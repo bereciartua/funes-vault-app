@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test and build (Xcode ${{ matrix.xcode }})
+    # No secrets: package tests, the log-privacy check and an unsigned build.
+    # Same toolchains as EK Bridge: 27.0 (the release Mac; a GitHub preview
+    # image) and 26.6 (the previous major release).
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - xcode: "27.0"
+            runner: xcode-27
+          - xcode: "26.6"
+            runner: macos-26
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: |
+          sw_vers
+          xcode-select -p
+          xcrun swiftc --version
+      - name: Tests and build
+        run: sh scripts/test.sh

@@ -1,0 +1,11 @@
+.DS_Store
+build/
+.build/
+.swiftpm/
+dist/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+Package.resolved.bak
+__pycache__/
