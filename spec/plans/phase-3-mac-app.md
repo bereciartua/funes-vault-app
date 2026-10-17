@@ -6,9 +6,9 @@
 
 ## Tasks
 ### 3.1 App shell · 2 h
-- [ ] Menu bar controller (icon states, menu), main window with sidebar sections, Settings window.
-- [ ] Launch at login (`SMAppService`), `AppMover`, Dock visibility preference.
-- [ ] "Pause Funes Vault" (1 hour, until tomorrow, until resumed).
+- [x] Menu bar controller (icon states, menu), main window with sidebar sections, Settings window.
+- [x] Launch at login (`SMAppService`), `AppMover`, Dock visibility preference.
+- [x] "Pause Funes Vault" (1 hour, until tomorrow at 8:00, until resumed), kept across relaunches.
 
 ### 3.2 Vault UI · 5 h
 - [ ] List with search (debounced, 150 ms), filters, sort and empty states.

@@ -15,5 +15,7 @@ PYTHONPYCACHEPREFIX="$PWD/build/pycache" python3 Tests/mcp/mcp_test.py \
     "$(swift build --package-path Packages/FunesMCP --show-bin-path)/funes-mcp-test-server" Tests/mcp/fixtures/tools.json
 xcodebuild -project FunesVault.xcodeproj -scheme FunesMac -configuration Debug \
     -destination 'generic/platform=macOS' -derivedDataPath build/DerivedData \
-    CODE_SIGNING_ALLOWED=NO build -quiet
+    CODE_SIGNING_ALLOWED=NO SWIFT_EMIT_LOC_STRINGS=YES build -quiet
+# Every user-facing string is in the String Catalog (NFR-L10N-01).
+CHECK=1 sh scripts/sync_strings.sh
 echo "test.sh: all green"

@@ -1,0 +1,620 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ asks to use %lld memories in Funes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ asks to use %2$lld memories in Funes"
+          }
+        }
+      }
+    },
+    "%@ suggests a memory for Funes" : {
+
+    },
+    "%@ wants to use your memories" : {
+
+    },
+    "%@ · %lld min left" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$lld min left"
+          }
+        }
+      }
+    },
+    "%@ · approved, waiting for the agent" : {
+
+    },
+    "%lld above its sensitivity limit" : {
+
+    },
+    "%lld expired" : {
+
+    },
+    "%lld in categories it can't read" : {
+
+    },
+    "%lld more matched but can't go to this agent (%@)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld more matched but can't go to this agent (%2$@)."
+          }
+        }
+      }
+    },
+    "%lld not shareable" : {
+
+    },
+    "%lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "%lld s" : {
+
+    },
+    "%lld seconds left" : {
+
+    },
+    "A category with that name already exists." : {
+
+    },
+    "A memory can have at most 12 categories." : {
+
+    },
+    "A request expired before you answered" : {
+
+    },
+    "A suggestion is waiting in the Inbox" : {
+
+    },
+    "A vault file has unsafe permissions." : {
+
+    },
+    "AI Models" : {
+
+    },
+    "About Funes Vault" : {
+
+    },
+    "Activity" : {
+
+    },
+    "Activity, %lld pending requests" : {
+
+    },
+    "Added by you" : {
+
+    },
+    "Advanced" : {
+
+    },
+    "Agents" : {
+
+    },
+    "Agents can connect" : {
+
+    },
+    "Agents can't connect: the server is off" : {
+
+    },
+    "An agent" : {
+
+    },
+    "An agent was refused more than 5 times in 10 minutes" : {
+
+    },
+    "Another agent already has that name." : {
+
+    },
+    "Answered a question" : {
+
+    },
+    "Applications" : {
+
+    },
+    "Approval" : {
+
+    },
+    "Built-in categories can be renamed but not deleted." : {
+
+    },
+    "Capture" : {
+
+    },
+    "Captured on iPhone" : {
+
+    },
+    "Captured on this Mac" : {
+
+    },
+    "Category" : {
+
+    },
+    "Check for Updates…" : {
+
+    },
+    "Choose at least one category." : {
+
+    },
+    "Close Window" : {
+
+    },
+    "Constraint" : {
+
+    },
+    "Copy" : {
+
+    },
+    "Cut" : {
+
+    },
+    "Data" : {
+
+    },
+    "Deny" : {
+
+    },
+    "Downloads" : {
+
+    },
+    "Edit" : {
+
+    },
+    "Event" : {
+
+    },
+    "Everyday preferences. Fine for most of your agents." : {
+
+    },
+    "Fact" : {
+
+    },
+    "File" : {
+
+    },
+    "Find…" : {
+
+    },
+    "Fine for anyone to know." : {
+
+    },
+    "For 1 Hour" : {
+
+    },
+    "For this session" : {
+
+    },
+    "Funes Vault" : {
+
+    },
+    "Funes Vault Settings" : {
+
+    },
+    "Funes Vault always stays in the menu bar. Without the Dock icon, it shows in the Dock only while a window is open." : {
+
+    },
+    "Funes Vault is off" : {
+
+    },
+    "Funes Vault is on · %lld agents" : {
+
+    },
+    "Funes Vault is on · 1 agent" : {
+
+    },
+    "Funes Vault is paused" : {
+
+    },
+    "Funes Vault is starting…" : {
+
+    },
+    "Funes Vault, off" : {
+
+    },
+    "Funes Vault, paused" : {
+
+    },
+    "Funes Vault, waiting for you" : {
+
+    },
+    "General" : {
+
+    },
+    "Goal" : {
+
+    },
+    "Hide Funes Vault" : {
+
+    },
+    "Imported from ChatGPT" : {
+
+    },
+    "Imported from Claude" : {
+
+    },
+    "Imported from Markdown" : {
+
+    },
+    "Imported from a Funes export" : {
+
+    },
+    "Inbox" : {
+
+    },
+    "Inbox, %lld waiting" : {
+
+    },
+    "Inbox: %lld" : {
+
+    },
+    "Instruction" : {
+
+    },
+    "Internal" : {
+
+    },
+    "It changed in the meantime. Look again and retry." : {
+
+    },
+    "It was deleted or changed elsewhere." : {
+
+    },
+    "It's already in Applications." : {
+
+    },
+    "It's the only category some agents may read. Choose a replacement, or change those agents first." : {
+
+    },
+    "Keeps it" : {
+
+    },
+    "Kept by the agent" : {
+
+    },
+    "Later" : {
+
+    },
+    "Looking for" : {
+
+    },
+    "Low" : {
+
+    },
+    "MCP" : {
+
+    },
+    "Minimize" : {
+
+    },
+    "Never shared with agents unless you raise an agent's ceiling to Secret." : {
+
+    },
+    "New Memory" : {
+
+    },
+    "Next request" : {
+
+    },
+    "Not allowed." : {
+
+    },
+    "Not kept" : {
+
+    },
+    "Not said" : {
+
+    },
+    "Notifications" : {
+
+    },
+    "Notifications never include memory text." : {
+
+    },
+    "Open Funes Vault" : {
+
+    },
+    "Open Funes Vault at login" : {
+
+    },
+    "Paste" : {
+
+    },
+    "Pause Funes Vault" : {
+
+    },
+    "Paused until %@" : {
+
+    },
+    "Paused until tomorrow at %@" : {
+
+    },
+    "Paused until you resume" : {
+
+    },
+    "Pending requests" : {
+
+    },
+    "Pending requests: %lld" : {
+
+    },
+    "Personal: health, money, family. Share rarely, and always ask." : {
+
+    },
+    "Port %@ is in use" : {
+
+    },
+    "Port %@ is in use by another app" : {
+
+    },
+    "Preference" : {
+
+    },
+    "Previous request" : {
+
+    },
+    "Project Context" : {
+
+    },
+    "Public" : {
+
+    },
+    "Purpose" : {
+
+    },
+    "Quit Funes Vault" : {
+
+    },
+    "Quit the other copy first." : {
+
+    },
+    "Redo" : {
+
+    },
+    "Reject" : {
+
+    },
+    "Relationship" : {
+
+    },
+    "Remember…" : {
+
+    },
+    "Removed agent" : {
+
+    },
+    "Restricted" : {
+
+    },
+    "Resume" : {
+
+    },
+    "Resume Funes Vault" : {
+
+    },
+    "Save" : {
+
+    },
+    "Save this memory?" : {
+
+    },
+    "Saved by an agent" : {
+
+    },
+    "Secret" : {
+
+    },
+    "Select All" : {
+
+    },
+    "Sensitive" : {
+
+    },
+    "Sensitivity" : {
+
+    },
+    "Sensitivity: %@" : {
+
+    },
+    "Settings…" : {
+
+    },
+    "Share" : {
+
+    },
+    "Shared with" : {
+
+    },
+    "Show all" : {
+
+    },
+    "Show all of %@" : {
+
+    },
+    "Show in Activity" : {
+
+    },
+    "Show in Dock" : {
+
+    },
+    "Show less" : {
+
+    },
+    "Show less of %@" : {
+
+    },
+    "Some memories are only in this category. Choose a replacement." : {
+
+    },
+    "Something else named %@ is in %@. Move it away first." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something else named %1$@ is in %2$@. Move it away first."
+          }
+        }
+      }
+    },
+    "Something in this form isn't valid." : {
+
+    },
+    "Something went wrong. Try again." : {
+
+    },
+    "Starting…" : {
+
+    },
+    "Suggested by %@. It's in your Inbox either way." : {
+
+    },
+    "Suggested by an agent" : {
+
+    },
+    "Summary" : {
+
+    },
+    "Task: “%@”" : {
+
+    },
+    "That category no longer exists." : {
+
+    },
+    "That name can't be used for a category." : {
+
+    },
+    "The agent server is off" : {
+
+    },
+    "The agent server stopped" : {
+
+    },
+    "The copy already in Applications couldn't be moved to the Trash." : {
+
+    },
+    "The copy couldn't be made: %@" : {
+
+    },
+    "The copy's signature didn't check out, so it was moved to the Trash." : {
+
+    },
+    "The name needs 1 to 60 characters." : {
+
+    },
+    "The text needs 1 to 10,000 characters." : {
+
+    },
+    "The title needs 1 to 180 characters." : {
+
+    },
+    "The vault didn't open" : {
+
+    },
+    "This copy isn't signed by a developer, so its copy can't be checked. Drag it to Applications in Finder instead." : {
+
+    },
+    "This looks like %@. Funes never stores secrets." : {
+
+    },
+    "This request changed; review again." : {
+
+    },
+    "This vault was written by a newer Funes Vault. Update the app." : {
+
+    },
+    "Undo" : {
+
+    },
+    "Until I Resume" : {
+
+    },
+    "Until Tomorrow" : {
+
+    },
+    "Updates" : {
+
+    },
+    "Vault" : {
+
+    },
+    "Very personal. Only for agents you fully trust, and always ask." : {
+
+    },
+    "View" : {
+
+    },
+    "Why" : {
+
+    },
+    "Window" : {
+
+    },
+    "Work or project context. Share with agents you use for that work." : {
+
+    },
+    "Zoom" : {
+
+    },
+    "a card number" : {
+
+    },
+    "a password or secret" : {
+
+    },
+    "a private key" : {
+
+    },
+    "a secret" : {
+
+    },
+    "a sign-in token" : {
+
+    },
+    "a temporary location" : {
+
+    },
+    "an API key" : {
+
+    },
+    "an agent key" : {
+
+    },
+    "just now" : {
+
+    },
+    "macOS didn't add Funes Vault to Login Items." : {
+
+    },
+    "macOS didn't remove Funes Vault from Login Items." : {
+
+    },
+    "macOS didn't say where %@ was opened from. Drag it to Applications in Finder, then open it from there." : {
+
+    },
+    "macOS needs your approval in System Settings ▸ General ▸ Login Items." : {
+
+    },
+    "the disk image" : {
+
+    },
+    "the “%@” folder" : {
+
+    },
+    "“%@” (as reported)" : {
+
+    }
+  },
+  "version" : "1.0"
+}

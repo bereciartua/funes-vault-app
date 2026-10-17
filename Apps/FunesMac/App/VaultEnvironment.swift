@@ -19,8 +19,12 @@ final class VaultEnvironment {
     let search: SearchService
     let disclosures: DisclosureService
     let suggestions: SuggestionService
-    private var indexer: EmbeddingIndexer?
+    let captures: CaptureService
+    let imports: ImportService
+    private(set) var indexer: EmbeddingIndexer?
     private var observation: AnyObject?
+    /// The Share, Save and access-request panels.
+    private(set) lazy var approvals = FunesApprovals(environment: self)
 
     /// `~/Library/Application Support/FunesVault`. Debug builds honour FUNES_DATA_DIR (the
     /// launcher does too), so development never touches the real vault.
@@ -34,19 +38,22 @@ final class VaultEnvironment {
             .appendingPathComponent(Identifiers.supportFolderName, isDirectory: true)
     }
 
-    init(dataFolder: URL = VaultEnvironment.defaultDataFolder()) throws {
+    init(dataFolder: URL = VaultEnvironment.defaultDataFolder(), retention: ActivityRetention = .funes,
+         embeddings: Bool = true) throws {
         self.dataFolder = dataFolder
         try FileManager.default.createDirectory(at: dataFolder, withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
         store = try VaultStore.open(directory: dataFolder)
-        activity = ActivityLog(dataFolder: dataFolder)
+        activity = ActivityLog(dataFolder: dataFolder, retention: retention)
         keys = AgentKeyFileStore(dataFolder: dataFolder)
         agents = AgentService(store: store, issuer: BridgeKitKeyIssuer(), keys: keys, activity: activity)
-        let indexer = Self.bundledIndexer(store: store)
+        let indexer = embeddings ? Self.bundledIndexer(store: store) : nil
         self.indexer = indexer
         search = SearchService(store: store, indexer: indexer)
         disclosures = DisclosureService(store: store, retriever: search, activity: activity, pause: pause)
         suggestions = SuggestionService(store: store, activity: activity, pause: pause, disclosures: disclosures)
+        captures = CaptureService(store: store, activity: activity)
+        imports = ImportService(store: store, activity: activity)
         if let indexer {
             try? indexer.loadIndex()
             observation = indexer.startObserving()
@@ -58,6 +65,9 @@ final class VaultEnvironment {
         FunesServices(store: store, agents: agents, disclosures: disclosures, suggestions: suggestions, pause: pause,
                       activity: activity)
     }
+
+    /// Whether vault search and agent retrieval use the bundled model (ADR-0016).
+    var hasEmbeddings: Bool { indexer != nil }
 
     /// The bundled bge-small model (ADR-0016) when it's available; keyword search otherwise.
     /// Until the model ships inside the app (Phase 4), development builds use the converted copy
