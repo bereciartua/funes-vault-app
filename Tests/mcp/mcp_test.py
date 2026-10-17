@@ -481,6 +481,27 @@ def run_privacy(h):
 
 
 def run_limits(h):
+    # 8 concurrent requests from one agent: exactly 3 may wait for approval, counted where they're
+    # created (PR #2 review 4303295938).
+    def one(index):
+        client = Client(h, h.key("narrow"))
+        try:
+            return client.call("request_memory", {"task": f"concurrent {index}"})
+        finally:
+            client.close()
+    threads = [None] * 8
+    boxes = [{} for _ in range(8)]
+    for index in range(8):
+        threads[index] = threading.Thread(target=lambda i=index: boxes[i].update(result=one(i)))
+        threads[index].start()
+    for thread in threads:
+        thread.join(20)
+    results = [box.get("result", {}) for box in boxes]
+    waiting = [r for r in results if r.get("status") == "needs_approval"]
+    limited = [r for r in results if r.get("reason") == "rate_limited"]
+    check("concurrent: 3 pending at most", len(waiting) == 3 and len(limited) == 5 and
+          all(r.get("retry_after_s") == 60 and r.get("_isError") is True for r in limited),
+          [r.get("status") or r.get("reason") for r in results])
     c = Client(h, h.key("reader"))
     limited = None
     for _ in range(40):

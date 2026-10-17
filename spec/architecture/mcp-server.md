@@ -175,7 +175,7 @@ Brings Funes to the front on the Mac, at a pending request or suggestion.
 | Tool calls per agent | 120/min, burst 30 | `rate_limited` |
 | Suggestions and writes per agent | 20/min, burst 10; 250 per rolling 24 h (counting stored ones only) | `rate_limited` |
 | Calls in progress per agent | 8 | `rate_limited` |
-| Requests waiting for approval per agent | 3 (each up to 45 s in a panel, then 15 min pending) | `rate_limited` |
+| Requests waiting for approval per agent | 3 (each up to 45 s in a panel, then 15 min pending), counted in the write transaction that would add one, so concurrent calls can't exceed it | `rate_limited` (`retry_after_s` 60) |
 | Panels on screen | 3 (others queue) | — |
 | Time to answer a call | 55 s | `timeout` |
 | Result size | 200,000 bytes (bundles are bounded by `max_tokens` anyway) | `response_too_large` |

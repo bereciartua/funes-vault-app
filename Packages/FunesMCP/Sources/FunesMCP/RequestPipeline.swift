@@ -52,6 +52,8 @@ public final class RequestPipeline: BridgeHandler {
     /// mcp-server.md §9.
     public static let maxInFlightPerAgent = 8
     public static let maxPendingApprovalsPerAgent = 3
+    /// When the user may have answered one of them: about one panel's time.
+    public static let pendingRetrySeconds = 60
     public static let getMemoryRequestInterval: TimeInterval = 5
 
     let services: FunesServices

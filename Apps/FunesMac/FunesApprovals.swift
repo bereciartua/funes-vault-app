@@ -62,7 +62,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         let names = Dictionary(uniqueKeysWithValues: categories.map { ($0.key, $0.name) })
         let rows = panel.memories.map { memory in
             PanelItem.Row(id: memory.id.uuidString, title: memory.title, detail: memory.body,
-                          badge: memory.sensitivity.name.capitalized,
+                          version: String(memory.version), badge: memory.sensitivity.name.capitalized,
                           badgeIsWarning: memory.sensitivity >= .sensitive)
         }
         var facts = [PanelItem.Fact]()

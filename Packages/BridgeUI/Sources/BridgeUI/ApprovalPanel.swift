@@ -60,14 +60,32 @@ public final class ApprovalPanelController {
 
     public var window: NSWindow? { panel }
 
+    /// The panel's height: everything at its natural size, but never taller than the screen's
+    /// visible area. Beyond that the rows scroll and the title and buttons stay put.
     private func fit(_ panel: NSPanel) {
-        guard let host else { return }
-        let size = host.sizeThatFits(in: NSSize(width: Self.width, height: 2_000))
-        if size.height > 1, size != panel.contentLayoutRect.size {
+        guard host != nil else { return }
+        let available = (panel.screen ?? NSScreen.main ?? NSScreen.screens.first)
+            .map { $0.visibleFrame.height - 2 * Self.margin } ?? 800
+        let height = Self.height(for: queue, available: available)
+        let size = NSSize(width: Self.width, height: height)
+        if height > 1, size != panel.contentLayoutRect.size {
             let top = panel.frame.maxY
             panel.setContentSize(size)
             if panel.isVisible { panel.setFrameTopLeftPoint(NSPoint(x: panel.frame.minX, y: top)) }
         }
+    }
+
+    static let margin: CGFloat = 12
+
+    /// The natural height of the current item, measured without scrolling.
+    public static func idealHeight(for queue: ApprovalQueue) -> CGFloat {
+        let measure = NSHostingController(rootView: ApprovalPanelView(queue: queue, scrolls: false))
+        return measure.sizeThatFits(in: NSSize(width: width, height: 100_000)).height
+    }
+
+    /// The height the panel takes: its natural height, capped at `available`.
+    public static func height(for queue: ApprovalQueue, available: CGFloat) -> CGFloat {
+        min(idealHeight(for: queue), available)
     }
 
     private func makePanel() -> NSPanel {
@@ -85,7 +103,7 @@ public final class ApprovalPanelController {
         panel.standardWindowButton(.zoomButton)?.isHidden = true
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.title = String(localized: "Approval")
-        let host = NSHostingController(rootView: ApprovalPanelView(queue: queue))
+        let host = NSHostingController(rootView: ApprovalPanelView(queue: queue, scrolls: true))
         host.sizingOptions = []
         panel.contentViewController = host
         self.host = host
@@ -98,19 +116,29 @@ public final class ApprovalPanelController {
         panel.layoutIfNeeded()
         let frame = screen.visibleFrame
         let size = panel.frame.size
-        panel.setFrameOrigin(NSPoint(x: frame.maxX - size.width - 12, y: frame.maxY - size.height - 12))
+        panel.setFrameOrigin(NSPoint(x: frame.maxX - size.width - Self.margin, y: frame.maxY - size.height - Self.margin))
     }
 }
 
 public struct ApprovalPanelView: View {
     let queue: ApprovalQueue
-    /// The item the buttons may act on. When the shown item switches (one expired, or the user
-    /// stepped), they wait a moment so a click meant for the old one can't answer the new one.
-    @State private var armedID: UUID?
+    /// True in the panel: the middle scrolls inside whatever height the panel has. False only to
+    /// measure the natural height.
+    let scrolls: Bool
+    /// The content the buttons may act on: the item and its content generation. When either
+    /// changes (one expired, the user stepped, or a refresh changed what would be shared), they
+    /// wait a moment so a click meant for the old content can't approve the new one.
+    @State private var armed: ArmKey?
     public static let armingDelay: TimeInterval = 0.6
 
-    public init(queue: ApprovalQueue) {
+    struct ArmKey: Equatable {
+        let id: UUID
+        let generation: Int
+    }
+
+    public init(queue: ApprovalQueue, scrolls: Bool = true) {
         self.queue = queue
+        self.scrolls = scrolls
     }
 
     public var body: some View {
@@ -120,29 +148,33 @@ public struct ApprovalPanelView: View {
     @ViewBuilder
     private var content: some View {
         if let item = queue.current {
+            let key = ArmKey(id: item.id, generation: queue.generation(of: item.id))
             VStack(alignment: .leading, spacing: 0) {
-                VStack(alignment: .leading, spacing: 12) {
-                    header(item)
-                    rows(item)
-                    facts(item)
-                    if let note = item.note {
-                        Text(note).font(.callout).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                header(item)
+                    .padding([.horizontal, .top], 16)
+                    .padding(.bottom, 12)
+                if scrolls {
+                    ScrollView(.vertical) { middle(item) }
+                        .scrollBounceBehavior(.basedOnSize)
+                } else {
+                    middle(item)
                 }
-                .padding(16)
                 Divider()
-                footer(item)
+                footer(item, armed: armed == key)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
             }
             .frame(width: ApprovalPanelController.width)
-            .fixedSize(horizontal: false, vertical: true)
-            .onChange(of: item.id, initial: true) { _, id in
-                armedID = nil
+            .frame(maxHeight: scrolls ? .infinity : nil, alignment: .top)
+            .fixedSize(horizontal: false, vertical: !scrolls)
+            .onChange(of: key, initial: true) { _, key in
+                armed = nil
                 DispatchQueue.main.asyncAfter(deadline: .now() + Self.armingDelay) {
                     MainActor.assumeIsolated {
-                        if queue.current?.id == id { armedID = id }
+                        if let current = queue.current,
+                           ArmKey(id: current.id, generation: queue.generation(of: current.id)) == key {
+                            armed = key
+                        }
                     }
                 }
             }
@@ -151,6 +183,25 @@ public struct ApprovalPanelView: View {
         } else {
             Color.clear.frame(width: ApprovalPanelController.width, height: 1)
         }
+    }
+
+    /// Everything between the title and the buttons; it scrolls when the panel is capped.
+    private func middle(_ item: PanelItem) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let subtitle = item.subtitle {
+                Text(subtitle).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            rows(item)
+            facts(item)
+            if let note = item.note {
+                Text(note).font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
     }
 
     private func header(_ item: PanelItem) -> some View {
@@ -163,10 +214,6 @@ public struct ApprovalPanelView: View {
                 Text(item.title)
                     .font(.headline)
                     .fixedSize(horizontal: false, vertical: true)
-                if let subtitle = item.subtitle {
-                    Text(subtitle).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
             }
         }
     }
@@ -197,10 +244,22 @@ public struct ApprovalPanelView: View {
                                     .accessibilityLabel(String(localized: "Sensitivity: \(badge)"))
                             }
                         }
-                        if let detail = row.detail {
+                        if let detail = queue.displayedDetail(row, in: item.id) {
+                            // The exact text that would be sent: a preview cut by PanelText, never
+                            // clipped silently, and all of it after Show all.
                             Text(detail).font(.callout).foregroundStyle(.secondary)
-                                .lineLimit(3)
+                                .textSelection(.enabled)
                                 .fixedSize(horizontal: false, vertical: true)
+                        }
+                        if row.isClipped {
+                            let open = queue.isExpanded(row: row.id, in: item.id)
+                            Button(open ? String(localized: "Show less") : String(localized: "Show all")) {
+                                queue.toggleExpanded(row: row.id, in: item.id)
+                            }
+                            .buttonStyle(.link)
+                            .font(.callout)
+                            .accessibilityLabel(open ? String(localized: "Show less of \(row.title)")
+                                                     : String(localized: "Show all of \(row.title)"))
                         }
                     }
                 }
@@ -223,10 +282,9 @@ public struct ApprovalPanelView: View {
         }
     }
 
-    private func footer(_ item: PanelItem) -> some View {
+    private func footer(_ item: PanelItem, armed: Bool) -> some View {
         let shown = queue.shown
         let index = shown.firstIndex(where: { $0.id == item.id }) ?? 0
-        let armed = armedID == item.id
         let count = item.selectedIDs.count
         return HStack(spacing: 8) {
             if shown.count > 1 {

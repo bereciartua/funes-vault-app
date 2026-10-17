@@ -285,6 +285,31 @@ import Testing
         #expect(try fx.store.provenance(memoryID: fx.id("m1")).filter { $0.event == .shared }.count == 1)
     }
 
+    /// mcp-server.md §9: at most 3 requests waiting for approval per agent, enforced in the write
+    /// that creates them, so concurrent calls can't all slip under the limit (PR #2 review 4303295938).
+    @Test func pendingApprovalLimitHoldsUnderConcurrency() async throws {
+        let fx = try ServiceFixture()
+        let outcomes = try await withThrowingTaskGroup(of: RequestOutcome.self) { group in
+            for index in 0..<8 {
+                group.addTask {
+                    try await fx.disclosures.request(agentID: fx.agentID, MemoryRequest(task: "Task \(index)"),
+                                                     now: fx.now, maxPendingApprovals: 3)
+                }
+            }
+            return try await group.reduce(into: []) { $0.append($1) }
+        }
+        #expect(outcomes.filter { $0.status == .needsApproval }.count == 3)
+        let refused = outcomes.filter { $0.status == .denied }
+        #expect(refused.count == 5 && refused.allSatisfy { $0.reason == .rateLimited && $0.bundle == nil })
+        #expect(try await fx.disclosures.pendingRequests(now: fx.now).filter { $0.status == .needsApproval }.count == 3)
+        // Answering one frees a slot.
+        let first = try #require(outcomes.first { $0.status == .needsApproval }?.requestID)
+        try await fx.disclosures.deny(requestID: first, now: fx.now)
+        let next = try await fx.disclosures.request(agentID: fx.agentID, MemoryRequest(task: "Again"), now: fx.now,
+                                                    maxPendingApprovals: 3)
+        #expect(next.status == .needsApproval)
+    }
+
     @Test func approveRacingDeliverIsConsistent() async throws {
         for _ in 0..<10 {
             let fx = try ServiceFixture()

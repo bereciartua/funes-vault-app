@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import BridgeUI
 
@@ -158,5 +159,99 @@ struct ApprovalQueueTests {
         #expect(queue.items.count == 1 && queue.current?.title == "Updated")
         queue.answer(id, .secondary)
         #expect(answers == ["first"])
+    }
+}
+
+/// PR #2 review findings on the Share panel (4303295917, 4303295925, 4303295930).
+@Suite("Share panel review fixes")
+@MainActor
+struct SharePanelReviewTests {
+    static func shareItem(_ id: UUID, rows: [PanelItem.Row]) -> PanelItem {
+        PanelItem(id: id, kind: .share, agentID: "a", title: "Claude Code wants to use your memories",
+                  subtitle: "For: plan the week", rows: rows, facts: [PanelItem.Fact(label: "Keeps it", value: "Not said")],
+                  note: "2 more matched but can't go to this agent.", primary: "Share", secondary: "Deny",
+                  expiresAt: nil, announcement: "Share?")
+    }
+
+    static let publicRow = PanelItem.Row(id: "public", title: "Coffee", detail: "Flat white.", version: "1")
+    static let privateRow = PanelItem.Row(id: "private", title: "Work hours", detail: "9 to 12.", version: "1")
+
+    // 4303295917: re-enqueuing (open_in_funes) must not re-tick what the user unticked.
+    @Test func refreshKeepsTheUsersSelection() {
+        let queue = ApprovalQueue()
+        let id = UUID()
+        queue.enqueue(Self.shareItem(id, rows: [Self.publicRow, Self.privateRow])) { _ in }
+        queue.toggle(row: "private", in: id)
+        #expect(queue.current?.selectedIDs == ["public"])
+        let generation = queue.generation(of: id)
+        queue.enqueue(Self.shareItem(id, rows: [Self.publicRow, Self.privateRow])) { _ in }
+        #expect(queue.current?.selectedIDs == ["public"])
+        #expect(queue.generation(of: id) == generation, "unchanged content keeps the buttons armed")
+    }
+
+    // 4303295917: when what would be shared changes, the buttons re-arm (new generation), and a
+    // changed memory isn't covered by the old tick.
+    @Test func changedContentReArms() {
+        let queue = ApprovalQueue()
+        let id = UUID()
+        queue.enqueue(Self.shareItem(id, rows: [Self.publicRow, Self.privateRow])) { _ in }
+        queue.toggle(row: "private", in: id)
+        let generation = queue.generation(of: id)
+        var edited = Self.publicRow
+        edited.detail = "Flat white, oat milk."
+        edited.version = "2"
+        queue.enqueue(Self.shareItem(id, rows: [edited, Self.privateRow])) { _ in }
+        #expect(queue.generation(of: id) == generation + 1)
+        #expect(queue.current?.selectedIDs == ["public"], "the unticked unchanged row stays unticked")
+        let added = PanelItem.Row(id: "new", title: "New", detail: "Added.", version: "1")
+        queue.enqueue(Self.shareItem(id, rows: [edited, Self.privateRow, added])) { _ in }
+        #expect(queue.generation(of: id) == generation + 2)
+    }
+
+    // 4303295925: the user can read everything they'd share before sharing it.
+    @Test func showAllRevealsTheExactText() {
+        let long = (1...40).map { "Line \($0) of a long memory body with details." }.joined(separator: " ")
+        let multiline = "One\nTwo\nThree\nFour"
+        let queue = ApprovalQueue()
+        let id = UUID()
+        let rows = [PanelItem.Row(id: "long", title: "Long", detail: long),
+                    PanelItem.Row(id: "lines", title: "Lines", detail: multiline),
+                    PanelItem.Row(id: "short", title: "Short", detail: "Fits.")]
+        queue.enqueue(Self.shareItem(id, rows: rows)) { _ in }
+        let item = try! #require(queue.current)
+        for row in item.rows {
+            let shown = try! #require(queue.displayedDetail(row, in: id))
+            // Either the whole text is visible, or Show all is offered.
+            #expect(shown == row.detail || row.isClipped)
+        }
+        #expect(item.rows.map(\.isClipped) == [true, true, false])
+        #expect(PanelText.preview(long).count <= PanelText.previewCharacters + 1)
+        #expect(PanelText.preview(multiline) == "One\nTwo\nThree…")
+        queue.toggleExpanded(row: "long", in: id)
+        #expect(queue.displayedDetail(item.rows[0], in: id) == long)
+        queue.toggleExpanded(row: "long", in: id)
+        #expect(queue.displayedDetail(item.rows[0], in: id) == PanelText.preview(long))
+    }
+
+    // 4303295930: 30 rows on an 871 pt screen: the panel stays within the screen and the rows scroll.
+    @Test func thirtyRowsFitTheScreen() {
+        let queue = ApprovalQueue()
+        let rows = (1...30).map {
+            PanelItem.Row(id: "m\($0)", title: "Memory \($0)", detail: "Body of memory \($0), a sentence or two long.",
+                          version: "1", badge: "Low")
+        }
+        queue.enqueue(Self.shareItem(UUID(), rows: rows)) { _ in }
+        let available: CGFloat = 871
+        let ideal = ApprovalPanelController.idealHeight(for: queue)
+        #expect(ideal > available, "30 rows need more than the screen: \(ideal)")
+        #expect(ApprovalPanelController.height(for: queue, available: available) == available)
+        // The panel's view laid out in that height doesn't grow past it, so the footer is on screen.
+        let host = NSHostingController(rootView: ApprovalPanelView(queue: queue, scrolls: true))
+        let fitted = host.sizeThatFits(in: NSSize(width: ApprovalPanelController.width, height: available))
+        #expect(fitted.height <= available, "laid out at \(fitted.height) pt")
+        // Few rows: the panel is just as tall as its content.
+        let small = ApprovalQueue()
+        small.enqueue(Self.shareItem(UUID(), rows: Array(rows.prefix(2)))) { _ in }
+        #expect(ApprovalPanelController.height(for: small, available: available) < 400)
     }
 }

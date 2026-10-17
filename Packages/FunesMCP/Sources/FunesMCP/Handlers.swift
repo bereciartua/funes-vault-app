@@ -44,21 +44,22 @@ extension RequestPipeline {
             maxTokens: (a["max_tokens"] as? NSNumber)?.intValue ?? InputLimits.defaultMaxTokens,
             retention: (a["retention"] as? String).flatMap(Retention.init(rawValue:)) ?? .unknown,
             processors: a["processors"] as? [String] ?? [])
-        // Requests waiting for the user: at most 3 per agent (§9).
-        let started = now()
-        if let pending = try? await services.disclosures.pendingRequests(now: started),
-           pending.filter({ $0.agentID == agent.id && $0.status == .needsApproval }).count
-               >= Self.maxPendingApprovalsPerAgent {
-            return rateLimited(call, agent.id, 60)
-        }
         let presenter = self.presenter
         do {
+            // Requests waiting for the user: at most 3 per agent (§9), counted by FunesCore in the
+            // write that would add one, so concurrent calls can't all pass.
             let outcome = try await services.disclosures.requestInCall(
-                agentID: agent.id, input, wait: inCallWait, now: now,
+                agentID: agent.id, input, wait: inCallWait, maxPendingApprovals: Self.maxPendingApprovalsPerAgent,
+                now: now,
                 onNeedsApproval: { outcome in
                     guard let id = outcome.requestID else { return }
                     Task { await presenter.showApproval(requestID: id, agentID: agent.id) }
                 })
+            if outcome.status == .denied, outcome.reason == .rateLimited {
+                // FunesCore recorded it in Activity; the agent gets the usual infrastructure answer.
+                return ToolOutput.denied(.rateLimited, message: Messages.rateLimited(Self.pendingRetrySeconds),
+                                         isError: true, extra: ["retry_after_s": Self.pendingRetrySeconds])
+            }
             return Self.output(outcome)
         } catch let error as VaultError {
             return failure(call, agent.id, error)

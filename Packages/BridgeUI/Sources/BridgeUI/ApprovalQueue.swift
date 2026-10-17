@@ -19,8 +19,12 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
     public struct Row: Identifiable, Sendable, Equatable {
         public let id: String
         public var title: String
-        /// A preview of the text the agent would get.
+        /// The text the agent would get, in full; the panel shows `PanelText.preview` of it with
+        /// **Show all** when that's shorter.
         public var detail: String?
+        /// Changes when the content changes (a memory's version): a refreshed row with the same id
+        /// and version keeps the user's tick.
+        public var version: String?
         /// "Low", "Sensitive"…
         public var badge: String?
         /// Badges at or above a level the app considers sensitive are drawn in orange.
@@ -28,16 +32,23 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
         public var selectable: Bool
         public var selected: Bool
 
-        public init(id: String, title: String, detail: String? = nil, badge: String? = nil,
+        public init(id: String, title: String, detail: String? = nil, version: String? = nil, badge: String? = nil,
                     badgeIsWarning: Bool = false, selectable: Bool = true, selected: Bool = true) {
             self.id = id
             self.title = title
             self.detail = detail
+            self.version = version
             self.badge = badge
             self.badgeIsWarning = badgeIsWarning
             self.selectable = selectable
             self.selected = selected
         }
+
+        /// Whether the panel shows less than the whole text until **Show all**.
+        public var isClipped: Bool { detail.map { PanelText.preview($0) != $0 } ?? false }
+
+        /// What the user approves when ticking this row; a change re-arms the buttons.
+        var content: [String?] { [id, version, title, detail, badge] }
     }
 
     /// A label and value under the rows: "Purpose (as reported)", "Retention"…
@@ -94,6 +105,28 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
     public var selectedIDs: [String] { rows.filter { $0.selectable && $0.selected }.map(\.id) }
 }
 
+/// The preview a row shows before **Show all**: the first 3 lines, at most 160 characters, cut at a
+/// word. Decided here rather than by clipping in the view, so the panel always knows whether text
+/// is hidden and offers the full text (the user approves the exact text; 04-ux-mac.md).
+public enum PanelText {
+    public static let previewLines = 3
+    public static let previewCharacters = 160
+
+    public static func preview(_ text: String) -> String {
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+        var shown = lines.prefix(previewLines).joined(separator: "\n")
+        let cutLines = lines.count > previewLines
+        guard cutLines || shown.count > previewCharacters else { return text }
+        if shown.count > previewCharacters {
+            shown = String(shown.prefix(previewCharacters))
+            if let space = shown.lastIndex(where: { $0 == " " || $0 == "\n" }), shown.distance(from: shown.startIndex, to: space) > previewCharacters / 2 {
+                shown = String(shown[..<space])
+            }
+        }
+        return shown.trimmingCharacters(in: .whitespacesAndNewlines) + "…"
+    }
+}
+
 public enum PanelAnswer: Sendable, Equatable {
     /// Share or Save, with the ticked rows.
     case primary(selected: [String])
@@ -120,6 +153,11 @@ public final class ApprovalQueue {
     /// Ticks once a second while an item counts down, so the panel redraws.
     public private(set) var now = Date()
 
+    /// Bumped when an item's approvable content changes, so the panel re-arms its buttons.
+    public private(set) var generations = [UUID: Int]()
+    /// Rows the user expanded with **Show all**, as "item|row".
+    public private(set) var expanded = Set<String>()
+
     @ObservationIgnored private var completions = [UUID: (PanelAnswer) -> Void]()
     @ObservationIgnored private let clock: () -> Date
     @ObservationIgnored private var timer: Timer?
@@ -140,10 +178,24 @@ public final class ApprovalQueue {
     }
 
     /// Adds an item; `completion` runs once, on the main actor. An item whose id is already
-    /// waiting replaces it on screen and keeps its first completion.
+    /// waiting is refreshed in place and keeps its first completion: rows with the same id and
+    /// content keep the user's tick, and if the content changed the buttons re-arm.
     public func enqueue(_ item: PanelItem, completion: @escaping (PanelAnswer) -> Void) {
         if let index = items.firstIndex(where: { $0.id == item.id }) {
-            items[index] = item
+            let old = items[index]
+            var refreshed = item
+            for rowIndex in refreshed.rows.indices {
+                let row = refreshed.rows[rowIndex]
+                if let previous = old.rows.first(where: { $0.id == row.id }), previous.content == row.content {
+                    refreshed.rows[rowIndex].selected = previous.selected
+                } else {
+                    expanded.remove(key(item.id, row.id))
+                }
+            }
+            if old.rows.map(\.content) != refreshed.rows.map(\.content) {
+                generations[item.id, default: 0] += 1
+            }
+            items[index] = refreshed
         } else {
             items.append(item)
             completions[item.id] = completion
@@ -158,6 +210,8 @@ public final class ApprovalQueue {
         items.remove(at: index)
         if selection >= shown.count { selection = max(0, shown.count - 1) }
         let completion = completions.removeValue(forKey: id)
+        generations[id] = nil
+        expanded = expanded.filter { !$0.hasPrefix(id.uuidString + "|") }
         tick()
         queueChanged()
         completion?(answer)
@@ -175,6 +229,23 @@ public final class ApprovalQueue {
               let rowIndex = items[index].rows.firstIndex(where: { $0.id == row && $0.selectable }) else { return }
         items[index].rows[rowIndex].selected.toggle()
     }
+
+    public func generation(of id: UUID) -> Int { generations[id, default: 0] }
+
+    public func isExpanded(row: String, in id: UUID) -> Bool { expanded.contains(key(id, row)) }
+
+    public func toggleExpanded(row: String, in id: UUID) {
+        let key = key(id, row)
+        if expanded.contains(key) { expanded.remove(key) } else { expanded.insert(key) }
+    }
+
+    /// The text the panel shows for a row now: the preview, or everything after **Show all**.
+    public func displayedDetail(_ row: PanelItem.Row, in id: UUID) -> String? {
+        guard let detail = row.detail else { return nil }
+        return isExpanded(row: row.id, in: id) ? detail : PanelText.preview(detail)
+    }
+
+    private func key(_ id: UUID, _ row: String) -> String { id.uuidString + "|" + row }
 
     /// Seconds left on an item's countdown, never negative.
     public func remaining(_ item: PanelItem) -> Int? {
