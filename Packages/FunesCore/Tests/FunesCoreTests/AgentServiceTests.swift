@@ -131,3 +131,58 @@ import Testing
         #expect(try await agents.authenticate(key: key.plaintext)?.paused == true)
     }
 }
+
+/// PR #3 review 4304236144: the access editor's draft against a change made elsewhere (Always Allow
+/// from a panel while the Access tab is open).
+@Suite struct AccessDraftTests {
+    static func make() async throws -> (AgentService, Agent, TestVault) {
+        let v = try TestVault()
+        let agents = AgentService(store: v.store, keys: InMemoryAgentKeyStore(), activity: InMemoryActivityLog())
+        let (agent, _) = try await agents.create(name: "Cursor", kind: .cursor,
+                                                 access: Access(operations: [.read], allowedCategoryKeys: ["software_development"]),
+                                                 asksForAccess: true, now: t0)
+        return (agents, agent, v)
+    }
+
+    @Test func anUntouchedDraftFollowsTheGrant() async throws {
+        let (agents, agent, vault) = try await Self.make()
+        defer { withExtendedLifetime(vault) {} }
+        let draft = AccessDraft(agent)
+        let granted = try await agents.allowCategory(agentID: agent.id, "project_context", now: t0)
+        let refreshed = draft.refreshed(from: granted)
+        #expect(!refreshed.isEdited && !refreshed.isStale)
+        #expect(refreshed.access.allowedCategoryKeys == ["software_development", "project_context"])
+    }
+
+    @Test func anEditedDraftCantUndoTheGrant() async throws {
+        let (agents, agent, vault) = try await Self.make()
+        defer { withExtendedLifetime(vault) {} }
+        var draft = AccessDraft(agent)
+        draft.access.maxSensitivity = .internal
+        let granted = try await agents.allowCategory(agentID: agent.id, "project_context", now: t0)
+        draft = draft.refreshed(from: granted)
+        #expect(draft.isEdited && draft.isStale && draft.access.maxSensitivity == .internal)
+        await #expect(throws: VaultError.revisionChanged) { _ = try await draft.save(with: agents, now: t0) }
+        // Also through the service directly with the old revision.
+        await #expect(throws: VaultError.revisionChanged) {
+            try await agents.updateAccess(agentID: agent.id, draft.access, expectedRevision: agent.revision, now: t0)
+        }
+        let current = try #require(try await agents.agent(id: agent.id))
+        #expect(current.access.allowedCategoryKeys.contains("project_context") && current.access.maxSensitivity == .low)
+        // Reviewing again: a fresh draft from the current agent saves.
+        var again = AccessDraft(current)
+        again.access.maxSensitivity = .internal
+        let saved = try await again.save(with: agents, now: t0)
+        #expect(saved.access.maxSensitivity == .internal && saved.access.allowedCategoryKeys.contains("project_context"))
+    }
+
+    @Test func savingAnUnchangedAgentWorks() async throws {
+        let (agents, agent, vault) = try await Self.make()
+        defer { withExtendedLifetime(vault) {} }
+        var draft = AccessDraft(agent)
+        draft.retention = .session
+        draft.access.askBeforeSharing = false
+        let saved = try await draft.save(with: agents, now: t0)
+        #expect(saved.retention == .session && !saved.access.askBeforeSharing && !saved.isEdited)
+    }
+}

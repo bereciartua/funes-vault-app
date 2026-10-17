@@ -95,6 +95,8 @@ public protocol GenerationProvider: Sendable {
 3. **Agents' task text** goes to a cloud embedding provider only if "Embed agent requests with the cloud model" is on. It's **on by default when a cloud embedding model is chosen**, because retrieval quality depends on it, and it's stated in the disclosure line. If it's off, agent retrieval for that vault is keyword-only.
 4. **No memory text in errors or logs.** Provider errors are logged with the status code and provider id only.
 5. **TLS required** for cloud endpoints (`https://`). Plain HTTP is allowed only for local-server providers.
+6. **One way out.** Every call to a model goes through `ModelRouter.send`, which applies 1–2 before any request: the secret scanner for every provider that isn't on this Mac, and the cloud limit (with an unknown sensitivity treated as above it) for cloud providers. A refusal is `ProviderError.blocked`. `scripts/test.sh` fails if anything else calls a provider's `generate`.
+7. **Test connection** classifies a made-up note among the built-in categories as Funes ships them, never the user's category names, descriptions or custom categories.
 
 ## 6. Fallbacks and failure
 | Situation | Behaviour |

@@ -120,8 +120,9 @@ A card at the top of the Vault:
     - **Ask before saving:** shown only with Write.
     - **Access expires:** never, or a date.
     - **Let it ask for more access:** on or off.
+    - If the agent changes elsewhere while the tab is open (Always Allow from a panel), an untouched editor shows the new access; an edited one says so and must be reviewed again before saving, so it can't undo the other change.
   - **Connect:**
-    - one-click buttons;
+    - one-click buttons (a changed file is backed up first; when the agent's own command replaces an existing entry, its settings file is backed up, removal must succeed, and a failed add puts the backup back);
     - snippets;
     - the launcher path;
     - Copy key (with a warning);
@@ -156,7 +157,7 @@ A card at the top of the Vault:
 
 ### Settings
 - **General:** launch at login, show in Dock, notifications.
-- **Capture:** hotkey, default sensitivity for captures, classification on/off.
+- **Capture:** hotkey, default sensitivity for captures ("At least <level>": a minimum no proposal, rules or model, goes below), classification on/off.
 - **AI Models:**
   - **Tasks:** Embeddings (v0.1: "Built in (bge-small, on this Mac)", no choice; other models later), Classification (later Consolidation). Each has a provider pop-up with a locality badge (On this Mac · Local server · Apple cloud · Cloud), a model pop-up, and a status ("Ready", "Re-embedding 1,240 / 3,000", "Unavailable: using on-device").
   - **Providers:** add or edit (base URL, API key stored in the Keychain, local or cloud), **Test connection**, usage counters.

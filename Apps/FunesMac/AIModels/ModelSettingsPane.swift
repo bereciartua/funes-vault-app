@@ -205,7 +205,7 @@ struct ProviderSheet: View {
                     .disabled(testing || provider.model.isEmpty)
                 if let status { Text(status).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) }
             }
-            Text(String(localized: "Test Connection lists the models and classifies one made-up note; none of your memories are sent."))
+            Text(String(localized: "Test Connection classifies one made-up note among Funes's built-in categories; none of your memories or category names are sent."))
                 .font(.caption).foregroundStyle(.secondary)
             if let error { Text(error).foregroundStyle(.red).font(.callout) }
             HStack {
@@ -261,7 +261,7 @@ struct ProviderSheet: View {
             do {
                 let (draft, scratch) = try draft()
                 let started = Date()
-                let proposal = try await ModelRouter.testConnection(try scratch.client(for: draft), categories: model.categories)
+                let proposal = try await ModelRouter.testConnection(try scratch.client(for: draft))
                 let seconds = Date().timeIntervalSince(started).formatted(.number.precision(.fractionLength(1)))
                 status = String(localized: "Works: it proposed “\(proposal.title)” in \(seconds) s.")
             } catch {
@@ -290,6 +290,7 @@ struct ProviderSheet: View {
         case .timeout?: String(localized: "No answer within 20 seconds.")
         case .insecureEndpoint?: String(localized: "Cloud providers need an https:// address.")
         case .unavailable?: String(localized: "Check the address and the key.")
+        case .blocked?: String(localized: "Funes didn't send it: it looked like a secret, or was above the cloud limit.")
         case .transport?, nil: String(localized: "Couldn't reach the server.")
         }
     }

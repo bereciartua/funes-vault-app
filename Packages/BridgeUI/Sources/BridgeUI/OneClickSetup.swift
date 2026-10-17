@@ -185,24 +185,73 @@ public enum OneClickAgents {
             var log = ""
             let name = agent.displayName
             let environment = environment(tool, home: home)
+            // Replacing an existing entry (PR #3 review 4304236146): the file the agent's command keeps
+            // it in is backed up first, removal must succeed before adding, and a failed add puts the
+            // backup back, so a working setup is never left deleted.
+            var backup: (file: URL, copy: URL)?
             if replacing {
+                let file = cliConfigFile(agent, home: home)
+                guard FileManager.default.fileExists(atPath: file.path) else {
+                    return .failure(OneClickFailure(message: String(localized: "\(name) already has a \(key) entry, but its settings file wasn't where \(appName) expected, so nothing was changed.")))
+                }
+                let copy = file.deletingLastPathComponent()
+                    .appendingPathComponent("\(file.lastPathComponent).\(tag)-backup-\(AgentConfigWriter.backupSuffix())")
+                do {
+                    try? FileManager.default.removeItem(at: copy)
+                    try FileManager.default.copyItem(at: file, to: copy)
+                    try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: copy.path)
+                } catch {
+                    return .failure(OneClickFailure(message: String(localized: "\(appName) couldn't back up \(file.lastPathComponent) first, so nothing was changed.")))
+                }
+                backup = (file, copy)
                 let removed = ProcessRunner.run(tool, removeArguments(agent, key: key), timeout: 20, environment: environment)
                 log += removed?.output ?? ""
+                guard let removed, !removed.timedOut, removed.exitCode == 0 else {
+                    let restored = restore(backup)
+                    return .failure(OneClickFailure(
+                        message: restored ? String(localized: "\(name) couldn't remove its existing \(key) entry, so it was left as it was.")
+                                          : String(localized: "\(name) couldn't remove its existing \(key) entry. Its previous settings are in \(copy.path)."),
+                        output: lastLines(log, 20)))
+                }
             }
-            guard let added = ProcessRunner.run(tool, arguments, timeout: 20, environment: environment) else {
-                return .failure(OneClickFailure(message: String(localized: "\(name) couldn't be started.")))
-            }
-            log += added.output
+            let added = ProcessRunner.run(tool, arguments, timeout: 20, environment: environment)
+            log += added?.output ?? ""
             let tail = lastLines(log, 20)
-            if added.timedOut {
-                return .failure(OneClickFailure(message: String(localized: "\(name) didn't finish within 20 seconds."), output: tail))
+            let problem: String? = switch added {
+            case nil: String(localized: "\(name) couldn't be started.")
+            case let added? where added.timedOut: String(localized: "\(name) didn't finish within 20 seconds.")
+            case let added? where added.exitCode != 0: String(localized: "\(name) reported an error (exit code \(added.exitCode)).")
+            default: nil
             }
-            guard added.exitCode == 0 else {
-                return .failure(OneClickFailure(message: String(localized: "\(name) reported an error (exit code \(added.exitCode))."),
-                                                output: tail))
+            if let problem {
+                guard let backup else { return .failure(OneClickFailure(message: problem, output: tail)) }
+                let note = restore(backup) ? String(localized: "Your previous setup was put back.")
+                                           : String(localized: "Your previous setup couldn't be put back; it's in \(backup.copy.path).")
+                return .failure(OneClickFailure(message: problem + " " + note, output: tail))
             }
-            return .success(OneClickResult(agent: agent, output: tail))
+            return .success(OneClickResult(agent: agent, backup: backup?.copy, output: tail))
         }
+    }
+
+    /// Where an agent's own command keeps its MCP servers: `~/.claude.json` (user scope) or Codex's
+    /// config.toml.
+    static func cliConfigFile(_ agent: SetupAgent, home: String) -> URL {
+        agent == .codex ? codexConfig("~/.codex/config.toml", home: home) : expand("~/.claude.json", home: home)
+    }
+
+    /// Copies the backup over the file again; true when it matches afterwards.
+    static func restore(_ backup: (file: URL, copy: URL)?) -> Bool {
+        guard let backup else { return true }
+        let manager = FileManager.default
+        let staged = backup.file.deletingLastPathComponent().appendingPathComponent(".\(backup.file.lastPathComponent).restoring")
+        try? manager.removeItem(at: staged)
+        guard (try? manager.copyItem(at: backup.copy, to: staged)) != nil else { return false }
+        if manager.fileExists(atPath: backup.file.path) {
+            guard (try? manager.replaceItemAt(backup.file, withItemAt: staged)) != nil else { return false }
+        } else {
+            guard (try? manager.moveItem(at: staged, to: backup.file)) != nil else { return false }
+        }
+        return manager.contents(atPath: backup.file.path) == manager.contents(atPath: backup.copy.path)
     }
 
     /// A GUI app's PATH is minimal; `claude` may be a Node script, so its own folder and the usual

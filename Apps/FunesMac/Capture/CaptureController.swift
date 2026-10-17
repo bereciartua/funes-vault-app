@@ -68,7 +68,8 @@ final class CaptureController: NSObject {
                 let record = await router.classify(body, categories: categories, hint: hint)
                 settings.collectUsage(from: router)
                 if record.engine != RulesClassifier.engine || record.keptOnDevice {
-                    try? await services.captures.reclassify(suggestionID: result.suggestionID, record: record)
+                    // "At least <level>" holds whatever the model proposed (PR #3 review 4304236141).
+                    try? await services.captures.reclassify(suggestionID: result.suggestionID, record: record, floor: hint)
                 }
             } catch let error as VaultError {
                 show(text: body, error: ErrorText.message(error))

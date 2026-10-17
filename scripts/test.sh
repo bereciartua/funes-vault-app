@@ -5,6 +5,13 @@ set -eu
 cd "$(dirname "$0")/.."
 
 sh scripts/check_log_privacy.sh
+# Text reaches a model only through ModelRouter.send, whose guardrails can't be skipped (model
+# providers §5, PR #3 review 4304236136).
+if grep -rn --include='*.swift' '\.generate(' Apps Packages | grep -v '/Tests/' \
+    | grep -v '^Packages/FunesCore/Sources/FunesCore/Models/ModelRouter.swift:.*try await provider.generate(request)'; then
+    echo "test.sh: call models through ModelRouter.send, not .generate(" >&2
+    exit 1
+fi
 swift test --package-path Packages/FunesProtocol
 swift test --package-path Packages/FunesCore
 swift test --package-path Packages/FunesMCP

@@ -8,15 +8,24 @@ import SwiftUI
 struct AccessEditor: View {
     let model: AppModel
     let agent: Agent
-    @State private var access = Access()
-    @State private var asksForAccess = false
-    @State private var retention: Retention = .unknown
+    /// The draft knows the agent it was built from (FunesCore `AccessDraft`): an untouched one
+    /// follows changes made elsewhere; an edited one can't overwrite them (PR #3 review 4304236144).
+    @State private var draft: AccessDraft
+
+    init(model: AppModel, agent: Agent) {
+        self.model = model
+        self.agent = agent
+        _draft = State(initialValue: AccessDraft(agent))
+    }
+
+    private var access: Access {
+        get { draft.access }
+        nonmutating set { draft.access = newValue }
+    }
     @State private var error: String?
     @State private var saved = false
 
-    private var dirty: Bool {
-        access != agent.access || asksForAccess != agent.asksForAccess || retention != agent.declaredRetention
-    }
+    private var dirty: Bool { draft.isEdited }
 
     var body: some View {
         ScrollView {
@@ -33,8 +42,7 @@ struct AccessEditor: View {
             .frame(maxWidth: 680, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .onAppear(perform: reset)
-        .onChange(of: agent) { _, _ in if !dirty { reset() } }
+        .onChange(of: agent) { _, agent in draft = draft.refreshed(from: agent) }
     }
 
     // MARK: Sections
@@ -112,7 +120,7 @@ struct AccessEditor: View {
         Card {
             SwitchRow(title: String(localized: "Ask before sharing"),
                       detail: String(localized: "A panel shows exactly what would be shared, and nothing goes until you choose."),
-                      isOn: $access.askBeforeSharing)
+                      isOn: $draft.access.askBeforeSharing)
             if !access.askBeforeSharing {
                 Label(String(localized: "\(agent.name) will get matching memories it's allowed to read without asking you. You'll see each share in Activity."),
                       systemImage: "exclamationmark.triangle.fill")
@@ -122,7 +130,7 @@ struct AccessEditor: View {
             if access.operations.contains(.write) {
                 SwitchRow(title: String(localized: "Ask before saving"),
                           detail: String(localized: "Off: it saves memories directly. On: they wait in your Inbox."),
-                          isOn: $access.askBeforeSaving)
+                          isOn: $draft.access.askBeforeSaving)
             }
         }
     }
@@ -153,11 +161,11 @@ struct AccessEditor: View {
         Card {
             SwitchRow(title: String(localized: "Let it ask for more access"),
                       detail: String(localized: "When a request is refused only because a category isn't allowed, Funes asks you: Not Now, Allow Once or Always Allow. Never for the sensitivity limit or denied categories."),
-                      isOn: $asksForAccess)
+                      isOn: $draft.asksForAccess)
             HStack {
                 Text(String(localized: "Keeps what it gets"))
                 Spacer()
-                Picker(String(localized: "Keeps what it gets"), selection: $retention) {
+                Picker(String(localized: "Keeps what it gets"), selection: $draft.retention) {
                     ForEach(Retention.allCases, id: \.self) { Text(AgentText.retention($0)).tag($0) }
                 }
                 .labelsHidden()
@@ -170,7 +178,14 @@ struct AccessEditor: View {
 
     private var footer: some View {
         HStack(spacing: 10) {
-            if let error {
+            if draft.isStale {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label(String(localized: "\(agent.name)'s access changed while you were editing (for example, Always Allow from a panel). Review it again before saving."),
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.callout).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                    Button(String(localized: "Show the Current Access")) { reset() }.buttonStyle(.link)
+                }
+            } else if let error {
                 Text(error).foregroundStyle(.red).font(.callout)
             } else if dirty, model.pending.contains(where: { $0.agentID == agent.id }) {
                 Text(String(localized: "Saving cancels \(agent.name)'s pending requests; it can ask again."))
@@ -183,7 +198,7 @@ struct AccessEditor: View {
             Button(String(localized: "Save")) { save() }
                 .keyboardShortcut("s", modifiers: .command)
                 .buttonStyle(.borderedProminent)
-                .disabled(!dirty)
+                .disabled(!dirty || draft.isStale)
         }
     }
 
@@ -210,22 +225,23 @@ struct AccessEditor: View {
     // MARK: Actions
 
     private func reset() {
-        access = agent.access
-        asksForAccess = agent.asksForAccess
-        retention = agent.declaredRetention
+        draft = AccessDraft(agent)
         error = nil
     }
 
     private func save() {
-        let access = access, asks = asksForAccess, retention = retention, id = agent.id
-        let accessChanged = access != agent.access
+        let draft = draft
         Task {
             do {
-                if accessChanged { try await model.services.agents.updateAccess(agentID: id, access, now: Date()) }
-                try await model.services.agents.update(agentID: id, declaredRetention: retention, asksForAccess: asks)
+                self.draft = try await draft.save(with: model.services.agents, now: Date())
                 error = nil
                 saved = true
                 await model.refresh()
+            } catch VaultError.revisionChanged {
+                self.error = String(localized: "\(agent.name)'s access changed while you were editing. Nothing was saved: review it again.")
+                if let current = try? await model.services.agents.agent(id: agent.id) {
+                    self.draft = self.draft.refreshed(from: current)
+                }
             } catch {
                 self.error = ErrorText.message(error)
             }

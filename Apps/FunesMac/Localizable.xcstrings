@@ -30,6 +30,16 @@
     "%@ access" : {
 
     },
+    "%@ already has a %@ entry, but its settings file wasn't where %@ expected, so nothing was changed." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ already has a %2$@ entry, but its settings file wasn't where %3$@ expected, so nothing was changed."
+          }
+        }
+      }
+    },
     "%@ asks for more access in Funes" : {
 
     },
@@ -82,8 +92,38 @@
         }
       }
     },
+    "%@ couldn't back up %@ first, so nothing was changed." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ couldn't back up %2$@ first, so nothing was changed."
+          }
+        }
+      }
+    },
     "%@ couldn't be started." : {
 
+    },
+    "%@ couldn't remove its existing %@ entry, so it was left as it was." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ couldn't remove its existing %2$@ entry, so it was left as it was."
+          }
+        }
+      }
+    },
+    "%@ couldn't remove its existing %@ entry. Its previous settings are in %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ couldn't remove its existing %2$@ entry. Its previous settings are in %3$@."
+          }
+        }
+      }
     },
     "%@ didn't finish within 20 seconds." : {
 
@@ -140,6 +180,12 @@
       }
     },
     "%@ · approved, waiting for the agent" : {
+
+    },
+    "%@'s access changed while you were editing (for example, Always Allow from a panel). Review it again before saving." : {
+
+    },
+    "%@'s access changed while you were editing. Nothing was saved: review it again." : {
 
     },
     "%@'s request waited 15 minutes without an answer." : {
@@ -1230,6 +1276,9 @@
     "Funes backs up the file next to it first." : {
 
     },
+    "Funes didn't send it: it looked like a secret, or was above the cloud limit." : {
+
+    },
     "Funes keeps the last 7 backups in its data folder." : {
 
     },
@@ -1399,6 +1448,9 @@
 
     },
     "It changed in the meantime. Look again and retry." : {
+
+    },
+    "It changed in the meantime. Review it again." : {
 
     },
     "It couldn't be saved. Try again." : {
@@ -2325,6 +2377,9 @@
     "Show less of %@" : {
 
     },
+    "Show the Current Access" : {
+
+    },
     "Show the Setup Checklist Again" : {
 
     },
@@ -2459,7 +2514,7 @@
     "Test Connection" : {
 
     },
-    "Test Connection lists the models and classifies one made-up note; none of your memories are sent." : {
+    "Test Connection classifies one made-up note among Funes's built-in categories; none of your memories or category names are sent." : {
 
     },
     "Testing…" : {
@@ -2804,6 +2859,12 @@
 
     },
     "Your note on how this agent keeps data. Shown on its panels; it doesn't change what's shared." : {
+
+    },
+    "Your previous setup couldn't be put back; it's in %@." : {
+
+    },
+    "Your previous setup was put back." : {
 
     },
     "Your vault is empty" : {

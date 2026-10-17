@@ -20,8 +20,9 @@ public struct CaptureProposal: Sendable, Hashable, Codable {
 
     /// Makes any engine's output safe to show (memory processing §5, model providers §3): unknown
     /// categories dropped (none left: `personal_preferences`), at most 3, sensitivity raised to the
-    /// categories' default, title trimmed to 80 characters and never empty.
-    public func validated(categories: [MemoryCategory], fallbackTitle: String) -> CaptureProposal {
+    /// categories' default and to `floor` (the minimum the user picked when capturing), title trimmed
+    /// to 80 characters and never empty.
+    public func validated(categories: [MemoryCategory], fallbackTitle: String, floor userFloor: Sensitivity? = nil) -> CaptureProposal {
         let known = Dictionary(uniqueKeysWithValues: categories.map { ($0.key, $0) })
         var seen = Set<String>()
         var keys = categoryKeys.filter { known[$0] != nil && seen.insert($0).inserted }
@@ -31,7 +32,8 @@ public struct CaptureProposal: Sendable, Hashable, Codable {
         var title = Self.trim(title.trimmingCharacters(in: .whitespacesAndNewlines), to: InputLimits.proposedTitle)
         if title.isEmpty { title = Self.trim(fallbackTitle, to: InputLimits.proposedTitle) }
         if title.isEmpty { title = "Note" }
-        return CaptureProposal(title: title, kind: kind, categoryKeys: keys, sensitivity: max(sensitivity, floor),
+        return CaptureProposal(title: title, kind: kind, categoryKeys: keys,
+                               sensitivity: max(sensitivity, floor, userFloor ?? .public),
                                timeLimited: timeLimited)
     }
 

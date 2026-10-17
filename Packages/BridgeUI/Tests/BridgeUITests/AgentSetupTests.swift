@@ -262,3 +262,92 @@ struct OneClickSetupTests {
         #expect(ran.first == home && Array(ran.dropFirst().prefix(5)) == ["mcp", "add-json", "--scope", "user", "funes"])
     }
 }
+
+/// PR #3 review 4304236146: replacing an existing entry through the agent's own command never
+/// leaves the working setup deleted. A fake `claude` / `codex` in a scratch HOME: `get` says the
+/// entry exists, `remove` empties the file, `add` fails or succeeds as told.
+@Suite("One-click replace")
+struct OneClickReplaceTests {
+    func scratch() throws -> String {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("oneclick-replace-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url.path
+    }
+
+    /// The fake tool; its config file is `file` under HOME.
+    func fakeTool(_ name: String, home: String, file: String) throws -> String {
+        let tool = home + "/bin/" + name
+        try FileManager.default.createDirectory(atPath: home + "/bin", withIntermediateDirectories: true)
+        try """
+            #!/bin/sh
+            case "$2" in
+              get) exit 0 ;;
+              remove)
+                if [ -f "$HOME/remove-fails" ]; then echo "remove failed"; exit 2; fi
+                printf '{"emptied":true}' > "$HOME/\(file)"; echo "Removed"; exit 0 ;;
+              *)
+                touch "$HOME/add-ran"
+                if [ -f "$HOME/add-fails" ]; then printf 'half-written' > "$HOME/\(file)"; echo "add failed"; exit 1; fi
+                printf '{"new":true}' > "$HOME/\(file)"; echo "Added"; exit 0 ;;
+            esac
+            """.write(toFile: tool, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tool)
+        return tool
+    }
+
+    func run(_ agent: SetupAgent, file: String, setUp: (String) throws -> Void) throws -> (String, Result<OneClickResult, OneClickFailure>, String) {
+        let home = try scratch()
+        let toolName = agent == .codex ? "codex" : "claude"
+        let tool = try fakeTool(toolName, home: home, file: file)
+        try FileManager.default.createDirectory(atPath: (home + "/" + file as NSString).deletingLastPathComponent,
+                                                withIntermediateDirectories: true)
+        let original = #"{"mcpServers":{"funes":{"command":"old"}},"theme":"dark"}"#
+        try original.write(toFile: home + "/" + file, atomically: true, encoding: .utf8)
+        try setUp(home)
+        let locator = ExecutableLocator(isExecutable: { $0 == tool }, loginShellLookup: { _ in tool })
+        let setup = try #require(agent.oneClickSetup(AgentSetupTests.context))
+        let preview = try OneClickAgents.preview(agent, setup, home: home, appName: "Funes Vault", locator: locator).get()
+        guard case .command(_, _, _, _, let replacing) = preview, replacing else {
+            Issue.record("expected a replacing command")
+            return (home, .failure(OneClickFailure(message: "")), original)
+        }
+        return (home, OneClickAgents.apply(preview, home: home, appName: "Funes Vault", tag: "funes"), original)
+    }
+
+    @Test(arguments: [(SetupAgent.claudeCode, ".claude.json"), (SetupAgent.codex, ".codex/config.toml")])
+    func aFailedAddPutsTheOriginalBack(_ agent: SetupAgent, _ file: String) throws {
+        let (home, result, original) = try run(agent, file: file) { home in
+            FileManager.default.createFile(atPath: home + "/add-fails", contents: nil)
+        }
+        defer { try? FileManager.default.removeItem(atPath: home) }
+        guard case .failure(let failure) = result else {
+            Issue.record("expected a failure")
+            return
+        }
+        #expect(failure.message.contains("exit code 1") && failure.message.contains("previous setup was put back"))
+        #expect(try String(contentsOfFile: home + "/" + file, encoding: .utf8) == original)
+    }
+
+    @Test func aFailedRemoveChangesNothing() throws {
+        let (home, result, original) = try run(.claudeCode, file: ".claude.json") { home in
+            FileManager.default.createFile(atPath: home + "/remove-fails", contents: nil)
+        }
+        defer { try? FileManager.default.removeItem(atPath: home) }
+        guard case .failure(let failure) = result else {
+            Issue.record("expected a failure")
+            return
+        }
+        #expect(failure.message.contains("couldn't remove"))
+        #expect(!FileManager.default.fileExists(atPath: home + "/add-ran"))
+        #expect(try String(contentsOfFile: home + "/.claude.json", encoding: .utf8) == original)
+    }
+
+    @Test func aSuccessfulReplaceKeepsABackup() throws {
+        let (home, result, original) = try run(.claudeCode, file: ".claude.json") { _ in }
+        defer { try? FileManager.default.removeItem(atPath: home) }
+        let done = try result.get()
+        let backup = try #require(done.backup)
+        #expect(try String(contentsOf: backup, encoding: .utf8) == original)
+        #expect(try String(contentsOfFile: home + "/.claude.json", encoding: .utf8) == #"{"new":true}"#)
+    }
+}
