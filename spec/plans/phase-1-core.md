@@ -15,11 +15,11 @@
 - [x] `InputLimits` constants, counting Unicode scalars like SQLite's `length()` (title 180, body 10,000, task 1,000, keywords 20×60, purpose 160, evidence 2,000, categories 12/24, processors 12×120, tokens 100–8,000, default 1,200).
 
 ### 1.2 Store (GRDB) · 4 h
-- [ ] `VaultStore` with a `DatabasePool`, the migrator and `v1_initial` (the [schema](../architecture/storage.md#2-schema-v1)).
-- [ ] FTS5 external-content table and triggers. Seed the built-in categories.
-- [ ] CRUD APIs that enforce invariants: at least one category, version bump, provenance append.
-- [ ] Soft delete, restore and purge. Online backup.
-- [ ] Tests: migration from empty; invariants; FTS stays in sync on insert, update and delete.
+- [x] `VaultStore` with a `DatabasePool`, the migrator and `v1_initial` (the [schema](../architecture/storage.md#2-schema-v1)).
+- [x] FTS5 external-content table and triggers. Seed the built-in categories.
+- [x] CRUD APIs that enforce invariants: at least one category, version bump, provenance append (memories and categories here; agents, suggestions and disclosures through their services).
+- [x] Soft delete, restore and purge. Online backup.
+- [x] Tests: migration from empty; invariants; FTS stays in sync on insert, update and delete.
 
 ### 1.3 SecretScanner (FunesProtocol) · 1 h
 - [x] The [patterns](../domain/memory-processing.md#1-secret-scanner), including the Luhn check.

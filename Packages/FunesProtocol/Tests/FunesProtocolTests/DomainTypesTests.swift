@@ -81,14 +81,14 @@ import Testing
     }
 
     @Test func builtinCategories() {
-        #expect(Category.builtins.map(\.key) == [
+        #expect(MemoryCategory.builtins.map(\.key) == [
             "communication_style", "personal_preferences", "software_development", "project_context",
             "privacy_preferences", "health", "finance", "legal",
         ])
-        let sensitive = Category.builtins.filter { $0.defaultSensitivity == .sensitive }.map(\.key)
+        let sensitive = MemoryCategory.builtins.filter { $0.defaultSensitivity == .sensitive }.map(\.key)
         #expect(sensitive == ["health", "finance", "legal"])
-        #expect(Category.builtins.allSatisfy { $0.builtin && Category.isValidKey($0.key) })
-        #expect(!Category.isValidKey("Health") && !Category.isValidKey("1abc") && !Category.isValidKey("")
-            && !Category.isValidKey("a-b") && Category.isValidKey("side_projects2"))
+        #expect(MemoryCategory.builtins.allSatisfy { $0.builtin && MemoryCategory.isValidKey($0.key) })
+        #expect(!MemoryCategory.isValidKey("Health") && !MemoryCategory.isValidKey("1abc") && !MemoryCategory.isValidKey("")
+            && !MemoryCategory.isValidKey("a-b") && MemoryCategory.isValidKey("side_projects2"))
     }
 }

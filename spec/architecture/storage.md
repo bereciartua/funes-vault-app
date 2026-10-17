@@ -20,7 +20,7 @@ Everything lives under `~/Library/Application Support/FunesVault/`, in a 0700 fo
 **Encryption at rest:** relies on FileVault in v0.1. Optional SQLCipher is an [open question](../plans/open-questions.md).
 
 ## 2. Schema (v1)
-SQLite with `PRAGMA foreign_keys = ON`, `journal_mode = WAL` and `synchronous = NORMAL`. Times are stored as ISO-8601 UTC text in Swift `Date` columns via GRDB. Ids are UUID text.
+SQLite with `PRAGMA foreign_keys = ON`, `journal_mode = WAL` and `synchronous = NORMAL`. Times are stored as UTC text in GRDB's `Date` format (`YYYY-MM-DD HH:MM:SS.SSS`, which sorts and compares as text). Ids are lowercase UUID text.
 
 ```sql
 CREATE TABLE category (
@@ -33,7 +33,8 @@ CREATE TABLE category (
 );
 
 CREATE TABLE memory (
-  id                TEXT PRIMARY KEY,
+  seq               INTEGER PRIMARY KEY,        -- stable rowid for the FTS external content (see below)
+  id                TEXT NOT NULL UNIQUE,
   title             TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 180),
   body              TEXT NOT NULL CHECK (length(body) BETWEEN 1 AND 10000),
   kind              TEXT NOT NULL,
@@ -62,10 +63,12 @@ CREATE INDEX memory_category_by_category ON memory_category(category_key);
 
 -- Full-text index (external content); kept in sync by triggers
 CREATE VIRTUAL TABLE memory_fts USING fts5(
-  title, body, content='memory', content_rowid='rowid',
+  title, body, content='memory', content_rowid='seq',
   tokenize='porter unicode61 remove_diacritics 2'
 );
 -- triggers memory_ai / memory_ad / memory_au insert/delete/update memory_fts rows
+-- memory.seq: a table whose primary key isn't an INTEGER PRIMARY KEY can get new rowids on VACUUM,
+-- which would detach the external-content FTS rows. Ids stay the UUID text in memory.id.
 
 CREATE TABLE embedding (           -- ADR-0016: about 15 MB of vectors at 10,000 memories
   memory_id    TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
@@ -225,7 +228,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - Downgrades aren't supported. An older app version that finds a newer schema refuses to open the vault, shows "Update Funes", and never writes to it.
 
 ## 4. Invariants enforced in code (and tested)
-- **Categories:** a memory always has at least one `memory_category` row, enforced in the store API, since SQLite can't express it.
+- **Categories:** a memory always has at least one `memory_category` row, enforced in the store API, since SQLite can't express it. A memory's categories are read in category order (`sort_order`, then key); the first is its primary category (the `category` of a bundle item).
 - **Versioning:** `version` increments in the same transaction as any field change. `updated_at` is set at the same time.
 - **Disclosure items:** written only in delivery transactions.
 - **Captures:** `capture_receipt` is inserted in the same transaction as its suggestion.
