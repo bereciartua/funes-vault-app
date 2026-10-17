@@ -238,7 +238,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 | Job | When | What |
 |---|---|---|
 | Purge deleted | launch, then daily | Hard-delete memories deleted more than 30 days ago |
-| Expire suggestions | launch, then hourly | `pending` → `expired` after 30 days; delete expired ones after 7 more days |
+| Expire suggestions | launch, then hourly | `pending` → `expired` after 30 days; delete expired ones after 7 more days, except while a capture receipt still points at them (receipts keep captures idempotent for 90 days) |
 | Expire disclosures | every minute while any are pending | needs_approval older than 15 min → denied |
 | Re-embed | on change; when the bundled model version changes; later, when the user switches the embedding model (batched, resumable, with progress; see [model providers §7](model-providers.md#7-switching-the-embedding-model)) | Write vectors for the new `model_id`; switch `active_embedding_model` atomically when complete; delete old vectors |
 | Backup | daily, and before migrations | Keep the last 7 |

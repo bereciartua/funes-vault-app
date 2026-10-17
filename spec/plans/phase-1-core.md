@@ -53,10 +53,10 @@
 - [x] Tests: T13–T20 and T22, plus concurrency (two deliveries racing: exactly one wins; approve racing deliver).
 
 ### 1.8 SuggestionService and CaptureService · 2 h
-- [ ] `suggest(agentId, input) -> SuggestOutcome` (validation, scan, gate, scope, write or suggest).
-- [ ] `apply(suggestionId, edits)`, `reject`, `expire`.
-- [ ] `capture(text, origin, captureId?, deviceId?)` with idempotency via `capture_receipt`.
-- [ ] Tests: T23–T29, T34 and T35 (the service level of device handling), plus duplicate `captureId`.
+- [x] `suggest(agentId, input) -> SuggestOutcome` (validation, scan, gate, scope, write or suggest).
+- [x] `apply(suggestionId, edits)`, `reject`, `expire` (plus `restore`; corrections apply as Replace or Keep both).
+- [x] `capture(text, origin, captureId?, deviceId?)` with idempotency via `capture_receipt`.
+- [x] Tests: T23–T29, T34 and T35 (the service level of device handling, in `DeviceService`), plus duplicate `captureId`.
 
 ### 1.9 Agents and access · 1 h
 - [ ] `AgentService`:

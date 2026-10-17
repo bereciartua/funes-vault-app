@@ -154,7 +154,8 @@ Run M3–M5 against the proposed sensitivity (default LOW) and categories. A fai
 
 - `suggest_memory` never blocks waiting for the user. The panel is a convenience; the result is final when returned.
 - Caller metadata is stored as inert JSON under `callerMetadata` and is never interpreted.
-- Corrections (`target_memory_id`) create `action = update` suggestions. Direct writes with a target update that memory, which needs `write` and eligibility.
+- Corrections (`target_memory_id`) always create `action = update` suggestions, even for an agent with `write` and ask before saving off: agents can't edit or delete in v0.1 ([FR-S-06](../product/03-requirements.md), Q12). Applying one offers Replace or Keep both.
+- **Defaults:** kind `fact`; categories from the rules classifier, falling back to `personal_preferences`; sensitivity LOW raised to the categories' default (so a Health suggestion without a sensitivity is SENSITIVE, and is checked as such in §5.3).
 - **Rate limits:** see the MCP spec (writes: 20 per minute, bursts of 10; 250 per day).
 
 ## 6. Owner devices (paired iPhone)

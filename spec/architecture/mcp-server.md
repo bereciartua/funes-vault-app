@@ -127,7 +127,7 @@ Lists the categories that exist and what this agent may do in each. It returns n
 | `body` | string | yes | 1–10,000 |
 | `kind` | MemoryKind enum | no | default `fact` |
 | `categories` | [string] | no | ≤ 12 existing keys; default from classification, falling back to `personal_preferences` |
-| `sensitivity` | Sensitivity enum | no | default `low` |
+| `sensitivity` | Sensitivity enum | no | default `low`, raised to the categories' default (SENSITIVE for Health, Finance and Legal) |
 | `evidence` | string | no | ≤ 2,000; why you think this is true (quote the user) |
 | `purpose` | string | no | ≤ 160 |
 | `expires_at` | ISO 8601 date-time | no | must be in the future |
