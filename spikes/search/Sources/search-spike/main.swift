@@ -7,6 +7,16 @@ let args = CommandLine.arguments
 let fixturesDir = URL(fileURLWithPath: args.count > 1 ? args[1] : "../../Packages/FunesCore/Tests/FunesCoreTests/fixtures")
 let bigN = args.count > 2 ? Int(args[2])! : 10_000
 
+// Spike 2b (open embedding models) lives in Bench2b.swift.
+if ProcessInfo.processInfo.environment["MODE"] == "2b" {
+    try await runSpike2b(fixturesDir: fixturesDir, bigN: bigN)
+    exit(0)
+}
+if ProcessInfo.processInfo.environment["MODE"] == "coreml" {
+    try await runCoreMLBench()
+    exit(0)
+}
+
 func now() -> Double { Double(DispatchTime.now().uptimeNanoseconds) / 1e6 }  // ms
 func f(_ x: Double, _ digits: Int = 3) -> String { String(format: "%.\(digits)f", x) }
 func pct(_ xs: [Double], _ p: Double) -> Double {

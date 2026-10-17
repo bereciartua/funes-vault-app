@@ -1,0 +1,5 @@
+.venv/
+out/
+vectors/
+corpus.json
+embed-log*.txt
