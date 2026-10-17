@@ -204,7 +204,7 @@ stateDiagram-v2
     pending --> applied: Apply / Save (creates or updates memory)
     pending --> rejected: Reject / Discard
     pending --> expired: 30 days
-    expired --> pending: Restore (within 7 days)
+    expired --> pending: Restore (within 7 days; another 30 days)
     applied --> [*]
     rejected --> [*]
 ```

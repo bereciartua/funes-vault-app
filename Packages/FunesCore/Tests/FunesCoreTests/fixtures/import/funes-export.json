@@ -1,0 +1,16 @@
+{
+  "format": "funesvault.export.v1",
+  "exportedAt": "2026-10-01T12:00:00Z",
+  "categories": [
+    {"key": "communication_style", "name": "Communication style", "description": "", "defaultSensitivity": "low"},
+    {"key": "garden", "name": "Garden", "description": "Plants and the allotment", "defaultSensitivity": "low"}
+  ],
+  "memories": [
+    {"id": "6f1c0000-0000-4000-8000-000000000001", "title": "No emojis", "body": "Don't use emojis.", "kind": "instruction",
+     "categories": ["communication_style"], "sensitivity": "low", "status": "active", "createdAt": "2026-01-01T00:00:00Z",
+     "updatedAt": "2026-01-02T00:00:00Z"},
+    {"id": "6f1c0000-0000-4000-8000-000000000002", "title": "Tomatoes", "body": "Plant tomatoes in October.", "kind": "fact",
+     "categories": ["garden"], "sensitivity": "low", "status": "archived", "expiresAt": "2027-01-01T00:00:00Z",
+     "createdAt": "2026-01-01T00:00:00Z", "updatedAt": "2026-01-01T00:00:00Z"}
+  ]
+}

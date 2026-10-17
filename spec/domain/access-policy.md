@@ -42,12 +42,12 @@ A denial at the gate doesn't run retrieval, and its response has no `withheld` c
 
 ### 3.2 Retrieval (which memories are relevant)
 1. **Candidate pool:** memories with `status = active`, *including expired ones* (so expiry shows up in withheld counts). Archived and deleted memories are never candidates.
-2. **If `categories` is given:** keep memories with at least one of those categories. Unknown keys are ignored. This can only narrow the pool, never widen access.
+2. **If `categories` is given:** keep memories with at least one of those categories. Unknown keys are ignored, so a list of only unknown keys matches nothing. This can only narrow the pool, never widen access.
 3. **Query text:** the `task`, followed by any `keywords` the agent sent. Keywords only widen or sharpen *which* memories are relevant; they never change the decision about a memory (§3.3–3.5).
 4. **Score each candidate:** `score = 0.30 × keyword + 0.70 × semantic` ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md)).
    - `keyword ∈ [0,1]`: FTS5 BM25 over title and body, normalized by the best score in the pool. If the query text has no indexable terms, it's 0.
    - `semantic ∈ [0,1]`: the cosine between the query embedding and the memory embedding, min-max normalized over the pool. It's 0 if embeddings aren't available (the model failed to load, or the memory has no vector yet).
-5. **Keep candidates** with `keyword > 0` (above the keyword floor) or a **raw** cosine ≥ the model's retrieval threshold (0.55 for `bge-small-en-v1.5/coreml-fp16`). Take the top 30 by score; ties go to the most recently updated.
+5. **Keep candidates** with `keyword ≥` the keyword floor (0.15; [memory processing §4](memory-processing.md#4-ranking)) or a **raw** cosine ≥ the model's retrieval threshold (0.55 for `bge-small-en-v1.5/coreml-int8`). Take the top 30 by score; ties go to the most recently updated.
 6. **If no candidates remain:** DENY `no_matching_memories`, with empty `withheld`.
 
 The weights and thresholds come from [Spike 2b](../plans/spike-results.md#spike-2b-local-open-source-embeddings) and are stored per embedding model id. The task text and keywords are used only in memory. They're stored as one hash.
@@ -81,6 +81,7 @@ The task text and keywords are kept in memory only, tied to the request id, for 
 
 ### 3.6 Approval (panel or pending list)
 - The UI shows each eligible memory's **current** text, read fresh from the database when shown.
+- **Rebuilding:** when the panel is built, the snapshot is re-checked against the current memories and access. If a memory's version or eligibility, or the agent's revision, changed, the snapshot is rebuilt (only the original candidates that are still eligible, with their current versions) and gets a new `snapshotRevision`. If none remain eligible, the request is denied with `no_allowed_memories`. So an access change invalidates pending approvals (FR-A-03), and a panel built before the change is refused on approval (T22).
 - **Allow:**
   - The user picks a non-empty subset S of the eligible ids.
   - The UI submits `{requestId, snapshotRevision, S}`.
@@ -90,7 +91,7 @@ The task text and keywords are kept in memory only, tied to the request id, for 
 
 ### 3.7 Delivery (inside the same call, or through `get_memory_request`)
 In a single database transaction:
-1. If the agent was removed, the call fails at authentication earlier. If it's paused: `agent_paused` (the status stays `approved` until expiry).
+1. If the agent was removed, the call fails at authentication earlier. If Funes is paused (`funes_paused`) or the agent is (`agent_paused`), the call is refused with that reason and `status: denied`, but the stored status stays `approved` until expiry, so it can be retrieved after resuming. The rest of the agent gate runs again too: access that expired after approval (`access_expired`) or a missing `read` operation (`operation_not_allowed`) refuses delivery the same way, because time passing doesn't change the agent's revision.
 2. If `now > approvalExpiresAt`: `status = needs_approval`, reason `approval_expired`. The task text is gone after 15 minutes, so the request can only be denied after that point. Shown as "expired".
 3. If the agent's current revision ≠ `agentRevisionAtRequest`: `status = needs_approval`, reason `policy_changed`.
 4. For each approved id, check that the memory still exists, is `active`, has the same `version`, and is still eligible under the current access (§3.3). If any check fails: `status = needs_approval`, reason `policy_changed`. The whole request is invalidated, not partly delivered.
@@ -116,12 +117,12 @@ In a single database transaction:
 A request still in `needs_approval` 15 minutes after creation becomes `denied` with reason `approval_expired`. It disappears from Pending requests, and the Activity row is kept.
 
 ## 4. Bundle compilation
-- **Item text:** `"<title>: <body>"`. **Estimated tokens:** `ceil(characters / 4)`.
+- **Item text:** `"<title>: <body>"`. **Estimated tokens:** `ceil(characters / 4)`, counting Unicode scalars as every input limit does (SQLite's `length()`).
 - **Order:** retrieval score order.
 - **Budget rule:**
   - Add items while the running total stays within `max_tokens`.
   - An item that would overflow is **skipped**, and later, smaller items can still fit.
-  - Exception: if the **first** item alone exceeds the budget, it's **clipped** to `max_tokens × 4` characters, ending with "…", and marked `clipped: true`.
+  - Exception: if the **first** item alone exceeds the budget, it's **clipped** to `max_tokens × 4` characters, ending with "…" (which counts), and marked `clipped: true`. Clipping never splits a grapheme cluster, so it may stop a few characters short.
 - **Instructions,** always included (`instructionsVersion = 1`):
   1. "Use this context only for the task you stated."
   2. "Do not store or reuse it beyond your declared retention."
@@ -153,7 +154,8 @@ Run M3–M5 against the proposed sensitivity (default LOW) and categories. A fai
 
 - `suggest_memory` never blocks waiting for the user. The panel is a convenience; the result is final when returned.
 - Caller metadata is stored as inert JSON under `callerMetadata` and is never interpreted.
-- Corrections (`target_memory_id`) create `action = update` suggestions. Direct writes with a target update that memory, which needs `write` and eligibility.
+- Corrections (`target_memory_id`) always create `action = update` suggestions, even for an agent with `write` and ask before saving off: agents can't edit or delete in v0.1 ([FR-S-06](../product/03-requirements.md), Q12). Applying one offers Replace or Keep both.
+- **Defaults:** kind `fact`; categories from the rules classifier, falling back to `personal_preferences`; sensitivity LOW raised to the categories' default (so a Health suggestion without a sensitivity is SENSITIVE, and is checked as such in §5.3).
 - **Rate limits:** see the MCP spec (writes: 20 per minute, bursts of 10; 250 per day).
 
 ## 6. Owner devices (paired iPhone)
@@ -174,7 +176,7 @@ Offered only when **all** of these hold:
 - the same agent, category and operation hasn't been asked in the last hour.
 
 - **Panel:** "<Agent> can't read <Category>." Buttons: **Not Now**, **Allow Once** and **Always Allow**.
-  - **Allow Once** runs the request again with a temporary grant bound to this request id and the agent's revision. It isn't persisted.
+  - **Allow Once** runs the request again with a temporary grant bound to this request id and the agent's revision. It isn't persisted. If that request needs approval, the grant stays with it, in memory, for its panel and its delivery (§3.6–3.7). Any change to the agent's access bumps the revision and drops the grant, so the request then fails closed with `policy_changed`.
   - **Always Allow** adds exactly that category to the allow list, or that operation, and increments the revision.
 - Never offered for sensitivity ceilings or denied categories. Those are deliberate user choices and can only be changed in the editor.
 

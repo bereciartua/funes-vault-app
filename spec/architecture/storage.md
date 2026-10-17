@@ -17,10 +17,10 @@ Everything lives under `~/Library/Application Support/FunesVault/`, in a 0700 fo
 - **User defaults:** UI preferences, the hotkey, ports, iPhone access modes, update settings, setup checklist state.
 - **Nothing** lives in `/tmp`. Unlike EK Bridge, there's no file transport.
 
-**Encryption at rest:** relies on FileVault in v0.1. Optional SQLCipher is an [open question](../plans/open-questions.md).
+**Encryption at rest:** relies on FileVault in v0.1 ([Q7](../plans/open-questions.md), decided). SQLCipher may be revisited later.
 
 ## 2. Schema (v1)
-SQLite with `PRAGMA foreign_keys = ON`, `journal_mode = WAL` and `synchronous = NORMAL`. Times are stored as ISO-8601 UTC text in Swift `Date` columns via GRDB. Ids are UUID text.
+SQLite with `PRAGMA foreign_keys = ON`, `journal_mode = WAL` and `synchronous = NORMAL`. Times are stored as UTC text in GRDB's `Date` format (`YYYY-MM-DD HH:MM:SS.SSS`, which sorts and compares as text). Ids are lowercase UUID text.
 
 ```sql
 CREATE TABLE category (
@@ -33,7 +33,8 @@ CREATE TABLE category (
 );
 
 CREATE TABLE memory (
-  id                TEXT PRIMARY KEY,
+  seq               INTEGER PRIMARY KEY,        -- stable rowid for the FTS external content (see below)
+  id                TEXT NOT NULL UNIQUE,
   title             TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 180),
   body              TEXT NOT NULL CHECK (length(body) BETWEEN 1 AND 10000),
   kind              TEXT NOT NULL,
@@ -62,14 +63,16 @@ CREATE INDEX memory_category_by_category ON memory_category(category_key);
 
 -- Full-text index (external content); kept in sync by triggers
 CREATE VIRTUAL TABLE memory_fts USING fts5(
-  title, body, content='memory', content_rowid='rowid',
+  title, body, content='memory', content_rowid='seq',
   tokenize='porter unicode61 remove_diacritics 2'
 );
 -- triggers memory_ai / memory_ad / memory_au insert/delete/update memory_fts rows
+-- memory.seq: a table whose primary key isn't an INTEGER PRIMARY KEY can get new rowids on VACUUM,
+-- which would detach the external-content FTS rows. Ids stay the UUID text in memory.id.
 
 CREATE TABLE embedding (           -- ADR-0016: about 15 MB of vectors at 10,000 memories
   memory_id    TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
-  model_id     TEXT NOT NULL,      -- v0.1: "bge-small-en-v1.5/coreml-fp16" (384 dims); later e.g. "openai/text-embedding-3-small"
+  model_id     TEXT NOT NULL,      -- v0.1: "bge-small-en-v1.5/coreml-int8" (384 dims); later e.g. "openai/text-embedding-3-small"
   dims         INTEGER NOT NULL,
   vector       BLOB NOT NULL,      -- Float32 little-endian, L2-normalized
   content_hash TEXT NOT NULL,      -- SHA-256 of the embedded text
@@ -120,7 +123,7 @@ CREATE TABLE access_category (
   agent_id     TEXT NOT NULL REFERENCES agent(id) ON DELETE CASCADE,
   category_key TEXT NOT NULL REFERENCES category(key) ON UPDATE CASCADE ON DELETE CASCADE,
   mode         TEXT NOT NULL CHECK (mode IN ('allow','deny')),
-  PRIMARY KEY (agent_id, category_key)
+  PRIMARY KEY (agent_id, category_key, mode)   -- a key may be on both lists; deny wins (T8)
 );
 
 CREATE TABLE disclosure (
@@ -225,7 +228,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - Downgrades aren't supported. An older app version that finds a newer schema refuses to open the vault, shows "Update Funes", and never writes to it.
 
 ## 4. Invariants enforced in code (and tested)
-- **Categories:** a memory always has at least one `memory_category` row, enforced in the store API, since SQLite can't express it.
+- **Categories:** a memory always has at least one `memory_category` row, enforced in the store API, since SQLite can't express it. A memory's categories are read in category order (`sort_order`, then key); the first is its primary category (the `category` of a bundle item).
 - **Versioning:** `version` increments in the same transaction as any field change. `updated_at` is set at the same time.
 - **Disclosure items:** written only in delivery transactions.
 - **Captures:** `capture_receipt` is inserted in the same transaction as its suggestion.
@@ -235,7 +238,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 | Job | When | What |
 |---|---|---|
 | Purge deleted | launch, then daily | Hard-delete memories deleted more than 30 days ago |
-| Expire suggestions | launch, then hourly | `pending` → `expired` after 30 days; delete expired ones after 7 more days |
+| Expire suggestions | launch, then hourly | `pending` → `expired` after 30 days; delete expired ones after 7 more days, except while a capture receipt still points at them (receipts keep captures idempotent for 90 days) |
 | Expire disclosures | every minute while any are pending | needs_approval older than 15 min → denied |
 | Re-embed | on change; when the bundled model version changes; later, when the user switches the embedding model (batched, resumable, with progress; see [model providers §7](model-providers.md#7-switching-the-embedding-model)) | Write vectors for the new `model_id`; switch `active_embedding_model` atomically when complete; delete old vectors |
 | Backup | daily, and before migrations | Keep the last 7 |

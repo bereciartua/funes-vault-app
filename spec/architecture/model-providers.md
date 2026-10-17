@@ -15,7 +15,7 @@ How Funes uses AI models, how users choose them, and what protects their data. D
 ## 2. Providers
 | Provider | Locality | Embeddings | Generation | Setup |
 |---|---|---|---|---|
-| **Bundled (Funes)** | Local | `bge-small-en-v1.5`, Core ML fp16, CPU only (the v0.1 default and only choice) | — | None |
+| **Bundled (Funes)** | Local | `bge-small-en-v1.5`, Core ML (int8 weights), CPU only (the v0.1 default and only choice) | — | None |
 | **Apple on-device** | Local | Not offered: NaturalLanguage embeddings failed Spike 2 | Foundation Models (macOS 26+ with Apple Intelligence) | None |
 | **Apple Private Cloud Compute** | Apple cloud | — | Foundation Models server model | Entitlement; free for Small Business Program developers under 2M first-time downloads, with daily limits |
 | **Ollama** | Local | `/v1/embeddings` (later; e.g. `nomic-embed-text`, which matched bge-small in Spike 2b, or `mxbai-embed-large`) | `/v1/chat/completions` | Base URL (default `http://127.0.0.1:11434/v1`) |
@@ -32,22 +32,26 @@ How Funes uses AI models, how users choose them, and what protects their data. D
 ## 3. Architecture
 ```swift
 public protocol EmbeddingProvider: Sendable {
-    var id: ProviderID { get }               // e.g. "apple.nl", "openai", "ollama"
+    var id: ProviderID { get }               // e.g. "funes.bundled"; later "openai", "ollama"
     var locality: Locality { get }            // .onDevice, .localServer, .appleCloud, .cloud
-    func modelID() -> String                  // stable id stored with vectors, e.g. "openai/text-embedding-3-small"
-    func embed(_ texts: [String]) async throws -> [[Float]]   // L2-normalized by Funes after return
+    var model: EmbeddingModelInfo { get }     // id stored with vectors, dims, vault/retrieval thresholds
+    func embed(_ texts: [String], as role: EmbeddingRole) async throws -> [[Float]]  // .query or .document; L2-normalized by Funes
 }
 public protocol GenerationProvider: Sendable {
     var id: ProviderID { get }
     var locality: Locality { get }
-    func generate<T: Decodable>(_ request: StructuredRequest<T>) async throws -> T  // JSON-schema constrained
+    var modelID: String { get }
+    func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage)  // JSON-schema constrained
 }
 ```
-- **Implementations** (in FunesCore, as a `Models` module):
-  - `AppleNLEmbedder`, `AppleFoundationGenerator`, `ApplePCCGenerator`;
-  - `OpenAICompatibleClient`, implementing both protocols (embeddings, and chat with `response_format: json_schema`);
-  - `AnthropicClient` (generation only; Messages API with structured output via the documented output-format parameter);
-  - `RulesClassifier`, the always-available fallback.
+- **Implementations** (in FunesCore, `Search/` and `Models/`):
+  - `BundledBGEEmbedder` (ADR-0016; Apple's NaturalLanguage embeddings are not used);
+  - `AppleFoundationGenerator` (guided generation with a dynamic schema); `ApplePCCGenerator` later, when the entitlement is granted;
+  - `OpenAICompatibleClient`: chat with `response_format: json_schema` (strict) and the model list; embeddings later (ADR-0016);
+  - `AnthropicClient` (generation only; Messages API with structured output via `output_config.format`, type `json_schema`; suggested default `claude-haiku-5-5`);
+  - `RulesClassifier`, the always-available fallback and the capture pre-screen.
+- **Schemas** are a small `JSONSchema` type that serializes to the strict subset both APIs accept (closed objects, all properties required, no length or size constraints, which are re-checked by validation) and converts to Foundation Models' `DynamicGenerationSchema`.
+- **Locality:** a literal loopback, RFC 1918, link-local or IPv6 unique-local address, `localhost`, or a host whose every resolved address is one of those, is local; anything else is cloud. Cloud endpoints must be `https://`.
 - **`ModelRouter`:**
   - resolves the configured provider per task;
   - applies the guardrails (§5);
