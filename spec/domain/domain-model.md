@@ -93,7 +93,7 @@ An MCP client the user has added. It is EK Bridge's "connection".
 |---|---|---|
 | `id` | UUID | |
 | `name` | string, unique among active agents | |
-| `agentKind` | detected type (`claude_code`, `claude_desktop`, `cursor`, `codex`, `vscode`, `zed`, `gemini_cli`, `other`) | Drives the icon and setup snippets |
+| `agentKind` | detected type (`claude_code`, `claude_desktop`, `cursor`, `codex`, `vscode`, `zed`, `gemini_cli`, `devin_desktop`, `cline`, `jetbrains`, `other`; the agents EK Bridge's setup knows) | Drives the icon and setup snippets |
 | `keyDigest` | SHA-256 | The key's plaintext lives only in the key file |
 | `keyIssuedAt` | timestamp | |
 | `paused` | bool | |

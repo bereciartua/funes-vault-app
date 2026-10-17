@@ -40,6 +40,9 @@ final class FakeResponder: FunesPresenter, @unchecked Sendable {
     private(set) var shown = [UUID]()
     private(set) var suggestions = [UUID]()
     private(set) var opened = [String]()
+    /// How access requests are answered: "notnow" (the default), "once" or "always".
+    var accessMode = "notnow"
+    private(set) var accessPrompts = [AccessPrompt]()
 
     func showApproval(requestID: UUID, agentID: UUID) async {
         let mode = lock.withLock { () -> String in
@@ -55,6 +58,18 @@ final class FakeResponder: FunesPresenter, @unchecked Sendable {
 
     func showSuggestion(suggestionID: UUID, agentID: UUID) async {
         lock.withLock { suggestions.append(suggestionID) }
+    }
+
+    func askForAccess(_ prompt: AccessPrompt) async -> AccessAnswer {
+        let mode = lock.withLock { () -> String in
+            accessPrompts.append(prompt)
+            return accessMode
+        }
+        switch mode {
+        case "once": return prompt.allowsOnce ? .allowOnce : .notNow
+        case "always": return .alwaysAllow
+        default: return .notNow
+        }
     }
 
     func open(requestID: UUID) async { lock.withLock { opened.append("request:" + requestID.uuidString.lowercased()) } }
@@ -80,8 +95,8 @@ final class FakeResponder: FunesPresenter, @unchecked Sendable {
     }
 
     var latest: UUID? { lock.withLock { shown.last } }
-    var snapshot: (shown: Int, suggestions: Int, opened: [String]) {
-        lock.withLock { (shown.count, suggestions.count, opened) }
+    var snapshot: (shown: Int, suggestions: Int, opened: [String], access: [AccessPrompt]) {
+        lock.withLock { (shown.count, suggestions.count, opened, accessPrompts) }
     }
 }
 
@@ -147,6 +162,23 @@ final class Harness {
             ("expired", Access(operations: [.read], maxSensitivity: .internal, askBeforeSharing: false,
                                expiresAt: now.addingTimeInterval(-60))),
         ]
+        // Let it ask for more access (access policy §7): Software Development only, no ceiling to
+        // speak of, so everything else is withheld only for its category.
+        let narrowRead = Access(operations: [.read], maxSensitivity: .secret, allowedCategoryKeys: ["software_development"],
+                                askBeforeSharing: false)
+        let asking: [(String, Access)] = [
+            ("asknotnow", narrowRead), ("askonce", narrowRead), ("askalways", narrowRead), ("askshared", narrowRead),
+            ("asksuggest", Access(operations: [.suggest], maxSensitivity: .internal,
+                                  allowedCategoryKeys: ["software_development"])),
+            ("askwriter", Access(operations: [.write], maxSensitivity: .internal, allowedCategoryKeys: ["software_development"],
+                                 askBeforeSaving: false)),
+        ]
+        for (name, access) in asking {
+            let (agent, key) = try await agents.create(name: name, kind: .claudeCode, access: access, asksForAccess: true,
+                                                       now: now)
+            agentIDs[name] = agent.id
+            result[name] = ["id": agent.id.uuidString.lowercased(), "key": key.plaintext]
+        }
         for (name, access) in presets {
             let (agent, key) = try await agents.create(name: name, kind: .claudeCode, access: access, now: now)
             agentIDs[name] = agent.id
@@ -169,7 +201,13 @@ final class Harness {
             return ["ok": ok]
         case "presented":
             let snapshot = responder.snapshot
-            return ["approvals": snapshot.shown, "suggestions": snapshot.suggestions, "opened": snapshot.opened]
+            return ["approvals": snapshot.shown, "suggestions": snapshot.suggestions, "opened": snapshot.opened,
+                    "access": snapshot.access.map { ["category": $0.categoryKey ?? "", "operation": $0.operation.rawValue,
+                                                     "task": $0.task ?? "",
+                                                     "allows_once": $0.allowsOnce] }]
+        case "access":
+            responder.accessMode = command["mode"] as? String ?? "notnow"
+            return ["ok": true]
         case "pause":
             if command["on"] as? Bool ?? true { pause.pause(until: .distantFuture) } else { pause.resume() }
             return ["ok": true]

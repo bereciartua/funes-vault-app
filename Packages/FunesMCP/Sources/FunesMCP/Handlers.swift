@@ -44,17 +44,8 @@ extension RequestPipeline {
             maxTokens: (a["max_tokens"] as? NSNumber)?.intValue ?? InputLimits.defaultMaxTokens,
             retention: (a["retention"] as? String).flatMap(Retention.init(rawValue:)) ?? .unknown,
             processors: a["processors"] as? [String] ?? [])
-        let presenter = self.presenter
         do {
-            // Requests waiting for the user: at most 3 per agent (§9), counted by FunesCore in the
-            // write that would add one, so concurrent calls can't all pass.
-            let outcome = try await services.disclosures.requestInCall(
-                agentID: agent.id, input, wait: inCallWait, maxPendingApprovals: Self.maxPendingApprovalsPerAgent,
-                now: now,
-                onNeedsApproval: { outcome in
-                    guard let id = outcome.requestID else { return }
-                    Task { await presenter.showApproval(requestID: id, agentID: agent.id) }
-                })
+            let outcome = try await requestInCall(agent, input)
             if outcome.status == .denied, outcome.reason == .rateLimited {
                 // FunesCore recorded it in Activity; the agent gets the usual infrastructure answer.
                 return ToolOutput.denied(.rateLimited, message: Messages.rateLimited(Self.pendingRetrySeconds),
@@ -65,6 +56,66 @@ extension RequestPipeline {
             return failure(call, agent.id, error)
         } catch {
             return refuse(call, agent.id, .notFound)
+        }
+    }
+
+    /// The in-call flow (access policy §3.7, §7), within one `inCallWait` for everything the user is
+    /// asked: evaluate; if more access was offered, ask (Allow Once and Always Allow run the request
+    /// again, replacing a waiting one); if it needs approval, show the panel and wait for the rest of
+    /// the time; deliver when approved. On timeout the request waits in Pending requests.
+    func requestInCall(_ agent: Agent, _ input: MemoryRequest) async throws -> RequestOutcome {
+        let disclosures = services.disclosures
+        let deadline = now().addingTimeInterval(Double(inCallWait.components.seconds))
+        // Requests waiting for the user: at most 3 per agent (§9), counted by FunesCore in the write
+        // that would add one, so concurrent calls can't all pass.
+        let limit = Self.maxPendingApprovalsPerAgent
+        var outcome = try await disclosures.request(agentID: agent.id, input, now: now(), maxPendingApprovals: limit)
+        if outcome.status == .fulfilled, let offer = outcome.accessOffer, let key = offer.categoryKeys.first {
+            // Shared without asking: the agent gets its answer now; Always Allow is for next time.
+            let prompt = AccessPrompt(agentID: agent.id, categoryKey: key, operation: .read, task: input.task,
+                                      expiresAt: deadline, allowsOnce: false)
+            let services = self.services, presenter = self.presenter, now = self.now
+            Task {
+                if await presenter.askForAccess(prompt) == .alwaysAllow {
+                    _ = try? await services.agents.allowCategory(agentID: agent.id, key, now: now())
+                }
+            }
+            return outcome
+        }
+        if let offer = outcome.accessOffer, let key = offer.categoryKeys.first, let offeredBy = offer.requestID,
+           outcome.status == .denied || outcome.status == .needsApproval {
+            let prompt = AccessPrompt(agentID: agent.id, categoryKey: key, operation: .read, task: input.task,
+                                      expiresAt: deadline)
+            let answer = await presenter.askForAccess(prompt)
+            if answer != .notNow {
+                var grant: OnceGrant?
+                if answer == .alwaysAllow {
+                    try await services.agents.allowCategory(agentID: agent.id, key, now: now())
+                } else {
+                    // Bound to the revision the offer was made at: an access change while the panel
+                    // was open makes the grant fail closed (§7).
+                    grant = OnceGrant(offeredByRequestID: offeredBy, agentRevision: offer.agentRevision, categoryKey: key)
+                }
+                if outcome.status == .needsApproval, let waiting = outcome.requestID {
+                    try? await disclosures.supersede(requestID: waiting, now: now())
+                }
+                outcome = try await disclosures.request(agentID: agent.id, input, now: now(), grant: grant,
+                                                        maxPendingApprovals: limit)
+            }
+        }
+        guard outcome.status == .needsApproval, let id = outcome.requestID else { return outcome }
+        let presenter = self.presenter
+        Task { await presenter.showApproval(requestID: id, agentID: agent.id) }
+        let remaining = max(0, deadline.timeIntervalSince(now()))
+        switch await disclosures.waitForDecision(requestID: id, timeout: .milliseconds(Int(remaining * 1_000))) {
+        case .approved?:
+            return try await disclosures.deliver(requestID: id, agentID: agent.id, now: now())
+        case .denied?:
+            outcome.status = .denied
+            outcome.reason = try await disclosures.disclosure(requestID: id)?.reason
+            return outcome
+        default:
+            return outcome
         }
     }
 
@@ -170,6 +221,11 @@ extension RequestPipeline {
         } catch {
             return refuse(call, agent.id, .notFound)
         }
+        if outcome.status == .denied, let offer = outcome.accessOffer {
+            // Suggestions never wait for the user: the agent gets its answer now, and if the user
+            // allows it, the suggestion goes to the Inbox afterwards (access policy §7).
+            askForSuggestionAccess(agent, input, offer)
+        }
         var object: [String: Any] = ["status": outcome.status.rawValue]
         switch outcome.status {
         case .saved:
@@ -191,6 +247,39 @@ extension RequestPipeline {
             if !outcome.findings.isEmpty { object["findings"] = outcome.findings.map(\.rawValue) }
         }
         return ToolOutput.make(object)
+    }
+
+    /// The access-request panel for a refused suggestion. Allow Once lets this one suggestion
+    /// through; Always Allow adds the category (or Suggest) to the agent's access first. Either way it
+    /// goes to the Inbox with its Save panel, never straight into the vault (§7).
+    func askForSuggestionAccess(_ agent: Agent, _ input: SuggestInput, _ offer: AccessRequestOffer) {
+        let services = self.services, presenter = self.presenter, now = self.now
+        let prompt = AccessPrompt(agentID: agent.id, categoryKey: offer.categoryKeys.first, operation: offer.operation,
+                                  task: nil, expiresAt: now().addingTimeInterval(Double(inCallWait.components.seconds)))
+        Task {
+            let answer = await presenter.askForAccess(prompt)
+            do {
+                let outcome: SuggestOutcome
+                switch answer {
+                case .notNow: return
+                case .allowOnce:
+                    outcome = try await services.suggestions.suggest(agentID: agent.id, input, now: now(), allowOnce: offer,
+                                                                     alwaysQueue: true)
+                case .alwaysAllow:
+                    if let key = offer.categoryKeys.first {
+                        try await services.agents.allowCategory(agentID: agent.id, key, now: now())
+                    } else {
+                        try await services.agents.allowOperation(agentID: agent.id, offer.operation, now: now())
+                    }
+                    outcome = try await services.suggestions.suggest(agentID: agent.id, input, now: now(), alwaysQueue: true)
+                }
+                if outcome.status == .queued, let id = outcome.suggestionID {
+                    await presenter.showSuggestion(suggestionID: id, agentID: agent.id)
+                }
+            } catch {
+                // The agent already has its answer; the refusal stands.
+            }
+        }
     }
 
     /// ISO 8601 with an offset, with or without fractional seconds.

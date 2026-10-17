@@ -11,18 +11,18 @@ Tier-2 code copied from EK Bridge (`bereciartua/ek-bridge`) under [ADR-0013](../
 | `Sources/ApprovalPanel.swift` | `9c726f2` (v0.11.1) | Sources/BridgeUI/ApprovalPanel.swift (adapted: checkbox rows with badges, facts, countdown, Share N) |
 | `Sources/ActivityStore.swift` | `9c726f2` (v0.11.1) | Sources/BridgeUI/ActivityStore.swift (adapted: generic row type, retention as a parameter) |
 | `Sources/AccessRequests.swift` | `9c726f2` (v0.11.1) | — (Phase 3: Funes's access requests) |
-| `Sources/ActivityView.swift` | `9c726f2` (v0.11.1) | — (Phase 3: Activity screen) |
-| `Sources/AgentDetection.swift` | `9c726f2` (v0.11.1) | — (Phase 3: Add-agent sheet) |
-| `Sources/AgentSetup.swift` | `9c726f2` (v0.11.1) | — (Phase 3: agent setup snippets; SetupJSON/SetupTOML are in BridgeKitCore) |
-| `Sources/ConnectAgentView.swift` | `9c726f2` (v0.11.1) | — (Phase 3) |
-| `Sources/OneClickSetup.swift` | `9c726f2` (v0.11.1) | — (Phase 3; uses BridgeKitCore's AgentConfigWriter) |
+| `Sources/ActivityView.swift` | `9c726f2` (v0.11.1) | — (Funes's Activity screen follows its layout in Apps/FunesMac/Activity) |
+| `Sources/AgentDetection.swift` | `9c726f2` (v0.11.1) | Sources/BridgeUI/AgentDetection.swift (adapted: `SetupAgent`, public probe; ConnectionAgentKinds dropped) |
+| `Sources/AgentSetup.swift` | `9c726f2` (v0.11.1) | Sources/BridgeUI/AgentSetup.swift (adapted: `SetupAgent`, the app's names in `SetupNames`, local agents only; Codex one-click; goldens in Tests/BridgeUITests/fixtures/agent-setup) |
+| `Sources/ConnectAgentView.swift` | `9c726f2` (v0.11.1) | — (Funes's Connect tab is written fresh in Apps/FunesMac/Agents) |
+| `Sources/OneClickSetup.swift` | `9c726f2` (v0.11.1) | Sources/BridgeUI/OneClickSetup.swift (adapted: backup tag and app name as parameters; agents' commands run with HOME set to the configured home) |
 | `Sources/Updates.swift` | `9c726f2` (v0.11.1) | — (Phase 4: updates) |
 | `Sources/SparkleUpdater.swift` | `9c726f2` (v0.11.1) | — (Phase 4: Sparkle wrapper) |
-| `Sources/AppMover.swift` | `9c726f2` (v0.11.1) | — (Phase 4) |
-| `Sources/InstallLocation.swift` | `9c726f2` (v0.11.1) | — (Phase 4) |
+| `Sources/AppMover.swift` | `9c726f2` (v0.11.1) | Sources/BridgeUI/AppMover.swift (adapted: the app's names as `AppMover.Identity`, no live-test isolation) |
+| `Sources/InstallLocation.swift` | `9c726f2` (v0.11.1) | Sources/BridgeUI/InstallLocation.swift (public, otherwise unchanged) |
 | `Sources/Notifications.swift` | `9c726f2` (v0.11.1) | — (Phase 3) |
 | `Sources/UIComponents.swift` | `9c726f2` (v0.11.1) | — (Phase 3) |
-| `Sources/StatusMenuController.swift` | `9c726f2` (v0.11.1) | — (Phase 3: menu bar skeleton) |
-| `Sources/MainWindowController.swift` | `9c726f2` (v0.11.1) | — (Phase 3: main window skeleton) |
+| `Sources/StatusMenuController.swift` | `9c726f2` (v0.11.1) | — (Funes's menu is written fresh in Apps/FunesMac/MenuBar) |
+| `Sources/MainWindowController.swift` | `9c726f2` (v0.11.1) | — (Funes's windows are written fresh in Apps/FunesMac/Window) |
 
 Full source commit: `9c726f2c903a190d5303c28c1c6e7464544905fa`.

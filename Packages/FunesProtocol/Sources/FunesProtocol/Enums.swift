@@ -144,6 +144,9 @@ public enum AgentKind: String, Codable, Sendable, CaseIterable {
     case claudeDesktop = "claude_desktop"
     case cursor, codex, vscode, zed
     case geminiCLI = "gemini_cli"
+    case devinDesktop = "devin_desktop"
+    case cline
+    case jetBrains = "jetbrains"
     case other
 }
 

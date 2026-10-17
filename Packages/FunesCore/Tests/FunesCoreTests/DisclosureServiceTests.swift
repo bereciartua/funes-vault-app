@@ -337,8 +337,10 @@ import Testing
         fx.retriever.set([fx.id("m2")])
         let first = try await fx.request("Summarize my projects")
         #expect(first.withheld == [.categoryNotAllowed: 1])
+        let revision = try #require(try fx.store.agent(id: fx.agentID)).revision
         #expect(first.accessOffer == AccessRequestOffer(agentID: fx.agentID, requestID: first.requestID,
-                                                        categoryKeys: ["project_context"], operation: .read))
+                                                        categoryKeys: ["project_context"], operation: .read,
+                                                        agentRevision: revision))
         #expect(try await fx.request("Summarize my projects", at: fx.now.plus(minutes: 30)).accessOffer == nil)
         #expect(try await fx.request("Summarize my projects", at: fx.now.plus(minutes: 61)).accessOffer != nil)
     }

@@ -15,6 +15,7 @@
 		F0000000000000000000B006 /* FunesProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D006 /* FunesProtocol */; };
 		F0000000000000000000B007 /* funes-mcp in Embed Launcher */ = {isa = PBXBuildFile; fileRef = F0000000000000000000A002 /* funes-mcp */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F0000000000000000000B008 /* BridgeKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D007 /* BridgeKitCore */; };
+		F0000000000000000000B009 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D008 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +70,7 @@
 				F0000000000000000000B003 /* FunesMCP in Frameworks */,
 				F0000000000000000000B004 /* BridgeUI in Frameworks */,
 				F0000000000000000000B008 /* BridgeKitCore in Frameworks */,
+				F0000000000000000000B009 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,6 +139,7 @@
 				F0000000000000000000D003 /* FunesMCP */,
 				F0000000000000000000D004 /* BridgeUI */,
 				F0000000000000000000D007 /* BridgeKitCore */,
+				F0000000000000000000D008 /* Sparkle */,
 			);
 			productName = FunesMac;
 			productReference = F0000000000000000000A001 /* FunesVault.app */;
@@ -198,6 +201,7 @@
 				F00000000000000000007003 /* XCLocalSwiftPackageReference "Packages/FunesMCP" */,
 				F00000000000000000007004 /* XCLocalSwiftPackageReference "Packages/BridgeUI" */,
 				F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */,
+				F00000000000000000007006 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F00000000000000000006003 /* Products */;
@@ -294,6 +298,7 @@
 				DEVELOPMENT_TEAM = JVNJ326L7B;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Apps/FunesMac-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Funes Vault";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -318,6 +323,7 @@
 				DEVELOPMENT_TEAM = JVNJ326L7B;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Apps/FunesMac-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Funes Vault";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -417,6 +423,14 @@
 				version = 0.1.0;
 			};
 		};
+		F00000000000000000007006 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.10.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -454,6 +468,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */;
 			productName = BridgeKitCore;
+		};
+		F0000000000000000000D008 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007006 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -29,4 +29,7 @@ public enum VaultError: Error, Sendable, Equatable {
     case snapshotChanged
     /// No valid key, removed agent or revoked device: HTTP 401 at the transport.
     case unauthenticated
+    /// The agent's access changed since the editor read it (e.g. Always Allow from a panel): "This
+    /// agent's access changed; review again." Nothing was saved.
+    case revisionChanged
 }

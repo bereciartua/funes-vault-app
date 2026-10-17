@@ -71,6 +71,17 @@ public struct AccessRequestOffer: Sendable, Hashable {
     /// Categories to allow (Allow Once / Always Allow add exactly one of them).
     public var categoryKeys: [String]
     public var operation: AccessOperation
+    /// The agent's revision when the offer was made. Allow Once holds only while it's current: any
+    /// change to the agent's access drops it (§7).
+    public var agentRevision: Int
+
+    public init(agentID: UUID, requestID: UUID?, categoryKeys: [String], operation: AccessOperation, agentRevision: Int) {
+        self.agentID = agentID
+        self.requestID = requestID
+        self.categoryKeys = categoryKeys
+        self.operation = operation
+        self.agentRevision = agentRevision
+    }
 }
 
 /// The result of `request_memory` or `get_memory_request`.
@@ -112,6 +123,12 @@ public struct OnceGrant: Sendable, Hashable {
     public var offeredByRequestID: UUID
     public var agentRevision: Int
     public var categoryKey: String
+
+    public init(offeredByRequestID: UUID, agentRevision: Int, categoryKey: String) {
+        self.offeredByRequestID = offeredByRequestID
+        self.agentRevision = agentRevision
+        self.categoryKey = categoryKey
+    }
 }
 
 /// Requests to read memories, approvals and single-use delivery (task 1.7, access policy §3).
@@ -173,7 +190,12 @@ public final class DisclosureService: Sendable {
         let paused = pause.isPaused(at: now)
         let requestID = UUID()
 
-        struct Result { var outcome: RequestOutcome; var delivered: [UUID]; var withheldCategories: [String] }
+        struct Result {
+            var outcome: RequestOutcome
+            var delivered: [UUID]
+            var withheldCategories: [String]
+            var revision = 0
+        }
         let result = try await store.writer.write { db -> Result in
             // Re-read inside the transaction, so the decision and the stored snapshot agree.
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.unauthenticated }
@@ -234,7 +256,8 @@ public final class DisclosureService: Sendable {
                 try Self.insert(db, row)
                 outcome.status = .needsApproval
             }
-            return Result(outcome: outcome, delivered: delivered, withheldCategories: withheldCategories)
+            return Result(outcome: outcome, delivered: delivered, withheldCategories: withheldCategories,
+                          revision: agent.revision)
         }
 
         var outcome = result.outcome
@@ -244,7 +267,7 @@ public final class DisclosureService: Sendable {
         }
         if let withheld = outcome.withheld, Set(withheld.keys) == [.categoryNotAllowed], agent.asksForAccess {
             outcome.accessOffer = offer(agentID: agentID, requestID: requestID, categories: result.withheldCategories,
-                                        operation: .read, now: now)
+                                        operation: .read, agentRevision: result.revision, now: now)
         }
         activity.record(ActivityEvent(
             time: now, requestID: requestID, actor: .agent(agentID), via: .mcp, event: "request_memory",
@@ -373,6 +396,24 @@ public final class DisclosureService: Sendable {
         requestGrants.withLock { _ = $0.removeValue(forKey: requestID) }
         activity.record(ActivityEvent(time: now, requestID: requestID, phase: .event, actor: .user, via: .app,
                                       event: "approval", outcome: "denied", reason: .deniedByUser, approval: .denied))
+        notify(requestID)
+    }
+
+    /// A waiting request replaced by a new one after the user allowed more access (access policy
+    /// §7): denied with `policy_changed`, without a denial by the user in Activity. The agent never
+    /// saw this request's id; it gets the new request's answer.
+    public func supersede(requestID: UUID, now: Date) async throws {
+        let changed = try await store.writer.write { db -> Bool in
+            try db.execute(sql: """
+                UPDATE disclosure SET status = 'denied', reason = ?, decided_at = ? WHERE id = ? AND status = 'needs_approval'
+                """, arguments: [ReasonCode.policyChanged.rawValue, now, requestID.db])
+            return db.changesCount > 0
+        }
+        guard changed else { throw VaultError.invalidState }
+        tasks.withLock { _ = $0.removeValue(forKey: requestID) }
+        requestGrants.withLock { _ = $0.removeValue(forKey: requestID) }
+        activity.record(ActivityEvent(time: now, requestID: requestID, phase: .event, actor: .system, via: .app,
+                                      event: "approval", outcome: "replaced", reason: .policyChanged))
         notify(requestID)
     }
 
@@ -529,7 +570,8 @@ public final class DisclosureService: Sendable {
 
     /// An access request to offer the user, at most once an hour per agent, category and operation
     /// (§7, FR-A-10). Used for reads here and for suggestions by SuggestionService.
-    func offer(agentID: UUID, requestID: UUID?, categories: [String], operation: AccessOperation, now: Date) -> AccessRequestOffer? {
+    func offer(agentID: UUID, requestID: UUID?, categories: [String], operation: AccessOperation, agentRevision: Int,
+               now: Date) -> AccessRequestOffer? {
         var seen = Set<String>()
         let fresh = offered.withLock { offered -> [String] in
             let keys = (categories.isEmpty ? [""] : categories).filter { seen.insert($0).inserted }
@@ -542,7 +584,8 @@ public final class DisclosureService: Sendable {
         guard !fresh.isEmpty else { return nil }
         let categoryKeys = fresh.filter { !$0.isEmpty }
         if let requestID, !categoryKeys.isEmpty { grants.withLock { $0[requestID, default: []].formUnion(categoryKeys) } }
-        return AccessRequestOffer(agentID: agentID, requestID: requestID, categoryKeys: categoryKeys, operation: operation)
+        return AccessRequestOffer(agentID: agentID, requestID: requestID, categoryKeys: categoryKeys, operation: operation,
+                                  agentRevision: agentRevision)
     }
 
     /// The access a stored request is evaluated with: the agent's, plus the Allow Once grant the

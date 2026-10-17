@@ -43,6 +43,10 @@ Debug builds of the app and `funes-mcp` honour `FUNES_DATA_DIR`, so a developmen
 ```bash
 sh scripts/check_log_privacy.sh
 ```
+User-facing text lives in `Apps/FunesMac/Localizable.xcstrings` (the app's and BridgeUI's strings). After changing UI text, build the app (test.sh does) and update the catalog; test.sh fails while it's out of date:
+```bash
+sh scripts/sync_strings.sh
+```
 The bundled embedding model isn't in git. Fetch and convert it once (Python 3.11; cached in `~/Library/Caches/com.funesvault.dev/`); without it the model-dependent tests skip:
 ```bash
 sh scripts/fetch_embedding_model.sh

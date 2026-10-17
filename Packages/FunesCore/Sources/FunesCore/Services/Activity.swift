@@ -69,6 +69,30 @@ public final class FunesPause: Sendable {
     public func pause(until date: Date) { until.withLock { $0 = date } }
     public func resume() { until.withLock { $0 = nil } }
     public func isPaused(at now: Date) -> Bool { until.withLock { $0.map { now < $0 } ?? false } }
+    /// When the pause ends, while paused; `.distantFuture` for "until I resume".
+    public func pausedUntil(at now: Date) -> Date? { until.withLock { $0.flatMap { now < $0 ? $0 : nil } } }
+
+    /// The menu's choices (FR-A-11): For 1 Hour, Until Tomorrow, Until I Resume.
+    public enum Duration: String, Sendable, CaseIterable {
+        case oneHour = "one_hour"
+        case untilTomorrow = "until_tomorrow"
+        case untilResumed = "until_resumed"
+
+        /// "Until Tomorrow" ends at 8:00 the next morning, so a pause late in the evening still
+        /// lasts the night.
+        public static let tomorrowHour = 8
+
+        public func end(from now: Date, calendar: Calendar = .current) -> Date {
+            switch self {
+            case .oneHour: return now.addingTimeInterval(3_600)
+            case .untilResumed: return .distantFuture
+            case .untilTomorrow:
+                let startOfToday = calendar.startOfDay(for: now)
+                let tomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now.addingTimeInterval(86_400)
+                return calendar.date(bySettingHour: Self.tomorrowHour, minute: 0, second: 0, of: tomorrow) ?? tomorrow
+            }
+        }
+    }
 }
 
 extension Dictionary where Key == ReasonCode, Value == Int {

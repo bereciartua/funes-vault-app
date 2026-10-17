@@ -102,9 +102,16 @@ public final class AgentService: Sendable {
     }
 
     /// Replaces the access (FR-A-03). Revision +1 even if nothing changed: the user saved.
+    /// `expectedRevision` is the revision the editor read: if the access changed since (another
+    /// window, Always Allow), nothing is written and it throws `revisionChanged` (fail closed).
     @discardableResult
-    public func updateAccess(agentID: UUID, _ access: Access, now: Date) async throws -> Agent {
+    public func updateAccess(agentID: UUID, _ access: Access, expectedRevision: Int? = nil, now: Date) async throws -> Agent {
         try await change(agentID, event: "access_changed", now: now) { db in
+            if let expectedRevision {
+                guard let current = try AgentStore.fetch(db, id: agentID), current.revision == expectedRevision else {
+                    throw VaultError.revisionChanged
+                }
+            }
             try AgentStore.writeAccess(db, agentID: agentID, access)
         }
     }

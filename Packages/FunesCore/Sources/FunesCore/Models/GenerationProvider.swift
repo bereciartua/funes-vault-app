@@ -105,6 +105,9 @@ public enum ProviderError: Error, Sendable, Equatable {
     case timeout
     /// A cloud endpoint over plain HTTP (model providers §5.5).
     case insecureEndpoint
+    /// Funes didn't send it: the text matched the secret scanner, or is above the cloud limit
+    /// (model providers §5). Nothing left the Mac.
+    case blocked
     case transport
 }
 

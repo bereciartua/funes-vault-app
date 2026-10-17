@@ -1,0 +1,1 @@
+claude mcp add --scope user funes -- "/Applications/FunesVault.app/Contents/MacOS/funes-mcp" --agent 3f1c2b7e-8a41-4d0c-9a8e-5b6f1d2e9a1c

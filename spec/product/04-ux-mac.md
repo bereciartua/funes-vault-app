@@ -97,7 +97,7 @@ A card at the top of the Vault:
 | Secret | Never shared with agents unless you raise an agent's ceiling to Secret. |
 
 ### Inbox
-- **Sections:** From agents · Captures · Imports · (later) Cleanup suggestions.
+- **Sections:** From agents · Captures · Imports · Your answers (seed questions) · (later) Cleanup suggestions. Expired suggestions (FR-I-05) sit at the end with Restore.
 - **Item card:**
   - source line ("Suggested by Claude Code · 10:31", "Captured on iPhone · yesterday", "Imported from ChatGPT");
   - proposed title and body, editable inline;
@@ -105,7 +105,8 @@ A card at the top of the Vault:
   - evidence, if the agent provided it, shown as quoted data;
   - a duplicate hint, when it applies;
   - the engine that proposed the fields ("Proposed on this Mac", "Proposed by Claude via Anthropic", "Kept on this Mac: looked sensitive").
-- **Actions:** Apply (⌘⏎), Reject (⌫), Later. Multi-select gives "Apply 12" and "Reject 12".
+- **Apply stores exactly what the card shows.** A card the user hasn't edited follows background classification; an edited one keeps the user's values.
+- **Actions:** Apply (⌘⏎), Reject (⌫ when no field is being edited, ⌘⌫ anytime), Later. Click a card to make it the one the keys act on. Multi-select gives "Apply 12" and "Reject 12", with per-item results ("12 applied, 1 blocked by the secret scanner").
 - **Correction suggestions:** when a suggestion references an existing memory, the card shows a diff (old → new) with **Replace** and **Keep both**.
 
 ### Agents
@@ -119,8 +120,9 @@ A card at the top of the Vault:
     - **Ask before saving:** shown only with Write.
     - **Access expires:** never, or a date.
     - **Let it ask for more access:** on or off.
+    - If the agent changes elsewhere while the tab is open (Always Allow from a panel), an untouched editor shows the new access; an edited one says so and must be reviewed again before saving, so it can't undo the other change.
   - **Connect:**
-    - one-click buttons;
+    - one-click buttons (a changed file is backed up first; when the agent's own command replaces an existing entry, its settings file is backed up, removal must succeed, and a failed add puts the backup back);
     - snippets;
     - the launcher path;
     - Copy key (with a warning);
@@ -137,7 +139,7 @@ A card at the top of the Vault:
 - **Filters:** All, Shared, Suggestions, Problems; Agent ▾; Device ▾; Today / 7 days / 30 days / All.
 - **Detail pane:**
   - the request id;
-  - the task, shown during the session only (stored as a hash, so after relaunch it shows "Task text not stored");
+  - the task, for requests whose Share panel this session showed (the vault stores only a hash, so otherwise, and after relaunch, it shows "Task text not stored");
   - withheld counts by reason;
   - fix links ("Allow Project Context for Cursor…").
 
@@ -155,7 +157,7 @@ A card at the top of the Vault:
 
 ### Settings
 - **General:** launch at login, show in Dock, notifications.
-- **Capture:** hotkey, default sensitivity for captures, classification on/off.
+- **Capture:** hotkey, default sensitivity for captures ("At least <level>": a minimum no proposal, rules or model, goes below), classification on/off.
 - **AI Models:**
   - **Tasks:** Embeddings (v0.1: "Built in (bge-small, on this Mac)", no choice; other models later), Classification (later Consolidation). Each has a provider pop-up with a locality badge (On this Mac · Local server · Apple cloud · Cloud), a model pop-up, and a status ("Ready", "Re-embedding 1,240 / 3,000", "Unavailable: using on-device").
   - **Providers:** add or edit (base URL, API key stored in the Keychain, local or cloud), **Test connection**, usage counters.
@@ -164,7 +166,7 @@ A card at the top of the Vault:
   - **Disclosure:** a sentence under every non-local choice saying exactly what is sent where.
   - **Calibrate…** (later) for embedding models Funes doesn't know.
 - **MCP:** server on/off, port (47625), launcher location, protocol log counts (no bodies).
-- **Data:** backups, export, import, Show in Finder, Erase All Data.
+- **Data:** backups, export, import, Show in Finder, Erase All Data. Restore from Backup relaunches; before the chosen backup replaces the vault, the current vault is saved as a self-contained `pre-restore-…` backup (an SQLite online backup, so nothing still in the WAL is lost).
 - **Updates:** automatic checks, Check Now.
 - **Advanced:** activity retention, reset the setup checklist.
 
@@ -208,7 +210,8 @@ All panels are non-activating floating `NSPanel`s at the top right, stacked if m
 
 ### <agent> wants more access
 - Example: "Cursor can't read **Project Context**. It asked for context for: <task>."
-- Buttons: Not Now · Allow Once · Always Allow.
+- Buttons: Not Now · Allow Once · Always Allow. When the agent already got an answer (shared without asking), only Not Now and Always Allow (access policy §7).
+- Opening a pending request from the menu or Activity counts down to the end of its 15 minutes ("9:05").
 
 ## Content style (applies to both apps)
 - **Plain words:** "Share", "Save", "Agent", "Memory", "Inbox", "Paused", not "disclosure", "policy" or "client" in the UI. Those terms appear only in docs and in the API.

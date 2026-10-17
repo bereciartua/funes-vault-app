@@ -172,22 +172,19 @@ public final class ModelRouter: Sendable {
         for p in [classifier, onDevice].compactMap({ $0 }) where !chain.contains(where: { $0.id == p.id }) { chain.append(p) }
 
         for provider in chain {
-            if !provider.locality.isLocal {
-                // Guardrails (§5): no secret and nothing above the limit ever goes to a cloud model.
-                guard SecretScanner.scan(request.outgoingTexts).isEmpty, cloudLimit.allows(estimate) else {
-                    keptOnDevice = true
-                    continue
-                }
-            } else if provider.locality != .onDevice, !SecretScanner.scan(request.outgoingTexts).isEmpty {
-                continue  // local servers aren't limited by the guard, but the scanner still applies
-            }
             if let until = backoff.withLock({ $0[provider.id] }), now < until { continue }
             do {
-                let (output, used) = try await withTimeout(generationTimeout) { try await provider.generate(request) }
+                let (output, used) = try await Self.send(request, to: provider, sensitivity: estimate, cloudLimit: cloudLimit,
+                                                         timeout: generationTimeout)
                 record(used, for: provider.id)
-                let proposal = ClassificationPrompt.proposal(output).validated(categories: categories, fallbackTitle: rules.title)
+                let proposal = ClassificationPrompt.proposal(output).validated(categories: categories, fallbackTitle: rules.title,
+                                                                               floor: hint)
                 let engine = provider.id == "apple.foundation" ? "apple.foundation" : "\(provider.id)/\(provider.modelID)"
                 return ClassificationRecord(engine: engine, proposal: proposal, keptOnDevice: keptOnDevice)
+            } catch ProviderError.blocked {
+                // A secret, or above the cloud limit: it stays on this Mac (§5).
+                if !provider.locality.isLocal { keptOnDevice = true }
+                continue
             } catch let error as ProviderError {
                 record(ProviderUsage(requests: 1), for: provider.id)
                 if case let .rateLimited(retryAfter) = error {
@@ -278,4 +275,44 @@ public final class InMemoryProviderKeyStore: ProviderKeyStore {
     public func key(for provider: ProviderID) throws -> String? { keys.withLock { $0[provider] } }
     public func setKey(_ key: String, for provider: ProviderID) throws { keys.withLock { $0[provider] = key } }
     public func deleteKey(for provider: ProviderID) throws { keys.withLock { _ = $0.removeValue(forKey: provider) } }
+}
+
+// MARK: - Sending to a provider
+
+extension ModelRouter {
+    /// The only way Funes sends text to a model (model providers §5; test.sh fails on any other
+    /// call of a provider's generate). Text with a secret-scanner match never goes to a provider that isn't on
+    /// this Mac; a cloud provider also gets nothing above the cloud limit, and nothing at all when
+    /// the sensitivity isn't known. Either refusal is `ProviderError.blocked`, before any request.
+    public static func send<T: Decodable & Sendable>(_ request: StructuredRequest<T>, to provider: any GenerationProvider,
+                                                     sensitivity: Sensitivity?, cloudLimit: CloudLimit,
+                                                     timeout: Duration) async throws -> (T, ProviderUsage) {
+        if provider.locality != .onDevice, !SecretScanner.scan(request.outgoingTexts).isEmpty {
+            throw ProviderError.blocked
+        }
+        if !provider.locality.isLocal {
+            guard let sensitivity, cloudLimit.allows(sensitivity) else { throw ProviderError.blocked }
+        }
+        return try await withTimeout(timeout) { try await provider.generate(request) }
+    }
+
+    // MARK: Test connection
+
+    /// The note **Test connection** classifies (model providers §4): made up, so nothing of the
+    /// user's is sent.
+    public static let testNote = "Prefers green tea in the afternoon."
+
+    /// The categories it's classified among: the built-in ones as Funes ships them, never the
+    /// user's names, descriptions or custom categories (PR #3 review 4304236136).
+    public static var testCategories: [MemoryCategory] { MemoryCategory.builtins }
+
+    /// One tiny classification with `provider`, through the same guardrails as every call, within
+    /// the generation timeout (Settings ▸ AI Models ▸ Test connection). Throws the provider's error.
+    public static func testConnection(_ provider: any GenerationProvider,
+                                      timeout: Duration = .seconds(20)) async throws -> CaptureProposal {
+        let request = ClassificationPrompt.request(testNote, categories: testCategories)
+        let (output, _) = try await send(request, to: provider, sensitivity: .public, cloudLimit: .upTo(.public),
+                                         timeout: timeout)
+        return ClassificationPrompt.proposal(output).validated(categories: testCategories, fallbackTitle: testNote)
+    }
 }

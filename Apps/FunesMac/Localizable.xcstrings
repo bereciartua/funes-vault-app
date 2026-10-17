@@ -1,0 +1,3043 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : {
+
+    },
+    " and %lld more" : {
+
+    },
+    "%@ (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$lld)"
+          }
+        }
+      }
+    },
+    "%@ / %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ / %2$@"
+          }
+        }
+      }
+    },
+    "%@ access" : {
+
+    },
+    "%@ already has a %@ entry, but its settings file wasn't where %@ expected, so nothing was changed." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ already has a %2$@ entry, but its settings file wasn't where %3$@ expected, so nothing was changed."
+          }
+        }
+      }
+    },
+    "%@ asks for more access in Funes" : {
+
+    },
+    "%@ asks to use %lld memories in Funes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ asks to use %2$lld memories in Funes"
+          }
+        }
+      }
+    },
+    "%@ can be offered personal memories. Keep Ask before sharing on." : {
+
+    },
+    "%@ can't add to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ can't add to %2$@."
+          }
+        }
+      }
+    },
+    "%@ can't read %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ can't read %2$@."
+          }
+        }
+      }
+    },
+    "%@ can't read your memories." : {
+
+    },
+    "%@ can't suggest memories." : {
+
+    },
+    "%@ connected %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ connected %2$@"
+          }
+        }
+      }
+    },
+    "%@ couldn't back up %@ first, so nothing was changed." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ couldn't back up %2$@ first, so nothing was changed."
+          }
+        }
+      }
+    },
+    "%@ couldn't be started." : {
+
+    },
+    "%@ couldn't remove its existing %@ entry, so it was left as it was." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ couldn't remove its existing %2$@ entry, so it was left as it was."
+          }
+        }
+      }
+    },
+    "%@ couldn't remove its existing %@ entry. Its previous settings are in %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ couldn't remove its existing %2$@ entry. Its previous settings are in %3$@."
+          }
+        }
+      }
+    },
+    "%@ didn't finish within 20 seconds." : {
+
+    },
+    "%@ has no access yet. It can connect, but sees nothing until you change its access." : {
+
+    },
+    "%@ reported an error (exit code %d)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ reported an error (exit code %2$d)."
+          }
+        }
+      }
+    },
+    "%@ suggested a memory. Review it in the Inbox." : {
+
+    },
+    "%@ suggests a memory for Funes" : {
+
+    },
+    "%@ wants more access" : {
+
+    },
+    "%@ wants to use your memories" : {
+
+    },
+    "%@ was refused repeatedly" : {
+
+    },
+    "%@ will get matching memories it's allowed to read without asking you. You'll see each share in Activity." : {
+
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %lld min left" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$lld min left"
+          }
+        }
+      }
+    },
+    "%@ · approved, waiting for the agent" : {
+
+    },
+    "%@'s access changed while you were editing (for example, Always Allow from a panel). Review it again before saving." : {
+
+    },
+    "%@'s access changed while you were editing. Nothing was saved: review it again." : {
+
+    },
+    "%@'s request waited 15 minutes without an answer." : {
+
+    },
+    "%@, %lld chosen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld chosen"
+          }
+        }
+      }
+    },
+    "%@, %lld couldn't be changed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld couldn't be changed"
+          }
+        }
+      }
+    },
+    "%@, done" : {
+
+    },
+    "%@, on this Mac" : {
+
+    },
+    "%lld" : {
+
+    },
+    "%lld above its sensitivity limit" : {
+
+    },
+    "%lld applied" : {
+
+    },
+    "%lld archived" : {
+
+    },
+    "%lld blocked by the secret scanner" : {
+
+    },
+    "%lld changed" : {
+
+    },
+    "%lld couldn't be changed" : {
+
+    },
+    "%lld days" : {
+
+    },
+    "%lld deleted permanently" : {
+
+    },
+    "%lld earlier entries" : {
+
+    },
+    "%lld expired" : {
+
+    },
+    "%lld in categories it can't read" : {
+
+    },
+    "%lld memories restored." : {
+
+    },
+    "%lld memories selected" : {
+
+    },
+    "%lld min left" : {
+
+    },
+    "%lld models" : {
+
+    },
+    "%lld more matched but can't go to this agent (%@)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld more matched but can't go to this agent (%2$@)."
+          }
+        }
+      }
+    },
+    "%lld moved to Recently Deleted" : {
+
+    },
+    "%lld not shareable" : {
+
+    },
+    "%lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "%lld of 10,000 characters" : {
+
+    },
+    "%lld of 4" : {
+
+    },
+    "%lld rejected" : {
+
+    },
+    "%lld requests · %lld tokens in · %lld out" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld requests · %2$lld tokens in · %3$lld out"
+          }
+        }
+      }
+    },
+    "%lld restored" : {
+
+    },
+    "%lld s" : {
+
+    },
+    "%lld seconds left" : {
+
+    },
+    "%lld selected" : {
+
+    },
+    "%lld suggestions are in your Inbox." : {
+
+    },
+    "%lld suggestions waiting for you" : {
+
+    },
+    "%lld withheld" : {
+
+    },
+    "%lld, never imported" : {
+
+    },
+    "%lld. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld. %2$@"
+          }
+        }
+      }
+    },
+    "(deleted memory)" : {
+
+    },
+    "+%lld" : {
+
+    },
+    "1 suggestion waiting for you" : {
+
+    },
+    "30 days" : {
+
+    },
+    "7 days" : {
+
+    },
+    "A Few Questions" : {
+
+    },
+    "A category with that name already exists." : {
+
+    },
+    "A funesvault.export.v1 file with your categories and memories. It never includes agents, their access, keys or Activity." : {
+
+    },
+    "A memory can have at most 12 categories." : {
+
+    },
+    "A panel shows exactly what would be shared, and nothing goes until you choose." : {
+
+    },
+    "A request expired" : {
+
+    },
+    "A request expired before you answered" : {
+
+    },
+    "A short name for it" : {
+
+    },
+    "A suggestion is waiting" : {
+
+    },
+    "A suggestion is waiting in the Inbox" : {
+
+    },
+    "A vault file has unsafe permissions." : {
+
+    },
+    "AI Assistant has known problems with local HTTP servers, so only the launcher is offered." : {
+
+    },
+    "AI Models" : {
+
+    },
+    "AI Models…" : {
+
+    },
+    "API key" : {
+
+    },
+    "About Funes Vault" : {
+
+    },
+    "Above its sensitivity limit" : {
+
+    },
+    "Access" : {
+
+    },
+    "Access changed" : {
+
+    },
+    "Access expired" : {
+
+    },
+    "Access expires" : {
+
+    },
+    "Active" : {
+
+    },
+    "Activity" : {
+
+    },
+    "Activity, %lld pending requests" : {
+
+    },
+    "Add" : {
+
+    },
+    "Add %@" : {
+
+    },
+    "Add Agent" : {
+
+    },
+    "Add Agent…" : {
+
+    },
+    "Add Category" : {
+
+    },
+    "Add Category…" : {
+
+    },
+    "Add Claude Code, Cursor or another AI agent, then choose what it may read." : {
+
+    },
+    "Add Funes Vault to %@?" : {
+
+    },
+    "Add Provider" : {
+
+    },
+    "Add a category" : {
+
+    },
+    "Add a server, choose As JSON, and paste this." : {
+
+    },
+    "Add a title." : {
+
+    },
+    "Add an Agent" : {
+
+    },
+    "Add an agent" : {
+
+    },
+    "Add the %@ entry under context_servers." : {
+
+    },
+    "Add the %@ entry under mcpServers." : {
+
+    },
+    "Add the inputs and servers entries." : {
+
+    },
+    "Add the text to remember." : {
+
+    },
+    "Add this to ~/.codex/config.toml." : {
+
+    },
+    "Add to %@…" : {
+
+    },
+    "Added" : {
+
+    },
+    "Added by you" : {
+
+    },
+    "Address" : {
+
+    },
+    "Add…" : {
+
+    },
+    "Advanced" : {
+
+    },
+    "After: %@" : {
+
+    },
+    "Agent" : {
+
+    },
+    "Agent ID" : {
+
+    },
+    "Agent added" : {
+
+    },
+    "Agent or device" : {
+
+    },
+    "Agent paused" : {
+
+    },
+    "Agent removed" : {
+
+    },
+    "Agent resumed" : {
+
+    },
+    "Agents" : {
+
+    },
+    "Agents can connect" : {
+
+    },
+    "Agents can't connect: the server is off" : {
+
+    },
+    "Agents get the answer when they check again." : {
+
+    },
+    "Agents start the launcher, which reads their key file and talks to Funes. Setups on the Connect tab use this path." : {
+
+    },
+    "Agents' access is set per category. Built-in categories can be renamed; your own can also be deleted." : {
+
+    },
+    "All" : {
+
+    },
+    "All agents" : {
+
+    },
+    "All time" : {
+
+    },
+    "Allow" : {
+
+    },
+    "Allow Once" : {
+
+    },
+    "Allow Once is for this request only. %@" : {
+
+    },
+    "Already delivered" : {
+
+    },
+    "Already set up" : {
+
+    },
+    "Always Allow" : {
+
+    },
+    "Always Allow adds %@ to %@'s categories." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Allow adds %1$@ to %2$@'s categories."
+          }
+        }
+      }
+    },
+    "Always Allow lets %@ suggest memories from now on." : {
+
+    },
+    "An agent" : {
+
+    },
+    "An agent was refused more than 5 times in 10 minutes" : {
+
+    },
+    "Another agent already has that name." : {
+
+    },
+    "Another app already uses %@. Try another shortcut." : {
+
+    },
+    "Another app is using port %@. Quit it, then turn this off and on again. Funes never moves to another port, because agents' setups name this one." : {
+
+    },
+    "Answer a Few Questions" : {
+
+    },
+    "Answer a Few Questions…" : {
+
+    },
+    "Answer a few questions or import from ChatGPT or Claude." : {
+
+    },
+    "Answer a few questions to get started, or press ⌥⌘M anytime to remember something." : {
+
+    },
+    "Answer any you like. Each answer goes to your Inbox, where you can edit it before it becomes a memory." : {
+
+    },
+    "Answered a question" : {
+
+    },
+    "Anyone with this key can ask Funes for memories as %@. Paste it only into %@'s settings, and never into a project file. Setups that use the launcher don't need it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Anyone with this key can ask Funes for memories as %1$@. Paste it only into %2$@'s settings, and never into a project file. Setups that use the launcher don't need it."
+          }
+        }
+      }
+    },
+    "Apple Intelligence isn't available on this Mac: simple rules propose the fields." : {
+
+    },
+    "Apple cloud" : {
+
+    },
+    "Apple on-device" : {
+
+    },
+    "Applications" : {
+
+    },
+    "Applied" : {
+
+    },
+    "Applied from the Inbox" : {
+
+    },
+    "Applied “%@”. A similar memory exists." : {
+
+    },
+    "Applied. Similar memory exists:" : {
+
+    },
+    "Applies to every cloud provider. Captures are checked on this Mac first, and anything that looks like a secret is never sent." : {
+
+    },
+    "Apply" : {
+
+    },
+    "Apply %lld" : {
+
+    },
+    "Apply (⌘⏎)" : {
+
+    },
+    "Apply what's right." : {
+
+    },
+    "Approval" : {
+
+    },
+    "Approved" : {
+
+    },
+    "Approved by you" : {
+
+    },
+    "Approved, waiting for the agent to pick it up" : {
+
+    },
+    "Archive" : {
+
+    },
+    "Archived" : {
+
+    },
+    "Archived %@" : {
+
+    },
+    "Archived memories are kept but never shared with agents." : {
+
+    },
+    "Archived memories are kept, but never shared with agents." : {
+
+    },
+    "Are there practical constraints that often shape your work or availability?" : {
+
+    },
+    "Ask before saving" : {
+
+    },
+    "Ask before sharing" : {
+
+    },
+    "Ask for memories that match its task. Only memories this page allows are ever offered." : {
+
+    },
+    "Asked for memories" : {
+
+    },
+    "Asked for more access" : {
+
+    },
+    "At least %@" : {
+
+    },
+    "At most 20,000 important rows are kept. Older rows go at the next cleanup (at launch and every 6 hours)." : {
+
+    },
+    "Back Up Now" : {
+
+    },
+    "Back up the vault every day" : {
+
+    },
+    "Backed up." : {
+
+    },
+    "Backup: %@" : {
+
+    },
+    "Backups" : {
+
+    },
+    "Base URL" : {
+
+    },
+    "Before: %@" : {
+
+    },
+    "Built in" : {
+
+    },
+    "Built in (bge-small, on this Mac)" : {
+
+    },
+    "Built-in categories can be renamed but not deleted." : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Capture" : {
+
+    },
+    "Capture shortcut: %@" : {
+
+    },
+    "Captured a note" : {
+
+    },
+    "Captured on iPhone" : {
+
+    },
+    "Captured on iPhone · %@" : {
+
+    },
+    "Captured on this Mac" : {
+
+    },
+    "Captured on this Mac · %@" : {
+
+    },
+    "Captures" : {
+
+    },
+    "Captures get simple proposals from rules on this Mac." : {
+
+    },
+    "Categories" : {
+
+    },
+    "Categories…" : {
+
+    },
+    "Category" : {
+
+    },
+    "Category denied" : {
+
+    },
+    "Category not allowed" : {
+
+    },
+    "Change %@'s categories…" : {
+
+    },
+    "Changed since approval" : {
+
+    },
+    "Changes to the file" : {
+
+    },
+    "Changes “%@”" : {
+
+    },
+    "ChatGPT Memories…" : {
+
+    },
+    "Check Now" : {
+
+    },
+    "Check for Updates…" : {
+
+    },
+    "Check for updates every day" : {
+
+    },
+    "Check the address and the key." : {
+
+    },
+    "Checked a request" : {
+
+    },
+    "Choose" : {
+
+    },
+    "Choose File…" : {
+
+    },
+    "Choose a Markdown file. Headings that match a category's name file the items under them; bullets and paragraphs become suggestions." : {
+
+    },
+    "Choose a funesvault.export.v1 file. Its memories come in as suggestions, or as memories if you choose so below. It never brings agents or access." : {
+
+    },
+    "Choose a model in %@'s settings. Until then: on-device, then rules." : {
+
+    },
+    "Choose at least one category." : {
+
+    },
+    "Choose the memories file from your ChatGPT data export (JSON). Each memory becomes a suggestion." : {
+
+    },
+    "Classification" : {
+
+    },
+    "Classification sends capture and suggestion text (up to %@) to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Classification sends capture and suggestion text (up to %1$@) to %2$@."
+          }
+        }
+      }
+    },
+    "Classification sends nothing to %@: the cloud limit is Never send memories, so it runs on this Mac." : {
+
+    },
+    "Claude Code" : {
+
+    },
+    "Claude Code's claude command wasn't found on this Mac." : {
+
+    },
+    "Claude Code, Cursor, Codex or another MCP client." : {
+
+    },
+    "Claude Desktop" : {
+
+    },
+    "Claude Desktop's custom connectors run from Anthropic's cloud and can't reach this Mac, so use this local setup instead." : {
+
+    },
+    "Claude Memories…" : {
+
+    },
+    "Claude memories" : {
+
+    },
+    "Cleanup suggestion · %@" : {
+
+    },
+    "Clear" : {
+
+    },
+    "Clear search" : {
+
+    },
+    "Clear the filters to see everything." : {
+
+    },
+    "Click Install in VS Code, or run the command in Terminal." : {
+
+    },
+    "Cline" : {
+
+    },
+    "Cline treats a remote server without a type as legacy SSE, so only the launcher is offered." : {
+
+    },
+    "Close Window" : {
+
+    },
+    "Cloud" : {
+
+    },
+    "Cloud limit" : {
+
+    },
+    "Cloud providers need an https:// address." : {
+
+    },
+    "Codex" : {
+
+    },
+    "Codex connects the next time it starts." : {
+
+    },
+    "Codex started from an app doesn't see your shell's environment variables, so the launcher is more reliable than direct HTTP." : {
+
+    },
+    "Confirmed still true %@" : {
+
+    },
+    "Connect" : {
+
+    },
+    "Connect it" : {
+
+    },
+    "Connected · %@" : {
+
+    },
+    "Connected · %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Connected · %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Constraint" : {
+
+    },
+    "Copied" : {
+
+    },
+    "Copied. Funes clears the clipboard in 60 seconds." : {
+
+    },
+    "Copy" : {
+
+    },
+    "Copy %@" : {
+
+    },
+    "Copy %@'s key?" : {
+
+    },
+    "Copy Key" : {
+
+    },
+    "Copy Key…" : {
+
+    },
+    "Correction from %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Correction from %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Correction suggested %@" : {
+
+    },
+    "Couldn't reach the server." : {
+
+    },
+    "Counts only: Funes never logs what agents send or receive." : {
+
+    },
+    "Created %@" : {
+
+    },
+    "Created a memory" : {
+
+    },
+    "Cursor" : {
+
+    },
+    "Custom" : {
+
+    },
+    "Cut" : {
+
+    },
+    "Data" : {
+
+    },
+    "Data folder" : {
+
+    },
+    "Date Created" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete %@" : {
+
+    },
+    "Delete %lld memories now?" : {
+
+    },
+    "Delete Now" : {
+
+    },
+    "Delete Now…" : {
+
+    },
+    "Delete this memory now?" : {
+
+    },
+    "Delete “%@”?" : {
+
+    },
+    "Deleted %@" : {
+
+    },
+    "Deleted %@. It's removed for good in %lld days unless you restore it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Deleted %1$@. It's removed for good in %2$lld days unless you restore it."
+          }
+        }
+      }
+    },
+    "Deleted memories stay here for 30 days, then they're gone for good." : {
+
+    },
+    "Delete…" : {
+
+    },
+    "Denied by you" : {
+
+    },
+    "Deny" : {
+
+    },
+    "Description" : {
+
+    },
+    "Deselect" : {
+
+    },
+    "Detail" : {
+
+    },
+    "Details" : {
+
+    },
+    "Devin Desktop" : {
+
+    },
+    "Direct HTTP" : {
+
+    },
+    "Discard" : {
+
+    },
+    "Dismiss" : {
+
+    },
+    "Doesn't keep it" : {
+
+    },
+    "Don't move them" : {
+
+    },
+    "Done" : {
+
+    },
+    "Done when its first request arrives." : {
+
+    },
+    "Downloads" : {
+
+    },
+    "Each agent gets its own key and only the access you give it." : {
+
+    },
+    "Edit" : {
+
+    },
+    "Edit %@" : {
+
+    },
+    "Edit %@'s access…" : {
+
+    },
+    "Edited %@" : {
+
+    },
+    "Edited %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Edited %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Edited a memory" : {
+
+    },
+    "Edit…" : {
+
+    },
+    "Embeddings" : {
+
+    },
+    "Empty allow list means all categories. Deny always wins." : {
+
+    },
+    "Erase All Data" : {
+
+    },
+    "Erase All Data…" : {
+
+    },
+    "Erase all of Funes Vault's data?" : {
+
+    },
+    "Event" : {
+
+    },
+    "Everyday preferences. Fine for most of your agents." : {
+
+    },
+    "Expired" : {
+
+    },
+    "Expired memory" : {
+
+    },
+    "Expired suggestions (%lld)" : {
+
+    },
+    "Expires" : {
+
+    },
+    "Expiry date" : {
+
+    },
+    "Export First…" : {
+
+    },
+    "Export and import" : {
+
+    },
+    "Exported the vault" : {
+
+    },
+    "Exported." : {
+
+    },
+    "Export…" : {
+
+    },
+    "Fact" : {
+
+    },
+    "File" : {
+
+    },
+    "Find…" : {
+
+    },
+    "Fine for anyone to know." : {
+
+    },
+    "For 1 Hour" : {
+
+    },
+    "For HTTP, paste the %@ from %@ or read it from the key file." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "For HTTP, paste the %1$@ from %2$@ or read it from the key file."
+          }
+        }
+      }
+    },
+    "For the session" : {
+
+    },
+    "For this session" : {
+
+    },
+    "Found" : {
+
+    },
+    "Found on this Mac: %@" : {
+
+    },
+    "From" : {
+
+    },
+    "From %@. It's in your Inbox either way." : {
+
+    },
+    "From agents" : {
+
+    },
+    "From other apps" : {
+
+    },
+    "Funes Vault" : {
+
+    },
+    "Funes Vault Export…" : {
+
+    },
+    "Funes Vault Settings" : {
+
+    },
+    "Funes Vault always stays in the menu bar. Without the Dock icon, it shows in the Dock only while a window is open." : {
+
+    },
+    "Funes Vault is off" : {
+
+    },
+    "Funes Vault is on · %lld agents" : {
+
+    },
+    "Funes Vault is on · 1 agent" : {
+
+    },
+    "Funes Vault is paused" : {
+
+    },
+    "Funes Vault is starting…" : {
+
+    },
+    "Funes Vault paused" : {
+
+    },
+    "Funes Vault resumed" : {
+
+    },
+    "Funes Vault, off" : {
+
+    },
+    "Funes Vault, paused" : {
+
+    },
+    "Funes Vault, waiting for you" : {
+
+    },
+    "Funes backs up the file next to it first." : {
+
+    },
+    "Funes didn't send it: it looked like a secret, or was above the cloud limit." : {
+
+    },
+    "Funes keeps the last 7 backups in its data folder." : {
+
+    },
+    "Funes notes that you checked it today." : {
+
+    },
+    "Funes relaunches with the vault as it was then. The current vault is kept in Backups first." : {
+
+    },
+    "Funes runs this command, replacing the existing funes entry:" : {
+
+    },
+    "Funes runs this command:" : {
+
+    },
+    "Funes shows Connected here after the first request from %@." : {
+
+    },
+    "Funes shows the exact change first, backs up the file and never writes the key into it." : {
+
+    },
+    "Funes treats any server that isn't on this Mac or your local network as cloud, whatever this says." : {
+
+    },
+    "Funes was paused" : {
+
+    },
+    "Gemini CLI" : {
+
+    },
+    "General" : {
+
+    },
+    "Goal" : {
+
+    },
+    "Goes in %@" : {
+
+    },
+    "Goes to your Inbox" : {
+
+    },
+    "HTTP %@" : {
+
+    },
+    "Header" : {
+
+    },
+    "Hide" : {
+
+    },
+    "Hide Funes Vault" : {
+
+    },
+    "History" : {
+
+    },
+    "How do you like AI assistants to collaborate with you?" : {
+
+    },
+    "Import" : {
+
+    },
+    "Import ChatGPT Memories" : {
+
+    },
+    "Import ChatGPT Memories…" : {
+
+    },
+    "Import a Funes Vault Export" : {
+
+    },
+    "Import a Markdown File" : {
+
+    },
+    "Import a Markdown File…" : {
+
+    },
+    "Import likely duplicates too" : {
+
+    },
+    "Imported %lld items" : {
+
+    },
+    "Imported from ChatGPT" : {
+
+    },
+    "Imported from ChatGPT · %@" : {
+
+    },
+    "Imported from Claude" : {
+
+    },
+    "Imported from Claude · %@" : {
+
+    },
+    "Imported from Markdown" : {
+
+    },
+    "Imported from Markdown · %@" : {
+
+    },
+    "Imported from a Funes export" : {
+
+    },
+    "Imported from a Funes export · %@" : {
+
+    },
+    "Imported · %@" : {
+
+    },
+    "Imports" : {
+
+    },
+    "Import…" : {
+
+    },
+    "In Claude, open Settings ▸ Capabilities ▸ Memory, copy what's there, and paste it here. Each line or bullet becomes a suggestion." : {
+
+    },
+    "In Cline, open MCP Servers and click Configure MCP Servers." : {
+
+    },
+    "In VS Code, run MCP: Open User Configuration." : {
+
+    },
+    "In Zed, run zed: open settings." : {
+
+    },
+    "Inbox" : {
+
+    },
+    "Inbox, %lld waiting" : {
+
+    },
+    "Inbox: %lld" : {
+
+    },
+    "Include archived memories" : {
+
+    },
+    "Install in VS Code" : {
+
+    },
+    "Instruction" : {
+
+    },
+    "Internal" : {
+
+    },
+    "Invalid input" : {
+
+    },
+    "Is this still true?" : {
+
+    },
+    "Issued %@" : {
+
+    },
+    "It already got what it may read. %@" : {
+
+    },
+    "It asked for context for" : {
+
+    },
+    "It can connect, but sees nothing until you give it access." : {
+
+    },
+    "It changed in the meantime. Look again and retry." : {
+
+    },
+    "It changed in the meantime. Review it again." : {
+
+    },
+    "It couldn't be saved. Try again." : {
+
+    },
+    "It was deleted for good." : {
+
+    },
+    "It was deleted or changed elsewhere." : {
+
+    },
+    "It's a cloud service" : {
+
+    },
+    "It's already in Applications." : {
+
+    },
+    "It's at the top of the Vault." : {
+
+    },
+    "It's removed for good, with its history. This can't be undone." : {
+
+    },
+    "It's the only category some agents may read. Choose a replacement, or change those agents first." : {
+
+    },
+    "Its key stops working at once and its access is deleted. Activity keeps its history, labelled “removed agent”. Its entry in the agent's own settings stays until you delete it there." : {
+
+    },
+    "Its weekly check found a problem. Restore a backup in Settings ▸ Data." : {
+
+    },
+    "JetBrains AI Assistant" : {
+
+    },
+    "Keep Both" : {
+
+    },
+    "Keep everything else" : {
+
+    },
+    "Keep shares, refusals and changes" : {
+
+    },
+    "Keeps it" : {
+
+    },
+    "Keeps what it gets" : {
+
+    },
+    "Kept by the agent" : {
+
+    },
+    "Kept on this Mac: looked sensitive" : {
+
+    },
+    "Key" : {
+
+    },
+    "Key file" : {
+
+    },
+    "Key in Keychain" : {
+
+    },
+    "Key rotated" : {
+
+    },
+    "Keys are stored in the Keychain on this Mac only, never in the vault, exports or Activity." : {
+
+    },
+    "Kind" : {
+
+    },
+    "Last Updated" : {
+
+    },
+    "Last backup" : {
+
+    },
+    "Last checked" : {
+
+    },
+    "Later" : {
+
+    },
+    "Launcher" : {
+
+    },
+    "Let Funes propose it" : {
+
+    },
+    "Let agents connect" : {
+
+    },
+    "Let it ask for more access" : {
+
+    },
+    "Likely duplicates" : {
+
+    },
+    "Link to ~/.local/bin/funes-mcp" : {
+
+    },
+    "Linked as ~/.local/bin/funes-mcp" : {
+
+    },
+    "Linked. Make sure ~/.local/bin is on your PATH." : {
+
+    },
+    "Listed categories" : {
+
+    },
+    "Load Models" : {
+
+    },
+    "Local server" : {
+
+    },
+    "Location" : {
+
+    },
+    "Long items:" : {
+
+    },
+    "Longer than 10,000 characters" : {
+
+    },
+    "Look like secrets" : {
+
+    },
+    "Looked like a secret" : {
+
+    },
+    "Looking for" : {
+
+    },
+    "Low" : {
+
+    },
+    "MCP" : {
+
+    },
+    "MCP URL" : {
+
+    },
+    "Mark that you checked this memory today" : {
+
+    },
+    "Markdown File…" : {
+
+    },
+    "Matches, none allowed" : {
+
+    },
+    "Maximum sensitivity" : {
+
+    },
+    "Memories" : {
+
+    },
+    "Memories in it can move to another category. Agents that couldn't read it won't be able to read the replacement either." : {
+
+    },
+    "Memories past their expiry date appear here. Agents don't get them." : {
+
+    },
+    "Method" : {
+
+    },
+    "Minimize" : {
+
+    },
+    "Model" : {
+
+    },
+    "More than 5 requests were refused in 10 minutes. See why in Activity." : {
+
+    },
+    "Move its memories to" : {
+
+    },
+    "Move to %@" : {
+
+    },
+    "My Agent" : {
+
+    },
+    "My Server" : {
+
+    },
+    "Name" : {
+
+    },
+    "Never" : {
+
+    },
+    "Never send memories" : {
+
+    },
+    "Never send memories above" : {
+
+    },
+    "Never shared with agents unless you raise an agent's ceiling to Secret." : {
+
+    },
+    "Never shared with an agent" : {
+
+    },
+    "New Memory" : {
+
+    },
+    "New captures" : {
+
+    },
+    "New categories" : {
+
+    },
+    "New key issued. The old one no longer works." : {
+
+    },
+    "New memories start at" : {
+
+    },
+    "New memories: %@" : {
+
+    },
+    "Next request" : {
+
+    },
+    "No access yet" : {
+
+    },
+    "No activity yet" : {
+
+    },
+    "No agent selected" : {
+
+    },
+    "No agents yet" : {
+
+    },
+    "No answer in 15 minutes" : {
+
+    },
+    "No answer within 20 seconds." : {
+
+    },
+    "No answer: %@ was told to wait. It's in Pending requests." : {
+
+    },
+    "No key" : {
+
+    },
+    "No memories match these filters" : {
+
+    },
+    "No memory selected" : {
+
+    },
+    "No problems" : {
+
+    },
+    "None" : {
+
+    },
+    "None yet" : {
+
+    },
+    "None yet. Funes uses Apple's on-device model, or simple rules when that isn't available." : {
+
+    },
+    "Not Now" : {
+
+    },
+    "Not allowed to do this" : {
+
+    },
+    "Not allowed." : {
+
+    },
+    "Not found" : {
+
+    },
+    "Not kept" : {
+
+    },
+    "Not known" : {
+
+    },
+    "Not said" : {
+
+    },
+    "Nothing archived" : {
+
+    },
+    "Nothing expired" : {
+
+    },
+    "Nothing here" : {
+
+    },
+    "Nothing matches these filters." : {
+
+    },
+    "Nothing relevant" : {
+
+    },
+    "Nothing to change: it's already set up." : {
+
+    },
+    "Nothing to import was found." : {
+
+    },
+    "Nothing waiting" : {
+
+    },
+    "Nothing yet" : {
+
+    },
+    "Notifications" : {
+
+    },
+    "Notifications never include memory text." : {
+
+    },
+    "Off" : {
+
+    },
+    "Off: it saves memories directly. On: they wait in your Inbox." : {
+
+    },
+    "On" : {
+
+    },
+    "On a date" : {
+
+    },
+    "On this Mac" : {
+
+    },
+    "On, but Funes is paused" : {
+
+    },
+    "One-click setup" : {
+
+    },
+    "One-click setup isn't available." : {
+
+    },
+    "Only allowed categories can be shared. Deny always wins." : {
+
+    },
+    "Open %@." : {
+
+    },
+    "Open Funes Vault" : {
+
+    },
+    "Open Funes Vault at login" : {
+
+    },
+    "Open Inbox" : {
+
+    },
+    "Open Inbox (%lld)" : {
+
+    },
+    "Open Settings ▸ Tools ▸ AI Assistant ▸ Model Context Protocol (MCP)." : {
+
+    },
+    "Opened a request in Funes" : {
+
+    },
+    "Opens the capture box from any app. Funes doesn't need Accessibility access for it." : {
+
+    },
+    "Or in ~/.codex/config.toml" : {
+
+    },
+    "Or set it up yourself" : {
+
+    },
+    "Other MCP client" : {
+
+    },
+    "Other OpenAI-Compatible Server…" : {
+
+    },
+    "Paste" : {
+
+    },
+    "Paste Claude Memories" : {
+
+    },
+    "Paste Claude Memories…" : {
+
+    },
+    "Pause" : {
+
+    },
+    "Pause Funes Vault" : {
+
+    },
+    "Paused" : {
+
+    },
+    "Paused until %@" : {
+
+    },
+    "Paused until tomorrow at %@" : {
+
+    },
+    "Paused until you resume" : {
+
+    },
+    "Pending requests" : {
+
+    },
+    "Pending requests: %lld" : {
+
+    },
+    "Period" : {
+
+    },
+    "Personal: health, money, family. Share rarely, and always ask." : {
+
+    },
+    "Port %@ is in use" : {
+
+    },
+    "Port %@ is in use by another app" : {
+
+    },
+    "Preference" : {
+
+    },
+    "Press the new shortcut…" : {
+
+    },
+    "Preview" : {
+
+    },
+    "Previous request" : {
+
+    },
+    "Problems" : {
+
+    },
+    "Problems %lld" : {
+
+    },
+    "Project Context" : {
+
+    },
+    "Propose a title, kind and categories" : {
+
+    },
+    "Propose new memories or corrections. They wait in your Inbox." : {
+
+    },
+    "Proposed by %@" : {
+
+    },
+    "Proposed by %@ via %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Proposed by %1$@ via %2$@"
+          }
+        }
+      }
+    },
+    "Proposed on this Mac" : {
+
+    },
+    "Providers" : {
+
+    },
+    "Public" : {
+
+    },
+    "Purpose" : {
+
+    },
+    "Purpose given by the agent: “%@”" : {
+
+    },
+    "Quick capture" : {
+
+    },
+    "Quit Funes Vault" : {
+
+    },
+    "Quit the other copy first." : {
+
+    },
+    "Raise %@'s limit…" : {
+
+    },
+    "Read" : {
+
+    },
+    "Read and suggest, ask first" : {
+
+    },
+    "Read and suggest, up to Internal, except Health, Finance and Legal. Funes asks before sharing." : {
+
+    },
+    "Read low-sensitivity memories, ask first" : {
+
+    },
+    "Read, up to Low, in all categories. Funes asks before sharing." : {
+
+    },
+    "Reads %@ and below %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reads %1$@ and below %2$@"
+          }
+        }
+      }
+    },
+    "Reads everything %@" : {
+
+    },
+    "Ready" : {
+
+    },
+    "Ready. If it fails, Funes uses the on-device model, then rules." : {
+
+    },
+    "Recently Deleted" : {
+
+    },
+    "Recently Deleted is empty" : {
+
+    },
+    "Redo" : {
+
+    },
+    "Refuse this agent's requests until you resume it" : {
+
+    },
+    "Refused a request" : {
+
+    },
+    "Refused keys" : {
+
+    },
+    "Reject" : {
+
+    },
+    "Reject %lld" : {
+
+    },
+    "Reject (⌫ or ⌘⌫)" : {
+
+    },
+    "Rejected" : {
+
+    },
+    "Relationship" : {
+
+    },
+    "Remember" : {
+
+    },
+    "Remember…" : {
+
+    },
+    "Remove" : {
+
+    },
+    "Remove %@" : {
+
+    },
+    "Remove %@?" : {
+
+    },
+    "Remove Link" : {
+
+    },
+    "Removed agent" : {
+
+    },
+    "Removed agent (%@)" : {
+
+    },
+    "Removed." : {
+
+    },
+    "Remove…" : {
+
+    },
+    "Rename" : {
+
+    },
+    "Rename %@" : {
+
+    },
+    "Rename Agent" : {
+
+    },
+    "Rename Category" : {
+
+    },
+    "Rename, add or delete categories" : {
+
+    },
+    "Rename…" : {
+
+    },
+    "Replace" : {
+
+    },
+    "Request" : {
+
+    },
+    "Request answered" : {
+
+    },
+    "Request expired" : {
+
+    },
+    "Requests" : {
+
+    },
+    "Requests from your agents appear here, with what was shared and why." : {
+
+    },
+    "Reset Usage" : {
+
+    },
+    "Restart %@" : {
+
+    },
+    "Restart Claude Desktop." : {
+
+    },
+    "Restart Codex." : {
+
+    },
+    "Restart Cursor." : {
+
+    },
+    "Restart Devin Desktop." : {
+
+    },
+    "Restart Gemini CLI." : {
+
+    },
+    "Restore" : {
+
+    },
+    "Restore %@" : {
+
+    },
+    "Restore %lld" : {
+
+    },
+    "Restore Defaults" : {
+
+    },
+    "Restore and Relaunch" : {
+
+    },
+    "Restore as memories, not suggestions" : {
+
+    },
+    "Restore from Backup…" : {
+
+    },
+    "Restore this backup?" : {
+
+    },
+    "Restored %@" : {
+
+    },
+    "Restricted" : {
+
+    },
+    "Result" : {
+
+    },
+    "Resume" : {
+
+    },
+    "Resume %@" : {
+
+    },
+    "Resume Funes Vault" : {
+
+    },
+    "Revert" : {
+
+    },
+    "Review %@'s request" : {
+
+    },
+    "Review Now" : {
+
+    },
+    "Review your Inbox" : {
+
+    },
+    "Review…" : {
+
+    },
+    "Rotate %@'s key?" : {
+
+    },
+    "Rotate Key" : {
+
+    },
+    "Rotate Key…" : {
+
+    },
+    "Run it in Terminal, or add the lines below to ~/.codex/config.toml." : {
+
+    },
+    "Run it in Terminal. Claude Code connects the next time it starts (or run /mcp to reconnect)." : {
+
+    },
+    "Save" : {
+
+    },
+    "Save new memories, within the limits below. Corrections still wait in your Inbox." : {
+
+    },
+    "Save this correction?" : {
+
+    },
+    "Save this memory?" : {
+
+    },
+    "Saved" : {
+
+    },
+    "Saved a memory" : {
+
+    },
+    "Saved as %@ in %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Saved as %1$@ in %2$@"
+          }
+        }
+      }
+    },
+    "Saved by an agent" : {
+
+    },
+    "Saved to Inbox" : {
+
+    },
+    "Saved. A similar memory exists:" : {
+
+    },
+    "Saved; type to replace" : {
+
+    },
+    "Saving cancels %@'s pending requests; it can ask again." : {
+
+    },
+    "Search activity" : {
+
+    },
+    "Search and agents' requests are matched on this Mac. Other embedding models come in a later version." : {
+
+    },
+    "Search memories" : {
+
+    },
+    "Secret" : {
+
+    },
+    "Seed your vault" : {
+
+    },
+    "Select %@" : {
+
+    },
+    "Select All" : {
+
+    },
+    "Select a memory to read or edit it." : {
+
+    },
+    "Select an agent to change its access or connect it." : {
+
+    },
+    "Select text in any app, then choose Services ▸ Remember in Funes. It goes to your Inbox." : {
+
+    },
+    "Send %lld to Inbox" : {
+
+    },
+    "Send to Inbox" : {
+
+    },
+    "Sensitive" : {
+
+    },
+    "Sensitivity" : {
+
+    },
+    "Sensitivity: %@" : {
+
+    },
+    "Server name" : {
+
+    },
+    "Servers that prompt for input aren't sent to VS Code's Agent Host, so the launcher works in more places." : {
+
+    },
+    "Set %@ to the %@ (%@) in the environment %@ starts from." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set %1$@ to the %2$@ (%3$@) in the environment %4$@ starts from."
+          }
+        }
+      }
+    },
+    "Set up Funes Vault" : {
+
+    },
+    "Set up for" : {
+
+    },
+    "Settings ▸ Advanced brings it back" : {
+
+    },
+    "Settings…" : {
+
+    },
+    "Setup" : {
+
+    },
+    "Share" : {
+
+    },
+    "Shared" : {
+
+    },
+    "Shared %lld memories" : {
+
+    },
+    "Shared %lld times · last with %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shared %1$lld times · last with %2$@ %3$@"
+          }
+        }
+      }
+    },
+    "Shared 1 memory" : {
+
+    },
+    "Shared once · with %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shared once · with %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Shared with" : {
+
+    },
+    "Shared with %@" : {
+
+    },
+    "Shared without asking" : {
+
+    },
+    "Shortcut" : {
+
+    },
+    "Shorten Them" : {
+
+    },
+    "Show" : {
+
+    },
+    "Show All" : {
+
+    },
+    "Show Setup" : {
+
+    },
+    "Show all" : {
+
+    },
+    "Show all of %@" : {
+
+    },
+    "Show everything" : {
+
+    },
+    "Show in Activity" : {
+
+    },
+    "Show in Dock" : {
+
+    },
+    "Show in Finder" : {
+
+    },
+    "Show less" : {
+
+    },
+    "Show less of %@" : {
+
+    },
+    "Show the Current Access" : {
+
+    },
+    "Show the Setup Checklist Again" : {
+
+    },
+    "Showing %@ only" : {
+
+    },
+    "Showing one request" : {
+
+    },
+    "Showing “%@” only" : {
+
+    },
+    "Similar memory exists:" : {
+
+    },
+    "Some memories are only in this category. Choose a replacement." : {
+
+    },
+    "Something else is already at ~/.local/bin/funes-mcp, so it was left alone." : {
+
+    },
+    "Something else named %@ is in %@. Move it away first." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something else named %1$@ is in %2$@. Move it away first."
+          }
+        }
+      }
+    },
+    "Something in this form isn't valid." : {
+
+    },
+    "Something went wrong. Try again." : {
+
+    },
+    "Sort by" : {
+
+    },
+    "Source" : {
+
+    },
+    "Space" : {
+
+    },
+    "Split Them" : {
+
+    },
+    "Start" : {
+
+    },
+    "Start %@ when VS Code asks." : {
+
+    },
+    "Start with nothing and set it up on the Access tab." : {
+
+    },
+    "Starting access" : {
+
+    },
+    "Starting…" : {
+
+    },
+    "Status" : {
+
+    },
+    "Still True" : {
+
+    },
+    "Still True…" : {
+
+    },
+    "Stopped after an error" : {
+
+    },
+    "Stored in the Keychain" : {
+
+    },
+    "Suggest" : {
+
+    },
+    "Suggested a memory" : {
+
+    },
+    "Suggested by %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Suggested by %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Suggested by an agent" : {
+
+    },
+    "Suggestion refused" : {
+
+    },
+    "Suggestion: %@" : {
+
+    },
+    "Suggestions" : {
+
+    },
+    "Suggestions expire after 30 days. You can restore them for 7 more." : {
+
+    },
+    "Suggestions from agents, captures and imports wait here until you apply or reject them." : {
+
+    },
+    "Summary" : {
+
+    },
+    "Tab" : {
+
+    },
+    "Task" : {
+
+    },
+    "Task text not stored" : {
+
+    },
+    "Task: “%@”" : {
+
+    },
+    "Tasks" : {
+
+    },
+    "Test Connection" : {
+
+    },
+    "Test Connection classifies one made-up note among Funes's built-in categories; none of your memories or category names are sent." : {
+
+    },
+    "Testing…" : {
+
+    },
+    "Text" : {
+
+    },
+    "That category no longer exists." : {
+
+    },
+    "That file doesn't hold ChatGPT memories Funes can read." : {
+
+    },
+    "That file is over 20 MB." : {
+
+    },
+    "That isn't a Funes Vault export." : {
+
+    },
+    "That name can't be used for a category." : {
+
+    },
+    "That's longer than 10,000 characters." : {
+
+    },
+    "The agent server is off" : {
+
+    },
+    "The agent server stopped" : {
+
+    },
+    "The backup couldn't be written." : {
+
+    },
+    "The copy already in Applications couldn't be moved to the Trash." : {
+
+    },
+    "The copy couldn't be made: %@" : {
+
+    },
+    "The copy's signature didn't check out, so it was moved to the Trash." : {
+
+    },
+    "The export couldn't be written." : {
+
+    },
+    "The file couldn't be read." : {
+
+    },
+    "The key couldn't be saved in the Keychain." : {
+
+    },
+    "The key file couldn't be read. Rotate the key to make a new one." : {
+
+    },
+    "The key isn't written anywhere: the launcher reads it from Funes's key file." : {
+
+    },
+    "The link couldn't be made." : {
+
+    },
+    "The model declined." : {
+
+    },
+    "The model's answer wasn't usable. Try another model." : {
+
+    },
+    "The name needs 1 to 60 characters." : {
+
+    },
+    "The old key stops working at once. Setups that use the launcher keep working; any setup with the key pasted in needs the new one." : {
+
+    },
+    "The provider answered with an error (%lld)." : {
+
+    },
+    "The provider says to slow down. Try again later." : {
+
+    },
+    "The server listed no models." : {
+
+    },
+    "The text is longer than 10,000 characters." : {
+
+    },
+    "The text needs 1 to 10,000 characters." : {
+
+    },
+    "The title is longer than 180 characters." : {
+
+    },
+    "The title needs 1 to 180 characters." : {
+
+    },
+    "The vault didn't open" : {
+
+    },
+    "The vault needs attention" : {
+
+    },
+    "The weekly check found a problem with the vault file. Restore the latest backup." : {
+
+    },
+    "There's no link to remove." : {
+
+    },
+    "There's no one-click setup for %@." : {
+
+    },
+    "There's no text to remember." : {
+
+    },
+    "They skip the Inbox. Only do this with your own export." : {
+
+    },
+    "They're removed for good, with their history. This can't be undone." : {
+
+    },
+    "This copy isn't signed by a developer, so its copy can't be checked. Drag it to Applications in Finder instead." : {
+
+    },
+    "This copy of Funes Vault can't update itself (a development build, or one without its update key). Download new versions from GitHub." : {
+
+    },
+    "This deletes every memory, suggestion, agent and key, Activity, backups and AI provider keys, then relaunches empty. It can't be undone. Agents' own settings still name Funes until you remove it there." : {
+
+    },
+    "This looks like %@. Funes never stores secrets." : {
+
+    },
+    "This memory is gone" : {
+
+    },
+    "This request changed; review again." : {
+
+    },
+    "This vault was written by a newer Funes Vault. Update the app." : {
+
+    },
+    "Time" : {
+
+    },
+    "Title" : {
+
+    },
+    "Today" : {
+
+    },
+    "Too many requests" : {
+
+    },
+    "Traffic since launch" : {
+
+    },
+    "Transport" : {
+
+    },
+    "Try It" : {
+
+    },
+    "Turn Off" : {
+
+    },
+    "URL" : {
+
+    },
+    "Unavailable: check API key. Using on-device instead." : {
+
+    },
+    "Unavailable: check the API key." : {
+
+    },
+    "Unavailable: keyword search only" : {
+
+    },
+    "Undo" : {
+
+    },
+    "Unknown category" : {
+
+    },
+    "Until I Resume" : {
+
+    },
+    "Until Tomorrow" : {
+
+    },
+    "Updates" : {
+
+    },
+    "Updates come from GitHub, signed for Funes Vault. Installing always takes a click, and waits while a request is waiting for you." : {
+
+    },
+    "Use the HTTP values if the agent supports Streamable HTTP with a custom header; otherwise run the launcher over stdio." : {
+
+    },
+    "Use the bar above the list to change them together." : {
+
+    },
+    "Use the setup below instead." : {
+
+    },
+    "Use your own ~/.cursor/mcp.json, never a project's .cursor/mcp.json, which often gets committed." : {
+
+    },
+    "Use ⌘, ⌥ or ⌃ with a key." : {
+
+    },
+    "Use ⌥⌘M" : {
+
+    },
+    "Uses the Classification model in AI Models; you review every proposal in the Inbox." : {
+
+    },
+    "VS Code (Copilot)" : {
+
+    },
+    "Vault" : {
+
+    },
+    "Version" : {
+
+    },
+    "Very personal. Only for agents you fully trust, and always ask." : {
+
+    },
+    "View" : {
+
+    },
+    "Waiting for first request" : {
+
+    },
+    "Waiting for you" : {
+
+    },
+    "Waiting in Inbox" : {
+
+    },
+    "What belongs here (agents see this)" : {
+
+    },
+    "What it can do" : {
+
+    },
+    "What long-term goals should assistants keep in mind when helping you?" : {
+
+    },
+    "What should Funes be especially careful not to share casually?" : {
+
+    },
+    "What should Funes remember?" : {
+
+    },
+    "What should coding assistants know about how you build software?" : {
+
+    },
+    "What tone, level of detail, or format do you usually prefer?" : {
+
+    },
+    "When VS Code asks for the %@, paste it from %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "When VS Code asks for the %1$@, paste it from %2$@."
+          }
+        }
+      }
+    },
+    "When a request is refused only because a category isn't allowed, Funes asks you: Not Now, Allow Once or Always Allow. At most once an hour." : {
+
+    },
+    "When a request is refused only because a category isn't allowed, Funes asks you: Not Now, Allow Once or Always Allow. Never for the sensitivity limit or denied categories." : {
+
+    },
+    "Which current projects should your vault remember, and why do they matter?" : {
+
+    },
+    "Why" : {
+
+    },
+    "Why, as reported: “%@”" : {
+
+    },
+    "Window" : {
+
+    },
+    "With this method the agent sends the key without checking that the program on the port is Funes Vault. The launcher checks first." : {
+
+    },
+    "Withheld" : {
+
+    },
+    "Work or project context. Share with agents you use for that work." : {
+
+    },
+    "Works: it proposed “%@” in %@ s." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Works: it proposed “%1$@” in %2$@ s."
+          }
+        }
+      }
+    },
+    "Write" : {
+
+    },
+    "Yesterday" : {
+
+    },
+    "You" : {
+
+    },
+    "You applied a suggestion" : {
+
+    },
+    "You approved sharing %lld" : {
+
+    },
+    "You denied a request" : {
+
+    },
+    "You rejected a suggestion" : {
+
+    },
+    "You're all set" : {
+
+    },
+    "Your Inbox is empty" : {
+
+    },
+    "Your answer" : {
+
+    },
+    "Your answer · %@" : {
+
+    },
+    "Your answers" : {
+
+    },
+    "Your note on how this agent keeps data. Shown on its panels; it doesn't change what's shared." : {
+
+    },
+    "Your previous setup couldn't be put back; it's in %@." : {
+
+    },
+    "Your previous setup was put back." : {
+
+    },
+    "Your vault is empty" : {
+
+    },
+    "Zed" : {
+
+    },
+    "Zed starts a sign-in when a remote server has no Authorization header, so only the launcher is offered." : {
+
+    },
+    "Zoom" : {
+
+    },
+    "a card number" : {
+
+    },
+    "a password or secret" : {
+
+    },
+    "a private key" : {
+
+    },
+    "a secret" : {
+
+    },
+    "a sign-in token" : {
+
+    },
+    "a temporary location" : {
+
+    },
+    "an API key" : {
+
+    },
+    "an agent" : {
+
+    },
+    "an agent key" : {
+
+    },
+    "and below: %@" : {
+
+    },
+    "asks first" : {
+
+    },
+    "by %@" : {
+
+    },
+    "by Funes Vault" : {
+
+    },
+    "by an import" : {
+
+    },
+    "by you" : {
+
+    },
+    "categories" : {
+
+    },
+    "confidence" : {
+
+    },
+    "expires %@" : {
+
+    },
+    "expires in %lld days" : {
+
+    },
+    "expires today" : {
+
+    },
+    "expires tomorrow" : {
+
+    },
+    "expiry" : {
+
+    },
+    "funes-mcp" : {
+
+    },
+    "iPhone" : {
+
+    },
+    "in %lld categories" : {
+
+    },
+    "in 1 category" : {
+
+    },
+    "in all categories" : {
+
+    },
+    "just now" : {
+
+    },
+    "key" : {
+
+    },
+    "kind" : {
+
+    },
+    "macOS didn't add Funes Vault to Login Items." : {
+
+    },
+    "macOS didn't remove Funes Vault from Login Items." : {
+
+    },
+    "macOS didn't say where %@ was opened from. Drag it to Applications in Finder, then open it from there." : {
+
+    },
+    "macOS needs your approval in System Settings ▸ General ▸ Login Items." : {
+
+    },
+    "no model" : {
+
+    },
+    "none" : {
+
+    },
+    "on iPhone" : {
+
+    },
+    "saves without asking" : {
+
+    },
+    "sensitivity" : {
+
+    },
+    "shares without asking" : {
+
+    },
+    "status" : {
+
+    },
+    "stdio args" : {
+
+    },
+    "stdio command" : {
+
+    },
+    "suggests" : {
+
+    },
+    "text" : {
+
+    },
+    "the disk image" : {
+
+    },
+    "the “%@” folder" : {
+
+    },
+    "title" : {
+
+    },
+    "until %@" : {
+
+    },
+    "· confirmed %@" : {
+
+    },
+    "—" : {
+
+    },
+    "“%@” (as reported)" : {
+
+    },
+    "⏎ Save · ⇧⏎ New line · Esc Cancel" : {
+
+    }
+  },
+  "version" : "1.0"
+}

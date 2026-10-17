@@ -304,3 +304,96 @@ import Testing
         #expect(KeychainProviderKeyStore().service == "com.funesvault.provider")
     }
 }
+
+/// Task 3.8b: Settings ▸ AI Models ▸ Test connection sends only the made-up note.
+@Suite struct TestConnectionTests {
+    @Test func classifiesTheMadeUpNote() async throws {
+        let stub = StubURLProtocol.Session { _ in .json(ModelRouterTests.proposal(["personal_preferences"])) }
+        let client = try OpenAICompatibleClient(endpoint: .openAI(), model: "gpt-small", apiKey: "k", session: stub.session)
+        let proposal = try await ModelRouter.testConnection(client)
+        #expect(proposal.categoryKeys == ["personal_preferences"])
+        #expect(stub.requests.count == 1 && stub.requests[0].text.contains(ModelRouter.testNote))
+    }
+
+    @Test func reportsTheProvidersError() async throws {
+        let stub = StubURLProtocol.Session { _ in .json(["error": "no"], status: 401) }
+        let client = try OpenAICompatibleClient(endpoint: .openAI(), model: "gpt-small", apiKey: "bad", session: stub.session)
+        await #expect(throws: ProviderError.unauthorized) { _ = try await ModelRouter.testConnection(client) }
+    }
+
+    /// PR #3 review 4304236136: the test sends the built-in sample categories only, never the user's.
+    @Test func sendsOnlyTheSampleCategories() async throws {
+        let stub = StubURLProtocol.Session { _ in .json(ModelRouterTests.proposal(["personal_preferences"])) }
+        let client = try OpenAICompatibleClient(endpoint: .openAI(), model: "gpt-small", apiKey: "k", session: stub.session)
+        _ = try await ModelRouter.testConnection(client)
+        let sent = try #require(stub.requests.first).text
+        for category in MemoryCategory.builtins { #expect(sent.contains(category.description)) }
+        #expect(ModelRouter.testCategories == MemoryCategory.builtins)
+    }
+}
+
+/// PR #3 review 4304236136: every provider call goes through `ModelRouter.send`, whose guardrails
+/// can't be skipped: a secret anywhere in the outgoing text (here, a category description) never
+/// reaches a local server or the cloud, and the cloud never gets text above the limit.
+@Suite struct GuardedSendTests {
+    static let secret = "sk-" + String(repeating: "q", count: 30)
+
+    static var categories: [MemoryCategory] {
+        MemoryCategory.builtins + [MemoryCategory(key: "keys", name: "Keys", description: "my key is \(secret)")]
+    }
+
+    @Test func secretsInAnyOutgoingTextAreNeverSent() async throws {
+        for endpoint in [ProviderEndpoint.openAI(), .ollama()] {
+            let stub = StubURLProtocol.Session { _ in .json(ModelRouterTests.proposal()) }
+            let locality: Locality = endpoint.id == "ollama" ? .localServer : .cloud
+            let client = try OpenAICompatibleClient(endpoint: endpoint, model: "m", apiKey: "k", session: stub.session,
+                                                    locality: locality)
+            let request = ClassificationPrompt.request("Likes tea", categories: Self.categories)
+            await #expect(throws: ProviderError.blocked) {
+                _ = try await ModelRouter.send(request, to: client, sensitivity: .low, cloudLimit: .upTo(.internal),
+                                               timeout: .seconds(5))
+            }
+            let router = ModelRouter(classifier: client, onDevice: nil, generationTimeout: .milliseconds(300))
+            let record = await router.classify("Likes tea", categories: Self.categories)
+            #expect(record.engine == RulesClassifier.engine && record.keptOnDevice == (locality == .cloud))
+            #expect(stub.requests.isEmpty, "\(endpoint.id) got a request")
+        }
+    }
+
+    @Test func theCloudLimitAndUnknownSensitivityBlock() async throws {
+        let stub = StubURLProtocol.Session { _ in .json(ModelRouterTests.proposal()) }
+        let client = try OpenAICompatibleClient(endpoint: .openAI(), model: "m", apiKey: "k", session: stub.session)
+        let request = ClassificationPrompt.request("Likes tea", categories: MemoryCategory.builtins)
+        for (sensitivity, limit) in [(Sensitivity?.some(.sensitive), CloudLimit.upTo(.internal)), (.low, .never), (nil, .upTo(.secret))] {
+            await #expect(throws: ProviderError.blocked) {
+                _ = try await ModelRouter.send(request, to: client, sensitivity: sensitivity, cloudLimit: limit, timeout: .seconds(5))
+            }
+        }
+        #expect(stub.requests.isEmpty)
+        _ = try await ModelRouter.send(request, to: client, sensitivity: .low, cloudLimit: .upTo(.internal), timeout: .seconds(5))
+        #expect(stub.requests.count == 1)
+    }
+}
+
+/// PR #3 review 4304236141: "At least <level>" for captures survives classification, by the model
+/// and when the proposal replaces the capture's.
+@Suite struct CaptureFloorTests {
+    @Test func classificationNeverGoesBelowTheChosenMinimum() async throws {
+        let router = ModelRouter(classifier: nil, onDevice: ModelRouterTests.FakeOnDevice())  // proposes Health, Low
+        let record = await router.classify("Dentist on Friday", categories: MemoryCategory.builtins, hint: .secret)
+        #expect(record.engine == "apple.foundation" && record.proposal.sensitivity == .secret)
+
+        let vault = try TestVault()
+        let captures = CaptureService(store: vault.store, activity: InMemoryActivityLog())
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let id = try await captures.capture("Dentist on Friday", sensitivityHint: .secret, now: now).suggestionID
+        let lower = ClassificationRecord(engine: "apple.foundation", proposal: CaptureProposal(
+            title: "Dentist", kind: .event, categoryKeys: ["health"], sensitivity: .low, timeLimited: true), keptOnDevice: false)
+        try await captures.reclassify(suggestionID: id, record: lower, floor: .secret)
+        let suggestions = SuggestionService(store: vault.store, activity: InMemoryActivityLog(), pause: FunesPause())
+        #expect(try await suggestions.suggestion(id: id)?.sensitivity == .secret)
+        // Without a floor the category default still applies.
+        try await captures.reclassify(suggestionID: id, record: lower)
+        #expect(try await suggestions.suggestion(id: id)?.sensitivity == .sensitive)
+    }
+}

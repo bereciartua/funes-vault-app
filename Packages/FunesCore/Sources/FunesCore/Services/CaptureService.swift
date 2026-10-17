@@ -60,11 +60,12 @@ public final class CaptureService: Sendable {
         return result
     }
 
-    /// Replaces a pending capture's proposal, e.g. with a model's classification.
-    public func reclassify(suggestionID: UUID, record: ClassificationRecord) async throws {
+    /// Replaces a pending capture's proposal, e.g. with a model's classification. `floor` is the
+    /// minimum sensitivity the user picked when capturing: no engine's proposal goes below it.
+    public func reclassify(suggestionID: UUID, record: ClassificationRecord, floor: Sensitivity? = nil) async throws {
         try await store.writer.write { db in
             guard let s = try SuggestionService.fetch(db, id: suggestionID), s.status == .pending else { throw VaultError.invalidState }
-            let p = record.proposal.validated(categories: try CategoryStore.all(db), fallbackTitle: s.title)
+            let p = record.proposal.validated(categories: try CategoryStore.all(db), fallbackTitle: s.title, floor: floor)
             try db.execute(sql: """
                 UPDATE suggestion SET title = ?, kind = ?, category_keys = ?, sensitivity = ?, classification = ? WHERE id = ?
                 """, arguments: [p.title, p.kind.rawValue, JSON.encode(p.categoryKeys), p.sensitivity.rawValue,

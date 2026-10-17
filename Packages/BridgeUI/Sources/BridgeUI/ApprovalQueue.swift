@@ -13,6 +13,8 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
         case share
         /// Save a suggested memory: no countdown, non-blocking.
         case save
+        /// "<Agent> wants more access": Not Now, Allow Once (tertiary) and Always Allow (primary).
+        case access
     }
 
     /// A row the user can tick (or just read, when `selectable` is false).
@@ -83,8 +85,10 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
     public var primary: String
     /// "Deny" or "Later".
     public var secondary: String
-    /// "Reject" for a suggestion.
+    /// "Reject" for a suggestion, "Allow Once" for an access request.
     public var tertiary: String?
+    /// "Edit…" on the Save panel: opens the suggestion in the Inbox.
+    public var edit: String?
     /// The panel answers `.expired` at this time; nil for no countdown.
     public var expiresAt: Date?
     /// Read by VoiceOver when the item appears.
@@ -92,7 +96,7 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
 
     public init(id: UUID, kind: Kind, agentID: String, title: String, subtitle: String? = nil, rows: [Row],
                 facts: [Fact] = [], note: String? = nil, primary: String, secondary: String, tertiary: String? = nil,
-                expiresAt: Date? = nil, announcement: String) {
+                edit: String? = nil, expiresAt: Date? = nil, announcement: String) {
         self.id = id
         self.kind = kind
         self.agentID = agentID
@@ -104,6 +108,7 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
         self.primary = primary
         self.secondary = secondary
         self.tertiary = tertiary
+        self.edit = edit
         self.expiresAt = expiresAt
         self.announcement = announcement
     }
@@ -143,8 +148,10 @@ public enum PanelAnswer: Sendable, Equatable {
     case primary(selected: [String])
     /// Deny or Later.
     case secondary
-    /// Reject.
+    /// Reject, or Allow Once.
     case tertiary
+    /// Edit… (the Save panel).
+    case edit
     /// The countdown ran out.
     case expired
     /// The app took it back (the agent hung up, Funes paused, quit).
@@ -263,6 +270,11 @@ public final class ApprovalQueue {
     }
 
     private func key(_ id: UUID, _ row: String) -> String { id.uuidString + "|" + row }
+
+    /// "41 s", or "9:05" from a minute up (a pending request's 15 minutes).
+    public static func countdown(_ seconds: Int) -> String {
+        seconds < 60 ? String(localized: "\(seconds) s") : String(format: "%d:%02d", seconds / 60, seconds % 60)
+    }
 
     /// Seconds left on an item's countdown, never negative.
     public func remaining(_ item: PanelItem) -> Int? {
