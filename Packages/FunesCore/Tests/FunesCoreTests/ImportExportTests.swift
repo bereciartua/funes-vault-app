@@ -105,6 +105,22 @@ import Testing
         #expect(try v.count("SELECT count(*) FROM agent") == 0 && v.count("SELECT count(*) FROM access") == 0)
     }
 
+    /// PR #1 review: preview entries are editable, so commit rescans what it stores.
+    @Test func commitRescansEditedPreviews() async throws {
+        let v = try TestVault()
+        let service = ImportService(store: v.store, activity: InMemoryActivityLog())
+        var preview = try await service.preview([ImportItem(title: "Note", body: "Prefers short emails"),
+                                                 ImportItem(title: "Other", body: "Likes hiking")], source: .markdown)
+        #expect(preview.entries.map(\.status) == [.ready, .ready])
+        preview.entries[0].item.body = "password=abcdefghijklmnopqrstuv"
+        #expect(!SecretScanner.scan([preview.entries[0].item.body]).isEmpty)
+        preview.entries[1].item.title = String(repeating: "t", count: 181)
+        let result = try await service.commit(preview, now: t0)
+        #expect(result.suggestionIDs.isEmpty && result.skipped == 2)
+        #expect(try v.count("SELECT count(*) FROM suggestion") == 0)
+        #expect(try v.count("SELECT blocked FROM import_run") == 1)
+    }
+
     @Test func activeMemoriesOnlyFromAFunesExport() async throws {
         let v = try TestVault()
         let service = ImportService(store: v.store, activity: InMemoryActivityLog())

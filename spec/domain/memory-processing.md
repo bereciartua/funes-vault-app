@@ -129,7 +129,7 @@ All imports create **suggestions** (`origin = import`, with an `importRunId`) af
 | Markdown | `.md` file | `#`/`##` headings map to categories by name (case-insensitive, otherwise "unmatched", reviewed per item). Bullets and paragraphs become items |
 | Funes export | `funesvault.export.v1` JSON | Categories (created if missing) and memories, as suggestions by default or as active memories after confirmation |
 
-**Preview:** total items, likely duplicates (normalized exact match against the vault or earlier in the same import, or raw cosine ≥ 0.92, see §8), items blocked by the secret scanner, and items over the length limit (split or truncated, the user's choice). A Funes export also lists the categories it would create.
+**Preview:** total items, likely duplicates (normalized exact match against the vault or earlier in the same import, or raw cosine ≥ 0.92, see §8), items blocked by the secret scanner, and items over the length limit (split or truncated, the user's choice). A Funes export also lists the categories it would create. **Commit re-checks** every item it stores (secret scan and length limits) against its current text, not the preview's cached status, because the user can edit items between preview and commit.
 
 ## 8. Duplicate hint
 On create or apply, show "Similar memory exists" if:

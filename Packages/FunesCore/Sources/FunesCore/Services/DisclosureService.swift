@@ -137,6 +137,8 @@ public final class DisclosureService: Sendable {
     private let offered = Mutex<[String: Date]>([:])
     /// Request id → categories offered by it and not yet used by Allow Once.
     private let grants = Mutex<[UUID: Set<String>]>([:])
+    /// Request id → the Allow Once grant it was made with, kept for its panel and delivery.
+    private let requestGrants = Mutex<[UUID: OnceGrant]>([:])
     private let waiters = Mutex<[UUID: [UUID: CheckedContinuation<Void, Never>]]>([:])
 
     public init(store: VaultStore, retriever: any MemoryRetriever, activity: any ActivityRecorder, pause: FunesPause) {
@@ -172,7 +174,7 @@ public final class DisclosureService: Sendable {
             // Re-read inside the transaction, so the decision and the stored snapshot agree.
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.unauthenticated }
             var access = agent.access
-            if let grant { access.allowedCategoryKeys.insert(grant.categoryKey) }
+            if let grant, grant.agentRevision == agent.revision { access.allowedCategoryKeys.insert(grant.categoryKey) }
             try AgentStore.recordRequest(db, agentID: agentID, now: now)
             var row = Self.newRow(id: requestID, agent: agent, input: input, now: now)
 
@@ -222,6 +224,7 @@ public final class DisclosureService: Sendable {
         var outcome = result.outcome
         if outcome.status == .needsApproval {
             tasks.withLock { $0[requestID] = CachedTask(task: input.task, keywords: input.keywords, expires: now + Self.window) }
+            if let grant { requestGrants.withLock { $0[requestID] = grant } }
         }
         if let withheld = outcome.withheld, Set(withheld.keys) == [.categoryNotAllowed], agent.asksForAccess {
             outcome.accessOffer = offer(agentID: agentID, requestID: requestID, categories: result.withheldCategories,
@@ -268,8 +271,9 @@ public final class DisclosureService: Sendable {
             guard var d = try Self.fetch(db, id: requestID), d.status == .needsApproval,
                   now < d.createdAt + Self.window,
                   let agent = try AgentStore.fetch(db, id: d.agentID), !agent.isRemoved else { return nil }
+            let access = self.access(agent, requestID: requestID)
             let snapshot = try MemoryStore.fetch(db, ids: d.candidateSnapshot.map(\.id))
-            let current = snapshot.filter { PolicyEngine.eligibility($0, access: agent.access, now: now) == nil }
+            let current = snapshot.filter { PolicyEngine.eligibility($0, access: access, now: now) == nil }
             let items = current.map { SnapshotItem(id: $0.id, version: $0.version) }
             if items != d.candidateSnapshot || agent.revision != d.agentRevisionAtRequest {
                 d.candidateSnapshot = items
@@ -347,6 +351,7 @@ public final class DisclosureService: Sendable {
         }
         guard changed else { throw VaultError.invalidState }
         tasks.withLock { _ = $0.removeValue(forKey: requestID) }
+        requestGrants.withLock { _ = $0.removeValue(forKey: requestID) }
         activity.record(ActivityEvent(time: now, requestID: requestID, phase: .event, actor: .user, via: .app,
                                       event: "approval", outcome: "denied", reason: .deniedByUser, approval: .denied))
         notify(requestID)
@@ -390,6 +395,12 @@ public final class DisclosureService: Sendable {
             // Funes or the agent paused: refused for now; the approval stands until it expires.
             if paused { out.reason = .funesPaused; return out }
             if agent.paused { out.reason = .agentPaused; return out }
+            // Access can expire after approval without a revision change, so re-run the gate (G3, G4).
+            let access = self.access(agent, requestID: requestID)
+            if let reason = PolicyEngine.gate(agent: agent, access: access, globalPaused: false, now: now) {
+                out.reason = reason
+                return out
+            }
             guard let expires = d.approvalExpiresAt, now <= expires else { return try back(to: .approvalExpired) }
             guard agent.revision == d.agentRevisionAtRequest else { return try back(to: .policyChanged) }
             let approved = d.approvedMemoryIDs ?? []
@@ -397,7 +408,7 @@ public final class DisclosureService: Sendable {
             let memories = try MemoryStore.fetch(db, ids: approved)
             let unchanged = memories.count == approved.count && memories.allSatisfy { m in
                 m.status == .active && versions[m.id] == m.version
-                    && PolicyEngine.eligibility(m, access: agent.access, now: now) == nil
+                    && PolicyEngine.eligibility(m, access: access, now: now) == nil
             }
             // The whole request is invalidated, never partly delivered.
             guard !approved.isEmpty, unchanged else { return try back(to: .policyChanged) }
@@ -410,7 +421,10 @@ public final class DisclosureService: Sendable {
             out.bundle = bundle
             return out
         }
-        if outcome.status == .delivered { tasks.withLock { _ = $0.removeValue(forKey: requestID) } }
+        if outcome.status == .delivered {
+            tasks.withLock { _ = $0.removeValue(forKey: requestID) }
+            requestGrants.withLock { _ = $0.removeValue(forKey: requestID) }
+        }
         activity.record(ActivityEvent(
             time: now, requestID: requestID, actor: .agent(agentID), via: .mcp, event: "get_memory_request",
             outcome: outcome.status.rawValue, ids: outcome.bundle?.items.map(\.memoryID) ?? [], reason: outcome.reason,
@@ -436,6 +450,7 @@ public final class DisclosureService: Sendable {
         }
         tasks.withLock { cache in cache = cache.filter { $0.value.expires > now } }
         grants.withLock { g in g = g.filter { !expired.contains($0.key) } }
+        requestGrants.withLock { g in g = g.filter { !expired.contains($0.key) } }
         for id in expired {
             activity.record(ActivityEvent(time: now, requestID: id, phase: .event, actor: .system, via: .app, event: "approval",
                                           outcome: "denied", reason: .approvalExpired, approval: .timeout))
@@ -507,6 +522,17 @@ public final class DisclosureService: Sendable {
         let categoryKeys = fresh.filter { !$0.isEmpty }
         if let requestID, !categoryKeys.isEmpty { grants.withLock { $0[requestID, default: []].formUnion(categoryKeys) } }
         return AccessRequestOffer(agentID: agentID, requestID: requestID, categoryKeys: categoryKeys, operation: operation)
+    }
+
+    /// The access a stored request is evaluated with: the agent's, plus the Allow Once grant the
+    /// request was made with while the agent's revision still matches (§7). Any change to the
+    /// agent's access bumps the revision and drops the grant, so the request fails closed.
+    private func access(_ agent: Agent, requestID: UUID) -> Access {
+        var access = agent.access
+        if let grant = requestGrants.withLock({ $0[requestID] }), grant.agentRevision == agent.revision {
+            access.allowedCategoryKeys.insert(grant.categoryKey)
+        }
+        return access
     }
 
     /// Validates and consumes an Allow Once grant; returns the access to evaluate with.

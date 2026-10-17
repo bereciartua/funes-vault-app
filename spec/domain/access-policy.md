@@ -91,7 +91,7 @@ The task text and keywords are kept in memory only, tied to the request id, for 
 
 ### 3.7 Delivery (inside the same call, or through `get_memory_request`)
 In a single database transaction:
-1. If the agent was removed, the call fails at authentication earlier. If Funes is paused (`funes_paused`) or the agent is (`agent_paused`), the call is refused with that reason and `status: denied`, but the stored status stays `approved` until expiry, so it can be retrieved after resuming.
+1. If the agent was removed, the call fails at authentication earlier. If Funes is paused (`funes_paused`) or the agent is (`agent_paused`), the call is refused with that reason and `status: denied`, but the stored status stays `approved` until expiry, so it can be retrieved after resuming. The rest of the agent gate runs again too: access that expired after approval (`access_expired`) or a missing `read` operation (`operation_not_allowed`) refuses delivery the same way, because time passing doesn't change the agent's revision.
 2. If `now > approvalExpiresAt`: `status = needs_approval`, reason `approval_expired`. The task text is gone after 15 minutes, so the request can only be denied after that point. Shown as "expired".
 3. If the agent's current revision ≠ `agentRevisionAtRequest`: `status = needs_approval`, reason `policy_changed`.
 4. For each approved id, check that the memory still exists, is `active`, has the same `version`, and is still eligible under the current access (§3.3). If any check fails: `status = needs_approval`, reason `policy_changed`. The whole request is invalidated, not partly delivered.
@@ -176,7 +176,7 @@ Offered only when **all** of these hold:
 - the same agent, category and operation hasn't been asked in the last hour.
 
 - **Panel:** "<Agent> can't read <Category>." Buttons: **Not Now**, **Allow Once** and **Always Allow**.
-  - **Allow Once** runs the request again with a temporary grant bound to this request id and the agent's revision. It isn't persisted.
+  - **Allow Once** runs the request again with a temporary grant bound to this request id and the agent's revision. It isn't persisted. If that request needs approval, the grant stays with it, in memory, for its panel and its delivery (§3.6–3.7). Any change to the agent's access bumps the revision and drops the grant, so the request then fails closed with `policy_changed`.
   - **Always Allow** adds exactly that category to the allow list, or that operation, and increments the revision.
 - Never offered for sensitivity ceilings or denied categories. Those are deliberate user choices and can only be changed in the editor.
 

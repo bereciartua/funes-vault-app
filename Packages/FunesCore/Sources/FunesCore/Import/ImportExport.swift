@@ -304,7 +304,7 @@ public final class ImportService: Sendable {
                     INSERT INTO category (key, name, description, builtin, default_sensitivity, sort_order) VALUES (?, ?, ?, 0, ?, ?)
                     """, arguments: [c.key, c.name, c.description, c.defaultSensitivity.rawValue, order])
             }
-            let blocked = preview.entries.filter { if case .blocked = $0.status { true } else { false } }.count
+            var blocked = preview.entries.filter { if case .blocked = $0.status { true } else { false } }.count
             try db.execute(sql: "INSERT INTO import_run (id, source, created_at, item_count, blocked) VALUES (?, ?, ?, ?, ?)",
                            arguments: [runID.db, preview.source.rawValue, now, preview.total, blocked])
             let categories = try CategoryStore.all(db)
@@ -318,7 +318,18 @@ public final class ImportService: Sendable {
                     out.skipped += 1
                     continue
                 }
+                // The preview is the caller's to edit, so check the text being stored, not its cached status.
                 let item = entry.item
+                guard SecretScanner.scan([item.title, item.body]).isEmpty else {
+                    blocked += 1
+                    out.skipped += 1
+                    continue
+                }
+                guard InputLimits.title.contains(InputLimits.length(of: item.title)),
+                      InputLimits.body.contains(InputLimits.length(of: item.body)) else {
+                    out.skipped += 1
+                    continue
+                }
                 var keys = item.categoryKeys.filter(known.contains)
                 if keys.isEmpty { keys = RulesClassifier.propose(item.title + "\n" + item.body, categories: categories).categoryKeys }
                 if asMemories {
@@ -328,7 +339,6 @@ public final class ImportService: Sendable {
                     out.memoryIDs.append(m.id)
                 } else {
                     let sensitivity = try item.sensitivity ?? MemoryStore.defaultSensitivity(db, categoryKeys: keys)
-                    guard InputLimits.title.contains(InputLimits.length(of: item.title)) else { out.skipped += 1; continue }
                     let id = try SuggestionService.insertSuggestion(
                         db, origin: .import, importRunID: runID,
                         input: SuggestInput(title: item.title, body: item.body, kind: item.kind, expiresAt: item.expiresAt),
@@ -336,6 +346,7 @@ public final class ImportService: Sendable {
                     out.suggestionIDs.append(id)
                 }
             }
+            try db.execute(sql: "UPDATE import_run SET blocked = ? WHERE id = ?", arguments: [blocked, runID.db])
             return out
         }
         activity.record(ActivityEvent(time: now, phase: .event, actor: .importRun(runID), via: .app, event: "import",

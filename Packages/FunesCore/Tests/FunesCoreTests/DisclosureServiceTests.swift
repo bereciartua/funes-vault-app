@@ -343,6 +343,55 @@ import Testing
         #expect(try await fx.request().withheld == [.categoryNotAllowed: 1])
     }
 
+    /// PR #1 review: Allow Once must hold through the panel and delivery, not only the request.
+    @Test func allowOnceGrantHoldsThroughApprovalAndDelivery() async throws {
+        let fx = try ServiceFixture()
+        try fx.setAgent(asksForAccess: true)
+        try fx.setAccess { $0.allowedCategoryKeys = ["communication_style"] }
+        fx.retriever.set([fx.id("m2")])
+        let first = try await fx.request()
+        let revision = try await fx.store.writer.read { db in try AgentStore.fetch(db, id: fx.agentID)!.revision }
+        let grant = OnceGrant(offeredByRequestID: first.requestID!, agentRevision: revision, categoryKey: "project_context")
+        let id = try #require(try await fx.request(grant: grant).requestID)
+        let panel = try #require(try await fx.disclosures.panel(requestID: id, now: fx.now))
+        #expect(panel.memories.map(\.id) == [fx.id("m2")])
+        try await fx.disclosures.approve(requestID: id, snapshotRevision: panel.snapshotRevision,
+                                         memoryIDs: [fx.id("m2")], now: fx.now)
+        let out = try await fx.disclosures.deliver(requestID: id, agentID: fx.agentID, now: fx.now.plus(minutes: 1))
+        #expect(out.status == .delivered && out.bundle?.items.map(\.memoryID) == [fx.id("m2")])
+        // The grant belongs to that request only.
+        #expect(try await fx.request().withheld == [.categoryNotAllowed: 1])
+    }
+
+    /// The grant is bound to the agent's revision: any access change before delivery invalidates it.
+    @Test func allowOnceGrantDropsWhenAccessChanges() async throws {
+        let fx = try ServiceFixture()
+        try fx.setAgent(asksForAccess: true)
+        try fx.setAccess { $0.allowedCategoryKeys = ["communication_style"] }
+        fx.retriever.set([fx.id("m2")])
+        let first = try await fx.request()
+        let revision = try await fx.store.writer.read { db in try AgentStore.fetch(db, id: fx.agentID)!.revision }
+        let grant = OnceGrant(offeredByRequestID: first.requestID!, agentRevision: revision, categoryKey: "project_context")
+        let id = try #require(try await fx.request(grant: grant).requestID)
+        let panel = try #require(try await fx.disclosures.panel(requestID: id, now: fx.now))
+        try await fx.disclosures.approve(requestID: id, snapshotRevision: panel.snapshotRevision,
+                                         memoryIDs: [fx.id("m2")], now: fx.now)
+        try fx.setAccess { $0.askBeforeSharing = true }  // any edit bumps the revision
+        let out = try await fx.disclosures.deliver(requestID: id, agentID: fx.agentID, now: fx.now)
+        #expect(out.status == .needsApproval && out.reason == .policyChanged && out.bundle == nil)
+    }
+
+    /// PR #1 review: access that expires after approval stops delivery (G3), without a revision change.
+    @Test func accessExpiryIsRecheckedAtDelivery() async throws {
+        let fx = try ServiceFixture()
+        try fx.setAccess { $0.expiresAt = fx.now.plus(minutes: 1) }
+        let id = try await fx.approved(["m1"])
+        let out = try await fx.disclosures.deliver(requestID: id, agentID: fx.agentID, now: fx.now.plus(minutes: 2))
+        #expect(out.status == .denied && out.reason == .accessExpired && out.bundle == nil)
+        #expect(try await fx.disclosures.items(requestID: id).isEmpty)
+        #expect(try await fx.status(id).0 == .approved)
+    }
+
     // MARK: Input, authentication and privacy
 
     @Test func invalidInputAndRemovedAgents() async throws {
