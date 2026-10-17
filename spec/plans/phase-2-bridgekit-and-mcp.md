@@ -40,8 +40,8 @@
 ## Part C: Funes MCP (weekend 2, second half, and weekend 3)
 
 ### 2.6 Funes packages and copies · 2 h
-- [ ] Add `BridgeKit` as a package dependency, pinned exactly to `0.1.0`.
-- [ ] Create `Packages/BridgeUI` and copy the tier-2 files ([reuse §2](../architecture/ek-bridge-reuse.md#2-tier-2-copied-into-funes-packagesbridgeui-extracted-as-bridgekitui-after-funes-v01)), recording their source commits in `PROVENANCE.md`.
+- [ ] Add `BridgeKit` as a package dependency, pinned exactly to `0.1.0`. *(By local path, `../bridgekit`, until the repository and tag are published.)*
+- [x] Create `Packages/BridgeUI` and copy the tier-2 files ([reuse §2](../architecture/ek-bridge-reuse.md#2-tier-2-copied-into-funes-packagesbridgeui-extracted-as-bridgekitui-after-funes-v01)), recording their source commits in `PROVENANCE.md`.
 
 ### 2.7 Tool contract · 2 h
 *The contract, pipeline, handlers and the `FUNES_MCP_TEST` server live in `Packages/FunesMCP` ([ADR-0017](../architecture/decisions/0017-funes-mcp-package.md)); the contract is `Packages/FunesMCP/Sources/FunesMCP/Resources/mcp-tools.json`.*
@@ -57,13 +57,13 @@
 - [x] `mcp-endpoint.json` lifecycle.
 
 ### 2.9 Approval panels v1 · 3 h
-- [ ] Adapt the copied `ApprovalPanel`:
+- [x] Adapt the copied `ApprovalPanel`:
   - **Share with…** (checkbox rows, sensitivity badges, task, purpose "as reported", retention, withheld line, countdown);
   - **Save this memory?**.
-- [ ] Arming delay, queue limits, VoiceOver announcement.
+- [x] Arming delay, queue limits, VoiceOver announcement.
 
 ### 2.10 Launcher · 0.5 h
-- [ ] `FunesMCPLauncher` target: a `main.swift` calling `BridgeLauncher.run(funesConfig)`, supporting `--agent`, `headers` and `check`.
+- [x] `FunesMCPLauncher` target: a `main.swift` calling `BridgeLauncher.run(funesConfig)`, supporting `--agent`, `headers` and `check`.
 
 ### 2.11 Python MCP harness for Funes · 2 h
 - [x] A `FUNES_MCP_TEST` build with a temporary vault and a fake approval responder.

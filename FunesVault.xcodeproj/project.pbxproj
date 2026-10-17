@@ -9,16 +9,52 @@
 /* Begin PBXBuildFile section */
 		F0000000000000000000B001 /* FunesCore in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D001 /* FunesCore */; };
 		F0000000000000000000B002 /* FunesProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D002 /* FunesProtocol */; };
+		F0000000000000000000B003 /* FunesMCP in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D003 /* FunesMCP */; };
+		F0000000000000000000B004 /* BridgeUI in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D004 /* BridgeUI */; };
+		F0000000000000000000B005 /* BridgeKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D005 /* BridgeKitCore */; };
+		F0000000000000000000B006 /* FunesProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D006 /* FunesProtocol */; };
+		F0000000000000000000B007 /* funes-mcp in Embed Launcher */ = {isa = PBXBuildFile; fileRef = F0000000000000000000A002 /* funes-mcp */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F0000000000000000000B008 /* BridgeKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D007 /* BridgeKitCore */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F0000000000000000000F002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F00000000000000000009001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F00000000000000000004002;
+			remoteInfo = FunesMCPLauncher;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F0000000000000000000E004 /* Embed Launcher */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				F0000000000000000000B007 /* funes-mcp in Embed Launcher */,
+			);
+			name = "Embed Launcher";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		F0000000000000000000A001 /* FunesVault.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FunesVault.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0000000000000000000A002 /* funes-mcp */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "funes-mcp"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F0000000000000000000C001 /* FunesMac */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = FunesMac;
+			sourceTree = "<group>";
+		};
+		F0000000000000000000C002 /* FunesMCPLauncher */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = FunesMCPLauncher;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -30,6 +66,18 @@
 			files = (
 				F0000000000000000000B001 /* FunesCore in Frameworks */,
 				F0000000000000000000B002 /* FunesProtocol in Frameworks */,
+				F0000000000000000000B003 /* FunesMCP in Frameworks */,
+				F0000000000000000000B004 /* BridgeUI in Frameworks */,
+				F0000000000000000000B008 /* BridgeKitCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000E012 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0000000000000000000B005 /* BridgeKitCore in Frameworks */,
+				F0000000000000000000B006 /* FunesProtocol in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -48,6 +96,7 @@
 			isa = PBXGroup;
 			children = (
 				F0000000000000000000C001 /* FunesMac */,
+				F0000000000000000000C002 /* FunesMCPLauncher */,
 			);
 			path = Apps;
 			sourceTree = "<group>";
@@ -56,6 +105,7 @@
 			isa = PBXGroup;
 			children = (
 				F0000000000000000000A001 /* FunesVault.app */,
+				F0000000000000000000A002 /* funes-mcp */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,10 +120,12 @@
 				F0000000000000000000E001 /* Sources */,
 				F0000000000000000000E002 /* Frameworks */,
 				F0000000000000000000E003 /* Resources */,
+				F0000000000000000000E004 /* Embed Launcher */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F0000000000000000000F001 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F0000000000000000000C001 /* FunesMac */,
@@ -82,10 +134,36 @@
 			packageProductDependencies = (
 				F0000000000000000000D001 /* FunesCore */,
 				F0000000000000000000D002 /* FunesProtocol */,
+				F0000000000000000000D003 /* FunesMCP */,
+				F0000000000000000000D004 /* BridgeUI */,
+				F0000000000000000000D007 /* BridgeKitCore */,
 			);
 			productName = FunesMac;
 			productReference = F0000000000000000000A001 /* FunesVault.app */;
 			productType = "com.apple.product-type.application";
+		};
+		F00000000000000000004002 /* FunesMCPLauncher */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F00000000000000000008003 /* Build configuration list for PBXNativeTarget "FunesMCPLauncher" */;
+			buildPhases = (
+				F0000000000000000000E011 /* Sources */,
+				F0000000000000000000E012 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F0000000000000000000C002 /* FunesMCPLauncher */,
+			);
+			name = FunesMCPLauncher;
+			packageProductDependencies = (
+				F0000000000000000000D005 /* BridgeKitCore */,
+				F0000000000000000000D006 /* FunesProtocol */,
+			);
+			productName = "funes-mcp";
+			productReference = F0000000000000000000A002 /* funes-mcp */;
+			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
@@ -98,6 +176,9 @@
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
 					F00000000000000000004001 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					F00000000000000000004002 = {
 						CreatedOnToolsVersion = 27.0;
 					};
 				};
@@ -114,6 +195,9 @@
 			packageReferences = (
 				F00000000000000000007001 /* XCLocalSwiftPackageReference "Packages/FunesCore" */,
 				F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */,
+				F00000000000000000007003 /* XCLocalSwiftPackageReference "Packages/FunesMCP" */,
+				F00000000000000000007004 /* XCLocalSwiftPackageReference "Packages/BridgeUI" */,
+				F00000000000000000007005 /* XCLocalSwiftPackageReference "../bridgekit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F00000000000000000006003 /* Products */;
@@ -121,6 +205,7 @@
 			projectRoot = "";
 			targets = (
 				F00000000000000000004001 /* FunesMac */,
+				F00000000000000000004002 /* FunesMCPLauncher */,
 			);
 		};
 /* End PBXProject section */
@@ -143,7 +228,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F0000000000000000000E011 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F0000000000000000000F001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F00000000000000000004002 /* FunesMCPLauncher */;
+			targetProxy = F0000000000000000000F002 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		F00000000000000000005001 /* Debug */ = {
@@ -233,6 +333,30 @@
 			};
 			name = Release;
 		};
+		F00000000000000000005005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = JVNJ326L7B;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.funesvault.mac.funes-mcp";
+				PRODUCT_NAME = "funes-mcp";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		F00000000000000000005006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = JVNJ326L7B;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.funesvault.mac.funes-mcp";
+				PRODUCT_NAME = "funes-mcp";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -254,6 +378,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		F00000000000000000008003 /* Build configuration list for PBXNativeTarget "FunesMCPLauncher" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F00000000000000000005005 /* Debug */,
+				F00000000000000000005006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -264,6 +397,18 @@
 		F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/FunesProtocol;
+		};
+		F00000000000000000007003 /* XCLocalSwiftPackageReference "Packages/FunesMCP" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FunesMCP;
+		};
+		F00000000000000000007004 /* XCLocalSwiftPackageReference "Packages/BridgeUI" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/BridgeUI;
+		};
+		F00000000000000000007005 /* XCLocalSwiftPackageReference "../bridgekit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../bridgekit;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -277,6 +422,31 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */;
 			productName = FunesProtocol;
+		};
+		F0000000000000000000D003 /* FunesMCP */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007003 /* XCLocalSwiftPackageReference "Packages/FunesMCP" */;
+			productName = FunesMCP;
+		};
+		F0000000000000000000D004 /* BridgeUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007004 /* XCLocalSwiftPackageReference "Packages/BridgeUI" */;
+			productName = BridgeUI;
+		};
+		F0000000000000000000D005 /* BridgeKitCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007005 /* XCLocalSwiftPackageReference "../bridgekit" */;
+			productName = BridgeKitCore;
+		};
+		F0000000000000000000D006 /* FunesProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */;
+			productName = FunesProtocol;
+		};
+		F0000000000000000000D007 /* BridgeKitCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007005 /* XCLocalSwiftPackageReference "../bridgekit" */;
+			productName = BridgeKitCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

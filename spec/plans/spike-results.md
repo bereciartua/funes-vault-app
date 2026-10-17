@@ -343,3 +343,14 @@ The figures marked docs, source, issues or staff come from a desk check on 2026-
 Fallback, unchanged from the plan: if Claude Desktop or Cursor turns out to cut off before ~50 s, make the wait per agent kind (for example 20 s for that client). If several do, return `needs_approval` immediately. Both measured agents handled the immediate-return path well.
 
 **Before closing Q10:** fill the Claude Desktop and Cursor rows, plus Claude Code interactive (`claude_tui.sh approval`), using the spike README checklist. Then mark Q10 decided in [open-questions.md](open-questions.md).
+
+## Phase 0 quick check: EK Bridge's `swiftc` build linking a Swift package
+**Run:** 2026-10-16, Xcode 27.0 (Swift 6.4), macOS 27, M-series Mac. **Status:** **pass**, so ADR-0013 stands; no Xcode project for EK Bridge.
+
+- A toy package (`library` product, an actor, Foundation) built with `swift build -c release --arch arm64 --arch x86_64` gives a universal `libToyKit.a` and `ToyKit.swiftmodule` (both slices) in `.build/out/Products/Release`.
+- `swiftc -target <arch>-apple-macosx14.0 -I <dir> -L <dir> -lToyKit` linked it into a command-line tool per architecture; `lipo -create` made it universal; `codesign --options runtime` with the Developer ID identity signed it and `codesign --verify --strict` passed. `minos` stayed 14.0.
+- Then for real (Phase 2 task 2.5): EK Bridge's `build.sh` links `BridgeKitCore` into the app, `bridge-mcp` and `bridge-client`, universal and signed, and `scripts/check_bundle.sh` passes.
+- **Two traps, both handled in BridgeKit and `scripts/bridgekit.sh`:**
+  - Xcode 26's SwiftPM (the native build system) makes no `.a` for an automatic library product when building one architecture, and keeps modules in `Modules/`. BridgeKitCore's product is declared `.static`, and the script picks the module folder.
+  - In Swift 6 language mode, `MainActor.assumeIsolated` traps when a host drains the main queue with `dispatchMain()` (off the main thread). BridgeKitCore hops with `Task { @MainActor in … }`; test servers run the main run loop.
+
