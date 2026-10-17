@@ -44,9 +44,12 @@ struct Shortcut: Codable, Equatable {
         case kVK_Tab: return "⇥"
         case kVK_Delete: return "⌫"
         case kVK_Escape: return "⎋"
-        case kVK_F1...kVK_F20: return "F\(Int(keyCode) - kVK_F1 + 1)"
         default: break
         }
+        // Function keys' codes aren't in order.
+        let functionKeys = [kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6, kVK_F7, kVK_F8, kVK_F9, kVK_F10, kVK_F11, kVK_F12,
+                            kVK_F13, kVK_F14, kVK_F15, kVK_F16, kVK_F17, kVK_F18, kVK_F19, kVK_F20]
+        if let index = functionKeys.firstIndex(of: Int(keyCode)) { return "F\(index + 1)" }
         guard let source = TISCopyCurrentKeyboardLayoutInputSource()?.takeRetainedValue(),
               let pointer = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else { return "?" }
         let data = Unmanaged<CFData>.fromOpaque(pointer).takeUnretainedValue() as Data

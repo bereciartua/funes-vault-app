@@ -17,7 +17,7 @@ Following EK Bridge's discipline: **tests are the specification for privacy guar
 | Launcher | Python (`launcher_test.py`) | stdio relay, key-file reading, impostor-listener refusal, `headers`, `check` | CI |
 | Companion protocol | Swift Testing + a Python client | Pairing paths, every method, error codes, exactly-once captures with a dropped response, revoked devices | CI |
 | Fuzzing | Swift (libFuzzer-style harness, or randomized property tests) | Envelope decoder, MCP JSON parser, import parsers | Nightly / before release |
-| UI snapshots | `FUNES_UI_REVIEW` build with fake data → PNGs in light and dark | Every main screen and panel | Before release; reviewed by eye |
+| UI snapshots | `FUNES_UI_REVIEW` build with fake data → PNGs in light and dark (`sh scripts/ui_snapshots.sh`, into `build/ui-snapshots`; needs a GUI session and Screen Recording for the terminal) | Every main screen, sheet and panel | Before release; reviewed by eye |
 | UI behaviour | XCTest UI tests (Mac) | Panel arming, keyboard-only flows, VoiceOver labels present | Before release |
 | Live matrix | Manual checklist in `docs/TESTING.md` | Claude Code, Claude Desktop, Cursor, Codex (v0.1); iPhone transport matrix (v0.2) | Each release |
 | Update test | Script (from EK Bridge's `update_test.sh`) | A Sparkle update between two local builds via a local feed | Before each release |
@@ -37,7 +37,7 @@ Following EK Bridge's discipline: **tests are the specification for privacy guar
 ## Test data
 - `Tests/fixtures/memories-200.json`, `queries-30.json` (from Spike 2).
 - Import fixtures: ChatGPT export variants, Claude paste samples, Markdown samples, `funesvault.export.v1`.
-- A demo vault for the iPhone (about 20 memories) and for the Mac UI review build (about 60 memories, 4 agents, about 50 activity rows).
+- A demo vault for the iPhone (about 20 memories) and, for the Mac UI review build and `--dev-seed`, `SampleData` (Apps/FunesMac/App/SampleData.swift): memories in every state (active, expiring, archived, recently deleted), three agents (connected, waiting for its first request, paused), suggestions from every source including a correction, a pending request and the Activity they make.
 
 ## Definition of done (per feature)
 1. Requirements' acceptance criteria are met and the related test vectors are implemented.

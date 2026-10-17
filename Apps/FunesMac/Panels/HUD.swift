@@ -32,7 +32,7 @@ final class HUD {
                     panel.orderOut(nil)
                 } else {
                     NSAnimationContext.runAnimationGroup({ $0.duration = 0.3; panel.animator().alphaValue = 0 },
-                                                         completionHandler: { panel.orderOut(nil) })
+                                                         completionHandler: { MainActor.assumeIsolated { panel.orderOut(nil) } })
                 }
             }
         }

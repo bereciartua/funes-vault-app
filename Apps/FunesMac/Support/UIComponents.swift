@@ -209,23 +209,6 @@ struct PaneHeader<Trailing: View>: View {
     }
 }
 
-extension View {
-    /// Animations only when Reduce Motion is off.
-    func motionAware<V: Equatable>(_ animation: Animation?, value: V) -> some View {
-        modifier(MotionAware(animation: animation, value: value))
-    }
-}
-
-private struct MotionAware<V: Equatable>: ViewModifier {
-    let animation: Animation?
-    let value: V
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    func body(content: Content) -> some View {
-        content.animation(reduceMotion ? nil : animation, value: value)
-    }
-}
-
 /// A user-facing message for a vault error. Never includes memory text: only field names and
 /// pattern types.
 enum ErrorText {

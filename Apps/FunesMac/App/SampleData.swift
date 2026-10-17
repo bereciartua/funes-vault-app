@@ -53,11 +53,11 @@ enum SampleData {
         }
         if let old = try? store.createMemory(MemoryDraft(title: "Old desk setup", body: "Uses a 27-inch display on the left.",
                                                          categoryKeys: ["personal_preferences"]), now: now.addingTimeInterval(-300 * 86_400)) {
-            try? store.archiveMemory(id: old.id, now: now.addingTimeInterval(-20 * 86_400))
+            _ = try? store.archiveMemory(id: old.id, now: now.addingTimeInterval(-20 * 86_400))
         }
         if let gone = try? store.createMemory(MemoryDraft(title: "Gym schedule", body: "Mondays and Thursdays at 7.",
                                                           categoryKeys: ["personal_preferences"]), now: now.addingTimeInterval(-60 * 86_400)) {
-            try? store.deleteMemory(id: gone.id, now: now.addingTimeInterval(-4 * 86_400))
+            _ = try? store.deleteMemory(id: gone.id, now: now.addingTimeInterval(-4 * 86_400))
         }
 
         let (cursor, _) = try await environment.agents.create(

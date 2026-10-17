@@ -106,6 +106,19 @@ struct ActivityList: View {
     var body: some View {
         let rows = activity.rows(scope, now: model.now, labels: labels)
         let selected = rows.first { $0.id == activity.selection }
+        GeometryReader { proxy in
+            list(rows: rows, selected: selected, height: proxy.size.height)
+        }
+        .background(Palette.card)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Palette.separator.opacity(0.6), lineWidth: 0.5))
+        .task(id: model.activityGeneration) { await activity.load() }
+        .onChange(of: model.dataGeneration) { _, _ in Task { await activity.load() } }
+    }
+
+    /// The table, and the selected row's details below it: never more than 45% of the height, so
+    /// the rows stay in view.
+    private func list(rows: [ActivityEntry], selected: ActivityEntry?, height: CGFloat) -> some View {
         VStack(spacing: 0) {
             header
             Divider()
@@ -131,14 +144,9 @@ struct ActivityList: View {
             if let selected {
                 Divider()
                 ActivityInspector(model: model, entry: selected)
-                    .frame(height: 230)
+                    .frame(height: min(230, height * 0.45))
             }
         }
-        .background(Palette.card)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Palette.separator.opacity(0.6), lineWidth: 0.5))
-        .task(id: model.activityGeneration) { await activity.load() }
-        .onChange(of: model.dataGeneration) { _, _ in Task { await activity.load() } }
     }
 
     private var isAgentScope: Bool { if case .agent = scope { true } else { false } }

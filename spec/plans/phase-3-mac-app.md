@@ -54,8 +54,8 @@
 - [x] General, Capture, MCP (port, launcher symlink), Data (backups, export, import, Show in Finder, Erase), Updates (Sparkle), Advanced.
 
 ### 3.10 Accessibility and polish · 2 h
-- [ ] Keyboard navigation everywhere, VoiceOver labels, Increase Contrast, Reduce Motion.
-- [ ] UI snapshot build (`FUNES_UI_REVIEW` with fake data) in light and dark.
+- [x] Keyboard navigation everywhere, VoiceOver labels, Increase Contrast, Reduce Motion.
+- [x] UI snapshot build (`FUNES_UI_REVIEW` with fake data) in light and dark.
 
 ## Exit criteria
 - You (the author) use Funes daily for a week with at least 2 agents, with no blocking bugs.

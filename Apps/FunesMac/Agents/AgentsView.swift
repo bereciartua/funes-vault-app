@@ -157,6 +157,7 @@ struct AgentDetailView: View {
                 HStack(spacing: 6) {
                     Pill(label: AgentText.statusLine(agent, now: model.now, client: model.clientName(agent.id)),
                          tone: AgentText.tone(agent, now: model.now))
+                        .fixedSize()
                     Text(agent.agentKind.setupAgent.displayName).font(.callout).foregroundStyle(.secondary)
                 }
                 if let error { Text(error).font(.callout).foregroundStyle(.red) }

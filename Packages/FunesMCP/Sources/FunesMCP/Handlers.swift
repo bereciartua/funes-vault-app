@@ -77,7 +77,7 @@ extension RequestPipeline {
             let services = self.services, presenter = self.presenter, now = self.now
             Task {
                 if await presenter.askForAccess(prompt) == .alwaysAllow {
-                    try? await services.agents.allowCategory(agentID: agent.id, key, now: now())
+                    _ = try? await services.agents.allowCategory(agentID: agent.id, key, now: now())
                 }
             }
             return outcome

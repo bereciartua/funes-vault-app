@@ -16,6 +16,10 @@ PYTHONPYCACHEPREFIX="$PWD/build/pycache" python3 Tests/mcp/mcp_test.py \
 xcodebuild -project FunesVault.xcodeproj -scheme FunesMac -configuration Debug \
     -destination 'generic/platform=macOS' -derivedDataPath build/DerivedData \
     CODE_SIGNING_ALLOWED=NO SWIFT_EMIT_LOC_STRINGS=YES build -quiet
+# The UI-review build (task 3.10) still compiles; scripts/ui_snapshots.sh runs it.
+xcodebuild -project FunesVault.xcodeproj -scheme FunesMac -configuration Debug \
+    -destination 'generic/platform=macOS' -derivedDataPath build/ui-review \
+    CODE_SIGNING_ALLOWED=NO SWIFT_ACTIVE_COMPILATION_CONDITIONS='DEBUG FUNES_UI_REVIEW' build -quiet
 # Every user-facing string is in the String Catalog (NFR-L10N-01).
 CHECK=1 sh scripts/sync_strings.sh
 echo "test.sh: all green"

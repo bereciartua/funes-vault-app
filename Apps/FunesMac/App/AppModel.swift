@@ -128,14 +128,14 @@ final class AppModel {
     @ObservationIgnored private var observation: AnyObject?
     @ObservationIgnored private var refreshPending = false
 
-    init(services: VaultEnvironment, preferences: Preferences) {
+    init(services: VaultEnvironment, preferences: Preferences, modelSettings: ModelSettings? = nil) {
         self.services = services
         self.preferences = preferences
         vault = VaultModel(services: services)
         inboxState = InboxModel(services: services)
         activity = ActivityModel(services: services)
         checklist = ChecklistModel(preferences: preferences)
-        modelSettings = ModelSettings(defaults: preferences.defaults, keys: ModelSettings.keychain())
+        self.modelSettings = modelSettings ?? ModelSettings(defaults: preferences.defaults, keys: ModelSettings.keychain())
         data = DataOperations(environment: services, preferences: preferences)
         pausedUntil = services.pause.pausedUntil(at: Date())
         observation = services.store.observeChanges { [weak self] in
