@@ -19,8 +19,9 @@ import Testing
         #expect(a.plaintext.hasPrefix("fns_mcp_v1_") && a.plaintext.count == 11 + 64)
         #expect(a.plaintext.dropFirst(11).allSatisfy { "0123456789abcdef".contains($0) })
         #expect(a.digest.count == 32 && issuer.digest(of: a.plaintext) == a.digest)
-        // The scanner keeps Funes keys out of the vault.
-        #expect(SecretScanner.scan(a.plaintext) == [.funesOrEKBKey])
+        // The scanner keeps Funes keys out of the vault. (Random hex can also hold a Luhn-valid
+        // digit run, so the key may match `creditCard` too.)
+        #expect(SecretScanner.scan(a.plaintext).contains(.funesOrEKBKey))
     }
 
     @Test func createStoresOnlyTheDigest() async throws {

@@ -1,10 +1,21 @@
 name: CI
 
+# Kept cheap while the repo is private (macOS minutes count 10x): pull requests that touch
+# code, and manual runs. No run on push to main, since every change lands through a tested PR.
+# Spec, spike and Markdown-only changes don't run CI. The workflow can also be paused entirely
+# with `gh workflow disable CI` (and resumed with `gh workflow enable CI`).
 on:
   pull_request:
-  push:
-    branches: [main]
+    paths-ignore:
+      - "spec/**"
+      - "spikes/**"
+      - "**/*.md"
   workflow_dispatch:
+    inputs:
+      all_toolchains:
+        description: "Also test on Xcode 26.6 (do this before a release)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -19,16 +30,12 @@ jobs:
     # No secrets: package tests, the log-privacy check and an unsigned build. The bundled
     # embedding model (ADR-0016) is fetched from Hugging Face at a pinned revision, converted,
     # checksummed and cached, so the search regression runs against the real model.
-    # Same toolchains as EK Bridge: 27.0 (the release Mac; a GitHub preview
-    # image) and 26.6 (the previous major release).
+    # Xcode 27.0 (the release Mac; a GitHub preview image) always; 26.6 (the previous major
+    # release, as in EK Bridge) only on a manual run with all_toolchains.
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - xcode: "27.0"
-            runner: xcode-27
-          - xcode: "26.6"
-            runner: macos-26
+        include: ${{ fromJSON(inputs.all_toolchains && '[{"xcode":"27.0","runner":"xcode-27"},{"xcode":"26.6","runner":"macos-26"}]' || '[{"xcode":"27.0","runner":"xcode-27"}]') }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     env:
