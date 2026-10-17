@@ -71,10 +71,10 @@
 - Acceptance: evaluation compares against the current time at decision time; no background job is required.
 
 **FR-V-10 Search** · M · v0.1
-- Keyword search (FTS5 with English stemming) in v0.1. Hybrid search with semantic similarity comes later, when the user picks an embedding model (FR-AI-01, ADR-0015).
+- Hybrid search: keyword matching (FTS5 with English stemming) plus semantic similarity from the bundled on-device embedding model (FR-AI-01, ADR-0016).
 - Acceptance:
   - Results within 150 ms for a 10,000-memory vault on an M1.
-  - Once embeddings exist: queries that look like secrets skip semantic embedding, as in the web version.
+  - Queries that look like secrets skip semantic embedding, as in the web version.
 
 **FR-V-11 Filters and sort** · M · v0.1
 - Filter by category, kind, sensitivity, status (active, archived, expired, recently deleted) and source. Sort by updated, created or title.
@@ -210,7 +210,8 @@
   2. retrieval;
   3. per-memory checks;
   4. overall decision.
-- Acceptance: the result is identical for any `purpose` or `task` wording, given the same retrieved candidates. This is tested.
+- Acceptance: the result is identical for any `purpose`, `task` or `keywords` wording, given the same retrieved candidates. This is tested.
+- `keywords` (optional, ≤ 20 × 1–60) are appended to the task for retrieval only, kept in memory like the task, and shown with the task on the approval panel (ADR-0016).
 
 **FR-D-02 Share without asking** · M · v0.1
 - If the decision is ALLOW (ask before sharing is off), the bundle returns immediately and the disclosure is logged.
@@ -473,8 +474,9 @@
 
 ### Intelligence (FR-AI)
 
-**FR-AI-01 Embeddings** · S · later (ADR-0015)
-- Opt-in. Embeddings for active memories, computed with the embedding model the user chose (default: off; Apple's on-device embeddings failed Spike 2). Must beat the keyword baseline on the Spike 2 benchmark. Embeddings are recomputed when the title or body changes, and stored on the Mac only.
+**FR-AI-01 Embeddings** · M · v0.1
+- Embeddings for active memories, computed on the Mac with the bundled `bge-small-en-v1.5` Core ML model (ADR-0016), recomputed when the title or body changes, and stored on the Mac only. Choosing another embedding model comes later (FR-AI-11).
+- Acceptance: on the Spike 2 benchmark, hybrid recall@5 ≥ 0.92 with agent keywords and ≥ 0.68 on raw tasks; if the model can't load, search continues keyword-only. Embeddings are recomputed when the title or body changes, and stored on the Mac only.
 
 **FR-AI-02 Classification** · S · v0.1
 - See FR-C-04.
@@ -486,7 +488,7 @@
 - claude.ai and ChatGPT connectors via EK Bridge's OAuth 2.1 and tunnel code.
 
 **FR-AI-05 Choose models per task** · M · v0.1
-- Settings ▸ AI Models has one row per task (Classification in v0.1; later Embeddings and Consolidation), each with a provider and a model.
+- Settings ▸ AI Models has one row per task (Embeddings, built in with no choice in v0.1; Classification; later Consolidation), each with a provider and a model.
 - **Providers:** Apple on-device (default), Apple Private Cloud Compute, Ollama, LM Studio, OpenAI, Anthropic, Google Gemini, OpenRouter, and custom OpenAI-compatible endpoints.
 - Acceptance:
   - The defaults send nothing off the Mac.
@@ -503,22 +505,22 @@
 - Acceptance:
   - Nothing above the limit, and no secret-scanner match, is ever sent to a non-local provider (tested with request capture).
   - Captures are pre-screened on the device before cloud classification.
-  - Once embeddings exist: with a cloud embedding model, memories above the limit are keyword-only, and the vault shows this.
+  - Later, with a cloud embedding model, memories above the limit are keyword-only, and the vault shows this.
 
 **FR-AI-08 Disclosure of model use** · M · v0.1
 - Under each non-local choice, a plain sentence says what is sent where. For example: "Search embeddings send memory text (up to Internal), your searches and agents' task descriptions to OpenAI."
 - Inbox cards show which engine proposed their fields.
 
-**FR-AI-09 Agent task text and cloud embeddings** · M · later (with FR-AI-01)
+**FR-AI-09 Agent task text and cloud embeddings** · M · later (ADR-0016)
 - When the embedding model is in the cloud, a switch controls whether agents' task text is embedded with it (default on, stated in the disclosure). When off, agent retrieval is keyword-only.
 
 **FR-AI-10 Fallbacks** · M · v0.1
 - If a provider fails, times out or returns invalid output:
   - classification falls back to on-device, then to rules;
-  - embedding queries fall back to keyword-only (once embeddings exist).
+  - embedding queries fall back to keyword-only.
 - Acceptance: capture, the Inbox and MCP requests never wait more than the provider timeout (embeddings 10 s, generation 20 s), and never fail because of a provider.
 
-**FR-AI-11 Switch the embedding model** · M · later (with FR-AI-01)
+**FR-AI-11 Switch the embedding model** · M · later (ADR-0016)
 - Changing the embedding model re-embeds the vault in the background, with progress and cancel. Search uses the old vectors until the new set is complete. Thresholds are per model, with **Calibrate** for unknown models.
 
 **FR-AI-12 Usage counters** · S · v0.1
@@ -586,7 +588,7 @@
 - **NFR-PERF-01:** `request_memory` evaluation and bundle in under 300 ms at p95 with 10,000 memories, excluding approval wait.
 - **NFR-PERF-02:** vault search in under 150 ms at p95 with 10,000 memories.
 - **NFR-PERF-03:** cold launch to menu bar ready in under 1 s. Idle memory under 150 MB, idle CPU about 0%.
-- **NFR-PERF-04** (once embeddings exist): embedding a new or edited memory in under 200 ms, asynchronously.
+- **NFR-PERF-04:** embedding a new or edited memory in under 200 ms, asynchronously (Spike 2b: about 5 ms with bge-small Core ML).
 - **NFR-PERF-05:** an iPhone capture saved locally in under 200 ms. Delivery of 100 queued captures in under 3 s on Wi-Fi.
 
 ### Reliability (NFR-REL)

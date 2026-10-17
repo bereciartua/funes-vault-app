@@ -33,40 +33,48 @@ Everything here runs on the Mac. By default, AI tasks use **Apple's on-device mo
 - **False positives:** the user can't override a match in v0.1. A match that is genuinely not a secret is a scanner bug to fix with a test.
 - **Search queries** that match a pattern skip embedding and are never logged.
 
-## 2. Embeddings and semantic search (after v0.1)
+## 2. Embeddings and semantic search
 
-> **v0.1 has no embeddings** ([ADR-0015](../architecture/decisions/0015-keyword-search-first.md)). Search is keyword-only (§3), and `semantic` is 0 everywhere. Spike 2 found Apple's on-device embeddings add about +0.02 recall@5 over keyword search. This section describes the opt-in that comes later.
+Decision: [ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md), from [Spike 2b](../plans/spike-results.md#spike-2b-local-open-source-embeddings).
 
-- **Model:** user-selectable (Settings ▸ AI Models ▸ Embeddings); see [model providers](../architecture/model-providers.md).
-  - **Default:** **Off** (keyword only). Apple NaturalLanguage was the planned default, but failed Spike 2.
-  - **Options:** possibly a small open model bundled as Core ML (if a Spike 2b clears the bar), or any OpenAI-compatible `/v1/embeddings` model, local (Ollama, LM Studio) or cloud (OpenAI, Gemini, OpenRouter, custom).
-  - **Normalization:** all vectors are L2-normalized by Funes, so similarity is a plain dot product, whatever the provider.
-  - **One embedding model is active at a time.** Switching re-embeds in the background ([model providers §7](../architecture/model-providers.md#7-switching-the-embedding-model)).
-  - **Cloud limit:** with a cloud embedding model, memories above the cloud sensitivity limit get no vector and are found by keyword only.
-- **Input text:** `"<title>\n<kind>\n<category names>\n<body>"`, truncated to the model's token limit (256 tokens). For long bodies, embed the first 256 tokens.
-- **Storage:** an `embedding` table holding `memoryId`, `modelId`, `dims`, the vector as a Float32 blob, and `contentHash`. It is recomputed when the hash changes or the model id changes, for example after an OS update.
+- **Model (v0.1):** `bge-small-en-v1.5` (BAAI, MIT), **bundled in the app as Core ML**.
+  - **Format:** fp16 ML Program, 384 dims, about 64 MB. CLS pooling and L2 normalization are inside the model.
+  - **Runtime:** `MLComputeUnits.cpuOnly`: 3.6 ms per query and 4.7 ms per memory on an M1.
+  - **Tokenizer:** a WordPiece tokenizer in FunesCore (no dependency), with the model's bundled vocabulary. It must match Hugging Face's token ids on the fixture texts.
+  - **Model id:** `bge-small-en-v1.5/coreml-fp16`.
+  - **Later:** choosing another embedding model (Ollama such as `nomic-embed-text`, LM Studio, or a cloud model) in Settings ▸ AI Models ▸ Embeddings, with re-embedding and calibration ([model providers](../architecture/model-providers.md)). Not in v0.1.
+  - **Normalization:** all vectors are L2-normalized, so similarity is a plain dot product, whatever the provider.
+  - **One embedding model is active at a time.** Switching (later) re-embeds in the background ([model providers §7](../architecture/model-providers.md#7-switching-the-embedding-model)).
+  - **Cloud limit (later, cloud models only):** memories above the cloud sensitivity limit get no vector and are found by keyword only.
+- **Input text:**
+  - **Memories:** `"<title>\n<kind>\n<category names>\n<body>"`, truncated to 256 tokens.
+  - **Queries:** bge's retrieval instruction prefix plus the query text (for agents: the task plus any `keywords`).
+- **Storage:** an `embedding` table holding `memoryId`, `modelId`, `dims`, the vector as a Float32 blob, and `contentHash`. A vector is recomputed when the hash or the model id changes, for example when an app update ships a new model version.
 - **Which memories:** all `active` memories. Archived memories keep their vector for fast restore; deleted ones lose it when purged.
-- **Query:** embed the query once, then compute a brute-force dot product over all active vectors. At 10,000 × 768 Float32 that is about 30 MB and takes milliseconds (Spike 2 measured under 1 ms for 10,000 × 512) with Accelerate (`vDSP_dotpr`) or a single matrix–vector multiply.
-- **Fallback:** if the embedding model is unavailable (missing language assets), semantic = 0 and search is keyword-only. The UI shows nothing; this is an implementation detail.
+- **Initial embedding:** on first launch, after an import, or after a model change, missing vectors are computed in the background (about 47 s for 10,000 memories). Until a memory has a vector, its `semantic` is 0.
+- **Query:** embed the query once, then a brute-force dot product over all active vectors (`vDSP_mmul` over 10,000 × 384: under 1 ms). No approximate index is needed at this scale.
+- **Fallback:** if the model can't load, `semantic` = 0 and search is keyword-only. It never blocks or fails a request. The failure is logged (no content) and shown in Settings ▸ AI Models.
 
 ## 3. Keyword search
 - **FTS5** virtual table over the title and body, using the `porter unicode61 remove_diacritics 2` tokenizer: English stemming on top of `unicode61`, worth +0.11 recall@5 in Spike 2. Other languages tokenize without stemming.
-- **Query:** the task or search text becomes an OR query of its non-stopword terms.
+- **Query:** the search text, or the task plus any `keywords`, becomes an OR query of its non-stopword terms.
 - **Prefix search** for the vault UI ("pnp*").
 - **Normalization:** BM25 scores are normalized per query, dividing by the best score, to get `keyword ∈ [0,1]`.
 
 ## 4. Ranking
-**In v0.1, `semantic` is always 0**, so `score = 0.45 × keyword` and results are ordered by keyword score. Keyword-only search is equivalent, and the formula stays ready for embeddings.
-
-- **Vault search (UI):**
-  - `score = 0.45 × keyword + 0.55 × semantic`;
-  - keep a result if `keyword > 0` or `semantic ≥ 0.30` (the web version's vault threshold);
-  - filters apply before ranking.
-- **Agent retrieval:** see [access policy §3.2](access-policy.md#32-retrieval-which-memories-are-relevant). The rule is the same, with a 0.35 semantic threshold and the top 30.
-- **Tuning:** thresholds are stored **per embedding model id**.
-  - For supported models, they're measured with the [Spike 2](../plans/spike-results.md#spike-2-search-quality-and-speed) 200-memory and 30-query benchmark, and kept as constants with tests. (For Apple's centered `NLContextualEmbedding`, Spike 2 measured 0.20 / 0.25; it isn't offered.)
-- **Regression baseline (v0.1):** FTS5 porter recall@5 ≥ 0.56 on that benchmark. Any embedding option must beat it.
-  - Unknown models use top-K semantic candidates (K = 10) plus all keyword hits, until the user runs **Calibrate** ([model providers §8](../architecture/model-providers.md#8-calibration-thresholds-per-model)).
+- **Formula (vault search and agent retrieval):** `score = 0.30 × keyword + 0.70 × semantic`.
+  - `semantic` is the query–memory cosine, **min-max normalized over the candidate pool for this query**: `(cos − min) / (max − min)`, or 0 if `max = min`.
+  - Modern models compress cosines (bge: unrelated memories around 0.45, relevant ones around 0.64), so raw-cosine fusion lets the keyword term dominate. Min-max 0.30/0.70 was the best or tied for best for every open model in Spike 2b.
+- **Keeping candidates:** keep a memory if `keyword > 0`, or its **raw** cosine ≥ the model's threshold.
+  - **Thresholds for `bge-small-en-v1.5/coreml-fp16`:** vault **0.50**, retrieval **0.55**.
+  - **Keyword floor:** broad agent keywords match many memories (about 17% of the vault per query in Spike 2b), so Phase 1 sets a minimum normalized keyword score on the benchmark.
+- **Vault search (UI):** filters apply before ranking.
+- **Agent retrieval:** see [access policy §3.2](access-policy.md#32-retrieval-which-memories-are-relevant): the same rule, with the retrieval threshold and the top 30.
+- **Tuning:** thresholds are stored **per embedding model id** and measured with the 200-memory and 30-query benchmark (raw and agent-expanded queries), kept as constants with tests.
+  - Unknown models (later) use top-K semantic candidates (K = 10) plus all keyword hits, until the user runs **Calibrate** ([model providers §8](../architecture/model-providers.md#8-calibration-thresholds-per-model)).
+- **Regression baselines** (Spike 2b, re-measured in FunesCore before freezing):
+  - hybrid recall@5 ≥ 0.92 on `queries-30-expanded`, and ≥ 0.68 on raw `queries-30`;
+  - keyword-only (the fallback path) ≥ 0.82 on `queries-30-expanded`.
 
 ## 5. Classification of captures and suggestions
 **Goal:** make Inbox review fast by proposing a title, kind, categories and sensitivity. It **never** auto-applies.
@@ -121,12 +129,12 @@ All imports create **suggestions** (`origin = import`, with an `importRunId`) af
 | Markdown | `.md` file | `#`/`##` headings map to categories by name (case-insensitive, otherwise "unmatched", reviewed per item). Bullets and paragraphs become items |
 | Funes export | `funesvault.export.v1` JSON | Categories (created if missing) and memories, as suggestions by default or as active memories after confirmation |
 
-**Preview:** total items, likely duplicates (normalized exact match; plus semantic ≥ 0.92 once embeddings exist), items blocked by the secret scanner, and items over the length limit (split or truncated, the user's choice).
+**Preview:** total items, likely duplicates (normalized exact match, or raw cosine ≥ 0.92; re-check this threshold for bge-small in Phase 1), items blocked by the secret scanner, and items over the length limit (split or truncated, the user's choice).
 
 ## 8. Duplicate hint
 On create or apply, show "Similar memory exists" if:
 - the normalized title and body (lowercase, whitespace collapsed) equal those of an active memory; or
-- semantic similarity is ≥ 0.92 (only when an embedding model is active; after v0.1).
+- the raw cosine similarity is ≥ 0.92 (re-check this threshold for bge-small in Phase 1).
 
 It's a hint only.
 

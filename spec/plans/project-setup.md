@@ -57,6 +57,7 @@
 | BridgeKit (own) | Shared protocol and security core with EK Bridge | SwiftPM **exact** version tag |
 | GRDB.swift | SQLite, migrations, FTS5, backups | SwiftPM exact version |
 | Sparkle 2.x | Updates (Mac app only) | SwiftPM exact version + checksum (or EK Bridge's download script) |
+| bge-small-en-v1.5 (BAAI, MIT): bundled model asset, not a package | The on-device embedding model ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md)) | Pinned Hugging Face revision + SHA-256, converted to Core ML by `scripts/fetch_embedding_model.sh`; not committed |
 
 **Nothing else.** CryptoKit, NaturalLanguage, FoundationModels, Network, VisionKit, CoreImage, AppIntents and BackgroundTasks are system frameworks.
 

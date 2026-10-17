@@ -12,7 +12,7 @@
 ### 1.1 Models and enums (FunesProtocol + FunesCore) · 2 h
 - [ ] Enums: `MemoryKind`, `Sensitivity` (ordered, `Comparable`), `Operation`, `Retention`, `DisclosureStatus`, `SuggestionStatus`, `ReasonCode`, `MemorySource`, `SuggestionOrigin`.
 - [ ] Value types: `Memory`, `Category`, `Suggestion`, `Agent`, `Access`, `Disclosure`, `DisclosureItem`, `Device`, `ProvenanceEntry`.
-- [ ] `InputLimits` constants (title 180, body 10,000, task 1,000, purpose 160, evidence 2,000, categories 12/24, processors 12×120, tokens 100–8,000, default 1,200).
+- [ ] `InputLimits` constants (title 180, body 10,000, task 1,000, keywords 20×60, purpose 160, evidence 2,000, categories 12/24, processors 12×120, tokens 100–8,000, default 1,200).
 
 ### 1.2 Store (GRDB) · 4 h
 - [ ] `VaultStore` with a `DatabasePool`, the migrator and `v1_initial` (the [schema](../architecture/storage.md#2-schema-v1)).
@@ -25,10 +25,14 @@
 - [ ] The [patterns](../domain/memory-processing.md#1-secret-scanner), including the Luhn check.
 - [ ] Tests: positive and negative samples per pattern, plus 20 realistic non-secret memories that must pass.
 
-### 1.4 Keyword search · 2 h ([ADR-0015](../architecture/decisions/0015-keyword-search-first.md))
-- [ ] FTS5 query building: the task or search text → an OR query of its non-stopword terms (plus prefix terms for as-you-type vault search); BM25 normalized by the best score ([memory processing §3](../domain/memory-processing.md#3-keyword-search)).
-- [ ] `SearchService.vaultSearch(query, filters)` and `retrieve(task, categories)`, keyword-only (`semantic` = 0), keeping the hybrid formula's shape so embeddings can slot in later. No `Embedder` or `EmbeddingIndex` in v0.1.
-- [ ] Tests: the memories-200 and queries-30 benchmark as a regression: FTS5 porter recall@5 ≥ 0.56 (re-measure here before freezing).
+### 1.4 Search and embeddings · 5 h ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md))
+- [ ] `scripts/fetch_embedding_model.sh`: download `BAAI/bge-small-en-v1.5` at a pinned revision, verify SHA-256, convert with coremltools (fp16 ML Program, CLS pooling + L2 normalization inside, enumerated lengths 16–256), verify the output checksum; cache outside git (start from `spikes/embeddings/`). Try int8 weights; keep only if recall holds.
+- [ ] `WordPieceTokenizer` (port the spike's): matches Hugging Face ids on every fixture text.
+- [ ] `Embedder` protocol; `BundledBGEEmbedder` (Core ML, `cpuOnly`, query prefix) and a deterministic `FakeEmbedder` for tests.
+- [ ] `EmbeddingIndex`: load vectors, `vDSP_mmul` over all active vectors, update on change; background embedding of missing vectors.
+- [ ] FTS5 query building: the search text, or task + `keywords`, → an OR query of its non-stopword terms (plus prefix terms for as-you-type vault search); BM25 normalized by the best score ([memory processing §3](../domain/memory-processing.md#3-keyword-search)).
+- [ ] `SearchService.vaultSearch(query, filters)` and `retrieve(task, keywords, categories)`: min-max 0.30/0.70 fusion, raw-cosine thresholds 0.50 / 0.55, a keyword floor tuned on the benchmark ([memory processing §4](../domain/memory-processing.md#4-ranking)).
+- [ ] Tests: the memories-200 / queries-30 / queries-30-expanded benchmark as a regression: hybrid R@5 ≥ 0.92 expanded and ≥ 0.68 raw; keyword-only (model unavailable) ≥ 0.82 expanded (re-measure here before freezing). The model-dependent tests skip with a clear message when the model isn't fetched; CI fetches it.
 
 ### 1.5 PolicyEngine · 3 h
 - [ ] Pure functions:
@@ -63,7 +67,7 @@
 - [ ] Tests: the revision bumps on every change; a removed agent can't authenticate.
 
 ### 1.9b Model providers · 4 h
-- [ ] `GenerationProvider` protocol (and `EmbeddingProvider` as a protocol only, for later), plus `ModelRouter` (task → provider, timeouts, fallbacks, usage counters) ([model providers](../architecture/model-providers.md)).
+- [ ] `GenerationProvider` and `EmbeddingProvider` protocols (the bundled embedder implements the latter; other embedding providers later), plus `ModelRouter` (task → provider, timeouts, fallbacks, usage counters) ([model providers](../architecture/model-providers.md)).
 - [ ] `AppleFoundationGenerator` (default) and `RulesClassifier`.
 - [ ] `OpenAICompatibleClient` (chat with JSON-schema output; model list; embeddings later) and `AnthropicClient` (Messages API; structured output).
 - [ ] Guardrails: the secret scanner on outgoing text; the cloud sensitivity limit; the capture pre-screen; locality detection (loopback or private address = local).
@@ -78,5 +82,5 @@
 
 ## Exit criteria
 - `swift test` passes on both packages; every policy test vector is implemented and green.
-- The Spike 2 benchmark's keyword recall@5 is at or above the recorded baseline (0.56).
+- The Spike 2b benchmark baselines hold: hybrid R@5 ≥ 0.92 (expanded) and ≥ 0.68 (raw); keyword-only ≥ 0.82 (expanded).
 - No `import AppKit` or `import SwiftUI` in FunesCore or FunesProtocol.

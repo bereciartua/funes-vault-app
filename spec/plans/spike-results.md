@@ -137,7 +137,7 @@ With the spike plan's fallback, the Apple-only stack gets to 0.74 with expansion
 
 Recommendation: **1, then 2.** On these fixtures the weakness is the embedding, not the ranking formula, and a small modern embedding model is the cheapest fix that keeps everything on the Mac and under 150 ms.
 
-### Decision (2026-10-16)
+### Decision (2026-10-16; superseded by Spike 2b, see below)
 **Keyword search for v0.1; semantic search later as an opt-in** ([ADR-0015](../architecture/decisions/0015-keyword-search-first.md)). This is close to option 3, without Foundation Models expansion.
 - **v0.1 search:** FTS5 BM25 with the `porter unicode61 remove_diacritics 2` tokenizer, for both vault search and agent retrieval. There are no embeddings, so `semantic` is 0.
 - **Regression baseline:** FTS5 porter recall@5 ≥ 0.56 on these fixtures (Phase 1 task 1.4).
@@ -245,7 +245,10 @@ Measured: **Spanish tasks against English memories** (cross-lingual). English-on
 
 On these fixtures, "keyword-only plus agent keywords" (0.83) is a solid v0.1 baseline. "bge-small Core ML hybrid plus agent keywords" (0.94) is the version that clears the bar.
 
-### Spec changes this implies (not made here)
+### Decision (2026-10-17)
+**v0.1 ships bundled bge-small-en-v1.5 (Core ML, CPU), min-max 0.30/0.70 fusion, and an optional `keywords` field on `request_memory`** ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md), superseding ADR-0015). The spec changes below were made with that ADR. Multilingual embeddings and other embedding models are later.
+
+### Spec changes this implied (made with ADR-0016)
 1. **[ADR-0015](../architecture/decisions/0015-keyword-search-first.md):** either keep v0.1 keyword-only and add `keywords`, or ship bundled bge-small Core ML by default (needs a new or amended ADR, and an update to AGENTS.md's dependency list, since it's a bundled third-party asset).
 2. **[MCP server](../architecture/mcp-server.md) and [access policy §3.2](../domain/access-policy.md#32-retrieval-which-memories-are-relevant):** an optional `keywords: [string]` on `request_memory`, appended to the task text for retrieval (and, like the task, never stored); the hybrid formula with min-max semantic and 0.30/0.70.
 3. **[Memory processing §2–4](../domain/memory-processing.md#2-embeddings-and-semantic-search):** the default model `bge-small-en-v1.5` (Core ML fp16, CPU, 384 dims, CLS pooling, the query instruction prefix, WordPiece); fusion; per-model thresholds 0.50 / 0.55; mean-centering only for Apple's model.

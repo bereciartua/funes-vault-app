@@ -1,6 +1,6 @@
 # ADR-0014: User-selectable AI models, on-device by default
 
-**Status:** Accepted · 2026-10-16 · **Supersedes** [ADR-0005](0005-on-device-intelligence.md) · **Amended by** [ADR-0015](0015-keyword-search-first.md): v0.1 ships model choice for classification only; embeddings come later, off by default
+**Status:** Accepted · 2026-10-16 · **Supersedes** [ADR-0005](0005-on-device-intelligence.md) · **Amended by** [ADR-0016](0016-bundled-bge-small-embeddings.md): the default embedding model is bundled bge-small (Core ML), not Apple NaturalLanguage; choosing another embedding model comes after v0.1
 
 **Context.**
 - **Where Funes uses AI:**

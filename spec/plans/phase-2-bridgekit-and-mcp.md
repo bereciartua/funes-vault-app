@@ -44,7 +44,8 @@
 - [ ] Create `Packages/BridgeUI` and copy the tier-2 files ([reuse §2](../architecture/ek-bridge-reuse.md#2-tier-2-copied-into-funes-packagesbridgeui-extracted-as-bridgekitui-after-funes-v01)), recording their source commits in `PROVENANCE.md`.
 
 ### 2.7 Tool contract · 2 h
-- [ ] `Resources/mcp-tools.json`: server instructions, the 5 tools, schemas, annotations ([MCP spec](../architecture/mcp-server.md#6-tools)).
+- [ ] `Resources/mcp-tools.json`: server instructions, the 5 tools, schemas, annotations ([MCP spec](../architecture/mcp-server.md#6-tools)), including the optional `keywords` on `request_memory` and the description asking for them ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md)).
+- [ ] Live check: record whether Claude Code, Claude Desktop, Cursor and Codex send `keywords`, and sample what they send; tune the description from that.
 - [ ] Golden fixture and a byte-for-byte test. Implement `visibleTools(access:)`.
 
 ### 2.8 Handlers and pipeline · 5 h

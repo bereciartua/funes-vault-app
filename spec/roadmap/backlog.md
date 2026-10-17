@@ -19,8 +19,9 @@ Epics map requirements to phases.
 | VaultStore + schema v1 + migrations + FTS triggers + backups | FR-V-01..04, NFR-REL-01/02 | 1 | M | M |
 | Categories (built-in seed) | FR-V-05 | 1 | S | M |
 | Secret scanner | NFR-SEC-06 | 1 | S | M |
-| Keyword search (FTS5 porter) + Spike 2 recall regression | FR-V-10 | 1 | M | S |
-| Embeddings + index + hybrid search (opt-in) | FR-AI-01, FR-AI-09, FR-AI-11 | later | S | M |
+| Hybrid search: FTS5 porter + bundled bge-small Core ML (WordPiece, index, min-max fusion) + Spike 2b recall regression | FR-V-10, FR-AI-01 | 1 | M | M |
+| `keywords` on `request_memory` (schema, retrieval, panel) | FR-D-01 | 2 | M | S |
+| Choose another embedding model, re-embedding, calibration | FR-AI-09, FR-AI-11 | later | S | M |
 | Model providers for classification: protocols, ModelRouter, Apple / OpenAI-compatible / Anthropic adapters, guardrails, Keychain keys | FR-AI-05..08, 10 | 1 | M | M |
 | Provenance | FR-V-12 | 1 | S | M |
 

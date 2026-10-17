@@ -1,6 +1,6 @@
 # ADR-0015: Keyword search in v0.1; semantic search later, as an embedding model the user chooses
 
-**Status:** Accepted · 2026-10-16 · **Amends** [ADR-0014](0014-user-selectable-models.md) (its embeddings half moves after v0.1)
+**Status:** **Superseded** by [ADR-0016](0016-bundled-bge-small-embeddings.md) (2026-10-17) · was Accepted 2026-10-16 · Amended [ADR-0014](0014-user-selectable-models.md)
 
 **Context.**
 - **Phase 0 Spike 2** (results in [spike results](../../plans/spike-results.md#spike-2-search-quality-and-speed)) measured search over 200 synthetic memories and 30 agent-style queries, against a target of recall@5 ≥ 0.85:

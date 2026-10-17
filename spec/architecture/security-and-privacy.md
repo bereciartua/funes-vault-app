@@ -67,7 +67,7 @@
 | Memory text released to an agent | The agent, then its AI provider | Only on ALLOW or the user's approval |
 | Update check (app version, OS version, as Sparkle sends) | GitHub Releases | Daily, if automatic checks are on |
 | Companion responses (encrypted) | The paired iPhone, possibly through a tunnel | When the phone asks |
-| Memory text (up to the cloud limit), search queries and agents' task text | The **embedding** provider the user chose, if it isn't on the device (after v0.1; off by default, [ADR-0015](decisions/0015-keyword-search-first.md)) | Only after the user picks it; the disclosure is shown in Settings |
+| Memory text (up to the cloud limit), search queries and agents' task text | The **embedding** provider the user chose, if it isn't on the device (after v0.1; v0.1 embeds on the Mac with the bundled model, [ADR-0016](decisions/0016-bundled-bge-small-embeddings.md)) | Only after the user picks it; the disclosure is shown in Settings |
 | Capture, suggestion and import text (up to the cloud limit, after an on-device pre-screen) | The **classification** provider the user chose, if it isn't on the device | Same |
 | Memory pairs (up to the cloud limit) | The **consolidation** provider (v0.3) | Same |
 | Nothing else | — | No analytics, no crash reporting, no accounts |

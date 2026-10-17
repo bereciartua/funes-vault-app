@@ -8,7 +8,7 @@ flowchart LR
         Agents["AI agents<br/>Claude Code · Claude Desktop · Cursor · Codex · …"]
         Launcher["funes-mcp<br/>(stdio launcher)"]
         App["FunesVault.app<br/>menu bar app"]
-        DB[("Vault<br/>SQLite + FTS5")]
+        DB[("Vault<br/>SQLite + FTS5<br/>+ embeddings")]
         KeyFiles["Agent key files<br/>0600"]
         Act["Activity log<br/>JSONL"]
     end
@@ -27,7 +27,7 @@ flowchart LR
     iOS --> Q
     iOS -- "Companion API :47626<br/>signed + HPKE-encrypted<br/>LAN · Tailscale · tunnel" --> App
     App -. "Sparkle update check" .-> GitHub[(GitHub Releases)]
-    App -. "optional, user-chosen: classification (embeddings later)<br/>(guardrails: secret scan, cloud sensitivity limit)" .-> Providers[(AI model providers<br/>local server or cloud)]
+    App -. "optional, user-chosen: classification (other embedding models later)<br/>(guardrails: secret scan, cloud sensitivity limit)" .-> Providers[(AI model providers<br/>local server or cloud)]
 ```
 
 **Trust boundaries:**
@@ -46,7 +46,7 @@ flowchart LR
 | **App services** | `RequestPipeline` (gate → rate limit → handler → approvals → activity), `ApprovalCenter`, `AccessRequests`, `ActivityStore`, `AgentSetup`/`AgentConfigWriter`, `Updater` (Sparkle), `AppMover`, `LoginItem`, `HotKey`, `ServicesProvider`, `Notifications` | **BridgeUI** (copied from EK Bridge) on top of **BridgeKitCore** |
 | **MCP adapter** | `LoopbackHTTPServer`, `MCPServer` (JSON-RPC, protocol versions), `MCPToolCatalog` (JSON contract), `FunesToolHandlers` | **BridgeKitCore** (shared library) + new handlers |
 | **Companion adapter** (v0.2) | `CompanionServer` (HTTP listener on 47626), `PairingService`, `DeviceRegistry`, `EnvelopeCrypto` (HPKE + P-256 signatures), `BonjourAdvertiser` | New, with BridgeKitCore HTTP parts |
-| **FunesCore** (package) | `VaultStore` (GRDB), `PolicyEngine`, `Retrieval`, `BundleCompiler`, `DisclosureService`, `SuggestionService`, `CaptureService`, `ImportExport`, `Classifier`, `Provenance`, **`Models`** (`ModelRouter`, Apple, OpenAI-compatible and Anthropic providers; see [model providers](model-providers.md)) | New, porting the web version's rules |
+| **FunesCore** (package) | `VaultStore` (GRDB), `PolicyEngine`, `Retrieval`, `BundleCompiler`, `DisclosureService`, `SuggestionService`, `CaptureService`, `ImportExport`, `Embeddings` (bundled bge-small Core ML, WordPiece tokenizer, vector index), `Classifier`, `Provenance`, **`Models`** (`ModelRouter`, Apple, OpenAI-compatible and Anthropic providers; see [model providers](model-providers.md)) | New, porting the web version's rules |
 | **FunesProtocol** (package, shared with iOS) | Companion request and response types, envelope format, `SecretScanner`, input limits, enums | New |
 
 ### funes-mcp (launcher, inside `FunesVault.app/Contents/MacOS/`)

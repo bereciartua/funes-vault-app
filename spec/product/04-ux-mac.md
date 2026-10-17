@@ -157,7 +157,7 @@ A card at the top of the Vault:
 - **General:** launch at login, show in Dock, notifications.
 - **Capture:** hotkey, default sensitivity for captures, classification on/off.
 - **AI Models:**
-  - **Tasks:** Classification (later Embeddings, off by default, and Consolidation). Each has a provider pop-up with a locality badge (On this Mac · Local server · Apple cloud · Cloud), a model pop-up, and a status ("Ready", "Re-embedding 1,240 / 3,000", "Unavailable: using on-device").
+  - **Tasks:** Embeddings (v0.1: "Built in (bge-small, on this Mac)", no choice; other models later), Classification (later Consolidation). Each has a provider pop-up with a locality badge (On this Mac · Local server · Apple cloud · Cloud), a model pop-up, and a status ("Ready", "Re-embedding 1,240 / 3,000", "Unavailable: using on-device").
   - **Providers:** add or edit (base URL, API key stored in the Keychain, local or cloud), **Test connection**, usage counters.
   - **Cloud limit:** "Never send memories above **Internal** to cloud models".
   - **Embedding options** (later): "Embed agent requests with the cloud model", shown when the embedding model is in the cloud.
@@ -178,6 +178,7 @@ All panels are non-activating floating `NSPanel`s at the top right, stacked if m
 │ ⟡ Share with Claude Code?                     0:41 │
 │ Task: "Set up a new TypeScript repo following the   │
 │ user's preferences"                                 │
+│ Looking for: package manager, test framework, …     │
 │ Purpose (as reported): "scaffold project"           │
 │ Keeps it: for this session                          │
 ├─────────────────────────────────────────────────────┤

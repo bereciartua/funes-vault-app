@@ -17,5 +17,6 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 | 0011 | [App-layer end-to-end encryption for companion traffic (HPKE + P-256 Secure Enclave signing)](0011-app-layer-encryption-for-companion.md) | Proposed (validate in Spike 1) |
 | 0012 | [Denials report withheld counts, not memory ids](0012-withheld-counts-not-ids.md) | Accepted |
 | 0013 | [Share code with EK Bridge in tiers, extracting BridgeKitCore now](0013-shared-bridgekit-core.md) | Accepted |
-| 0014 | [User-selectable AI models, on-device by default](0014-user-selectable-models.md) | Accepted; amended by 0015 |
-| 0015 | [Keyword search in v0.1; semantic search later, as an embedding model the user chooses](0015-keyword-search-first.md) | Accepted |
+| 0014 | [User-selectable AI models, on-device by default](0014-user-selectable-models.md) | Accepted; amended by 0016 |
+| 0015 | [Keyword search in v0.1; semantic search later, as an embedding model the user chooses](0015-keyword-search-first.md) | Superseded by 0016 |
+| 0016 | [Bundled bge-small embeddings (Core ML) and agent keywords in v0.1](0016-bundled-bge-small-embeddings.md) | Accepted |
