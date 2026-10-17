@@ -186,6 +186,7 @@ public final class AgentService: Sendable {
         try await store.writer.read { db in try AgentStore.fetch(db, keyDigest: keyDigest) }.flatMap { $0.isRemoved ? nil : $0 }
     }
 
+    @discardableResult
     private func change(_ agentID: UUID, event: String, now: Date,
                         _ body: @escaping @Sendable (Database) throws -> Void) async throws -> Agent {
         let agent = try await store.writer.write { db -> Agent in

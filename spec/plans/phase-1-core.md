@@ -67,12 +67,12 @@
 - [x] Tests: the revision bumps on every change; a removed agent can't authenticate.
 
 ### 1.9b Model providers · 4 h
-- [ ] `GenerationProvider` and `EmbeddingProvider` protocols (the bundled embedder implements the latter; other embedding providers later), plus `ModelRouter` (task → provider, timeouts, fallbacks, usage counters) ([model providers](../architecture/model-providers.md)).
-- [ ] `AppleFoundationGenerator` (default) and `RulesClassifier`.
-- [ ] `OpenAICompatibleClient` (chat with JSON-schema output; model list; embeddings later) and `AnthropicClient` (Messages API; structured output).
-- [ ] Guardrails: the secret scanner on outgoing text; the cloud sensitivity limit; the capture pre-screen; locality detection (loopback or private address = local).
-- [ ] `ProviderKeyStore` (Keychain, this device only).
-- [ ] Tests: `URLProtocol` contract fixtures per adapter; guardrail tests capturing outgoing bodies; fallbacks (timeout, 401, 429, 500, bad JSON).
+- [x] `GenerationProvider` and `EmbeddingProvider` protocols (the bundled embedder implements the latter; other embedding providers later), plus `ModelRouter` (task → provider, timeouts, fallbacks, usage counters) ([model providers](../architecture/model-providers.md)).
+- [x] `AppleFoundationGenerator` (default) and `RulesClassifier`.
+- [x] `OpenAICompatibleClient` (chat with JSON-schema output; model list; embeddings later) and `AnthropicClient` (Messages API; structured output).
+- [x] Guardrails: the secret scanner on outgoing text; the cloud sensitivity limit; the capture pre-screen; locality detection (loopback or private address = local).
+- [x] `ProviderKeyStore` (Keychain, this device only).
+- [x] Tests: `URLProtocol` contract fixtures per adapter; guardrail tests capturing outgoing bodies; fallbacks (timeout, 401, 429, 500, bad JSON).
 
 ### 1.10 Import and export · 2 h (S priority; can slip to Phase 3)
 - [ ] Parsers: ChatGPT JSON (tolerant), Claude paste, Markdown, `funesvault.export.v1`.
