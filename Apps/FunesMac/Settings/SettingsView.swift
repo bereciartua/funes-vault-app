@@ -52,7 +52,7 @@ struct SettingsView: View {
         switch tab {
         case .general: GeneralSettings(model: model)
         case .capture: CaptureSettings(model: model)
-        case .models: ModelSettings(model: model)
+        case .models: ModelSettingsPane(model: model)
         case .mcp: MCPSettings(model: model)
         case .data: DataSettings(model: model)
         case .updates: UpdateSettings(model: model)

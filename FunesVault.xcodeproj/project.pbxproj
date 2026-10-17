@@ -294,6 +294,7 @@
 				DEVELOPMENT_TEAM = JVNJ326L7B;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Apps/FunesMac-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Funes Vault";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -318,6 +319,7 @@
 				DEVELOPMENT_TEAM = JVNJ326L7B;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Apps/FunesMac-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Funes Vault";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;

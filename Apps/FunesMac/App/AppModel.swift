@@ -72,6 +72,7 @@ final class AppModel {
     let inboxState: InboxModel
     let activity: ActivityModel
     let checklist: ChecklistModel
+    let modelSettings: ModelSettings
 
     // MARK: Navigation
 
@@ -107,6 +108,8 @@ final class AppModel {
     @ObservationIgnored var connection: (UUID) -> String? = { _ in nil }
     /// The port the MCP server listens on, or is configured for.
     var mcpPort: Int = 47_625
+    /// Registers a new capture shortcut; false when another app has it.
+    @ObservationIgnored var setCaptureShortcut: (Shortcut?) -> Bool = { _ in false }
     /// Turns the MCP server on or off (Settings ▸ MCP).
     @ObservationIgnored var setServer: (Bool) -> Void = { _ in }
     /// Turns a notification kind on, asking macOS for permission the first time.
@@ -125,6 +128,7 @@ final class AppModel {
         inboxState = InboxModel(services: services)
         activity = ActivityModel(services: services)
         checklist = ChecklistModel(preferences: preferences)
+        modelSettings = ModelSettings(defaults: preferences.defaults, keys: ModelSettings.keychain())
         pausedUntil = services.pause.pausedUntil(at: Date())
         observation = services.store.observeChanges { [weak self] in
             Task { @MainActor in self?.scheduleRefresh() }

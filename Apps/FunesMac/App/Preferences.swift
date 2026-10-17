@@ -98,6 +98,16 @@ final class Preferences {
         set { defaults.set(newValue, forKey: Key.mcpEnabled) }
     }
 
+    /// The capture hotkey (FR-C-01): ⌥⌘M until changed; nil when turned off.
+    var captureShortcut: Shortcut? {
+        get {
+            guard let data = defaults.data(forKey: Key.hotKey) else { return .defaultCapture }
+            if String(decoding: data, as: UTF8.self) == "null" { return nil }
+            return (try? JSONDecoder().decode(Shortcut.self, from: data)) ?? .defaultCapture
+        }
+        set { defaults.set(try? JSONEncoder().encode(newValue), forKey: Key.hotKey) }
+    }
+
     func flag(_ key: String) -> Bool { defaults.bool(forKey: key) }
     func set(_ key: String, _ value: Bool) { defaults.set(value, forKey: key) }
 }

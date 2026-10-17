@@ -49,6 +49,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var failedItem: NSStatusItem?
     private let hud = HUD()
     private let notifier = Notifier()
+    private var capture: CaptureController?
+    private var hotKey: HotKey?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppMover.waitForPreviousCopy()
@@ -81,6 +83,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.dockPreferenceChanged = { [weak self] in self?.updateActivationPolicy() }
 
         wirePanels(environment, model: model)
+        let capture = CaptureController(model: model, hud: hud)
+        self.capture = capture
+        model.openCapture = { capture.show() }
+        let hotKey = HotKey { capture.show() }
+        hotKey.register(preferences.captureShortcut)
+        self.hotKey = hotKey
+        model.setCaptureShortcut = { [preferences] shortcut in
+            guard hotKey.register(shortcut) else {
+                hotKey.register(preferences.captureShortcut)
+                return false
+            }
+            preferences.captureShortcut = shortcut
+            return true
+        }
+        NSApp.servicesProvider = capture
+        NSUpdateDynamicServices()
         let menu = StatusMenuController(model: model)
         self.menu = menu
         model.changed = { [weak menu] in menu?.update() }
@@ -119,7 +137,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // FUNES_DEBUG_OPEN=vault|inbox|agents|activity|settings[:tab] opens a window at launch.
         if let open = ProcessInfo.processInfo.environment["FUNES_DEBUG_OPEN"], !open.isEmpty {
             let parts = open.split(separator: ":").map(String.init)
-            if parts[0] == "settings" {
+            if parts[0] == "capture" {
+                model.openCapture()
+            } else if parts[0] == "settings" {
                 model.openSettings(parts.count > 1 ? SettingsTab(rawValue: parts[1]) : nil)
             } else if let section = AppSection(rawValue: parts[0]) {
                 model.show(section)

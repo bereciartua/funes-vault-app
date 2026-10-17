@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!-- Keys Xcode can't generate from build settings; merged with the generated Info.plist
+     (GENERATE_INFOPLIST_FILE). spec/plans/project-setup.md "Info.plist highlights". -->
+<dict>
+	<key>NSServices</key>
+	<array>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>Remember in Funes</string>
+			</dict>
+			<key>NSMessage</key>
+			<string>rememberInFunes</string>
+			<key>NSPortName</key>
+			<string>Funes Vault</string>
+			<key>NSRequiredContext</key>
+			<dict/>
+			<key>NSSendTypes</key>
+			<array>
+				<string>NSStringPboardType</string>
+				<string>public.utf8-plain-text</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

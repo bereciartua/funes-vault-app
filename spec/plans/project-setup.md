@@ -76,7 +76,7 @@ The OpenAI-compatible and Anthropic model clients are small `URLSession` code in
 
 ## Info.plist highlights (Mac)
 - `LSUIElement = YES`, `LSMinimumSystemVersion = 15.0`.
-- `NSServices`: "Remember in Funes" (`NSStringPboardType` / `public.utf8-plain-text`).
+- `NSServices`: "Remember in Funes" (`NSStringPboardType` / `public.utf8-plain-text`). Keys Xcode can't generate from build settings live in `Apps/FunesMac-Info.plist`, merged into the generated Info.plist.
 - `SUFeedURL = https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml`, `SUPublicEDKey`.
 - `NSLocalNetworkUsageDescription` (v0.2, for Bonjour advertising if prompted).
 

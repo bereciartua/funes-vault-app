@@ -36,9 +36,9 @@
 - [x] Optional notifications (FR-L-04).
 
 ### 3.7 Capture · 2 h
-- [ ] Global hotkey (Carbon) with a configurable shortcut. Capture box with secret-scanner feedback.
-- [ ] "Remember…" menu item. Services provider ("Remember in Funes").
-- [ ] Classification through `ModelRouter` (default Foundation Models, with rules as a fallback; or the user's chosen provider), run asynchronously, with the engine shown on Inbox cards.
+- [x] Global hotkey (Carbon) with a configurable shortcut. Capture box with secret-scanner feedback.
+- [x] "Remember…" menu item. Services provider ("Remember in Funes").
+- [x] Classification through `ModelRouter` (default Foundation Models, with rules as a fallback; or the user's chosen provider), run asynchronously, with the engine shown on Inbox cards.
 
 ### 3.8 Onboarding · 2 h
 - [ ] Setup checklist card.
