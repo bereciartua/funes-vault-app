@@ -197,7 +197,7 @@
 				F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */,
 				F00000000000000000007003 /* XCLocalSwiftPackageReference "Packages/FunesMCP" */,
 				F00000000000000000007004 /* XCLocalSwiftPackageReference "Packages/BridgeUI" */,
-				F00000000000000000007005 /* XCLocalSwiftPackageReference "../bridgekit" */,
+				F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F00000000000000000006003 /* Products */;
@@ -406,11 +406,18 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/BridgeUI;
 		};
-		F00000000000000000007005 /* XCLocalSwiftPackageReference "../bridgekit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../bridgekit;
-		};
 /* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/bereciartua/bridgekit.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		F0000000000000000000D001 /* FunesCore */ = {
@@ -435,7 +442,7 @@
 		};
 		F0000000000000000000D005 /* BridgeKitCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F00000000000000000007005 /* XCLocalSwiftPackageReference "../bridgekit" */;
+			package = F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */;
 			productName = BridgeKitCore;
 		};
 		F0000000000000000000D006 /* FunesProtocol */ = {
@@ -445,7 +452,7 @@
 		};
 		F0000000000000000000D007 /* BridgeKitCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F00000000000000000007005 /* XCLocalSwiftPackageReference "../bridgekit" */;
+			package = F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */;
 			productName = BridgeKitCore;
 		};
 /* End XCSwiftPackageProductDependency section */

@@ -9,8 +9,8 @@
 ## Part A: BridgeKitCore (weekend 1)
 
 ### 2.1 Create the BridgeKit repo · 1 h
-- [ ] `bereciartua/bridgekit`, Apache-2.0, `Package.swift` with product `BridgeKitCore`, macOS 14+, no dependencies. *(Created locally at `../bridgekit`; the GitHub repository is the user's call.)*
-- [x] CI: `swift test` on macOS, and the reference harness (2.4). *(Workflow written; runs once the repository is on GitHub.)*
+- [x] `bereciartua/bridgekit`, Apache-2.0, `Package.swift` with product `BridgeKitCore`, macOS 14+, no dependencies. *(Public: https://github.com/bereciartua/bridgekit.)*
+- [x] CI: `swift test` on macOS, and the reference harness (2.4). *(Manual runs and code-only pull requests.)*
 
 ### 2.2 Move the tier-1 code · 4 h
 - [x] Move the files listed in [EK Bridge reuse §1](../architecture/ek-bridge-reuse.md#1-tier-1-bridgekitcore-shared-library-extracted-in-funes-phase-2) and record their source commit in `PROVENANCE.md`.
@@ -23,7 +23,7 @@
 
 ### 2.4 Reference harness · 1 h
 - [x] A tiny reference server in `Tests/harness` (an echo tool plus a write tool) built on BridgeKitCore. Run EK Bridge's `mcp_test.py` and `launcher_test.py`, generalized, against it.
-- [ ] Tag **`0.1.0`**. *(The user's call, after publishing.)*
+- [x] Tag **`0.1.0`**. *(At 6fcf18e, 2026-10-17.)*
 
 ## Part B: EK Bridge adopts BridgeKitCore (weekend 2, first half)
 
@@ -40,7 +40,7 @@
 ## Part C: Funes MCP (weekend 2, second half, and weekend 3)
 
 ### 2.6 Funes packages and copies · 2 h
-- [ ] Add `BridgeKit` as a package dependency, pinned exactly to `0.1.0`. *(By local path, `../bridgekit`, until the repository and tag are published.)*
+- [x] Add `BridgeKit` as a package dependency, pinned exactly to `0.1.0`.
 - [x] Create `Packages/BridgeUI` and copy the tier-2 files ([reuse §2](../architecture/ek-bridge-reuse.md#2-tier-2-copied-into-funes-packagesbridgeui-extracted-as-bridgekitui-after-funes-v01)), recording their source commits in `PROVENANCE.md`.
 
 ### 2.7 Tool contract · 2 h

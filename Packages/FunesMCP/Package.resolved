@@ -1,6 +1,15 @@
 {
-  "originHash" : "3d50ad69e8bdcf0f0af408b7cfc0690455f2762703327acf1dca409f34e2629c",
+  "originHash" : "9715e2f3fb07bb3359738f5b03bed12b92244d859a614e286208ab09e1e01bab",
   "pins" : [
+    {
+      "identity" : "bridgekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/bereciartua/bridgekit.git",
+      "state" : {
+        "revision" : "6fcf18e7f5d10fe974154a9385183044351bf564",
+        "version" : "0.1.0"
+      }
+    },
     {
       "identity" : "grdb.swift",
       "kind" : "remoteSourceControl",

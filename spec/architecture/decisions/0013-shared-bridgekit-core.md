@@ -2,7 +2,7 @@
 
 **Status:** Accepted · 2026-10-16 · **Supersedes** [ADR-0008](0008-copy-then-extract-bridgekit.md)
 
-**Progress (2026-10-17):** the Phase 0 quick check passed ([results](../../plans/spike-results.md#phase-0-quick-check-ek-bridges-swiftc-build-linking-a-swift-package)), so no fallback was needed. BridgeKitCore exists locally with its tests and reference harness green. EK Bridge runs on it, on its branch `bridgekit-adoption`, with every existing test unchanged and green. Funes builds on it by local path. Still open, all the user's call: publishing `bereciartua/bridgekit`, tagging `0.1.0`, and releasing EK Bridge.
+**Progress (2026-10-17):** the Phase 0 quick check passed ([results](../../plans/spike-results.md#phase-0-quick-check-ek-bridges-swiftc-build-linking-a-swift-package)), so no fallback was needed. BridgeKit 0.1.0 is published (https://github.com/bereciartua/bridgekit, tag at 6fcf18e) with its tests and reference harness green. EK Bridge runs on it, on its branch `bridgekit-adoption`, with every existing test unchanged and green. Funes pins it exactly at 0.1.0. Still open: EK Bridge's live check and release.
 
 **Context.**
 - **What's shared:** Funes and EK Bridge share about 14K lines of Swift. Not all of it is equally settled:
