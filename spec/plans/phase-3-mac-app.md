@@ -22,13 +22,13 @@
 - [x] Multi-select bulk review with per-item results. Badge counts.
 
 ### 3.4 Agents UI · 4 h
-- [ ] Add-agent sheet with detected tiles (BridgeUI `AgentDetection`) and starting-access presets.
-- [ ] Access editor: operations, ceiling slider, category allow/deny table, ask-before switches, expiry, "let it ask for more access".
-- [ ] Connect tab: one-click setup buttons (Claude Desktop, Claude Code, Cursor, Codex) with preview and backup; snippets for the rest; copy and rotate key.
-- [ ] Status: waiting for first request, connected, paused, expired. Pause and Remove.
+- [x] Add-agent sheet with detected tiles (BridgeUI `AgentDetection`) and starting-access presets.
+- [x] Access editor: operations, ceiling slider, category allow/deny table, ask-before switches, expiry, "let it ask for more access".
+- [x] Connect tab: one-click setup buttons (Claude Desktop, Claude Code, Cursor, Codex) with preview and backup; snippets for the rest; copy and rotate key.
+- [x] Status: waiting for first request, connected, paused, expired. Pause and Remove.
 
 ### 3.5 Activity UI · 2 h
-- [ ] Adapt `ActivityView`: filters, live title lookup, detail pane, fix deep links.
+- [x] Adapt `ActivityView`: filters, live title lookup, detail pane, fix deep links.
 
 ### 3.6 Panels, final · 2 h
 - [ ] Pending requests (from the menu bar and Activity), approvable within 15 minutes.

@@ -17,6 +17,9 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
 
     private let environment: VaultEnvironment
     @MainActor let queue = ApprovalQueue()
+    /// Task text of the requests this session showed a panel for, for Activity's detail pane. In
+    /// memory only: the vault keeps a hash (FR-L-01), so after a relaunch it's "Task text not stored".
+    @MainActor private var tasks: [UUID: String] = [:]
     @MainActor private lazy var controller = ApprovalPanelController(queue: queue)
 
     @MainActor
@@ -50,6 +53,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         let disclosure = try? await disclosures.disclosure(requestID: requestID)
         let item = Self.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: now)
         await MainActor.run {
+            if let task = panel.task { tasks[requestID] = task }
             queue.enqueue(item) { [weak self] answer in self?.answered(panel, answer) }
             if focus { bringForward() }
         }
@@ -145,6 +149,9 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     }
 
     // MARK: Helpers
+
+    @MainActor
+    func sessionTask(_ requestID: UUID) -> String? { tasks[requestID] }
 
     @MainActor
     private func bringForward() {

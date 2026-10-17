@@ -78,6 +78,19 @@ extension SuggestionService {
         }
     }
 
+    /// The suggestions with these ids that still exist, any status (Activity's live titles).
+    public func suggestions(ids: [UUID]) async throws -> [Suggestion] {
+        guard !ids.isEmpty else { return [] }
+        return try await store.writer.read { db in
+            var found: [Suggestion] = []
+            for chunk in stride(from: 0, to: ids.count, by: 500).map({ Array(ids[$0..<min($0 + 500, ids.count)]) }) {
+                found += try Row.fetchAll(db, sql: "SELECT * FROM suggestion WHERE id IN (\(databaseQuestionMarks(count: chunk.count)))",
+                                          arguments: StatementArguments(chunk.map(\.db))).map(Suggestion.from(row:))
+            }
+            return found
+        }
+    }
+
     /// Expired suggestions that can still be restored (FR-I-05), newest first.
     public func restorable(now: Date) async throws -> [Suggestion] {
         try await store.writer.read { db in

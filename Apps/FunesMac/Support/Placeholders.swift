@@ -2,8 +2,6 @@ import SwiftUI
 
 // Sections and settings panes that later Phase 3 tasks fill in.
 
-struct AgentsView: View { let model: AppModel; var body: some View { Placeholder(title: AppSection.agents.title) } }
-struct ActivityScreen: View { let model: AppModel; var body: some View { Placeholder(title: AppSection.activity.title) } }
 struct CaptureSettings: View { let model: AppModel; var body: some View { Placeholder(title: SettingsTab.capture.title) } }
 struct ModelSettings: View { let model: AppModel; var body: some View { Placeholder(title: SettingsTab.models.title) } }
 struct MCPSettings: View { let model: AppModel; var body: some View { Placeholder(title: SettingsTab.mcp.title) } }

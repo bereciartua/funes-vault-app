@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    " and %lld more" : {
+
+    },
     "%@ (%lld)" : {
       "localizations" : {
         "en" : {
@@ -21,6 +24,9 @@
         }
       }
     },
+    "%@ access" : {
+
+    },
     "%@ asks to use %lld memories in Funes" : {
       "localizations" : {
         "en" : {
@@ -31,10 +37,35 @@
         }
       }
     },
+    "%@ can be offered personal memories. Keep Ask before sharing on." : {
+
+    },
+    "%@ couldn't be started." : {
+
+    },
+    "%@ didn't finish within 20 seconds." : {
+
+    },
+    "%@ has no access yet. It can connect, but sees nothing until you change its access." : {
+
+    },
+    "%@ reported an error (exit code %d)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ reported an error (exit code %2$d)."
+          }
+        }
+      }
+    },
     "%@ suggests a memory for Funes" : {
 
     },
     "%@ wants to use your memories" : {
+
+    },
+    "%@ will get matching memories it's allowed to read without asking you. You'll see each share in Activity." : {
 
     },
     "%@ · %lld min left" : {
@@ -70,6 +101,9 @@
         }
       }
     },
+    "%@, on this Mac" : {
+
+    },
     "%lld above its sensitivity limit" : {
 
     },
@@ -101,6 +135,9 @@
 
     },
     "%lld memories selected" : {
+
+    },
+    "%lld min left" : {
 
     },
     "%lld more matched but can't go to this agent (%@)." : {
@@ -150,16 +187,41 @@
     "%lld suggestions waiting for you" : {
 
     },
+    "%lld withheld" : {
+
+    },
+    "%lld. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld. %2$@"
+          }
+        }
+      }
+    },
+    "(deleted memory)" : {
+
+    },
     "+%lld" : {
 
     },
     "1 suggestion waiting for you" : {
 
     },
+    "30 days" : {
+
+    },
+    "7 days" : {
+
+    },
     "A category with that name already exists." : {
 
     },
     "A memory can have at most 12 categories." : {
+
+    },
+    "A panel shows exactly what would be shared, and nothing goes until you choose." : {
 
     },
     "A request expired before you answered" : {
@@ -174,10 +236,28 @@
     "A vault file has unsafe permissions." : {
 
     },
+    "AI Assistant has known problems with local HTTP servers, so only the launcher is offered." : {
+
+    },
     "AI Models" : {
 
     },
     "About Funes Vault" : {
+
+    },
+    "Above its sensitivity limit" : {
+
+    },
+    "Access" : {
+
+    },
+    "Access changed" : {
+
+    },
+    "Access expired" : {
+
+    },
+    "Access expires" : {
 
     },
     "Active" : {
@@ -192,19 +272,55 @@
     "Add" : {
 
     },
+    "Add Agent" : {
+
+    },
+    "Add Agent…" : {
+
+    },
     "Add Category" : {
 
     },
     "Add Category…" : {
 
     },
+    "Add Claude Code, Cursor or another AI agent, then choose what it may read." : {
+
+    },
+    "Add Funes Vault to %@?" : {
+
+    },
     "Add a category" : {
+
+    },
+    "Add a server, choose As JSON, and paste this." : {
 
     },
     "Add a title." : {
 
     },
+    "Add an Agent" : {
+
+    },
+    "Add the %@ entry under context_servers." : {
+
+    },
+    "Add the %@ entry under mcpServers." : {
+
+    },
+    "Add the inputs and servers entries." : {
+
+    },
     "Add the text to remember." : {
+
+    },
+    "Add this to ~/.codex/config.toml." : {
+
+    },
+    "Add to %@…" : {
+
+    },
+    "Added" : {
 
     },
     "Added by you" : {
@@ -216,6 +332,27 @@
     "After: %@" : {
 
     },
+    "Agent" : {
+
+    },
+    "Agent ID" : {
+
+    },
+    "Agent added" : {
+
+    },
+    "Agent or device" : {
+
+    },
+    "Agent paused" : {
+
+    },
+    "Agent removed" : {
+
+    },
+    "Agent resumed" : {
+
+    },
     "Agents" : {
 
     },
@@ -225,7 +362,28 @@
     "Agents can't connect: the server is off" : {
 
     },
+    "Agents get the answer when they check again." : {
+
+    },
     "Agents' access is set per category. Built-in categories can be renamed; your own can also be deleted." : {
+
+    },
+    "All" : {
+
+    },
+    "All agents" : {
+
+    },
+    "All time" : {
+
+    },
+    "Allow" : {
+
+    },
+    "Already delivered" : {
+
+    },
+    "Already set up" : {
 
     },
     "An agent" : {
@@ -246,7 +404,20 @@
     "Answered a question" : {
 
     },
+    "Anyone with this key can ask Funes for memories as %@. Paste it only into %@'s settings, and never into a project file. Setups that use the launcher don't need it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Anyone with this key can ask Funes for memories as %1$@. Paste it only into %2$@'s settings, and never into a project file. Setups that use the launcher don't need it."
+          }
+        }
+      }
+    },
     "Applications" : {
+
+    },
+    "Applied" : {
 
     },
     "Applied from the Inbox" : {
@@ -270,6 +441,15 @@
     "Approval" : {
 
     },
+    "Approved" : {
+
+    },
+    "Approved by you" : {
+
+    },
+    "Approved, waiting for the agent to pick it up" : {
+
+    },
     "Archive" : {
 
     },
@@ -285,6 +465,24 @@
     "Archived memories are kept, but never shared with agents." : {
 
     },
+    "Ask before saving" : {
+
+    },
+    "Ask before sharing" : {
+
+    },
+    "Ask for memories that match its task. Only memories this page allows are ever offered." : {
+
+    },
+    "Asked for memories" : {
+
+    },
+    "Asked for more access" : {
+
+    },
+    "Backup: %@" : {
+
+    },
     "Before: %@" : {
 
     },
@@ -298,6 +496,9 @@
 
     },
     "Capture" : {
+
+    },
+    "Captured a note" : {
 
     },
     "Captured on iPhone" : {
@@ -324,13 +525,43 @@
     "Category" : {
 
     },
+    "Category denied" : {
+
+    },
+    "Category not allowed" : {
+
+    },
+    "Change %@'s categories…" : {
+
+    },
+    "Changed since approval" : {
+
+    },
+    "Changes to the file" : {
+
+    },
     "Changes “%@”" : {
 
     },
     "Check for Updates…" : {
 
     },
+    "Checked a request" : {
+
+    },
     "Choose at least one category." : {
+
+    },
+    "Claude Code" : {
+
+    },
+    "Claude Code's claude command wasn't found on this Mac." : {
+
+    },
+    "Claude Desktop" : {
+
+    },
+    "Claude Desktop's custom connectors run from Anthropic's cloud and can't reach this Mac, so use this local setup instead." : {
 
     },
     "Cleanup suggestion · %@" : {
@@ -345,16 +576,68 @@
     "Clear the filters to see everything." : {
 
     },
+    "Click Install in VS Code, or run the command in Terminal." : {
+
+    },
+    "Cline" : {
+
+    },
+    "Cline treats a remote server without a type as legacy SSE, so only the launcher is offered." : {
+
+    },
     "Close Window" : {
+
+    },
+    "Codex" : {
+
+    },
+    "Codex connects the next time it starts." : {
+
+    },
+    "Codex started from an app doesn't see your shell's environment variables, so the launcher is more reliable than direct HTTP." : {
 
     },
     "Confirmed still true %@" : {
 
     },
+    "Connect" : {
+
+    },
+    "Connected · %@" : {
+
+    },
+    "Connected · %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Connected · %1$@ · %2$@"
+          }
+        }
+      }
+    },
     "Constraint" : {
 
     },
+    "Copied" : {
+
+    },
+    "Copied. Funes clears the clipboard in 60 seconds." : {
+
+    },
     "Copy" : {
+
+    },
+    "Copy %@" : {
+
+    },
+    "Copy %@'s key?" : {
+
+    },
+    "Copy Key" : {
+
+    },
+    "Copy Key…" : {
 
     },
     "Correction from %@ · %@" : {
@@ -371,6 +654,15 @@
 
     },
     "Created %@" : {
+
+    },
+    "Created a memory" : {
+
+    },
+    "Cursor" : {
+
+    },
+    "Custom" : {
 
     },
     "Cut" : {
@@ -422,6 +714,9 @@
     "Delete…" : {
 
     },
+    "Denied by you" : {
+
+    },
     "Deny" : {
 
     },
@@ -431,7 +726,22 @@
     "Deselect" : {
 
     },
+    "Detail" : {
+
+    },
+    "Details" : {
+
+    },
+    "Devin Desktop" : {
+
+    },
+    "Direct HTTP" : {
+
+    },
     "Dismiss" : {
+
+    },
+    "Doesn't keep it" : {
 
     },
     "Don't move them" : {
@@ -443,7 +753,13 @@
     "Downloads" : {
 
     },
+    "Each agent gets its own key and only the access you give it." : {
+
+    },
     "Edit" : {
+
+    },
+    "Edit %@'s access…" : {
 
     },
     "Edited %@" : {
@@ -459,6 +775,12 @@
         }
       }
     },
+    "Edited a memory" : {
+
+    },
+    "Empty allow list means all categories. Deny always wins." : {
+
+    },
     "Event" : {
 
     },
@@ -468,6 +790,9 @@
     "Expired" : {
 
     },
+    "Expired memory" : {
+
+    },
     "Expired suggestions (%lld)" : {
 
     },
@@ -475,6 +800,9 @@
 
     },
     "Expiry date" : {
+
+    },
+    "Exported the vault" : {
 
     },
     "Fact" : {
@@ -492,7 +820,23 @@
     "For 1 Hour" : {
 
     },
+    "For HTTP, paste the %@ from %@ or read it from the key file." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "For HTTP, paste the %1$@ from %2$@ or read it from the key file."
+          }
+        }
+      }
+    },
+    "For the session" : {
+
+    },
     "For this session" : {
+
+    },
+    "From" : {
 
     },
     "From agents" : {
@@ -522,6 +866,12 @@
     "Funes Vault is starting…" : {
 
     },
+    "Funes Vault paused" : {
+
+    },
+    "Funes Vault resumed" : {
+
+    },
     "Funes Vault, off" : {
 
     },
@@ -531,7 +881,28 @@
     "Funes Vault, waiting for you" : {
 
     },
+    "Funes backs up the file next to it first." : {
+
+    },
     "Funes notes that you checked it today." : {
+
+    },
+    "Funes runs this command, replacing the existing funes entry:" : {
+
+    },
+    "Funes runs this command:" : {
+
+    },
+    "Funes shows Connected here after the first request from %@." : {
+
+    },
+    "Funes shows the exact change first, backs up the file and never writes the key into it." : {
+
+    },
+    "Funes was paused" : {
+
+    },
+    "Gemini CLI" : {
 
     },
     "General" : {
@@ -540,10 +911,22 @@
     "Goal" : {
 
     },
+    "Goes in %@" : {
+
+    },
+    "Header" : {
+
+    },
     "Hide Funes Vault" : {
 
     },
     "History" : {
+
+    },
+    "Import" : {
+
+    },
+    "Imported %lld items" : {
 
     },
     "Imported from ChatGPT" : {
@@ -576,6 +959,15 @@
     "Imports" : {
 
     },
+    "In Cline, open MCP Servers and click Configure MCP Servers." : {
+
+    },
+    "In VS Code, run MCP: Open User Configuration." : {
+
+    },
+    "In Zed, run zed: open settings." : {
+
+    },
     "Inbox" : {
 
     },
@@ -585,13 +977,25 @@
     "Inbox: %lld" : {
 
     },
+    "Install in VS Code" : {
+
+    },
     "Instruction" : {
 
     },
     "Internal" : {
 
     },
+    "Invalid input" : {
+
+    },
     "Is this still true?" : {
+
+    },
+    "Issued %@" : {
+
+    },
+    "It can connect, but sees nothing until you give it access." : {
 
     },
     "It changed in the meantime. Look again and retry." : {
@@ -612,16 +1016,34 @@
     "It's the only category some agents may read. Choose a replacement, or change those agents first." : {
 
     },
+    "Its key stops working at once and its access is deleted. Activity keeps its history, labelled “removed agent”. Its entry in the agent's own settings stays until you delete it there." : {
+
+    },
+    "JetBrains AI Assistant" : {
+
+    },
     "Keep Both" : {
 
     },
     "Keeps it" : {
 
     },
+    "Keeps what it gets" : {
+
+    },
     "Kept by the agent" : {
 
     },
     "Kept on this Mac: looked sensitive" : {
+
+    },
+    "Key" : {
+
+    },
+    "Key file" : {
+
+    },
+    "Key rotated" : {
 
     },
     "Kind" : {
@@ -633,6 +1055,18 @@
     "Later" : {
 
     },
+    "Launcher" : {
+
+    },
+    "Let it ask for more access" : {
+
+    },
+    "Listed categories" : {
+
+    },
+    "Looked like a secret" : {
+
+    },
     "Looking for" : {
 
     },
@@ -642,7 +1076,16 @@
     "MCP" : {
 
     },
+    "MCP URL" : {
+
+    },
     "Mark that you checked this memory today" : {
+
+    },
+    "Matches, none allowed" : {
+
+    },
+    "Maximum sensitivity" : {
 
     },
     "Memories" : {
@@ -654,6 +1097,9 @@
     "Memories past their expiry date appear here. Agents don't get them." : {
 
     },
+    "Method" : {
+
+    },
     "Minimize" : {
 
     },
@@ -661,6 +1107,9 @@
 
     },
     "Move to %@" : {
+
+    },
+    "My Agent" : {
 
     },
     "Name" : {
@@ -678,6 +1127,9 @@
     "New Memory" : {
 
     },
+    "New key issued. The old one no longer works." : {
+
+    },
     "New memories start at" : {
 
     },
@@ -687,16 +1139,46 @@
     "Next request" : {
 
     },
+    "No access yet" : {
+
+    },
+    "No activity yet" : {
+
+    },
+    "No agent selected" : {
+
+    },
+    "No agents yet" : {
+
+    },
+    "No answer in 15 minutes" : {
+
+    },
+    "No key" : {
+
+    },
     "No memories match these filters" : {
 
     },
     "No memory selected" : {
 
     },
+    "No problems" : {
+
+    },
+    "Not allowed to do this" : {
+
+    },
     "Not allowed." : {
 
     },
+    "Not found" : {
+
+    },
     "Not kept" : {
+
+    },
+    "Not known" : {
 
     },
     "Not said" : {
@@ -708,7 +1190,22 @@
     "Nothing expired" : {
 
     },
+    "Nothing here" : {
+
+    },
+    "Nothing matches these filters." : {
+
+    },
+    "Nothing relevant" : {
+
+    },
+    "Nothing to change: it's already set up." : {
+
+    },
     "Nothing waiting" : {
+
+    },
+    "Nothing yet" : {
 
     },
     "Notifications" : {
@@ -717,7 +1214,25 @@
     "Notifications never include memory text." : {
 
     },
+    "Off: it saves memories directly. On: they wait in your Inbox." : {
+
+    },
     "On a date" : {
+
+    },
+    "On this Mac" : {
+
+    },
+    "One-click setup" : {
+
+    },
+    "One-click setup isn't available." : {
+
+    },
+    "Only allowed categories can be shared. Deny always wins." : {
+
+    },
+    "Open %@." : {
 
     },
     "Open Funes Vault" : {
@@ -726,10 +1241,31 @@
     "Open Funes Vault at login" : {
 
     },
+    "Open Settings ▸ Tools ▸ AI Assistant ▸ Model Context Protocol (MCP)." : {
+
+    },
+    "Opened a request in Funes" : {
+
+    },
+    "Or in ~/.codex/config.toml" : {
+
+    },
+    "Or set it up yourself" : {
+
+    },
+    "Other MCP client" : {
+
+    },
     "Paste" : {
 
     },
+    "Pause" : {
+
+    },
     "Pause Funes Vault" : {
+
+    },
+    "Paused" : {
 
     },
     "Paused until %@" : {
@@ -747,6 +1283,9 @@
     "Pending requests: %lld" : {
 
     },
+    "Period" : {
+
+    },
     "Personal: health, money, family. Share rarely, and always ask." : {
 
     },
@@ -762,7 +1301,16 @@
     "Previous request" : {
 
     },
+    "Problems" : {
+
+    },
+    "Problems %lld" : {
+
+    },
     "Project Context" : {
+
+    },
+    "Propose new memories or corrections. They wait in your Inbox." : {
 
     },
     "Proposed by %@" : {
@@ -796,6 +1344,37 @@
     "Quit the other copy first." : {
 
     },
+    "Raise %@'s limit…" : {
+
+    },
+    "Read" : {
+
+    },
+    "Read and suggest, ask first" : {
+
+    },
+    "Read and suggest, up to Internal, except Health, Finance and Legal. Funes asks before sharing." : {
+
+    },
+    "Read low-sensitivity memories, ask first" : {
+
+    },
+    "Read, up to Low, in all categories. Funes asks before sharing." : {
+
+    },
+    "Reads %@ and below %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reads %1$@ and below %2$@"
+          }
+        }
+      }
+    },
+    "Reads everything %@" : {
+
+    },
     "Recently Deleted" : {
 
     },
@@ -803,6 +1382,12 @@
 
     },
     "Redo" : {
+
+    },
+    "Refuse this agent's requests until you resume it" : {
+
+    },
+    "Refused a request" : {
 
     },
     "Reject" : {
@@ -814,13 +1399,22 @@
     "Reject (⌫ or ⌘⌫)" : {
 
     },
+    "Rejected" : {
+
+    },
     "Relationship" : {
 
     },
     "Remember…" : {
 
     },
+    "Remove" : {
+
+    },
     "Remove %@" : {
+
+    },
+    "Remove %@?" : {
 
     },
     "Removed agent" : {
@@ -829,7 +1423,16 @@
     "Removed agent (%@)" : {
 
     },
+    "Remove…" : {
+
+    },
+    "Rename" : {
+
+    },
     "Rename %@" : {
+
+    },
+    "Rename Agent" : {
 
     },
     "Rename Category" : {
@@ -844,6 +1447,36 @@
     "Replace" : {
 
     },
+    "Request" : {
+
+    },
+    "Request answered" : {
+
+    },
+    "Request expired" : {
+
+    },
+    "Requests from your agents appear here, with what was shared and why." : {
+
+    },
+    "Restart %@" : {
+
+    },
+    "Restart Claude Desktop." : {
+
+    },
+    "Restart Codex." : {
+
+    },
+    "Restart Cursor." : {
+
+    },
+    "Restart Devin Desktop." : {
+
+    },
+    "Restart Gemini CLI." : {
+
+    },
     "Restore" : {
 
     },
@@ -856,7 +1489,13 @@
     "Restricted" : {
 
     },
+    "Result" : {
+
+    },
     "Resume" : {
+
+    },
+    "Resume %@" : {
 
     },
     "Resume Funes Vault" : {
@@ -865,19 +1504,55 @@
     "Revert" : {
 
     },
+    "Review %@'s request" : {
+
+    },
     "Review Now" : {
+
+    },
+    "Review…" : {
+
+    },
+    "Rotate %@'s key?" : {
+
+    },
+    "Rotate Key" : {
+
+    },
+    "Rotate Key…" : {
+
+    },
+    "Run it in Terminal, or add the lines below to ~/.codex/config.toml." : {
+
+    },
+    "Run it in Terminal. Claude Code connects the next time it starts (or run /mcp to reconnect)." : {
 
     },
     "Save" : {
 
     },
+    "Save new memories, within the limits below. Corrections still wait in your Inbox." : {
+
+    },
     "Save this memory?" : {
+
+    },
+    "Saved" : {
+
+    },
+    "Saved a memory" : {
 
     },
     "Saved by an agent" : {
 
     },
     "Saved. A similar memory exists:" : {
+
+    },
+    "Saving cancels %@'s pending requests; it can ask again." : {
+
+    },
+    "Search activity" : {
 
     },
     "Search memories" : {
@@ -895,6 +1570,9 @@
     "Select a memory to read or edit it." : {
 
     },
+    "Select an agent to change its access or connect it." : {
+
+    },
     "Sensitive" : {
 
     },
@@ -904,10 +1582,38 @@
     "Sensitivity: %@" : {
 
     },
+    "Server name" : {
+
+    },
+    "Servers that prompt for input aren't sent to VS Code's Agent Host, so the launcher works in more places." : {
+
+    },
+    "Set %@ to the %@ (%@) in the environment %@ starts from." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set %1$@ to the %2$@ (%3$@) in the environment %4$@ starts from."
+          }
+        }
+      }
+    },
+    "Set up for" : {
+
+    },
     "Settings…" : {
 
     },
+    "Setup" : {
+
+    },
     "Share" : {
+
+    },
+    "Shared" : {
+
+    },
+    "Shared %lld memories" : {
 
     },
     "Shared %lld times · last with %@ %@" : {
@@ -919,6 +1625,9 @@
           }
         }
       }
+    },
+    "Shared 1 memory" : {
+
     },
     "Shared once · with %@ %@" : {
       "localizations" : {
@@ -936,6 +1645,12 @@
     "Shared with %@" : {
 
     },
+    "Shared without asking" : {
+
+    },
+    "Show" : {
+
+    },
     "Show All" : {
 
     },
@@ -943,6 +1658,9 @@
 
     },
     "Show all of %@" : {
+
+    },
+    "Show everything" : {
 
     },
     "Show in Activity" : {
@@ -955,6 +1673,15 @@
 
     },
     "Show less of %@" : {
+
+    },
+    "Showing %@ only" : {
+
+    },
+    "Showing one request" : {
+
+    },
+    "Showing “%@” only" : {
 
     },
     "Similar memory exists:" : {
@@ -985,6 +1712,15 @@
     "Source" : {
 
     },
+    "Start %@ when VS Code asks." : {
+
+    },
+    "Start with nothing and set it up on the Access tab." : {
+
+    },
+    "Starting access" : {
+
+    },
     "Starting…" : {
 
     },
@@ -995,6 +1731,12 @@
 
     },
     "Still True…" : {
+
+    },
+    "Suggest" : {
+
+    },
+    "Suggested a memory" : {
 
     },
     "Suggested by %@ · %@" : {
@@ -1013,7 +1755,13 @@
     "Suggested by an agent" : {
 
     },
+    "Suggestion refused" : {
+
+    },
     "Suggestion: %@" : {
+
+    },
+    "Suggestions" : {
 
     },
     "Suggestions expire after 30 days. You can restore them for 7 more." : {
@@ -1023,6 +1771,15 @@
 
     },
     "Summary" : {
+
+    },
+    "Tab" : {
+
+    },
+    "Task" : {
+
+    },
+    "Task text not stored" : {
 
     },
     "Task: “%@”" : {
@@ -1052,7 +1809,16 @@
     "The copy's signature didn't check out, so it was moved to the Trash." : {
 
     },
+    "The key file couldn't be read. Rotate the key to make a new one." : {
+
+    },
+    "The key isn't written anywhere: the launcher reads it from Funes's key file." : {
+
+    },
     "The name needs 1 to 60 characters." : {
+
+    },
+    "The old key stops working at once. Setups that use the launcher keep working; any setup with the key pasted in needs the new one." : {
 
     },
     "The text is longer than 10,000 characters." : {
@@ -1068,6 +1834,9 @@
 
     },
     "The vault didn't open" : {
+
+    },
+    "There's no one-click setup for %@." : {
 
     },
     "They're removed for good, with their history. This can't be undone." : {
@@ -1088,10 +1857,28 @@
     "This vault was written by a newer Funes Vault. Update the app." : {
 
     },
+    "Time" : {
+
+    },
     "Title" : {
 
     },
+    "Today" : {
+
+    },
+    "Too many requests" : {
+
+    },
+    "Transport" : {
+
+    },
+    "URL" : {
+
+    },
     "Undo" : {
+
+    },
+    "Unknown category" : {
 
     },
     "Until I Resume" : {
@@ -1103,7 +1890,19 @@
     "Updates" : {
 
     },
+    "Use the HTTP values if the agent supports Streamable HTTP with a custom header; otherwise run the launcher over stdio." : {
+
+    },
     "Use the bar above the list to change them together." : {
+
+    },
+    "Use the setup below instead." : {
+
+    },
+    "Use your own ~/.cursor/mcp.json, never a project's .cursor/mcp.json, which often gets committed." : {
+
+    },
+    "VS Code (Copilot)" : {
 
     },
     "Vault" : {
@@ -1115,7 +1914,35 @@
     "View" : {
 
     },
+    "Waiting for first request" : {
+
+    },
+    "Waiting for you" : {
+
+    },
+    "Waiting in Inbox" : {
+
+    },
     "What belongs here (agents see this)" : {
+
+    },
+    "What it can do" : {
+
+    },
+    "When VS Code asks for the %@, paste it from %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "When VS Code asks for the %1$@, paste it from %2$@."
+          }
+        }
+      }
+    },
+    "When a request is refused only because a category isn't allowed, Funes asks you: Not Now, Allow Once or Always Allow. At most once an hour." : {
+
+    },
+    "When a request is refused only because a category isn't allowed, Funes asks you: Not Now, Allow Once or Always Allow. Never for the sensitivity limit or denied categories." : {
 
     },
     "Why" : {
@@ -1127,7 +1954,34 @@
     "Window" : {
 
     },
+    "With this method the agent sends the key without checking that the program on the port is Funes Vault. The launcher checks first." : {
+
+    },
+    "Withheld" : {
+
+    },
     "Work or project context. Share with agents you use for that work." : {
+
+    },
+    "Write" : {
+
+    },
+    "Yesterday" : {
+
+    },
+    "You" : {
+
+    },
+    "You applied a suggestion" : {
+
+    },
+    "You approved sharing %lld" : {
+
+    },
+    "You denied a request" : {
+
+    },
+    "You rejected a suggestion" : {
 
     },
     "Your Inbox is empty" : {
@@ -1139,7 +1993,16 @@
     "Your answers" : {
 
     },
+    "Your note on how this agent keeps data. Shown on its panels; it doesn't change what's shared." : {
+
+    },
     "Your vault is empty" : {
+
+    },
+    "Zed" : {
+
+    },
+    "Zed starts a sign-in when a remote server has no Authorization header, so only the launcher is offered." : {
 
     },
     "Zoom" : {
@@ -1170,6 +2033,12 @@
 
     },
     "an agent key" : {
+
+    },
+    "and below: %@" : {
+
+    },
+    "asks first" : {
 
     },
     "by %@" : {
@@ -1205,7 +2074,22 @@
     "expiry" : {
 
     },
+    "iPhone" : {
+
+    },
+    "in %lld categories" : {
+
+    },
+    "in 1 category" : {
+
+    },
+    "in all categories" : {
+
+    },
     "just now" : {
+
+    },
+    "key" : {
 
     },
     "kind" : {
@@ -1226,10 +2110,25 @@
     "on iPhone" : {
 
     },
+    "saves without asking" : {
+
+    },
     "sensitivity" : {
 
     },
+    "shares without asking" : {
+
+    },
     "status" : {
+
+    },
+    "stdio args" : {
+
+    },
+    "stdio command" : {
+
+    },
+    "suggests" : {
 
     },
     "text" : {
@@ -1244,7 +2143,13 @@
     "title" : {
 
     },
+    "until %@" : {
+
+    },
     "· confirmed %@" : {
+
+    },
+    "—" : {
 
     },
     "“%@” (as reported)" : {

@@ -91,6 +91,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.mcp = mcp
         model.setServer = { [weak self] on in self?.setServer(on) }
+        model.mcpPort = mcp.configuration.mcpPort
+        model.connection = { [weak mcp] id in mcp?.connections[id.db]?.agent }
+        model.setupControls = OneClickAgents.live(home: Self.setupHome, appName: "Funes Vault", tag: "funes")
+        model.detectAgents = { AgentDetection.installed(.live) }
         Task {
             #if DEBUG
             await DevSeed.runIfAsked(environment)
@@ -116,6 +120,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 model.openSettings(parts.count > 1 ? SettingsTab(rawValue: parts[1]) : nil)
             } else if let section = AppSection(rawValue: parts[0]) {
                 model.show(section)
+                if parts.count > 2, let tab = AgentTab(rawValue: parts[2]) { model.agentTab = tab }
                 if parts.count > 1, parts[1] == "first" {
                     Task {
                         try? await Task.sleep(for: .milliseconds(600))
@@ -127,6 +132,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         #endif
         logger.info("Launched")
+    }
+
+    /// Where one-click setup writes agents' configs: the user's home, except for a development
+    /// vault (Debug on FUNES_DATA_DIR), which writes into a scratch home so it never points the
+    /// user's real agents at a development build.
+    static var setupHome: String {
+        guard Preferences.isDevelopmentVault else { return NSHomeDirectory() }
+        let home = (ProcessInfo.processInfo.environment["FUNES_DATA_DIR"] ?? NSTemporaryDirectory()) + "-agent-home"
+        try? FileManager.default.createDirectory(atPath: home, withIntermediateDirectories: true)
+        return home
     }
 
     func applicationWillTerminate(_ notification: Notification) {

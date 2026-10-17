@@ -61,3 +61,15 @@ import Testing
         #expect(try await s.pending().map(\.id) == [result.suggestionIDs[0]])
     }
 }
+
+extension InboxSupportTests {
+    @Test func suggestionsByID() async throws {
+        let (fx, s) = try Self.make()
+        let a = try await s.seed(SeedQuestion.all[0], answer: "Pair with me", now: fx.now)
+        let b = try await s.seed(SeedQuestion.all[1], answer: "Short answers", now: fx.now)
+        try await s.reject(suggestionID: b, now: fx.now)
+        let found = try await s.suggestions(ids: [a, b, UUID()])
+        #expect(Set(found.map(\.id)) == [a, b])
+        #expect(try await s.suggestions(ids: []).isEmpty)
+    }
+}

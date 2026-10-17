@@ -1,0 +1,1 @@
+{"mcpServers":{"funes":{"httpUrl":"http://127.0.0.1:47625/mcp","headers":{"Authorization":"Bearer $FUNES_MCP_KEY"},"timeout":60000}}}

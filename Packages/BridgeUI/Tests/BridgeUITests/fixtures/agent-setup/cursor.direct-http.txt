@@ -1,0 +1,1 @@
+{"mcpServers":{"funes":{"url":"http://127.0.0.1:47625/mcp","headers":{"Authorization":"Bearer ${env:FUNES_MCP_KEY}"}}}}

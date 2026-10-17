@@ -1,0 +1,1 @@
+{"inputs":[{"type":"promptString","id":"funes-key","description":"Funes Vault MCP key","password":true}],"servers":{"funes":{"type":"http","url":"http://127.0.0.1:47625/mcp","headers":{"Authorization":"Bearer ${input:funes-key}"}}}}

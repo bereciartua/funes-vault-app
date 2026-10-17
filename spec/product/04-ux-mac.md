@@ -137,7 +137,7 @@ A card at the top of the Vault:
 - **Filters:** All, Shared, Suggestions, Problems; Agent ▾; Device ▾; Today / 7 days / 30 days / All.
 - **Detail pane:**
   - the request id;
-  - the task, shown during the session only (stored as a hash, so after relaunch it shows "Task text not stored");
+  - the task, for requests whose Share panel this session showed (the vault stores only a hash, so otherwise, and after relaunch, it shows "Task text not stored");
   - withheld counts by reason;
   - fix links ("Allow Project Context for Cursor…").
 

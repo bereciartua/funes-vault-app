@@ -1,18 +1,22 @@
 // swift-tools-version: 6.0
 import PackageDescription
 
-// UI and workflow pieces copied from EK Bridge (tier 2, ADR-0013): the approval
-// queue and panel, and the Activity log. `Upstream/` keeps the copies as they were
-// (not compiled); `Sources/BridgeUI` holds the adapted ones. Extracted into
-// BridgeKit as BridgeKitUI after Funes v0.1. No Funes or EventKit types.
+// UI and workflow pieces copied from EK Bridge (tier 2, ADR-0013): the approval queue and panel,
+// the Activity log, agent setup and detection, one-click setup and Move to Applications.
+// `Upstream/` keeps the copies as they were (not compiled); `Sources/BridgeUI` holds the adapted
+// ones. Extracted into BridgeKit as BridgeKitUI after Funes v0.1. No Funes or EventKit types.
 let package = Package(
     name: "BridgeUI",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "BridgeUI", targets: ["BridgeUI"]),
     ],
+    dependencies: [
+        // Exactly the version FunesMCP and the Xcode project pin (AGENTS.md).
+        .package(url: "https://github.com/bereciartua/bridgekit.git", exact: "0.1.0"),
+    ],
     targets: [
-        .target(name: "BridgeUI"),
-        .testTarget(name: "BridgeUITests", dependencies: ["BridgeUI"]),
+        .target(name: "BridgeUI", dependencies: [.product(name: "BridgeKitCore", package: "bridgekit")]),
+        .testTarget(name: "BridgeUITests", dependencies: ["BridgeUI"], resources: [.copy("fixtures")]),
     ]
 )

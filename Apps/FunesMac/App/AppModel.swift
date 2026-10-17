@@ -1,4 +1,5 @@
 import BridgeKitCore
+import BridgeUI
 import Foundation
 import FunesCore
 import FunesProtocol
@@ -69,12 +70,16 @@ final class AppModel {
 
     let vault: VaultModel
     let inboxState: InboxModel
+    let activity: ActivityModel
     let checklist: ChecklistModel
 
     // MARK: Navigation
 
     var section: AppSection = .vault
     var settingsTab: SettingsTab = .general
+    var agentTab: AgentTab = .access
+    /// Add Agent… from the setup checklist.
+    var addAgentRequest = 0
     var selectedMemoryID: UUID?
     var selectedAgentID: UUID?
     var selectedSuggestionIDs = Set<UUID>()
@@ -89,6 +94,17 @@ final class AppModel {
     @ObservationIgnored var openPendingRequest: (UUID) -> Void = { _ in }
     @ObservationIgnored var changed: () -> Void = {}
     @ObservationIgnored var dockPreferenceChanged: () -> Void = {}
+    /// One-click setup (live, or fakes in the UI-review build).
+    @ObservationIgnored var setupControls = AgentSetupControls(
+        preview: { _, _, done in done(.failure(OneClickFailure(message: String(localized: "One-click setup isn't available.")))) },
+        apply: { _, done in done(.failure(OneClickFailure(message: String(localized: "One-click setup isn't available.")))) },
+        restart: { _, done in done(false) })
+    /// Agents installed on this Mac, for Add Agent's tiles.
+    @ObservationIgnored var detectAgents: () -> Set<SetupAgent> = { [] }
+    /// The last MCP connection per agent id ("Claude Code 2.1"), from the server.
+    @ObservationIgnored var connection: (UUID) -> String? = { _ in nil }
+    /// The port the MCP server listens on, or is configured for.
+    var mcpPort: Int = 47_625
     /// Turns the MCP server on or off (Settings ▸ MCP).
     @ObservationIgnored var setServer: (Bool) -> Void = { _ in }
     /// Turns a notification kind on, asking macOS for permission the first time.
@@ -105,6 +121,7 @@ final class AppModel {
         self.preferences = preferences
         vault = VaultModel(services: services)
         inboxState = InboxModel(services: services)
+        activity = ActivityModel(services: services)
         checklist = ChecklistModel(preferences: preferences)
         pausedUntil = services.pause.pausedUntil(at: Date())
         observation = services.store.observeChanges { [weak self] in
@@ -228,6 +245,21 @@ final class AppModel {
         case "lmstudio": "LM Studio"
         default: nil
         }
+    }
+
+    /// What an agent's last MCP connection said it was ("claude-code 2.1").
+    func clientName(_ id: UUID) -> String? { connection(id) }
+
+    let setupNames = SetupNames(appName: "Funes Vault", agentOption: "agent", secretNoun: String(localized: "key"),
+                                copySecretAction: String(localized: "Copy Key…"), environmentVariable: "FUNES_MCP_KEY")
+
+    /// The values an agent's setup needs: the MCP URL, the launcher inside the app, its id and key file.
+    func setupContext(for agent: Agent) -> SetupContext {
+        let launcher = Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/\(Identifiers.mcpLauncherName)").path
+        let keyPath = services.keys.url(agentID: agent.id)?.path
+            ?? services.dataFolder.appendingPathComponent("agent-keys/\(agent.id.db).key").path
+        return SetupContext(serverKey: Identifiers.mcpServerKey, url: "http://127.0.0.1:\(mcpPort)/mcp", launcherPath: launcher,
+                            agentID: agent.id.db, keyPath: keyPath, names: setupNames)
     }
 
     func categoryName(_ key: String) -> String { categories.first { $0.key == key }?.name ?? key }
