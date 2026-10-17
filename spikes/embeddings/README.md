@@ -23,4 +23,4 @@ cd spikes/search && MODE=2b MODELS=bge-small,bge-small-coreml-cpu,bge-small-noin
 
 - `make_query_variants.py` wrote `queries-30-expanded.json` (FunesCore fixture) and `queries-30-es.json` (here).
 - `tokcheck.py` writes Hugging Face token ids to check the Swift WordPiece tokenizer (`TOKCHECK=`).
-- EmbeddingGemma-300m is listed in `embed.py` but wasn't run: the repository is gated behind Gemma's terms.
+- EmbeddingGemma-300m is listed in `embed.py` but wasn't run. The repository is gated: even signed in, the download returns 403 until the account accepts the Gemma terms at huggingface.co/google/embeddinggemma-300m.

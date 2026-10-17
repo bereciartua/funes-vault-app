@@ -171,12 +171,13 @@ Open models are much better than Apple's on raw tasks (0.56–0.77 alone vs 0.39
 | multilingual-e5-small | MIT | 384 | 449 MB | 0.561 / 0.617 | 0.856 / 0.939 | **0.539** | 15.9 ms (MPS) |
 | nomic-embed-text v1.5 | Apache-2.0 | 768 | 522 MB | 0.722 / **0.778** | 0.883 / 0.944 | 0.339 | 24.4 ms (MPS) |
 | Qwen3-Embedding-0.6B | Apache-2.0 | 1024 | 1,136 MB | 0.722 / 0.739 | 0.911 / 0.933 | **0.644** | 86.0 ms (MPS, fp16) |
-| EmbeddingGemma-300m | Gemma terms | 768 | — | **not run**: gated on Hugging Face (needs the user to accept Gemma's terms with their account); no unofficial mirror used | | | |
+| EmbeddingGemma-300m | Gemma Terms of Use | 768 | — | **not run**: gated. With a signed-in read token, Hugging Face still returns 403 because the Gemma terms aren't accepted on that account. No unofficial mirror was used | | | |
 
 Notes:
 - **Prefixes, as each model documents:** bge uses the retrieval instruction for queries (without it: 0.761 raw, 0.956 best agent; same within noise); e5 `query:`/`passage:`; nomic `search_query:`/`search_document:`; Qwen3 a task instruction ("Given a task that an AI assistant received, retrieve the user's personal notes that help with the task"). The document text is the spec's `title \n kind \n categories \n body`, truncated to 256 tokens.
 - **Runtimes:** quality numbers come from PyTorch 2.14.1 on MPS (fp32, Qwen3 fp16) through sentence-transformers 6.1.0, except the Core ML row. nomic's remote code needed a one-method shim for transformers 5.x.
 - **Embed time per memory** (batch 32, MPS): 2.2–2.5 ms for the small models, 11 ms nomic, 55 ms Qwen3. Core ML CPU from Swift, one at a time: 4.7 ms, so re-embedding 10,000 memories takes about 47 s.
+- **To add EmbeddingGemma later:** accept the terms at huggingface.co/google/embeddinggemma-300m with the signed-in account, then run `embed.py corpus.json vectors embeddinggemma` and rescore with `MODE=2b` (see the spike README). Its prompts (`task: search result | query: `, `title: none | text: `) are already in `embed.py`.
 - With 30 queries and 70 labels, differences under ~0.05 are noise. The three small English models and nomic are effectively tied on agent queries.
 
 ### Fusion: the spec's formula needs a change
@@ -240,6 +241,7 @@ Measured: **Spanish tasks against English memories** (cross-lingual). English-on
 3. **Fusion:** `0.30 × keyword + 0.70 × semantic`, with `semantic` the cosine min-max normalized over the vault per query. Thresholds on the raw cosine: vault 0.50, retrieval 0.55 for this model id.
 4. **Add `keywords` to `request_memory`**, and make the tool description ask for them. It lifts keyword-only v0.1 search to ~0.83 even if embeddings wait.
 5. **Multilingual later:** multilingual-e5-small (MIT) is the candidate when Spanish ships, after a Spanish-memory benchmark. Qwen3-0.6B is better cross-lingually but 1.1 GB and 86 ms per query.
+6. **Licences for bundling:** bge-small, e5 and multilingual-e5 are MIT; nomic and Qwen3 are Apache-2.0. All allow bundling with an attribution notice. EmbeddingGemma (unmeasured here) is under Google's **Gemma Terms of Use**, which isn't an open-source licence. Redistributing it means passing its use restrictions and Prohibited Use Policy on to users, with a notice in the app, and Google can update those terms. That's a heavier obligation for a bundled default than MIT or Apache-2.0, so it should only be chosen if it clearly wins once it's measured.
 
 On these fixtures, "keyword-only plus agent keywords" (0.83) is a solid v0.1 baseline. "bge-small Core ML hybrid plus agent keywords" (0.94) is the version that clears the bar.
 
