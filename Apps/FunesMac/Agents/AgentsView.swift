@@ -144,12 +144,14 @@ struct AgentDetailView: View {
         .sheet(isPresented: $renaming) { renameSheet }
     }
 
+    /// The name and status take the room; the buttons keep their size. The kind is one line that
+    /// truncates, and is left out when the name already says it.
     private var header: some View {
         HStack(alignment: .center, spacing: 12) {
             AgentIcon(kind: agent.agentKind, size: 40)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(agent.name).font(.title2.weight(.semibold)).lineLimit(1)
+                    Text(agent.name).font(.title2.weight(.semibold)).lineLimit(1).truncationMode(.tail)
                     Button { newName = agent.name; renaming = true } label: { Image(systemName: "pencil") }
                         .buttonStyle(.borderless)
                         .accessibilityLabel(String(localized: "Rename \(agent.name)"))
@@ -158,18 +160,25 @@ struct AgentDetailView: View {
                     Pill(label: AgentText.statusLine(agent, now: model.now, client: model.clientName(agent.id)),
                          tone: AgentText.tone(agent, now: model.now))
                         .fixedSize()
-                    Text(agent.agentKind.setupAgent.displayName).font(.callout).foregroundStyle(.secondary)
+                    let kind = agent.agentKind.setupAgent.displayName
+                    if kind != agent.name {
+                        Text(kind).font(.callout).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
+                    }
                 }
-                if let error { Text(error).font(.callout).foregroundStyle(.red) }
+                if let error { Text(error).font(.callout).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true) }
             }
-            Spacer()
-            if agent.paused {
-                Button(String(localized: "Resume")) { run { try await model.services.agents.resume(agentID: agent.id, now: Date()) } }
-            } else {
-                Button(String(localized: "Pause")) { run { try await model.services.agents.pause(agentID: agent.id, now: Date()) } }
-                    .help(String(localized: "Refuse this agent's requests until you resume it"))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .layoutPriority(1)
+            HStack(spacing: 8) {
+                if agent.paused {
+                    Button(String(localized: "Resume")) { run { try await model.services.agents.resume(agentID: agent.id, now: Date()) } }
+                } else {
+                    Button(String(localized: "Pause")) { run { try await model.services.agents.pause(agentID: agent.id, now: Date()) } }
+                        .help(String(localized: "Refuse this agent's requests until you resume it"))
+                }
+                Button(String(localized: "Remove…"), role: .destructive) { confirmRemove = true }
             }
-            Button(String(localized: "Remove…"), role: .destructive) { confirmRemove = true }
+            .fixedSize()
         }
     }
 

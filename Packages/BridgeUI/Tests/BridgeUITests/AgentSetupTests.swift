@@ -207,6 +207,75 @@ struct OneClickSetupTests {
         #expect(try OneClickAgents.apply(again, home: home, appName: "Funes Vault", tag: "funes").get().alreadySetUp)
     }
 
+    /// Claude Desktop's config as it ships today: an empty mcpServers next to its own top-level
+    /// settings. The preview is a diff that adds only the funes entry, and Add keeps every other key.
+    @Test func claudeDesktopConfigWithItsOwnSettings() throws {
+        let home = try scratch()
+        defer { try? FileManager.default.removeItem(atPath: home) }
+        let folder = home + "/Library/Application Support/Claude"
+        try FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true)
+        let original = """
+            {
+              "mcpServers": {},
+              "coworkUserFilesPath": "/Users/you/Claude",
+              "preferences": {
+                "menuBarEnabled": true,
+                "sidebarMode": "chat",
+                "quickEntryShortcut": "double-tap-option"
+              }
+            }
+            """
+        let file = folder + "/claude_desktop_config.json"
+        try original.write(toFile: file, atomically: true, encoding: .utf8)
+        let setup = try #require(SetupAgent.claudeDesktop.oneClickSetup(AgentSetupTests.context))
+        let preview = try OneClickAgents.preview(.claudeDesktop, setup, home: home, appName: "Funes Vault",
+                                                 locator: ExecutableLocator(isExecutable: { _ in false }, loginShellLookup: { _ in nil })).get()
+        guard case .file(_, let change) = preview else {
+            Issue.record("expected a file change")
+            return
+        }
+        #expect(change.outcome == .added && change.before != nil)
+        #expect(change.diffLines.contains { $0.kind == .added && $0.text.contains("funes-mcp") })
+        // Only the empty `"mcpServers": {}` line is rewritten; the settings around it are untouched.
+        let removed = change.diffLines.filter { $0.kind == .removed }.map(\.text)
+        #expect(removed.allSatisfy { $0.contains("mcpServers") }, "removed: \(removed)")
+        let result = try OneClickAgents.apply(preview, home: home, appName: "Funes Vault", tag: "funes").get()
+        let backup = try #require(result.backup)
+        #expect(try String(contentsOf: backup, encoding: .utf8) == original)
+        let written = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: URL(fileURLWithPath: file))) as? [String: Any])
+        #expect(written["coworkUserFilesPath"] as? String == "/Users/you/Claude")
+        let preferences = try #require(written["preferences"] as? [String: Any])
+        #expect(preferences["menuBarEnabled"] as? Bool == true && preferences["sidebarMode"] as? String == "chat"
+            && preferences["quickEntryShortcut"] as? String == "double-tap-option")
+        let servers = try #require(written["mcpServers"] as? [String: Any])
+        #expect(servers.count == 1)
+        let funes = try #require(servers["funes"] as? [String: Any])
+        #expect(funes["command"] as? String == AgentSetupTests.context.launcherPath)
+        #expect(funes["args"] as? [String] == ["--agent", AgentSetupTests.agentID])
+    }
+
+    /// No config yet (Claude Desktop never opened its settings): the preview creates the file, with
+    /// nothing to back up.
+    @Test func claudeDesktopWithoutAConfigFile() throws {
+        let home = try scratch()
+        defer { try? FileManager.default.removeItem(atPath: home) }
+        let setup = try #require(SetupAgent.claudeDesktop.oneClickSetup(AgentSetupTests.context))
+        let preview = try OneClickAgents.preview(.claudeDesktop, setup, home: home, appName: "Funes Vault",
+                                                 locator: ExecutableLocator(isExecutable: { _ in false }, loginShellLookup: { _ in nil })).get()
+        guard case .file(_, let change) = preview else {
+            Issue.record("expected a file change")
+            return
+        }
+        #expect(change.before == nil && change.outcome != .unchanged)
+        #expect(change.diffLines.contains { $0.kind == .added && $0.text.contains("funes") })
+        let result = try OneClickAgents.apply(preview, home: home, appName: "Funes Vault", tag: "funes").get()
+        #expect(result.backup == nil)
+        let file = home + "/Library/Application Support/Claude/claude_desktop_config.json"
+        let written = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: URL(fileURLWithPath: file))) as? [String: Any])
+        let servers = try #require(written["mcpServers"] as? [String: Any])
+        #expect(servers["funes"] != nil)
+    }
+
     @Test func invalidConfigIsLeftAlone() throws {
         let home = try scratch()
         defer { try? FileManager.default.removeItem(atPath: home) }
