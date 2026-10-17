@@ -502,6 +502,21 @@ def run_access(h):
     check("allowed once: in the Inbox afterwards", wait_for(lambda: h.control(cmd="inbox")["pending"] == before + 1))
     check("and its Save panel", wait_for(lambda: h.control(cmd="presented")["suggestions"] == shown + 1))
     s.close()
+
+    # PR #3 review 4304175703: an agent that may save without asking still gets the Inbox here.
+    # A category per mode: an offer is made once an hour per agent and category.
+    for mode, category in (("once", "personal_preferences"), ("always", "project_context")):
+        h.control(cmd="access", mode=mode)
+        before = h.control(cmd="inbox")["pending"]
+        count = h.control(cmd="memory_count")["count"]
+        w = Client(h, h.key("askwriter"))
+        result = w.call("suggest_memory", {"title": f"Likes {mode} tea", "body": "Green tea in the afternoon.",
+                                           "categories": [category]})
+        check(f"writer refused at once ({mode})", result.get("reason") == "category_not_allowed", result)
+        check(f"allowed {mode}: queued, not saved",
+              wait_for(lambda: h.control(cmd="inbox")["pending"] == before + 1) and
+              h.control(cmd="memory_count")["count"] == count)
+        w.close()
     h.control(cmd="access", mode="notnow")
 
 

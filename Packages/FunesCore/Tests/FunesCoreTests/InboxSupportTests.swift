@@ -73,3 +73,57 @@ extension InboxSupportTests {
         #expect(try await s.suggestions(ids: []).isEmpty)
     }
 }
+
+/// PR #3 review 4304175704: an Inbox card follows background classification until the user edits
+/// it, and Apply stores exactly what the card showed.
+@Suite struct SuggestionDraftTests {
+    @Test func untouchedDraftsFollowClassificationAndApplyWhatTheyShow() async throws {
+        let vault = try TestVault()
+        let activity = InMemoryActivityLog()
+        let captures = CaptureService(store: vault.store, activity: activity)
+        let suggestions = SuggestionService(store: vault.store, activity: activity, pause: FunesPause())
+        let categories = try vault.store.categories()
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let id = try await captures.capture("Book the dentist before the end of the month", now: now).suggestionID
+        let shown = SuggestionDraft(try #require(try await suggestions.suggestion(id: id)), categories: categories)
+
+        // Classification finishes while the card is on screen.
+        try await captures.reclassify(suggestionID: id, record: ClassificationRecord(
+            engine: "apple.foundation",
+            proposal: CaptureProposal(title: "Dentist appointment", kind: .event, categoryKeys: ["health"],
+                                      sensitivity: .sensitive, timeLimited: true),
+            keptOnDevice: false))
+        let current = try #require(try await suggestions.suggestion(id: id))
+        #expect(current.title == "Dentist appointment" && current.sensitivity == .sensitive)
+
+        // Untouched, the card refreshes to the new proposal.
+        let refreshed = shown.refreshed(from: current, categories: categories)
+        #expect(refreshed.title == "Dentist appointment" && refreshed.categoryKeys == ["health"] && refreshed.sensitivity == .sensitive)
+
+        // Applying a card that still shows the old proposal stores exactly that, not the newer values.
+        let result = try await suggestions.apply(suggestionID: id, edits: shown.edit, now: now)
+        let memory = try #require(try vault.store.memory(id: result.memoryID))
+        #expect(memory.title == shown.title && memory.sensitivity == shown.sensitivity && memory.categoryKeys == shown.categoryKeys)
+    }
+
+    @Test func editedDraftsKeepTheUsersValues() throws {
+        let categories = MemoryCategory.builtins
+        let base = Suggestion(id: UUID(), origin: .captureMac, action: .create, title: "Old", body: "Note", kind: .fact,
+                              categoryKeys: ["personal_preferences"], sensitivity: .low, status: .pending,
+                              createdAt: Date(), expiresAfter: Date())
+        var draft = SuggestionDraft(base, categories: categories)
+        #expect(!draft.touched)
+        draft.title = "Mine"
+        var newer = base
+        newer.title = "Classified"
+        newer.sensitivity = .internal
+        let kept = draft.refreshed(from: newer, categories: categories)
+        #expect(kept.title == "Mine" && kept.sensitivity == .low && kept.touched)
+        // No categories means Personal preferences, at its default sensitivity, as Apply decides.
+        var bare = base
+        bare.categoryKeys = []
+        bare.sensitivity = nil
+        let fallback = SuggestionDraft(bare, categories: categories)
+        #expect(fallback.categoryKeys == ["personal_preferences"] && fallback.sensitivity == .low)
+    }
+}

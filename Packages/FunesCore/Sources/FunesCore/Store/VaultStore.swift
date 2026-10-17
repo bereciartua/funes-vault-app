@@ -88,6 +88,44 @@ public final class VaultStore: Sendable {
         return String(format: "%04d%02d%02d-%02d%02d", c.year!, c.month!, c.day!, c.hour!, c.minute!)
     }
 
+    /// Restore from Backup (FR-G-04), run before the vault opens: the current vault is first saved
+    /// as `Backups/pre-restore-<time>.sqlite` with SQLite's online backup, so transactions still in
+    /// its WAL are in that one self-contained file like every other backup; then `backupName` (a
+    /// file in `Backups/`) replaces `vault.sqlite`, and the old WAL and shared-memory files go.
+    /// Nothing changes if the snapshot fails. Returns the snapshot's URL (nil without a vault).
+    @discardableResult
+    public static func restoreBackup(_ backupName: String, in directory: URL, now: Date) throws -> URL? {
+        guard !backupName.contains("/"), backupName.hasSuffix(".sqlite") else { throw VaultError.invalidInput(field: "backup") }
+        let manager = FileManager.default
+        let backups = directory.appending(path: "Backups", directoryHint: .isDirectory)
+        let source = backups.appending(path: backupName)
+        guard manager.fileExists(atPath: source.path) else { throw VaultError.notFound }
+        let current = directory.appending(path: fileName)
+        var snapshot: URL?
+        if manager.fileExists(atPath: current.path) {
+            try FileSafety.prepareDirectory(backups)
+            let url = backups.appending(path: "pre-restore-\(stamp(now))-\(Int(now.timeIntervalSince1970) % 60).sqlite")
+            let from = try DatabaseQueue(path: current.path)
+            let to = try DatabaseQueue(path: url.path)
+            try from.backup(to: to)
+            try to.close()
+            try from.close()
+            _ = chmod(url.path, 0o600)
+            snapshot = url
+        }
+        // The copy goes in under a temporary name first, so a failed copy leaves the vault as it was.
+        let incoming = directory.appending(path: fileName + ".restoring")
+        try? manager.removeItem(at: incoming)
+        try manager.copyItem(at: source, to: incoming)
+        _ = chmod(incoming.path, 0o600)
+        for suffix in ["", "-wal", "-shm"] {
+            let file = directory.appending(path: fileName + suffix)
+            if manager.fileExists(atPath: file.path) { try manager.removeItem(at: file) }
+        }
+        try manager.moveItem(at: incoming, to: current)
+        return snapshot
+    }
+
     // MARK: - Meta
 
     public func meta(_ key: String) throws -> String? {

@@ -91,8 +91,10 @@ extension RequestPipeline {
                 var grant: OnceGrant?
                 if answer == .alwaysAllow {
                     try await services.agents.allowCategory(agentID: agent.id, key, now: now())
-                } else if let current = try await services.agents.agent(id: agent.id) {
-                    grant = OnceGrant(offeredByRequestID: offeredBy, agentRevision: current.revision, categoryKey: key)
+                } else {
+                    // Bound to the revision the offer was made at: an access change while the panel
+                    // was open makes the grant fail closed (§7).
+                    grant = OnceGrant(offeredByRequestID: offeredBy, agentRevision: offer.agentRevision, categoryKey: key)
                 }
                 if outcome.status == .needsApproval, let waiting = outcome.requestID {
                     try? await disclosures.supersede(requestID: waiting, now: now())
@@ -248,7 +250,8 @@ extension RequestPipeline {
     }
 
     /// The access-request panel for a refused suggestion. Allow Once lets this one suggestion
-    /// through; Always Allow adds the category (or Suggest) to the agent's access first.
+    /// through; Always Allow adds the category (or Suggest) to the agent's access first. Either way it
+    /// goes to the Inbox with its Save panel, never straight into the vault (§7).
     func askForSuggestionAccess(_ agent: Agent, _ input: SuggestInput, _ offer: AccessRequestOffer) {
         let services = self.services, presenter = self.presenter, now = self.now
         let prompt = AccessPrompt(agentID: agent.id, categoryKey: offer.categoryKeys.first, operation: offer.operation,
@@ -260,14 +263,15 @@ extension RequestPipeline {
                 switch answer {
                 case .notNow: return
                 case .allowOnce:
-                    outcome = try await services.suggestions.suggest(agentID: agent.id, input, now: now(), allowOnce: offer)
+                    outcome = try await services.suggestions.suggest(agentID: agent.id, input, now: now(), allowOnce: offer,
+                                                                     alwaysQueue: true)
                 case .alwaysAllow:
                     if let key = offer.categoryKeys.first {
                         try await services.agents.allowCategory(agentID: agent.id, key, now: now())
                     } else {
                         try await services.agents.allowOperation(agentID: agent.id, offer.operation, now: now())
                     }
-                    outcome = try await services.suggestions.suggest(agentID: agent.id, input, now: now())
+                    outcome = try await services.suggestions.suggest(agentID: agent.id, input, now: now(), alwaysQueue: true)
                 }
                 if outcome.status == .queued, let id = outcome.suggestionID {
                     await presenter.showSuggestion(suggestionID: id, agentID: agent.id)

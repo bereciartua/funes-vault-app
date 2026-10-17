@@ -138,6 +138,7 @@ final class AppModel {
         self.modelSettings = modelSettings ?? ModelSettings(defaults: preferences.defaults, keys: ModelSettings.keychain())
         data = DataOperations(environment: services, preferences: preferences)
         pausedUntil = services.pause.pausedUntil(at: Date())
+        inboxState.categories = { [weak self] in self?.categories ?? [] }
         observation = services.store.observeChanges { [weak self] in
             Task { @MainActor in self?.scheduleRefresh() }
         }

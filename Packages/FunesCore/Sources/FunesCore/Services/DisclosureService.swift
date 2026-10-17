@@ -71,6 +71,17 @@ public struct AccessRequestOffer: Sendable, Hashable {
     /// Categories to allow (Allow Once / Always Allow add exactly one of them).
     public var categoryKeys: [String]
     public var operation: AccessOperation
+    /// The agent's revision when the offer was made. Allow Once holds only while it's current: any
+    /// change to the agent's access drops it (§7).
+    public var agentRevision: Int
+
+    public init(agentID: UUID, requestID: UUID?, categoryKeys: [String], operation: AccessOperation, agentRevision: Int) {
+        self.agentID = agentID
+        self.requestID = requestID
+        self.categoryKeys = categoryKeys
+        self.operation = operation
+        self.agentRevision = agentRevision
+    }
 }
 
 /// The result of `request_memory` or `get_memory_request`.
@@ -179,7 +190,12 @@ public final class DisclosureService: Sendable {
         let paused = pause.isPaused(at: now)
         let requestID = UUID()
 
-        struct Result { var outcome: RequestOutcome; var delivered: [UUID]; var withheldCategories: [String] }
+        struct Result {
+            var outcome: RequestOutcome
+            var delivered: [UUID]
+            var withheldCategories: [String]
+            var revision = 0
+        }
         let result = try await store.writer.write { db -> Result in
             // Re-read inside the transaction, so the decision and the stored snapshot agree.
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.unauthenticated }
@@ -240,7 +256,8 @@ public final class DisclosureService: Sendable {
                 try Self.insert(db, row)
                 outcome.status = .needsApproval
             }
-            return Result(outcome: outcome, delivered: delivered, withheldCategories: withheldCategories)
+            return Result(outcome: outcome, delivered: delivered, withheldCategories: withheldCategories,
+                          revision: agent.revision)
         }
 
         var outcome = result.outcome
@@ -250,7 +267,7 @@ public final class DisclosureService: Sendable {
         }
         if let withheld = outcome.withheld, Set(withheld.keys) == [.categoryNotAllowed], agent.asksForAccess {
             outcome.accessOffer = offer(agentID: agentID, requestID: requestID, categories: result.withheldCategories,
-                                        operation: .read, now: now)
+                                        operation: .read, agentRevision: result.revision, now: now)
         }
         activity.record(ActivityEvent(
             time: now, requestID: requestID, actor: .agent(agentID), via: .mcp, event: "request_memory",
@@ -553,7 +570,8 @@ public final class DisclosureService: Sendable {
 
     /// An access request to offer the user, at most once an hour per agent, category and operation
     /// (§7, FR-A-10). Used for reads here and for suggestions by SuggestionService.
-    func offer(agentID: UUID, requestID: UUID?, categories: [String], operation: AccessOperation, now: Date) -> AccessRequestOffer? {
+    func offer(agentID: UUID, requestID: UUID?, categories: [String], operation: AccessOperation, agentRevision: Int,
+               now: Date) -> AccessRequestOffer? {
         var seen = Set<String>()
         let fresh = offered.withLock { offered -> [String] in
             let keys = (categories.isEmpty ? [""] : categories).filter { seen.insert($0).inserted }
@@ -566,7 +584,8 @@ public final class DisclosureService: Sendable {
         guard !fresh.isEmpty else { return nil }
         let categoryKeys = fresh.filter { !$0.isEmpty }
         if let requestID, !categoryKeys.isEmpty { grants.withLock { $0[requestID, default: []].formUnion(categoryKeys) } }
-        return AccessRequestOffer(agentID: agentID, requestID: requestID, categoryKeys: categoryKeys, operation: operation)
+        return AccessRequestOffer(agentID: agentID, requestID: requestID, categoryKeys: categoryKeys, operation: operation,
+                                  agentRevision: agentRevision)
     }
 
     /// The access a stored request is evaluated with: the agent's, plus the Allow Once grant the

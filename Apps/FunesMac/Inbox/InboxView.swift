@@ -120,7 +120,7 @@ struct InboxView: View {
 struct SuggestionCard: View {
     let model: AppModel
     let suggestion: Suggestion
-    @State private var form: SuggestionForm?
+    @State private var form: SuggestionDraft?
     @State private var target: Memory?
     @State private var similar: [Memory] = []
     @State private var error: String?
@@ -178,19 +178,22 @@ struct SuggestionCard: View {
         .contentShape(Rectangle())
         .onTapGesture { inbox.focused = suggestion.id }
         .task(id: suggestion.id) { await load() }
+        // Background classification changes the proposal under the same id: an untouched card
+        // shows the new values (PR #3 review 4304175704).
+        .onChange(of: suggestion) { _, current in form = inbox.draft(for: current) }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(String(localized: "Suggestion: \(suggestion.title)"))
     }
 
-    private var formBinding: Binding<SuggestionForm>? {
+    private var formBinding: Binding<SuggestionDraft>? {
         guard form != nil else { return nil }
         return Binding(get: { form! }, set: { value in
             form = value
-            inbox.edits[suggestion.id] = value
+            inbox.drafts[suggestion.id] = value
         })
     }
 
-    private func fields(_ form: Binding<SuggestionForm>) -> some View {
+    private func fields(_ form: Binding<SuggestionDraft>) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             TextField(String(localized: "Title"), text: form.title)
                 .textFieldStyle(.roundedBorder)
@@ -280,7 +283,7 @@ struct SuggestionCard: View {
 
     private func load() async {
         let services = model.services
-        form = inbox.edits[suggestion.id] ?? SuggestionForm(suggestion, categories: model.categories)
+        form = inbox.draft(for: suggestion)
         if let id = suggestion.targetMemoryID { target = try? services.store.memory(id: id) }
         var ids = (try? services.store.exactDuplicates(title: suggestion.title, body: suggestion.body)) ?? []
         let names = suggestion.categoryKeys.map(model.categoryName)
@@ -315,7 +318,7 @@ struct SuggestionCard: View {
 /// A correction's change: old → new for the title and the text (FR-S-06).
 struct CorrectionDiff: View {
     let old: Memory
-    let new: SuggestionForm
+    let new: SuggestionDraft
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {

@@ -170,6 +170,8 @@ final class Harness {
             ("asknotnow", narrowRead), ("askonce", narrowRead), ("askalways", narrowRead), ("askshared", narrowRead),
             ("asksuggest", Access(operations: [.suggest], maxSensitivity: .internal,
                                   allowedCategoryKeys: ["software_development"])),
+            ("askwriter", Access(operations: [.write], maxSensitivity: .internal, allowedCategoryKeys: ["software_development"],
+                                 askBeforeSaving: false)),
         ]
         for (name, access) in asking {
             let (agent, key) = try await agents.create(name: name, kind: .claudeCode, access: access, asksForAccess: true,

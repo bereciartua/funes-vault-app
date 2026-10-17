@@ -84,29 +84,18 @@ final class DataOperations {
         Self.relaunch()
     }
 
-    /// At launch, before the vault opens: the current files move to `Backups/pre-restore-…` (with
-    /// their WAL), and the chosen backup becomes `vault.sqlite`.
+    /// At launch, before the vault opens: FunesCore saves the current vault as a self-contained
+    /// `Backups/pre-restore-…` backup (with what was still in its WAL), then puts the chosen backup in
+    /// place (`VaultStore.restoreBackup`).
     static func applyPendingRestore(dataFolder: URL) {
         let manager = FileManager.default
         let marker = dataFolder.appendingPathComponent(restoreMarker)
         guard let data = manager.contents(atPath: marker.path) else { return }
         try? manager.removeItem(at: marker)
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: String],
-              let name = object["backup"], !name.contains("/"), name.hasSuffix(".sqlite") else { return }
-        let backups = dataFolder.appendingPathComponent("Backups", isDirectory: true)
-        let source = backups.appendingPathComponent(name)
-        guard manager.fileExists(atPath: source.path) else { return }
-        let stamp = Int(Date().timeIntervalSince1970)
-        for suffix in ["", "-wal", "-shm"] {
-            let current = dataFolder.appendingPathComponent(VaultStore.fileName + suffix)
-            if manager.fileExists(atPath: current.path) {
-                try? manager.moveItem(at: current, to: backups.appendingPathComponent("pre-restore-\(stamp).sqlite" + suffix))
-            }
-        }
-        let target = dataFolder.appendingPathComponent(VaultStore.fileName)
+              let name = object["backup"] else { return }
         do {
-            try manager.copyItem(at: source, to: target)
-            _ = chmod(target.path, 0o600)
+            try VaultStore.restoreBackup(name, in: dataFolder, now: Date())
         } catch {
             logger.error("Restoring a backup failed")
         }

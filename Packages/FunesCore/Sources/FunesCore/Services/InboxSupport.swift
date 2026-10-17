@@ -100,3 +100,41 @@ extension SuggestionService {
         }
     }
 }
+
+/// What an Inbox card shows and the user may edit before Apply (FR-I-02). Apply sends all of it,
+/// so what's applied is exactly what was on screen, even if the suggestion changed underneath
+/// (background classification). A draft the user hasn't touched follows such changes; one they
+/// edited keeps their values (PR #3 review 4304175704).
+public struct SuggestionDraft: Sendable, Hashable {
+    public var title: String { didSet { touched = true } }
+    public var body: String { didSet { touched = true } }
+    public var kind: MemoryKind { didSet { touched = true } }
+    public var categoryKeys: [String] { didSet { touched = true } }
+    public var sensitivity: Sensitivity { didSet { touched = true } }
+    /// The user changed something.
+    public private(set) var touched = false
+
+    /// The suggestion's proposal; no categories means Personal preferences, and no sensitivity the
+    /// categories' default (as Apply would decide).
+    public init(_ suggestion: Suggestion, categories: [MemoryCategory]) {
+        title = suggestion.title
+        body = suggestion.body
+        kind = suggestion.kind ?? .fact
+        let keys = suggestion.categoryKeys.isEmpty ? ["personal_preferences"] : suggestion.categoryKeys
+        categoryKeys = keys
+        sensitivity = suggestion.sensitivity
+            ?? max(.low, categories.filter { keys.contains($0.key) }.map(\.defaultSensitivity).max() ?? .low)
+    }
+
+    /// The draft for `suggestion` as it is now: rebuilt when untouched, kept when edited.
+    public func refreshed(from suggestion: Suggestion, categories: [MemoryCategory]) -> SuggestionDraft {
+        touched ? self : SuggestionDraft(suggestion, categories: categories)
+    }
+
+    /// Every field as shown, trimmed, for `SuggestionService.apply`.
+    public var edit: SuggestionEdit {
+        SuggestionEdit(title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                       body: body.trimmingCharacters(in: .whitespacesAndNewlines), kind: kind, categoryKeys: categoryKeys,
+                       sensitivity: sensitivity)
+    }
+}

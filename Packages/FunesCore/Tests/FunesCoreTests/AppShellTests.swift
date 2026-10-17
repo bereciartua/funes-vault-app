@@ -1,4 +1,5 @@
 import Foundation
+import GRDB
 import Testing
 @testable import FunesCore
 import FunesProtocol
@@ -62,5 +63,57 @@ import FunesProtocol
         for name in ["Home & Garden", "2027 goals", "日本", "__x__", "Ünïcødé"] {
             #expect(MemoryCategory.isValidKey(MemoryCategory.key(forName: name, existing: [])))
         }
+    }
+}
+
+/// PR #3 review 4304175702: Restore from Backup keeps what was still in the WAL. The pre-restore
+/// snapshot is a self-contained backup, so restoring it later brings those rows back.
+@Suite struct RestoreBackupTests {
+    func folder() throws -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("restore-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        return url
+    }
+
+    func titles(_ file: URL) throws -> [String] {
+        let queue = try DatabaseQueue(path: file.path)
+        defer { try? queue.close() }
+        return try queue.read { db in try String.fetchAll(db, sql: "SELECT title FROM memory ORDER BY title") }
+    }
+
+    @Test func walRowsSurviveARestoreRoundTrip() throws {
+        let directory = try folder()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        var store: VaultStore? = try VaultStore.open(directory: directory)
+        try store!.createMemory(MemoryDraft(title: "Before", body: "In the backup", categoryKeys: ["personal_preferences"]), now: now)
+        let older = try store!.dailyBackup(into: directory.appending(path: "Backups"), now: now)
+        try store!.createMemory(MemoryDraft(title: "After", body: "Only in the WAL", categoryKeys: ["personal_preferences"]), now: now)
+        // The vault is still open, so "After" is committed but not yet in vault.sqlite itself.
+        let wal = directory.appending(path: VaultStore.fileName + "-wal")
+        #expect(((try? FileManager.default.attributesOfItem(atPath: wal.path)[.size] as? Int) ?? 0) > 0)
+
+        let snapshot = try #require(try VaultStore.restoreBackup(older.lastPathComponent, in: directory,
+                                                                  now: now.addingTimeInterval(60)))
+        #expect(!FileManager.default.fileExists(atPath: wal.path))
+        store = nil
+        #expect(try titles(directory.appending(path: VaultStore.fileName)) == ["Before"])
+        // The snapshot is one file with everything, as a copy of just that file shows.
+        let copy = directory.appending(path: "copy.sqlite")
+        try FileManager.default.copyItem(at: snapshot, to: copy)
+        #expect(try titles(copy) == ["After", "Before"])
+        let mode = try FileManager.default.attributesOfItem(atPath: snapshot.path)[.posixPermissions] as? Int
+        #expect(mode == 0o600)
+
+        // Restoring the snapshot brings "After" back.
+        try VaultStore.restoreBackup(snapshot.lastPathComponent, in: directory, now: now.addingTimeInterval(120))
+        #expect(try titles(directory.appending(path: VaultStore.fileName)) == ["After", "Before"])
+    }
+
+    @Test func refusesNamesOutsideBackups() throws {
+        let directory = try folder()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        #expect(throws: VaultError.invalidInput(field: "backup")) { try VaultStore.restoreBackup("../vault.sqlite", in: directory, now: Date()) }
+        #expect(throws: VaultError.notFound) { try VaultStore.restoreBackup("missing.sqlite", in: directory, now: Date()) }
     }
 }

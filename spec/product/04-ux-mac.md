@@ -105,6 +105,7 @@ A card at the top of the Vault:
   - evidence, if the agent provided it, shown as quoted data;
   - a duplicate hint, when it applies;
   - the engine that proposed the fields ("Proposed on this Mac", "Proposed by Claude via Anthropic", "Kept on this Mac: looked sensitive").
+- **Apply stores exactly what the card shows.** A card the user hasn't edited follows background classification; an edited one keeps the user's values.
 - **Actions:** Apply (⌘⏎), Reject (⌫ when no field is being edited, ⌘⌫ anytime), Later. Click a card to make it the one the keys act on. Multi-select gives "Apply 12" and "Reject 12", with per-item results ("12 applied, 1 blocked by the secret scanner").
 - **Correction suggestions:** when a suggestion references an existing memory, the card shows a diff (old → new) with **Replace** and **Keep both**.
 
@@ -164,7 +165,7 @@ A card at the top of the Vault:
   - **Disclosure:** a sentence under every non-local choice saying exactly what is sent where.
   - **Calibrate…** (later) for embedding models Funes doesn't know.
 - **MCP:** server on/off, port (47625), launcher location, protocol log counts (no bodies).
-- **Data:** backups, export, import, Show in Finder, Erase All Data.
+- **Data:** backups, export, import, Show in Finder, Erase All Data. Restore from Backup relaunches; before the chosen backup replaces the vault, the current vault is saved as a self-contained `pre-restore-…` backup (an SQLite online backup, so nothing still in the WAL is lost).
 - **Updates:** automatic checks, Check Now.
 - **Advanced:** activity retention, reset the setup checklist.
 

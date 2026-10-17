@@ -108,19 +108,31 @@ public final class SuggestionService: Sendable {
     /// (§5.1–5.4). Never blocks for the user; a validation failure stores nothing.
     ///
     /// `allowOnce` is an offer this service made for an earlier, refused call of the same suggestion,
-    /// answered Allow Once by the user (access policy §7): its category or operation counts for this
-    /// call only. It never widens an "all categories" access, and never lifts a ceiling or a denial.
-    public func suggest(agentID: UUID, _ input: SuggestInput, now: Date,
-                        allowOnce: AccessRequestOffer? = nil) async throws -> SuggestOutcome {
+    /// answered Allow Once by the user (access policy §7). It counts for this call only, and only
+    /// while the agent's revision is the one the offer was made at: a stale grant is refused with
+    /// `policy_changed` before it touches anything. A category offer adds only that category (never
+    /// to an "all categories" access); an operation offer adds only that operation. Neither lifts a
+    /// ceiling or a denial.
+    ///
+    /// `alwaysQueue` stores the suggestion in the Inbox even when the agent may save directly: a
+    /// suggestion let through after an access request always waits for review (§7).
+    public func suggest(agentID: UUID, _ input: SuggestInput, now: Date, allowOnce: AccessRequestOffer? = nil,
+                        alwaysQueue: Bool = false) async throws -> SuggestOutcome {
         let paused = pause.isPaused(at: now)
-        enum Step { case done(SuggestOutcome), offer(SuggestOutcome, [String], AccessOperation) }
+        enum Step { case done(SuggestOutcome), offer(SuggestOutcome, [String], AccessOperation, Int) }
         let step = try await store.writer.write { db -> Step in
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.unauthenticated }
             try AgentStore.recordRequest(db, agentID: agentID, now: now)
             var access = agent.access
-            if let once = allowOnce, once.agentID == agentID {
-                if !access.allowedCategoryKeys.isEmpty { access.allowedCategoryKeys.formUnion(once.categoryKeys) }
-                access.operations.insert(once.operation)
+            if let once = allowOnce {
+                guard once.agentID == agentID, once.agentRevision == agent.revision else {
+                    return .done(.denied(.policyChanged))
+                }
+                if once.categoryKeys.isEmpty {
+                    access.operations.insert(once.operation)
+                } else if !access.allowedCategoryKeys.isEmpty {
+                    access.allowedCategoryKeys.formUnion(once.categoryKeys)
+                }
             }
 
             // §5.1 validation. Any failure: nothing stored.
@@ -145,12 +157,13 @@ public final class SuggestionService: Sendable {
             let sensitivity = try input.sensitivity ?? MemoryStore.defaultSensitivity(db, categoryKeys: categories)
             if let reason = PolicyEngine.scopeCheck(sensitivity: sensitivity, categoryKeys: categories, access: access) {
                 let out = SuggestOutcome.denied(reason)
-                return reason == .categoryNotAllowed && agent.asksForAccess ? .offer(out, categories, .suggest) : .done(out)
+                return reason == .categoryNotAllowed && agent.asksForAccess
+                    ? .offer(out, categories, .suggest, agent.revision) : .done(out)
             }
 
             // §5.4 decision. Corrections are always suggestions (FR-S-06).
             let ops = access.operations
-            if ops.contains(.write), !access.askBeforeSaving, input.targetMemoryID == nil {
+            if ops.contains(.write), !access.askBeforeSaving, input.targetMemoryID == nil, !alwaysQueue {
                 let m = try MemoryStore.insert(db, MemoryDraft(
                     title: input.title, body: input.body, kind: input.kind ?? .fact, categoryKeys: categories,
                     sensitivity: sensitivity, expiresAt: input.expiresAt, confidence: input.confidence ?? 0.5,
@@ -166,16 +179,16 @@ public final class SuggestionService: Sendable {
                 return .done(SuggestOutcome(status: .queued, suggestionID: id, findings: []))
             }
             let out = SuggestOutcome.denied(.operationNotAllowed)
-            return agent.asksForAccess ? .offer(out, [], .suggest) : .done(out)
+            return agent.asksForAccess ? .offer(out, [], .suggest, agent.revision) : .done(out)
         }
 
         var outcome: SuggestOutcome
         switch step {
         case let .done(o): outcome = o
-        case let .offer(o, categories, operation):
+        case let .offer(o, categories, operation, revision):
             outcome = o
             outcome.accessOffer = disclosures?.offer(agentID: agentID, requestID: nil, categories: categories,
-                                                     operation: operation, now: now)
+                                                     operation: operation, agentRevision: revision, now: now)
         }
         activity.record(ActivityEvent(
             time: now, actor: .agent(agentID), via: .mcp, event: "suggest_memory", outcome: outcome.status.rawValue,

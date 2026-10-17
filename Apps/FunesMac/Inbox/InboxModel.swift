@@ -16,8 +16,9 @@ final class InboxModel {
     var result: String?
     private(set) var importSources: [UUID: ImportSource] = [:]
     private(set) var restorable: [Suggestion] = []
-    /// Edits made on cards, kept while the Inbox reloads.
-    var edits: [UUID: SuggestionForm] = [:]
+    /// What each card shows, kept while the Inbox reloads (edited ones keep the user's values).
+    var drafts: [UUID: SuggestionDraft] = [:]
+    @ObservationIgnored var categories: () -> [MemoryCategory] = { [] }
 
     init(services: VaultEnvironment) {
         self.services = services
@@ -62,18 +63,27 @@ final class InboxModel {
 
     // MARK: Actions
 
-    /// Applies with the card's edits. Returns the similar memories to point out, or throws.
+    /// The card's draft for a suggestion as it is now: an untouched one follows classification.
+    func draft(for suggestion: Suggestion) -> SuggestionDraft {
+        let draft = drafts[suggestion.id]?.refreshed(from: suggestion, categories: categories())
+            ?? SuggestionDraft(suggestion, categories: categories())
+        if drafts[suggestion.id] != draft { drafts[suggestion.id] = draft }
+        return draft
+    }
+
+    /// Applies exactly what the card shows (every field, so a change underneath can't slip in).
+    /// Returns the similar memories to point out, or throws.
     func apply(_ suggestion: Suggestion, mode: ApplyMode = .keepBoth) async throws -> ApplyResult {
-        let edit = edits[suggestion.id].map { $0.edit(from: suggestion) } ?? SuggestionEdit()
+        let edit = draft(for: suggestion).edit
         let result = try await services.suggestions.apply(suggestionID: suggestion.id, edits: edit, mode: mode, now: Date())
-        edits[suggestion.id] = nil
+        drafts[suggestion.id] = nil
         selection.remove(suggestion.id)
         return result
     }
 
     func reject(_ suggestion: Suggestion) async throws {
         try await services.suggestions.reject(suggestionID: suggestion.id, now: Date())
-        edits[suggestion.id] = nil
+        drafts[suggestion.id] = nil
         selection.remove(suggestion.id)
     }
 
@@ -100,29 +110,6 @@ final class InboxModel {
     func restore(_ suggestion: Suggestion) async {
         try? await services.suggestions.restore(suggestionID: suggestion.id, now: Date())
         await load()
-    }
-}
-
-/// A card's editable proposal (FR-I-02 Edit & Apply).
-struct SuggestionForm: Equatable {
-    var title: String
-    var body: String
-    var kind: MemoryKind
-    var categoryKeys: [String]
-    var sensitivity: Sensitivity
-
-    init(_ suggestion: Suggestion, categories: [MemoryCategory]) {
-        title = suggestion.title
-        body = suggestion.body
-        kind = suggestion.kind ?? .fact
-        categoryKeys = suggestion.categoryKeys.isEmpty ? ["personal_preferences"] : suggestion.categoryKeys
-        sensitivity = suggestion.sensitivity ?? MemoryForm.defaultSensitivity(categoryKeys, categories: categories)
-    }
-
-    func edit(from suggestion: Suggestion) -> SuggestionEdit {
-        SuggestionEdit(title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-                       body: body.trimmingCharacters(in: .whitespacesAndNewlines), kind: kind, categoryKeys: categoryKeys,
-                       sensitivity: sensitivity)
     }
 }
 

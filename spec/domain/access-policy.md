@@ -182,8 +182,8 @@ Offered only when **all** of these hold:
 - **When the panel shows** (task 3.6):
   - **A read that was denied or needs approval:** inside the call, within the same 45 s as the Share panel. Allow Once or Always Allow runs the request again; a request that was waiting for approval is replaced (denied with `policy_changed`, recorded as "replaced"), and the new one gets its own panel for the rest of the 45 s.
   - **A read shared without asking** (some memories allowed, `askBeforeSharing` off): the agent gets its answer at once, and the panel offers only **Not Now** and **Always Allow**, for its next request.
-  - **A suggestion:** the agent gets its refusal at once (suggestions never wait). If the user picks Allow Once or Always Allow, that suggestion is stored again and goes to the Inbox with its Save panel.
-- The panel asks about one category: the primary category of the first withheld memory, in score order.
+  - **A suggestion:** the agent gets its refusal at once (suggestions never wait). If the user picks Allow Once or Always Allow, that suggestion is stored again and goes to the Inbox with its Save panel, even for an agent that may save without asking. Allow Once for a suggestion holds only at the agent's revision when the offer was made (a stale panel is refused with `policy_changed`), and grants only what was offered: a category, or the missing operation, never both.
+- The panel asks about one category: the primary category of the first withheld memory, in score order. Every offer records the agent's revision; Allow Once for a read is bound to that revision too, so an access change while the panel is open makes it fail closed.
 
 ## 8. Reason codes
 | Code | Where | Meaning shown to the user / agent |
