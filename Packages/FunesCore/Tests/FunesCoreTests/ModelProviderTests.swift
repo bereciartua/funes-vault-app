@@ -304,3 +304,22 @@ import Testing
         #expect(KeychainProviderKeyStore().service == "com.funesvault.provider")
     }
 }
+
+/// Task 3.8b: Settings ▸ AI Models ▸ Test connection sends only the made-up note.
+@Suite struct TestConnectionTests {
+    @Test func classifiesTheMadeUpNote() async throws {
+        let stub = StubURLProtocol.Session { _ in .json(ModelRouterTests.proposal(["personal_preferences"])) }
+        let client = try OpenAICompatibleClient(endpoint: .openAI(), model: "gpt-small", apiKey: "k", session: stub.session)
+        let proposal = try await ModelRouter.testConnection(client, categories: MemoryCategory.builtins)
+        #expect(proposal.categoryKeys == ["personal_preferences"])
+        #expect(stub.requests.count == 1 && stub.requests[0].text.contains(ModelRouter.testNote))
+    }
+
+    @Test func reportsTheProvidersError() async throws {
+        let stub = StubURLProtocol.Session { _ in .json(["error": "no"], status: 401) }
+        let client = try OpenAICompatibleClient(endpoint: .openAI(), model: "gpt-small", apiKey: "bad", session: stub.session)
+        await #expect(throws: ProviderError.unauthorized) {
+            _ = try await ModelRouter.testConnection(client, categories: MemoryCategory.builtins)
+        }
+    }
+}

@@ -279,3 +279,20 @@ public final class InMemoryProviderKeyStore: ProviderKeyStore {
     public func setKey(_ key: String, for provider: ProviderID) throws { keys.withLock { $0[provider] = key } }
     public func deleteKey(for provider: ProviderID) throws { keys.withLock { _ = $0.removeValue(forKey: provider) } }
 }
+
+// MARK: - Test connection
+
+extension ModelRouter {
+    /// The note **Test connection** classifies (model providers §4): made up, so nothing of the
+    /// user's is sent.
+    public static let testNote = "Prefers green tea in the afternoon."
+
+    /// One tiny classification with `provider`, within the generation timeout (Settings ▸ AI
+    /// Models ▸ Test connection). Throws the provider's error.
+    public static func testConnection(_ provider: any GenerationProvider, categories: [MemoryCategory],
+                                      timeout: Duration = .seconds(20)) async throws -> CaptureProposal {
+        let request = ClassificationPrompt.request(testNote, categories: categories)
+        let (output, _) = try await withTimeout(timeout) { try await provider.generate(request) }
+        return ClassificationPrompt.proposal(output).validated(categories: categories, fallbackTitle: testNote)
+    }
+}

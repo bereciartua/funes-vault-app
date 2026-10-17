@@ -119,6 +119,16 @@
     "%@ will get matching memories it's allowed to read without asking you. You'll see each share in Activity." : {
 
     },
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
     "%@ · %lld min left" : {
       "localizations" : {
         "en" : {
@@ -203,6 +213,9 @@
     "%lld min left" : {
 
     },
+    "%lld models" : {
+
+    },
     "%lld more matched but can't go to this agent (%@)." : {
       "localizations" : {
         "en" : {
@@ -237,6 +250,16 @@
     },
     "%lld rejected" : {
 
+    },
+    "%lld requests · %lld tokens in · %lld out" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld requests · %2$lld tokens in · %3$lld out"
+          }
+        }
+      }
     },
     "%lld restored" : {
 
@@ -326,6 +349,9 @@
     "AI Models…" : {
 
     },
+    "API key" : {
+
+    },
     "About Funes Vault" : {
 
     },
@@ -356,6 +382,9 @@
     "Add" : {
 
     },
+    "Add %@" : {
+
+    },
     "Add Agent" : {
 
     },
@@ -372,6 +401,9 @@
 
     },
     "Add Funes Vault to %@?" : {
+
+    },
+    "Add Provider" : {
 
     },
     "Add a category" : {
@@ -538,7 +570,13 @@
         }
       }
     },
+    "Apple Intelligence isn't available on this Mac: simple rules propose the fields." : {
+
+    },
     "Apple cloud" : {
+
+    },
+    "Apple on-device" : {
 
     },
     "Applications" : {
@@ -554,6 +592,9 @@
 
     },
     "Applied. Similar memory exists:" : {
+
+    },
+    "Applies to every cloud provider. Captures are checked on this Mac first, and anything that looks like a secret is never sent." : {
 
     },
     "Apply" : {
@@ -619,10 +660,16 @@
     "Backup: %@" : {
 
     },
+    "Base URL" : {
+
+    },
     "Before: %@" : {
 
     },
     "Built in" : {
+
+    },
+    "Built in (bge-small, on this Mac)" : {
 
     },
     "Built-in categories can be renamed but not deleted." : {
@@ -688,7 +735,13 @@
     "Check for Updates…" : {
 
     },
+    "Check the address and the key." : {
+
+    },
     "Checked a request" : {
+
+    },
+    "Choose" : {
 
     },
     "Choose File…" : {
@@ -700,10 +753,29 @@
     "Choose a funesvault.export.v1 file. Its memories come in as suggestions, or as memories if you choose so below. It never brings agents or access." : {
 
     },
+    "Choose a model in %@'s settings. Until then: on-device, then rules." : {
+
+    },
     "Choose at least one category." : {
 
     },
     "Choose the memories file from your ChatGPT data export (JSON). Each memory becomes a suggestion." : {
+
+    },
+    "Classification" : {
+
+    },
+    "Classification sends capture and suggestion text (up to %@) to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Classification sends capture and suggestion text (up to %1$@) to %2$@."
+          }
+        }
+      }
+    },
+    "Classification sends nothing to %@: the cloud limit is Never send memories, so it runs on this Mac." : {
 
     },
     "Claude Code" : {
@@ -749,6 +821,12 @@
 
     },
     "Cloud" : {
+
+    },
+    "Cloud limit" : {
+
+    },
+    "Cloud providers need an https:// address." : {
 
     },
     "Codex" : {
@@ -817,6 +895,9 @@
       }
     },
     "Correction suggested %@" : {
+
+    },
+    "Couldn't reach the server." : {
 
     },
     "Created %@" : {
@@ -931,6 +1012,9 @@
     "Edit" : {
 
     },
+    "Edit %@" : {
+
+    },
     "Edit %@'s access…" : {
 
     },
@@ -951,6 +1035,9 @@
 
     },
     "Edit…" : {
+
+    },
+    "Embeddings" : {
 
     },
     "Empty allow list means all categories. Deny always wins." : {
@@ -1084,6 +1171,9 @@
 
     },
     "Funes shows the exact change first, backs up the file and never writes the key into it." : {
+
+    },
+    "Funes treats any server that isn't on this Mac or your local network as cloud, whatever this says." : {
 
     },
     "Funes was paused" : {
@@ -1233,6 +1323,9 @@
     "It was deleted or changed elsewhere." : {
 
     },
+    "It's a cloud service" : {
+
+    },
     "It's already in Applications." : {
 
     },
@@ -1269,7 +1362,13 @@
     "Key file" : {
 
     },
+    "Key in Keychain" : {
+
+    },
     "Key rotated" : {
+
+    },
+    "Keys are stored in the Keychain on this Mac only, never in the vault, exports or Activity." : {
 
     },
     "Kind" : {
@@ -1294,6 +1393,9 @@
 
     },
     "Listed categories" : {
+
+    },
+    "Load Models" : {
 
     },
     "Local server" : {
@@ -1347,6 +1449,9 @@
     "Minimize" : {
 
     },
+    "Model" : {
+
+    },
     "More than 5 requests were refused in 10 minutes. See why in Activity." : {
 
     },
@@ -1359,10 +1464,19 @@
     "My Agent" : {
 
     },
+    "My Server" : {
+
+    },
     "Name" : {
 
     },
     "Never" : {
+
+    },
+    "Never send memories" : {
+
+    },
+    "Never send memories above" : {
 
     },
     "Never shared with agents unless you raise an agent's ceiling to Secret." : {
@@ -1407,6 +1521,9 @@
     "No answer in 15 minutes" : {
 
     },
+    "No answer within 20 seconds." : {
+
+    },
     "No answer: %@ was told to wait. It's in Pending requests." : {
 
     },
@@ -1423,6 +1540,9 @@
 
     },
     "None" : {
+
+    },
+    "None yet. Funes uses Apple's on-device model, or simple rules when that isn't available." : {
 
     },
     "Not Now" : {
@@ -1530,6 +1650,9 @@
     "Other MCP client" : {
 
     },
+    "Other OpenAI-Compatible Server…" : {
+
+    },
     "Paste" : {
 
     },
@@ -1618,6 +1741,9 @@
     "Proposed on this Mac" : {
 
     },
+    "Providers" : {
+
+    },
     "Public" : {
 
     },
@@ -1668,6 +1794,9 @@
 
     },
     "Ready" : {
+
+    },
+    "Ready. If it fails, Funes uses the on-device model, then rules." : {
 
     },
     "Recently Deleted" : {
@@ -1755,6 +1884,9 @@
 
     },
     "Requests from your agents appear here, with what was shared and why." : {
+
+    },
+    "Reset Usage" : {
 
     },
     "Restart %@" : {
@@ -1872,10 +2004,16 @@
     "Saved. A similar memory exists:" : {
 
     },
+    "Saved; type to replace" : {
+
+    },
     "Saving cancels %@'s pending requests; it can ask again." : {
 
     },
     "Search activity" : {
+
+    },
+    "Search and agents' requests are matched on this Mac. Other embedding models come in a later version." : {
 
     },
     "Search memories" : {
@@ -2092,6 +2230,9 @@
     "Still True…" : {
 
     },
+    "Stored in the Keychain" : {
+
+    },
     "Suggest" : {
 
     },
@@ -2141,6 +2282,18 @@
     "Task: “%@”" : {
 
     },
+    "Tasks" : {
+
+    },
+    "Test Connection" : {
+
+    },
+    "Test Connection lists the models and classifies one made-up note; none of your memories are sent." : {
+
+    },
+    "Testing…" : {
+
+    },
     "Text" : {
 
     },
@@ -2180,16 +2333,34 @@
     "The file couldn't be read." : {
 
     },
+    "The key couldn't be saved in the Keychain." : {
+
+    },
     "The key file couldn't be read. Rotate the key to make a new one." : {
 
     },
     "The key isn't written anywhere: the launcher reads it from Funes's key file." : {
 
     },
+    "The model declined." : {
+
+    },
+    "The model's answer wasn't usable. Try another model." : {
+
+    },
     "The name needs 1 to 60 characters." : {
 
     },
     "The old key stops working at once. Setups that use the launcher keep working; any setup with the key pasted in needs the new one." : {
+
+    },
+    "The provider answered with an error (%lld)." : {
+
+    },
+    "The provider says to slow down. Try again later." : {
+
+    },
+    "The server listed no models." : {
 
     },
     "The text is longer than 10,000 characters." : {
@@ -2256,6 +2427,15 @@
 
     },
     "URL" : {
+
+    },
+    "Unavailable: check API key. Using on-device instead." : {
+
+    },
+    "Unavailable: check the API key." : {
+
+    },
+    "Unavailable: keyword search only" : {
 
     },
     "Undo" : {
@@ -2372,6 +2552,16 @@
     },
     "Work or project context. Share with agents you use for that work." : {
 
+    },
+    "Works: it proposed “%@” in %@ s." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Works: it proposed “%1$@” in %2$@ s."
+          }
+        }
+      }
     },
     "Write" : {
 
@@ -2521,6 +2711,9 @@
 
     },
     "macOS needs your approval in System Settings ▸ General ▸ Login Items." : {
+
+    },
+    "no model" : {
 
     },
     "none" : {
