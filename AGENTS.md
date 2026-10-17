@@ -15,8 +15,11 @@ When a design changes, update the spec in the same change and add an ADR for arc
 - `Apps/FunesMac/`: the Mac app target (bundle `com.funesvault.mac`, `LSUIElement`, hardened runtime, not sandboxed, macOS 15+). Later: `FunesMCPLauncher/`, `FunesiOS/`, `FunesShareExtension/`, `FunesIntents/`.
 - `Packages/FunesProtocol/`: shared Mac + iOS types and logic. **No dependencies** beyond system frameworks.
 - `Packages/FunesCore/`: vault logic, Mac only. Depends on FunesProtocol and GRDB. **No AppKit, SwiftUI, MCP or networking UI** here.
+- `Packages/FunesMCP/`: the MCP adapter: tool contract (`Sources/FunesMCP/Resources/mcp-tools.json`), `RequestPipeline`, handlers, key files, and the `funes-mcp-test-server` (FUNES_MCP_TEST) the Python harness drives. Depends on FunesCore and BridgeKit; no AppKit ([ADR-0017](spec/architecture/decisions/0017-funes-mcp-package.md)).
+- `Packages/BridgeUI/`: UI pieces copied from EK Bridge (tier 2): `Upstream/` as copied, `Sources/BridgeUI/` adapted (approval queue and panel, Activity store). See its `PROVENANCE.md`.
+- `Apps/FunesMCPLauncher/`: the `funes-mcp` launcher, embedded in `FunesVault.app/Contents/MacOS/`.
 - `FunesVault.xcodeproj`: plain Xcode project using folder-synchronized groups, so new source files in `Apps/*` need no project-file edits.
-- BridgeKit (`BridgeKitCore`, repo `bereciartua/bridgekit`) is an external package, added in Phase 2.
+- BridgeKit (`BridgeKitCore`, repo [`bereciartua/bridgekit`](https://github.com/bereciartua/bridgekit)) is an external package, pinned to exactly `0.1.0` in `Packages/FunesMCP/Package.swift` and the Xcode project.
 
 ## Commands
 ```bash
@@ -29,6 +32,14 @@ swift test --package-path Packages/FunesProtocol
 ```bash
 swift test --package-path Packages/FunesCore
 ```
+```bash
+swift test --package-path Packages/FunesMCP
+```
+```bash
+swift build --package-path Packages/FunesMCP --product funes-mcp-test-server
+python3 Tests/mcp/mcp_test.py "$(swift build --package-path Packages/FunesMCP --show-bin-path)/funes-mcp-test-server" Tests/mcp/fixtures/tools.json
+```
+Debug builds of the app and `funes-mcp` honour `FUNES_DATA_DIR`, so a development vault never touches the real one; `--dev-seed` fills an empty one with sample memories and a Claude Code agent.
 ```bash
 sh scripts/check_log_privacy.sh
 ```

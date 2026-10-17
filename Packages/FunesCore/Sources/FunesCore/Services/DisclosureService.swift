@@ -152,7 +152,11 @@ public final class DisclosureService: Sendable {
 
     /// Evaluates a request: gate, retrieval, eligibility, decision (FR-D-01). ALLOW delivers in the
     /// same call (`fulfilled`); NEEDS_APPROVAL persists the snapshot and returns no text.
-    public func request(agentID: UUID, _ input: MemoryRequest, now: Date, grant: OnceGrant? = nil) async throws -> RequestOutcome {
+    /// `maxPendingApprovals` caps this agent's requests waiting for the user (mcp-server.md §9). It's
+    /// counted in the same write transaction that would add one, so concurrent calls can't all pass;
+    /// over the cap the request is denied with `rate_limited`.
+    public func request(agentID: UUID, _ input: MemoryRequest, now: Date, grant: OnceGrant? = nil,
+                        maxPendingApprovals: Int? = nil) async throws -> RequestOutcome {
         try input.validate()
         let agent = try await store.writer.read { db in try AgentStore.fetch(db, id: agentID) }
         guard let agent, !agent.isRemoved else { throw VaultError.unauthenticated }
@@ -212,6 +216,18 @@ public final class DisclosureService: Sendable {
                 outcome.bundle = bundle
                 delivered = bundle.items.map(\.memoryID)
             case .needsApproval:
+                if let limit = maxPendingApprovals {
+                    let waiting = try Int.fetchOne(db, sql: """
+                        SELECT COUNT(*) FROM disclosure WHERE agent_id = ? AND status = 'needs_approval' AND created_at > ?
+                        """, arguments: [agentID.db, now - Self.window]) ?? 0
+                    if waiting >= limit {
+                        row.status = .denied
+                        row.reason = .rateLimited
+                        try Self.insert(db, row)
+                        outcome.reason = .rateLimited
+                        return Result(outcome: outcome, delivered: [], withheldCategories: [])
+                    }
+                }
                 row.status = .needsApproval
                 row.snapshotRevision = Self.snapshotRevision(agentID: agentID, agentRevision: agent.revision,
                                                              items: row.candidateSnapshot)
@@ -240,11 +256,14 @@ public final class DisclosureService: Sendable {
 
     /// The in-call flow (§3.7): evaluate, wait up to `wait` for the panel, deliver if approved.
     /// On timeout the result is `needs_approval` with the request id, and the request moves to
-    /// Pending requests (T18).
+    /// Pending requests (T18). `onNeedsApproval` runs once the request is waiting, so the app can
+    /// show its panel.
     public func requestInCall(agentID: UUID, _ input: MemoryRequest, wait: Duration = .seconds(45),
-                              now: @Sendable () -> Date = { Date() }) async throws -> RequestOutcome {
-        let outcome = try await request(agentID: agentID, input, now: now())
+                              maxPendingApprovals: Int? = nil, now: @Sendable () -> Date = { Date() },
+                              onNeedsApproval: @Sendable (RequestOutcome) -> Void = { _ in }) async throws -> RequestOutcome {
+        let outcome = try await request(agentID: agentID, input, now: now(), maxPendingApprovals: maxPendingApprovals)
         guard outcome.status == .needsApproval, let id = outcome.requestID else { return outcome }
+        onNeedsApproval(outcome)
         switch await waitForDecision(requestID: id, timeout: wait) {
         case .approved?:
             return try await deliver(requestID: id, agentID: agentID, now: now())
@@ -468,7 +487,9 @@ public final class DisclosureService: Sendable {
             waiters.withLock { $0[requestID, default: [:]][token] = c }
             if let s = try? status(requestID), s != .needsApproval { resume(requestID, token) }
             Task {
-                try? await Task.sleep(for: timeout)
+                // An explicit tolerance: by default a 45 s sleep may run seconds late (timer
+                // coalescing), past the panel's countdown.
+                try? await Task.sleep(for: timeout, tolerance: .milliseconds(100))
                 self.resume(requestID, token)
             }
         }

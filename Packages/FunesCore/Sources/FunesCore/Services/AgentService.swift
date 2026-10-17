@@ -10,6 +10,11 @@ import Synchronization
 public struct IssuedKey: Sendable, Hashable {
     public let plaintext: String
     public let digest: Data
+
+    public init(plaintext: String, digest: Data) {
+        self.plaintext = plaintext
+        self.digest = digest
+    }
 }
 
 /// Issues and digests agent MCP keys (`fns_mcp_v1_` + 64 hex characters; NFR-SEC-03).

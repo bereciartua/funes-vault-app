@@ -117,7 +117,7 @@ Lists the categories that exist and what this agent may do in each. It returns n
 ### 6.3 `get_memory_request`
 - **Input:** `{"request_id": string}`
 - **Output:** the same shape as `request_memory`, with `status` from [access policy §3.8](../domain/access-policy.md#38-get_memory_request). It can also be `already_delivered` or `not_found` (with `reason`).
-- **Description note:** "Call once after the user had time to approve; don't poll more than every 10 seconds." Rate-limited per request id to once every 5 s.
+- **Description note:** "Call once after the user had time to approve; don't poll more than every 10 seconds." Rate-limited per agent and request id to once every 5 s, so another agent's calls can't reveal that a request exists (T20).
 
 ### 6.4 `suggest_memory`
 **Input:**
@@ -156,16 +156,18 @@ Brings Funes to the front on the Mac, at a pending request or suggestion.
 - `open_in_funes`: `readOnlyHint: true` (UI side effect only).
 
 ## 7. Errors
-- **Protocol errors** are JSON-RPC errors (`-32600` invalid request, `-32601` method not found, `-32602` invalid params, including JSON Schema validation failures with the field path).
+- **Protocol errors** are JSON-RPC errors (`-32600` invalid request, `-32601` method not found, `-32602` invalid params, such as an unknown tool name).
+- **Arguments that fail the input schema** are tool results with `isError: true`, `status: denied`, `reason: invalid_input` and the field path in `message` (for example `task: must be at most 1000 characters, got 1001`), so the model can correct itself (MCP's guidance since 2025-11-25). They never reach the handler or Activity. Lengths count Unicode scalars, like FunesCore's limits.
 - **Tool-level outcomes** (denied, needs_approval) are successful results with `status` and `reason`, not errors.
-- **Infrastructure:** `rate_limited` (with `retry_after_s`), `timeout`, `funes_quit`.
+- **Infrastructure:** `rate_limited` (with `retry_after_s`), `timeout`, `funes_quit`, as `status: denied` results with `isError: true`.
 
 ## 8. Contract and fixtures
-- The full contract (instructions, tools, input and output schemas, annotations) lives in `Resources/mcp-tools.json`.
+- The full contract (instructions, tools, input and output schemas, annotations) lives in `Packages/FunesMCP/Sources/FunesMCP/Resources/mcp-tools.json` ([ADR-0017](decisions/0017-funes-mcp-package.md)).
   - It's loaded at launch.
   - It's compared byte-for-byte against `Tests/mcp/fixtures/tools.json` in CI (EK Bridge pattern).
   - Regenerate it with `UPDATE_GOLDENS=1`.
-- **Validation:** BridgeKitCore's JSON Schema validator checks arguments before handlers run.
+- **Validation:** BridgeKitCore's JSON Schema validator checks arguments before handlers run, counting string lengths in Unicode scalars. FunesCore checks every limit again (fail closed).
+- **Harness:** `Tests/mcp/mcp_test.py` drives `funes-mcp-test-server` (the `FUNES_MCP_TEST` build: a temporary vault, seeded agents and memories, a fake approval responder) over loopback. The generic protocol checks live in BridgeKit's own harness.
 
 ## 9. Limits
 | Limit | Value | When exceeded |
@@ -173,7 +175,7 @@ Brings Funes to the front on the Mac, at a pending request or suggestion.
 | Tool calls per agent | 120/min, burst 30 | `rate_limited` |
 | Suggestions and writes per agent | 20/min, burst 10; 250 per rolling 24 h (counting stored ones only) | `rate_limited` |
 | Calls in progress per agent | 8 | `rate_limited` |
-| Requests waiting for approval per agent | 3 (each up to 45 s in a panel, then 15 min pending) | `rate_limited` |
+| Requests waiting for approval per agent | 3 (each up to 45 s in a panel, then 15 min pending), counted in the write transaction that would add one, so concurrent calls can't exceed it | `rate_limited` (`retry_after_s` 60) |
 | Panels on screen | 3 (others queue) | — |
 | Time to answer a call | 55 s | `timeout` |
 | Result size | 200,000 bytes (bundles are bounded by `max_tokens` anyway) | `response_too_large` |

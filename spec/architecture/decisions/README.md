@@ -20,3 +20,4 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 | 0014 | [User-selectable AI models, on-device by default](0014-user-selectable-models.md) | Accepted; amended by 0016 |
 | 0015 | [Keyword search in v0.1; semantic search later, as an embedding model the user chooses](0015-keyword-search-first.md) | Superseded by 0016 |
 | 0016 | [Bundled bge-small embeddings (Core ML) and agent keywords in v0.1](0016-bundled-bge-small-embeddings.md) | Accepted |
+| 0017 | [Funes's MCP adapter is a local package, FunesMCP](0017-funes-mcp-package.md) | Accepted |

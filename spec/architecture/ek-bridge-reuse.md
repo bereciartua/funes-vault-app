@@ -20,26 +20,39 @@
 
 **Total:** about 4.5–5K lines.
 
-**The seam between BridgeKitCore and the apps:**
+**The seam between BridgeKitCore and the apps** (as built in BridgeKit 0.1.0):
 ```swift
 public struct BridgeConfiguration: Sendable {
-    public var appIdentity: AppIdentity          // bundle ID, display name, support folder
-    public var mcpPort: UInt16                   // 47615 EK Bridge · 47625 Funes
+    public var identity: BridgeIdentity          // display name, bundle ID, data folder, version
+    public var mcpPort: Int                      // 47615 EK Bridge · 47625 Funes
     public var keyPrefix: String                 // "ekb_mcp_v1_" · "fns_mcp_v1_"
     public var serverKey: String                 // "ek-bridge" · "funes"
     public var launcherName: String              // "bridge-mcp" · "funes-mcp"
-    public var limits: RateLimits
+    public var serverDescription, agentMetaKey: String
+    public var limits: RateLimiter.Policy
+    public var http: HTTPLimits; public var maxConnections: Int; public var toolCallTimeout: TimeInterval
+    public var allowedOrigins: Set<String>; public var forwardedHeaders, forwardedHeaderPrefixes: [String]
+    public var stringLength: JSONSchemaValidator.StringLength   // UTF-8 bytes (EK Bridge) · Unicode scalars (Funes)
+    public var texts: BridgeTexts                // 401, 403 and 503 wording in the app's terms
 }
-public protocol BridgeOperation: Sendable { var name: String { get }; var isWrite: Bool { get } }
+public protocol BridgeOperation: Sendable { var name: String { get }; var isWrite: Bool { get }; var needsApproval: Bool { get } }
 public protocol AgentAuthenticator: Sendable {   // app-owned storage, core-owned crypto
-    func agent(forKeyDigest digest: Data) async -> AuthenticatedAgent?
+    func authenticate(_ key: PresentedKey) async -> AuthenticationOutcome   // .authenticated(agent) · .rejected · .unavailable
+}
+@MainActor public protocol ToolRegistry: AnyObject {   // the app's contract and visibility
+    var serverInstructions: String { get }
+    func tool(named: String) -> ToolDefinition?
+    func visibleTools(for agent: AuthenticatedAgent) -> [ToolDefinition]
+    func failureResult(_ failure: ToolFailure, tool: String, arguments: [String: Any]?) -> ToolResult
 }
 public protocol BridgeHandler: Sendable {
-    func handle(_ call: ToolCall, agent: AuthenticatedAgent) async throws -> ToolResult
+    func handle(_ call: ToolCall) async -> ToolResult   // call.context: cancellation, the app's timeout answer
 }
 ```
-- The app's `RequestPipeline` (which handles pause, approvals, policy and activity) wraps its handlers.
+- The core validates arguments against the contract (`ToolContract`, `JSONSchemaValidator`) before the handler runs, and answers a timeout itself after `toolCallTimeout`, without cancelling the call.
+- The app's `RequestPipeline` (which handles pause, approvals, policy and activity) is its `BridgeHandler`.
 - BridgeKitCore never sees a calendar or a memory.
+- The launcher takes a `LauncherConfiguration` (names, key folder and suffix, the `--agent`/`--client` option, the probe tool for `check`, wording, a test mode), and each app's launcher target is a `main.swift` calling `BridgeLauncher.run(_:)`.
 
 ## 2. Tier 2: copied into Funes `Packages/BridgeUI` (extracted as `BridgeKitUI` after Funes v0.1)
 | Area | EK Bridge files | ~Lines | Funes changes |
@@ -49,7 +62,8 @@ public protocol BridgeHandler: Sendable {
 | Agent setup UI | `AgentDetection`, `AgentSetup`, `ConnectAgentView`, `OneClickSetup` | 2,350 | Funes snippets and goldens; uses BridgeKitCore's `AgentConfigWriter` |
 | App shell | `Updates`, `SparkleUpdater`, `AppMover`, `InstallLocation`, `Notifications`, `UIComponents`, `StatusMenuController` and `MainWindowController` skeletons | 1,500 | Funes branding; the update relaunch gate also waits for pending disclosures |
 
-**Total:** about 5.5–6K lines.
+**Total:** about 5.5–6K lines (5,843 at EK Bridge 9c726f2).
+- `Packages/BridgeUI/Upstream/` keeps the copies unchanged; `Packages/BridgeUI/Sources/BridgeUI/` holds the adapted ones, adapted as each phase needs them (Phase 2: the approval queue and panel, and the Activity store).
 - `Packages/BridgeUI/PROVENANCE.md` lists the EK Bridge commit for every copied file. Diff it against EK Bridge before each Funes release.
 - After Funes v0.1, the common shape of both apps' versions becomes `BridgeKitUI`.
 
@@ -85,10 +99,10 @@ bridgekit/
 - **Release order:** change BridgeKit, then tag it, then bump EK Bridge (its tests and fixtures must stay byte-for-byte green), then bump Funes.
 
 ## 7. EK Bridge's adoption (the proof step)
-1. **Build:** `build.sh` runs `swift build -c release --product BridgeKitCore` for each architecture and passes the module path (`-I`) and the object files or static library to the existing `swiftc` calls, for the app and for the `bridge-mcp` launcher. If that becomes awkward, add a minimal Xcode project. Verified first in a [Phase 0 quick check](../plans/phase-0-spikes.md#also-verify-in-phase-0-quick-checks-under-1-hour-each).
+1. **Build:** `scripts/bridgekit.sh` runs `swift build -c release --product BridgeKitCore --arch …` once for all the app's architectures (a universal static library), and `build.sh` passes the module path (`-I`) and `-L … -lBridgeKitCore` to the existing `swiftc` calls for the app, `bridge-mcp` and `bridge-client`. Verified first in a [Phase 0 quick check](../plans/phase-0-spikes.md#also-verify-in-phase-0-quick-checks-under-1-hour-each), [passed](../plans/spike-results.md#phase-0-quick-check-ek-bridges-swiftc-build-linking-a-swift-package).
 2. **Code:**
-   - Delete the moved files from EK Bridge and `import BridgeKitCore`.
-   - Wrap EK Bridge's `RequestPipeline` handlers in `BridgeHandler`.
-   - Keep `ClientRegistry`'s JSON storage, now behind `AgentAuthenticator`.
+   - Delete the moved files from EK Bridge; one file re-exports `BridgeKitCore` (`@_exported import`), so the rest of EK Bridge, and its tests, compile unchanged.
+   - Wrap EK Bridge's `RequestPipeline` in `BridgeHandler`, and `MCPToolCatalog` and `MCPToolMapping` in `ToolRegistry` (`Sources/MCP/MCPAdapters.swift`).
+   - Keep `ClientRegistry`'s JSON storage, now behind `AgentAuthenticator`; `ClientCredentialFiles` and `AgentConfigWriter` keep their API over BridgeKitCore's.
 3. **Proof:** EK Bridge's tool fixture, `mcp_test.py`, `launcher_test.py`, `cli_test.py`, the UI test scripts and a live check with Claude Code must all pass, unchanged.
 4. **Ship:** EK Bridge releases a patch version (for example 0.11.2 or 0.12.0) on BridgeKit with no user-visible change. Its CHANGELOG says "internal: uses BridgeKit".
