@@ -112,6 +112,12 @@ public struct OnceGrant: Sendable, Hashable {
     public var offeredByRequestID: UUID
     public var agentRevision: Int
     public var categoryKey: String
+
+    public init(offeredByRequestID: UUID, agentRevision: Int, categoryKey: String) {
+        self.offeredByRequestID = offeredByRequestID
+        self.agentRevision = agentRevision
+        self.categoryKey = categoryKey
+    }
 }
 
 /// Requests to read memories, approvals and single-use delivery (task 1.7, access policy §3).
@@ -373,6 +379,24 @@ public final class DisclosureService: Sendable {
         requestGrants.withLock { _ = $0.removeValue(forKey: requestID) }
         activity.record(ActivityEvent(time: now, requestID: requestID, phase: .event, actor: .user, via: .app,
                                       event: "approval", outcome: "denied", reason: .deniedByUser, approval: .denied))
+        notify(requestID)
+    }
+
+    /// A waiting request replaced by a new one after the user allowed more access (access policy
+    /// §7): denied with `policy_changed`, without a denial by the user in Activity. The agent never
+    /// saw this request's id; it gets the new request's answer.
+    public func supersede(requestID: UUID, now: Date) async throws {
+        let changed = try await store.writer.write { db -> Bool in
+            try db.execute(sql: """
+                UPDATE disclosure SET status = 'denied', reason = ?, decided_at = ? WHERE id = ? AND status = 'needs_approval'
+                """, arguments: [ReasonCode.policyChanged.rawValue, now, requestID.db])
+            return db.changesCount > 0
+        }
+        guard changed else { throw VaultError.invalidState }
+        tasks.withLock { _ = $0.removeValue(forKey: requestID) }
+        requestGrants.withLock { _ = $0.removeValue(forKey: requestID) }
+        activity.record(ActivityEvent(time: now, requestID: requestID, phase: .event, actor: .system, via: .app,
+                                      event: "approval", outcome: "replaced", reason: .policyChanged))
         notify(requestID)
     }
 

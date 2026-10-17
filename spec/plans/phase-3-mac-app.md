@@ -31,9 +31,9 @@
 - [x] Adapt `ActivityView`: filters, live title lookup, detail pane, fix deep links.
 
 ### 3.6 Panels, final · 2 h
-- [ ] Pending requests (from the menu bar and Activity), approvable within 15 minutes.
-- [ ] Access-request panel (Not Now, Allow Once, Always Allow) with an hourly throttle.
-- [ ] Optional notifications (FR-L-04).
+- [x] Pending requests (from the menu bar and Activity), approvable within 15 minutes.
+- [x] Access-request panel (Not Now, Allow Once, Always Allow) with an hourly throttle.
+- [x] Optional notifications (FR-L-04).
 
 ### 3.7 Capture · 2 h
 - [ ] Global hotkey (Carbon) with a configurable shortcut. Capture box with secret-scanner feedback.

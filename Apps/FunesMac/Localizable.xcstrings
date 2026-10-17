@@ -27,6 +27,9 @@
     "%@ access" : {
 
     },
+    "%@ asks for more access in Funes" : {
+
+    },
     "%@ asks to use %lld memories in Funes" : {
       "localizations" : {
         "en" : {
@@ -38,6 +41,32 @@
       }
     },
     "%@ can be offered personal memories. Keep Ask before sharing on." : {
+
+    },
+    "%@ can't add to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ can't add to %2$@."
+          }
+        }
+      }
+    },
+    "%@ can't read %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ can't read %2$@."
+          }
+        }
+      }
+    },
+    "%@ can't read your memories." : {
+
+    },
+    "%@ can't suggest memories." : {
 
     },
     "%@ couldn't be started." : {
@@ -59,10 +88,19 @@
         }
       }
     },
+    "%@ suggested a memory. Review it in the Inbox." : {
+
+    },
     "%@ suggests a memory for Funes" : {
 
     },
+    "%@ wants more access" : {
+
+    },
     "%@ wants to use your memories" : {
+
+    },
+    "%@ was refused repeatedly" : {
 
     },
     "%@ will get matching memories it's allowed to read without asking you. You'll see each share in Activity." : {
@@ -79,6 +117,9 @@
       }
     },
     "%@ · approved, waiting for the agent" : {
+
+    },
+    "%@'s request waited 15 minutes without an answer." : {
 
     },
     "%@, %lld chosen" : {
@@ -224,10 +265,16 @@
     "A panel shows exactly what would be shared, and nothing goes until you choose." : {
 
     },
+    "A request expired" : {
+
+    },
     "A request expired before you answered" : {
 
     },
     "A short name for it" : {
+
+    },
+    "A suggestion is waiting" : {
 
     },
     "A suggestion is waiting in the Inbox" : {
@@ -380,10 +427,32 @@
     "Allow" : {
 
     },
+    "Allow Once" : {
+
+    },
+    "Allow Once is for this request only. %@" : {
+
+    },
     "Already delivered" : {
 
     },
     "Already set up" : {
+
+    },
+    "Always Allow" : {
+
+    },
+    "Always Allow adds %@ to %@'s categories." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Allow adds %1$@ to %2$@'s categories."
+          }
+        }
+      }
+    },
+    "Always Allow lets %@ suggest memories from now on." : {
 
     },
     "An agent" : {
@@ -738,6 +807,9 @@
     "Direct HTTP" : {
 
     },
+    "Discard" : {
+
+    },
     "Dismiss" : {
 
     },
@@ -776,6 +848,9 @@
       }
     },
     "Edited a memory" : {
+
+    },
+    "Edit…" : {
 
     },
     "Empty allow list means all categories. Deny always wins." : {
@@ -837,6 +912,9 @@
 
     },
     "From" : {
+
+    },
+    "From %@. It's in your Inbox either way." : {
 
     },
     "From agents" : {
@@ -995,6 +1073,12 @@
     "Issued %@" : {
 
     },
+    "It already got what it may read. %@" : {
+
+    },
+    "It asked for context for" : {
+
+    },
     "It can connect, but sees nothing until you give it access." : {
 
     },
@@ -1103,6 +1187,9 @@
     "Minimize" : {
 
     },
+    "More than 5 requests were refused in 10 minutes. See why in Activity." : {
+
+    },
     "Move its memories to" : {
 
     },
@@ -1154,6 +1241,9 @@
     "No answer in 15 minutes" : {
 
     },
+    "No answer: %@ was told to wait. It's in Pending requests." : {
+
+    },
     "No key" : {
 
     },
@@ -1164,6 +1254,9 @@
 
     },
     "No problems" : {
+
+    },
+    "Not Now" : {
 
     },
     "Not allowed to do this" : {
@@ -1534,6 +1627,9 @@
     "Save new memories, within the limits below. Corrections still wait in your Inbox." : {
 
     },
+    "Save this correction?" : {
+
+    },
     "Save this memory?" : {
 
     },
@@ -1748,9 +1844,6 @@
           }
         }
       }
-    },
-    "Suggested by %@. It's in your Inbox either way." : {
-
     },
     "Suggested by an agent" : {
 

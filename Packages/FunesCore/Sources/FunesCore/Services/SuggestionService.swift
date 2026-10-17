@@ -106,13 +106,22 @@ public final class SuggestionService: Sendable {
 
     /// Validation, the secret scanner, the gate, the scope check, then save, queue or deny
     /// (§5.1–5.4). Never blocks for the user; a validation failure stores nothing.
-    public func suggest(agentID: UUID, _ input: SuggestInput, now: Date) async throws -> SuggestOutcome {
+    ///
+    /// `allowOnce` is an offer this service made for an earlier, refused call of the same suggestion,
+    /// answered Allow Once by the user (access policy §7): its category or operation counts for this
+    /// call only. It never widens an "all categories" access, and never lifts a ceiling or a denial.
+    public func suggest(agentID: UUID, _ input: SuggestInput, now: Date,
+                        allowOnce: AccessRequestOffer? = nil) async throws -> SuggestOutcome {
         let paused = pause.isPaused(at: now)
         enum Step { case done(SuggestOutcome), offer(SuggestOutcome, [String], AccessOperation) }
         let step = try await store.writer.write { db -> Step in
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.unauthenticated }
             try AgentStore.recordRequest(db, agentID: agentID, now: now)
-            let access = agent.access
+            var access = agent.access
+            if let once = allowOnce, once.agentID == agentID {
+                if !access.allowedCategoryKeys.isEmpty { access.allowedCategoryKeys.formUnion(once.categoryKeys) }
+                access.operations.insert(once.operation)
+            }
 
             // §5.1 validation. Any failure: nothing stored.
             if let reason = Self.invalid(input, now: now) { return .done(.denied(reason)) }

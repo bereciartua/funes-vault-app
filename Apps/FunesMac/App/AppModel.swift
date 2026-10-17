@@ -93,6 +93,8 @@ final class AppModel {
     @ObservationIgnored var openCapture: () -> Void = {}
     @ObservationIgnored var openPendingRequest: (UUID) -> Void = { _ in }
     @ObservationIgnored var changed: () -> Void = {}
+    /// Each Activity row as it's written (for the "refused repeatedly" notification).
+    @ObservationIgnored var activityAppended: (ActivityEvent) -> Void = { _ in }
     @ObservationIgnored var dockPreferenceChanged: () -> Void = {}
     /// One-click setup (live, or fakes in the UI-review build).
     @ObservationIgnored var setupControls = AgentSetupControls(
@@ -127,9 +129,10 @@ final class AppModel {
         observation = services.store.observeChanges { [weak self] in
             Task { @MainActor in self?.scheduleRefresh() }
         }
-        services.activity.onAppend = { [weak self] in
+        services.activity.onAppend = { [weak self] event in
             Task { @MainActor in
                 self?.activityGeneration += 1
+                self?.activityAppended(event)
                 self?.scheduleRefresh()
             }
         }

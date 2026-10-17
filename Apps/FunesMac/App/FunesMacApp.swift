@@ -47,6 +47,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var mcp: FunesMCPServer?
     private var minuteTimer: Timer?
     private var failedItem: NSStatusItem?
+    private let hud = HUD()
+    private let notifier = Notifier()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppMover.waitForPreviousCopy()
@@ -78,6 +80,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.openPendingRequest = { id in Task { await environment.approvals.open(requestID: id) } }
         model.dockPreferenceChanged = { [weak self] in self?.updateActivationPolicy() }
 
+        wirePanels(environment, model: model)
         let menu = StatusMenuController(model: model)
         self.menu = menu
         model.changed = { [weak menu] in menu?.update() }
@@ -155,6 +158,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
 
+    /// The panels' notices, Edit… and the optional notifications (FR-L-04).
+    private func wirePanels(_ environment: VaultEnvironment, model: AppModel) {
+        let approvals = environment.approvals
+        let preferences = self.preferences
+        let notifier = self.notifier
+        approvals.notice = { [hud] text in hud.show(text, symbol: "hourglass") }
+        approvals.editSuggestion = { id in
+            model.inboxState.focused = id
+            model.show(.inbox)
+        }
+        approvals.suggestionArrived = { name in
+            guard preferences.notifySuggestion else { return }
+            notifier.post(.suggestion, title: String(localized: "A suggestion is waiting"),
+                          body: String(localized: "\(name) suggested a memory. Review it in the Inbox."))
+        }
+        model.requestNotificationPermission = { done in notifier.requestPermission(done) }
+        model.activityAppended = { event in
+            guard preferences.notifyRefused, event.outcome == "denied", event.actor.hasPrefix("agent:"),
+                  let id = UUID(uuidString: String(event.actor.dropFirst(6))),
+                  notifier.noteRefusal(agentID: id, at: event.time) else { return }
+            notifier.post(.refused, title: String(localized: "\(model.agentName(id)) was refused repeatedly"),
+                          body: String(localized: "More than 5 requests were refused in 10 minutes. See why in Activity."),
+                          agentID: id)
+        }
+        notifier.onOpen = { kind, agent in
+            switch kind {
+            case .suggestion: model.show(.inbox)
+            case .expired, .refused: model.showActivity(agent.map(ActivityFocus.agent))
+            }
+        }
+    }
+
     /// The MCP server switch (Settings ▸ MCP).
     private func setServer(_ on: Bool) {
         preferences.mcpEnabled = on
@@ -168,7 +203,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Pending requests past their 15 minutes are denied, and old suggestions expire (access
     /// policy §3.9); the clock the menu and lists show moves on.
     private func startMinuteJob(_ environment: VaultEnvironment, model: AppModel) {
+        let preferences = self.preferences
+        let notifier = self.notifier
         let job: @MainActor () -> Void = {
+            // Requests about to be denied for want of an answer (FR-L-04).
+            if preferences.notifyExpired {
+                for request in model.pending where request.status == .needsApproval && request.expiresAt <= Date() {
+                    notifier.post(.expired, title: String(localized: "A request expired"),
+                                  body: String(localized: "\(request.agentName)'s request waited 15 minutes without an answer."),
+                                  agentID: request.agentID)
+                }
+            }
             model.tick()
             Task {
                 _ = try? await environment.disclosures.expirePending(now: Date())

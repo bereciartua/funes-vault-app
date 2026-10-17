@@ -1,4 +1,6 @@
 import Foundation
+import FunesCore
+import FunesProtocol
 
 /// What the MCP side needs from the app's UI. The app shows the panels (BridgeUI); the
 /// FUNES_MCP_TEST server answers them from its control channel.
@@ -11,4 +13,41 @@ public protocol FunesPresenter: Sendable {
     /// `open_in_funes`, already checked to be this agent's pending item.
     func open(requestID: UUID) async
     func open(suggestionID: UUID) async
+    /// "<Agent> wants more access" (access policy §7, FR-A-10): ask, and return the answer, or
+    /// `.notNow` when `prompt.expiresAt` passes. FunesCore already limited this to once an hour per
+    /// agent, category and operation.
+    func askForAccess(_ prompt: AccessPrompt) async -> AccessAnswer
+}
+
+/// What the access-request panel asks about.
+public struct AccessPrompt: Sendable, Hashable {
+    public var agentID: UUID
+    /// The category it can't read or suggest in; nil when an operation is missing.
+    public var categoryKey: String?
+    public var operation: AccessOperation
+    /// The task it asked with (reads), shown as reported.
+    public var task: String?
+    public var expiresAt: Date
+    /// False when the agent already has its answer (a request shared without asking): Allow Once
+    /// can't apply, so the panel offers Not Now and Always Allow only.
+    public var allowsOnce: Bool
+
+    public init(agentID: UUID, categoryKey: String?, operation: AccessOperation, task: String?, expiresAt: Date,
+                allowsOnce: Bool = true) {
+        self.agentID = agentID
+        self.categoryKey = categoryKey
+        self.operation = operation
+        self.task = task
+        self.expiresAt = expiresAt
+        self.allowsOnce = allowsOnce
+    }
+}
+
+public enum AccessAnswer: String, Sendable {
+    /// Not Now, no answer in time, or the panel was withdrawn.
+    case notNow
+    /// This request only (a grant bound to it and the agent's revision).
+    case allowOnce
+    /// Adds exactly that category, or that operation, to the agent's access.
+    case alwaysAllow
 }

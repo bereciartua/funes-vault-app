@@ -23,14 +23,14 @@ struct ActivityLine: ActivityRow {
 /// FunesCore's `ActivityRecorder` on BridgeUI's append-only store (storage §1).
 final class ActivityLog: ActivityRecorder, Sendable {
     let store: ActivityStore<ActivityLine>
-    private let listener = Mutex<(@Sendable () -> Void)?>(nil)
+    private let listener = Mutex<(@Sendable (ActivityEvent) -> Void)?>(nil)
 
     init(dataFolder: URL, retention: ActivityRetention = .funes) {
         store = ActivityStore(dataFolder: dataFolder, retention: retention, autoCompact: true)
     }
 
     /// Called after each row is written (on the writer's thread).
-    var onAppend: (@Sendable () -> Void)? {
+    var onAppend: (@Sendable (ActivityEvent) -> Void)? {
         get { listener.withLock { $0 } }
         set { listener.withLock { $0 = newValue } }
     }
@@ -38,6 +38,6 @@ final class ActivityLog: ActivityRecorder, Sendable {
     func record(_ event: ActivityEvent) {
         let base = (event.requestID?.uuidString.lowercased() ?? UUID().uuidString.lowercased()) + "|" + event.phase.rawValue
         store.append(ActivityLine(rowID: base, event: event))
-        onAppend?()
+        onAppend?(event)
     }
 }

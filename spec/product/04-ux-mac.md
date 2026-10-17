@@ -208,7 +208,8 @@ All panels are non-activating floating `NSPanel`s at the top right, stacked if m
 
 ### <agent> wants more access
 - Example: "Cursor can't read **Project Context**. It asked for context for: <task>."
-- Buttons: Not Now · Allow Once · Always Allow.
+- Buttons: Not Now · Allow Once · Always Allow. When the agent already got an answer (shared without asking), only Not Now and Always Allow (access policy §7).
+- Opening a pending request from the menu or Activity counts down to the end of its 15 minutes ("9:05").
 
 ## Content style (applies to both apps)
 - **Plain words:** "Share", "Save", "Agent", "Memory", "Inbox", "Paused", not "disclosure", "policy" or "client" in the UI. Those terms appear only in docs and in the API.

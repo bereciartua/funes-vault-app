@@ -153,6 +153,7 @@ def main():
         run_approvals(h)
         run_suggestions(h)
         run_open(h)
+        run_access(h)
         run_agent_state(h)
         run_privacy(h)
     finally:
@@ -181,7 +182,8 @@ def main():
             print("  " + failure)
         sys.exit(1)
     print(f"Funes MCP: {checks} checks over loopback (contract, visibility, categories, request, approve, deny, "
-          "timeout then get, single use, invalidation, suggestions, open, agent state, privacy, limits) passed")
+          "timeout then get, single use, invalidation, suggestions, open, access requests, agent state, privacy, limits) "
+          "passed")
 
 
 def run_protocol(h, catalog, contract):
@@ -437,6 +439,70 @@ def run_open(h):
     h.control(cmd="answer", decision="deny")
     for client in (c, other, s):
         client.close()
+
+
+def run_access(h):
+    """Let it ask for more access (access policy §7, FR-A-10): asked once an hour; Allow Once
+    shares one more category for that request only; Always Allow keeps it; a request shared without
+    asking, and a suggestion, don't wait for the answer."""
+    # Health stays out: run_privacy checks the allergy memory is never shared.
+    others = ["personal_preferences", "project_context"]
+    task = {"task": "What should I know about the user?", "categories": others}
+    asked = len(h.control(cmd="presented")["access"])
+
+    h.control(cmd="access", mode="notnow")
+    c = Client(h, h.key("asknotnow"))
+    result = c.call("request_memory", task)
+    check("not now: refused", result.get("status") == "denied" and result.get("reason") == "no_allowed_memories" and
+          result.get("withheld") == {"category_not_allowed": 2}, result)
+    prompts = h.control(cmd="presented")["access"]
+    check("asked once, with the task", len(prompts) == asked + 1 and prompts[-1]["operation"] == "read" and
+          prompts[-1]["task"] == task["task"] and prompts[-1]["category"] in others and prompts[-1]["allows_once"],
+          prompts)
+    c.call("request_memory", task)
+    check("not asked again within the hour", len(h.control(cmd="presented")["access"]) == asked + 1)
+    c.close()
+
+    h.control(cmd="access", mode="once")
+    c = Client(h, h.key("askonce"))
+    result = c.call("request_memory", task)
+    check("allow once: that category, this request", result.get("status") == "fulfilled" and
+          len(result.get("items", [])) == 1 and result["items"][0]["category"] in others and
+          result.get("withheld") == {"category_not_allowed": 1}, result)
+    result = c.call("request_memory", task)
+    check("allow once is once", result.get("status") == "denied", result)
+    c.close()
+
+    h.control(cmd="access", mode="always")
+    c = Client(h, h.key("askalways"))
+    result = c.call("request_memory", task)
+    check("always allow", result.get("status") == "fulfilled" and len(result.get("items", [])) == 1, result)
+    result = c.call("request_memory", task)
+    check("always allow stays", result.get("status") == "fulfilled" and len(result.get("items", [])) == 1, result)
+    c.close()
+
+    h.control(cmd="access", mode="notnow")
+    asked = len(h.control(cmd="presented")["access"])
+    c = Client(h, h.key("askshared"))
+    result = c.call("request_memory", {"task": "What should I know about the user?"})
+    check("shared without asking: answered at once", result.get("status") == "fulfilled" and
+          len(result.get("items", [])) == 2 and result.get("withheld") == {"category_not_allowed": 3}, result)
+    check("then asked, without Allow Once", wait_for(lambda: len(h.control(cmd="presented")["access"]) == asked + 1) and
+          h.control(cmd="presented")["access"][-1]["allows_once"] is False)
+    c.close()
+
+    h.control(cmd="access", mode="once")
+    before = h.control(cmd="inbox")["pending"]
+    shown = h.control(cmd="presented")["suggestions"]
+    s = Client(h, h.key("asksuggest"))
+    result = s.call("suggest_memory", {"title": "Likes tea", "body": "Green tea in the afternoon.",
+                                       "categories": ["personal_preferences"]})
+    check("suggestion refused at once", result.get("status") == "denied" and
+          result.get("reason") == "category_not_allowed", result)
+    check("allowed once: in the Inbox afterwards", wait_for(lambda: h.control(cmd="inbox")["pending"] == before + 1))
+    check("and its Save panel", wait_for(lambda: h.control(cmd="presented")["suggestions"] == shown + 1))
+    s.close()
+    h.control(cmd="access", mode="notnow")
 
 
 def run_agent_state(h):

@@ -312,17 +312,32 @@ public struct ApprovalPanelView: View {
                     .accessibilityLabel(String(localized: "Next request"))
             }
             if let seconds = queue.remaining(item) {
-                Text(String(localized: "\(seconds) s")).monospacedDigit().foregroundStyle(.secondary)
+                Text(ApprovalQueue.countdown(seconds)).monospacedDigit().foregroundStyle(.secondary)
                     .accessibilityLabel(String(localized: "\(seconds) seconds left"))
             }
             Spacer()
-            if let tertiary = item.tertiary {
-                Button(tertiary) { queue.answer(item.id, .tertiary) }
+            if item.kind == .access {
+                // Not Now · Allow Once · Always Allow (04-ux-mac.md).
+                Button(item.secondary) { queue.answer(item.id, .secondary) }
+                    .keyboardShortcut(.cancelAction)
                     .disabled(!armed)
+                if let tertiary = item.tertiary {
+                    Button(tertiary) { queue.answer(item.id, .tertiary) }
+                        .disabled(!armed)
+                }
+            } else {
+                if let tertiary = item.tertiary {
+                    Button(tertiary) { queue.answer(item.id, .tertiary) }
+                        .disabled(!armed)
+                }
+                Button(item.secondary) { queue.answer(item.id, .secondary) }
+                    .keyboardShortcut(.cancelAction)
+                    .disabled(!armed)
+                if let edit = item.edit {
+                    Button(edit) { queue.answer(item.id, .edit) }
+                        .disabled(!armed)
+                }
             }
-            Button(item.secondary) { queue.answer(item.id, .secondary) }
-                .keyboardShortcut(.cancelAction)
-                .disabled(!armed)
             Button(item.kind == .share ? "\(item.primary) \(count)" : item.primary) {
                 queue.answer(item.id, .primary(selected: item.selectedIDs))
             }

@@ -296,3 +296,31 @@ struct LookingForTests {
         #expect(!short.isClipped && queue.displayedValue(short, in: UUID()) == "coffee order")
     }
 }
+
+/// Task 3.6: the access-request panel and pending countdowns.
+@Suite("Access-request panel")
+@MainActor
+struct AccessPanelTests {
+    @Test func countdownWording() {
+        #expect(ApprovalQueue.countdown(41) == "41 s")
+        #expect(ApprovalQueue.countdown(60) == "1:00")
+        #expect(ApprovalQueue.countdown(545) == "9:05")
+    }
+
+    @Test func answersArriveOnce() {
+        let queue = ApprovalQueue()
+        var answers = [PanelAnswer]()
+        let item = PanelItem(id: UUID(), kind: .access, agentID: "a", title: "Cursor wants more access", rows: [],
+                             primary: "Always Allow", secondary: "Not Now", tertiary: "Allow Once",
+                             expiresAt: Date().addingTimeInterval(45), announcement: "Cursor wants more access")
+        queue.enqueue(item) { answers.append($0) }
+        queue.answer(item.id, .tertiary)
+        queue.answer(item.id, .primary(selected: []))
+        #expect(answers == [.tertiary])
+        let save = PanelItem(id: UUID(), kind: .save, agentID: "a", title: "Save this memory?", rows: [], primary: "Save",
+                             secondary: "Later", tertiary: "Discard", edit: "Edit…", announcement: "x")
+        queue.enqueue(save) { answers.append($0) }
+        queue.answer(save.id, .edit)
+        #expect(answers == [.tertiary, .edit])
+    }
+}
