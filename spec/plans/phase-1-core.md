@@ -40,17 +40,17 @@
   - `eligibility(memory, access, now) -> ReasonCode?`;
   - `decide(eligible, access, window) -> Decision`;
   - `scopeCheck(proposed, access)` for suggestions.
-- [ ] Tests: T1–T12 and T27–T33 as parameterized tests.
+- [x] Tests: T1–T12 and T27–T33 as parameterized tests (T1–T11 and T31–T33 run both in the engine and through DisclosureService; T12 and T30 at the service level).
 
 ### 1.6 BundleCompiler · 1 h
 - [x] `title: body`, `ceil(chars/4)`, skip-overflow, clip the first item, instructions v1. Characters are Unicode scalars; clipping keeps whole grapheme clusters.
 - [x] Tests: T21 plus edge cases (budget exactly met; an empty body is impossible; Unicode character counting).
 
 ### 1.7 DisclosureService · 3 h
-- [ ] `request(agentId, input) -> RequestOutcome` (persists the snapshot; keeps task text in an in-memory cache with a 15-minute TTL).
-- [ ] `approve(requestId, revision, ids)`, `deny(requestId)`, `deliver(requestId, agentId) -> Bundle | Status`, `expirePending(now)`.
-- [ ] One write transaction per approve and per deliver.
-- [ ] Tests: T13–T20 and T22, plus concurrency (two deliveries racing: exactly one wins; approve racing deliver).
+- [x] `request(agentId, input) -> RequestOutcome` (persists the snapshot; keeps task text in an in-memory cache with a 15-minute TTL).
+- [x] `approve(requestId, revision, ids)`, `deny(requestId)`, `deliver(requestId, agentId) -> Bundle | Status`, `expirePending(now)`.
+- [x] One write transaction per approve and per deliver.
+- [x] Tests: T13–T20 and T22, plus concurrency (two deliveries racing: exactly one wins; approve racing deliver).
 
 ### 1.8 SuggestionService and CaptureService · 2 h
 - [ ] `suggest(agentId, input) -> SuggestOutcome` (validation, scan, gate, scope, write or suggest).

@@ -123,7 +123,7 @@ CREATE TABLE access_category (
   agent_id     TEXT NOT NULL REFERENCES agent(id) ON DELETE CASCADE,
   category_key TEXT NOT NULL REFERENCES category(key) ON UPDATE CASCADE ON DELETE CASCADE,
   mode         TEXT NOT NULL CHECK (mode IN ('allow','deny')),
-  PRIMARY KEY (agent_id, category_key)
+  PRIMARY KEY (agent_id, category_key, mode)   -- a key may be on both lists; deny wins (T8)
 );
 
 CREATE TABLE disclosure (

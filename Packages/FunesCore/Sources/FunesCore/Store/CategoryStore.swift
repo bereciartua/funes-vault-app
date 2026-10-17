@@ -91,13 +91,14 @@ extension VaultStore {
             let agents = try String.fetchAll(db, sql: "SELECT DISTINCT agent_id FROM access_category WHERE category_key = ?",
                                              arguments: [key])
             for agent in agents {
-                let mode = try String.fetchOne(db, sql: "SELECT mode FROM access_category WHERE agent_id = ? AND category_key = ?",
-                                               arguments: [agent, key])
+                let modes = Set(try String.fetchAll(db, sql: "SELECT mode FROM access_category WHERE agent_id = ? AND category_key = ?",
+                                                    arguments: [agent, key]))
                 if let replacement {
-                    if mode == "deny" {
-                        try db.execute(sql: "INSERT OR REPLACE INTO access_category (agent_id, category_key, mode) VALUES (?, ?, 'deny')",
+                    if modes.contains("deny") {
+                        try db.execute(sql: "INSERT OR IGNORE INTO access_category (agent_id, category_key, mode) VALUES (?, ?, 'deny')",
                                        arguments: [agent, replacement])
-                    } else if onlyAllowed.contains(where: { $0.db == agent }) {
+                    }
+                    if modes.contains("allow"), onlyAllowed.contains(where: { $0.db == agent }) {
                         // Keep the agent narrowed to what replaced its only allowed category.
                         try db.execute(sql: "INSERT OR IGNORE INTO access_category (agent_id, category_key, mode) VALUES (?, ?, 'allow')",
                                        arguments: [agent, replacement])

@@ -81,6 +81,7 @@ The task text and keywords are kept in memory only, tied to the request id, for 
 
 ### 3.6 Approval (panel or pending list)
 - The UI shows each eligible memory's **current** text, read fresh from the database when shown.
+- **Rebuilding:** when the panel is built, the snapshot is re-checked against the current memories and access. If a memory's version or eligibility, or the agent's revision, changed, the snapshot is rebuilt (only the original candidates that are still eligible, with their current versions) and gets a new `snapshotRevision`. If none remain eligible, the request is denied with `no_allowed_memories`. So an access change invalidates pending approvals (FR-A-03), and a panel built before the change is refused on approval (T22).
 - **Allow:**
   - The user picks a non-empty subset S of the eligible ids.
   - The UI submits `{requestId, snapshotRevision, S}`.
@@ -90,7 +91,7 @@ The task text and keywords are kept in memory only, tied to the request id, for 
 
 ### 3.7 Delivery (inside the same call, or through `get_memory_request`)
 In a single database transaction:
-1. If the agent was removed, the call fails at authentication earlier. If it's paused: `agent_paused` (the status stays `approved` until expiry).
+1. If the agent was removed, the call fails at authentication earlier. If Funes is paused (`funes_paused`) or the agent is (`agent_paused`), the call is refused with that reason and `status: denied`, but the stored status stays `approved` until expiry, so it can be retrieved after resuming.
 2. If `now > approvalExpiresAt`: `status = needs_approval`, reason `approval_expired`. The task text is gone after 15 minutes, so the request can only be denied after that point. Shown as "expired".
 3. If the agent's current revision ≠ `agentRevisionAtRequest`: `status = needs_approval`, reason `policy_changed`.
 4. For each approved id, check that the memory still exists, is `active`, has the same `version`, and is still eligible under the current access (§3.3). If any check fails: `status = needs_approval`, reason `policy_changed`. The whole request is invalidated, not partly delivered.
