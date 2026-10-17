@@ -17,7 +17,7 @@ Everything lives under `~/Library/Application Support/FunesVault/`, in a 0700 fo
 - **User defaults:** UI preferences, the hotkey, ports, iPhone access modes, update settings, setup checklist state.
 - **Nothing** lives in `/tmp`. Unlike EK Bridge, there's no file transport.
 
-**Encryption at rest:** relies on FileVault in v0.1. Optional SQLCipher is an [open question](../plans/open-questions.md).
+**Encryption at rest:** relies on FileVault in v0.1 ([Q7](../plans/open-questions.md), decided). SQLCipher may be revisited later.
 
 ## 2. Schema (v1)
 SQLite with `PRAGMA foreign_keys = ON`, `journal_mode = WAL` and `synchronous = NORMAL`. Times are stored as UTC text in GRDB's `Date` format (`YYYY-MM-DD HH:MM:SS.SSS`, which sorts and compares as text). Ids are lowercase UUID text.

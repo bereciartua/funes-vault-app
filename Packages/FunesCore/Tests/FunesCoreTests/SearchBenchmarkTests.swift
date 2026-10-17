@@ -23,6 +23,10 @@ import Testing
         static let hybridExpanded = 0.92
         static let hybridRaw = 0.68
         static let keywordExpanded = 0.82
+        // MRR at or above the recorded baseline (testing strategy), with 0.01 of slack.
+        static let hybridExpandedMRR = 0.96
+        static let hybridRawMRR = 0.81
+        static let keywordExpandedMRR = 0.89
     }
 
     struct Result { var r5 = 0.0, r30 = 0.0, mrr = 0.0, kept = 0.0 }
@@ -50,6 +54,7 @@ import Testing
         let expanded = try await Self.measure(search, ids: ids, expanded: true)
         let raw = try await Self.measure(search, ids: ids, expanded: false)
         #expect(expanded.r5 >= Baseline.keywordExpanded, "keyword-only R@5 (expanded) \(expanded.r5)")
+        #expect(expanded.mrr >= Baseline.keywordExpandedMRR, "keyword-only MRR (expanded) \(expanded.mrr)")
         Self.report("keyword-only expanded", expanded)
         Self.report("keyword-only raw", raw)
     }
@@ -70,6 +75,8 @@ import Testing
         let raw = try await Self.measure(search, ids: ids, expanded: false)
         #expect(expanded.r5 >= Baseline.hybridExpanded, "hybrid R@5 (expanded) \(expanded.r5)")
         #expect(raw.r5 >= Baseline.hybridRaw, "hybrid R@5 (raw) \(raw.r5)")
+        #expect(expanded.mrr >= Baseline.hybridExpandedMRR && raw.mrr >= Baseline.hybridRawMRR,
+                "hybrid MRR \(expanded.mrr) / \(raw.mrr)")
         Self.report("hybrid expanded", expanded)
         Self.report("hybrid raw", raw)
 
