@@ -20,6 +20,10 @@ let package = Package(
                 .product(name: "GRDB", package: "GRDB.swift"),
             ]
         ),
-        .testTarget(name: "FunesCoreTests", dependencies: ["FunesCore"]),
+        .testTarget(
+            name: "FunesCoreTests",
+            dependencies: ["FunesCore"],
+            resources: [.copy("fixtures")]
+        ),
     ]
 )
