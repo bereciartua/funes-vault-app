@@ -471,7 +471,9 @@ public final class DisclosureService: Sendable {
             waiters.withLock { $0[requestID, default: [:]][token] = c }
             if let s = try? status(requestID), s != .needsApproval { resume(requestID, token) }
             Task {
-                try? await Task.sleep(for: timeout)
+                // An explicit tolerance: by default a 45 s sleep may run seconds late (timer
+                // coalescing), past the panel's countdown.
+                try? await Task.sleep(for: timeout, tolerance: .milliseconds(100))
                 self.resume(requestID, token)
             }
         }
