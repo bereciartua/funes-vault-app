@@ -108,6 +108,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             mainWindow.show()
         }
         offerMoveToApplications()
+        #if DEBUG
+        // FUNES_DEBUG_OPEN=vault|inbox|agents|activity|settings[:tab] opens a window at launch.
+        if let open = ProcessInfo.processInfo.environment["FUNES_DEBUG_OPEN"], !open.isEmpty {
+            let parts = open.split(separator: ":").map(String.init)
+            if parts[0] == "settings" {
+                model.openSettings(parts.count > 1 ? SettingsTab(rawValue: parts[1]) : nil)
+            } else if let section = AppSection(rawValue: parts[0]) {
+                model.show(section)
+                if parts.count > 1, parts[1] == "first" {
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(600))
+                        if let first = model.vault.memories.first { model.vault.selection = [first.id] }
+                        if let first = model.agents.first { model.selectedAgentID = first.id }
+                    }
+                }
+            }
+        }
+        #endif
         logger.info("Launched")
     }
 

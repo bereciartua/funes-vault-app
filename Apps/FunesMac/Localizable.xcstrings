@@ -1,6 +1,26 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$lld)"
+          }
+        }
+      }
+    },
+    "%@ / %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ / %2$@"
+          }
+        }
+      }
+    },
     "%@ asks to use %lld memories in Funes" : {
       "localizations" : {
         "en" : {
@@ -30,13 +50,48 @@
     "%@ · approved, waiting for the agent" : {
 
     },
+    "%@, %lld chosen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld chosen"
+          }
+        }
+      }
+    },
+    "%@, %lld couldn't be changed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld couldn't be changed"
+          }
+        }
+      }
+    },
     "%lld above its sensitivity limit" : {
+
+    },
+    "%lld archived" : {
+
+    },
+    "%lld changed" : {
+
+    },
+    "%lld deleted permanently" : {
+
+    },
+    "%lld earlier entries" : {
 
     },
     "%lld expired" : {
 
     },
     "%lld in categories it can't read" : {
+
+    },
+    "%lld memories selected" : {
 
     },
     "%lld more matched but can't go to this agent (%@)." : {
@@ -48,6 +103,9 @@
           }
         }
       }
+    },
+    "%lld moved to Recently Deleted" : {
+
     },
     "%lld not shareable" : {
 
@@ -62,10 +120,22 @@
         }
       }
     },
+    "%lld of 10,000 characters" : {
+
+    },
+    "%lld restored" : {
+
+    },
     "%lld s" : {
 
     },
     "%lld seconds left" : {
+
+    },
+    "%lld selected" : {
+
+    },
+    "+%lld" : {
 
     },
     "A category with that name already exists." : {
@@ -75,6 +145,9 @@
 
     },
     "A request expired before you answered" : {
+
+    },
+    "A short name for it" : {
 
     },
     "A suggestion is waiting in the Inbox" : {
@@ -89,10 +162,31 @@
     "About Funes Vault" : {
 
     },
+    "Active" : {
+
+    },
     "Activity" : {
 
     },
     "Activity, %lld pending requests" : {
+
+    },
+    "Add" : {
+
+    },
+    "Add Category" : {
+
+    },
+    "Add Category…" : {
+
+    },
+    "Add a category" : {
+
+    },
+    "Add a title." : {
+
+    },
+    "Add the text to remember." : {
 
     },
     "Added by you" : {
@@ -110,6 +204,9 @@
     "Agents can't connect: the server is off" : {
 
     },
+    "Agents' access is set per category. Built-in categories can be renamed; your own can also be deleted." : {
+
+    },
     "An agent" : {
 
     },
@@ -119,16 +216,46 @@
     "Another agent already has that name." : {
 
     },
+    "Answer a Few Questions" : {
+
+    },
+    "Answer a few questions to get started, or press ⌥⌘M anytime to remember something." : {
+
+    },
     "Answered a question" : {
 
     },
     "Applications" : {
 
     },
+    "Applied from the Inbox" : {
+
+    },
     "Approval" : {
 
     },
+    "Archive" : {
+
+    },
+    "Archived" : {
+
+    },
+    "Archived %@" : {
+
+    },
+    "Archived memories are kept but never shared with agents." : {
+
+    },
+    "Archived memories are kept, but never shared with agents." : {
+
+    },
+    "Built in" : {
+
+    },
     "Built-in categories can be renamed but not deleted." : {
+
+    },
+    "Cancel" : {
 
     },
     "Capture" : {
@@ -140,6 +267,12 @@
     "Captured on this Mac" : {
 
     },
+    "Categories" : {
+
+    },
+    "Categories…" : {
+
+    },
     "Category" : {
 
     },
@@ -149,7 +282,19 @@
     "Choose at least one category." : {
 
     },
+    "Clear" : {
+
+    },
+    "Clear search" : {
+
+    },
+    "Clear the filters to see everything." : {
+
+    },
     "Close Window" : {
+
+    },
+    "Confirmed still true %@" : {
 
     },
     "Constraint" : {
@@ -158,13 +303,74 @@
     "Copy" : {
 
     },
+    "Correction suggested %@" : {
+
+    },
+    "Created %@" : {
+
+    },
     "Cut" : {
 
     },
     "Data" : {
 
     },
+    "Date Created" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete %@" : {
+
+    },
+    "Delete %lld memories now?" : {
+
+    },
+    "Delete Now" : {
+
+    },
+    "Delete Now…" : {
+
+    },
+    "Delete this memory now?" : {
+
+    },
+    "Delete “%@”?" : {
+
+    },
+    "Deleted %@" : {
+
+    },
+    "Deleted %@. It's removed for good in %lld days unless you restore it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Deleted %1$@. It's removed for good in %2$lld days unless you restore it."
+          }
+        }
+      }
+    },
+    "Deleted memories stay here for 30 days, then they're gone for good." : {
+
+    },
+    "Delete…" : {
+
+    },
     "Deny" : {
+
+    },
+    "Description" : {
+
+    },
+    "Dismiss" : {
+
+    },
+    "Don't move them" : {
+
+    },
+    "Done" : {
 
     },
     "Downloads" : {
@@ -173,10 +379,32 @@
     "Edit" : {
 
     },
+    "Edited %@" : {
+
+    },
+    "Edited %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Edited %1$@ %2$@"
+          }
+        }
+      }
+    },
     "Event" : {
 
     },
     "Everyday preferences. Fine for most of your agents." : {
+
+    },
+    "Expired" : {
+
+    },
+    "Expires" : {
+
+    },
+    "Expiry date" : {
 
     },
     "Fact" : {
@@ -230,6 +458,9 @@
     "Funes Vault, waiting for you" : {
 
     },
+    "Funes notes that you checked it today." : {
+
+    },
     "General" : {
 
     },
@@ -237,6 +468,9 @@
 
     },
     "Hide Funes Vault" : {
+
+    },
+    "History" : {
 
     },
     "Imported from ChatGPT" : {
@@ -266,13 +500,22 @@
     "Internal" : {
 
     },
+    "Is this still true?" : {
+
+    },
     "It changed in the meantime. Look again and retry." : {
+
+    },
+    "It was deleted for good." : {
 
     },
     "It was deleted or changed elsewhere." : {
 
     },
     "It's already in Applications." : {
+
+    },
+    "It's removed for good, with its history. This can't be undone." : {
 
     },
     "It's the only category some agents may read. Choose a replacement, or change those agents first." : {
@@ -282,6 +525,12 @@
 
     },
     "Kept by the agent" : {
+
+    },
+    "Kind" : {
+
+    },
+    "Last Updated" : {
 
     },
     "Later" : {
@@ -296,16 +545,55 @@
     "MCP" : {
 
     },
+    "Mark that you checked this memory today" : {
+
+    },
+    "Memories" : {
+
+    },
+    "Memories in it can move to another category. Agents that couldn't read it won't be able to read the replacement either." : {
+
+    },
+    "Memories past their expiry date appear here. Agents don't get them." : {
+
+    },
     "Minimize" : {
+
+    },
+    "Move its memories to" : {
+
+    },
+    "Move to %@" : {
+
+    },
+    "Name" : {
+
+    },
+    "Never" : {
 
     },
     "Never shared with agents unless you raise an agent's ceiling to Secret." : {
 
     },
+    "Never shared with an agent" : {
+
+    },
     "New Memory" : {
 
     },
+    "New memories start at" : {
+
+    },
+    "New memories: %@" : {
+
+    },
     "Next request" : {
+
+    },
+    "No memories match these filters" : {
+
+    },
+    "No memory selected" : {
 
     },
     "Not allowed." : {
@@ -317,10 +605,19 @@
     "Not said" : {
 
     },
+    "Nothing archived" : {
+
+    },
+    "Nothing expired" : {
+
+    },
     "Notifications" : {
 
     },
     "Notifications never include memory text." : {
+
+    },
+    "On a date" : {
 
     },
     "Open Funes Vault" : {
@@ -380,6 +677,12 @@
     "Quit the other copy first." : {
 
     },
+    "Recently Deleted" : {
+
+    },
+    "Recently Deleted is empty" : {
+
+    },
     "Redo" : {
 
     },
@@ -392,7 +695,31 @@
     "Remember…" : {
 
     },
+    "Remove %@" : {
+
+    },
     "Removed agent" : {
+
+    },
+    "Removed agent (%@)" : {
+
+    },
+    "Rename %@" : {
+
+    },
+    "Rename Category" : {
+
+    },
+    "Rename, add or delete categories" : {
+
+    },
+    "Rename…" : {
+
+    },
+    "Restore" : {
+
+    },
+    "Restored %@" : {
 
     },
     "Restricted" : {
@@ -404,6 +731,9 @@
     "Resume Funes Vault" : {
 
     },
+    "Revert" : {
+
+    },
     "Save" : {
 
     },
@@ -413,10 +743,19 @@
     "Saved by an agent" : {
 
     },
+    "Saved. A similar memory exists:" : {
+
+    },
+    "Search memories" : {
+
+    },
     "Secret" : {
 
     },
     "Select All" : {
+
+    },
+    "Select a memory to read or edit it." : {
 
     },
     "Sensitive" : {
@@ -434,7 +773,33 @@
     "Share" : {
 
     },
+    "Shared %lld times · last with %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shared %1$lld times · last with %2$@ %3$@"
+          }
+        }
+      }
+    },
+    "Shared once · with %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shared once · with %1$@ %2$@"
+          }
+        }
+      }
+    },
     "Shared with" : {
+
+    },
+    "Shared with %@" : {
+
+    },
+    "Show All" : {
 
     },
     "Show all" : {
@@ -453,6 +818,9 @@
 
     },
     "Show less of %@" : {
+
+    },
+    "Similar memory exists:" : {
 
     },
     "Some memories are only in this category. Choose a replacement." : {
@@ -474,7 +842,22 @@
     "Something went wrong. Try again." : {
 
     },
+    "Sort by" : {
+
+    },
+    "Source" : {
+
+    },
     "Starting…" : {
+
+    },
+    "Status" : {
+
+    },
+    "Still True" : {
+
+    },
+    "Still True…" : {
 
     },
     "Suggested by %@. It's in your Inbox either way." : {
@@ -487,6 +870,9 @@
 
     },
     "Task: “%@”" : {
+
+    },
+    "Text" : {
 
     },
     "That category no longer exists." : {
@@ -513,7 +899,13 @@
     "The name needs 1 to 60 characters." : {
 
     },
+    "The text is longer than 10,000 characters." : {
+
+    },
     "The text needs 1 to 10,000 characters." : {
+
+    },
+    "The title is longer than 180 characters." : {
 
     },
     "The title needs 1 to 180 characters." : {
@@ -522,16 +914,25 @@
     "The vault didn't open" : {
 
     },
+    "They're removed for good, with their history. This can't be undone." : {
+
+    },
     "This copy isn't signed by a developer, so its copy can't be checked. Drag it to Applications in Finder instead." : {
 
     },
     "This looks like %@. Funes never stores secrets." : {
 
     },
+    "This memory is gone" : {
+
+    },
     "This request changed; review again." : {
 
     },
     "This vault was written by a newer Funes Vault. Update the app." : {
+
+    },
+    "Title" : {
 
     },
     "Undo" : {
@@ -546,6 +947,9 @@
     "Updates" : {
 
     },
+    "Use the bar above the list to change them together." : {
+
+    },
     "Vault" : {
 
     },
@@ -555,6 +959,9 @@
     "View" : {
 
     },
+    "What belongs here (agents see this)" : {
+
+    },
     "Why" : {
 
     },
@@ -562,6 +969,9 @@
 
     },
     "Work or project context. Share with agents you use for that work." : {
+
+    },
+    "Your vault is empty" : {
 
     },
     "Zoom" : {
@@ -588,10 +998,49 @@
     "an API key" : {
 
     },
+    "an agent" : {
+
+    },
     "an agent key" : {
 
     },
+    "by %@" : {
+
+    },
+    "by Funes Vault" : {
+
+    },
+    "by an import" : {
+
+    },
+    "by you" : {
+
+    },
+    "categories" : {
+
+    },
+    "confidence" : {
+
+    },
+    "expires %@" : {
+
+    },
+    "expires in %lld days" : {
+
+    },
+    "expires today" : {
+
+    },
+    "expires tomorrow" : {
+
+    },
+    "expiry" : {
+
+    },
     "just now" : {
+
+    },
+    "kind" : {
 
     },
     "macOS didn't add Funes Vault to Login Items." : {
@@ -606,10 +1055,28 @@
     "macOS needs your approval in System Settings ▸ General ▸ Login Items." : {
 
     },
+    "on iPhone" : {
+
+    },
+    "sensitivity" : {
+
+    },
+    "status" : {
+
+    },
+    "text" : {
+
+    },
     "the disk image" : {
 
     },
     "the “%@” folder" : {
+
+    },
+    "title" : {
+
+    },
+    "· confirmed %@" : {
 
     },
     "“%@” (as reported)" : {

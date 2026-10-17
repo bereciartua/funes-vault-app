@@ -52,6 +52,8 @@ final class AppModel {
 
     var mcpStatus: MCPService.Status = .off
     var agents: [Agent] = []
+    /// Removed agents too, for labels in Activity and history ("removed agent").
+    var allAgents: [Agent] = []
     var inbox: [Suggestion] = []
     var pending: [PendingRequest] = []
     var categories: [MemoryCategory] = []
@@ -62,6 +64,11 @@ final class AppModel {
     var pausedUntil: Date?
     /// Bumped when Activity gets a row.
     var activityGeneration = 0
+    /// Bumped after every vault change, so open screens reload.
+    var dataGeneration = 0
+
+    let vault: VaultModel
+    let checklist: ChecklistModel
 
     // MARK: Navigation
 
@@ -95,6 +102,8 @@ final class AppModel {
     init(services: VaultEnvironment, preferences: Preferences) {
         self.services = services
         self.preferences = preferences
+        vault = VaultModel(services: services)
+        checklist = ChecklistModel(preferences: preferences)
         pausedUntil = services.pause.pausedUntil(at: Date())
         observation = services.store.observeChanges { [weak self] in
             Task { @MainActor in self?.scheduleRefresh() }
@@ -144,17 +153,21 @@ final class AppModel {
         let now = Date()
         self.now = now
         pausedUntil = services.pause.pausedUntil(at: now)
-        let agents = (try? await services.agents.agents()) ?? []
+        let all = (try? await services.agents.agents(includingRemoved: true)) ?? []
+        let agents = all.filter { !$0.isRemoved }
         let inbox = (try? await services.suggestions.pending()) ?? []
         let disclosures = (try? await services.disclosures.pendingRequests(now: now)) ?? []
         let names = Dictionary(uniqueKeysWithValues: agents.map { ($0.id, $0.name) })
         self.agents = agents
+        allAgents = all
         self.inbox = inbox
         pending = disclosures.map {
             PendingRequest(id: $0.id, agentID: $0.agentID, agentName: names[$0.agentID] ?? String(localized: "Removed agent"),
                            status: $0.status, createdAt: $0.createdAt)
         }
         categories = (try? services.store.categories()) ?? []
+        dataGeneration += 1
+        checklist.update(model: self)
         changed()
     }
 
@@ -197,6 +210,12 @@ final class AppModel {
     // MARK: Lookups
 
     func agent(_ id: UUID?) -> Agent? { id.flatMap { id in agents.first { $0.id == id } } }
+
+    /// An agent's name; "Removed agent" once it's gone.
+    func agentName(_ id: UUID) -> String {
+        guard let agent = allAgents.first(where: { $0.id == id }) else { return String(localized: "an agent") }
+        return agent.isRemoved ? String(localized: "Removed agent (\(agent.name))") : agent.name
+    }
 
     func categoryName(_ key: String) -> String { categories.first { $0.key == key }?.name ?? key }
 

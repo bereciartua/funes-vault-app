@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import FunesCore
+import FunesProtocol
 
 /// Task 3.1: "Pause Funes Vault" durations (FR-A-11) and change observation for the app's screens.
 @Suite struct AppShellTests {
@@ -44,5 +45,22 @@ import Testing
         var iterator = seen.stream.makeAsyncIterator()
         _ = await iterator.next()
         withExtendedLifetime(observation) {}
+    }
+}
+
+/// Task 3.2: custom category keys (FR-V-06).
+@Suite struct CategoryKeyTests {
+    @Test func keysFromNames() {
+        #expect(MemoryCategory.key(forName: "Home & Garden", existing: []) == "home_garden")
+        #expect(MemoryCategory.key(forName: "  Café Plans ", existing: []) == "cafe_plans")
+        #expect(MemoryCategory.key(forName: "2027 goals", existing: []) == "category_2027_goals")
+        #expect(MemoryCategory.key(forName: "日本", existing: []) == "category")
+        #expect(MemoryCategory.key(forName: "Health", existing: ["health"]) == "health_2")
+        #expect(MemoryCategory.key(forName: "Health", existing: ["health", "health_2"]) == "health_3")
+        let long = MemoryCategory.key(forName: String(repeating: "a", count: 100), existing: [])
+        #expect(long.count == 60 && MemoryCategory.isValidKey(long))
+        for name in ["Home & Garden", "2027 goals", "日本", "__x__", "Ünïcødé"] {
+            #expect(MemoryCategory.isValidKey(MemoryCategory.key(forName: name, existing: [])))
+        }
     }
 }

@@ -11,11 +11,11 @@
 - [x] "Pause Funes Vault" (1 hour, until tomorrow at 8:00, until resumed), kept across relaunches.
 
 ### 3.2 Vault UI · 5 h
-- [ ] List with search (debounced, 150 ms), filters, sort and empty states.
-- [ ] Detail and editor: fields, sensitivity explanations, category token field, expiry picker, provenance timeline, "Shared N times" link, Archive, Delete, Still true.
-- [ ] Recently Deleted view with restore and Delete Now.
-- [ ] Custom categories management (S).
-- [ ] Bulk actions (S).
+- [x] List with search (debounced, 150 ms), filters, sort and empty states.
+- [x] Detail and editor: fields, sensitivity explanations, category token field, expiry picker, provenance timeline, "Shared N times" link, Archive, Delete, Still true.
+- [x] Recently Deleted view with restore and Delete Now.
+- [x] Custom categories management (S).
+- [x] Bulk actions (S).
 
 ### 3.3 Inbox UI · 3 h
 - [ ] Cards by source, inline editing, Apply, Reject and Later, a duplicate hint, a correction diff with Replace or Keep both.

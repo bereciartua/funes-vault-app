@@ -13,6 +13,34 @@ enum CategoryStore {
     }
 }
 
+extension MemoryCategory {
+    /// The immutable key for a new custom category named `name` (FR-V-06): lowercase ASCII letters,
+    /// digits and underscores from the name, starting with a letter, unique among `existing`.
+    public static func key(forName name: String, existing: Set<String>) -> String {
+        let folded = name.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "en"))
+            .lowercased()
+        var key = ""
+        for scalar in folded.unicodeScalars {
+            if ("a"..."z").contains(scalar) || ("0"..."9").contains(scalar) {
+                key.unicodeScalars.append(scalar)
+            } else if !key.hasSuffix("_"), !key.isEmpty {
+                key += "_"
+            }
+        }
+        while key.hasSuffix("_") { key.removeLast() }
+        if key.isEmpty || !("a"..."z").contains(key.unicodeScalars.first!) { key = "category_" + key }
+        key = String(key.prefix(60))
+        while key.hasSuffix("_") { key.removeLast() }
+        var candidate = key
+        var n = 2
+        while existing.contains(candidate) {
+            candidate = "\(key)_\(n)"
+            n += 1
+        }
+        return candidate
+    }
+}
+
 extension VaultStore {
     public func categories() throws -> [MemoryCategory] {
         try writer.read { db in try CategoryStore.all(db) }
