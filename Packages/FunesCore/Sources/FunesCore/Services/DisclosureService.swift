@@ -240,11 +240,14 @@ public final class DisclosureService: Sendable {
 
     /// The in-call flow (§3.7): evaluate, wait up to `wait` for the panel, deliver if approved.
     /// On timeout the result is `needs_approval` with the request id, and the request moves to
-    /// Pending requests (T18).
+    /// Pending requests (T18). `onNeedsApproval` runs once the request is waiting, so the app can
+    /// show its panel.
     public func requestInCall(agentID: UUID, _ input: MemoryRequest, wait: Duration = .seconds(45),
-                              now: @Sendable () -> Date = { Date() }) async throws -> RequestOutcome {
+                              now: @Sendable () -> Date = { Date() },
+                              onNeedsApproval: @Sendable (RequestOutcome) -> Void = { _ in }) async throws -> RequestOutcome {
         let outcome = try await request(agentID: agentID, input, now: now())
         guard outcome.status == .needsApproval, let id = outcome.requestID else { return outcome }
+        onNeedsApproval(outcome)
         switch await waitForDecision(requestID: id, timeout: wait) {
         case .approved?:
             return try await deliver(requestID: id, agentID: agentID, now: now())

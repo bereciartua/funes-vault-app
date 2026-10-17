@@ -92,3 +92,11 @@ enum AgentStore {
                        arguments: [now, now, agentID.db])
     }
 }
+
+extension VaultStore {
+    /// One agent, removed ones included; a quick synchronous read (the MCP tool list is computed on
+    /// the main actor).
+    public func agent(id: UUID) throws -> Agent? {
+        try writer.read { db in try AgentStore.fetch(db, id: id) }
+    }
+}

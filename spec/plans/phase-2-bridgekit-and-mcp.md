@@ -44,16 +44,17 @@
 - [ ] Create `Packages/BridgeUI` and copy the tier-2 files ([reuse §2](../architecture/ek-bridge-reuse.md#2-tier-2-copied-into-funes-packagesbridgeui-extracted-as-bridgekitui-after-funes-v01)), recording their source commits in `PROVENANCE.md`.
 
 ### 2.7 Tool contract · 2 h
-- [ ] `Resources/mcp-tools.json`: server instructions, the 5 tools, schemas, annotations ([MCP spec](../architecture/mcp-server.md#6-tools)), including the optional `keywords` on `request_memory` and the description asking for them ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md)).
+*The contract, pipeline, handlers and the `FUNES_MCP_TEST` server live in `Packages/FunesMCP` ([ADR-0017](../architecture/decisions/0017-funes-mcp-package.md)); the contract is `Packages/FunesMCP/Sources/FunesMCP/Resources/mcp-tools.json`.*
+- [x] `Resources/mcp-tools.json`: server instructions, the 5 tools, schemas, annotations ([MCP spec](../architecture/mcp-server.md#6-tools)), including the optional `keywords` on `request_memory` and the description asking for them ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md)).
 - [ ] Live check: record whether Claude Code, Claude Desktop, Cursor and Codex send `keywords`, and sample what they send; tune the description from that.
-- [ ] Golden fixture and a byte-for-byte test. Implement `visibleTools(access:)`.
+- [x] Golden fixture and a byte-for-byte test. Implement `visibleTools(access:)`.
 
 ### 2.8 Handlers and pipeline · 5 h
-- [ ] `BridgeConfiguration` for Funes: port 47625, prefix `fns_mcp_v1_`, server key `funes`, launcher `funes-mcp`.
-- [ ] `AgentAuthenticator` backed by `AgentService` (SQLite).
-- [ ] `RequestPipeline`: Funes on? → agent state → rate limits (calls, writes, in-flight, pending) → handler → Activity.
-- [ ] Handlers: `request_memory` (with the 45 s approval wait), `get_memory_request`, `suggest_memory` (non-blocking Save panel), `list_memory_categories`, `open_in_funes`.
-- [ ] `mcp-endpoint.json` lifecycle.
+- [x] `BridgeConfiguration` for Funes: port 47625, prefix `fns_mcp_v1_`, server key `funes`, launcher `funes-mcp`.
+- [x] `AgentAuthenticator` backed by `AgentService` (SQLite).
+- [x] `RequestPipeline`: Funes on? → agent state → rate limits (calls, writes, in-flight, pending) → handler → Activity.
+- [x] Handlers: `request_memory` (with the 45 s approval wait), `get_memory_request`, `suggest_memory` (non-blocking Save panel), `list_memory_categories`, `open_in_funes`.
+- [x] `mcp-endpoint.json` lifecycle.
 
 ### 2.9 Approval panels v1 · 3 h
 - [ ] Adapt the copied `ApprovalPanel`:
@@ -65,8 +66,8 @@
 - [ ] `FunesMCPLauncher` target: a `main.swift` calling `BridgeLauncher.run(funesConfig)`, supporting `--agent`, `headers` and `check`.
 
 ### 2.11 Python MCP harness for Funes · 2 h
-- [ ] A `FUNES_MCP_TEST` build with a temporary vault and a fake approval responder.
-- [ ] `Tests/mcp/mcp_test.py`: Funes tool paths. The generic protocol checks live in BridgeKit's harness.
+- [x] A `FUNES_MCP_TEST` build with a temporary vault and a fake approval responder.
+- [x] `Tests/mcp/mcp_test.py`: Funes tool paths. The generic protocol checks live in BridgeKit's harness.
 
 ## Exit criteria
 - **BridgeKit `0.1.0`** is tagged, with tests and the reference harness green.

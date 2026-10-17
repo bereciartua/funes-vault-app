@@ -6,7 +6,7 @@
 
 **Decision.**
 
-Use one **Xcode project** (`FunesVault.xcodeproj`) with app targets (Mac, launcher, iOS, extensions) and **local Swift packages** `FunesCore`, `FunesProtocol` and `BridgeUI` (copied EK Bridge UI pieces), plus the external package **`BridgeKit`** (product `BridgeKitCore`, pinned to an exact version; see [ADR-0013](0013-shared-bridgekit-core.md)). Release scripts use `xcodebuild archive`/`-exportArchive` and keep EK Bridge's notarize, DMG, Sparkle and appcast steps.
+Use one **Xcode project** (`FunesVault.xcodeproj`) with app targets (Mac, launcher, iOS, extensions) and **local Swift packages** `FunesCore`, `FunesProtocol`, `FunesMCP` (the MCP adapter; [ADR-0017](0017-funes-mcp-package.md)) and `BridgeUI` (copied EK Bridge UI pieces), plus the external package **`BridgeKit`** (product `BridgeKitCore`, pinned to an exact version; see [ADR-0013](0013-shared-bridgekit-core.md)). Release scripts use `xcodebuild archive`/`-exportArchive` and keep EK Bridge's notarize, DMG, Sparkle and appcast steps.
 
 **Consequences.**
 

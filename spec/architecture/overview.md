@@ -44,7 +44,7 @@ flowchart LR
 |---|---|---|
 | **UI** (SwiftUI in AppKit) | Menu bar controller, main window (Vault, Inbox, Agents, Activity, iPhone, Settings), capture box, panels | New, with EK Bridge shells |
 | **App services** | `RequestPipeline` (gate → rate limit → handler → approvals → activity), `ApprovalCenter`, `AccessRequests`, `ActivityStore`, `AgentSetup`/`AgentConfigWriter`, `Updater` (Sparkle), `AppMover`, `LoginItem`, `HotKey`, `ServicesProvider`, `Notifications` | **BridgeUI** (copied from EK Bridge) on top of **BridgeKitCore** |
-| **MCP adapter** | `LoopbackHTTPServer`, `MCPServer` (JSON-RPC, protocol versions), `MCPToolCatalog` (JSON contract), `FunesToolHandlers` | **BridgeKitCore** (shared library) + new handlers |
+| **MCP adapter** | `LoopbackHTTPServer`, `MCPServer` (JSON-RPC, protocol versions) from **BridgeKitCore**; the tool contract, `RequestPipeline` and handlers in **FunesMCP** ([ADR-0017](decisions/0017-funes-mcp-package.md)) | **BridgeKitCore** (shared library) + **FunesMCP** (package) |
 | **Companion adapter** (v0.2) | `CompanionServer` (HTTP listener on 47626), `PairingService`, `DeviceRegistry`, `EnvelopeCrypto` (HPKE + P-256 signatures), `BonjourAdvertiser` | New, with BridgeKitCore HTTP parts |
 | **FunesCore** (package) | `VaultStore` (GRDB), `PolicyEngine`, `Retrieval`, `BundleCompiler`, `DisclosureService`, `SuggestionService`, `CaptureService`, `ImportExport`, `Embeddings` (bundled bge-small Core ML, WordPiece tokenizer, vector index), `Classifier`, `Provenance`, **`Models`** (`ModelRouter`, Apple, OpenAI-compatible and Anthropic providers; see [model providers](model-providers.md)) | New, porting the web version's rules |
 | **FunesProtocol** (package, shared with iOS) | Companion request and response types, envelope format, `SecretScanner`, input limits, enums | New |
@@ -172,9 +172,10 @@ funes-vault-app/
 ├── Packages/                # each package keeps its own Tests/ (SwiftPM needs them inside the package)
 │   ├── FunesCore/           # vault logic (Mac only); Tests/FunesCoreTests: policy vectors, store, search
 │   ├── FunesProtocol/       # shared Mac + iOS; Tests/FunesProtocolTests
+│   ├── FunesMCP/            # MCP contract, pipeline, handlers, FUNES_MCP_TEST server (ADR-0017)
 │   └── BridgeUI/            # UI pieces copied from EK Bridge (→ BridgeKitUI after v0.1)
 │   (BridgeKit/BridgeKitCore is an external package: github.com/bereciartua/bridgekit)
-├── Resources/               # icons, MCP tool contract JSON, seed data
+├── Resources/               # icons, seed data
 ├── Tests/                   # cross-cutting harnesses outside SwiftPM
 │   ├── mcp/                 # Python loopback harness + golden fixtures
 │   └── companion/           # protocol tests, fuzzing
