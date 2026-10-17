@@ -75,6 +75,11 @@ final class AppModel {
     let activity: ActivityModel
     let checklist: ChecklistModel
     let modelSettings: ModelSettings
+    let data: DataOperations
+    /// Sparkle, or a stand-in where this build can't update itself.
+    @ObservationIgnored var updater = UpdaterControls.unavailable
+    /// MCP traffic counts since launch (Settings ▸ MCP).
+    @ObservationIgnored var trafficCounts: () -> MCPTrafficCounters.Snapshot = { MCPTrafficCounters.Snapshot() }
 
     // MARK: Navigation
 
@@ -131,6 +136,7 @@ final class AppModel {
         activity = ActivityModel(services: services)
         checklist = ChecklistModel(preferences: preferences)
         modelSettings = ModelSettings(defaults: preferences.defaults, keys: ModelSettings.keychain())
+        data = DataOperations(environment: services, preferences: preferences)
         pausedUntil = services.pause.pausedUntil(at: Date())
         observation = services.store.observeChanges { [weak self] in
             Task { @MainActor in self?.scheduleRefresh() }
@@ -255,6 +261,49 @@ final class AppModel {
         case "lmstudio": "LM Studio"
         default: nil
         }
+    }
+
+    /// "0.0.1 (1)".
+    var versionText: String {
+        let info = Bundle.main.infoDictionary ?? [:]
+        return "\(info["CFBundleShortVersionString"] as? String ?? "?") (\(info["CFBundleVersion"] as? String ?? "?"))"
+    }
+
+    /// funes-mcp inside the app bundle.
+    var launcherPath: String {
+        Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/\(Identifiers.mcpLauncherName)").path
+    }
+
+    static var launcherLink: String { NSHomeDirectory() + "/.local/bin/" + Identifiers.mcpLauncherName }
+
+    /// Whether ~/.local/bin/funes-mcp points at this app's launcher (mcp-server.md §1).
+    var launcherLinked: Bool {
+        (try? FileManager.default.destinationOfSymbolicLink(atPath: Self.launcherLink)) == launcherPath
+    }
+
+    /// Adds or removes the symlink; returns what happened. Never replaces a file that isn't our link.
+    func setLauncherLink(_ on: Bool) -> String {
+        let manager = FileManager.default
+        let link = Self.launcherLink
+        let existing = try? manager.destinationOfSymbolicLink(atPath: link)
+        if on {
+            if manager.fileExists(atPath: link) || existing != nil {
+                guard existing?.hasSuffix("/Contents/MacOS/\(Identifiers.mcpLauncherName)") == true else {
+                    return String(localized: "Something else is already at ~/.local/bin/funes-mcp, so it was left alone.")
+                }
+                try? manager.removeItem(atPath: link)
+            }
+            do {
+                try manager.createDirectory(atPath: (link as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
+                try manager.createSymbolicLink(atPath: link, withDestinationPath: launcherPath)
+                return String(localized: "Linked. Make sure ~/.local/bin is on your PATH.")
+            } catch {
+                return String(localized: "The link couldn't be made.")
+            }
+        }
+        guard existing == launcherPath else { return String(localized: "There's no link to remove.") }
+        try? manager.removeItem(atPath: link)
+        return String(localized: "Removed.")
     }
 
     /// What an agent's last MCP connection said it was ("claude-code 2.1").

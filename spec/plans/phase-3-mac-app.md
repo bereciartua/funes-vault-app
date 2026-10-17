@@ -51,7 +51,7 @@
 - [x] Cloud sensitivity limit; disclosure sentences; usage counters. (The "embed agent requests" switch, re-embedding and Calibrate come with cloud embeddings, after v0.1: FR-AI-09, FR-AI-11, ADR-0016.)
 
 ### 3.9 Settings and data · 1 h
-- [ ] General, Capture, MCP (port, launcher symlink), Data (backups, export, import, Show in Finder, Erase), Updates (Sparkle), Advanced.
+- [x] General, Capture, MCP (port, launcher symlink), Data (backups, export, import, Show in Finder, Erase), Updates (Sparkle), Advanced.
 
 ### 3.10 Accessibility and polish · 2 h
 - [ ] Keyboard navigation everywhere, VoiceOver labels, Increase Contrast, Reduce Motion.

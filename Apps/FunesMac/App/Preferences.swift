@@ -1,3 +1,4 @@
+import BridgeUI
 import Foundation
 import FunesProtocol
 
@@ -106,6 +107,15 @@ final class Preferences {
             return (try? JSONDecoder().decode(Shortcut.self, from: data)) ?? .defaultCapture
         }
         set { defaults.set(try? JSONEncoder().encode(newValue), forKey: Key.hotKey) }
+    }
+
+    /// Activity retention (FR-L-03, Q20): 400 days for shares, refusals and changes, 30 for the
+    /// rest, both changeable in Settings ▸ Advanced.
+    var activityRetention: ActivityRetention {
+        let important = max(1, defaults.integer(forKey: Key.importantRetentionDays))
+        let routine = max(1, defaults.integer(forKey: Key.routineRetentionDays))
+        return ActivityRetention(importantAge: Double(important) * 86_400, importantLimit: ActivityRetention.funes.importantLimit,
+                                 routineAge: Double(routine) * 86_400, routineLimit: ActivityRetention.funes.routineLimit)
     }
 
     func flag(_ key: String) -> Bool { defaults.bool(forKey: key) }

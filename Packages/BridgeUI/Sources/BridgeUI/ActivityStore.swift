@@ -90,7 +90,7 @@ public final class ActivityStore<Record: ActivityRow>: @unchecked Sendable {
 
     public let folder: URL
     public let file: URL
-    private let retention: ActivityRetention
+    private var retention: ActivityRetention
     private let now: @Sendable () -> Date
     private let autoCompact: Bool
     private let sync: @Sendable (Int32) -> Int32
@@ -122,6 +122,15 @@ public final class ActivityStore<Record: ActivityRow>: @unchecked Sendable {
 
     deinit {
         if descriptor >= 0 { close(descriptor) }
+    }
+
+    /// The limits compaction keeps to; a change applies from the next compaction, which this
+    /// schedules (Settings ▸ Advanced).
+    public func setRetention(_ retention: ActivityRetention) {
+        lock.lock()
+        self.retention = retention
+        lock.unlock()
+        scheduleCompaction()
     }
 
     /// Every kept row, oldest first.
@@ -198,9 +207,10 @@ public final class ActivityStore<Record: ActivityRow>: @unchecked Sendable {
         appendedWhileCompacting = []
         let snapshot = rows
         let at = now()
+        let limits = retention
         lock.unlock()
 
-        let kept = retention.keep(snapshot, now: at)
+        let kept = limits.keep(snapshot, now: at)
         var data = Data()
         for record in kept { if let line = Self.encode(record) { data.append(line) } }
         let temporary = folder.appendingPathComponent(Self.fileName + ".tmp")

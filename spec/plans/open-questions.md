@@ -25,7 +25,7 @@ Each has a recommendation (★). Decide before the phase listed, and record the 
 | Q17 | **Web version (funes-vault)** | Keep as is · archive later | **Decided: keep as a historical artifact.** At production readiness (1.0), add a "no longer maintained" note to its README with a link to the new repo | Decided 2026-10-16 |
 | Q18 | **Command-line tool** (`funes` for scripts) | v0.1 · later | **Later**. EK Bridge's signed CLI transport can be reused | After v0.2 |
 | Q19 | **Localization** | English only · + Spanish | **English only in v0.1**, using String Catalogs from day one; Spanish is an easy early addition | Phase 4 |
-| Q20 | **Activity retention defaults** | 400 days important / 30 days other · user-configurable | **These defaults, configurable in Advanced** | Phase 3 |
+| Q20 | **Activity retention defaults** | 400 days important / 30 days other · user-configurable | **These defaults, configurable in Advanced** | Decided 2026-10-17, taken from the recommendation (the user can object): 400 days for shares, refusals and changes, 30 days for the rest, both in Settings ▸ Advanced |
 | Q23 | **Domain** | Buy a domain · keep `io.github.bereciartua.*` | **Decided: funesvault.com** (bought 2026-10-16). Bundle IDs `com.funesvault.*`, MCP Registry `com.funesvault/funes`, website, privacy and support URLs on it. Optionally also register `funesvault.app` and redirect it. **Done:** "Funes Vault" reserved in App Store Connect; App IDs and App Group registered. **Still to do:** search trademarks for "FUNES VAULT" and "FUNES" in classes 9 and 42. (Name research: an iPhone app "FUNES." by AAANY Limited exists; `funes.io`, `.co`, `.me`, `.app`, `.dev`, `.ai` and `.so` are taken) | Decided 2026-10-16 |
 
 ## Background: name and domain research (Q1, Q23)

@@ -324,3 +324,56 @@ struct AccessPanelTests {
         #expect(answers == [.tertiary, .edit])
     }
 }
+
+/// Task 3.9: the update relaunch waits for pending approvals (FR-G-03), from EK Bridge's tests.
+@Suite("Update relaunch gate")
+@MainActor
+struct UpdateRelaunchGateTests {
+    @Test func relaunchesAtOnceWithNothingWaiting() {
+        let gate = UpdateRelaunchGate(pendingApprovals: { 0 }, maximumWait: 60, schedule: { _, _ in Issue.record("no wait") })
+        var proceeded = false
+        #expect(!gate.postpone { proceeded = true })
+        #expect(!proceeded)
+    }
+
+    @Test func waitsUntilAnsweredOrTheMaximum() {
+        var pending = 2
+        var clock = Date(timeIntervalSince1970: 0)
+        var scheduled: [@MainActor () -> Void] = []
+        let gate = UpdateRelaunchGate(pendingApprovals: { pending }, maximumWait: 60, now: { clock },
+                                      schedule: { _, action in scheduled.append(action) })
+        var proceeded = 0
+        #expect(gate.postpone { proceeded += 1 })
+        #expect(!gate.postpone { proceeded += 1 })  // one at a time
+        clock += 1
+        scheduled.removeFirst()()
+        #expect(proceeded == 0 && gate.isWaiting)
+        pending = 0
+        scheduled.removeFirst()()
+        #expect(proceeded == 1 && !gate.isWaiting)
+        // Still waiting at the maximum: it goes anyway.
+        pending = 1
+        #expect(gate.postpone { proceeded += 1 })
+        clock += 61
+        scheduled.removeFirst()()
+        #expect(proceeded == 2)
+    }
+
+    @Test func retentionCanChange() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("bridgeui-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let store = ActivityStore<Row>(dataFolder: folder, retention: .funes, now: { now })
+        store.append(Row(rowID: "old", at: now.addingTimeInterval(-10 * 86_400), phase: "result", requestID: "a", important: false))
+        store.append(Row(rowID: "new", at: now, phase: "result", requestID: "b", important: false))
+        #expect(store.compact() && store.records().count == 2)
+        store.setRetention(ActivityRetention(importantAge: 400 * 86_400, importantLimit: 20_000, routineAge: 7 * 86_400,
+                                             routineLimit: 5_000))
+        // setRetention compacts in the background too; whichever runs, the old row goes.
+        _ = store.compact()
+        let deadline = Date().addingTimeInterval(5)
+        while store.records().count > 1, Date() < deadline { _ = store.compact() }
+        #expect(store.records().map(\.rowID) == ["new"])
+    }
+}

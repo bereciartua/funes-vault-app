@@ -43,6 +43,7 @@ final class VaultEnvironment {
         self.dataFolder = dataFolder
         try FileManager.default.createDirectory(at: dataFolder, withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
+        DataOperations.applyPendingRestore(dataFolder: dataFolder)
         store = try VaultStore.open(directory: dataFolder)
         activity = ActivityLog(dataFolder: dataFolder, retention: retention)
         keys = AgentKeyFileStore(dataFolder: dataFolder)

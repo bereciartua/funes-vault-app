@@ -50,6 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let hud = HUD()
     private let notifier = Notifier()
     private var capture: CaptureController?
+    private var updater: SparkleUpdater?
     private var hotKey: HotKey?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -57,7 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = MainMenu.build(target: self)
         let environment: VaultEnvironment
         do {
-            environment = try VaultEnvironment()
+            environment = try VaultEnvironment(retention: preferences.activityRetention)
         } catch {
             logger.error("The vault didn't open")
             showOpenFailure(error)
@@ -101,6 +102,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSUpdateDynamicServices()
         let menu = StatusMenuController(model: model)
         self.menu = menu
+        // Updates (FR-G-03): the relaunch waits while a panel is waiting for the user.
+        let gate = UpdateRelaunchGate(pendingApprovals: { environment.approvals.queue.items.count },
+                                      maximumWait: FunesApprovals.panelSeconds + 15)
+        let updater = SparkleUpdater(gate: gate)
+        updater.start()
+        self.updater = updater
+        model.updater = updater.controls
+        menu.checkForUpdates = { model.updater.checkForUpdates() }
+        menu.updatesAvailable = { model.updater.isAvailable() }
+        model.data.integrityFailed = { [notifier] in
+            notifier.post(.refused, title: String(localized: "The vault needs attention"),
+                          body: String(localized: "Its weekly check found a problem. Restore a backup in Settings ▸ Data."))
+        }
+        model.data.startJobs()
         model.changed = { [weak menu] in menu?.update() }
 
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
@@ -113,6 +128,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.mcp = mcp
         model.setServer = { [weak self] on in self?.setServer(on) }
         model.mcpPort = mcp.configuration.mcpPort
+        model.trafficCounts = { [weak mcp] in mcp?.counters.snapshot ?? MCPTrafficCounters.Snapshot() }
         model.connection = { [weak mcp] id in mcp?.connections[id.db]?.agent }
         model.setupControls = OneClickAgents.live(home: Self.setupHome, appName: "Funes Vault", tag: "funes")
         model.detectAgents = { AgentDetection.installed(.live) }

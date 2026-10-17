@@ -192,6 +192,9 @@
     "%lld couldn't be changed" : {
 
     },
+    "%lld days" : {
+
+    },
     "%lld deleted permanently" : {
 
     },
@@ -314,6 +317,9 @@
 
     },
     "A category with that name already exists." : {
+
+    },
+    "A funesvault.export.v1 file with your categories and memories. It never includes agents, their access, keys or Activity." : {
 
     },
     "A memory can have at most 12 categories." : {
@@ -445,6 +451,9 @@
     "Added by you" : {
 
     },
+    "Address" : {
+
+    },
     "Add…" : {
 
     },
@@ -485,6 +494,9 @@
 
     },
     "Agents get the answer when they check again." : {
+
+    },
+    "Agents start the launcher, which reads their key file and talks to Funes. Setups on the Connect tab use this path." : {
 
     },
     "Agents' access is set per category. Built-in categories can be renamed; your own can also be deleted." : {
@@ -540,6 +552,9 @@
 
     },
     "Another app already uses %@. Try another shortcut." : {
+
+    },
+    "Another app is using port %@. Quit it, then turn this off and on again. Funes never moves to another port, because agents' setups name this one." : {
 
     },
     "Answer a Few Questions" : {
@@ -657,7 +672,22 @@
     "At least %@" : {
 
     },
+    "At most 20,000 important rows are kept. Older rows go at the next cleanup (at launch and every 6 hours)." : {
+
+    },
+    "Back Up Now" : {
+
+    },
+    "Back up the vault every day" : {
+
+    },
+    "Backed up." : {
+
+    },
     "Backup: %@" : {
+
+    },
+    "Backups" : {
 
     },
     "Base URL" : {
@@ -732,7 +762,16 @@
     "Changes “%@”" : {
 
     },
+    "ChatGPT Memories…" : {
+
+    },
+    "Check Now" : {
+
+    },
     "Check for Updates…" : {
+
+    },
+    "Check for updates every day" : {
 
     },
     "Check the address and the key." : {
@@ -791,6 +830,9 @@
 
     },
     "Claude Desktop's custom connectors run from Anthropic's cloud and can't reach this Mac, so use this local setup instead." : {
+
+    },
+    "Claude Memories…" : {
 
     },
     "Claude memories" : {
@@ -900,6 +942,9 @@
     "Couldn't reach the server." : {
 
     },
+    "Counts only: Funes never logs what agents send or receive." : {
+
+    },
     "Created %@" : {
 
     },
@@ -916,6 +961,9 @@
 
     },
     "Data" : {
+
+    },
+    "Data folder" : {
 
     },
     "Date Created" : {
@@ -1043,6 +1091,15 @@
     "Empty allow list means all categories. Deny always wins." : {
 
     },
+    "Erase All Data" : {
+
+    },
+    "Erase All Data…" : {
+
+    },
+    "Erase all of Funes Vault's data?" : {
+
+    },
     "Event" : {
 
     },
@@ -1064,7 +1121,19 @@
     "Expiry date" : {
 
     },
+    "Export First…" : {
+
+    },
+    "Export and import" : {
+
+    },
     "Exported the vault" : {
+
+    },
+    "Exported." : {
+
+    },
+    "Export…" : {
 
     },
     "Fact" : {
@@ -1119,6 +1188,9 @@
     "Funes Vault" : {
 
     },
+    "Funes Vault Export…" : {
+
+    },
     "Funes Vault Settings" : {
 
     },
@@ -1158,7 +1230,13 @@
     "Funes backs up the file next to it first." : {
 
     },
+    "Funes keeps the last 7 backups in its data folder." : {
+
+    },
     "Funes notes that you checked it today." : {
+
+    },
+    "Funes relaunches with the vault as it was then. The current vault is kept in Backups first." : {
 
     },
     "Funes runs this command, replacing the existing funes entry:" : {
@@ -1192,6 +1270,9 @@
 
     },
     "Goes to your Inbox" : {
+
+    },
+    "HTTP %@" : {
 
     },
     "Header" : {
@@ -1263,6 +1344,9 @@
     "Imports" : {
 
     },
+    "Import…" : {
+
+    },
     "In Claude, open Settings ▸ Capabilities ▸ Memory, copy what's there, and paste it here. Each line or bullet becomes a suggestion." : {
 
     },
@@ -1282,6 +1366,9 @@
 
     },
     "Inbox: %lld" : {
+
+    },
+    "Include archived memories" : {
 
     },
     "Install in VS Code" : {
@@ -1329,6 +1416,9 @@
     "It's already in Applications." : {
 
     },
+    "It's at the top of the Vault." : {
+
+    },
     "It's removed for good, with its history. This can't be undone." : {
 
     },
@@ -1338,10 +1428,19 @@
     "Its key stops working at once and its access is deleted. Activity keeps its history, labelled “removed agent”. Its entry in the agent's own settings stays until you delete it there." : {
 
     },
+    "Its weekly check found a problem. Restore a backup in Settings ▸ Data." : {
+
+    },
     "JetBrains AI Assistant" : {
 
     },
     "Keep Both" : {
+
+    },
+    "Keep everything else" : {
+
+    },
+    "Keep shares, refusals and changes" : {
 
     },
     "Keeps it" : {
@@ -1377,6 +1476,12 @@
     "Last Updated" : {
 
     },
+    "Last backup" : {
+
+    },
+    "Last checked" : {
+
+    },
     "Later" : {
 
     },
@@ -1386,10 +1491,22 @@
     "Let Funes propose it" : {
 
     },
+    "Let agents connect" : {
+
+    },
     "Let it ask for more access" : {
 
     },
     "Likely duplicates" : {
+
+    },
+    "Link to ~/.local/bin/funes-mcp" : {
+
+    },
+    "Linked as ~/.local/bin/funes-mcp" : {
+
+    },
+    "Linked. Make sure ~/.local/bin is on your PATH." : {
 
     },
     "Listed categories" : {
@@ -1399,6 +1516,9 @@
 
     },
     "Local server" : {
+
+    },
+    "Location" : {
 
     },
     "Long items:" : {
@@ -1426,6 +1546,9 @@
 
     },
     "Mark that you checked this memory today" : {
+
+    },
+    "Markdown File…" : {
 
     },
     "Matches, none allowed" : {
@@ -1542,6 +1665,9 @@
     "None" : {
 
     },
+    "None yet" : {
+
+    },
     "None yet. Funes uses Apple's on-device model, or simple rules when that isn't available." : {
 
     },
@@ -1599,13 +1725,22 @@
     "Notifications never include memory text." : {
 
     },
+    "Off" : {
+
+    },
     "Off: it saves memories directly. On: they wait in your Inbox." : {
+
+    },
+    "On" : {
 
     },
     "On a date" : {
 
     },
     "On this Mac" : {
+
+    },
+    "On, but Funes is paused" : {
 
     },
     "One-click setup" : {
@@ -1814,6 +1949,9 @@
     "Refused a request" : {
 
     },
+    "Refused keys" : {
+
+    },
     "Reject" : {
 
     },
@@ -1844,10 +1982,16 @@
     "Remove %@?" : {
 
     },
+    "Remove Link" : {
+
+    },
     "Removed agent" : {
 
     },
     "Removed agent (%@)" : {
+
+    },
+    "Removed." : {
 
     },
     "Remove…" : {
@@ -1883,6 +2027,9 @@
     "Request expired" : {
 
     },
+    "Requests" : {
+
+    },
     "Requests from your agents appear here, with what was shared and why." : {
 
     },
@@ -1916,7 +2063,19 @@
     "Restore %lld" : {
 
     },
+    "Restore Defaults" : {
+
+    },
+    "Restore and Relaunch" : {
+
+    },
     "Restore as memories, not suggestions" : {
+
+    },
+    "Restore from Backup…" : {
+
+    },
+    "Restore this backup?" : {
 
     },
     "Restored %@" : {
@@ -2157,10 +2316,16 @@
     "Show in Dock" : {
 
     },
+    "Show in Finder" : {
+
+    },
     "Show less" : {
 
     },
     "Show less of %@" : {
+
+    },
+    "Show the Setup Checklist Again" : {
 
     },
     "Showing %@ only" : {
@@ -2176,6 +2341,9 @@
 
     },
     "Some memories are only in this category. Choose a replacement." : {
+
+    },
+    "Something else is already at ~/.local/bin/funes-mcp, so it was left alone." : {
 
     },
     "Something else named %@ is in %@. Move it away first." : {
@@ -2228,6 +2396,9 @@
 
     },
     "Still True…" : {
+
+    },
+    "Stopped after an error" : {
 
     },
     "Stored in the Keychain" : {
@@ -2321,6 +2492,9 @@
     "The agent server stopped" : {
 
     },
+    "The backup couldn't be written." : {
+
+    },
     "The copy already in Applications couldn't be moved to the Trash." : {
 
     },
@@ -2328,6 +2502,9 @@
 
     },
     "The copy's signature didn't check out, so it was moved to the Trash." : {
+
+    },
+    "The export couldn't be written." : {
 
     },
     "The file couldn't be read." : {
@@ -2340,6 +2517,9 @@
 
     },
     "The key isn't written anywhere: the launcher reads it from Funes's key file." : {
+
+    },
+    "The link couldn't be made." : {
 
     },
     "The model declined." : {
@@ -2378,6 +2558,15 @@
     "The vault didn't open" : {
 
     },
+    "The vault needs attention" : {
+
+    },
+    "The weekly check found a problem with the vault file. Restore the latest backup." : {
+
+    },
+    "There's no link to remove." : {
+
+    },
     "There's no one-click setup for %@." : {
 
     },
@@ -2391,6 +2580,12 @@
 
     },
     "This copy isn't signed by a developer, so its copy can't be checked. Drag it to Applications in Finder instead." : {
+
+    },
+    "This copy of Funes Vault can't update itself (a development build, or one without its update key). Download new versions from GitHub." : {
+
+    },
+    "This deletes every memory, suggestion, agent and key, Activity, backups and AI provider keys, then relaunches empty. It can't be undone. Agents' own settings still name Funes until you remove it there." : {
 
     },
     "This looks like %@. Funes never stores secrets." : {
@@ -2415,6 +2610,9 @@
 
     },
     "Too many requests" : {
+
+    },
+    "Traffic since launch" : {
 
     },
     "Transport" : {
@@ -2453,6 +2651,9 @@
     "Updates" : {
 
     },
+    "Updates come from GitHub, signed for Funes Vault. Installing always takes a click, and waits while a request is waiting for you." : {
+
+    },
     "Use the HTTP values if the agent supports Streamable HTTP with a custom header; otherwise run the launcher over stdio." : {
 
     },
@@ -2478,6 +2679,9 @@
 
     },
     "Vault" : {
+
+    },
+    "Version" : {
 
     },
     "Very personal. Only for agents you fully trust, and always ask." : {
@@ -2678,6 +2882,9 @@
 
     },
     "expiry" : {
+
+    },
+    "funes-mcp" : {
 
     },
     "iPhone" : {
