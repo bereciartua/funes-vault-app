@@ -59,12 +59,12 @@
 - [x] Tests: T23–T29, T34 and T35 (the service level of device handling, in `DeviceService`), plus duplicate `captureId`.
 
 ### 1.9 Agents and access · 1 h
-- [ ] `AgentService`:
-  - create (key generation via BridgeKitCore, digest stored; BridgeKitCore only exists from Phase 2, so until then generate keys behind a small `AgentKeyIssuer` protocol in FunesCore and swap in BridgeKitCore's implementation when it lands);
+- [x] `AgentService`:
+  - create (key generation via BridgeKitCore, digest stored; BridgeKitCore only exists from Phase 2, so until then generate keys behind a small `AgentKeyIssuer` protocol in FunesCore and swap in BridgeKitCore's implementation when it lands). Done as `AgentKeyIssuer` / `LocalAgentKeyIssuer`, with an `AgentKeyStore` protocol for the key file, which Phase 2 implements with BridgeKit's safe files;
   - update access (revision +1);
   - pause, resume, remove, rotate key;
   - `authenticate(keyDigest)`.
-- [ ] Tests: the revision bumps on every change; a removed agent can't authenticate.
+- [x] Tests: the revision bumps on every change; a removed agent can't authenticate.
 
 ### 1.9b Model providers · 4 h
 - [ ] `GenerationProvider` and `EmbeddingProvider` protocols (the bundled embedder implements the latter; other embedding providers later), plus `ModelRouter` (task → provider, timeouts, fallbacks, usage counters) ([model providers](../architecture/model-providers.md)).
