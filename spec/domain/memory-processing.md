@@ -38,10 +38,10 @@ Everything here runs on the Mac. By default, AI tasks use **Apple's on-device mo
 Decision: [ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md), from [Spike 2b](../plans/spike-results.md#spike-2b-local-open-source-embeddings).
 
 - **Model (v0.1):** `bge-small-en-v1.5` (BAAI, MIT), **bundled in the app as Core ML**.
-  - **Format:** fp16 ML Program, 384 dims, about 64 MB. CLS pooling and L2 normalization are inside the model.
+  - **Format:** ML Program with int8 weights (fp16 compute), 384 dims, about 32 MB. CLS pooling and L2 normalization are inside the model. `scripts/fetch_embedding_model.sh` builds it at a pinned revision and checksum.
   - **Runtime:** `MLComputeUnits.cpuOnly`: 3.6 ms per query and 4.7 ms per memory on an M1.
   - **Tokenizer:** a WordPiece tokenizer in FunesCore (no dependency), with the model's bundled vocabulary. It must match Hugging Face's token ids on the fixture texts.
-  - **Model id:** `bge-small-en-v1.5/coreml-fp16`.
+  - **Model id:** `bge-small-en-v1.5/coreml-int8`.
   - **Later:** choosing another embedding model (Ollama such as `nomic-embed-text`, LM Studio, or a cloud model) in Settings ▸ AI Models ▸ Embeddings, with re-embedding and calibration ([model providers](../architecture/model-providers.md)). Not in v0.1.
   - **Normalization:** all vectors are L2-normalized, so similarity is a plain dot product, whatever the provider.
   - **One embedding model is active at a time.** Switching (later) re-embeds in the background ([model providers §7](../architecture/model-providers.md#7-switching-the-embedding-model)).
@@ -58,7 +58,7 @@ Decision: [ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings
 ## 3. Keyword search
 - **FTS5** virtual table over the title and body, using the `porter unicode61 remove_diacritics 2` tokenizer: English stemming on top of `unicode61`, worth +0.11 recall@5 in Spike 2. Other languages tokenize without stemming.
 - **Query:** the search text, or the task plus any `keywords`, becomes an OR query of its non-stopword terms.
-- **Prefix search** for the vault UI ("pnp*").
+- **Prefix search** for the vault UI: the last word also matches as a prefix ("pnp*"), for as-you-type search.
 - **Normalization:** BM25 scores are normalized per query, dividing by the best score, to get `keyword ∈ [0,1]`.
 
 ## 4. Ranking
@@ -66,8 +66,8 @@ Decision: [ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings
   - `semantic` is the query–memory cosine, **min-max normalized over the candidate pool for this query**: `(cos − min) / (max − min)`, or 0 if `max = min`.
   - Modern models compress cosines (bge: unrelated memories around 0.45, relevant ones around 0.64), so raw-cosine fusion lets the keyword term dominate. Min-max 0.30/0.70 was the best or tied for best for every open model in Spike 2b.
 - **Keeping candidates:** keep a memory if `keyword > 0`, or its **raw** cosine ≥ the model's threshold.
-  - **Thresholds for `bge-small-en-v1.5/coreml-fp16`:** vault **0.50**, retrieval **0.55**.
-  - **Keyword floor:** broad agent keywords match many memories (about 17% of the vault per query in Spike 2b), so Phase 1 sets a minimum normalized keyword score on the benchmark.
+  - **Thresholds for `bge-small-en-v1.5/coreml-int8`:** vault **0.50**, retrieval **0.55**.
+  - **Keyword floor: 0.15.** Broad agent keywords match many memories (about 17% of the vault per query in Spike 2b), so a memory kept on its keyword score alone needs `keyword ≥ 0.15`. Tuned in Phase 1: the highest floor that loses no recall on the benchmark, cutting kept memories by about a fifth. It applies in keyword-only mode too.
 - **Vault search (UI):** filters apply before ranking.
 - **Agent retrieval:** see [access policy §3.2](access-policy.md#32-retrieval-which-memories-are-relevant): the same rule, with the retrieval threshold and the top 30.
 - **Tuning:** thresholds are stored **per embedding model id** and measured with the 200-memory and 30-query benchmark (raw and agent-expanded queries), kept as constants with tests.

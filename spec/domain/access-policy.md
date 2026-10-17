@@ -42,12 +42,12 @@ A denial at the gate doesn't run retrieval, and its response has no `withheld` c
 
 ### 3.2 Retrieval (which memories are relevant)
 1. **Candidate pool:** memories with `status = active`, *including expired ones* (so expiry shows up in withheld counts). Archived and deleted memories are never candidates.
-2. **If `categories` is given:** keep memories with at least one of those categories. Unknown keys are ignored. This can only narrow the pool, never widen access.
+2. **If `categories` is given:** keep memories with at least one of those categories. Unknown keys are ignored, so a list of only unknown keys matches nothing. This can only narrow the pool, never widen access.
 3. **Query text:** the `task`, followed by any `keywords` the agent sent. Keywords only widen or sharpen *which* memories are relevant; they never change the decision about a memory (§3.3–3.5).
 4. **Score each candidate:** `score = 0.30 × keyword + 0.70 × semantic` ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md)).
    - `keyword ∈ [0,1]`: FTS5 BM25 over title and body, normalized by the best score in the pool. If the query text has no indexable terms, it's 0.
    - `semantic ∈ [0,1]`: the cosine between the query embedding and the memory embedding, min-max normalized over the pool. It's 0 if embeddings aren't available (the model failed to load, or the memory has no vector yet).
-5. **Keep candidates** with `keyword > 0` (above the keyword floor) or a **raw** cosine ≥ the model's retrieval threshold (0.55 for `bge-small-en-v1.5/coreml-fp16`). Take the top 30 by score; ties go to the most recently updated.
+5. **Keep candidates** with `keyword ≥` the keyword floor (0.15; [memory processing §4](memory-processing.md#4-ranking)) or a **raw** cosine ≥ the model's retrieval threshold (0.55 for `bge-small-en-v1.5/coreml-int8`). Take the top 30 by score; ties go to the most recently updated.
 6. **If no candidates remain:** DENY `no_matching_memories`, with empty `withheld`.
 
 The weights and thresholds come from [Spike 2b](../plans/spike-results.md#spike-2b-local-open-source-embeddings) and are stored per embedding model id. The task text and keywords are used only in memory. They're stored as one hash.

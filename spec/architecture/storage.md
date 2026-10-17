@@ -72,7 +72,7 @@ CREATE VIRTUAL TABLE memory_fts USING fts5(
 
 CREATE TABLE embedding (           -- ADR-0016: about 15 MB of vectors at 10,000 memories
   memory_id    TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
-  model_id     TEXT NOT NULL,      -- v0.1: "bge-small-en-v1.5/coreml-fp16" (384 dims); later e.g. "openai/text-embedding-3-small"
+  model_id     TEXT NOT NULL,      -- v0.1: "bge-small-en-v1.5/coreml-int8" (384 dims); later e.g. "openai/text-embedding-3-small"
   dims         INTEGER NOT NULL,
   vector       BLOB NOT NULL,      -- Float32 little-endian, L2-normalized
   content_hash TEXT NOT NULL,      -- SHA-256 of the embedded text

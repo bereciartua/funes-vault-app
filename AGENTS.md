@@ -32,6 +32,10 @@ swift test --package-path Packages/FunesCore
 ```bash
 sh scripts/check_log_privacy.sh
 ```
+The bundled embedding model isn't in git. Fetch and convert it once (Python 3.11; cached in `~/Library/Caches/com.funesvault.dev/`); without it the model-dependent tests skip:
+```bash
+sh scripts/fetch_embedding_model.sh
+```
 ```bash
 xcodebuild -project FunesVault.xcodeproj -scheme FunesMac -configuration Debug -destination 'generic/platform=macOS' CODE_SIGNING_ALLOWED=NO build
 ```

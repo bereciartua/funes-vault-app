@@ -1,0 +1,6 @@
+# Converts bge-small-en-v1.5 to Core ML (scripts/fetch_embedding_model.sh). Pinned; no transformers.
+coremltools==9.0
+numpy==2.4.6
+safetensors==0.8.0
+tokenizers==0.23.3
+torch==2.14.1

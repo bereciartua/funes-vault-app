@@ -257,6 +257,34 @@ On these fixtures, "keyword-only plus agent keywords" (0.83) is a solid v0.1 bas
 6. **[Testing strategy](testing-strategy.md) / Phase 1 task 1.4:** add `queries-30-expanded.json` to the regression. Baselines from this run: FTS5 porter + keywords R@5 ≥ 0.82; bge-small hybrid + keywords R@5 ≥ 0.92.
 7. **`NOTICE`:** BAAI's MIT notice for the bundled model.
 
+### Phase 1 re-measurement in FunesCore
+**Run:** 2026-10-16, same M1, through `SearchService.retrieve` (FunesCore task 1.4) on the 200 fixture memories and 30 tasks, top 30. The test is `SearchBenchmarkTests`; `FUNES_SEARCH_SWEEP=1` prints the tables below.
+
+| Path | R@5 | R@30 | MRR | Exit criterion (R@5) |
+|---|---|---|---|---|
+| hybrid (int8 model), task + keywords | **0.939** | 0.989 | 0.967 | ≥ 0.92 |
+| hybrid (int8 model), raw task | **0.689** | 0.911 | 0.831 | ≥ 0.68 |
+| keyword only, task + keywords | **0.828** | 0.978 | 0.896 | ≥ 0.82 |
+| keyword only, raw task | 0.567 | 0.706 | 0.714 | — |
+
+The Spike 2b numbers reproduce exactly with the fp16 model (0.939 / 0.689 / 0.828). The Swift WordPiece tokenizer matches Hugging Face's ids on all 268 fixture texts (memories, raw and expanded queries, and edge cases: accents, CJK, emoji, punctuation, odd whitespace, 400-word texts).
+
+**Int8 weights** (coremltools `linear_quantize_weights`, linear symmetric): 32 MB instead of 64 MB; worst cosine against sentence-transformers' fp32 vectors 0.99956 (fp16: 0.99998); the same R@5 on both query sets (raw R@30 0.911 vs 0.894); 3.7 ms per query and 0.83 s for the 200 memories, the same as fp16. **Kept** as the bundled model, `bge-small-en-v1.5/coreml-int8` ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md), Phase 1 update).
+
+**Keyword floor sweep** (R@5 / R@30 / memories kept per query before the top-30 cut):
+
+| Floor | hybrid, + keywords | hybrid, raw | keyword only, + keywords | keyword only, raw |
+|---|---|---|---|---|
+| 0 | 0.939 / 0.989 / 44.5 | 0.689 / 0.894 / 27.8 | 0.828 / 0.978 / 34.4 | 0.567 / 0.706 / 18.3 |
+| 0.10 | 0.939 / 0.989 / 43.4 | 0.689 / 0.894 / 27.8 | 0.828 / 0.978 / 33.0 | 0.567 / 0.706 / 18.3 |
+| **0.15** | 0.939 / 0.989 / **38.3** | 0.689 / 0.894 / 27.6 | 0.828 / 0.978 / **26.0** | 0.567 / 0.706 / 18.0 |
+| 0.20 | 0.939 / 0.989 / 33.0 | 0.689 / 0.894 / 26.5 | 0.828 / 0.950 / 18.3 | 0.567 / 0.706 / 16.5 |
+| 0.25 | 0.939 / 0.989 / 29.3 | 0.689 / 0.883 / 25.1 | 0.828 / 0.889 / 12.8 | 0.567 / 0.683 / 14.4 |
+| 0.30 | 0.939 / 0.989 / 27.2 | 0.689 / 0.883 / 24.0 | 0.828 / 0.889 / 9.4 | 0.550 / 0.656 / 12.8 |
+| 0.50 | 0.939 / 0.978 / 23.7 | 0.689 / 0.861 / 19.7 | 0.733 / 0.756 / 3.4 | 0.522 / 0.550 / 5.9 |
+
+(fp16 model; int8 gives the same rows within ±0.02 R@30.) **Chosen: 0.15**, the highest floor with no loss in R@5 or R@30 on any path. Higher floors shrink the approval list further but start losing relevant memories from the top 30 in keyword-only mode, the fallback when the model can't load.
+
 ---
 
 ## Spike 3: Agent timeouts and the in-call approval

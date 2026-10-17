@@ -16,7 +16,9 @@ concurrency:
 jobs:
   test:
     name: Test and build (Xcode ${{ matrix.xcode }})
-    # No secrets: package tests, the log-privacy check and an unsigned build.
+    # No secrets: package tests, the log-privacy check and an unsigned build. The bundled
+    # embedding model (ADR-0016) is fetched from Hugging Face at a pinned revision, converted,
+    # checksummed and cached, so the search regression runs against the real model.
     # Same toolchains as EK Bridge: 27.0 (the release Mac; a GitHub preview
     # image) and 26.6 (the previous major release).
     strategy:
@@ -40,5 +42,22 @@ jobs:
           sw_vers
           xcode-select -p
           xcrun swiftc --version
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Embedding model cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # The converted model only: not the conversion venv or the downloaded weights.
+          path: |
+            ~/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7
+            !~/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7/venv
+            !~/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7/hf
+          key: embedding-model-${{ runner.os }}-${{ hashFiles('scripts/fetch_embedding_model.sh', 'scripts/embedding_model/**') }}
+      - name: Embedding model
+        run: FUNES_PYTHON=python3.11 sh scripts/fetch_embedding_model.sh
       - name: Tests and build
+        env:
+          # Model-dependent tests fail instead of skipping when the model is missing.
+          FUNES_REQUIRE_EMBEDDING_MODEL: "1"
         run: sh scripts/test.sh

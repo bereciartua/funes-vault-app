@@ -15,7 +15,7 @@ How Funes uses AI models, how users choose them, and what protects their data. D
 ## 2. Providers
 | Provider | Locality | Embeddings | Generation | Setup |
 |---|---|---|---|---|
-| **Bundled (Funes)** | Local | `bge-small-en-v1.5`, Core ML fp16, CPU only (the v0.1 default and only choice) | — | None |
+| **Bundled (Funes)** | Local | `bge-small-en-v1.5`, Core ML (int8 weights), CPU only (the v0.1 default and only choice) | — | None |
 | **Apple on-device** | Local | Not offered: NaturalLanguage embeddings failed Spike 2 | Foundation Models (macOS 26+ with Apple Intelligence) | None |
 | **Apple Private Cloud Compute** | Apple cloud | — | Foundation Models server model | Entitlement; free for Small Business Program developers under 2M first-time downloads, with daily limits |
 | **Ollama** | Local | `/v1/embeddings` (later; e.g. `nomic-embed-text`, which matched bge-small in Spike 2b, or `mxbai-embed-large`) | `/v1/chat/completions` | Base URL (default `http://127.0.0.1:11434/v1`) |

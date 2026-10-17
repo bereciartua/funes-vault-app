@@ -8,7 +8,7 @@ public struct EmbeddingModelInfo: Sendable, Hashable {
     public let vaultThreshold: Float
     /// Agent retrieval keeps a memory whose raw cosine reaches this, keyword match or not.
     public let retrievalThreshold: Float
-    /// The bundled model, `bge-small-en-v1.5` as Core ML fp16.
+    /// The bundled model, `bge-small-en-v1.5` as Core ML with int8 weights (fp16 compute).
     public static let bundled = EmbeddingModelInfo(
-        id: "bge-small-en-v1.5/coreml-fp16", dimensions: 384, vaultThreshold: 0.50, retrievalThreshold: 0.55)
+        id: "bge-small-en-v1.5/coreml-int8", dimensions: 384, vaultThreshold: 0.50, retrievalThreshold: 0.55)
 }

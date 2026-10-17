@@ -26,13 +26,13 @@
 - [x] Tests: positive and negative samples per pattern, plus 20 realistic non-secret memories that must pass.
 
 ### 1.4 Search and embeddings · 5 h ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md))
-- [ ] `scripts/fetch_embedding_model.sh`: download `BAAI/bge-small-en-v1.5` at a pinned revision, verify SHA-256, convert with coremltools (fp16 ML Program, CLS pooling + L2 normalization inside, enumerated lengths 16–256), verify the output checksum; cache outside git (start from `spikes/embeddings/`). Try int8 weights; keep only if recall holds.
-- [ ] `WordPieceTokenizer` (port the spike's): matches Hugging Face ids on every fixture text.
-- [ ] `Embedder` protocol; `BundledBGEEmbedder` (Core ML, `cpuOnly`, query prefix) and a deterministic `FakeEmbedder` for tests.
-- [ ] `EmbeddingIndex`: load vectors, `vDSP_mmul` over all active vectors, update on change; background embedding of missing vectors.
-- [ ] FTS5 query building: the search text, or task + `keywords`, → an OR query of its non-stopword terms (plus prefix terms for as-you-type vault search); BM25 normalized by the best score ([memory processing §3](../domain/memory-processing.md#3-keyword-search)).
-- [ ] `SearchService.vaultSearch(query, filters)` and `retrieve(task, keywords, categories)`: min-max 0.30/0.70 fusion, raw-cosine thresholds 0.50 / 0.55, a keyword floor tuned on the benchmark ([memory processing §4](../domain/memory-processing.md#4-ranking)).
-- [ ] Tests: the memories-200 / queries-30 / queries-30-expanded benchmark as a regression: hybrid R@5 ≥ 0.92 expanded and ≥ 0.68 raw; keyword-only (model unavailable) ≥ 0.82 expanded (re-measure here before freezing). The model-dependent tests skip with a clear message when the model isn't fetched; CI fetches it.
+- [x] `scripts/fetch_embedding_model.sh`: download `BAAI/bge-small-en-v1.5` at a pinned revision, verify SHA-256, convert with coremltools (fp16 ML Program, CLS pooling + L2 normalization inside, enumerated lengths 16–256), verify the output checksum; cache outside git (start from `spikes/embeddings/`). Try int8 weights; keep only if recall holds. **Recall held: the bundled model is int8 (32 MB), `bge-small-en-v1.5/coreml-int8`.**
+- [x] `WordPieceTokenizer` (port the spike's): matches Hugging Face ids on every fixture text.
+- [x] `Embedder` protocol (`EmbeddingProvider`, shared with task 1.9b); `BundledBGEEmbedder` (Core ML, `cpuOnly`, query prefix) and a deterministic `FakeEmbedder` for tests.
+- [x] `EmbeddingIndex`: load vectors, `vDSP_mmul` over all active vectors, update on change; background embedding of missing vectors.
+- [x] FTS5 query building: the search text, or task + `keywords`, → an OR query of its non-stopword terms (plus prefix terms for as-you-type vault search); BM25 normalized by the best score ([memory processing §3](../domain/memory-processing.md#3-keyword-search)).
+- [x] `SearchService.vaultSearch(query, filters)` and `retrieve(task, keywords, categories)`: min-max 0.30/0.70 fusion, raw-cosine thresholds 0.50 / 0.55, a keyword floor tuned on the benchmark (0.15) ([memory processing §4](../domain/memory-processing.md#4-ranking)).
+- [x] Tests: the memories-200 / queries-30 / queries-30-expanded benchmark as a regression: hybrid R@5 ≥ 0.92 expanded and ≥ 0.68 raw; keyword-only (model unavailable) ≥ 0.82 expanded (re-measure here before freezing). The model-dependent tests skip with a clear message when the model isn't fetched; CI fetches and caches it, and fails if it's missing (`FUNES_REQUIRE_EMBEDDING_MODEL=1`). Measured: 0.939 / 0.689 / 0.828 ([spike results](spike-results.md#phase-1-re-measurement-in-funescore)).
 
 ### 1.5 PolicyEngine · 3 h
 - [ ] Pure functions:

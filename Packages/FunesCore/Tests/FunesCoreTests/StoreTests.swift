@@ -16,7 +16,7 @@ import Testing
                            "meta", "provenance", "suggestion"])
         #expect(try v.store.categories().map(\.key) == MemoryCategory.builtins.map(\.key))
         #expect(try v.store.categories().first { $0.key == "health" }?.defaultSensitivity == .sensitive)
-        #expect(try v.store.meta("active_embedding_model") == "bge-small-en-v1.5/coreml-fp16")
+        #expect(try v.store.meta("active_embedding_model") == "bge-small-en-v1.5/coreml-int8")
         let vaultID = try #require(try v.store.meta("vault_id"))
         #expect(UUID(uuidString: vaultID) != nil)
         #expect(try v.store.writer.read { db in try Bool.fetchOne(db, sql: "PRAGMA foreign_keys") } == true)
