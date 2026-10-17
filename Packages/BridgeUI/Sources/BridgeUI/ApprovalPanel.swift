@@ -192,8 +192,8 @@ public struct ApprovalPanelView: View {
                 Text(subtitle).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            rows(item)
             facts(item)
+            rows(item)
             if let note = item.note {
                 Text(note).font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -274,7 +274,20 @@ public struct ApprovalPanelView: View {
                 ForEach(Array(item.facts.enumerated()), id: \.offset) { _, fact in
                     GridRow {
                         Text(fact.label).foregroundStyle(.secondary)
-                        Text(fact.value).fixedSize(horizontal: false, vertical: true)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(queue.displayedValue(fact, in: item.id))
+                                .textSelection(.enabled)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if fact.isClipped {
+                                let open = queue.isExpanded(row: "fact:" + fact.label, in: item.id)
+                                Button(open ? String(localized: "Show less") : String(localized: "Show all")) {
+                                    queue.toggleExpanded(row: "fact:" + fact.label, in: item.id)
+                                }
+                                .buttonStyle(.link)
+                                .accessibilityLabel(open ? String(localized: "Show less of \(fact.label)")
+                                                         : String(localized: "Show all of \(fact.label)"))
+                            }
+                        }
                     }
                 }
             }

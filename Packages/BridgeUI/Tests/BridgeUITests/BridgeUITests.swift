@@ -255,3 +255,44 @@ struct SharePanelReviewTests {
         #expect(ApprovalPanelController.height(for: small, available: available) < 400)
     }
 }
+
+/// The agent's keywords appear as "Looking for" with the task (ADR-0016 decision 3, access policy
+/// §3.2, 04-ux-mac.md), previewed to two lines with Show all, and omitted when there are none.
+@Suite("Share panel: looking for")
+@MainActor
+struct LookingForTests {
+    static func item(keywords: [String], task: String? = "Plan dinner") -> PanelItem {
+        PanelItem.share(id: UUID(), agentID: "a", agentName: "Claude Code", task: task, keywords: keywords,
+                        purpose: "menu", keepsIt: "For this session", sharedWith: [],
+                        rows: [PanelItem.Row(id: "m", title: "Vegetarian", detail: "No meat.")], note: nil, expiresAt: nil)
+    }
+
+    @Test func keywordsAreShownWithTheTask() throws {
+        let item = Self.item(keywords: ["dietary restrictions", " food allergies ", "", "favourite cuisines"])
+        #expect(item.subtitle == "Task: “Plan dinner”")
+        let first = try #require(item.facts.first)
+        #expect(first.label == "Looking for")
+        #expect(first.value == "dietary restrictions, food allergies, favourite cuisines")
+        #expect(item.facts.map(\.label) == ["Looking for", "Purpose", "Keeps it"])
+    }
+
+    @Test func noKeywordsNoLine() {
+        #expect(!Self.item(keywords: []).facts.contains { $0.label == "Looking for" })
+        #expect(!Self.item(keywords: ["  "]).facts.contains { $0.label == "Looking for" })
+    }
+
+    @Test func longKeywordListsPreviewWithShowAll() throws {
+        let keywords = (1...20).map { "kind of personal context \($0)" }
+        let queue = ApprovalQueue()
+        let item = Self.item(keywords: keywords)
+        queue.enqueue(item) { _ in }
+        let fact = try #require(item.facts.first { $0.label == "Looking for" })
+        #expect(fact.isClipped)
+        let preview = queue.displayedValue(fact, in: item.id)
+        #expect(preview.count <= PanelText.factCharacters + 1 && preview.hasSuffix("…"))
+        queue.toggleExpanded(row: "fact:Looking for", in: item.id)
+        #expect(queue.displayedValue(fact, in: item.id) == keywords.joined(separator: ", "))
+        let short = try #require(Self.item(keywords: ["coffee order"]).facts.first)
+        #expect(!short.isClipped && queue.displayedValue(short, in: UUID()) == "coffee order")
+    }
+}

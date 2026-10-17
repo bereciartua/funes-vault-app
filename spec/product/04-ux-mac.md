@@ -195,6 +195,7 @@ All panels are non-activating floating `NSPanel`s at the top right, stacked if m
 │                         [ Deny ]   [ Share 3 ]      │
 └─────────────────────────────────────────────────────┘
 ```
+- "Looking for" lists the agent's `keywords` (as it reported them), under the task. It's cut to about two lines with "Show all", and left out when the agent sent none. The same panel serves a pending request when it's opened again; Phase 3's Pending requests list shows them too.
 - The body text is clipped to 3 lines (at most 160 characters), with "Show all" to expand. The text is the exact text that will be sent, and every row whose text is cut offers "Show all", so everything Share would release can be read first.
 - The panel is never taller than the screen's visible area: the title and the buttons stay in place and the rows between them scroll.
 - Opening a pending request again (from the menu, Pending requests or an agent's `open_in_funes`) refreshes the same panel. Rows whose memory is unchanged keep the user's ticks. If anything that would be shared changed, the buttons arm again.

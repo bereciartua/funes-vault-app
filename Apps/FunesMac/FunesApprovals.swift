@@ -48,43 +48,27 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         let now = Date()
         guard let panel = try? await disclosures.panel(requestID: requestID, now: now) else { return }
         let disclosure = try? await disclosures.disclosure(requestID: requestID)
-        let categories = (try? environment.store.categories()) ?? []
-        let item = await Self.shareItem(panel, withheld: disclosure?.withheld ?? [:], categories: categories,
-                                        now: now)
+        let item = Self.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: now)
         await MainActor.run {
             queue.enqueue(item) { [weak self] answer in self?.answered(panel, answer) }
             if focus { bringForward() }
         }
     }
 
-    static func shareItem(_ panel: ApprovalPanel, withheld: [ReasonCode: Int], categories: [MemoryCategory],
-                          now: Date) async -> PanelItem {
-        let names = Dictionary(uniqueKeysWithValues: categories.map { ($0.key, $0.name) })
+    static func shareItem(_ panel: ApprovalPanel, withheld: [ReasonCode: Int], now: Date) -> PanelItem {
         let rows = panel.memories.map { memory in
             PanelItem.Row(id: memory.id.uuidString, title: memory.title, detail: memory.body,
                           version: String(memory.version), badge: memory.sensitivity.name.capitalized,
                           badgeIsWarning: memory.sensitivity >= .sensitive)
         }
-        var facts = [PanelItem.Fact]()
-        if let purpose = panel.purpose, !purpose.isEmpty {
-            facts.append(PanelItem.Fact(label: String(localized: "Purpose"), value: String(localized: "“\(purpose)” (as reported)")))
-        }
-        facts.append(PanelItem.Fact(label: String(localized: "Keeps it"), value: retention(panel.retention)))
-        if !panel.processors.isEmpty {
-            facts.append(PanelItem.Fact(label: String(localized: "Shared with"), value: panel.processors.joined(separator: ", ")))
-        }
         let held = withheld.values.reduce(0, +)
         let note: String? = held == 0 ? nil : String(localized: "\(held) more matched but can't go to this agent (\(withheldReasons(withheld))).")
-        let categoryList = Set(panel.memories.compactMap { $0.categoryKeys.first }).compactMap { names[$0] }.sorted()
-        let subtitle = panel.task.map { String(localized: "For: \($0)") }
-            ?? String(localized: "From \(categoryList.joined(separator: ", "))")
-        return PanelItem(
-            id: panel.requestID, kind: .share, agentID: panel.agentID.uuidString,
-            title: String(localized: "\(panel.agentName) wants to use your memories"),
-            subtitle: subtitle, rows: rows, facts: facts, note: note,
-            primary: String(localized: "Share"), secondary: String(localized: "Deny"),
-            expiresAt: max(now, panel.createdAt) + panelSeconds,
-            announcement: String(localized: "\(panel.agentName) asks to use \(rows.count) memories in Funes"))
+        // The task and keywords are shown while FunesCore still holds them (15 minutes).
+        return PanelItem.share(
+            id: panel.requestID, agentID: panel.agentID.uuidString, agentName: panel.agentName, task: panel.task,
+            keywords: panel.keywords, purpose: panel.purpose, keepsIt: retention(panel.retention),
+            sharedWith: panel.processors, rows: rows, note: note,
+            expiresAt: max(now, panel.createdAt) + panelSeconds)
     }
 
     private func answered(_ panel: ApprovalPanel, _ answer: PanelAnswer) {

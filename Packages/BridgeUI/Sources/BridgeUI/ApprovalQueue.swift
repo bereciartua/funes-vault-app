@@ -55,11 +55,17 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
     public struct Fact: Sendable, Equatable {
         public let label: String
         public let value: String
+        /// Long values (an agent's keywords) preview to `PanelText.factLines` with Show all.
+        public let collapsible: Bool
 
-        public init(label: String, value: String) {
+        public init(label: String, value: String, collapsible: Bool = false) {
             self.label = label
             self.value = value
+            self.collapsible = collapsible
         }
+
+        public var isClipped: Bool { collapsible && PanelText.preview(value, lines: PanelText.factLines,
+                                                                      characters: PanelText.factCharacters) != value }
     }
 
     public let id: UUID
@@ -111,15 +117,20 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
 public enum PanelText {
     public static let previewLines = 3
     public static let previewCharacters = 160
+    /// A fact such as "Looking for": about two lines.
+    public static let factLines = 2
+    public static let factCharacters = 100
 
-    public static func preview(_ text: String) -> String {
+    public static func preview(_ text: String, lines previewLines: Int = previewLines,
+                               characters previewCharacters: Int = previewCharacters) -> String {
         let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
         var shown = lines.prefix(previewLines).joined(separator: "\n")
         let cutLines = lines.count > previewLines
         guard cutLines || shown.count > previewCharacters else { return text }
         if shown.count > previewCharacters {
             shown = String(shown.prefix(previewCharacters))
-            if let space = shown.lastIndex(where: { $0 == " " || $0 == "\n" }), shown.distance(from: shown.startIndex, to: space) > previewCharacters / 2 {
+            if let space = shown.lastIndex(where: { $0 == " " || $0 == "\n" || $0 == "," }),
+               shown.distance(from: shown.startIndex, to: space) > previewCharacters / 2 {
                 shown = String(shown[..<space])
             }
         }
@@ -239,6 +250,12 @@ public final class ApprovalQueue {
         if expanded.contains(key) { expanded.remove(key) } else { expanded.insert(key) }
     }
 
+    /// A fact's value now: its preview, or all of it after **Show all**.
+    public func displayedValue(_ fact: PanelItem.Fact, in id: UUID) -> String {
+        guard fact.collapsible, !isExpanded(row: "fact:" + fact.label, in: id) else { return fact.value }
+        return PanelText.preview(fact.value, lines: PanelText.factLines, characters: PanelText.factCharacters)
+    }
+
     /// The text the panel shows for a row now: the preview, or everything after **Show all**.
     public func displayedDetail(_ row: PanelItem.Row, in id: UUID) -> String? {
         guard let detail = row.detail else { return nil }
@@ -272,3 +289,33 @@ public final class ApprovalQueue {
         }
     }
 }
+
+extension PanelItem {
+    /// The **Share with <agent>?** panel (04-ux-mac.md): the task, what the agent says it's looking
+    /// for (its keywords), purpose as reported, retention and processors above the memories, then
+    /// the withheld line. Agent-provided text is labelled as such; nothing here decides anything.
+    public static func share(id: UUID, agentID: String, agentName: String, task: String?, keywords: [String],
+                             purpose: String?, keepsIt: String, sharedWith: [String], rows: [Row], note: String?,
+                             expiresAt: Date?) -> PanelItem {
+        var facts = [Fact]()
+        let lookingFor = keywords.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        if !lookingFor.isEmpty {
+            facts.append(Fact(label: String(localized: "Looking for"), value: lookingFor.joined(separator: ", "),
+                              collapsible: true))
+        }
+        if let purpose, !purpose.isEmpty {
+            facts.append(Fact(label: String(localized: "Purpose"), value: String(localized: "“\(purpose)” (as reported)")))
+        }
+        facts.append(Fact(label: String(localized: "Keeps it"), value: keepsIt))
+        if !sharedWith.isEmpty {
+            facts.append(Fact(label: String(localized: "Shared with"), value: sharedWith.joined(separator: ", ")))
+        }
+        return PanelItem(
+            id: id, kind: .share, agentID: agentID,
+            title: String(localized: "\(agentName) wants to use your memories"),
+            subtitle: task.map { String(localized: "Task: “\($0)”") }, rows: rows, facts: facts, note: note,
+            primary: String(localized: "Share"), secondary: String(localized: "Deny"), expiresAt: expiresAt,
+            announcement: String(localized: "\(agentName) asks to use \(rows.count) memories in Funes"))
+    }
+}
+
