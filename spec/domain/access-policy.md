@@ -45,11 +45,11 @@ A denial at the gate doesn't run retrieval, and its response has no `withheld` c
 2. **If `categories` is given:** keep memories with at least one of those categories. Unknown keys are ignored. This can only narrow the pool, never widen access.
 3. **Score each candidate:** `score = 0.45 × keyword + 0.55 × semantic`.
    - `keyword ∈ [0,1]`: FTS5 BM25 over title and body, normalized by the best score in the pool. If the task has no indexable terms, it's 0.
-   - `semantic ∈ [0,1]`: cosine similarity between the task embedding and the memory embedding, clamped to ≥ 0. It's 0 if embeddings aren't available.
+   - `semantic ∈ [0,1]`: cosine similarity between the task embedding and the memory embedding, clamped to ≥ 0. It's 0 if embeddings aren't available, which is **always in v0.1** ([ADR-0015](../architecture/decisions/0015-keyword-search-first.md)). In v0.1, retrieval is keyword matching only.
 4. **Keep candidates** with `keyword > 0` or `semantic ≥ 0.35`. Take the top 30 by score; ties go to the most recently updated.
 5. **If no candidates remain:** DENY `no_matching_memories`, with empty `withheld`.
 
-The weights (0.45 and 0.55) and the 0.35 threshold come from the web version and are confirmed or tuned in [Spike 2](../plans/phase-0-spikes.md). The task text is used only in memory. It is stored as a hash.
+The weights (0.45 and 0.55) and the 0.35 threshold come from the web version. [Spike 2](../plans/spike-results.md#spike-2-search-quality-and-speed) confirmed the weights; thresholds become per embedding model when embeddings arrive. The task text is used only in memory. It is stored as a hash.
 
 ### 3.3 Per-memory eligibility (in order; the first failure decides)
 | # | Condition | Reason |

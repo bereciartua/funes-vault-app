@@ -25,11 +25,10 @@
 - [ ] The [patterns](../domain/memory-processing.md#1-secret-scanner), including the Luhn check.
 - [ ] Tests: positive and negative samples per pattern, plus 20 realistic non-secret memories that must pass.
 
-### 1.4 Search and embeddings · 3 h
-- [ ] `Embedder` protocol. `NLEmbedder` implementation (the Spike 2 winner) and a deterministic `FakeEmbedder` for tests.
-- [ ] `EmbeddingIndex`: load vectors, brute-force dot product (Accelerate), update on change.
-- [ ] `SearchService.vaultSearch(query, filters)` and `retrieve(task, categories)` using the weights and thresholds from Spike 2.
-- [ ] Tests: the memories-200 and queries-30 benchmark as a regression (recall@5 must stay ≥ the baseline).
+### 1.4 Keyword search · 2 h ([ADR-0015](../architecture/decisions/0015-keyword-search-first.md))
+- [ ] FTS5 query building: the task or search text → an OR query of its non-stopword terms (plus prefix terms for as-you-type vault search); BM25 normalized by the best score ([memory processing §3](../domain/memory-processing.md#3-keyword-search)).
+- [ ] `SearchService.vaultSearch(query, filters)` and `retrieve(task, categories)`, keyword-only (`semantic` = 0), keeping the hybrid formula's shape so embeddings can slot in later. No `Embedder` or `EmbeddingIndex` in v0.1.
+- [ ] Tests: the memories-200 and queries-30 benchmark as a regression: FTS5 porter recall@5 ≥ 0.56 (re-measure here before freezing).
 
 ### 1.5 PolicyEngine · 3 h
 - [ ] Pure functions:
@@ -64,13 +63,12 @@
 - [ ] Tests: the revision bumps on every change; a removed agent can't authenticate.
 
 ### 1.9b Model providers · 4 h
-- [ ] `EmbeddingProvider` and `GenerationProvider` protocols, plus `ModelRouter` (task → provider, timeouts, fallbacks, usage counters) ([model providers](../architecture/model-providers.md)).
-- [ ] `AppleNLEmbedder` and `AppleFoundationGenerator` (default), and `RulesClassifier`.
-- [ ] `OpenAICompatibleClient` (embeddings; chat with JSON-schema output; model list) and `AnthropicClient` (Messages API; structured output).
+- [ ] `GenerationProvider` protocol (and `EmbeddingProvider` as a protocol only, for later), plus `ModelRouter` (task → provider, timeouts, fallbacks, usage counters) ([model providers](../architecture/model-providers.md)).
+- [ ] `AppleFoundationGenerator` (default) and `RulesClassifier`.
+- [ ] `OpenAICompatibleClient` (chat with JSON-schema output; model list; embeddings later) and `AnthropicClient` (Messages API; structured output).
 - [ ] Guardrails: the secret scanner on outgoing text; the cloud sensitivity limit; the capture pre-screen; locality detection (loopback or private address = local).
 - [ ] `ProviderKeyStore` (Keychain, this device only).
-- [ ] Re-embedding job (new `model_id`, batches, resume, atomic switch), and per-model thresholds with top-K for unknown models.
-- [ ] Tests: `URLProtocol` contract fixtures per adapter; guardrail tests capturing outgoing bodies; fallbacks (timeout, 401, 429, 500, bad JSON); a re-embedding switch and cancel.
+- [ ] Tests: `URLProtocol` contract fixtures per adapter; guardrail tests capturing outgoing bodies; fallbacks (timeout, 401, 429, 500, bad JSON).
 
 ### 1.10 Import and export · 2 h (S priority; can slip to Phase 3)
 - [ ] Parsers: ChatGPT JSON (tolerant), Claude paste, Markdown, `funesvault.export.v1`.
@@ -80,5 +78,5 @@
 
 ## Exit criteria
 - `swift test` passes on both packages; every policy test vector is implemented and green.
-- Spike 2 benchmark recall@5 is at or above the recorded baseline.
+- The Spike 2 benchmark's keyword recall@5 is at or above the recorded baseline (0.56).
 - No `import AppKit` or `import SwiftUI` in FunesCore or FunesProtocol.

@@ -157,12 +157,12 @@ A card at the top of the Vault:
 - **General:** launch at login, show in Dock, notifications.
 - **Capture:** hotkey, default sensitivity for captures, classification on/off.
 - **AI Models:**
-  - **Tasks:** Embeddings and Classification (later Consolidation). Each has a provider pop-up with a locality badge (On this Mac · Local server · Apple cloud · Cloud), a model pop-up, and a status ("Ready", "Re-embedding 1,240 / 3,000", "Unavailable: using on-device").
+  - **Tasks:** Classification (later Embeddings, off by default, and Consolidation). Each has a provider pop-up with a locality badge (On this Mac · Local server · Apple cloud · Cloud), a model pop-up, and a status ("Ready", "Re-embedding 1,240 / 3,000", "Unavailable: using on-device").
   - **Providers:** add or edit (base URL, API key stored in the Keychain, local or cloud), **Test connection**, usage counters.
   - **Cloud limit:** "Never send memories above **Internal** to cloud models".
-  - **Embedding options:** "Embed agent requests with the cloud model", shown when the embedding model is in the cloud.
+  - **Embedding options** (later): "Embed agent requests with the cloud model", shown when the embedding model is in the cloud.
   - **Disclosure:** a sentence under every non-local choice saying exactly what is sent where.
-  - **Calibrate…** for embedding models Funes doesn't know.
+  - **Calibrate…** (later) for embedding models Funes doesn't know.
 - **MCP:** server on/off, port (47625), launcher location, protocol log counts (no bodies).
 - **Data:** backups, export, import, Show in Finder, Erase All Data.
 - **Updates:** automatic checks, Check Now.

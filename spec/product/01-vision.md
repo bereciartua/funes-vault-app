@@ -37,7 +37,7 @@ See [users and use cases](02-users-and-use-cases.md).
 4. **Agents' words are data, not instructions.** An agent's stated purpose or task text never changes an access decision. Memory text returned to agents is marked as context, not commands.
 5. **Show, don't summarize.** Approval panels show the exact text being shared, never an AI paraphrase or the agent's own description.
 6. **Ids, not content, in logs.** Logs record what happened, never the memory text itself.
-7. **Local AI by default, your choice of model.** Classification and semantic search use Apple's on-device models by default: no API keys, no cost, nothing leaves the Mac. You can switch any task to a local server (Ollama, LM Studio) or a cloud model (Claude, GPT, Gemini…). Funes then shows what it sends, never sends secrets, and never sends memories above your cloud sensitivity limit.
+7. **Local AI by default, your choice of model.** Classification uses Apple's on-device models by default, and search is local keyword search: no API keys, no cost, nothing leaves the Mac. You can switch classification, and later opt into semantic search, with a local server (Ollama, LM Studio) or a cloud model (Claude, GPT, Gemini…). Funes then shows what it sends, never sends secrets, and never sends memories above your cloud sensitivity limit.
 8. **Native and quiet.** A menu bar app that stays out of the way, follows macOS conventions, and asks for attention only when an agent wants something.
 9. **Built the EK Bridge way.** Same trust model, the same quality bar and as much shared code as possible with [EK Bridge](https://github.com/bereciartua/ek-bridge).
 

@@ -19,8 +19,9 @@ Epics map requirements to phases.
 | VaultStore + schema v1 + migrations + FTS triggers + backups | FR-V-01..04, NFR-REL-01/02 | 1 | M | M |
 | Categories (built-in seed) | FR-V-05 | 1 | S | M |
 | Secret scanner | NFR-SEC-06 | 1 | S | M |
-| Embeddings + index + hybrid search | FR-V-10, FR-AI-01 | 1 | M | M |
-| Model providers: protocols, ModelRouter, Apple / OpenAI-compatible / Anthropic adapters, guardrails, Keychain keys, re-embedding, per-model thresholds | FR-AI-05..11 | 1 | M | M |
+| Keyword search (FTS5 porter) + Spike 2 recall regression | FR-V-10 | 1 | M | S |
+| Embeddings + index + hybrid search (opt-in) | FR-AI-01, FR-AI-09, FR-AI-11 | later | S | M |
+| Model providers for classification: protocols, ModelRouter, Apple / OpenAI-compatible / Anthropic adapters, guardrails, Keychain keys | FR-AI-05..08, 10 | 1 | M | M |
 | Provenance | FR-V-12 | 1 | S | M |
 
 ## E2: Policy and disclosure (Phase 1)
@@ -71,7 +72,7 @@ Epics map requirements to phases.
 | Hotkey capture box + menu item | FR-C-01, 02 | 3 | S | M |
 | Services provider | FR-C-03 | 3 | S | S |
 | Classification via ModelRouter (default Foundation Models + rules) | FR-C-04, FR-AI-02 | 3 | M | S |
-| AI Models settings: per-task picker, providers + Keychain keys, test connection, cloud limit, disclosures, re-embed progress, calibrate, usage | FR-AI-05..12 | 3 | M | M |
+| AI Models settings: Classification picker, providers + Keychain keys, test connection, cloud limit, disclosures, usage | FR-AI-05..08, 10, 12 | 3 | M | M |
 
 ## E7: Agents UI and setup (Phase 3)
 | Item | Covers | Phase | Size | Pri |

@@ -44,7 +44,7 @@ That's roughly **10–11 weekends to v0.1** and **16–17 weekends to v0.2**, in
 
 ### v0.1: Mac public preview
 **In:**
-- **Vault:** create, edit, archive, delete, categories (built-in plus custom), sensitivity, expiry, provenance, hybrid search.
+- **Vault:** create, edit, archive, delete, categories (built-in plus custom), sensitivity, expiry, provenance, keyword search (FTS5 with stemming; [ADR-0015](../architecture/decisions/0015-keyword-search-first.md)).
 - **Capture:** hotkey, menu bar, Services; classification proposals.
 - **Inbox:** agent suggestions, captures, seed questions, imports (ChatGPT, Claude, Markdown).
 - **Agents:**
@@ -55,7 +55,7 @@ That's roughly **10–11 weekends to v0.1** and **16–17 weekends to v0.2**, in
 - **Disclosure:** the policy engine, the Share panel with partial approval, the 45 s in-call wait, the 15-minute pending list, single use, invalidation, withheld counts.
 - **Suggestions:** the Save panel (non-blocking), direct Write when allowed.
 - **Activity:** log and view.
-- **AI models:** Apple on-device by default; per-task choice of local servers (Ollama, LM Studio) or cloud providers (OpenAI, Anthropic, Gemini, OpenRouter, custom), with a cloud sensitivity limit, disclosures, Keychain keys and background re-embedding.
+- **AI models:** Apple on-device by default; per-task choice of local servers (Ollama, LM Studio) or cloud providers (OpenAI, Anthropic, Gemini, OpenRouter, custom), with a cloud sensitivity limit, disclosures and Keychain keys. For **classification** only; embeddings come later.
 - **Distribution:** MCP server, launcher, Sparkle, Homebrew, MCP Registry, docs.
 
 **Out:**
@@ -82,7 +82,9 @@ That's roughly **10–11 weekends to v0.1** and **16–17 weekends to v0.2**, in
 - **Pricing decision** at 1.0.
 - **At production readiness (1.0):** add a "no longer maintained" note to `funes-vault`'s README, linking to the new repo ([ADR-0010](../architecture/decisions/0010-start-from-scratch.md)).
 - **An agent `update_memory` tool** behind Write plus ask-before-saving.
-- **Local open-source embeddings or LLM** (Core AI / MLX) as an upgrade path.
+- **Semantic search as an opt-in** ([ADR-0015](../architecture/decisions/0015-keyword-search-first.md)): an Embeddings row in Settings ▸ AI Models (off by default) with local servers, cloud models, or a bundled open model (Spike 2b: bge-small or e5-small as Core ML), plus re-embedding and calibration. Must beat the keyword baseline.
+- **Foundation Models query expansion for agent retrieval** (+0.10 recall@5 in Spike 2, about 3.7 s per request; cache per task).
+- **Local open-source LLM** (Core AI / MLX) as an upgrade path.
 
 ## Tracking progress
 - **Phase plans** (`plans/phase-*.md`) hold the task checklists; tick them as you go.

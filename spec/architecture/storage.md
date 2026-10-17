@@ -63,10 +63,11 @@ CREATE INDEX memory_category_by_category ON memory_category(category_key);
 -- Full-text index (external content); kept in sync by triggers
 CREATE VIRTUAL TABLE memory_fts USING fts5(
   title, body, content='memory', content_rowid='rowid',
-  tokenize='unicode61 remove_diacritics 2'
+  tokenize='porter unicode61 remove_diacritics 2'
 );
 -- triggers memory_ai / memory_ad / memory_au insert/delete/update memory_fts rows
 
+-- Not in v1: added by the migration that brings semantic search (ADR-0015)
 CREATE TABLE embedding (
   memory_id    TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
   model_id     TEXT NOT NULL,      -- e.g. "apple.nl/contextual-en-2026.1", "openai/text-embedding-3-small"
@@ -237,7 +238,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 | Purge deleted | launch, then daily | Hard-delete memories deleted more than 30 days ago |
 | Expire suggestions | launch, then hourly | `pending` → `expired` after 30 days; delete expired ones after 7 more days |
 | Expire disclosures | every minute while any are pending | needs_approval older than 15 min → denied |
-| Re-embed | on change; when the user switches the embedding model (batched, resumable, with progress; see [model providers §7](model-providers.md#7-switching-the-embedding-model)) | Write vectors for the new `model_id`; switch `active_embedding_model` atomically when complete; delete old vectors |
+| Re-embed (after v0.1) | on change; when the user switches the embedding model (batched, resumable, with progress; see [model providers §7](model-providers.md#7-switching-the-embedding-model)) | Write vectors for the new `model_id`; switch `active_embedding_model` atomically when complete; delete old vectors |
 | Backup | daily, and before migrations | Keep the last 7 |
 | Activity compaction | launch, every 6 h, above 8 MB | Retention per FR-L-03 |
 | Receipt cleanup | daily | Delete capture receipts older than 90 days |

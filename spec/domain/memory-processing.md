@@ -33,33 +33,39 @@ Everything here runs on the Mac. By default, AI tasks use **Apple's on-device mo
 - **False positives:** the user can't override a match in v0.1. A match that is genuinely not a secret is a scanner bug to fix with a test.
 - **Search queries** that match a pattern skip embedding and are never logged.
 
-## 2. Embeddings and semantic search
+## 2. Embeddings and semantic search (after v0.1)
+
+> **v0.1 has no embeddings** ([ADR-0015](../architecture/decisions/0015-keyword-search-first.md)). Search is keyword-only (§3), and `semantic` is 0 everywhere. Spike 2 found Apple's on-device embeddings add about +0.02 recall@5 over keyword search. This section describes the opt-in that comes later.
 
 - **Model:** user-selectable (Settings ▸ AI Models ▸ Embeddings); see [model providers](../architecture/model-providers.md).
-  - **Default:** Apple NaturalLanguage, `NLContextualEmbedding` for the user's language (English first). Token vectors are mean-pooled; Spike 2 compares it with `NLEmbedding` and picks the default.
-  - **Alternatives:** any OpenAI-compatible `/v1/embeddings` model, local (Ollama, LM Studio) or cloud (OpenAI, Gemini, OpenRouter, custom).
+  - **Default:** **Off** (keyword only). Apple NaturalLanguage was the planned default, but failed Spike 2.
+  - **Options:** possibly a small open model bundled as Core ML (if a Spike 2b clears the bar), or any OpenAI-compatible `/v1/embeddings` model, local (Ollama, LM Studio) or cloud (OpenAI, Gemini, OpenRouter, custom).
   - **Normalization:** all vectors are L2-normalized by Funes, so similarity is a plain dot product, whatever the provider.
   - **One embedding model is active at a time.** Switching re-embeds in the background ([model providers §7](../architecture/model-providers.md#7-switching-the-embedding-model)).
   - **Cloud limit:** with a cloud embedding model, memories above the cloud sensitivity limit get no vector and are found by keyword only.
 - **Input text:** `"<title>\n<kind>\n<category names>\n<body>"`, truncated to the model's token limit (256 tokens). For long bodies, embed the first 256 tokens.
 - **Storage:** an `embedding` table holding `memoryId`, `modelId`, `dims`, the vector as a Float32 blob, and `contentHash`. It is recomputed when the hash changes or the model id changes, for example after an OS update.
 - **Which memories:** all `active` memories. Archived memories keep their vector for fast restore; deleted ones lose it when purged.
-- **Query:** embed the query once, then compute a brute-force dot product over all active vectors. At 10,000 × 768 Float32 that is about 30 MB and takes milliseconds with Accelerate (`vDSP_dotpr`) or a single matrix–vector multiply.
+- **Query:** embed the query once, then compute a brute-force dot product over all active vectors. At 10,000 × 768 Float32 that is about 30 MB and takes milliseconds (Spike 2 measured under 1 ms for 10,000 × 512) with Accelerate (`vDSP_dotpr`) or a single matrix–vector multiply.
 - **Fallback:** if the embedding model is unavailable (missing language assets), semantic = 0 and search is keyword-only. The UI shows nothing; this is an implementation detail.
 
 ## 3. Keyword search
-- **FTS5** virtual table over the title and body, using the `unicode61 remove_diacritics 2` tokenizer.
+- **FTS5** virtual table over the title and body, using the `porter unicode61 remove_diacritics 2` tokenizer: English stemming on top of `unicode61`, worth +0.11 recall@5 in Spike 2. Other languages tokenize without stemming.
+- **Query:** the task or search text becomes an OR query of its non-stopword terms.
 - **Prefix search** for the vault UI ("pnp*").
 - **Normalization:** BM25 scores are normalized per query, dividing by the best score, to get `keyword ∈ [0,1]`.
 
 ## 4. Ranking
+**In v0.1, `semantic` is always 0**, so `score = 0.45 × keyword` and results are ordered by keyword score. Keyword-only search is equivalent, and the formula stays ready for embeddings.
+
 - **Vault search (UI):**
   - `score = 0.45 × keyword + 0.55 × semantic`;
   - keep a result if `keyword > 0` or `semantic ≥ 0.30` (the web version's vault threshold);
   - filters apply before ranking.
 - **Agent retrieval:** see [access policy §3.2](access-policy.md#32-retrieval-which-memories-are-relevant). The rule is the same, with a 0.35 semantic threshold and the top 30.
 - **Tuning:** thresholds are stored **per embedding model id**.
-  - For Apple's model and the supported cloud and local models, they're measured in [Spike 2](../plans/phase-0-spikes.md) with the 200-memory and 30-query benchmark, and kept as constants with tests.
+  - For supported models, they're measured with the [Spike 2](../plans/spike-results.md#spike-2-search-quality-and-speed) 200-memory and 30-query benchmark, and kept as constants with tests. (For Apple's centered `NLContextualEmbedding`, Spike 2 measured 0.20 / 0.25; it isn't offered.)
+- **Regression baseline (v0.1):** FTS5 porter recall@5 ≥ 0.56 on that benchmark. Any embedding option must beat it.
   - Unknown models use top-K semantic candidates (K = 10) plus all keyword hits, until the user runs **Calibrate** ([model providers §8](../architecture/model-providers.md#8-calibration-thresholds-per-model)).
 
 ## 5. Classification of captures and suggestions
@@ -115,12 +121,12 @@ All imports create **suggestions** (`origin = import`, with an `importRunId`) af
 | Markdown | `.md` file | `#`/`##` headings map to categories by name (case-insensitive, otherwise "unmatched", reviewed per item). Bullets and paragraphs become items |
 | Funes export | `funesvault.export.v1` JSON | Categories (created if missing) and memories, as suggestions by default or as active memories after confirmation |
 
-**Preview:** total items, likely duplicates (normalized exact match plus semantic ≥ 0.92), items blocked by the secret scanner, and items over the length limit (split or truncated, the user's choice).
+**Preview:** total items, likely duplicates (normalized exact match; plus semantic ≥ 0.92 once embeddings exist), items blocked by the secret scanner, and items over the length limit (split or truncated, the user's choice).
 
 ## 8. Duplicate hint
 On create or apply, show "Similar memory exists" if:
 - the normalized title and body (lowercase, whitespace collapsed) equal those of an active memory; or
-- semantic similarity is ≥ 0.92.
+- semantic similarity is ≥ 0.92 (only when an embedding model is active; after v0.1).
 
 It's a hint only.
 

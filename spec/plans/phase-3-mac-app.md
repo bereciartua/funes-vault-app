@@ -49,7 +49,6 @@
 ### 3.8b AI Models settings · 3 h
 - [ ] A per-task provider and model picker with locality badges; a providers list (add or edit, base URL, Keychain-stored key, **Test connection**).
 - [ ] Cloud sensitivity limit; the "embed agent requests" switch; disclosure sentences; usage counters.
-- [ ] Re-embedding progress and cancel; **Calibrate…** for unknown embedding models.
 
 ### 3.9 Settings and data · 1 h
 - [ ] General, Capture, MCP (port, launcher symlink), Data (backups, export, import, Show in Finder, Erase), Updates (Sparkle), Advanced.

@@ -26,7 +26,7 @@ This folder (`spec/` in the `funes-vault-app` repo) holds the requirements, desi
 - **What you can see:** the **Activity** log records everything (ids only, never text). You can pause or remove an agent in one click.
 - **Privacy:**
   - **Everything is local:** no account, no server, no cloud copy.
-  - **AI is local by default:** search and classification use Apple's on-device models, with no API keys.
+  - **AI is local by default:** search is local keyword search, and classification uses Apple's on-device models, with no API keys. Semantic search with an embedding model you choose comes later.
   - **Any model you prefer, per task:** a local server (Ollama, LM Studio) or a cloud model (Claude, GPT, Gemini…). Funes shows what it sends, never sends secrets, and never sends memories above your cloud sensitivity limit.
 - **iPhone (v0.2):**
   - a **thin client** paired by QR code;
@@ -59,7 +59,7 @@ This folder (`spec/` in the `funes-vault-app` repo) holds the requirements, desi
    - [Security and privacy](architecture/security-and-privacy.md): threat model, guarantees, what leaves the Mac.
    - [AI model providers](architecture/model-providers.md): on-device by default, per-task model choice, guardrails, fallbacks, re-embedding.
    - [Reusing EK Bridge](architecture/ek-bridge-reuse.md): what to copy, what to rewrite, refactors.
-   - [Decision records](architecture/decisions/README.md): 14 ADRs.
+   - [Decision records](architecture/decisions/README.md): 15 ADRs.
 4. **Plans**
    - [Plans index](plans/README.md): Phase 0 spikes through Phase 5, plus project setup, testing, releases.
    - [Open questions](plans/open-questions.md): 23 decisions with recommendations. Already decided: Q1 (name), Q3 (license), Q4 (repo), Q5 (minimum macOS), Q8 (BridgeKit), Q9 (Xcode project), Q14 (AI models), Q17 (web version), Q23 (domain).
@@ -75,6 +75,7 @@ This folder (`spec/` in the `funes-vault-app` repo) holds the requirements, desi
 | Data location | The Mac only; the iPhone is a thin client; no CloudKit | [ADR-0003](architecture/decisions/0003-mac-is-the-only-source-of-truth.md) |
 | Storage | SQLite + FTS5 via GRDB | [ADR-0004](architecture/decisions/0004-sqlite-grdb.md) |
 | AI models | Apple on-device by default; user-selectable per task (local servers or cloud providers) with a cloud sensitivity limit and disclosures | [ADR-0014](architecture/decisions/0014-user-selectable-models.md) (supersedes 0005) |
+| Search | Keyword (FTS5 with stemming) in v0.1; semantic search later as an opt-in embedding model | [ADR-0015](architecture/decisions/0015-keyword-search-first.md) |
 | Build | Xcode project + local Swift packages | [ADR-0006](architecture/decisions/0006-xcode-project-and-packages.md) |
 | Distribution | Developer ID, not sandboxed (Mac); App Store (iPhone) | [ADR-0007](architecture/decisions/0007-developer-id-not-sandboxed.md) |
 | Code reuse | Shared library **BridgeKit** with EK Bridge: protocol and security core extracted now (`BridgeKitCore`, EK Bridge adopts it first); UI pieces copied, extracted after v0.1; Remote Access later | [ADR-0013](architecture/decisions/0013-shared-bridgekit-core.md) (supersedes 0008) |

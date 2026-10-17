@@ -1,6 +1,6 @@
 # ADR-0014: User-selectable AI models, on-device by default
 
-**Status:** Accepted · 2026-10-16 · **Supersedes** [ADR-0005](0005-on-device-intelligence.md)
+**Status:** Accepted · 2026-10-16 · **Supersedes** [ADR-0005](0005-on-device-intelligence.md) · **Amended by** [ADR-0015](0015-keyword-search-first.md): v0.1 ships model choice for classification only; embeddings come later, off by default
 
 **Context.**
 - **Where Funes uses AI:**
