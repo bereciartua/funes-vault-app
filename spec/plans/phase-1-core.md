@@ -35,7 +35,7 @@
 - [x] Tests: the memories-200 / queries-30 / queries-30-expanded benchmark as a regression: hybrid R@5 ≥ 0.92 expanded and ≥ 0.68 raw; keyword-only (model unavailable) ≥ 0.82 expanded (re-measure here before freezing). The model-dependent tests skip with a clear message when the model isn't fetched; CI fetches and caches it, and fails if it's missing (`FUNES_REQUIRE_EMBEDDING_MODEL=1`). Measured: 0.939 / 0.689 / 0.828 ([spike results](spike-results.md#phase-1-re-measurement-in-funescore)).
 
 ### 1.5 PolicyEngine · 3 h
-- [ ] Pure functions:
+- [x] Pure functions:
   - `gate(agent, access, globalPaused, now) -> ReasonCode?`;
   - `eligibility(memory, access, now) -> ReasonCode?`;
   - `decide(eligible, access, window) -> Decision`;
@@ -43,8 +43,8 @@
 - [ ] Tests: T1–T12 and T27–T33 as parameterized tests.
 
 ### 1.6 BundleCompiler · 1 h
-- [ ] `title: body`, `ceil(chars/4)`, skip-overflow, clip the first item, instructions v1.
-- [ ] Tests: T21 plus edge cases (budget exactly met; an empty body is impossible; Unicode character counting).
+- [x] `title: body`, `ceil(chars/4)`, skip-overflow, clip the first item, instructions v1. Characters are Unicode scalars; clipping keeps whole grapheme clusters.
+- [x] Tests: T21 plus edge cases (budget exactly met; an empty body is impossible; Unicode character counting).
 
 ### 1.7 DisclosureService · 3 h
 - [ ] `request(agentId, input) -> RequestOutcome` (persists the snapshot; keeps task text in an in-memory cache with a 15-minute TTL).

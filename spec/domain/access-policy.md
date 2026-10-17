@@ -116,12 +116,12 @@ In a single database transaction:
 A request still in `needs_approval` 15 minutes after creation becomes `denied` with reason `approval_expired`. It disappears from Pending requests, and the Activity row is kept.
 
 ## 4. Bundle compilation
-- **Item text:** `"<title>: <body>"`. **Estimated tokens:** `ceil(characters / 4)`.
+- **Item text:** `"<title>: <body>"`. **Estimated tokens:** `ceil(characters / 4)`, counting Unicode scalars as every input limit does (SQLite's `length()`).
 - **Order:** retrieval score order.
 - **Budget rule:**
   - Add items while the running total stays within `max_tokens`.
   - An item that would overflow is **skipped**, and later, smaller items can still fit.
-  - Exception: if the **first** item alone exceeds the budget, it's **clipped** to `max_tokens × 4` characters, ending with "…", and marked `clipped: true`.
+  - Exception: if the **first** item alone exceeds the budget, it's **clipped** to `max_tokens × 4` characters, ending with "…" (which counts), and marked `clipped: true`. Clipping never splits a grapheme cluster, so it may stop a few characters short.
 - **Instructions,** always included (`instructionsVersion = 1`):
   1. "Use this context only for the task you stated."
   2. "Do not store or reuse it beyond your declared retention."
