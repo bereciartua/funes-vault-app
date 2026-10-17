@@ -145,6 +145,115 @@ Recommendation: **1, then 2.** On these fixtures the weakness is the embedding, 
 
 ---
 
+## Spike 2b: Local open-source embeddings
+
+**Run:** 17 Oct 2026, same M1 (8 GB), macOS 27.0.1. **Question:** does a local open embedding model clear recall@5 ≥ 0.85 with < 150 ms at 10,000 memories, and does agent-side query expansion help?
+**Code:** [`spikes/embeddings/`](../../spikes/embeddings/README.md) (Python: embeddings, Core ML conversion) and `MODE=2b` / `MODE=coreml` in [`spikes/search/`](../../spikes/search/) (Swift: FTS5, scoring, latency, Core ML end to end). Full output: [`spikes/embeddings/run-2b.md`](../../spikes/embeddings/run-2b.md).
+**Fixtures:** Spike 2's `memories-200.json` and `queries-30.json`, plus a new permanent [`queries-30-expanded.json`](../../Packages/FunesCore/Tests/FunesCoreTests/fixtures/queries-30-expanded.json): each task with 5–15 keywords and 1–3 category keys, as an agent would add them to `request_memory`. A spike-only `queries-30-es.json` holds Spanish translations of the 30 tasks.
+
+### Verdict
+
+| Query text | Bar: R@5 ≥ 0.85, < 150 ms at 10K | Best result |
+|---|---|---|
+| **Raw task** (as in Spike 2) | ❌ **fail**, all models | 0.78: nomic-embed-text v1.5 + FTS5 (0.05/0.95); bge-small alone 0.77 |
+| **Agent-expanded** (task + keywords) | ✅ **pass** | **bge-small-en-v1.5 via Core ML: R@5 0.94, MRR 0.97, 10.5 ms p50 end to end at 10,000** (hybrid, min-max 0.30/0.70). nomic, multilingual-e5-small and Qwen3 also reach 0.94–0.96 |
+
+Open models are much better than Apple's on raw tasks (0.56–0.77 alone vs 0.39), but the misses that need inference remain. With raw tasks, bge-small alone still ranks *peanut allergy* 196th for "plan dinners". What closes the gap is the agent saying what context it wants. With the expanded text, **keyword search alone reaches 0.83**, Apple's contextual embedding hybrid 0.87–0.89, and the open models 0.92–0.96.
+
+### Models (all local)
+
+| Model | Licence | Dims | Weights | R@5 raw (alone / best hybrid) | R@5 agent (alone / min-max 0.30/0.70) | R@5 Spanish (alone) | Query embed p50 (runtime) |
+|---|---|---|---|---|---|---|---|
+| FTS5 porter (keyword only) | — | — | — | 0.567 | 0.828 | 0.189 | — |
+| Apple `NLContextualEmbedding`, centered (Spike 2) | OS | 512 | in OS | 0.389 / 0.583 | 0.689 / 0.872 | 0.339 | 11.9 ms (Swift) |
+| **bge-small-en-v1.5** | MIT | 384 | 127 MB fp32; **64 MB Core ML fp16** | **0.767** / 0.767 | 0.894 / **0.939** | 0.400 | 16.5 ms (PyTorch MPS); **3.6 ms (Core ML CPU, Swift)** |
+| e5-small-v2 | MIT | 384 | 127 MB | 0.717 / 0.717 | 0.872 / 0.922 | 0.350 | 15.7 ms (MPS) |
+| multilingual-e5-small | MIT | 384 | 449 MB | 0.561 / 0.617 | 0.856 / 0.939 | **0.539** | 15.9 ms (MPS) |
+| nomic-embed-text v1.5 | Apache-2.0 | 768 | 522 MB | 0.722 / **0.778** | 0.883 / 0.944 | 0.339 | 24.4 ms (MPS) |
+| Qwen3-Embedding-0.6B | Apache-2.0 | 1024 | 1,136 MB | 0.722 / 0.739 | 0.911 / 0.933 | **0.644** | 86.0 ms (MPS, fp16) |
+| EmbeddingGemma-300m | Gemma terms | 768 | — | **not run**: gated on Hugging Face (needs the user to accept Gemma's terms with their account); no unofficial mirror used | | | |
+
+Notes:
+- **Prefixes, as each model documents:** bge uses the retrieval instruction for queries (without it: 0.761 raw, 0.956 best agent; same within noise); e5 `query:`/`passage:`; nomic `search_query:`/`search_document:`; Qwen3 a task instruction ("Given a task that an AI assistant received, retrieve the user's personal notes that help with the task"). The document text is the spec's `title \n kind \n categories \n body`, truncated to 256 tokens.
+- **Runtimes:** quality numbers come from PyTorch 2.14.1 on MPS (fp32, Qwen3 fp16) through sentence-transformers 6.1.0, except the Core ML row. nomic's remote code needed a one-method shim for transformers 5.x.
+- **Embed time per memory** (batch 32, MPS): 2.2–2.5 ms for the small models, 11 ms nomic, 55 ms Qwen3. Core ML CPU from Swift, one at a time: 4.7 ms, so re-embedding 10,000 memories takes about 47 s.
+- With 30 queries and 70 labels, differences under ~0.05 are noise. The three small English models and nomic are effectively tied on agent queries.
+
+### Fusion: the spec's formula needs a change
+`0.45 × keyword + 0.55 × cosine` assumes cosines spread over [0, 1]. Modern models compress them: bge's unrelated memories score 0.45 median (relevant 0.64), e5's 0.76 (relevant 0.83). So the max-normalized keyword term dominates, and the hybrid is *worse* than the embedding alone on raw tasks (bge: 0.59 vs 0.77). Normalizing the cosine per query (min-max over the vault) fixes most of it:
+
+| bge-small (Core ML) | R@5 raw | R@5 agent | R@5 agent, 10K |
+|---|---|---|---|
+| embedding alone | 0.767 | 0.894 | 0.839 |
+| linear 0.45/0.55 (spec) | 0.594 | 0.878 | 0.817 |
+| linear 0.30/0.70 | 0.617 | 0.900 | 0.800 |
+| **min-max 0.30/0.70** | 0.689 | **0.939** | 0.800 |
+| reciprocal rank fusion | 0.622 | 0.883 | 0.811 |
+
+Min-max 0.30/0.70 is the best or tied for best for every open model on agent queries, and it doesn't need per-model weights. (The 10,000 column counts a paraphrase as its source, and a mixture as a hit when it contains a sentence of a relevant memory.)
+
+### Thresholds (bge-small, raw cosine; keep if keyword > 0 or cosine ≥ T)
+
+| T | Vault: recall / kept per query (raw tasks) | Retrieval R@30 (raw tasks) | Retrieval R@30 (agent) |
+|---|---|---|---|
+| 0.45 | 0.978 / 99 | 0.911 | 0.978 |
+| **0.50** | **0.944 / 53** | 0.911 | 0.978 |
+| **0.55** | 0.894 / 28 | **0.878** | **0.978** |
+| 0.60 | 0.822 / 20 | 0.806 | 0.978 |
+
+The cosine distribution: relevant p10 0.50, median 0.64; others median 0.45, p90 0.54, p99 0.61. Proposed for `bge-small-en-v1.5`: **vault 0.50, retrieval 0.55**. The thresholds filter on the raw cosine, while ranking uses the min-max score. With agent keywords, `keyword > 0` alone keeps 34 memories per query (17% of the vault), so the keyword floor from Spike 2 matters more, not less.
+
+### Latency at 10,000 memories (Swift, 30 agent queries × 5 runs)
+Search without the query embedding (FTS5 porter + `vDSP_mmul` over 10,000 × 384 + fusion + top 30) is **6.9 ms p50, 10.7 ms p95**. End to end:
+
+| Path | Query embedding | Total p50 |
+|---|---|---|
+| **bge-small, Core ML fp16, CPU only, Swift (incl. WordPiece)** | **3.6 ms** (p95 6.0) | **10.5 ms** |
+| bge-small / e5 / multilingual-e5, PyTorch MPS | 16 ms | 22–23 ms |
+| nomic v1.5, PyTorch MPS | 24 ms | 32 ms |
+| Qwen3-0.6B, PyTorch MPS fp16 | 86 ms | 94 ms |
+
+Every model passes < 150 ms. **Core ML compute units matter:** for this small model, CPU only (3.6 ms per query, 4.7 ms per memory, 0.3 s load) beats the Neural Engine (16 ms, 19.5 ms, 2.6 s load), the GPU (9 ms, 95 ms p95), and `.all` (9 ms, 148 ms p95, 7.4 s load). The enumerated sequence lengths (16–256 tokens) make the accelerators re-specialize between shapes. The Core ML model (with pooling and L2 normalization inside) matches PyTorch to cosine 1.0000, and gives identical R@5. The Swift WordPiece tokenizer (about 100 lines, no dependency) matched Hugging Face's ids on 2,090 of 2,090 texts.
+
+### Agent-side query expansion
+The agent writes the expansion from the task alone, for example "Plan a week of dinners" + *diet, dietary restrictions, food allergies, food preferences, favourite cuisines, cooking, recipes, meal planning, nutrition, grocery budget* + `personal_preferences, health`.
+
+| | Raw task | + keywords | + keywords + category filter |
+|---|---|---|---|
+| FTS5 porter alone | 0.567 | **0.828** | 0.878 |
+| bge-small hybrid (min-max 0.30/0.70) | 0.689 | **0.939** | 0.939 |
+| Spike 2's Foundation Models expansion, FTS5 alone | — | 0.667 (3.7 s) | — |
+
+- **A `keywords` hint is worth adding** to `request_memory`: an optional array of 5–15 terms naming the kinds of personal context that would help ("dietary restrictions, allergies"). It's the biggest single gain measured in Spikes 2 and 2b (+0.26 for keyword search). It costs the agent nothing, and it works with or without embeddings.
+- **`categories` (already a narrowing filter):** +0.05 for keyword-only, nothing for the hybrid. It's also risky: a wrong guess hides the right memory. Keep it as specified and don't push agents to use it.
+- **Caveat:** I wrote the expansions knowing the vault, while trying not to use it. The keyword-only 0.83 may be optimistic. The Foundation Models expansions from Spike 2 (3B model, blind to the vault) got 0.67. Measure with real agents' `keywords` before relying on the number.
+
+### Multilingual (for the planned Spanish version)
+Measured: **Spanish tasks against English memories** (cross-lingual). English-only models fall to 0.34–0.40; multilingual-e5-small gets 0.54–0.57 and Qwen3 0.64–0.66. FTS5 gets 0.19. Not measured: Spanish memories with Spanish tasks, which is the real case for a Spanish-speaking user. multilingual-e5-small is the only small multilingual candidate. It ties bge on agent queries (0.939) but is weaker on raw tasks (0.56 vs 0.77). It's 3.5× the size (≈ 235 MB as Core ML fp16, estimated from 118M parameters, most of them in the 250K-token vocabulary), and it needs a SentencePiece (Unigram) tokenizer in Swift instead of WordPiece. **Not worth it for v0.1**; decide when the Spanish version is scoped, with a Spanish-memory benchmark.
+
+### Recommendation
+1. **Model: bge-small-en-v1.5**, **bundled as Core ML** (fp16 ML Program, pooling and normalization inside), run **CPU only**. It's the smallest and fastest candidate and ties the best on agent queries.
+   - **App-size cost:** +64 MB (the `.mlpackage`; int8 weight quantization would roughly halve it, untested) and 30 KB of vocabulary.
+   - **Licence:** MIT. Bundling needs the copyright and licence text in `NOTICE` and the app's acknowledgements.
+   - **Speed:** 3.6 ms per query, 4.7 ms per memory, 10.5 ms per search end to end at 10,000 memories.
+2. **Not MLX Swift:** it's a new package dependency and GPU-bound, and CPU Core ML is already fast enough. **Not Ollama** as the default: nomic-embed-text through Ollama is a reasonable *opt-in* alternative (Apache-2.0, 0.94 on agent queries) for users who run it already.
+3. **Fusion:** `0.30 × keyword + 0.70 × semantic`, with `semantic` the cosine min-max normalized over the vault per query. Thresholds on the raw cosine: vault 0.50, retrieval 0.55 for this model id.
+4. **Add `keywords` to `request_memory`**, and make the tool description ask for them. It lifts keyword-only v0.1 search to ~0.83 even if embeddings wait.
+5. **Multilingual later:** multilingual-e5-small (MIT) is the candidate when Spanish ships, after a Spanish-memory benchmark. Qwen3-0.6B is better cross-lingually but 1.1 GB and 86 ms per query.
+
+On these fixtures, "keyword-only plus agent keywords" (0.83) is a solid v0.1 baseline. "bge-small Core ML hybrid plus agent keywords" (0.94) is the version that clears the bar.
+
+### Spec changes this implies (not made here)
+1. **[ADR-0015](../architecture/decisions/0015-keyword-search-first.md):** either keep v0.1 keyword-only and add `keywords`, or ship bundled bge-small Core ML by default (needs a new or amended ADR, and an update to AGENTS.md's dependency list, since it's a bundled third-party asset).
+2. **[MCP server](../architecture/mcp-server.md) and [access policy §3.2](../domain/access-policy.md#32-retrieval-which-memories-are-relevant):** an optional `keywords: [string]` on `request_memory`, appended to the task text for retrieval (and, like the task, never stored); the hybrid formula with min-max semantic and 0.30/0.70.
+3. **[Memory processing §2–4](../domain/memory-processing.md#2-embeddings-and-semantic-search):** the default model `bge-small-en-v1.5` (Core ML fp16, CPU, 384 dims, CLS pooling, the query instruction prefix, WordPiece); fusion; per-model thresholds 0.50 / 0.55; mean-centering only for Apple's model.
+4. **[Storage](../architecture/storage.md):** the `embedding` table returns in schema v1 if embeddings ship in v0.1 (`model_id` e.g. `bge-small-en-v1.5/coreml-fp16`, 384 dims, 15 MB at 10,000).
+5. **[Model providers](../architecture/model-providers.md):** a "Bundled (on this Mac)" embedding provider row; Ollama nomic-embed-text as the documented local-server option.
+6. **[Testing strategy](testing-strategy.md) / Phase 1 task 1.4:** add `queries-30-expanded.json` to the regression. Baselines from this run: FTS5 porter + keywords R@5 ≥ 0.82; bge-small hybrid + keywords R@5 ≥ 0.92.
+7. **`NOTICE`:** BAAI's MIT notice for the bundled model.
+
+---
+
 ## Spike 3: Agent timeouts and the in-call approval
 **Run:** 2026-10-16. **Code:** [`spikes/agent-timeouts/`](../../spikes/agent-timeouts/README.md), a throwaway stdio MCP server (Python standard library) plus a log reader.
 **Status:** **provisional pass.** Claude Code passes, measured. Claude Desktop and Cursor still need a manual run (checklist in the spike README) before Q10 is closed.

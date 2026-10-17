@@ -1,0 +1,688 @@
+{
+  "format": "funes.fixture.queries-expanded.v1",
+  "note": "The 30 queries as an agent might send them to request_memory: the task plus 5-15 keywords and 1-3 category keys, written from the task text alone without looking at the memories (Spike 2b).",
+  "queries": [
+    {
+      "id": "q01",
+      "query": "Write a commit message for my latest change",
+      "keywords": [
+        "commit message conventions",
+        "git",
+        "commit style",
+        "conventional commits",
+        "version control",
+        "tone",
+        "changelog"
+      ],
+      "categories": [
+        "software_development",
+        "communication_style"
+      ],
+      "relevant": [
+        "m059",
+        "m003"
+      ]
+    },
+    {
+      "id": "q02",
+      "query": "Plan a week of dinners for me",
+      "keywords": [
+        "diet",
+        "dietary restrictions",
+        "food allergies",
+        "food preferences",
+        "favourite cuisines",
+        "cooking",
+        "recipes",
+        "meal planning",
+        "nutrition",
+        "grocery budget"
+      ],
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "relevant": [
+        "m027",
+        "m136",
+        "m048"
+      ]
+    },
+    {
+      "id": "q03",
+      "query": "Draft an email reminding the sailing club treasurer that last month's invoice is overdue",
+      "keywords": [
+        "invoice",
+        "overdue payment",
+        "payment reminder",
+        "late payment",
+        "client",
+        "treasurer",
+        "sailing club",
+        "email tone",
+        "email signature",
+        "billing terms"
+      ],
+      "categories": [
+        "finance",
+        "communication_style",
+        "project_context"
+      ],
+      "relevant": [
+        "m170",
+        "m091",
+        "m005"
+      ]
+    },
+    {
+      "id": "q04",
+      "query": "Book train tickets and somewhere to stay for a weekend in Porto",
+      "keywords": [
+        "travel preferences",
+        "train",
+        "hotel",
+        "accommodation",
+        "seat preference",
+        "travel budget",
+        "payment card",
+        "weekend trip"
+      ],
+      "categories": [
+        "personal_preferences",
+        "finance"
+      ],
+      "relevant": [
+        "m031",
+        "m180"
+      ]
+    },
+    {
+      "id": "q05",
+      "query": "What should I order at a café this afternoon?",
+      "keywords": [
+        "coffee",
+        "tea",
+        "drink preferences",
+        "caffeine",
+        "milk",
+        "dietary restrictions",
+        "food allergies",
+        "snacks"
+      ],
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "relevant": [
+        "m141",
+        "m024",
+        "m147"
+      ]
+    },
+    {
+      "id": "q06",
+      "query": "Set up a new Python project that parses bank statement exports",
+      "keywords": [
+        "Python",
+        "project setup",
+        "coding conventions",
+        "linting",
+        "type hints",
+        "testing",
+        "CSV",
+        "bank statements",
+        "parsing",
+        "budgeting",
+        "dependencies"
+      ],
+      "categories": [
+        "software_development",
+        "finance",
+        "project_context"
+      ],
+      "relevant": [
+        "m057",
+        "m097"
+      ]
+    },
+    {
+      "id": "q07",
+      "query": "Review this pull request for the Nordwind dispatch service",
+      "keywords": [
+        "code review",
+        "pull request",
+        "review style",
+        "Nordwind",
+        "client project",
+        "coding standards",
+        "TypeScript",
+        "testing"
+      ],
+      "categories": [
+        "software_development",
+        "project_context"
+      ],
+      "relevant": [
+        "m062",
+        "m100",
+        "m101"
+      ]
+    },
+    {
+      "id": "q08",
+      "query": "Suggest a running plan for the next four weeks",
+      "keywords": [
+        "running",
+        "training plan",
+        "fitness level",
+        "injuries",
+        "race goal",
+        "marathon",
+        "weekly mileage",
+        "heart rate",
+        "schedule"
+      ],
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "relevant": [
+        "m146",
+        "m106",
+        "m153"
+      ]
+    },
+    {
+      "id": "q09",
+      "query": "Find a time next week for an intro call with a prospective client",
+      "keywords": [
+        "calendar",
+        "availability",
+        "working hours",
+        "meeting preferences",
+        "calls",
+        "time zone",
+        "schedule",
+        "client",
+        "focus time"
+      ],
+      "categories": [
+        "personal_preferences",
+        "communication_style",
+        "project_context"
+      ],
+      "relevant": [
+        "m035",
+        "m020"
+      ]
+    },
+    {
+      "id": "q10",
+      "query": "The doctor wants to prescribe antibiotics. Is there anything they should know?",
+      "keywords": [
+        "allergies",
+        "drug allergies",
+        "medication",
+        "medical history",
+        "current medications",
+        "health conditions",
+        "side effects"
+      ],
+      "categories": [
+        "health"
+      ],
+      "relevant": [
+        "m135"
+      ]
+    },
+    {
+      "id": "q11",
+      "query": "Help me get my paperwork together for this year's income tax filing",
+      "keywords": [
+        "income tax",
+        "tax return",
+        "accountant",
+        "receipts",
+        "invoices",
+        "deductions",
+        "business expenses",
+        "freelance income",
+        "tax deadlines"
+      ],
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "relevant": [
+        "m165",
+        "m166",
+        "m174"
+      ]
+    },
+    {
+      "id": "q12",
+      "query": "Help me write a blog post about building the Harbor app",
+      "keywords": [
+        "blog",
+        "writing style",
+        "tone",
+        "Harbor app",
+        "project details",
+        "audience",
+        "post length",
+        "app development"
+      ],
+      "categories": [
+        "communication_style",
+        "project_context",
+        "software_development"
+      ],
+      "relevant": [
+        "m015",
+        "m104",
+        "m090"
+      ]
+    },
+    {
+      "id": "q13",
+      "query": "A client sent a contract with a 12-month non-compete. Should I sign it?",
+      "keywords": [
+        "contract",
+        "non-compete clause",
+        "legal review",
+        "lawyer",
+        "contract terms",
+        "freelance contracts",
+        "negotiation"
+      ],
+      "categories": [
+        "legal"
+      ],
+      "relevant": [
+        "m190",
+        "m189",
+        "m187"
+      ]
+    },
+    {
+      "id": "q14",
+      "query": "Summarize the terms and conditions of this new service",
+      "keywords": [
+        "terms of service",
+        "summary format",
+        "privacy",
+        "data sharing",
+        "legal terms",
+        "subscriptions",
+        "auto-renewal"
+      ],
+      "categories": [
+        "legal",
+        "privacy_preferences",
+        "communication_style"
+      ],
+      "relevant": [
+        "m200"
+      ]
+    },
+    {
+      "id": "q15",
+      "query": "Build a settings screen for my SwiftUI app",
+      "keywords": [
+        "SwiftUI",
+        "Swift style",
+        "iOS",
+        "macOS",
+        "UI conventions",
+        "accessibility",
+        "architecture",
+        "state management",
+        "design"
+      ],
+      "categories": [
+        "software_development"
+      ],
+      "relevant": [
+        "m087",
+        "m075",
+        "m054"
+      ]
+    },
+    {
+      "id": "q16",
+      "query": "What should I get Jordan for their birthday?",
+      "keywords": [
+        "Jordan",
+        "gift ideas",
+        "birthday",
+        "partner",
+        "interests",
+        "hobbies",
+        "likes and dislikes",
+        "budget"
+      ],
+      "categories": [
+        "personal_preferences"
+      ],
+      "relevant": [
+        "m040",
+        "m044"
+      ]
+    },
+    {
+      "id": "q17",
+      "query": "My head hurts after a long day at the computer. Any advice?",
+      "keywords": [
+        "headache",
+        "migraine",
+        "eye strain",
+        "screen time",
+        "posture",
+        "breaks",
+        "sleep",
+        "hydration",
+        "stress",
+        "medication"
+      ],
+      "categories": [
+        "health"
+      ],
+      "relevant": [
+        "m137",
+        "m145",
+        "m149"
+      ]
+    },
+    {
+      "id": "q18",
+      "query": "How much should I put into savings and investments this month?",
+      "keywords": [
+        "savings",
+        "investments",
+        "budget",
+        "emergency fund",
+        "income",
+        "expenses",
+        "financial goals",
+        "retirement",
+        "risk tolerance"
+      ],
+      "categories": [
+        "finance"
+      ],
+      "relevant": [
+        "m161",
+        "m162",
+        "m160"
+      ]
+    },
+    {
+      "id": "q19",
+      "query": "Write the privacy policy for my iOS app",
+      "keywords": [
+        "privacy policy",
+        "data collection",
+        "analytics",
+        "tracking",
+        "App Store",
+        "GDPR",
+        "user data",
+        "app details"
+      ],
+      "categories": [
+        "legal",
+        "privacy_preferences",
+        "software_development"
+      ],
+      "relevant": [
+        "m194",
+        "m127"
+      ]
+    },
+    {
+      "id": "q20",
+      "query": "Help me write a message to my mum about my next visit",
+      "keywords": [
+        "mother",
+        "parents",
+        "family",
+        "language",
+        "tone",
+        "travel plans",
+        "visit"
+      ],
+      "categories": [
+        "communication_style",
+        "personal_preferences"
+      ],
+      "relevant": [
+        "m006",
+        "m043"
+      ]
+    },
+    {
+      "id": "q21",
+      "query": "Set up automated builds and tests for my open-source library",
+      "keywords": [
+        "continuous integration",
+        "CI",
+        "GitHub Actions",
+        "testing",
+        "build",
+        "open-source library",
+        "project",
+        "licence"
+      ],
+      "categories": [
+        "software_development",
+        "project_context"
+      ],
+      "relevant": [
+        "m070",
+        "m112"
+      ]
+    },
+    {
+      "id": "q22",
+      "query": "Where should I deploy the server for the booking app?",
+      "keywords": [
+        "hosting",
+        "deployment",
+        "server",
+        "cloud provider",
+        "infrastructure",
+        "Docker",
+        "booking app",
+        "backend",
+        "budget"
+      ],
+      "categories": [
+        "software_development",
+        "project_context"
+      ],
+      "relevant": [
+        "m071",
+        "m092"
+      ]
+    },
+    {
+      "id": "q23",
+      "query": "Prepare a quote for a three-week freelance engagement",
+      "keywords": [
+        "rate",
+        "pricing",
+        "day rate",
+        "availability",
+        "proposal",
+        "scope",
+        "payment terms",
+        "currency",
+        "VAT",
+        "contract"
+      ],
+      "categories": [
+        "finance",
+        "project_context",
+        "communication_style"
+      ],
+      "relevant": [
+        "m108",
+        "m107",
+        "m021"
+      ]
+    },
+    {
+      "id": "q24",
+      "query": "The landlord asked whether we'll stay in the flat after the contract ends",
+      "keywords": [
+        "lease",
+        "rental contract",
+        "rent",
+        "landlord",
+        "tenancy",
+        "notice period",
+        "housing",
+        "moving"
+      ],
+      "categories": [
+        "legal",
+        "finance"
+      ],
+      "relevant": [
+        "m185",
+        "m173"
+      ]
+    },
+    {
+      "id": "q25",
+      "query": "Write up the notes from today's standup",
+      "keywords": [
+        "meeting notes",
+        "standup",
+        "format",
+        "action items",
+        "team",
+        "project",
+        "summary"
+      ],
+      "categories": [
+        "communication_style",
+        "project_context"
+      ],
+      "relevant": [
+        "m008",
+        "m102"
+      ]
+    },
+    {
+      "id": "q26",
+      "query": "Can I paste the client's database schema into ChatGPT to debug a query?",
+      "keywords": [
+        "client data",
+        "confidentiality",
+        "NDA",
+        "privacy",
+        "AI tools",
+        "data sharing",
+        "database",
+        "security"
+      ],
+      "categories": [
+        "privacy_preferences",
+        "legal",
+        "project_context"
+      ],
+      "relevant": [
+        "m101",
+        "m126"
+      ]
+    },
+    {
+      "id": "q27",
+      "query": "Make slides for my Porto conference talk",
+      "keywords": [
+        "presentation",
+        "slides",
+        "talk",
+        "conference",
+        "presentation style",
+        "slide design",
+        "speaker notes"
+      ],
+      "categories": [
+        "communication_style",
+        "project_context"
+      ],
+      "relevant": [
+        "m016",
+        "m109"
+      ]
+    },
+    {
+      "id": "q28",
+      "query": "Find a recipe I can cook tonight in half an hour",
+      "keywords": [
+        "recipe",
+        "quick dinner",
+        "diet",
+        "dietary restrictions",
+        "allergies",
+        "cooking equipment",
+        "cuisine",
+        "measurement units"
+      ],
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "relevant": [
+        "m048",
+        "m027",
+        "m013"
+      ]
+    },
+    {
+      "id": "q29",
+      "query": "What should I pack for a day out on the water?",
+      "keywords": [
+        "boating",
+        "sailing",
+        "packing list",
+        "sun protection",
+        "weather",
+        "gear",
+        "water activities"
+      ],
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "relevant": [
+        "m156",
+        "m032"
+      ]
+    },
+    {
+      "id": "q30",
+      "query": "How much can we spend on remodelling the kitchen, and how will we pay for it?",
+      "keywords": [
+        "kitchen renovation",
+        "remodel",
+        "budget",
+        "savings",
+        "financing",
+        "loan",
+        "home improvement",
+        "costs"
+      ],
+      "categories": [
+        "finance",
+        "project_context"
+      ],
+      "relevant": [
+        "m105",
+        "m184"
+      ]
+    }
+  ]
+}

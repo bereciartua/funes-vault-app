@@ -6,4 +6,4 @@ Compares FTS5 BM25, Apple `NLEmbedding` / `NLContextualEmbedding`, hybrids, and 
 cd spikes/search && swift run -c release search-spike ../../Packages/FunesCore/Tests/FunesCoreTests/fixtures 10000
 ```
 
-`DUMP=1` adds per-query rankings; `RERANK=0` skips the slow re-rank step. The full run takes 10–20 minutes on an M1. Results and conclusions: [`spec/plans/spike-results.md`](../../spec/plans/spike-results.md); raw output: `run-1.md`, `run-2.md`.
+`MODE=2b` runs Spike 2b (open embedding models; see `../embeddings/README.md`), and `MODE=coreml` embeds with a Core ML model from Swift. `DUMP=1` adds per-query rankings; `RERANK=0` skips the slow re-rank step. The full run takes 10–20 minutes on an M1. Results and conclusions: [`spec/plans/spike-results.md`](../../spec/plans/spike-results.md); raw output: `run-1.md`, `run-2.md`.

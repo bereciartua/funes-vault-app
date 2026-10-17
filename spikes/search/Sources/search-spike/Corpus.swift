@@ -28,6 +28,8 @@ struct Doc {
     let body: String
     let kind: String
     let categories: [String]
+    /// For mixtures: the fixture memories whose sentences it contains.
+    var mixSources: [String] = []
 
     /// The id a hit counts as when scoring: a paraphrase counts as its source.
     var scoringId: String { sourceId ?? id }
@@ -125,7 +127,7 @@ func synthesize(from base: [Doc], total: Int, seed: UInt64 = 42) -> [Doc] {
             let picks = (0..<Int.random(in: 2...3, using: &rng)).map { _ in base.randomElement(using: &rng)! }
             let body = picks.map { sentences($0.body).randomElement(using: &rng)! }.joined(separator: " ")
             docs.append(Doc(id: "s\(n)", sourceId: nil, title: picks[0].title + " (misc)", body: body,
-                            kind: picks[0].kind, categories: picks[0].categories))
+                            kind: picks[0].kind, categories: picks[0].categories, mixSources: picks.map(\.id)))
         }
     }
     return docs

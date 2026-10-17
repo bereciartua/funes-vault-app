@@ -48,6 +48,28 @@ import Testing
         #expect(Set(memories.flatMap(\.categories)) == Self.categories)
     }
 
+    struct ExpandedQuery: Decodable {
+        let id: String
+        let query: String
+        let keywords: [String]
+        let categories: [String]
+        let relevant: [String]
+    }
+    struct ExpandedFile: Decodable { let queries: [ExpandedQuery] }
+
+    /// Spike 2b: the same 30 tasks with agent-supplied keywords and categories.
+    @Test func expandedQueriesMatchTheBaseQueries() throws {
+        let base = try load("queries-30", as: QueriesFile.self).queries
+        let expanded = try load("queries-30-expanded", as: ExpandedFile.self).queries
+        #expect(expanded.map(\.id) == base.map(\.id))
+        #expect(expanded.map(\.query) == base.map(\.query))
+        #expect(expanded.map(\.relevant) == base.map(\.relevant))
+        for q in expanded {
+            #expect((5...15).contains(q.keywords.count), "\(q.id)")
+            #expect((1...3).contains(q.categories.count) && Set(q.categories).isSubset(of: Self.categories), "\(q.id)")
+        }
+    }
+
     @Test func queriesPointAtExistingMemories() throws {
         let ids = Set(try load("memories-200", as: MemoriesFile.self).memories.map(\.id))
         let queries = try load("queries-30", as: QueriesFile.self).queries

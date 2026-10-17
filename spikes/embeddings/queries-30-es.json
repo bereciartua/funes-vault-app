@@ -1,0 +1,256 @@
+{
+  "note": "Spanish (Rioplatense) translations of queries-30, for the multilingual check in Spike 2b.",
+  "queries": [
+    {
+      "id": "q01",
+      "query": "Escribí un mensaje de commit para mi último cambio",
+      "relevant": [
+        "m059",
+        "m003"
+      ]
+    },
+    {
+      "id": "q02",
+      "query": "Planificá las cenas de la semana para mí",
+      "relevant": [
+        "m027",
+        "m136",
+        "m048"
+      ]
+    },
+    {
+      "id": "q03",
+      "query": "Redactá un correo para recordarle al tesorero del club de vela que la factura del mes pasado está vencida",
+      "relevant": [
+        "m170",
+        "m091",
+        "m005"
+      ]
+    },
+    {
+      "id": "q04",
+      "query": "Reservá pasajes de tren y alojamiento para un fin de semana en Oporto",
+      "relevant": [
+        "m031",
+        "m180"
+      ]
+    },
+    {
+      "id": "q05",
+      "query": "¿Qué debería pedir en un café esta tarde?",
+      "relevant": [
+        "m141",
+        "m024",
+        "m147"
+      ]
+    },
+    {
+      "id": "q06",
+      "query": "Armá un proyecto nuevo en Python que procese los extractos bancarios exportados",
+      "relevant": [
+        "m057",
+        "m097"
+      ]
+    },
+    {
+      "id": "q07",
+      "query": "Revisá este pull request del servicio de despacho de Nordwind",
+      "relevant": [
+        "m062",
+        "m100",
+        "m101"
+      ]
+    },
+    {
+      "id": "q08",
+      "query": "Sugerime un plan de carrera para las próximas cuatro semanas",
+      "relevant": [
+        "m146",
+        "m106",
+        "m153"
+      ]
+    },
+    {
+      "id": "q09",
+      "query": "Buscá un horario la semana que viene para una llamada de presentación con un posible cliente",
+      "relevant": [
+        "m035",
+        "m020"
+      ]
+    },
+    {
+      "id": "q10",
+      "query": "El médico quiere recetarme antibióticos. ¿Hay algo que debería saber?",
+      "relevant": [
+        "m135"
+      ]
+    },
+    {
+      "id": "q11",
+      "query": "Ayudame a juntar los papeles para la declaración de impuestos de este año",
+      "relevant": [
+        "m165",
+        "m166",
+        "m174"
+      ]
+    },
+    {
+      "id": "q12",
+      "query": "Ayudame a escribir una entrada de blog sobre cómo construí la app Harbor",
+      "relevant": [
+        "m015",
+        "m104",
+        "m090"
+      ]
+    },
+    {
+      "id": "q13",
+      "query": "Un cliente me mandó un contrato con una cláusula de no competencia de 12 meses. ¿Lo firmo?",
+      "relevant": [
+        "m190",
+        "m189",
+        "m187"
+      ]
+    },
+    {
+      "id": "q14",
+      "query": "Resumí los términos y condiciones de este servicio nuevo",
+      "relevant": [
+        "m200"
+      ]
+    },
+    {
+      "id": "q15",
+      "query": "Hacé una pantalla de ajustes para mi app en SwiftUI",
+      "relevant": [
+        "m087",
+        "m075",
+        "m054"
+      ]
+    },
+    {
+      "id": "q16",
+      "query": "¿Qué le regalo a Jordan para su cumpleaños?",
+      "relevant": [
+        "m040",
+        "m044"
+      ]
+    },
+    {
+      "id": "q17",
+      "query": "Me duele la cabeza después de un día largo frente a la computadora. ¿Algún consejo?",
+      "relevant": [
+        "m137",
+        "m145",
+        "m149"
+      ]
+    },
+    {
+      "id": "q18",
+      "query": "¿Cuánto debería destinar a ahorros e inversiones este mes?",
+      "relevant": [
+        "m161",
+        "m162",
+        "m160"
+      ]
+    },
+    {
+      "id": "q19",
+      "query": "Escribí la política de privacidad de mi app para iOS",
+      "relevant": [
+        "m194",
+        "m127"
+      ]
+    },
+    {
+      "id": "q20",
+      "query": "Ayudame a escribirle un mensaje a mi mamá sobre mi próxima visita",
+      "relevant": [
+        "m006",
+        "m043"
+      ]
+    },
+    {
+      "id": "q21",
+      "query": "Configurá compilaciones y pruebas automáticas para mi biblioteca de código abierto",
+      "relevant": [
+        "m070",
+        "m112"
+      ]
+    },
+    {
+      "id": "q22",
+      "query": "¿Dónde debería desplegar el servidor de la app de reservas?",
+      "relevant": [
+        "m071",
+        "m092"
+      ]
+    },
+    {
+      "id": "q23",
+      "query": "Prepará un presupuesto para un trabajo freelance de tres semanas",
+      "relevant": [
+        "m108",
+        "m107",
+        "m021"
+      ]
+    },
+    {
+      "id": "q24",
+      "query": "El dueño del departamento preguntó si nos vamos a quedar cuando termine el contrato",
+      "relevant": [
+        "m185",
+        "m173"
+      ]
+    },
+    {
+      "id": "q25",
+      "query": "Pasá en limpio las notas de la reunión diaria de hoy",
+      "relevant": [
+        "m008",
+        "m102"
+      ]
+    },
+    {
+      "id": "q26",
+      "query": "¿Puedo pegar el esquema de la base de datos del cliente en ChatGPT para depurar una consulta?",
+      "relevant": [
+        "m101",
+        "m126"
+      ]
+    },
+    {
+      "id": "q27",
+      "query": "Prepará las diapositivas para mi charla en la conferencia de Oporto",
+      "relevant": [
+        "m016",
+        "m109"
+      ]
+    },
+    {
+      "id": "q28",
+      "query": "Buscá una receta que pueda cocinar esta noche en media hora",
+      "relevant": [
+        "m048",
+        "m027",
+        "m013"
+      ]
+    },
+    {
+      "id": "q29",
+      "query": "¿Qué llevo para pasar un día en el agua?",
+      "relevant": [
+        "m156",
+        "m032"
+      ]
+    },
+    {
+      "id": "q30",
+      "query": "¿Cuánto podemos gastar en reformar la cocina y cómo lo vamos a pagar?",
+      "relevant": [
+        "m105",
+        "m184"
+      ]
+    }
+  ]
+}
