@@ -170,6 +170,21 @@ import Testing
         #expect(try await search.vaultSearch("packages pn", now: t0).first?.memoryID == pnpm.id)
     }
 
+    @Test func nearDuplicatesByCosine() async throws {
+        let v = try TestVault()
+        let tea = try v.memory("Tea", "green tea jasmine", kind: .fact)
+        try v.memory("Coffee", "black coffee espresso")
+        let indexer = EmbeddingIndexer(store: v.store, provider: FakeEmbedder())
+        try await indexer.embedPending()
+        let search = SearchService(store: v.store, indexer: indexer)
+        #expect(try await search.nearDuplicates(title: "Tea", body: "green tea jasmine", kind: .fact,
+                                                categoryNames: ["Personal preferences"]) == [tea.id])
+        #expect(try await search.nearDuplicates(title: "Tea", body: "green tea jasmine", kind: .fact,
+                                                categoryNames: ["Personal preferences"], excluding: tea.id).isEmpty)
+        #expect(try await SearchService(store: v.store, indexer: nil).nearDuplicates(title: "Tea", body: "x", kind: .fact,
+                                                                                    categoryNames: []).isEmpty)
+    }
+
     @Test func missingModelFilesFailToLoad() {
         #expect(throws: BundledBGEEmbedder.LoadError.self) { try BundledBGEEmbedder(directory: URL(fileURLWithPath: "/nonexistent")) }
     }

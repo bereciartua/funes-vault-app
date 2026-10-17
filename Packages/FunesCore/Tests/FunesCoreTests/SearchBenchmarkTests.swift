@@ -81,6 +81,24 @@ import Testing
                 times.append(ContinuousClock.now - s)
             }
             print("\(file): 200 memories embedded in \(embedTime); query embed p50 \(times.sorted()[times.count / 2])")
+            // Duplicate-hint threshold (memory processing §8): nearest-neighbour cosines between the
+            // 200 distinct fixture memories, and between each memory and a light rewording of it.
+            let fixtures = try Fixtures.memories()
+            var nearest: [Float] = []
+            for (a, fa) in fixtures.enumerated() {
+                let q = try #require(try await embedder.embed([fa.title + "\n" + fa.body], as: .document).first)
+                let cos = indexer.index.cosines(q)
+                nearest.append(fixtures.indices.filter { $0 != a }.map { cos[ids[fixtures[$0].id]!] ?? -1 }.max()!)
+            }
+            nearest.sort()
+            var reworded: [Float] = []
+            for f in fixtures.prefix(50) {
+                let docs = try await embedder.embed([f.title + "\n" + f.body, "Note: " + f.body.lowercased() + " Still true."], as: .document)
+                reworded.append(zip(docs[0], docs[1]).map(*).reduce(0, +))
+            }
+            reworded.sort()
+            print(String(format: "distinct nearest cosine: median %.3f, p99 %.3f, max %.3f; reworded: min %.3f, median %.3f",
+                         nearest[100], nearest[197], nearest[199], reworded[0], reworded[25]))
             for floor: Float in [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50] {
                 let h = SearchService(store: v.store, indexer: indexer, keywordFloor: floor)
                 let k = SearchService(store: v.store, indexer: nil, keywordFloor: floor)

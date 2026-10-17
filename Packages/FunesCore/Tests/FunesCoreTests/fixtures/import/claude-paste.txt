@@ -1,0 +1,9 @@
+# What Claude remembers
+
+- Prefers short answers
+* Uses Swift 6 with strict concurrency
+• Keeps a vegetarian diet
+1. Lives in Buenos Aires
+2) Has two cats
+
+Plain line without a bullet

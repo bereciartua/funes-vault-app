@@ -125,6 +125,21 @@ public final class SearchService: Sendable {
         return try await rank(text: text, pool: pool, prefix: false, threshold: \.retrievalThreshold, limit: nil)
     }
 
+    /// The duplicate hint's semantic half (memory processing §8): active memories whose raw cosine
+    /// with this text is at least `threshold` (0.92 for bge-small, re-checked in Phase 1). Empty
+    /// without a model. A hint only.
+    public func nearDuplicates(title: String, body: String, kind: MemoryKind, categoryNames: [String],
+                               excluding: UUID? = nil, threshold: Float = 0.92) async throws -> [UUID] {
+        guard let indexer, SecretScanner.scan([title, body]).isEmpty else { return [] }
+        let text = EmbeddingIndexer.embeddingText(title: title, kind: kind, categoryNames: categoryNames, body: body)
+        guard let v = try? await indexer.provider.embed([text], as: .document).first else { return [] }
+        let active = Set(try await store.writer.read { db in
+            try String.fetchAll(db, sql: "SELECT id FROM memory WHERE status = 'active'").compactMap(UUID.init(uuidString:))
+        })
+        return indexer.index.cosines(v).filter { $0.value >= threshold && active.contains($0.key) && $0.key != excluding }
+            .sorted { $0.value > $1.value }.map(\.key)
+    }
+
     private func rank(text: String, pool: [(id: UUID, updatedAt: Date)], prefix: Bool,
                       threshold: KeyPath<EmbeddingModelInfo, Float>, limit: Int?) async throws -> [SearchHit] {
         guard !pool.isEmpty else { return [] }

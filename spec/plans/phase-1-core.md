@@ -75,10 +75,10 @@
 - [x] Tests: `URLProtocol` contract fixtures per adapter; guardrail tests capturing outgoing bodies; fallbacks (timeout, 401, 429, 500, bad JSON).
 
 ### 1.10 Import and export · 2 h (S priority; can slip to Phase 3)
-- [ ] Parsers: ChatGPT JSON (tolerant), Claude paste, Markdown, `funesvault.export.v1`.
-- [ ] Preview model (counts, duplicates, blocked items) and commit as suggestions.
-- [ ] Export, writing `funesvault.export.v1`.
-- [ ] Tests: fixtures for each parser; export → import round trip; no keys in the export.
+- [x] Parsers: ChatGPT JSON (tolerant), Claude paste, Markdown, `funesvault.export.v1`.
+- [x] Preview model (counts, duplicates, blocked items) and commit as suggestions.
+- [x] Export, writing `funesvault.export.v1`.
+- [x] Tests: fixtures for each parser; export → import round trip; no keys in the export.
 
 ## Exit criteria
 - `swift test` passes on both packages; every policy test vector is implemented and green.
