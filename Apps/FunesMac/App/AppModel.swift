@@ -68,6 +68,7 @@ final class AppModel {
     var dataGeneration = 0
 
     let vault: VaultModel
+    let inboxState: InboxModel
     let checklist: ChecklistModel
 
     // MARK: Navigation
@@ -103,6 +104,7 @@ final class AppModel {
         self.services = services
         self.preferences = preferences
         vault = VaultModel(services: services)
+        inboxState = InboxModel(services: services)
         checklist = ChecklistModel(preferences: preferences)
         pausedUntil = services.pause.pausedUntil(at: Date())
         observation = services.store.observeChanges { [weak self] in
@@ -215,6 +217,17 @@ final class AppModel {
     func agentName(_ id: UUID) -> String {
         guard let agent = allAgents.first(where: { $0.id == id }) else { return String(localized: "an agent") }
         return agent.isRemoved ? String(localized: "Removed agent (\(agent.name))") : agent.name
+    }
+
+    /// A model provider's name for Inbox cards ("via Anthropic").
+    func providerName(_ id: String) -> String? {
+        switch id {
+        case "anthropic": "Anthropic"
+        case "openai": "OpenAI"
+        case "ollama": "Ollama"
+        case "lmstudio": "LM Studio"
+        default: nil
+        }
     }
 
     func categoryName(_ key: String) -> String { categories.first { $0.key == key }?.name ?? key }

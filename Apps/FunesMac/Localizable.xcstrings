@@ -73,10 +73,19 @@
     "%lld above its sensitivity limit" : {
 
     },
+    "%lld applied" : {
+
+    },
     "%lld archived" : {
 
     },
+    "%lld blocked by the secret scanner" : {
+
+    },
     "%lld changed" : {
+
+    },
+    "%lld couldn't be changed" : {
 
     },
     "%lld deleted permanently" : {
@@ -123,6 +132,9 @@
     "%lld of 10,000 characters" : {
 
     },
+    "%lld rejected" : {
+
+    },
     "%lld restored" : {
 
     },
@@ -135,7 +147,13 @@
     "%lld selected" : {
 
     },
+    "%lld suggestions waiting for you" : {
+
+    },
     "+%lld" : {
+
+    },
+    "1 suggestion waiting for you" : {
 
     },
     "A category with that name already exists." : {
@@ -195,6 +213,9 @@
     "Advanced" : {
 
     },
+    "After: %@" : {
+
+    },
     "Agents" : {
 
     },
@@ -231,6 +252,21 @@
     "Applied from the Inbox" : {
 
     },
+    "Applied “%@”. A similar memory exists." : {
+
+    },
+    "Applied. Similar memory exists:" : {
+
+    },
+    "Apply" : {
+
+    },
+    "Apply %lld" : {
+
+    },
+    "Apply (⌘⏎)" : {
+
+    },
     "Approval" : {
 
     },
@@ -249,6 +285,9 @@
     "Archived memories are kept, but never shared with agents." : {
 
     },
+    "Before: %@" : {
+
+    },
     "Built in" : {
 
     },
@@ -264,7 +303,16 @@
     "Captured on iPhone" : {
 
     },
+    "Captured on iPhone · %@" : {
+
+    },
     "Captured on this Mac" : {
+
+    },
+    "Captured on this Mac · %@" : {
+
+    },
+    "Captures" : {
 
     },
     "Categories" : {
@@ -276,10 +324,16 @@
     "Category" : {
 
     },
+    "Changes “%@”" : {
+
+    },
     "Check for Updates…" : {
 
     },
     "Choose at least one category." : {
+
+    },
+    "Cleanup suggestion · %@" : {
 
     },
     "Clear" : {
@@ -302,6 +356,16 @@
     },
     "Copy" : {
 
+    },
+    "Correction from %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Correction from %1$@ · %2$@"
+          }
+        }
+      }
     },
     "Correction suggested %@" : {
 
@@ -364,6 +428,9 @@
     "Description" : {
 
     },
+    "Deselect" : {
+
+    },
     "Dismiss" : {
 
     },
@@ -401,6 +468,9 @@
     "Expired" : {
 
     },
+    "Expired suggestions (%lld)" : {
+
+    },
     "Expires" : {
 
     },
@@ -423,6 +493,9 @@
 
     },
     "For this session" : {
+
+    },
+    "From agents" : {
 
     },
     "Funes Vault" : {
@@ -476,13 +549,31 @@
     "Imported from ChatGPT" : {
 
     },
+    "Imported from ChatGPT · %@" : {
+
+    },
     "Imported from Claude" : {
+
+    },
+    "Imported from Claude · %@" : {
 
     },
     "Imported from Markdown" : {
 
     },
+    "Imported from Markdown · %@" : {
+
+    },
     "Imported from a Funes export" : {
+
+    },
+    "Imported from a Funes export · %@" : {
+
+    },
+    "Imported · %@" : {
+
+    },
+    "Imports" : {
 
     },
     "Inbox" : {
@@ -521,10 +612,16 @@
     "It's the only category some agents may read. Choose a replacement, or change those agents first." : {
 
     },
+    "Keep Both" : {
+
+    },
     "Keeps it" : {
 
     },
     "Kept by the agent" : {
+
+    },
+    "Kept on this Mac: looked sensitive" : {
 
     },
     "Kind" : {
@@ -611,6 +708,9 @@
     "Nothing expired" : {
 
     },
+    "Nothing waiting" : {
+
+    },
     "Notifications" : {
 
     },
@@ -665,10 +765,29 @@
     "Project Context" : {
 
     },
+    "Proposed by %@" : {
+
+    },
+    "Proposed by %@ via %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Proposed by %1$@ via %2$@"
+          }
+        }
+      }
+    },
+    "Proposed on this Mac" : {
+
+    },
     "Public" : {
 
     },
     "Purpose" : {
+
+    },
+    "Purpose given by the agent: “%@”" : {
 
     },
     "Quit Funes Vault" : {
@@ -687,6 +806,12 @@
 
     },
     "Reject" : {
+
+    },
+    "Reject %lld" : {
+
+    },
+    "Reject (⌫ or ⌘⌫)" : {
 
     },
     "Relationship" : {
@@ -716,7 +841,13 @@
     "Rename…" : {
 
     },
+    "Replace" : {
+
+    },
     "Restore" : {
+
+    },
+    "Restore %@" : {
 
     },
     "Restored %@" : {
@@ -732,6 +863,9 @@
 
     },
     "Revert" : {
+
+    },
+    "Review Now" : {
 
     },
     "Save" : {
@@ -750,6 +884,9 @@
 
     },
     "Secret" : {
+
+    },
+    "Select %@" : {
 
     },
     "Select All" : {
@@ -860,10 +997,29 @@
     "Still True…" : {
 
     },
+    "Suggested by %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Suggested by %1$@ · %2$@"
+          }
+        }
+      }
+    },
     "Suggested by %@. It's in your Inbox either way." : {
 
     },
     "Suggested by an agent" : {
+
+    },
+    "Suggestion: %@" : {
+
+    },
+    "Suggestions expire after 30 days. You can restore them for 7 more." : {
+
+    },
+    "Suggestions from agents, captures and imports wait here until you apply or reject them." : {
 
     },
     "Summary" : {
@@ -965,10 +1121,22 @@
     "Why" : {
 
     },
+    "Why, as reported: “%@”" : {
+
+    },
     "Window" : {
 
     },
     "Work or project context. Share with agents you use for that work." : {
+
+    },
+    "Your Inbox is empty" : {
+
+    },
+    "Your answer · %@" : {
+
+    },
+    "Your answers" : {
 
     },
     "Your vault is empty" : {

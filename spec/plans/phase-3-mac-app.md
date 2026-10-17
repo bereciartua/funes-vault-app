@@ -18,8 +18,8 @@
 - [x] Bulk actions (S).
 
 ### 3.3 Inbox UI · 3 h
-- [ ] Cards by source, inline editing, Apply, Reject and Later, a duplicate hint, a correction diff with Replace or Keep both.
-- [ ] Multi-select bulk review with per-item results. Badge counts.
+- [x] Cards by source, inline editing, Apply, Reject and Later, a duplicate hint, a correction diff with Replace or Keep both.
+- [x] Multi-select bulk review with per-item results. Badge counts.
 
 ### 3.4 Agents UI · 4 h
 - [ ] Add-agent sheet with detected tiles (BridgeUI `AgentDetection`) and starting-access presets.

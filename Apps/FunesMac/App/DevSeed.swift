@@ -6,10 +6,10 @@ import os
 
 private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category: "dev-seed")
 
-/// Debug builds only, with `--dev-seed`: a few memories and a "Claude Code" agent (read and
-/// suggest, asking before sharing and saving) in an empty vault, for development and the
-/// Phase 2 live check until Phase 3's screens exist. Writes the agent's id (not its key) to
-/// `dev-seed.json` in the data folder; the key is in agent-keys/ as usual.
+/// Debug builds only, with `--dev-seed`: SampleData in an empty vault (memories in every state,
+/// agents including "Claude Code" with read and suggest, asking before sharing and saving, and
+/// Inbox items). Writes Claude Code's id (not its key) to `dev-seed.json` in the data folder; the
+/// key is in agent-keys/ as usual.
 enum DevSeed {
     static func runIfAsked(_ environment: VaultEnvironment) async {
         guard CommandLine.arguments.contains("--dev-seed") else { return }
@@ -19,27 +19,8 @@ enum DevSeed {
                 write(agentID: agent.id, to: environment.dataFolder)
                 return
             }
-            let now = Date()
-            for (title, body, category, sensitivity) in [
-                ("Prefers pnpm and Vitest", "Use pnpm for packages and Vitest for tests in TypeScript projects.",
-                 "software_development", Sensitivity.low),
-                ("Writes Swift 6", "New Mac code is Swift 6 with strict concurrency and Swift Testing.",
-                 "software_development", .low),
-                ("Commit messages", "Short imperative subject, details in the body, task ids in the subject.",
-                 "software_development", .low),
-                ("Coffee order", "Flat white with oat milk, no sugar.", "personal_preferences", .public),
-                ("Vegetarian", "Doesn't eat meat or fish; eggs and dairy are fine.", "personal_preferences", .low),
-                ("Funes launch", "Funes Vault v0.1 ships as a Mac preview first.", "project_context", .internal),
-                ("Penicillin allergy", "Allergic to penicillin since childhood.", "health", .sensitive),
-            ] {
-                _ = try environment.store.createMemory(MemoryDraft(title: title, body: body, categoryKeys: [category],
-                                                                   sensitivity: sensitivity), now: now)
-            }
-            let access = Access(operations: [.read, .suggest], maxSensitivity: .internal, askBeforeSharing: true,
-                                askBeforeSaving: true)
-            let (agent, _) = try await environment.agents.create(name: "Claude Code", kind: .claudeCode, access: access,
-                                                                 now: now)
-            write(agentID: agent.id, to: environment.dataFolder)
+            let agents = try await SampleData.fill(environment)
+            write(agentID: agents.claudeCode.id, to: environment.dataFolder)
             logger.notice("Seeded the development vault")
         } catch {
             logger.error("Seeding the development vault failed")

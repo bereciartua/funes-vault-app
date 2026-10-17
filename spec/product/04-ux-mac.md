@@ -97,7 +97,7 @@ A card at the top of the Vault:
 | Secret | Never shared with agents unless you raise an agent's ceiling to Secret. |
 
 ### Inbox
-- **Sections:** From agents · Captures · Imports · (later) Cleanup suggestions.
+- **Sections:** From agents · Captures · Imports · Your answers (seed questions) · (later) Cleanup suggestions. Expired suggestions (FR-I-05) sit at the end with Restore.
 - **Item card:**
   - source line ("Suggested by Claude Code · 10:31", "Captured on iPhone · yesterday", "Imported from ChatGPT");
   - proposed title and body, editable inline;
@@ -105,7 +105,7 @@ A card at the top of the Vault:
   - evidence, if the agent provided it, shown as quoted data;
   - a duplicate hint, when it applies;
   - the engine that proposed the fields ("Proposed on this Mac", "Proposed by Claude via Anthropic", "Kept on this Mac: looked sensitive").
-- **Actions:** Apply (⌘⏎), Reject (⌫), Later. Multi-select gives "Apply 12" and "Reject 12".
+- **Actions:** Apply (⌘⏎), Reject (⌫ when no field is being edited, ⌘⌫ anytime), Later. Click a card to make it the one the keys act on. Multi-select gives "Apply 12" and "Reject 12", with per-item results ("12 applied, 1 blocked by the secret scanner").
 - **Correction suggestions:** when a suggestion references an existing memory, the card shows a diff (old → new) with **Replace** and **Keep both**.
 
 ### Agents
