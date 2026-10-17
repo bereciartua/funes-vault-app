@@ -10,9 +10,9 @@
 
 ## Tasks
 ### 1.1 Models and enums (FunesProtocol + FunesCore) · 2 h
-- [ ] Enums: `MemoryKind`, `Sensitivity` (ordered, `Comparable`), `Operation`, `Retention`, `DisclosureStatus`, `SuggestionStatus`, `ReasonCode`, `MemorySource`, `SuggestionOrigin`.
-- [ ] Value types: `Memory`, `Category`, `Suggestion`, `Agent`, `Access`, `Disclosure`, `DisclosureItem`, `Device`, `ProvenanceEntry`.
-- [ ] `InputLimits` constants (title 180, body 10,000, task 1,000, keywords 20×60, purpose 160, evidence 2,000, categories 12/24, processors 12×120, tokens 100–8,000, default 1,200).
+- [x] Enums: `MemoryKind`, `Sensitivity` (ordered, `Comparable`), `Operation` (`AccessOperation` in Swift, since `Operation` clashes with Foundation), `Retention`, `DisclosureStatus`, `SuggestionStatus`, `ReasonCode`, `MemorySource`, `SuggestionOrigin`.
+- [x] Value types (`Memory` and `Category` in FunesProtocol, the rest in FunesCore): `Memory`, `Category`, `Suggestion`, `Agent`, `Access`, `Disclosure`, `DisclosureItem`, `Device`, `ProvenanceEntry`.
+- [x] `InputLimits` constants, counting Unicode scalars like SQLite's `length()` (title 180, body 10,000, task 1,000, keywords 20×60, purpose 160, evidence 2,000, categories 12/24, processors 12×120, tokens 100–8,000, default 1,200).
 
 ### 1.2 Store (GRDB) · 4 h
 - [ ] `VaultStore` with a `DatabasePool`, the migrator and `v1_initial` (the [schema](../architecture/storage.md#2-schema-v1)).
