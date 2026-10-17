@@ -72,6 +72,16 @@
     "%@ can't suggest memories." : {
 
     },
+    "%@ connected %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ connected %2$@"
+          }
+        }
+      }
+    },
     "%@ couldn't be started." : {
 
     },
@@ -145,7 +155,13 @@
         }
       }
     },
+    "%@, done" : {
+
+    },
     "%@, on this Mac" : {
+
+    },
+    "%lld" : {
 
     },
     "%lld above its sensitivity limit" : {
@@ -176,6 +192,9 @@
 
     },
     "%lld in categories it can't read" : {
+
+    },
+    "%lld memories restored." : {
 
     },
     "%lld memories selected" : {
@@ -213,6 +232,9 @@
     "%lld of 10,000 characters" : {
 
     },
+    "%lld of 4" : {
+
+    },
     "%lld rejected" : {
 
     },
@@ -228,10 +250,16 @@
     "%lld selected" : {
 
     },
+    "%lld suggestions are in your Inbox." : {
+
+    },
     "%lld suggestions waiting for you" : {
 
     },
     "%lld withheld" : {
+
+    },
+    "%lld, never imported" : {
 
     },
     "%lld. %@" : {
@@ -257,6 +285,9 @@
 
     },
     "7 days" : {
+
+    },
+    "A Few Questions" : {
 
     },
     "A category with that name already exists." : {
@@ -355,6 +386,9 @@
     "Add an Agent" : {
 
     },
+    "Add an agent" : {
+
+    },
     "Add the %@ entry under context_servers." : {
 
     },
@@ -377,6 +411,9 @@
 
     },
     "Added by you" : {
+
+    },
+    "Add…" : {
 
     },
     "Advanced" : {
@@ -476,7 +513,16 @@
     "Answer a Few Questions" : {
 
     },
+    "Answer a Few Questions…" : {
+
+    },
+    "Answer a few questions or import from ChatGPT or Claude." : {
+
+    },
     "Answer a few questions to get started, or press ⌥⌘M anytime to remember something." : {
+
+    },
+    "Answer any you like. Each answer goes to your Inbox, where you can edit it before it becomes a memory." : {
 
     },
     "Answered a question" : {
@@ -519,6 +565,9 @@
     "Apply (⌘⏎)" : {
 
     },
+    "Apply what's right." : {
+
+    },
     "Approval" : {
 
     },
@@ -544,6 +593,9 @@
 
     },
     "Archived memories are kept, but never shared with agents." : {
+
+    },
+    "Are there practical constraints that often shape your work or availability?" : {
 
     },
     "Ask before saving" : {
@@ -639,7 +691,19 @@
     "Checked a request" : {
 
     },
+    "Choose File…" : {
+
+    },
+    "Choose a Markdown file. Headings that match a category's name file the items under them; bullets and paragraphs become suggestions." : {
+
+    },
+    "Choose a funesvault.export.v1 file. Its memories come in as suggestions, or as memories if you choose so below. It never brings agents or access." : {
+
+    },
     "Choose at least one category." : {
+
+    },
+    "Choose the memories file from your ChatGPT data export (JSON). Each memory becomes a suggestion." : {
 
     },
     "Claude Code" : {
@@ -648,10 +712,16 @@
     "Claude Code's claude command wasn't found on this Mac." : {
 
     },
+    "Claude Code, Cursor, Codex or another MCP client." : {
+
+    },
     "Claude Desktop" : {
 
     },
     "Claude Desktop's custom connectors run from Anthropic's cloud and can't reach this Mac, so use this local setup instead." : {
+
+    },
+    "Claude memories" : {
 
     },
     "Cleanup suggestion · %@" : {
@@ -694,6 +764,9 @@
 
     },
     "Connect" : {
+
+    },
+    "Connect it" : {
 
     },
     "Connected · %@" : {
@@ -846,6 +919,9 @@
     "Done" : {
 
     },
+    "Done when its first request arrives." : {
+
+    },
     "Downloads" : {
 
     },
@@ -933,6 +1009,12 @@
 
     },
     "For this session" : {
+
+    },
+    "Found" : {
+
+    },
+    "Found on this Mac: %@" : {
 
     },
     "From" : {
@@ -1025,13 +1107,37 @@
     "Header" : {
 
     },
+    "Hide" : {
+
+    },
     "Hide Funes Vault" : {
 
     },
     "History" : {
 
     },
+    "How do you like AI assistants to collaborate with you?" : {
+
+    },
     "Import" : {
+
+    },
+    "Import ChatGPT Memories" : {
+
+    },
+    "Import ChatGPT Memories…" : {
+
+    },
+    "Import a Funes Vault Export" : {
+
+    },
+    "Import a Markdown File" : {
+
+    },
+    "Import a Markdown File…" : {
+
+    },
+    "Import likely duplicates too" : {
 
     },
     "Imported %lld items" : {
@@ -1065,6 +1171,9 @@
 
     },
     "Imports" : {
+
+    },
+    "In Claude, open Settings ▸ Capabilities ▸ Memory, copy what's there, and paste it here. Each line or bullet becomes a suggestion." : {
 
     },
     "In Cline, open MCP Servers and click Configure MCP Servers." : {
@@ -1181,10 +1290,22 @@
     "Let it ask for more access" : {
 
     },
+    "Likely duplicates" : {
+
+    },
     "Listed categories" : {
 
     },
     "Local server" : {
+
+    },
+    "Long items:" : {
+
+    },
+    "Longer than 10,000 characters" : {
+
+    },
+    "Look like secrets" : {
 
     },
     "Looked like a secret" : {
@@ -1254,6 +1375,9 @@
 
     },
     "New captures" : {
+
+    },
+    "New categories" : {
 
     },
     "New key issued. The old one no longer works." : {
@@ -1340,6 +1464,9 @@
     "Nothing to change: it's already set up." : {
 
     },
+    "Nothing to import was found." : {
+
+    },
     "Nothing waiting" : {
 
     },
@@ -1379,6 +1506,12 @@
     "Open Funes Vault at login" : {
 
     },
+    "Open Inbox" : {
+
+    },
+    "Open Inbox (%lld)" : {
+
+    },
     "Open Settings ▸ Tools ▸ AI Assistant ▸ Model Context Protocol (MCP)." : {
 
     },
@@ -1398,6 +1531,12 @@
 
     },
     "Paste" : {
+
+    },
+    "Paste Claude Memories" : {
+
+    },
+    "Paste Claude Memories…" : {
 
     },
     "Pause" : {
@@ -1440,6 +1579,9 @@
 
     },
     "Press the new shortcut…" : {
+
+    },
+    "Preview" : {
 
     },
     "Previous request" : {
@@ -1523,6 +1665,9 @@
       }
     },
     "Reads everything %@" : {
+
+    },
+    "Ready" : {
 
     },
     "Recently Deleted" : {
@@ -1636,6 +1781,12 @@
     "Restore %@" : {
 
     },
+    "Restore %lld" : {
+
+    },
+    "Restore as memories, not suggestions" : {
+
+    },
     "Restored %@" : {
 
     },
@@ -1661,6 +1812,9 @@
 
     },
     "Review Now" : {
+
+    },
+    "Review your Inbox" : {
 
     },
     "Review…" : {
@@ -1699,6 +1853,16 @@
     "Saved a memory" : {
 
     },
+    "Saved as %@ in %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Saved as %1$@ in %2$@"
+          }
+        }
+      }
+    },
     "Saved by an agent" : {
 
     },
@@ -1720,6 +1884,9 @@
     "Secret" : {
 
     },
+    "Seed your vault" : {
+
+    },
     "Select %@" : {
 
     },
@@ -1733,6 +1900,12 @@
 
     },
     "Select text in any app, then choose Services ▸ Remember in Funes. It goes to your Inbox." : {
+
+    },
+    "Send %lld to Inbox" : {
+
+    },
+    "Send to Inbox" : {
 
     },
     "Sensitive" : {
@@ -1760,7 +1933,13 @@
         }
       }
     },
+    "Set up Funes Vault" : {
+
+    },
     "Set up for" : {
+
+    },
+    "Settings ▸ Advanced brings it back" : {
 
     },
     "Settings…" : {
@@ -1813,10 +1992,16 @@
     "Shortcut" : {
 
     },
+    "Shorten Them" : {
+
+    },
     "Show" : {
 
     },
     "Show All" : {
+
+    },
+    "Show Setup" : {
 
     },
     "Show all" : {
@@ -1878,6 +2063,12 @@
 
     },
     "Space" : {
+
+    },
+    "Split Them" : {
+
+    },
+    "Start" : {
 
     },
     "Start %@ when VS Code asks." : {
@@ -1956,6 +2147,15 @@
     "That category no longer exists." : {
 
     },
+    "That file doesn't hold ChatGPT memories Funes can read." : {
+
+    },
+    "That file is over 20 MB." : {
+
+    },
+    "That isn't a Funes Vault export." : {
+
+    },
     "That name can't be used for a category." : {
 
     },
@@ -1975,6 +2175,9 @@
 
     },
     "The copy's signature didn't check out, so it was moved to the Trash." : {
+
+    },
+    "The file couldn't be read." : {
 
     },
     "The key file couldn't be read. Rotate the key to make a new one." : {
@@ -2008,6 +2211,9 @@
 
     },
     "There's no text to remember." : {
+
+    },
+    "They skip the Inbox. Only do this with your own export." : {
 
     },
     "They're removed for good, with their history. This can't be undone." : {
@@ -2115,7 +2321,19 @@
     "What it can do" : {
 
     },
+    "What long-term goals should assistants keep in mind when helping you?" : {
+
+    },
+    "What should Funes be especially careful not to share casually?" : {
+
+    },
     "What should Funes remember?" : {
+
+    },
+    "What should coding assistants know about how you build software?" : {
+
+    },
+    "What tone, level of detail, or format do you usually prefer?" : {
 
     },
     "When VS Code asks for the %@, paste it from %@." : {
@@ -2132,6 +2350,9 @@
 
     },
     "When a request is refused only because a category isn't allowed, Funes asks you: Not Now, Allow Once or Always Allow. Never for the sensitivity limit or denied categories." : {
+
+    },
+    "Which current projects should your vault remember, and why do they matter?" : {
 
     },
     "Why" : {
@@ -2173,7 +2394,13 @@
     "You rejected a suggestion" : {
 
     },
+    "You're all set" : {
+
+    },
     "Your Inbox is empty" : {
+
+    },
+    "Your answer" : {
 
     },
     "Your answer · %@" : {

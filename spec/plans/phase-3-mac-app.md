@@ -41,10 +41,10 @@
 - [x] Classification through `ModelRouter` (default Foundation Models, with rules as a fallback; or the user's chosen provider), run asynchronously, with the engine shown on Inbox cards.
 
 ### 3.8 Onboarding · 2 h
-- [ ] Setup checklist card.
-- [ ] Seed-questions sheet (7 prompts) that creates suggestions.
-- [ ] Import entry points: ChatGPT file, Claude paste, Markdown (if 1.10 is done).
-- [ ] The checklist completes on the first agent request.
+- [x] Setup checklist card.
+- [x] Seed-questions sheet (7 prompts) that creates suggestions.
+- [x] Import entry points: ChatGPT file, Claude paste, Markdown (if 1.10 is done).
+- [x] The checklist completes on the first agent request.
 
 ### 3.8b AI Models settings · 3 h
 - [ ] A per-task provider and model picker with locality badges; a providers list (add or edit, base URL, Keychain-stored key, **Test connection**).

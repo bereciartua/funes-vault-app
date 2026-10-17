@@ -30,6 +30,12 @@ struct MainView: View {
             .frame(minWidth: 600, maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: MainWindowController.minimumSize.width, minHeight: MainWindowController.minimumSize.height)
+        .sheet(isPresented: Binding(get: { model.checklist.showSeedQuestions }, set: { model.checklist.showSeedQuestions = $0 })) {
+            SeedQuestionsSheet(model: model)
+        }
+        .sheet(item: Binding(get: { model.checklist.showImport }, set: { model.checklist.showImport = $0 })) { kind in
+            ImportSheet(model: model, kind: kind)
+        }
     }
 
     private func badge(_ section: AppSection) -> Int {

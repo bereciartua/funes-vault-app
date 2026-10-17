@@ -58,6 +58,8 @@ final class AppModel {
     var inbox: [Suggestion] = []
     var pending: [PendingRequest] = []
     var categories: [MemoryCategory] = []
+    /// Whether the vault has any active memory (the checklist and empty states).
+    var hasMemories = false
     /// The Inbox is waiting on a decision; drives the menu bar's "needs you" state with `pending`.
     var inboxCount: Int { inbox.count }
     /// Updated once a minute, for "2 min ago" and countdowns.
@@ -192,6 +194,7 @@ final class AppModel {
                            status: $0.status, createdAt: $0.createdAt)
         }
         categories = (try? services.store.categories()) ?? []
+        hasMemories = !((try? services.store.memories(MemoryFilter(status: .activeIncludingExpired), now: now, limit: 1)) ?? []).isEmpty
         dataGeneration += 1
         checklist.update(model: self)
         changed()
