@@ -9,33 +9,33 @@
 ## Part A: BridgeKitCore (weekend 1)
 
 ### 2.1 Create the BridgeKit repo · 1 h
-- [ ] `bereciartua/bridgekit`, Apache-2.0, `Package.swift` with product `BridgeKitCore`, macOS 14+, no dependencies.
-- [ ] CI: `swift test` on macOS, and the reference harness (2.4).
+- [ ] `bereciartua/bridgekit`, Apache-2.0, `Package.swift` with product `BridgeKitCore`, macOS 14+, no dependencies. *(Created locally at `../bridgekit`; the GitHub repository is the user's call.)*
+- [x] CI: `swift test` on macOS, and the reference harness (2.4). *(Workflow written; runs once the repository is on GitHub.)*
 
 ### 2.2 Move the tier-1 code · 4 h
-- [ ] Move the files listed in [EK Bridge reuse §1](../architecture/ek-bridge-reuse.md#1-tier-1-bridgekitcore-shared-library-extracted-in-funes-phase-2) and record their source commit in `PROVENANCE.md`.
-- [ ] Introduce `BridgeConfiguration`, `BridgeOperation`, `AgentAuthenticator`, `BridgeHandler` and `ToolRegistry`.
-- [ ] Remove every reference to `BridgeCommand`, EventKit and `ekb_` constants.
-- [ ] Make public only what the apps need. Keep everything else internal.
+- [x] Move the files listed in [EK Bridge reuse §1](../architecture/ek-bridge-reuse.md#1-tier-1-bridgekitcore-shared-library-extracted-in-funes-phase-2) and record their source commit in `PROVENANCE.md`.
+- [x] Introduce `BridgeConfiguration`, `BridgeOperation`, `AgentAuthenticator`, `BridgeHandler` and `ToolRegistry`.
+- [x] Remove every reference to `BridgeCommand`, EventKit and `ekb_` constants.
+- [x] Make public only what the apps need. Keep everything else internal.
 
 ### 2.3 Move the tests · 2 h
-- [ ] Convert EK Bridge's `@main` test executables for these files to Swift Testing in `Tests/BridgeKitCoreTests` (HTTP parsing, JSON-RPC, schema validator, rate limiter, key digest and verify, safe file loading, config writer, launcher listener verification).
+- [x] Convert EK Bridge's `@main` test executables for these files to Swift Testing in `Tests/BridgeKitCoreTests` (HTTP parsing, JSON-RPC, schema validator, rate limiter, key digest and verify, safe file loading, config writer, launcher listener verification).
 
 ### 2.4 Reference harness · 1 h
-- [ ] A tiny reference server in `Tests/harness` (an echo tool plus a write tool) built on BridgeKitCore. Run EK Bridge's `mcp_test.py` and `launcher_test.py`, generalized, against it.
-- [ ] Tag **`0.1.0`**.
+- [x] A tiny reference server in `Tests/harness` (an echo tool plus a write tool) built on BridgeKitCore. Run EK Bridge's `mcp_test.py` and `launcher_test.py`, generalized, against it.
+- [ ] Tag **`0.1.0`**. *(The user's call, after publishing.)*
 
 ## Part B: EK Bridge adopts BridgeKitCore (weekend 2, first half)
 
 ### 2.5 Switch EK Bridge · 4 h
-- [ ] `build.sh`: build `BridgeKitCore` (universal) and link it into the app and `bridge-mcp` ([reuse §7](../architecture/ek-bridge-reuse.md#7-ek-bridges-adoption-the-proof-step)).
-- [ ] Delete the moved sources and `import BridgeKitCore`. Adapt `ClientRegistry` behind `AgentAuthenticator` and the pipeline behind `BridgeHandler`.
-- [ ] **Proof:** these must all pass, unchanged:
+- [x] `build.sh`: build `BridgeKitCore` (universal) and link it into the app and `bridge-mcp` ([reuse §7](../architecture/ek-bridge-reuse.md#7-ek-bridges-adoption-the-proof-step)).
+- [x] Delete the moved sources and `import BridgeKitCore`. Adapt `ClientRegistry` behind `AgentAuthenticator` and the pipeline behind `BridgeHandler`.
+- [ ] **Proof:** these must all pass, unchanged: *(all green on EK Bridge's `bridgekit-adoption` branch except the live Claude Code check, which needs Calendar access granted in a GUI session; `test.sh`'s compile lists changed, its tests didn't)*
   - the golden `tools.json`;
   - `mcp_test.py`, `launcher_test.py`, `cli_test.py`;
   - `ui_test.sh`;
   - a live Claude Code check.
-- [ ] Release EK Bridge as a patch version ("internal: uses BridgeKit"). Users see no change.
+- [ ] Release EK Bridge as a patch version *(release branch and notes prepared; the release is the user's call)* ("internal: uses BridgeKit"). Users see no change.
 
 ## Part C: Funes MCP (weekend 2, second half, and weekend 3)
 
@@ -46,7 +46,7 @@
 ### 2.7 Tool contract · 2 h
 *The contract, pipeline, handlers and the `FUNES_MCP_TEST` server live in `Packages/FunesMCP` ([ADR-0017](../architecture/decisions/0017-funes-mcp-package.md)); the contract is `Packages/FunesMCP/Sources/FunesMCP/Resources/mcp-tools.json`.*
 - [x] `Resources/mcp-tools.json`: server instructions, the 5 tools, schemas, annotations ([MCP spec](../architecture/mcp-server.md#6-tools)), including the optional `keywords` on `request_memory` and the description asking for them ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md)).
-- [ ] Live check: record whether Claude Code, Claude Desktop, Cursor and Codex send `keywords`, and sample what they send; tune the description from that.
+- [ ] Live check: record whether Claude Code, Claude Desktop, Cursor and Codex send `keywords`, and sample what they send; tune the description from that. *(Claude Code and Codex: yes, 7–9 each, [samples](spike-results.md#phase-2-live-check-agents-on-the-real-mcp-server); the description stays. Claude Desktop and Cursor: by hand.)*
 - [x] Golden fixture and a byte-for-byte test. Implement `visibleTools(access:)`.
 
 ### 2.8 Handlers and pipeline · 5 h
@@ -77,6 +77,17 @@
   - request memory (panel approve, panel deny, timeout then get);
   - suggest a memory into the Inbox.
 - **Funes's golden tool fixture and Python harness** are green in CI.
+
+### Still to do by hand (2026-10-17)
+The automated part of the live check passed ([results](spike-results.md#phase-2-live-check-agents-on-the-real-mcp-server)). These need a person at the Mac:
+1. **Funes, Share panel by hand:** run the Debug app with a development vault, then point Claude Code at it:
+   ```bash
+   FUNES_DATA_DIR=/tmp/funes-dev build/DerivedData/Build/Products/Debug/FunesVault.app/Contents/MacOS/FunesVault --dev-seed
+   ```
+   Then ask Claude Code for your TypeScript preferences. Click **Share 3** in the panel, and the next time **Deny**, and see that Claude Code gets `delivered` and `denied`. The agent id is in `dev-seed.json`; the MCP config is `{"command": ".../funes-mcp", "args": ["--agent", "<id>"], "env": {"FUNES_DATA_DIR": "/tmp/funes-dev"}}`.
+2. **Funes, the panel's look:** check the Share panel (rows, badges, countdown, Share N) and the Save panel in light and dark mode, and with VoiceOver.
+3. **Funes, Claude Desktop and Cursor:** do they send `keywords`, and do they wait 45 s? (Spike 3's open rows too.)
+4. **EK Bridge:** the live Claude Code check on the `bridgekit-adoption` branch (`scripts/live_test.sh`), then the release.
 
 ## If extraction runs long
 - The fallback is to copy tier 1 into Funes as well, as in ADR-0008, and finish the extraction after Funes v0.1.

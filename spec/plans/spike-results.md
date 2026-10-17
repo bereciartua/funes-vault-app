@@ -354,3 +354,24 @@ Fallback, unchanged from the plan: if Claude Desktop or Cursor turns out to cut 
   - Xcode 26's SwiftPM (the native build system) makes no `.a` for an automatic library product when building one architecture, and keeps modules in `Modules/`. BridgeKitCore's product is declared `.static`, and the script picks the module folder.
   - In Swift 6 language mode, `MainActor.assumeIsolated` traps when a host drains the main queue with `dispatchMain()` (off the main thread). BridgeKitCore hops with `Task { @MainActor in … }`; test servers run the main run loop.
 
+## Phase 2 live check: agents on the real MCP server
+**Run:** 2026-10-17, Debug build, a development vault (`FUNES_DATA_DIR`, `--dev-seed`), Claude Code 2.1.288 and Codex CLI headless with per-run configs (no global config changed).
+
+| Check | How | Result |
+|---|---|---|
+| `funes-mcp check` against the running app | launcher → endpoint file → listener verification (same user, Funes's bundle ID, holds the socket) → `server/discover`, `tools/list`, probe | **Pass:** key file 0600, key accepted for agent "Claude Code", 5 tools, "Funes Vault is on" |
+| Claude Code connects through `funes-mcp` and lists categories | stdio launcher → real app | **Pass** |
+| Codex connects through `funes-mcp`, requests memory, panel times out | stdio launcher → real app; nobody clicks | **Pass:** the Share panel was on screen (window list) for 45 s; `needs_approval` with the Spike 3 wording; Codex said "Waiting for your approval in Funes." |
+| Request, approved in the panel | Claude Code → FUNES_MCP_TEST server (HTTP), fake responder allows | **Pass:** `delivered` in the call; Claude Code answered from it and relayed the withheld count |
+| Request, denied | same, responder denies | **Pass:** `denied_by_user`; Claude Code said it won't ask again unless told |
+| Timeout, then `get_memory_request` | same, no answer for 45 s; approved afterwards; the session resumed (`claude -p --resume`) as its timer would | **Pass:** `needs_approval` at 45.1 s; Claude Code relayed the sentence and backgrounded `sleep 60` (as in Spike 3); resumed, it called `get_memory_request` with the right `request_id`, got `delivered` and answered from it |
+| Suggest into the Inbox | Claude Code as a suggest-only agent | **Pass:** `queued`, in the Inbox, the Save panel shown; Claude Code said it waits for the user's review |
+| Panel approve and deny **by a person, in the real app** | — | **Not run:** this session has no Accessibility or Screen Recording permission, so it can't click or see the panel. Left for the user (checklist in the Phase 2 plan) |
+
+**Do agents send `keywords`?** Yes, unprompted, every time:
+- **Claude Code:** 7–8 keywords per request, mixing kinds of context and candidate values, for example `["preferred package manager", "preferred test framework", "TypeScript preferences", "JavaScript tooling", "npm pnpm yarn bun", "Jest Vitest", "coding conventions"]`. It also sent a `purpose`, and once a `categories` narrowing after `list_memory_categories`.
+- **Codex:** 9 keywords, `["TypeScript project", "package manager preference", "test framework preference", "npm", "pnpm", "yarn", "bun", "Vitest", "Jest"]`, plus `categories: ["software_development"]`, `retention: "none"` and `max_tokens: 500`.
+- Both guess candidate values (`pnpm`, `Vitest`) besides kinds of context. That helps keyword retrieval, and the policy never depends on it. The description stays as it is; Claude Desktop and Cursor remain to be checked by hand.
+
+**Found and fixed during the check:** a 45 s in-call wait ran to about 47 s, and a 55 s timeout could have run past 60 s. `Task.sleep` without a tolerance lets the system coalesce long timers by several percent. FunesCore's wait and BridgeKitCore's call timeout now pass an explicit 100 ms tolerance: 45 s → 45.1 s.
+
