@@ -22,8 +22,8 @@
 - [ ] Tests: migration from empty; invariants; FTS stays in sync on insert, update and delete.
 
 ### 1.3 SecretScanner (FunesProtocol) · 1 h
-- [ ] The [patterns](../domain/memory-processing.md#1-secret-scanner), including the Luhn check.
-- [ ] Tests: positive and negative samples per pattern, plus 20 realistic non-secret memories that must pass.
+- [x] The [patterns](../domain/memory-processing.md#1-secret-scanner), including the Luhn check.
+- [x] Tests: positive and negative samples per pattern, plus 20 realistic non-secret memories that must pass.
 
 ### 1.4 Search and embeddings · 5 h ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md))
 - [ ] `scripts/fetch_embedding_model.sh`: download `BAAI/bge-small-en-v1.5` at a pinned revision, verify SHA-256, convert with coremltools (fp16 ML Program, CLS pooling + L2 normalization inside, enumerated lengths 16–256), verify the output checksum; cache outside git (start from `spikes/embeddings/`). Try int8 weights; keep only if recall holds.
