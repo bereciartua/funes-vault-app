@@ -46,7 +46,7 @@
 ### 2.7 Tool contract · 2 h
 *The contract, pipeline, handlers and the `FUNES_MCP_TEST` server live in `Packages/FunesMCP` ([ADR-0017](../architecture/decisions/0017-funes-mcp-package.md)); the contract is `Packages/FunesMCP/Sources/FunesMCP/Resources/mcp-tools.json`.*
 - [x] `Resources/mcp-tools.json`: server instructions, the 5 tools, schemas, annotations ([MCP spec](../architecture/mcp-server.md#6-tools)), including the optional `keywords` on `request_memory` and the description asking for them ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md)).
-- [ ] Live check: record whether Claude Code, Claude Desktop, Cursor and Codex send `keywords`, and sample what they send; tune the description from that. *(Claude Code and Codex: yes, 7–9 each, [samples](spike-results.md#phase-2-live-check-agents-on-the-real-mcp-server); the description stays. Claude Desktop and Cursor: by hand.)*
+- [x] Live check: record whether Claude Code, Claude Desktop, Cursor and Codex send `keywords`, and sample what they send; tune the description from that. *(All four send them: Claude Code and Codex 7–9 each, [samples](spike-results.md#phase-2-live-check-agents-on-the-real-mcp-server); Claude Desktop and Cursor checked by hand. The description stays.)*
 - [x] Golden fixture and a byte-for-byte test. Implement `visibleTools(access:)`.
 
 ### 2.8 Handlers and pipeline · 5 h
@@ -80,13 +80,13 @@
 
 ### Still to do by hand (2026-10-17)
 The automated part of the live check passed ([results](spike-results.md#phase-2-live-check-agents-on-the-real-mcp-server)). These need a person at the Mac:
-1. **Funes, Share panel by hand:** run the Debug app with a development vault, then point Claude Code at it:
+1. **Done 2026-10-17. Funes, Share panel by hand:** run the Debug app with a development vault, then point Claude Code at it:
    ```bash
    FUNES_DATA_DIR=/tmp/funes-dev build/DerivedData/Build/Products/Debug/FunesVault.app/Contents/MacOS/FunesVault --dev-seed
    ```
    Then ask Claude Code for your TypeScript preferences. Click **Share 3** in the panel, and the next time **Deny**, and see that Claude Code gets `delivered` and `denied`. The agent id is in `dev-seed.json`; the MCP config is `{"command": ".../funes-mcp", "args": ["--agent", "<id>"], "env": {"FUNES_DATA_DIR": "/tmp/funes-dev"}}`.
-2. **Funes, the panel's look:** check the Share panel (rows, badges, countdown, Share N) and the Save panel in light and dark mode, and with VoiceOver.
-3. **Funes, Claude Desktop and Cursor:** do they send `keywords`, and do they wait 45 s? (Spike 3's open rows too.)
+2. **Done 2026-10-17 (look and dark mode checked, nothing to fix; VoiceOver not reported). Funes, the panel's look:** check the Share panel (rows, badges, countdown, Share N) and the Save panel in light and dark mode, and with VoiceOver.
+3. **Done 2026-10-17 (both send `keywords` and wait the full 45 s). Funes, Claude Desktop and Cursor:** do they send `keywords`, and do they wait 45 s? (Spike 3's open rows too.)
 4. **EK Bridge:** the live Claude Code check on the `bridgekit-adoption` branch (`scripts/live_test.sh`), then the release.
 
 ## If extraction runs long

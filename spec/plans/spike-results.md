@@ -289,7 +289,7 @@ The Spike 2b numbers reproduce exactly with the fp16 model (0.939 / 0.689 / 0.82
 
 ## Spike 3: Agent timeouts and the in-call approval
 **Run:** 2026-10-16. **Code:** [`spikes/agent-timeouts/`](../../spikes/agent-timeouts/README.md), a throwaway stdio MCP server (Python standard library) plus a log reader.
-**Status:** **provisional pass.** Claude Code passes, measured. Claude Desktop and Cursor still need a manual run (checklist in the spike README) before Q10 is closed.
+**Status:** **pass.** Claude Code and Codex were measured headless. Claude Desktop and Cursor were checked by hand in the Phase 2 hands-on check (2026-10-17): both waited the full 45 s. Q10 is decided.
 
 ### What was measured
 The server has three tools:
@@ -306,8 +306,8 @@ Claude ran the two CLIs headless (`claude -p`, `codex exec`), in a clean environ
 |---|---|---|---|---|---|
 | Claude Code 2.1.288 | **≥ 300 s** measured (15, 30, 45, 60, 120, 300 all completed). Docs: `MCP_TOOL_TIMEOUT` ≈ 28 h | Headless: no server message, just a generic 30 s heartbeat. Interactive: not checked | No | **Partly.** In 3 of 3 runs it said it would check back and started a background `sleep 60`. The headless process then exited, so the follow-up call is unverified | **Yes** (3/3) |
 | Codex CLI 0.160.0 | **≥ 90 s** measured (30, 45, 60, 90) with no `tool_timeout_sec`. Docs say 60 s; source says 300 s | Headless: no | No | **Yes.** It used its built-in `sleep` tool for 50–55 s, polled, and got the canary text: 2 of 2 runs, including with the 45 s in-call wait | **Yes** (2/2) |
-| Claude Desktop | Manual. Issue threads report a fixed ~60 s | — | — | — | — |
-| Cursor | Manual. Staff: ~60 min in the IDE, a hardcoded 60 s in the CLI/ACP | — | — | — | — |
+| Claude Desktop | **≥ 45 s**, checked by hand against Funes's real panel (Phase 2, 2026-10-17); the exact maximum wasn't measured. Issue threads report a fixed ~60 s | — | — | — | — |
+| Cursor | **≥ 45 s**, checked by hand against Funes's real panel (Phase 2, 2026-10-17); the exact maximum wasn't measured. Staff: ~60 min in the IDE, a hardcoded 60 s in the CLI/ACP | — | — | — | — |
 | VS Code Copilot | Manual. Source: no client-side timeout | — | — | — | — |
 | Gemini CLI | Manual. Docs: 600 s per server | — | — | — | — |
 
@@ -342,7 +342,7 @@ The figures marked docs, source, issues or staff come from a desk check on 2026-
 
 Fallback, unchanged from the plan: if Claude Desktop or Cursor turns out to cut off before ~50 s, make the wait per agent kind (for example 20 s for that client). If several do, return `needs_approval` immediately. Both measured agents handled the immediate-return path well.
 
-**Before closing Q10:** fill the Claude Desktop and Cursor rows, plus Claude Code interactive (`claude_tui.sh approval`), using the spike README checklist. Then mark Q10 decided in [open-questions.md](open-questions.md).
+**Q10 closed (2026-10-17):** Claude Desktop and Cursor waited the full 45 s, and Claude Code answered the real panel interactively, in the Phase 2 hands-on check. [Q10](open-questions.md) is decided: 45 s for all agents.
 
 ## Phase 0 quick check: EK Bridge's `swiftc` build linking a Swift package
 **Run:** 2026-10-16, Xcode 27.0 (Swift 6.4), macOS 27, M-series Mac. **Status:** **pass**, so ADR-0013 stands; no Xcode project for EK Bridge.
@@ -366,12 +366,12 @@ Fallback, unchanged from the plan: if Claude Desktop or Cursor turns out to cut 
 | Request, denied | same, responder denies | **Pass:** `denied_by_user`; Claude Code said it won't ask again unless told |
 | Timeout, then `get_memory_request` | same, no answer for 45 s; approved afterwards; the session resumed (`claude -p --resume`) as its timer would | **Pass:** `needs_approval` at 45.1 s; Claude Code relayed the sentence and backgrounded `sleep 60` (as in Spike 3); resumed, it called `get_memory_request` with the right `request_id`, got `delivered` and answered from it |
 | Suggest into the Inbox | Claude Code as a suggest-only agent | **Pass:** `queued`, in the Inbox, the Save panel shown; Claude Code said it waits for the user's review |
-| Panel approve and deny **by a person, in the real app** | — | **Not run:** this session has no Accessibility or Screen Recording permission, so it can't click or see the panel. Left for the user (checklist in the Phase 2 plan) |
+| Panel approve and deny **by a person, in the real app** | The user, Debug build 1dad5fb, test vault `/tmp/funes-dev`, Claude Code, Claude Desktop and Cursor | **Pass** (2026-10-17): Share and Deny in the real panel worked with Claude Code, and the Save panel showed. Claude Desktop and Cursor sent `keywords` and waited the full 45 s. The panels' look and dark mode were checked; nothing to fix |
 
 **Do agents send `keywords`?** Yes, unprompted, every time:
 - **Claude Code:** 7–8 keywords per request, mixing kinds of context and candidate values, for example `["preferred package manager", "preferred test framework", "TypeScript preferences", "JavaScript tooling", "npm pnpm yarn bun", "Jest Vitest", "coding conventions"]`. It also sent a `purpose`, and once a `categories` narrowing after `list_memory_categories`.
 - **Codex:** 9 keywords, `["TypeScript project", "package manager preference", "test framework preference", "npm", "pnpm", "yarn", "bun", "Vitest", "Jest"]`, plus `categories: ["software_development"]`, `retention: "none"` and `max_tokens: 500`.
-- Both guess candidate values (`pnpm`, `Vitest`) besides kinds of context. That helps keyword retrieval, and the policy never depends on it. The description stays as it is; Claude Desktop and Cursor remain to be checked by hand.
+- Both guess candidate values (`pnpm`, `Vitest`) besides kinds of context. That helps keyword retrieval, and the policy never depends on it. The description stays as it is. Claude Desktop and Cursor send `keywords` too (checked by hand, 2026-10-17).
 
 **Found and fixed during the check:** a 45 s in-call wait ran to about 47 s, and a 55 s timeout could have run past 60 s. `Task.sleep` without a tolerance lets the system coalesce long timers by several percent. FunesCore's wait and BridgeKitCore's call timeout now pass an explicit 100 ms tolerance: 45 s → 45.1 s.
 
