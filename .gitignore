@@ -9,3 +9,4 @@ xcuserdata/
 *.xcscmblueprint
 Package.resolved.bak
 __pycache__/
+site/assets/screenshots/*.png

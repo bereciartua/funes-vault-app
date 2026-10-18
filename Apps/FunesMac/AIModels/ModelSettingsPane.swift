@@ -134,14 +134,15 @@ struct ModelSettingsPane: View {
             : String(localized: "Apple Intelligence isn't available on this Mac: simple rules propose the fields.")
     }
 
-    /// "Classification sends capture and suggestion text (up to Internal) to Anthropic." (FR-AI-08)
+    /// "Classification sends new captures (up to Internal) and your category names and descriptions to
+    /// Anthropic." (FR-AI-08) Only captures are classified in v0.1.
     private var classificationDisclosure: String? {
         guard let provider = settings.classifier, !classifierLocality.isLocal else { return nil }
         switch settings.cloudLimit {
         case .never:
             return String(localized: "Classification sends nothing to \(provider.name): the cloud limit is Never send memories, so it runs on this Mac.")
         case .upTo(let level):
-            return String(localized: "Classification sends capture and suggestion text (up to \(level.title)) to \(provider.name).")
+            return String(localized: "Classification sends new captures (up to \(level.title)) and your category names and descriptions to \(provider.name).")
         }
     }
 

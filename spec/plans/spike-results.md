@@ -336,7 +336,7 @@ The figures marked docs, source, issues or staff come from a desk check on 2026-
 ### Recommendation for Q10
 **45 s for all agents** (the current default). No per-agent-kind table in v0.1, and no immediate return. Supporting changes for Phase 2:
 - Use the explicit message wording from finding 3 in `request_memory` and `get_memory_request` ([mcp-server.md §6.2](../architecture/mcp-server.md#62-request_memory)).
-- Send `notifications/progress` with "Waiting for your approval in Funes…" during the in-call wait, when the client sent a `progressToken`. Don't rely on it to extend timeouts.
+- Send `notifications/progress` with "Waiting for your approval in Funes…" during the in-call wait, when the client sent a `progressToken`. Don't rely on it to extend timeouts. *(Deferred past v0.1: it needs an SSE response, which BridgeKitCore 0.1.0 doesn't send. See [mcp-server.md §1](../architecture/mcp-server.md#1-transport).)*
 - Keep the in-call wait one constant. Log `clientInfo.name` with each request so a per-kind override can be added if a manual row comes in below ~50 s.
 - Document per-agent behaviour in `docs/MCP.md` (Phase 4), from the completed table.
 

@@ -1,0 +1,394 @@
+diff --git a/.github/workflows/check.yml b/.github/workflows/check.yml
+index d02e6aa..f344d92 100644
+--- a/.github/workflows/check.yml
++++ b/.github/workflows/check.yml
+@@ -11,13 +11,18 @@ permissions:
+ 
+ jobs:
+   check:
+-    name: Style, audit, livecheck and install
++    name: Style, audit, livecheck and install (${{ matrix.cask }})
+     runs-on: macos-26
+     timeout-minutes: 20
++    strategy:
++      fail-fast: false
++      matrix:
++        cask: [ek-bridge, funes-vault]
+     env:
+       # brew audit calls the GitHub API; without a token it shares the
+       # runner IP's 60 requests an hour and fails when they run out.
+       HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
++      CASK: ${{ matrix.cask }}
+     steps:
+       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+-      - run: sh scripts/check.sh --install
++      - run: sh scripts/check.sh --install "$CASK"
+diff --git a/.github/workflows/update.yml b/.github/workflows/update.yml
+index cda4465..33f9532 100644
+--- a/.github/workflows/update.yml
++++ b/.github/workflows/update.yml
+@@ -1,16 +1,23 @@
+ name: Update
+ 
+-# Points the cask at EK Bridge's latest release once its DMG's build
++# Points each cask at its app's latest release once the DMG's build
+ # attestation and checksum check out (scripts/update-cask.sh), then checks and
+-# installs it before pushing. Runs every six hours and by hand:
++# installs it before pushing. One job per cask, one at a time, so a failing
++# cask doesn't hold up the others. Runs every six hours and by hand:
+ #   gh workflow run update.yml --repo bereciartua/homebrew-tap
++#   gh workflow run update.yml --repo bereciartua/homebrew-tap -f cask=funes-vault -f version=0.1.0
+ on:
+   schedule:
+     - cron: "23 */6 * * *"
+   workflow_dispatch:
+     inputs:
++      cask:
++        description: Cask to update
++        type: choice
++        options: [all, ek-bridge, funes-vault]
++        default: all
+       version:
+-        description: Release version (default the latest)
++        description: Release version (default the latest; needs a single cask)
+         required: false
+ 
+ permissions:
+@@ -22,19 +29,40 @@ concurrency:
+ 
+ jobs:
+   update:
+-    name: Update the cask
++    name: Update ${{ matrix.cask }}
+     runs-on: macos-26
+     timeout-minutes: 20
++    strategy:
++      fail-fast: false
++      max-parallel: 1
++      matrix:
++        cask: [ek-bridge, funes-vault]
+     env:
+       GH_TOKEN: ${{ github.token }}
+       # brew audit calls the GitHub API; without a token it shares the
+       # runner IP's 60 requests an hour and fails when they run out.
+       HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
++      CASK: ${{ matrix.cask }}
++      SELECTED: ${{ inputs.cask || 'all' }}
+       VERSION: ${{ inputs.version }}
+     steps:
+-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+-      - id: cask
+-        run: sh scripts/update-cask.sh ${VERSION:+"$VERSION"}
++      - id: selected
++        run: |
++          if [ -n "$VERSION" ] && [ "$SELECTED" = all ]; then
++            echo "::error::A version needs a single cask (-f cask=...)"
++            exit 1
++          fi
++          if [ "$SELECTED" = all ] || [ "$SELECTED" = "$CASK" ]; then
++            echo "run=true" >> "$GITHUB_OUTPUT"
++          fi
++      - if: steps.selected.outputs.run == 'true'
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++        with:
++          # The full history, so the push can rebase onto another cask's bump.
++          fetch-depth: 0
++      - if: steps.selected.outputs.run == 'true'
++        id: cask
++        run: sh scripts/update-cask.sh "$CASK" ${VERSION:+"$VERSION"}
+       - if: steps.cask.outputs.changed == 'true'
+         name: Commit, check and push
+         env:
+@@ -42,6 +70,8 @@ jobs:
+         run: |
+           git config user.name "github-actions[bot]"
+           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+-          git commit -m "ek-bridge $NEW_VERSION" -- Casks/ek-bridge.rb
+-          sh scripts/check.sh --install
++          git commit -m "$CASK $NEW_VERSION" -- "Casks/$CASK.rb"
++          sh scripts/check.sh --install "$CASK"
++          # An earlier job in this run may have pushed another cask's bump.
++          git pull --rebase origin main
+           git push origin HEAD:main
+diff --git a/Casks/funes-vault.rb b/Casks/funes-vault.rb
+new file mode 100644
+index 0000000..5bf2ae0
+--- /dev/null
++++ b/Casks/funes-vault.rb
+@@ -0,0 +1,32 @@
++cask "funes-vault" do
++  version "0.1.0"
++  # Placeholder until the release is out: scripts/update-cask.sh fills in the
++  # SHA-256 of the attested DMG (and refuses to keep anything else).
++  sha256 "PLACEHOLDER: run sh scripts/update-cask.sh funes-vault 0.1.0"
++
++  url "https://github.com/bereciartua/funes-vault-app/releases/download/v#{version}/FunesVault-#{version}.dmg"
++  name "Funes Vault"
++  desc "Personal memory vault that AI agents can use only as you allow"
++  homepage "https://funesvault.com/"
++
++  livecheck do
++    url "https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml"
++    strategy :sparkle, &:short_version
++  end
++
++  auto_updates true
++  depends_on macos: :sequoia
++
++  app "FunesVault.app"
++  binary "#{appdir}/FunesVault.app/Contents/MacOS/funes-mcp"
++
++  uninstall quit: "com.funesvault.mac"
++
++  zap trash: [
++    "~/Library/Application Support/FunesVault",
++    "~/Library/Caches/com.funesvault.mac",
++    "~/Library/HTTPStorages/com.funesvault.mac",
++    "~/Library/HTTPStorages/com.funesvault.mac.binarycookies",
++    "~/Library/Preferences/com.funesvault.mac.plist",
++  ]
++end
+diff --git a/README.md b/README.md
+index 3b1a713..d62c31d 100644
+--- a/README.md
++++ b/README.md
+@@ -1,6 +1,9 @@
+ # bereciartua/tap
+ 
+-Homebrew casks for [EK Bridge](https://github.com/bereciartua/ek-bridge), the menu bar app that gives scripts and AI agents scoped access to Calendar and Reminders.
++Homebrew casks for two menu bar apps that give AI agents scoped access to your Mac:
++
++- [EK Bridge](https://github.com/bereciartua/ek-bridge): scoped access to Calendar and Reminders for scripts and AI agents.
++- [Funes Vault](https://funesvault.com): a personal memory vault on your Mac that AI agents can use only as you allow.
+ 
+ ## Install
+ 
+@@ -10,9 +13,15 @@ brew install --cask bereciartua/tap/ek-bridge
+ 
+ This installs the same notarized, universal `EKBridge.app` as the [release DMG](https://github.com/bereciartua/ek-bridge/releases/latest) into `/Applications`, and links its command-line client, `bridge-client`, into Homebrew's `bin`. It needs macOS 14 or later. Then open the app and follow its setup checklist ([Setup](https://github.com/bereciartua/ek-bridge/blob/main/docs/SETUP.md)).
+ 
++```sh
++brew install --cask bereciartua/tap/funes-vault
++```
++
++This installs the same notarized, universal `FunesVault.app` as the [release DMG](https://github.com/bereciartua/funes-vault-app/releases/latest) into `/Applications`, and links its MCP launcher, `funes-mcp`, into Homebrew's `bin`. It needs macOS 15 or later. Then open the app from the menu bar and connect an agent ([MCP setup](https://github.com/bereciartua/funes-vault-app/blob/main/docs/MCP.md)).
++
+ ## Updates
+ 
+-The app updates itself (**Check for Updates…**, or the daily check), so `brew upgrade` skips it, as it does every cask marked `auto_updates`. `brew upgrade --greedy` updates it through Homebrew instead. Either way it stays at the same path, so its Calendar and Reminders access, clients and agent setups stay.
++Both apps update themselves (**Check for Updates…**, or the daily check), so `brew upgrade` skips them, as it does every cask marked `auto_updates`. `brew upgrade --greedy` updates them through Homebrew instead. Either way they stay at the same path, so EK Bridge's Calendar and Reminders access and Funes Vault's agents, and both apps' agent setups, stay.
+ 
+ ## Uninstall
+ 
+@@ -22,9 +31,15 @@ brew uninstall --cask ek-bridge
+ 
+ This quits and removes the app and the `bridge-client` link, and keeps your data. Before uninstalling, remove its Calendar and Reminders access (EK Bridge's [Uninstall](https://github.com/bereciartua/ek-bridge#uninstall) steps). `brew uninstall --zap --cask ek-bridge` also moves its data to the Trash: clients, keys, tokens, Activity and settings in `~/Library/Application Support/EKBridge` and the app's preferences and caches. Agents can't connect again without new keys.
+ 
+-## How the cask is updated
++```sh
++brew uninstall --cask funes-vault
++```
++
++This quits and removes the app and the `funes-mcp` link, and keeps your vault. `brew uninstall --zap --cask funes-vault` also moves its data to the Trash: your memories, agents, agent keys, Activity and settings in `~/Library/Application Support/FunesVault`, and the app's preferences and caches. Export your vault first if you want to keep it. API keys for AI providers you added stay in your Keychain (service `com.funesvault.provider`) until you remove them in Funes Vault's Settings or Keychain Access.
++
++## How the casks are updated
+ 
+-`.github/workflows/update.yml` runs every six hours and after a release (`gh workflow run update.yml --repo bereciartua/homebrew-tap`). `scripts/update-cask.sh` downloads the latest release's DMG and uses it only if its [build attestation](https://docs.github.com/actions/security-for-github-actions/using-artifact-attestations) shows that ek-bridge's release workflow built it from that version's tag on a GitHub-hosted runner, and its SHA-256 matches the release's `SHA256SUMS`. `scripts/check.sh --install` then runs `brew style`, `brew audit --strict --online` and `brew livecheck`, installs the cask on a macOS runner, checks the app is notarized and `bridge-client` works, and uninstalls it. Only then is the new version pushed.
++`.github/workflows/update.yml` runs every six hours and after a release (`gh workflow run update.yml --repo bereciartua/homebrew-tap`, optionally with `-f cask=funes-vault -f version=0.1.0`), one job per cask. `scripts/update-cask.sh` downloads the latest release's DMG and uses it only if its [build attestation](https://docs.github.com/actions/security-for-github-actions/using-artifact-attestations) shows that the app's release workflow built it from that version's tag on a GitHub-hosted runner, and its SHA-256 matches the release's `SHA256SUMS`. `scripts/check.sh --install` then runs `brew style`, `brew audit --strict --online` and `brew livecheck`, installs the cask on a macOS runner, checks the app is notarized and its command works, and uninstalls it. Only then is the new version pushed. `scripts/casks.sh` lists each cask's repository, DMG name, app and command.
+ 
+ GitHub turns scheduled workflows off after 60 days without activity in a repository. If it has, `gh workflow enable update.yml --repo bereciartua/homebrew-tap` turns it back on.
+ 
+diff --git a/scripts/casks.sh b/scripts/casks.sh
+new file mode 100644
+index 0000000..bdc2f64
+--- /dev/null
++++ b/scripts/casks.sh
+@@ -0,0 +1,21 @@
++# Sourced by update-cask.sh and check.sh: what each cask installs and where
++# its releases come from.
++#   casks              every cask in the tap
++#   cask_info NAME     sets repo (GitHub owner/name), dmg_prefix (the DMG is
++#                      <dmg_prefix>-<version>.dmg), app (the bundle in
++#                      /Applications) and binary (the command it links)
++# shellcheck shell=sh
++
++casks="ek-bridge funes-vault"
++
++cask_info() {
++    case "$1" in
++        ek-bridge)
++            repo=bereciartua/ek-bridge dmg_prefix=EKBridge app=EKBridge.app binary=bridge-client ;;
++        funes-vault)
++            repo=bereciartua/funes-vault-app dmg_prefix=FunesVault app=FunesVault.app binary=funes-mcp ;;
++        *)
++            printf '%s: no cask "%s" (one of: %s)\n' "$(basename "$0" .sh)" "$1" "$casks" >&2
++            exit 2 ;;
++    esac
++}
+diff --git a/scripts/check.sh b/scripts/check.sh
+index 196459b..c4f78d6 100644
+--- a/scripts/check.sh
++++ b/scripts/check.sh
+@@ -1,17 +1,27 @@
+ #!/bin/sh
+ # Checks the tap as Homebrew sees it: style, an online audit, and that
+-# livecheck finds the version in EK Bridge's update feed. With --install it
+-# also installs the cask, checks the app and the bridge-client link, and
++# livecheck finds each cask's version in its app's update feed. With --install
++# it also installs each cask, checks the app and its command's link, and
+ # uninstalls it again.
++#   sh scripts/check.sh [--install] [CASK...]   (default: every cask in scripts/casks.sh)
+ #
+ # For CI: it replaces any bereciartua/tap with a clone of this checkout's last
+ # commit, and --install installs into /Applications. Don't run it on a Mac
+-# that uses the tap or has EK Bridge installed.
++# that uses the tap or has one of its apps installed.
+ set -eu
+ 
+ tap=bereciartua/tap
+-cask="$tap/ek-bridge"
+ tap_dir=$(cd "$(dirname "$0")/.." && pwd)
++# shellcheck source=scripts/casks.sh
++. "$tap_dir/scripts/casks.sh"
++install=false
++if [ "${1:-}" = --install ]; then
++    install=true
++    shift
++fi
++# shellcheck disable=SC2086 # casks is a space-separated list of names
++[ $# -gt 0 ] || set -- $casks
++for name in "$@"; do cask_info "$name"; done
+ export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ANALYTICS=1 HOMEBREW_DEVELOPER=1
+ 
+ brew untap --force "$tap" 2> /dev/null || true
+@@ -19,29 +29,34 @@ brew tap "$tap" "$tap_dir"
+ # Homebrew loads a third-party tap only once it is trusted (https://docs.brew.sh/Tap-Trust).
+ brew trust "$tap"
+ 
+-brew style --cask "$cask"
+ # brew style would hold the scripts to Homebrew's own shell format; shellcheck is enough.
+ if [ -n "${CI:-}" ] && ! command -v shellcheck > /dev/null; then brew install --quiet shellcheck; fi
+-if command -v shellcheck > /dev/null; then shellcheck "$tap_dir"/scripts/*.sh; fi
+-brew audit --cask --strict --online "$cask"
+-version=$(sed -n 's/^  version "\(.*\)"$/\1/p' "$tap_dir/Casks/ek-bridge.rb")
+-found=$(brew livecheck --cask --json "$cask" | ruby -rjson -e 'print JSON.parse(STDIN.read)[0].dig("version", "latest")')
+-# The feed may already offer a newer version than the cask; never an older one.
+-[ "$(printf '%s\n%s\n' "$version" "$found" | sort -V | tail -n 1)" = "$found" ] || {
+-    printf 'check: the cask has %s, but the update feed offers %s\n' "$version" "$found" >&2
+-    exit 1
+-}
+-printf 'check: style, audit and livecheck passed (cask %s, feed %s)\n' "$version" "$found"
++if command -v shellcheck > /dev/null; then shellcheck -x "$tap_dir"/scripts/*.sh; fi
+ 
+-[ "${1:-}" = --install ] || exit 0
++for name in "$@"; do
++    cask_info "$name"
++    cask="$tap/$name"
++    brew style --cask "$cask"
++    brew audit --cask --strict --online "$cask"
++    version=$(sed -n 's/^  version "\(.*\)"$/\1/p' "$tap_dir/Casks/$name.rb")
++    found=$(brew livecheck --cask --json "$cask" | ruby -rjson -e 'print JSON.parse(STDIN.read)[0].dig("version", "latest")')
++    # The feed may already offer a newer version than the cask; never an older one.
++    [ "$(printf '%s\n%s\n' "$version" "$found" | sort -V | tail -n 1)" = "$found" ] || {
++        printf 'check: the %s cask has %s, but the update feed offers %s\n' "$name" "$version" "$found" >&2
++        exit 1
++    }
++    printf 'check: %s style, audit and livecheck passed (cask %s, feed %s)\n' "$name" "$version" "$found"
+ 
+-app=/Applications/EKBridge.app
+-link="$(brew --prefix)/bin/bridge-client"
+-brew install --cask "$cask"
+-[ "$(defaults read "$app/Contents/Info" CFBundleShortVersionString)" = "$version" ]
+-spctl --assess --type execute --verbose=2 "$app" 2>&1 | tee /dev/stderr | grep -qx 'source=Notarized Developer ID'
+-[ "$(readlink "$link")" = "$app/Contents/MacOS/bridge-client" ]
+-"$link" --help > /dev/null
+-brew uninstall --cask "$cask"
+-[ ! -e "$app" ] && [ ! -e "$link" ]
+-printf 'check: installed %s (notarized, bridge-client linked) and uninstalled it\n' "$version"
++    [ "$install" = true ] || continue
++
++    app_path="/Applications/$app"
++    link="$(brew --prefix)/bin/$binary"
++    brew install --cask "$cask"
++    [ "$(defaults read "$app_path/Contents/Info" CFBundleShortVersionString)" = "$version" ]
++    spctl --assess --type execute --verbose=2 "$app_path" 2>&1 | tee /dev/stderr | grep -qx 'source=Notarized Developer ID'
++    [ "$(readlink "$link")" = "$app_path/Contents/MacOS/$binary" ]
++    "$link" --help > /dev/null
++    brew uninstall --cask "$cask"
++    [ ! -e "$app_path" ] && [ ! -e "$link" ]
++    printf 'check: installed %s %s (notarized, %s linked) and uninstalled it\n' "$name" "$version" "$binary"
++done
+diff --git a/scripts/update-cask.sh b/scripts/update-cask.sh
+index acdac4e..8d2a56c 100644
+--- a/scripts/update-cask.sh
++++ b/scripts/update-cask.sh
+@@ -1,20 +1,29 @@
+ #!/bin/sh
+-# Points Casks/ek-bridge.rb at an EK Bridge release: the latest published one,
+-# or the version given (`sh scripts/update-cask.sh 0.9.0`).
++# Points Casks/<cask>.rb at a release of its app: the latest published one, or
++# the version given (`sh scripts/update-cask.sh ek-bridge 0.9.0`). The casks
++# and their repositories are listed in scripts/casks.sh.
+ #
+ # The DMG is downloaded and trusted only if its build attestation says the
+-# ek-bridge release workflow built it from that version's tag on a GitHub
+-# runner, and its SHA-256 matches the release's SHA256SUMS. The cask then gets
+-# that version and SHA-256. Never moves the cask to an older version.
++# app's release workflow built it from that version's tag on a GitHub runner,
++# and its SHA-256 matches the release's SHA256SUMS. The cask then gets that
++# version and SHA-256. Never moves a cask to an older version. A cask whose
++# sha256 isn't a SHA-256 yet (a new cask's placeholder) is filled in even at
++# the same version.
+ #
+ # Needs gh (signed in, or GH_TOKEN). In GitHub Actions it writes `changed` and
+ # `version` to $GITHUB_OUTPUT.
+ set -eu
+ 
+-repo=bereciartua/ek-bridge
+-workflow="$repo/.github/workflows/release.yml"
+ tap_dir=$(cd "$(dirname "$0")/.." && pwd)
+-cask="$tap_dir/Casks/ek-bridge.rb"
++# shellcheck source=scripts/casks.sh
++. "$tap_dir/scripts/casks.sh"
++
++[ $# -ge 1 ] || { printf 'usage: sh scripts/update-cask.sh CASK [VERSION]   (CASK: %s)\n' "$casks" >&2; exit 2; }
++name=$1
++shift
++cask_info "$name"
++workflow="$repo/.github/workflows/release.yml"
++cask="$tap_dir/Casks/$name.rb"
+ 
+ output() {
+     if [ -n "${GITHUB_OUTPUT:-}" ]; then printf '%s=%s\n' "$1" "$2" >> "$GITHUB_OUTPUT"; fi
+@@ -34,19 +43,20 @@ case "$version" in
+     *[!0-9.]* | "" | .* | *.) fail "\"$version\" isn't a release version" ;;
+ esac
+ current=$(sed -n 's/^  version "\(.*\)"$/\1/p' "$cask")
++current_sha=$(sed -n 's/^  sha256 "\(.*\)"$/\1/p' "$cask")
+ output version "$version"
+-if [ "$version" = "$current" ]; then
+-    printf 'update-cask: already at %s\n' "$version"
++if [ "$version" = "$current" ] && printf '%s\n' "$current_sha" | grep -qx '[0-9a-f]\{64\}'; then
++    printf 'update-cask: %s already at %s\n' "$name" "$version"
+     output changed false
+     exit 0
+ fi
+ if [ "$(printf '%s\n%s\n' "$current" "$version" | sort -V | tail -n 1)" != "$version" ]; then
+-    fail "$tag is older than the cask's $current"
++    fail "$tag is older than the $name cask's $current"
+ fi
+ 
+ work=$(mktemp -d)
+ trap 'rm -rf "$work"' EXIT
+-dmg="EKBridge-$version.dmg"
++dmg="$dmg_prefix-$version.dmg"
+ gh release download "$tag" --repo "$repo" --dir "$work" --pattern "$dmg" --pattern SHA256SUMS
+ gh attestation verify "$work/$dmg" --repo "$repo" --signer-workflow "$workflow" \
+     --source-ref "refs/tags/$tag" --deny-self-hosted-runners > /dev/null ||
+@@ -62,5 +72,5 @@ V="$version" S="$sha256" perl -pi -e '
+ if ! grep -qx "  version \"$version\"" "$cask" || ! grep -qx "  sha256 \"$sha256\"" "$cask"; then
+     fail "couldn't rewrite $cask"
+ fi
+-printf 'update-cask: %s -> %s (attested, SHA-256 %s)\n' "$current" "$version" "$sha256"
++printf 'update-cask: %s %s -> %s (attested, SHA-256 %s)\n' "$name" "$current" "$version" "$sha256"
+ output changed true

@@ -156,7 +156,7 @@ sequenceDiagram
   4. Start the companion listener and Bonjour if iPhone access is on.
   5. Schedule background maintenance.
 - **Sleep and wake:** listeners survive sleep. On wake, the app re-advertises Bonjour and expires pending approvals whose 15 minutes have passed.
-- **Quit:** stop the listeners, remove `mcp-endpoint.json`, and refuse open panels (`denied`, `funes_quit`).
+- **Quit:** answer calls in progress (a call waiting for the user gets `denied`, `funes_quit`, and its request stays pending), withdraw open panels, then stop the listeners and remove `mcp-endpoint.json`.
 - **Update:** Sparkle's relaunch waits while panels or pending approvals exist (EK Bridge's `UpdateRelaunchGate`).
 
 ## Repository layout (proposed)

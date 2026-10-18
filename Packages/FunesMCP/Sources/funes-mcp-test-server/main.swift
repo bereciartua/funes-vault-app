@@ -13,6 +13,8 @@ import FunesProtocol
 // - FUNES_MCP_TEST_DIR: a private temp folder (required); the vault and agent-keys go here.
 // - FUNES_MCP_TEST_PORT: default 0, any free port.
 // - FUNES_MCP_TEST_WAIT: the in-call approval wait in seconds (default 45).
+// - FUNES_MCP_TEST_LARGE: 1 adds three large memories (10,000, 10,000 and 3,500 emoji), for the
+//   response-size check (PR #5 review 4307609724).
 // - FUNES_MCP_TEST_APPROVAL: how the fake responder answers panels: none (default; answer
 //   with the control channel), allow or deny.
 //
@@ -133,6 +135,14 @@ final class Harness {
             let memory = try store.createMemory(MemoryDraft(title: title, body: body, categoryKeys: categories,
                                                             sensitivity: sensitivity), now: now)
             memoryIDs[name] = memory.id
+        }
+        if ProcessInfo.processInfo.environment["FUNES_MCP_TEST_LARGE"] == "1" {
+            for (index, count) in [10_000, 10_000, 3_500].enumerated() {
+                let memory = try store.createMemory(MemoryDraft(title: "M", body: String(repeating: "😀", count: count),
+                                                                categoryKeys: ["personal_preferences"], sensitivity: .public),
+                                                    now: now)
+                memoryIDs["large\(index + 1)"] = memory.id
+            }
         }
         disclosures = DisclosureService(store: store, retriever: AllMemories(store: store, ids: Array(memoryIDs.values)),
                                         activity: activity, pause: pause)
@@ -264,6 +274,12 @@ final class Harness {
         case "stop":
             server.stop()
             return ["ok": true]
+        case "quit":
+            // What the app does before it quits: waiting calls answer funes_quit.
+            server.quit()
+            return ["ok": true]
+        case "in_progress":
+            return ["calls": server.callsInProgress]
         case "start":
             server.start(port: command["port"] as? Int ?? lastPort)
             return ["ok": true]

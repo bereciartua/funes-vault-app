@@ -65,9 +65,9 @@ The OpenAI-compatible and Anthropic model clients are small `URLSession` code in
 
 ## Signing and secrets
 - **Apple Developer Program team:** the same as EK Bridge.
-- **Mac:** a Developer ID Application certificate and a notary profile (`xcrun notarytool store-credentials funes-notary`), or an App Store Connect API key in CI.
+- **Mac:** a Developer ID Application certificate and a notary profile (on the maintainer's Mac, the existing `ekbridge` profile of the same team: `FUNES_NOTARY_PROFILE=ekbridge`), or an App Store Connect API key in CI. Archives are signed manually with the Developer ID identity and exported with method `developer-id` ([MAINTAINING](../../docs/MAINTAINING.md#releasing)).
 - **iOS:** automatic signing for development; App Store distribution via Xcode Cloud or `xcodebuild -exportArchive` with an API key.
-- **Sparkle EdDSA key pair:** a new pair for Funes, not EK Bridge's. The private key lives in the Keychain locally and in a CI secret; the public key goes in `Info.plist` (`SUPublicEDKey`).
+- **Sparkle EdDSA key pair:** a new pair for Funes, not EK Bridge's: `generate_keys --account funes-vault` (EK Bridge's is the default account, `ed25519`). The private key lives in the login keychain under that account and in a CI secret; the public key goes in `Info.plist` (`SUPublicEDKey`).
 - **CI secrets** (GitHub `release` environment):
   - the p12 and its password;
   - the notary API key;

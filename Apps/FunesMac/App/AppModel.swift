@@ -119,6 +119,8 @@ final class AppModel {
     @ObservationIgnored var setCaptureShortcut: (Shortcut?) -> Bool = { _ in false }
     /// Turns the MCP server on or off (Settings ▸ MCP).
     @ObservationIgnored var setServer: (Bool) -> Void = { _ in }
+    /// Moves the MCP server to another port (Settings ▸ MCP).
+    @ObservationIgnored var setPort: (Int) -> Void = { _ in }
     /// Turns a notification kind on, asking macOS for permission the first time.
     @ObservationIgnored var requestNotificationPermission: (@escaping @MainActor (Bool) -> Void) -> Void = { $0(false) }
     /// ⌘N and ⌘F from the main menu, for the Vault.

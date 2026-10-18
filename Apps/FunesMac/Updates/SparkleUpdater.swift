@@ -11,9 +11,8 @@ private let logger = Logger(subsystem: "com.funesvault.mac", category: "updates"
 /// gentle reminders (a found update shows in the menu); installing always takes a click
 /// (`SUAllowsAutomaticUpdates` is off). The relaunch waits while requests wait for the user.
 ///
-/// TODO(release): the Info.plist's `SUFeedURL` and `SUPublicEDKey` are empty placeholders until the
-/// user creates Funes's own Sparkle key pair (spec/plans/project-setup.md). Until then `isConfigured`
-/// is false and this build never checks for updates.
+/// `isConfigured` is false, and the build never checks, while either Info.plist key is empty (a
+/// build without Funes's Sparkle key, docs/MAINTAINING.md "Updates").
 @MainActor
 final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate {
     var foundUpdateChanged: (FoundUpdate?) -> Void = { _ in }

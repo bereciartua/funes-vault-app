@@ -1,0 +1,138 @@
+name: MCP Registry
+
+# Publishes server.json to the official MCP Registry
+# (registry.modelcontextprotocol.io) as com.funesvault/funes when a release is
+# published, and by hand. Pull requests that change server.json only validate
+# it, without any secret.
+#
+# The name is a reverse-DNS namespace, so the registry login is DNS-based: a
+# TXT record on the apex of funesvault.com holds the public key
+# ("v=MCPv1; k=ed25519; p=<base64 public key>"), and the publish job signs with
+# the private key (64 hex characters, the Ed25519 seed). Setup, once:
+#   1. Generate the key with OpenSSL 3 (macOS's LibreSSL has no Ed25519):
+#        brew install openssl@3
+#        ossl=$(brew --prefix openssl@3)/bin/openssl
+#        "$ossl" genpkey -algorithm Ed25519 -out key.pem
+#        "$ossl" pkey -in key.pem -pubout -outform DER | tail -c 32 | base64      # p= in the TXT record
+#        "$ossl" pkey -in key.pem -noout -text | grep -A3 "priv:" | tail -n +2 | tr -d ' :\n'  # the secret
+#   2. Add the TXT record at Hover (site/DNS.md), then delete key.pem or keep
+#      it only in a password manager.
+#   3. Create the `registry` environment (Settings > Environments) with a
+#      deployment rule for tags `v*` and the default branch, and add the hex
+#      private key to it as the secret MCP_REGISTRY_DNS_KEY:
+#        gh secret set MCP_REGISTRY_DNS_KEY --env registry --repo bereciartua/funes-vault-app
+#
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - server.json
+      - .github/workflows/mcp-registry.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mcp-registry-${{ github.event_name == 'pull_request' && github.ref || 'publish' }}
+  cancel-in-progress: false
+
+env:
+  PUBLISHER_VERSION: 1.8.1
+  PUBLISHER_SHA256: a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc
+  REGISTRY: https://registry.modelcontextprotocol.io
+  DOMAIN: funesvault.com
+
+jobs:
+  validate:
+    name: Validate server.json
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install mcp-publisher
+        run: |
+          archive="$RUNNER_TEMP/mcp-publisher.tar.gz"
+          curl --fail --silent --show-error --location --proto '=https' --output "$archive" \
+            "https://github.com/modelcontextprotocol/registry/releases/download/v$PUBLISHER_VERSION/mcp-publisher_linux_amd64.tar.gz"
+          echo "$PUBLISHER_SHA256  $archive" | sha256sum --check --strict -
+          tar -xzf "$archive" -C "$RUNNER_TEMP" mcp-publisher
+      - name: Validate
+        run: |
+          "$RUNNER_TEMP/mcp-publisher" validate server.json
+          version=$(jq -r .version server.json)
+          # Every target shares one version (spec/plans/release-and-distribution.md).
+          versions=$(grep 'MARKETING_VERSION = ' FunesVault.xcodeproj/project.pbxproj | sed 's/.*MARKETING_VERSION = \(.*\);/\1/' | sort -u)
+          app_version=$(printf '%s\n' "$versions" | head -n 1)
+          if [ "$(printf '%s\n' "$versions" | wc -l)" -ne 1 ]; then
+            echo "::error::The Xcode project has more than one MARKETING_VERSION: $(echo $versions)"
+            exit 1
+          fi
+          if [ "$version" != "$app_version" ]; then
+            echo "::error::server.json has version $version, the Xcode project's MARKETING_VERSION $app_version"
+            exit 1
+          fi
+
+  publish:
+    name: Publish server.json
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The DNS signing key is an environment secret, readable only by this job
+    # and only from the refs the environment allows.
+    environment: registry
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install mcp-publisher
+        run: |
+          archive="$RUNNER_TEMP/mcp-publisher.tar.gz"
+          curl --fail --silent --show-error --location --proto '=https' --output "$archive" \
+            "https://github.com/modelcontextprotocol/registry/releases/download/v$PUBLISHER_VERSION/mcp-publisher_linux_amd64.tar.gz"
+          echo "$PUBLISHER_SHA256  $archive" | sha256sum --check --strict -
+          tar -xzf "$archive" -C "$RUNNER_TEMP" mcp-publisher
+      - name: Publish
+        env:
+          MCP_REGISTRY_DNS_KEY: ${{ secrets.MCP_REGISTRY_DNS_KEY }}
+        run: |
+          if [ -z "$MCP_REGISTRY_DNS_KEY" ]; then
+            echo "::error::The registry environment has no MCP_REGISTRY_DNS_KEY secret"
+            exit 1
+          fi
+          name=$(jq -r .name server.json)
+          version=$(jq -r .version server.json)
+          # Only a version that's out: the registry keeps every version for good.
+          latest=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
+          if [ "v$version" != "$latest" ]; then
+            echo "::error::server.json has version $version, but the latest release is $latest"
+            exit 1
+          fi
+          encoded=$(jq -rn --arg n "$name" '$n | @uri')
+          # 200 when this version is in the registry, 404 when it isn't, anything
+          # else when the registry didn't answer.
+          lookup() {
+            curl --silent --location --max-time 90 --output "$RUNNER_TEMP/entry.json" --write-out '%{http_code}' \
+              "$REGISTRY/v0.1/servers/$encoded/versions/$version" || true
+          }
+          # The registry can time out on a publish that went through (504), so a
+          # failed attempt is followed by a lookup before the next one.
+          for attempt in 1 2 3; do
+            status=$(lookup)
+            if [ "$status" = 200 ]; then
+              jq '{name: .server.name, version: .server.version, status: ._meta."io.modelcontextprotocol.registry/official".status}' \
+                "$RUNNER_TEMP/entry.json"
+              exit 0
+            fi
+            echo "Attempt $attempt: the registry answered $status for $name $version; publishing"
+            if "$RUNNER_TEMP/mcp-publisher" login dns --domain "$DOMAIN" --private-key "$MCP_REGISTRY_DNS_KEY" &&
+              "$RUNNER_TEMP/mcp-publisher" publish server.json; then
+              exit 0
+            fi
+            sleep 60
+          done
+          [ "$(lookup)" = 200 ] && exit 0
+          echo "::error::$name $version isn't in the registry after 3 attempts"
+          exit 1

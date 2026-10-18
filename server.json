@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.funesvault/funes",
+  "title": "Funes Vault",
+  "description": "Personal memory for AI agents from a vault on your Mac, with per-agent scopes and approvals",
+  "websiteUrl": "https://funesvault.com",
+  "repository": {
+    "url": "https://github.com/bereciartua/funes-vault-app",
+    "source": "github",
+    "id": "1422742370"
+  },
+  "icons": [
+    {
+      "src": "https://funesvault.com/assets/icon-512.png",
+      "mimeType": "image/png",
+      "sizes": ["512x512"]
+    }
+  ],
+  "version": "0.1.0"
+}

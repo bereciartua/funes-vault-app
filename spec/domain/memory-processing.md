@@ -79,6 +79,8 @@ Decision: [ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings
 ## 5. Classification of captures and suggestions
 **Goal:** make Inbox review fast by proposing a title, kind, categories and sensitivity. It **never** auto-applies.
 
+**v0.1 classifies captures only.** Agent suggestions, imports and seed answers keep the fields they arrive with, and are never sent to a classification model.
+
 - **Engine:** user-selectable (Settings ▸ AI Models ▸ Classification); see [model providers](../architecture/model-providers.md).
   - **Default:** the Apple Foundation Models on-device model (macOS 26+ with Apple Intelligence), using guided generation.
   - **Other providers:** local or cloud generation models receive the same instructions and an equivalent **JSON schema** (structured output). Cloud classification of captures follows an on-device sensitivity pre-screen ([model providers §5](../architecture/model-providers.md#5-guardrails-all-non-local-providers)).

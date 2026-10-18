@@ -136,6 +136,7 @@ public enum ReasonCode: String, Codable, Sendable, CaseIterable {
     case secretLikeContent = "secret_like_content"
     // Transport
     case rateLimited = "rate_limited"
+    case funesQuit = "funes_quit"
 }
 
 /// The detected type of an MCP client; drives the icon and setup snippets.

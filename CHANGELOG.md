@@ -4,20 +4,56 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+## [0.1.0] - Unreleased
+
+The first public preview of Funes Vault for the Mac: a menu bar app that keeps your personal context in a private vault on your Mac, and shares it with AI agents only as you allow. It needs macOS 15 or later, on Apple silicon or Intel.
+
 ### Added
 
-- Repository setup: the product definition in `spec/`, the `FunesProtocol` and `FunesCore` Swift packages, the `FunesVault` Xcode project with a placeholder menu bar app, and CI.
-- The vault logic in `FunesCore` (Phase 1, no UI yet): the SQLite store, hybrid search with the bundled bge-small embedding model (`scripts/fetch_embedding_model.sh`), the access policy with approvals and single-use delivery, suggestions, captures, agents and keys, AI model providers with cloud guardrails, and import and export. The secret scanner lives in `FunesProtocol`.
-- Agents can connect (Phase 2, no main window yet). The app opens the vault and serves MCP on `127.0.0.1:47625`, and agents reach it through the `funes-mcp` launcher inside the app. They can list categories, request memories, check a waiting request and suggest memories. A floating panel asks before sharing, with a checkbox per memory and a 45-second countdown, and another asks whether to save a suggestion. The menu shows whether agents can connect and can pause Funes Vault. The protocol and security core is [BridgeKit](https://github.com/bereciartua/bridgekit), shared with EK Bridge.
-- The Mac app shell (Phase 3): the menu bar icon shows when Funes needs you or is paused, and its menu has Remember…, the Inbox count, Pending requests with minutes left, Pause Funes Vault (for 1 hour, until tomorrow or until you resume, kept across relaunches), Open Funes Vault and Settings. The main window has Vault, Inbox, Agents and Activity; Settings opens at login on request and can show Funes in the Dock. Run from Downloads or a disk image, it offers to move itself to Applications.
-- The Vault: search as you type, filters by category, kind, sensitivity, status and source, and three sort orders. Each memory opens in an editor with a character counter, categories, a sensitivity level with what it means, an optional expiry date, how often it was shared (linking to Activity), its history, and Archive, Delete and Still True. Recently Deleted keeps memories 30 days with Restore and Delete Now. Select several to archive, delete, move or change their sensitivity together. Categories can be renamed, and your own added or deleted. Saving a memory says when a similar one exists.
-- The Inbox: suggestions from agents, captures, imports and your answers, each a card you can edit before Apply, Reject or Later. Cards say who proposed the fields, quote the agent's reasons as reported, point out similar memories, and show a correction as old → new with Replace or Keep Both. Select several to apply or reject them together. Expired suggestions can be restored for 7 days.
-- Agents: add one from tiles for the agents found on this Mac, with a starting access. Each shows whether it's waiting for its first request, connected, paused or expired, and what it may read. The access editor sets what it can do, its sensitivity limit, allowed and denied categories, whether Funes asks before sharing or saving, an expiry date, and whether it may ask for more. Connect adds Funes to Claude Desktop, Claude Code, Cursor or Codex in one click after showing the exact change (with a backup), or gives the setup to copy for about a dozen agents; Copy Key… and Rotate Key… are there too. Pause and Remove are in the header.
-- Activity: what each agent asked for and what happened, by day, with filters (Shared, Suggestions, Problems), agent, period and search. A row's details show the memories involved by their current title, what was withheld and why, and links to fix a refusal. Pending requests sit at the top with Review.
-- Agents that may ask for more access get a panel when a request is refused only because of a category: Not Now, Allow Once (that request only) or Always Allow. At most once an hour per agent and category. A refused suggestion goes to the Inbox if you allow it.
-- A request left unanswered says so on screen and waits in Pending requests, where Review opens it again with the minutes it has left. The Save panel has Edit…, which opens the suggestion in the Inbox. Optional notifications (Settings ▸ General): a request expired, a suggestion is waiting, an agent was refused more than 5 times in 10 minutes.
-- Quick capture: ⌥⌘M (changeable in Settings ▸ Capture), Remember… in the menu, or Services ▸ Remember in Funes in any app. The box says when text looks like a secret and saves nothing; otherwise it goes to the Inbox, and the chosen model (Apple's on-device model by default, rules as a fallback) proposes a title, kind, categories and sensitivity in the background.
-- Getting started: a checklist at the top of the Vault (seed your vault, review the Inbox, add an agent, connect it), seven optional questions whose answers go to the Inbox, and imports from a ChatGPT memories file, pasted Claude memories or a Markdown file, each previewed (duplicates, secrets, over-long items) before anything is stored.
-- Settings ▸ AI Models: embeddings are built in (bge-small, on this Mac). Classification can use Apple's on-device model (the default) or a provider you add: Anthropic, OpenAI, Ollama, LM Studio or another OpenAI-compatible server, with its key in the Keychain and Test Connection. Each choice shows where it runs and, for cloud ones, what it sends. Nothing above the cloud limit (Internal by default) goes to a cloud model. Usage counts per provider, with Reset.
-- Settings ▸ MCP turns agent access on or off and shows the address, the launcher (optionally linked as ~/.local/bin/funes-mcp) and traffic counts. Settings ▸ Data backs up the vault daily (keeping 7), restores a backup, exports and imports, shows the data folder and erases everything. Settings ▸ Updates checks for updates through Sparkle once the release keys exist. Settings ▸ Advanced sets how long Activity keeps rows and brings back the setup checklist.
-- Accessibility: every control works from the keyboard and has a VoiceOver label; panels, the capture box's errors and short notices are announced; badges and cards get stronger outlines with Increase Contrast, and notices don't fade with Reduce Motion.
+- **Agents connect over MCP**, on this Mac only.
+  - The app serves MCP on `127.0.0.1:47625`, a port you can change in Settings ▸ MCP. Agents reach it through the `funes-mcp` launcher inside the app, or directly over HTTP.
+  - Agents can list your categories, request memories for a task (with keywords for the kinds of context that would help), pick up a request you answered later, and suggest memories.
+  - Each agent has its own key, kept in a private file and stored in the vault only as a hash.
+  - The protocol and security core is [BridgeKit](https://github.com/bereciartua/bridgekit) 0.1.1, shared with EK Bridge. It refuses JSON-RPC ids longer than 1,024 bytes, so every response fits its 200,000-byte limit.
+- **You approve the exact text.**
+  - A floating Share panel shows each memory an agent may get, with a checkbox per memory, the agent's task, keywords and stated purpose, and a 45-second countdown.
+  - A request left unanswered says so on screen and waits in **Pending requests** for 15 minutes, where **Review** opens it again with the minutes it has left.
+  - Quitting Funes Vault while an agent waits tells the agent at once (`funes_quit`), and the request stays in Pending requests.
+  - Shares always fit in one result of at most 200,000 bytes: memories that wouldn't fit are left out, like those over the agent's token budget.
+  - An approval is used once, within 15 minutes, and is cancelled if a memory or the agent's access changes. Refusals tell agents how many memories were withheld and why, never which ones.
+- **Agents**: add one from tiles for the agents found on this Mac, with a starting access.
+  - The access editor sets what it can do (Read, Suggest, Write), its sensitivity limit, allowed and denied categories, whether Funes asks before sharing or saving, an expiry date, and whether it may ask for more.
+  - Each agent shows whether it's waiting for its first request, connected, paused or expired. **Pause** and **Remove** are in its header; **Copy Key…** and **Rotate Key…** on its Connect tab.
+  - **Connect** adds Funes to Claude Desktop, Claude Code, Cursor or Codex in one click, after showing the exact change and keeping a backup, and never writes the key. Copyable setups cover VS Code (Copilot), Gemini CLI, Zed, Cline, JetBrains AI Assistant, Devin Desktop and any other MCP client.
+- **Asking for more access**: an agent you allow to ask gets a panel when a request is refused only because of a category: **Not Now**, **Allow Once** (that request only) or **Always Allow**. At most once an hour per agent and category. A refused suggestion goes to the Inbox if you allow it.
+- **The Vault**: search as you type, by meaning as well as by words, with filters by category, kind, sensitivity, status and source, and three sort orders.
+  - Each memory opens in an editor with a character counter, categories, a sensitivity level with what it means, an optional expiry date, how often it was shared (linking to Activity), its history, and **Archive**, **Delete** and **Still True**.
+  - **Recently Deleted** keeps memories for 30 days, with **Restore** and **Delete Now**.
+  - Select several memories to archive, delete, move or change their sensitivity together. Rename categories, and add or delete your own. Saving a memory says when a similar one exists.
+- **The Inbox**: suggestions from agents, captures, imports and your answers, each a card you can edit before **Apply**, **Reject** or **Later**.
+  - Cards say who proposed the fields, quote the agent's reasons as reported, point out similar memories, and show a correction as old → new with **Replace** or **Keep Both**.
+  - Select several to apply or reject them together. Expired suggestions can be restored for 7 days.
+  - The **Save this memory?** panel appears when an agent suggests something, with **Edit…** to open it in the Inbox.
+- **Activity**: what each agent asked for and what happened, by day, with filters (Shared, Suggestions, Problems), agent, period and search.
+  - A row's details show the memories involved by their current title, what was withheld and why, and links to fix a refusal. Pending requests sit at the top with **Review**.
+  - Activity stores ids and reason codes only, never memory text.
+- **Quick capture** with ⌥⌘M (changeable in Settings ▸ Capture), **Remember…** in the menu, or **Services ▸ Remember in Funes** in any app.
+  - The box says when text looks like a secret, and saves nothing then.
+  - Otherwise the capture goes to the Inbox, and the chosen model (Apple's on-device model by default, with rules as a fallback) proposes a title, kind, categories and sensitivity in the background.
+- **Getting started**: a checklist at the top of the Vault (seed your vault, review the Inbox, add an agent, connect it), seven optional questions whose answers go to the Inbox, and imports from a ChatGPT memories file, pasted Claude memories, a Markdown file or a Funes Vault export. Each import is previewed (duplicates, secrets, over-long items) before anything is stored.
+- **The menu bar**: the icon shows when Funes needs you or is paused. The menu has **Remember…**, the Inbox count, **Pending requests** with minutes left, **Pause Funes Vault** (for 1 hour, until tomorrow or until you resume, kept across relaunches), **Open Funes Vault** and **Settings…**.
+- **Search on your Mac**: hybrid keyword and semantic search with the bundled [bge-small-en-v1.5](https://huggingface.co/BAAI/bge-small-en-v1.5) embedding model, run with Core ML on the CPU. No download, no API key, nothing leaves the Mac.
+- **Settings ▸ AI Models**: embeddings are built in. Classification uses Apple's on-device model by default, or a provider you add: Anthropic, OpenAI, Ollama, LM Studio or another OpenAI-compatible server, with its key in the Keychain and **Test Connection**.
+  - Each choice shows where it runs and, for cloud ones, what it sends. Classification sends only new captures and your category names and descriptions; agent suggestions and imports are never sent.
+  - Nothing above the cloud limit (Internal by default), and nothing that looks like a secret, goes to a cloud model.
+  - Usage counts per provider, with **Reset**.
+- **More settings**
+  - **General**: open at login, show Funes in the Dock, and optional notifications: a request expired, a suggestion is waiting, an agent was refused more than 5 times in 10 minutes.
+  - **MCP**: turn agent access on or off, change the port, see the address, the launcher (optionally linked as `~/.local/bin/funes-mcp`) and traffic counts.
+  - **Data**: daily backups of the vault (keeping 7), restore a backup, export and import, show the data folder, and erase everything.
+  - **Updates**: signed updates from GitHub through Sparkle, checked daily; installing always takes a click.
+  - **Advanced**: how long Activity keeps rows, and bringing back the setup checklist.
+- **Moving to Applications**: run from Downloads or a disk image, the app offers to move itself to Applications.
+- **Accessibility**: every control works from the keyboard and has a VoiceOver label; panels, the capture box's errors and short notices are announced; badges and cards get stronger outlines with Increase Contrast, and notices don't fade with Reduce Motion.
+- **Licences in the app**: the bundled embedding model ships inside the app with its MIT licence, and the app includes the licence texts of GRDB.swift, Sparkle and the model alongside its own `LICENSE` and `NOTICE`.
+- **Open source**: the code, the product definition in `spec/`, and the tests are public under the Apache License 2.0. See [Testing](docs/TESTING.md) for what has been checked.

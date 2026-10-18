@@ -65,6 +65,7 @@ public final class RequestPipeline: BridgeHandler {
     /// `get_memory_request` calls by agent and request id. Keyed by both, so another agent's
     /// calls can't reveal that a request exists (T20).
     let lastGet = Mutex<[String: Date]>([:])
+    private let quitting = Mutex(false)
 
     public init(services: FunesServices, presenter: any FunesPresenter, limiter: RateLimiter,
                 inCallWait: Duration = FunesMCPConfiguration.inCallWait, now: @escaping @Sendable () -> Date = { Date() }) {
@@ -75,8 +76,21 @@ public final class RequestPipeline: BridgeHandler {
         self.now = now
     }
 
+    /// Funes is quitting (mcp-server.md §7): calls waiting for the user get `funes_quit` now, with
+    /// their request id, and new calls get it at once. Their requests stay in Pending requests.
+    public func quit() {
+        quitting.withLock { $0 = true }
+        services.disclosures.endWaits()
+    }
+
+    var isQuitting: Bool { quitting.withLock { $0 } }
+
+    /// Tool calls being handled, for every agent; the app holds its quit until they've answered.
+    public var callsInProgress: Int { inFlight.withLock { $0.values.reduce(0, +) } }
+
     public func handle(_ call: ToolCall) async -> ToolResult {
         guard let agentID = UUID(uuidString: call.agent.id) else { return ToolOutput.denied(.notFound) }
+        if isQuitting { return quit(call, agentID) }
         let started = now()
         // 1. Funes on.
         if services.pause.isPaused(at: started) { return refuse(call, agentID, .funesPaused) }
@@ -120,6 +134,13 @@ public final class RequestPipeline: BridgeHandler {
     func refuse(_ call: ToolCall, _ agentID: UUID, _ reason: ReasonCode, message: String? = nil) -> ToolResult {
         record(call, agentID, outcome: "denied", reason: reason)
         return ToolOutput.denied(reason, message: message)
+    }
+
+    func quit(_ call: ToolCall, _ agentID: UUID, requestID: UUID? = nil) -> ToolResult {
+        record(call, agentID, outcome: "denied", reason: .funesQuit)
+        guard let requestID else { return ToolOutput.denied(.funesQuit, isError: true) }
+        let id = requestID.uuidString.lowercased()
+        return ToolOutput.denied(.funesQuit, message: Messages.quit(id), isError: true, extra: ["request_id": id])
     }
 
     func rateLimited(_ call: ToolCall, _ agentID: UUID, _ seconds: Int) -> ToolResult {

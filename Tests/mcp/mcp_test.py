@@ -165,6 +165,18 @@ def main():
     finally:
         limits.close()
 
+    quitting = Harness(binary, FUNES_MCP_TEST_WAIT=30)
+    try:
+        run_quit(quitting)
+    finally:
+        quitting.close()
+
+    large = Harness(binary, FUNES_MCP_TEST_WAIT=1, FUNES_MCP_TEST_LARGE=1)
+    try:
+        run_response_size(large)
+    finally:
+        large.close()
+
     auto = Harness(binary, FUNES_MCP_TEST_WAIT=3, FUNES_MCP_TEST_APPROVAL="allow")
     try:
         c = Client(auto, auto.key("asker"))
@@ -182,7 +194,8 @@ def main():
             print("  " + failure)
         sys.exit(1)
     print(f"Funes MCP: {checks} checks over loopback (contract, visibility, categories, request, approve, deny, "
-          "timeout then get, single use, invalidation, suggestions, open, access requests, agent state, privacy, limits) "
+          "timeout then get, single use, invalidation, suggestions, open, access requests, agent state, privacy, limits, "
+          "quit, response size) "
           "passed")
 
 
@@ -559,6 +572,62 @@ def run_privacy(h):
     for secret in ["TypeScript", "Plan dinner", "Vitest", "dark mode", "sk-proj", "pick the tooling", "oat milk"]:
         check(f"activity never holds text: {secret}", secret not in text)
     check("withheld memory ids never in activity", h.memories["allergy"] not in text)
+
+
+def run_quit(h):
+    # Quitting while a call waits for the user (mcp-server.md §7): it answers funes_quit at once,
+    # with its request id, and the request stays pending for get_memory_request.
+    c = Client(h, h.key("asker"))
+    before = h.control(cmd="presented")["approvals"]
+    started = time.time()
+    thread, box = in_background(lambda: c.call("request_memory", {"task": "Set up a TypeScript project"}))
+    check("quit: panel shown", wait_for(lambda: h.control(cmd="presented")["approvals"] == before + 1))
+    check("quit: one call in progress", h.control(cmd="in_progress")["calls"] == 1)
+    h.control(cmd="quit")
+    thread.join(10)
+    result = box.get("result", {})
+    check("quit: waiting call answers funes_quit", result.get("status") == "denied" and
+          result.get("reason") == "funes_quit" and result.get("_isError") is True and
+          len(result.get("request_id", "")) == 36 and "get_memory_request" in result.get("message", "") and
+          time.time() - started < 10, result)
+    check("quit: no calls left", wait_for(lambda: h.control(cmd="in_progress")["calls"] == 0))
+    other = Client(h, h.key("reader"))
+    result = other.call("list_memory_categories")
+    check("quit: new calls refused", result.get("reason") == "funes_quit" and result.get("_isError") is True, result)
+    rows = h.control(cmd="activity")["activity"]
+    check("quit: in Activity", any(r.get("reason") == "funes_quit" for r in rows), rows[:3])
+    c.close()
+    other.close()
+
+
+def run_response_size(h):
+    # PR #5 review 4307609724: the JSON-RPC id is echoed, so it counts toward the 200,000 bytes.
+    # BridgeKit 0.1.1 refuses ids over 1,024 encoded bytes (-32600, id null) and bundles keep room
+    # for one at the cap. Three large memories and max_tokens 8000, so the bundle is as big as it gets.
+    c = Client(h, h.key("reader"))
+    # Personal Preferences only (the large memories and Coffee).
+    arguments = {"task": "Plan the week", "max_tokens": 8000, "categories": ["personal_preferences"]}
+    for label, request_id in [("id at the cap", "r" * 1022), ("escaped id at the cap", '"' * 511),
+                              ("1,025-byte id", "r" * 1023), ("20,000-character id", "r" * 20000)]:
+        message = {"jsonrpc": "2.0", "id": request_id, "method": "tools/call",
+                   "params": {"name": "request_memory", "arguments": arguments}}
+        data = json.dumps(message, separators=(",", ":")).encode()
+        c.conn.request("POST", "/mcp", body=data, headers={
+            "Host": c.host, "Content-Type": "application/json", "Accept": "application/json",
+            "Authorization": "Bearer " + c.key, "MCP-Protocol-Version": LEGACY, "Content-Length": str(len(data))})
+        response = c.conn.getresponse()
+        payload = response.read()
+        body = json.loads(payload) if payload else {}
+        if len(json.dumps(request_id, separators=(",", ":")).encode()) <= 1024:
+            content = (body.get("result") or {}).get("structuredContent") or {}
+            check(f"response size: {label} answered", response.status == 200 and body.get("id") == request_id and
+                  content.get("status") == "fulfilled" and len(content.get("items", [])) >= 1,
+                  (response.status, content.get("status")))
+            check(f"response size: {label} within 200,000 bytes", len(payload) <= 200000, len(payload))
+        else:
+            check(f"response size: {label} refused", response.status == 400 and "id" in body and
+                  body["id"] is None and (body.get("error") or {}).get("code") == -32600, (response.status, body))
+    c.close()
 
 
 def run_limits(h):

@@ -6,6 +6,8 @@ import FunesProtocol
 public enum FunesMCPConfiguration {
     /// Avoids EK Bridge's 47615 and 47616.
     public static let defaultPort = 47625
+    /// The ports Settings ▸ MCP accepts: no privileged ones.
+    public static let portRange = 1024...65_535
     /// `server/discover` names the agent a key belongs to under this key (`funes-mcp check`).
     public static let agentMetaKey = "com.funesvault/agent"
     /// `agent-keys/<agentId>.key` (storage §1).
@@ -44,6 +46,9 @@ public enum FunesMCPConfiguration {
             // mcp-server.md §4: X-Forwarded-*, Forwarded, CF-* and Tailscale-* are refused.
             forwardedHeaderPrefixes: ["x-forwarded-", "forwarded", "cf-", "tailscale-"],
             stringLength: .unicodeScalars,
+            // Longer ids get -32600 before any tool runs, so bundles keep room for exactly this
+            // much (`BundleCompiler.requestIDBytes`; mcp-server.md §9).
+            maxIDBytes: JSONRPC.defaultMaxIDBytes,
             texts: BridgeTexts(
                 unavailable: "\(app) can't read its vault. Ask the user to open \(app).",
                 unauthorized: "\(app) doesn't recognize this agent's key. "

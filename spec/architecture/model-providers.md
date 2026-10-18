@@ -73,7 +73,7 @@ public protocol GenerationProvider: Sendable {
 - **Providers list:** add or edit a provider (base URL, API key, local or cloud flag) and **Test connection** (lists models, makes one tiny call).
 - **Cloud guard:** "Never send memories above **Internal** to cloud models". Choices: Public · Low · Internal (default) · Sensitive · Never send memories. It applies to every non-local provider.
 - **Disclosure line** under each cloud choice:
-  - "Classification sends capture and suggestion text (up to Internal) to Anthropic."
+  - "Classification sends new captures (up to Internal) and your category names and descriptions to Anthropic." (v0.1 classifies captures only; agent suggestions, imports and seed answers arrive with their fields proposed.)
   - "Search embeddings send memory text (up to Internal), your searches and agents' task descriptions to OpenAI."
 - **Usage counters** per provider (requests and tokens, from provider responses where available), resettable.
 - **Storage:**
@@ -91,7 +91,7 @@ public protocol GenerationProvider: Sendable {
      - The pre-screen uses the rules classifier (health, finance and legal keyword lists; category defaults), plus Foundation Models where available.
      - It also uses any sensitivity hint the user picked when capturing.
      - If the estimate is at or below the cloud guard, the capture goes to the chosen cloud model. Otherwise it's classified on the device, and the card says "Kept on this Mac: looked sensitive".
-     - Agent suggestions and imports already carry a proposed sensitivity, and follow the guard directly.
+     - Agent suggestions and imports already carry a proposed sensitivity. v0.1 never sends them to a classification model; if a later version does, they follow the guard directly.
 3. **Agents' task text** goes to a cloud embedding provider only if "Embed agent requests with the cloud model" is on. It's **on by default when a cloud embedding model is chosen**, because retrieval quality depends on it, and it's stated in the disclosure line. If it's off, agent retrieval for that vault is keyword-only.
 4. **No memory text in errors or logs.** Provider errors are logged with the status code and provider id only.
 5. **TLS required** for cloud endpoints (`https://`). Plain HTTP is allowed only for local-server providers.

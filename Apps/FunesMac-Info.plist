@@ -4,14 +4,15 @@
 <!-- Keys Xcode can't generate from build settings; merged with the generated Info.plist
      (GENERATE_INFOPLIST_FILE). spec/plans/project-setup.md "Info.plist highlights". -->
 <dict>
-	<!-- TODO(release): Sparkle's feed and EdDSA public key are left empty until the user creates
-	     Funes's own key pair at release time (spec/plans/project-setup.md: SUFeedURL is
-	     https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml).
-	     While either is empty, the app never checks for updates. -->
+	<!-- Sparkle: the latest published release's appcast, and Funes's own EdDSA public key (the
+	     private key is in the maintainer's login keychain as account funes-vault, and the
+	     SPARKLE_PRIVATE_KEY secret). Never change SUPublicEDKey in a release: installed copies
+	     only accept updates signed with the key they shipped with (docs/MAINTAINING.md, Updates).
+	     A build with either key empty never checks for updates. -->
 	<key>SUFeedURL</key>
-	<string></string>
+	<string>https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string></string>
+	<string>oFIltO+F0B34afueMjZjzPhGfSgO12GLQ99IDGFXQ0g=</string>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUScheduledCheckInterval</key>

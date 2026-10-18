@@ -545,6 +545,9 @@
     "Agents start the launcher, which reads their key file and talks to Funes. Setups on the Connect tab use this path." : {
 
     },
+    "Agents that start funes-mcp follow the new port on their own. Set up again any agent whose setup names the address, such as Claude Code." : {
+
+    },
     "Agents' access is set per category. Built-in categories can be renamed; your own can also be deleted." : {
 
     },
@@ -600,7 +603,7 @@
     "Another app already uses %@. Try another shortcut." : {
 
     },
-    "Another app is using port %@. Quit it, then turn this off and on again. Funes never moves to another port, because agents' setups name this one." : {
+    "Another app is using port %@. Quit it, then turn this off and on again, or choose another port. Funes never moves on its own, because agents' setups name the port." : {
 
     },
     "Answer a Few Questions" : {
@@ -799,6 +802,9 @@
     "Change %@'s categories…" : {
 
     },
+    "Change Port" : {
+
+    },
     "Changed since approval" : {
 
     },
@@ -841,6 +847,16 @@
     "Choose a model in %@'s settings. Until then: on-device, then rules." : {
 
     },
+    "Choose a port from %@ to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose a port from %1$@ to %2$@."
+          }
+        }
+      }
+    },
     "Choose at least one category." : {
 
     },
@@ -850,12 +866,12 @@
     "Classification" : {
 
     },
-    "Classification sends capture and suggestion text (up to %@) to %@." : {
+    "Classification sends new captures (up to %@) and your category names and descriptions to %@." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Classification sends capture and suggestion text (up to %1$@) to %2$@."
+            "value" : "Classification sends new captures (up to %1$@) and your category names and descriptions to %2$@."
           }
         }
       }
@@ -1304,6 +1320,9 @@
 
     },
     "Funes was paused" : {
+
+    },
+    "Funes was quitting" : {
 
     },
     "Gemini CLI" : {
@@ -1877,6 +1896,9 @@
 
     },
     "Personal: health, money, family. Share rarely, and always ask." : {
+
+    },
+    "Port" : {
 
     },
     "Port %@ is in use" : {

@@ -157,6 +157,8 @@ public final class DisclosureService: Sendable {
     /// Request id → the Allow Once grant it was made with, kept for its panel and delivery.
     private let requestGrants = Mutex<[UUID: OnceGrant]>([:])
     private let waiters = Mutex<[UUID: [UUID: CheckedContinuation<Void, Never>]]>([:])
+    /// Set by `endWaits()`: Funes is quitting, so no wait lasts.
+    private let waitsEnded = Mutex(false)
 
     public init(store: VaultStore, retriever: any MemoryRetriever, activity: any ActivityRecorder, pause: FunesPause) {
         self.store = store
@@ -526,6 +528,8 @@ public final class DisclosureService: Sendable {
         let token = UUID()
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
             waiters.withLock { $0[requestID, default: [:]][token] = c }
+            // Checked after registering, so a wait can't slip past `endWaits()`.
+            if waitsEnded.withLock({ $0 }) { resume(requestID, token) }
             if let s = try? status(requestID), s != .needsApproval { resume(requestID, token) }
             Task {
                 // An explicit tolerance: by default a 45 s sleep may run seconds late (timer
@@ -535,6 +539,17 @@ public final class DisclosureService: Sendable {
             }
         }
         return try? status(requestID)
+    }
+
+    /// Funes is quitting: every wait returns now, and later ones at once, with the request's status
+    /// as it is. Requests still waiting for the user stay in Pending requests (mcp-server.md §7).
+    public func endWaits() {
+        waitsEnded.withLock { $0 = true }
+        let all = waiters.withLock { w in
+            defer { w.removeAll() }
+            return w
+        }
+        for group in all.values { for c in group.values { c.resume() } }
     }
 
     private func status(_ id: UUID) throws -> DisclosureStatus? {
