@@ -62,6 +62,8 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         var item = Self.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: now)
         if focus { item.expiresAt = panel.expiresAt }
         await MainActor.run {
+            // Quitting: the queue refuses it anyway; don't bring Funes forward for it.
+            guard !queue.isClosed else { return }
             if let task = panel.task { tasks[requestID] = task }
             queue.enqueue(item) { [weak self] answer in self?.answered(panel, answer) }
             if focus { bringForward() }
@@ -146,6 +148,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             tertiary: String(localized: "Discard"), edit: String(localized: "Edit…"),
             announcement: String(localized: "\(agentName) suggests a memory for Funes"))
         await MainActor.run {
+            guard !queue.isClosed else { return }
             queue.enqueue(item) { [weak self] answer in self?.answered(suggestion: suggestion.id, answer) }
             if focus { bringForward() } else { suggestionArrived(agentName) }
         }
@@ -175,6 +178,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         let item = Self.accessItem(prompt, agentName: agentName, categoryName: category)
         return await withCheckedContinuation { continuation in
             Task { @MainActor in
+                // A closed queue (quitting) answers `.withdrawn` at once: Not Now, so the call never waits.
                 queue.enqueue(item) { answer in
                     switch answer {
                     case .primary: continuation.resume(returning: .alwaysAllow)

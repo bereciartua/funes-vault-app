@@ -55,6 +55,8 @@ extension RequestPipeline {
                 return quit(call, agent.id, requestID: id)
             }
             return Self.output(outcome)
+        } catch let quitting as QuitBeforeAsking {
+            return quit(call, agent.id, requestID: quitting.requestID)
         } catch let error as VaultError {
             return failure(call, agent.id, error)
         } catch {
@@ -66,6 +68,8 @@ extension RequestPipeline {
     /// asked: evaluate; if more access was offered, ask (Allow Once and Always Allow run the request
     /// again, replacing a waiting one); if it needs approval, show the panel and wait for the rest of
     /// the time; deliver when approved. On timeout the request waits in Pending requests.
+    /// Once Funes is quitting, nothing new is shown: the call throws `QuitBeforeAsking` instead
+    /// (mcp-server.md §7; PR #5 review 4307518013).
     func requestInCall(_ agent: Agent, _ input: MemoryRequest) async throws -> RequestOutcome {
         let disclosures = services.disclosures
         let deadline = now().addingTimeInterval(Double(inCallWait.components.seconds))
@@ -73,7 +77,7 @@ extension RequestPipeline {
         // that would add one, so concurrent calls can't all pass.
         let limit = Self.maxPendingApprovalsPerAgent
         var outcome = try await disclosures.request(agentID: agent.id, input, now: now(), maxPendingApprovals: limit)
-        if outcome.status == .fulfilled, let offer = outcome.accessOffer, let key = offer.categoryKeys.first {
+        if outcome.status == .fulfilled, let offer = outcome.accessOffer, let key = offer.categoryKeys.first, !isQuitting {
             // Shared without asking: the agent gets its answer now; Always Allow is for next time.
             let prompt = AccessPrompt(agentID: agent.id, categoryKey: key, operation: .read, task: input.task,
                                       expiresAt: deadline, allowsOnce: false)
@@ -87,9 +91,15 @@ extension RequestPipeline {
         }
         if let offer = outcome.accessOffer, let key = offer.categoryKeys.first, let offeredBy = offer.requestID,
            outcome.status == .denied || outcome.status == .needsApproval {
+            // Quitting (retrieval can outlast the quit): no panel, and the agent gets funes_quit, not a
+            // wait cut off by the app's quit deadline. Asked again after the answer, which is Not Now
+            // when the quit withdrew the panel.
+            let waiting = outcome.status == .needsApproval ? outcome.requestID : nil
+            if isQuitting { throw QuitBeforeAsking(requestID: waiting) }
             let prompt = AccessPrompt(agentID: agent.id, categoryKey: key, operation: .read, task: input.task,
                                       expiresAt: deadline)
             let answer = await presenter.askForAccess(prompt)
+            if answer == .notNow, isQuitting { throw QuitBeforeAsking(requestID: waiting) }
             if answer != .notNow {
                 var grant: OnceGrant?
                 if answer == .alwaysAllow {
@@ -120,6 +130,12 @@ extension RequestPipeline {
         default:
             return outcome
         }
+    }
+
+    /// Funes began quitting before the user was asked. `requestID` is the request still waiting in
+    /// Pending requests, if there is one.
+    struct QuitBeforeAsking: Error {
+        let requestID: UUID?
     }
 
     // MARK: get_memory_request
@@ -239,7 +255,7 @@ extension RequestPipeline {
             limiter.recordWrite(agent.id.uuidString.lowercased())
             object["suggestion_id"] = outcome.suggestionID?.uuidString.lowercased()
             object["message"] = "Saved to the user's Funes Inbox for review."
-            if let id = outcome.suggestionID {
+            if let id = outcome.suggestionID, !isQuitting {
                 let presenter = self.presenter
                 Task { await presenter.showSuggestion(suggestionID: id, agentID: agent.id) }
             }
@@ -256,6 +272,7 @@ extension RequestPipeline {
     /// through; Always Allow adds the category (or Suggest) to the agent's access first. Either way it
     /// goes to the Inbox with its Save panel, never straight into the vault (§7).
     func askForSuggestionAccess(_ agent: Agent, _ input: SuggestInput, _ offer: AccessRequestOffer) {
+        guard !isQuitting else { return }
         let services = self.services, presenter = self.presenter, now = self.now
         let prompt = AccessPrompt(agentID: agent.id, categoryKey: offer.categoryKeys.first, operation: offer.operation,
                                   task: nil, expiresAt: now().addingTimeInterval(Double(inCallWait.components.seconds)))

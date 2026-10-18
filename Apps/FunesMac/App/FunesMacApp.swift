@@ -185,11 +185,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// Calls in progress answer before the listener goes: one waiting for the user gets `funes_quit`
-    /// with its request id (mcp-server.md §7). The quit waits for them, 3 seconds at most.
+    /// with its request id (mcp-server.md §7). The quit waits for them, 3 seconds at most. The panel
+    /// queue closes, so no panel shows after this, even one a call was still building.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard let mcp, mcp.callsInProgress > 0 else { return .terminateNow }
         mcp.quit()
-        environment?.approvals.queue.withdrawAll()
+        environment?.approvals.queue.close()
         Task {
             let deadline = ContinuousClock.now + .seconds(3)
             while mcp.callsInProgress > 0, ContinuousClock.now < deadline {
@@ -203,8 +204,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        // Open panels are withdrawn; the endpoint file goes with the listener.
-        environment?.approvals.queue.withdrawAll()
+        // Open panels are withdrawn and no more show; the endpoint file goes with the listener.
+        environment?.approvals.queue.close()
         mcp?.stop()
     }
 

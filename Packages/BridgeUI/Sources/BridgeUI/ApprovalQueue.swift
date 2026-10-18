@@ -175,6 +175,8 @@ public final class ApprovalQueue {
     public private(set) var generations = [UUID: Int]()
     /// Rows the user expanded with **Show all**, as "item|row".
     public private(set) var expanded = Set<String>()
+    /// Set by `close()`: the app is quitting, so nothing new is shown.
+    public private(set) var isClosed = false
 
     @ObservationIgnored private var completions = [UUID: (PanelAnswer) -> Void]()
     @ObservationIgnored private let clock: () -> Date
@@ -197,8 +199,13 @@ public final class ApprovalQueue {
 
     /// Adds an item; `completion` runs once, on the main actor. An item whose id is already
     /// waiting is refreshed in place and keeps its first completion: rows with the same id and
-    /// content keep the user's tick, and if the content changed the buttons re-arm.
+    /// content keep the user's tick, and if the content changed the buttons re-arm. Once the queue
+    /// is closed, `completion` runs at once with `.withdrawn` and nothing is shown.
     public func enqueue(_ item: PanelItem, completion: @escaping (PanelAnswer) -> Void) {
+        guard !isClosed else {
+            completion(.withdrawn)
+            return
+        }
         if let index = items.firstIndex(where: { $0.id == item.id }) {
             let old = items[index]
             var refreshed = item
@@ -237,9 +244,17 @@ public final class ApprovalQueue {
 
     public func withdraw(_ id: UUID) { answer(id, .withdrawn) }
 
-    /// Withdraws everything (quit, Funes paused).
+    /// Withdraws everything (Funes paused, the server switched off). Later items still show.
     public func withdrawAll() {
         for item in items { answer(item.id, .withdrawn) }
+    }
+
+    /// The app is quitting: withdraws everything, and answers anything enqueued later `.withdrawn`
+    /// at once, so a panel built after the quit began never shows and its caller never waits.
+    /// On the main actor, like `enqueue`, so nothing slips in between.
+    public func close() {
+        isClosed = true
+        withdrawAll()
     }
 
     public func toggle(row: String, in id: UUID) {

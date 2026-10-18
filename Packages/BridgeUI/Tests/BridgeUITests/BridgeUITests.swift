@@ -148,6 +148,30 @@ struct ApprovalQueueTests {
         #expect(queue.items.isEmpty)
     }
 
+    /// Quitting (PR #5 review 4307518013): once closed, nothing new is shown, and a late enqueue is
+    /// answered `.withdrawn` at once, so its caller doesn't wait for a panel that never appears.
+    @Test func closedQueueRefusesNewItems() {
+        let queue = ApprovalQueue()
+        var answers = [PanelAnswer]()
+        queue.enqueue(item()) { answers.append($0) }
+        queue.close()
+        #expect(queue.isClosed)
+        #expect(answers == [.withdrawn])
+        queue.enqueue(item()) { answers.append($0) }
+        #expect(answers == [.withdrawn, .withdrawn])
+        #expect(queue.items.isEmpty && queue.current == nil)
+    }
+
+    /// Pausing Funes withdraws the panels but doesn't close the queue: later requests still show.
+    @Test func withdrawAllLeavesTheQueueOpen() {
+        let queue = ApprovalQueue()
+        queue.withdrawAll()
+        #expect(!queue.isClosed)
+        var answer: PanelAnswer?
+        queue.enqueue(item()) { answer = $0 }
+        #expect(answer == nil && queue.items.count == 1)
+    }
+
     @Test func reenqueueKeepsTheFirstCompletion() {
         let queue = ApprovalQueue()
         var answers = [String]()
