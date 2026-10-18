@@ -71,11 +71,14 @@ final class VaultEnvironment {
     var hasEmbeddings: Bool { indexer != nil }
 
     /// The bundled bge-small model (ADR-0016) when it's available; keyword search otherwise.
-    /// Until the model ships inside the app (Phase 4), development builds use the converted copy
-    /// in `~/Library/Caches/com.funesvault.dev` that scripts/fetch_embedding_model.sh makes.
+    /// The build copies it into Contents/Resources (scripts/embed_resources.sh); a Debug
+    /// build without it also tries the converted copy in `~/Library/Caches/com.funesvault.dev`
+    /// that scripts/fetch_embedding_model.sh makes.
     private static func bundledIndexer(store: VaultStore) -> EmbeddingIndexer? {
-        let cache = URL(fileURLWithPath: NSHomeDirectory() + "/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7")
-        let candidates = [Bundle.main.resourceURL?.appendingPathComponent("bge-small-en-v1.5"), cache].compactMap { $0 }
+        var candidates = [Bundle.main.resourceURL?.appendingPathComponent("bge-small-en-v1.5")].compactMap { $0 }
+        #if DEBUG
+        candidates.append(URL(fileURLWithPath: NSHomeDirectory() + "/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7"))
+        #endif
         for folder in candidates {
             let model = folder.appendingPathComponent("bge-small-en-v1.5.mlmodelc")
             let vocab = folder.appendingPathComponent("vocab.txt")

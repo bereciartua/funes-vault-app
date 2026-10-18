@@ -6,7 +6,7 @@
 
 ## Tasks
 ### 4.1 Release pipeline · 3 h
-- [ ] `scripts/release.sh` adapted from EK Bridge:
+- [x] `scripts/release.sh` adapted from EK Bridge:
   1. clean tree tagged `v<version>`;
   2. tests;
   3. `xcodebuild archive` (universal);
@@ -18,8 +18,10 @@
   9. Sparkle `sign_update` + `verify_update_signature`;
   10. `appcast.xml`;
   11. draft GitHub release.
-- [ ] `.github/workflows/release.yml`: protected environment, temporary keychain, notary key, Sparkle key, build provenance attestation.
-- [ ] `ci.yml`: `swift test` on the packages, `xcodebuild test`, the Python MCP harness, golden fixtures.
+
+  Also `--untagged --no-release` rehearsals, `scripts/check_bundle.sh` (both architectures, `funes-mcp` signed as `com.funesvault.mac.mcp`, no `get-task-allow` anywhere, the pinned model inside, licenses) and the **Embed Resources** build phase (`scripts/embed_resources.sh`), which puts the bundled model and the license files in every build and fails a Release build without the model. Archives are signed manually with the Developer ID identity and exported with method `developer-id`. See [MAINTAINING](../../docs/MAINTAINING.md#releasing).
+- [x] `.github/workflows/release.yml`: protected environment, temporary keychain, notary key, Sparkle key, build provenance attestation.
+- [x] `ci.yml`: `swift test` on the packages, `xcodebuild test`, the Python MCP harness, golden fixtures. Already covered by `scripts/test.sh`, which CI runs (there is no XCTest target in the app yet; UI is checked with `scripts/ui_snapshots.sh`). Its cost-saving triggers are unchanged.
 
 ### 4.2 Distribution · 2 h
 - [ ] Homebrew: add `Casks/funes-vault.rb` to `bereciartua/homebrew-tap`, with the update workflow checking the attestation and SHA-256 (EK Bridge pattern).
