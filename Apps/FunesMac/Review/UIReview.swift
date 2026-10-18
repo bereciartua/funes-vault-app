@@ -51,6 +51,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
         let model: AppModel
         let empty: AppModel
         let agents: SampleData.Agents
+        let claudeDesktop: Agent
         let shareItem: PanelItem
     }
 
@@ -60,6 +61,19 @@ final class UIReview: NSObject, NSApplicationDelegate {
         let preferences = Preferences(defaults: defaults)
         let environment = try VaultEnvironment(dataFolder: scratch.appendingPathComponent("vault"))
         let agents = try await SampleData.fill(environment)
+        let (claudeDesktop, _) = try await environment.agents.create(name: "Claude Desktop", kind: .claudeDesktop,
+                                                                     access: agents.claudeCode.access, now: Date())
+        // Claude Desktop's config as it ships: an empty mcpServers next to its own settings, in the
+        // scratch home the one-click previews read.
+        let desktopFolder = scratch.appendingPathComponent("home/Library/Application Support/Claude")
+        try FileManager.default.createDirectory(at: desktopFolder, withIntermediateDirectories: true)
+        try Data("""
+            {
+              "mcpServers": {},
+              "coworkUserFilesPath": "/Users/you/Claude",
+              "preferences": { "menuBarEnabled": true, "sidebarMode": "chat" }
+            }
+            """.utf8).write(to: desktopFolder.appendingPathComponent("claude_desktop_config.json"))
         // Claude Code connected through a request; a second one waits for the user.
         _ = try await environment.disclosures.request(agentID: agents.claudeCode.id,
                                                       MemoryRequest(task: "Which test framework does the user prefer?",
@@ -90,7 +104,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
                              modelSettings: ModelSettings(defaults: emptyDefaults, keys: InMemoryProviderKeyStore()))
         configure(empty)
         await empty.refresh()
-        return Fixture(model: model, empty: empty, agents: agents, shareItem: share)
+        return Fixture(model: model, empty: empty, agents: agents, claudeDesktop: claudeDesktop, shareItem: share)
     }
 
     private func configure(_ model: AppModel) {
@@ -147,6 +161,22 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 model.selectedAgentID = fixture.agents.cursor?.id
                 model.agentTab = .connect
             }
+            // A Claude Desktop agent in a window about as narrow as the user's, then Add to Claude
+            // Desktop… through the Connect tab's own path: the sheet the user sees.
+            main.window?.setContentSize(NSSize(width: 900, height: 680))
+            await mainScene("agents-connect-claude-desktop") {
+                model.selectedAgentID = fixture.claudeDesktop.id
+                model.agentTab = .connect
+            }
+            model.agentTab = .access
+            try? await Task.sleep(for: .milliseconds(300))
+            ConnectTab.reviewStartsOneClick = .claudeDesktop
+            model.agentTab = .connect
+            for _ in 0..<40 where main.window?.attachedSheet == nil { try? await Task.sleep(for: .milliseconds(100)) }
+            await snapshot("one-click-sheet-\(suffix)", main.window?.attachedSheet)
+            model.agentTab = .access
+            try? await Task.sleep(for: .milliseconds(500))
+            main.window?.setContentSize(NSSize(width: 1_040, height: 680))
             await mainScene("activity") {
                 model.section = .activity
                 model.activity.selection = model.activity.entries.first(where: { $0.event.event == "request_memory" })?.id

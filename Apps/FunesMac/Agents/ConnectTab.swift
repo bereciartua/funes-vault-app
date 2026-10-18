@@ -3,7 +3,10 @@ import BridgeKitCore
 import BridgeUI
 import FunesCore
 import FunesProtocol
+import os
 import SwiftUI
+
+private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category: "one-click")
 
 /// Connect (04-ux-mac.md, FR-A-06..08): one-click setup with a preview and a backup, copyable setups
 /// for the rest, the launcher path, Copy Key… and Rotate Key….
@@ -12,13 +15,20 @@ struct ConnectTab: View {
     let agent: Agent
     @State private var target: SetupAgent = .other
     @State private var method: SetupMethod = .launcher
-    @State private var preview: OneClickPreview?
-    @State private var previewing = false
+    /// The change waiting in the sheet. The sheet is presented from this value itself, so it never
+    /// opens before the preview is there (an empty sheet with no buttons, Funes 0.1.0 Release).
+    @State private var pending: PendingPreview?
+    @State private var preparing = false
     @State private var oneClickError: OneClickFailure?
     @State private var result: OneClickResult?
     @State private var confirmCopyKey = false
     @State private var confirmRotate = false
     @State private var keyMessage: String?
+
+    #if FUNES_UI_REVIEW
+    /// The UI-review build sets this to open the one-click sheet through Add to <Agent>…'s own path.
+    @MainActor static var reviewStartsOneClick: SetupAgent?
+    #endif
 
     var body: some View {
         ScrollView {
@@ -52,18 +62,24 @@ struct ConnectTab: View {
         .onAppear {
             target = agent.agentKind.setupAgent
             method = target.recommended
+            #if FUNES_UI_REVIEW
+            if let review = Self.reviewStartsOneClick {
+                Self.reviewStartsOneClick = nil
+                target = review
+                method = review.recommended
+                startPreview(review)
+            }
+            #endif
         }
         .onChange(of: target) { _, agent in
             method = agent.recommended
             result = nil
             oneClickError = nil
         }
-        .sheet(isPresented: $previewing) {
-            if let preview {
-                ConfigPreviewSheet(preview: preview, agentName: agent.name) { confirmed in
-                    previewing = false
-                    if confirmed { apply(preview) }
-                }
+        .sheet(item: $pending) { pending in
+            ConfigPreviewSheet(preview: pending.preview, agentName: agent.name) { confirmed in
+                self.pending = nil
+                if confirmed { apply(pending.preview) }
             }
         }
         .confirmationDialog(String(localized: "Copy \(agent.name)'s key?"), isPresented: $confirmCopyKey) {
@@ -88,8 +104,10 @@ struct ConnectTab: View {
             Text(String(localized: "Funes shows the exact change first, backs up the file and never writes the key into it."))
                 .font(.callout).foregroundStyle(.secondary)
             HStack {
-                Button(String(localized: "Add to \(target.displayName)…")) { startPreview() }
+                Button(String(localized: "Add to \(target.displayName)…")) { startPreview(target) }
                     .buttonStyle(.borderedProminent)
+                    .disabled(preparing)
+                if preparing { ProgressView().controlSize(.small) }
                 if let result {
                     if result.alreadySetUp {
                         Label(String(localized: "Already set up"), systemImage: "checkmark.circle.fill").foregroundStyle(.green)
@@ -118,25 +136,36 @@ struct ConnectTab: View {
         }
     }
 
-    private func startPreview() {
+    /// Builds the change, then shows it in the sheet; a failure shows its reason in the card. Logs
+    /// name only the agent kind and the outcome, never the file's contents or path.
+    private func startPreview(_ target: SetupAgent) {
         result = nil
         oneClickError = nil
+        preparing = true
+        let kind = target.rawValue
         model.setupControls.preview(target, context) { outcome in
+            preparing = false
             switch outcome {
             case .success(let preview):
-                self.preview = preview
-                previewing = true
+                logger.info("One-click preview ready for \(kind, privacy: .public)") // log-safe: an agent kind
+                pending = PendingPreview(preview: preview)
             case .failure(let failure):
+                logger.error("One-click preview failed for \(kind, privacy: .public)") // log-safe: an agent kind
                 oneClickError = failure
             }
         }
     }
 
     private func apply(_ preview: OneClickPreview) {
+        let kind = preview.agent.rawValue
         model.setupControls.apply(preview) { outcome in
             switch outcome {
-            case .success(let done): result = done
-            case .failure(let failure): oneClickError = failure
+            case .success(let done):
+                logger.info("One-click setup applied for \(kind, privacy: .public)") // log-safe: an agent kind
+                result = done
+            case .failure(let failure):
+                logger.error("One-click setup failed for \(kind, privacy: .public)") // log-safe: an agent kind
+                oneClickError = failure
             }
         }
     }
@@ -242,6 +271,12 @@ struct ConnectTab: View {
             }
         }
     }
+}
+
+/// A preview for `.sheet(item:)`: a new identity each time, so every Add to <Agent>… shows its own.
+private struct PendingPreview: Identifiable {
+    let id = UUID()
+    let preview: OneClickPreview
 }
 
 /// The change Add to <Agent>… would make: the file's diff, or the agent's own command.
