@@ -24,5 +24,8 @@ Tier-2 code copied from EK Bridge (`bereciartua/ek-bridge`) under [ADR-0013](../
 | `Sources/UIComponents.swift` | `9c726f2` (v0.11.1) | — (Phase 3) |
 | `Sources/StatusMenuController.swift` | `9c726f2` (v0.11.1) | — (Funes's menu is written fresh in Apps/FunesMac/MenuBar) |
 | `Sources/MainWindowController.swift` | `9c726f2` (v0.11.1) | — (Funes's windows are written fresh in Apps/FunesMac/Window) |
+| `Sources/RemoteAccessView.swift` | `e753b22` (v0.11.2 + BridgeKit 0.1.1) | — (Phase 4b: the Remote Access page) |
+| `Sources/TunnelSwitchView.swift` | `e753b22` | — (Phase 4b: Switch Tunnel…) |
+| `Sources/TunnelHealth.swift`, `Sources/TunnelSwitch.swift`, `Sources/RemoteAccessSupport.swift` | `e753b22` | — (Phase 4b: their logic moved to BridgeKitRemote; the words for its typed results are adapted here) |
 
-Full source commit: `9c726f2c903a190d5303c28c1c6e7464544905fa`.
+Full source commits: `9c726f2c903a190d5303c28c1c6e7464544905fa` (tier 2) and `e753b221a6646e6420eb2fe382780bea88493841` (the Remote Access views, Phase 4b). The cloud agent setups and tunnel commands are in `Upstream/AgentSetup.swift` (9c726f2; unchanged at e753b22 apart from code that moved to BridgeKit).
