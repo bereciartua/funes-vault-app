@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Funes Vault: give AI agents your memory, not all of it</title>
+  <meta name="description" content="Funes Vault is a free Mac menu bar app that keeps your personal context in a private vault on your Mac and shares it with AI agents only as you allow.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#fbf6ec" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#10182d" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://funesvault.com/">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/assets/favicon-64.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <meta property="og:title" content="Funes Vault">
+  <meta property="og:description" content="Give AI agents your memory. Not all of it. A private memory vault on your Mac, shared with each agent only as you allow.">
+  <meta property="og:url" content="https://funesvault.com/">
+  <meta property="og:image" content="https://funesvault.com/assets/icon-512.png">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/"><img src="/assets/icon-512.png" alt="" width="32" height="32">Funes Vault</a>
+      <nav class="site-nav" aria-label="Site">
+        <a href="#control">How you stay in control</a>
+        <a href="#docs">Docs</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/support/">Support</a>
+        <a href="https://github.com/bereciartua/funes-vault-app">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="wrap">
+        <div>
+          <p class="eyebrow">Public preview · v0.1 · for macOS</p>
+          <h1>Give AI agents your memory. Not all of it.</h1>
+          <p class="lede">Funes Vault keeps what AI agents should know about you (your preferences, projects, instructions and constraints) in a private vault on your Mac. Each agent gets only what you allow, and you can see everything it received.</p>
+          <div class="actions">
+            <a class="button" href="https://github.com/bereciartua/funes-vault-app/releases/latest/download/FunesVault.dmg">Download for Mac</a>
+            <a class="button secondary" href="https://github.com/bereciartua/funes-vault-app">Source on GitHub</a>
+          </div>
+          <p class="meta">Free and open source (Apache 2.0) · macOS 15 Sequoia or later · Apple silicon and Intel · <a href="https://github.com/bereciartua/funes-vault-app/releases/latest">Release notes</a></p>
+          <div class="install">
+            <p class="install-label">Or install with Homebrew:</p>
+            <div class="command">
+              <code id="brew-command">brew install --cask bereciartua/tap/funes-vault</code>
+              <button type="button" data-copy="brew-command" hidden>Copy</button>
+            </div>
+          </div>
+        </div>
+        <img class="hero-icon" src="/assets/icon-512.png" alt="The Funes Vault icon: a round vault door with rings like a tree's, one of them lit in amber." width="220" height="220">
+      </div>
+    </section>
+
+    <section id="how">
+      <div class="wrap">
+        <h2>How it works</h2>
+        <p class="section-intro">Funes Vault is a menu bar app with a local MCP server. Agents on your Mac connect to it the way they connect to any MCP tool.</p>
+        <ol class="steps">
+          <li><strong>Keep your context in one place.</strong> Write memories in the vault, capture a thought from any app with a shortcut, or select text and choose <em>Remember in Funes</em>. Funes proposes a title, categories and a sensitivity (on your Mac, unless you choose another AI model), and you review each one in the Inbox.</li>
+          <li><strong>Connect your agents.</strong> Claude Code, Claude Desktop, Cursor, Codex, VS Code and other MCP clients, each with its own key and setup you can apply in one click. They talk to Funes on <code>127.0.0.1</code> only.</li>
+          <li><strong>Agents ask; you decide.</strong> When an agent needs context for a task, Funes finds the relevant memories, keeps only the ones that agent may have, and, if you asked to approve, shows you the exact text before anything is shared.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="control">
+      <div class="wrap">
+        <h2>How you stay in control</h2>
+        <p class="section-intro">Consent is the product. Funes is built so that a confused, compromised or over-eager agent gets less, not more.</p>
+        <div class="grid">
+          <div class="card">
+            <span class="mark" aria-hidden="true"></span>
+            <h3>Every agent starts with nothing</h3>
+            <p>For each agent you choose whether it can read or suggest memories, up to which sensitivity, in which categories, until when, and whether it must ask first. Anything unclear means no.</p>
+          </div>
+          <div class="card">
+            <span class="mark" aria-hidden="true"></span>
+            <h3>You approve the exact text</h3>
+            <p>A small panel shows the precise memories an agent would receive. You pick which ones go, and only those leave the vault, once. An agent's own words never change what it may have.</p>
+          </div>
+          <div class="card">
+            <span class="mark" aria-hidden="true"></span>
+            <h3>Agents suggest, you decide</h3>
+            <p>Agents can propose new memories. They wait in your Inbox and join the vault only when you approve them.</p>
+          </div>
+          <div class="card">
+            <span class="mark" aria-hidden="true"></span>
+            <h3>You can see everything</h3>
+            <p>Activity records every request, decision and release, with ids rather than text. Pause Funes, or pause or remove any agent, instantly.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screenshots">
+      <div class="wrap">
+        <h2>A look inside</h2>
+        <div class="shots">
+          <figure class="shot">
+            <div class="frame"><picture><source srcset="/assets/screenshots/share-panel-dark.png" media="(prefers-color-scheme: dark)"><img src="/assets/screenshots/share-panel-light.png" alt="An approval panel listing the memories an agent asked for, each with a checkbox." loading="lazy" onerror="this.parentNode.remove()"></picture></div>
+            <figcaption>An agent asks: you see the exact text and choose what it gets.</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="frame"><picture><source srcset="/assets/screenshots/vault-memory-dark.png" media="(prefers-color-scheme: dark)"><img src="/assets/screenshots/vault-memory-light.png" alt="The vault window with a list of memories and one memory open, showing its categories and sensitivity." loading="lazy" onerror="this.parentNode.remove()"></picture></div>
+            <figcaption>The vault: short, durable memories with categories and a sensitivity.</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="frame"><picture><source srcset="/assets/screenshots/agents-access-dark.png" media="(prefers-color-scheme: dark)"><img src="/assets/screenshots/agents-access-light.png" alt="An agent's access settings: operations, sensitivity ceiling, categories and expiry." loading="lazy" onerror="this.parentNode.remove()"></picture></div>
+            <figcaption>Per-agent access: what each agent may read or suggest, and until when.</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="frame"><picture><source srcset="/assets/screenshots/inbox-dark.png" media="(prefers-color-scheme: dark)"><img src="/assets/screenshots/inbox-light.png" alt="The Inbox with captures and agent suggestions waiting for review." loading="lazy" onerror="this.parentNode.remove()"></picture></div>
+            <figcaption>The Inbox: your captures and agents' suggestions wait for you.</figcaption>
+          </figure>
+          <figure class="shot">
+            <div class="frame"><picture><source srcset="/assets/screenshots/activity-dark.png" media="(prefers-color-scheme: dark)"><img src="/assets/screenshots/activity-light.png" alt="The Activity log listing requests, decisions and releases by agent." loading="lazy" onerror="this.parentNode.remove()"></picture></div>
+            <figcaption>Activity: every request and decision, on your Mac only.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="private">
+      <div class="wrap prose">
+        <h2>Local first</h2>
+        <p>Your vault lives in <code>~/Library/Application Support/FunesVault</code>. There's no account, no server of ours, no analytics and no telemetry. Search runs on your Mac with a small embedding model built into the app, and new captures are classified with Apple's on-device model by default.</p>
+        <p>What leaves your Mac: what you allow agents to have, a daily update check to GitHub, and, only if you add one, the capture text you send to an AI provider of your choice, never above your cloud sensitivity limit and never anything that looks like a secret. <a href="/privacy/">Read the privacy statement</a>.</p>
+        <p class="callout">Funes Vault separates the agents you connect from each other and from your vault. Like most Mac apps, it can't protect your data from malicious software already running as you, and it can't recall text once an agent has it. The <a href="https://github.com/bereciartua/funes-vault-app/blob/main/SECURITY.md">security policy</a> lists the limits.</p>
+      </div>
+    </section>
+
+    <section id="docs">
+      <div class="wrap">
+        <h2>Docs</h2>
+        <div class="grid">
+          <div class="card">
+            <h3><a href="https://github.com/bereciartua/funes-vault-app#readme">Get started</a></h3>
+            <p>Install, first run, your first memory and your first agent.</p>
+          </div>
+          <div class="card">
+            <h3><a href="https://github.com/bereciartua/funes-vault-app/blob/main/docs/MCP.md">Connect agents</a></h3>
+            <p>Setups for each agent, the MCP tools, and the limits.</p>
+          </div>
+          <div class="card">
+            <h3><a href="https://github.com/bereciartua/funes-vault-app/blob/main/docs/ARCHITECTURE.md">Architecture</a></h3>
+            <p>How the app, the local MCP server and the vault fit together.</p>
+          </div>
+          <div class="card">
+            <h3><a href="https://github.com/bereciartua/funes-vault-app/blob/main/CHANGELOG.md">Changelog</a></h3>
+            <p>What changed in each release.</p>
+          </div>
+        </div>
+        <div class="prose">
+          <h3 style="margin-top:32px">Verify your download</h3>
+          <p>Every release is notarized by Apple, lists its checksums in <code>SHA256SUMS</code>, and carries a build attestation from GitHub Actions. With the <a href="https://cli.github.com">GitHub CLI</a>:</p>
+          <pre><code>gh attestation verify FunesVault-0.1.0.dmg --repo bereciartua/funes-vault-app</code></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <span>Funes Vault · Apache License 2.0</span>
+      <nav aria-label="Footer">
+        <a href="/privacy/">Privacy</a>
+        <a href="/support/">Support</a>
+        <a href="https://github.com/bereciartua/funes-vault-app/blob/main/SECURITY.md">Security</a>
+        <a href="https://github.com/bereciartua/funes-vault-app">GitHub</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // The only script on the site: the Copy button for the Homebrew command.
+    document.querySelectorAll("[data-copy]").forEach(function (button) {
+      var target = document.getElementById(button.dataset.copy);
+      button.hidden = false;
+      button.addEventListener("click", function () {
+        var done = function (label) {
+          button.textContent = label;
+          setTimeout(function () { button.textContent = "Copy"; }, 1600);
+        };
+        var select = function () {
+          var range = document.createRange();
+          range.selectNodeContents(target);
+          var selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          done("Selected");
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(target.textContent).then(function () { done("Copied"); }, select);
+        } else {
+          select();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

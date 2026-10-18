@@ -1,0 +1,76 @@
+name: Pages
+
+# Deploys site/ (funesvault.com) to GitHub Pages as it is, minus its .md notes:
+# hand-written HTML and CSS, no build step and no Jekyll. Runs when site/
+# changes on main, and by hand (gh workflow run pages.yml).
+#
+# Setup, once (site/DNS.md has the DNS records):
+#   1. Settings > Pages > Build and deployment > Source: "GitHub Actions".
+#   2. Settings > Pages > Custom domain: funesvault.com, then "Enforce HTTPS"
+#      once the certificate is issued. (site/CNAME records the domain, but with
+#      Actions deployments the setting is what counts.)
+#   3. Verify the domain for the account (github.com/settings/pages) so no
+#      other repository can claim it.
+# Pages on a private repository needs a paid plan; on a public one it's free.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "docs/images/**"
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Package site/
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check the site
+        run: |
+          # Every page the site links to exists, and nothing loads from another host.
+          for page in index.html 404.html privacy/index.html support/index.html CNAME robots.txt favicon.ico \
+                      assets/style.css assets/icon-512.png assets/favicon-64.png assets/apple-touch-icon.png; do
+            [ -f "site/$page" ] || { echo "::error::site/$page is missing"; exit 1; }
+          done
+          if grep -rnE '<(script|link|img|iframe)[^>]+(src|href)="(https?:)?//' site --include='*.html' | grep -v 'rel="canonical"'; then
+            echo "::error::The site loads something from another host"
+            exit 1
+          fi
+      - name: Leave out the notes, add the screenshots
+        # site/DNS.md and site/assets/screenshots/README.md are for maintainers. The
+        # screenshots are the README's (docs/images), copied here so they live in git once.
+        run: |
+          rsync -a --exclude '*.md' site/ "$RUNNER_TEMP/site/"
+          for name in vault-memory share-panel inbox agents-access activity; do
+            for theme in light dark; do
+              cp "docs/images/$name-$theme.png" "$RUNNER_TEMP/site/assets/screenshots/"
+            done
+          done
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ runner.temp }}/site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
