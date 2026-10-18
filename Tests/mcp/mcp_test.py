@@ -601,17 +601,16 @@ def run_quit(h):
 
 
 def run_response_size(h):
-    # PR #5 review 4307609724: the JSON-RPC id is echoed, so a long one must not push the whole
-    # response past 200,000 bytes. Three large memories, max_tokens 8000, and the reviewer's
-    # 20,000-character id, then the longest id that fits the 64 KiB body.
+    # PR #5 review 4307609724: the JSON-RPC id is echoed, so it counts toward the 200,000 bytes.
+    # BridgeKit 0.1.1 refuses ids over 1,024 encoded bytes (-32600, id null) and bundles keep room
+    # for one at the cap. Three large memories and max_tokens 8000, so the bundle is as big as it gets.
     c = Client(h, h.key("reader"))
-    # Personal Preferences only (the large memories and Coffee), so the bundle is as big as it can be.
+    # Personal Preferences only (the large memories and Coffee).
     arguments = {"task": "Plan the week", "max_tokens": 8000, "categories": ["personal_preferences"]}
-    template = {"jsonrpc": "2.0", "id": "", "method": "tools/call",
-                "params": {"name": "request_memory", "arguments": arguments}}
-    room = 64 * 1024 - len(json.dumps(template, separators=(",", ":")).encode())
-    for label, length in [("20,000-character id", 20000), ("longest id", room)]:
-        message = dict(template, id="r" * length)
+    for label, request_id in [("id at the cap", "r" * 1022), ("escaped id at the cap", '"' * 511),
+                              ("1,025-byte id", "r" * 1023), ("20,000-character id", "r" * 20000)]:
+        message = {"jsonrpc": "2.0", "id": request_id, "method": "tools/call",
+                   "params": {"name": "request_memory", "arguments": arguments}}
         data = json.dumps(message, separators=(",", ":")).encode()
         c.conn.request("POST", "/mcp", body=data, headers={
             "Host": c.host, "Content-Type": "application/json", "Accept": "application/json",
@@ -619,11 +618,15 @@ def run_response_size(h):
         response = c.conn.getresponse()
         payload = response.read()
         body = json.loads(payload) if payload else {}
-        content = (body.get("result") or {}).get("structuredContent") or {}
-        check(f"response size: {label} answered", response.status == 200 and body.get("id") == message["id"] and
-              content.get("status") == "fulfilled" and len(content.get("items", [])) >= 1,
-              (response.status, content.get("status"), len(data)))
-        check(f"response size: {label} within 200,000 bytes", len(payload) <= 200000, len(payload))
+        if len(json.dumps(request_id, separators=(",", ":")).encode()) <= 1024:
+            content = (body.get("result") or {}).get("structuredContent") or {}
+            check(f"response size: {label} answered", response.status == 200 and body.get("id") == request_id and
+                  content.get("status") == "fulfilled" and len(content.get("items", [])) >= 1,
+                  (response.status, content.get("status")))
+            check(f"response size: {label} within 200,000 bytes", len(payload) <= 200000, len(payload))
+        else:
+            check(f"response size: {label} refused", response.status == 400 and "id" in body and
+                  body["id"] is None and (body.get("error") or {}).get("code") == -32600, (response.status, body))
     c.close()
 
 

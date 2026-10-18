@@ -46,6 +46,9 @@ public enum FunesMCPConfiguration {
             // mcp-server.md §4: X-Forwarded-*, Forwarded, CF-* and Tailscale-* are refused.
             forwardedHeaderPrefixes: ["x-forwarded-", "forwarded", "cf-", "tailscale-"],
             stringLength: .unicodeScalars,
+            // Longer ids get -32600 before any tool runs, so bundles keep room for exactly this
+            // much (`BundleCompiler.requestIDBytes`; mcp-server.md §9).
+            maxIDBytes: JSONRPC.defaultMaxIDBytes,
             texts: BridgeTexts(
                 unavailable: "\(app) can't read its vault. Ask the user to open \(app).",
                 unauthorized: "\(app) doesn't recognize this agent's key. "

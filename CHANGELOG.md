@@ -14,7 +14,7 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
   - The app serves MCP on `127.0.0.1:47625`, a port you can change in Settings ▸ MCP. Agents reach it through the `funes-mcp` launcher inside the app, or directly over HTTP.
   - Agents can list your categories, request memories for a task (with keywords for the kinds of context that would help), pick up a request you answered later, and suggest memories.
   - Each agent has its own key, kept in a private file and stored in the vault only as a hash.
-  - The protocol and security core is [BridgeKit](https://github.com/bereciartua/bridgekit) 0.1.0, shared with EK Bridge.
+  - The protocol and security core is [BridgeKit](https://github.com/bereciartua/bridgekit) 0.1.1, shared with EK Bridge. It refuses JSON-RPC ids longer than 1,024 bytes, so every response fits its 200,000-byte limit.
 - **You approve the exact text.**
   - A floating Share panel shows each memory an agent may get, with a checkbox per memory, the agent's task, keywords and stated purpose, and a 45-second countdown.
   - A request left unanswered says so on screen and waits in **Pending requests** for 15 minutes, where **Review** opens it again with the minutes it has left.

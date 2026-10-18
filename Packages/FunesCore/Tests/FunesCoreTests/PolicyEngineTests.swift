@@ -236,14 +236,13 @@ import Testing
     }
 
     @Test func aFullBundleFitsTheResultLimit() {
-        // Three of these fit 8,000 tokens, but at 4 bytes a character only one fits the result once
-        // room is kept for the longest JSON-RPC id (PR #5 review 4307609724); the third is skipped too.
+        // Three of these fit 8,000 tokens, but at 4 bytes a character only two fit the result.
         let memories = (0..<3).map { i in
             Memory(title: "M\(i)", body: String(repeating: "😀", count: 9_990), kind: .fact, categoryKeys: ["legal"],
                    sensitivity: .low, source: .manual, createdAt: t0, updatedAt: t0)
         }
         let b = BundleCompiler.compile(memories, maxTokens: 8_000)
-        #expect(b.items.map(\.memoryID) == [memories[0].id] && b.estimatedTokens < 8_000)
+        #expect(b.items.map(\.memoryID) == Array(memories.prefix(2).map(\.id)) && b.estimatedTokens < 8_000)
         let size = b.items.reduce(0) { $0 + BundleCompiler.itemBytes(title: $1.title, text: $1.text) }
         #expect(size <= BundleCompiler.maxItemBytes)
     }

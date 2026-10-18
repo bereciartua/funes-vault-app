@@ -182,11 +182,11 @@ Brings Funes to the front on the Mac, at a pending request or suggestion.
 | Requests waiting for approval per agent | 3 (each up to 45 s in a panel, then 15 min pending), counted in the write transaction that would add one, so concurrent calls can't exceed it | `rate_limited` (`retry_after_s` 60) |
 | Panels on screen | 3 (others queue) | — |
 | Time to answer a call | 55 s | `timeout` |
-| Result size | 200,000 bytes for the whole response body, JSON-RPC envelope and echoed id included, whatever id the request used; met by compiling bundles to fit, with room kept for the longest id the body allows ([access policy §4](../domain/access-policy.md#4-bundle-compilation)) | the item is skipped, or clipped if it's the first |
+| Result size | 200,000 bytes for the whole response body, JSON-RPC envelope and echoed id included; met by compiling bundles to fit, with room kept for the longest id accepted ([access policy §4](../domain/access-policy.md#4-bundle-compilation)) | the item is skipped, or clipped if it's the first |
 | `get_memory_request` per request id | once per 5 s | `rate_limited` |
 | Failed authentications (all callers) | 120/min | 429 for 60 s |
 | Body | 64 KiB | 413 |
-| JSON-RPC id | any string or integer that fits the body (BridgeKit 0.1.0 sets no shorter cap), echoed unchanged; never escaped more than it arrived, so its echo is at most 64 KiB | — |
+| JSON-RPC id | at most 1,024 encoded bytes, quotes and escapes included (BridgeKit 0.1.1); echoed unchanged | -32600, `"id": null` (HTTP 400) |
 
 ## 10. Agent setup
 - **Generated configs** (`AgentSetup`, about 12 agents) use the launcher and never include the key. Example for Claude Desktop:

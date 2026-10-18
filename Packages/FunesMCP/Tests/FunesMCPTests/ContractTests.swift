@@ -3,6 +3,7 @@ import Foundation
 @testable import FunesCore
 @testable import FunesMCP
 import FunesProtocol
+import Synchronization
 import Testing
 
 /// The tool contract (task 2.7): the shipped `mcp-tools.json` matches the golden fixture byte
@@ -102,11 +103,11 @@ struct ResultSizeTests {
 
     /// The complete response body as BridgeKit writes it, in the modern era (which adds
     /// `resultType` and `_meta`), echoing the request's id unchanged.
-    static func response(id: String, _ result: ToolResult) -> Data {
+    static func response(id: JSONRPCID, _ result: ToolResult) -> Data {
         var json = result.json
         json["resultType"] = "complete"
         json["_meta"] = ["io.modelcontextprotocol/serverInfo": ["name": "funes", "version": "0.1.0-preview.99"]]
-        return JSONRPC.result(id: .string(id), json)
+        return JSONRPC.result(id: id, json)
     }
 
     static func fulfilled(_ memories: [Memory], maxTokens: Int) -> ToolResult {
@@ -116,10 +117,26 @@ struct ResultSizeTests {
                                                      withheld: withheld, maxTokens: maxTokens))
     }
 
+    static let configuration = FunesMCPConfiguration.server(dataFolder: URL(fileURLWithPath: "/tmp"), version: "0")
+
+    /// Ids exactly at Funes's cap, as the response writes them: plain, and all escapes (`\"`).
+    static var idsAtTheCap: [JSONRPCID] {
+        let cap = configuration.maxIDBytes
+        return [.string(String(repeating: "r", count: cap - 2)), .string(String(repeating: "\"", count: (cap - 2) / 2))]
+    }
+
+    /// The room bundles keep for the id covers the longest id BridgeKit lets through, so raising
+    /// the cap or shrinking the room fails here.
+    @Test func theIDRoomCoversTheIDCap() {
+        #expect(Self.configuration.maxIDBytes == JSONRPC.defaultMaxIDBytes)
+        #expect(BundleCompiler.requestIDBytes >= Self.configuration.maxIDBytes)
+        for id in Self.idsAtTheCap { #expect(id.encodedByteCount == Self.configuration.maxIDBytes) }
+    }
+
     /// PR #5 review 4307609724, as reproduced: three memories titled `M` with 10,000, 10,000 and
-    /// 3,500 emoji, `max_tokens` 8,000 and a JSON-RPC id of 20,000 characters made a 210,099-byte
-    /// response. The id is echoed, so the bundle has to leave room for it.
-    @Test func aLongRequestIDStillFitsTheLimit() throws {
+    /// 3,500 emoji and `max_tokens` 8,000, with a 20,000-character id, made a 210,099-byte response.
+    /// Such an id is now refused (below); with the longest id accepted, the response fits.
+    @Test func theReviewersBundleWithAnIDAtTheCapFitsTheLimit() throws {
         let t0 = Date(timeIntervalSince1970: 1_800_000_000)
         let memories = [10_000, 10_000, 3_500].map { count in
             Memory(title: "M", body: String(repeating: "😀", count: count), kind: .fact,
@@ -128,37 +145,16 @@ struct ResultSizeTests {
         }
         let result = Self.fulfilled(memories, maxTokens: 8_000)
         let content = try #require(result.json["structuredContent"] as? [String: Any])
-        #expect((content["items"] as? [Any])?.isEmpty == false)
-        let response = Self.response(id: String(repeating: "r", count: 20_000), result)
-        #expect(response.count <= BundleCompiler.maxResultBytes, "\(response.count) bytes")
-    }
-
-    /// The room kept for the id covers every id the transport accepts: none can be longer than
-    /// the request body it came in.
-    @Test func theIDRoomCoversTheBodyLimit() {
-        let http = FunesMCPConfiguration.server(dataFolder: URL(fileURLWithPath: "/tmp"), version: "0").http
-        #expect(BundleCompiler.requestIDBytes >= http.maxBodyBytes)
-    }
-
-    /// Echoed ids are never escaped more than they arrived (raw control characters aren't valid
-    /// JSON), so an id's echo is no longer than its share of the request body. Each piece is JSON
-    /// source text.
-    @Test(arguments: ["r", "\\\"", "\\\\", "\\u0001", "\\n", "\\/", "日", "\\ud83d\\ude00", "\u{7F}", "\u{2028}"])
-    func echoedIDsAreNoLongerThanSent(_ piece: String) throws {
-        let id = String(repeating: piece, count: 1_000)
-        let body = Data(#"{"jsonrpc":"2.0","id":""#.utf8) + Data(id.utf8) + Data(#"","method":"ping"}"#.utf8)
-        guard case .success(.request(let parsed, _, _)) = JSONRPC.parse(body) else {
-            Issue.record("not parsed")
-            return
+        #expect((content["items"] as? [Any])?.count == 3)
+        for id in Self.idsAtTheCap {
+            let response = Self.response(id: id, result)
+            #expect(response.count <= BundleCompiler.maxResultBytes, "\(response.count) bytes")
         }
-        let sent = body.count - #"{"jsonrpc":"2.0","id":,"method":"ping"}"#.utf8.count
-        let echoed = JSONRPC.encode(["id": parsed.json]).count - #"{"id":}"#.utf8.count
-        #expect(echoed <= sent, "\(echoed) > \(sent)")
     }
 
-    /// The worst case: the largest bundle, every character escaped, every withheld count, and the
-    /// longest id that fits the request body. The whole response stays within 200,000 bytes.
-    @Test func theLargestBundleWithTheLongestIDFitsTheLimit() throws {
+    /// The worst case: the largest bundle, every character escaped, every withheld count, and an
+    /// id at the cap. The whole response stays within 200,000 bytes.
+    @Test func theLargestBundleWithAnIDAtTheCapFitsTheLimit() throws {
         let t0 = Date(timeIntervalSince1970: 1_800_000_000)
         let pattern = "\"\u{1}\\\n日😀"
         let memories = (0..<8).map { _ in
@@ -166,21 +162,86 @@ struct ResultSizeTests {
                    kind: .fact, categoryKeys: ["software_development"], sensitivity: .low, source: .manual,
                    createdAt: t0, updatedAt: t0)
         }
-        let longest = String(repeating: "r", count: BundleCompiler.requestIDBytes - 2)
-        let response = Self.response(id: longest, Self.fulfilled(memories, maxTokens: InputLimits.maxTokens.upperBound))
-        #expect(response.count <= BundleCompiler.maxResultBytes, "\(response.count) bytes")
+        let result = Self.fulfilled(memories, maxTokens: InputLimits.maxTokens.upperBound)
+        for id in Self.idsAtTheCap {
+            let response = Self.response(id: id, result)
+            #expect(response.count <= BundleCompiler.maxResultBytes, "\(response.count) bytes")
+        }
     }
 
     /// Not only tool results: `initialize` and `tools/list` echo the id too.
-    @Test func protocolResultsWithTheLongestIDFitTheLimit() {
-        let longest = String(repeating: "r", count: BundleCompiler.requestIDBytes - 2)
+    @Test func protocolResultsWithAnIDAtTheCapFitTheLimit() {
         let results: [[String: Any]] = [
             ["tools": FunesTools.contract.tools.map(\.definition)],
             ["instructions": FunesTools.contract.serverInstructions, "capabilities": ["tools": ["listChanged": false]]],
         ]
         for result in results {
-            let response = Self.response(id: longest, ToolResult(result))
+            let response = Self.response(id: Self.idsAtTheCap[0], ToolResult(result))
             #expect(response.count <= BundleCompiler.maxResultBytes, "\(response.count) bytes")
         }
+    }
+}
+
+/// Funes's MCP server with BridgeKit 0.1.1's id cap (PR #5 review 4307609724): an id longer than
+/// 1,024 encoded bytes is refused with -32600 and `"id": null` before any tool runs; one at the cap
+/// reaches the pipeline and is echoed.
+@Suite("Request id cap")
+@MainActor
+struct RequestIDCapTests {
+    struct Accept: AgentAuthenticator {
+        func authenticate(_ key: PresentedKey) async -> AuthenticationOutcome {
+            .authenticated(AuthenticatedAgent(id: UUID().uuidString.lowercased(), name: "Test"))
+        }
+    }
+
+    final class Recorder: BridgeHandler {
+        let calls = Mutex(0)
+        func handle(_ call: ToolCall) async -> ToolResult {
+            calls.withLock { $0 += 1 }
+            return ToolOutput.make(["status": "fulfilled"])
+        }
+    }
+
+    /// One `tools/call` through Funes's configuration, as the listener hands it over.
+    func send(id: JSONRPCID, handler: Recorder) async throws -> (status: Int, body: [String: Any]) {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("funes-id-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
+                                                attributes: [.posixPermissions: 0o700])
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let configuration = FunesMCPConfiguration.server(dataFolder: directory, version: "0")
+        let server = MCPServer(configuration: configuration, authenticator: Accept(),
+                               tools: FunesTools(store: try VaultStore.open(directory: directory)), handler: handler,
+                               limiter: RateLimiter(policy: configuration.limits), counters: MCPTrafficCounters())
+        let body = JSONRPC.encode(["jsonrpc": "2.0", "id": id.json, "method": "tools/call",
+                                   "params": ["name": "request_memory", "arguments": ["task": "Plan the week"]]])
+        let request = HTTPRequest(method: "POST", target: "/mcp", path: "/mcp", version: "HTTP/1.1",
+                                  headers: [("content-type", "application/json"), ("mcp-protocol-version", "2025-11-25")],
+                                  body: body)
+        let reply = await withCheckedContinuation { (continuation: CheckedContinuation<MCPServer.Reply, Never>) in
+            server.handle(request, key: "unused", whenClosed: { _ in {} }, reply: { continuation.resume(returning: $0) })
+        }
+        let json = try #require(try JSONSerialization.jsonObject(with: reply.response.body) as? [String: Any])
+        return (reply.response.status, json)
+    }
+
+    /// 1,023 characters is 1,025 bytes with its quotes, one over; 20,000 is the reviewer's id.
+    @Test(arguments: [JSONRPC.defaultMaxIDBytes - 1, 20_000])
+    func longIDsAreRefused(characters: Int) async throws {
+        let handler = Recorder()
+        let (status, body) = try await send(id: .string(String(repeating: "r", count: characters)), handler: handler)
+        #expect(status == 400)
+        #expect(body["id"] is NSNull)
+        #expect((body["error"] as? [String: Any])?["code"] as? Int == JSONRPC.invalidRequest)
+        #expect(handler.calls.withLock { $0 } == 0)
+    }
+
+    @Test func anIDAtTheCapReachesThePipeline() async throws {
+        let handler = Recorder()
+        for id in ResultSizeTests.idsAtTheCap {
+            let (status, body) = try await send(id: id, handler: handler)
+            #expect(status == 200)
+            #expect(body["id"] as? String == (id.json as? String))
+        }
+        #expect(handler.calls.withLock { $0 } == 2)
     }
 }
