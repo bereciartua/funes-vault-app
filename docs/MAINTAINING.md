@@ -16,7 +16,7 @@ This guide is for maintainers: how a change is made, checked and released, and w
 | `scripts/test.sh` | Everything offline: package tests, the MCP harness, the log-privacy check, both Debug builds, the String Catalog check |
 | `scripts/fetch_embedding_model.sh`, `scripts/embedding_model/` | The bundled model: fetched at a pinned revision, checksummed, converted to Core ML, cached in `~/Library/Caches/com.funesvault.dev/` ([ADR-0016](../spec/architecture/decisions/0016-bundled-bge-small-embeddings.md)) |
 | `scripts/embed_resources.sh` | The FunesMac build phase **Embed Resources**: copies the model (checked against the pinned checksums) and the license files into the app. A Release build fails without the model; a Debug build warns and falls back to the cache folder |
-| `scripts/app_icon.swift` | Draws the app icon in code and writes `AppIcon.appiconset` |
+| `scripts/app_icon.swift` | Draws the app icon in code and writes `AppIcon.appiconset` and the website's icons |
 | `scripts/release.sh` and its helpers | The release ([Releasing](#releasing)): `check_version.sh`, `check_bundle.sh`, `check_notarized.sh`, `make_dmg.sh` + `dmg_window.swift`, `release_assets.sh`, `release_notes.py`, `appcast.py`, `verify_update_signature.swift` |
 | `scripts/ui_snapshots.sh` | PNGs of every screen, light and dark, from the UI-review build (needs Screen Recording permission for the terminal) |
 | `server.json`, `.github/workflows/mcp-registry.yml` | The MCP Registry entry `com.funesvault/funes` and the workflow that publishes it |
@@ -56,7 +56,7 @@ The Xcode project is the one source of the version. A release is a tag `v<MARKET
 3. Archives the universal app (`arm64 x86_64`) with `xcodebuild archive`, signed manually with the Developer ID identity, so neither a development certificate nor a provisioning profile is needed. The Release configuration never injects `get-task-allow`. The **Embed Resources** phase puts the model and the license files inside; without the model the archive fails. Packages resolve into `build/source-packages/`, which outlives a run, so Sparkle's tools stay at `build/source-packages/artifacts/sparkle/Sparkle/bin/`.
 4. Exports it with `xcodebuild -exportArchive` (method `developer-id`, manual signing), which re-signs every piece inside out with the hardened runtime and a secure timestamp, then runs `scripts/check_bundle.sh`. That script checks: both architectures and the minimum macOS; `funes-mcp`'s identifier; the team, hardened runtime and no `get-task-allow` on every piece of code; a Release build; Sparkle; the feed and key; the model's checksums; the icon; and the license files.
 5. Notarizes the app (`notarytool submit --wait`; anything but Accepted prints Apple's log), staples the ticket, and checks Gatekeeper's verdict with `scripts/check_notarized.sh` (`source=Notarized Developer ID` and a valid staple).
-6. Builds `FunesVault-<version>.dmg` with `scripts/make_dmg.sh`: LZFSE, HFS+, an Applications link, the app icon as the volume icon, and a fixed window whose background `scripts/dmg_window.swift` draws (the icon's cream, a dotted ink arc from the app to Applications with one amber dot) and whose `.DS_Store` it writes itself, so nothing scripts Finder and it builds the same in CI. The DMG is signed, notarized, stapled and checked like the app. To see a change: `sh scripts/make_dmg.sh /Applications/FunesVault.app "Funes Vault" /tmp/test.dmg`.
+6. Builds `FunesVault-<version>.dmg` with `scripts/make_dmg.sh`: LZFSE, HFS+, an Applications link, the app icon as the volume icon, and a fixed window whose background `scripts/dmg_window.swift` draws (cream, a dotted ink arc from the app to Applications with one amber dot) and whose `.DS_Store` it writes itself, so nothing scripts Finder and it builds the same in CI. The DMG is signed, notarized, stapled and checked like the app. To see a change: `sh scripts/make_dmg.sh /Applications/FunesVault.app "Funes Vault" /tmp/test.dmg`.
 7. Builds `FunesVault-<version>.zip` from the stapled app (Sparkle installs from the zip; people download the DMG). `scripts/release_assets.sh` copies the DMG to `FunesVault.dmg`, the same name in every release, so `https://github.com/bereciartua/funes-vault-app/releases/latest/download/FunesVault.dmg` always downloads the newest published version, and writes `SHA256SUMS`.
 8. With a Sparkle key, signs the zip with `sign_update`, checks the signature against the app's `SUPublicEDKey` as installed copies will (`scripts/verify_update_signature.swift`), and writes `appcast.xml` (`scripts/appcast.py`) with the changelog section as HTML.
 9. Creates the draft release `v<version>` with both DMG names, the zip, `SHA256SUMS`, `appcast.xml` and notes: the changelog section (`scripts/release_notes.py`) followed by Install and Checksums.
@@ -110,12 +110,15 @@ That stores the private key in the login keychain under the account `funes-vault
 
 ## The app icon
 
-`scripts/app_icon.swift` draws it: a vault door whose face is made of rings like a tree's growth rings (a memory that keeps every year), with one short stretch lit in amber, the one memory an agent gets. Sizes of 64 pixels and below use a simpler drawing with three thicker rings. After a change:
+`scripts/app_icon.swift` draws it: an open eye in ink on parchment with a gold iris, for Funes, Borges' man who remembers everything he has seen. Sizes of 64 pixels and below use a bolder drawing of the same eye, with a heavier outline and a larger iris. After a change, regenerate the app's icon set and the website's icons:
 
 ```bash
 xcrun swiftc -O scripts/app_icon.swift -o build/app_icon
 build/app_icon iconset Apps/FunesMac/Assets.xcassets/AppIcon.appiconset
 build/app_icon png site/assets/icon-512.png 512
+build/app_icon png site/assets/favicon-64.png 64
+build/app_icon png site/assets/apple-touch-icon.png 180
+build/app_icon png build/favicon-32.png 32   # then wrap it as site/favicon.ico (a single 32-pixel PNG entry)
 ```
 
 ## Upgrade notes

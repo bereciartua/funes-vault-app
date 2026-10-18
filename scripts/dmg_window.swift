@@ -1,6 +1,6 @@
-// The window people see when they open FunesVault.dmg: the icon's cream background
+// The window people see when they open FunesVault.dmg: a cream background
 // with a dotted ink arc leading from the app to the Applications folder, one dot lit
-// in the icon's amber, and the Finder settings (.DS_Store) that size the window, hide its toolbar
+// in amber, and the Finder settings (.DS_Store) that size the window, hide its toolbar
 // and sidebar, place both icons over the art and point at the background.
 // scripts/make_dmg.sh compiles it and runs both commands:
 //
@@ -120,7 +120,7 @@ func drawBackground(to path: String, scale: CGFloat) {
     context.setLineJoin(.round)
     context.strokePath()
 
-    // The lit dot at the top of the arc: the icon's amber, the one memory that's shared.
+    // The lit dot at the top of the arc, in amber: the one memory that's shared.
     context.saveGState()
     context.setShadow(offset: .zero, blur: 10 * scale, color: color(0xFFB23E, 0.8))
     context.setFillColor(color(0xFFB23E))
