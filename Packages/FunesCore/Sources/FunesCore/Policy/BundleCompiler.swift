@@ -40,16 +40,24 @@ public enum BundleCompiler {
         (InputLimits.length(of: text) + 3) / 4
     }
 
-    /// The most an agent's result may weigh (mcp-server.md §9). Bundles are compiled to fit, so
-    /// the limit never has to refuse a release that was already used up.
+    /// The most a response to an agent may weigh: the whole JSON-RPC body (mcp-server.md §9).
+    /// Bundles are compiled to fit, so the limit never has to refuse a release that was already
+    /// used up.
     public static let maxResultBytes = 200_000
-    /// Kept back from `maxResultBytes` for everything but the items: the JSON-RPC envelope, status,
-    /// ids, message, instructions and withheld counts, in both copies of the result.
+    /// Kept back from `maxResultBytes` for everything but the items and the JSON-RPC id: the
+    /// envelope, status, request id, message, instructions and withheld counts, in both copies of
+    /// the result.
     static let envelopeBytes = 8_000
+    /// Kept back for the JSON-RPC id the response echoes (PR #5 review 4307609724). The transport
+    /// accepts any string id that fits the 64 KiB request body and echoes it unchanged, never
+    /// escaped more than it arrived, so no accepted id takes more than this. The handler doesn't
+    /// see the id, so the room is the same for every call; FunesMCP's tests check it covers the
+    /// body limit.
+    public static let requestIDBytes = 64 * 1_024
     /// One item's fixed fields (id, category, sensitivity, counts and keys), in both copies.
     static let itemOverheadBytes = 600
     /// What the items of one bundle may add to the result, in `wireBytes`.
-    public static let maxItemBytes = maxResultBytes - envelopeBytes
+    public static let maxItemBytes = maxResultBytes - envelopeBytes - requestIDBytes
 
     /// What a string adds to an agent's result, in UTF-8 bytes. An MCP result carries the bundle
     /// twice: as structured JSON, and as that JSON escaped again inside its text content. Both

@@ -171,6 +171,12 @@ def main():
     finally:
         quitting.close()
 
+    large = Harness(binary, FUNES_MCP_TEST_WAIT=1, FUNES_MCP_TEST_LARGE=1)
+    try:
+        run_response_size(large)
+    finally:
+        large.close()
+
     auto = Harness(binary, FUNES_MCP_TEST_WAIT=3, FUNES_MCP_TEST_APPROVAL="allow")
     try:
         c = Client(auto, auto.key("asker"))
@@ -189,7 +195,7 @@ def main():
         sys.exit(1)
     print(f"Funes MCP: {checks} checks over loopback (contract, visibility, categories, request, approve, deny, "
           "timeout then get, single use, invalidation, suggestions, open, access requests, agent state, privacy, limits, "
-          "quit) "
+          "quit, response size) "
           "passed")
 
 
@@ -592,6 +598,33 @@ def run_quit(h):
     check("quit: in Activity", any(r.get("reason") == "funes_quit" for r in rows), rows[:3])
     c.close()
     other.close()
+
+
+def run_response_size(h):
+    # PR #5 review 4307609724: the JSON-RPC id is echoed, so a long one must not push the whole
+    # response past 200,000 bytes. Three large memories, max_tokens 8000, and the reviewer's
+    # 20,000-character id, then the longest id that fits the 64 KiB body.
+    c = Client(h, h.key("reader"))
+    # Personal Preferences only (the large memories and Coffee), so the bundle is as big as it can be.
+    arguments = {"task": "Plan the week", "max_tokens": 8000, "categories": ["personal_preferences"]}
+    template = {"jsonrpc": "2.0", "id": "", "method": "tools/call",
+                "params": {"name": "request_memory", "arguments": arguments}}
+    room = 64 * 1024 - len(json.dumps(template, separators=(",", ":")).encode())
+    for label, length in [("20,000-character id", 20000), ("longest id", room)]:
+        message = dict(template, id="r" * length)
+        data = json.dumps(message, separators=(",", ":")).encode()
+        c.conn.request("POST", "/mcp", body=data, headers={
+            "Host": c.host, "Content-Type": "application/json", "Accept": "application/json",
+            "Authorization": "Bearer " + c.key, "MCP-Protocol-Version": LEGACY, "Content-Length": str(len(data))})
+        response = c.conn.getresponse()
+        payload = response.read()
+        body = json.loads(payload) if payload else {}
+        content = (body.get("result") or {}).get("structuredContent") or {}
+        check(f"response size: {label} answered", response.status == 200 and body.get("id") == message["id"] and
+              content.get("status") == "fulfilled" and len(content.get("items", [])) >= 1,
+              (response.status, content.get("status"), len(data)))
+        check(f"response size: {label} within 200,000 bytes", len(payload) <= 200000, len(payload))
+    c.close()
 
 
 def run_limits(h):
