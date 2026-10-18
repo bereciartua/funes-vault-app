@@ -48,6 +48,12 @@ These ran on the development Mac, an M1 MacBook (8 GB) with macOS 27.0.1, agains
 
 No live check so far used a signed, notarized build, the launcher from an installed app, or a real vault.
 
+## Release rehearsals
+
+| Date | Commit | Command | Result |
+| --- | --- | --- | --- |
+| 17 Oct 2026 | `c4ca516` (+ a rehearsal-only commit with a throwaway Sparkle key, because Funes's own key didn't exist yet) | `FUNES_NOTARY_PROFILE=ekbridge FUNES_SPARKLE_KEY_FILE=<throwaway> sh scripts/release.sh --untagged --no-release`, Xcode 27.0, macOS 27 | `test.sh` green; universal archive and Developer ID export; `check_bundle.sh` passed (arm64 + x86_64, `funes-mcp` as `com.funesvault.mac.mcp`, no `get-task-allow`, the pinned model inside); app and DMG notarization **Accepted** and stapled; `spctl`: `accepted, source=Notarized Developer ID` for both; `verify-update-signature`: the zip matches `SUPublicEDKey`; `appcast.xml` written. To repeat with Funes's own key (`FUNES_SPARKLE_KEYCHAIN=1`) once it's in `Info.plist`. |
+
 ## Live agent matrix
 
 To run before each release, with a signed build installed in `/Applications`, a throwaway agent per row, and a vault of synthetic memories. Record each result with the date, app version and agent version; no memory text, keys or raw logs.
