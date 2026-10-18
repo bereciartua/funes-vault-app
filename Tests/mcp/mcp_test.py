@@ -165,6 +165,12 @@ def main():
     finally:
         limits.close()
 
+    quitting = Harness(binary, FUNES_MCP_TEST_WAIT=30)
+    try:
+        run_quit(quitting)
+    finally:
+        quitting.close()
+
     auto = Harness(binary, FUNES_MCP_TEST_WAIT=3, FUNES_MCP_TEST_APPROVAL="allow")
     try:
         c = Client(auto, auto.key("asker"))
@@ -182,7 +188,8 @@ def main():
             print("  " + failure)
         sys.exit(1)
     print(f"Funes MCP: {checks} checks over loopback (contract, visibility, categories, request, approve, deny, "
-          "timeout then get, single use, invalidation, suggestions, open, access requests, agent state, privacy, limits) "
+          "timeout then get, single use, invalidation, suggestions, open, access requests, agent state, privacy, limits, "
+          "quit) "
           "passed")
 
 
@@ -559,6 +566,32 @@ def run_privacy(h):
     for secret in ["TypeScript", "Plan dinner", "Vitest", "dark mode", "sk-proj", "pick the tooling", "oat milk"]:
         check(f"activity never holds text: {secret}", secret not in text)
     check("withheld memory ids never in activity", h.memories["allergy"] not in text)
+
+
+def run_quit(h):
+    # Quitting while a call waits for the user (mcp-server.md §7): it answers funes_quit at once,
+    # with its request id, and the request stays pending for get_memory_request.
+    c = Client(h, h.key("asker"))
+    before = h.control(cmd="presented")["approvals"]
+    started = time.time()
+    thread, box = in_background(lambda: c.call("request_memory", {"task": "Set up a TypeScript project"}))
+    check("quit: panel shown", wait_for(lambda: h.control(cmd="presented")["approvals"] == before + 1))
+    check("quit: one call in progress", h.control(cmd="in_progress")["calls"] == 1)
+    h.control(cmd="quit")
+    thread.join(10)
+    result = box.get("result", {})
+    check("quit: waiting call answers funes_quit", result.get("status") == "denied" and
+          result.get("reason") == "funes_quit" and result.get("_isError") is True and
+          len(result.get("request_id", "")) == 36 and "get_memory_request" in result.get("message", "") and
+          time.time() - started < 10, result)
+    check("quit: no calls left", wait_for(lambda: h.control(cmd="in_progress")["calls"] == 0))
+    other = Client(h, h.key("reader"))
+    result = other.call("list_memory_categories")
+    check("quit: new calls refused", result.get("reason") == "funes_quit" and result.get("_isError") is True, result)
+    rows = h.control(cmd="activity")["activity"]
+    check("quit: in Activity", any(r.get("reason") == "funes_quit" for r in rows), rows[:3])
+    c.close()
+    other.close()
 
 
 def run_limits(h):

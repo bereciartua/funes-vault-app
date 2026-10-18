@@ -1,5 +1,6 @@
 import BridgeUI
 import Foundation
+import FunesMCP
 import FunesProtocol
 
 /// The app's settings in user defaults (storage §1): UI preferences, the hotkey, the setup
@@ -20,6 +21,7 @@ final class Preferences {
         static let checklistSeeded = "SetupChecklistSeeded"
         static let checklistReviewed = "SetupChecklistReviewed"
         static let mcpEnabled = "MCPServerEnabled"
+        static let mcpPort = "MCPServerPort"
         static let importantRetentionDays = "ActivityImportantDays"
         static let routineRetentionDays = "ActivityRoutineDays"
         static let automaticBackups = "AutomaticBackups"
@@ -51,6 +53,7 @@ final class Preferences {
             Key.classifyCaptures: true,
             Key.captureSensitivity: -1,
             Key.mcpEnabled: true,
+            Key.mcpPort: FunesMCPConfiguration.defaultPort,
             Key.importantRetentionDays: 400,
             Key.routineRetentionDays: 30,
             Key.automaticBackups: true,
@@ -97,6 +100,15 @@ final class Preferences {
     var mcpEnabled: Bool {
         get { defaults.bool(forKey: Key.mcpEnabled) }
         set { defaults.set(newValue, forKey: Key.mcpEnabled) }
+    }
+
+    /// The MCP server's port (Settings ▸ MCP); the default unless the user changed it.
+    var mcpPort: Int {
+        get {
+            let port = defaults.integer(forKey: Key.mcpPort)
+            return FunesMCPConfiguration.portRange.contains(port) ? port : FunesMCPConfiguration.defaultPort
+        }
+        set { defaults.set(newValue, forKey: Key.mcpPort) }
     }
 
     /// The capture hotkey (FR-C-01): ⌥⌘M until changed; nil when turned off.

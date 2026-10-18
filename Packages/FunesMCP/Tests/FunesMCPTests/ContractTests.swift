@@ -1,6 +1,6 @@
 import BridgeKitCore
 import Foundation
-import FunesCore
+@testable import FunesCore
 @testable import FunesMCP
 import FunesProtocol
 import Testing
@@ -75,5 +75,28 @@ struct ContractTests {
         #expect(JSONSchemaValidator.validate(["task": task], against: tool.inputSchema, counting: .unicodeScalars) == nil)
         #expect(JSONSchemaValidator.validate(["task": task + "é"], against: tool.inputSchema, counting: .unicodeScalars)
             == "task: must be at most 1000 characters, got 1001")
+    }
+}
+
+/// The result size limit (mcp-server.md §9): the largest bundle a request can return, with every
+/// character escaped twice, still makes a JSON-RPC response under 200,000 bytes.
+@Suite("Result size")
+struct ResultSizeTests {
+    @Test func theLargestBundleFitsTheLimit() throws {
+        let t0 = Date(timeIntervalSince1970: 1_800_000_000)
+        let pattern = "\"\u{1}\\\n日😀"
+        let memories = (0..<8).map { i in
+            Memory(title: String(repeating: "\"", count: 180), body: String(String(repeating: pattern, count: 2_000).prefix(10_000)),
+                   kind: .fact, categoryKeys: ["software_development"], sensitivity: .low, source: .manual,
+                   createdAt: t0, updatedAt: t0)
+        }
+        let bundle = BundleCompiler.compile(memories, maxTokens: InputLimits.maxTokens.upperBound)
+        #expect(!bundle.items.isEmpty)
+        let withheld = Dictionary(uniqueKeysWithValues: ReasonCode.allCases.map { ($0, 9_999) })
+        let outcome = RequestOutcome(status: .delivered, requestID: UUID(), bundle: bundle, withheld: withheld,
+                                     maxTokens: InputLimits.maxTokens.upperBound)
+        let result = RequestPipeline.output(outcome)
+        let response = JSONRPC.encode(["jsonrpc": "2.0", "id": String(repeating: "9", count: 64), "result": result.json])
+        #expect(response.count <= BundleCompiler.maxResultBytes, "\(response.count) bytes")
     }
 }

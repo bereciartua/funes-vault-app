@@ -165,7 +165,7 @@ A card at the top of the Vault:
   - **Embedding options** (later): "Embed agent requests with the cloud model", shown when the embedding model is in the cloud.
   - **Disclosure:** a sentence under every non-local choice saying exactly what is sent where.
   - **Calibrate…** (later) for embedding models Funes doesn't know.
-- **MCP:** server on/off, port (47625), launcher location, protocol log counts (no bodies).
+- **MCP:** server on/off, port (47625 by default; changing it says which agents need their setup again), launcher location, protocol log counts (no bodies).
 - **Data:** backups, export, import, Show in Finder, Erase All Data. Restore from Backup relaunches; before the chosen backup replaces the vault, the current vault is saved as a self-contained `pre-restore-…` backup (an SQLite online backup, so nothing still in the WAL is lost).
 - **Updates:** automatic checks, Check Now.
 - **Advanced:** activity retention, reset the setup checklist.

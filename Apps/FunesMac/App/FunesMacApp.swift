@@ -120,14 +120,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
         let mcp = FunesMCPServer(services: environment.services, presenter: environment.approvals,
-                                 dataFolder: environment.dataFolder, version: version)
+                                 dataFolder: environment.dataFolder, version: version, port: preferences.mcpPort)
         mcp.statusChanged = { [weak model] status in
             model?.mcpStatus = status
             model?.changed()
         }
         self.mcp = mcp
         model.setServer = { [weak self] on in self?.setServer(on) }
-        model.mcpPort = mcp.configuration.mcpPort
+        model.setPort = { [weak self] port in self?.setPort(port) }
+        model.mcpPort = mcp.port
         model.trafficCounts = { [weak mcp] in mcp?.counters.snapshot ?? MCPTrafficCounters.Snapshot() }
         model.connection = { [weak mcp] id in mcp?.connections[id.db]?.agent }
         model.setupControls = OneClickAgents.live(home: Self.setupHome, appName: "Funes Vault", tag: "funes")
@@ -183,8 +184,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return home
     }
 
+    /// Calls in progress answer before the listener goes: one waiting for the user gets `funes_quit`
+    /// with its request id (mcp-server.md §7). The quit waits for them, 3 seconds at most.
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard let mcp, mcp.callsInProgress > 0 else { return .terminateNow }
+        mcp.quit()
+        environment?.approvals.queue.withdrawAll()
+        Task {
+            let deadline = ContinuousClock.now + .seconds(3)
+            while mcp.callsInProgress > 0, ContinuousClock.now < deadline {
+                try? await Task.sleep(for: .milliseconds(50))
+            }
+            // The answers are written on the listener's queue just after their handlers return.
+            try? await Task.sleep(for: .milliseconds(250))
+            NSApp.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
-        // Open panels are refused (`funes_quit`); the endpoint file goes with the listener.
+        // Open panels are withdrawn; the endpoint file goes with the listener.
         environment?.approvals.queue.withdrawAll()
         mcp?.stop()
     }
@@ -233,6 +252,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             environment?.approvals.queue.withdrawAll()
             mcp?.stop()
         }
+        model?.changed()
+    }
+
+    /// Another port (Settings ▸ MCP): the listener moves now. Setups that start `funes-mcp` find it
+    /// through the endpoint file; setups that name the address need copying again.
+    private func setPort(_ port: Int) {
+        guard let mcp, FunesMCPConfiguration.portRange.contains(port), port != mcp.port else { return }
+        preferences.mcpPort = port
+        mcp.port = port
+        if preferences.mcpEnabled { mcp.start() }
+        model?.mcpPort = port
         model?.changed()
     }
 

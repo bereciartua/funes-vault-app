@@ -13,6 +13,11 @@ enum Messages {
         count == 1 ? "Here is 1 memory, shared once for this task." : "Here are \(count) memories, shared once for this task."
     }
 
+    static func quit(_ requestID: String) -> String {
+        "Funes Vault was quit before the user answered. Tell the user. If Funes is open again within 15 minutes, "
+            + "call get_memory_request with request_id \"\(requestID)\"; otherwise make a new request."
+    }
+
     static func rateLimited(_ seconds: Int) -> String {
         "Too many requests from this agent. Wait \(seconds) s before trying again."
     }
@@ -39,6 +44,7 @@ enum Messages {
         case .deniedCategory, .categoryNotAllowed:
             "This agent may not save memories in that category. Tell the user if it's needed."
         case .rateLimited: "Too many requests from this agent. Wait before trying again."
+        case .funesQuit: "Funes Vault is quitting. Tell the user; try again once it's open."
         case .inactiveMemory, .expiredMemory, .allowed, .allowedByWindow:
             "Not shared."
         }

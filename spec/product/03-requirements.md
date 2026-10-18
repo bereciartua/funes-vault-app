@@ -319,7 +319,7 @@
 ### MCP server (FR-M)
 
 **FR-M-01 Local listener** · M · v0.1
-- Streamable HTTP (JSON responses) on `127.0.0.1:47625/mcp`, off until setup turns it on.
+- Streamable HTTP (JSON responses) on `127.0.0.1:47625/mcp`, off until setup turns it on. The port can be changed in Settings ▸ MCP.
 
 **FR-M-02 stdio launcher** · M · v0.1
 - `funes-mcp` relays stdio to HTTP. It reads the agent's key file and verifies the listener belongs to the same user and bundle ID (EK Bridge launcher).

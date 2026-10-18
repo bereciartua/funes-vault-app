@@ -51,6 +51,9 @@ extension RequestPipeline {
                 return ToolOutput.denied(.rateLimited, message: Messages.rateLimited(Self.pendingRetrySeconds),
                                          isError: true, extra: ["retry_after_s": Self.pendingRetrySeconds])
             }
+            if isQuitting, outcome.status == .needsApproval, let id = outcome.requestID {
+                return quit(call, agent.id, requestID: id)
+            }
             return Self.output(outcome)
         } catch let error as VaultError {
             return failure(call, agent.id, error)
@@ -103,7 +106,7 @@ extension RequestPipeline {
                                                         maxPendingApprovals: limit)
             }
         }
-        guard outcome.status == .needsApproval, let id = outcome.requestID else { return outcome }
+        guard outcome.status == .needsApproval, let id = outcome.requestID, !isQuitting else { return outcome }
         let presenter = self.presenter
         Task { await presenter.showApproval(requestID: id, agentID: agent.id) }
         let remaining = max(0, deadline.timeIntervalSince(now()))

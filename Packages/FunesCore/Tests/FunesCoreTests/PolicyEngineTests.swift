@@ -194,6 +194,59 @@ import Testing
         #expect(item.text.hasSuffix("…"))
     }
 
+    // The result size limit (mcp-server.md §9): bundles are compiled to fit 200,000 bytes.
+
+    @Test func wireBytesCountBothCopiesAndTheirEscaping() {
+        #expect(BundleCompiler.wireBytes("ab") == 4)
+        #expect(BundleCompiler.wireBytes("/") == 2)
+        #expect(BundleCompiler.wireBytes("\"") == 6 && BundleCompiler.wireBytes("\\") == 6)
+        #expect(BundleCompiler.wireBytes("\n") == 5 && BundleCompiler.wireBytes("\t") == 5)
+        #expect(BundleCompiler.wireBytes("\u{1}") == 13)
+        #expect(BundleCompiler.wireBytes("é") == 4 && BundleCompiler.wireBytes("日") == 6 && BundleCompiler.wireBytes("😀") == 8)
+    }
+
+    @Test func wireBytesBoundTheRealEncoding() throws {
+        // As FunesMCP sends a result: structured JSON, and that JSON again as escaped text.
+        let options: JSONSerialization.WritingOptions = [.sortedKeys, .withoutEscapingSlashes]
+        for text in ["plain words", "a\"b\\c/d\ne\tf\u{1}g\u{7F}", "é日😀\u{2028}\u{2029}👩‍💻\u{FEFF}"] {
+            let once = try JSONSerialization.data(withJSONObject: ["t": text], options: options)
+            let twice = try JSONSerialization.data(withJSONObject: ["t": String(decoding: once, as: UTF8.self)],
+                                                   options: options)
+            // Less the framing: `{"t":""}` once, and escaped inside the second copy.
+            let encoded = (once.count - 8) + (twice.count - 8 - 14)
+            #expect(encoded <= BundleCompiler.wireBytes(text), "\(text)")
+        }
+    }
+
+    @Test func itemsThatWouldOverflowTheResultAreSkipped() {
+        let a = Self.memory("a", chars: 200), big = Self.memory("big", chars: 300), small = Self.memory("small", chars: 100)
+        let budget = BundleCompiler.itemBytes(title: a.title, text: a.disclosureText)
+            + BundleCompiler.itemBytes(title: small.title, text: small.disclosureText)
+        let b = BundleCompiler.compile([a, big, small], maxTokens: 8_000, maxBytes: budget)
+        #expect(b.items.map(\.memoryID) == [a.id, small.id] && b.items.allSatisfy { !$0.clipped })
+    }
+
+    @Test func aFirstItemTooLargeForTheResultIsClipped() {
+        let m = Memory(title: "CJK", body: String(repeating: "日", count: 9_000), kind: .fact, categoryKeys: ["legal"],
+                       sensitivity: .low, source: .manual, createdAt: t0, updatedAt: t0)
+        let item = BundleCompiler.compile([m], maxTokens: 8_000, maxBytes: 20_000).items[0]
+        let size = BundleCompiler.itemBytes(title: m.title, text: item.text)
+        #expect(item.clipped && item.text.hasSuffix("…") && size <= 20_000 && size > 20_000 - 12)
+        #expect(item.text.dropLast().allSatisfy { $0 == "日" || "CJK: ".contains($0) })
+    }
+
+    @Test func aFullBundleFitsTheResultLimit() {
+        // Three of these fit 8,000 tokens, but at 4 bytes a character only two fit the result.
+        let memories = (0..<3).map { i in
+            Memory(title: "M\(i)", body: String(repeating: "😀", count: 9_990), kind: .fact, categoryKeys: ["legal"],
+                   sensitivity: .low, source: .manual, createdAt: t0, updatedAt: t0)
+        }
+        let b = BundleCompiler.compile(memories, maxTokens: 8_000)
+        #expect(b.items.map(\.memoryID) == Array(memories.prefix(2).map(\.id)) && b.estimatedTokens < 8_000)
+        let size = b.items.reduce(0) { $0 + BundleCompiler.itemBytes(title: $1.title, text: $1.text) }
+        #expect(size <= BundleCompiler.maxItemBytes)
+    }
+
     @Test func emptyInputGivesAnEmptyBundle() {
         let b = BundleCompiler.compile([], maxTokens: 1200)
         #expect(b.items.isEmpty && b.estimatedTokens == 0)

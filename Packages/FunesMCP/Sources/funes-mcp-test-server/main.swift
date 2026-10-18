@@ -264,6 +264,12 @@ final class Harness {
         case "stop":
             server.stop()
             return ["ok": true]
+        case "quit":
+            // What the app does before it quits: waiting calls answer funes_quit.
+            server.quit()
+            return ["ok": true]
+        case "in_progress":
+            return ["calls": server.callsInProgress]
         case "start":
             server.start(port: command["port"] as? Int ?? lastPort)
             return ["ok": true]

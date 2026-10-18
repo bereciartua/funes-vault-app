@@ -114,7 +114,7 @@ sequenceDiagram
 
 `suggest_memory` never waits: the agent gets `saved`, `queued` or `denied` at once, and a queued suggestion shows the **Save this memory?** panel without blocking the call.
 
-When you quit, the listener stops, `mcp-endpoint.json` is removed, and open panels are withdrawn. Sparkle's relaunch for an update waits while a request is waiting for you.
+When you quit, calls in progress answer first: a `request_memory` waiting for you returns `funes_quit` with its `request_id`, and the request stays in Pending requests. The app waits for those answers (3 seconds at most), then withdraws open panels, stops the listener and removes `mcp-endpoint.json`. Sparkle's relaunch for an update waits while a request is waiting for you.
 
 ## Access policy
 

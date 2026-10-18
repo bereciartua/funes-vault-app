@@ -176,7 +176,7 @@ Something else? Open an [issue](https://github.com/bereciartua/funes-vault-app/i
 
 ## Security boundary
 
-- **MCP server.** Runs while **Settings ▸ MCP ▸ Let agents connect** is on (the default), and listens only on `127.0.0.1:47625`. Every request needs an agent's own key; the vault stores only its SHA-256 hash. Requests with a foreign `Host`, any `Origin` (web pages) or tunnel forwarding headers are refused, and repeated failed sign-ins are locked out for a minute. Paused and expired agents are refused; removed agents' keys no longer work.
+- **MCP server.** Runs while **Settings ▸ MCP ▸ Let agents connect** is on (the default), and listens only on `127.0.0.1` (port 47625 unless you change it in the same pane). Every request needs an agent's own key; the vault stores only its SHA-256 hash. Requests with a foreign `Host`, any `Origin` (web pages) or tunnel forwarding headers are refused, and repeated failed sign-ins are locked out for a minute. Paused and expired agents are refused; removed agents' keys no longer work.
 - **Agent keys.** Each key is a file only you can read (mode 0600, in a 0700 folder) under `~/Library/Application Support/FunesVault/agent-keys/`. The `funes-mcp` launcher sends it only after checking that the program on the port is your own Funes Vault. **Rotate Key…** replaces it at once.
 - **Access decisions.** Made inside Funes from the agent's access, each memory's sensitivity and categories, and your answer, never from what the agent writes. An approval is bound to the exact memories and versions you saw.
 - **Data at rest.** The vault is an SQLite file in your Application Support folder, protected by FileVault, not by its own encryption. Backups stay in the same folder.

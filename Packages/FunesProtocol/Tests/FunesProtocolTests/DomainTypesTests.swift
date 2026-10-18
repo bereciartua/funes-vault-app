@@ -43,7 +43,7 @@ import Testing
             "inactive_memory", "expired_memory", "above_sensitivity_ceiling", "denied_category", "category_not_allowed",
             "no_allowed_memories", "confirmation_required", "allowed", "allowed_by_window", "denied_by_user",
             "approval_expired", "policy_changed", "already_delivered", "not_found", "invalid_input", "unknown_category",
-            "secret_like_content", "rate_limited",
+            "secret_like_content", "rate_limited", "funes_quit",
         ])
         #expect(MemoryKind.projectContext.words == "project context")
     }

@@ -2,6 +2,7 @@ import AppKit
 import BridgeKitCore
 import BridgeUI
 import FunesCore
+import FunesMCP
 import FunesProtocol
 import SwiftUI
 import UniformTypeIdentifiers
@@ -11,6 +12,8 @@ import UniformTypeIdentifiers
 struct MCPSettings: View {
     let model: AppModel
     @State private var on = true
+    @State private var port = FunesMCPConfiguration.defaultPort
+    @State private var portMessage: String?
     @State private var linkMessage: String?
 
     var body: some View {
@@ -19,12 +22,25 @@ struct MCPSettings: View {
                 Toggle(String(localized: "Let agents connect"), isOn: $on)
                     .onChange(of: on) { _, value in model.setServer(value) }
                 LabeledContent(String(localized: "Status"), value: SidebarStatusText.text(model))
+                LabeledContent(String(localized: "Port")) {
+                    HStack {
+                        if port != model.mcpPort {
+                            Button(String(localized: "Change Port")) { changePort() }
+                        }
+                        TextField(String(localized: "Port"), value: $port, format: .number.grouping(.never))
+                            .labelsHidden().multilineTextAlignment(.trailing).frame(width: 70)
+                            .onSubmit { changePort() }
+                    }
+                }
                 LabeledContent(String(localized: "Address")) {
                     Text(verbatim: "http://127.0.0.1:\(model.mcpPort)/mcp").font(.callout.monospaced()).textSelection(.enabled)
                 }
                 if case .failed(.portInUse) = model.mcpStatus {
-                    Text(String(localized: "Another app is using port \(String(model.mcpPort)). Quit it, then turn this off and on again. Funes never moves to another port, because agents' setups name this one."))
+                    Text(String(localized: "Another app is using port \(String(model.mcpPort)). Quit it, then turn this off and on again, or choose another port. Funes never moves on its own, because agents' setups name the port."))
                         .font(.callout).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                }
+                if let portMessage {
+                    Text(portMessage).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
             }
             Section(String(localized: "Launcher")) {
@@ -53,7 +69,21 @@ struct MCPSettings: View {
             }
         }
         .formStyle(.grouped)
-        .onAppear { on = model.preferences.mcpEnabled }
+        .onAppear {
+            on = model.preferences.mcpEnabled
+            port = model.mcpPort
+        }
+    }
+
+    private func changePort() {
+        let range = FunesMCPConfiguration.portRange
+        guard range.contains(port) else {
+            portMessage = String(localized: "Choose a port from \(String(range.lowerBound)) to \(String(range.upperBound)).")
+            return
+        }
+        guard port != model.mcpPort else { return }
+        model.setPort(port)
+        portMessage = String(localized: "Agents that start funes-mcp follow the new port on their own. Set up again any agent whose setup names the address, such as Claude Code.")
     }
 }
 

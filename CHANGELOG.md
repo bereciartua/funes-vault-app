@@ -11,13 +11,15 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
 ### Added
 
 - **Agents connect over MCP**, on this Mac only.
-  - The app serves MCP on `127.0.0.1:47625`. Agents reach it through the `funes-mcp` launcher inside the app, or directly over HTTP.
+  - The app serves MCP on `127.0.0.1:47625`, a port you can change in Settings ▸ MCP. Agents reach it through the `funes-mcp` launcher inside the app, or directly over HTTP.
   - Agents can list your categories, request memories for a task (with keywords for the kinds of context that would help), pick up a request you answered later, and suggest memories.
   - Each agent has its own key, kept in a private file and stored in the vault only as a hash.
   - The protocol and security core is [BridgeKit](https://github.com/bereciartua/bridgekit) 0.1.0, shared with EK Bridge.
 - **You approve the exact text.**
   - A floating Share panel shows each memory an agent may get, with a checkbox per memory, the agent's task, keywords and stated purpose, and a 45-second countdown.
   - A request left unanswered says so on screen and waits in **Pending requests** for 15 minutes, where **Review** opens it again with the minutes it has left.
+  - Quitting Funes Vault while an agent waits tells the agent at once (`funes_quit`), and the request stays in Pending requests.
+  - Shares always fit in one result of at most 200,000 bytes: memories that wouldn't fit are left out, like those over the agent's token budget.
   - An approval is used once, within 15 minutes, and is cancelled if a memory or the agent's access changes. Refusals tell agents how many memories were withheld and why, never which ones.
 - **Agents**: add one from tiles for the agents found on this Mac, with a starting access.
   - The access editor sets what it can do (Read, Suggest, Write), its sensitivity limit, allowed and denied categories, whether Funes asks before sharing or saving, an expiry date, and whether it may ask for more.
@@ -42,12 +44,12 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
 - **The menu bar**: the icon shows when Funes needs you or is paused. The menu has **Remember…**, the Inbox count, **Pending requests** with minutes left, **Pause Funes Vault** (for 1 hour, until tomorrow or until you resume, kept across relaunches), **Open Funes Vault** and **Settings…**.
 - **Search on your Mac**: hybrid keyword and semantic search with the bundled [bge-small-en-v1.5](https://huggingface.co/BAAI/bge-small-en-v1.5) embedding model, run with Core ML on the CPU. No download, no API key, nothing leaves the Mac.
 - **Settings ▸ AI Models**: embeddings are built in. Classification uses Apple's on-device model by default, or a provider you add: Anthropic, OpenAI, Ollama, LM Studio or another OpenAI-compatible server, with its key in the Keychain and **Test Connection**.
-  - Each choice shows where it runs and, for cloud ones, what it sends.
+  - Each choice shows where it runs and, for cloud ones, what it sends. Classification sends only new captures and your category names and descriptions; agent suggestions and imports are never sent.
   - Nothing above the cloud limit (Internal by default), and nothing that looks like a secret, goes to a cloud model.
   - Usage counts per provider, with **Reset**.
 - **More settings**
   - **General**: open at login, show Funes in the Dock, and optional notifications: a request expired, a suggestion is waiting, an agent was refused more than 5 times in 10 minutes.
-  - **MCP**: turn agent access on or off, see the address, the launcher (optionally linked as `~/.local/bin/funes-mcp`) and traffic counts.
+  - **MCP**: turn agent access on or off, change the port, see the address, the launcher (optionally linked as `~/.local/bin/funes-mcp`) and traffic counts.
   - **Data**: daily backups of the vault (keeping 7), restore a backup, export and import, show the data folder, and erase everything.
   - **Updates**: signed updates from GitHub through Sparkle, checked daily; installing always takes a click.
   - **Advanced**: how long Activity keeps rows, and bringing back the setup checklist.

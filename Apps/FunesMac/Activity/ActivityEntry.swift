@@ -166,6 +166,7 @@ struct ActivityEntry: Identifiable, Equatable {
         case .unknownCategory: String(localized: "Unknown category")
         case .secretLikeContent: String(localized: "Looked like a secret")
         case .rateLimited: String(localized: "Too many requests")
+        case .funesQuit: String(localized: "Funes was quitting")
         }
     }
 }

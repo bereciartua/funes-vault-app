@@ -6,6 +6,8 @@ import FunesProtocol
 public enum FunesMCPConfiguration {
     /// Avoids EK Bridge's 47615 and 47616.
     public static let defaultPort = 47625
+    /// The ports Settings ▸ MCP accepts: no privileged ones.
+    public static let portRange = 1024...65_535
     /// `server/discover` names the agent a key belongs to under this key (`funes-mcp check`).
     public static let agentMetaKey = "com.funesvault/agent"
     /// `agent-keys/<agentId>.key` (storage §1).
