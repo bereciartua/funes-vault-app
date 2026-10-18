@@ -106,9 +106,14 @@ public final class RequestPipeline: BridgeHandler {
         }
         if agent.paused { return refuse(call, agentID, .agentPaused) }
         if let expiry = agent.access.expiresAt, expiry <= started { return refuse(call, agentID, .accessExpired) }
-        // 3. Rate limits: calls (and writes) per agent, then calls in flight.
+        // 3. Rate limits: calls (and writes) per agent, the same buckets on every channel, then calls
+        // in flight. Remote calls also take a token from the stricter remote buckets (60 calls and 10
+        // writes a minute): network hygiene for the tunnel, not an access rule (ADR-0018).
         let isWrite = call.name == "suggest_memory"
         if case .limited(let wait) = limiter.allow(call.agent.id, write: isWrite) {
+            return rateLimited(call, agentID, wait)
+        }
+        if call.remote, case .limited(let wait) = limiter.allow(call.agent.id, write: isWrite, remote: true) {
             return rateLimited(call, agentID, wait)
         }
         let admitted = inFlight.withLock { counts -> Bool in
@@ -150,7 +155,11 @@ public final class RequestPipeline: BridgeHandler {
     }
 
     func record(_ call: ToolCall, _ agentID: UUID, outcome: String, reason: ReasonCode? = nil, ids: [UUID] = []) {
-        services.activity.record(ActivityEvent(time: now(), actor: .agent(agentID), via: .mcp, event: call.name,
+        services.activity.record(ActivityEvent(time: now(), actor: .agent(agentID), via: Self.via(call), event: call.name,
                                                outcome: outcome, ids: ids, reason: reason))
     }
+
+    /// Activity's channel. The only thing `ToolCall.remote` changes (ADR-0018): every decision
+    /// above and in FunesCore gets the same inputs on both listeners.
+    static func via(_ call: ToolCall) -> ActivityEvent.Via { call.remote ? .remote : .mcp }
 }

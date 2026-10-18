@@ -59,14 +59,14 @@
 ### 4b.7 Agents: cloud access and remote tokens · 3 h
 - [x] Schema migration: `agent.cloud_access`, `remote_key_digest` and `remote_key_issued_at` ([domain model](../domain/domain-model.md#agent)); update [storage](../architecture/storage.md).
 - [x] The remote key file `agent-keys/<agentId>.remote.key` (0600).
-- [ ] A `RemoteAuthenticator` backed by `AgentService`.
+- [x] A `RemoteAuthenticator` backed by `AgentService`.
 - [x] Revision bumps for every cloud change.
-- [ ] Turning cloud access off, or removing the agent, deletes the remote token and the agent's OAuth connections.
+- [x] Turning cloud access off, or removing the agent, deletes the remote token and the agent's OAuth connections.
 - [x] The secret scanner learns the four new prefixes.
 
 ### 4b.8 Remote listener · 3 h
-- [ ] `FunesRemoteServer` on 47627 with BridgeKitRemote, wired to the **same** dispatch, `FunesTools` and `RequestPipeline` as the local server.
-- [ ] Remote calls count in the agent's own rate-limit buckets.
+- [x] `FunesRemoteServer` on 47627 with BridgeKitRemote, wired to the **same** dispatch, `FunesTools` and `RequestPipeline` as the local server.
+- [x] Remote calls count in the agent's own rate-limit buckets, and also in EK Bridge's stricter remote buckets (60 calls and 10 writes a minute), as network hygiene ([ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md) decision 2, decided after this plan).
 - [ ] Settings stored: on/off (default off), port, secret path, address, tunnel, automatic turn-off, keep awake.
 - [ ] Quitting, pausing and the 3 s quit hold behave as for the local listener.
 - [ ] The local server is unchanged. Add tests that it refuses remote and OAuth credentials (401) and tunnel headers (403).
@@ -108,7 +108,7 @@
   - each gate denial;
   - ALLOW and NEEDS_APPROVAL (approve, deny, timeout then `get_memory_request`);
   - `suggest_memory` queued and saved;
-  - the rate limits shared across both listeners.
+  - the rate limits shared across both listeners, and the remote buckets on top.
 - [ ] A Swift test that `RequestPipeline` and `PolicyEngine` get the same inputs for local and remote calls, so `ToolCall.remote` only affects Activity.
 
 ### 4b.14 Docs · 2 h

@@ -45,7 +45,7 @@ extension RequestPipeline {
             retention: (a["retention"] as? String).flatMap(Retention.init(rawValue:)) ?? .unknown,
             processors: a["processors"] as? [String] ?? [])
         do {
-            let outcome = try await requestInCall(agent, input)
+            let outcome = try await requestInCall(agent, input, via: Self.via(call))
             if outcome.status == .denied, outcome.reason == .rateLimited {
                 // FunesCore recorded it in Activity; the agent gets the usual infrastructure answer.
                 return ToolOutput.denied(.rateLimited, message: Messages.rateLimited(Self.pendingRetrySeconds),
@@ -70,13 +70,14 @@ extension RequestPipeline {
     /// the time; deliver when approved. On timeout the request waits in Pending requests.
     /// Once Funes is quitting, nothing new is shown: the call throws `QuitBeforeAsking` instead
     /// (mcp-server.md §7; PR #5 review 4307518013).
-    func requestInCall(_ agent: Agent, _ input: MemoryRequest) async throws -> RequestOutcome {
+    func requestInCall(_ agent: Agent, _ input: MemoryRequest, via: ActivityEvent.Via) async throws -> RequestOutcome {
         let disclosures = services.disclosures
         let deadline = now().addingTimeInterval(Double(inCallWait.components.seconds))
         // Requests waiting for the user: at most 3 per agent (§9), counted by FunesCore in the write
         // that would add one, so concurrent calls can't all pass.
         let limit = Self.maxPendingApprovalsPerAgent
-        var outcome = try await disclosures.request(agentID: agent.id, input, now: now(), maxPendingApprovals: limit)
+        var outcome = try await disclosures.request(agentID: agent.id, input, now: now(), maxPendingApprovals: limit,
+                                                    via: via)
         if outcome.status == .fulfilled, let offer = outcome.accessOffer, let key = offer.categoryKeys.first, !isQuitting {
             // Shared without asking: the agent gets its answer now; Always Allow is for next time.
             let prompt = AccessPrompt(agentID: agent.id, categoryKey: key, operation: .read, task: input.task,
@@ -113,7 +114,7 @@ extension RequestPipeline {
                     try? await disclosures.supersede(requestID: waiting, now: now())
                 }
                 outcome = try await disclosures.request(agentID: agent.id, input, now: now(), grant: grant,
-                                                        maxPendingApprovals: limit)
+                                                        maxPendingApprovals: limit, via: via)
             }
         }
         guard outcome.status == .needsApproval, let id = outcome.requestID, !isQuitting else { return outcome }
@@ -122,7 +123,7 @@ extension RequestPipeline {
         let remaining = max(0, deadline.timeIntervalSince(now()))
         switch await disclosures.waitForDecision(requestID: id, timeout: .milliseconds(Int(remaining * 1_000))) {
         case .approved?:
-            return try await disclosures.deliver(requestID: id, agentID: agent.id, now: now())
+            return try await disclosures.deliver(requestID: id, agentID: agent.id, now: now(), via: via)
         case .denied?:
             outcome.status = .denied
             outcome.reason = try await disclosures.disclosure(requestID: id)?.reason
@@ -161,7 +162,8 @@ extension RequestPipeline {
         }
         if let wait { return rateLimited(call, agent.id, wait) }
         do {
-            return Self.output(try await services.disclosures.deliver(requestID: requestID, agentID: agent.id, now: current))
+            return Self.output(try await services.disclosures.deliver(requestID: requestID, agentID: agent.id, now: current,
+                                                                      via: Self.via(call)))
         } catch let error as VaultError {
             return failure(call, agent.id, error)
         } catch {
@@ -234,7 +236,7 @@ extension RequestPipeline {
             confidence: (a["confidence"] as? NSNumber)?.doubleValue, targetMemoryID: target, metadataJSON: metadataJSON)
         let outcome: SuggestOutcome
         do {
-            outcome = try await services.suggestions.suggest(agentID: agent.id, input, now: now())
+            outcome = try await services.suggestions.suggest(agentID: agent.id, input, now: now(), via: Self.via(call))
         } catch let error as VaultError {
             return failure(call, agent.id, error)
         } catch {
@@ -243,7 +245,7 @@ extension RequestPipeline {
         if outcome.status == .denied, let offer = outcome.accessOffer {
             // Suggestions never wait for the user: the agent gets its answer now, and if the user
             // allows it, the suggestion goes to the Inbox afterwards (access policy §7).
-            askForSuggestionAccess(agent, input, offer)
+            askForSuggestionAccess(agent, input, offer, via: Self.via(call))
         }
         var object: [String: Any] = ["status": outcome.status.rawValue]
         switch outcome.status {
@@ -271,7 +273,8 @@ extension RequestPipeline {
     /// The access-request panel for a refused suggestion. Allow Once lets this one suggestion
     /// through; Always Allow adds the category (or Suggest) to the agent's access first. Either way it
     /// goes to the Inbox with its Save panel, never straight into the vault (§7).
-    func askForSuggestionAccess(_ agent: Agent, _ input: SuggestInput, _ offer: AccessRequestOffer) {
+    func askForSuggestionAccess(_ agent: Agent, _ input: SuggestInput, _ offer: AccessRequestOffer,
+                                via: ActivityEvent.Via) {
         guard !isQuitting else { return }
         let services = self.services, presenter = self.presenter, now = self.now
         let prompt = AccessPrompt(agentID: agent.id, categoryKey: offer.categoryKeys.first, operation: offer.operation,
@@ -284,14 +287,15 @@ extension RequestPipeline {
                 case .notNow: return
                 case .allowOnce:
                     outcome = try await services.suggestions.suggest(agentID: agent.id, input, now: now(), allowOnce: offer,
-                                                                     alwaysQueue: true)
+                                                                     alwaysQueue: true, via: via)
                 case .alwaysAllow:
                     if let key = offer.categoryKeys.first {
                         try await services.agents.allowCategory(agentID: agent.id, key, now: now())
                     } else {
                         try await services.agents.allowOperation(agentID: agent.id, offer.operation, now: now())
                     }
-                    outcome = try await services.suggestions.suggest(agentID: agent.id, input, now: now(), alwaysQueue: true)
+                    outcome = try await services.suggestions.suggest(agentID: agent.id, input, now: now(), alwaysQueue: true,
+                                                                     via: via)
                 }
                 if outcome.status == .queued, let id = outcome.suggestionID {
                     await presenter.showSuggestion(suggestionID: id, agentID: agent.id)

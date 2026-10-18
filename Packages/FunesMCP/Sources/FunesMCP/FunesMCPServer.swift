@@ -13,7 +13,10 @@ public final class FunesMCPServer {
     public let configuration: BridgeConfiguration
     /// The port `start()` listens on (Settings ▸ MCP). Changing it takes effect at the next start.
     public var port: Int
-    private let pipeline: RequestPipeline
+    let pipeline: RequestPipeline
+    let services: FunesServices
+    let tools: FunesTools
+    let authenticator: FunesAuthenticator
     /// The last request from each agent ("Connected · Claude Code 2.1 · 2 min ago"), by agent id.
     public private(set) var connections = [String: MCPServer.Connection]()
     public var statusChanged: (MCPService.Status) -> Void = { _ in } {
@@ -32,9 +35,12 @@ public final class FunesMCPServer {
         let pipeline = RequestPipeline(services: services, presenter: presenter, limiter: limiter,
                                        inCallWait: inCallWait, now: now)
         self.pipeline = pipeline
+        self.services = services
+        tools = FunesTools(store: services.store)
+        authenticator = FunesAuthenticator(agents: services.agents)
         var record: (String, MCPServer.Connection) -> Void = { _, _ in }
-        let server = MCPServer(configuration: configuration, authenticator: FunesAuthenticator(agents: services.agents),
-                               tools: FunesTools(store: services.store), handler: pipeline, limiter: limiter,
+        let server = MCPServer(configuration: configuration, authenticator: authenticator,
+                               tools: tools, handler: pipeline, limiter: limiter,
                                counters: counters, didConnect: { record($0, $1) })
         service = MCPService(server: server, limiter: limiter, counters: counters,
                              endpointFile: MCPEndpointFile(directory: dataFolder))

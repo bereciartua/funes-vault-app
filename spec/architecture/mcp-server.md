@@ -186,6 +186,8 @@ Brings Funes to the front on the Mac, at a pending request or suggestion.
 | Result size | 200,000 bytes for the whole response body, JSON-RPC envelope and echoed id included; met by compiling bundles to fit, with room kept for the longest id accepted ([access policy §4](../domain/access-policy.md#4-bundle-compilation)) | the item is skipped, or clipped if it's the first |
 | `get_memory_request` per request id | once per 5 s | `rate_limited` |
 | Failed authentications (all callers) | 120/min | 429 for 60 s |
+| Remote calls per agent, in addition to the rows above (§12) | 60/min, burst 15; writes 10/min, burst 5 | `rate_limited` |
+| Failed remote authentications per forwarded address (§12) | 30/min | 429 for 5 min, for requests without a well-formed credential |
 | Body | 64 KiB | 413 |
 | JSON-RPC id | at most 1,024 encoded bytes, quotes and escapes included (BridgeKit 0.1.1); echoed unchanged | -32600, `"id": null` (HTTP 400) |
 
@@ -236,8 +238,9 @@ Brings Funes to the front on the Mac, at a pending request or suggestion.
   - The panel grants nothing beyond the agent's current access.
 - **Same pipeline, same policy:**
   - An authenticated remote call goes through the same BridgeKitCore dispatch, contract, tool visibility and `RequestPipeline` as a local one, with `ToolCall.remote` set.
-  - The [access policy](../domain/access-policy.md), the panels, the 45 s in-call wait, the 15-minute pending list, the per-agent rate limits (§9, the same buckets) and Activity apply unchanged.
-  - The only differences: Activity records `via: remote`, and the forwarded address and tunnel are kept in memory for the last 50 remote requests.
+  - The [access policy](../domain/access-policy.md), the panels, the 45 s in-call wait, the 15-minute pending list, the per-agent rate limits (§9, the same buckets, shared by both listeners) and Activity apply unchanged.
+  - Remote calls also take a token from the stricter remote buckets (`RateLimiter`'s remote limits, as in EK Bridge: 60 calls a minute with a burst of 15, 10 writes a minute with a burst of 5; `rate_limited` when exceeded). That's network hygiene for a port the internet can reach, like the lockout, not a policy: what an agent may read or save, and when it's asked, is the same on both channels ([ADR-0018](decisions/0018-remote-access-in-v0.1.md) decision 2).
+  - The only other differences: Activity records `via: remote`, and the forwarded address and tunnel are kept in memory for the last 50 remote requests.
   - Tested: the same agent and request get the same result on both transports.
 - **Refused:**
   - a local `fns_mcp_v1_` key on the remote port (401);

@@ -21,9 +21,9 @@
    - the same Ask before sharing and Ask before saving, the same panels on the Mac, the same 45 s in-call wait and 15-minute pending list;
    - if the user isn't at the Mac, requests wait or expire. That's how the user configured it;
    - the per-agent **Ask before sharing** and **Ask before saving** switches are the only auto-approve mechanism, for local and remote agents alike;
-   - no remote-specific policy, ceilings or defaults. The policy engine never sees the transport, and the per-agent rate limits are the same.
+   - no remote-specific policy, ceilings or defaults. The policy engine never sees the transport, and every call counts in the agent's own rate-limit buckets, whichever the channel.
 
-   Only network hygiene differs on the remote port: the secret path, the `Host` check, and the failed-authentication lockout per forwarded address.
+   Only network hygiene differs on the remote port: the secret path, the `Host` check, the failed-authentication lockout per forwarded address, and EK Bridge's **stricter remote rate-limit buckets** (BridgeKitCore's `RateLimiter` remote limits: 60 calls and 10 writes a minute, bursts of 15 and 5), which a remote call takes from in addition to the agent's own. Rate limits protect the Mac, not the memories: they aren't an approval or access rule, so decisions about memories stay identical on both channels, and only how fast a remote caller can hammer the port differs. *(Decided after the plan, 2026-10-18.)*
 3. **A remote listener on `127.0.0.1:47627`** (changeable in Settings), separate from the local port. 47625 (Funes MCP) keeps refusing tunnel and forwarding headers with 403, unchanged. The 47627 default avoids these ports:
    - Funes: 47625 (MCP) and 47626 (the companion);
    - EK Bridge: 47615 and 47616;
