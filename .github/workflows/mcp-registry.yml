@@ -22,10 +22,6 @@ name: MCP Registry
 #      private key to it as the secret MCP_REGISTRY_DNS_KEY:
 #        gh secret set MCP_REGISTRY_DNS_KEY --env registry --repo bereciartua/funes-vault-app
 #
-# server.json leaves out repository.id, which the registry doesn't require. To
-# add it (as EK Bridge does), read it with
-#   gh api repos/bereciartua/funes-vault-app --jq .id
-# and add "id": "<that number>" under "repository".
 on:
   release:
     types: [published]
