@@ -1,8 +1,8 @@
 # Phase 5: iPhone companion (v0.2)
 
-**Goal:** capture anywhere, always. Search, edit and review when the Mac is reachable. No cloud.
+**Goal:** capture anywhere, always. Search, edit and review when the Mac is reachable. **Approve agents' requests from the phone,** the main reason for the companion ([Q16](open-questions.md)). No cloud copy.
 
-**Duration:** 3–4 weekends (+ App Store review). **Depends on:** Spike 1 passed, and v0.1 shipped. Specs: [companion protocol](../architecture/companion-protocol.md), [UX: iPhone](../product/05-ux-iphone.md).
+**Duration:** 4–5 weekends (+ App Store review), one more than before for approvals from the iPhone. **Depends on:** Spike 1 passed, and v0.1 shipped. Specs: [companion protocol](../architecture/companion-protocol.md), [UX: iPhone](../product/05-ux-iphone.md).
 
 ## Tasks
 ### 5.1 FunesProtocol: companion · 3 h
@@ -31,19 +31,29 @@
 - [ ] Inbox tab with swipe actions.
 - [ ] Reachability banner and states; the "Why?" sheet.
 
-### 5.6 Demo mode and App Store · 2 h
+### 5.6 Approvals from the iPhone · 5 h
+*[FR-iOS-12](../product/03-requirements.md); the push channel is [Q24](open-questions.md). Decide it, as an ADR, before this task.*
+- [ ] Early in the phase: measure the chosen channel's delivery time from the Mac to a locked phone (a CloudKit doorbell first).
+- [ ] Mac: when a Share, Save or access request starts waiting, ring the doorbell for each paired device with approvals on. It carries only "you have a request" and an opaque id: no text, titles, task or agent name.
+- [ ] Companion methods to fetch a waiting request's panel contents and to answer it. The answer is bound to the request id and its snapshot revision, single use, with the same 15-minute and invalidation rules ([access policy](../domain/access-policy.md)); the first answer wins on the Mac or the phone.
+- [ ] iPhone: a notification (worded on the phone by a notification service extension, after fetching over the companion channel), and the Share and Save panels with checkboxes and badges. Answering needs the phone unlocked. "Mac not reachable" when it can't fetch.
+- [ ] Settings ▸ iPhone on the Mac and Settings on the phone: approvals on or off per device (default on once paired).
+- [ ] Tests: the push payload never contains text (captured); a phone answer and a Mac answer racing; a revoked device's answer refused; Activity rows under the device.
+
+### 5.7 Demo mode and App Store · 2 h
 - [ ] Demo vault resource and banner. App Review notes.
 - [ ] Privacy label "Data Not Collected". Privacy policy at `https://funesvault.com/privacy`, support URL `https://funesvault.com/support`.
 - [ ] App Store name "Funes Vault" (reserved early in App Store Connect), subtitle "Private memory for AI agents".
 - [ ] TestFlight build; App Store submission.
 
-### 5.7 Testing · 2 h
+### 5.8 Testing · 2 h
 - [ ] The protocol test plan ([§9](../architecture/companion-protocol.md#9-test-plan)) automated where possible.
-- [ ] A manual matrix: same Wi-Fi, Tailscale, tunnel, Mac asleep, revoked device, queue of 1,000.
+- [ ] A manual matrix: same Wi-Fi, Tailscale, tunnel, Mac asleep, revoked device, queue of 1,000; approvals from the phone on Wi-Fi and Tailscale, locked phone, Mac unreachable.
 
 ## Exit criteria
 - **v0.2:**
   - a capture made with the Mac asleep arrives exactly once after wake;
   - search and edit work over the same Wi-Fi and over Tailscale;
+  - a request from ChatGPT or claude.ai is approved from the phone, with no memory text in the push;
   - the app is approved on the App Store;
   - the Mac app with iPhone access is released via Sparkle.

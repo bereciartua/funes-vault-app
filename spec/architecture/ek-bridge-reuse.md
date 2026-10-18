@@ -5,7 +5,7 @@
 **Strategy:** share code in **three tiers** ([ADR-0013](decisions/0013-shared-bridgekit-core.md), which supersedes ADR-0008):
 1. **Extract the protocol and security core now** into a shared library, `bereciartua/bridgekit` (product `BridgeKitCore`). EK Bridge adopts it first.
 2. **Copy the UI and workflow pieces** into Funes (`Packages/BridgeUI`) and extract them after Funes v0.1.
-3. **Leave Remote Access in EK Bridge** until Funes needs it in v0.3.
+3. **Extract Remote Access now** as a second product, `BridgeKitRemote` (BridgeKit 0.2.0), for Funes v0.1. EK Bridge adopts it first ([ADR-0018](decisions/0018-remote-access-in-v0.1.md)).
 
 ## 1. Tier 1: BridgeKitCore (shared library, extracted in Funes Phase 2)
 | Area | EK Bridge files | ~Lines | Generalization needed |
@@ -67,10 +67,26 @@ public protocol BridgeHandler: Sendable {
 - `Packages/BridgeUI/PROVENANCE.md` lists the EK Bridge commit for every copied file. Diff it against EK Bridge before each Funes release.
 - After Funes v0.1, the common shape of both apps' versions becomes `BridgeKitUI`.
 
-## 3. Tier 3: Remote Access (stays in EK Bridge until Funes v0.3)
-- `RemoteMCPService`, `OAuthServer`, `OAuthStore`, `OAuthPages`, `OAuthTypes`, `CIMDFetcher`, `TunnelHealth`, `TunnelChecks`, `TunnelSwitch`, `RemoteAccessSupport`: about 3,400 lines plus about 900 of UI.
-- **Funes v0.2's public-tunnel mode for the iPhone** needs only the secret-path and Host checks and the tunnel checklist text. Copy those few hundred lines into Funes's companion server.
-- **When Funes adds Remote Access for cloud agents (v0.3),** extract the full tier as `BridgeKitRemote`. Ideally, run EK Bridge's live cloud matrix first.
+## 3. Tier 3: BridgeKitRemote (extracted now, for Funes v0.1)
+*Amended by [ADR-0018](decisions/0018-remote-access-in-v0.1.md): this tier was to stay in EK Bridge until Funes v0.3. Line counts at EK Bridge `e753b22` (0.11.2 plus BridgeKit 0.1.1). Plan: [Phase 4b](../plans/phase-4b-remote-access.md).*
+
+| Area | EK Bridge files | ~Lines | Generalization needed |
+|---|---|---|---|
+| Remote listener | `MCP/RemoteMCPService` (`RemoteConfiguration`, `RemoteHTTPGate`, `RemoteNonces`, the service) | 440 | Authenticates through a new `RemoteAuthenticator` protocol instead of `ClientRegistry`, and returns an agent id for BridgeKitCore's `MCPAuthentication(remote: true)`. The 401 wording comes from the app's texts |
+| OAuth | `MCP/OAuthServer`, `OAuthStore`, `OAuthPages`, `OAuthTypes` | 1,360 | The scope (`calendar` → `memory`), the token prefixes (`ekb_oat_v1_`, `ekb_ort_v1_`, `ekb_ocs_v1_` → `fns_…`), the display name on the sign-in pages, and the store's folder are parameters. A connection's `clientID` is the app's agent id. The store stays a 0600 JSON file (`remote-connections.json`) that fails closed |
+| Client metadata | `MCP/CIMDFetcher` | 580 | The `User-Agent` name and version come from `BridgeIdentity` |
+| Tunnels | `TunnelHealth`, `TunnelChecks`, `TunnelSwitch` | 910 | The port is a parameter; the status lines become typed results that the app words (as `BridgeTexts` does for BridgeKitCore), because the kit has no String Catalog |
+| Support | `RemoteAccessSupport` (`KeepAwake`, `RemoteProbe`) | 100 | The assertion's reason text is a parameter |
+
+**Total:** about 3,400 lines. EK Bridge's tests for them move too: `OAuthServerTests`, `CIMDFetcherTests`, `TunnelHealthTests` with the `Tests/tunnel-health` fixtures, `TunnelSwitchTests`, the remote checks of `MCPGateTests`, and `mcp_test.py`'s `run_remote` and `run_oauth`, generalized to run against the reference server.
+
+**Already in BridgeKitCore 0.1.x**, so tier 3 sits on top of it: `MCPAuthentication(remote:)`, `ToolCall.remote` and `MCPServer.Connection.remote`, and `RateLimiter`'s remote buckets and per-address failed-auth lockout. Funes doesn't use the separate remote buckets: its pipeline counts a remote call in the agent's own buckets, so an agent has the same limits on every channel. Only the per-address lockout is remote-specific.
+
+**Stays app-side:**
+- **The views,** `RemoteAccessView` and `TunnelSwitchView` (about 1,300 lines), and the cloud sections of `AgentSetup` (cloud agent setups, tunnel commands, goldens `Tests/agent-setup/cloud-*.txt` and `tunnel-*.txt`). They're bound to each app's model (EK Bridge's `BridgeAppModel` and connections; Funes's agents) and its String Catalog. Funes copies them into `Packages/BridgeUI` (`Upstream/` and `PROVENANCE.md`, as for tier 2), and they become part of BridgeKitUI after v0.1.
+- **Which agent a credential belongs to,** where the remote-token digest is stored (EK Bridge's JSON registry, Funes's SQLite), and the "Allow cloud access" switch. Policy stays in each app (rule 1).
+
+**Funes v0.2's public-tunnel mode for the iPhone** uses BridgeKitRemote's gate pieces (secret path, `Host` check) and tunnel checks, instead of copying them into the companion server.
 
 ## 4. Scripts and CI (copied as files in both repos, not shared code)
 - `release.sh`, `scripts/make_dmg.sh`, `scripts/dmg_window.swift`, `scripts/appcast.py`, `scripts/release_notes.py`, `scripts/verify_update_signature.swift`, `scripts/sparkle.sh`, and workflows `ci.yml`, `release.yml` and `mcp-registry.yml`. About 2,200 lines.
@@ -86,16 +102,18 @@ public protocol BridgeHandler: Sendable {
 ## 6. The BridgeKit repository
 ```
 bridgekit/
-├── Package.swift                 # products: BridgeKitCore (later BridgeKitUI, BridgeKitRemote)
+├── Package.swift                 # products: BridgeKitCore, BridgeKitRemote (0.2.0); later BridgeKitUI
 ├── Sources/BridgeKitCore/
+├── Sources/BridgeKitRemote/       # depends on BridgeKitCore; no UI
 ├── Tests/BridgeKitCoreTests/     # Swift Testing; moved from EK Bridge's test executables
+├── Tests/BridgeKitRemoteTests/   # 0.2.0: OAuth, CIMD, tunnel parsers, remote gate
 ├── Tests/harness/                # reference server + mcp_test.py / launcher_test.py (moved from EK Bridge)
 ├── PROVENANCE.md                 # EK Bridge commit each file came from
 ├── CHANGELOG.md
 └── LICENSE                       # Apache-2.0
 ```
 - **Platforms:** macOS 14+ (EK Bridge's minimum). No dependencies.
-- **Versions:** `0.1.0` is the first tag. Both apps pin an exact version (`.exact("0.1.0")`).
+- **Versions:** `0.1.0` is the first tag. Both apps pin an exact version (`.exact("0.1.0")`). `0.2.0` adds the `BridgeKitRemote` product; BridgeKitCore only gains additions in it (most of what tier 3 uses is already public).
 - **Release order:** change BridgeKit, then tag it, then bump EK Bridge (its tests and fixtures must stay byte-for-byte green), then bump Funes.
 
 ## 7. EK Bridge's adoption (the proof step)

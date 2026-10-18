@@ -2,7 +2,7 @@
 
 **Goal:** a notarized, auto-updating public preview that people can install with one command.
 
-**Duration:** 1 weekend (+ a buffer weekend). **Depends on:** Phase 3.
+**Duration:** 1 weekend (+ a buffer weekend). **Depends on:** Phase 3. The live matrix and the launch (4.4 and 4.5) also depend on [Phase 4b: Remote Access](phase-4b-remote-access.md) ([ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)).
 
 ## Tasks
 ### 4.1 Release pipeline · 3 h
@@ -38,11 +38,14 @@
 - [x] `docs/ARCHITECTURE.md`, `docs/MCP.md` (agent setups, tools, limits), `docs/TESTING.md` (evidence ledger, live matrix), `docs/MAINTAINING.md`, `SECURITY.md`, `CHANGELOG.md`, `CONTRIBUTING.md`.
 - [x] Privacy statement: everything that leaves the Mac ([PRIVACY.md](../../PRIVACY.md), and `/privacy` on the site).
 
-### 4.4 Live test matrix · 2 h
+### 4.4 Live test matrix · 3 h
+*After Phase 4b.*
 - [ ] Claude Code, Claude Desktop, Cursor, Codex: connect, request (approve, deny, timeout then get), suggest (queued and saved), paused agent, removed agent.
+- [ ] ChatGPT and claude.ai through Remote Access (Tailscale Funnel): pair, the same requests and suggestions, paused agent, cloud access off, Revoke, Remote Access off.
 - [ ] Record the results in `docs/TESTING.md`.
 
 ### 4.5 Launch · 1 h
+*After Phase 4b's exit criteria, including a week of daily use with ChatGPT and claude.ai.*
 - [ ] Publish the release (from draft), check that Sparkle sees it, check `brew install --cask bereciartua/tap/funes-vault`.
 - [ ] Mention it in EK Bridge's README and release notes ("From the maker of EK Bridge: Funes gives agents your memory, not all of it.").
 - [ ] Optional: a Show HN and an r/macapps post. These are self-serve channels; no outreach required.
@@ -53,4 +56,4 @@
   - the Homebrew cask works;
   - the MCP Registry is listed;
   - a Sparkle update from v0.1.0 to v0.1.1 has been tested.
-- The live matrix is recorded for 4 agents.
+- The live matrix is recorded for 6 agents: 4 local, plus ChatGPT and claude.ai through Remote Access.

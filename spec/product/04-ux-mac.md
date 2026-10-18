@@ -7,10 +7,11 @@ Funes is a menu bar app (`LSUIElement`) with one main window and floating panels
 ```
 Menu bar icon ─┬─ Menu ─────────────── Remember… · Inbox (3) · Pending requests · Pause Funes Vault · Open Funes Vault · Updates · Quit
                ├─ Capture box ───────── (⌥⌘M) quick capture
-               └─ Panels (top right) ── Share with <agent>? · Save this memory? · <agent> wants more access
+               └─ Panels (top right) ── Share with <agent>? · Save this memory? · <agent> wants more access · <app> wants to connect
 Main window ───┬─ Vault        (memories: list + detail)
                ├─ Inbox        (suggestions to review)
-               ├─ Agents       (connections: access, connect, activity)
+               ├─ Agents       (connections: access, connect, cloud, activity)
+               ├─ Remote Access (cloud agents through your tunnel; experimental, off by default)
                ├─ Activity     (log)
                ├─ iPhone       (v0.2: pairing, devices, reachability)
                └─ Settings     (general, capture, MCP, data, updates, advanced)
@@ -26,6 +27,7 @@ Main window ───┬─ Vault        (memories: list + detail)
 | Needs you | filled glyph with an accent dot | a panel is open, or requests or suggestions are waiting |
 | Paused | glyph with a slash | Funes or the MCP server is paused |
 | Off | dimmed glyph | MCP server off (before setup) |
+| Remote Access on | any of the above, plus a small globe | the Remote Access listener is on |
 
 **Menu:**
 ```
@@ -34,6 +36,9 @@ Funes Vault is on · 3 agents
 Remember…                         ⌥⌘M
 Inbox                               3
 Pending requests                    1   ▸  Claude Code · 2 min left
+──────────────────────
+Remote Access on · 2 cloud agents            (only while on; "· tunnel down" when the tunnel isn't running)
+Turn Off Remote Access
 ──────────────────────
 Pause Funes Vault                            ▸  For 1 Hour · Until Tomorrow · Until I Resume
 Open Funes Vault                          ⌘O
@@ -127,8 +132,26 @@ A card at the top of the Vault:
     - the launcher path;
     - Copy key (with a warning);
     - Rotate key.
+  - **Cloud** (shown while Remote Access is on, or while the agent has cloud access):
+    - **Allow cloud access:** off by default. The caption sums up what the agent can do from the internet ("Cloud agents can use this from the internet: reads Low and below, asks first"). Its access is the same as on this Mac; nothing here changes it.
+    - **Agent:** a picker of cloud agents, marked Token or OAuth, with the MCP URL, the setup to copy and its steps (EK Bridge's cloud setups, in Funes's words).
+    - **Connected:** cloud apps signed in with OAuth, with when they connected and were last used, and **Revoke**.
+    - **Connect a Cloud App…** opens pairing for this agent for 10 minutes. **Copy Remote Token…** (asks first; clears the clipboard after 90 s) and **Reset Remote Token…**.
+    - Turning cloud access off asks first when the agent has a remote token or connected apps: they stop working at once.
   - **Activity:** this agent's log.
 - **Header actions:** Pause / Resume, Remove…
+- **Add Agent** also has cloud tiles (claude.ai, ChatGPT, Gemini Enterprise, the Anthropic and OpenAI APIs, Claude Code on the web, Cursor, Copilot, Devin). A tile creates an agent with cloud access on and the chosen starting access, then opens pairing or the token setup. With Remote Access off, it offers to set it up first.
+
+### Remote Access (experimental)
+Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1`, so a tunnel the user runs forwards them to a second port on this Mac.
+- **Before setup:** what it does, that it's off by default, and what it means: "While Remote Access is on, cloud agents reach Funes Vault through a public address. What you share with them goes to their servers." [Set Up Remote Access…]
+- **Guided setup**, four steps:
+  1. **Choose a tunnel:** Tailscale Funnel (recommended: TLS ends on this Mac), Cloudflare Tunnel, ngrok, Cloudflare quick tunnel (testing only), other.
+  2. **Start it:** **Turn On Remote Access** (asks first), then the tunnel's command to copy into Terminal. Funes never runs a tunnel. It checks every 3 s whether the tunnel runs and forwards to 47627, and moves on by itself.
+  3. **Paste its address:** the public `https://` address, filled in when step 2 found it.
+  4. **Test:** one request through the tunnel to Funes's own health URL: **Reachable**, or **Not reachable** with the reason.
+- **Once set up:** the switch at the top, then rows for **Status** (Test), **Tunnel** (Running · forwards to 47627, Not running with its command, Wrong port, Not public; **Switch Tunnel…**), **Address** (Edit…), **MCP URL** (copy, Reset Path…), **Port** (47627), **Turn off automatically** (Never, 1 hour, 8 hours, 1 day) and **Keep this Mac awake while on power**. Below them, the agents with cloud access, each linking to its Cloud section.
+- The sidebar label shows **On**, or ⚠ **Down** while the tunnel in use isn't running.
 
 ### Activity
 - **Columns:** time, agent or device, event, detail, result.
@@ -136,7 +159,8 @@ A card at the top of the Vault:
   - "Shared 3 memories" · Approved by you
   - "Refused" · Category not allowed
   - "Suggested *Prefers Vitest*" · Waiting in Inbox. The title is looked up live; if the memory was deleted, the row shows "(deleted memory)".
-- **Filters:** All, Shared, Suggestions, Problems; Agent ▾; Device ▾; Today / 7 days / 30 days / All.
+- **Filters:** All, Shared, Suggestions, Problems, Remote Access; Agent ▾; Device ▾; Today / 7 days / 30 days / All.
+- Rows from cloud agents carry a cloud icon and "via Remote Access". The detail pane shows the tunnel and forwarded address for the last 50 remote requests, kept in memory only.
 - **Detail pane:**
   - the request id;
   - the task, for requests whose Share panel this session showed (the vault stores only a hash, so otherwise, and after relaunch, it shows "Task text not stored");
@@ -202,11 +226,17 @@ All panels are non-activating floating `NSPanel`s at the top right, stacked if m
 - The panel is never taller than the screen's visible area: the title and the buttons stay in place and the rows between them scroll.
 - Opening a pending request again (from the menu, Pending requests or an agent's `open_in_funes`) refreshes the same panel. Rows whose memory is unchanged keep the user's ticks. If anything that would be shared changed, the buttons arm again.
 - On timeout the panel says "No answer: Claude Code was told to wait" and moves to Pending requests.
+- A request from a cloud agent gets the same panel, with "via Remote Access" under the agent's name.
 
 ### Save this memory?
 - Shows: from <agent>, title, body, kind, categories, sensitivity, evidence (as quoted data).
 - Buttons: Discard · Later · Edit… · Save.
 - On timeout: "Saved to Inbox for later".
+
+### <app> wants to connect (cloud sign-in)
+- Shown only while pairing is open for one agent. Example: "**Claude** wants to connect as **claude.ai**", with the app's metadata URL, "Returns to claude.ai", and the six-digit code the browser shows ("482 913").
+- Text: "Allow only if this code matches the one in your browser. It will use claude.ai's access."
+- Buttons: Deny · Allow (armed after 1 s). A second sign-in waits until this one is answered.
 
 ### <agent> wants more access
 - Example: "Cursor can't read **Project Context**. It asked for context for: <task>."
