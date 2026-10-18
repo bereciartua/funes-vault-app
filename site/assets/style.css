@@ -1,23 +1,23 @@
 /* funesvault.com: one stylesheet, system fonts only, light and dark in one
-   palette taken from the app icon (scripts/app_icon.swift): parchment
-   #F6EEDC to #E2D0AC, eye white #FDF9F0, ink #1D1912, gold #F6CF6A to
-   #A06A18. Nothing is loaded from other hosts. */
+   palette taken from the app icon (scripts/app_icon.swift): orange #FF7A26
+   to #F04C08, eye white #FFFDF9, black #121110. Nothing is loaded from
+   other hosts. */
 
 :root {
   color-scheme: light dark;
-  --bg: #f6eedc;              /* parchment */
-  --surface: #fdf9f0;         /* eye white */
-  --surface-2: #ede1c6;
-  --text: #1d1912;            /* ink */
-  --muted: #5a5040;
-  --line: #e2d0ac;            /* parchment, the darker end */
-  --accent: #3d3324;
-  --accent-text: #fdf9f0;
-  --gold: #80520c;            /* gold, darkened for text contrast on parchment */
-  --gold-fill: #a06a18;       /* the iris's deep gold */
-  --code-bg: #1d1912;
-  --code-text: #fdf9f0;
-  --shadow: 0 1px 2px rgba(29, 25, 18, 0.06), 0 8px 24px rgba(29, 25, 18, 0.08);
+  --bg: #fffdf9;              /* eye white */
+  --surface: #ffffff;
+  --surface-2: #f6efe6;       /* the eye white's shade */
+  --text: #121110;            /* black */
+  --muted: #5a524a;
+  --line: #ece3d8;
+  --accent: #f04c08;          /* the ground's deep orange */
+  --accent-text: #121110;
+  --orange: #ad3600;          /* orange, darkened for text contrast on white (6.3:1) */
+  --orange-fill: #f04c08;
+  --code-bg: #121110;
+  --code-text: #fffdf9;
+  --shadow: 0 1px 2px rgba(18, 17, 16, 0.06), 0 8px 24px rgba(18, 17, 16, 0.08);
   --radius: 14px;
   --measure: 68ch;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -27,18 +27,18 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #17140e;            /* ink, deepened */
-    --surface: #211c15;
-    --surface-2: #2b251c;
-    --text: #fdf9f0;
-    --muted: #c8baa0;
-    --line: #3a3226;
-    --accent: #e9dab9;        /* parchment */
-    --accent-text: #1d1912;
-    --gold: #f6cf6a;          /* the iris's pale gold */
-    --gold-fill: #f6cf6a;
-    --code-bg: #0f0d09;
-    --code-text: #fdf9f0;
+    --bg: #0f0e0d;            /* black, deepened */
+    --surface: #1a1816;
+    --surface-2: #24211e;
+    --text: #fffdf9;
+    --muted: #bdb4aa;
+    --line: #332e29;
+    --accent: #ff7a26;        /* the ground's light orange */
+    --accent-text: #121110;
+    --orange: #ff8a3d;
+    --orange-fill: #ff6312;
+    --code-bg: #000000;
+    --code-text: #fffdf9;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 }
@@ -55,11 +55,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--accent); text-underline-offset: 0.18em; }
+a { color: var(--orange); text-underline-offset: 0.18em; }
 a:hover { text-decoration-thickness: 2px; }
-@media (prefers-color-scheme: dark) { a { color: var(--accent); } }
 
-:focus-visible { outline: 3px solid var(--gold-fill); outline-offset: 2px; border-radius: 4px; }
+:focus-visible { outline: 3px solid var(--orange-fill); outline-offset: 2px; border-radius: 4px; }
 
 img { max-width: 100%; height: auto; }
 
@@ -90,7 +89,7 @@ img { max-width: 100%; height: auto; }
 .hero { padding: 64px 0 40px; }
 .hero .wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: center; }
 .hero-icon { width: 220px; height: 220px; }
-.eyebrow { display: inline-block; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); margin: 0 0 12px; }
+.eyebrow { display: inline-block; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--orange); margin: 0 0 12px; }
 h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; letter-spacing: -0.01em; }
 h1 { font-size: clamp(2.1rem, 5vw, 3.3rem); margin: 0 0 16px; font-weight: 750; }
 .lede { font-size: 1.2rem; color: var(--muted); margin: 0 0 28px; max-width: 34em; }
@@ -114,10 +113,10 @@ h1 { font-size: clamp(2.1rem, 5vw, 3.3rem); margin: 0 0 16px; font-weight: 750; 
 }
 .command code { flex: 1; min-width: 0; padding: 12px 14px; background: none; color: inherit; border-radius: 0; font: 0.92rem/1.5 var(--font-mono); overflow-x: auto; white-space: nowrap; }
 .command button {
-  flex: none; border: 0; border-left: 1px solid rgba(253, 249, 240, 0.15); background: transparent; color: var(--code-text);
+  flex: none; border: 0; border-left: 1px solid rgba(255, 253, 249, 0.15); background: transparent; color: var(--code-text);
   font: 600 0.85rem var(--font); padding: 0 14px; cursor: pointer;
 }
-.command button:hover { background: rgba(253, 249, 240, 0.08); }
+.command button:hover { background: rgba(255, 253, 249, 0.08); }
 
 /* Sections */
 section { padding: 40px 0; }
@@ -128,7 +127,7 @@ h3 { font-size: 1.15rem; margin: 0 0 6px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 16px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
 .card p { margin: 0; color: var(--muted); font-size: 0.97rem; }
-.card .mark { display: block; width: 28px; height: 4px; border-radius: 2px; background: var(--gold-fill); margin-bottom: 14px; }
+.card .mark { display: block; width: 28px; height: 4px; border-radius: 2px; background: var(--orange-fill); margin-bottom: 14px; }
 
 .steps { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; max-width: 46em; }
 .steps li { counter-increment: step; position: relative; padding-left: 44px; }
@@ -165,7 +164,7 @@ table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
 th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
 th { font-weight: 650; background: var(--surface-2); }
 
-.callout { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--gold-fill); border-radius: 10px; padding: 14px 16px; }
+.callout { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--orange-fill); border-radius: 10px; padding: 14px 16px; }
 
 .not-found { text-align: center; padding: 96px 0 40px; }
 .not-found img { width: 120px; height: 120px; }

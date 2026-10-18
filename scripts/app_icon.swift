@@ -1,6 +1,6 @@
 // Draws Funes Vault's app icon as vector art and writes the asset catalog's AppIcon set:
-// an open eye, drawn in ink on parchment, with a gold iris. Funes, in Borges' story, is the
-// man who remembers everything he has ever seen. Original art, drawn here; no third-party assets.
+// an open eye, white with a black outline and a black iris, on an orange ground. Funes, in Borges'
+// story, is the man who remembers everything he has ever seen. Original art, drawn here; no third-party assets.
 //
 //   swiftc -O scripts/app_icon.swift -o build/app_icon
 //   build/app_icon iconset Apps/FunesMac/Assets.xcassets/AppIcon.appiconset
@@ -23,7 +23,7 @@ func color(_ hex: Int, _ alpha: CGFloat = 1) -> CGColor {
 }
 
 let space = CGColorSpace(name: CGColorSpace.sRGB)!
-let ink = color(0x1D1912)
+let ink = color(0x121110)
 
 /// The macOS icon body: a superellipse, close to Apple's continuous-corner square.
 func bodyPath() -> CGPath {
@@ -69,10 +69,11 @@ func draw(pixels: Int) -> CGImage {
     context.scaleBy(x: 1, y: -1)
     context.setShouldAntialias(true)
     context.interpolationQuality = .high
-    // Small sizes get a heavier outline and a larger iris so the eye stays legible.
+    // Small sizes get a heavier outline and a larger iris so the eye stays legible, and drop the
+    // sheen, the shadows and the catchlight, which only blur at that size.
     let small = pixels <= 64
 
-    // The body: parchment, a little darker towards the bottom, with a soft shadow below.
+    // The body: orange, a little deeper towards the bottom, with a soft shadow below.
     let body = bodyPath()
     context.saveGState()
     if !small {
@@ -80,56 +81,88 @@ func draw(pixels: Int) -> CGImage {
         context.setShadow(offset: CGSize(width: 0, height: -10 * scale), blur: 26 * scale, color: color(0x000000, 0.32))
     }
     context.addPath(body)
-    context.setFillColor(color(0xE2D0AC))
+    context.setFillColor(color(0xF04C08))
     context.fillPath()
     context.restoreGState()
     context.saveGState()
     context.addPath(body)
     context.clip()
-    let paper = CGGradient(colorsSpace: space, colors: [color(0xF6EEDC), color(0xE2D0AC)] as CFArray, locations: [0, 1])!
-    context.drawLinearGradient(paper, start: CGPoint(x: 512, y: 100), end: CGPoint(x: 512, y: 924), options: [])
-    // A thin rim: light along the top edge, a touch of shade along the bottom.
+    let ground = CGGradient(colorsSpace: space, colors: [color(0xFF7A26), color(0xF04C08)] as CFArray, locations: [0, 1])!
+    context.drawLinearGradient(ground, start: CGPoint(x: 512, y: 100), end: CGPoint(x: 512, y: 924), options: [])
     if !small {
+        // A soft white sheen falling from the top edge.
+        let sheen = CGGradient(colorsSpace: space, colors: [color(0xFFFFFF, 0.3), color(0xFFFFFF, 0)] as CFArray,
+                               locations: [0, 1])!
+        context.drawRadialGradient(sheen, startCenter: CGPoint(x: 512, y: 0), startRadius: 0,
+                                   endCenter: CGPoint(x: 512, y: 0), endRadius: 870, options: [])
+        // A thin rim: light along the top edge, a touch of shade along the bottom.
         context.addPath(body)
         context.setLineWidth(10)
         context.replacePathWithStrokedPath()
         context.clip()
         let rim = CGGradient(colorsSpace: space,
-                             colors: [color(0xFFFFFF, 0.5), color(0xFFFFFF, 0), color(0x000000, 0), color(0x000000, 0.3)] as CFArray,
+                             colors: [color(0xFFFFFF, 0.45), color(0xFFFFFF, 0), color(0x000000, 0), color(0x000000, 0.27)] as CFArray,
                              locations: [0, 0.18, 0.85, 1])!
         context.drawLinearGradient(rim, start: CGPoint(x: 512, y: 100), end: CGPoint(x: 512, y: 924), options: [])
     }
     context.restoreGState()
 
-    // The eye: white, a gold iris and an ink pupil, inside an ink outline.
+    // The eye: a white almond and a black iris inside a black outline, casting a soft shadow.
     let corner: CGFloat = small ? 168 : 196
-    let eye = almondPath(corner: corner, upper: small ? 236 : 250, lower: small ? 788 : 774)
+    let upper: CGFloat = small ? 236 : 250, lower: CGFloat = small ? 788 : 774
+    let eye = almondPath(corner: corner, upper: upper, lower: lower)
     let iris: CGFloat = small ? 150 : 138
-    let pupil: CGFloat = small ? 64 : 54
-    context.addPath(eye)
-    context.setFillColor(color(0xFDF9F0))
-    context.fillPath()
+    context.saveGState()
+    if !small {
+        context.setShadow(offset: CGSize(width: 0, height: -18 * scale), blur: 40 * scale, color: color(0x7A2200, 0.45))
+    }
+    context.beginTransparencyLayer(auxiliaryInfo: nil)
 
+    // The white, shaded a little under the upper lid.
     context.saveGState()
     context.addPath(eye)
     context.clip()
+    if small {
+        context.setFillColor(color(0xFFFDF9))
+        context.fill(CGRect(x: 0, y: 0, width: 1024, height: 1024))
+    } else {
+        let white = CGGradient(colorsSpace: space, colors: [color(0xE9E2D8), color(0xFFFFFF), color(0xF4EFE8)] as CFArray,
+                               locations: [0, 0.35, 1])!
+        context.drawLinearGradient(white, start: CGPoint(x: 512, y: upper), end: CGPoint(x: 512, y: lower), options: [])
+    }
+
     context.addEllipse(in: circle(iris))
     context.clip()
-    // Lit from the upper left: pale gold at the light, deep gold at the rim.
-    let gold = CGGradient(colorsSpace: space, colors: [color(0xF6CF6A), color(0xA06A18)] as CFArray, locations: [0.15, 1])!
-    let light = CGPoint(x: 512 - 0.16 * iris, y: 512 - 0.24 * iris)
-    context.drawRadialGradient(gold, startCenter: light, startRadius: 0, endCenter: light, endRadius: 1.44 * iris,
-                               options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+    if small {
+        context.setFillColor(ink)
+        context.fill(CGRect(x: 0, y: 0, width: 1024, height: 1024))
+    } else {
+        // Lit from the upper left: warm grey at the light, near black at the rim, and a white catchlight.
+        let black = CGGradient(colorsSpace: space, colors: [color(0x3A332C), color(0x0B0A09)] as CFArray, locations: [0, 1])!
+        let light = CGPoint(x: 512 - 0.1 * iris, y: 512 - 0.2 * iris)
+        context.drawRadialGradient(black, startCenter: light, startRadius: 0, endCenter: light, endRadius: 1.2 * iris,
+                                   options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
+        let glint = CGPoint(x: 512 + 33.5, y: 512 - 33.5)
+        context.setFillColor(color(0xFFFDF9))
+        context.fillEllipse(in: CGRect(x: glint.x - 18.4, y: glint.y - 18.4, width: 36.8, height: 36.8))
+    }
     context.restoreGState()
-
-    context.setFillColor(ink)
-    context.fillEllipse(in: circle(pupil))
 
     context.addPath(eye)
     context.setStrokeColor(ink)
-    context.setLineWidth(small ? 76 : 36)
+    context.setLineWidth(small ? 80 : 44)
     context.setLineJoin(.round)
     context.strokePath()
+    context.endTransparencyLayer()
+    context.restoreGState()
+
+    // A faint orange rim round the iris, where the ground shows through.
+    if !small {
+        context.addEllipse(in: circle(iris - 6))
+        context.setStrokeColor(color(0xFF6312, 0.55))
+        context.setLineWidth(6)
+        context.strokePath()
+    }
 
     guard let image = context.makeImage() else { fail("can't render the icon") }
     return image

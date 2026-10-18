@@ -1,6 +1,6 @@
-// The window people see when they open FunesVault.dmg: a parchment background
-// with a dotted ink arc leading from the app to the Applications folder, one dot lit
-// in gold, all in the app icon's colours (scripts/app_icon.swift), and the Finder settings (.DS_Store) that size the window, hide its toolbar
+// The window people see when they open FunesVault.dmg: a warm white background
+// with a dotted black arc leading from the app to the Applications folder, one dot lit
+// in orange, all in the app icon's colours (scripts/app_icon.swift), and the Finder settings (.DS_Store) that size the window, hide its toolbar
 // and sidebar, place both icons over the art and point at the background.
 // scripts/make_dmg.sh compiles it and runs both commands:
 //
@@ -22,7 +22,7 @@ import Foundation
 // background from the top left of the window's content, which on macOS 26 and
 // later sits between the title bar and a status bar Finder shows even when told
 // not to. The window is sized so visibleHeight points show; the art stays in
-// them, and the parchment continues below for a Finder that shows more.
+// them, and the white continues below for a Finder that shows more.
 let windowSize = CGSize(width: 660, height: 440)
 let visibleHeight: CGFloat = 400
 let iconSize: CGFloat = 128
@@ -54,8 +54,8 @@ func drawBackground(to path: String, scale: CGFloat) {
     let h = windowSize.height
     func flipped(_ p: CGPoint) -> CGPoint { CGPoint(x: p.x, y: h - p.y) }
 
-    // The icon's parchment, lighter at the top: from its eye white to its paper.
-    let wash = CGGradient(colorsSpace: space, colors: [color(0xFDF9F0), color(0xF6EEDC)] as CFArray,
+    // The icon's eye white, shading a little towards the bottom.
+    let wash = CGGradient(colorsSpace: space, colors: [color(0xFFFDF9), color(0xF6EFE6)] as CFArray,
                           locations: nil)!
     context.drawLinearGradient(wash, start: CGPoint(x: 0, y: h), end: CGPoint(x: 0, y: 0), options: [])
 
@@ -65,15 +65,15 @@ func drawBackground(to path: String, scale: CGFloat) {
         let c = flipped(center)
         let tile = CGRect(x: c.x - 78, y: c.y - 72, width: 156, height: 152)
         context.saveGState()
-        context.setShadow(offset: CGSize(width: 0, height: -2 * scale), blur: 14 * scale, color: color(0x6B5530, 0.16))
+        context.setShadow(offset: CGSize(width: 0, height: -2 * scale), blur: 14 * scale, color: color(0x7A2200, 0.12))
         context.addPath(CGPath(roundedRect: tile, cornerWidth: 40, cornerHeight: 40, transform: nil))
         context.setFillColor(color(0xFFFFFF, 0.55))
         context.fillPath()
         context.restoreGState()
     }
 
-    // The arc: ink dots from the app to Applications, ending in an arrowhead.
-    let ink = color(0x1D1912)
+    // The arc: black dots from the app to Applications, ending in an arrowhead.
+    let ink = color(0x121110)
     let start = flipped(CGPoint(x: appCenter.x + 36, y: appCenter.y - 98))
     let end = flipped(CGPoint(x: applicationsCenter.x - 36, y: applicationsCenter.y - 98))
     let control = CGPoint(x: (start.x + end.x) / 2, y: start.y + 84)
@@ -120,21 +120,21 @@ func drawBackground(to path: String, scale: CGFloat) {
     context.setLineJoin(.round)
     context.strokePath()
 
-    // The lit dot at the top of the arc, in the iris's gold: the one memory that's shared.
+    // The lit dot at the top of the arc, in the icon's orange: the one memory that's shared.
     let sunRect = CGRect(x: sun.x - 9, y: sun.y - 9, width: 18, height: 18)
     context.saveGState()
-    context.setShadow(offset: .zero, blur: 10 * scale, color: color(0xE0A93A, 0.75))
-    context.setFillColor(color(0xA06A18))
+    context.setShadow(offset: .zero, blur: 10 * scale, color: color(0xFF6312, 0.7))
+    context.setFillColor(color(0xF04C08))
     context.fillEllipse(in: sunRect)
     context.restoreGState()
     context.saveGState()
     context.addEllipse(in: sunRect)
     context.clip()
-    // Lit from the upper left, like the iris.
-    let gold = CGGradient(colorsSpace: space, colors: [color(0xF6CF6A), color(0xA06A18)] as CFArray,
-                          locations: [0.15, 1])!
+    // Lit from the top, like the icon's ground.
+    let orange = CGGradient(colorsSpace: space, colors: [color(0xFF9A52), color(0xF04C08)] as CFArray,
+                            locations: [0.15, 1])!
     let light = CGPoint(x: sun.x - 2, y: sun.y + 3)
-    context.drawRadialGradient(gold, startCenter: light, startRadius: 0, endCenter: light, endRadius: 14,
+    context.drawRadialGradient(orange, startCenter: light, startRadius: 0, endCenter: light, endRadius: 14,
                                options: [.drawsBeforeStartLocation, .drawsAfterEndLocation])
     context.restoreGState()
 
@@ -146,7 +146,7 @@ func drawBackground(to path: String, scale: CGFloat) {
     let base = NSFont.systemFont(ofSize: 15, weight: .medium)
     let rounded = base.fontDescriptor.withDesign(.rounded).flatMap { NSFont(descriptor: $0, size: 15) } ?? base
     let text = NSAttributedString(string: "Drag to Applications to install", attributes: [
-        .font: rounded, .foregroundColor: NSColor(cgColor: color(0x1D1912, 0.62))!, .paragraphStyle: paragraph,
+        .font: rounded, .foregroundColor: NSColor(cgColor: color(0x121110, 0.62))!, .paragraphStyle: paragraph,
     ])
     text.draw(in: CGRect(x: 0, y: h - 342, width: windowSize.width, height: 24))
     NSGraphicsContext.current = nil
