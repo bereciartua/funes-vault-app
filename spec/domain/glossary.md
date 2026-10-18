@@ -34,7 +34,9 @@
 | **Companion API** | The HTTP API the iPhone uses to talk to the Mac. Signed and end-to-end encrypted. |
 | **Capture queue** | Captures waiting on the iPhone until the Mac acknowledges them. |
 | **Same Wi-Fi / Tailscale / Public tunnel** | The three ways the iPhone can reach the Mac. |
-| **BridgeKit** | The shared Swift library used by Funes and EK Bridge (repo `bereciartua/bridgekit`). Product **BridgeKitCore**: HTTP, MCP protocol, keys, limits, launcher, safe files, config writer. Later **BridgeKitUI** and **BridgeKitRemote**. |
+| **BridgeKit** | The shared Swift library used by Funes and EK Bridge (repo `bereciartua/bridgekit`). Product **BridgeKitCore**: HTTP, MCP protocol, keys, limits, launcher, safe files, config writer. **BridgeKitRemote** (0.2.0): Remote Access. Later **BridgeKitUI**. |
+| **Remote Access** | The second loopback listener (47627) that a tunnel the user runs makes reachable to cloud agents. Experimental, off by default ([ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)). |
+| **Cloud access** | A per-agent switch letting that agent's remote token and OAuth-connected cloud apps use Remote Access. It never changes the agent's access. |
 | **BridgeUI** | Funes's local package of UI pieces copied from EK Bridge (approvals, activity, agent setup UI, app shell). Becomes BridgeKitUI after v0.1. |
 | **FunesCore** | The Swift package with the vault logic: store, policy, search, processing. Mac only. |
 | **Model provider** | Where an AI task runs: Apple on-device (default), Apple Private Cloud Compute, a local server (Ollama, LM Studio), or a cloud provider (OpenAI, Anthropic, Gemini, OpenRouter, custom). Chosen per task in Settings ▸ AI Models. |

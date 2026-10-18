@@ -13,6 +13,7 @@ The Funes MCP server is the shared **BridgeKitCore** server (extracted from EK B
   - **Timeouts:** 10 s for headers and body, 30 s idle keep-alive.
 - **Endpoint file:** `~/Library/Application Support/FunesVault/mcp-endpoint.json` (`{"version":1,"url","port","pid","startedAt"}`), mode 0600. It's written while the server listens and removed when it stops.
 - **stdio:** the `funes-mcp` launcher, at `/Applications/FunesVault.app/Contents/MacOS/funes-mcp`, optionally symlinked to `~/.local/bin/funes-mcp`.
+- **Cloud agents** use a separate remote listener, never this port ([§12](#12-remote-transport)). The rules in this section and §3–§4 apply to the local port only, and don't change.
 
 ## 2. Protocol versions
 - **Stateless `2026-07-28`:**
@@ -203,3 +204,47 @@ Brings Funes to the front on the Mac, at a pending request or suggestion.
 
 ## 11. MCP Registry
 `server.json`: name `com.funesvault/funes` (namespace verified by a DNS TXT record on funesvault.com, as `mcp-publisher` requires for domain namespaces), title "Funes Vault", description "Personal memory for AI agents, from a vault on your Mac, with per-agent scopes, exact-text approvals and an audit log". It has no packages (the server is embedded in the app) and is published by a GitHub workflow (`.github/workflows/mcp-registry.yml`) with `mcp-publisher login dns` when a release is published: GitHub's OIDC login only covers `io.github.*` names, so the workflow signs in with the Ed25519 key whose public half is in the TXT record (secret `MCP_REGISTRY_DNS_KEY`). The version must match `MARKETING_VERSION` in the Xcode project.
+
+## 12. Remote transport
+*v0.1, experimental, off by default ([ADR-0018](decisions/0018-remote-access-in-v0.1.md)). Built on `BridgeKitRemote`, EK Bridge's Remote Access ([reuse §3](ek-bridge-reuse.md#3-tier-3-bridgekitremote-extracted-now-for-funes-v01)). Where this section doesn't say otherwise, behaviour matches EK Bridge's `docs/MCP.md` "Use from cloud agents".*
+
+- **Listener:** `127.0.0.1:47627`, loopback only, only while Remote Access is on. A tunnel the user runs (Tailscale Funnel, Cloudflare Tunnel, ngrok, a quick tunnel for testing) forwards to it; Funes never starts one.
+  - The port can be changed in Settings (1024–65535, not the MCP or companion port).
+  - The default avoids Funes's 47625 and 47626, EK Bridge's 47615 and 47616, and the EK Bridge Test copy's 47625 and 47626.
+  - It has the same HTTP limits as §1, with its own 32 connections.
+- **URL:** `https://<public host>/r/<secret>/mcp`.
+  - The secret is 22 base64url characters (128 bits). Every route, including OAuth and its discovery documents, lives under it, and any other path gets 404 before anything else is read.
+  - It's defense in depth, not the credential. **Reset Path…** makes a new one and disconnects every cloud app.
+- **Request checks (in order):**
+  1. the secret path (404);
+  2. `Host` is the saved public host, or `127.0.0.1:<port>`/`localhost:<port>` for tunnels that rewrite it (421);
+  3. no `Origin` (403), POST (405), JSON (415 and 406);
+  4. a remote credential (401).
+
+  Tunnel headers are expected here. They're never used for authorization, only for the per-address lockout and for display.
+- **Credentials,** each belonging to one Funes agent with **Allow cloud access** on:
+  - **Remote token** (`fns_mcpr_v1_` + 64 hex), one per agent, for agents that send a header. It's kept in `agent-keys/<agentId>.remote.key` (0600), and the database stores only its SHA-256. Copy and Reset are on the agent's Cloud section.
+  - **OAuth 2.1** for claude.ai, ChatGPT and Gemini Enterprise:
+    - scope `memory`; PKCE S256; access tokens (`fns_oat_v1_`) last an hour and are bound to the MCP URL;
+    - refresh tokens (`fns_ort_v1_`) rotate, with reuse detection, and end after 30 days unused;
+    - clients come from a client metadata document (CIMD), from dynamic registration (claude.ai's fallback), or from a client the user sets up ahead (`fns_ocs_v1_` secrets, Gemini Enterprise);
+    - state lives in `remote-connections.json` (0600, digests only, fails closed).
+- **Pairing → agent:**
+  - The user opens a 10-minute pairing window from one agent's Cloud section (**Connect a Cloud App…**), or from a cloud tile in **Add Agent**, which first creates the agent.
+  - Outside a window, the sign-in page says pairing isn't open, and nothing is fetched or shown on the Mac.
+  - The Mac's sign-in panel names the agent, the app (as reported), its metadata URL, where the browser returns, and the six-digit code the browser shows. **Allow** arms after one second. One cloud app per window.
+  - The panel grants nothing beyond the agent's current access.
+- **Same pipeline, same policy:**
+  - An authenticated remote call goes through the same BridgeKitCore dispatch, contract, tool visibility and `RequestPipeline` as a local one, with `ToolCall.remote` set.
+  - The [access policy](../domain/access-policy.md), the panels, the 45 s in-call wait, the 15-minute pending list, the per-agent rate limits (§9, the same buckets) and Activity apply unchanged.
+  - The only differences: Activity records `via: remote`, and the forwarded address and tunnel are kept in memory for the last 50 remote requests.
+  - Tested: the same agent and request get the same result on both transports.
+- **Refused:**
+  - a local `fns_mcp_v1_` key on the remote port (401);
+  - a remote or OAuth credential on the local port (401);
+  - any credential of an agent whose cloud access is off, or that is removed (401);
+  - more than 30 failed authentications a minute from one forwarded address: 429 for 5 minutes, for requests without a well-formed credential only.
+
+  Paused and expired agents still authenticate and get their reason codes, as locally.
+- **Off:** turning Remote Access off closes the port at once and ends pairing; the URL stops answering. Cloud access, remote tokens and connected apps are kept for next time. Turning an agent's cloud access off deletes its remote token and connected apps, and bumps its revision.
+- **Health:** `GET /r/<secret>/health?nonce=…` answers only a nonce Funes issued in the last 30 s, once. It's used by **Test** and the guided setup.

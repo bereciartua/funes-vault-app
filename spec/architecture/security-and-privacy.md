@@ -6,6 +6,7 @@
 | Memory text (title and body) | Personal and possibly sensitive. The main asset |
 | Access settings | Decide who gets what. Tampering widens disclosure |
 | Agent keys | Holding a key means acting as that agent |
+| Remote credentials (remote tokens, OAuth access and refresh tokens) and the Remote Access secret path | Held by cloud vendors. Holding one means acting as that agent from the internet, through the user's tunnel |
 | Device keys and pairing secrets | Holding them means owner-level access to the vault |
 | Activity and provenance | The audit trail. It must not leak text, and must not be silently erasable by agents |
 | Task texts sent by agents | Can reveal what the user is working on. Held in memory only, for up to 15 min |
@@ -17,9 +18,10 @@
 | **Paired iPhone (owner device)** | Full, but authenticated per message | Owner operations through the companion API, logged |
 | **Connected agent** | Scoped | Only what its access allows. Its words are data |
 | **Agent's AI provider** | Untrusted, out of our control | Sees whatever the user released to the agent |
+| **Cloud agent** (claude.ai, ChatGPT, cloud coding agents; v0.1, Remote Access) | Scoped, like any agent; runs on its vendor's servers, often while the user is away | Only what its agent's access allows, through the user's tunnel, while Remote Access is on |
 | **Other local processes (same user)** | Out of scope | Can read the user's files and keys. Funes can't defend against malware running as the user (the same boundary as EK Bridge) |
 | **Other local users / processes** | Untrusted | Reach 127.0.0.1:47625 but need a key |
-| **LAN peers, the Tailscale network, tunnel providers, internet** | Untrusted | Reach 47626 only in the modes the user enabled. They see envelopes they can't read or forge |
+| **LAN peers, the Tailscale network, tunnel providers, internet** | Untrusted | Reach 47626 only in the modes the user enabled; they see envelopes they can't read or forge. Reach 47627 only through the user's tunnel while Remote Access is on, and need the secret path and a remote credential. Tunnels that end TLS at their edge (Cloudflare, ngrok) can read Remote Access traffic |
 | **Malicious web pages in a browser** | Untrusted | Could try DNS rebinding or CSRF against localhost. Blocked |
 
 ## 3. Threats and mitigations
@@ -47,6 +49,14 @@
 | T22 | A stolen provider API key is used elsewhere | Keys stay in the Keychain (this device only), never in the database, logs or exports. Removing a provider deletes its key. The user rotates keys at the provider |
 | T19 | A user approves without reading | Arming delay; the exact text is shown; per-memory checkboxes; sensitivity badges; no "always allow everything" button |
 | T20 | Clock manipulation affects expiry | Expiry uses the Mac's clock (trusted, same user). Companion replay checks use ±120 s and the nonce cache |
+| T23 | Public tunnel exposure of the Remote Access listener: scanning, guessing, flooding | Off by default, with a confirmation; per-agent **Allow cloud access**, off by default; a 128-bit secret path, so other paths get 404 before `Host` or a credential is read; `Host` allowlist (421); 256-bit credentials; a lockout per forwarded address (more than 30 failures a minute: 429 for 5 min) that never blocks a well-formed credential; the same per-agent rate limits; **Turn Off Remote Access** in the menu, a menu bar indicator, optional automatic turn-off. Residual: forwarded addresses can be spoofed, and a flood can occupy the port's 32 connections while it's on |
+| T24 | OAuth consent phishing or spam: a look-alike app, or an attacker starting sign-ins | Nothing is fetched or shown unless the user opened a 10-minute pairing window from one agent. The browser and the Mac show the same six-digit code; the panel names the agent, the app (as reported), its metadata URL and the return host; **Allow** arms after 1 s; a new request never replaces an open panel; at most 3 wait. Exact redirect URIs, PKCE S256, `state` and `iss`; one app per window. Residual: a user who allows without comparing codes connects the wrong app, which gets only that agent's access, until **Revoke** |
+| T25 | A remote credential is stolen: from the vendor that stores the remote token, or a cloud app's refresh token | Remote and local credentials are separate (a local key is refused remotely, a remote one locally). Digests only, in 0600 files that fail closed. Access tokens last 1 h and are bound to the MCP URL; refresh tokens rotate, and reusing a rotated one revokes the connection; codes are single use. Reset token, Revoke app, Reset Path… or turning cloud access off ends them at once. **Copy Remote Token…** asks first and clears the clipboard after 90 s. The secret scanner knows the `fns_mcpr_v1_`, `fns_oat_v1_`, `fns_ort_v1_` and `fns_ocs_v1_` prefixes. Residual: a vendor breach works until the user resets, and only within that agent's access |
+| T26 | SSRF through the client-metadata (CIMD) fetch | Fetched only during pairing; `https` with a DNS name only (no IP literals); every resolved address must be public, and the connected address is checked again before any bytes go out; TLS verified for the name; no proxies, no redirects, 16 KB, 5 s, cached an hour; the document must name its own URL; no credential is sent (EK Bridge's T22) |
+| T27 | Released text goes to the cloud vendor's servers and logs | Same as T1 and guarantee 9: only what the agent's access allows, with the same approvals. The Cloud section and Remote Access page say where text goes, and suggest one agent per cloud app with only the access it needs |
+| T28 | Unattended cloud agents ask while the user is away | The same policy as locally: with Ask before sharing or saving on, requests wait 45 s, then 15 min in Pending requests, then expire. No remote auto-approval exists; the per-agent switches are the only way to skip panels, on every channel |
+| T29 | A tunnel pointed at the local port 47625 | The local port refuses tunnel and forwarding headers (403) and non-loopback `Host` (421), and remote credentials don't work there. A proxy that rewrites `Host` and strips the headers is deliberate circumvention; the guided setup only offers 47627 |
+| T30 | Spoofed tunnel status on the Mac, or a new tunnel tested while switching | Tunnel checks are read-only and display only: they never change what the server accepts. A tunnel being tested passes `Host` for the health route only. The health route answers only a nonce Funes issued in the last 30 s, once |
 
 ## 4. Privacy guarantees (each one is tested)
 1. **No text before consent.** A request that needs approval returns no memory text, ids or titles.
@@ -60,11 +70,16 @@
 9. **Revocation is immediate,** for future access. Text already released is beyond the vault's control, and the UI says so.
 10. **The vault exists only on the Mac.** The iPhone holds only queued captures.
 11. **AI processing is local by default.** Text reaches a non-local model provider only if the user chose one, never above the cloud sensitivity limit, and never when it matches the secret scanner.
+12. **The same policy on every channel.** For the same agent and request, a call through Remote Access gets the same decision, panels and waits as a local call ([ADR-0018](decisions/0018-remote-access-in-v0.1.md)). Remote Access is off by default.
 
 ## 5. Everything that can leave the Mac
 | Data | Destination | When |
 |---|---|---|
 | Memory text released to an agent | The agent, then its AI provider | Only on ALLOW or the user's approval |
+| Memory text released to a cloud agent, and its other tool results | The user's tunnel (its provider can read it if TLS ends at its edge: Cloudflare, ngrok; not Tailscale Funnel), then the cloud agent's vendor | Same, while Remote Access is on and the agent has cloud access |
+| One HTTPS GET of a cloud app's client metadata document | The URL the app gives (public addresses only), with no credential | Only while a pairing window is open |
+| One HTTPS request to Funes's own health URL | Through the user's tunnel, back to this Mac | When the guided setup or **Test** checks the tunnel |
+| "You have a request" plus an opaque id, never memory text or names (v0.2) | Apple's push service, through CloudKit or through a small relay and APNs ([Q24](../plans/open-questions.md)) | When a request waits for approval and iPhone approvals are on |
 | Update check (app version, OS version, as Sparkle sends) | GitHub Releases | Daily, if automatic checks are on |
 | Companion responses (encrypted) | The paired iPhone, possibly through a tunnel | When the phone asks |
 | Memory text (up to the cloud limit), search queries and agents' task text | The **embedding** provider the user chose, if it isn't on the device (after v0.1; v0.1 embeds on the Mac with the bundled model, [ADR-0016](decisions/0016-bundled-bge-small-embeddings.md)) | Only after the user picks it; the disclosure is shown in Settings |
@@ -79,3 +94,4 @@
 - **No control after release.** Funes can't recall or control text after it's released to an agent.
 - **FileVault protects the data at rest.** Funes doesn't add its own database encryption in v0.1.
 - **Some metadata is visible on the network.** On the LAN and Tailscale, which device is talking, when, and how much is visible, though not what.
+- **Remote Access is experimental.** While it's on, the vault answers on a public address, and the tunnel provider may read the traffic (unless TLS ends on the Mac, as with Tailscale Funnel). Cloud agents need the Mac awake, online and running Funes.

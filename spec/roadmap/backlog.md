@@ -106,8 +106,22 @@ Epics map requirements to phases.
 | Sparkle updates | FR-G-03 | 4 | S | M |
 | Homebrew cask + MCP Registry + directories | FR-M-06 | 4 | S | M |
 | Docs: README, ARCHITECTURE, MCP, TESTING, SECURITY, PRIVACY | NFR-MAINT-03 | 4 | M | M |
-| Live matrix (4 agents) | testing | 4 | S | M |
+| Live matrix (4 local agents, plus ChatGPT and claude.ai after Phase 4b) | testing | 4 | S | M |
 | Accessibility pass + UI snapshots | NFR-A11Y | 3–4 | M | M |
+
+## E10b: Remote Access for cloud agents (Phase 4b, before the v0.1 launch)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| BridgeKitRemote: move tier 3 + tests + remote harness; tag 0.2.0 | ADR-0013, ADR-0018 | 4b | L | M |
+| EK Bridge adopts BridgeKitRemote (proof: tests and goldens unchanged, daily remote use, release) | ADR-0018 | 4b | M | M |
+| Agents: cloud access, remote token, revision bumps, schema migration | FR-AI-04 | 4b | S | M |
+| Remote listener on 47627, same pipeline and rate limits | FR-AI-04, NFR-SEC-01/02 | 4b | S | M |
+| OAuth pairing → agent, sign-in sheet, connected apps, Revoke | FR-AI-04 | 4b | S | M |
+| Remote Access page, guided tunnel setup, Switch Tunnel, menu bar state | FR-AI-04 | 4b | M | M |
+| Agent Cloud section, cloud setups + goldens, cloud tiles in Add Agent | FR-AI-04 | 4b | S | M |
+| Activity rows marked remote | FR-AI-04, FR-L-01 | 4b | S | M |
+| Harness: remote paths + "same decision local vs remote" | FR-AI-04 | 4b | M | M |
+| Docs when the code lands; live check with ChatGPT and claude.ai | NFR-MAINT-03 | 4b | S | M |
 
 ## E11: iPhone companion (Phase 5)
 | Item | Covers | Phase | Size | Pri |
@@ -121,12 +135,18 @@ Epics map requirements to phases.
 | Demo mode + App Store submission | FR-iOS-10 | 5 | M | M |
 | Unpair / revoke flows | FR-iOS-11, FR-P-03 | 5 | S | M |
 
+## E11b: Approvals from the iPhone (Phase 5)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| Decide the push channel (CloudKit doorbell or APNs relay) and measure its delivery time; ADR | Q24 | 5 | S | M |
+| Mac: doorbell with no text, fetch-and-answer companion methods, first answer wins | FR-iOS-12 | 5 | M | M |
+| iPhone: notification (worded on the phone), Share and Save panels, unlock to answer | FR-iOS-12 | 5 | M | M |
+| Tests: no text in the push, races, revoked device | FR-iOS-12 | 5 | S | M |
+
 ## E12: Later
 | Item | Covers | Size |
 |---|---|---|
 | Consolidation suggestions | FR-AI-03 | L |
-| Remote Access for cloud agents (OAuth) | FR-AI-04 | L |
-| BridgeKitUI extraction (after v0.1) + BridgeKitRemote (with v0.3 Remote Access) | ADR-0013 | L |
+| BridgeKitUI extraction (after v0.1), with the Remote Access views | ADR-0013 | L |
 | `funes` CLI | Q18 | M |
 | Localization (Spanish) | Q19 | M |
-| Push doorbell for approvals on the iPhone | Q16 | M |

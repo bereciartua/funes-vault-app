@@ -1,6 +1,6 @@
 # ADR-0013: Share code with EK Bridge in tiers, extracting BridgeKitCore now
 
-**Status:** Accepted · 2026-10-16 · **Supersedes** [ADR-0008](0008-copy-then-extract-bridgekit.md)
+**Status:** Accepted · 2026-10-16 · **Supersedes** [ADR-0008](0008-copy-then-extract-bridgekit.md) · **Amended by** [ADR-0018](0018-remote-access-in-v0.1.md) (tier 3 is extracted now, as `BridgeKitRemote` in 0.2.0)
 
 **Progress (2026-10-17):** the Phase 0 quick check passed ([results](../../plans/spike-results.md#phase-0-quick-check-ek-bridges-swiftc-build-linking-a-swift-package)), so no fallback was needed. BridgeKit 0.1.0 is published (https://github.com/bereciartua/bridgekit, tag at 6fcf18e) with its tests and reference harness green. EK Bridge runs on it, on its branch `bridgekit-adoption`, with every existing test unchanged and green. Funes pins it exactly at 0.1.0. Still open: EK Bridge's live check and release.
 
@@ -20,7 +20,7 @@
 |---|---|---|---|
 | **1: BridgeKitCore** | `HTTPMessage`, `LoopbackHTTPServer`, `MCPService`, `MCPEndpointFile`, `JSONRPC`, `MCPServer` (generic dispatch), JSON Schema validator, `RateLimiter`, key issue/digest/verify and key-file storage, safe file loading (owner, mode, `O_NOFOLLOW`, size), `MCPLauncher` + `SafePath` + `AppIdentity` (parameterized), `AgentConfigWriter`, `ExecutableLocator` | **Now** (Funes Phase 2) | New repo `bereciartua/bridgekit`, Swift package `BridgeKit`, product `BridgeKitCore` |
 | **2: UI and workflow** | `ApprovalCenter`, `ApprovalPanel`, `AccessRequests`, `ActivityStore` + `ActivityView`, `AgentDetection`, `AgentSetup` + `ConnectAgentView`, `OneClickSetup`, updates (Sparkle wrapper), `AppMover`, `InstallLocation`, `Notifications`, `UIComponents`, menu and window skeletons | **Copy now** into Funes `Packages/BridgeUI`; extract as product `BridgeKitUI` **after Funes v0.1** | Funes repo for now; then `bridgekit` |
-| **3: Remote** | `RemoteMCPService`, `OAuthServer`/`Store`/`Pages`/`Types`, `CIMDFetcher`, `TunnelHealth`/`Checks`/`Switch` | **Extract when Funes needs it** (v0.3), ideally after EK Bridge's live cloud matrix has been run | Product `BridgeKitRemote` |
+| **3: Remote** | `RemoteMCPService`, `OAuthServer`/`Store`/`Pages`/`Types`, `CIMDFetcher`, `TunnelHealth`/`Checks`/`Switch` | **Extract now, for Funes v0.1** (was v0.3; [ADR-0018](0018-remote-access-in-v0.1.md), [Phase 4b](../../plans/phase-4b-remote-access.md)). EK Bridge adopts it first | Product `BridgeKitRemote` |
 
 **Rules for BridgeKit:**
 1. **No domain types.** Nothing about calendars, reminders or memories. Apps plug in through small protocols: `BridgeOperation` (name, `isWrite`, `needsApproval`) and `BridgeHandler`. Policy stays in each app.

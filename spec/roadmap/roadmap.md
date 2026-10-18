@@ -4,25 +4,26 @@ Planned as a **side project**: about one weekend (around 8–10 h) per week. Dat
 
 ## Timeline
 
+**Status (2026-10-19):** Phases 0–3 and Phase 4's preparation are done. [Phase 4b](../plans/phase-4b-remote-access.md) (Remote Access, [ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)) comes before the launch. The chart starts from today's state.
+
 ```mermaid
 gantt
     title Funes (weekends from 24 Oct 2026)
     dateFormat  YYYY-MM-DD
     axisFormat  %d %b
-    section Phase 0
-    Spikes 2 & 3 + quick checks        :p0, 2026-10-24, 7d
-    section Phase 1
-    FunesCore + tests                   :p1, after p0, 14d
-    section Phase 2
-    BridgeKitCore + EK Bridge adopts + Funes MCP + panels v1 :p2, after p1, 21d
-    section Phase 3
-    Mac app (vault, inbox, agents, …)   :p3, after p2, 21d
+    section Done
+    Phases 0–3 + Phase 4 prep           :done, d0, 2026-10-16, 4d
+    section Phase 4b
+    BridgeKitRemote 0.2.0 + EK Bridge adopts :p4a, 2026-10-24, 14d
+    Funes Remote Access                 :p4b, after p4a, 21d
+    Daily use (ChatGPT, claude.ai) + buffer :b0, after p4b, 14d
     section Phase 4
-    Release pipeline + docs + launch    :p4, after p3, 7d
-    Buffer                              :b1, after p4, 7d
+    Live matrix (6 agents)              :p4, after b0, 7d
+    Buffer (holidays)                   :b1, after p4, 14d
+    Launch v0.1                         :l1, after b1, 7d
     section Phase 5
-    Spike 1 (companion transport)       :s1, after b1, 7d
-    Companion server + iPhone app       :p5, after s1, 21d
+    Spike 1 (companion transport)       :s1, after l1, 7d
+    Companion server + iPhone app + approvals :p5, after s1, 28d
     App Store review + buffer           :b2, after p5, 14d
 ```
 
@@ -33,12 +34,13 @@ gantt
 | **M2a BridgeKit 0.1.0** | 21 Nov 2026 | BridgeKitCore tagged; EK Bridge released on it with unchanged, green tests |
 | **M2 Agents connect** | 5 Dec 2026 | Claude Code requests, approves and suggests against the real vault |
 | **M3 Daily driver** | 26 Dec 2026 | The author uses Funes daily with 2+ agents for a week |
-| **M4 v0.1 Mac public preview** | 2–9 Jan 2027 | Notarized DMG, Homebrew cask, MCP Registry, Sparkle update tested, live matrix recorded |
+| **M3b Cloud agents** | 12 Dec 2026 | BridgeKit 0.2.0 tagged and EK Bridge released on it; the author uses ChatGPT and claude.ai with Funes daily for a week |
+| **M4 v0.1 Mac public preview** | 2–9 Jan 2027 | Notarized DMG, Homebrew cask, MCP Registry, Sparkle update tested, live matrix recorded (6 agents, ChatGPT and claude.ai included) |
 | **M5 Companion proven** | 16 Jan 2027 | Spike 1 matrix green |
 | **Name hold** | before ~14 Apr 2027 | Upload any TestFlight build to keep "Funes Vault" reserved in App Store Connect (record created 16 Oct 2026) |
-| **M6 v0.2 iPhone companion** | Feb 2027 (+ review, possibly early Mar) | A capture made with the Mac asleep arrives exactly once; search and edit work over Wi-Fi and Tailscale; App Store approved |
+| **M6 v0.2 iPhone companion** | Feb–Mar 2027 (+ review) | A capture made with the Mac asleep arrives exactly once; search and edit work over Wi-Fi and Tailscale; a request is approved from the phone; App Store approved |
 
-That's roughly **10–11 weekends to v0.1** and **16–17 weekends to v0.2**, including one weekend for BridgeKit.
+That's roughly **10–11 weekends to v0.1** and **16–17 weekends to v0.2**, including one weekend for BridgeKit, plus **4–5 weekends for Phase 4b** before the launch and one more in Phase 5 for approvals from the iPhone.
 
 ## Release scopes
 
@@ -57,10 +59,10 @@ That's roughly **10–11 weekends to v0.1** and **16–17 weekends to v0.2**, in
 - **Activity:** log and view.
 - **AI models:** Apple on-device by default; per-task choice of local servers (Ollama, LM Studio) or cloud providers (OpenAI, Anthropic, Gemini, OpenRouter, custom), with a cloud sensitivity limit, disclosures and Keychain keys. For **classification**; embeddings use the bundled model in v0.1.
 - **Distribution:** MCP server, launcher, Sparkle, Homebrew, MCP Registry, docs.
+- **Remote Access for cloud agents (experimental):** ChatGPT, claude.ai and Gemini Enterprise over OAuth, header-based cloud agents with a remote token, through a tunnel the user runs (guided setup); an Allow cloud access switch per agent; the same policy as local agents ([ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)). Off by default.
 
 **Out:**
 - the iPhone app;
-- Remote Access for cloud agents;
 - consolidation;
 - the allow window;
 - a CLI;
@@ -70,13 +72,12 @@ That's roughly **10–11 weekends to v0.1** and **16–17 weekends to v0.2**, in
 **In:**
 - **Mac:** the companion server (Wi-Fi, Tailscale, optional public tunnel), pairing, devices.
 - **iPhone:** capture (in-app, share sheet, App Intent, Control, dictation), the offline queue with exactly-once delivery, search, detail, edit, Inbox review, demo mode, App Store.
+- **Approvals from the iPhone:** a notification for each request waiting for approval, answered on the phone. The push carries no memory text; the channel is [Q24](../plans/open-questions.md).
 
 ### v0.3+: Later (unordered; pick by real usage)
 - **Consolidation:** duplicate, conflict and stale detection, review-only ([processing §9](../domain/memory-processing.md#9-consolidation-v03-later)).
-- **Remote Access for claude.ai and ChatGPT** (EK Bridge's OAuth and tunnel).
 - **Allow window** for low-sensitivity sharing (if panels cause fatigue).
-- **Approvals from the iPhone** (needs a push channel; see [Q16](../plans/open-questions.md)).
-- **BridgeKitUI extraction** (approvals, activity, agent setup UI, app shell) after v0.1, then **BridgeKitRemote** when Remote Access arrives.
+- **BridgeKitUI extraction** (approvals, activity, agent setup UI, app shell, and the Remote Access views) after v0.1. BridgeKitRemote is extracted in Phase 4b.
 - **`funes` CLI** for scripts.
 - **Localization,** Spanish first.
 - **Pricing decision** at 1.0.

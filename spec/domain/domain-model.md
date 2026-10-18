@@ -93,11 +93,13 @@ An MCP client the user has added. It is EK Bridge's "connection".
 |---|---|---|
 | `id` | UUID | |
 | `name` | string, unique among active agents | |
-| `agentKind` | detected type (`claude_code`, `claude_desktop`, `cursor`, `codex`, `vscode`, `zed`, `gemini_cli`, `devin_desktop`, `cline`, `jetbrains`, `other`; the agents EK Bridge's setup knows) | Drives the icon and setup snippets |
+| `agentKind` | detected type (`claude_code`, `claude_desktop`, `cursor`, `codex`, `vscode`, `zed`, `gemini_cli`, `devin_desktop`, `cline`, `jetbrains`, `other`; the agents EK Bridge's setup knows; cloud agents add kinds such as `claude_ai`, `chatgpt`, `gemini_enterprise`, `anthropic_api`) | Drives the icon and setup snippets |
 | `keyDigest` | SHA-256 | The key's plaintext lives only in the key file |
 | `keyIssuedAt` | timestamp | |
+| `cloudAccess` | bool | Default false. Lets the agent's remote token and OAuth-connected cloud apps reach it through Remote Access ([ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)). It never changes the agent's access |
+| `remoteKeyDigest`, `remoteKeyIssuedAt` | SHA-256?, timestamp? | The remote token (`fns_mcpr_v1_`), only with `cloudAccess`. Deleted when cloud access is turned off |
 | `paused` | bool | |
-| `revision` | int | +1 on any change to access, pause or key. Pending approvals bind to it |
+| `revision` | int | +1 on any change to access, pause, key, cloud access, remote token or connected cloud apps. Pending approvals bind to it |
 | `declaredRetention` | `none` · `session` · `persistent` · `unknown` | Informational |
 | `asksForAccess` | bool | Default false |
 | `firstRequestAt`, `lastRequestAt` | timestamp? | |
@@ -156,7 +158,7 @@ An MCP client the user has added. It is EK Bridge's "connection".
 ### Activity record
 Stored in an append-only JSONL file (the EK Bridge `ActivityStore` pattern):
 - `time`, `requestId`, `phase` (`start` · `result` · `event`);
-- `actor` (agent, device, user or system), `via` (`mcp` · `companion` · `app`), `event`, `outcome`;
+- `actor` (agent, device, user or system), `via` (`mcp` · `remote` · `companion` · `app`), `event`, `outcome`;
 - ids, `reason`, `counts`, `approval` (`approved` · `denied` · `timeout` · `not_required`);
 - `agentReportedName` (sanitized, ≤ 64 bytes).
 

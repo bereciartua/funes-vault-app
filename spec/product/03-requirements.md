@@ -401,6 +401,14 @@
 **FR-iOS-11 Unpair** · M · v0.2
 - Deletes the phone's keys and queued captures, after confirmation.
 
+**FR-iOS-12 Approve requests on the iPhone** · M · v0.2
+- When a request waits for approval (Share, Save or more access), a paired iPhone with approvals turned on gets a notification. Opening it shows the same panel as the Mac (task, rows with checkboxes and badges, withheld line), and **Share N**, **Deny**, **Save** or **Discard** answer it as on the Mac.
+- Acceptance:
+  - The push carries only "you have a request" and an opaque id: no memory text, titles, task or agent name go through Apple or a relay. The phone fetches the details over the companion channel ([Q24](../plans/open-questions.md) chooses the push channel).
+  - The first answer wins, on the Mac or the phone; the other then shows it as answered. The same single-use, 15-minute and invalidation rules apply.
+  - Answering needs the phone unlocked. Each answer is a signed companion request, logged in Activity under the device.
+  - With the Mac unreachable, the notification says so, and the request waits on the Mac as usual.
+
 ### Import and export (FR-X)
 
 **FR-X-01 Import ChatGPT memories** · S · v0.1
@@ -484,8 +492,18 @@
 **FR-AI-03 Consolidation suggestions** · L · v0.3
 - Weekly or on-demand detection of duplicate, conflicting or superseded memories, using lexical and semantic candidates plus judgment from the chosen generation model. Results are review-only suggestions to archive one memory of a pair.
 
-**FR-AI-04 Remote Access for cloud agents** · L · v0.3
-- claude.ai and ChatGPT connectors via EK Bridge's OAuth 2.1 and tunnel code.
+**FR-AI-04 Remote Access for cloud agents** · M · v0.1 (experimental; [ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md))
+- claude.ai, ChatGPT and Gemini Enterprise sign in with OAuth; header-based cloud agents (the Anthropic and OpenAI APIs, Claude Code on the web, Cursor and Copilot cloud agents, Devin) use a remote token. They reach a separate loopback listener (47627) through a tunnel the user runs, via EK Bridge's Remote Access (`BridgeKitRemote`). See [MCP server §12](../architecture/mcp-server.md#12-remote-transport).
+- A Remote Access page with a guided tunnel setup (Tailscale Funnel recommended), a reachability test and tunnel status; an **Allow cloud access** switch per agent.
+- Acceptance:
+  - **The same agent and request get identical results** locally and remotely: decision, reason, withheld counts, items, panels, the 45 s in-call wait and the 15-minute pending list. Tested by replaying the same requests through both listeners.
+  - No remote-specific policy: Ask before sharing and Ask before saving are the only ways to skip a panel, on every channel.
+  - Remote Access is **off by default**, and turning it on asks first. Allow cloud access is off by default; only the user turns it on, on an agent's Cloud section or by choosing a cloud tile in Add Agent.
+  - An OAuth sign-in is considered only during a 10-minute pairing window the user opened from one agent, and connects only after **Allow** on the Mac, with the six-digit code that the browser shows.
+  - Every route outside the secret path gets 404. A local key is refused remotely, and a remote or OAuth credential locally.
+  - Turning Remote Access off stops the URL at once. Turning an agent's cloud access off, or removing it, ends its remote token and connected apps at once.
+  - The local port's rules are unchanged: it still refuses tunnel and forwarding headers (403).
+  - Activity marks remote rows ("via Remote Access") and stores no forwarded address.
 
 **FR-AI-05 Choose models per task** · M · v0.1
 - Settings ▸ AI Models has one row per task (Embeddings, built in with no choice in v0.1; Classification; later Consolidation), each with a provider and a model.
@@ -534,6 +552,7 @@
 
 **NFR-SEC-01 Network exposure**
 - The MCP listener binds to 127.0.0.1 only.
+- The Remote Access listener (47627) binds to 127.0.0.1 only, is off by default, and is reached only through a tunnel the user runs.
 - The companion listener is off by default. When on, it accepts:
   - private LAN ranges (Same Wi-Fi);
   - the Tailscale range;
@@ -545,6 +564,7 @@
   - any `Origin` header (403);
   - tunnel headers (403);
   - non-POST and non-JSON requests.
+- The Remote Access listener answers only under its secret path (404 otherwise), checks `Host` against the saved public host (421), and refuses any `Origin` (403).
 
 **NFR-SEC-03 Agent keys**
 - 256-bit keys with the `fns_mcp_v1_` prefix.
@@ -570,6 +590,7 @@
 - No analytics, crash reporting or network calls except:
   - Sparkle update checks to GitHub;
   - companion traffic when enabled;
+  - Remote Access traffic while it's on, the client-metadata fetch during pairing, and the tunnel test (FR-AI-04);
   - the AI model providers the user chose (FR-AI-05), within the guardrails of FR-AI-07.
 
 **NFR-PRIV-02 No memory text in logs**

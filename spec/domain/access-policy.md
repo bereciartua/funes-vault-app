@@ -28,6 +28,8 @@ This is the core of Funes. It defines exactly how agent requests to **read** (`r
 
 Authentication happens before this spec applies: a missing or invalid key gets HTTP 401, with no request record.
 
+**The transport is not an input.** A call from a cloud agent through Remote Access is decided exactly like a local one: the same agent and request get the same result on either listener ([ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)).
+
 ## 3. Reading: `request_memory`
 
 ### 3.1 Agent gate (in order; the first failure decides)

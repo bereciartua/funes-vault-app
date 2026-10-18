@@ -1,6 +1,6 @@
 # ADR-0002: Local MCP server over loopback HTTP with a stdio launcher
 
-**Status:** Accepted · 2026-10-16
+**Status:** Accepted · 2026-10-16 · **Amended by** [ADR-0018](0018-remote-access-in-v0.1.md) (cloud agents in v0.1, through a separate remote listener)
 
 **Context.** Agents speak MCP over stdio or HTTP. EK Bridge already has a hardened loopback HTTP server, a stdio launcher that verifies the listener, keys per agent and rate limits.
 
@@ -12,7 +12,7 @@ Expose MCP at `http://127.0.0.1:47625/mcp` (Streamable HTTP, JSON responses, the
 
 - Works with every MCP client, through stdio or HTTP.
 - Config files never contain keys: the launcher or Claude Code's `headersHelper` reads them.
-- Remote and cloud agents (claude.ai, ChatGPT) aren't supported until v0.3 (Remote Access with OAuth).
+- Remote and cloud agents (claude.ai, ChatGPT) can't reach this listener. They were planned for v0.3; [ADR-0018](0018-remote-access-in-v0.1.md) brings them into v0.1 through a separate remote listener on 47627, and this one keeps refusing tunneled requests.
 
 **Alternatives considered.**
 
