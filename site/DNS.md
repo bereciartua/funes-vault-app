@@ -1,6 +1,6 @@
 # DNS for funesvault.com (Hover)
 
-The records to add in Hover's control panel (**funesvault.com ▸ DNS**) for the website, the MCP Registry and email. Hover's nameservers (`ns1.hover.com`, `ns2.hover.com`) must be the domain's nameservers; if they aren't, add the same records wherever the DNS is hosted.
+The records to add in Hover's control panel (**funesvault.com ▸ DNS**) for the website and the MCP Registry (email is deferred; see step 4). Hover's nameservers (`ns1.hover.com`, `ns2.hover.com`) must be the domain's nameservers; if they aren't, add the same records wherever the DNS is hosted.
 
 This file sits next to the site for reference; the Pages workflow leaves `.md` files out of what it publishes.
 
@@ -12,7 +12,7 @@ GitHub's docs ask for this order, so no one else can claim the domain on GitHub 
 2. **Set the custom domain in the repository**: Settings ▸ Pages ▸ Build and deployment ▸ Source: **GitHub Actions**, then Custom domain: `funesvault.com`.
 3. **Add the website records** (step 2), then wait for **Enforce HTTPS** to become available (up to 24 hours) and turn it on.
 4. **Add the MCP Registry TXT record** (step 3) any time before the first registry publish.
-5. **Set up email forwarding** (step 4) before `SECURITY.md` and the site go public.
+5. Email forwarding (step 4) is **deferred**: v0.1 has no email addresses.
 
 Also **remove Hover's default records** for the apex and `www` (Hover adds parking A and CNAME records, and sometimes a `*` wildcard). GitHub warns that a wildcard record lets anyone take over subdomains, even with a verified domain.
 
@@ -79,7 +79,9 @@ Then:
 
 Format and commands from the registry's [authentication guide](https://github.com/modelcontextprotocol/registry/blob/main/docs/modelcontextprotocol-io/authentication.mdx) (DNS authentication; checked 17 October 2026, `mcp-publisher` 1.8.1).
 
-## 4. Email: support@ and security@
+## 4. Email: support@ and security@ (deferred)
+
+**Not set up for v0.1** (decided 18 October 2026): Hover's forwards are a paid add-on, so support goes through GitHub Issues and security reports through GitHub's private vulnerability reporting. If email is added later, use this section (or a free forwarding service such as ImprovMX or Forward Email, naming it in the privacy statement instead of Hover), and put the addresses back in SECURITY.md, PRIVACY.md and the site's privacy and support pages.
 
 Hover's **email forwards** pass mail for an address at the domain on to an existing mailbox. In Hover: **funesvault.com ▸ Email ▸ +**, choose a forward, and create:
 

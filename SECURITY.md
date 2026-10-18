@@ -13,10 +13,7 @@ Fixes ship as a new release, are listed in the [changelog](CHANGELOG.md), and re
 
 ## Report a vulnerability
 
-Use either channel:
-
-- **GitHub private vulnerability reporting:** **Security ▸ Report a vulnerability** in this repository, or [open a draft advisory](https://github.com/bereciartua/funes-vault-app/security/advisories/new) directly.
-- **Email:** [security@funesvault.com](mailto:security@funesvault.com).
+Use **GitHub private vulnerability reporting:** **Security ▸ Report a vulnerability** in this repository, or [open a draft advisory](https://github.com/bereciartua/funes-vault-app/security/advisories/new) directly. Only the maintainer sees it.
 
 Please don't open a public issue, discussion or pull request for a vulnerability.
 

@@ -1,8 +1,8 @@
 # Privacy
 
-**Funes Vault v0.1 (public preview) · Last updated 17 October 2026**
+**Funes Vault v0.1 (public preview) · Last updated 18 October 2026**
 
-Funes Vault keeps your memories on your Mac. It has no accounts, no servers of its own, no analytics and no telemetry. This page lists everything that can leave your Mac, and when. Questions: [support@funesvault.com](mailto:support@funesvault.com).
+Funes Vault keeps your memories on your Mac. It has no accounts, no servers of its own, no analytics and no telemetry. This page lists everything that can leave your Mac, and when. Questions: [open an issue](https://github.com/bereciartua/funes-vault-app/issues).
 
 ## In short
 
@@ -70,9 +70,8 @@ funesvault.com is a static site hosted on GitHub Pages. It sets no cookies, load
 
 ## Email and support
 
-- **Email** to support@funesvault.com or security@funesvault.com is forwarded by our domain registrar, Hover, to the maintainer's personal mailbox. We use it only to answer you, and don't add you to any list.
 - **GitHub Issues** are public. Don't paste memories, agent keys or API keys into an issue.
-- **Security reports** go privately to security@funesvault.com or through GitHub's private vulnerability reporting ([SECURITY.md](https://github.com/bereciartua/funes-vault-app/blob/main/SECURITY.md)).
+- **Security reports** go privately through GitHub's private vulnerability reporting ([SECURITY.md](https://github.com/bereciartua/funes-vault-app/blob/main/SECURITY.md)).
 
 ## Children
 
@@ -84,4 +83,4 @@ When this statement changes, the date at the top changes, and the change is list
 
 ## Contact
 
-Funes Vault is an open-source project maintained by [bereciartua](https://github.com/bereciartua). Email [support@funesvault.com](mailto:support@funesvault.com).
+Funes Vault is an open-source project maintained by [bereciartua](https://github.com/bereciartua). For questions, open an [issue](https://github.com/bereciartua/funes-vault-app/issues); for anything sensitive, use [private vulnerability reporting](https://github.com/bereciartua/funes-vault-app/security/advisories/new).
