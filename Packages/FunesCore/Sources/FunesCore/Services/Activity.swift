@@ -6,7 +6,8 @@ import Synchronization
 /// task text, keys or bodies: only ids, reason codes, counts and labels.
 public struct ActivityEvent: Sendable, Hashable, Codable {
     public enum Phase: String, Sendable, Codable { case start, result, event }
-    public enum Via: String, Sendable, Codable { case mcp, companion, app }
+    /// `remote`: an MCP call that came through Remote Access (a tunnel; ADR-0018).
+    public enum Via: String, Sendable, Codable { case mcp, remote, companion, app }
     public enum Approval: String, Sendable, Codable {
         case approved, denied, timeout
         case notRequired = "not_required"

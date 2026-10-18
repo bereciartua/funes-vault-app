@@ -87,8 +87,14 @@ public struct Agent: Sendable, Hashable, Identifiable {
     public var createdAt: Date
     public var removedAt: Date?
     public var access: Access
+    /// Remote Access (ADR-0018): its remote token and OAuth-connected cloud apps may reach it
+    /// through the tunnel. Off by default; it never changes `access`.
+    public var cloudAccess = false
+    /// When the remote token (`fns_mcpr_v1_`) was issued; nil without one.
+    public var remoteKeyIssuedAt: Date?
 
     public var isRemoved: Bool { removedAt != nil }
+    public var hasRemoteKey: Bool { remoteKeyIssuedAt != nil }
 }
 
 /// A paired iPhone (spec/domain/domain-model.md#device-a-paired-iphone).

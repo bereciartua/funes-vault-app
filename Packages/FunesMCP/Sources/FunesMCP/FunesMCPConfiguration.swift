@@ -13,6 +13,8 @@ public enum FunesMCPConfiguration {
     /// `agent-keys/<agentId>.key` (storage §1).
     public static let keyFolderName = "agent-keys"
     public static let keyFile = SecretFileKind(fileSuffix: ".key", maxBytes: 128)
+    /// `agent-keys/<agentId>.remote.key`: the agent's Remote Access token (ADR-0018).
+    public static let remoteKeyFile = SecretFileKind(fileSuffix: ".remote.key", maxBytes: 128)
     /// How long `request_memory` waits for the panel before returning `needs_approval` (Spike 3).
     public static let inCallWait: Duration = .seconds(45)
     /// The time to answer a call, below agents' 60 s.
@@ -30,6 +32,14 @@ public enum FunesMCPConfiguration {
         policy.writesPerDay = 250
         policy.failedAuthsPerMinute = 120
         policy.failedAuthLockout = 60
+        // Remote Access (§12): EK Bridge's stricter buckets, taken in addition to the agent's own,
+        // and the lockout per forwarded address.
+        policy.remoteCallsPerMinute = 60
+        policy.remoteCallBurst = 15
+        policy.remoteWritesPerMinute = 10
+        policy.remoteWriteBurst = 5
+        policy.remoteFailedAuthsPerMinute = 30
+        policy.remoteFailedAuthLockout = 300
         return policy
     }
 

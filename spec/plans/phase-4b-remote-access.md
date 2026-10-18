@@ -57,12 +57,12 @@
 ## Part C: Funes integration (weekend 2, second half, to weekend 4)
 
 ### 4b.7 Agents: cloud access and remote tokens · 3 h
-- [ ] Schema migration: `agent.cloud_access`, `remote_key_digest` and `remote_key_issued_at` ([domain model](../domain/domain-model.md#agent)); update [storage](../architecture/storage.md).
-- [ ] The remote key file `agent-keys/<agentId>.remote.key` (0600).
+- [x] Schema migration: `agent.cloud_access`, `remote_key_digest` and `remote_key_issued_at` ([domain model](../domain/domain-model.md#agent)); update [storage](../architecture/storage.md).
+- [x] The remote key file `agent-keys/<agentId>.remote.key` (0600).
 - [ ] A `RemoteAuthenticator` backed by `AgentService`.
-- [ ] Revision bumps for every cloud change.
+- [x] Revision bumps for every cloud change.
 - [ ] Turning cloud access off, or removing the agent, deletes the remote token and the agent's OAuth connections.
-- [ ] The secret scanner learns the four new prefixes.
+- [x] The secret scanner learns the four new prefixes.
 
 ### 4b.8 Remote listener · 3 h
 - [ ] `FunesRemoteServer` on 47627 with BridgeKitRemote, wired to the **same** dispatch, `FunesTools` and `RequestPipeline` as the local server.
