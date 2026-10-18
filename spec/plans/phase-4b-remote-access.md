@@ -69,7 +69,7 @@
 - [x] Remote calls count in the agent's own rate-limit buckets, and also in EK Bridge's stricter remote buckets (60 calls and 10 writes a minute), as network hygiene ([ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md) decision 2, decided after this plan).
 - [ ] Settings stored: on/off (default off), port, secret path, address, tunnel, automatic turn-off, keep awake.
 - [ ] Quitting, pausing and the 3 s quit hold behave as for the local listener.
-- [ ] The local server is unchanged. Add tests that it refuses remote and OAuth credentials (401) and tunnel headers (403).
+- [x] The local server is unchanged. Add tests that it refuses remote and OAuth credentials (401) and tunnel headers (403).
 
 ### 4b.9 OAuth pairing → agent · 3 h
 - [ ] **Connect a Cloud App…** on the agent's Cloud section opens pairing for that agent.
@@ -96,20 +96,20 @@
 - [ ] `check_log_privacy.sh` stays green.
 
 ### 4b.13 Harness and tests · 4 h
-- [ ] `funes-mcp-test-server` also runs the remote listener (an `https` public origin faked through `Host`) and a fake sign-in approver.
-- [ ] `Tests/mcp/mcp_test.py`, remote paths:
+- [x] `funes-mcp-test-server` also runs the remote listener (an `https` public origin faked through `Host`) and a fake sign-in approver.
+- [x] `Tests/mcp/remote_test.py` (next to `mcp_test.py`), remote paths:
   - 404 outside the secret, 421 for a foreign `Host`, 403 for `Origin`;
   - a local key refused remotely, and remote credentials refused locally;
   - an agent without cloud access gets 401;
   - pairing closed: nothing shown;
   - OAuth: code, token, refresh, reuse revokes;
   - turning Remote Access off stops the URL.
-- [ ] **Same decision, local vs remote:** one agent with a local key and a remote token. Replay the same requests through both listeners and compare the results field by field (status, reason, withheld, items, `estimated_tokens`; not ids). Cover:
+- [x] **Same decision, local vs remote:** one agent with a local key and a remote token. Replay the same requests through both listeners and compare the results field by field (status, reason, withheld, items, `estimated_tokens`; not ids). Cover:
   - each gate denial;
   - ALLOW and NEEDS_APPROVAL (approve, deny, timeout then `get_memory_request`);
   - `suggest_memory` queued and saved;
   - the rate limits shared across both listeners, and the remote buckets on top.
-- [ ] A Swift test that `RequestPipeline` and `PolicyEngine` get the same inputs for local and remote calls, so `ToolCall.remote` only affects Activity.
+- [x] A Swift test that `RequestPipeline` and `PolicyEngine` get the same inputs for local and remote calls, so `ToolCall.remote` only affects Activity.
 
 ### 4b.14 Docs · 2 h
 - [ ] When the code lands, update the user-facing docs (they describe shipped behaviour):
