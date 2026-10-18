@@ -1,0 +1,87 @@
+# Privacy
+
+**Funes Vault v0.1 (public preview) · Last updated 17 October 2026**
+
+Funes Vault keeps your memories on your Mac. It has no accounts, no servers of its own, no analytics and no telemetry. This page lists everything that can leave your Mac, and when. Questions: [support@funesvault.com](mailto:support@funesvault.com).
+
+## In short
+
+| What | Where it goes | When |
+|---|---|---|
+| Memory text you allow an agent to have | The AI agent on your Mac that asked, and from there that agent's own AI provider | Only when its access allows it, or you approve the request |
+| An update check: the app's name and version | GitHub (the Funes Vault releases) | Once a day, if **Check for updates every day** is on, and when you click **Check Now** |
+| Capture text, with your category names and descriptions | An AI provider you added and chose for Classification | Only if you add one and choose it, never above your cloud limit, never when it looks like a secret |
+| Anything else | Nowhere | No analytics, no crash reporting, no accounts |
+
+## Your vault stays on your Mac
+
+- Your memories, the Inbox, your agents and their keys, Activity and settings are stored in `~/Library/Application Support/FunesVault/` (folder mode 0700, files 0600) and the app's preferences. They aren't uploaded anywhere. There's no Funes Vault cloud, sync service or account.
+- Search runs on your Mac. Memories, your searches and agents' requests are matched with a small embedding model built into the app (bge-small-en-v1.5, run with Core ML on the CPU), plus keyword search. Nothing is downloaded or sent for this.
+- Funes Vault doesn't add its own database encryption. Your data at rest is protected by macOS and FileVault, like your other files. Other programs running as you can read it, as they can read most apps' data.
+- The app's logs (macOS unified logging) hold ids, labels and error codes, never memory text, task text or keys. They stay on your Mac unless you share them yourself, for example in a system diagnostic report.
+- Exports are files you save where you choose. They never contain agent keys, provider API keys or access settings.
+
+## What AI agents receive
+
+Agents connect to Funes Vault's MCP server, which listens only on `127.0.0.1:47625`, the loopback address of your Mac. Nothing on your network or the internet can reach it. Requests that arrive through a tunnel or a proxy, or from a web page, are refused. Agents that talk to MCP servers over stdio run `funes-mcp`, a small launcher inside the app that relays to the same local server.
+
+- **Each agent has its own key** and gets only what its access allows: a sensitivity ceiling, allowed and denied categories, read and suggest permissions, and an expiry date.
+- **When an agent asks for context,** Funes Vault finds the relevant memories and keeps only those the agent may have. If you asked to approve its requests, you see the exact text first and decide. Nothing is sent before you approve. An agent that's refused learns how many memories were withheld and why, never which ones.
+- **What you release goes to the agent and leaves Funes Vault's control.** The agent sends it to its own AI provider (for example Anthropic, OpenAI or Google) under that provider's terms. Funes Vault can't recall it later. Removing an agent or pausing it stops future access immediately.
+- **Suggestions** an agent makes wait in your Inbox until you review them. Rejected ones leave only an id in Activity.
+- **Activity** records which agent asked, when, what was decided and what was released (as ids and labels), on your Mac only.
+
+## Update checks
+
+Funes Vault uses [Sparkle](https://sparkle-project.org) 2 to check for updates.
+
+- **What it fetches:** `https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml`, which GitHub serves from its release storage. When you install an update, it downloads the update archive from the same place. Every update is checked against Funes Vault's EdDSA signature before it's installed, and installing always takes your click.
+- **What it sends:** an ordinary HTTPS request whose User-Agent names the app and its version (`Funes Vault/0.1.0 Sparkle/2.10.0`), plus the standard headers macOS's networking adds to every request, such as your preferred languages (`Accept-Language`). Sparkle's system profiling is off: no macOS version, Mac model, CPU or other system details are sent as feed parameters, and the feed URL has no parameters at all. GitHub sees your IP address, as with any request, under the [GitHub Privacy Statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement). <!-- TODO(check): confirm the exact headers on the release build with a proxy (Proxyman or mitmproxy). -->
+- **When:** once a day while **Check for updates every day** is on (it's on by default), and when you click **Check Now**. Turn it off in **Settings ▸ Updates**. A build without Funes Vault's update key (one you build from source) never checks.
+
+## AI models
+
+Funes Vault proposes a title, kind, categories and sensitivity for each new capture, which you review in the Inbox.
+
+- **By default this happens on your Mac**, with Apple's on-device model (Apple Intelligence, on macOS 26 or later where it's available) or, when that isn't available, simple rules. Apple's on-device model runs locally; Funes Vault doesn't use Apple's Private Cloud Compute. You can turn proposals off in **Settings ▸ Capture**; captures then get proposals from the rules only.
+- **You can add a provider** in **Settings ▸ AI Models**: a local server (Ollama, LM Studio or another server on your Mac or local network), or a cloud service (Anthropic, OpenAI, or any OpenAI-compatible endpoint). Nothing is sent to a provider until you add it and choose it for Classification.
+- **What a chosen provider receives:** the text of each new capture, and your category names and descriptions, so it can pick categories. <!-- TODO(check): v0.1 classifies captures only (CaptureController); the Settings disclosure line says "capture and suggestion text". Agent suggestions and imports aren't sent to a provider in v0.1. --> Requests to a cloud provider also carry the API key you gave it, which Funes Vault keeps only in your Mac's Keychain. **Load Models** asks the provider for its model list, and **Test Connection** classifies one made-up note among Funes Vault's built-in categories, so neither sends any of your memories or category names.
+- **The cloud limit** (default **Internal**) applies to every provider that isn't on your Mac or your local network. Funes Vault first estimates each capture's sensitivity on your Mac. If the estimate is above your limit, or unknown, the capture is classified on your Mac instead and its card says it was kept on this Mac. You can set the limit to Public, Low, Internal, Sensitive, or **Never send memories**.
+- **Anything that looks like a secret** (a password, an API key, a card number) is never sent to any provider that isn't Apple's on-device model.
+- **Cloud providers must use HTTPS.** A provider is treated as local only if its address is on your Mac or your private network; anything else is cloud, whatever it's called.
+- **Your provider's terms apply** to what you send it, including whether it keeps or trains on it. Funes Vault shows request and token counts per provider; costs are between you and the provider.
+
+Search embeddings aren't configurable in v0.1: they always run on your Mac with the built-in model.
+
+## No analytics, no crash reports
+
+Funes Vault contains no analytics, advertising or tracking code, and no crash reporter. It makes no network requests other than the ones above.
+
+If macOS crashes or hangs Funes Vault, macOS writes a report on your Mac. If you share analytics with Apple (**System Settings ▸ Privacy & Security ▸ Analytics & Improvements**), macOS sends Apple diagnostic data under [Apple's privacy policy](https://www.apple.com/legal/privacy/). We don't receive these reports for an app distributed outside the App Store. If you want us to see one, attach it to an issue or email, after removing anything private.
+
+## Installing
+
+- **The DMG** comes from GitHub Releases, under GitHub's privacy statement.
+- **Homebrew** (`brew install --cask bereciartua/tap/funes-vault`) downloads the same DMG from GitHub. Homebrew has its own [analytics](https://docs.brew.sh/Analytics), which you can turn off with `brew analytics off`. Funes Vault doesn't receive them.
+
+## This website
+
+funesvault.com is a static site hosted on GitHub Pages. It sets no cookies, loads no fonts, scripts or images from anywhere else, and has no analytics. The only script is the copy button for the Homebrew command, which runs in your browser. GitHub, as the host, receives your IP address and request details and keeps logs under the [GitHub Privacy Statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement). Downloads and documentation links go to GitHub.
+
+## Email and support
+
+- **Email** to support@funesvault.com or security@funesvault.com is forwarded by our domain registrar, Hover, to the maintainer's personal mailbox. We use it only to answer you, and don't add you to any list.
+- **GitHub Issues** are public. Don't paste memories, agent keys or API keys into an issue.
+- **Security reports** go privately to security@funesvault.com or through GitHub's private vulnerability reporting ([SECURITY.md](https://github.com/bereciartua/funes-vault-app/blob/main/SECURITY.md)).
+
+## Children
+
+Funes Vault isn't directed at children and collects no personal data from anyone.
+
+## Changes
+
+When this statement changes, the date at the top changes, and the change is listed in the [CHANGELOG](https://github.com/bereciartua/funes-vault-app/blob/main/CHANGELOG.md). A version that sends anything new will say so here before it ships.
+
+## Contact
+
+Funes Vault is an open-source project maintained by [bereciartua](https://github.com/bereciartua). Email [support@funesvault.com](mailto:support@funesvault.com).
