@@ -211,12 +211,15 @@ Brings Funes to the front on the Mac, at a pending request or suggestion.
 *v0.1, experimental, off by default ([ADR-0018](decisions/0018-remote-access-in-v0.1.md)). Built on `BridgeKitRemote`, EK Bridge's Remote Access ([reuse §3](ek-bridge-reuse.md#3-tier-3-bridgekitremote-extracted-now-for-funes-v01)). Where this section doesn't say otherwise, behaviour matches EK Bridge's `docs/MCP.md` "Use from cloud agents".*
 
 - **Listener:** `127.0.0.1:47627`, loopback only, only while Remote Access is on. A tunnel the user runs (Tailscale Funnel, Cloudflare Tunnel, ngrok, a quick tunnel for testing) forwards to it; Funes never starts one.
-- **Tailscale Funnel shared with other apps:** Funnel has three public ports (443, 8443, 10000).
-  - The guide uses where Funnel already forwards to 47627, else the first port nothing on this Mac serves (Funnel, tailnet-only Serve or TCP), so its command never replaces another app's entry, such as EK Bridge's on 443.
-  - With all three taken it offers no command.
+- **Tailscale Funnel shared with other apps, by path on port 443.** claude.ai and ChatGPT only connect to 443, so apps on one Mac share it.
+  - Each app adds only its own four public paths: `/r/<secret>`, and the protected-resource, authorization-server and OpenID discovery documents with `/r/<secret>` after their name (`RemoteConfiguration.publicPaths`).
+  - Tailscale sends every other path where it went before, such as EK Bridge's `/` entry.
+  - The guide shows one `tailscale funnel --bg --https=443 --set-path <path> http://127.0.0.1:47627<path>` per path, and off commands that each name their path.
+  - 443 is used unless it has a tailnet-only entry, which Funnel would make public, or a raw TCP forwarder. Then 8443 or 10000, with a warning that claude.ai and ChatGPT can't reach it. With none, no command.
+  - **Incomplete** (some paths missing) shows the missing ones.
   - Another app's entry is never "Wrong port"; only one to the local MCP port is.
-  - Funnel's turn-off command targets the address's port only.
-  - BridgeKitRemote 0.3.0 (`FunnelPorts`, [plan](../plans/phase-4b-funnel-ports.md)).
+  - Reset Path… shows the commands that move Funnel to the new secret's paths.
+  - BridgeKitRemote 0.4.0 (`RemotePaths`, `FunnelPorts`, `TailscaleFunnelCommand`, [plan](../plans/phase-4b-funnel-paths.md)).
   - The port can be changed in Settings (1024–65535, not the MCP or companion port).
   - The default avoids Funes's 47625 and 47626, EK Bridge's 47615 and 47616, and the EK Bridge Test copy's 47625 and 47626.
   - It has the same HTTP limits as §1, with its own 32 connections.

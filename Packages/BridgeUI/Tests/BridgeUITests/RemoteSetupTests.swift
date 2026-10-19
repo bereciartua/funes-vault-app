@@ -67,13 +67,20 @@ struct RemoteSetupTests {
         }
     }
 
+    /// The public paths for the sample secret.
+    static let paths = RemoteConfiguration(secret: "q7Zk2vN4bXwP9sL1mT6hYa", publicOrigin: nil, port: remotePort).publicPaths
+
     static func render(_ provider: TunnelProvider, publicPort: Int? = 443) -> String {
         let host = sampleHost(provider)
         var lines = [provider.displayName, "name: \(provider.name)", "summary: \(provider.summary)",
                      "preservesHost: \(provider.preservesHost)", "detectionHeader: \(provider.detectionHeader ?? "none")",
                      "installLink: \(provider.installLink ?? "none")", "", "commands:"]
-        lines += provider.commands(port: remotePort, hostname: host, names: names, publicPort: publicPort)
-        lines += ["", "run: \(provider.runCommand(port: remotePort, hostname: host, names: names, publicPort: publicPort) ?? "none")"]
+        lines += provider.commands(port: remotePort, hostname: host, names: names, publicPort: publicPort, paths: paths)
+        if provider == .tailscaleFunnel, let publicPort {
+            lines += ["", "off:"] + provider.offCommands(port: remotePort, publicPort: publicPort, paths: paths)
+        }
+        let run = provider.runCommand(port: remotePort, hostname: host, names: names, publicPort: publicPort, paths: paths)
+        lines += ["", "run: \(run ?? "none")"]
         if let config = provider.configFile(port: remotePort, hostname: host, names: names) {
             lines += ["", "config.yml:", config]
         }
@@ -95,28 +102,41 @@ struct RemoteSetupTests {
                provider.displayName, provider.summary]
     }
 
-    /// What Funnel serves on this Mac, as the Tailscale check reads it.
-    static func funnel(_ entries: [(Int, [Int], Bool)], port: Int = remotePort) -> FunnelPorts {
-        FunnelPorts(entries: entries.map { FunnelPorts.Entry(publicPort: $0.0, host: tunnelHost, targets: $0.1, funnel: $0.2) },
-                    port: port)
+    /// What Funnel serves on this Mac, as the Tailscale check reads it: per public port, its
+    /// paths (path → local port, keeping the path unless it's `/`) and whether Funnel is on.
+    static func funnel(_ entries: [(Int, [(String, Int)], Bool)], tcp: (Int, Int)? = nil) -> FunnelPorts {
+        var all = entries.map { port, handlers, funnel in
+            FunnelPorts.Entry(publicPort: port, host: tunnelHost,
+                              handlers: handlers.map { FunnelPorts.Handler(path: $0.0, port: $0.1, targetPath: $0.0 == "/" ? "" : $0.0) },
+                              funnel: funnel)
+        }
+        if let tcp { all.append(FunnelPorts.Entry(publicPort: tcp.0, host: nil, handlers: [], funnel: true, tcpForward: tcp.1)) }
+        return FunnelPorts(entries: all, port: remotePort, paths: paths)
     }
 
-    /// Step 2's line for each situation, and the No free port state's words.
+    /// Step 2's line for each situation, and the new states' words.
     static func renderFunnelPorts() -> String {
+        let ours = paths.map { ($0, remotePort) }
         let cases: [(String, FunnelPorts)] = [
             ("nothing served", funnel([])),
-            ("EK Bridge on 443", funnel([(443, [47616], true)])),
-            ("EK Bridge on 443, a Serve entry on 8443", funnel([(443, [47616], true), (8443, [4000], false)])),
-            ("all three taken", funnel([(443, [47616], true), (8443, [4000], false), (10000, [5432], true)])),
-            ("a file on 443", funnel([(443, [], true)])),
-            ("running on 10000", funnel([(443, [47616], true), (8443, [4000], false), (10000, [remotePort], true)])),
+            ("EK Bridge on / of 443", funnel([(443, [("/", 47616)], true)])),
+            ("443 tailnet-only", funnel([(443, [("/", 4000)], false)])),
+            ("443 and 8443 tailnet-only", funnel([(443, [("/", 4000)], false), (8443, [("/", 4001)], false)])),
+            ("nothing shareable", funnel([(443, [("/", 4000)], false), (8443, [], false)], tcp: (10000, 5432))),
+            ("running beside EK Bridge", funnel([(443, [("/", 47616)] + ours, true)])),
+            ("three of four paths", funnel([(443, [("/", 47616)] + Array(ours.prefix(3)), true)])),
         ]
         var lines = cases.map { name, ports in
-            "\(name): port \(ports.publicPort.map(String.init) ?? "none") · \(ports.reason(names: names) ?? "no line")"
+            "\(name): port \(ports.publicPort.map(String.init) ?? "none") · add \(ports.pathsToAdd.count) · "
+                + (ports.reason(names: names) ?? "no line")
         }
-        let taken = TunnelHealth.notRunning(reason: .allPortsTaken)
+        let none = TunnelHealth.notRunning(reason: .noSharablePort)
         lines += ["", "unknown: \(FunnelPorts.unknownWarning(names: names))",
-                  "no free port: \(taken.label) · \(taken.detail(.tailscaleFunnel, remotePort: remotePort, mcpPort: 47626) ?? "")"]
+                  "no shareable port: \(none.label) · \(none.detail(.tailscaleFunnel, remotePort: remotePort, mcpPort: 47626) ?? "")"]
+        for missing in [1, 2] {
+            let health = TunnelHealth.incomplete(address: "https://" + tunnelHost, missing: missing)
+            lines.append("incomplete \(missing): \(health.label) · \(health.detail(.tailscaleFunnel, remotePort: remotePort, mcpPort: 47626) ?? "") · \(health.unreachableReason(.tailscaleFunnel, remotePort: remotePort) ?? "")")
+        }
         return lines.joined(separator: "\n")
     }
 
@@ -131,8 +151,7 @@ struct RemoteSetupTests {
         for provider in TunnelProvider.allCases { expected["tunnel-\(Self.slug(provider)).txt"] = Self.render(provider) }
         // Funnel shared with other apps on this Mac: another public port, or none free.
         expected["tunnel-tailscale-funnel-8443.txt"] = Self.render(.tailscaleFunnel, publicPort: 8443)
-        expected["tunnel-tailscale-funnel-10000.txt"] = Self.render(.tailscaleFunnel, publicPort: 10000)
-        expected["tunnel-tailscale-funnel-no-free-port.txt"] = Self.render(.tailscaleFunnel, publicPort: nil)
+        expected["tunnel-tailscale-funnel-no-shareable-port.txt"] = Self.render(.tailscaleFunnel, publicPort: nil)
         expected["tunnel-funnel-ports.txt"] = Self.renderFunnelPorts()
         let folder = Self.fixtures
         if ProcessInfo.processInfo.environment["UPDATE_GOLDENS"] == "1" {
@@ -308,8 +327,9 @@ struct RemoteSetupTests {
     @Test func tunnelCommands() throws {
         for provider in TunnelProvider.allCases {
             let key = "\(provider)"
-            let commands = provider.commands(port: Self.remotePort, hostname: Self.tunnelHost, names: Self.names)
-            let moved = provider.commands(port: 50123, hostname: nil, names: Self.names)
+            let commands = provider.commands(port: Self.remotePort, hostname: Self.tunnelHost, names: Self.names,
+                                             paths: Self.paths)
+            let moved = provider.commands(port: 50123, hostname: nil, names: Self.names, paths: Self.paths)
             #expect(commands.isEmpty == (provider == .other), "\(key)")
             if provider != .other {
                 // A named Cloudflare tunnel takes the port from config.yml.
@@ -318,7 +338,9 @@ struct RemoteSetupTests {
                 #expect((moved + config(50123)).contains { $0.contains("50123") }, "\(key)")
             }
             #expect(!moved.contains { $0.contains("47627") || $0.contains(Self.tunnelHost) }, "\(key)")
-            #expect(Array(commands.suffix(provider.offCommands(port: Self.remotePort).count)) == provider.offCommands(port: Self.remotePort))
+            if provider != .tailscaleFunnel {
+                #expect(Array(commands.suffix(provider.offCommands(port: Self.remotePort).count)) == provider.offCommands(port: Self.remotePort))
+            }
             #expect(!provider.steps.isEmpty && !provider.notes.isEmpty, "\(key)")
             for text in Self.tunnelTexts(provider) + Self.tunnelTexts(provider, hostname: nil) {
                 #expect(!text.contains("47625") && !text.contains("47626"), "\(key) points at a local port")
@@ -326,8 +348,15 @@ struct RemoteSetupTests {
             }
         }
         #expect(TunnelProvider.defaultRemotePort == 47627)
-        #expect(TunnelProvider.tailscaleFunnel.commands(port: Self.remotePort, hostname: nil, names: Self.names)
-            == ["tailscale funnel --bg 47627", "tailscale funnel --bg 47627 off"])
+        // Funnel: one command per public path on 443, its off commands apart, each naming the path.
+        let funnel = TunnelProvider.tailscaleFunnel.commands(port: Self.remotePort, hostname: nil, names: Self.names,
+                                                             paths: Self.paths)
+        #expect(funnel.count == 4 && funnel[0] == "tailscale funnel --bg --https=443 --set-path /r/q7Zk2vN4bXwP9sL1mT6hYa "
+            + "http://127.0.0.1:47627/r/q7Zk2vN4bXwP9sL1mT6hYa")
+        #expect(TunnelProvider.tailscaleFunnel.offCommands(port: Self.remotePort, paths: Self.paths)
+            .allSatisfy { $0.hasPrefix("tailscale funnel --https=443 --set-path /") && $0.hasSuffix(" off") })
+        #expect(TunnelProvider.tailscaleFunnel.commands(port: Self.remotePort, hostname: nil, names: Self.names).isEmpty,
+                "no paths, no Funnel command")
         #expect(TunnelProvider.ngrok.commands(port: Self.remotePort, hostname: nil, names: Self.names)[1]
             == "ngrok http 47627 --url https://<your-dev-domain> --host-header=rewrite")
         #expect(TunnelProvider.cloudflareTunnel.commands(port: Self.remotePort, hostname: nil, names: Self.names)
@@ -336,8 +365,11 @@ struct RemoteSetupTests {
         #expect(config.contains("tunnel: funes-vault") && config.contains("service: http://127.0.0.1:50123")
             && config.contains(#"httpHostHeader: "127.0.0.1:50123""#) && config.contains("hostname: mcp.example.com"))
         #expect(TunnelProvider.allCases.map { $0.configFile(port: 1, hostname: nil, names: Self.names) != nil } == [false, true, false, false, false])
-        let run = TunnelProvider.allCases.map { $0.runCommand(port: Self.remotePort, hostname: "calm-otter-42.ngrok-free.app", names: Self.names) }
-        #expect(run == ["tailscale funnel --bg 47627", "cloudflared tunnel run funes-vault",
+        let run = TunnelProvider.allCases.map {
+            $0.runCommand(port: Self.remotePort, hostname: "calm-otter-42.ngrok-free.app", names: Self.names, paths: [Self.paths[0]])
+        }
+        #expect(run == ["tailscale funnel --bg --https=443 --set-path /r/q7Zk2vN4bXwP9sL1mT6hYa http://127.0.0.1:47627/r/q7Zk2vN4bXwP9sL1mT6hYa",
+                        "cloudflared tunnel run funes-vault",
                         "ngrok http 47627 --url https://calm-otter-42.ngrok-free.app --host-header=rewrite",
                         "cloudflared tunnel --url http://127.0.0.1:47627 --http-host-header 127.0.0.1:47627", nil])
         #expect(TunnelProvider.ngrok.notes.contains { $0.contains("20,000") })

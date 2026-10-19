@@ -4,6 +4,20 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+## [0.1.2] - Unreleased
+
+The first public preview. 0.1.0 and 0.1.1 were built as draft releases only and never published: everything in them below is in 0.1.2, with this fix in place of 0.1.1's.
+
+### Fixed
+
+- **Remote Access shares Tailscale Funnel's port 443 with other apps on your Mac**, such as EK Bridge's Remote Access. claude.ai and ChatGPT only connect to port 443, so 0.1.1's other public ports didn't reach them.
+  - The guide now shows one command per path Funes Vault answers. Each adds only that path to port 443, so other apps keep their entries, and the address has no port.
+  - The command to turn Funnel off removes only those paths.
+  - If 443 has another app's tailnet-only entry, which Funnel would make public, the guide uses 8443 or 10000 and says that claude.ai and ChatGPT can't reach it there.
+  - New Tunnel states: **Incomplete**, with the commands for the missing paths, and **No shareable port**.
+  - After **Reset Path…**, the page shows the commands that move Funnel to the new path.
+  - BridgeKit 0.4.0.
+
 ## [0.1.1] - 2026-10-19
 
 The first public preview. 0.1.0 was built as a draft release only and never published: everything in it below is in 0.1.1, with this fix.

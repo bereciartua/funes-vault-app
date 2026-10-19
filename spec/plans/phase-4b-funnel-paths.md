@@ -93,22 +93,22 @@ Two test path entries were added to Funnel's port 10000, next to its `/` entry t
 
 ## Part B: Funes 0.1.2
 
-- [ ] Guide step 2:
+- [x] Guide step 2:
   - the four commands as one Copy block;
   - one line saying they add only Funes Vault's own paths to port 443, so other apps keep theirs;
   - the claude.ai and ChatGPT warning when 443 isn't sharable.
-- [ ] Step 3's example address has no port on 443.
-- [ ] The Tunnel row: **Running**; **Incomplete**, with the commands; **No sharable port**.
-- [ ] Reset Path…'s confirmation shows the old paths off and the new paths on.
-- [ ] Turning Remote Access off doesn't run anything, as before. Its note shows the off commands for the four paths.
-- [ ] Goldens, `RemoteSetupTests`, `RemoteAccessControllerTests`, String Catalog.
-- [ ] Spec:
+- [x] Step 3's example address has no port on 443.
+- [x] The Tunnel row: **Running**; **Incomplete**, with the commands; **No sharable port**.
+- [x] Reset Path…: its alert says Funnel forwards the secret path too. The page then shows the commands that remove the old paths and add the new ones, until a check finds the new paths or you click Done.
+- [x] Step 2 shows the four off commands under the start commands (To turn it off later). Turning Remote Access off runs nothing, as before.
+- [x] Goldens, `RemoteSetupTests`, `RemoteAccessControllerTests`, String Catalog.
+- [x] Spec:
   - mcp-server §12 (replace the ports rule);
   - this plan's results in [spike results](spike-results.md) next to 4b.15 (claude.ai and ChatGPT reach only 443);
   - docs/MCP.md's Tailscale row;
   - CHANGELOG `[0.1.2]` (0.1.0 and 0.1.1 were drafts only);
   - version 0.1.2 (3), `server.json`;
-  - pin BridgeKit `exact: 0.4.0`.
+  - [ ] pin BridgeKit `exact: 0.4.0` (until the tag: the branch commit `6011ef8`).
 
 ## Part C: EK Bridge 0.11.4
 
