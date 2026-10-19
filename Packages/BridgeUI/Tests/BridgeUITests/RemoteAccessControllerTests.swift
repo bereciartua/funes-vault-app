@@ -24,35 +24,48 @@ struct RemoteAccessControllerTests {
         return (controller, defaults, suite)
     }
 
-    /// Funnel shared with other apps: the guide uses the check's free port, the Tunnel row the
-    /// address's, and neither offers a command for a port another app serves.
+    /// Funnel shared with other apps by path: the guide uses 443 unless it can't take the paths,
+    /// the Tunnel row the address's port and the missing paths, and neither offers a command that
+    /// would make another app's tailnet-only entry public.
     @Test func funnelPorts() {
         let calls = Calls()
         let (controller, defaults, suite) = make(calls)
         defer { defaults.removePersistentDomain(forName: suite) }
-        func ports(_ entries: [(Int, [Int], Bool)]) -> FunnelPorts {
-            FunnelPorts(entries: entries.map { FunnelPorts.Entry(publicPort: $0.0, host: "my-mac.tail1234.ts.net",
-                                                                  targets: $0.1, funnel: $0.2) }, port: 47_627)
-        }
-        let waiting = TunnelHealth.notRunning(reason: .noTunnel)
-        controller.reviewSet(enabled: true, origin: nil, tunnel: .tailscaleFunnel, health: waiting,
-                             funnel: ports([(443, [47616], true)]))
-        #expect(controller.guideFunnelPort == 8443 && controller.funnelExampleAddress == "https://my-mac.tail1234.ts.net:8443",
-                "443 serves another app: 8443")
         controller.reviewSet(enabled: true, origin: nil, tunnel: .tailscaleFunnel, health: .unknown)
+        let paths = controller.publicPaths
+        #expect(paths.count == 4 && paths[0] == "/r/" + controller.secret, "the secret prefix and three discovery paths")
+        func entry(_ port: Int, _ handlers: [(String, Int, String)], funnel: Bool) -> FunnelPorts.Entry {
+            FunnelPorts.Entry(publicPort: port, host: "my-mac.tail1234.ts.net",
+                              handlers: handlers.map { FunnelPorts.Handler(path: $0.0, port: $0.1, targetPath: $0.2) },
+                              funnel: funnel)
+        }
+        func ports(_ entries: [FunnelPorts.Entry]) -> FunnelPorts { FunnelPorts(entries: entries, port: 47_627, paths: paths) }
+        let waiting = TunnelHealth.notRunning(reason: .noTunnel)
+        let ek = entry(443, [("/", 47616, "")], funnel: true)
+        controller.reviewSet(enabled: true, origin: nil, tunnel: .tailscaleFunnel, health: waiting, funnel: ports([ek]))
         #expect(controller.guideFunnelPort == 443 && controller.funnelExampleAddress == "https://my-mac.tail1234.ts.net",
-                "couldn't check: 443, with the warning")
-        controller.reviewSet(enabled: true, origin: nil, tunnel: .tailscaleFunnel,
-                             health: .notRunning(reason: .allPortsTaken),
-                             funnel: ports([(443, [47616], true), (8443, [4000], false), (10000, [5432], true)]))
-        #expect(controller.guideFunnelPort == nil, "all taken: no command")
-        // In use at :8443, Funnel stopped: start it there again, unless another app took 8443.
+                "EK Bridge's / on 443 is shared: 443, no port in the address")
+        #expect(controller.guideFunnelPort == 443 && controller.funnelExampleAddress == "https://my-mac.tail1234.ts.net")
+        controller.reviewSet(enabled: true, origin: nil, tunnel: .tailscaleFunnel, health: waiting,
+                             funnel: ports([entry(443, [("/", 4000, "")], funnel: false)]))
+        #expect(controller.guideFunnelPort == 8443 && controller.funnelExampleAddress == "https://my-mac.tail1234.ts.net:8443",
+                "a tailnet-only 443 would become public: 8443")
+        controller.reviewSet(enabled: true, origin: nil, tunnel: .tailscaleFunnel, health: .notRunning(reason: .noSharablePort),
+                             funnel: ports([entry(443, [("/", 4000, "")], funnel: false),
+                                            entry(8443, [("/", 4001, "")], funnel: false),
+                                            FunnelPorts.Entry(publicPort: 10000, host: nil, handlers: [], funnel: true,
+                                                              tcpForward: 5432)]))
+        #expect(controller.guideFunnelPort == nil, "nothing shareable: no command")
+        // In use with three of four paths: the Tunnel row adds the missing one, on the address's port.
+        let three = paths.prefix(3).map { ($0, 47_627, $0) }
+        controller.reviewSet(enabled: true, origin: "https://my-mac.tail1234.ts.net", tunnel: .tailscaleFunnel,
+                             health: .incomplete(address: "https://my-mac.tail1234.ts.net", missing: 1),
+                             funnel: ports([entry(443, [("/", 47616, "")] + three, funnel: true)]))
+        #expect(controller.inUseFunnelPort == 443 && controller.inUseFunnelPaths == [paths[3]], "the missing path")
+        // The address's port now tailnet-only: no command.
         controller.reviewSet(enabled: true, origin: "https://my-mac.tail1234.ts.net:8443", tunnel: .tailscaleFunnel,
-                             health: waiting, funnel: ports([(443, [47616], true)]))
-        #expect(controller.inUseFunnelPort == 8443, "the address's port")
-        controller.reviewSet(enabled: true, origin: "https://my-mac.tail1234.ts.net:8443", tunnel: .tailscaleFunnel,
-                             health: waiting, funnel: ports([(443, [47616], true), (8443, [4000], true)]))
-        #expect(controller.inUseFunnelPort == nil, "another app took the address's port")
+                             health: waiting, funnel: ports([entry(8443, [("/", 4000, "")], funnel: false)]))
+        #expect(controller.inUseFunnelPort == nil, "a tailnet-only entry took the address's port")
     }
 
     @Test func anExpiredTurnOffAtLaunchTurnsItOff() {

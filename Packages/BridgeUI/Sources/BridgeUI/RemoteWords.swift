@@ -76,16 +76,17 @@ extension TunnelProvider {
 
     /// Start commands, then `offCommands`, to run in order in Terminal. `hostname` is the one
     /// typed for Cloudflare Tunnel and ngrok (`asksForHostname`), never the address in use.
-    /// `publicPort` is Funnel's public port (`FunnelPorts.publicPort`); nil when all three serve
-    /// other apps, and then Funnel has no command.
-    public func commands(port: Int, hostname: String?, names: RemoteNames, publicPort: Int? = 443) -> [String] {
+    /// Funnel's are one per public path (`RemoteConfiguration.publicPaths`) on `publicPort`
+    /// (`FunnelPorts.publicPort`; nil when no port can take them, and then there's no command),
+    /// without its off commands, which turn off the same paths later.
+    public func commands(port: Int, hostname: String?, names: RemoteNames, publicPort: Int? = 443,
+                         paths: [String] = []) -> [String] {
         let name = names.tunnelName
         let start: [String]
         switch self {
         case .tailscaleFunnel:
-            guard let publicPort else { return [] }
-            return [TailscaleFunnelCommand.start(port: port, publicPort: publicPort)]
-                + offCommands(port: port, publicPort: publicPort)
+            guard let publicPort, !paths.isEmpty else { return [] }
+            return TailscaleFunnelCommand.start(port: port, publicPort: publicPort, paths: paths)
         case .cloudflareTunnel:
             // The port is in config.yml.
             start = [
@@ -108,9 +109,9 @@ extension TunnelProvider {
     }
 
     /// Only Funnel keeps running in the background; the others stop with Control-C. Funnel's
-    /// turns off only its own public port, never another app's.
-    public func offCommands(port: Int, publicPort: Int = 443) -> [String] {
-        self == .tailscaleFunnel ? [TailscaleFunnelCommand.off(port: port, publicPort: publicPort)] : []
+    /// turn off only these paths, never the whole port or another app's.
+    public func offCommands(port: Int, publicPort: Int = 443, paths: [String] = []) -> [String] {
+        self == .tailscaleFunnel ? TailscaleFunnelCommand.off(publicPort: publicPort, paths: paths) : []
     }
 
     /// `~/.cloudflared/config.yml` for a named Cloudflare tunnel; nil for the others.
@@ -128,12 +129,16 @@ extension TunnelProvider {
             """
     }
 
-    /// The one command that starts the tunnel once it's set up, for the Tunnel row's Not running
-    /// state. Nil for Other tunnel.
-    public func runCommand(port: Int, hostname: String?, names: RemoteNames, publicPort: Int? = 443) -> String? {
+    /// What starts the tunnel once it's set up, for the Tunnel row's Not running state: one
+    /// command, or Funnel's one per path, a line each. Nil for Other tunnel.
+    public func runCommand(port: Int, hostname: String?, names: RemoteNames, publicPort: Int? = 443,
+                           paths: [String] = []) -> String? {
         switch self {
-        case .tailscaleFunnel, .cloudflareQuick:
-            commands(port: port, hostname: hostname, names: names, publicPort: publicPort).first
+        case .tailscaleFunnel:
+            commands(port: port, hostname: hostname, names: names, publicPort: publicPort, paths: paths)
+                .joined(separator: "\n").nilIfEmpty
+        case .cloudflareQuick:
+            commands(port: port, hostname: hostname, names: names).first
         case .cloudflareTunnel: "cloudflared tunnel run \(names.tunnelName)"
         case .ngrok: commands(port: port, hostname: hostname, names: names).first { $0.hasPrefix("ngrok http ") }
         case .other: nil
@@ -151,9 +156,9 @@ extension TunnelProvider {
             return [
                 String(localized: "Install Tailscale on this Mac and sign in."),
                 String(localized: "In the Tailscale admin console, turn on MagicDNS and HTTPS certificates, and add the funnel node attribute to your tailnet policy."),
-                String(localized: "Run the first command in Terminal. Funnel prints your public address, such as https://my-mac.tail1234.ts.net."),
-                paste(String(localized: "that address")) + " " + String(localized: "Public DNS can take about 10 minutes the first time."),
-                String(localized: "To turn it off, run the last command."),
+                String(localized: "Run the commands in Terminal. Each adds one of the Remote Access paths to Funnel's port; everything else on that port, such as another app's tunnel, stays as it is."),
+                paste(String(localized: "your Mac's Funnel address, such as https://my-mac.tail1234.ts.net")) + " " + String(localized: "Public DNS can take about 10 minutes the first time."),
+                String(localized: "To turn it off, run the off commands below them. They remove only these paths."),
             ]
         case .cloudflareTunnel:
             return [
@@ -192,7 +197,8 @@ extension TunnelProvider {
                 String(localized: "Funnel keeps the public hostname in Host, so it must match Address."),
                 String(localized: "Tailscale Serve isn't enough: cloud agents aren't on your tailnet."),
                 String(localized: "Funnel keeps running in the background, even after a restart, until you turn it off."),
-                String(localized: "Funnel has three public ports, 443, 8443 and 10000, one app each. The guide uses the first one nothing on this Mac serves yet, so it never replaces another app's tunnel."),
+                String(localized: "claude.ai and ChatGPT only connect to port 443, so apps on this Mac share it by path: Tailscale sends these paths here and every other path where it went before."),
+                String(localized: "The paths include the secret path. After Reset Path…, the page shows the commands that move Funnel to the new one."),
             ]
         case .cloudflareTunnel:
             return [
@@ -229,9 +235,10 @@ extension TunnelHealth {
         switch self {
         case .running: String(localized: "Running")
         case .wrongPort: String(localized: "Wrong port")
+        case .incomplete: String(localized: "Incomplete")
         case .notPublic: String(localized: "Not public")
         case .notRunning(let reason):
-            reason == .allPortsTaken ? String(localized: "No free port") : String(localized: "Not running")
+            reason == .noSharablePort ? String(localized: "No shareable port") : String(localized: "Not running")
         case .notInstalled: String(localized: "Not installed")
         case .unknown: String(localized: "Can't check on this Mac")
         }
@@ -247,6 +254,10 @@ extension TunnelHealth {
             return port == mcpPort
                 ? String(localized: "Forwards to \(String(port)), the local MCP port. Use \(String(remotePort)).")
                 : String(localized: "Forwards to \(String(port)). Use \(String(remotePort)).")
+        case .incomplete(_, let missing):
+            return missing == 1
+                ? String(localized: "Funnel forwards all but one of the Remote Access paths, so cloud agents can't sign in. Add it in Terminal.")
+                : String(localized: "Funnel forwards only some of the Remote Access paths (\(String(missing)) missing), so cloud agents can't sign in. Add them in Terminal.")
         case .notPublic:
             return provider == .tailscaleFunnel
                 ? String(localized: "Tailscale Serve is on, but Funnel isn't, so cloud agents can't reach it.")
@@ -261,8 +272,8 @@ extension TunnelHealth {
                     ? String(localized: "Tailscale is turned off. Turn it on, then start Funnel.")
                     : String(localized: "\(provider.name) runs, but isn't connected yet.")
             case .noTunnel: return nil
-            case .allPortsTaken:
-                return String(localized: "Funnel's three public ports already serve other apps on this Mac. Turn one off, or choose another tunnel.")
+            case .noSharablePort:
+                return String(localized: "Funnel's ports 443, 8443 and 10000 each have a tailnet-only entry or a TCP forwarder on this Mac, which adding the Remote Access paths would make public or replace. Change one of them, or choose another tunnel.")
             }
         case .notInstalled:
             switch provider {
@@ -283,6 +294,7 @@ extension TunnelHealth {
         case .notRunning: String(localized: "\(provider.name) isn't running on this Mac.")
         case .wrongPort(let port, _):
             String(localized: "\(provider.name) forwards to port \(String(port)), not \(String(remotePort)).")
+        case .incomplete: String(localized: "\(provider.name) forwards only some of the Remote Access paths.")
         case .notPublic: provider == .tailscaleFunnel
             ? String(localized: "Tailscale Serve is on, but Funnel isn't.")
             : String(localized: "\(provider.name) isn't public.")
@@ -295,35 +307,43 @@ extension TunnelHealth {
 // MARK: - Funnel's public ports
 
 extension FunnelPorts {
-    /// Step 2's line above the commands: why Funnel uses another port than 443, or what's on all
-    /// three. Nil when it uses 443 or already runs.
+    /// Step 2's line above the commands: that another app on 443 keeps working, why Remote Access
+    /// uses another port than 443, or why no port can take its paths. Nil when there's nothing
+    /// else on its port, or it already runs or is incomplete.
     public func reason(names: RemoteNames) -> String? {
-        let taken = inTheWay.map(Self.describe).formatted(.list(type: .and))
-        guard !taken.isEmpty else { return nil }
+        guard running == nil, incomplete == nil else { return nil }
         guard let publicPort else {
-            return String(localized: "Funnel already serves other apps on this Mac on \(taken). Starting it would replace one of them, so turn one off first, or choose another tunnel.")
+            let taken = inTheWay.map(Self.describe).formatted(.list(type: .and))
+            return String(localized: "No Funnel port on this Mac can take \(names.appName)'s paths without changing another app: \(taken). Change one of them, or choose another tunnel.")
         }
-        return inTheWay.count == 1
-            ? String(localized: "Funnel already serves another app on this Mac on \(taken), so \(names.appName) uses port \(String(publicPort)). Its address ends in :\(String(publicPort)).")
-            : String(localized: "Funnel already serves other apps on this Mac on \(taken), so \(names.appName) uses port \(String(publicPort)). Its address ends in :\(String(publicPort)).")
+        if publicPort == Self.cloudAgentPort {
+            guard let others = entry(on: publicPort), !others.handlers.isEmpty else { return nil }
+            return String(localized: "Funnel's \(Self.describe(others)) already serves another app on this Mac. These commands add only \(names.appName)'s paths, so it keeps working.")
+        }
+        let taken = inTheWay.map(Self.describe).formatted(.list(type: .and))
+        return String(localized: "Funnel's \(taken) can't take \(names.appName)'s paths without changing another app, so \(names.appName) uses port \(String(publicPort)). claude.ai and ChatGPT only connect to port 443, so they can't reach it there; other cloud agents can.")
     }
 
-    /// "port 443 (it forwards to 47616)".
+    /// "port 443 (it forwards to 47616)", "port 443 (tailnet only, it forwards to 4000)".
     static func describe(_ entry: Entry) -> String {
         let port = String(entry.publicPort)
-        switch entry.targets.count {
-        case 0: return String(localized: "port \(port)")
-        case 1: return String(localized: "port \(port) (it forwards to \(String(entry.targets[0])))")
-        default:
-            let targets = entry.targets.map { String($0) }.formatted(.list(type: .and))
-            return String(localized: "port \(port) (it forwards to \(targets))")
+        let targets = entry.targets.map { String($0) }.formatted(.list(type: .and))
+        switch (entry.funnel, entry.targets.isEmpty) {
+        case (true, true): return String(localized: "port \(port)")
+        case (true, false): return String(localized: "port \(port) (it forwards to \(targets))")
+        case (false, true): return String(localized: "port \(port) (tailnet only)")
+        case (false, false): return String(localized: "port \(port) (tailnet only, it forwards to \(targets))")
         }
     }
 
-    /// When the check couldn't read what Funnel serves: the 443 command, with this warning.
+    /// When the check couldn't read what Funnel serves: the 443 commands, with this warning.
     public static func unknownWarning(names: RemoteNames) -> String {
-        String(localized: "\(names.appName) couldn't check what Funnel already serves on this Mac. If it serves another app on port 443, this command replaces it: check with tailscale funnel status first.")
+        String(localized: "\(names.appName) couldn't check what Funnel already serves on this Mac. These commands add only its paths to port 443, but if 443 has a tailnet-only entry from another app, they make that entry public: check with tailscale funnel status first.")
     }
+}
+
+extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }
 
 // MARK: - Switch Tunnel…

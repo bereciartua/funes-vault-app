@@ -113,7 +113,7 @@ bridgekit/
 └── LICENSE                       # Apache-2.0
 ```
 - **Platforms:** macOS 14+ (EK Bridge's minimum). No dependencies.
-- **Versions:** `0.1.0` is the first tag. Both apps pin an exact version (`.exact("0.1.0")`). `0.2.0` adds the `BridgeKitRemote` product; BridgeKitCore only gains additions in it (most of what tier 3 uses is already public). `0.3.0` lets several apps share Tailscale Funnel on one Mac (`FunnelPorts`, `TailscaleFunnelCommand`); it changes `TunnelChecks`' answer to `TunnelCheckResult`, so both apps adopt it together.
+- **Versions:** `0.1.0` is the first tag. Both apps pin an exact version (`.exact("0.1.0")`). `0.2.0` adds the `BridgeKitRemote` product; BridgeKitCore only gains additions in it (most of what tier 3 uses is already public). `0.3.0` lets several apps share Tailscale Funnel on one Mac (`FunnelPorts`, `TailscaleFunnelCommand`); it changes `TunnelChecks`' answer to `TunnelCheckResult`, so both apps adopt it together. `0.4.0` replaces 0.3.0's port picking with sharing port 443 by path (`RemotePaths`, `RemoteConfiguration.publicPaths`), because claude.ai and ChatGPT only connect to 443; the checks take the app's paths.
 - **Release order:** change BridgeKit, then tag it, then bump EK Bridge (its tests and fixtures must stay byte-for-byte green), then bump Funes.
 
 ## 7. EK Bridge's adoption (the proof step)

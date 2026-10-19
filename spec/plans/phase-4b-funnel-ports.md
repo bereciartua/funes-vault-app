@@ -1,5 +1,7 @@
 # Phase 4b follow-up: Tailscale Funnel ports shared by several apps (v0.1.1)
 
+**Superseded** by [Funnel paths](phase-4b-funnel-paths.md). claude.ai and ChatGPT only connect to port 443, so an app on 8443 or 10000 can't serve them.
+
 **Problem:** found installing the 0.1.0 draft on a Mac where EK Bridge's Remote Access already uses Tailscale Funnel.
 - Guide step 2 offers `tailscale funnel --bg 47627`. That takes Funnel's port 443, replacing EK Bridge's entry and cutting off its cloud connectors.
 - The tunnel check reads EK Bridge's entry (443 → 47616) as "Wrong port" and suggests the same command.

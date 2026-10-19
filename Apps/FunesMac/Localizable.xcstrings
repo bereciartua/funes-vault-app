@@ -117,7 +117,7 @@
     "%@ couldn't be started." : {
 
     },
-    "%@ couldn't check what Funnel already serves on this Mac. If it serves another app on port 443, this command replaces it: check with tailscale funnel status first." : {
+    "%@ couldn't check what Funnel already serves on this Mac. These commands add only its paths to port 443, but if 443 has a tailnet-only entry from another app, they make that entry public: check with tailscale funnel status first." : {
 
     },
     "%@ couldn't remove its existing %@ entry, so it was left as it was." : {
@@ -141,6 +141,9 @@
       }
     },
     "%@ didn't finish within 20 seconds." : {
+
+    },
+    "%@ forwards only some of the Remote Access paths." : {
 
     },
     "%@ forwards to port %@, not %@." : {
@@ -586,6 +589,9 @@
     "Add the mcp_servers and tools entries below to your agent." : {
 
     },
+    "Add the missing paths in Terminal:" : {
+
+    },
     "Add the text to remember." : {
 
     },
@@ -738,9 +744,6 @@
 
     },
     "Another app is using port %@. Quit it, then turn this off and on again, or choose another port. Funes never moves on its own, because agents' setups name the port." : {
-
-    },
-    "Another app on this Mac now serves Funnel's port in your address, so starting Funnel there would replace it. Use Switch Tunnel… to set it up on a free port." : {
 
     },
     "Answer a Few Questions" : {
@@ -1729,30 +1732,10 @@
     "Funes was quitting" : {
 
     },
-    "Funnel already serves another app on this Mac on %@, so %@ uses port %@. Its address ends in :%@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Funnel already serves another app on this Mac on %1$@, so %2$@ uses port %3$@. Its address ends in :%4$@."
-          }
-        }
-      }
-    },
-    "Funnel already serves other apps on this Mac on %@, so %@ uses port %@. Its address ends in :%@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Funnel already serves other apps on this Mac on %1$@, so %2$@ uses port %3$@. Its address ends in :%4$@."
-          }
-        }
-      }
-    },
-    "Funnel already serves other apps on this Mac on %@. Starting it would replace one of them, so turn one off first, or choose another tunnel." : {
+    "Funnel forwards all but one of the Remote Access paths, so cloud agents can't sign in. Add it in Terminal." : {
 
     },
-    "Funnel has three public ports, 443, 8443 and 10000, one app each. The guide uses the first one nothing on this Mac serves yet, so it never replaces another app's tunnel." : {
+    "Funnel forwards only some of the Remote Access paths (%@ missing), so cloud agents can't sign in. Add them in Terminal." : {
 
     },
     "Funnel keeps running in the background, even after a restart, until you turn it off." : {
@@ -1761,7 +1744,30 @@
     "Funnel keeps the public hostname in Host, so it must match Address." : {
 
     },
-    "Funnel's three public ports already serve other apps on this Mac. Turn one off, or choose another tunnel." : {
+    "Funnel's %@ already serves another app on this Mac. These commands add only %@'s paths, so it keeps working." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funnel's %1$@ already serves another app on this Mac. These commands add only %2$@'s paths, so it keeps working."
+          }
+        }
+      }
+    },
+    "Funnel's %@ can't take %@'s paths without changing another app, so %@ uses port %@. claude.ai and ChatGPT only connect to port 443, so they can't reach it there; other cloud agents can." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funnel's %1$@ can't take %2$@'s paths without changing another app, so %3$@ uses port %4$@. claude.ai and ChatGPT only connect to port 443, so they can't reach it there; other cloud agents can."
+          }
+        }
+      }
+    },
+    "Funnel's port in your address now has a tailnet-only entry or a TCP forwarder from another app, which adding these paths would make public or replace. Use Switch Tunnel… to set it up again." : {
+
+    },
+    "Funnel's ports 443, 8443 and 10000 each have a tailnet-only entry or a TCP forwarder on this Mac, which adding the Remote Access paths would make public or replace. Change one of them, or choose another tunnel." : {
 
     },
     "Gemini CLI" : {
@@ -1959,6 +1965,9 @@
 
     },
     "Include archived memories" : {
+
+    },
+    "Incomplete" : {
 
     },
     "Install Tailscale on this Mac and sign in." : {
@@ -2273,6 +2282,16 @@
     "Next request" : {
 
     },
+    "No Funnel port on this Mac can take %@'s paths without changing another app: %@. Change one of them, or choose another tunnel." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No Funnel port on this Mac can take %1$@'s paths without changing another app: %2$@. Change one of them, or choose another tunnel."
+          }
+        }
+      }
+    },
     "No access yet" : {
 
     },
@@ -2312,9 +2331,6 @@
     "No credentials yet" : {
 
     },
-    "No free port" : {
-
-    },
     "No key" : {
 
     },
@@ -2325,6 +2341,9 @@
 
     },
     "No problems" : {
+
+    },
+    "No shareable port" : {
 
     },
     "None" : {
@@ -2987,7 +3006,7 @@
     "Run the command. cloudflared prints a random https://….trycloudflare.com address." : {
 
     },
-    "Run the first command in Terminal. Funnel prints your public address, such as https://my-mac.tail1234.ts.net." : {
+    "Run the commands in Terminal. Each adds one of the Remote Access paths to Funnel's port; everything else on that port, such as another app's tunnel, stays as it is." : {
 
     },
     "Running" : {
@@ -3410,6 +3429,9 @@
     "Tailscale Funnel (recommended)" : {
 
     },
+    "Tailscale Funnel forwards the secret path too: this page then shows the commands that move it to the new one." : {
+
+    },
     "Tailscale Serve is on, but Funnel isn't, so cloud agents can't reach it." : {
 
     },
@@ -3569,6 +3591,9 @@
     "The old key stops working at once. Setups that use the launcher keep working; any setup with the key pasted in needs the new one." : {
 
     },
+    "The paths include the secret path. After Reset Path…, the page shows the commands that move Funnel to the new one." : {
+
+    },
     "The provider answered with an error (%lld)." : {
 
     },
@@ -3576,6 +3601,9 @@
 
     },
     "The request failed (%@)." : {
+
+    },
+    "The secret path changed. Move Tailscale Funnel to the new one in Terminal:" : {
 
     },
     "The server listed no models." : {
@@ -3693,10 +3721,13 @@
     "Title" : {
 
     },
+    "To turn it off later:" : {
+
+    },
     "To turn it off, press Control-C in the Terminal window running %@." : {
 
     },
-    "To turn it off, run the last command." : {
+    "To turn it off, run the off commands below them. They remove only these paths." : {
 
     },
     "Today" : {
@@ -4080,6 +4111,9 @@
     "categories" : {
 
     },
+    "claude.ai and ChatGPT only connect to port 443, so apps on this Mac share it by path: Tailscale sends these paths here and every other path where it went before." : {
+
+    },
     "claude.ai · Claude Desktop · mobile" : {
 
     },
@@ -4186,6 +4220,19 @@
         }
       }
     },
+    "port %@ (tailnet only)" : {
+
+    },
+    "port %@ (tailnet only, it forwards to %@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "port %1$@ (tailnet only, it forwards to %2$@)"
+          }
+        }
+      }
+    },
     "saves without asking" : {
 
     },
@@ -4232,6 +4279,9 @@
 
     },
     "via Remote Access" : {
+
+    },
+    "your Mac's Funnel address, such as https://my-mac.tail1234.ts.net" : {
 
     },
     "· confirmed %@" : {

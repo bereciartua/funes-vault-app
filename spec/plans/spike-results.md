@@ -391,12 +391,12 @@ Fallback, unchanged from the plan: if Claude Desktop or Cursor turns out to cut 
    ```sh
    log stream --predicate 'subsystem == "com.funesvault.mac" AND category == "mcp"' --info
    ```
-2. **Tailscale Funnel next to EK Bridge's.** EK Bridge's Remote Access already uses Funnel's 443. From 0.1.1 the guide checks what's served and offers the first free public port (8443, or 10000 if 8443 has a Serve entry), never 443 here ([plan](phase-4b-funnel-ports.md)). Run the command step 2 shows, such as:
-   ```sh
-   tailscale funnel --bg --https=8443 47627
-   ```
-   The address is `https://<mac>.<tailnet>.ts.net:<port>`. Turn it off afterwards with the matching `tailscale funnel --https=<port> off`.
-3. In the test app: **Remote Access ▸ Set Up Remote Access…**, Tailscale Funnel, **Turn On Remote Access**, run step 2's command, paste the `:<port>` address, **Test** → Reachable. EK Bridge's Tunnel row still shows Running on 443.
+2. **Tailscale Funnel next to EK Bridge's, by path on 443.** EK Bridge's Remote Access uses Funnel's `/` on 443.
+   - 0.1.1 put Funes on another public port. On 2026-10-19 that worked from the internet, but claude.ai and ChatGPT both failed: claude.ai only connects out on 443 ([anthropics/claude-ai-mcp#373](https://github.com/anthropics/claude-ai-mcp/issues/373)).
+   - From 0.1.2, step 2 shows four `tailscale funnel --bg --https=443 --set-path …` commands, one per Funes path, beside EK Bridge's `/` ([plan](phase-4b-funnel-paths.md), with the Tailscale path test).
+   - Run them. The address is `https://<mac>.<tailnet>.ts.net`, with no port.
+   - Turn them off afterwards with the four off commands below them, never a bare `… off`.
+3. In the test app: **Remote Access ▸ Set Up Remote Access…**, Tailscale Funnel, **Turn On Remote Access**, run step 2's commands, paste the address, then **Test** → Reachable. EK Bridge's Tunnel row still shows Running.
 4. **Add Agent…** with the **claude.ai** tile (starting access *Read low-sensitivity memories, ask first*), and again with **ChatGPT**. For the header check, a third agent with the **Anthropic API** tile.
 
 ### Checks (per app)

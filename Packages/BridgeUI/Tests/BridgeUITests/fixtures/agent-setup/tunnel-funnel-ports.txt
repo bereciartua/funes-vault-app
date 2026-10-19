@@ -1,9 +1,12 @@
-nothing served: port 443 · no line
-EK Bridge on 443: port 8443 · Funnel already serves another app on this Mac on port 443 (it forwards to 47616), so Funes Vault uses port 8443. Its address ends in :8443.
-EK Bridge on 443, a Serve entry on 8443: port 10000 · Funnel already serves other apps on this Mac on port 443 (it forwards to 47616) and port 8443 (it forwards to 4000), so Funes Vault uses port 10000. Its address ends in :10000.
-all three taken: port none · Funnel already serves other apps on this Mac on port 443 (it forwards to 47616), port 8443 (it forwards to 4000), and port 10000 (it forwards to 5432). Starting it would replace one of them, so turn one off first, or choose another tunnel.
-a file on 443: port 8443 · Funnel already serves another app on this Mac on port 443, so Funes Vault uses port 8443. Its address ends in :8443.
-running on 10000: port 10000 · no line
+nothing served: port 443 · add 4 · no line
+EK Bridge on / of 443: port 443 · add 4 · Funnel's port 443 (it forwards to 47616) already serves another app on this Mac. These commands add only Funes Vault's paths, so it keeps working.
+443 tailnet-only: port 8443 · add 4 · Funnel's port 443 (tailnet only, it forwards to 4000) can't take Funes Vault's paths without changing another app, so Funes Vault uses port 8443. claude.ai and ChatGPT only connect to port 443, so they can't reach it there; other cloud agents can.
+443 and 8443 tailnet-only: port 10000 · add 4 · Funnel's port 443 (tailnet only, it forwards to 4000) and port 8443 (tailnet only, it forwards to 4001) can't take Funes Vault's paths without changing another app, so Funes Vault uses port 10000. claude.ai and ChatGPT only connect to port 443, so they can't reach it there; other cloud agents can.
+nothing shareable: port none · add 4 · No Funnel port on this Mac can take Funes Vault's paths without changing another app: port 443 (tailnet only, it forwards to 4000), port 8443 (tailnet only), and port 10000 (it forwards to 5432). Change one of them, or choose another tunnel.
+running beside EK Bridge: port 443 · add 0 · no line
+three of four paths: port 443 · add 1 · no line
 
-unknown: Funes Vault couldn't check what Funnel already serves on this Mac. If it serves another app on port 443, this command replaces it: check with tailscale funnel status first.
-no free port: No free port · Funnel's three public ports already serve other apps on this Mac. Turn one off, or choose another tunnel.
+unknown: Funes Vault couldn't check what Funnel already serves on this Mac. These commands add only its paths to port 443, but if 443 has a tailnet-only entry from another app, they make that entry public: check with tailscale funnel status first.
+no shareable port: No shareable port · Funnel's ports 443, 8443 and 10000 each have a tailnet-only entry or a TCP forwarder on this Mac, which adding the Remote Access paths would make public or replace. Change one of them, or choose another tunnel.
+incomplete 1: Incomplete · Funnel forwards all but one of the Remote Access paths, so cloud agents can't sign in. Add it in Terminal. · Tailscale Funnel forwards only some of the Remote Access paths.
+incomplete 2: Incomplete · Funnel forwards only some of the Remote Access paths (2 missing), so cloud agents can't sign in. Add them in Terminal. · Tailscale Funnel forwards only some of the Remote Access paths.
