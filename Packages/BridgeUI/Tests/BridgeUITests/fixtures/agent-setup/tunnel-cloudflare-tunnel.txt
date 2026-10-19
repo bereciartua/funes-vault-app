@@ -1,0 +1,36 @@
+Cloudflare Tunnel (your own domain)
+name: Cloudflare Tunnel
+summary: Free with your own domain on Cloudflare. TLS ends at Cloudflare.
+preservesHost: false
+detectionHeader: CF-Ray
+installLink: none
+
+commands:
+brew install cloudflared
+cloudflared tunnel login
+cloudflared tunnel create funes-vault
+cloudflared tunnel route dns funes-vault funes.example.com
+cloudflared tunnel run funes-vault
+
+run: cloudflared tunnel run funes-vault
+
+config.yml:
+tunnel: funes-vault
+credentials-file: ~/.cloudflared/<tunnel-UUID>.json
+ingress:
+  - hostname: funes.example.com
+    service: http://127.0.0.1:47627
+    originRequest:
+      httpHostHeader: "127.0.0.1:47627"
+  - service: http_status:404
+
+steps:
+1. You need a domain on Cloudflare. The login command opens your browser.
+2. Before you run the tunnel, save the configuration as ~/.cloudflared/config.yml, with <tunnel-UUID> replaced by the ID that tunnel create printed.
+3. Paste https:// and your hostname in step 3.
+4. To turn it off, press Control-C in the Terminal window running cloudflared.
+
+notes:
+- TLS ends at Cloudflare's edge, so Cloudflare can read the traffic, memories included.
+- The configuration rewrites Host to this Mac's address.
+- Optionally, put Cloudflare Access service tokens in front for agents that can send two extra headers, such as Cursor, Copilot and Devin.

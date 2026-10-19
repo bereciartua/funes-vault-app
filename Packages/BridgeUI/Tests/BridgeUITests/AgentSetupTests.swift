@@ -53,12 +53,12 @@ struct AgentSetupTests {
         let folder = Self.fixtures
         if ProcessInfo.processInfo.environment["UPDATE_GOLDENS"] == "1" {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            for old in try FileManager.default.contentsOfDirectory(atPath: folder.path) {
+            for old in try FileManager.default.contentsOfDirectory(atPath: folder.path) where !RemoteSetupTests.isRemoteGolden(old) {
                 try FileManager.default.removeItem(at: folder.appendingPathComponent(old))
             }
             for (name, text) in expected { try (text + "\n").write(to: folder.appendingPathComponent(name), atomically: true, encoding: .utf8) }
         }
-        let present = Set(try FileManager.default.contentsOfDirectory(atPath: folder.path))
+        let present = Set(try FileManager.default.contentsOfDirectory(atPath: folder.path).filter { !RemoteSetupTests.isRemoteGolden($0) })
         #expect(present == Set(expected.keys), "goldens: run with UPDATE_GOLDENS=1 after an intended change")
         for (name, text) in expected {
             let golden = try String(contentsOf: folder.appendingPathComponent(name), encoding: .utf8)

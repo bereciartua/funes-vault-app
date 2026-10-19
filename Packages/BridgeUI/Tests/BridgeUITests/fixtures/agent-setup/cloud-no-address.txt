@@ -1,0 +1,16 @@
+claude.ai · Claude Desktop · mobile
+credential: oauth
+agentKind: claude_ai
+symbol: sparkle
+needsLiteralSecret: false
+
+snippet (values):
+
+
+steps:
+1. Finish setting up Remote Access in Funes Vault first. This setup appears once the tunnel's public address is saved.
+
+warnings:
+- Cloud agents often run while you're away. With Ask before sharing on, a request waits up to 45 s for you at this Mac; after that, you can still approve it from the pending list within 15 minutes.
+
+footnote: Once added, the connector also works in Claude Desktop and the Claude mobile app. Claude signs in with OAuth; sending a fixed header is a limited beta.

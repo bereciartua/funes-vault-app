@@ -1,0 +1,28 @@
+Claude Managed Agents
+credential: remote token
+agentKind: managed_agents
+symbol: gearshape.2
+needsLiteralSecret: true
+
+snippet (shellCommand):
+curl "https://api.anthropic.com/v1/vaults/$VAULT_ID/credentials" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: managed-agents-2026-04-01" \
+  -d '{"display_name":"Funes Vault (Work agent)","auth":{"type":"static_bearer","mcp_server_url":"https://my-mac.tail1234.ts.net/r/q7Zk2vN4bXwP9sL1mT6hYa/mcp","token":"'"$FUNES_REMOTE_TOKEN"'"}}'
+
+In your agent (json):
+{"mcp_servers":[{"type":"url","name":"funes","url":"https://my-mac.tail1234.ts.net/r/q7Zk2vN4bXwP9sL1mT6hYa/mcp"}],"tools":[{"type":"mcp_toolset","mcp_server_name":"funes"}]}
+
+steps:
+1. Create an Anthropic vault, or pick an existing one, and set VAULT_ID to its ID.
+2. In Terminal, set FUNES_REMOTE_TOKEN to the remote token (Copy Remote Token… on the agent's Cloud section) and ANTHROPIC_API_KEY to your API key, then run the command.
+3. Add the mcp_servers and tools entries below to your agent.
+4. Pass the vault in vault_ids when you create a session.
+
+warnings:
+- The API calls tools without asking you, so this agent's access in Funes Vault is the only limit. Give it only the categories it needs.
+- Cloud agents often run while you're away. With Ask before sharing on, a request waits up to 45 s for you at this Mac; after that, you can still approve it from the pending list within 15 minutes.
+
+footnote: The Anthropic vault matches the credential by URL. If you reset the secret path, add the credential again.

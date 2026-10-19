@@ -1,0 +1,19 @@
+GitHub Copilot coding agent
+credential: remote token
+agentKind: copilot_agent
+symbol: arrow.triangle.branch
+needsLiteralSecret: true
+
+snippet (json):
+{"mcpServers":{"funes":{"type":"http","url":"https://my-mac.tail1234.ts.net/r/q7Zk2vN4bXwP9sL1mT6hYa/mcp","headers":{"Authorization":"Bearer $COPILOT_MCP_FUNES_REMOTE_TOKEN"},"tools":["list_memory_categories","request_memory","get_memory_request","open_in_funes"]}}}
+
+steps:
+1. In the repository on GitHub, open Settings ▸ Copilot ▸ MCP servers and paste this under MCP configuration.
+2. Add an Agents secret named COPILOT_MCP_FUNES_REMOTE_TOKEN and paste the remote token (Copy Remote Token… on the agent's Cloud section) as its value.
+3. The tools list holds only the read tools. Add suggest_memory only if this agent may suggest memories.
+
+warnings:
+- Copilot runs MCP tools without asking for approval. Give this agent read access only and keep the tools list to the read tools.
+- Cloud agents often run while you're away. With Ask before sharing on, a request waits up to 45 s for you at this Mac; after that, you can still approve it from the pending list within 15 minutes.
+
+footnote: Copilot can't sign in with OAuth, so it uses the remote token.
