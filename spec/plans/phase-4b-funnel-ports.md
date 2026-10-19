@@ -36,26 +36,26 @@ The same can happen the other way round: EK Bridge's guide would replace Funes's
 Changing the public tunnel types breaks source compatibility, so this is a minor bump under 0.x.
 
 ### F.1 Ports in the Tailscale parser · 3 h
-- [ ] `TailscaleStatus`: parse every entry of `funnel status --json` into the ports in use. Per public port: the local port(s) it forwards to (nil for file and text handlers or remote targets), whether Funnel is on, and whether it's Web or TCP.
-- [ ] `TunnelHealth` for Tailscale follows the rules above. Another app's Funnel is no longer `.wrongPort`. New `NotRunningReason.allPortsTaken`, carrying the three ports' targets.
-- [ ] `parse(status:funnel:port:mistakenPorts:)`: `.wrongPort` only for an entry forwarding to one of `mistakenPorts`.
-- [ ] The Tailscale check result also carries the chosen public port: the running entry's, else the first free one, else nil. Exact shape at implementation, for example `TailscaleFunnelPlan { publicPort, inUse }` next to the health. The apps don't recompute it.
+- [x] `FunnelPorts.parse`: parse every entry of `funnel status --json` into the ports in use. Per public port: the local port(s) it forwards to (nil for file and text handlers or remote targets), whether Funnel is on, and whether it's Web or TCP.
+- [x] `TunnelHealth` for Tailscale follows the rules above. Another app's Funnel is no longer `.wrongPort`. New `NotRunningReason.allPortsTaken`, carrying the three ports' targets.
+- [x] `parse(status:funnel:port:mistakenPorts:)`: `.wrongPort` only for an entry forwarding to one of `mistakenPorts`.
+- [x] The Tailscale check result also carries the chosen public port: the running entry's, else the first free one, else nil. Done as `TunnelCheckResult { health, funnel: FunnelPorts? }`, with `FunnelPorts.publicPort`, `.running` and `.inTheWay`. The apps don't recompute it.
 
 ### F.2 Commands in one place · 1 h
-- [ ] `TailscaleFunnelCommand.start(port:publicPort:)` and `.off(port:publicPort:)`. 443 keeps today's exact text: `tailscale funnel --bg <port>` and `… off`. Other ports give `tailscale funnel --bg --https=<p> <port>` and `tailscale funnel --https=<p> off`, with the exact `off` syntax checked against `tailscale funnel --help` of the current Tailscale.
-- [ ] `publicPort(fromAddress:)`: the port in a saved address, 443 when it has none.
-- [ ] `TunnelSwitchSummary`: the off commands for the tunnel being left use that address's port.
+- [x] `TailscaleFunnelCommand.start(port:publicPort:)` and `.off(port:publicPort:)`. 443 keeps today's exact text: `tailscale funnel --bg <port>` and `… off`. Other ports give `tailscale funnel --bg --https=<p> <port>` and `tailscale funnel --https=<p> off`, with the exact `off` syntax checked against `tailscale funnel --help` of the current Tailscale.
+- [x] `publicPort(fromAddress:)`: the port in a saved address, 443 when it has none.
+- [x] `TunnelSwitchSummary`: the off commands for the tunnel being left use that address's port.
 
 ### F.3 Tests, docs, release · 2 h
-- [ ] Fixtures in `Tests/BridgeKitRemoteTests` for:
-  - the anonymized real config (Funnel 443 → 47616, plus whatever else is served, captured fresh);
+- [x] Fixtures in `Tests/BridgeKitRemoteTests` for:
+  - the anonymized real config already in the fixtures (Funnel 443 → 47616, plus a tailnet-only Serve entry on 8443 → 4000). Not captured fresh: the sandbox can't reach Tailscale, so the live check confirms the current config;
   - 443 taken → 8443, and 443 and 8443 taken → 10000;
   - a Serve-only entry counts as taken, and so does a TCP entry;
   - all three taken;
   - our port already on 10000 → Running at `:10000`;
   - the local MCP port → wrong port;
   - unknown.
-- [ ] The commands for each port, and the off command from an address.
+- [x] The commands for each port, and the off command from an address.
 - [ ] README, CHANGELOG `## 0.3.0`, PR, CI green, tag `0.3.0` (each outward step with the user's OK).
 
 ## Part B: Funes 0.1.1
