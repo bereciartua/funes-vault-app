@@ -24,6 +24,7 @@ Continuous integration (`.github/workflows/ci.yml`) runs the same on pull reques
 | `BridgeUI` tests | The approval queue (first in, first out, at most 3 shown, countdown, exactly-once answers, withdraw on quit, re-arming when content changes), panel content (exact text, keywords, Show all), the Activity store (append, retention, compaction), the updater's relaunch gate, the install-location check, and agent setups. |
 | Agent setup goldens | Every copyable setup in `Packages/BridgeUI/Tests/BridgeUITests/fixtures/agent-setup/` byte for byte, including paths with spaces and apostrophes; no snippet contains a key; JSON and TOML parse; each one-click setup matches its snippet; one-click file merges keep a backup, leave invalid files alone and run agents' commands in the given home. |
 | MCP harness (`Tests/mcp/mcp_test.py`) | Drives `funes-mcp-test-server` (the real listener, server, pipeline, handlers, vault and key files on a temporary vault, with a fake approval responder and a short in-call wait) over real loopback sockets: `initialize` and the instructions; 401 for missing, unknown and EK Bridge keys, 403 for forwarded requests, 421 for a foreign `Host`; the endpoint and key files' contents and modes; schema refusals with field paths; every tool's paths, including approve, deny, timeout then `get_memory_request`, single use, `policy_changed`, another agent's request, suggestions queued, saved and refused (secrets, unknown categories, bad dates, oversize metadata, above the ceiling), `open_in_funes`, and asking for more access; paused Funes, paused, expired, rotated and removed agents; withheld memory ids never in Activity; and the rate limits (3 pending requests per agent under concurrency, the call burst, the write burst). |
+| Remote Access harness (`Tests/mcp/remote_test.py`) | Drives the same test server's remote listener (the public origin `https://remote.test` faked through `Host`, as a tunnel forwards it) and a fake sign-in approver: 404 outside the secret path, 421 for a foreign `Host`, 403 for `Origin`; a local key refused remotely and remote and OAuth credentials refused locally; tunnel headers still 403 on the local port; cloud access off and removed agents get 401; Reset Remote Token; the remote key file's mode; pairing closed shows nothing; pairing only for an agent with cloud access; dynamic registration, the code page, code exchange, refresh rotation, reuse revoking the connection, **Revoke**, Reset Path and cloud access off disconnecting apps, Deny; turning Remote Access off. **The same decision, local vs remote:** seven agents with a local key and a remote token make the same requests through both listeners, and the results are compared field by field (status, reason, withheld counts, items, token estimates; not ids): each gate denial, shared without asking, approve, deny, timeout then `get_memory_request`, suggestions queued and saved, one pending list per agent, and the rate limits shared by both listeners with the stricter remote bucket on top. `RemoteSameInputsTests` checks in Swift that the pipeline gives retrieval and FunesCore the same inputs, and writes the same Activity rows, `via` aside. |
 | App builds | An unsigned Debug build of the app and the launcher, and the UI-review build (`FUNES_UI_REVIEW`), both compile. |
 | String catalog | `CHECK=1 sh scripts/sync_strings.sh`: every user-facing string is in `Apps/FunesMac/Localizable.xcstrings`. |
 
@@ -71,6 +72,25 @@ To run before each release, with a signed build installed in `/Applications`, a 
 | Removed agent → refused (HTTP 401) | | | | |
 
 Agent versions: Claude Code —, Claude Desktop —, Cursor —, Codex —. App version: —. Date: —.
+
+## Remote Access live check
+
+Phase 4b's live check (task 4b.15), on a signed build with Tailscale Funnel to 47627 and a development vault. The procedure and the timeout measurement are in [spike results](../spec/plans/spike-results.md#phase-4b-live-check-cloud-agents-through-remote-access). Record each result with the date and app version.
+
+| Check | claude.ai | ChatGPT | Anthropic API (remote token) |
+| --- | --- | --- | --- |
+| Connect: pair (codes match, Allow), or paste the remote token | | | |
+| `list_memory_categories` | | | |
+| `request_memory`, approved in the panel | | | |
+| `request_memory`, denied | | | |
+| `request_memory`, no answer: what the app does, then `get_memory_request` | | | |
+| `suggest_memory` → queued, in the Inbox | | | |
+| **Revoke** (OAuth) or **Reset Remote Token…** (token): the old credential fails | | | |
+| **Turn Off Remote Access**: the URL stops answering | | | |
+| How long it waits for a tool call | | | — |
+| Sends `keywords` | | | |
+
+Agent versions: claude.ai —, ChatGPT —. App version: —. Date: —.
 
 ## Release install test
 

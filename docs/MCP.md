@@ -1,9 +1,9 @@
 # Connecting AI agents (MCP)
 
-Funes Vault runs a small **MCP server** inside the app, so AI agents on this Mac can ask for your memories and suggest new ones, within the access you give each of them. The server listens on `http://127.0.0.1:47625/mcp` (loopback only); agents on other machines can't reach it. Agents connect either directly over HTTP or through **`funes-mcp`**, a small launcher inside the app.
+Funes Vault runs a small **MCP server** inside the app, so AI agents on this Mac can ask for your memories and suggest new ones, within the access you give each of them. The server listens on `http://127.0.0.1:47625/mcp` (loopback only); agents on other machines can't reach it. Agents connect either directly over HTTP or through **`funes-mcp`**, a small launcher inside the app. Cloud agents, such as claude.ai and ChatGPT, can connect through [Remote Access](#use-from-cloud-agents) (experimental), a second port that a tunnel you run makes reachable.
 
-- [User guide](#user-guide): turning it on, adding an agent, setup for each agent, how agents wait for you, troubleshooting.
-- [Reference](#reference): tools, outcomes and reason codes, limits, HTTP statuses, protocol versions, the launcher.
+- [User guide](#user-guide): turning it on, adding an agent, setup for each agent, how agents wait for you, cloud agents through Remote Access, troubleshooting.
+- [Reference](#reference): tools, outcomes and reason codes, limits, HTTP statuses, Remote Access and OAuth, protocol versions, the launcher.
 
 The rules behind every decision are in the [access policy](../spec/domain/access-policy.md), and the server's specification in [MCP server](../spec/architecture/mcp-server.md).
 
@@ -206,7 +206,7 @@ stdio command: /Applications/FunesVault.app/Contents/MacOS/funes-mcp
 stdio args: --agent 3f1c2b7e-8a41-4d0c-9a8e-5b6f1d2e9a1c
 ```
 
-Cloud agents (claude.ai, ChatGPT, cloud coding agents) can't reach `127.0.0.1` and aren't supported in v0.1.
+Cloud agents (claude.ai, ChatGPT, cloud coding agents) run on their vendor's servers and can't reach `127.0.0.1`. They connect through Remote Access: see [Use from cloud agents](#use-from-cloud-agents). Don't point a tunnel or reverse proxy at the MCP port: it refuses requests with a non-local `Host` or with tunnel forwarding headers.
 
 ### How agents wait for you
 
@@ -226,6 +226,120 @@ What the agents measured so far did with this, from the [timeout spike and the f
 | Cursor | Yes, checked by hand | Not yet recorded |
 
 All four sent `keywords` without being asked. The server answers with plain JSON (no streaming), so it sends no progress notifications during the wait; none of the agents measured would extend its timeout for them anyway. The full live matrix is in [Testing](TESTING.md#live-agent-matrix).
+
+### Use from cloud agents
+
+**Experimental in v0.1.** Cloud agents reach Funes through **Remote Access**: a second listener on `127.0.0.1:47627` that a tunnel you run, such as Tailscale Funnel, makes reachable at a public HTTPS address. Funes never starts a tunnel. Behind it nothing changes: a cloud agent is a Funes agent like any other, with exactly the access you set for it, the same panels on this Mac, the same 45-second wait and 15-minute pending list, and the same Activity. The Mac must be awake, logged in and running Funes, with **Let agents connect** on.
+
+While Remote Access is on, the vault is reachable through a public address, and what you share with a cloud agent goes to its vendor's servers, where it may stay in their logs. Use one agent per cloud app, with only the access it needs.
+
+1. Set up Remote Access on its page: choose a tunnel, turn Remote Access on and start the tunnel, paste its address, test.
+2. Turn on **Allow cloud access** for the agent (or add one with a cloud tile in **Add Agent…**, which does it for you).
+3. Connect the cloud app: with the agent's **remote token**, or by signing in with OAuth after **Connect a Cloud App…**.
+
+#### Turn on Remote Access
+
+**Remote Access** has its own page in the sidebar, labelled **On** while it's on, and ⚠ **Down** while the tunnel in use isn't running. Until it's set up, the page explains what it does; **Set Up Remote Access…** starts a guide with four steps:
+
+1. **Choose a tunnel:** Tailscale Funnel (recommended: TLS ends on this Mac), Cloudflare Tunnel (your own domain), ngrok, a Cloudflare quick tunnel (testing only) or another tunnel.
+2. **Start it:** **Turn On Remote Access** (off by default; turning it on asks first). Funes then listens on `127.0.0.1:47627`, only while Remote Access is on, and creates the URL's secret path the first time. Cloudflare Tunnel and ngrok first ask for your **Hostname**. The step shows the tunnel's command to copy and run in Terminal, and checks on this Mac every 3 seconds whether the tunnel runs and forwards to 47627; once it does, it moves on by itself with the address filled in. For another tunnel, or when the check can't tell, click **I've Started It**.
+3. **Paste its address:** the tunnel's public `https://` address, without a path, then **Save Address**.
+4. **Test:** fetches Funes's own health URL through the tunnel. **Reachable** finishes the guide; **Not reachable** says why.
+
+Once it's set up, the page shows the **Remote Access** switch and these rows:
+
+| Row | What it shows or does |
+| --- | --- |
+| **Status** | **Reachable** (when it was tested, the round trip and the tunnel), **Not reachable** with the reason, **Not tested**, or **Off**. **Test** runs the check again. |
+| **Tunnel** | The tunnel in use and whether it runs on this Mac: **Running**, **Not running** (with the command to start it), **Wrong port**, **Not public** (Tailscale Serve without Funnel), **Not installed** or **Can't check on this Mac**. **Switch Tunnel…** moves to another tunnel; the one in use keeps working, and nothing is saved, until you test the new address and click **Switch**. |
+| **Address** | The tunnel's public address. **Edit…** tests a new address before saving it. |
+| **MCP URL** | `https://<host>/r/<secret>/mcp`, with **Reset Path…**. |
+| **Port** | 47627 by default. **Change…** accepts 1024–65535, except the MCP port. |
+| **Turn off** | **Never**, **After 1 hour**, **After 8 hours** or **After 1 day**. |
+| **Keep this Mac awake while on power** | Off by default. Prevents idle sleep while Remote Access is on and the Mac runs on power. |
+
+Below them, the page lists the agents with cloud access. While Remote Access is on, the menu bar icon shows a small globe and the menu says **Remote Access on · 2 cloud agents** (or **· tunnel down**), with **Turn Off Remote Access**. **Settings ▸ General ▸ Notifications ▸ Remote Access's tunnel stopped** (off by default) tells you when the tunnel in use stops.
+
+The tunnel checks are read-only and local: Funes asks the tunnel's own tool (the `tailscale` CLI's status, cloudflared's local metrics server and `~/.cloudflared/config.yml`, ngrok's local agent API, else this user's running processes). They never start, stop or change a tunnel, send nothing off the Mac, and never change what Funes accepts.
+
+The secret path is 22 random characters (128 bits). Every route on the Remote Access port contains it, and any other path gets 404 before a credential is read. It's defense in depth, not the credential. **Reset Path…** makes a new one: every cloud agent then needs the new URL, and connected cloud apps are disconnected. Changing the address disconnects them too.
+
+#### Set up a tunnel
+
+The tunnel must point at `http://127.0.0.1:47627`, never at 47625: the local port refuses tunneled requests, and local keys don't work remotely anyway.
+
+| Tunnel | Commands | Notes |
+| --- | --- | --- |
+| **Tailscale Funnel** (recommended) | `tailscale funnel --bg 47627`; to turn it off, `tailscale funnel --bg 47627 off` | Install Tailscale, sign in, and in the admin console turn on MagicDNS and HTTPS certificates and add the `funnel` node attribute. TLS ends on this Mac. Funnel keeps the public host name in `Host`, so it must match **Address**. Funnel keeps running, even after a restart, until you turn it off. If Funnel already serves another app on 443 (for example EK Bridge's Remote Access), this replaces it: use `tailscale funnel --bg --https=8443 47627` and add `:8443` to the address. |
+| **Cloudflare Tunnel** (your own domain) | `brew install cloudflared`, `cloudflared tunnel login`, `cloudflared tunnel create funes-vault`, `cloudflared tunnel route dns funes-vault <host name>`, `cloudflared tunnel run funes-vault` | Save the `config.yml` the guide shows first. TLS ends at Cloudflare's edge, so Cloudflare can read the traffic, memories included. |
+| **ngrok** | `ngrok config add-authtoken <your ngrok authtoken>`, `ngrok http 47627 --url https://<your-dev-domain> --host-header=rewrite` | TLS ends at ngrok's edge. Don't turn on ngrok's basic auth: it takes over the `Authorization` header. |
+| **Cloudflare quick tunnel** (testing only) | `cloudflared tunnel --url http://127.0.0.1:47627 --http-host-header 127.0.0.1:47627` | A random address each time it starts, which breaks every cloud agent you set up. |
+| **Other** | none | Point it at `http://127.0.0.1:47627`; have it rewrite `Host` to `127.0.0.1:47627` or keep its public host name; pass `Authorization` through unchanged. |
+
+#### Allow cloud access
+
+An agent's **Cloud** tab shows while Remote Access is on, or while the agent has cloud access or is a cloud agent. **Allow cloud access** is off by default; its caption says what the agent can do from the internet, which is the same access it has on this Mac. With it on, the tab has the cloud agent picker (marked **Token** or **OAuth**), the setup to copy with its steps, the connected cloud apps with **Revoke**, and **Copy Remote Token…**, **Reset Remote Token…**, **Set Up OAuth Client…** (Gemini Enterprise) and **Connect a Cloud App…**.
+
+Turning **Allow cloud access** off asks first when the agent has a remote token or connected apps: they stop working at once. Its access on this Mac isn't affected. Removing the agent removes its remote token and connected apps too. Every one of these changes the agent's revision, so requests waiting for approval end.
+
+#### Agents that send a token
+
+The Anthropic and OpenAI APIs, Claude Managed Agents, Claude Code on the web, Cursor and Copilot cloud agents and Devin send a fixed header. They use the agent's **remote token**: `fns_mcpr_v1_` and 64 hex digits, kept in `~/Library/Application Support/FunesVault/agent-keys/<agentId>.remote.key` (mode 600; the vault keeps only its SHA-256). It's separate from the agent's local key: a remote token never works on the local port, and a local key never works through the tunnel.
+
+- **Copy Remote Token…** creates it the first time, asks first, and clears the clipboard after 90 seconds. Funes never shows it.
+- **Reset Remote Token…** replaces it at once.
+
+The setups never contain the token: they read `$FUNES_REMOTE_TOKEN`, or say where to paste it. For example, the Anthropic API:
+
+```sh
+curl "https://api.anthropic.com/v1/messages" \
+  -H "content-type: application/json" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: mcp-client-2025-11-20" \
+  -d '{"model":"claude-opus-5-5","max_tokens":1024,"messages":[{"role":"user","content":"What do my memories say about how I like to work?"}],"mcp_servers":[{"type":"url","url":"https://my-mac.tail1234.ts.net/r/q7Zk2vN4bXwP9sL1mT6hYa/mcp","name":"funes","authorization_token":"'"$FUNES_REMOTE_TOKEN"'"}],"tools":[{"type":"mcp_toolset","mcp_server_name":"funes"}]}'
+```
+
+#### Apps that sign in with OAuth
+
+claude.ai (with Claude Desktop and the mobile app), ChatGPT and Gemini Enterprise can't send a fixed token. They sign in with OAuth; Funes is its own OAuth server on the Remote Access port. Nobody on the internet can make the Mac ask you anything: Funes considers a sign-in only while you have **pairing** open for one agent.
+
+1. On the agent's Cloud tab, choose **Connect a Cloud App…**. Pairing is open for 10 minutes, for that agent only.
+2. Add the connector in the cloud app with the MCP URL. In claude.ai: Customize ▸ Connectors ▸ **Add custom connector**. In ChatGPT: create a custom MCP server with OAuth.
+3. Your browser opens Funes's sign-in page, which shows a six-digit code such as **482 913**.
+4. A panel on the Mac says, for example, *Claude wants to connect as claude.ai*, with the app's metadata address, where the browser returns, and the same code. **Allow** works one second after it appears. Allow only if the codes match: the app then uses that agent's access, and nothing more.
+5. **Allow** signs the app in and closes pairing (one app per pairing); **Deny** refuses it.
+
+Outside pairing, the sign-in page only says *Pairing isn't open*, and nothing is fetched or shown on the Mac. A second sign-in waits until you answer the first. Connected apps stay signed in: access tokens last an hour and renew automatically, and a connection not renewed for 30 days ends.
+
+**Gemini Enterprise** needs an OAuth client set up ahead: choose it in the Cloud tab's picker and click **Set Up OAuth Client…**. Funes creates a client for this agent, opens pairing, and shows the Authorization URL, Token URL, Client ID (`cfg_…`), the secret (copy only; `fns_ocs_v1_…`), the scope `memory` and the redirect URI to enter in Gemini Enterprise's Custom MCP Server data store.
+
+#### What each cloud agent needs
+
+| Cloud agent | Credential | Where it goes |
+| --- | --- | --- |
+| claude.ai · Claude Desktop · mobile | OAuth | Add a custom connector, then pair. |
+| ChatGPT | OAuth | Create a custom MCP server with OAuth, then pair. |
+| Gemini Enterprise | OAuth, set up ahead | **Set Up OAuth Client…**, a Custom MCP Server data store, then pair. |
+| Anthropic API (MCP connector) | Remote token | `authorization_token` in the request's `mcp_servers` entry. |
+| Claude Managed Agents | Remote token | An Anthropic vault credential for the MCP URL. |
+| OpenAI Responses API | Remote token | `authorization` in the `mcp` tool entry. |
+| Claude Code on the web | Remote token | `.mcp.json` in the repository, `FUNES_REMOTE_TOKEN` in the cloud environment, and the tunnel's host under Allowed domains. |
+| Cursor cloud agents | Remote token | An HTTP MCP server with an `Authorization: Bearer` header. |
+| GitHub Copilot coding agent | Remote token | Repository Settings ▸ Copilot ▸ MCP servers, and the Agents secret `COPILOT_MCP_FUNES_REMOTE_TOKEN`. |
+| Devin | Remote token | A custom MCP server with the `Authorization` header. |
+| Codex cloud tasks | Not supported | No documented way to add an MCP server. |
+
+#### Cloud agents and asking first
+
+Cloud agents often run while you're away. **Ask before sharing** and **Ask before saving** apply to them exactly as to agents on this Mac: a request waits 45 seconds for the panel, then 15 minutes in **Pending requests**, then expires. There's no remote auto-approval; the per-agent switches are the only way to skip panels, on every channel. Remote calls also count in a stricter rate limit (60 calls and 10 suggestions a minute), on top of the agent's own, to protect the Mac from a flood through the tunnel.
+
+#### Turn it off
+
+- **One token agent:** **Reset Remote Token…**.
+- **One cloud app:** **Revoke**.
+- **One agent:** turn off **Allow cloud access**.
+- **Everything:** **Turn Off Remote Access** in the menu bar menu, or the switch on the page. The port closes at once and pairing ends; cloud access, remote tokens and connected apps are kept for next time. Stop the tunnel too.
 
 ### Troubleshooting
 
@@ -407,6 +521,8 @@ The call never waits for you. The proposed memory must fit the agent's own acces
 | Panels on screen | 3; others queue ("1 of 3") | — |
 | Asking for more access | once an hour per agent and category | not asked |
 | Failed sign-ins, all callers | 120 a minute | HTTP 429 for 60 seconds for requests without a valid key |
+| Remote calls per agent, on top of the above | 60 a minute, bursts of 15; suggestions 10 a minute, bursts of 5 | `rate_limited` |
+| Failed remote sign-ins per forwarded address | 30 a minute | HTTP 429 for 5 minutes for requests without a well-formed credential |
 | Request body | 64 KiB | HTTP 413 |
 | Connections | 32 | — |
 | Result size | 200,000 bytes | Never exceeded: memories that wouldn't fit are left out, like those over `max_tokens` |
@@ -423,6 +539,44 @@ The call never waits for you. The proposed memory must fit the agent's own acces
 | 429 | Failed sign-in lockout |
 
 Only `POST /mcp` with `Content-Type: application/json` is served, with JSON responses (no SSE, no sessions). Headers and bodies must arrive within 10 seconds, and idle connections close after 30.
+
+### Remote Access HTTP
+
+The Remote Access listener (`127.0.0.1:47627` by default, only while Remote Access is on) has the same HTTP limits and its own 32 connections. It takes only remote tokens and OAuth access tokens; behind it is the same MCP server and pipeline as on the local port.
+
+Checks run in this order: the path must be under `/r/<secret>` (404 for anything else, before `Host` or any credential is read); `Host` must be the saved address's host (also with `:443`) or `127.0.0.1:<port>`/`localhost:<port>` (421); then, for `/mcp`, no `Origin` (403), POST (405), JSON (415, 406), and a credential (401).
+
+| Route | Method | Purpose |
+| --- | --- | --- |
+| `/r/<secret>/mcp` | POST | MCP |
+| `/r/<secret>/health?nonce=<nonce>` | GET | **Test**: answers only a nonce Funes issued in the last 30 seconds, once |
+| `/.well-known/oauth-protected-resource/r/<secret>/mcp` | GET | Protected resource metadata (RFC 9728) |
+| `/.well-known/oauth-authorization-server/r/<secret>` (also the OpenID forms) | GET | Authorization server metadata (RFC 8414) |
+| `/r/<secret>/oauth/authorize`, `…/authorize/status` | GET | The browser's sign-in page, and its status poll |
+| `/r/<secret>/oauth/token` | POST | Code exchange and refresh |
+| `/r/<secret>/oauth/register` | POST | Dynamic client registration, only while pairing is open |
+| `/r/<secret>/oauth/revoke` | POST | Token revocation (RFC 7009) |
+
+| Situation | Status |
+| --- | --- |
+| No credential, a local key, an unknown or expired token, an OAuth token for another URL, an agent without cloud access or removed | 401, `-32001`, `WWW-Authenticate: Bearer resource_metadata="…", scope="memory"` |
+| More than 30 failed authentications a minute from one forwarded address | 429 for 5 minutes, only for requests without a well-formed credential |
+
+Tunnel forwarding headers are accepted here, but never used for authorization: the last `X-Forwarded-For` entry (else `CF-Connecting-IP`) keys the lockout and is shown in Activity, kept in memory only for the last 50 remote requests.
+
+### OAuth
+
+Funes's authorization server runs on the Remote Access port only: issuer `https://<host>/r/<secret>`, resource the MCP URL, scope `memory`, the `authorization_code` and `refresh_token` grants, PKCE `S256` only. Clients come from a client metadata document (CIMD, fetched only during pairing: `https` to a DNS name whose every address is public, no proxies or redirects, 16 KB, 5 seconds), from dynamic registration (`dcr_…`, only while pairing is open) or from **Set Up OAuth Client…** (`cfg_…`, with an `fns_ocs_v1_` secret, bound to one agent).
+
+| Item | Lifetime and rules |
+| --- | --- |
+| Pairing window | 10 minutes, for one agent; **Allow** closes it |
+| Sign-in request | 5 minutes, within the window; at most 3 wait |
+| Authorization code | 60 seconds, single use; presenting it again revokes what it produced |
+| Access token (`fns_oat_v1_…`) | 1 hour; checked against the MCP URL and the agent's cloud access on every request |
+| Refresh token (`fns_ort_v1_…`) | Rotates on every use; 30 days. A rotated one presented again revokes the connection |
+
+Connections and registrations are kept in `remote-connections.json` in the data folder (mode 600), with SHA-256 digests only. If its owner, mode or contents are wrong, no OAuth token is accepted and the file isn't overwritten.
 
 ### Protocol versions
 
