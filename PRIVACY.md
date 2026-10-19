@@ -9,6 +9,9 @@ Funes Vault keeps your memories on your Mac. It has no accounts, no servers of i
 | What | Where it goes | When |
 |---|---|---|
 | Memory text you allow an agent to have | The AI agent on your Mac that asked, and from there that agent's own AI provider | Only when its access allows it, or you approve the request |
+| Memory text you allow a cloud agent to have | That cloud agent's vendor (for example Anthropic for claude.ai, OpenAI for ChatGPT), through the tunnel you run | Only with **Remote Access** on (off by default), for an agent you allowed cloud access, under the same access and approvals |
+| A request to a cloud app's metadata address | That cloud app (for example claude.ai or ChatGPT) | Only while you have pairing open, when that app signs in. No credential or memory is sent |
+| One request to your tunnel's address | Your tunnel, and back to Funes Vault | When you click **Test** on the Remote Access page |
 | An update check: the app's name and version | GitHub (the Funes Vault releases) | Once a day, if **Check for updates every day** is on, and when you click **Check Now** |
 | Capture text, with your category names and descriptions | An AI provider you added and chose for Classification | Only if you add one and choose it, never above your cloud limit, never when it looks like a secret |
 | Anything else | Nowhere | No analytics, no crash reporting, no accounts |
@@ -23,13 +26,24 @@ Funes Vault keeps your memories on your Mac. It has no accounts, no servers of i
 
 ## What AI agents receive
 
-Agents connect to Funes Vault's MCP server, which listens only on `127.0.0.1` (port 47625 unless you change it), the loopback address of your Mac. Nothing on your network or the internet can reach it. Requests that arrive through a tunnel or a proxy, or from a web page, are refused. Agents that talk to MCP servers over stdio run `funes-mcp`, a small launcher inside the app that relays to the same local server.
+Agents connect to Funes Vault's MCP server, which listens only on `127.0.0.1` (port 47625 unless you change it), the loopback address of your Mac. Nothing on your network or the internet can reach it. Requests that arrive through a tunnel or a proxy, or from a web page, are refused. Cloud agents use a separate port, only if you turn on Remote Access ([below](#cloud-agents-remote-access-experimental)). Agents that talk to MCP servers over stdio run `funes-mcp`, a small launcher inside the app that relays to the same local server.
 
 - **Each agent has its own key** and gets only what its access allows: a sensitivity ceiling, allowed and denied categories, read and suggest permissions, and an expiry date.
 - **When an agent asks for context,** Funes Vault finds the relevant memories and keeps only those the agent may have. If you asked to approve its requests, you see the exact text first and decide. Nothing is sent before you approve. An agent that's refused learns how many memories were withheld and why, never which ones.
 - **What you release goes to the agent and leaves Funes Vault's control.** The agent sends it to its own AI provider (for example Anthropic, OpenAI or Google) under that provider's terms. Funes Vault can't recall it later. Removing an agent or pausing it stops future access immediately.
 - **Suggestions** an agent makes wait in your Inbox until you review them. Rejected ones leave only an id in Activity.
 - **Activity** records which agent asked, when, what was decided and what was released (as ids and labels), on your Mac only.
+
+## Cloud agents (Remote Access, experimental)
+
+Remote Access is **off by default**. While you have it on, a second listener on `127.0.0.1` (port 47627 unless you change it) answers requests that a tunnel you run (Tailscale Funnel, Cloudflare Tunnel, ngrok or another) forwards from a public address. Funes Vault never starts a tunnel or contacts one on its own.
+
+- **Only agents you allow cloud access** can be used from the internet, each with its own remote token or a cloud app you signed in with a code you compared on your Mac. A cloud agent gets exactly the access you set for it, with the same approvals as an agent on your Mac.
+- **What you release goes to the cloud agent's vendor**, for example Anthropic or OpenAI, and may stay in their logs under their terms.
+- **The tunnel provider may see the traffic.** With Tailscale Funnel, TLS ends on your Mac, so the relays can't read it. Cloudflare and ngrok end TLS at their edge, so they can read what passes, memory text included.
+- **Funes Vault makes two kinds of outbound requests for Remote Access:** **Test**, which fetches its own health address through your tunnel, and, only while you have pairing open, a fetch of the signing-in app's public metadata document (https only, to a public address, no credential, at most 16 KB).
+- **What's kept on your Mac:** the remote token's file (mode 0600, the vault stores only its hash), the list of connected cloud apps with hashes of their tokens (`remote-connections.json`, mode 0600), and, in memory only, the tunnel and forwarded address of the last 50 remote requests. Nothing about your tunnel or cloud apps is sent anywhere else.
+- **Turn Off Remote Access** in the menu bar closes the port at once.
 
 ## Update checks
 

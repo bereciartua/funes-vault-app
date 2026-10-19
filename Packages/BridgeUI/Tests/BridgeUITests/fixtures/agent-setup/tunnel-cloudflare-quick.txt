@@ -1,0 +1,20 @@
+Cloudflare quick tunnel (testing only)
+name: Cloudflare quick tunnel
+summary: No account, but a random address each time. For testing only.
+preservesHost: false
+detectionHeader: CF-Ray
+installLink: none
+
+commands:
+cloudflared tunnel --url http://127.0.0.1:47627 --http-host-header 127.0.0.1:47627
+
+run: cloudflared tunnel --url http://127.0.0.1:47627 --http-host-header 127.0.0.1:47627
+
+steps:
+1. Run the command. cloudflared prints a random https://….trycloudflare.com address.
+2. Paste that address in step 3.
+3. To turn it off, press Control-C in the Terminal window running cloudflared.
+
+notes:
+- For testing only: the address changes every time it starts, which breaks every cloud agent you set up.
+- TLS ends at Cloudflare's edge, so Cloudflare can read the traffic, memories included.

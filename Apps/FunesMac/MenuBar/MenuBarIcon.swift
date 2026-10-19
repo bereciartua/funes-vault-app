@@ -25,15 +25,38 @@ enum MenuBarIcon {
 
     static let size = NSSize(width: 18, height: 18)
 
-    static func image(_ state: State) -> NSImage {
+    /// `remote`: Remote Access is on, so a small globe sits at the bottom right (04-ux-mac.md).
+    static func image(_ state: State, remote: Bool = false) -> NSImage {
         // The dot is the only color, so only "needs you" isn't a template image.
         let image = NSImage(size: size, flipped: false) { rect in
             draw(state, in: rect)
+            if remote { drawGlobe(ink: state == .needsYou ? NSColor.labelColor : NSColor.black) }
             return true
         }
         image.isTemplate = state != .needsYou
-        image.accessibilityDescription = state.accessibilityLabel
+        image.accessibilityDescription = remote
+            ? state.accessibilityLabel + ", " + String(localized: "Remote Access on") : state.accessibilityLabel
         return image
+    }
+
+    /// A 7-point globe in a knocked-out circle, so it reads on the glyph.
+    private static func drawGlobe(ink: NSColor) {
+        let frame = NSRect(x: 11, y: 0, width: 7, height: 7)
+        NSGraphicsContext.current?.compositingOperation = .destinationOut
+        NSBezierPath(ovalIn: frame.insetBy(dx: -1, dy: -1)).fill()
+        NSGraphicsContext.current?.compositingOperation = .sourceOver
+        ink.setStroke()
+        let outline = NSBezierPath(ovalIn: frame.insetBy(dx: 0.5, dy: 0.5))
+        outline.lineWidth = 1
+        outline.stroke()
+        let meridian = NSBezierPath(ovalIn: NSRect(x: frame.midX - 1.4, y: frame.minY + 0.5, width: 2.8, height: frame.height - 1))
+        meridian.lineWidth = 0.8
+        meridian.stroke()
+        let equator = NSBezierPath()
+        equator.move(to: NSPoint(x: frame.minX + 0.5, y: frame.midY))
+        equator.line(to: NSPoint(x: frame.maxX - 0.5, y: frame.midY))
+        equator.lineWidth = 0.8
+        equator.stroke()
     }
 
     private static func draw(_ state: State, in rect: NSRect) {

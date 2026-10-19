@@ -7,6 +7,8 @@ Everything lives under `~/Library/Application Support/FunesVault/`, in a 0700 fo
 |---|---|---|
 | `vault.sqlite` (+ `-wal`, `-shm`) | Memories, categories, suggestions, agents, access, disclosures, devices, receipts, provenance, embeddings, FTS | GRDB `DatabasePool`, WAL mode |
 | `agent-keys/<agentId>.key` | The agent's MCP key, bare with no newline | Written once, never read back except by **Copy key**. Deleted on removal |
+| `agent-keys/<agentId>.remote.key` | The agent's Remote Access token (`fns_mcpr_v1_`), bare | Only with Allow cloud access. Read back only by **Copy Remote Token…**. Replaced by **Reset Remote Token…**; deleted when cloud access is turned off or the agent is removed ([ADR-0018](decisions/0018-remote-access-in-v0.1.md)) |
+| `remote-connections.json` | Remote Access OAuth state: connected cloud apps (agent id, app name, OAuth client id, MCP URL, SHA-256 digests of the access, refresh and recently rotated refresh tokens, expiry and use times) and registered OAuth clients (`dcr_`, and `cfg_` with the digest of its `fns_ocs_v1_` secret) | BridgeKitRemote's `OAuthStore`: written atomically with fsync, fails closed (a wrong owner, mode, size or content makes OAuth unavailable and the file is never overwritten). No token in the clear. Never exported |
 | `activity/activity.jsonl` | Activity log, append-only | BridgeUI `ActivityStore` (copied from EK Bridge); `fsync` per row |
 | `mcp-endpoint.json` | `{"version":1,"url","port","pid","startedAt"}` | Only while listening |
 | `Backups/vault-YYYYMMDD-HHMM.sqlite` | Online backups (GRDB `backup(to:)`) | Daily, keep 7; also before each migration |
@@ -103,10 +105,15 @@ CREATE TABLE agent (
   first_request_at   TEXT,
   last_request_at    TEXT,
   created_at         TEXT NOT NULL,
-  removed_at         TEXT
+  removed_at         TEXT,
+  -- v2_remote_access (ADR-0018):
+  cloud_access         INTEGER NOT NULL DEFAULT 0,
+  remote_key_digest    BLOB,          -- SHA-256 of the remote token; NULL without cloud access
+  remote_key_issued_at TEXT
 );
 CREATE UNIQUE INDEX agent_active_name ON agent(name) WHERE removed_at IS NULL;
 CREATE UNIQUE INDEX agent_key_digest ON agent(key_digest) WHERE key_digest IS NOT NULL;
+CREATE UNIQUE INDEX agent_remote_key_digest ON agent(remote_key_digest) WHERE remote_key_digest IS NOT NULL;
 
 CREATE TABLE access (
   agent_id           TEXT PRIMARY KEY REFERENCES agent(id) ON DELETE CASCADE,
@@ -223,6 +230,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 
 ## 3. Migrations
 - These are GRDB `DatabaseMigrator`, forward-only and named (`v1_initial`, `v2_…`).
+- `v2_remote_access` (v0.1, Phase 4b): adds `agent.cloud_access` (0 for every existing agent), `remote_key_digest` and `remote_key_issued_at`, and the unique index on the digest.
 - Before running pending migrations: make an online backup to `Backups/pre-<migration>-<date>.sqlite`.
 - Each migration has a test: open a fixture database created by the previous version, migrate it, and check the data and invariants.
 - Downgrades aren't supported. An older app version that finds a newer schema refuses to open the vault, shows "Update Funes", and never writes to it.

@@ -1,7 +1,9 @@
 import BridgeKitCore
+import BridgeKitRemote
 import BridgeUI
 import Foundation
 import FunesCore
+import FunesMCP
 import FunesProtocol
 import Observation
 
@@ -19,7 +21,7 @@ struct PendingRequest: Identifiable, Equatable {
 
 /// The main window's sections (04-ux-mac.md).
 enum AppSection: String, CaseIterable, Identifiable, Hashable {
-    case vault, inbox, agents, activity
+    case vault, inbox, agents, remoteAccess, activity
     var id: String { rawValue }
 
     var title: String {
@@ -27,6 +29,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .vault: String(localized: "Vault")
         case .inbox: String(localized: "Inbox")
         case .agents: String(localized: "Agents")
+        case .remoteAccess: String(localized: "Remote Access")
         case .activity: String(localized: "Activity")
         }
     }
@@ -36,6 +39,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         case .vault: "archivebox"
         case .inbox: "tray"
         case .agents: "person.2"
+        case .remoteAccess: "globe"
         case .activity: "list.bullet.rectangle"
         }
     }
@@ -76,6 +80,18 @@ final class AppModel {
     let checklist: ChecklistModel
     let modelSettings: ModelSettings
     let data: DataOperations
+    /// Remote Access (ADR-0018): its settings, guide and tunnel checks. The app delegate gives it
+    /// the listener through its host.
+    let remoteAccess: RemoteAccessController
+    /// The remote listener and OAuth server, while the app runs.
+    @ObservationIgnored var remoteServer: FunesRemoteServer?
+    /// Bumped when connected cloud apps or pairing change, so views re-read them.
+    var cloudGeneration = 0
+    /// Sign-ins waiting for the user, oldest first (the sign-in panel shows the first).
+    var signIns: [PairingRequest] = []
+    @ObservationIgnored var signInsUpdated: () -> Void = {}
+    /// The Cloud tab's last result ("Remote token copied…"), said once.
+    var cloudMessage: String?
     /// Sparkle, or a stand-in where this build can't update itself.
     @ObservationIgnored var updater = UpdaterControls.unavailable
     /// MCP traffic counts since launch (Settings ▸ MCP).
@@ -139,6 +155,8 @@ final class AppModel {
         checklist = ChecklistModel(preferences: preferences)
         self.modelSettings = modelSettings ?? ModelSettings(defaults: preferences.defaults, keys: ModelSettings.keychain())
         data = DataOperations(environment: services, preferences: preferences)
+        remoteAccess = RemoteAccessController(defaults: preferences.defaults, appName: "Funes Vault", names: .funes,
+                                              defaultPort: FunesRemoteConfiguration.defaultPort, host: .inert)
         pausedUntil = services.pause.pausedUntil(at: Date())
         inboxState.categories = { [weak self] in self?.categories ?? [] }
         observation = services.store.observeChanges { [weak self] in

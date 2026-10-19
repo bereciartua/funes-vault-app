@@ -14,7 +14,7 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
   - The app serves MCP on `127.0.0.1:47625`, a port you can change in Settings ▸ MCP. Agents reach it through the `funes-mcp` launcher inside the app, or directly over HTTP.
   - Agents can list your categories, request memories for a task (with keywords for the kinds of context that would help), pick up a request you answered later, and suggest memories.
   - Each agent has its own key, kept in a private file and stored in the vault only as a hash.
-  - The protocol and security core is [BridgeKit](https://github.com/bereciartua/bridgekit) 0.1.1, shared with EK Bridge. It refuses JSON-RPC ids longer than 1,024 bytes, so every response fits its 200,000-byte limit.
+  - The protocol and security core is [BridgeKit](https://github.com/bereciartua/bridgekit) 0.2.0, shared with EK Bridge. It refuses JSON-RPC ids longer than 1,024 bytes, so every response fits its 200,000-byte limit.
 - **You approve the exact text.**
   - A floating Share panel shows each memory an agent may get, with a checkbox per memory, the agent's task, keywords and stated purpose, and a 45-second countdown.
   - A request left unanswered says so on screen and waits in **Pending requests** for 15 minutes, where **Review** opens it again with the minutes it has left.
@@ -25,6 +25,13 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
   - The access editor sets what it can do (Read, Suggest, Write), its sensitivity limit, allowed and denied categories, whether Funes asks before sharing or saving, an expiry date, and whether it may ask for more.
   - Each agent shows whether it's waiting for its first request, connected, paused or expired. **Pause** and **Remove** are in its header; **Copy Key…** and **Rotate Key…** on its Connect tab.
   - **Connect** adds Funes to Claude Desktop, Claude Code, Cursor or Codex in one click, after showing the exact change and keeping a backup, and never writes the key. Copyable setups cover VS Code (Copilot), Gemini CLI, Zed, Cline, JetBrains AI Assistant, Devin Desktop and any other MCP client.
+- **Remote Access for cloud agents** (experimental, off by default): claude.ai, ChatGPT, Gemini Enterprise, the Anthropic and OpenAI APIs, Claude Managed Agents, and the Claude Code, Cursor, Copilot and Devin cloud agents can reach Funes through a tunnel you run, such as Tailscale Funnel.
+  - A Remote Access page with a four-step guide (choose a tunnel, turn on and start it, paste its address, test), the tunnel's commands for port 47627, checks on this Mac of whether the tunnel runs, **Test**, **Switch Tunnel…**, **Reset Path…**, an automatic turn-off and keep-awake.
+  - Each agent has **Allow cloud access**, off by default, on a new **Cloud** tab, with the cloud agent's setup, **Copy Remote Token…** and **Reset Remote Token…**, connected cloud apps with **Revoke**, and **Connect a Cloud App…**, which opens a 10-minute pairing window for that agent. Add Agent has cloud tiles.
+  - claude.ai and ChatGPT sign in with OAuth: a panel on the Mac shows the same six-digit code as the browser, and **Allow** works after a second.
+  - A cloud agent gets exactly the access you set for it, with the same panels, 45-second wait and 15-minute pending list as any agent. Remote calls are marked in Activity (a cloud icon, "via Remote Access", and a Remote Access filter) and have a stricter rate limit on top of the agent's own.
+  - The menu bar icon shows a globe while it's on, and the menu has **Turn Off Remote Access**. An optional notification says when the tunnel stops.
+  - Built on BridgeKit 0.2.0's `BridgeKitRemote`, EK Bridge's Remote Access, shared.
 - **Asking for more access**: an agent you allow to ask gets a panel when a request is refused only because of a category: **Not Now**, **Allow Once** (that request only) or **Always Allow**. At most once an hour per agent and category. A refused suggestion goes to the Inbox if you allow it.
 - **The Vault**: search as you type, by meaning as well as by words, with filters by category, kind, sensitivity, status and source, and three sort orders.
   - Each memory opens in an editor with a character counter, categories, a sensitivity level with what it means, an optional expiry date, how often it was shared (linking to Activity), its history, and **Archive**, **Delete** and **Still True**.

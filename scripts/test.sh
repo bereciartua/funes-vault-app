@@ -20,6 +20,10 @@ swift test --package-path Packages/BridgeUI
 swift build --package-path Packages/FunesMCP --product funes-mcp-test-server
 PYTHONPYCACHEPREFIX="$PWD/build/pycache" python3 Tests/mcp/mcp_test.py \
     "$(swift build --package-path Packages/FunesMCP --show-bin-path)/funes-mcp-test-server" Tests/mcp/fixtures/tools.json
+# Remote Access over loopback (Phase 4b): the gate, cloud credentials, OAuth pairing, and the
+# same decision for the same agent and request on both listeners.
+PYTHONPYCACHEPREFIX="$PWD/build/pycache" python3 Tests/mcp/remote_test.py \
+    "$(swift build --package-path Packages/FunesMCP --show-bin-path)/funes-mcp-test-server"
 xcodebuild -project FunesVault.xcodeproj -scheme FunesMac -configuration Debug \
     -destination 'generic/platform=macOS' -derivedDataPath build/DerivedData \
     CODE_SIGNING_ALLOWED=NO SWIFT_EMIT_LOC_STRINGS=YES build -quiet

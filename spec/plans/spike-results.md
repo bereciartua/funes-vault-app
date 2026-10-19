@@ -375,3 +375,45 @@ Fallback, unchanged from the plan: if Claude Desktop or Cursor turns out to cut 
 
 **Found and fixed during the check:** a 45 s in-call wait ran to about 47 s, and a 55 s timeout could have run past 60 s. `Task.sleep` without a tolerance lets the system coalesce long timers by several percent. FunesCore's wait and BridgeKitCore's call timeout now pass an explicit 100 ms tolerance: 45 s → 45.1 s.
 
+
+## Phase 4b live check: cloud agents through Remote Access
+**Status:** prepared, not run yet (task 4b.15). The user runs it with ChatGPT and claude.ai against a test build; record the results here and in [Testing](../../docs/TESTING.md#remote-access-live-check).
+
+**Why it matters:** Spike 3 measured agents on the Mac only. A cloud agent that gives up on a tool call before Funes's 45 s in-call wait ends would see an error instead of `needs_approval`. Nothing in the policy changes with the result: the request is in Pending requests either way, and `get_memory_request` collects it.
+
+### Set-up (a test build and a development vault; nothing touches the installed app or EK Bridge)
+1. Build the Debug app from the `phase-4b/remote-access` branch (`xcodebuild … -configuration Debug`, as in AGENTS.md) and start it with a development vault and a long in-call wait:
+   ```sh
+   FUNES_DATA_DIR=/tmp/funes-remote-check FUNES_DEBUG_CALL_WAIT=290 \
+     build/DerivedData/Build/Products/Debug/FunesVault.app/Contents/MacOS/FunesVault --dev-seed
+   ```
+   `FUNES_DEBUG_CALL_WAIT` (Debug builds only) makes `request_memory` wait up to 290 s for the panel (and the call answer at 300 s), so the cloud agent's own limit shows. Each time a client gives up, the app logs `request_memory call cancelled by the client after N s (remote: true)`:
+   ```sh
+   log stream --predicate 'subsystem == "com.funesvault.mac" AND category == "mcp"' --info
+   ```
+2. **Tailscale Funnel on port 8443, not 443.** EK Bridge's Remote Access already uses Funnel's 443 (`tailscale funnel --bg 47616`); `tailscale funnel --bg 47627` would replace it and cut off the user's daily EK Bridge connectors. Use:
+   ```sh
+   tailscale funnel --bg --https=8443 47627
+   ```
+   and the address `https://<mac>.<tailnet>.ts.net:8443`. Turn it off afterwards with `tailscale funnel --https=8443 off`.
+3. In the test app: **Remote Access ▸ Set Up Remote Access…**, Tailscale Funnel, **Turn On Remote Access**, paste the `:8443` address, **Test** → Reachable.
+4. **Add Agent…** with the **claude.ai** tile (starting access *Read low-sensitivity memories, ask first*), and again with **ChatGPT**. For the header check, a third agent with the **Anthropic API** tile.
+
+### Checks (per app)
+| Step | claude.ai | ChatGPT |
+|---|---|---|
+| Pair: **Connect a Cloud App…**, add the connector with the MCP URL, codes match, **Allow** | | |
+| `list_memory_categories` ("What categories does my Funes vault have?") | | |
+| `request_memory`, **Share** in the panel → memories in the answer | | |
+| `request_memory`, **Deny** → it says you declined | | |
+| `request_memory`, **no answer**: the seconds until the app gives up (log line), and what it shows | | |
+| then **Review** in Pending requests ▸ Share, ask again → `get_memory_request` delivers | | |
+| `suggest_memory` ("Remember that I prefer dark mode") → queued, in the Inbox, Save panel | | |
+| Sends `keywords` (Activity's request, or the panel's "Looking for") | | |
+| **Revoke** → the next call fails and it asks to reconnect | | |
+
+Anthropic API with the remote token (**Copy Remote Token…**, then the setup's `curl` with `FUNES_REMOTE_TOKEN`): the same requests; then **Reset Remote Token…** → the old token gets 401. Finally **Turn Off Remote Access** → the URL stops answering.
+
+### What to record
+- How long claude.ai and ChatGPT wait for a tool call (the log line), and their versions or dates.
+- **If either waits less than 45 s:** with the shipped 45 s wait, that app would show an error before Funes answers `needs_approval`, and wouldn't learn the request id. The request still waits in Pending requests, and Activity shows it. Options, in order of preference: (a) keep 45 s and rely on the user asking again, since `get_memory_request` needs the id; (b) answer `needs_approval` sooner for remote calls, which ADR-0018 rules out as a channel difference unless it's only a transport timeout, not a policy (record it in an ADR); (c) a per-client wait keyed by `clientInfo.name`, as Spike 3 proposed for slow local clients.

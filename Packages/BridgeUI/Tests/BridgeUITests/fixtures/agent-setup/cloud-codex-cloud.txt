@@ -1,0 +1,13 @@
+Codex cloud tasks
+credential: unsupported
+agentKind: codex_cloud
+symbol: terminal
+needsLiteralSecret: false
+
+snippet (values):
+
+
+steps:
+1. Codex cloud tasks have no documented way to add an MCP server, so they can't reach Funes Vault.
+
+footnote: Codex cloud tasks can't use your own MCP servers yet. Use Codex on this Mac with the local setup, or the OpenAI Responses API.

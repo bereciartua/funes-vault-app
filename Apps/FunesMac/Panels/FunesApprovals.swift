@@ -20,6 +20,8 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// Task text of the requests this session showed a panel for, for Activity's detail pane. In
     /// memory only: the vault keeps a hash (FR-L-01), so after a relaunch it's "Task text not stored".
     @MainActor private var tasks: [UUID: String] = [:]
+    /// Requests that came through Remote Access, so their panel says so when it's reopened.
+    @MainActor private var remoteRequests = Set<UUID>()
     @MainActor private lazy var controller = ApprovalPanelController(queue: queue)
     /// Shows a short notice (the HUD), e.g. when a request waited past its panel.
     @MainActor var notice: (String) -> Void = { _ in }
@@ -35,6 +37,11 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     }
 
     func showApproval(requestID: UUID, agentID: UUID) async {
+        await present(requestID: requestID, focus: false)
+    }
+
+    func showApproval(requestID: UUID, agentID: UUID, remote: Bool) async {
+        if remote { await MainActor.run { _ = remoteRequests.insert(requestID) } }
         await present(requestID: requestID, focus: false)
     }
 
@@ -59,7 +66,8 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         let now = Date()
         guard let panel = try? await disclosures.panel(requestID: requestID, now: now) else { return }
         let disclosure = try? await disclosures.disclosure(requestID: requestID)
-        var item = Self.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: now)
+        let remote = await MainActor.run { remoteRequests.contains(requestID) }
+        var item = Self.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: now, remote: remote)
         if focus { item.expiresAt = panel.expiresAt }
         await MainActor.run {
             // Quitting: the queue refuses it anyway; don't bring Funes forward for it.
@@ -70,7 +78,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         }
     }
 
-    static func shareItem(_ panel: ApprovalPanel, withheld: [ReasonCode: Int], now: Date) -> PanelItem {
+    static func shareItem(_ panel: ApprovalPanel, withheld: [ReasonCode: Int], now: Date, remote: Bool = false) -> PanelItem {
         let rows = panel.memories.map { memory in
             PanelItem.Row(id: memory.id.uuidString, title: memory.title, detail: memory.body,
                           version: String(memory.version), badge: memory.sensitivity.title,
@@ -83,7 +91,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             id: panel.requestID, agentID: panel.agentID.uuidString, agentName: panel.agentName, task: panel.task,
             keywords: panel.keywords, purpose: panel.purpose, keepsIt: retention(panel.retention),
             sharedWith: panel.processors, rows: rows, note: note,
-            expiresAt: max(now, panel.createdAt) + panelSeconds)
+            expiresAt: max(now, panel.createdAt) + panelSeconds, remote: remote)
     }
 
     private func answered(_ panel: ApprovalPanel, _ answer: PanelAnswer) {

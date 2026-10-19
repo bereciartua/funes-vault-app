@@ -29,9 +29,9 @@ Badges, once the listings exist:
 - **Each agent gets only what you choose.** Its own key, and the access you set: read, suggest or save; up to a sensitivity level; in the categories you pick. A new agent can start with nothing.
 - **You approve the exact text.** Before a memory goes to an agent, a small panel shows it, and you can untick what shouldn't go. An approval is used once, within 15 minutes, and is cancelled if anything changes.
 - **Agents suggest; you decide.** What an agent wants to remember waits in your Inbox, where you edit it, apply it or reject it.
-- **Everything stays on your Mac.** No account, no server, no cloud copy. Search runs on a small model built into the app.
+- **Everything stays on your Mac.** No account, no server of ours, no cloud copy. Search runs on a small model built into the app. Cloud agents such as claude.ai and ChatGPT can reach it only through a tunnel you run, with Remote Access (experimental, off by default).
 
-**Status:** public preview (v0.1), with best-effort support. **Works with** Claude Code, Claude Desktop, Cursor and Codex, with ready-made setups for VS Code (Copilot), Gemini CLI, Zed, Cline, JetBrains AI Assistant, Devin Desktop and any other MCP client.
+**Status:** public preview (v0.1), with best-effort support. **Works with** Claude Code, Claude Desktop, Cursor and Codex, with ready-made setups for VS Code (Copilot), Gemini CLI, Zed, Cline, JetBrains AI Assistant, Devin Desktop and any other MCP client. **From the cloud (experimental):** claude.ai, ChatGPT, Gemini Enterprise, the Anthropic and OpenAI APIs, and cloud coding agents, through Remote Access.
 
 ## Get started
 
@@ -54,6 +54,16 @@ Badges, once the listings exist:
 You can also capture a thought at any time with **⌥⌘M**, **Remember…** in the menu, or **Services ▸ Remember in Funes** in any app.
 
 Setups for every agent, the tool reference and troubleshooting are in the [MCP guide](docs/MCP.md).
+
+### From cloud agents (experimental)
+
+claude.ai, ChatGPT and cloud coding agents run on their vendor's servers, so they can't reach an app on your Mac directly. **Remote Access** lets them, through a tunnel you run, such as [Tailscale Funnel](https://tailscale.com/kb/1223/funnel):
+
+1. Open **Remote Access** in the sidebar and follow its four steps: choose a tunnel, turn Remote Access on and start the tunnel, paste its address, test. Funes never starts a tunnel; it shows the command.
+2. Add the agent with a cloud tile in **Add Agent…** (claude.ai, ChatGPT, …), or turn on **Allow cloud access** on an agent's **Cloud** tab.
+3. Connect it: apps that sign in (claude.ai, ChatGPT) use **Connect a Cloud App…** and a six-digit code you compare on the Mac; the others use the agent's remote token.
+
+A cloud agent gets exactly the access you set for it, and the same panels on your Mac: if you're away, its requests wait and expire as for any agent. While Remote Access is on, the vault is reachable through a public address, and what you share with a cloud agent goes to its vendor's servers. It's off by default, and **Turn Off Remote Access** in the menu bar cuts every cloud agent off at once. The [MCP guide](docs/MCP.md#use-from-cloud-agents) has the details.
 
 ## How you stay in control
 
@@ -99,7 +109,7 @@ Agents propose memories, and by default each one waits in the **Inbox** as a car
 
 ### Under the hood
 
-- **Local only.** The MCP server listens on `127.0.0.1:47625`, never on a network interface. No account, no analytics, no server of ours.
+- **Local by default.** The MCP server listens on `127.0.0.1:47625`, never on a network interface. No account, no analytics, no server of ours. Remote Access, off by default, opens a second loopback port only a tunnel you run can expose.
 - **A key per agent.** Each agent has its own 256-bit key in a private file; the vault stores only its hash. The recommended setups read the file instead of putting the key in the agent's config.
 - **Fail closed.** Any doubt about an agent or a request is a refusal. Refusals tell the agent *how many* memories were withheld and why, never which ones.
 - **Single use.** An approved share is delivered once, within 15 minutes, and only if the memories and the agent's access are unchanged.
@@ -149,6 +159,12 @@ The agent waits 45 seconds, then is told the request is waiting for your approva
 </details>
 
 <details>
+<summary><b>Does it work with claude.ai or ChatGPT?</b></summary>
+
+Yes, through Remote Access (experimental): a tunnel you run, such as Tailscale Funnel, makes Funes reachable at a public address, and claude.ai or ChatGPT signs in after you open pairing and compare a code on your Mac. Each cloud app uses one agent's access, with the same panels as any agent. See [From cloud agents](#from-cloud-agents-experimental).
+</details>
+
+<details>
 <summary><b>Can an agent change or delete my memories?</b></summary>
 
 No. Agents can only propose new memories and corrections. An agent you give **Write** with **Ask before saving** off can save new memories directly, within its categories and sensitivity limit; its corrections still wait in your Inbox.
@@ -181,6 +197,7 @@ Something else? Open an [issue](https://github.com/bereciartua/funes-vault-app/i
 - **Access decisions.** Made inside Funes from the agent's access, each memory's sensitivity and categories, and your answer, never from what the agent writes. An approval is bound to the exact memories and versions you saw.
 - **Data at rest.** The vault is an SQLite file in your Application Support folder, protected by FileVault, not by its own encryption. Backups stay in the same folder.
 - **Models.** Text goes to a model provider only if you added one and chose it, never above your cloud limit for a cloud provider, and never when it looks like a secret.
+- **Remote Access (experimental, off by default).** While it's on, a second listener on `127.0.0.1:47627` answers what a tunnel you run forwards from the internet. Every route sits under a 128-bit secret path (anything else is 404), `Host` must be your tunnel's address, and every call needs a credential of an agent you allowed cloud access: its remote token, or an OAuth token from a cloud app you approved with a six-digit code while pairing was open for that agent. Local keys don't work remotely and remote credentials don't work locally. Repeated failed sign-ins from one address are locked out for 5 minutes, and remote calls have a stricter rate limit. The same access, panels and pending list apply as for agents on your Mac. Text you share with a cloud agent goes to its vendor; some tunnels (Cloudflare, ngrok) can read the traffic, while Tailscale Funnel ends TLS on your Mac.
 
 **These controls do not isolate another process running as the same macOS user.** Such a process can read the vault, the backups and the key files. Funes also can't recall or control text after you've shared it with an agent. An access setting is a boundary between the agents you connect, not a defense against a compromised user account. See the [threat model](docs/ARCHITECTURE.md#threat-model).
 
@@ -196,9 +213,12 @@ The app has **no analytics, telemetry or crash reporting**, and no account. Your
 | `funes-mcp` connecting to `127.0.0.1` | When an agent on your Mac starts it, to reach the MCP server. |
 | One HTTPS request to GitHub for `appcast.xml` | Once a day while **Settings ▸ Updates ▸ Check for updates every day** is on, and when you choose **Check for Updates…**. GitHub sees your IP address and the app's version. A copy built from source never checks. |
 | Downloading an update from GitHub | Only after you click to install it. |
+| Remote Access listener, on `127.0.0.1:47627` | Only while **Remote Access** is on (off by default). Loopback only; a tunnel you run, such as Tailscale Funnel, makes it reachable from the internet at an address you choose. Funes never starts a tunnel. |
+| One HTTPS request to your tunnel's address | When you click **Test** on the Remote Access page (and during its setup): Funes fetches its own health URL through the tunnel. |
+| One HTTPS request to a cloud app's metadata document | Only while you have pairing open, when that app starts signing in (claude.ai and ChatGPT publish one). No credential is sent. |
 | The model provider you added | Only if you add one in **Settings ▸ AI Models** and choose it: to propose a title, categories and sensitivity for each capture, and for **Load Models** and **Test Connection** (which send none of your data). A local server (Ollama, LM Studio) stays on your Mac or local network; a cloud provider gets only captures at or below your cloud limit that passed the secret scanner. |
 
-Notifications, shown by macOS, never include memory text. What an agent receives through Funes goes to that agent and its AI provider, under their privacy terms, so give each agent only what it needs. The full statement is in [PRIVACY.md](PRIVACY.md) and at [funesvault.com/privacy](https://funesvault.com/privacy).
+Notifications, shown by macOS, never include memory text. What an agent receives through Funes goes to that agent and its AI provider, under their privacy terms, so give each agent only what it needs. With Remote Access, that includes the cloud agents you allow, and the tunnel provider if its TLS ends at its edge. The full statement is in [PRIVACY.md](PRIVACY.md) and at [funesvault.com/privacy](https://funesvault.com/privacy).
 
 ## Docs
 

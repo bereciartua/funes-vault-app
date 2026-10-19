@@ -116,12 +116,15 @@ public final class SuggestionService: Sendable {
     ///
     /// `alwaysQueue` stores the suggestion in the Inbox even when the agent may save directly: a
     /// suggestion let through after an access request always waits for review (§7).
+    /// `via` is for Activity only (ADR-0018).
     public func suggest(agentID: UUID, _ input: SuggestInput, now: Date, allowOnce: AccessRequestOffer? = nil,
-                        alwaysQueue: Bool = false) async throws -> SuggestOutcome {
+                        alwaysQueue: Bool = false, via: ActivityEvent.Via = .mcp,
+                        credential: CredentialCheck? = nil) async throws -> SuggestOutcome {
         let paused = pause.isPaused(at: now)
         enum Step { case done(SuggestOutcome), offer(SuggestOutcome, [String], AccessOperation, Int) }
         let step = try await store.writer.write { db -> Step in
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.unauthenticated }
+            if let credential, !credential(agent) { throw VaultError.unauthenticated }
             try AgentStore.recordRequest(db, agentID: agentID, now: now)
             var access = agent.access
             if let once = allowOnce {
@@ -191,7 +194,7 @@ public final class SuggestionService: Sendable {
                                                      operation: operation, agentRevision: revision, now: now)
         }
         activity.record(ActivityEvent(
-            time: now, actor: .agent(agentID), via: .mcp, event: "suggest_memory", outcome: outcome.status.rawValue,
+            time: now, actor: .agent(agentID), via: via, event: "suggest_memory", outcome: outcome.status.rawValue,
             ids: [outcome.memoryID, outcome.suggestionID].compactMap { $0 }, reason: outcome.reason,
             counts: Dictionary(uniqueKeysWithValues: outcome.findings.map { ($0.rawValue, 1) })))
         return outcome

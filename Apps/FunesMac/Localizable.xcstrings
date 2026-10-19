@@ -17,6 +17,18 @@
         }
       }
     },
+    "%@ (as reported)" : {
+
+    },
+    "%@ (as the tunnel reported)" : {
+
+    },
+    "%@ (connected cloud app)" : {
+
+    },
+    "%@ (remote token)" : {
+
+    },
     "%@ / %@" : {
       "localizations" : {
         "en" : {
@@ -128,7 +140,29 @@
     "%@ didn't finish within 20 seconds." : {
 
     },
+    "%@ forwards to port %@, not %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ forwards to port %2$@, not %3$@."
+          }
+        }
+      }
+    },
     "%@ has no access yet. It can connect, but sees nothing until you change its access." : {
+
+    },
+    "%@ isn't installed on this Mac." : {
+
+    },
+    "%@ isn't public." : {
+
+    },
+    "%@ isn't running on this Mac." : {
+
+    },
+    "%@ isn't running, so cloud agents can't reach Funes Vault." : {
 
     },
     "%@ reported an error (exit code %d)." : {
@@ -141,14 +175,40 @@
         }
       }
     },
+    "%@ runs, but isn't connected yet." : {
+
+    },
     "%@ suggested a memory. Review it in the Inbox." : {
 
     },
     "%@ suggests a memory for Funes" : {
 
     },
+    "%@ via Remote Access" : {
+
+    },
     "%@ wants more access" : {
 
+    },
+    "%@ wants to connect as %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants to connect as %2$@"
+          }
+        }
+      }
+    },
+    "%@ wants to connect. Code %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants to connect. Code %2$@."
+          }
+        }
+      }
     },
     "%@ wants to use your memories" : {
 
@@ -217,6 +277,16 @@
     "%@, on this Mac" : {
 
     },
+    "%@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. %2$@"
+          }
+        }
+      }
+    },
     "%lld" : {
 
     },
@@ -274,6 +344,9 @@
           }
         }
       }
+    },
+    "%lld more waiting" : {
+
     },
     "%lld moved to Recently Deleted" : {
 
@@ -359,13 +432,25 @@
     "7 days" : {
 
     },
+    "<%@ from Set Up OAuth Client…>" : {
+
+    },
+    "<remote token from %@>" : {
+
+    },
     "A Few Questions" : {
 
     },
     "A category with that name already exists." : {
 
     },
+    "A free dev domain with an ngrok account. TLS ends at ngrok." : {
+
+    },
     "A funesvault.export.v1 file with your categories and memories. It never includes agents, their access, keys or Activity." : {
+
+    },
+    "A hostname on your Cloudflare domain for this Mac. The commands below use it." : {
 
     },
     "A memory can have at most 12 categories." : {
@@ -402,6 +487,9 @@
 
     },
     "API key" : {
+
+    },
+    "About %@" : {
 
     },
     "About Funes Vault" : {
@@ -470,6 +558,16 @@
     "Add an Agent" : {
 
     },
+    "Add an Agents secret named %@ and paste the remote token (%@ on the agent's Cloud section) as its value." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add an Agents secret named %1$@ and paste the remote token (%2$@ on the agent's Cloud section) as its value."
+          }
+        }
+      }
+    },
     "Add an agent" : {
 
     },
@@ -482,7 +580,19 @@
     "Add the inputs and servers entries." : {
 
     },
+    "Add the mcp_servers and tools entries below to your agent." : {
+
+    },
     "Add the text to remember." : {
+
+    },
+    "Add the tunnel's address first." : {
+
+    },
+    "Add the tunnel's address on the Remote Access page first." : {
+
+    },
+    "Add this to .mcp.json at the root of the repository and commit it. It holds no token." : {
 
     },
     "Add this to ~/.codex/config.toml." : {
@@ -504,6 +614,15 @@
 
     },
     "Advanced" : {
+
+    },
+    "After 1 day" : {
+
+    },
+    "After 1 hour" : {
+
+    },
+    "After 8 hours" : {
 
     },
     "After: %@" : {
@@ -542,10 +661,16 @@
     "Agents get the answer when they check again." : {
 
     },
+    "Agents on this Mac don't need it: they connect locally." : {
+
+    },
     "Agents start the launcher, which reads their key file and talks to Funes. Setups on the Connect tab use this path." : {
 
     },
     "Agents that start funes-mcp follow the new port on their own. Set up again any agent whose setup names the address, such as Claude Code." : {
+
+    },
+    "Agents with cloud access" : {
 
     },
     "Agents' access is set per category. Built-in categories can be renamed; your own can also be deleted." : {
@@ -567,6 +692,12 @@
 
     },
     "Allow Once is for this request only. %@" : {
+
+    },
+    "Allow cloud access" : {
+
+    },
+    "Allow only if this code matches the one in your browser. It will use %@'s access." : {
 
     },
     "Already delivered" : {
@@ -624,6 +755,15 @@
     "Answered a question" : {
 
     },
+    "Anthropic API (MCP connector)" : {
+
+    },
+    "Any HTTPS tunnel that forwards to the Remote Access port." : {
+
+    },
+    "Anyone who uses that cloud environment can read its environment variables, including this token. Use an environment only you use, or on Pro and Max plans an API credential." : {
+
+    },
     "Anyone with this key can ask Funes for memories as %@. Paste it only into %@'s settings, and never into a project file. Setups that use the launcher don't need it." : {
       "localizations" : {
         "en" : {
@@ -633,6 +773,9 @@
           }
         }
       }
+    },
+    "Anyone with this token and the URL can use %@'s access from the internet while Remote Access and Funes Vault are on. Paste it only into the cloud agent's settings. The clipboard is cleared in 90 seconds." : {
+
     },
     "Apple Intelligence isn't available on this Mac: simple rules propose the fields." : {
 
@@ -718,10 +861,32 @@
     "Asked for more access" : {
 
     },
+    "At claude.ai/code, edit the cloud environment and add %@=%@ under Environment variables. %@ is on the agent's Cloud section in %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "At claude.ai/code, edit the cloud environment and add %1$@=%2$@ under Environment variables. %3$@ is on the agent's Cloud section in %4$@."
+          }
+        }
+      }
+    },
+    "At cursor.com/agents, open the MCP menu and add a server." : {
+
+    },
     "At least %@" : {
 
     },
     "At most 20,000 important rows are kept. Older rows go at the next cleanup (at launch and every 6 hours)." : {
+
+    },
+    "Authentication" : {
+
+    },
+    "Authorization URL" : {
+
+    },
+    "Back" : {
 
     },
     "Back Up Now" : {
@@ -742,7 +907,13 @@
     "Base URL" : {
 
     },
+    "Before you run the tunnel, save the configuration as ~/.cloudflared/config.yml, with <tunnel-UUID> replaced by the ID that tunnel create printed." : {
+
+    },
     "Before: %@" : {
+
+    },
+    "Both tunnels can run at the same time." : {
 
     },
     "Built in" : {
@@ -752,6 +923,9 @@
 
     },
     "Built-in categories can be renamed but not deleted." : {
+
+    },
+    "Can't check on this Mac" : {
 
     },
     "Cancel" : {
@@ -805,6 +979,12 @@
     "Change Port" : {
 
     },
+    "Change address" : {
+
+    },
+    "Change tunnel" : {
+
+    },
     "Changed since approval" : {
 
     },
@@ -814,7 +994,16 @@
     "Changes “%@”" : {
 
     },
+    "Change…" : {
+
+    },
+    "ChatGPT" : {
+
+    },
     "ChatGPT Memories…" : {
+
+    },
+    "ChatGPT can't send an API key, so it connects with OAuth." : {
 
     },
     "Check Now" : {
@@ -835,7 +1024,13 @@
     "Choose" : {
 
     },
+    "Choose Another Port…" : {
+
+    },
     "Choose File…" : {
+
+    },
+    "Choose HTTP and enter these values." : {
 
     },
     "Choose a Markdown file. Headings that match a category's name file the items under them; bullets and paragraphs become suggestions." : {
@@ -856,6 +1051,9 @@
           }
         }
       }
+    },
+    "Choose a tunnel" : {
+
     },
     "Choose at least one category." : {
 
@@ -882,6 +1080,9 @@
     "Claude Code" : {
 
     },
+    "Claude Code on the web" : {
+
+    },
     "Claude Code's claude command wasn't found on this Mac." : {
 
     },
@@ -892,6 +1093,9 @@
 
     },
     "Claude Desktop's custom connectors run from Anthropic's cloud and can't reach this Mac, so use this local setup instead." : {
+
+    },
+    "Claude Managed Agents" : {
 
     },
     "Claude Memories…" : {
@@ -915,6 +1119,15 @@
     "Click Install in VS Code, or run the command in Terminal." : {
 
     },
+    "Click Test tools." : {
+
+    },
+    "Client ID" : {
+
+    },
+    "Client secret" : {
+
+    },
     "Cline" : {
 
     },
@@ -927,13 +1140,73 @@
     "Cloud" : {
 
     },
+    "Cloud access turned off" : {
+
+    },
+    "Cloud access turned on" : {
+
+    },
+    "Cloud agent" : {
+
+    },
+    "Cloud agents can use this from the internet: %@. It's the same access as on this Mac." : {
+
+    },
+    "Cloud agents can't reach this Mac directly. A tunnel you run (Tailscale Funnel, Cloudflare or ngrok) forwards them to a second port on it. Funes Vault never starts a tunnel." : {
+
+    },
+    "Cloud agents keep using %@ until you save." : {
+
+    },
+    "Cloud agents keep using %@ until you switch." : {
+
+    },
+    "Cloud agents often run while you're away. With Ask before sharing on, a request waits up to 45 s for you at this Mac; after that, you can still approve it from the pending list within 15 minutes." : {
+
+    },
+    "Cloud agents using the current token stop working until you copy the new one into their settings. Connected cloud apps aren't affected." : {
+
+    },
+    "Cloud agents you allow will be able to reach %@ through a public address from a tunnel you run. What you share with them goes to their servers. Nothing is reachable until you set up a tunnel and allow an agent cloud access." : {
+
+    },
     "Cloud limit" : {
 
     },
     "Cloud providers need an https:// address." : {
 
     },
+    "Cloud sessions load .mcp.json only when the session has one repository." : {
+
+    },
+    "Cloud sign-in" : {
+
+    },
+    "Cloudflare Tunnel" : {
+
+    },
+    "Cloudflare Tunnel (your own domain)" : {
+
+    },
+    "Cloudflare quick tunnel" : {
+
+    },
+    "Cloudflare quick tunnel (testing only)" : {
+
+    },
+    "Code %@" : {
+
+    },
     "Codex" : {
+
+    },
+    "Codex cloud tasks" : {
+
+    },
+    "Codex cloud tasks can't use your own MCP servers yet. Use Codex on this Mac with the local setup, or the OpenAI Responses API." : {
+
+    },
+    "Codex cloud tasks have no documented way to add an MCP server, so they can't reach %@." : {
 
     },
     "Codex connects the next time it starts." : {
@@ -948,7 +1221,19 @@
     "Connect" : {
 
     },
+    "Connect a Cloud App…" : {
+
+    },
     "Connect it" : {
+
+    },
+    "Connected" : {
+
+    },
+    "Connected %@" : {
+
+    },
+    "Connected cloud apps changed" : {
 
     },
     "Connected · %@" : {
@@ -967,10 +1252,22 @@
     "Constraint" : {
 
     },
+    "Continue" : {
+
+    },
+    "Continue as %@" : {
+
+    },
     "Copied" : {
 
     },
     "Copied. Funes clears the clipboard in 60 seconds." : {
+
+    },
+    "Copilot can't sign in with OAuth, so it uses the remote token." : {
+
+    },
+    "Copilot runs MCP tools without asking for approval. Give this agent read access only and keep the tools list to the read tools." : {
 
     },
     "Copy" : {
@@ -986,6 +1283,18 @@
 
     },
     "Copy Key…" : {
+
+    },
+    "Copy Remote Token" : {
+
+    },
+    "Copy Remote Token…" : {
+
+    },
+    "Copy Secret" : {
+
+    },
+    "Copy the remote token for “%@”?" : {
 
     },
     "Correction from %@ · %@" : {
@@ -1004,7 +1313,13 @@
     "Couldn't reach the server." : {
 
     },
+    "Couldn't start" : {
+
+    },
     "Counts only: Funes never logs what agents send or receive." : {
+
+    },
+    "Create an Anthropic vault, or pick an existing one, and set VAULT_ID to its ID." : {
 
     },
     "Created %@" : {
@@ -1014,6 +1329,12 @@
 
     },
     "Cursor" : {
+
+    },
+    "Cursor cloud agents" : {
+
+    },
+    "Cursor keeps the header on its servers and relays tool calls, so the agent's machine never sees the token." : {
 
     },
     "Custom" : {
@@ -1089,6 +1410,9 @@
     "Details" : {
 
     },
+    "Devin" : {
+
+    },
     "Devin Desktop" : {
 
     },
@@ -1096,6 +1420,9 @@
 
     },
     "Discard" : {
+
+    },
+    "Disconnected; connect again" : {
 
     },
     "Dismiss" : {
@@ -1107,10 +1434,19 @@
     "Don't move them" : {
 
     },
+    "Don't turn on ngrok's basic auth: it takes over the Authorization header that carries the token." : {
+
+    },
     "Done" : {
 
     },
     "Done when its first request arrives." : {
+
+    },
+    "Down" : {
+
+    },
+    "Download %@…" : {
 
     },
     "Downloads" : {
@@ -1153,6 +1489,15 @@
     "Empty allow list means all categories. Deny always wins." : {
 
     },
+    "Enter the tunnel's https address, like https://my-mac.tail1234.ts.net, without a path." : {
+
+    },
+    "Enter these values in the app's OAuth settings. Pairing is open for 10 minutes; when the app asks you to sign in, check the code and allow it. If pairing has closed by then, open it again with Connect a Cloud App…." : {
+
+    },
+    "Enter these values." : {
+
+    },
     "Erase All Data" : {
 
     },
@@ -1165,7 +1510,13 @@
     "Event" : {
 
     },
+    "Every cloud agent setup uses the current URL and stops working until you give it the new one." : {
+
+    },
     "Everyday preferences. Fine for most of your agents." : {
+
+    },
+    "Experimental" : {
 
     },
     "Expired" : {
@@ -1201,13 +1552,28 @@
     "Fact" : {
 
     },
+    "Fetch Funes Vault's health URL through the tunnel" : {
+
+    },
     "File" : {
+
+    },
+    "Filled in from the running tunnel. Check it, then save." : {
+
+    },
+    "Filled in from the running tunnel. Check it, then test." : {
 
     },
     "Find…" : {
 
     },
     "Fine for anyone to know." : {
+
+    },
+    "Finish setting up Remote Access in %@ first. This setup appears once the tunnel's public address is saved." : {
+
+    },
+    "First, turn on Remote Access. Port %@ opens on this Mac for the tunnel; nothing is reachable until the tunnel runs." : {
 
     },
     "For 1 Hour" : {
@@ -1223,16 +1589,45 @@
         }
       }
     },
+    "For testing only: the address changes every time it starts, which breaks every cloud agent you set up." : {
+
+    },
     "For the session" : {
 
     },
     "For this session" : {
 
     },
+    "Forwards to %@, the local MCP port. Use %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Forwards to %1$@, the local MCP port. Use %2$@."
+          }
+        }
+      }
+    },
+    "Forwards to %@. Use %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Forwards to %1$@. Use %2$@."
+          }
+        }
+      }
+    },
     "Found" : {
 
     },
     "Found on this Mac: %@" : {
+
+    },
+    "Free with your own domain on Cloudflare. TLS ends at Cloudflare." : {
+
+    },
+    "Free; TLS ends on this Mac. Needs Tailscale installed and signed in." : {
 
     },
     "From" : {
@@ -1245,6 +1640,9 @@
 
     },
     "From other apps" : {
+
+    },
+    "From the cloud, through Remote Access" : {
 
     },
     "Funes Vault" : {
@@ -1325,10 +1723,28 @@
     "Funes was quitting" : {
 
     },
+    "Funnel keeps running in the background, even after a restart, until you turn it off." : {
+
+    },
+    "Funnel keeps the public hostname in Host, so it must match Address." : {
+
+    },
     "Gemini CLI" : {
 
     },
+    "Gemini Enterprise" : {
+
+    },
+    "Gemini Enterprise needs an OAuth client set up ahead of time: Set Up OAuth Client… creates one for this agent. Clicking it again replaces one that hasn't connected." : {
+
+    },
     "General" : {
+
+    },
+    "GitHub Copilot coding agent" : {
+
+    },
+    "Give it a name, paste this URL under Connection, and choose OAuth." : {
 
     },
     "Goal" : {
@@ -1343,7 +1759,19 @@
     "HTTP %@" : {
 
     },
+    "Have it rewrite Host to 127.0.0.1 and the port, or keep its public hostname, which must then be the address you paste." : {
+
+    },
     "Header" : {
+
+    },
+    "Header key" : {
+
+    },
+    "Header value" : {
+
+    },
+    "Hidden" : {
 
     },
     "Hide" : {
@@ -1355,7 +1783,22 @@
     "History" : {
 
     },
+    "Hostname" : {
+
+    },
+    "Hostname for %@" : {
+
+    },
     "How do you like AI assistants to collaborate with you?" : {
+
+    },
+    "I've Started It" : {
+
+    },
+    "If Funnel already serves another app on port 443, this command replaces it. Add --https=8443 after --bg instead, and :8443 to the address." : {
+
+    },
+    "If TLS ends at the provider's edge, the provider can read the traffic." : {
 
     },
     "Import" : {
@@ -1415,16 +1858,63 @@
     "Import…" : {
 
     },
+    "In %@, click Set Up OAuth Client… on the Cloud section of “%@”. Enter the OAuth settings below, copying the Client ID and Client secret from that sheet." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "In %1$@, click Set Up OAuth Client… on the Cloud section of “%2$@”. Enter the OAuth settings below, copying the Client ID and Client secret from that sheet."
+          }
+        }
+      }
+    },
+    "In ChatGPT, open Plugins, click +, then Create custom MCP server." : {
+
+    },
+    "In Claude, open Customize ▸ Connectors and click Add custom connector. On Team and Enterprise plans, an Owner adds it in Organization settings ▸ Connectors." : {
+
+    },
     "In Claude, open Settings ▸ Capabilities ▸ Memory, copy what's there, and paste it here. Each line or bullet becomes a suggestion." : {
 
     },
     "In Cline, open MCP Servers and click Configure MCP Servers." : {
 
     },
+    "In Devin, open Customize ▸ MCPs, choose Add MCP, then Add custom MCP." : {
+
+    },
+    "In Terminal, set %@ to the remote token (%@ on the agent's Cloud section) and %@ to your API key, then run the command." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "In Terminal, set %1$@ to the remote token (%2$@ on the agent's Cloud section) and %3$@ to your API key, then run the command."
+          }
+        }
+      }
+    },
     "In VS Code, run MCP: Open User Configuration." : {
 
     },
     "In Zed, run zed: open settings." : {
+
+    },
+    "In the Google Cloud console, open Gemini Enterprise ▸ Data stores ▸ Create data store and choose Custom MCP Server." : {
+
+    },
+    "In the Tailscale admin console, turn on MagicDNS and HTTPS certificates, and add the funnel node attribute to your tailnet policy." : {
+
+    },
+    "In the repository on GitHub, open Settings ▸ Copilot ▸ MCP servers and paste this under MCP configuration." : {
+
+    },
+    "In use" : {
+
+    },
+    "In your agent" : {
+
+    },
+    "In your own code, send the same mcp_servers entry with each request and keep the anthropic-beta header." : {
 
     },
     "Inbox" : {
@@ -1439,7 +1929,22 @@
     "Include archived memories" : {
 
     },
+    "Install Tailscale on this Mac and sign in." : {
+
+    },
+    "Install Tailscale, or choose another tunnel." : {
+
+    },
+    "Install cloudflared with brew install cloudflared, or choose another tunnel." : {
+
+    },
     "Install in VS Code" : {
+
+    },
+    "Install it in Terminal:" : {
+
+    },
+    "Install ngrok, or choose another tunnel." : {
 
     },
     "Instruction" : {
@@ -1475,6 +1980,9 @@
     "It couldn't be saved. Try again." : {
 
     },
+    "It stops working now. To use it again, connect it again." : {
+
+    },
     "It was deleted for good." : {
 
     },
@@ -1490,6 +1998,9 @@
     "It's at the top of the Vault." : {
 
     },
+    "It's reachable only from your own network, so cloud agents can't reach it." : {
+
+    },
     "It's removed for good, with its history. This can't be undone." : {
 
     },
@@ -1497,6 +2008,12 @@
 
     },
     "Its key stops working at once and its access is deleted. Activity keeps its history, labelled “removed agent”. Its entry in the agent's own settings stays until you delete it there." : {
+
+    },
+    "Its key, remote token and connected cloud apps stop working at once, and its access is deleted. Activity keeps its history, labelled “removed agent”. Its entry in the agent's own settings stays until you delete it there." : {
+
+    },
+    "Its remote token and every connected cloud app stop working now. Its access on this Mac isn't affected." : {
 
     },
     "Its weekly check found a problem. Restore a backup in Settings ▸ Data." : {
@@ -1512,6 +2029,12 @@
 
     },
     "Keep shares, refusals and changes" : {
+
+    },
+    "Keep the remote token with your app's other secrets; every request carries it." : {
+
+    },
+    "Keep this Mac awake while on power" : {
 
     },
     "Keeps it" : {
@@ -1551,6 +2074,12 @@
 
     },
     "Last checked" : {
+
+    },
+    "Last use" : {
+
+    },
+    "Last used: %@" : {
 
     },
     "Later" : {
@@ -1646,6 +2175,9 @@
     "Model" : {
 
     },
+    "More information" : {
+
+    },
     "More than 5 requests were refused in 10 minutes. See why in Activity." : {
 
     },
@@ -1682,10 +2214,16 @@
     "New Memory" : {
 
     },
+    "New address for %@" : {
+
+    },
     "New captures" : {
 
     },
     "New categories" : {
+
+    },
+    "New in this version: it may change." : {
 
     },
     "New key issued. The old one no longer works." : {
@@ -1697,13 +2235,22 @@
     "New memories: %@" : {
 
     },
+    "New secret path. Update the URL in each cloud agent." : {
+
+    },
     "Next request" : {
 
     },
     "No access yet" : {
 
     },
+    "No account, but a random address each time. For testing only." : {
+
+    },
     "No activity yet" : {
+
+    },
+    "No agent can be used from the cloud yet. Turn on Allow cloud access in an agent's Cloud tab, or add a cloud agent with Add Agent…." : {
 
     },
     "No agent selected" : {
@@ -1715,10 +2262,22 @@
     "No answer in 15 minutes" : {
 
     },
+    "No answer within 10 seconds. Is the tunnel running?" : {
+
+    },
     "No answer within 20 seconds." : {
 
     },
+    "No answer." : {
+
+    },
     "No answer: %@ was told to wait. It's in Pending requests." : {
+
+    },
+    "No cloud agents use the current URL yet." : {
+
+    },
+    "No credentials yet" : {
 
     },
     "No key" : {
@@ -1754,13 +2313,28 @@
     "Not found" : {
 
     },
+    "Not installed" : {
+
+    },
     "Not kept" : {
 
     },
     "Not known" : {
 
     },
+    "Not public" : {
+
+    },
+    "Not reachable" : {
+
+    },
+    "Not running" : {
+
+    },
     "Not said" : {
+
+    },
+    "Not tested" : {
 
     },
     "Nothing archived" : {
@@ -1770,6 +2344,9 @@
 
     },
     "Nothing here" : {
+
+    },
+    "Nothing is saved yet" : {
 
     },
     "Nothing matches these filters." : {
@@ -1796,13 +2373,25 @@
     "Notifications never include memory text." : {
 
     },
+    "OAuth Client" : {
+
+    },
+    "OAuth settings" : {
+
+    },
     "Off" : {
+
+    },
+    "Off: cloud agents can't use this agent." : {
 
     },
     "Off: it saves memories directly. On: they wait in your Inbox." : {
 
     },
     "On" : {
+
+    },
+    "On Pro and Max plans, you can add an API credential for %@ instead (Bearer, with the remote token as the value) and commit the version without headers." : {
 
     },
     "On a date" : {
@@ -1814,10 +2403,16 @@
     "On, but Funes is paused" : {
 
     },
+    "Once added, the connector also works in Claude Desktop and the Claude mobile app. Claude signs in with OAuth; sending a fixed header is a limited beta." : {
+
+    },
     "One-click setup" : {
 
     },
     "One-click setup isn't available." : {
+
+    },
+    "Only agents you give cloud access can be used from the internet, each with its own remote token or signed-in app, and only with the access you set for that agent. Panels still ask on this Mac." : {
 
     },
     "Only allowed categories can be shared. Deny always wins." : {
@@ -1841,10 +2436,19 @@
     "Open Settings ▸ Tools ▸ AI Assistant ▸ Model Context Protocol (MCP)." : {
 
     },
+    "OpenAI Responses API" : {
+
+    },
     "Opened a request in Funes" : {
 
     },
     "Opens the capture box from any app. Funes doesn't need Accessibility access for it." : {
+
+    },
+    "Optionally, allow only your agent's addresses with a Traffic Policy IP restriction, for example Anthropic's 160.79.104.0/21." : {
+
+    },
+    "Optionally, put Cloudflare Access service tokens in front for agents that can send two extra headers, such as Cursor, Copilot and Devin." : {
 
     },
     "Or in ~/.codex/config.toml" : {
@@ -1853,19 +2457,59 @@
     "Or set it up yourself" : {
 
     },
+    "Other" : {
+
+    },
     "Other MCP client" : {
 
     },
     "Other OpenAI-Compatible Server…" : {
 
     },
+    "Other tunnel" : {
+
+    },
+    "Pairing is open for 10 minutes. Add the connector in the cloud app now; when it asks to connect, check the code and allow it here." : {
+
+    },
+    "Pairing is open. Connect the app in its settings now." : {
+
+    },
+    "Pass the vault in vault_ids when you create a session." : {
+
+    },
     "Paste" : {
+
+    },
+    "Paste %@ in step 3." : {
 
     },
     "Paste Claude Memories" : {
 
     },
     "Paste Claude Memories…" : {
+
+    },
+    "Paste and test" : {
+
+    },
+    "Paste its address" : {
+
+    },
+    "Paste the remote token from %@ on the Cloud section of “%@” in %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Paste the remote token from %1$@ on the Cloud section of “%2$@” in %3$@."
+          }
+        }
+      }
+    },
+    "Paste this URL as the MCP server URL and choose OAuth 2.0. Turn on Enable PKCE Support." : {
+
+    },
+    "Paste this URL, leave the OAuth settings as they are, and click Add." : {
 
     },
     "Pause" : {
@@ -1898,6 +2542,12 @@
     "Personal: health, money, family. Share rarely, and always ask." : {
 
     },
+    "Point the tunnel at http://127.0.0.1 and the Remote Access port, never at the port local agents use." : {
+
+    },
+    "Point your tunnel at the new port afterwards. It must differ from the MCP server's port." : {
+
+    },
     "Port" : {
 
     },
@@ -1905,6 +2555,12 @@
 
     },
     "Port %@ is in use by another app" : {
+
+    },
+    "Port %@ is in use by another app." : {
+
+    },
+    "Port %@ is open only while Remote Access is on. Cloud agents reach Funes Vault only while this Mac is awake, logged in and running it.\n\nRemote tokens and cloud apps never work on the local MCP port, and local keys never work remotely. Turning off Remote Access cuts off every cloud agent at once." : {
 
     },
     "Preference" : {
@@ -1956,6 +2612,9 @@
     "Public" : {
 
     },
+    "Public DNS can take about 10 minutes the first time." : {
+
+    },
     "Purpose" : {
 
     },
@@ -1972,6 +2631,9 @@
 
     },
     "Raise %@'s limit…" : {
+
+    },
+    "Reachable" : {
 
     },
     "Read" : {
@@ -2014,6 +2676,9 @@
     "Recently Deleted is empty" : {
 
     },
+    "Redirect URI" : {
+
+    },
     "Redo" : {
 
     },
@@ -2045,6 +2710,60 @@
 
     },
     "Remember…" : {
+
+    },
+    "Remote Access" : {
+
+    },
+    "Remote Access (a cloud agent)" : {
+
+    },
+    "Remote Access Port" : {
+
+    },
+    "Remote Access is off, so cloud agents can't reach Funes Vault." : {
+
+    },
+    "Remote Access is on, but its tunnel address isn't set yet." : {
+
+    },
+    "Remote Access isn't set up yet. %@ can't reach Funes Vault until it is; the agent's Cloud tab links to it." : {
+
+    },
+    "Remote Access now uses port %@. Point your tunnel at the new port." : {
+
+    },
+    "Remote Access on" : {
+
+    },
+    "Remote Access on · %lld cloud agents" : {
+
+    },
+    "Remote Access on · 1 cloud agent" : {
+
+    },
+    "Remote Access on · tunnel down" : {
+
+    },
+    "Remote Access turned off, as scheduled." : {
+
+    },
+    "Remote Access's tunnel stopped" : {
+
+    },
+    "Remote Access, %@" : {
+
+    },
+    "Remote token" : {
+
+    },
+    "Remote token copied. The clipboard is cleared in 90 seconds." : {
+
+    },
+    "Remote token issued" : {
+
+    },
+    "Remote token reset. The old token no longer works; copy the new one." : {
 
     },
     "Remove" : {
@@ -2107,7 +2826,25 @@
     "Requests from your agents appear here, with what was shared and why." : {
 
     },
+    "Reset Path" : {
+
+    },
+    "Reset Path…" : {
+
+    },
+    "Reset Remote Token…" : {
+
+    },
+    "Reset Token" : {
+
+    },
     "Reset Usage" : {
+
+    },
+    "Reset the remote token for “%@”?" : {
+
+    },
+    "Reset the secret path?" : {
 
     },
     "Restart %@" : {
@@ -2170,6 +2907,9 @@
     "Resume Funes Vault" : {
 
     },
+    "Returns to %@" : {
+
+    },
     "Revert" : {
 
     },
@@ -2183,6 +2923,12 @@
 
     },
     "Review…" : {
+
+    },
+    "Revoke" : {
+
+    },
+    "Revoke “%@”?" : {
 
     },
     "Rotate %@'s key?" : {
@@ -2200,10 +2946,28 @@
     "Run it in Terminal. Claude Code connects the next time it starts (or run /mcp to reconnect)." : {
 
     },
+    "Run it in Terminal. It prints the tunnel's https address; you paste it next." : {
+
+    },
+    "Run the command. cloudflared prints a random https://….trycloudflare.com address." : {
+
+    },
+    "Run the first command in Terminal. Funnel prints your public address, such as https://my-mac.tail1234.ts.net." : {
+
+    },
+    "Running" : {
+
+    },
     "Save" : {
 
     },
+    "Save Address" : {
+
+    },
     "Save new memories, within the limits below. Corrections still wait in your Inbox." : {
+
+    },
+    "Save the new address?" : {
 
     },
     "Save this correction?" : {
@@ -2240,7 +3004,13 @@
     "Saved; type to replace" : {
 
     },
+    "Save…" : {
+
+    },
     "Saving cancels %@'s pending requests; it can ask again." : {
+
+    },
+    "Scopes" : {
 
     },
     "Search activity" : {
@@ -2288,6 +3058,9 @@
     "Sensitivity: %@" : {
 
     },
+    "Server URL" : {
+
+    },
     "Server name" : {
 
     },
@@ -2303,6 +3076,15 @@
           }
         }
       }
+    },
+    "Set Network access to Custom and add %@ under Allowed domains." : {
+
+    },
+    "Set Up OAuth Client…" : {
+
+    },
+    "Set Up Remote Access…" : {
+
     },
     "Set up Funes Vault" : {
 
@@ -2414,11 +3196,27 @@
     "Showing “%@” only" : {
 
     },
+    "Sign in" : {
+
+    },
+    "Sign up at ngrok.com, then put your authtoken and your free dev domain from the dashboard into the commands." : {
+
+    },
     "Similar memory exists:" : {
 
     },
     "Some memories are only in this category. Choose a replacement." : {
 
+    },
+    "Something answered at that address, but not %@ (HTTP %@). Check that the tunnel points at port %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something answered at that address, but not %1$@ (HTTP %2$@). Check that the tunnel points at port %3$@."
+          }
+        }
+      }
     },
     "Something else is already at ~/.local/bin/funes-mcp, so it was left alone." : {
 
@@ -2457,6 +3255,15 @@
     "Start %@ when VS Code asks." : {
 
     },
+    "Start it" : {
+
+    },
+    "Start it in Terminal:" : {
+
+    },
+    "Start it on port %@ in Terminal:" : {
+
+    },
     "Start with nothing and set it up on the Access tab." : {
 
     },
@@ -2468,6 +3275,16 @@
     },
     "Status" : {
 
+    },
+    "Step %lld, %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Step %1$lld, %2$@, %3$@"
+          }
+        }
+      }
     },
     "Still True" : {
 
@@ -2518,7 +3335,59 @@
     "Summary" : {
 
     },
+    "Switch" : {
+
+    },
+    "Switch Tunnel…" : {
+
+    },
+    "Switch to %@?" : {
+
+    },
+    "Switch tunnel" : {
+
+    },
+    "Switched to %@." : {
+
+    },
+    "Switch…" : {
+
+    },
+    "TLS ends at %@'s edge, so %@ can read the traffic, memories included." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "TLS ends at %1$@'s edge, so %2$@ can read the traffic, memories included."
+          }
+        }
+      }
+    },
+    "TLS ends on this Mac, inside Tailscale, so the relays in between can't read the traffic." : {
+
+    },
     "Tab" : {
+
+    },
+    "Tailscale Funnel" : {
+
+    },
+    "Tailscale Funnel (recommended)" : {
+
+    },
+    "Tailscale Serve is on, but Funnel isn't, so cloud agents can't reach it." : {
+
+    },
+    "Tailscale Serve is on, but Funnel isn't." : {
+
+    },
+    "Tailscale Serve isn't enough: cloud agents aren't on your tailnet." : {
+
+    },
+    "Tailscale is logged out. Open Tailscale and log in." : {
+
+    },
+    "Tailscale is turned off. Turn it on, then start Funnel." : {
 
     },
     "Task" : {
@@ -2533,16 +3402,28 @@
     "Tasks" : {
 
     },
+    "Test" : {
+
+    },
+    "Test Again" : {
+
+    },
     "Test Connection" : {
 
     },
     "Test Connection classifies one made-up note among Funes's built-in categories; none of your memories or category names are sent." : {
 
     },
+    "Testing %@…" : {
+
+    },
     "Testing…" : {
 
     },
     "Text" : {
+
+    },
+    "Text you share with a cloud agent goes to its vendor's servers. Use one agent per cloud app, with only the access it needs." : {
 
     },
     "That category no longer exists." : {
@@ -2563,13 +3444,49 @@
     "That's longer than 10,000 characters." : {
 
     },
+    "That's the local MCP server's port. Use a different one." : {
+
+    },
+    "The API calls tools without asking you, so this agent's access in %@ is the only limit. Give it only the categories it needs." : {
+
+    },
+    "The Anthropic vault matches the credential by URL. If you reset the secret path, add the credential again." : {
+
+    },
+    "The MCP URL becomes %@." : {
+
+    },
+    "The Remote Access address changed." : {
+
+    },
+    "The address %@ had last time. Check it, then test." : {
+
+    },
+    "The address doesn't resolve yet. A new address can take a few minutes (about 10 for Tailscale Funnel)." : {
+
+    },
+    "The address isn't valid." : {
+
+    },
     "The agent server is off" : {
 
     },
     "The agent server stopped" : {
 
     },
+    "The app couldn't be set up: the list of connected apps can't be saved right now." : {
+
+    },
+    "The app's name is as it reported it." : {
+
+    },
+    "The authorization field takes the bare token, without Bearer." : {
+
+    },
     "The backup couldn't be written." : {
+
+    },
+    "The configuration rewrites Host to this Mac's address." : {
 
     },
     "The copy already in Applications couldn't be moved to the Trash." : {
@@ -2585,6 +3502,9 @@
 
     },
     "The file couldn't be read." : {
+
+    },
+    "The free plan allows 20,000 requests a month." : {
 
     },
     "The key couldn't be saved in the Keychain." : {
@@ -2608,6 +3528,9 @@
     "The name needs 1 to 60 characters." : {
 
     },
+    "The new address for %@, without a path. Test it, then save." : {
+
+    },
     "The old key stops working at once. Setups that use the launcher keep working; any setup with the key pasted in needs the new one." : {
 
     },
@@ -2615,6 +3538,9 @@
 
     },
     "The provider says to slow down. Try again later." : {
+
+    },
+    "The request failed (%@)." : {
 
     },
     "The server listed no models." : {
@@ -2632,6 +3558,30 @@
     "The title needs 1 to 180 characters." : {
 
     },
+    "The tools list holds only the read tools. Add suggest_memory only if this agent may suggest memories." : {
+
+    },
+    "The tunnel in use keeps working" : {
+
+    },
+    "The tunnel must pass the Authorization header through unchanged." : {
+
+    },
+    "The tunnel refused the connection." : {
+
+    },
+    "The tunnel sent a different host name. Check the address, or set the tunnel to rewrite Host." : {
+
+    },
+    "The tunnel's HTTPS certificate wasn't accepted." : {
+
+    },
+    "The tunnel's public https address, without a path. For Tailscale Funnel it looks like https://my-mac.tail1234.ts.net." : {
+
+    },
+    "The tunnel's public https address, without a path. Test it before you switch." : {
+
+    },
     "The vault didn't open" : {
 
     },
@@ -2639,6 +3589,9 @@
 
     },
     "The weekly check found a problem with the vault file. Restore the latest backup." : {
+
+    },
+    "Then you can stop %@" : {
 
     },
     "There's no link to remove." : {
@@ -2650,10 +3603,26 @@
     "There's no text to remember." : {
 
     },
+    "These cloud apps are disconnected and have to connect again: %@." : {
+
+    },
     "They skip the Inbox. Only do this with your own export." : {
 
     },
     "They're removed for good, with their history. This can't be undone." : {
+
+    },
+    "This address goes through %@, not %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This address goes through %1$@, not %2$@."
+          }
+        }
+      }
+    },
+    "This agent has no access yet, so cloud agents can't use anything." : {
 
     },
     "This copy isn't signed by a developer, so its copy can't be checked. Drag it to Applications in Finder instead." : {
@@ -2665,6 +3634,9 @@
     "This deletes every memory, suggestion, agent and key, Activity, backups and AI provider keys, then relaunches empty. It can't be undone. Agents' own settings still name Funes until you remove it there." : {
 
     },
+    "This example allows only the read tools, without approval in the API. To let it suggest memories too, remove allowed_tools and handle approval requests in your code." : {
+
+    },
     "This looks like %@. Funes never stores secrets." : {
 
     },
@@ -2672,6 +3644,9 @@
 
     },
     "This request changed; review again." : {
+
+    },
+    "This switch is no longer open." : {
 
     },
     "This vault was written by a newer Funes Vault. Update the app." : {
@@ -2683,7 +3658,19 @@
     "Title" : {
 
     },
+    "To turn it off, press Control-C in the Terminal window running %@." : {
+
+    },
+    "To turn it off, run the last command." : {
+
+    },
     "Today" : {
+
+    },
+    "Token" : {
+
+    },
+    "Token URL" : {
 
     },
     "Too many requests" : {
@@ -2695,10 +3682,49 @@
     "Transport" : {
 
     },
+    "Try Again" : {
+
+    },
     "Try It" : {
 
     },
+    "Tunnel" : {
+
+    },
+    "Tunnel address" : {
+
+    },
     "Turn Off" : {
+
+    },
+    "Turn Off Remote Access" : {
+
+    },
+    "Turn On" : {
+
+    },
+    "Turn On Remote Access" : {
+
+    },
+    "Turn off" : {
+
+    },
+    "Turn off automatically" : {
+
+    },
+    "Turn off cloud access for “%@”?" : {
+
+    },
+    "Turn on Funnel in Terminal:" : {
+
+    },
+    "Turn on Remote Access to test the address." : {
+
+    },
+    "Turn on Remote Access?" : {
+
+    },
+    "Type" : {
 
     },
     "URL" : {
@@ -2716,6 +3742,9 @@
     "Undo" : {
 
     },
+    "Unknown" : {
+
+    },
     "Unknown category" : {
 
     },
@@ -2725,10 +3754,31 @@
     "Until Tomorrow" : {
 
     },
+    "Update the URL in" : {
+
+    },
+    "Update the URL in each cloud agent." : {
+
+    },
+    "Update the URL in each cloud agent. Connected cloud apps were disconnected; connect them again." : {
+
+    },
+    "Update the URL in: %@." : {
+
+    },
     "Updates" : {
 
     },
     "Updates come from GitHub, signed for Funes Vault. Installing always takes a click, and waits while a request is waiting for you." : {
+
+    },
+    "Use This Port" : {
+
+    },
+    "Use a number from 1024 to 65535." : {
+
+    },
+    "Use one agent per cloud app, with only the access it needs." : {
 
     },
     "Use the HTTP values if the agent supports Streamable HTTP with a custom header; otherwise run the launcher over stdio." : {
@@ -2764,10 +3814,19 @@
     "Very personal. Only for agents you fully trust, and always ask." : {
 
     },
+    "Via" : {
+
+    },
     "View" : {
 
     },
+    "Waiting for %@…" : {
+
+    },
     "Waiting for first request" : {
+
+    },
+    "Waiting for tunnel" : {
 
     },
     "Waiting for you" : {
@@ -2813,7 +3872,20 @@
     "When a request is refused only because a category isn't allowed, Funes asks you: Not Now, Allow Once or Always Allow. Never for the sensitivity limit or denied categories." : {
 
     },
+    "When it asks you to sign in, open “%@” in %@, choose Connect a Cloud App… on its Cloud section, and approve the code you see in both places." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "When it asks you to sign in, open “%1$@” in %2$@, choose Connect a Cloud App… on its Cloud section, and approve the code you see in both places."
+          }
+        }
+      }
+    },
     "Which current projects should your vault remember, and why do they matter?" : {
+
+    },
+    "While Remote Access is on, cloud agents reach Funes Vault through a public address. What you share with them goes to their servers." : {
 
     },
     "Why" : {
@@ -2823,6 +3895,9 @@
 
     },
     "Window" : {
+
+    },
+    "With an API credential" : {
 
     },
     "With this method the agent sends the key without checking that the program on the port is Funes Vault. The launcher checks first." : {
@@ -2847,6 +3922,9 @@
     "Write" : {
 
     },
+    "Wrong port" : {
+
+    },
     "Yesterday" : {
 
     },
@@ -2859,7 +3937,13 @@
     "You approved sharing %lld" : {
 
     },
+    "You can copy the secret only while this sheet is open. The clipboard is cleared after 90 seconds. If you lose it, click Set Up OAuth Client… again for a new one." : {
+
+    },
     "You denied a request" : {
+
+    },
+    "You need a domain on Cloudflare. The login command opens your browser." : {
 
     },
     "You rejected a suggestion" : {
@@ -2880,6 +3964,9 @@
     "Your answers" : {
 
     },
+    "Your ngrok dev domain, from the ngrok dashboard. The commands below use it." : {
+
+    },
     "Your note on how this agent keeps data. Shown on its panels; it doesn't change what's shared." : {
 
     },
@@ -2887,6 +3974,9 @@
 
     },
     "Your previous setup was put back." : {
+
+    },
+    "Your tailnet policy doesn't allow Funnel for this Mac. Add the funnel node attribute in the Tailscale admin console." : {
 
     },
     "Your vault is empty" : {
@@ -2931,7 +4021,13 @@
     "and below: %@" : {
 
     },
+    "another tunnel" : {
+
+    },
     "asks first" : {
+
+    },
+    "at %@" : {
 
     },
     "by %@" : {
@@ -2949,7 +4045,16 @@
     "categories" : {
 
     },
+    "claude.ai · Claude Desktop · mobile" : {
+
+    },
     "confidence" : {
+
+    },
+    "current" : {
+
+    },
+    "done" : {
 
     },
     "expires %@" : {
@@ -2970,6 +4075,12 @@
     "funes-mcp" : {
 
     },
+    "https:// and your dev domain" : {
+
+    },
+    "https:// and your hostname" : {
+
+    },
     "iPhone" : {
 
     },
@@ -2982,6 +4093,9 @@
     "in all categories" : {
 
     },
+    "its HTTPS address" : {
+
+    },
     "just now" : {
 
     },
@@ -2989,6 +4103,9 @@
 
     },
     "kind" : {
+
+    },
+    "last used %@" : {
 
     },
     "macOS didn't add Funes Vault to Login Items." : {
@@ -3003,13 +4120,22 @@
     "macOS needs your approval in System Settings ▸ General ▸ Login Items." : {
 
     },
+    "ngrok" : {
+
+    },
     "no model" : {
 
     },
     "none" : {
 
     },
+    "not done" : {
+
+    },
     "on iPhone" : {
+
+    },
+    "on this Mac · forwards to %@" : {
 
     },
     "saves without asking" : {
@@ -3033,7 +4159,13 @@
     "suggests" : {
 
     },
+    "tested %@" : {
+
+    },
     "text" : {
+
+    },
+    "that address" : {
 
     },
     "the disk image" : {
@@ -3042,10 +4174,16 @@
     "the “%@” folder" : {
 
     },
+    "through %@" : {
+
+    },
     "title" : {
 
     },
     "until %@" : {
+
+    },
+    "via Remote Access" : {
 
     },
     "· confirmed %@" : {

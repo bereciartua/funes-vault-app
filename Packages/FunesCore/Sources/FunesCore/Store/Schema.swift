@@ -20,8 +20,19 @@ enum Schema {
             try db.execute(sql: "INSERT INTO meta (key, value) VALUES ('active_embedding_model', ?)",
                            arguments: [EmbeddingModelInfo.bundled.id])
         }
+        // Remote Access (ADR-0018, storage §2): per-agent cloud access and its remote token.
+        migrator.registerMigration("v2_remote_access") { db in
+            try db.execute(sql: v2)
+        }
         return migrator
     }
+
+    static let v2 = """
+        ALTER TABLE agent ADD COLUMN cloud_access INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE agent ADD COLUMN remote_key_digest BLOB;
+        ALTER TABLE agent ADD COLUMN remote_key_issued_at TEXT;
+        CREATE UNIQUE INDEX agent_remote_key_digest ON agent(remote_key_digest) WHERE remote_key_digest IS NOT NULL;
+        """
 
     /// `memory.seq` is an INTEGER PRIMARY KEY so the FTS external content keeps stable rowids:
     /// a table whose primary key isn't an integer can get new rowids on VACUUM.

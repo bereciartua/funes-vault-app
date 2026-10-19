@@ -20,6 +20,15 @@ public enum Identifiers {
     public static let mcpLauncherName = "funes-mcp"
     public static let mcpKeyPrefix = "fns_mcp_v1_"
 
+    /// Remote Access (ADR-0018): an agent's remote token, and the OAuth access token, refresh
+    /// token and set-up client secret cloud apps get. Each is the prefix plus 64 lowercase hex.
+    public static let remoteKeyPrefix = "fns_mcpr_v1_"
+    public static let oauthAccessPrefix = "fns_oat_v1_"
+    public static let oauthRefreshPrefix = "fns_ort_v1_"
+    public static let oauthClientSecretPrefix = "fns_ocs_v1_"
+    /// The OAuth scope cloud apps are granted.
+    public static let oauthScope = "memory"
+
     public static let bonjourServiceType = "_funes._tcp"
     public static let iOSDeliveryTaskID = "com.funesvault.ios.deliver"
 }

@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(path: "../FunesCore"),
         .package(path: "../FunesProtocol"),
-        .package(url: "https://github.com/bereciartua/bridgekit.git", exact: "0.1.1"),
+        .package(url: "https://github.com/bereciartua/bridgekit.git", exact: "0.2.0"),
     ],
     targets: [
         .target(
@@ -24,6 +24,7 @@ let package = Package(
                 "FunesCore",
                 "FunesProtocol",
                 .product(name: "BridgeKitCore", package: "bridgekit"),
+                .product(name: "BridgeKitRemote", package: "bridgekit"),
             ],
             resources: [.copy("Resources/mcp-tools.json")]
         ),

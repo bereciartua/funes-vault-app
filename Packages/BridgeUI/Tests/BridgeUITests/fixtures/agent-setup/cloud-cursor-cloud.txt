@@ -1,0 +1,21 @@
+Cursor cloud agents
+credential: remote token
+agentKind: cursor_cloud
+symbol: chevron.left.forwardslash.chevron.right
+needsLiteralSecret: true
+
+snippet (values):
+Name: funes
+Type: HTTP
+URL: https://my-mac.tail1234.ts.net/r/q7Zk2vN4bXwP9sL1mT6hYa/mcp
+Header: Authorization: Bearer <remote token from Copy Remote Token…>
+
+steps:
+1. At cursor.com/agents, open the MCP menu and add a server.
+2. Choose HTTP and enter these values.
+3. Paste the remote token from Copy Remote Token… on the Cloud section of “Work agent” in Funes Vault.
+
+warnings:
+- Cloud agents often run while you're away. With Ask before sharing on, a request waits up to 45 s for you at this Mac; after that, you can still approve it from the pending list within 15 minutes.
+
+footnote: Cursor keeps the header on its servers and relays tool calls, so the agent's machine never sees the token.

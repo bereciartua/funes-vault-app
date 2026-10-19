@@ -1,4 +1,5 @@
 import BridgeKitCore
+import BridgeKitRemote
 import Darwin
 import Foundation
 import FunesCore
@@ -17,6 +18,10 @@ import FunesProtocol
 //   response-size check (PR #5 review 4307609724).
 // - FUNES_MCP_TEST_APPROVAL: how the fake responder answers panels: none (default; answer
 //   with the control channel), allow or deny.
+//
+// Remote Access (mcp-server.md §12): `remote_start` runs the remote listener on a second loopback
+// port, with the public origin https://remote.test faked through `Host` (as a tunnel forwards it)
+// and the secret path below. `answer_pairing` is the fake sign-in approver.
 //
 // Prints {"port":…,"agents":{name:{"id","key"}},"memories":{name:id}} on stdout, then answers
 // one JSON control command per stdin line, and exits when stdin closes.
@@ -114,6 +119,9 @@ final class Harness {
     let suggestions: SuggestionService
     let responder = FakeResponder()
     var server: FunesMCPServer!
+    var remote: FunesRemoteServer!
+    static let remoteSecret = "q7Zk2vN4bXwP9sL1mT6hYa"
+    static let remoteOrigin = "https://remote.test"
     var agentIDs = [String: UUID]()
     var memoryIDs = [String: UUID]()
     var lastPort = 0
@@ -283,6 +291,74 @@ final class Harness {
         case "start":
             server.start(port: command["port"] as? Int ?? lastPort)
             return ["ok": true]
+        case "agent":
+            guard let agent, let found = try? await agents.agent(id: agent) else { return ["agent": NSNull()] }
+            return ["agent": ["revision": found.revision, "cloud": found.cloudAccess, "remote_key": found.hasRemoteKey,
+                              "removed": found.isRemoved]]
+        // Remote Access.
+        case "remote_start":
+            remote.start(RemoteConfiguration(secret: command["secret"] as? String ?? Self.remoteSecret,
+                                             publicOrigin: Self.remoteOrigin, port: command["port"] as? Int ?? 0))
+            return ["ok": true]
+        case "remote_stop":
+            remote.stop()
+            return ["ok": true]
+        case "remote_port":
+            if case .listening(let port) = remote.status { return ["port": port] }
+            return ["port": NSNull()]
+        case "remote_secret":
+            // Reset Path…: connections for the old URL are revoked.
+            guard var settings = remote.service.settings else { return ["ok": false] }
+            settings.secret = command["secret"] as? String ?? RemoteConfiguration.newSecret()
+            return ["ok": true, "revoked": remote.update(settings)]
+        case "set_cloud":
+            guard let agent else { return ["ok": false] }
+            do { try await remote.setCloudAccess(agentID: agent, command["on"] as? Bool ?? true); return ["ok": true] }
+            catch { return ["ok": false] }
+        case "issue_remote_key":
+            guard let agent else { return ["ok": false] }
+            do {
+                let key = try await remote.issueRemoteKey(agentID: agent)
+                let onDisk = keys.remoteURL(agentID: agent).flatMap { try? String(contentsOf: $0, encoding: .utf8) }
+                return ["ok": true, "key": key.plaintext, "file_matches": onDisk?.trimmingCharacters(in: .whitespacesAndNewlines) == key.plaintext]
+            } catch { return ["ok": false] }
+        case "remove_cloud_agent":
+            guard let agent else { return ["ok": false] }
+            do { try await remote.removeAgent(agentID: agent); return ["ok": true] } catch { return ["ok": false] }
+        case "remote_key_file":
+            guard let agent, let url = keys.remoteURL(agentID: agent) else { return ["exists": false] }
+            var info = stat()
+            guard lstat(url.path, &info) == 0 else { return ["exists": false] }
+            return ["exists": true, "mode": Int(info.st_mode & 0o777)]
+        case "nonce":
+            return ["nonce": remote.service.nonces.issue()]
+        case "remote_notes":
+            return ["notes": remote.notes.reversed().map {
+                ["agentID": $0.clientID, "tunnel": $0.tunnel?.wireName as Any? ?? NSNull(), "address": $0.address]
+            }]
+        case "open_pairing":
+            guard let agent else { return ["ok": false] }
+            return ["ok": remote.openPairing(agentID: agent)]
+        case "close_pairing":
+            remote.oauth.closePairing()
+            return ["ok": true]
+        case "pairings":
+            return ["pending": remote.oauth.pendingPairings.map {
+                ["id": $0.id.uuidString.lowercased(), "agentID": $0.clientID, "app": $0.appName, "code": $0.code,
+                 "redirectHost": $0.redirectHost]
+            }, "open": remote.oauth.pairingClientID as Any? ?? NSNull()]
+        case "answer_pairing":
+            guard let first = remote.oauth.pendingPairings.first else { return ["ok": false] }
+            remote.oauth.answerPairing(first.id, allow: command["allow"] as? Bool ?? false)
+            return ["ok": true]
+        case "oauth_connections":
+            guard let agent else { return ["count": 0] }
+            let apps = remote.connectedApps(agentID: agent)
+            return ["count": apps.count, "ids": apps.map { $0.id.uuidString.lowercased() }, "names": apps.map(\.appName)]
+        case "revoke_app":
+            guard let id = (command["id"] as? String).flatMap(UUID.init(uuidString:)) else { return ["ok": false] }
+            remote.oauth.revoke(connectionID: id)
+            return ["ok": true]
         default:
             return ["error": "unknown command"]
         }
@@ -317,6 +393,7 @@ func startControl(_ harness: Harness) {
         let done = DispatchSemaphore(value: 0)
         Task { @MainActor in
             box.value.server.stop()
+            box.value.remote.stop()
             done.signal()
         }
         done.wait()
@@ -341,6 +418,7 @@ Task { @MainActor in
         harness.server = FunesMCPServer(services: services, presenter: harness.responder,
                                         dataFolder: harness.directory, version: "0.0.0-test",
                                         inCallWait: .milliseconds(Int(wait * 1000)))
+        harness.remote = FunesRemoteServer(local: harness.server, dataFolder: harness.directory, version: "0.0.0-test")
         var announced = false
         harness.server.statusChanged = { status in
             switch status {

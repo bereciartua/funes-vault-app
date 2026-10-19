@@ -1,0 +1,23 @@
+Claude Code on the web
+credential: remote token
+agentKind: claude_code_web
+symbol: terminal
+needsLiteralSecret: true
+
+snippet (json):
+{"mcpServers":{"funes":{"type":"http","url":"https://my-mac.tail1234.ts.net/r/q7Zk2vN4bXwP9sL1mT6hYa/mcp","headers":{"Authorization":"Bearer ${FUNES_REMOTE_TOKEN}"}}}}
+
+With an API credential (json):
+{"mcpServers":{"funes":{"type":"http","url":"https://my-mac.tail1234.ts.net/r/q7Zk2vN4bXwP9sL1mT6hYa/mcp"}}}
+
+steps:
+1. Add this to .mcp.json at the root of the repository and commit it. It holds no token.
+2. At claude.ai/code, edit the cloud environment and add FUNES_REMOTE_TOKEN=<remote token from Copy Remote Token…> under Environment variables. Copy Remote Token… is on the agent's Cloud section in Funes Vault.
+3. Set Network access to Custom and add my-mac.tail1234.ts.net under Allowed domains.
+4. On Pro and Max plans, you can add an API credential for my-mac.tail1234.ts.net instead (Bearer, with the remote token as the value) and commit the version without headers.
+
+warnings:
+- Anyone who uses that cloud environment can read its environment variables, including this token. Use an environment only you use, or on Pro and Max plans an API credential.
+- Cloud agents often run while you're away. With Ask before sharing on, a request waits up to 45 s for you at this Mac; after that, you can still approve it from the pending list within 15 minutes.
+
+footnote: Cloud sessions load .mcp.json only when the session has one repository.

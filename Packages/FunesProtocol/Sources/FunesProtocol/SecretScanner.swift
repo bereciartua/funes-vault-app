@@ -48,7 +48,8 @@ public enum SecretScanner {
         (.slackToken, #"\bxox[abposr]-[A-Za-z0-9-]{10,}\b"#, []),
         (.stripeKey, #"\b(sk|rk)_(live|test)_[A-Za-z0-9]{16,}\b"#, []),
         (.googleAPIKey, #"\bAIza[0-9A-Za-z_-]{35}\b"#, []),
-        (.funesOrEKBKey, #"\b(fns|ekb)_(mcp|mcpr)_v1_[0-9a-f]{64}\b"#, []),
+        // MCP keys, remote tokens, and OAuth access, refresh and client-secret tokens.
+        (.funesOrEKBKey, #"\b(fns|ekb)_(mcp|mcpr|oat|ort|ocs)_v1_[0-9a-f]{64}\b"#, []),
         // 13–19 digits, optionally grouped by single spaces or dashes; confirmed by the Luhn check.
         (.creditCard, #"(?<![0-9])(?:[0-9][ -]?){12,18}[0-9](?![0-9])"#, []),
     ]

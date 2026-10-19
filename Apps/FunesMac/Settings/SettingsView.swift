@@ -1,3 +1,4 @@
+import BridgeUI
 import FunesCore
 import ServiceManagement
 import SwiftUI
@@ -70,6 +71,7 @@ struct GeneralSettings: View {
     @State private var notifyExpired = false
     @State private var notifySuggestion = false
     @State private var notifyRefused = false
+    @State private var notifyTunnelDown = false
 
     var body: some View {
         Form {
@@ -99,6 +101,8 @@ struct GeneralSettings: View {
                     .onChange(of: notifySuggestion) { _, on in model.setNotification(Preferences.Key.notifySuggestion, on) }
                 Toggle(String(localized: "An agent was refused more than 5 times in 10 minutes"), isOn: $notifyRefused)
                     .onChange(of: notifyRefused) { _, on in model.setNotification(Preferences.Key.notifyRefused, on) }
+                Toggle(String(localized: "Remote Access's tunnel stopped"), isOn: $notifyTunnelDown)
+                    .onChange(of: notifyTunnelDown) { _, on in model.setNotification(RemoteAccessController.Key.notifyTunnelDown, on) }
                 Text(String(localized: "Notifications never include memory text."))
                     .font(.callout).foregroundStyle(.secondary)
             }
@@ -109,6 +113,7 @@ struct GeneralSettings: View {
             notifyExpired = model.preferences.notifyExpired
             notifySuggestion = model.preferences.notifySuggestion
             notifyRefused = model.preferences.notifyRefused
+            notifyTunnelDown = model.preferences.flag(RemoteAccessController.Key.notifyTunnelDown)
             launchAtLogin = LoginItem.isEnabled
         }
     }

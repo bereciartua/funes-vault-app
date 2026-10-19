@@ -1,0 +1,26 @@
+Gemini Enterprise
+credential: oauth
+agentKind: gemini_enterprise
+symbol: building.2
+needsLiteralSecret: false
+
+snippet (values):
+https://my-mac.tail1234.ts.net/r/q7Zk2vN4bXwP9sL1mT6hYa/mcp
+
+OAuth settings (values):
+Authorization URL: https://my-mac.tail1234.ts.net/r/q7Zk2vN4bXwP9sL1mT6hYa/oauth/authorize
+Token URL: https://my-mac.tail1234.ts.net/r/q7Zk2vN4bXwP9sL1mT6hYa/oauth/token
+Client ID: <Client ID from Set Up OAuth Client…>
+Client secret: <Client secret from Set Up OAuth Client…>
+Scopes: memory
+
+steps:
+1. In the Google Cloud console, open Gemini Enterprise ▸ Data stores ▸ Create data store and choose Custom MCP Server.
+2. Paste this URL as the MCP server URL and choose OAuth 2.0. Turn on Enable PKCE Support.
+3. In Funes Vault, click Set Up OAuth Client… on the Cloud section of “Work agent”. Enter the OAuth settings below, copying the Client ID and Client secret from that sheet.
+4. When it asks you to sign in, open “Work agent” in Funes Vault, choose Connect a Cloud App… on its Cloud section, and approve the code you see in both places.
+
+warnings:
+- Cloud agents often run while you're away. With Ask before sharing on, a request waits up to 45 s for you at this Mac; after that, you can still approve it from the pending list within 15 minutes.
+
+footnote: Gemini Enterprise needs an OAuth client set up ahead of time: Set Up OAuth Client… creates one for this agent. Clicking it again replaces one that hasn't connected.

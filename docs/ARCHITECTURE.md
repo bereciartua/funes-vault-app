@@ -10,8 +10,11 @@ flowchart LR
     G1[Agents that launch stdio servers<br/>Claude Desktop, Cursor, Codex, …] -->|stdio JSON-RPC| L[funes-mcp launcher<br/>reads the agent's key file]
     G2[Claude Code<br/>HTTP + headersHelper] -->|POST /mcp + Bearer key| S
     L -->|POST /mcp + Bearer key| S
+    G3[Cloud agents<br/>claude.ai, ChatGPT, APIs] -->|HTTPS to your public address| T[Tunnel you run<br/>Tailscale Funnel, Cloudflare, ngrok]
+    T -->|/r/secret/mcp + remote or OAuth token| RS
     subgraph App[FunesVault.app]
       S[BridgeKitCore listener + MCP server<br/>127.0.0.1:47625] --> P[FunesMCP RequestPipeline<br/>and tool handlers]
+      RS[BridgeKitRemote listener + OAuth<br/>127.0.0.1:47627, only while on] --> P
       P --> C[FunesCore<br/>policy, search, disclosures, suggestions]
       P --> UI[BridgeUI panels<br/>Share, Save, access requests]
       C --> DB[(vault.sqlite<br/>SQLite + FTS5 + vectors)]
@@ -23,7 +26,7 @@ flowchart LR
     App -.->|daily update check| GH[(GitHub Releases<br/>appcast.xml)]
 ```
 
-Agents are untrusted parties with scoped access; their keys separate them from each other. Model providers you add receive only what the guardrails allow. Other software running as your macOS user is out of scope (see [Threat model](#threat-model)).
+Agents are untrusted parties with scoped access; their keys separate them from each other. Cloud agents are Funes agents too: the remote listener is a second door to the same MCP server and pipeline, with its own credentials. Model providers you add receive only what the guardrails allow. Other software running as your macOS user is out of scope (see [Threat model](#threat-model)).
 
 ## Packages and targets
 
@@ -33,7 +36,7 @@ Agents are untrusted parties with scoped access; their keys separate them from e
 | `Packages/FunesCore` | The vault, Mac only: the GRDB store and migrations, the policy engine, retrieval and search, the bundle compiler, disclosures (requests, approvals, delivery), suggestions, captures, agents and their keys, import and export, and the AI model providers with `ModelRouter`. No AppKit, SwiftUI or MCP. | FunesProtocol, [GRDB.swift](https://github.com/groue/GRDB.swift) 7.11.1 |
 | `Packages/FunesMCP` | The MCP adapter: the tool contract (`Sources/FunesMCP/Resources/mcp-tools.json`), tool visibility, Funes's server configuration (port, key prefix, limits, wording), key lookup, `RequestPipeline` and the five handlers, and `funes-mcp-test-server`, the test build the Python harness drives ([ADR-0017](../spec/architecture/decisions/0017-funes-mcp-package.md)). No AppKit. | FunesCore, BridgeKit |
 | `Packages/BridgeUI` | UI and workflow pieces adapted from EK Bridge: the approval queue and panels, the Activity store, agent detection, agent setups and one-click setup, the app mover and the updater's relaunch gate. `Upstream/` keeps the copied originals; see its `PROVENANCE.md`. | BridgeKit |
-| BridgeKit (`BridgeKitCore`) | External package, [`bereciartua/bridgekit`](https://github.com/bereciartua/bridgekit), pinned to exactly **0.1.1**, shared with EK Bridge: the loopback HTTP listener, JSON-RPC and MCP protocol versions, the JSON Schema validator, keys, rate limits, safe files, the launcher and the agent config writer ([ADR-0013](../spec/architecture/decisions/0013-shared-bridgekit-core.md)). | System frameworks only |
+| BridgeKit (`BridgeKitCore`, `BridgeKitRemote`) | External package, [`bereciartua/bridgekit`](https://github.com/bereciartua/bridgekit), pinned to exactly **0.2.0**, shared with EK Bridge. BridgeKitCore: the loopback HTTP listener, JSON-RPC and MCP protocol versions, the JSON Schema validator, keys, rate limits, safe files, the launcher and the agent config writer ([ADR-0013](../spec/architecture/decisions/0013-shared-bridgekit-core.md)). BridgeKitRemote: Remote Access's listener and gate, the OAuth server and its store, the client-metadata fetch, and the tunnel checks ([ADR-0018](../spec/architecture/decisions/0018-remote-access-in-v0.1.md)). | System frameworks only |
 | `Apps/FunesMac` | The app target, `FunesVault.app` (bundle ID `com.funesvault.mac`): the menu bar, the main window (Vault, Inbox, Agents, Activity), Settings, the capture box, the panels' wiring, the Sparkle wrapper and the app's lifecycle. A menu bar app (`LSUIElement`), hardened runtime, not sandboxed, macOS 15 or later, Developer ID ([ADR-0007](../spec/architecture/decisions/0007-developer-id-not-sandboxed.md)). | All of the above, [Sparkle](https://sparkle-project.org) 2.10.0 |
 | `Apps/FunesMCPLauncher` | The `funes-mcp` command-line tool, signed with its own identifier `com.funesvault.mac.mcp` and embedded at `FunesVault.app/Contents/MacOS/funes-mcp`. It links BridgeKitCore and FunesProtocol only, so it carries no vault code. | BridgeKit, FunesProtocol |
 
@@ -51,6 +54,8 @@ Everything lives in `~/Library/Application Support/FunesVault/`, a folder only y
 | --- | --- |
 | `vault.sqlite` (with `-wal` and `-shm`) | Memories, categories, suggestions, agents and their access, disclosures (requests and what was delivered), provenance, the full-text index and the embedding vectors. Agent keys are stored only as SHA-256 hashes. |
 | `agent-keys/<agent id>.key` | Each agent's MCP key (`fns_mcp_v1_` and 64 hex digits), bare with no newline. Read by the launcher and by **Copy Key…**; deleted when the agent is removed. |
+| `agent-keys/<agent id>.remote.key` | The agent's Remote Access token (`fns_mcpr_v1_` and 64 hex digits), only while it has cloud access. Read only by **Copy Remote Token…**; deleted when cloud access is turned off or the agent is removed. |
+| `remote-connections.json` | Remote Access's OAuth state: connected cloud apps (agent, app name, OAuth client, MCP URL, SHA-256 digests of their access and refresh tokens, expiry and use times) and registered OAuth clients. Fails closed: a wrong owner, mode or content makes OAuth unavailable, and the file is never overwritten. |
 | `activity/activity.jsonl` | Activity, append-only JSON Lines: times, agent ids, events, outcomes, memory ids, reason codes and counts. Never memory text, task text or keys. Important rows (shares, refusals, changes) are kept 400 days and the rest 30 days by default (Settings ▸ Advanced). |
 | `mcp-endpoint.json` | `{"version":1,"url","port","pid","startedAt"}`, written while the MCP server listens and removed when it stops. The launcher reads it to find the server. |
 | `Backups/vault-<date>-<time>.sqlite` | Online backups: daily while **Settings ▸ Data ▸ Back up the vault every day** is on, keeping the last 7. |
@@ -181,6 +186,21 @@ The threat model is in [security and privacy](../spec/architecture/security-and-
 | A flood of requests or suggestions | Rate limits; at most 3 requests waiting per agent; at most 3 panels on screen; Pause. |
 | You approve without reading | A short arming delay before the panel's buttons work, the exact text, a checkbox per memory and sensitivity badges. |
 
+### Remote Access threat review
+
+Remote Access (ADR-0018) adds a door the internet can reach while it's on. The same policy applies on every channel: the policy engine never sees the transport, and the "same decision, local vs remote" harness replays the same requests through both listeners and compares every field. What's new, and how it's handled:
+
+| Threat | Mitigation |
+| --- | --- |
+| Scanning, guessing and flooding the public address (T23) | Off by default, asks first; per-agent **Allow cloud access**, off by default; a 128-bit secret path, so anything else is 404 before `Host` or a credential is read; `Host` allowlist (421); 256-bit credentials; more than 30 failed authentications a minute from one forwarded address: 429 for 5 minutes (never for a well-formed credential); stricter remote rate limits (60 calls, 10 suggestions a minute) on top of the agent's own; the menu's **Turn Off Remote Access**, a menu bar globe, optional automatic turn-off. Residual: forwarded addresses can be spoofed, and a flood can fill the port's 32 connections while it's on. |
+| OAuth consent phishing or spam (T24) | Nothing is fetched or shown unless you opened a 10-minute pairing window for one agent. The browser and the panel show the same six-digit code; the panel names the agent, the app as reported, its metadata URL and the return host; **Allow** arms after one second; a second sign-in waits. Exact redirect URIs, PKCE S256, `state` and `iss`; one app per window. Residual: allowing without comparing codes connects the wrong app, with only that agent's access, until **Revoke**. |
+| A stolen remote credential (T25) | Local and remote credentials are separate; digests only, in 0600 files that fail closed; access tokens last an hour and are bound to the MCP URL; refresh tokens rotate and a reused one revokes the connection; codes are single use. **Reset Remote Token…**, **Revoke**, **Reset Path…** or turning cloud access off end them at once. The secret scanner knows all four prefixes. |
+| SSRF through the client-metadata fetch (T26) | Only during pairing; `https` to a DNS name whose every address is public, checked again on connect; TLS verified; no proxies or redirects; 16 KB, 5 s; no credential sent. |
+| Released text at the cloud vendor (T27) | Only what the agent's access allows, with the same approvals. The Cloud tab and the Remote Access page say where text goes. |
+| Unattended cloud agents (T28) | The same panels, 45 s wait and 15-minute pending list; no remote auto-approval. |
+| A tunnel pointed at the local port (T29) | The local port refuses tunnel headers (403) and non-loopback `Host` (421), and remote credentials don't work there; the guide offers only 47627. |
+| Spoofed tunnel status (T30) | The tunnel checks are read-only and display only. A candidate address passes `Host` for the health route only. The health route answers only a nonce Funes issued in the last 30 s, once. |
+
 **Out of scope:** another process running as your macOS user can read the vault, the backups and the key files, and act as any agent. Funes can't control text after it's been shared with an agent. Physical access, an administrator account or System Integrity Protection turned off are out of scope too. See [SECURITY.md](../SECURITY.md).
 
 ## Decision records
@@ -198,6 +218,7 @@ The threat model is in [security and privacy](../spec/architecture/security-and-
 | [0013](../spec/architecture/decisions/0013-shared-bridgekit-core.md) | Code shared with EK Bridge through BridgeKitCore |
 | [0014](../spec/architecture/decisions/0014-user-selectable-models.md) | User-selectable AI models, on the Mac by default |
 | [0016](../spec/architecture/decisions/0016-bundled-bge-small-embeddings.md) | Bundled bge-small embeddings and agent keywords |
+| [0018](../spec/architecture/decisions/0018-remote-access-in-v0.1.md) | Remote Access for cloud agents in v0.1, with the same policy on every channel |
 | [0017](../spec/architecture/decisions/0017-funes-mcp-package.md) | The MCP adapter as a local package, FunesMCP |
 
 The [full list](../spec/architecture/decisions/README.md) includes the superseded and proposed records.

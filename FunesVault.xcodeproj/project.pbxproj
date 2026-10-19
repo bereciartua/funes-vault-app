@@ -16,6 +16,7 @@
 		F0000000000000000000B007 /* funes-mcp in Embed Launcher */ = {isa = PBXBuildFile; fileRef = F0000000000000000000A002 /* funes-mcp */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F0000000000000000000B008 /* BridgeKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D007 /* BridgeKitCore */; };
 		F0000000000000000000B009 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D008 /* Sparkle */; };
+		F0000000000000000000B00A /* BridgeKitRemote in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D009 /* BridgeKitRemote */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +71,7 @@
 				F0000000000000000000B003 /* FunesMCP in Frameworks */,
 				F0000000000000000000B004 /* BridgeUI in Frameworks */,
 				F0000000000000000000B008 /* BridgeKitCore in Frameworks */,
+				F0000000000000000000B00A /* BridgeKitRemote in Frameworks */,
 				F0000000000000000000B009 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -140,6 +142,7 @@
 				F0000000000000000000D003 /* FunesMCP */,
 				F0000000000000000000D004 /* BridgeUI */,
 				F0000000000000000000D007 /* BridgeKitCore */,
+				F0000000000000000000D009 /* BridgeKitRemote */,
 				F0000000000000000000D008 /* Sparkle */,
 			);
 			productName = FunesMac;
@@ -455,7 +458,7 @@
 			repositoryURL = "https://github.com/bereciartua/bridgekit.git";
 			requirement = {
 				kind = exactVersion;
-				version = 0.1.1;
+				version = 0.2.0;
 			};
 		};
 		F00000000000000000007006 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
@@ -503,6 +506,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */;
 			productName = BridgeKitCore;
+		};
+		F0000000000000000000D009 /* BridgeKitRemote */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */;
+			productName = BridgeKitRemote;
 		};
 		F0000000000000000000D008 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
