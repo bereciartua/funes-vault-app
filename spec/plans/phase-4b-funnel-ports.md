@@ -56,7 +56,8 @@ Changing the public tunnel types breaks source compatibility, so this is a minor
   - the local MCP port → wrong port;
   - unknown.
 - [x] The commands for each port, and the off command from an address.
-- [ ] README, CHANGELOG `## 0.3.0`, PR, CI green, tag `0.3.0` (each outward step with the user's OK).
+- [x] README, CHANGELOG `## 0.3.0`, PR (bridgekit#3), CI green, merged as `577e742`.
+- [ ] Tag `0.3.0` on `577e742`, after both apps are green against it (with the user's OK).
 
 ## Part B: Funes 0.1.1
 
@@ -79,9 +80,9 @@ Changing the public tunnel types breaks source compatibility, so this is a minor
 ## Part C: EK Bridge
 
 ### F.6 Adopt 0.3.0 · 2 h
-- [ ] `scripts/bridgekit.sh` → 0.3.0. `AgentSetup` commands use `TailscaleFunnelCommand` with the checked port. `mistakenPorts: [47615]`.
-- [ ] Wording for the new states, the same meaning as Funes's in EK Bridge's words. With 443 free, every command, golden and harness stays byte-for-byte the same. New goldens only for "443 taken" and "all taken".
-- [ ] docs/MCP.md, CHANGELOG. A release only if the user wants one; it can just land on main.
+- [x] `scripts/bridgekit.sh` → 0.3.0 at `577e742` (the merge commit, to be tagged). `AgentSetup` commands use `TailscaleFunnelCommand` with the checked port. `mistakenPorts: [47615]`.
+- [x] Wording for the new states, the same meaning as Funes's in EK Bridge's words. With 443 free, every command, golden and harness stays byte-for-byte the same. New goldens only for "443 taken" and "all taken".
+- [x] docs/MCP.md, CHANGELOG. A release only if the user wants one; it can just land on main.
 
 ## Checks
 
