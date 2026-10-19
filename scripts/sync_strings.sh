@@ -7,10 +7,15 @@ set -eu
 cd "$(dirname "$0")/.."
 catalog=Apps/FunesMac/Localizable.xcstrings
 intermediates=build/DerivedData/Build/Intermediates.noindex
-app=$(ls -d "$intermediates"/FunesVault.build/Debug/FunesMac.build/Objects-normal/* 2>/dev/null | head -n 1)
-bridgeui=$(ls -d "$intermediates"/BridgeUI.build/Debug/BridgeUI-t.build/Objects-normal/* 2>/dev/null | head -n 1)
-if [ -z "$app" ] || [ -z "$bridgeui" ] || ! ls "$bridgeui"/ApprovalPanel.stringsdata >/dev/null 2>&1; then
+# One architecture's folder of each, found by file rather than by path: Xcode versions name a
+# package target's build folder differently (BridgeUI-t.build in Xcode 27).
+first_dir() { find "$intermediates" -path "$1" -name "$2" 2>/dev/null | sort | head -n 1 | xargs -I{} dirname {}; }
+app=$(first_dir "*/FunesVault.build/Debug/FunesMac.build/Objects-normal/*" "*.stringsdata")
+bridgeui=$(first_dir "*/BridgeUI.build/Debug/*/Objects-normal/*" "ApprovalPanel.stringsdata")
+if [ -z "$app" ] || [ -z "$bridgeui" ]; then
     echo "sync_strings: build the app first with SWIFT_EMIT_LOC_STRINGS=YES (sh scripts/test.sh does)" >&2
+    echo "sync_strings: folders with .stringsdata under $intermediates:" >&2
+    find "$intermediates" -name "*.stringsdata" 2>/dev/null | xargs -I{} dirname {} | sort -u >&2
     exit 1
 fi
 args=""
