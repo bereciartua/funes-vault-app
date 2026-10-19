@@ -60,26 +60,26 @@ Two test path entries were added to Funnel's port 10000, next to its `/` entry t
 ## Part A: BridgeKitRemote 0.4.0
 
 ### P.1 One list of public paths · 1 h
-- [ ] `RemoteConfiguration.publicPaths`: the four paths of rule 1, derived from `secretPrefix`. The gate and `OAuthServer`'s routes use the same constants.
-- [ ] A test that every route the gate and OAuth server accept is under one of them, and nothing outside them is.
+- [x] `RemoteConfiguration.publicPaths`: the four paths of rule 1, derived from `secretPrefix`. The gate and `OAuthServer`'s routes use the same constants.
+- [x] A test that every route the gate and OAuth server accept is under one of them, and nothing outside them is.
 
 ### P.2 Path entries in the Tailscale parser · 4 h
-- [ ] `ToolJSON.localPort` accepts a path after the port (`http://127.0.0.1:47627/r/S`).
-- [ ] `FunnelPorts.Entry`: one per `host:port`, with its handlers by path (path → local port and target path) and whether Funnel is on.
-- [ ] `FunnelPorts` decides for an app's port and public paths:
+- [x] `ToolJSON.localPort` accepts a path after the port (`http://127.0.0.1:47627/r/S`).
+- [x] `FunnelPorts.Entry`: one per `host:port`, with its handlers by path (path → local port and target path) and whether Funnel is on.
+- [x] `FunnelPorts` decides for an app's port and public paths:
   - **running**: all paths, or `/`, on a Funnel port;
   - **incomplete**, listing the missing paths;
   - **the public port to use** (rule 3);
   - whether that port lets claude.ai and ChatGPT in (443).
-- [ ] `TunnelHealth`: new `.incomplete(address:, missing: Int)` and `NotRunningReason.noSharablePort` (replacing `allPortsTaken`).
-- [ ] `TunnelChecks.check(provider, port, publicPaths, done)`. The check needs the secret's paths; breaking, hence 0.4.0.
+- [x] `TunnelHealth`: new `.incomplete(address:, missing: Int)` and `NotRunningReason.noSharablePort` (replacing `allPortsTaken`). `TailscaleStatus.result` carries `FunnelPorts` with `pathsToAdd`.
+- [x] `TunnelChecks.check(provider, port, publicPaths, done)`. The check needs the secret's paths; breaking, hence 0.4.0.
 
 ### P.3 Commands · 1 h
-- [ ] `TailscaleFunnelCommand.start(port:publicPort:paths:)` and `.off(port:publicPort:paths:)`. The old single-path forms go.
-- [ ] `TunnelSwitchSummary`'s off commands and a new `ResetPathSummary` (old paths off, new paths on) take the paths.
+- [x] `TailscaleFunnelCommand.start(port:publicPort:paths:)` and `.off(port:publicPort:paths:)`. The old single-path forms go.
+- [x] `TailscaleFunnelCommand.off(_:address:paths:)` for `TunnelSwitchSummary`'s off commands, including a whole-port `/` from before, and `resetPath` (old paths off, new paths on; nothing for a `/` entry). No separate `ResetPathSummary` type.
 
 ### P.4 Tests, docs, release · 3 h
-- [ ] Fixtures:
+- [x] Fixtures:
   - today's real config, with path entries;
   - EK Bridge on `/` with Funes's four paths;
   - three of four paths (incomplete);
@@ -87,8 +87,8 @@ Two test path entries were added to Funnel's port 10000, next to its `/` entry t
   - all ports unsharable;
   - another app's path entries;
   - legacy `/` → our port.
-- [ ] The commands for 443 and other ports, and a path never off without `--set-path`.
-- [ ] The reference server and `remote_test.py`: the discovery and MCP routes still answer under the listed paths only.
+- [x] The commands for 443 and other ports, and a path never off without `--set-path`.
+- [x] The listed paths only: `RemoteGateTests.publicPaths` checks every served route is under them and that other discovery names and paths are 404. `remote_test.py`'s 86 checks pass unchanged.
 - [ ] README, CHANGELOG `## 0.4.0`, PR, CI, then tag `0.4.0` after both apps are green against it, each outward step with the user's OK.
 
 ## Part B: Funes 0.1.2
