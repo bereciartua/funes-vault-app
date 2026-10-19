@@ -57,7 +57,7 @@ Changing the public tunnel types breaks source compatibility, so this is a minor
   - unknown.
 - [x] The commands for each port, and the off command from an address.
 - [x] README, CHANGELOG `## 0.3.0`, PR (bridgekit#3), CI green, merged as `577e742`.
-- [ ] Tag `0.3.0` on `577e742`, after both apps are green against it (with the user's OK).
+- [x] Tag `0.3.0` on `577e742`, after both apps are green against it (with the user's OK).
 
 ## Part B: Funes 0.1.1
 
@@ -75,7 +75,7 @@ Changing the public tunnel types breaks source compatibility, so this is a minor
 - [x] docs/MCP.md's Tailscale row (the guide picks the port; the commands per port) and README if needed.
 - [x] [spike-results 4b.15](spike-results.md): the procedure follows the guide instead of a hand-typed `--https=8443`.
 - [x] `MARKETING_VERSION` 0.1.1, build 2, `server.json`, CHANGELOG `## [0.1.1]` (the 0.1.0 entry stays, never published).
-- [ ] Pin BridgeKit `exact: 0.3.0` in the Xcode project, BridgeUI and FunesMCP, and resolve. Until the tag, all three pin the branch's commit `8077dbf`.
+- [x] Pin BridgeKit `exact: 0.3.0` in the Xcode project, BridgeUI and FunesMCP, and resolve.
 
 ## Part C: EK Bridge
 

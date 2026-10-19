@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(path: "../FunesCore"),
         .package(path: "../FunesProtocol"),
-        .package(url: "https://github.com/bereciartua/bridgekit.git", revision: "8077dbfb5e0e5a224185a6e93ef33c707a7bbd49"),
+        .package(url: "https://github.com/bereciartua/bridgekit.git", exact: "0.3.0"),
     ],
     targets: [
         .target(

@@ -457,8 +457,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/bereciartua/bridgekit.git";
 			requirement = {
-				kind = revision;
-				revision = 8077dbfb5e0e5a224185a6e93ef33c707a7bbd49;
+				kind = exactVersion;
+				version = 0.3.0;
 			};
 		};
 		F00000000000000000007006 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
