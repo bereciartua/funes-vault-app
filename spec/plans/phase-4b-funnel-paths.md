@@ -90,7 +90,7 @@ Two test path entries were added to Funnel's port 10000, next to its `/` entry t
 - [x] The commands for 443 and other ports, and a path never off without `--set-path`.
 - [x] The listed paths only: `RemoteGateTests.publicPaths` checks every served route is under them and that other discovery names and paths are 404. `remote_test.py`'s 86 checks pass unchanged.
 - [x] README, CHANGELOG `## 0.4.0`, PR (bridgekit#4), CI green, merged as `45f8382`.
-- [ ] Tag `0.4.0` on `45f8382` after both apps are green against it (with the user's OK).
+- [x] Tag `0.4.0` on `45f8382` after both apps are green against it (with the user's OK).
 
 ## Part B: Funes 0.1.2
 
@@ -109,7 +109,7 @@ Two test path entries were added to Funnel's port 10000, next to its `/` entry t
   - docs/MCP.md's Tailscale row;
   - CHANGELOG `[0.1.2]` (0.1.0 and 0.1.1 were drafts only);
   - version 0.1.2 (3), `server.json`;
-  - [ ] pin BridgeKit `exact: 0.4.0` (until the tag: the branch commit `6011ef8`).
+  - [x] pin BridgeKit `exact: 0.4.0`.
 
 ## Part C: EK Bridge 0.11.4
 

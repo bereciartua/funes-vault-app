@@ -6,7 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/bereciartua/bridgekit.git",
       "state" : {
-        "revision" : "6011ef86f98ec9325505009533f9ff2567a81178"
+        "revision" : "45f8382a9175be3cc4a4c770cef7b61697576103",
+        "version" : "0.4.0"
       }
     },
     {
