@@ -19,7 +19,15 @@ extension AgentKind {
         case .cline: .cline
         case .jetBrains: .jetBrains
         case .other: .other
+        default: .other
         }
+    }
+
+    /// The cloud agent this kind is, for its Cloud tab's setup.
+    var cloudAgent: CloudAgent? { CloudAgent.allCases.first { $0.agentKind == rawValue } }
+
+    init(_ agent: CloudAgent) {
+        self = AgentKind(rawValue: agent.agentKind) ?? .other
     }
 
     init(_ agent: SetupAgent) {
@@ -33,6 +41,7 @@ extension AgentKind {
         case .cursor, .vscode, .zed, .cline, .jetBrains: "chevron.left.forwardslash.chevron.right"
         case .devinDesktop: "desktopcomputer"
         case .other: "puzzlepiece.extension"
+        default: cloudAgent?.symbol ?? "cloud"
         }
     }
 
@@ -47,6 +56,12 @@ extension AgentKind {
         case .devinDesktop: .green
         case .cline, .jetBrains: .pink
         case .other: .gray
+        case .claudeAI, .anthropicAPI, .managedAgents, .claudeCodeWeb: .orange
+        case .chatGPT, .openAIResponses, .codexCloud: .teal
+        case .geminiEnterprise: .cyan
+        case .cursorCloud: .indigo
+        case .copilotAgent: .blue
+        case .devin: .green
         }
     }
 }

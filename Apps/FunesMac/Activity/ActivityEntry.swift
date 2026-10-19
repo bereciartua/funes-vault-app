@@ -9,7 +9,7 @@ struct ActivityEntry: Identifiable, Equatable {
     let event: ActivityEvent
 
     enum Kind: String, CaseIterable, Identifiable {
-        case all, shared, suggestions, problems
+        case all, shared, suggestions, problems, remote
         var id: String { rawValue }
 
         var title: String {
@@ -18,6 +18,7 @@ struct ActivityEntry: Identifiable, Equatable {
             case .shared: String(localized: "Shared")
             case .suggestions: String(localized: "Suggestions")
             case .problems: String(localized: "Problems")
+            case .remote: String(localized: "Remote Access")
             }
         }
     }
@@ -58,8 +59,12 @@ struct ActivityEntry: Identifiable, Equatable {
         case .shared: isShared
         case .suggestions: isSuggestion
         case .problems: isProblem
+        case .remote: isRemote
         }
     }
+
+    /// A call through Remote Access, from a cloud agent (ADR-0018).
+    var isRemote: Bool { event.via == .remote }
 
     // MARK: Words
 
@@ -102,6 +107,10 @@ struct ActivityEntry: Identifiable, Equatable {
         case "agent_resumed": return String(localized: "Agent resumed")
         case "access_changed": return String(localized: "Access changed")
         case "key_rotated": return String(localized: "Key rotated")
+        case "cloud_access_on": return String(localized: "Cloud access turned on")
+        case "cloud_access_off": return String(localized: "Cloud access turned off")
+        case "remote_key_issued": return String(localized: "Remote token issued")
+        case "cloud_apps_changed": return String(localized: "Connected cloud apps changed")
         case "funes_paused": return String(localized: "Funes Vault paused")
         case "funes_resumed": return String(localized: "Funes Vault resumed")
         case "import": return String(localized: "Imported \((e.counts["suggestions"] ?? 0) + (e.counts["memories"] ?? 0)) items")

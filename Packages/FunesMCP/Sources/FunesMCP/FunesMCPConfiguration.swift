@@ -43,15 +43,16 @@ public enum FunesMCPConfiguration {
         return policy
     }
 
+    /// `callTimeout` is longer only in a Debug build measuring how long agents wait (task 4b.15).
     public static func server(dataFolder: URL, version: String, port: Int = defaultPort,
-                              allowedOrigins: Set<String> = []) -> BridgeConfiguration {
+                              allowedOrigins: Set<String> = [], callTimeout: TimeInterval = toolCallTimeout) -> BridgeConfiguration {
         let app = "Funes Vault"
         return BridgeConfiguration(
             identity: BridgeIdentity(displayName: app, bundleID: Identifiers.macBundleID, dataFolder: dataFolder,
                                      version: version),
             mcpPort: port, keyPrefix: Identifiers.mcpKeyPrefix, serverKey: Identifiers.mcpServerKey,
             launcherName: Identifiers.mcpLauncherName, serverDescription: serverDescription,
-            agentMetaKey: agentMetaKey, limits: limits, toolCallTimeout: toolCallTimeout,
+            agentMetaKey: agentMetaKey, limits: limits, toolCallTimeout: callTimeout,
             allowedOrigins: allowedOrigins,
             // mcp-server.md §4: X-Forwarded-*, Forwarded, CF-* and Tailscale-* are refused.
             forwardedHeaderPrefixes: ["x-forwarded-", "forwarded", "cf-", "tailscale-"],

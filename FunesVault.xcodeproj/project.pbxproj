@@ -16,6 +16,7 @@
 		F0000000000000000000B007 /* funes-mcp in Embed Launcher */ = {isa = PBXBuildFile; fileRef = F0000000000000000000A002 /* funes-mcp */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F0000000000000000000B008 /* BridgeKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D007 /* BridgeKitCore */; };
 		F0000000000000000000B009 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D008 /* Sparkle */; };
+		F0000000000000000000B00A /* BridgeKitRemote in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D009 /* BridgeKitRemote */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +71,7 @@
 				F0000000000000000000B003 /* FunesMCP in Frameworks */,
 				F0000000000000000000B004 /* BridgeUI in Frameworks */,
 				F0000000000000000000B008 /* BridgeKitCore in Frameworks */,
+				F0000000000000000000B00A /* BridgeKitRemote in Frameworks */,
 				F0000000000000000000B009 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -140,6 +142,7 @@
 				F0000000000000000000D003 /* FunesMCP */,
 				F0000000000000000000D004 /* BridgeUI */,
 				F0000000000000000000D007 /* BridgeKitCore */,
+				F0000000000000000000D009 /* BridgeKitRemote */,
 				F0000000000000000000D008 /* Sparkle */,
 			);
 			productName = FunesMac;
@@ -201,7 +204,7 @@
 				F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */,
 				F00000000000000000007003 /* XCLocalSwiftPackageReference "Packages/FunesMCP" */,
 				F00000000000000000007004 /* XCLocalSwiftPackageReference "Packages/BridgeUI" */,
-				F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */,
+				F00000000000000000007007 /* XCLocalSwiftPackageReference "../funes-dev-deps/bridgekit" */,
 				F00000000000000000007006 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -447,17 +450,13 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/BridgeUI;
 		};
+		F00000000000000000007007 /* XCLocalSwiftPackageReference "../funes-dev-deps/bridgekit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../funes-dev-deps/bridgekit";
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/bereciartua/bridgekit.git";
-			requirement = {
-				kind = exactVersion;
-				version = 0.1.1;
-			};
-		};
 		F00000000000000000007006 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sparkle-project/Sparkle";
@@ -491,7 +490,7 @@
 		};
 		F0000000000000000000D005 /* BridgeKitCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */;
+			package = F00000000000000000007007 /* XCLocalSwiftPackageReference "../funes-dev-deps/bridgekit" */;
 			productName = BridgeKitCore;
 		};
 		F0000000000000000000D006 /* FunesProtocol */ = {
@@ -501,8 +500,13 @@
 		};
 		F0000000000000000000D007 /* BridgeKitCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */;
+			package = F00000000000000000007007 /* XCLocalSwiftPackageReference "../funes-dev-deps/bridgekit" */;
 			productName = BridgeKitCore;
+		};
+		F0000000000000000000D009 /* BridgeKitRemote */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007007 /* XCLocalSwiftPackageReference "../funes-dev-deps/bridgekit" */;
+			productName = BridgeKitRemote;
 		};
 		F0000000000000000000D008 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -2,7 +2,10 @@ import BridgeKitCore
 import Foundation
 import FunesCore
 import FunesProtocol
+import os
 import Synchronization
+
+private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category: "mcp")
 
 /// The vault services the MCP tools use.
 public struct FunesServices: Sendable {
@@ -92,6 +95,16 @@ public final class RequestPipeline: BridgeHandler {
         guard let agentID = UUID(uuidString: call.agent.id) else { return ToolOutput.denied(.notFound) }
         if isQuitting { return quit(call, agentID) }
         let started = now()
+        // When a client stops waiting (it closed the connection or sent notifications/cancelled), so
+        // agents' tool-call timeouts can be measured (Spike 3, task 4b.15). The tool name is from the
+        // contract and the channel a flag; no agent text.
+        let tool = call.name, remote = call.remote, clock = ContinuousClock.now
+        await MainActor.run {
+            call.context.onCancel {
+                let seconds = Int((ContinuousClock.now - clock).components.seconds)
+                logger.notice("\(tool, privacy: .public) call cancelled by the client after \(seconds) s (remote: \(remote))") // log-safe: a contract tool name, a duration and a flag
+            }
+        }
         // 1. Funes on.
         if services.pause.isPaused(at: started) { return refuse(call, agentID, .funesPaused) }
         // 2. Agent state. Removed agents never authenticate; a row that can't be read is a refusal.

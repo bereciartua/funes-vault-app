@@ -1,5 +1,6 @@
 import AppKit
 import BridgeKitCore
+import BridgeKitRemote
 import BridgeUI
 import FunesCore
 import FunesMCP
@@ -45,6 +46,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var mainWindow: MainWindowController?
     private var settingsWindow: SettingsWindowController?
     private var mcp: FunesMCPServer?
+    private var remote: FunesRemoteServer?
+    private var signInPanel: SignInPanelController?
+    private let keepAwake = KeepAwake(reason: "Funes Vault Remote Access is on")
     private var minuteTimer: Timer?
     private var failedItem: NSStatusItem?
     private let hud = HUD()
@@ -119,8 +123,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.changed = { [weak menu] in menu?.update() }
 
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+        var inCallWait = FunesMCPConfiguration.inCallWait
+        var callTimeout = FunesMCPConfiguration.toolCallTimeout
+        #if DEBUG
+        // FUNES_DEBUG_CALL_WAIT=<seconds>: a longer in-call wait (and call timeout), to measure how
+        // long an agent waits for a tool call before giving up (Spike 3, task 4b.15). Debug only.
+        if let text = ProcessInfo.processInfo.environment["FUNES_DEBUG_CALL_WAIT"], let seconds = Int(text),
+           (1...900).contains(seconds) {
+            inCallWait = .seconds(seconds)
+            callTimeout = TimeInterval(seconds + 10)
+        }
+        #endif
         let mcp = FunesMCPServer(services: environment.services, presenter: environment.approvals,
-                                 dataFolder: environment.dataFolder, version: version, port: preferences.mcpPort)
+                                 dataFolder: environment.dataFolder, version: version, port: preferences.mcpPort,
+                                 inCallWait: inCallWait, callTimeout: callTimeout)
         mcp.statusChanged = { [weak model] status in
             model?.mcpStatus = status
             model?.changed()
@@ -131,6 +147,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.mcpPort = mcp.port
         model.trafficCounts = { [weak mcp] in mcp?.counters.snapshot ?? MCPTrafficCounters.Snapshot() }
         model.connection = { [weak mcp] id in mcp?.connections[id.db]?.agent }
+        wireRemoteAccess(mcp, environment: environment, model: model, menu: menu, version: version)
         model.setupControls = OneClickAgents.live(home: Self.setupHome, appName: "Funes Vault", tag: "funes")
         model.detectAgents = { AgentDetection.installed(.live) }
         Task {
@@ -139,6 +156,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             #endif
             if preferences.mcpEnabled { mcp.start() }
             await model.refresh()
+            // After the agents are read, so the page and menu count them.
+            if preferences.mcpEnabled { model.remoteAccess.launch() }
         }
         startMinuteJob(environment, model: model)
         if let movedFrom = AppMover.movedFrom(), InstallLocation.volume(of: movedFrom) == nil {
@@ -207,6 +226,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Open panels are withdrawn and no more show; the endpoint file goes with the listener.
         environment?.approvals.queue.close()
         mcp?.stop()
+        remote?.stop()
+        keepAwake.set(false)
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -242,18 +263,74 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             switch kind {
             case .suggestion: model.show(.inbox)
             case .expired, .refused: model.showActivity(agent.map(ActivityFocus.agent))
+            case .tunnelDown: model.show(.remoteAccess)
             }
         }
     }
 
-    /// The MCP server switch (Settings ▸ MCP).
+    /// The MCP server switch (Settings ▸ MCP). Remote Access runs only while it's on: the remote
+    /// listener is a second door to the same server.
     private func setServer(_ on: Bool) {
         preferences.mcpEnabled = on
-        if on { mcp?.start() } else {
+        if on {
+            mcp?.start()
+            if let model, model.remoteAccess.enabled { remote?.start(model.remoteAccess.configuration) }
+        } else {
             environment?.approvals.queue.withdrawAll()
             mcp?.stop()
+            remote?.stop()
         }
         model?.changed()
+    }
+
+    /// Remote Access (ADR-0018): the remote listener on the same pipeline, its OAuth server, the
+    /// page's controller, the sign-in panel and the tunnel-down notification.
+    private func wireRemoteAccess(_ mcp: FunesMCPServer, environment: VaultEnvironment, model: AppModel,
+                                  menu: StatusMenuController, version: String) {
+        let remote = FunesRemoteServer(local: mcp, dataFolder: environment.dataFolder, version: version)
+        self.remote = remote
+        model.remoteServer = remote
+        let preferences = self.preferences
+        let notifier = self.notifier
+        let keepAwake = self.keepAwake
+        model.remoteAccess.host = RemoteAccessHost(
+            start: { configuration in if preferences.mcpEnabled { remote.start(configuration) } },
+            update: { remote.update($0) },
+            stop: { remote.stop() },
+            test: { configuration, done in RemoteProbe.test(configuration, nonces: remote.service.nonces, completion: done) },
+            portIsFree: { PortProbe.isFree($0) },
+            setKeepAwake: { keepAwake.set($0) },
+            onACPower: { KeepAwake.onACPower },
+            tunnels: .live,
+            cloudAgents: { [weak model] in model?.remoteCloudAgents() ?? [] },
+            mcpPort: { [weak model] in model?.mcpPort ?? FunesMCPConfiguration.defaultPort },
+            tunnelDown: { provider in
+                notifier.post(.tunnelDown, title: String(localized: "Remote Access's tunnel stopped"),
+                              body: String(localized: "\(provider.name) isn't running, so cloud agents can't reach Funes Vault."))
+            },
+            changed: { [weak model, weak menu] in
+                model?.changed()
+                menu?.update()
+            })
+        remote.service.statusChanged = { [weak model] status in model?.remoteAccess.statusDidChange(status) }
+        let panel = SignInPanelController(model: model)
+        signInPanel = panel
+        remote.oauth.pairingRequested = { [weak model] _ in model?.signInsChanged() }
+        remote.oauth.pairingChanged = { [weak model] in model?.signInsChanged() }
+        model.signInsUpdated = { panel.update() }
+        remote.cloudAppsChanged = { [weak model] _ in
+            guard let model else { return }
+            model.cloudGeneration += 1
+            model.remoteAccess.agentsChanged()
+            Task { await model.refresh() }
+        }
+        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil,
+                                                          queue: .main) { [weak model] _ in
+            MainActor.assumeIsolated {
+                model?.remoteAccess.checkTunnelNow()
+                model?.remoteAccess.updateKeepAwake()
+            }
+        }
     }
 
     /// Another port (Settings ▸ MCP): the listener moves now. Setups that start `funes-mcp` find it

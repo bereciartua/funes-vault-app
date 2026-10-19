@@ -26,10 +26,11 @@ public final class FunesMCPServer {
     public init(services: FunesServices, presenter: any FunesPresenter, dataFolder: URL, version: String,
                 port: Int = FunesMCPConfiguration.defaultPort, allowedOrigins: Set<String> = [],
                 inCallWait: Duration = FunesMCPConfiguration.inCallWait,
+                callTimeout: TimeInterval = FunesMCPConfiguration.toolCallTimeout,
                 now: @escaping @Sendable () -> Date = { Date() }) {
         self.port = port
         configuration = FunesMCPConfiguration.server(dataFolder: dataFolder, version: version, port: port,
-                                                     allowedOrigins: allowedOrigins)
+                                                     allowedOrigins: allowedOrigins, callTimeout: callTimeout)
         limiter = RateLimiter(policy: configuration.limits)
         counters = MCPTrafficCounters()
         let pipeline = RequestPipeline(services: services, presenter: presenter, limiter: limiter,

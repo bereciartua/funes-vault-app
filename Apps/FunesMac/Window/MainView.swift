@@ -9,10 +9,17 @@ struct MainView: View {
         NavigationSplitView {
             List(selection: Binding(get: { model.section }, set: { if let section = $0 { model.section = section } })) {
                 ForEach(AppSection.allCases) { section in
-                    Label(section.title, systemImage: section.symbol)
-                        .badge(badge(section))
-                        .tag(section)
-                        .accessibilityLabel(accessibilityLabel(section))
+                    if section == .remoteAccess, let state = model.remoteAccess.sidebarBadge {
+                        Label(section.title, systemImage: section.symbol)
+                            .badge(Text(model.remoteAccess.tunnelDown ? "⚠ " + state : state))
+                            .tag(section)
+                            .accessibilityLabel(String(localized: "Remote Access, \(state)"))
+                    } else {
+                        Label(section.title, systemImage: section.symbol)
+                            .badge(badge(section))
+                            .tag(section)
+                            .accessibilityLabel(accessibilityLabel(section))
+                    }
                 }
             }
             .listStyle(.sidebar)
@@ -24,6 +31,7 @@ struct MainView: View {
                 case .vault: VaultView(model: model)
                 case .inbox: InboxView(model: model)
                 case .agents: AgentsView(model: model)
+                case .remoteAccess: RemoteAccessPage(model: model)
                 case .activity: ActivityScreen(model: model)
                 }
             }

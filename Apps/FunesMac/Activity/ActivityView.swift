@@ -202,7 +202,8 @@ enum ActivityText {
     static func detail(_ entry: ActivityEntry, model: AppModel) -> String {
         let e = entry.event
         switch e.event {
-        case "agent_added", "agent_removed", "agent_paused", "agent_resumed", "access_changed", "key_rotated":
+        case "agent_added", "agent_removed", "agent_paused", "agent_resumed", "access_changed", "key_rotated",
+             "cloud_access_on", "cloud_access_off", "remote_key_issued", "cloud_apps_changed":
             return e.ids.first.map(model.agentName) ?? ""
         case "request_memory" where e.outcome != "fulfilled":
             let withheld = e.counts.values.reduce(0, +)
@@ -230,7 +231,19 @@ struct ActivityRowView: View {
                 .frame(width: 70, alignment: .leading)
                 .help(RelativeTime.full(entry.time))
             if showsAgent {
-                Text(ActivityText.who(entry, model: model)).lineLimit(1).frame(width: 130, alignment: .leading)
+                HStack(spacing: 4) {
+                    if entry.isRemote {
+                        Image(systemName: "cloud").foregroundStyle(.secondary)
+                            .help(String(localized: "via Remote Access"))
+                            .accessibilityLabel(String(localized: "via Remote Access"))
+                    }
+                    Text(ActivityText.who(entry, model: model)).lineLimit(1)
+                }
+                .frame(width: 130, alignment: .leading)
+            } else if entry.isRemote {
+                Image(systemName: "cloud").foregroundStyle(.secondary)
+                    .help(String(localized: "via Remote Access"))
+                    .accessibilityLabel(String(localized: "via Remote Access"))
             }
             Text(entry.label).lineLimit(1).frame(minWidth: 140, maxWidth: .infinity, alignment: .leading)
             Text(ActivityText.detail(entry, model: model)).foregroundStyle(.secondary).lineLimit(1)
@@ -291,7 +304,21 @@ struct ActivityInspector: View {
                 Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 6) {
                     GridRow {
                         Text(String(localized: "From")).foregroundStyle(.secondary)
-                        Text(ActivityText.who(entry, model: model))
+                        Text(entry.isRemote ? String(localized: "\(ActivityText.who(entry, model: model)) via Remote Access")
+                                            : ActivityText.who(entry, model: model))
+                    }
+                    if entry.isRemote, let agentID = entry.agentID,
+                       let note = model.remoteServer?.note(agentID: agentID, near: entry.time) {
+                        // In memory only, for the last 50 remote requests (mcp-server.md §12).
+                        GridRow {
+                            Text(String(localized: "Tunnel")).foregroundStyle(.secondary)
+                            Text(note.tunnel?.name ?? String(localized: "Unknown"))
+                        }
+                        GridRow {
+                            Text(String(localized: "Address")).foregroundStyle(.secondary)
+                            Text(String(localized: "\(note.address) (as the tunnel reported)"))
+                                .font(.callout.monospaced()).textSelection(.enabled)
+                        }
                     }
                     if let request = entry.event.requestID {
                         GridRow {

@@ -149,6 +149,27 @@ public enum AgentKind: String, Codable, Sendable, CaseIterable {
     case cline
     case jetBrains = "jetbrains"
     case other
+    // Cloud agents, through Remote Access (ADR-0018).
+    case claudeAI = "claude_ai"
+    case chatGPT = "chatgpt"
+    case geminiEnterprise = "gemini_enterprise"
+    case anthropicAPI = "anthropic_api"
+    case managedAgents = "managed_agents"
+    case openAIResponses = "openai_responses"
+    case claudeCodeWeb = "claude_code_web"
+    case cursorCloud = "cursor_cloud"
+    case copilotAgent = "copilot_agent"
+    case devin
+    case codexCloud = "codex_cloud"
+
+    /// A cloud agent, reaching Funes through Remote Access.
+    public var isCloud: Bool {
+        switch self {
+        case .claudeAI, .chatGPT, .geminiEnterprise, .anthropicAPI, .managedAgents, .openAIResponses, .claudeCodeWeb,
+             .cursorCloud, .copilotAgent, .devin, .codexCloud: true
+        default: false
+        }
+    }
 }
 
 /// Events recorded in a memory's provenance (FR-V-12). Never holds text.

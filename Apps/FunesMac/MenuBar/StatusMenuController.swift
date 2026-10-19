@@ -27,9 +27,12 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     /// Redraws the icon; the menu itself is built when it opens.
     func update() {
         let state = model.iconState
-        item.button?.image = MenuBarIcon.image(state)
-        item.button?.setAccessibilityLabel(state.accessibilityLabel)
+        let remote = model.remoteAccess.enabled
+        item.button?.image = MenuBarIcon.image(state, remote: remote)
+        item.button?.setAccessibilityLabel(remote ? state.accessibilityLabel + ", " + String(localized: "Remote Access on")
+                                                  : state.accessibilityLabel)
         var tip = statusLine
+        if remote { tip += "\n" + model.remoteAccess.menuLine }
         if model.inboxCount > 0 { tip += "\n" + String(localized: "Inbox: \(model.inboxCount)") }
         if !model.pending.isEmpty { tip += "\n" + String(localized: "Pending requests: \(model.pending.count)") }
         item.button?.toolTip = tip
@@ -42,6 +45,16 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
         let status = NSMenuItem(title: statusLine, action: #selector(openAgents), keyEquivalent: "")
         status.target = self
         menu.addItem(status)
+        if model.remoteAccess.enabled {
+            let remote = NSMenuItem(title: model.remoteAccess.menuLine, action: #selector(openRemoteAccess), keyEquivalent: "")
+            remote.target = self
+            remote.image = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)
+            menu.addItem(remote)
+            let off = NSMenuItem(title: String(localized: "Turn Off Remote Access"), action: #selector(turnOffRemote),
+                                 keyEquivalent: "")
+            off.target = self
+            menu.addItem(off)
+        }
         menu.addItem(.separator())
 
         let remember = NSMenuItem(title: String(localized: "Remember…"), action: #selector(remember), keyEquivalent: "m")
@@ -147,6 +160,9 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     // MARK: Actions
 
     @objc private func openAgents() { model.show(.agents) }
+    @objc private func openRemoteAccess() { model.show(.remoteAccess) }
+    /// At once, without asking: the port closes and every cloud agent is cut off.
+    @objc private func turnOffRemote() { model.remoteAccess.apply(false) }
     @objc private func remember() { model.openCapture() }
     @objc private func openInbox() { model.show(.inbox) }
     @objc private func openActivity() { model.showActivity(nil) }

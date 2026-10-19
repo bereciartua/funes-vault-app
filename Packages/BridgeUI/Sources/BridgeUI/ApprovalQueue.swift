@@ -321,10 +321,14 @@ extension PanelItem {
     /// The **Share with <agent>?** panel (04-ux-mac.md): the task, what the agent says it's looking
     /// for (its keywords), purpose as reported, retention and processors above the memories, then
     /// the withheld line. Agent-provided text is labelled as such; nothing here decides anything.
+    /// `remote`: the request came through Remote Access, from a cloud agent.
     public static func share(id: UUID, agentID: String, agentName: String, task: String?, keywords: [String],
                              purpose: String?, keepsIt: String, sharedWith: [String], rows: [Row], note: String?,
-                             expiresAt: Date?) -> PanelItem {
+                             expiresAt: Date?, remote: Bool = false) -> PanelItem {
         var facts = [Fact]()
+        if remote {
+            facts.append(Fact(label: String(localized: "Via"), value: String(localized: "Remote Access (a cloud agent)")))
+        }
         let lookingFor = keywords.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         if !lookingFor.isEmpty {
             facts.append(Fact(label: String(localized: "Looking for"), value: lookingFor.joined(separator: ", "),

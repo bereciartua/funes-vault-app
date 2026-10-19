@@ -186,6 +186,7 @@ extension TunnelProvider {
                 String(localized: "Funnel keeps the public hostname in Host, so it must match Address."),
                 String(localized: "Tailscale Serve isn't enough: cloud agents aren't on your tailnet."),
                 String(localized: "Funnel keeps running in the background, even after a restart, until you turn it off."),
+                String(localized: "If Funnel already serves another app on port 443, this command replaces it. Add --https=8443 after --bg instead, and :8443 to the address."),
             ]
         case .cloudflareTunnel:
             return [

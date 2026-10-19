@@ -119,7 +119,8 @@ extension RequestPipeline {
         }
         guard outcome.status == .needsApproval, let id = outcome.requestID, !isQuitting else { return outcome }
         let presenter = self.presenter
-        Task { await presenter.showApproval(requestID: id, agentID: agent.id) }
+        let remote = via == .remote
+        Task { await presenter.showApproval(requestID: id, agentID: agent.id, remote: remote) }
         let remaining = max(0, deadline.timeIntervalSince(now()))
         switch await disclosures.waitForDecision(requestID: id, timeout: .milliseconds(Int(remaining * 1_000))) {
         case .approved?:

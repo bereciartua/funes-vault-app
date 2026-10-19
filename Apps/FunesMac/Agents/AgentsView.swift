@@ -96,13 +96,14 @@ struct AgentRow: View {
 }
 
 enum AgentTab: String, CaseIterable, Identifiable {
-    case access, connect, activity
+    case access, connect, cloud, activity
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .access: String(localized: "Access")
         case .connect: String(localized: "Connect")
+        case .cloud: String(localized: "Cloud")
         case .activity: String(localized: "Activity")
         }
     }
@@ -121,7 +122,7 @@ struct AgentDetailView: View {
         VStack(spacing: 0) {
             header.padding(16)
             Picker(String(localized: "Tab"), selection: $model.agentTab) {
-                ForEach(AgentTab.allCases) { Text($0.title).tag($0) }
+                ForEach(tabs) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -131,6 +132,7 @@ struct AgentDetailView: View {
             switch model.agentTab {
             case .access: AccessEditor(model: model, agent: agent)
             case .connect: ConnectTab(model: model, agent: agent)
+            case .cloud: CloudTab(model: model, agent: agent)
             case .activity:
                 ActivityList(model: model, scope: .agent(agent.id))
                     .padding(16)
@@ -139,9 +141,17 @@ struct AgentDetailView: View {
         .confirmationDialog(String(localized: "Remove \(agent.name)?"), isPresented: $confirmRemove) {
             Button(String(localized: "Remove"), role: .destructive) { remove() }
         } message: {
-            Text(String(localized: "Its key stops working at once and its access is deleted. Activity keeps its history, labelled “removed agent”. Its entry in the agent's own settings stays until you delete it there."))
+            Text(agent.cloudAccess
+                 ? String(localized: "Its key, remote token and connected cloud apps stop working at once, and its access is deleted. Activity keeps its history, labelled “removed agent”. Its entry in the agent's own settings stays until you delete it there.")
+                 : String(localized: "Its key stops working at once and its access is deleted. Activity keeps its history, labelled “removed agent”. Its entry in the agent's own settings stays until you delete it there."))
         }
         .sheet(isPresented: $renaming) { renameSheet }
+    }
+
+    /// Cloud shows while Remote Access is on, or while the agent has cloud access or is a cloud agent.
+    private var tabs: [AgentTab] {
+        let cloud = model.remoteAccess.enabled || agent.cloudAccess || agent.agentKind.isCloud
+        return AgentTab.allCases.filter { $0 != .cloud || cloud }
     }
 
     /// The name and status take the room; the buttons keep their size. The kind is one line that
@@ -160,7 +170,7 @@ struct AgentDetailView: View {
                     Pill(label: AgentText.statusLine(agent, now: model.now, client: model.clientName(agent.id)),
                          tone: AgentText.tone(agent, now: model.now))
                         .fixedSize()
-                    let kind = agent.agentKind.setupAgent.displayName
+                    let kind = agent.agentKind.cloudAgent?.name ?? agent.agentKind.setupAgent.displayName
                     if kind != agent.name {
                         Text(kind).font(.callout).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
                     }
@@ -204,7 +214,7 @@ struct AgentDetailView: View {
 
     private func remove() {
         run {
-            try await model.services.agents.remove(agentID: agent.id, now: Date())
+            try await model.removeAgent(agent)
             model.selectedAgentID = nil
         }
     }

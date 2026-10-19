@@ -1,6 +1,7 @@
 #if FUNES_UI_REVIEW
 import AppKit
 import BridgeKitCore
+import BridgeKitRemote
 import BridgeUI
 import FunesCore
 import FunesMCP
@@ -52,6 +53,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
         let empty: AppModel
         let agents: SampleData.Agents
         let claudeDesktop: Agent
+        let cloudAgent: Agent
         let shareItem: PanelItem
     }
 
@@ -63,6 +65,11 @@ final class UIReview: NSObject, NSApplicationDelegate {
         let agents = try await SampleData.fill(environment)
         let (claudeDesktop, _) = try await environment.agents.create(name: "Claude Desktop", kind: .claudeDesktop,
                                                                      access: agents.claudeCode.access, now: Date())
+        // A cloud agent with cloud access and a remote token (Remote Access, ADR-0018).
+        let (claudeAI, _) = try await environment.agents.create(name: "claude.ai", kind: .claudeAI,
+                                                                access: Access.Preset.readLowAskFirst.access, now: Date())
+        try await environment.agents.setCloudAccess(agentID: claudeAI.id, true, now: Date())
+        _ = try await environment.agents.issueRemoteKey(agentID: claudeAI.id, now: Date())
         // Claude Desktop's config as it ships: an empty mcpServers next to its own settings, in the
         // scratch home the one-click previews read.
         let desktopFolder = scratch.appendingPathComponent("home/Library/Application Support/Claude")
@@ -104,7 +111,9 @@ final class UIReview: NSObject, NSApplicationDelegate {
                              modelSettings: ModelSettings(defaults: emptyDefaults, keys: InMemoryProviderKeyStore()))
         configure(empty)
         await empty.refresh()
-        return Fixture(model: model, empty: empty, agents: agents, claudeDesktop: claudeDesktop, shareItem: share)
+        let cloudAgent = try await environment.agents.agent(id: claudeAI.id) ?? claudeAI
+        return Fixture(model: model, empty: empty, agents: agents, claudeDesktop: claudeDesktop, cloudAgent: cloudAgent,
+                       shareItem: share)
     }
 
     private func configure(_ model: AppModel) {
@@ -182,6 +191,27 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 model.activity.selection = model.activity.entries.first(where: { $0.event.event == "request_memory" })?.id
             }
 
+            // Remote Access: before setup, the guide, set up, and an agent's Cloud tab.
+            let remote = model.remoteAccess
+            await mainScene("remote-not-set-up") {
+                remote.reviewSet(enabled: false, origin: nil, tunnel: nil)
+                remote.guideActive = false
+                model.section = .remoteAccess
+            }
+            await mainScene("remote-guide-1") { remote.guideActive = true }
+            await mainScene("remote-set-up") {
+                remote.guideActive = false
+                remote.reviewSet(enabled: true, origin: "https://my-mac.tail1234.ts.net", tunnel: .tailscaleFunnel,
+                                 test: .reachable(rtt: 0.18, tunnel: .tailscaleFunnel, at: Date()),
+                                 health: .running(address: "https://my-mac.tail1234.ts.net", port: remote.port))
+            }
+            await mainScene("agents-cloud") {
+                model.selectedAgentID = fixture.cloudAgent.id
+                model.agentTab = .cloud
+                model.section = .agents
+            }
+            model.agentTab = .access
+
             let empty = MainWindowController(model: fixture.empty)
             keep.append(empty)
             fixture.empty.section = .vault
@@ -206,6 +236,12 @@ final class UIReview: NSObject, NSApplicationDelegate {
             // Panels.
             await panel("share-panel-\(suffix)", fixture.shareItem)
             await panel("save-panel-\(suffix)", saveItem(fixture))
+            var remoteShare = fixture.shareItem
+            remoteShare.facts.insert(PanelItem.Fact(label: String(localized: "Via"), value: String(localized: "Remote Access (a cloud agent)")), at: 0)
+            await panel("share-panel-remote-\(suffix)", remoteShare)
+            await sheet("sign-in-panel-\(suffix)", SignInPanelView(model: model, request: PairingRequest(
+                id: UUID(), clientID: fixture.cloudAgent.id.db, appName: "Claude", appURL: "https://claude.ai/oauth/claude-code-client-metadata",
+                redirectHost: "claude.ai", code: "482 913", expiresAt: Date().addingTimeInterval(300))))
             await panel("access-panel-\(suffix)", FunesApprovals.accessItem(
                 AccessPrompt(agentID: fixture.agents.cursor?.id ?? UUID(), categoryKey: "project_context", operation: .read,
                              task: "Summarize the user's current projects", expiresAt: Date().addingTimeInterval(38.5)),
@@ -323,6 +359,13 @@ private struct MenuIconStrip: View {
                     Image(nsImage: MenuBarIcon.image(state)).renderingMode(state == .needsYou ? .original : .template)
                         .foregroundStyle(.primary)
                     Text(state.rawValue).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            ForEach([MenuBarIcon.State.normal, .needsYou], id: \.self) { state in
+                VStack(spacing: 6) {
+                    Image(nsImage: MenuBarIcon.image(state, remote: true)).renderingMode(state == .needsYou ? .original : .template)
+                        .foregroundStyle(.primary)
+                    Text(state.rawValue + " + remote").font(.caption).foregroundStyle(.secondary)
                 }
             }
         }
