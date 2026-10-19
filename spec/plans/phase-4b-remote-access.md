@@ -51,7 +51,7 @@
   - the agent-setup goldens (`cloud-*.txt`, `tunnel-*.txt`);
   - `ui_test.sh`, and `ui_snapshots.sh` for the Remote Access screens;
   - the EK Bridge Test copy's quick-tunnel checks (`live_test.sh quicktunnel`, L2–L3 in `docs/TESTING.md`).
-- [ ] The user's daily remote use through ChatGPT and Claude, on the adopted build, for a few days. This replaces the unticked live cloud matrix as the proof (ADR-0018). *(2026-10-19: ChatGPT works as before on a Developer ID build of the adopted branch; Claude and the few days of use are ongoing.)*
+- [ ] The user's daily remote use through ChatGPT and Claude, on the adopted build, for a few days. This replaces the unticked live cloud matrix as the proof (ADR-0018). *(2026-10-19: ChatGPT and claude.ai work as before on a Developer ID build of the adopted branch; the few days of daily use are ongoing.)*
 - [ ] Release EK Bridge ("internal: uses BridgeKitRemote"). Users see no change.
 
 ## Part C: Funes integration (weekend 2, second half, to weekend 4)
