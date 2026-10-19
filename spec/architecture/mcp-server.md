@@ -249,5 +249,6 @@ Brings Funes to the front on the Mac, at a pending request or suggestion.
   - more than 30 failed authentications a minute from one forwarded address: 429 for 5 minutes, for requests without a well-formed credential only.
 
   Paused and expired agents still authenticate and get their reason codes, as locally.
+- **In-flight calls:** a remote call that is still running when its agent's cloud access is turned off, the agent is removed, its remote token is reset, or one of its cloud apps connects or is revoked releases and saves nothing. FunesCore checks the credential (cloud access on, cloud credentials unchanged since the call began) in the same transaction that would commit a disclosure, a delivery or a suggestion, and refuses otherwise. It's an authentication check, not policy, and local calls of the same agent are unaffected.
 - **Off:** turning Remote Access off closes the port at once and ends pairing; the URL stops answering. Cloud access, remote tokens and connected apps are kept for next time. Turning an agent's cloud access off deletes its remote token and connected apps, and bumps its revision.
 - **Health:** `GET /r/<secret>/health?nonce=…` answers only a nonce Funes issued in the last 30 s, once. It's used by **Test** and the guided setup.

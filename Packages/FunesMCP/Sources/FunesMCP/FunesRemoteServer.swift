@@ -96,6 +96,7 @@ public final class FunesRemoteServer {
     /// An agent's connected cloud apps changed (its revision was bumped first).
     public var cloudAppsChanged: (UUID) -> Void = { _ in }
     private let agents: AgentService
+    private let epochs: RemoteCredentialEpochs
     private let now: @Sendable () -> Date
 
     /// `cimdTesting` only from the FUNES_MCP_TEST harness.
@@ -104,6 +105,7 @@ public final class FunesRemoteServer {
         let configuration = FunesRemoteConfiguration.make(dataFolder: dataFolder, version: version)
         self.configuration = configuration
         agents = local.services.agents
+        epochs = local.pipeline.remoteEpochs
         self.now = now
         let authenticator = FunesRemoteAuthenticator(agents: local.services.agents)
         self.authenticator = authenticator
@@ -125,6 +127,8 @@ public final class FunesRemoteServer {
         }
         oauth.connectionsChanged = { [weak self] id in
             guard let self, let agentID = UUID(uuidString: id) else { return }
+            // A new or revoked app: the agent's in-flight remote calls release nothing more.
+            self.epochs.bump(id)
             let agents = self.agents, now = self.now
             Task { @MainActor [weak self] in
                 // Pending approvals bind to the revision; a new or revoked app ends them (domain model).
@@ -156,18 +160,29 @@ public final class FunesRemoteServer {
 
     /// Allow cloud access. Off deletes the remote token and the agent's connected apps at once;
     /// either way the revision goes up.
+    /// Remote calls already in flight release nothing once it's off.
     public func setCloudAccess(agentID: UUID, _ on: Bool) async throws {
+        if !on { epochs.bump(agentID.uuidString.lowercased()) }
         try await agents.setCloudAccess(agentID: agentID, on, now: now())
         if !on { revokeApps(agentID: agentID) }
     }
 
     /// Removing an agent also removes its connected apps (and confidential clients set up for it).
     public func removeAgent(agentID: UUID) async throws {
+        epochs.bump(agentID.uuidString.lowercased())
         try await agents.remove(agentID: agentID, now: now())
         revokeApps(agentID: agentID)
     }
 
+    /// Copy Remote Token… the first time, Reset Remote Token… after: the old token stops at once,
+    /// in-flight calls included.
+    public func issueRemoteKey(agentID: UUID) async throws -> IssuedKey {
+        epochs.bump(agentID.uuidString.lowercased())
+        return try await agents.issueRemoteKey(agentID: agentID, now: now())
+    }
+
     public func revokeApps(agentID: UUID) {
+        epochs.bump(agentID.uuidString.lowercased())
         oauth.revokeAll(clientID: agentID.uuidString.lowercased())
         if oauth.pairingClientID == agentID.uuidString.lowercased() { oauth.closePairing() }
     }

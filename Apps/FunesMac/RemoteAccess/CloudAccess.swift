@@ -114,7 +114,8 @@ extension AppModel {
                    saved.hasPrefix(Identifiers.remoteKeyPrefix) {
                     token = saved.trimmingCharacters(in: .whitespacesAndNewlines)
                 } else {
-                    token = try await services.agents.issueRemoteKey(agentID: agent.id, now: Date()).plaintext
+                    guard let remoteServer else { return }
+                    token = try await remoteServer.issueRemoteKey(agentID: agent.id).plaintext
                 }
                 SecretClipboard.copy(token)
                 cloudMessage = String(localized: "Remote token copied. The clipboard is cleared in 90 seconds.")
@@ -138,7 +139,8 @@ extension AppModel {
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         Task {
             do {
-                _ = try await services.agents.issueRemoteKey(agentID: agent.id, now: Date())
+                guard let remoteServer else { return }
+                _ = try await remoteServer.issueRemoteKey(agentID: agent.id)
                 cloudMessage = String(localized: "Remote token reset. The old token no longer works; copy the new one.")
             } catch {
                 cloudMessage = ErrorText.message(error)

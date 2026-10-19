@@ -118,11 +118,13 @@ public final class SuggestionService: Sendable {
     /// suggestion let through after an access request always waits for review (§7).
     /// `via` is for Activity only (ADR-0018).
     public func suggest(agentID: UUID, _ input: SuggestInput, now: Date, allowOnce: AccessRequestOffer? = nil,
-                        alwaysQueue: Bool = false, via: ActivityEvent.Via = .mcp) async throws -> SuggestOutcome {
+                        alwaysQueue: Bool = false, via: ActivityEvent.Via = .mcp,
+                        credential: CredentialCheck? = nil) async throws -> SuggestOutcome {
         let paused = pause.isPaused(at: now)
         enum Step { case done(SuggestOutcome), offer(SuggestOutcome, [String], AccessOperation, Int) }
         let step = try await store.writer.write { db -> Step in
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.unauthenticated }
+            if let credential, !credential(agent) { throw VaultError.unauthenticated }
             try AgentStore.recordRequest(db, agentID: agentID, now: now)
             var access = agent.access
             if let once = allowOnce {

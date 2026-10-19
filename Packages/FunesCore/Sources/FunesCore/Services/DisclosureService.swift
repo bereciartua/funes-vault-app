@@ -175,8 +175,10 @@ public final class DisclosureService: Sendable {
     /// counted in the same write transaction that would add one, so concurrent calls can't all pass;
     /// over the cap the request is denied with `rate_limited`. `via` is for Activity only: the
     /// decision never depends on the channel (ADR-0018).
+    /// `credential` fails closed with `unauthenticated`, before anything is stored.
     public func request(agentID: UUID, _ input: MemoryRequest, now: Date, grant: OnceGrant? = nil,
-                        maxPendingApprovals: Int? = nil, via: ActivityEvent.Via = .mcp) async throws -> RequestOutcome {
+                        maxPendingApprovals: Int? = nil, via: ActivityEvent.Via = .mcp,
+                        credential: CredentialCheck? = nil) async throws -> RequestOutcome {
         try input.validate()
         let agent = try await store.writer.read { db in try AgentStore.fetch(db, id: agentID) }
         guard let agent, !agent.isRemoved else { throw VaultError.unauthenticated }
@@ -202,6 +204,7 @@ public final class DisclosureService: Sendable {
         let result = try await store.writer.write { db -> Result in
             // Re-read inside the transaction, so the decision and the stored snapshot agree.
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.unauthenticated }
+            if let credential, !credential(agent) { throw VaultError.unauthenticated }
             var access = agent.access
             if let grant, grant.agentRevision == agent.revision { access.allowedCategoryKeys.insert(grant.categoryKey) }
             try AgentStore.recordRequest(db, agentID: agentID, now: now)
@@ -286,15 +289,15 @@ public final class DisclosureService: Sendable {
     /// show its panel.
     public func requestInCall(agentID: UUID, _ input: MemoryRequest, wait: Duration = .seconds(45),
                               maxPendingApprovals: Int? = nil, via: ActivityEvent.Via = .mcp,
-                              now: @Sendable () -> Date = { Date() },
+                              credential: CredentialCheck? = nil, now: @Sendable () -> Date = { Date() },
                               onNeedsApproval: @Sendable (RequestOutcome) -> Void = { _ in }) async throws -> RequestOutcome {
         let outcome = try await request(agentID: agentID, input, now: now(), maxPendingApprovals: maxPendingApprovals,
-                                        via: via)
+                                        via: via, credential: credential)
         guard outcome.status == .needsApproval, let id = outcome.requestID else { return outcome }
         onNeedsApproval(outcome)
         switch await waitForDecision(requestID: id, timeout: wait) {
         case .approved?:
-            return try await deliver(requestID: id, agentID: agentID, now: now(), via: via)
+            return try await deliver(requestID: id, agentID: agentID, now: now(), via: via, credential: credential)
         case .denied?:
             var denied = outcome
             denied.status = .denied
@@ -425,10 +428,12 @@ public final class DisclosureService: Sendable {
     // MARK: - Delivery and get_memory_request
 
     /// `get_memory_request` (§3.8), running delivery (§3.7) when approved, in one transaction.
-    public func deliver(requestID: UUID, agentID: UUID, now: Date, via: ActivityEvent.Via = .mcp) async throws -> RequestOutcome {
+    public func deliver(requestID: UUID, agentID: UUID, now: Date, via: ActivityEvent.Via = .mcp,
+                        credential: CredentialCheck? = nil) async throws -> RequestOutcome {
         let paused = pause.isPaused(at: now)
         let outcome = try await store.writer.write { db -> RequestOutcome in
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.unauthenticated }
+            if let credential, !credential(agent) { throw VaultError.unauthenticated }
             try AgentStore.recordRequest(db, agentID: agentID, now: now)
             // Unknown, or another agent's: the same answer (T20).
             guard let d = try Self.fetch(db, id: requestID), d.agentID == agentID else {

@@ -156,8 +156,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             #endif
             if preferences.mcpEnabled { mcp.start() }
             await model.refresh()
-            // After the agents are read, so the page and menu count them.
-            if preferences.mcpEnabled { model.remoteAccess.launch() }
+            // After the agents are read, so the page and menu count them. Always, so the automatic
+            // turn-off and the tunnel checks run even if agents can't connect yet; the host starts
+            // the listener only while they can (PR #9 review).
+            model.remoteAccess.launch()
         }
         startMinuteJob(environment, model: model)
         if let movedFrom = AppMover.movedFrom(), InstallLocation.volume(of: movedFrom) == nil {
@@ -274,7 +276,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         preferences.mcpEnabled = on
         if on {
             mcp?.start()
-            if let model, model.remoteAccess.enabled { remote?.start(model.remoteAccess.configuration) }
+            model?.remoteAccess.resumeListening()
         } else {
             environment?.approvals.queue.withdrawAll()
             mcp?.stop()

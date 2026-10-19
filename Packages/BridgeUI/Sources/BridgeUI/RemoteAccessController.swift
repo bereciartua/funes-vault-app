@@ -189,8 +189,9 @@ public final class RemoteAccessController {
         rememberedAddresses = TunnelAddressMemory.load(defaults)
     }
 
-    /// At launch: on again if it was on (unless its automatic turn-off passed), and the tunnel
-    /// checks' clock.
+    /// At launch, whatever the app's server state: on again if it was on (unless its automatic
+    /// turn-off passed; the host decides whether the listener can start), and the clock that
+    /// enforces the turn-off and runs the tunnel checks.
     public func launch() {
         if enabled {
             if let offAt, offAt <= Date() {
@@ -277,6 +278,18 @@ public final class RemoteAccessController {
         NSApp.activate()
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         apply(true)
+    }
+
+    /// The app's server came back on (Let agents connect): the listener starts again, unless the
+    /// automatic turn-off passed meanwhile, which turns Remote Access off instead.
+    public func resumeListening() {
+        guard enabled else { return }
+        if let offAt, offAt <= Date() {
+            apply(false)
+            notice = String(localized: "Remote Access turned off, as scheduled.")
+            return
+        }
+        host.start(configuration)
     }
 
     /// Without asking: the menu's Turn Off Remote Access, the automatic turn-off, tests.

@@ -318,7 +318,7 @@ final class Harness {
         case "issue_remote_key":
             guard let agent else { return ["ok": false] }
             do {
-                let key = try await agents.issueRemoteKey(agentID: agent, now: now)
+                let key = try await remote.issueRemoteKey(agentID: agent)
                 let onDisk = keys.remoteURL(agentID: agent).flatMap { try? String(contentsOf: $0, encoding: .utf8) }
                 return ["ok": true, "key": key.plaintext, "file_matches": onDisk?.trimmingCharacters(in: .whitespacesAndNewlines) == key.plaintext]
             } catch { return ["ok": false] }
