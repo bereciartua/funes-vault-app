@@ -4,7 +4,7 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
-## [0.1.1] - Unreleased
+## [0.1.1] - 2026-10-19
 
 The first public preview. 0.1.0 was built as a draft release only and never published: everything in it below is in 0.1.1, with this fix.
 
