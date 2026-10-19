@@ -19,7 +19,7 @@ When a design changes, update the spec in the same change and add an ADR for arc
 - `Packages/BridgeUI/`: UI pieces copied from EK Bridge (tier 2): `Upstream/` as copied, `Sources/BridgeUI/` adapted (approval queue and panel, Activity store). See its `PROVENANCE.md`.
 - `Apps/FunesMCPLauncher/`: the `funes-mcp` launcher, embedded in `FunesVault.app/Contents/MacOS/`.
 - `FunesVault.xcodeproj`: plain Xcode project using folder-synchronized groups, so new source files in `Apps/*` need no project-file edits.
-- BridgeKit (`BridgeKitCore`, repo [`bereciartua/bridgekit`](https://github.com/bereciartua/bridgekit)) is an external package, pinned to exactly `0.1.1` in `Packages/FunesMCP/Package.swift`, `Packages/BridgeUI/Package.swift` and the Xcode project.
+- BridgeKit (`BridgeKitCore` and `BridgeKitRemote`, repo [`bereciartua/bridgekit`](https://github.com/bereciartua/bridgekit)) is an external package, pinned to exactly `0.2.0` in `Packages/FunesMCP/Package.swift`, `Packages/BridgeUI/Package.swift` and the Xcode project.
 
 ## Commands
 ```bash

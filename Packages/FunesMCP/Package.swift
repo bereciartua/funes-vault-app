@@ -15,8 +15,7 @@ let package = Package(
     dependencies: [
         .package(path: "../FunesCore"),
         .package(path: "../FunesProtocol"),
-        // TEMPORARY until BridgeKit 0.2.0 is tagged: a local checkout (Phase 4b).
-        .package(path: "../../../funes-dev-deps/bridgekit"),
+        .package(url: "https://github.com/bereciartua/bridgekit.git", exact: "0.2.0"),
     ],
     targets: [
         .target(

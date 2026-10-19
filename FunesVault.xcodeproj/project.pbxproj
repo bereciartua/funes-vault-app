@@ -204,7 +204,7 @@
 				F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */,
 				F00000000000000000007003 /* XCLocalSwiftPackageReference "Packages/FunesMCP" */,
 				F00000000000000000007004 /* XCLocalSwiftPackageReference "Packages/BridgeUI" */,
-				F00000000000000000007007 /* XCLocalSwiftPackageReference "../funes-dev-deps/bridgekit" */,
+				F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */,
 				F00000000000000000007006 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -450,13 +450,17 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/BridgeUI;
 		};
-		F00000000000000000007007 /* XCLocalSwiftPackageReference "../funes-dev-deps/bridgekit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "../funes-dev-deps/bridgekit";
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/bereciartua/bridgekit.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.2.0;
+			};
+		};
 		F00000000000000000007006 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sparkle-project/Sparkle";
@@ -490,7 +494,7 @@
 		};
 		F0000000000000000000D005 /* BridgeKitCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F00000000000000000007007 /* XCLocalSwiftPackageReference "../funes-dev-deps/bridgekit" */;
+			package = F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */;
 			productName = BridgeKitCore;
 		};
 		F0000000000000000000D006 /* FunesProtocol */ = {
@@ -500,12 +504,12 @@
 		};
 		F0000000000000000000D007 /* BridgeKitCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F00000000000000000007007 /* XCLocalSwiftPackageReference "../funes-dev-deps/bridgekit" */;
+			package = F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */;
 			productName = BridgeKitCore;
 		};
 		F0000000000000000000D009 /* BridgeKitRemote */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F00000000000000000007007 /* XCLocalSwiftPackageReference "../funes-dev-deps/bridgekit" */;
+			package = F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */;
 			productName = BridgeKitRemote;
 		};
 		F0000000000000000000D008 /* Sparkle */ = {

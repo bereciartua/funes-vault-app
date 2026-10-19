@@ -36,7 +36,7 @@
 ### 4b.4 Reference harness and tag · 2 h
 - [x] The reference server gains a remote listener and a fake OAuth approver.
 - [x] Generalize `mcp_test.py`'s `run_remote` and `run_oauth` and run them against it.
-- [ ] Tag **`0.2.0`**. BridgeKitCore only gains additions.
+- [x] Tag **`0.2.0`**. BridgeKitCore only gains additions. *(Tagged 2026-10-19 at c7fb211, bereciartua/bridgekit#2.)*
 
 ## Part B: EK Bridge adopts BridgeKitRemote (weekend 2, first half)
 
