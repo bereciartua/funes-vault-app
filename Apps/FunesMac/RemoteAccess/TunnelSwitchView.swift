@@ -102,7 +102,7 @@ struct TunnelSwitchView: View {
                 Text(caption(provider)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 TextField(String(localized: "Address"), text: Binding(
                     get: { remote.tunnelSwitch?.address ?? "" }, set: { remote.setSwitchAddress($0) }),
-                          prompt: Text(verbatim: "https://my-mac.tail1234.ts.net"))
+                          prompt: Text(verbatim: remote.funnelExampleAddress))
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { remote.switchTest() }
                     .accessibilityLabel(String(localized: "New address for \(provider.name)"))

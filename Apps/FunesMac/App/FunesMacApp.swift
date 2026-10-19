@@ -303,7 +303,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             portIsFree: { PortProbe.isFree($0) },
             setKeepAwake: { keepAwake.set($0) },
             onACPower: { KeepAwake.onACPower },
-            tunnels: .live,
+            // A Funnel entry to the local MCP port is a mistake ("Wrong port"); any other belongs to
+            // another app on this Mac.
+            tunnels: .live(mistakenPorts: [preferences.mcpPort, FunesMCPConfiguration.defaultPort]),
             cloudAgents: { [weak model] in model?.remoteCloudAgents() ?? [] },
             mcpPort: { [weak model] in model?.mcpPort ?? FunesMCPConfiguration.defaultPort },
             tunnelDown: { provider in

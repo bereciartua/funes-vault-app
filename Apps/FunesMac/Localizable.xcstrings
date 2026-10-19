@@ -117,6 +117,9 @@
     "%@ couldn't be started." : {
 
     },
+    "%@ couldn't check what Funnel already serves on this Mac. If it serves another app on port 443, this command replaces it: check with tailscale funnel status first." : {
+
+    },
     "%@ couldn't remove its existing %@ entry, so it was left as it was." : {
       "localizations" : {
         "en" : {
@@ -735,6 +738,9 @@
 
     },
     "Another app is using port %@. Quit it, then turn this off and on again, or choose another port. Funes never moves on its own, because agents' setups name the port." : {
+
+    },
+    "Another app on this Mac now serves Funnel's port in your address, so starting Funnel there would replace it. Use Switch Tunnel… to set it up on a free port." : {
 
     },
     "Answer a Few Questions" : {
@@ -1723,10 +1729,39 @@
     "Funes was quitting" : {
 
     },
+    "Funnel already serves another app on this Mac on %@, so %@ uses port %@. Its address ends in :%@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funnel already serves another app on this Mac on %1$@, so %2$@ uses port %3$@. Its address ends in :%4$@."
+          }
+        }
+      }
+    },
+    "Funnel already serves other apps on this Mac on %@, so %@ uses port %@. Its address ends in :%@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funnel already serves other apps on this Mac on %1$@, so %2$@ uses port %3$@. Its address ends in :%4$@."
+          }
+        }
+      }
+    },
+    "Funnel already serves other apps on this Mac on %@. Starting it would replace one of them, so turn one off first, or choose another tunnel." : {
+
+    },
+    "Funnel has three public ports, 443, 8443 and 10000, one app each. The guide uses the first one nothing on this Mac serves yet, so it never replaces another app's tunnel." : {
+
+    },
     "Funnel keeps running in the background, even after a restart, until you turn it off." : {
 
     },
     "Funnel keeps the public hostname in Host, so it must match Address." : {
+
+    },
+    "Funnel's three public ports already serve other apps on this Mac. Turn one off, or choose another tunnel." : {
 
     },
     "Gemini CLI" : {
@@ -1793,9 +1828,6 @@
 
     },
     "I've Started It" : {
-
-    },
-    "If Funnel already serves another app on port 443, this command replaces it. Add --https=8443 after --bg instead, and :8443 to the address." : {
 
     },
     "If TLS ends at the provider's edge, the provider can read the traffic." : {
@@ -2278,6 +2310,9 @@
 
     },
     "No credentials yet" : {
+
+    },
+    "No free port" : {
 
     },
     "No key" : {
@@ -3576,7 +3611,7 @@
     "The tunnel's HTTPS certificate wasn't accepted." : {
 
     },
-    "The tunnel's public https address, without a path. For Tailscale Funnel it looks like https://my-mac.tail1234.ts.net." : {
+    "The tunnel's public https address, without a path. For Tailscale Funnel it looks like %@." : {
 
     },
     "The tunnel's public https address, without a path. Test it before you switch." : {
@@ -4137,6 +4172,19 @@
     },
     "on this Mac · forwards to %@" : {
 
+    },
+    "port %@" : {
+
+    },
+    "port %@ (it forwards to %@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "port %1$@ (it forwards to %2$@)"
+          }
+        }
+      }
     },
     "saves without asking" : {
 

@@ -211,6 +211,12 @@ Brings Funes to the front on the Mac, at a pending request or suggestion.
 *v0.1, experimental, off by default ([ADR-0018](decisions/0018-remote-access-in-v0.1.md)). Built on `BridgeKitRemote`, EK Bridge's Remote Access ([reuse §3](ek-bridge-reuse.md#3-tier-3-bridgekitremote-extracted-now-for-funes-v01)). Where this section doesn't say otherwise, behaviour matches EK Bridge's `docs/MCP.md` "Use from cloud agents".*
 
 - **Listener:** `127.0.0.1:47627`, loopback only, only while Remote Access is on. A tunnel the user runs (Tailscale Funnel, Cloudflare Tunnel, ngrok, a quick tunnel for testing) forwards to it; Funes never starts one.
+- **Tailscale Funnel shared with other apps:** Funnel has three public ports (443, 8443, 10000).
+  - The guide uses where Funnel already forwards to 47627, else the first port nothing on this Mac serves (Funnel, tailnet-only Serve or TCP), so its command never replaces another app's entry, such as EK Bridge's on 443.
+  - With all three taken it offers no command.
+  - Another app's entry is never "Wrong port"; only one to the local MCP port is.
+  - Funnel's turn-off command targets the address's port only.
+  - BridgeKitRemote 0.3.0 (`FunnelPorts`, [plan](../plans/phase-4b-funnel-ports.md)).
   - The port can be changed in Settings (1024–65535, not the MCP or companion port).
   - The default avoids Funes's 47625 and 47626, EK Bridge's 47615 and 47616, and the EK Bridge Test copy's 47625 and 47626.
   - It has the same HTTP limits as §1, with its own 32 connections.

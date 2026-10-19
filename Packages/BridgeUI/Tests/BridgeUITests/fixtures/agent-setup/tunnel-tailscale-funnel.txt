@@ -23,4 +23,4 @@ notes:
 - Funnel keeps the public hostname in Host, so it must match Address.
 - Tailscale Serve isn't enough: cloud agents aren't on your tailnet.
 - Funnel keeps running in the background, even after a restart, until you turn it off.
-- If Funnel already serves another app on port 443, this command replaces it. Add --https=8443 after --bg instead, and :8443 to the address.
+- Funnel has three public ports, 443, 8443 and 10000, one app each. The guide uses the first one nothing on this Mac serves yet, so it never replaces another app's tunnel.

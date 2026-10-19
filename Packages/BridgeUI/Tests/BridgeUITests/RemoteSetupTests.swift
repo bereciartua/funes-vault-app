@@ -67,13 +67,13 @@ struct RemoteSetupTests {
         }
     }
 
-    static func render(_ provider: TunnelProvider) -> String {
+    static func render(_ provider: TunnelProvider, publicPort: Int? = 443) -> String {
         let host = sampleHost(provider)
         var lines = [provider.displayName, "name: \(provider.name)", "summary: \(provider.summary)",
                      "preservesHost: \(provider.preservesHost)", "detectionHeader: \(provider.detectionHeader ?? "none")",
                      "installLink: \(provider.installLink ?? "none")", "", "commands:"]
-        lines += provider.commands(port: remotePort, hostname: host, names: names)
-        lines += ["", "run: \(provider.runCommand(port: remotePort, hostname: host, names: names) ?? "none")"]
+        lines += provider.commands(port: remotePort, hostname: host, names: names, publicPort: publicPort)
+        lines += ["", "run: \(provider.runCommand(port: remotePort, hostname: host, names: names, publicPort: publicPort) ?? "none")"]
         if let config = provider.configFile(port: remotePort, hostname: host, names: names) {
             lines += ["", "config.yml:", config]
         }
@@ -95,6 +95,31 @@ struct RemoteSetupTests {
                provider.displayName, provider.summary]
     }
 
+    /// What Funnel serves on this Mac, as the Tailscale check reads it.
+    static func funnel(_ entries: [(Int, [Int], Bool)], port: Int = remotePort) -> FunnelPorts {
+        FunnelPorts(entries: entries.map { FunnelPorts.Entry(publicPort: $0.0, host: tunnelHost, targets: $0.1, funnel: $0.2) },
+                    port: port)
+    }
+
+    /// Step 2's line for each situation, and the No free port state's words.
+    static func renderFunnelPorts() -> String {
+        let cases: [(String, FunnelPorts)] = [
+            ("nothing served", funnel([])),
+            ("EK Bridge on 443", funnel([(443, [47616], true)])),
+            ("EK Bridge on 443, a Serve entry on 8443", funnel([(443, [47616], true), (8443, [4000], false)])),
+            ("all three taken", funnel([(443, [47616], true), (8443, [4000], false), (10000, [5432], true)])),
+            ("a file on 443", funnel([(443, [], true)])),
+            ("running on 10000", funnel([(443, [47616], true), (8443, [4000], false), (10000, [remotePort], true)])),
+        ]
+        var lines = cases.map { name, ports in
+            "\(name): port \(ports.publicPort.map(String.init) ?? "none") · \(ports.reason(names: names) ?? "no line")"
+        }
+        let taken = TunnelHealth.notRunning(reason: .allPortsTaken)
+        lines += ["", "unknown: \(FunnelPorts.unknownWarning(names: names))",
+                  "no free port: \(taken.label) · \(taken.detail(.tailscaleFunnel, remotePort: remotePort, mcpPort: 47626) ?? "")"]
+        return lines.joined(separator: "\n")
+    }
+
     static var fixtures: URL {
         URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("fixtures/agent-setup")
     }
@@ -104,6 +129,11 @@ struct RemoteSetupTests {
         for agent in CloudAgent.allCases { expected["cloud-\(Self.slug(agent)).txt"] = Self.render(agent, Self.cloud) }
         expected["cloud-no-address.txt"] = Self.render(.claudeAI, Self.noAddress)
         for provider in TunnelProvider.allCases { expected["tunnel-\(Self.slug(provider)).txt"] = Self.render(provider) }
+        // Funnel shared with other apps on this Mac: another public port, or none free.
+        expected["tunnel-tailscale-funnel-8443.txt"] = Self.render(.tailscaleFunnel, publicPort: 8443)
+        expected["tunnel-tailscale-funnel-10000.txt"] = Self.render(.tailscaleFunnel, publicPort: 10000)
+        expected["tunnel-tailscale-funnel-no-free-port.txt"] = Self.render(.tailscaleFunnel, publicPort: nil)
+        expected["tunnel-funnel-ports.txt"] = Self.renderFunnelPorts()
         let folder = Self.fixtures
         if ProcessInfo.processInfo.environment["UPDATE_GOLDENS"] == "1" {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

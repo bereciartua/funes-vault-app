@@ -1,13 +1,13 @@
 {
-  "originHash" : "6d884e7ebe2ea3a5a477cf9d193ce86c951d99a6dc4cf682bac17c22f155678b",
+  "originHash" : "5650ccaed97a4ba4444ecdffb600cd5b51d774ec78df5e0c510f773cdcee0dd7",
   "pins" : [
     {
       "identity" : "bridgekit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/bereciartua/bridgekit.git",
       "state" : {
-        "revision" : "c7fb2114afd22c05e014f15ad16d1cf90b8df958",
-        "version" : "0.2.0"
+        "revision" : "577e7421d69c1790b48dd0e05f015c67c92cb6ba",
+        "version" : "0.3.0"
       }
     }
   ],
