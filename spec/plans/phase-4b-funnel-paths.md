@@ -89,7 +89,8 @@ Two test path entries were added to Funnel's port 10000, next to its `/` entry t
   - legacy `/` → our port.
 - [x] The commands for 443 and other ports, and a path never off without `--set-path`.
 - [x] The listed paths only: `RemoteGateTests.publicPaths` checks every served route is under them and that other discovery names and paths are 404. `remote_test.py`'s 86 checks pass unchanged.
-- [ ] README, CHANGELOG `## 0.4.0`, PR, CI, then tag `0.4.0` after both apps are green against it, each outward step with the user's OK.
+- [x] README, CHANGELOG `## 0.4.0`, PR (bridgekit#4), CI green, merged as `45f8382`.
+- [ ] Tag `0.4.0` on `45f8382` after both apps are green against it (with the user's OK).
 
 ## Part B: Funes 0.1.2
 
@@ -112,9 +113,9 @@ Two test path entries were added to Funnel's port 10000, next to its `/` entry t
 
 ## Part C: EK Bridge 0.11.4
 
-- [ ] Adopt 0.4.0: commands, Incomplete, Reset Path's commands, the warning; EK Bridge's words.
-- [ ] Existing users on `/` stay Running with no change. With 443 free, a new setup shows the four path commands instead of `tailscale funnel --bg 47616`, so the tunnel goldens change.
-- [ ] docs/MCP.md, CHANGELOG `[0.11.4]` (0.11.3 was a draft only), version 0.11.4 (21), `server.json`.
+- [x] Adopt 0.4.0: commands, Incomplete, Reset Path's commands, the warning; EK Bridge's words.
+- [x] Existing users on `/` stay Running with no change. With 443 free, a new setup shows the four path commands instead of `tailscale funnel --bg 47616`, so the tunnel goldens change.
+- [x] docs/MCP.md, CHANGELOG `[0.11.4]` (0.11.3 was a draft only), version 0.11.4 (21), `server.json`.
 
 ## Checks
 
