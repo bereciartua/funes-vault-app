@@ -1,0 +1,13 @@
+# Fixed Remote Access secret paths of the test harness and the DEBUG-only UI-review state, not real secrets.
+008a2adeb9a7aa126ed8cb5c0cfcd6b84f491bb2:Packages/FunesMCP/Sources/funes-mcp-test-server/main.swift:generic-api-key:123
+008a2adeb9a7aa126ed8cb5c0cfcd6b84f491bb2:Packages/BridgeUI/Sources/BridgeUI/RemoteAccessController.swift:generic-api-key:767
+008a2adeb9a7aa126ed8cb5c0cfcd6b84f491bb2:Tests/mcp/remote_test.py:generic-api-key:33
+008a2adeb9a7aa126ed8cb5c0cfcd6b84f491bb2:Tests/mcp/remote_test.py:generic-api-key:289
+d31ec9d1b7f6f9d62c06230a35ae9d0525a3dcf6:Packages/FunesMCP/Sources/funes-mcp-test-server/main.swift:generic-api-key:123
+521f5e5291e9bac602b84c63ff2c344dcaba86ad:Packages/BridgeUI/Sources/BridgeUI/RemoteAccessController.swift:generic-api-key:754
+24904fb9110126058549759ea54a8b0df870f963:Tests/mcp/remote_test.py:generic-api-key:33
+24904fb9110126058549759ea54a8b0df870f963:Tests/mcp/remote_test.py:generic-api-key:289
+Packages/BridgeUI/Sources/BridgeUI/RemoteAccessController.swift:generic-api-key:767
+Packages/FunesMCP/Sources/funes-mcp-test-server/main.swift:generic-api-key:123
+Tests/mcp/remote_test.py:generic-api-key:33
+Tests/mcp/remote_test.py:generic-api-key:289
