@@ -155,6 +155,8 @@ public final class RemoteAccessController {
     public private(set) var guideAddress: String?
     @ObservationIgnored private var guideAdvancedThisEntry = false
     public private(set) var tunnelHealth: TunnelHealth?
+    /// What Tailscale serves on this Mac's public ports, from the same check (Funnel only).
+    public private(set) var tunnelFunnel: FunnelPorts?
     public private(set) var tunnelHealthProvider: TunnelProvider?
     public private(set) var tunnelHealthCheckedAt: Date?
     public private(set) var inUseTunnelHealth: TunnelHealth?
@@ -307,6 +309,7 @@ public final class RemoteAccessController {
             setOffAt(nil)
             candidate = nil
             tunnelHealth = nil
+            tunnelFunnel = nil
             tunnelHealthProvider = nil
             inUseTunnelHealth = nil
             lastTunnelDown = nil
@@ -643,7 +646,9 @@ public final class RemoteAccessController {
         for name in agents.flatMap(\.apps) where !apps.contains(name) { apps.append(name) }
         return TunnelSwitchSummary.make(change, newOrigin: address, port: port,
                                         remoteTokenClients: agents.filter(\.hasRemoteToken).map(\.name), oauthApps: apps,
-                                        offCommands: { provider, port in provider.offCommands(port: port) })
+                                        offCommands: { provider, port, origin in
+            provider.offCommands(port: port, publicPort: TailscaleFunnelCommand.publicPort(fromAddress: origin))
+        })
     }
 
     /// Switch (Save): the only step that saves anything.
@@ -686,6 +691,31 @@ public final class RemoteAccessController {
         tunnelHealthProvider == tunnelCheckTarget ? tunnelHealth : nil
     }
 
+    public var currentFunnelPorts: FunnelPorts? {
+        tunnelHealthProvider == tunnelCheckTarget ? tunnelFunnel : nil
+    }
+
+    /// Funnel's public port for the guide's commands (first setup and Switch Tunnel…): where it
+    /// already runs, else the first free one. 443 when the check couldn't tell; nil when all three
+    /// serve other apps (no command then).
+    public var guideFunnelPort: Int? {
+        guard let ports = currentFunnelPorts else { return 443 }
+        return ports.publicPort
+    }
+
+    /// Step 3's example address for Tailscale Funnel, with the port the guide uses.
+    public var funnelExampleAddress: String {
+        "https://my-mac.tail1234.ts.net" + (guideFunnelPort.map { $0 == 443 ? "" : ":\($0)" } ?? "")
+    }
+
+    /// Funnel's public port for the tunnel in use: the one in the address. Nil when another app
+    /// now serves that port, so starting Funnel there would replace it.
+    public var inUseFunnelPort: Int? {
+        let publicPort = TailscaleFunnelCommand.publicPort(fromAddress: origin)
+        guard let entry = currentFunnelPorts?.entry(on: publicPort) else { return publicPort }
+        return entry.targets.contains(port) ? publicPort : nil
+    }
+
     public var waitingForTunnel: Bool {
         if let tunnelSwitch { return tunnelSwitch.step == .start }
         return guideActive && guideStep == .startTunnel
@@ -703,13 +733,15 @@ public final class RemoteAccessController {
         let port = self.port
         tunnelCheckRunning = true
         tunnelCheckStarted = Date()
-        host.tunnels.check(provider, port) { [weak self] health in
+        host.tunnels.check(provider, port) { [weak self] result in
             guard let self else { return }
             self.tunnelCheckRunning = false
+            let health = result.health
             let current = provider == self.tunnelCheckTarget && port == self.port
             if current {
-                if self.tunnelHealth != health || self.tunnelHealthProvider != provider {
+                if self.tunnelHealth != health || self.tunnelFunnel != result.funnel || self.tunnelHealthProvider != provider {
                     self.tunnelHealth = health
+                    self.tunnelFunnel = result.funnel
                     self.tunnelHealthProvider = provider
                 }
                 self.tunnelHealthCheckedAt = Date()
@@ -762,7 +794,7 @@ public final class RemoteAccessController {
     #if DEBUG
     /// The UI-review build: a state without the alert.
     public func reviewSet(enabled: Bool, origin: String?, tunnel: TunnelProvider?, test: RemoteTestState = .notTested,
-                          health: TunnelHealth? = nil) {
+                          health: TunnelHealth? = nil, funnel: FunnelPorts? = nil) {
         self.enabled = enabled
         if secret.isEmpty { secret = "q7Zk2vN4bXwP9sL1mT6hYa" }
         self.origin = origin
@@ -771,6 +803,7 @@ public final class RemoteAccessController {
         status = enabled ? .listening(port: port) : .off
         if let health {
             tunnelHealth = health
+            tunnelFunnel = funnel
             tunnelHealthProvider = tunnelCheckTarget
             inUseTunnelHealth = health
             inUseTunnelProvider = tunnelLabel

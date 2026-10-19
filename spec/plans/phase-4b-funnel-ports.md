@@ -61,20 +61,20 @@ Changing the public tunnel types breaks source compatibility, so this is a minor
 ## Part B: Funes 0.1.1
 
 ### F.4 Guide, Tunnel row and wording · 3 h
-- [ ] `RemoteWords`: `commands`, `offCommands` and `runCommand` take the public port from the check's result (rules 2, 3 and 6) and the turn-off port from the saved address (rule 7).
-- [ ] Step 2 shows which port it will use and why, in one line above the command. For example: "Funnel's port 443 already serves another app on this Mac (it forwards to 47616), so Funes Vault uses 8443."
-- [ ] Step 3's address hint expects the matching `:<port>`.
-- [ ] All taken (rule 4): a list of the three ports and their targets, and "Turn one off, or choose another tunnel." No Copy button.
-- [ ] The Tunnel row and the menu's "tunnel down" use the same states. `mistakenPorts: [47626]`.
-- [ ] `CloudSetup` notes: drop the manual 8443 note and add rule 6's line.
-- [ ] String Catalog, goldens for each state (`tunnel-*`), `RemoteSetupTests` and `RemoteAccessControllerTests`.
+- [x] `RemoteWords`: `commands`, `offCommands` and `runCommand` take the public port from the check's result (rules 2, 3 and 6) and the turn-off port from the saved address (rule 7).
+- [x] Step 2 shows which port it will use and why, in one line above the command. For example: "Funnel's port 443 already serves another app on this Mac (it forwards to 47616), so Funes Vault uses 8443."
+- [x] Step 3's address hint expects the matching `:<port>`.
+- [x] All taken (rule 4): a list of the three ports and their targets, and "Turn one off, or choose another tunnel." No Copy button.
+- [x] The Tunnel row and the menu's "tunnel down" use the same states. `mistakenPorts: [47626]`.
+- [x] `CloudSetup` notes: drop the manual 8443 note and add rule 6's line.
+- [x] String Catalog, goldens for each state (`tunnel-*`), `RemoteSetupTests` and `RemoteAccessControllerTests`.
 
 ### F.5 Spec, docs, version · 1 h
-- [ ] [MCP server §12](../architecture/mcp-server.md#12-remote-transport) gets the port rule, and [reuse §3](../architecture/ek-bridge-reuse.md#3-tier-3-bridgekitremote-extracted-now-for-funes-v01) BridgeKit 0.3.0.
-- [ ] docs/MCP.md's Tailscale row (the guide picks the port; the commands per port) and README if needed.
-- [ ] [spike-results 4b.15](spike-results.md): the procedure follows the guide instead of a hand-typed `--https=8443`.
-- [ ] `MARKETING_VERSION` 0.1.1, build 2, `server.json`, CHANGELOG `## [0.1.1]` (the 0.1.0 entry stays, never published).
-- [ ] Pin BridgeKit `exact: 0.3.0` in the Xcode project and BridgeUI, and resolve.
+- [x] [MCP server §12](../architecture/mcp-server.md#12-remote-transport) gets the port rule, and [reuse §3](../architecture/ek-bridge-reuse.md#3-tier-3-bridgekitremote-extracted-now-for-funes-v01) BridgeKit 0.3.0.
+- [x] docs/MCP.md's Tailscale row (the guide picks the port; the commands per port) and README if needed.
+- [x] [spike-results 4b.15](spike-results.md): the procedure follows the guide instead of a hand-typed `--https=8443`.
+- [x] `MARKETING_VERSION` 0.1.1, build 2, `server.json`, CHANGELOG `## [0.1.1]` (the 0.1.0 entry stays, never published).
+- [ ] Pin BridgeKit `exact: 0.3.0` in the Xcode project, BridgeUI and FunesMCP, and resolve. Until the tag, all three pin the branch's commit `8077dbf`.
 
 ## Part C: EK Bridge
 

@@ -4,6 +4,19 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+## [0.1.1] - Unreleased
+
+The first public preview. 0.1.0 was built as a draft release only and never published: everything in it below is in 0.1.1, with this fix.
+
+### Fixed
+
+- **Remote Access shares Tailscale Funnel with other apps on your Mac.** The guide used to offer `tailscale funnel --bg 47627`, which takes Funnel's port 443 and replaces whatever another app serves there, such as EK Bridge's Remote Access.
+  - It now checks what Funnel already serves and uses the first free public port: 443, 8443 or 10000. The address ends in that port, such as `https://my-mac.tail1234.ts.net:8443`.
+  - If all three are taken, it says so and offers no command.
+  - Another app's Funnel entry no longer shows as **Wrong port**.
+  - The command to turn Funnel off only touches Funes Vault's own port.
+  - BridgeKit 0.3.0.
+
 ## [0.1.0] - 2026-10-18
 
 The first public preview of Funes Vault for the Mac: a menu bar app that keeps your personal context in a private vault on your Mac, and shares it with AI agents only as you allow. It needs macOS 15 or later, on Apple silicon or Intel.

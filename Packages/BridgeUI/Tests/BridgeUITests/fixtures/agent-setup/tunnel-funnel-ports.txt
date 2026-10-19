@@ -1,0 +1,9 @@
+nothing served: port 443 · no line
+EK Bridge on 443: port 8443 · Funnel already serves another app on this Mac on port 443 (it forwards to 47616), so Funes Vault uses port 8443. Its address ends in :8443.
+EK Bridge on 443, a Serve entry on 8443: port 10000 · Funnel already serves other apps on this Mac on port 443 (it forwards to 47616) and port 8443 (it forwards to 4000), so Funes Vault uses port 10000. Its address ends in :10000.
+all three taken: port none · Funnel already serves other apps on this Mac on port 443 (it forwards to 47616), port 8443 (it forwards to 4000), and port 10000 (it forwards to 5432). Starting it would replace one of them, so turn one off first, or choose another tunnel.
+a file on 443: port 8443 · Funnel already serves another app on this Mac on port 443, so Funes Vault uses port 8443. Its address ends in :8443.
+running on 10000: port 10000 · no line
+
+unknown: Funes Vault couldn't check what Funnel already serves on this Mac. If it serves another app on port 443, this command replaces it: check with tailscale funnel status first.
+no free port: No free port · Funnel's three public ports already serve other apps on this Mac. Turn one off, or choose another tunnel.
