@@ -26,6 +26,7 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
 
     private static let handlers = Mutex<[String: Handler]>([:])
     private static let captured = Mutex<[String: [Captured]]>([:])
+    private static let answered = Mutex<[String: Int]>([:])
     static let header = "X-Stub-Session"
 
     /// A session whose requests go to `handler`; `requests()` lists what it sent.
@@ -42,7 +43,11 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
         }
 
         var requests: [Captured] { StubURLProtocol.captured.withLock { $0[id] ?? [] } }
+        /// How many requests got their reply; a delayed reply to a cancelled request never arrives.
+        var answers: Int { StubURLProtocol.answered.withLock { $0[id] ?? 0 } }
     }
+
+    private let stopped = Mutex(false)
 
     override class func canInit(with request: URLRequest) -> Bool { request.value(forHTTPHeaderField: header) != nil }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
@@ -68,7 +73,8 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
         let reply = Self.handlers.withLock { $0[id] }?(captured) ?? Reply(status: 599)
         let client = self.client
         let finish: @Sendable () -> Void = { [weak self] in
-            guard let self else { return }
+            guard let self, !self.stopped.withLock({ $0 }) else { return }
+            Self.answered.withLock { $0[id, default: 0] += 1 }
             if reply.fail {
                 client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
                 return
@@ -88,5 +94,5 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
         }
     }
 
-    override func stopLoading() {}
+    override func stopLoading() { stopped.withLock { $0 = true } }
 }
