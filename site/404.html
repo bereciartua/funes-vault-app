@@ -6,41 +6,53 @@
   <title>Not found · Funes Vault</title>
   <meta name="robots" content="noindex">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#fffdf9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0f0e0d" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ff7a26">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/assets/favicon-64.png" type="image/png" sizes="64x64">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
   <link rel="stylesheet" href="/assets/style.css">
+  <script src="/assets/site.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
-  <header class="site-header">
-    <div class="wrap">
-      <a class="brand" href="/"><img src="/assets/icon-512.png" alt="" width="32" height="32">Funes Vault</a>
-      <nav class="site-nav" aria-label="Site">
-        <a href="/#control">How you stay in control</a>
-        <a href="/#docs">Docs</a>
-        <a href="/privacy/">Privacy</a>
-        <a href="/support/">Support</a>
+  <div class="hero">
+    <header class="wrap bar">
+      <a class="brand" href="/"><img src="/assets/icon-512.png" alt="" width="34" height="34">Funes Vault</a>
+      <nav aria-label="Site">
+        <a class="wide" href="/#see">How it works</a>
+        <a href="/#install">Install</a>
+        <a class="wide" href="/privacy/">Privacy</a>
+        <a class="wide" href="/support/">Support</a>
         <a href="https://github.com/bereciartua/funes-vault-app">GitHub</a>
       </nav>
-    </div>
-  </header>
-
-  <main id="main" class="not-found">
-    <div class="wrap">
-      <img src="/assets/icon-512.png" alt="" width="120" height="120">
+    </header>
+    <main id="main" class="wrap not-found">
+      <svg class="eye follows" viewBox="104 230 816 590" role="img" aria-label="The Funes Vault eye, looking around">
+        <defs>
+          <linearGradient id="lost-white" gradientUnits="userSpaceOnUse" x1="512" y1="250" x2="512" y2="774"><stop offset="0" stop-color="#E9E2D8"/><stop offset=".35" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F4EFE8"/></linearGradient>
+          <radialGradient id="lost-iris" gradientUnits="userSpaceOnUse" cx="498.2" cy="484.4" fx="498.2" fy="484.4" r="165.6"><stop offset="0" stop-color="#3A332C"/><stop offset="1" stop-color="#0B0A09"/></radialGradient>
+          <clipPath id="lost-almond"><path d="M196 512C328.72 250 695.28 250 828 512C695.28 774 328.72 774 196 512Z"/></clipPath>
+          <filter id="lost-shadow" x="-25%" y="-30%" width="150%" height="170%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#7A2200" flood-opacity=".45"/></filter>
+        </defs>
+        <g class="lid">
+          <g filter="url(#lost-shadow)">
+            <path d="M196 512C328.72 250 695.28 250 828 512C695.28 774 328.72 774 196 512Z" fill="url(#lost-white)"/>
+            <g clip-path="url(#lost-almond)"><g class="look"><circle cx="512" cy="512" r="138" fill="url(#lost-iris)"/><circle cx="545.5" cy="478.5" r="18.4" fill="#FFFDF9"/></g></g>
+            <path d="M196 512C328.72 250 695.28 250 828 512C695.28 774 328.72 774 196 512Z" fill="none" stroke="#121110" stroke-width="44" stroke-linejoin="round"/>
+          </g>
+          <g class="look"><circle cx="512" cy="512" r="132" fill="none" stroke="#FF6312" stroke-opacity=".55" stroke-width="6"/></g>
+        </g>
+      </svg>
       <h1>Not in the vault</h1>
-      <p class="lede" style="margin: 0 auto 28px;">There's no page at this address. Funes remembers everything, but not this.</p>
-      <div class="actions" style="justify-content: center;">
+      <p>There’s no page at this address. Funes remembers everything, but not this.</p>
+      <div class="actions">
         <a class="button" href="/">Go to the home page</a>
-        <a class="button secondary" href="/support/">Support</a>
+        <a class="button light" href="/support/">Support</a>
       </div>
-    </div>
-  </main>
+    </main>
+  </div>
 
-  <footer class="site-footer">
+  <footer>
     <div class="wrap">
       <span>Funes Vault · Apache License 2.0</span>
       <nav aria-label="Footer">

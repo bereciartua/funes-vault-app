@@ -11,6 +11,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - Then **Address ▸ Edit…** changes the address to the one without a port.
   - BridgeKit 0.4.1.
 
+### Changed
+
+- **funesvault.com has a new design**, built around the app icon's eye. The privacy statement's section on the website now describes its one script: the Homebrew copy button, and the eye on the home page that follows your pointer. It sends and stores nothing.
+
 ## [0.1.2] - 2026-10-19
 
 The first public preview. 0.1.0 and 0.1.1 were preview builds, kept on GitHub as pre-releases: everything in them below is in 0.1.2, with this fix in place of 0.1.1's.

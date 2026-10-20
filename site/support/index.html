@@ -4,10 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Support · Funes Vault</title>
-  <meta name="description" content="Get help with Funes Vault: GitHub Issues, email, security reports and common questions.">
+  <meta name="description" content="Get help with Funes Vault: GitHub Issues, security reports and common questions.">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#fffdf9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0f0e0d" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ff7a26">
   <link rel="canonical" href="https://funesvault.com/support/">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
   <link rel="icon" href="/assets/favicon-64.png" type="image/png" sizes="64x64">
@@ -17,20 +16,20 @@
 <body>
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header">
-    <div class="wrap">
-      <a class="brand" href="/"><img src="/assets/icon-512.png" alt="" width="32" height="32">Funes Vault</a>
-      <nav class="site-nav" aria-label="Site">
-        <a href="/#control">How you stay in control</a>
-        <a href="/#docs">Docs</a>
-        <a href="/privacy/">Privacy</a>
-        <a href="/support/" aria-current="page">Support</a>
+    <div class="wrap bar">
+      <a class="brand" href="/"><img src="/assets/icon-512.png" alt="" width="34" height="34">Funes Vault</a>
+      <nav aria-label="Site">
+        <a class="wide" href="/#see">How it works</a>
+        <a href="/#install">Install</a>
+        <a class="wide" href="/privacy/">Privacy</a>
+        <a class="wide" href="/support/" aria-current="page">Support</a>
         <a href="https://github.com/bereciartua/funes-vault-app">GitHub</a>
       </nav>
     </div>
   </header>
 
   <main id="main" class="page">
-    <div class="wrap prose">
+    <div class="wrap">
       <h1>Support</h1>
       <p class="updated">Funes Vault is a free public preview, supported on a best-effort basis by its maintainer.</p>
 
@@ -42,39 +41,39 @@
         <li>what you did, what you expected, and what happened instead;</li>
         <li>for connection problems, the output of <code>/Applications/FunesVault.app/Contents/MacOS/funes-mcp check --agent &lt;agent ID&gt;</code> (it prints no keys).</li>
       </ul>
-      <p class="callout">Issues are public. Never paste memories, agent keys (<code>fns_mcp_v1_…</code>) or AI provider API keys into an issue or a screenshot.</p>
+      <p class="callout">Issues are public. Never paste memories, agent keys or remote tokens (anything starting with <code>fns_</code>, such as <code>fns_mcp_v1_…</code> or <code>fns_mcpr_v1_…</code>), or AI provider API keys, into an issue or a screenshot.</p>
 
       <h2 id="security">Security</h2>
-      <p>Please report vulnerabilities privately, not in a public issue: use GitHub's <a href="https://github.com/bereciartua/funes-vault-app/security/advisories/new">private vulnerability reporting</a>; only the maintainer sees it. <a href="https://github.com/bereciartua/funes-vault-app/blob/main/SECURITY.md">SECURITY.md</a> describes what's in scope, the known limits, and how reports are handled.</p>
+      <p>Please report vulnerabilities privately, not in a public issue: use GitHub’s <a href="https://github.com/bereciartua/funes-vault-app/security/advisories/new">private vulnerability reporting</a>; only the maintainer sees it. <a href="https://github.com/bereciartua/funes-vault-app/blob/main/SECURITY.md">SECURITY.md</a> describes what’s in scope, the known limits, and how reports are handled.</p>
 
       <h2 id="faq">Common questions</h2>
 
-      <h3>An agent can't see Funes Vault</h3>
-      <p>Make sure Funes Vault is running (its icon is in the menu bar) and the agent has access on its page in the app. Then run the <code>funes-mcp check</code> command above, and see <a href="https://github.com/bereciartua/funes-vault-app/blob/main/docs/MCP.md">Connect agents</a> for each agent's setup. After changing an agent's MCP settings, restart the agent.</p>
+      <h3>An agent can’t see Funes Vault</h3>
+      <p>Make sure Funes Vault is running (its icon is in the menu bar) and the agent has access on its page in the app. Then run the <code>funes-mcp check</code> command above, and see <a href="https://github.com/bereciartua/funes-vault-app/blob/main/docs/MCP.md">Connect agents</a> for each agent’s setup. After changing an agent’s MCP settings, restart the agent.</p>
 
       <h3>Where is my data?</h3>
       <p>Only on your Mac, in <code>~/Library/Application Support/FunesVault</code>. Back it up with the rest of your Mac (Time Machine), or export the vault from <strong>Settings ▸ Data</strong>. Exports never contain keys or access settings.</p>
 
       <h3>Do I need Apple Intelligence?</h3>
-      <p>No. With Apple Intelligence (macOS 26 or later), Funes Vault uses Apple's on-device model to propose titles and categories for new captures. Without it, simple rules on your Mac propose them. Search and agent access work the same either way.</p>
+      <p>No. With Apple Intelligence (macOS 26 or later), Funes Vault uses Apple’s on-device model to propose titles and categories for new captures. Without it, simple rules on your Mac propose them. Search and agent access work the same either way.</p>
 
       <h3>Does anything leave my Mac?</h3>
-      <p>Only what you allow agents to have, a daily update check to GitHub, and, if you add one, what you send to an AI provider of your choice. The <a href="/privacy/">privacy statement</a> has the details.</p>
+      <p>Only what you allow agents to have, a daily update check to GitHub, and, if you add one, what you send to an AI provider of your choice. With Remote Access on (it’s off by default), cloud agents you allow get what their access permits through the tunnel you run, and Funes tests your tunnel and, while pairing, fetches the signing-in app’s public metadata. The <a href="/privacy/">privacy statement</a> has the details.</p>
 
       <h3>How do I uninstall it?</h3>
-      <p>Remove Funes Vault from your agents' MCP settings, quit the app from its menu, and move <code>FunesVault.app</code> to the Trash. Your vault stays in <code>~/Library/Application Support/FunesVault</code> until you delete that folder. If you installed with Homebrew, <code>brew uninstall --zap --cask funes-vault</code> removes the app and moves that folder to the Trash. API keys for AI providers you added are in your Keychain under <code>com.funesvault.provider</code>.</p>
+      <p>If you used Remote Access, turn your tunnel off first; the Remote Access page shows how. Then remove Funes Vault from your agents’ MCP settings, quit the app from its menu, and move <code>FunesVault.app</code> to the Trash. Your vault stays in <code>~/Library/Application Support/FunesVault</code> until you delete that folder; the app’s settings are in <code>~/Library/Preferences/com.funesvault.mac.plist</code>, and if you linked the launcher, delete <code>~/.local/bin/funes-mcp</code>. If you installed with Homebrew, <code>brew uninstall --zap --cask funes-vault</code> removes the app and moves the data folder, caches and preferences to the Trash. API keys for AI providers you added are in your Keychain under <code>com.funesvault.provider</code>.</p>
 
       <h3>More questions</h3>
       <p>See the <a href="https://github.com/bereciartua/funes-vault-app#faq">FAQ in the README</a> and the <a href="https://github.com/bereciartua/funes-vault-app/blob/main/docs/MCP.md">MCP guide</a>.</p>
     </div>
   </main>
 
-  <footer class="site-footer">
+  <footer>
     <div class="wrap">
       <span>Funes Vault · Apache License 2.0</span>
       <nav aria-label="Footer">
         <a href="/privacy/">Privacy</a>
-        <a href="/support/">Support</a>
+        <a href="/support/" aria-current="page">Support</a>
         <a href="https://github.com/bereciartua/funes-vault-app/blob/main/SECURITY.md">Security</a>
         <a href="https://github.com/bereciartua/funes-vault-app">GitHub</a>
       </nav>
