@@ -227,7 +227,8 @@ struct CloudTile: View {
                 Spacer(minLength: 0)
             }
             .padding(8)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            // One height for every tile, whether its name takes one line or two.
+            .frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: 8).fill(selected ? Color.accentColor.opacity(0.16) : Palette.card))
             .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(selected ? Color.accentColor : Palette.separator,
                                                                     lineWidth: selected ? 2 : 0.5))
@@ -256,7 +257,8 @@ struct AgentTile: View {
                 Spacer(minLength: 0)
             }
             .padding(8)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            // One height for every tile, whether its name takes one line or two.
+            .frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: 8).fill(selected ? Color.accentColor.opacity(0.16) : Palette.card))
             .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(selected ? Color.accentColor : Palette.separator,
                                                                     lineWidth: selected ? 2 : 0.5))

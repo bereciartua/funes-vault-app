@@ -40,10 +40,11 @@ struct SeedQuestionsSheet: View {
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
-                    neverShareStep
                 }
                 .padding(.trailing, 8)
             }
+            // Always in view: Save applies it, so it must never be below the fold.
+            neverShareStep
             if let error { Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.callout) }
             HStack {
                 Spacer()
@@ -54,7 +55,8 @@ struct SeedQuestionsSheet: View {
             }
         }
         .padding(24)
-        .frame(width: 600, height: 680)
+        // Fits the main window at its minimum size; the questions scroll.
+        .frame(width: 600, height: 540)
         .task {
             let current = (try? await model.services.agents.neverShareCategories()) ?? []
             loadedNeverShare = current
@@ -66,7 +68,7 @@ struct SeedQuestionsSheet: View {
     /// "Which of these should agents never see?": category chips, applied as Deny.
     private var neverShareStep: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Divider().padding(.vertical, 4)
+            Divider().padding(.bottom, 4)
             Text(String(localized: "Which of these should agents never see?")).fontWeight(.medium)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 8, alignment: .leading)], alignment: .leading, spacing: 8) {
                 ForEach(model.categories) { category in
