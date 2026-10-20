@@ -11,7 +11,7 @@ curl "https://api.openai.com/v1/responses" \
   -d '{"model":"gpt-6-astra","input":"What do my memories say about how I like to work?","tools":[{"type":"mcp","server_label":"funes","server_url":"https://my-mac.tail1234.ts.net/r/q7Zk2vN4bXwP9sL1mT6hYa/mcp","authorization":"'"$FUNES_REMOTE_TOKEN"'","allowed_tools":["list_memory_categories","request_memory","get_memory_request","open_in_funes"],"require_approval":"never"}]}'
 
 steps:
-1. In Terminal, set FUNES_REMOTE_TOKEN to the remote token (Copy Remote Token… on the agent's Cloud section) and OPENAI_API_KEY to your API key, then run the command.
+1. In Terminal, set FUNES_REMOTE_TOKEN to the remote token (Copy Remote Token… below) and OPENAI_API_KEY to your API key, then run the command.
 2. This example allows only the read tools, without approval in the API. To let it suggest memories too, remove allowed_tools and handle approval requests in your code.
 
 warnings:

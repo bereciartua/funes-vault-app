@@ -63,7 +63,9 @@ Quit Funes Vault                          ⌘Q
 
 ## Main window
 
-A sidebar plus a content area, with a minimum size of 860×560.
+A sidebar plus a content area, with a minimum size of 860×560. Every section fits at that size, with the sidebar at any width it allows (180–260): nothing runs off the right edge. The UI-review build shows each section at the minimum size, shrunk from the default as a user would (`*-min` snapshots).
+
+Warnings are an orange icon with primary text, never orange text, which is under 3:1 on white. Text on a colored badge is primary; the color is in the fill. Text aims for 4.5:1 or better, and Increase Contrast strengthens fills, borders and the warning orange.
 
 ### Setup checklist (until dismissed)
 A card at the top of the Vault, connecting first:
@@ -77,13 +79,13 @@ A card at the top of the Vault, connecting first:
 - **Toolbar:**
   - search field (⌘F);
   - filter pop-ups (Category, Kind, Sensitivity, Status, Source);
-  - sort;
+  - sort (its "Sort by" label drops when the window is too narrow for it);
   - **+ New Memory** (⌘N).
 - **List row:**
   - title;
   - one-line body preview;
   - category chips;
-  - a sensitivity badge, colored by level, with text;
+  - a sensitivity badge, colored by level in its fill, with the level's name in primary text;
   - kind icon;
   - "expires in 3 days" or "Expired" when relevant;
   - updated time.
@@ -91,7 +93,7 @@ A card at the top of the Vault, connecting first:
   - **Fields:** title, body (plain text, up to 10,000 characters, with a counter), kind, categories (token field), sensitivity (segmented control with a one-line explanation), expiry (date picker, with "never").
   - **Shared with:** "Shared 4 times · last with Claude Code yesterday", with a link to filtered Activity.
   - **Provenance timeline:** created, edited, archived, shared, suggested by. Rows hold labels only.
-  - **Actions:** Archive / Restore, Delete, "Still true" (confirm).
+  - **Actions:** Archive / Restore, Delete, "Still true" (confirm). In Recently Deleted: Restore and **Delete Now…**, which asks first ("Delete this memory now?"), from the detail, the list's context menu and the bulk bar alike.
 - **Empty state:** "Your vault is empty. Answer a few questions to get started, or press ⌥⌘M anytime to remember something."
 - **First run** (no memories yet, nothing filtered): the checklist, then a welcome instead of the toolbar, list and detail: "Your memory, shared only as you allow", three lines on the promise (the vault stays on this Mac; each agent gets only the access you give it and you see the exact text first; Activity records every request, without the text), [Answer a Few Questions…] [New Memory…] "or press ⌥⌘M in any app".
 
@@ -120,6 +122,7 @@ A card at the top of the Vault, connecting first:
 - **Correction suggestions:** when a suggestion references an existing memory, the card shows a diff (old → new) with **Replace** and **Keep both**.
 
 ### Agents
+- **Layout:** the list is 220 pt wide at the window's minimum width, growing to 300; the detail takes the rest. **Add Agent…** shows only its icon when the list is too narrow for its label.
 - **List:** each agent shows its icon (detected type), name, status ("Connected · 2 min ago", "Waiting for first request", "Paused", "Access expired") and access summary ("Reads Low and below in 3 categories · asks first").
 - **Pending requests** sit above the list while any wait ("Claude Code · 3 memories · 13 min left", the task's first line while this session holds it, [Review…]); the sidebar's Agents badge counts them. Activity shows them too, with Details.
 - **Add Agent:** two tabs, **On This Mac** (agents found on this Mac first, "Show All 11 Agents") and **Cloud · Experimental** (Remote Access's state first, with Set Up Remote Access… while it's off). Names wrap instead of truncating, and the sheet scrolls rather than outgrow the screen. For an agent with one-click setup the button is **Add and Connect…**: the agent is added and its Connect tab shows the change to its settings at once; after Add, it suggests a first question to ask the agent. New agents start with Deny for the never-share categories.
@@ -140,13 +143,13 @@ A card at the top of the Vault, connecting first:
     - Copy key (with a warning);
     - Rotate key.
   - **Cloud** (shown while Remote Access is on, or while the agent has cloud access):
-    - **Allow cloud access:** off by default. The caption sums up what the agent can do from the internet ("Cloud agents can use this from the internet: reads Low and below, asks first"). Its access is the same as on this Mac; nothing here changes it.
-    - **Agent:** a picker of cloud agents, marked Token or OAuth, with the MCP URL, the setup to copy and its steps (EK Bridge's cloud setups, in Funes's words).
+    - **Allow cloud access:** off by default. The caption says where shared text goes ("Text you share with a cloud agent goes to its vendor's servers. Use one agent per cloud app, with only the access it needs."), then sums up what the agent can do from the internet ("Cloud agents can use this from the internet: reads Low and below, asks first"). Its access is the same as on this Mac; nothing here changes it.
+    - **Agent:** a picker of cloud agents, marked Token or OAuth, with the MCP URL, the setup to copy and its steps (EK Bridge's cloud setups, in Funes's words). The steps point to this section's own buttons ("click Connect a Cloud App… below"), not to the screen the user is already on. A long agent name truncates in the picker rather than widening the section.
     - **Connected:** cloud apps signed in with OAuth, with when they connected and were last used, and **Revoke**.
     - **Connect a Cloud App…** opens pairing for this agent for 10 minutes. **Copy Remote Token…** (asks first; clears the clipboard after 90 s) and **Reset Remote Token…**.
     - Turning cloud access off asks first when the agent has a remote token or connected apps: they stop working at once.
   - **Activity:** this agent's log.
-- **Header actions:** Pause / Resume, Remove…
+- **Header:** icon, name (Rename), status and the agent's kind ("claude.ai · Claude Desktop · mobile"), which goes under the status and wraps when the column is narrow. **Header actions:** Pause / Resume, Remove…, which move to a line of their own when they don't fit beside the name.
 - **Add Agent**'s cloud tab has tiles (claude.ai, ChatGPT, Gemini Enterprise, the Anthropic and OpenAI APIs, Claude Code on the web, Cursor, Copilot, Devin). A tile creates an agent with cloud access on and the chosen starting access, then opens pairing or the token setup. With Remote Access off, it offers to set it up first.
 
 ### Remote Access (experimental)

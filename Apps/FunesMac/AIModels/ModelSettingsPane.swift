@@ -44,8 +44,7 @@ struct ModelSettingsPane: View {
                 }
                 Text(classificationStatus).font(.callout).foregroundStyle(.secondary)
                 if let disclosure = classificationDisclosure {
-                    Label(disclosure, systemImage: "arrow.up.forward.app")
-                        .font(.callout).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                    WarningLabel(text: disclosure, symbol: "arrow.up.forward.app")
                 }
             }
             Section(String(localized: "Cloud limit")) {

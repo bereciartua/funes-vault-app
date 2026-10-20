@@ -17,7 +17,7 @@ In your agent (json):
 
 steps:
 1. Create an Anthropic vault, or pick an existing one, and set VAULT_ID to its ID.
-2. In Terminal, set FUNES_REMOTE_TOKEN to the remote token (Copy Remote Token… on the agent's Cloud section) and ANTHROPIC_API_KEY to your API key, then run the command.
+2. In Terminal, set FUNES_REMOTE_TOKEN to the remote token (Copy Remote Token… below) and ANTHROPIC_API_KEY to your API key, then run the command.
 3. Add the mcp_servers and tools entries below to your agent.
 4. Pass the vault in vault_ids when you create a session.
 

@@ -213,11 +213,12 @@ public enum CloudSetup {
         }
         let placeholder = c.remoteTokenPlaceholder
         let curl = SetupCurl(variable: variable)
-        let copyToken = String(localized: "Paste the remote token from \(names.copyTokenAction) on the Cloud section of “\(c.agentName)” in \(app).")
+        // The steps show on the agent's Cloud section, so its buttons are "below".
+        let copyToken = String(localized: "Paste the remote token from \(names.copyTokenAction) below.")
         let exportToken = { (apiKey: String) in
-            String(localized: "In Terminal, set \(variable) to the remote token (\(names.copyTokenAction) on the agent's Cloud section) and \(apiKey) to your API key, then run the command.")
+            String(localized: "In Terminal, set \(variable) to the remote token (\(names.copyTokenAction) below) and \(apiKey) to your API key, then run the command.")
         }
-        let pairing = String(localized: "When it asks you to sign in, open “\(c.agentName)” in \(app), choose Connect a Cloud App… on its Cloud section, and approve the code you see in both places.")
+        let pairing = String(localized: "When it asks you to sign in, click Connect a Cloud App… below and approve the code you see in both places.")
         let question = "What do my memories say about how I like to work?"
 
         switch agent {
@@ -249,7 +250,7 @@ public enum CloudSetup {
                 steps: [
                     String(localized: "In the Google Cloud console, open Gemini Enterprise ▸ Data stores ▸ Create data store and choose Custom MCP Server."),
                     String(localized: "Paste this URL as the MCP server URL and choose OAuth 2.0. Turn on Enable PKCE Support."),
-                    String(localized: "In \(app), click Set Up OAuth Client… on the Cloud section of “\(c.agentName)”. Enter the OAuth settings below, copying the Client ID and Client secret from that sheet."),
+                    String(localized: "Click Set Up OAuth Client… below. Enter the OAuth settings above, copying the Client ID and Client secret from that sheet."),
                     pairing,
                 ],
                 extraSnippets: [(String(localized: "OAuth settings"), .values, settings)])
@@ -335,7 +336,7 @@ public enum CloudSetup {
                 kind: .json, text: mcpJSON(true),
                 steps: [
                     String(localized: "Add this to .mcp.json at the root of the repository and commit it. It holds no token."),
-                    String(localized: "At claude.ai/code, edit the cloud environment and add \(variable)=\(placeholder) under Environment variables. \(names.copyTokenAction) is on the agent's Cloud section in \(app)."),
+                    String(localized: "At claude.ai/code, edit the cloud environment and add \(variable)=\(placeholder) under Environment variables. \(names.copyTokenAction) is below."),
                     String(localized: "Set Network access to Custom and add \(host) under Allowed domains."),
                     String(localized: "On Pro and Max plans, you can add an API credential for \(host) instead (Bearer, with the remote token as the value) and commit the version without headers."),
                 ],
@@ -365,7 +366,7 @@ public enum CloudSetup {
                 kind: .json, text: json,
                 steps: [
                     String(localized: "In the repository on GitHub, open Settings ▸ Copilot ▸ MCP servers and paste this under MCP configuration."),
-                    String(localized: "Add an Agents secret named \(c.copilotSecretName) and paste the remote token (\(names.copyTokenAction) on the agent's Cloud section) as its value."),
+                    String(localized: "Add an Agents secret named \(c.copilotSecretName) and paste the remote token (\(names.copyTokenAction) below) as its value."),
                     String(localized: "The tools list holds only the read tools. Add suggest_memory only if this agent may suggest memories."),
                 ],
                 needsLiteralSecret: true)

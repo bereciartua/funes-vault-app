@@ -17,8 +17,8 @@ Scopes: memory
 steps:
 1. In the Google Cloud console, open Gemini Enterprise ▸ Data stores ▸ Create data store and choose Custom MCP Server.
 2. Paste this URL as the MCP server URL and choose OAuth 2.0. Turn on Enable PKCE Support.
-3. In Funes Vault, click Set Up OAuth Client… on the Cloud section of “Work agent”. Enter the OAuth settings below, copying the Client ID and Client secret from that sheet.
-4. When it asks you to sign in, open “Work agent” in Funes Vault, choose Connect a Cloud App… on its Cloud section, and approve the code you see in both places.
+3. Click Set Up OAuth Client… below. Enter the OAuth settings above, copying the Client ID and Client secret from that sheet.
+4. When it asks you to sign in, click Connect a Cloud App… below and approve the code you see in both places.
 
 warnings:
 - Cloud agents often run while you're away. With Ask before sharing on, a request waits up to 45 s for you at this Mac; after that, you can still approve it from the pending list within 15 minutes.

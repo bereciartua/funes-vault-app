@@ -82,9 +82,7 @@ struct AccessEditor: View {
                     .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             if access.maxSensitivity >= .sensitive {
-                Label(String(localized: "\(agent.name) can be offered personal memories. Keep Ask before sharing on."),
-                      systemImage: "exclamationmark.triangle.fill")
-                    .font(.callout).foregroundStyle(.orange)
+                WarningLabel(text: String(localized: "\(agent.name) can be offered personal memories. Keep Ask before sharing on."))
             }
         }
     }
@@ -122,10 +120,7 @@ struct AccessEditor: View {
                       detail: String(localized: "A panel shows exactly what would be shared, and nothing goes until you choose."),
                       isOn: $draft.access.askBeforeSharing)
             if !access.askBeforeSharing {
-                Label(String(localized: "\(agent.name) will get matching memories it's allowed to read without asking you. You'll see each share in Activity."),
-                      systemImage: "exclamationmark.triangle.fill")
-                    .font(.callout).foregroundStyle(.orange)
-                    .fixedSize(horizontal: false, vertical: true)
+                WarningLabel(text: String(localized: "\(agent.name) will get matching memories it's allowed to read without asking you. You'll see each share in Activity."))
             }
             if access.operations.contains(.write) {
                 SwitchRow(title: String(localized: "Ask before saving"),
@@ -180,9 +175,7 @@ struct AccessEditor: View {
         HStack(spacing: 10) {
             if draft.isStale {
                 VStack(alignment: .leading, spacing: 4) {
-                    Label(String(localized: "\(agent.name)'s access changed while you were editing (for example, Always Allow from a panel). Review it again before saving."),
-                          systemImage: "exclamationmark.triangle.fill")
-                        .font(.callout).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                    WarningLabel(text: String(localized: "\(agent.name)'s access changed while you were editing (for example, Always Allow from a panel). Review it again before saving."))
                     Button(String(localized: "Show the Current Access")) { reset() }.buttonStyle(.link)
                 }
             } else if let error {

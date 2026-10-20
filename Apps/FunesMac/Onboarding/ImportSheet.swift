@@ -128,8 +128,7 @@ struct ImportSheet: View {
             if kind == .funes {
                 Toggle(String(localized: "Restore as memories, not suggestions"), isOn: $asMemories)
                 if asMemories {
-                    Text(String(localized: "They skip the Inbox. Only do this with your own export."))
-                        .font(.callout).foregroundStyle(.orange)
+                    WarningLabel(text: String(localized: "They skip the Inbox. Only do this with your own export."))
                 }
             }
             HStack {

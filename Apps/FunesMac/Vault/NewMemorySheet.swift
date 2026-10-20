@@ -22,7 +22,7 @@ struct NewMemorySheet: View {
             }
             if !similar.isEmpty {
                 HStack(spacing: 6) {
-                    Image(systemName: "doc.on.doc").foregroundStyle(.orange)
+                    Image(systemName: "doc.on.doc").foregroundStyle(Palette.warning)
                     Text(String(localized: "Saved. A similar memory exists:"))
                     ForEach(similar.prefix(2)) { other in
                         Button(other.title) {

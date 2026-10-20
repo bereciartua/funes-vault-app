@@ -9,53 +9,18 @@ struct AgentsView: View {
     @Bindable var model: AppModel
     @State private var adding = false
 
+    /// The list's width for the room beside the sidebar: 220 at the window's minimum (860), up to
+    /// 300. A plain stack, not an HSplitView: on a live resize HSplitView kept its panes' widths and
+    /// ran the detail off the window's edge.
+    static func listWidth(_ available: CGFloat) -> CGFloat { min(max(available * 0.32, 220), 300) }
+
     var body: some View {
-        HSplitView {
-            VStack(spacing: 0) {
-                HStack {
-                    Text(String(localized: "Agents")).font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
-                    Spacer()
-                    Button { adding = true } label: { Label(String(localized: "Add Agent…"), systemImage: "plus") }
-                }
-                .padding(16)
+        GeometryReader { proxy in
+            HStack(spacing: 0) {
+                list.frame(width: Self.listWidth(proxy.size.width))
                 Divider()
-                if !model.pending.isEmpty {
-                    // Requests waiting for you, where the sidebar's badge points (UX review F12).
-                    PendingRequestsCard(model: model, compact: true)
-                        .padding(10)
-                    Divider()
-                }
-                if model.agents.isEmpty {
-                    ContentUnavailableView {
-                        Label(String(localized: "No agents yet"), systemImage: "person.2")
-                    } description: {
-                        Text(String(localized: "Add Claude Code, Cursor or another AI agent, then choose what it may read."))
-                    } actions: {
-                        Button(String(localized: "Add Agent…")) { adding = true }
-                    }
-                } else {
-                    List(selection: Binding(get: { model.selectedAgentID }, set: { model.selectedAgentID = $0 })) {
-                        ForEach(model.agents) { agent in
-                            AgentRow(agent: agent, model: model).tag(agent.id)
-                        }
-                    }
-                    .listStyle(.inset)
-                    .scrollContentBackground(.hidden)
-                    .accessibilityLabel(String(localized: "Agents"))
-                }
+                detail.frame(maxWidth: .infinity)
             }
-            .frame(minWidth: 260, idealWidth: 300, maxWidth: 380, maxHeight: .infinity)
-            .background(Palette.card)
-            Group {
-                if let agent = model.agent(model.selectedAgentID) {
-                    AgentDetailView(model: model, agent: agent).id(agent.id)
-                } else {
-                    ContentUnavailableView(String(localized: "No agent selected"), systemImage: "person.crop.circle",
-                                           description: Text(String(localized: "Select an agent to change its access or connect it.")))
-                }
-            }
-            .frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
-            .background(Palette.pane)
         }
         .sheet(isPresented: $adding) {
             AddAgentSheet(model: model) { id in
@@ -74,6 +39,62 @@ struct AgentsView: View {
             if model.selectedAgentID == nil { model.selectedAgentID = model.agents.first?.id }
         }
     }
+
+    private var list: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(String(localized: "Agents")).font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 8)
+                // At the list's narrowest, the button keeps only its icon.
+                ViewThatFits(in: .horizontal) {
+                    Button { adding = true } label: { Label(String(localized: "Add Agent…"), systemImage: "plus") }
+                    Button { adding = true } label: { Label(String(localized: "Add Agent…"), systemImage: "plus").labelStyle(.iconOnly) }
+                        .help(String(localized: "Add Agent…"))
+                }
+            }
+            .padding(16)
+            Divider()
+            if !model.pending.isEmpty {
+                // Requests waiting for you, where the sidebar's badge points (UX review F12).
+                PendingRequestsCard(model: model, compact: true)
+                    .padding(10)
+                Divider()
+            }
+            if model.agents.isEmpty {
+                ContentUnavailableView {
+                    Label(String(localized: "No agents yet"), systemImage: "person.2")
+                } description: {
+                    Text(String(localized: "Add Claude Code, Cursor or another AI agent, then choose what it may read."))
+                } actions: {
+                    Button(String(localized: "Add Agent…")) { adding = true }
+                }
+            } else {
+                List(selection: Binding(get: { model.selectedAgentID }, set: { model.selectedAgentID = $0 })) {
+                    ForEach(model.agents) { agent in
+                        AgentRow(agent: agent, model: model).tag(agent.id)
+                    }
+                }
+                .listStyle(.inset)
+                .scrollContentBackground(.hidden)
+                .accessibilityLabel(String(localized: "Agents"))
+            }
+        }
+        .frame(maxHeight: .infinity)
+        .background(Palette.card)
+    }
+
+    private var detail: some View {
+        Group {
+            if let agent = model.agent(model.selectedAgentID) {
+                AgentDetailView(model: model, agent: agent).id(agent.id)
+            } else {
+                ContentUnavailableView(String(localized: "No agent selected"), systemImage: "person.crop.circle",
+                                       description: Text(String(localized: "Select an agent to change its access or connect it.")))
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Palette.pane)
+    }
 }
 
 struct AgentRow: View {
@@ -90,7 +111,7 @@ struct AgentRow: View {
                     Text(AgentText.statusLine(agent, now: model.now)).font(.callout).foregroundStyle(.secondary).lineLimit(1)
                 }
                 Text(AgentText.accessSummary(agent.access, categories: model.categories))
-                    .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(3)
             }
         }
         .padding(.vertical, 4)
@@ -166,42 +187,69 @@ struct AgentDetailView: View {
         return AgentTab.allCases.filter { $0 != .cloud || cloud }
     }
 
-    /// The name and status take the room; the buttons keep their size. The kind is one line that
-    /// truncates, and is left out when the name already says it.
+    /// The icon, name and status, then Pause or Resume and Remove…: on one line when they fit,
+    /// with the kind under the status when that makes them fit, and otherwise with the buttons on a
+    /// line of their own and the kind wrapping. The kind is left out when the name already says it.
     private var header: some View {
+        ViewThatFits(in: .horizontal) {
+            oneLine(kindBelow: false)
+            oneLine(kindBelow: true)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .center, spacing: 12) {
+                    AgentIcon(kind: agent.agentKind, size: 40)
+                    identity(kindBelow: true).frame(maxWidth: .infinity, alignment: .leading)
+                }
+                HStack(spacing: 8) { headerButtons }.padding(.leading, 52)
+            }
+        }
+    }
+
+    private func oneLine(kindBelow: Bool) -> some View {
         HStack(alignment: .center, spacing: 12) {
             AgentIcon(kind: agent.agentKind, size: 40)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(agent.name).font(.title2.weight(.semibold)).lineLimit(1).truncationMode(.tail)
-                    Button { newName = agent.name; renaming = true } label: { Image(systemName: "pencil") }
-                        .buttonStyle(.borderless)
-                        .accessibilityLabel(String(localized: "Rename \(agent.name)"))
-                }
-                HStack(spacing: 6) {
-                    Pill(label: AgentText.statusLine(agent, now: model.now, client: model.clientName(agent.id)),
-                         tone: AgentText.tone(agent, now: model.now))
-                        .fixedSize()
-                    let kind = agent.agentKind.cloudAgent?.name ?? agent.agentKind.setupAgent.displayName
-                    if kind != agent.name {
-                        Text(kind).font(.callout).foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
-                    }
-                }
-                if let error { Text(error).font(.callout).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true) }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .layoutPriority(1)
-            HStack(spacing: 8) {
-                if agent.paused {
-                    Button(String(localized: "Resume")) { run { try await model.services.agents.resume(agentID: agent.id, now: Date()) } }
-                } else {
-                    Button(String(localized: "Pause")) { run { try await model.services.agents.pause(agentID: agent.id, now: Date()) } }
-                        .help(String(localized: "Refuse this agent's requests until you resume it"))
-                }
-                Button(String(localized: "Remove…"), role: .destructive) { confirmRemove = true }
-            }
-            .fixedSize()
+            identity(kindBelow: kindBelow).frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 8) { headerButtons }.fixedSize()
         }
+    }
+
+    private func identity(kindBelow: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Text(agent.name).font(.title2.weight(.semibold)).lineLimit(1).truncationMode(.tail)
+                Button { newName = agent.name; renaming = true } label: { Image(systemName: "pencil") }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(String(localized: "Rename \(agent.name)"))
+            }
+            if kindBelow {
+                status
+                kindText?.fixedSize(horizontal: false, vertical: true)
+            } else {
+                HStack(spacing: 6) { status; kindText }
+            }
+            if let error { Text(error).font(.callout).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true) }
+        }
+    }
+
+    private var status: some View {
+        Pill(label: AgentText.statusLine(agent, now: model.now, client: model.clientName(agent.id)),
+             tone: AgentText.tone(agent, now: model.now))
+            .fixedSize()
+    }
+
+    private var kindText: Text? {
+        let kind = agent.agentKind.cloudAgent?.name ?? agent.agentKind.setupAgent.displayName
+        guard kind.localizedCaseInsensitiveCompare(agent.name) != .orderedSame else { return nil }
+        return Text(kind).font(.callout).foregroundStyle(.secondary)
+    }
+
+    @ViewBuilder private var headerButtons: some View {
+        if agent.paused {
+            Button(String(localized: "Resume")) { run { try await model.services.agents.resume(agentID: agent.id, now: Date()) } }
+        } else {
+            Button(String(localized: "Pause")) { run { try await model.services.agents.pause(agentID: agent.id, now: Date()) } }
+                .help(String(localized: "Refuse this agent's requests until you resume it"))
+        }
+        Button(String(localized: "Remove…"), role: .destructive) { confirmRemove = true }
     }
 
     private var renameSheet: some View {

@@ -12,7 +12,7 @@ With an API credential (json):
 
 steps:
 1. Add this to .mcp.json at the root of the repository and commit it. It holds no token.
-2. At claude.ai/code, edit the cloud environment and add FUNES_REMOTE_TOKEN=<remote token from Copy Remote Token…> under Environment variables. Copy Remote Token… is on the agent's Cloud section in Funes Vault.
+2. At claude.ai/code, edit the cloud environment and add FUNES_REMOTE_TOKEN=<remote token from Copy Remote Token…> under Environment variables. Copy Remote Token… is below.
 3. Set Network access to Custom and add my-mac.tail1234.ts.net under Allowed domains.
 4. On Pro and Max plans, you can add an API credential for my-mac.tail1234.ts.net instead (Bearer, with the remote token as the value) and commit the version without headers.
 
