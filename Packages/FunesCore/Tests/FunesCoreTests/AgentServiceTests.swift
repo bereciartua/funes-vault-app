@@ -37,6 +37,31 @@ import Testing
         #expect(try await agents.authenticate(key: "nope") == nil)
     }
 
+    /// UX review F4: never-share categories. New agents start with Deny for them; applying them
+    /// denies them for existing agents too (an access change), and never lifts a Deny.
+    @Test func neverShareCategories() async throws {
+        let (vault, agents, _) = try Self.make()
+        defer { withExtendedLifetime(vault) {} }
+        let (before, _) = try await agents.create(name: "Cursor", kind: .cursor,
+                                                  access: Access(operations: [.read], allowedCategoryKeys: ["health", "project_context"]),
+                                                  now: t0)
+        #expect(try await agents.neverShareCategories().isEmpty)
+        try await agents.setNeverShareCategories(["health", "finance"], applyToAgents: true, now: t0)
+        #expect(try await agents.neverShareCategories() == ["health", "finance"])
+        let updated = try #require(try await agents.agent(id: before.id))
+        #expect(updated.access.deniedCategoryKeys == ["health", "finance"])
+        #expect(updated.access.allowedCategoryKeys == ["project_context"])
+        #expect(updated.revision == before.revision + 1)
+        let (after, _) = try await agents.create(name: "Codex", kind: .codex,
+                                                 access: Access(operations: [.read], allowedCategoryKeys: ["finance"]), now: t0)
+        #expect(after.access.deniedCategoryKeys == ["health", "finance"] && after.access.allowedCategoryKeys.isEmpty)
+        // Off the list: new agents only; nobody's Deny is lifted, and nothing changes without applying.
+        try await agents.setNeverShareCategories(["health"], applyToAgents: false, now: t0)
+        #expect(try #require(try await agents.agent(id: after.id)).access.deniedCategoryKeys == ["health", "finance"])
+        let (third, _) = try await agents.create(name: "Zed", kind: .zed, now: t0)
+        #expect(third.access.deniedCategoryKeys == ["health"])
+    }
+
     @Test func namesAreUniqueAmongActiveAgents() async throws {
         let (vault, agents, _) = try Self.make()
         defer { withExtendedLifetime(vault) {} }

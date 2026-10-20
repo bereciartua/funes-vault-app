@@ -5,29 +5,36 @@ import SwiftUI
 /// from when they arrived. Review opens the same Share panel again.
 struct PendingRequestsCard: View {
     let model: AppModel
+    /// The Agents list's version: no Details link and no caption, for a narrow column.
+    var compact = false
 
     var body: some View {
         Card(padding: 12) {
             HStack {
                 Label(String(localized: "Pending requests"), systemImage: "hourglass").font(.headline)
                 Spacer()
-                Text(String(localized: "Agents get the answer when they check again.")).font(.caption).foregroundStyle(.secondary)
+                if !compact {
+                    Text(String(localized: "Agents get the answer when they check again.")).font(.caption).foregroundStyle(.secondary)
+                }
             }
             ForEach(model.pending) { request in
-                HStack(spacing: 10) {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
                     if let agent = model.agent(request.agentID) { AgentIcon(kind: agent.agentKind, size: 22) }
-                    Text(request.agentName).fontWeight(.medium)
-                    if request.status == .approved {
-                        Text(String(localized: "Approved, waiting for the agent to pick it up")).foregroundStyle(.secondary)
-                    } else {
-                        Text(String(localized: "\(request.minutesLeft(at: model.now)) min left")).foregroundStyle(.secondary).monospacedDigit()
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(request.agentName).fontWeight(.medium)
+                        Text(request.summary(at: model.now)).foregroundStyle(.secondary).monospacedDigit()
+                        if let task = request.task?.split(separator: "\n").first {
+                            Text("“\(task)”").foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
+                        }
                     }
                     Spacer()
                     if request.status == .needsApproval {
                         Button(String(localized: "Review…")) { model.openPendingRequest(request.id) }
                             .accessibilityLabel(String(localized: "Review \(request.agentName)'s request"))
                     }
-                    Button(String(localized: "Details")) { model.showActivity(.request(request.id)) }.buttonStyle(.link)
+                    if !compact {
+                        Button(String(localized: "Details")) { model.showActivity(.request(request.id)) }.buttonStyle(.link)
+                    }
                 }
                 .font(.callout)
             }

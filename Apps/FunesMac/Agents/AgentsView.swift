@@ -19,6 +19,12 @@ struct AgentsView: View {
                 }
                 .padding(16)
                 Divider()
+                if !model.pending.isEmpty {
+                    // Requests waiting for you, where the sidebar's badge points (UX review F12).
+                    PendingRequestsCard(model: model, compact: true)
+                        .padding(10)
+                    Divider()
+                }
                 if model.agents.isEmpty {
                     ContentUnavailableView {
                         Label(String(localized: "No agents yet"), systemImage: "person.2")
@@ -57,7 +63,13 @@ struct AgentsView: View {
                 model.agentTab = .connect
             }
         }
-        .onChange(of: model.addAgentRequest) { _, _ in adding = true }
+        // `initial`: the checklist's Add… also switches to this page, so it may not be on screen yet.
+        .onChange(of: model.wantsAddAgent, initial: true) { _, wants in
+            if wants {
+                adding = true
+                model.wantsAddAgent = false
+            }
+        }
         .onAppear {
             if model.selectedAgentID == nil { model.selectedAgentID = model.agents.first?.id }
         }

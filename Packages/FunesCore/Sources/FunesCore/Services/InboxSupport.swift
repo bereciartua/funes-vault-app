@@ -21,8 +21,6 @@ public struct SeedQuestion: Sendable, Hashable, Identifiable {
                      kind: .instruction, categoryKey: "software_development", sensitivity: .low),
         SeedQuestion(id: "current_projects", prompt: "Which current projects should your vault remember, and why do they matter?",
                      kind: .projectContext, categoryKey: "project_context", sensitivity: .internal),
-        SeedQuestion(id: "privacy_preferences", prompt: "What should Funes be especially careful not to share casually?",
-                     kind: .constraint, categoryKey: "privacy_preferences", sensitivity: .internal),
         SeedQuestion(id: "life_constraints",
                      prompt: "Are there practical constraints that often shape your work or availability?",
                      kind: .constraint, categoryKey: "project_context", sensitivity: .internal),
@@ -37,7 +35,6 @@ public struct SeedQuestion: Sendable, Hashable, Identifiable {
         case "communication_preferences": "Tone, detail and format"
         case "software_development_preferences": "How I build software"
         case "current_projects": "Current projects"
-        case "privacy_preferences": "Not to share casually"
         case "life_constraints": "Practical constraints"
         case "long_term_goals": "Long-term goals"
         default: "Answer"

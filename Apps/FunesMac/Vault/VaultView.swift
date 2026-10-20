@@ -13,31 +13,32 @@ struct VaultView: View {
 
     private var vault: VaultModel { model.vault }
 
+    /// Nothing in the vault yet and nothing filtered: a welcome instead of an empty list, empty
+    /// filters and an empty detail pane (UX review F7).
+    private var isFirstRun: Bool {
+        !model.hasMemories && vault.loaded && !vault.hasFilters && vault.query.isEmpty && vault.status == .active
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             if model.checklist.isVisible {
                 SetupChecklistCard(model: model)
                     .padding([.horizontal, .top], 16)
-            }
-            toolbar
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-            if let result = vault.bulkResult {
-                HStack {
-                    Text(result).foregroundStyle(.secondary)
+            } else if model.checklist.justHidden {
+                HStack(spacing: 8) {
+                    Text(String(localized: "Setup checklist hidden. Settings ▸ Advanced brings it back."))
+                        .foregroundStyle(.secondary)
+                    Button(String(localized: "Undo")) { model.checklist.undoHide() }
+                        .keyboardShortcut("z", modifiers: .command)
                     Spacer()
-                    Button(String(localized: "Dismiss")) { vault.bulkResult = nil }.buttonStyle(.link)
                 }
                 .font(.callout)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 8)
+                .padding([.horizontal, .top], 16)
             }
-            Divider()
-            HSplitView {
-                list
-                    .frame(minWidth: 280, idealWidth: 360, maxWidth: 460, maxHeight: .infinity)
-                detail
-                    .frame(minWidth: 360, idealWidth: 520, maxWidth: .infinity, maxHeight: .infinity)
+            if isFirstRun {
+                WelcomeView(model: model, creating: $creating)
+            } else {
+                library
             }
         }
         .background(Palette.pane)
@@ -61,6 +62,33 @@ struct VaultView: View {
             }
         }
         .sheet(isPresented: $managingCategories) { CategoriesSheet(model: model) }
+    }
+
+    /// The toolbar, the list and the selected memory.
+    @ViewBuilder
+    private var library: some View {
+        VStack(spacing: 0) {
+            toolbar
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            if let result = vault.bulkResult {
+                HStack {
+                    Text(result).foregroundStyle(.secondary)
+                    Spacer()
+                    Button(String(localized: "Dismiss")) { vault.bulkResult = nil }.buttonStyle(.link)
+                }
+                .font(.callout)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+            }
+            Divider()
+            HSplitView {
+                list
+                    .frame(minWidth: 280, idealWidth: 360, maxWidth: 460, maxHeight: .infinity)
+                detail
+                    .frame(minWidth: 360, idealWidth: 520, maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
     }
 
     // MARK: Toolbar
@@ -363,5 +391,37 @@ struct BulkBar: View {
     private func run(_ action: VaultModel.BulkAction) {
         let ids = ids
         Task { await model.vault.perform(action, on: ids) }
+    }
+}
+
+/// The empty vault on first run: what Funes is for, its promise, and the ways in.
+struct WelcomeView: View {
+    let model: AppModel
+    @Binding var creating: Bool
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(String(localized: "Your memory, shared only as you allow")).font(.title2.weight(.semibold))
+                    .accessibilityAddTraits(.isHeader)
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(String(localized: "Memories stay in a vault on this Mac."), systemImage: "lock")
+                    Label(String(localized: "Each agent gets only the access you give it, and Funes shows you the exact text before anything is shared."),
+                          systemImage: "eye")
+                    Label(String(localized: "Activity records every request, without the text."), systemImage: "list.bullet.rectangle")
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .foregroundStyle(.secondary)
+                HStack(spacing: 10) {
+                    Button(String(localized: "Answer a Few Questions…")) { model.checklist.showSeedQuestions = true }
+                    Button(String(localized: "New Memory…")) { creating = true }
+                    Text(String(localized: "or press \(model.preferences.captureShortcut?.display ?? "⌥⌘M") in any app"))
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+            }
+            .padding(24)
+            .frame(maxWidth: 640, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }

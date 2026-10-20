@@ -153,6 +153,9 @@
 - Acceptance:
   - Each agent gets a unique name and its own key.
   - The new agent has **no access** unless a starting access is chosen.
+  - Tiles for agents on this Mac and for cloud agents (Remote Access, experimental) are on separate tabs; agents found on the Mac come first.
+  - For an agent with one-click setup, **Add and Connect…** adds it and shows the change to its settings at once.
+  - New agents start with Deny for the vault's never-share categories (FR-O-02).
 
 **FR-A-02 Starting access presets** · M · v0.1
 - Presets:
@@ -238,7 +241,7 @@
 
 **FR-D-05 Timeout fallback** · M · v0.1
 - If unanswered after 45 s, the tool returns `needs_approval` with a `request_id`.
-- The request then appears under **Pending requests** (menu bar and Activity) and can be approved within 15 minutes. The agent retrieves the result once with `get_memory_request`.
+- The request then appears under **Pending requests** (the menu bar, Agents, whose sidebar badge counts them, and Activity), with how many memories it would share, and can be approved within 15 minutes. The agent retrieves the result once with `get_memory_request`.
 
 **FR-D-06 Single use** · M · v0.1
 - An approved release can be retrieved once. Later calls return `already_delivered`.
@@ -437,25 +440,25 @@
 ### Onboarding (FR-O)
 
 **FR-O-01 Setup checklist** · M · v0.1
-- Four steps:
-  1. Seed your vault.
-  2. Review the Inbox.
-  3. Add an agent.
-  4. Connect it.
+- Four steps, connecting first so a new user reaches an approved request quickly:
+  1. Connect an agent.
+  2. Approve its first request.
+  3. Seed your vault.
+  4. Review the Inbox.
 
-  Shown in the main window until complete, then dismissible.
+  Shown at the top of the Vault until dismissed. The first unfinished step's button has the initial keyboard focus; Hide offers Undo, and Settings ▸ Advanced brings it back. An empty vault shows a welcome (what Funes does and its promise) instead of an empty list and filters.
 
 **FR-O-02 Seed questions** · M · v0.1
-- Seven optional prompts (from the web guided interview):
+- Six optional prompts (from the web guided interview):
   - collaboration style
   - communication preferences
   - software development preferences
   - current projects
-  - privacy boundaries
   - practical constraints
   - long-term goals
 
   Each answer becomes a suggestion with a preset kind, category and sensitivity.
+- Then **"Which of these should agents never see?"**: category checkboxes (Health, Finance and Legal ticked until the user chooses). They become the vault's **never-share categories**: every agent gets Deny for them, and new agents start with it. Nothing is saved as a memory, so the answer can't itself be shared (UX review F4). The Categories sheet keeps the list editable ("New agents can't read").
 
 **FR-O-03 Move to Applications** · M · v0.1
 - Offer to move the app to /Applications when it's run from elsewhere (EK Bridge `AppMover`).
@@ -463,7 +466,7 @@
 ### App, settings and updates (FR-G)
 
 **FR-G-01 Menu bar presence** · M · v0.1
-- Icon states: normal, request waiting (accented), paused (slashed).
+- Icon states, drawn as the app icon's eye: normal (outline), request waiting (filled, with an accent dot), paused (slashed), off (dimmed).
 - The menu contains:
   - Remember…
   - Inbox (N)

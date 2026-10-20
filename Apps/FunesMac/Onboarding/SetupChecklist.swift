@@ -3,18 +3,21 @@ import FunesCore
 import Observation
 import SwiftUI
 
-/// The setup checklist (FR-O-01): seed the vault, review the Inbox, add an agent, connect it. It
-/// shows at the top of the Vault until done, then can be dismissed. Connecting completes on the
-/// agent's first request.
+/// The setup checklist (FR-O-01): connect an agent, approve its first request, seed the vault,
+/// review the Inbox. Connecting comes first, so a new user reaches an approved request in a few
+/// steps (UX review F9). It shows at the top of the Vault until dismissed; "Approve its first
+/// request" completes on the agent's first request.
 @MainActor @Observable
 final class ChecklistModel {
-    enum Step: Int, CaseIterable { case seed, review, add, connect }
+    enum Step: Int, CaseIterable { case add, connect, seed, review }
 
     private let preferences: Preferences
     private(set) var done: Set<Step> = []
     /// "Claude Code connected 10:42".
     private(set) var connectedLine: String?
     private(set) var dismissed = false
+    /// Just hidden: the Vault offers Undo for a few seconds (UX review F7).
+    private(set) var justHidden = false
     var showSeedQuestions = false
     var showImport: ImportKind?
 
@@ -53,6 +56,22 @@ final class ChecklistModel {
         preferences.set(Preferences.Key.checklistDismissed, true)
     }
 
+    /// Hide, with Undo offered for 10 seconds.
+    func hide() {
+        dismiss()
+        justHidden = true
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(10))
+            self?.justHidden = false
+        }
+    }
+
+    func undoHide() {
+        dismissed = false
+        justHidden = false
+        preferences.set(Preferences.Key.checklistDismissed, false)
+    }
+
     /// Settings ▸ Advanced ▸ Reset the setup checklist.
     func reset(model: AppModel) {
         for key in [Preferences.Key.checklistDismissed, Preferences.Key.checklistSeeded, Preferences.Key.checklistReviewed] {
@@ -67,6 +86,9 @@ final class ChecklistModel {
 struct SetupChecklistCard: View {
     let model: AppModel
     @State private var detected: [SetupAgent] = []
+    /// The first unfinished step's button gets the initial keyboard focus, never Hide: a stray
+    /// Space on first launch must not throw the guide away (UX review F7).
+    @FocusState private var firstAction: ChecklistModel.Step?
 
     private var checklist: ChecklistModel { model.checklist }
 
@@ -80,12 +102,29 @@ struct SetupChecklistCard: View {
                 if checklist.isComplete {
                     Button(String(localized: "Dismiss")) { checklist.dismiss() }
                 } else {
-                    Button(String(localized: "Hide")) { checklist.dismiss() }
+                    Button(String(localized: "Hide")) { checklist.hide() }
                         .buttonStyle(.link)
+                        .focusable(false)
                         .help(String(localized: "Settings ▸ Advanced brings it back"))
                 }
             }
             HStack(alignment: .top, spacing: 12) {
+                step(.add, String(localized: "Connect an agent"), detectedLine) {
+                    Button(String(localized: "Add…")) {
+                        model.wantsAddAgent = true
+                        model.show(.agents)
+                    }
+                }
+                step(.connect, String(localized: "Approve its first request"),
+                     checklist.connectedLine ?? String(localized: "Ask it something. Funes shows you exactly what it would share.")) {
+                    if let agent = model.agents.first {
+                        Button(agent.agentKind.setupAgent.oneClick ? String(localized: "Add to \(agent.agentKind.setupAgent.displayName)…")
+                                                                   : String(localized: "Show Setup")) {
+                            model.agentTab = .connect
+                            model.showAgent(agent.id)
+                        }
+                    }
+                }
                 step(.seed, String(localized: "Seed your vault"),
                      String(localized: "Answer a few questions or import from ChatGPT or Claude.")) {
                     Menu(String(localized: "Start")) {
@@ -102,30 +141,15 @@ struct SetupChecklistCard: View {
                         model.show(.inbox)
                     }
                 }
-                step(.add, String(localized: "Add an agent"), detectedLine) {
-                    Button(String(localized: "Add…")) {
-                        model.show(.agents)
-                        model.addAgentRequest += 1
-                    }
-                }
-                step(.connect, String(localized: "Connect it"),
-                     checklist.connectedLine ?? String(localized: "Done when its first request arrives.")) {
-                    if let agent = model.agents.first {
-                        Button(agent.agentKind.setupAgent.oneClick ? String(localized: "Add to \(agent.agentKind.setupAgent.displayName)…")
-                                                                   : String(localized: "Show Setup")) {
-                            model.agentTab = .connect
-                            model.showAgent(agent.id)
-                        }
-                    }
-                }
             }
             .fixedSize(horizontal: false, vertical: true)
         }
         .task { detected = SetupAgent.allCases.filter { model.detectAgents().contains($0) } }
+        .defaultFocus($firstAction, ChecklistModel.Step.allCases.first { !checklist.done.contains($0) })
     }
 
     private var detectedLine: String {
-        guard !detected.isEmpty else { return String(localized: "Claude Code, Cursor, Codex or another MCP client.") }
+        guard !detected.isEmpty else { return String(localized: "Claude Code, Cursor, Codex or another AI agent.") }
         let names = detected.prefix(3).map(\.displayName).joined(separator: ", ")
         return String(localized: "Found on this Mac: \(names)")
     }
@@ -142,7 +166,7 @@ struct SetupChecklistCard: View {
             }
             Text(detail).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
-            if !done { action().controlSize(.small) }
+            if !done { action().controlSize(.small).focused($firstAction, equals: step) }
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .contain)

@@ -14,9 +14,20 @@ struct PendingRequest: Identifiable, Equatable {
     let agentName: String
     let status: DisclosureStatus
     let createdAt: Date
+    /// How many memories it would share, from its snapshot.
+    var memoryCount = 0
+    /// The task, while this session still holds it (it's never stored).
+    var task: String?
     var expiresAt: Date { createdAt + DisclosureService.window }
 
     func minutesLeft(at now: Date) -> Int { max(0, Int((expiresAt.timeIntervalSince(now) / 60).rounded(.up))) }
+
+    /// "3 memories · 13 min left" (UX review F12).
+    func summary(at now: Date) -> String {
+        let memories = memoryCount == 1 ? String(localized: "1 memory") : String(localized: "\(memoryCount) memories")
+        return status == .approved ? String(localized: "\(memories) · approved, waiting for the agent")
+                                   : String(localized: "\(memories) · \(minutesLeft(at: now)) min left")
+    }
 }
 
 /// The main window's sections (04-ux-mac.md).
@@ -103,7 +114,10 @@ final class AppModel {
     var settingsTab: SettingsTab = .general
     var agentTab: AgentTab = .access
     /// Add Agent… from the setup checklist.
-    var addAgentRequest = 0
+    /// Open Add Agent when the Agents page shows (the checklist's Add…, which also switches to it).
+    var wantsAddAgent = false
+    /// An agent just added with Add and Connect…: its Connect tab starts one-click setup.
+    var pendingOneClick: UUID?
     var selectedMemoryID: UUID?
     var selectedAgentID: UUID?
     var selectedSuggestionIDs = Set<UUID>()
@@ -222,7 +236,8 @@ final class AppModel {
         self.inbox = inbox
         pending = disclosures.map {
             PendingRequest(id: $0.id, agentID: $0.agentID, agentName: names[$0.agentID] ?? String(localized: "Removed agent"),
-                           status: $0.status, createdAt: $0.createdAt)
+                           status: $0.status, createdAt: $0.createdAt, memoryCount: $0.candidateSnapshot.count,
+                           task: services.approvals.sessionTask($0.id))
         }
         categories = (try? services.store.categories()) ?? []
         hasMemories = !((try? services.store.memories(MemoryFilter(status: .activeIncludingExpired), now: now, limit: 1)) ?? []).isEmpty

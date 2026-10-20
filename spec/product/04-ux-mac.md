@@ -23,10 +23,10 @@ Main window ───┬─ Vault        (memories: list + detail)
 
 | State | Look | Meaning |
 |---|---|---|
-| Normal | outline "f." glyph | on, nothing waiting |
-| Needs you | filled glyph with an accent dot | a panel is open, or requests or suggestions are waiting |
-| Paused | glyph with a slash | Funes or the MCP server is paused |
-| Off | dimmed glyph | MCP server off (before setup) |
+| Normal | outline eye (the app icon's almond and iris) | on, nothing waiting |
+| Needs you | filled eye with an accent dot | a panel is open, or requests or suggestions are waiting |
+| Paused | eye with a slash | Funes or the MCP server is paused |
+| Off | dimmed eye | MCP server off (before setup) |
 | Remote Access on | any of the above, plus a small globe | the Remote Access listener is on |
 
 **Menu:**
@@ -65,12 +65,13 @@ Quit Funes Vault                          ⌘Q
 
 A sidebar plus a content area, with a minimum size of 860×560.
 
-### Setup checklist (until complete)
-A card at the top of the Vault:
-1. **Seed your vault**: "Answer a few questions or import from ChatGPT or Claude." [Start]
-2. **Review your Inbox**: "Apply what's right." [Open Inbox]
-3. **Add an agent**: tiles for detected agents. [Add]
-4. **Connect it**: [Add to Claude Code…] / [Show setup]. The step completes when the first request arrives ("Claude Code connected 10:42").
+### Setup checklist (until dismissed)
+A card at the top of the Vault, connecting first:
+1. **Connect an agent**: "Found on this Mac: Claude Code, Cursor". [Add…]
+2. **Approve its first request**: [Add to Claude Code…] / [Show Setup]. "Ask it something. Funes shows you exactly what it would share." The step completes when the first request arrives ("Claude Code connected 10:42").
+3. **Seed your vault**: "Answer a few questions or import from ChatGPT or Claude." [Start]
+4. **Review your Inbox**: "Apply what's right." [Open Inbox]
+- The first unfinished step's button has the initial keyboard focus (never Hide). Hide leaves "Setup checklist hidden. Settings ▸ Advanced brings it back. [Undo]" for 10 seconds.
 
 ### Vault
 - **Toolbar:**
@@ -92,6 +93,7 @@ A card at the top of the Vault:
   - **Provenance timeline:** created, edited, archived, shared, suggested by. Rows hold labels only.
   - **Actions:** Archive / Restore, Delete, "Still true" (confirm).
 - **Empty state:** "Your vault is empty. Answer a few questions to get started, or press ⌥⌘M anytime to remember something."
+- **First run** (no memories yet, nothing filtered): the checklist, then a welcome instead of the toolbar, list and detail: "Your memory, shared only as you allow", three lines on the promise (the vault stays on this Mac; each agent gets only the access you give it and you see the exact text first; Activity records every request, without the text), [Answer a Few Questions…] [New Memory…] "or press ⌥⌘M in any app".
 
 **Sensitivity explanations (UI copy):**
 
@@ -119,6 +121,8 @@ A card at the top of the Vault:
 
 ### Agents
 - **List:** each agent shows its icon (detected type), name, status ("Connected · 2 min ago", "Waiting for first request", "Paused", "Access expired") and access summary ("Reads Low and below in 3 categories · asks first").
+- **Pending requests** sit above the list while any wait ("Claude Code · 3 memories · 13 min left", the task's first line while this session holds it, [Review…]); the sidebar's Agents badge counts them. Activity shows them too, with Details.
+- **Add Agent:** two tabs, **On This Mac** (agents found on this Mac first, "Show All 11 Agents") and **Cloud · Experimental** (Remote Access's state first, with Set Up Remote Access… while it's off). Names wrap instead of truncating, and the sheet scrolls rather than outgrow the screen. For an agent with one-click setup the button is **Add and Connect…**: the agent is added and its Connect tab shows the change to its settings at once; after Add, it suggests a first question to ask the agent. New agents start with Deny for the never-share categories.
 - **Agent detail tabs:**
   - **Access:**
     - **Operations:** Read, Suggest and Write toggles, with plain explanations.
@@ -143,7 +147,7 @@ A card at the top of the Vault:
     - Turning cloud access off asks first when the agent has a remote token or connected apps: they stop working at once.
   - **Activity:** this agent's log.
 - **Header actions:** Pause / Resume, Remove…
-- **Add Agent** also has cloud tiles (claude.ai, ChatGPT, Gemini Enterprise, the Anthropic and OpenAI APIs, Claude Code on the web, Cursor, Copilot, Devin). A tile creates an agent with cloud access on and the chosen starting access, then opens pairing or the token setup. With Remote Access off, it offers to set it up first.
+- **Add Agent**'s cloud tab has tiles (claude.ai, ChatGPT, Gemini Enterprise, the Anthropic and OpenAI APIs, Claude Code on the web, Cursor, Copilot, Devin). A tile creates an agent with cloud access on and the chosen starting access, then opens pairing or the token setup. With Remote Access off, it offers to set it up first.
 
 ### Remote Access (experimental)
 Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1`, so a tunnel the user runs forwards them to a second port on this Mac.

@@ -1,14 +1,18 @@
 import FunesCore
 import SwiftUI
 
-/// Seven optional questions (FR-O-02, memory processing §6). Each answer becomes a suggestion with
-/// a preset kind, category and sensitivity, reviewed in the Inbox like any other.
+/// Six optional questions (FR-O-02, memory processing §6), then the categories agents should never
+/// see. Each answer becomes a suggestion with a preset kind, category and sensitivity, reviewed in
+/// the Inbox like any other. The never-see step sets rules, not a memory: every agent gets Deny for
+/// those categories, and new agents start with it (UX review F4).
 struct SeedQuestionsSheet: View {
     let model: AppModel
     @Environment(\.dismiss) private var dismiss
     @State private var answers: [String: String] = [:]
     @State private var error: String?
     @State private var saving = false
+    @State private var neverShare: Set<String> = []
+    @State private var loadedNeverShare: Set<String>?
 
     private var answered: Int { answers.values.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.count }
 
@@ -39,17 +43,44 @@ struct SeedQuestionsSheet: View {
                 }
                 .padding(.trailing, 8)
             }
+            // Always in view: Save applies it, so it must never be below the fold.
+            neverShareStep
             if let error { Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.callout) }
             HStack {
                 Spacer()
                 Button(String(localized: "Cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
-                Button(answered == 0 ? String(localized: "Send to Inbox") : String(localized: "Send \(answered) to Inbox")) { save() }
+                Button(answered == 0 ? String(localized: "Save") : String(localized: "Send \(answered) to Inbox")) { save() }
                     .keyboardShortcut(.defaultAction)
-                    .disabled(answered == 0 || saving)
+                    .disabled(saving || (answered == 0 && neverShare == loadedNeverShare))
             }
         }
         .padding(24)
-        .frame(width: 600, height: 640)
+        // Fits the main window at its minimum size; the questions scroll.
+        .frame(width: 600, height: 540)
+        .task {
+            let current = (try? await model.services.agents.neverShareCategories()) ?? []
+            loadedNeverShare = current
+            // Health, Finance and Legal start ticked until the user has chosen.
+            neverShare = current.isEmpty ? Set(["health", "finance", "legal"]).intersection(model.categories.map(\.key)) : current
+        }
+    }
+
+    /// "Which of these should agents never see?": category chips, applied as Deny.
+    private var neverShareStep: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Divider().padding(.bottom, 4)
+            Text(String(localized: "Which of these should agents never see?")).fontWeight(.medium)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 8, alignment: .leading)], alignment: .leading, spacing: 8) {
+                ForEach(model.categories) { category in
+                    Toggle(category.name, isOn: Binding(get: { neverShare.contains(category.key) }, set: { on in
+                        if on { neverShare.insert(category.key) } else { neverShare.remove(category.key) }
+                    }))
+                    .toggleStyle(.checkbox)
+                }
+            }
+            Text(String(localized: "Every agent gets Deny for these, and new agents start with it. Nothing you tick here is saved as a memory, and you can change it for each agent in its Access tab."))
+                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     /// The prompts in the user's language (the catalog keeps the English text in FunesCore).
@@ -59,7 +90,6 @@ struct SeedQuestionsSheet: View {
         case "communication_preferences": String(localized: "What tone, level of detail, or format do you usually prefer?")
         case "software_development_preferences": String(localized: "What should coding assistants know about how you build software?")
         case "current_projects": String(localized: "Which current projects should your vault remember, and why do they matter?")
-        case "privacy_preferences": String(localized: "What should Funes be especially careful not to share casually?")
         case "life_constraints": String(localized: "Are there practical constraints that often shape your work or availability?")
         case "long_term_goals": String(localized: "What long-term goals should assistants keep in mind when helping you?")
         default: question.prompt
@@ -72,8 +102,17 @@ struct SeedQuestionsSheet: View {
             let answer = (answers[question.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             return answer.isEmpty ? nil : (question, answer)
         }
+        let neverShare = neverShare, changedNeverShare = neverShare != loadedNeverShare
         Task {
             var failed: [String] = []
+            if changedNeverShare {
+                do {
+                    try await model.services.agents.setNeverShareCategories(neverShare, applyToAgents: true, now: Date())
+                    loadedNeverShare = neverShare
+                } catch {
+                    failed.append(ErrorText.message(error))
+                }
+            }
             for (question, answer) in pending {
                 do {
                     try await model.services.suggestions.seed(question, answer: answer, now: Date())
@@ -84,10 +123,12 @@ struct SeedQuestionsSheet: View {
             }
             saving = false
             if failed.isEmpty {
-                model.preferences.set(Preferences.Key.checklistSeeded, true)
                 await model.refresh()
                 dismiss()
-                model.show(.inbox)
+                if !pending.isEmpty {
+                    model.preferences.set(Preferences.Key.checklistSeeded, true)
+                    model.show(.inbox)
+                }
             } else {
                 error = failed.first
             }

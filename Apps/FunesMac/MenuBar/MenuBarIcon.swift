@@ -1,7 +1,8 @@
 import AppKit
 
-/// The menu bar glyph (04-ux-mac.md): an "f." in a rounded square, drawn in code so it follows
-/// the menu bar's appearance.
+/// The menu bar glyph (04-ux-mac.md): the app icon's eye (UX review F19), drawn in code so it
+/// follows the menu bar's appearance. The almond is the icon's (scripts/app_icon.swift), scaled to
+/// 16 points wide.
 enum MenuBarIcon {
     enum State: String, CaseIterable {
         /// On, nothing waiting: the outline glyph.
@@ -59,37 +60,59 @@ enum MenuBarIcon {
         equator.stroke()
     }
 
+    /// The icon's almond: two cubic lids from the left corner to the right one.
+    static func almond() -> NSBezierPath {
+        let path = NSBezierPath()
+        let left = NSPoint(x: 1, y: 9), right = NSPoint(x: 17, y: 9)
+        // On the icon's 1024 canvas: corners 196 and 828, control points 132.72 in and 262 up or down.
+        let inset: CGFloat = 16 * 132.72 / 632, lift: CGFloat = 16 * 262 / 632
+        path.move(to: left)
+        path.curve(to: right, controlPoint1: NSPoint(x: left.x + inset, y: 9 + lift),
+                   controlPoint2: NSPoint(x: right.x - inset, y: 9 + lift))
+        path.curve(to: left, controlPoint1: NSPoint(x: right.x - inset, y: 9 - lift),
+                   controlPoint2: NSPoint(x: left.x + inset, y: 9 - lift))
+        path.close()
+        return path
+    }
+
     private static func draw(_ state: State, in rect: NSRect) {
         let ink = state == .needsYou ? NSColor.labelColor : NSColor.black
         let alpha: CGFloat = state == .off ? 0.45 : 1
-        let box = NSRect(x: 2, y: 2, width: 14, height: 14)
-        let shape = NSBezierPath(roundedRect: box, xRadius: 3.5, yRadius: 3.5)
-        let font = NSFont.systemFont(ofSize: 11.5, weight: .heavy)
-        let glyph = NSAttributedString(string: "f.", attributes: [.font: font, .foregroundColor: ink.withAlphaComponent(alpha)])
-        let glyphSize = glyph.size()
-        let origin = NSPoint(x: box.midX - glyphSize.width / 2 + 0.5, y: box.midY - glyphSize.height / 2 + 0.5)
+        let eye = almond()
+        let iris = NSBezierPath(ovalIn: NSRect(x: 9 - 3.1, y: 9 - 3.1, width: 6.2, height: 6.2))
 
         if state == .needsYou {
             ink.setFill()
-            shape.fill()
-            // Knock the glyph out of the filled square.
+            eye.fill()
+            // A white iris ring knocked out of the filled almond, with the pupil left in.
             NSGraphicsContext.current?.compositingOperation = .destinationOut
-            glyph.draw(at: origin)
+            iris.fill()
             NSGraphicsContext.current?.compositingOperation = .sourceOver
-            let dot = NSBezierPath(ovalIn: NSRect(x: 12, y: 12, width: 6, height: 6))
+            NSBezierPath(ovalIn: NSRect(x: 9 - 1.7, y: 9 - 1.7, width: 3.4, height: 3.4)).fill()
+            let dot = NSBezierPath(ovalIn: NSRect(x: 12.5, y: 12, width: 5.5, height: 5.5))
             NSColor.controlAccentColor.setFill()
             dot.fill()
         } else {
             ink.withAlphaComponent(alpha).setStroke()
-            shape.lineWidth = 1.3
-            shape.stroke()
-            glyph.draw(at: origin)
+            ink.withAlphaComponent(alpha).setFill()
+            eye.lineWidth = 1.4
+            eye.stroke()
+            iris.fill()
+            // The icon's catchlight.
+            NSGraphicsContext.current?.compositingOperation = .destinationOut
+            NSBezierPath(ovalIn: NSRect(x: 9.6, y: 9.6, width: 1.5, height: 1.5)).fill()
+            NSGraphicsContext.current?.compositingOperation = .sourceOver
         }
         if state == .paused {
+            // A gap around the slash keeps it legible across the outline.
             let slash = NSBezierPath()
-            slash.move(to: NSPoint(x: 1, y: 1))
-            slash.line(to: NSPoint(x: 17, y: 17))
-            slash.lineWidth = 1.6
+            slash.move(to: NSPoint(x: 2, y: 1.5))
+            slash.line(to: NSPoint(x: 16, y: 16.5))
+            NSGraphicsContext.current?.compositingOperation = .destinationOut
+            slash.lineWidth = 3.4
+            slash.stroke()
+            NSGraphicsContext.current?.compositingOperation = .sourceOver
+            slash.lineWidth = 1.5
             ink.setStroke()
             slash.stroke()
         }

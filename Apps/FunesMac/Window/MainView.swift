@@ -49,7 +49,7 @@ struct MainView: View {
     private func badge(_ section: AppSection) -> Int {
         switch section {
         case .inbox: model.inboxCount
-        case .activity: model.pending.count
+        case .agents: model.pending.count
         default: 0
         }
     }
@@ -57,7 +57,7 @@ struct MainView: View {
     private func accessibilityLabel(_ section: AppSection) -> String {
         switch section {
         case .inbox where model.inboxCount > 0: String(localized: "Inbox, \(model.inboxCount) waiting")
-        case .activity where !model.pending.isEmpty: String(localized: "Activity, \(model.pending.count) pending requests")
+        case .agents where !model.pending.isEmpty: String(localized: "Agents, \(model.pending.count) requests waiting")
         default: section.title
         }
     }

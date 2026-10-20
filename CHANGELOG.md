@@ -9,6 +9,8 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 - **The Share panel says where the text goes.** A "Goes to" line, built only from what Funes Vault knows: "Claude Code on this Mac. It may send what it reads to its AI service.", or for a cloud agent "claude.ai, through your Tailscale Funnel, to Anthropic's servers" with a **Cloud** chip.
 - **Review Request (⌃⌥⌘R), from any app.** It brings a waiting panel forward and makes it key, so Return and Esc answer it; with no panel showing, it opens the newest pending request. The menu's first item does the same while something waits. Change or turn off the shortcut in Settings ▸ General.
 - **More Time** on the Share panel moves the request to Pending requests at once, where it waits up to 15 minutes.
+- **Never-share categories.** "A Few Questions" ends with "Which of these should agents never see?". The categories you tick get Deny for every agent, and new agents start with it; Categories keeps the list ("New agents can't read"). It replaces the question "What should Funes be especially careful not to share casually?", whose answer was saved as a memory that agents reading Internal could get.
+- **Add and Connect…** For Claude Code, Claude Desktop, Cursor and Codex, Add Agent goes straight to the change to the agent's settings, then suggests a first question to ask it.
 - **The capture box says when a cloud model sees the text:** "Goes to your Inbox · fields suggested by Anthropic". Settings ▸ Capture says it too.
 
 - **Remote Access offers to move a Tailscale Funnel setup on port 8443 or 10000 to 443.** claude.ai and ChatGPT only connect to 443. Setups from 0.1.1's drafts, or on a port picked by hand, showed as **Running**, or got start commands for the old port.
@@ -25,11 +27,17 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 - **An access request nobody answered doesn't block the next one for an hour.** If the panel ran out or was withdrawn, Funes Vault may ask again; Not Now still waits an hour.
 - **The Save panel shows the memory first**, then its details; Edit… is a link.
 - **The cloud limit says what it limits:** "Never send captures above".
+- **Setup connects first.** The checklist is now Connect an agent, Approve its first request, Seed your vault, Review your Inbox. Keyboard focus starts on the first step, not Hide, and Hide offers Undo. An empty vault shows a welcome instead of an empty list and filters.
+- **Add Agent has two tabs,** On This Mac (agents found on this Mac first) and Cloud · Experimental, and agent names no longer get cut off.
+- **Pending requests are easier to find:** above the Agents list, counted by the sidebar's Agents badge, with how many memories each would share and its task.
+- **The menu bar icon is the app's eye.**
 - **The sign-in panel:** Esc denies, it shows until when pairing is open, and VoiceOver reads the code digit by digit.
 
 - **funesvault.com has a new design**, built around the app icon's eye. The privacy statement's section on the website now describes its one script: the Homebrew copy button, and the eye on the home page that follows your pointer. It sends and stores nothing.
 
 ### Fixed
+
+- **The setup checklist's Add… opens Add Agent** even when the Agents page wasn't showing yet.
 
 - **A copy built from source never checks for updates**, as the privacy docs promised. Only copies signed with Funes Vault's Developer ID check GitHub; builds from source, Xcode runs and Debug builds don't, and they hide **Check for Updates…**. Before, every build checked, because the feed and the update key are in the committed `Info.plist`.
 - **Activity fits the window again.** Since the Remote Access filter, the filter row was wider than the page at the default window size, so the page slid under the sidebar and cut off the title, Pending requests and the table's first columns. The agent and period pickers and search now move to a second line when the row doesn't fit, and the Event and Detail columns can get narrower, down to the window's minimum width.

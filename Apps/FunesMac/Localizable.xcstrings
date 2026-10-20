@@ -325,6 +325,12 @@
     "%@, on this Mac" : {
 
     },
+    "%@, remote token" : {
+
+    },
+    "%@, sign in" : {
+
+    },
     "%@, through Remote Access, to %@'s servers" : {
       "localizations" : {
         "en" : {
@@ -401,13 +407,13 @@
     "%lld in categories it can't read" : {
 
     },
+    "%lld memories" : {
+
+    },
     "%lld memories restored." : {
 
     },
     "%lld memories selected" : {
-
-    },
-    "%lld min left" : {
 
     },
     "%lld minutes %lld seconds left" : {
@@ -516,6 +522,9 @@
     "+%lld more" : {
 
     },
+    "1 memory" : {
+
+    },
     "1 suggestion waiting for you" : {
 
     },
@@ -609,7 +618,7 @@
     "Activity" : {
 
     },
-    "Activity, %lld pending requests" : {
+    "Activity records every request, without the text." : {
 
     },
     "Add" : {
@@ -661,7 +670,7 @@
         }
       }
     },
-    "Add an agent" : {
+    "Add and Connect…" : {
 
     },
     "Add the %@ entry under context_servers." : {
@@ -770,6 +779,9 @@
 
     },
     "Agents' access is set per category. Built-in categories can be renamed; your own can also be deleted." : {
+
+    },
+    "Agents, %lld requests waiting" : {
 
     },
     "All" : {
@@ -934,13 +946,13 @@
     "Approval" : {
 
     },
+    "Approve its first request" : {
+
+    },
     "Approved" : {
 
     },
     "Approved by you" : {
-
-    },
-    "Approved, waiting for the agent to pick it up" : {
 
     },
     "Archive" : {
@@ -968,6 +980,9 @@
 
     },
     "Ask for memories that match its task. Only memories this page allows are ever offered." : {
+
+    },
+    "Ask it something. Funes shows you exactly what it would share." : {
 
     },
     "Asked for memories" : {
@@ -1213,7 +1228,7 @@
     "Claude Code's claude command wasn't found on this Mac." : {
 
     },
-    "Claude Code, Cursor, Codex or another MCP client." : {
+    "Claude Code, Cursor, Codex or another AI agent." : {
 
     },
     "Claude Desktop" : {
@@ -1288,6 +1303,9 @@
     "Cloud agents keep using %@ until you switch." : {
 
     },
+    "Cloud agents need Remote Access, which is off. What you share with them goes to their servers." : {
+
+    },
     "Cloud agents often run while you're away. With Ask before sharing on, a request waits up to 45 s for you at this Mac; after that, you can still approve it from the pending list within 15 minutes." : {
 
     },
@@ -1307,6 +1325,9 @@
 
     },
     "Cloud sign-in" : {
+
+    },
+    "Cloud · Experimental" : {
 
     },
     "Cloudflare Tunnel" : {
@@ -1354,7 +1375,7 @@
     "Connect a Cloud App…" : {
 
     },
-    "Connect it" : {
+    "Connect an agent" : {
 
     },
     "Connected" : {
@@ -1570,9 +1591,6 @@
     "Done" : {
 
     },
-    "Done when its first request arrives." : {
-
-    },
     "Down" : {
 
     },
@@ -1583,6 +1601,9 @@
 
     },
     "Each agent gets its own key and only the access you give it." : {
+
+    },
+    "Each agent gets only the access you give it, and Funes shows you the exact text before anything is shared." : {
 
     },
     "Edit" : {
@@ -1638,6 +1659,9 @@
 
     },
     "Event" : {
+
+    },
+    "Every agent gets Deny for these, and new agents start with it. Nothing you tick here is saved as a memory, and you can change it for each agent in its Access tab." : {
 
     },
     "Every cloud agent setup uses the current URL and stops working until you give it the new one." : {
@@ -1748,6 +1772,9 @@
     "Found" : {
 
     },
+    "Found on this Mac" : {
+
+    },
     "Found on this Mac: %@" : {
 
     },
@@ -1767,9 +1794,6 @@
 
     },
     "From other apps" : {
-
-    },
-    "From the cloud, through Remote Access" : {
 
     },
     "Funes Vault" : {
@@ -2328,6 +2352,9 @@
     "Memories past their expiry date appear here. Agents don't get them." : {
 
     },
+    "Memories stay in a vault on this Mac." : {
+
+    },
     "Method" : {
 
     },
@@ -2385,7 +2412,16 @@
     "New Memory" : {
 
     },
+    "New Memory…" : {
+
+    },
     "New address for %@" : {
+
+    },
+    "New agents can't read" : {
+
+    },
+    "New agents start with Deny for this category. Existing agents keep their access." : {
 
     },
     "New captures" : {
@@ -2573,6 +2609,9 @@
 
     },
     "On Pro and Max plans, you can add an API credential for %@ instead (Bearer, with the remote token as the value) and commit the version without headers." : {
+
+    },
+    "On This Mac" : {
 
     },
     "On a date" : {
@@ -2905,7 +2944,7 @@
     "Remote Access is on, but its tunnel address isn't set yet." : {
 
     },
-    "Remote Access isn't set up yet. %@ can't reach Funes Vault until it is; the agent's Cloud tab links to it." : {
+    "Remote Access is on. Cloud agents reach Funes through your tunnel, and what you share goes to their servers." : {
 
     },
     "Remote Access now uses port %@. Point your tunnel at the new port." : {
@@ -3253,9 +3292,6 @@
     "Send %lld to Inbox" : {
 
     },
-    "Send to Inbox" : {
-
-    },
     "Sensitive" : {
 
     },
@@ -3306,6 +3342,9 @@
 
     },
     "Setup" : {
+
+    },
+    "Setup checklist hidden. Settings ▸ Advanced brings it back." : {
 
     },
     "Share" : {
@@ -3364,7 +3403,13 @@
     "Show All" : {
 
     },
+    "Show All %lld Agents" : {
+
+    },
     "Show Less" : {
+
+    },
+    "Show Only Agents Found on This Mac" : {
 
     },
     "Show Setup" : {
@@ -3401,6 +3446,9 @@
 
     },
     "Showing “%@” only" : {
+
+    },
+    "Shows the change to %@'s settings first." : {
 
     },
     "Sign in" : {
@@ -3827,6 +3875,12 @@
     "The weekly check found a problem with the vault file. Restore the latest backup." : {
 
     },
+    "Then ask %@: “What do you know about how I like to work?”" : {
+
+    },
+    "Then ask %@: “What do you know about how I like to work?” Funes shows you exactly what it would share." : {
+
+    },
     "Then change the address to %@ with Address ▸ Edit…." : {
 
     },
@@ -4089,9 +4143,6 @@
     "What long-term goals should assistants keep in mind when helping you?" : {
 
     },
-    "What should Funes be especially careful not to share casually?" : {
-
-    },
     "What should Funes remember?" : {
 
     },
@@ -4127,7 +4178,13 @@
         }
       }
     },
+    "Where it runs" : {
+
+    },
     "Which current projects should your vault remember, and why do they matter?" : {
+
+    },
+    "Which of these should agents never see?" : {
 
     },
     "While Remote Access is on, cloud agents reach Funes Vault through a public address. What you share with them goes to their servers." : {
@@ -4207,6 +4264,9 @@
 
     },
     "Your answers" : {
+
+    },
+    "Your memory, shared only as you allow" : {
 
     },
     "Your ngrok dev domain, from the ngrok dashboard. The commands below use it." : {
@@ -4409,6 +4469,9 @@
     "on this Mac · forwards to %@" : {
 
     },
+    "or press %@ in any app" : {
+
+    },
     "port %@" : {
 
     },
@@ -4490,6 +4553,9 @@
 
     },
     "—" : {
+
+    },
+    "“%@”" : {
 
     },
     "“%@” (as reported)" : {
