@@ -13,7 +13,7 @@ let package = Package(
     ],
     dependencies: [
         // Exactly the version FunesMCP and the Xcode project pin (AGENTS.md).
-        .package(url: "https://github.com/bereciartua/bridgekit.git", exact: "0.4.0"),
+        .package(url: "https://github.com/bereciartua/bridgekit.git", revision: "c7ea1447555df34932f01dd9ce87a741b4f172ce"),
     ],
     targets: [
         .target(name: "BridgeUI", dependencies: [.product(name: "BridgeKitCore", package: "bridgekit"),
