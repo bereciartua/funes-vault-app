@@ -68,6 +68,47 @@ struct RemoteAccessControllerTests {
         #expect(controller.inUseFunnelPort == nil, "a tailnet-only entry took the address's port")
     }
 
+    /// A setup left on 10000 (0.1.1's drafts) moves to 443 once 443 can take the paths: running or
+    /// not, but not while Tailscale needs a login, and never for another tunnel.
+    @Test func funnelMove() {
+        let calls = Calls()
+        let (controller, defaults, suite) = make(calls)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        controller.reviewSet(enabled: true, origin: nil, tunnel: .tailscaleFunnel, health: .unknown)
+        let paths = controller.publicPaths
+        let host = "my-mac.tail1234.ts.net"
+        let ek = FunnelPorts.Entry(publicPort: 443, host: host, handlers: [FunnelPorts.Handler(path: "/", port: 47616)],
+                                   funnel: true)
+        let legacy = FunnelPorts.Entry(publicPort: 10000, host: host, handlers: [FunnelPorts.Handler(path: "/", port: 47_627)],
+                                       funnel: true)
+        let ports = FunnelPorts(entries: [ek, legacy], port: 47_627, paths: paths)
+        let running = TunnelHealth.running(address: "https://\(host):10000", port: 47_627)
+        controller.reviewSet(enabled: true, origin: "https://\(host):10000", tunnel: .tailscaleFunnel, health: running,
+                             funnel: ports)
+        #expect(controller.inUseFunnelMove == FunnelPorts.Move(
+            from: 10000, start: TailscaleFunnelCommand.start(port: 47_627, paths: paths),
+            off: ["tailscale funnel --https=10000 --set-path / off"], address: "https://\(host)"))
+        let notRunning = FunnelPorts(entries: [ek], port: 47_627, paths: paths)
+        controller.reviewSet(enabled: true, origin: "https://\(host):10000", tunnel: .tailscaleFunnel,
+                             health: .notRunning(reason: .noTunnel), funnel: notRunning)
+        #expect(controller.inUseFunnelMove?.start == TailscaleFunnelCommand.start(port: 47_627, paths: paths)
+            && controller.inUseFunnelMove?.off == [], "443's commands instead of 10000's")
+        controller.reviewSet(enabled: true, origin: "https://\(host):10000", tunnel: .tailscaleFunnel,
+                             health: .notRunning(reason: .loggedOut), funnel: notRunning)
+        #expect(controller.inUseFunnelMove == nil, "log in first")
+        let on443 = FunnelPorts.Entry(publicPort: 443, host: host,
+                                      handlers: [FunnelPorts.Handler(path: "/", port: 47616)]
+                                          + paths.map { FunnelPorts.Handler(path: $0, port: 47_627, targetPath: $0) },
+                                      funnel: true)
+        controller.reviewSet(enabled: true, origin: "https://\(host)", tunnel: .tailscaleFunnel,
+                             health: .running(address: "https://\(host)", port: 47_627),
+                             funnel: FunnelPorts(entries: [on443], port: 47_627, paths: paths))
+        #expect(controller.inUseFunnelMove == nil, "on 443 already")
+        controller.reviewSet(enabled: true, origin: "https://funes.example.com", tunnel: .cloudflareTunnel,
+                             health: .running(address: "https://funes.example.com", port: 47_627))
+        #expect(controller.inUseFunnelMove == nil, "not Funnel")
+    }
+
     @Test func anExpiredTurnOffAtLaunchTurnsItOff() {
         let calls = Calls()
         let (controller, defaults, suite) = make(calls) {

@@ -991,6 +991,12 @@
     "Change address" : {
 
     },
+    "Change the address to %@ with Address ▸ Edit…." : {
+
+    },
+    "Change the address with Address ▸ Edit… to your Mac's Funnel address without :%@." : {
+
+    },
     "Change tunnel" : {
 
     },
@@ -3573,6 +3579,26 @@
     "The key isn't written anywhere: the launcher reads it from Funes's key file." : {
 
     },
+    "The last %@ commands turn off %@'s entry on port %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The last %1$@ commands turn off %2$@'s entry on port %3$@."
+          }
+        }
+      }
+    },
+    "The last command turns off %@'s entry on port %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The last command turns off %1$@'s entry on port %2$@."
+          }
+        }
+      }
+    },
     "The link couldn't be made." : {
 
     },
@@ -3652,6 +3678,12 @@
 
     },
     "The weekly check found a problem with the vault file. Restore the latest backup." : {
+
+    },
+    "Then change the address to %@ with Address ▸ Edit…." : {
+
+    },
+    "Then change the address with Address ▸ Edit… to your Mac's Funnel address without :%@." : {
 
     },
     "Then you can stop %@" : {
@@ -4110,6 +4142,26 @@
     },
     "categories" : {
 
+    },
+    "claude.ai and ChatGPT only connect to Funnel's port 443, and Remote Access uses port %@. Port 443 can take %@'s paths now, beside other apps' entries. Move them in Terminal:" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "claude.ai and ChatGPT only connect to Funnel's port 443, and Remote Access uses port %1$@. Port 443 can take %2$@'s paths now, beside other apps' entries. Move them in Terminal:"
+          }
+        }
+      }
+    },
+    "claude.ai and ChatGPT only connect to Funnel's port 443, which already forwards %@'s paths, but the address uses port %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "claude.ai and ChatGPT only connect to Funnel's port 443, which already forwards %1$@'s paths, but the address uses port %2$@."
+          }
+        }
+      }
     },
     "claude.ai and ChatGPT only connect to port 443, so apps on this Mac share it by path: Tailscale sends these paths here and every other path where it went before." : {
 
