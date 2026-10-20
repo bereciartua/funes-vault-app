@@ -100,6 +100,17 @@ final class ModelSettings {
         }
     }
 
+    /// The provider new captures go to when it isn't local and the cloud limit lets anything go
+    /// (the capture box says so; UX review F6). Nil when classification stays on this Mac. Locality
+    /// needs a DNS lookup for host names, so it's worked out off the main thread.
+    func cloudClassifierName() async -> String? {
+        guard let provider = classifier, !provider.model.isEmpty, case .upTo = cloudLimit else { return nil }
+        if provider.endpoint.kind == .anthropic && !hasKey(provider.id) { return nil }
+        let endpoint = provider.endpoint
+        let local = await Task.detached(priority: .utility) { endpoint.locality().isLocal }.value
+        return local ? nil : provider.name
+    }
+
     /// The router for this choice: the chosen provider, then Apple on-device, then rules.
     func makeRouter() -> ModelRouter {
         let chosen = classifier.flatMap { try? client(for: $0) }

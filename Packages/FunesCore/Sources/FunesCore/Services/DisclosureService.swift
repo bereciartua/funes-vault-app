@@ -9,11 +9,36 @@ import Synchronization
 public protocol MemoryRetriever: Sendable {
     /// Candidate ids in score order, at most 30.
     func candidateIDs(task: String, keywords: [String], categories: [String]) async throws -> [UUID]
+    /// The same candidates with their scores, which decide which rows the panel ticks (§3.2).
+    func candidates(task: String, keywords: [String], categories: [String]) async throws -> [RetrievedCandidate]
+}
+
+/// A retrieved memory and its search score (nil when the retriever has none).
+public struct RetrievedCandidate: Sendable, Hashable {
+    public var id: UUID
+    public var score: Double?
+
+    public init(id: UUID, score: Double?) {
+        self.id = id
+        self.score = score
+    }
+}
+
+extension MemoryRetriever {
+    /// Retrievers without scores (tests): every candidate counts as a strong match.
+    public func candidates(task: String, keywords: [String], categories: [String]) async throws -> [RetrievedCandidate] {
+        try await candidateIDs(task: task, keywords: keywords, categories: categories).map { RetrievedCandidate(id: $0, score: nil) }
+    }
 }
 
 extension SearchService: MemoryRetriever {
     public func candidateIDs(task: String, keywords: [String], categories: [String]) async throws -> [UUID] {
         try await retrieve(task: task, keywords: keywords, categories: categories).map(\.memoryID)
+    }
+
+    public func candidates(task: String, keywords: [String], categories: [String]) async throws -> [RetrievedCandidate] {
+        try await retrieve(task: task, keywords: keywords, categories: categories)
+            .map { RetrievedCandidate(id: $0.memoryID, score: Double($0.score)) }
     }
 }
 
@@ -112,6 +137,8 @@ public struct ApprovalPanel: Sendable, Hashable {
     public var processors: [String]
     /// The eligible memories, current, in score order.
     public var memories: [Memory]
+    /// The memories that matched closely enough to be ticked (§3.2); the rest are offered unticked.
+    public var strong: Set<UUID>
     public var snapshotRevision: String
     public var createdAt: Date
     public var expiresAt: Date
@@ -185,12 +212,14 @@ public final class DisclosureService: Sendable {
         let access = try useGrant(grant, agent: agent)
 
         // A denial at the gate doesn't run retrieval (§3.1): the task isn't even embedded.
-        let candidateIDs: [UUID] =
+        let retrieved: [RetrievedCandidate] =
             if PolicyEngine.gate(agent: agent, access: access, globalPaused: pause.isPaused(at: now), now: now) == nil {
-                try await retriever.candidateIDs(task: input.task, keywords: input.keywords, categories: input.categories)
+                try await retriever.candidates(task: input.task, keywords: input.keywords, categories: input.categories)
             } else {
                 []
             }
+        let candidateIDs = retrieved.map(\.id)
+        let scores = Dictionary(retrieved.map { ($0.id, $0.score) }, uniquingKeysWith: { first, _ in first })
         let window = windows.withLock { $0[agentID] }
         let paused = pause.isPaused(at: now)
         let requestID = UUID()
@@ -221,7 +250,7 @@ public final class DisclosureService: Sendable {
             let candidates = try MemoryStore.fetch(db, ids: candidateIDs).filter { $0.status != .deleted }
             let e = PolicyEngine.evaluate(candidates: candidates, agent: agent, access: access, window: window, now: now)
             row.withheld = e.withheld
-            row.candidateSnapshot = e.eligible.map { SnapshotItem(id: $0.id, version: $0.version) }
+            row.candidateSnapshot = e.eligible.map { SnapshotItem(id: $0.id, version: $0.version, score: scores[$0.id] ?? nil) }
             row.reason = e.decision.reason
             let withheldCategories = candidates
                 .filter { PolicyEngine.eligibility($0, access: access, now: now) == .categoryNotAllowed }
@@ -324,7 +353,8 @@ public final class DisclosureService: Sendable {
             let access = self.access(agent, requestID: requestID)
             let snapshot = try MemoryStore.fetch(db, ids: d.candidateSnapshot.map(\.id))
             let current = snapshot.filter { PolicyEngine.eligibility($0, access: access, now: now) == nil }
-            let items = current.map { SnapshotItem(id: $0.id, version: $0.version) }
+            let scores = Dictionary(d.candidateSnapshot.map { ($0.id, $0.score) }, uniquingKeysWith: { first, _ in first })
+            let items = current.map { SnapshotItem(id: $0.id, version: $0.version, score: scores[$0.id] ?? nil) }
             if items != d.candidateSnapshot || agent.revision != d.agentRevisionAtRequest {
                 d.candidateSnapshot = items
                 d.agentRevisionAtRequest = agent.revision
@@ -340,7 +370,8 @@ public final class DisclosureService: Sendable {
             }
             return ApprovalPanel(requestID: d.id, agentID: agent.id, agentName: agent.name, task: cached?.task,
                                  keywords: cached?.keywords ?? [], purpose: d.purpose, retention: d.retention,
-                                 processors: d.processors, memories: current, snapshotRevision: d.snapshotRevision ?? "",
+                                 processors: d.processors, memories: current,
+                                 strong: PolicyEngine.strongMatches(items), snapshotRevision: d.snapshotRevision ?? "",
                                  createdAt: d.createdAt, expiresAt: d.createdAt + Self.window)
         }
     }
@@ -593,6 +624,15 @@ public final class DisclosureService: Sendable {
 
     /// An access request to offer the user, at most once an hour per agent, category and operation
     /// (§7, FR-A-10). Used for reads here and for suggestions by SuggestionService.
+    /// Forgets an offer the user never answered (the panel ran out or was withdrawn), so the next
+    /// request may ask again instead of waiting an hour (access policy §7). Not Now keeps the hour.
+    public func releaseOffer(_ offer: AccessRequestOffer) {
+        let keys = offer.categoryKeys.isEmpty ? [""] : offer.categoryKeys
+        offered.withLock { offered in
+            for key in keys { offered["\(offer.agentID.db)|\(key)|\(offer.operation.rawValue)"] = nil }
+        }
+    }
+
     func offer(agentID: UUID, requestID: UUID?, categories: [String], operation: AccessOperation, agentRevision: Int,
                now: Date) -> AccessRequestOffer? {
         var seen = Set<String>()

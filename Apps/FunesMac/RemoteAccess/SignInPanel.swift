@@ -36,8 +36,8 @@ final class SignInPanelController {
         position(panel)
         panel.orderFrontRegardless()
         NSAccessibility.post(element: NSApp as Any, notification: .announcementRequested,
-                             userInfo: [.announcement: String(localized: "\(first.appName) wants to connect. Code \(first.code)."),
-                                        .priority: NSAccessibilityPriorityLevel.high.rawValue])
+                             userInfo: [.announcement: String(localized: "\(first.appName) wants to connect. Code \(SignInPanelView.spokenCode(first.code))."),
+                                        .priority: NSAccessibilityPriorityLevel.medium.rawValue])
     }
 
     private func makePanel() -> NSPanel {
@@ -71,6 +71,11 @@ final class SignInPanelController {
 }
 
 struct SignInPanelView: View {
+    /// "4 8 2, 9 1 3": VoiceOver reads the code digit by digit, not as a number.
+    static func spokenCode(_ code: String) -> String {
+        code.split(separator: " ").map { $0.map(String.init).joined(separator: " ") }.joined(separator: ", ")
+    }
+
     let model: AppModel
     let request: PairingRequest
     /// Allow is enabled a moment after the panel appears, so a click meant for something else
@@ -90,22 +95,29 @@ struct SignInPanelView: View {
                     Text(url).font(.callout.monospaced()).foregroundStyle(.secondary).lineLimit(2).truncationMode(.middle)
                 }
                 Text(String(localized: "Returns to \(request.redirectHost)")).font(.callout).foregroundStyle(.secondary)
-                Text(String(localized: "The app's name is as it reported it.")).font(.caption).foregroundStyle(.tertiary)
+                Text(String(localized: "The app's name is as it reported it.")).font(.caption).foregroundStyle(.secondary)
             }
             Text(request.code)
                 .font(.system(size: 34, weight: .bold, design: .monospaced))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 4)
-                .accessibilityLabel(String(localized: "Code \(request.code)"))
+                .accessibilityLabel(String(localized: "Code \(Self.spokenCode(request.code))"))
             Text(String(localized: "Allow only if this code matches the one in your browser. It will use \(agent)'s access."))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack {
-                if model.signIns.count > 1 {
-                    Text(String(localized: "\(model.signIns.count - 1) more waiting")).font(.callout).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    // The pairing window's end; Allow does nothing after it.
+                    Text(String(localized: "Until \(request.expiresAt.formatted(date: .omitted, time: .shortened))"))
+                        .font(.callout).foregroundStyle(.secondary).monospacedDigit()
+                    if model.signIns.count > 1 {
+                        Text(String(localized: "\(model.signIns.count - 1) more waiting")).font(.callout).foregroundStyle(.secondary)
+                    }
                 }
                 Spacer()
+                // Esc denies. Allow has no Return key: the codes must be compared first.
                 Button(String(localized: "Deny")) { model.answerSignIn(request.id, allow: false) }
+                    .keyboardShortcut(.cancelAction)
                 Button(String(localized: "Allow")) { model.answerSignIn(request.id, allow: true) }
                     .buttonStyle(.borderedProminent)
                     .disabled(!armed)

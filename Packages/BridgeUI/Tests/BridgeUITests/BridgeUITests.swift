@@ -104,7 +104,7 @@ struct ApprovalQueueTests {
         queue.enqueue(first) { answers.append("first \($0)") }
         queue.enqueue(second) { answers.append("second \($0)") }
         #expect(queue.current?.id == first.id)
-        queue.selection = 1
+        queue.select(second.id)
         #expect(queue.current?.id == second.id)
         queue.answer(second.id, .secondary)
         queue.answer(second.id, .tertiary)
@@ -117,11 +117,38 @@ struct ApprovalQueueTests {
         #expect(queue.current == nil)
     }
 
+    /// UX review F3: an item on a clock comes before one that waits for nothing, soonest first, so a
+    /// Save panel never hides a request that is running out.
+    @Test func itemsOnAClockComeFirst() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let queue = ApprovalQueue(clock: { now })
+        let save = item(), later = item(expires: now + 40), sooner = item(expires: now + 13)
+        for each in [save, later, sooner] { queue.enqueue(each) { _ in } }
+        #expect(queue.shown.map(\.id) == [sooner.id, later.id, save.id])
+        #expect(queue.current?.id == sooner.id)
+    }
+
+    /// Once the user picks an item (or acts on it), a more urgent arrival doesn't replace it under
+    /// the cursor; its chip shows instead.
+    @Test func theChosenItemStays() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let queue = ApprovalQueue(clock: { now })
+        let first = item(expires: now + 40)
+        queue.enqueue(first) { _ in }
+        queue.toggle(row: "m1", in: first.id)
+        let urgent = item(expires: now + 10)
+        queue.enqueue(urgent) { _ in }
+        #expect(queue.current?.id == first.id)
+        queue.answer(first.id, .secondary)
+        #expect(queue.current?.id == urgent.id)
+    }
+
     @Test func onlyThreeShown() {
         let queue = ApprovalQueue()
         for _ in 0..<5 { queue.enqueue(item()) { _ in } }
         #expect(queue.shown.count == 3)
         #expect(queue.items.count == 5)
+        #expect(queue.hiddenCount == 2)
     }
 
     @Test func countdownExpires() {
@@ -286,23 +313,26 @@ struct SharePanelReviewTests {
 @MainActor
 struct LookingForTests {
     static func item(keywords: [String], task: String? = "Plan dinner") -> PanelItem {
-        PanelItem.share(id: UUID(), agentID: "a", agentName: "Claude Code", task: task, keywords: keywords,
-                        purpose: "menu", keepsIt: "For this session", sharedWith: [],
+        PanelItem.share(id: UUID(), agentID: "a", agentName: "Claude Code",
+                        destination: .init(text: "Claude Code on this Mac.", isCloud: false), task: task, keywords: keywords,
+                        purpose: "menu", keepsIt: "For the session", sharedWith: [],
                         rows: [PanelItem.Row(id: "m", title: "Vegetarian", detail: "No meat.")], note: nil, expiresAt: nil)
     }
 
+    /// UX review F2: everything the agent supplied sits in its own block, never among Funes's facts.
     @Test func keywordsAreShownWithTheTask() throws {
         let item = Self.item(keywords: ["dietary restrictions", " food allergies ", "", "favourite cuisines"])
-        #expect(item.subtitle == "Task: “Plan dinner”")
-        let first = try #require(item.facts.first)
-        #expect(first.label == "Looking for")
-        #expect(first.value == "dietary restrictions, food allergies, favourite cuisines")
-        #expect(item.facts.map(\.label) == ["Looking for", "Purpose", "Keeps it"])
+        #expect(item.subtitle == nil)
+        #expect(item.facts.isEmpty)
+        #expect(item.agentSays.map(\.label) == ["Task", "Looking for", "Purpose", "Keeps what it gets"])
+        #expect(item.agentSays[0].value == "“Plan dinner”")
+        #expect(item.agentSays[1].value == "dietary restrictions, food allergies, favourite cuisines")
+        #expect(item.destination?.text == "Claude Code on this Mac.")
     }
 
     @Test func noKeywordsNoLine() {
-        #expect(!Self.item(keywords: []).facts.contains { $0.label == "Looking for" })
-        #expect(!Self.item(keywords: ["  "]).facts.contains { $0.label == "Looking for" })
+        #expect(!Self.item(keywords: []).agentSays.contains { $0.label == "Looking for" })
+        #expect(!Self.item(keywords: ["  "]).agentSays.contains { $0.label == "Looking for" })
     }
 
     @Test func longKeywordListsPreviewWithShowAll() throws {
@@ -310,14 +340,26 @@ struct LookingForTests {
         let queue = ApprovalQueue()
         let item = Self.item(keywords: keywords)
         queue.enqueue(item) { _ in }
-        let fact = try #require(item.facts.first { $0.label == "Looking for" })
+        let fact = try #require(item.agentSays.first { $0.label == "Looking for" })
         #expect(fact.isClipped)
         let preview = queue.displayedValue(fact, in: item.id)
         #expect(preview.count <= PanelText.factCharacters + 1 && preview.hasSuffix("…"))
         queue.toggleExpanded(row: "fact:Looking for", in: item.id)
         #expect(queue.displayedValue(fact, in: item.id) == keywords.joined(separator: ", "))
-        let short = try #require(Self.item(keywords: ["coffee order"]).facts.first)
+        let short = try #require(Self.item(keywords: ["coffee order"]).agentSays.first { $0.label == "Looking for" })
         #expect(!short.isClipped && queue.displayedValue(short, in: UUID()) == "coffee order")
+    }
+
+    /// FR-D-03: weaker matches are offered unticked; Share counts only the ticked ones.
+    @Test func weakRowsStartUnticked() {
+        let item = PanelItem.share(id: UUID(), agentID: "a", agentName: "Claude Code", destination: nil, task: nil,
+                                   keywords: [], purpose: nil, keepsIt: nil, sharedWith: [],
+                                   rows: [PanelItem.Row(id: "strong", title: "pnpm"),
+                                          PanelItem.Row(id: "weak", title: "Swift 6", selected: false, weak: true)],
+                                   note: nil, expiresAt: Date())
+        #expect(item.selectedIDs == ["strong"])
+        #expect(item.title == "Claude Code wants 2 memories")
+        #expect(item.moreTime != nil)
     }
 }
 
@@ -329,6 +371,24 @@ struct AccessPanelTests {
         #expect(ApprovalQueue.countdown(41) == "41 s")
         #expect(ApprovalQueue.countdown(60) == "1:00")
         #expect(ApprovalQueue.countdown(545) == "9:05")
+    }
+
+    /// UX review F1: Return never means Always Allow. Allow Once is the default; without it,
+    /// nothing is.
+    @Test func defaultIsNeverAlwaysAllow() {
+        let offered = PanelItem(id: UUID(), kind: .access, agentID: "a", title: "Cursor wants to read Health", rows: [],
+                                primary: "Always Allow Cursor to Read Health", secondary: "Not Now", tertiary: "Allow Once",
+                                announcement: "x")
+        #expect(offered.defaultAnswer == .tertiary)
+        var sharedAlready = offered
+        sharedAlready.tertiary = nil
+        #expect(sharedAlready.defaultAnswer == nil)
+    }
+
+    @Test func spokenCountdown() {
+        #expect(ApprovalQueue.spokenCountdown(41) == "41 seconds left")
+        #expect(ApprovalQueue.spokenCountdown(900) == "15 minutes left")
+        #expect(ApprovalQueue.spokenCountdown(545) == "9 minutes 5 seconds left")
     }
 
     @Test func answersArriveOnce() {

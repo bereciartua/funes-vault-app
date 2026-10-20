@@ -487,4 +487,41 @@ import Testing
         let agent = try await fx.store.writer.read { db in try AgentStore.fetch(db, id: fx.agentID)! }
         #expect(agent.firstRequestAt == fx.now && agent.lastRequestAt == fx.now.plus(minutes: 2))
     }
+
+    /// FR-D-03, access policy §3.2 (UX review F5): the panel ticks strong matches only. Scores ride
+    /// in the snapshot (not in its revision hash) and survive a rebuild of the snapshot.
+    @Test func panelTicksOnlyStrongMatches() async throws {
+        let fx = try ServiceFixture()
+        let probe = try #require(try await fx.request().requestID)
+        let eligible = try #require(try await fx.disclosures.panel(requestID: probe, now: fx.now)).memories.map(\.id)
+        try #require(eligible.count >= 2)
+        #expect(Set(try #require(try await fx.disclosures.panel(requestID: probe, now: fx.now)).strong) == Set(eligible))
+        var scores = [UUID: Double]()
+        for (index, id) in eligible.enumerated() { scores[id] = index == 0 ? 1.0 : 0.2 }
+        fx.retriever.set(scores: scores)
+        let id = try #require(try await fx.request().requestID)
+        let panel = try #require(try await fx.disclosures.panel(requestID: id, now: fx.now))
+        #expect(panel.strong == [eligible[0]])
+        let stored = try #require(try await fx.disclosures.disclosure(requestID: id))
+        #expect(stored.candidateSnapshot.first?.score == 1.0)
+        // A memory edited since: the snapshot is rebuilt, and the scores stay.
+        try await fx.store.writer.write { db in
+            try db.execute(sql: "UPDATE memory SET version = version + 1 WHERE id = ?", arguments: [eligible[1].db])
+        }
+        let rebuilt = try #require(try await fx.disclosures.panel(requestID: id, now: fx.now))
+        #expect(rebuilt.strong == [eligible[0]])
+    }
+
+    /// Rows stored before scores were kept decode without them, and then every row is strong.
+    @Test func oldSnapshotsWithoutScoresTickEverything() throws {
+        let a = UUID(), b = UUID()
+        let old = Data(#"[{"id":"\#(a.uuidString)","version":1},{"id":"\#(b.uuidString)","version":2}]"#.utf8)
+        let items = try JSONDecoder().decode([SnapshotItem].self, from: old)
+        #expect(items.allSatisfy { $0.score == nil })
+        #expect(PolicyEngine.strongMatches(items) == [a, b])
+        #expect(PolicyEngine.strongMatches([SnapshotItem(id: a, version: 1, score: 0.9),
+                                            SnapshotItem(id: b, version: 1, score: 0.5)]) == [a])
+        #expect(PolicyEngine.strongMatches([SnapshotItem(id: a, version: 1, score: 0.9),
+                                            SnapshotItem(id: b, version: 1, score: 0.6)]) == [a, b])
+    }
 }

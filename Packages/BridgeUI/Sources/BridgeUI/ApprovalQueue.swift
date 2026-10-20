@@ -1,10 +1,10 @@
 import Foundation
 import Observation
 
-// Adapted from EK Bridge's ApprovalCenter (Upstream/ApprovalCenter.swift): the same FIFO,
-// selection, timeouts and exactly-once answers, over a generic panel item instead of
-// EK Bridge's change summaries. The app builds each item from fresh data, never from
-// agent prose.
+// Adapted from EK Bridge's ApprovalCenter (Upstream/ApprovalCenter.swift): the same selection,
+// timeouts and exactly-once answers, over a generic panel item instead of EK Bridge's change
+// summaries, with items on a clock shown first. The app builds each item from fresh data, never
+// from agent prose.
 
 /// What a panel shows for one request. Built by the app; shown, never stored.
 public struct PanelItem: Identifiable, Sendable, Equatable {
@@ -13,7 +13,8 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
         case share
         /// Save a suggested memory: no countdown, non-blocking.
         case save
-        /// "<Agent> wants more access": Not Now, Allow Once (tertiary) and Always Allow (primary).
+        /// "<Agent> wants to read <Category>": Not Now, **Allow Once** (tertiary, the default) and
+        /// Always Allow (primary, a link on its own line, never the default).
         case access
     }
 
@@ -33,9 +34,11 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
         public var badgeIsWarning: Bool
         public var selectable: Bool
         public var selected: Bool
+        /// A weaker match: offered unticked under "Also matched" (access policy §3.2).
+        public var weak: Bool
 
         public init(id: String, title: String, detail: String? = nil, version: String? = nil, badge: String? = nil,
-                    badgeIsWarning: Bool = false, selectable: Bool = true, selected: Bool = true) {
+                    badgeIsWarning: Bool = false, selectable: Bool = true, selected: Bool = true, weak: Bool = false) {
             self.id = id
             self.title = title
             self.detail = detail
@@ -44,6 +47,7 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
             self.badgeIsWarning = badgeIsWarning
             self.selectable = selectable
             self.selected = selected
+            self.weak = weak
         }
 
         /// Whether the panel shows less than the whole text until **Show all**.
@@ -53,7 +57,21 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
         var content: [String?] { [id, version, title, detail, badge] }
     }
 
-    /// A label and value under the rows: "Purpose (as reported)", "Retention"…
+    /// Where shared text goes, built only from what Funes knows (the agent, local or remote, the
+    /// tunnel, the cloud app's vendor): "Claude Code on this Mac. It may send what it reads to its AI
+    /// service."
+    public struct Destination: Sendable, Equatable {
+        public let text: String
+        /// Drawn with the Cloud chip: the text leaves this Mac for someone else's servers.
+        public let isCloud: Bool
+
+        public init(text: String, isCloud: Bool) {
+            self.text = text
+            self.isCloud = isCloud
+        }
+    }
+
+    /// A label and value: "Kind", "Your note"; or, in `agentSays`, "Task", "Purpose"…
     public struct Fact: Sendable, Equatable {
         public let label: String
         public let value: String
@@ -72,12 +90,20 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
 
     public let id: UUID
     public var kind: Kind
-    /// Who asked; limits and "1 of 3" are per agent.
+    /// Who asked.
     public var agentID: String
-    /// "Claude Code wants to use your memories".
+    /// "Claude Code wants 3 memories".
     public var title: String
+    /// "Cursor · access": the item's chip when several wait.
+    public var shortLabel: String
     public var subtitle: String?
+    /// Share: where the text goes. Shown first, as Funes's own words.
+    public var destination: Destination?
+    /// What the agent said about its request (task, keywords, purpose, retention): shown in its own
+    /// block, labelled as not checked by Funes (principle 4).
+    public var agentSays: [Fact]
     public var rows: [Row]
+    /// Facts Funes holds: the user's note on the agent, a suggestion's kind and category…
     public var facts: [Fact]
     /// A line in secondary text under the facts ("2 more weren't offered: …").
     public var note: String?
@@ -87,21 +113,27 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
     public var secondary: String
     /// "Reject" for a suggestion, "Allow Once" for an access request.
     public var tertiary: String?
-    /// "Edit…" on the Save panel: opens the suggestion in the Inbox.
+    /// "Edit…" on the Save panel: opens the suggestion in the Inbox. Drawn as a link.
     public var edit: String?
+    /// "More time" on a Share panel: moves the request to Pending requests now (`.deferred`).
+    public var moreTime: String?
     /// The panel answers `.expired` at this time; nil for no countdown.
     public var expiresAt: Date?
     /// Read by VoiceOver when the item appears.
     public var announcement: String
 
-    public init(id: UUID, kind: Kind, agentID: String, title: String, subtitle: String? = nil, rows: [Row],
-                facts: [Fact] = [], note: String? = nil, primary: String, secondary: String, tertiary: String? = nil,
-                edit: String? = nil, expiresAt: Date? = nil, announcement: String) {
+    public init(id: UUID, kind: Kind, agentID: String, title: String, shortLabel: String? = nil, subtitle: String? = nil,
+                destination: Destination? = nil, agentSays: [Fact] = [], rows: [Row], facts: [Fact] = [],
+                note: String? = nil, primary: String, secondary: String, tertiary: String? = nil, edit: String? = nil,
+                moreTime: String? = nil, expiresAt: Date? = nil, announcement: String) {
         self.id = id
         self.kind = kind
         self.agentID = agentID
         self.title = title
+        self.shortLabel = shortLabel ?? title
         self.subtitle = subtitle
+        self.destination = destination
+        self.agentSays = agentSays
         self.rows = rows
         self.facts = facts
         self.note = note
@@ -109,11 +141,22 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
         self.secondary = secondary
         self.tertiary = tertiary
         self.edit = edit
+        self.moreTime = moreTime
         self.expiresAt = expiresAt
         self.announcement = announcement
     }
 
     public var selectedIDs: [String] { rows.filter { $0.selectable && $0.selected }.map(\.id) }
+
+    /// What Return answers once the panel is key, or nil for none. Never Always Allow: on an
+    /// access request it's Allow Once, and when Allow Once isn't offered nothing is the default.
+    public var defaultAnswer: PanelAnswer? {
+        switch kind {
+        case .share: selectedIDs.isEmpty ? nil : .primary(selected: selectedIDs)
+        case .save: .primary(selected: selectedIDs)
+        case .access: tertiary == nil ? nil : .tertiary
+        }
+    }
 }
 
 /// The preview a row shows before **Show all**: the first 3 lines, at most 160 characters, cut at a
@@ -148,26 +191,30 @@ public enum PanelAnswer: Sendable, Equatable {
     case primary(selected: [String])
     /// Deny or Later.
     case secondary
-    /// Reject, or Allow Once.
+    /// Reject (or Discard), or Allow Once.
     case tertiary
     /// Edit… (the Save panel).
     case edit
     /// The countdown ran out.
     case expired
+    /// More time: the user moved a request to Pending requests before its countdown ran out.
+    case deferred
     /// The app took it back (the agent hung up, Funes paused, quit).
     case withdrawn
 }
 
-/// A FIFO of items waiting for the user, shown one at a time in one panel ("1 of 3"), each
-/// answered exactly once.
+/// Items waiting for the user, shown one at a time in one panel with a chip for each, each
+/// answered exactly once. Items on a clock come first, soonest first, so a Save panel (which waits
+/// for nothing) never hides a request that is running out (UX review F3).
 @MainActor @Observable
 public final class ApprovalQueue {
     /// Panels a user can step through; later items wait unseen until one is answered.
     public static let maxShown = 3
 
+    /// In arrival order; `ordered` and `shown` give the order the panel uses.
     public private(set) var items = [PanelItem]()
-    /// Index of the item the panel shows, within `shown`.
-    public var selection = 0
+    /// The item the user chose (a chip, or acting on it); nil shows the most urgent.
+    public private(set) var selectedID: UUID?
     /// Ticks once a second while an item counts down, so the panel redraws.
     public private(set) var now = Date()
 
@@ -189,12 +236,29 @@ public final class ApprovalQueue {
         now = clock()
     }
 
-    public var shown: [PanelItem] { Array(items.prefix(Self.maxShown)) }
+    /// Items on a clock first, soonest deadline first; then the rest in arrival order.
+    public var ordered: [PanelItem] {
+        let timed = items.filter { $0.expiresAt != nil }.enumerated()
+            .sorted { ($0.element.expiresAt!, $0.offset) < ($1.element.expiresAt!, $1.offset) }.map(\.element)
+        return timed + items.filter { $0.expiresAt == nil }
+    }
+
+    public var shown: [PanelItem] { Array(ordered.prefix(Self.maxShown)) }
+
+    /// Items beyond `shown`, waiting unseen.
+    public var hiddenCount: Int { max(0, items.count - Self.maxShown) }
 
     public var current: PanelItem? {
         let visible = shown
-        guard !visible.isEmpty else { return nil }
-        return visible[min(max(selection, 0), visible.count - 1)]
+        if let selectedID, let item = visible.first(where: { $0.id == selectedID }) { return item }
+        return visible.first
+    }
+
+    /// Shows this item (its chip was clicked, or the user acted on it), so a more urgent arrival
+    /// doesn't replace it under the cursor.
+    public func select(_ id: UUID) {
+        guard items.contains(where: { $0.id == id }) else { return }
+        selectedID = id
     }
 
     /// Adds an item; `completion` runs once, on the main actor. An item whose id is already
@@ -233,7 +297,7 @@ public final class ApprovalQueue {
     public func answer(_ id: UUID, _ answer: PanelAnswer) {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         items.remove(at: index)
-        if selection >= shown.count { selection = max(0, shown.count - 1) }
+        if selectedID == id { selectedID = nil }
         let completion = completions.removeValue(forKey: id)
         generations[id] = nil
         expanded = expanded.filter { !$0.hasPrefix(id.uuidString + "|") }
@@ -261,6 +325,7 @@ public final class ApprovalQueue {
         guard let index = items.firstIndex(where: { $0.id == id }),
               let rowIndex = items[index].rows.firstIndex(where: { $0.id == row && $0.selectable }) else { return }
         items[index].rows[rowIndex].selected.toggle()
+        selectedID = id
     }
 
     public func generation(of id: UUID) -> Int { generations[id, default: 0] }
@@ -270,6 +335,7 @@ public final class ApprovalQueue {
     public func toggleExpanded(row: String, in id: UUID) {
         let key = key(id, row)
         if expanded.contains(key) { expanded.remove(key) } else { expanded.insert(key) }
+        if items.contains(where: { $0.id == id }) { selectedID = id }
     }
 
     /// A fact's value now: its preview, or all of it after **Show all**.
@@ -291,6 +357,14 @@ public final class ApprovalQueue {
         seconds < 60 ? String(localized: "\(seconds) s") : String(format: "%d:%02d", seconds / 60, seconds % 60)
     }
 
+    /// The countdown as VoiceOver reads it: "41 seconds left", "9 minutes 5 seconds left".
+    public static func spokenCountdown(_ seconds: Int) -> String {
+        guard seconds >= 60 else { return String(localized: "\(seconds) seconds left") }
+        let minutes = seconds / 60, rest = seconds % 60
+        return rest == 0 ? String(localized: "\(minutes) minutes left")
+                         : String(localized: "\(minutes) minutes \(rest) seconds left")
+    }
+
     /// Seconds left on an item's countdown, never negative.
     public func remaining(_ item: PanelItem) -> Int? {
         item.expiresAt.map { max(0, Int($0.timeIntervalSince(now).rounded(.up))) }
@@ -299,7 +373,7 @@ public final class ApprovalQueue {
     /// Expires what ran out and keeps a one-second timer while anything counts down.
     public func tick() {
         now = clock()
-        for item in items where item.expiresAt.map({ $0 <= now }) == true {
+        for item in ordered where item.expiresAt.map({ $0 <= now }) == true {
             answer(item.id, .expired)
             return
         }
@@ -318,35 +392,39 @@ public final class ApprovalQueue {
 }
 
 extension PanelItem {
-    /// The **Share with <agent>?** panel (04-ux-mac.md): the task, what the agent says it's looking
-    /// for (its keywords), purpose as reported, retention and processors above the memories, then
-    /// the withheld line. Agent-provided text is labelled as such; nothing here decides anything.
-    /// `remote`: the request came through Remote Access, from a cloud agent.
-    public static func share(id: UUID, agentID: String, agentName: String, task: String?, keywords: [String],
-                             purpose: String?, keepsIt: String, sharedWith: [String], rows: [Row], note: String?,
-                             expiresAt: Date?, remote: Bool = false) -> PanelItem {
-        var facts = [Fact]()
-        if remote {
-            facts.append(Fact(label: String(localized: "Via"), value: String(localized: "Remote Access (a cloud agent)")))
+    /// The **Share** panel (04-ux-mac.md): where the text goes, then what the agent said about its
+    /// request in a block of its own (task, keywords, purpose, retention, processors), then the
+    /// memories (strong matches ticked, weaker ones offered unticked), then the withheld line.
+    /// Agent-provided text is labelled as such; nothing here decides anything.
+    public static func share(id: UUID, agentID: String, agentName: String, destination: Destination?, task: String?,
+                             keywords: [String], purpose: String?, keepsIt: String?, sharedWith: [String],
+                             facts: [Fact] = [], rows: [Row], note: String?, expiresAt: Date?) -> PanelItem {
+        var says = [Fact]()
+        if let task, !task.isEmpty {
+            says.append(Fact(label: String(localized: "Task"), value: "“\(task)”", collapsible: true))
         }
         let lookingFor = keywords.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         if !lookingFor.isEmpty {
-            facts.append(Fact(label: String(localized: "Looking for"), value: lookingFor.joined(separator: ", "),
-                              collapsible: true))
+            says.append(Fact(label: String(localized: "Looking for"), value: lookingFor.joined(separator: ", "),
+                             collapsible: true))
         }
         if let purpose, !purpose.isEmpty {
-            facts.append(Fact(label: String(localized: "Purpose"), value: String(localized: "“\(purpose)” (as reported)")))
+            says.append(Fact(label: String(localized: "Purpose"), value: "“\(purpose)”"))
         }
-        facts.append(Fact(label: String(localized: "Keeps it"), value: keepsIt))
+        if let keepsIt { says.append(Fact(label: String(localized: "Keeps what it gets"), value: keepsIt)) }
         if !sharedWith.isEmpty {
-            facts.append(Fact(label: String(localized: "Shared with"), value: sharedWith.joined(separator: ", ")))
+            says.append(Fact(label: String(localized: "Shared with"), value: sharedWith.joined(separator: ", ")))
         }
+        let count = rows.filter(\.selected).count
         return PanelItem(
             id: id, kind: .share, agentID: agentID,
-            title: String(localized: "\(agentName) wants to use your memories"),
-            subtitle: task.map { String(localized: "Task: “\($0)”") }, rows: rows, facts: facts, note: note,
-            primary: String(localized: "Share"), secondary: String(localized: "Deny"), expiresAt: expiresAt,
-            announcement: String(localized: "\(agentName) asks to use \(rows.count) memories in Funes"))
+            title: rows.count == 1 ? String(localized: "\(agentName) wants 1 memory")
+                                   : String(localized: "\(agentName) wants \(rows.count) memories"),
+            shortLabel: String(localized: "\(agentName) · share"), destination: destination, agentSays: says,
+            rows: rows, facts: facts, note: note, primary: String(localized: "Share"), secondary: String(localized: "Deny"),
+            moreTime: expiresAt == nil ? nil : String(localized: "More Time"), expiresAt: expiresAt,
+            announcement: count == rows.count
+                ? String(localized: "\(agentName) asks to use \(rows.count) memories in Funes")
+                : String(localized: "\(agentName) asks to use your memories in Funes: \(count) of \(rows.count) ticked"))
     }
 }
-

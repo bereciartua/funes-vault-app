@@ -224,6 +224,9 @@ struct RemoteSetupTests {
 
     @Test func cloudCatalog() {
         #expect(CloudAgent.allCases.count == 11 && TunnelProvider.allCases.count == 5)
+        // The Share panel's Goes to line names each cloud agent's vendor (UX review F2).
+        #expect(CloudAgent.allCases.allSatisfy { !$0.vendor.isEmpty })
+        #expect(CloudAgent.claudeAI.vendor == "Anthropic" && CloudAgent.chatGPT.vendor == "OpenAI")
         #expect(CloudAgent.allCases.filter(\.usesOAuth) == [.claudeAI, .chatGPT, .geminiEnterprise])
         #expect(CloudAgent.allCases.filter { !$0.isSupported } == [.codexCloud])
         #expect(Set(CloudAgent.allCases.map(\.agentKind)).count == CloudAgent.allCases.count)

@@ -42,16 +42,36 @@ public final class ApprovalPanelController {
             position(panel)
             panel.orderFrontRegardless()
         }
-        for item in queue.shown where !announced.contains(item.id) {
-            announced.insert(item.id)
+        // One announcement for everything new, so a second one never cuts the first off.
+        let fresh = queue.shown.filter { !announced.contains($0.id) }
+        if !fresh.isEmpty {
+            announced.formUnion(fresh.map(\.id))
             NSAccessibility.post(element: NSApp as Any, notification: .announcementRequested,
-                                 userInfo: [.announcement: item.announcement,
-                                            .priority: NSAccessibilityPriorityLevel.high.rawValue])
+                                 userInfo: [.announcement: Self.announcement(fresh, current: current, queue: queue,
+                                                                             reviewHint: reviewHint),
+                                            .priority: NSAccessibilityPriorityLevel.medium.rawValue])
         }
-        _ = current
     }
 
-    /// Brings the panel forward (Open in Funes).
+    /// Appended to announcements: how to reach the panel from the keyboard ("Option-Command-R to
+    /// review"). Set by the app, which owns the shortcut.
+    public var reviewHint: String?
+
+    /// "Cursor asks for more access in Funes. 38 seconds to answer. Option-Command-R to review.", or
+    /// "3 requests waiting in Funes. …" when several arrive together.
+    static func announcement(_ fresh: [PanelItem], current: PanelItem, queue: ApprovalQueue, reviewHint: String?) -> String {
+        var parts = [fresh.count == 1 ? fresh[0].announcement
+                                      : String(localized: "\(queue.items.count) requests waiting in Funes")]
+        if let seconds = queue.remaining(current) {
+            parts.append(seconds < 60 ? String(localized: "\(seconds) seconds to answer")
+                                      : String(localized: "\(seconds / 60) minutes to answer"))
+        }
+        if let reviewHint { parts.append(reviewHint) }
+        return parts.joined(separator: ". ") + "."
+    }
+
+    /// Brings the panel forward and makes it key, so Return and Escape answer it (Open in Funes,
+    /// the Review Request shortcut, the menu's Review item).
     public func bringForward() {
         guard let panel, queue.current != nil else { return }
         panel.orderFrontRegardless()
@@ -126,8 +146,8 @@ public struct ApprovalPanelView: View {
     /// measure the natural height.
     let scrolls: Bool
     /// The content the buttons may act on: the item and its content generation. When either
-    /// changes (one expired, the user stepped, or a refresh changed what would be shared), they
-    /// wait a moment so a click meant for the old content can't approve the new one.
+    /// changes (one expired, the user picked another, or a refresh changed what would be shared),
+    /// they wait a moment so a click meant for the old content can't approve the new one.
     @State private var armed: ArmKey?
     public static let armingDelay: TimeInterval = 0.6
 
@@ -150,8 +170,13 @@ public struct ApprovalPanelView: View {
         if let item = queue.current {
             let key = ArmKey(id: item.id, generation: queue.generation(of: item.id))
             VStack(alignment: .leading, spacing: 0) {
+                if queue.shown.count > 1 {
+                    chips(current: item)
+                        .padding([.horizontal, .top], 12)
+                }
                 header(item)
-                    .padding([.horizontal, .top], 16)
+                    .padding([.horizontal], 16)
+                    .padding(.top, queue.shown.count > 1 ? 10 : 16)
                     .padding(.bottom, 12)
                 if scrolls {
                     ScrollView(.vertical) { middle(item) }
@@ -185,15 +210,55 @@ public struct ApprovalPanelView: View {
         }
     }
 
-    /// Everything between the title and the buttons; it scrolls when the panel is capped.
+    /// One chip per waiting item, most urgent first, each with its own countdown: "Cursor · access
+    /// · 0:13". The shown one is filled; clicking another shows it.
+    private func chips(current: PanelItem) -> some View {
+        HStack(spacing: 6) {
+            ForEach(queue.shown) { item in
+                let isCurrent = item.id == current.id
+                Button { queue.select(item.id) } label: {
+                    HStack(spacing: 4) {
+                        Text(item.shortLabel).lineLimit(1)
+                        if let seconds = queue.remaining(item) {
+                            Text(ApprovalQueue.countdown(seconds)).monospacedDigit()
+                        }
+                    }
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .foregroundStyle(isCurrent ? Color.white : Color.primary)
+                    .background(Capsule().fill(isCurrent ? Color.accentColor : Color.secondary.opacity(0.15)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(queue.remaining(item).map { "\(item.shortLabel), \(ApprovalQueue.spokenCountdown($0))" }
+                                    ?? item.shortLabel)
+                .accessibilityAddTraits(isCurrent ? .isSelected : [])
+            }
+            if queue.hiddenCount > 0 {
+                Text(String(localized: "+\(queue.hiddenCount) more")).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// Everything between the title and the buttons; it scrolls when the panel is capped. A Save
+    /// panel shows the memory first; the others show where the text goes and what the agent said
+    /// before the memories.
     private func middle(_ item: PanelItem) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             if let subtitle = item.subtitle {
                 Text(subtitle).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            facts(item)
-            rows(item)
+            if let destination = item.destination { destinationBox(destination) }
+            if !item.agentSays.isEmpty { agentSays(item) }
+            if item.kind == .save {
+                rows(item)
+                facts(item.facts, in: item)
+            } else {
+                facts(item.facts, in: item)
+                rows(item)
+            }
             if let note = item.note {
                 Text(note).font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -205,22 +270,63 @@ public struct ApprovalPanelView: View {
     }
 
     private func header(_ item: PanelItem) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 10) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
-                .frame(width: 40, height: 40)
+                .frame(width: 32, height: 32)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.title)
-                    .font(.headline)
-                    .fixedSize(horizontal: false, vertical: true)
+            Text(item.title)
+                .font(.headline)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+        }
+    }
+
+    /// "Goes to": Funes's own words about where the text ends up.
+    private func destinationBox(_ destination: PanelItem.Destination) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(String(localized: "Goes to")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(destination.text).fixedSize(horizontal: false, vertical: true)
+                if destination.isCloud {
+                    Text(String(localized: "Cloud"))
+                        .font(.caption2.weight(.semibold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(Color.orange.opacity(0.2)))
+                        .accessibilityLabel(String(localized: "Leaves this Mac"))
+                }
             }
         }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.1)))
+        .accessibilityElement(children: .combine)
+    }
+
+    /// What the agent said, in a quoted block of its own: not checked by Funes, never a reason to share.
+    private func agentSays(_ item: PanelItem) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(String(localized: "The agent says · not checked by Funes"))
+                .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            facts(item.agentSays, in: item)
+        }
+        .padding(.leading, 10)
+        .overlay(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 1.5).fill(Color.secondary.opacity(0.35)).frame(width: 3)
+        }
+        .accessibilityElement(children: .contain)
     }
 
     private func rows(_ item: PanelItem) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(item.rows) { row in
+            ForEach(Array(item.rows.enumerated()), id: \.element.id) { index, row in
+                if row.weak, index == 0 || !item.rows[index - 1].weak {
+                    Text(String(localized: "Also matched, less closely"))
+                        .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        .padding(.top, index == 0 ? 0 : 4)
+                        .accessibilityAddTraits(.isHeader)
+                }
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     if row.selectable {
                         Toggle(isOn: Binding(get: { row.selected },
@@ -236,7 +342,7 @@ public struct ApprovalPanelView: View {
                             Text(row.title).fontWeight(.medium)
                             if let badge = row.badge {
                                 Text(badge)
-                                    .font(.caption2.weight(.semibold))
+                                    .font(.caption.weight(.semibold))
                                     .padding(.horizontal, 5)
                                     .padding(.vertical, 1)
                                     .background(Capsule().fill(row.badgeIsWarning ? Color.orange.opacity(0.25)
@@ -253,7 +359,7 @@ public struct ApprovalPanelView: View {
                         }
                         if row.isClipped {
                             let open = queue.isExpanded(row: row.id, in: item.id)
-                            Button(open ? String(localized: "Show less") : String(localized: "Show all")) {
+                            Button(open ? String(localized: "Show Less") : String(localized: "Show All")) {
                                 queue.toggleExpanded(row: row.id, in: item.id)
                             }
                             .buttonStyle(.link)
@@ -268,10 +374,10 @@ public struct ApprovalPanelView: View {
     }
 
     @ViewBuilder
-    private func facts(_ item: PanelItem) -> some View {
-        if !item.facts.isEmpty {
+    private func facts(_ facts: [PanelItem.Fact], in item: PanelItem) -> some View {
+        if !facts.isEmpty {
             Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 4) {
-                ForEach(Array(item.facts.enumerated()), id: \.offset) { _, fact in
+                ForEach(Array(facts.enumerated()), id: \.offset) { _, fact in
                     GridRow {
                         Text(fact.label).foregroundStyle(.secondary)
                         VStack(alignment: .leading, spacing: 2) {
@@ -280,7 +386,7 @@ public struct ApprovalPanelView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                             if fact.isClipped {
                                 let open = queue.isExpanded(row: "fact:" + fact.label, in: item.id)
-                                Button(open ? String(localized: "Show less") : String(localized: "Show all")) {
+                                Button(open ? String(localized: "Show Less") : String(localized: "Show All")) {
                                     queue.toggleExpanded(row: "fact:" + fact.label, in: item.id)
                                 }
                                 .buttonStyle(.link)
@@ -295,54 +401,65 @@ public struct ApprovalPanelView: View {
         }
     }
 
+    /// The buttons. The default (Return, once the panel is key) is drawn prominent and is never a
+    /// choice with lasting effect: Share N, Save, or Allow Once. Always Allow is a link on its own
+    /// line, so it can't be truncated and is never hit by habit (UX review F1).
     private func footer(_ item: PanelItem, armed: Bool) -> some View {
-        let shown = queue.shown
-        let index = shown.firstIndex(where: { $0.id == item.id }) ?? 0
         let count = item.selectedIDs.count
-        return HStack(spacing: 8) {
-            if shown.count > 1 {
-                Button { queue.selection = max(0, index - 1) } label: { Image(systemName: "chevron.left") }
-                    .buttonStyle(.borderless)
-                    .disabled(index == 0)
-                    .accessibilityLabel(String(localized: "Previous request"))
-                Text(String(localized: "\(index + 1) of \(shown.count)")).foregroundStyle(.secondary)
-                Button { queue.selection = min(shown.count - 1, index + 1) } label: { Image(systemName: "chevron.right") }
-                    .buttonStyle(.borderless)
-                    .disabled(index == shown.count - 1)
-                    .accessibilityLabel(String(localized: "Next request"))
-            }
-            if let seconds = queue.remaining(item) {
-                Text(ApprovalQueue.countdown(seconds)).monospacedDigit().foregroundStyle(.secondary)
-                    .accessibilityLabel(String(localized: "\(seconds) seconds left"))
-            }
-            Spacer()
-            if item.kind == .access {
-                // Not Now · Allow Once · Always Allow (04-ux-mac.md).
-                Button(item.secondary) { queue.answer(item.id, .secondary) }
-                    .keyboardShortcut(.cancelAction)
-                    .disabled(!armed)
-                if let tertiary = item.tertiary {
-                    Button(tertiary) { queue.answer(item.id, .tertiary) }
-                        .disabled(!armed)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                if let seconds = queue.remaining(item) {
+                    Text(ApprovalQueue.countdown(seconds)).monospacedDigit().foregroundStyle(.secondary)
+                        .accessibilityLabel(ApprovalQueue.spokenCountdown(seconds))
                 }
-            } else {
-                if let tertiary = item.tertiary {
-                    Button(tertiary) { queue.answer(item.id, .tertiary) }
+                if let moreTime = item.moreTime {
+                    Button(moreTime) { queue.answer(item.id, .deferred) }
+                        .buttonStyle(.link)
                         .disabled(!armed)
+                        .help(String(localized: "Moves it to Pending requests, where it waits up to 15 minutes"))
                 }
-                Button(item.secondary) { queue.answer(item.id, .secondary) }
-                    .keyboardShortcut(.cancelAction)
-                    .disabled(!armed)
                 if let edit = item.edit {
                     Button(edit) { queue.answer(item.id, .edit) }
+                        .buttonStyle(.link)
                         .disabled(!armed)
                 }
+                Spacer(minLength: 4)
+                switch item.kind {
+                case .access:
+                    Button(item.secondary) { queue.answer(item.id, .secondary) }
+                        .keyboardShortcut(.cancelAction)
+                        .disabled(!armed)
+                    if let tertiary = item.tertiary {
+                        Button(tertiary) { queue.answer(item.id, .tertiary) }
+                            .keyboardShortcut(.defaultAction)
+                            .buttonStyle(.borderedProminent)
+                            // The panel is rarely key; draw the default as primary anyway.
+                            .environment(\.controlActiveState, .key)
+                            .disabled(!armed)
+                    }
+                case .share, .save:
+                    if let tertiary = item.tertiary {
+                        Button(tertiary) { queue.answer(item.id, .tertiary) }
+                            .disabled(!armed)
+                    }
+                    Button(item.secondary) { queue.answer(item.id, .secondary) }
+                        .keyboardShortcut(.cancelAction)
+                        .disabled(!armed)
+                    Button(item.kind == .share ? "\(item.primary) \(count)" : item.primary) {
+                        queue.answer(item.id, .primary(selected: item.selectedIDs))
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .buttonStyle(.borderedProminent)
+                            // The panel is rarely key; draw the default as primary anyway.
+                            .environment(\.controlActiveState, .key)
+                    .disabled(!armed || (item.kind == .share && count == 0))
+                }
             }
-            Button(item.kind == .share ? "\(item.primary) \(count)" : item.primary) {
-                queue.answer(item.id, .primary(selected: item.selectedIDs))
+            if item.kind == .access {
+                Button(item.primary) { queue.answer(item.id, .primary(selected: [])) }
+                    .buttonStyle(.link)
+                    .disabled(!armed)
             }
-            .keyboardShortcut(.defaultAction)
-            .disabled(!armed || (item.kind == .share && count == 0))
         }
     }
 }

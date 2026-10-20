@@ -94,6 +94,13 @@ struct GeneralSettings: View {
                 Text(String(localized: "Funes Vault always stays in the menu bar. Without the Dock icon, it shows in the Dock only while a window is open."))
                     .font(.callout).foregroundStyle(.secondary)
             }
+            Section(String(localized: "Requests")) {
+                ShortcutRecorder(title: String(localized: "Review Request"), accessibilityName: String(localized: "Review Request shortcut"),
+                                 current: model.preferences.reviewShortcut, defaultShortcut: .defaultReview,
+                                 apply: model.setReviewShortcut)
+                Text(String(localized: "Brings a waiting approval panel forward from any app, so Return and Esc answer it."))
+                    .font(.callout).foregroundStyle(.secondary)
+            }
             Section(String(localized: "Notifications")) {
                 Toggle(String(localized: "A request expired before you answered"), isOn: $notifyExpired)
                     .onChange(of: notifyExpired) { _, on in model.setNotification(Preferences.Key.notifyExpired, on) }

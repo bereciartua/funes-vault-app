@@ -476,6 +476,17 @@ def run_access(h):
     check("not asked again within the hour", len(h.control(cmd="presented")["access"]) == asked + 1)
     c.close()
 
+    # UX review F3: a panel that ran out unseen doesn't use up the hour.
+    h.control(cmd="access", mode="unanswered")
+    asked = len(h.control(cmd="presented")["access"])
+    c = Client(h, h.key("askunanswered"))
+    result = c.call("request_memory", task)
+    check("unanswered: refused like Not Now", result.get("status") == "denied" and
+          result.get("reason") == "no_allowed_memories", result)
+    c.call("request_memory", task)
+    check("unanswered: asked again on the next request", len(h.control(cmd="presented")["access"]) == asked + 2)
+    c.close()
+
     h.control(cmd="access", mode="once")
     c = Client(h, h.key("askonce"))
     result = c.call("request_memory", task)

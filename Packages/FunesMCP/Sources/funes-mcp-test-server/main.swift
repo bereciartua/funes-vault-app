@@ -47,7 +47,7 @@ final class FakeResponder: FunesPresenter, @unchecked Sendable {
     private(set) var shown = [UUID]()
     private(set) var suggestions = [UUID]()
     private(set) var opened = [String]()
-    /// How access requests are answered: "notnow" (the default), "once" or "always".
+    /// How access requests are answered: "notnow" (the default), "once", "always" or "unanswered".
     var accessMode = "notnow"
     private(set) var accessPrompts = [AccessPrompt]()
 
@@ -75,6 +75,7 @@ final class FakeResponder: FunesPresenter, @unchecked Sendable {
         switch mode {
         case "once": return prompt.allowsOnce ? .allowOnce : .notNow
         case "always": return .alwaysAllow
+        case "unanswered": return .unanswered
         default: return .notNow
         }
     }
@@ -185,7 +186,7 @@ final class Harness {
         let narrowRead = Access(operations: [.read], maxSensitivity: .secret, allowedCategoryKeys: ["software_development"],
                                 askBeforeSharing: false)
         let asking: [(String, Access)] = [
-            ("asknotnow", narrowRead), ("askonce", narrowRead), ("askalways", narrowRead), ("askshared", narrowRead),
+            ("asknotnow", narrowRead), ("askunanswered", narrowRead), ("askonce", narrowRead), ("askalways", narrowRead), ("askshared", narrowRead),
             ("asksuggest", Access(operations: [.suggest], maxSensitivity: .internal,
                                   allowedCategoryKeys: ["software_development"])),
             ("askwriter", Access(operations: [.write], maxSensitivity: .internal, allowedCategoryKeys: ["software_development"],

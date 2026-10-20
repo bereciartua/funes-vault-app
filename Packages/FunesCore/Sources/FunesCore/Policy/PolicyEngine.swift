@@ -79,6 +79,18 @@ public enum PolicyEngine {
         return .needsApproval
     }
 
+    /// A memory scoring at least this share of the top score is a strong match: the panel ticks it.
+    /// Weaker ones are offered unticked (§3.2, FR-D-03).
+    public static let strongMatchRatio = 0.6
+
+    /// The snapshot items that are strong matches. The top one always is; without scores (rows
+    /// stored before scores were kept, or a retriever without them) every item is.
+    public static func strongMatches(_ items: [SnapshotItem]) -> Set<UUID> {
+        let scores = items.compactMap(\.score)
+        guard scores.count == items.count, let top = scores.max(), top > 0 else { return Set(items.map(\.id)) }
+        return Set(items.filter { ($0.score ?? 0) >= top * strongMatchRatio }.map(\.id))
+    }
+
     /// Eligibility over retrieved candidates (in score order) and the decision.
     public struct Evaluation: Sendable, Hashable {
         public var eligible: [Memory]

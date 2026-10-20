@@ -17,8 +17,8 @@ public protocol FunesPresenter: Sendable {
     func open(requestID: UUID) async
     func open(suggestionID: UUID) async
     /// "<Agent> wants more access" (access policy §7, FR-A-10): ask, and return the answer, or
-    /// `.notNow` when `prompt.expiresAt` passes. FunesCore already limited this to once an hour per
-    /// agent, category and operation.
+    /// `.unanswered` when `prompt.expiresAt` passes or the panel is withdrawn. FunesCore limits this
+    /// to once an hour per agent, category and operation; an unanswered offer doesn't count.
     func askForAccess(_ prompt: AccessPrompt) async -> AccessAnswer
 }
 
@@ -53,8 +53,11 @@ public struct AccessPrompt: Sendable, Hashable {
 }
 
 public enum AccessAnswer: String, Sendable {
-    /// Not Now, no answer in time, or the panel was withdrawn.
+    /// Not Now: not asked again for an hour.
     case notNow
+    /// No answer in time, or the panel was withdrawn: treated as Not Now, but the next request may
+    /// ask again (the user may never have seen it).
+    case unanswered
     /// This request only (a grant bound to it and the agent's revision).
     case allowOnce
     /// Adds exactly that category, or that operation, to the agent's access.

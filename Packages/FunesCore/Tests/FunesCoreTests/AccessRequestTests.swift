@@ -116,4 +116,19 @@ import Testing
         // Without the retry flag, the same agent's ordinary call still saves directly.
         #expect(try await s.suggest(agentID: fx.agentID, input, now: fx.now).status == .saved)
     }
+
+    /// UX review F3: an offer the user never answered (the panel ran out or was withdrawn) doesn't
+    /// use up the hour; Not Now still does.
+    @Test func anUnansweredOfferCanBeMadeAgain() async throws {
+        let fx = try ServiceFixture()
+        try fx.setAgent(asksForAccess: true)
+        try fx.setAccess { $0.operations = [.suggest]; $0.allowedCategoryKeys = ["communication_style"] }
+        let s = SuggestionService(store: fx.store, activity: fx.activity, pause: fx.pause, disclosures: fx.disclosures)
+        let input = SuggestInput(title: "Launch plan", body: "Ship the Mac preview first", categories: ["project_context"],
+                                 sensitivity: .internal)
+        let offer = try #require(try await s.suggest(agentID: fx.agentID, input, now: fx.now).accessOffer)
+        #expect(try await s.suggest(agentID: fx.agentID, input, now: fx.now.plus(minutes: 1)).accessOffer == nil)
+        fx.disclosures.releaseOffer(offer)
+        #expect(try await s.suggest(agentID: fx.agentID, input, now: fx.now.plus(minutes: 2)).accessOffer != nil)
+    }
 }

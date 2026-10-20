@@ -146,12 +146,14 @@ enum AgentText {
         return text
     }
 
+    /// "Keeps what it gets": one set of words for the user's note on an agent and for what an agent
+    /// says about a request.
     static func retention(_ retention: Retention) -> String {
         switch retention {
-        case .none: String(localized: "Doesn't keep it")
+        case .none: String(localized: "Not at all")
         case .session: String(localized: "For the session")
-        case .persistent: String(localized: "Keeps it")
-        case .unknown: String(localized: "Not known")
+        case .persistent: String(localized: "Beyond the session")
+        case .unknown: String(localized: "Not said")
         }
     }
 }

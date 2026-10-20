@@ -1,4 +1,6 @@
 import AppKit
+import BridgeUI
+import Carbon.HIToolbox
 import BridgeKitCore
 import FunesCore
 
@@ -41,6 +43,15 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         model.tick()
         menu.removeAllItems()
+
+        // While something waits for the user, the first item answers it (UX review F3).
+        if let review = reviewTitle {
+            let item = NSMenuItem(title: review, action: #selector(reviewRequest), keyEquivalent: "")
+            item.target = self
+            if let shortcut = model.preferences.reviewShortcut { Self.setKeyEquivalent(item, shortcut) }
+            menu.addItem(item)
+            menu.addItem(.separator())
+        }
 
         let status = NSMenuItem(title: statusLine, action: #selector(openAgents), keyEquivalent: "")
         status.target = self
@@ -133,6 +144,31 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
                      keyEquivalent: "q")
     }
 
+    /// "Review Cursor's request · 0:13…" for the panel's current item, or the newest pending request;
+    /// nil when nothing waits.
+    private var reviewTitle: String? {
+        if let current = model.services.approvals.queue.current {
+            let agent = current.shortLabel.components(separatedBy: " · ").first ?? current.shortLabel
+            if let seconds = model.services.approvals.queue.remaining(current) {
+                return String(localized: "Review \(agent)'s Request · \(ApprovalQueue.countdown(seconds))…")
+            }
+            return String(localized: "Review \(agent)'s Request…")
+        }
+        guard let newest = model.pending.first(where: { $0.status == .needsApproval }) else { return nil }
+        return String(localized: "Review \(newest.agentName)'s Request · \(newest.minutesLeft(at: model.now)) min left…")
+    }
+
+    /// Shows the global shortcut next to the item (it works from any app, menu open or not).
+    private static func setKeyEquivalent(_ item: NSMenuItem, _ shortcut: Shortcut) {
+        item.keyEquivalent = Shortcut.keyName(shortcut.keyCode).lowercased()
+        var mask: NSEvent.ModifierFlags = []
+        if shortcut.modifiers & UInt32(cmdKey) != 0 { mask.insert(.command) }
+        if shortcut.modifiers & UInt32(optionKey) != 0 { mask.insert(.option) }
+        if shortcut.modifiers & UInt32(controlKey) != 0 { mask.insert(.control) }
+        if shortcut.modifiers & UInt32(shiftKey) != 0 { mask.insert(.shift) }
+        item.keyEquivalentModifierMask = mask
+    }
+
     /// "Funes Vault is on · 3 agents" and its variants.
     var statusLine: String {
         let count = model.agents.count
@@ -160,6 +196,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     // MARK: Actions
 
     @objc private func openAgents() { model.show(.agents) }
+    @objc private func reviewRequest() { model.reviewRequest() }
     @objc private func openRemoteAccess() { model.show(.remoteAccess) }
     /// At once, without asking: the port closes and every cloud agent is cut off.
     @objc private func turnOffRemote() { model.remoteAccess.apply(false) }

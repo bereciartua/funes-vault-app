@@ -56,6 +56,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var capture: CaptureController?
     private var updater: SparkleUpdater?
     private var hotKey: HotKey?
+    private var reviewHotKey: HotKey?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppMover.waitForPreviousCopy()
@@ -100,6 +101,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return false
             }
             preferences.captureShortcut = shortcut
+            return true
+        }
+        // Review Request (⌃⌥⌘R): the keyboard path to a waiting panel, which never takes focus by itself.
+        let approvals = environment.approvals
+        model.reviewRequest = {
+            guard !approvals.review() else { return }
+            if let newest = model.pending.first(where: { $0.status == .needsApproval }) { model.openPendingRequest(newest.id) }
+        }
+        let reviewHotKey = HotKey(id: 2) { model.reviewRequest() }
+        reviewHotKey.register(preferences.reviewShortcut)
+        self.reviewHotKey = reviewHotKey
+        approvals.reviewHint = preferences.reviewShortcut.map { String(localized: "\($0.spoken) to review") }
+        model.setReviewShortcut = { [preferences] shortcut in
+            guard reviewHotKey.register(shortcut) else {
+                reviewHotKey.register(preferences.reviewShortcut)
+                return false
+            }
+            preferences.reviewShortcut = shortcut
+            approvals.reviewHint = shortcut.map { String(localized: "\($0.spoken) to review") }
             return true
         }
         NSApp.servicesProvider = capture
@@ -243,6 +263,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let preferences = self.preferences
         let notifier = self.notifier
         approvals.notice = { [hud] text in hud.show(text, symbol: "hourglass") }
+        approvals.remoteTunnel = { agentID in
+            model.remoteServer?.note(agentID: agentID, near: Date())?.tunnel?.name ?? model.remoteAccess.inUseTunnelProvider?.name
+        }
         approvals.editSuggestion = { id in
             model.inboxState.focused = id
             model.show(.inbox)

@@ -6,12 +6,26 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Added
 
+- **The Share panel says where the text goes.** A "Goes to" line, built only from what Funes Vault knows: "Claude Code on this Mac. It may send what it reads to its AI service.", or for a cloud agent "claude.ai, through your Tailscale Funnel, to Anthropic's servers" with a **Cloud** chip.
+- **Review Request (⌃⌥⌘R), from any app.** It brings a waiting panel forward and makes it key, so Return and Esc answer it; with no panel showing, it opens the newest pending request. The menu's first item does the same while something waits. Change or turn off the shortcut in Settings ▸ General.
+- **More Time** on the Share panel moves the request to Pending requests at once, where it waits up to 15 minutes.
+- **The capture box says when a cloud model sees the text:** "Goes to your Inbox · fields suggested by Anthropic". Settings ▸ Capture says it too.
+
 - **Remote Access offers to move a Tailscale Funnel setup on port 8443 or 10000 to 443.** claude.ai and ChatGPT only connect to 443. Setups from 0.1.1's drafts, or on a port picked by hand, showed as **Running**, or got start commands for the old port.
   - Once 443 can take Funes Vault's paths, the Tunnel row says so and shows the four commands that add them to 443, then the ones that turn off the old port's entry.
   - Then **Address ▸ Edit…** changes the address to the one without a port.
   - BridgeKit 0.4.1.
 
 ### Changed
+
+- **"Wants more access" makes Allow Once the default.** The panel is now "Cursor wants to read Project context", with Not Now and **Allow Once**; Always Allow is a link that names what it adds, never the Return key, and is never cut off.
+- **The Share panel keeps the agent's words apart.** Task, keywords, purpose, how long it keeps what it gets and who it shares with sit in a block marked "The agent says · not checked by Funes". Your own note on the agent shows as "Your note", as the Access tab always promised.
+- **Only strong matches start ticked.** Memories that matched less closely are offered unticked under "Also matched, less closely".
+- **Requests on a clock come first.** When several panels wait, chips at the top show each one with its countdown, most urgent first, so a Save panel never hides a request that is running out. VoiceOver hears one announcement with the time to answer and the shortcut.
+- **An access request nobody answered doesn't block the next one for an hour.** If the panel ran out or was withdrawn, Funes Vault may ask again; Not Now still waits an hour.
+- **The Save panel shows the memory first**, then its details; Edit… is a link.
+- **The cloud limit says what it limits:** "Never send captures above".
+- **The sign-in panel:** Esc denies, it shows until when pairing is open, and VoiceOver reads the code digit by digit.
 
 - **funesvault.com has a new design**, built around the app icon's eye. The privacy statement's section on the website now describes its one script: the Homebrew copy button, and the eye on the home page that follows your pointer. It sends and stores nothing.
 

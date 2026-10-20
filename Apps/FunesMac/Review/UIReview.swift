@@ -55,6 +55,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
         let claudeDesktop: Agent
         let cloudAgent: Agent
         let shareItem: PanelItem
+        let remoteShareItem: PanelItem
     }
 
     private func makeFixture() async throws -> Fixture {
@@ -102,8 +103,15 @@ final class UIReview: NSObject, NSApplicationDelegate {
 
         let panel = try await environment.disclosures.panel(requestID: waiting.requestID!, now: Date())!
         let disclosure = try await environment.disclosures.disclosure(requestID: waiting.requestID!)
-        var share = FunesApprovals.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: Date())
+        var share = FunesApprovals.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: Date(),
+                                             agent: agents.claudeCode)
         share.expiresAt = Date().addingTimeInterval(41.5)
+        // The same request from a cloud agent through the tunnel (Goes to names the vendor).
+        var cloudPanel = panel
+        cloudPanel.agentName = claudeAI.name
+        var remoteShare = FunesApprovals.shareItem(cloudPanel, withheld: [:], now: Date(), agent: claudeAI, remote: true,
+                                                   tunnel: TunnelProvider.tailscaleFunnel.name)
+        remoteShare.expiresAt = Date().addingTimeInterval(41.5)
 
         let emptyDefaults = UserDefaults(suiteName: suiteName + "-empty")!
         let emptyEnvironment = try VaultEnvironment(dataFolder: scratch.appendingPathComponent("empty"), embeddings: false)
@@ -113,7 +121,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
         await empty.refresh()
         let cloudAgent = try await environment.agents.agent(id: claudeAI.id) ?? claudeAI
         return Fixture(model: model, empty: empty, agents: agents, claudeDesktop: claudeDesktop, cloudAgent: cloudAgent,
-                       shareItem: share)
+                       shareItem: share, remoteShareItem: remoteShare)
     }
 
     private func configure(_ model: AppModel) {
@@ -243,21 +251,33 @@ final class UIReview: NSObject, NSApplicationDelegate {
 
             // Panels.
             await panel("share-panel-\(suffix)", fixture.shareItem)
+            // A weaker match offered unticked under "Also matched" (access policy §3.2).
+            var weak = fixture.shareItem
+            if weak.rows.count > 1 {
+                weak.rows[weak.rows.count - 1].weak = true
+                weak.rows[weak.rows.count - 1].selected = false
+            }
+            await panel("share-panel-weak-\(suffix)", weak)
             await panel("save-panel-\(suffix)", saveItem(fixture))
-            var remoteShare = fixture.shareItem
-            remoteShare.facts.insert(PanelItem.Fact(label: String(localized: "Via"), value: String(localized: "Remote Access (a cloud agent)")), at: 0)
-            await panel("share-panel-remote-\(suffix)", remoteShare)
+            await panel("share-panel-remote-\(suffix)", fixture.remoteShareItem)
             await sheet("sign-in-panel-\(suffix)", SignInPanelView(model: model, request: PairingRequest(
                 id: UUID(), clientID: fixture.cloudAgent.id.db, appName: "Claude", appURL: "https://claude.ai/oauth/claude-code-client-metadata",
                 redirectHost: "claude.ai", code: "482 913", expiresAt: Date().addingTimeInterval(300))))
-            await panel("access-panel-\(suffix)", FunesApprovals.accessItem(
+            let access = FunesApprovals.accessItem(
                 AccessPrompt(agentID: fixture.agents.cursor?.id ?? UUID(), categoryKey: "project_context", operation: .read,
                              task: "Summarize the user's current projects", expiresAt: Date().addingTimeInterval(38.5)),
-                agentName: "Cursor", categoryName: "Project context"))
+                agentName: "Cursor", categoryName: "Project context")
+            await panel("access-panel-\(suffix)", access)
+            // Three at once: the access request (on a clock) comes before the Save panel.
+            await panel("panel-queue-\(suffix)", saveItem(fixture), access, fixture.shareItem)
             let box = CaptureBoxModel()
             box.text = "my OpenAI key is sk-proj-" + String(repeating: "x", count: 30)
             box.error = SecretText.message([.openAIStyleKey])
             await sheet("capture-box-\(suffix)", CaptureBox(box: box).padding(20), titled: false)
+            let cloudBox = CaptureBoxModel()
+            cloudBox.text = "Prefers morning meetings before 11"
+            cloudBox.cloudProvider = "Anthropic"
+            await sheet("capture-box-cloud-\(suffix)", CaptureBox(box: cloudBox).padding(20), titled: false)
             await sheet("capture-hud-\(suffix)", HUDView(text: String(localized: "Saved to Inbox"), symbol: "checkmark.circle.fill").padding(20),
                         titled: false)
             await sheet("menu-bar-icons-\(suffix)", MenuIconStrip().padding(16), titled: false)
@@ -279,14 +299,14 @@ final class UIReview: NSObject, NSApplicationDelegate {
         let suggestion = fixture.model.inbox.first { $0.origin == .agent && $0.targetMemoryID == nil }
         return PanelItem(
             id: UUID(), kind: .save, agentID: "", title: String(localized: "Save this memory?"),
+            shortLabel: "Claude Code · save",
             subtitle: String(localized: "From Claude Code. It's in your Inbox either way."),
+            agentSays: [PanelItem.Fact(label: String(localized: "Why"), value: suggestion?.evidence ?? "", collapsible: true)],
             rows: [PanelItem.Row(id: "s", title: suggestion?.title ?? "Prefers Vitest over Jest",
                                  detail: suggestion?.body ?? "", selectable: false)],
             facts: [PanelItem.Fact(label: String(localized: "Kind"), value: MemoryKind.preference.title),
                     PanelItem.Fact(label: String(localized: "Category"), value: "Software development"),
-                    PanelItem.Fact(label: String(localized: "Sensitivity"), value: Sensitivity.low.title),
-                    PanelItem.Fact(label: String(localized: "Why"),
-                                   value: "“\(suggestion?.evidence ?? "")” (as reported)", collapsible: true)],
+                    PanelItem.Fact(label: String(localized: "Sensitivity"), value: Sensitivity.low.title)],
             primary: String(localized: "Save"), secondary: String(localized: "Later"), tertiary: String(localized: "Discard"),
             edit: String(localized: "Edit…"), announcement: "")
     }
@@ -309,12 +329,15 @@ final class UIReview: NSObject, NSApplicationDelegate {
         window.orderOut(nil)
     }
 
-    private func panel(_ name: String, _ item: PanelItem) async {
-        var item = item
-        // Countdowns start now, so a later pass doesn't find them expired.
-        if item.expiresAt != nil { item.expiresAt = Date().addingTimeInterval(41.5) }
+    private func panel(_ name: String, _ items: PanelItem...) async {
         let queue = ApprovalQueue()
-        queue.enqueue(item) { _ in }
+        for item in items {
+            var item = item
+            // Countdowns start now, so a later pass doesn't find them expired. In a queue, the access
+            // request is the one about to run out.
+            if item.expiresAt != nil { item.expiresAt = Date().addingTimeInterval(item.kind == .access && items.count > 1 ? 13.5 : 41.5) }
+            queue.enqueue(item) { _ in }
+        }
         keep.append(queue)
         let height = ApprovalPanelController.idealHeight(for: queue)
         let host = NSHostingController(rootView: ApprovalPanelView(queue: queue, scrolls: false))

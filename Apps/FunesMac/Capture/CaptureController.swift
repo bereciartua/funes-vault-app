@@ -30,6 +30,11 @@ final class CaptureController: NSObject {
         box.text = text
         box.error = error
         box.focusRequest += 1
+        box.cloudProvider = nil
+        if model.preferences.classifyCaptures {
+            let settings = model.modelSettings
+            Task { [box] in box.cloudProvider = await settings.cloudClassifierName() }
+        }
         if let screen = NSScreen.main {
             let frame = screen.visibleFrame
             panel.setFrameOrigin(NSPoint(x: frame.midX - panel.frame.width / 2, y: frame.maxY - panel.frame.height - frame.height * 0.18))
@@ -135,6 +140,9 @@ final class CaptureBoxModel {
     var text = ""
     var error: String?
     var focusRequest = 0
+    /// The cloud provider that proposes the fields for new captures ("Anthropic"); nil when that
+    /// happens on this Mac.
+    var cloudProvider: String?
     @ObservationIgnored var save: (String) -> Bool = { _ in false }
     @ObservationIgnored var cancel: () -> Void = {}
 }
@@ -178,7 +186,18 @@ struct CaptureBox: View {
             HStack {
                 Text(String(localized: "⏎ Save · ⇧⏎ New line · Esc Cancel")).font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Text(String(localized: "Goes to your Inbox")).font(.caption).foregroundStyle(.secondary)
+                if let provider = box.cloudProvider {
+                    Text(String(localized: "Goes to your Inbox · fields suggested by \(provider)"))
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text(String(localized: "Cloud"))
+                        .font(.caption2.weight(.semibold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(Color.orange.opacity(0.2)))
+                        .accessibilityLabel(String(localized: "Leaves this Mac"))
+                } else {
+                    Text(String(localized: "Goes to your Inbox")).font(.caption).foregroundStyle(.secondary)
+                }
             }
         }
         .padding(18)

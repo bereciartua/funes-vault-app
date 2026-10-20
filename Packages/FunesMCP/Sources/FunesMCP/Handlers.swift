@@ -85,7 +85,9 @@ extension RequestPipeline {
                                       expiresAt: deadline, allowsOnce: false)
             let services = self.services, presenter = self.presenter, now = self.now
             Task {
-                if await presenter.askForAccess(prompt) == .alwaysAllow {
+                let answer = await presenter.askForAccess(prompt)
+                if answer == .unanswered { services.disclosures.releaseOffer(offer) }
+                if answer == .alwaysAllow {
                     _ = try? await services.agents.allowCategory(agentID: agent.id, key, now: now())
                 }
             }
@@ -100,7 +102,11 @@ extension RequestPipeline {
             if isQuitting { throw QuitBeforeAsking(requestID: waiting) }
             let prompt = AccessPrompt(agentID: agent.id, categoryKey: key, operation: .read, task: input.task,
                                       expiresAt: deadline)
-            let answer = await presenter.askForAccess(prompt)
+            var answer = await presenter.askForAccess(prompt)
+            if answer == .unanswered {
+                disclosures.releaseOffer(offer)
+                answer = .notNow
+            }
             if answer == .notNow, isQuitting { throw QuitBeforeAsking(requestID: waiting) }
             if answer != .notNow {
                 var grant: OnceGrant?
@@ -289,6 +295,9 @@ extension RequestPipeline {
                 let outcome: SuggestOutcome
                 switch answer {
                 case .notNow: return
+                case .unanswered:
+                    services.disclosures.releaseOffer(offer)
+                    return
                 case .allowOnce:
                     outcome = try await services.suggestions.suggest(agentID: agent.id, input, now: now(), allowOnce: offer,
                                                                      alwaysQueue: true, via: via, credential: credential)
