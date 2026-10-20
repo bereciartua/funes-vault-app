@@ -1,0 +1,322 @@
+import Foundation
+import FunesCore
+import FunesProtocol
+import os
+
+private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category: "companion")
+
+/// The vault services the companion methods use.
+public struct CompanionServices: Sendable {
+    public let store: VaultStore
+    public let devices: DeviceService
+    public let captures: CaptureService
+    public let suggestions: SuggestionService
+    public let search: SearchService
+    public let agents: AgentService
+    public let activity: any ActivityRecorder
+
+    public init(store: VaultStore, devices: DeviceService, captures: CaptureService, suggestions: SuggestionService,
+                search: SearchService, agents: AgentService, activity: any ActivityRecorder) {
+        self.store = store
+        self.devices = devices
+        self.captures = captures
+        self.suggestions = suggestions
+        self.search = search
+        self.agents = agents
+        self.activity = activity
+    }
+}
+
+/// The companion methods (§4). Each acts as the **owner** (access policy §6): no agent access,
+/// panels or ceilings, but the same validation and secret scanner, and Activity rows under
+/// `device:<id>`. FunesCore logs the writes; this logs the reads. `status.get`, the phone's
+/// reachability probe, isn't logged.
+public final class CompanionHandlers: Sendable {
+    public static let callTimeout: Duration = .seconds(10)
+    static let snippetLength = 160
+
+    let services: CompanionServices
+    let macName: @Sendable () -> String
+    let appVersion: String
+
+    public init(services: CompanionServices, macName: @escaping @Sendable () -> String, appVersion: String) {
+        self.services = services
+        self.macName = macName
+        self.appVersion = appVersion
+    }
+
+    /// The reply JSON for a request's plaintext. Never throws: every failure is an error reply.
+    func handle(_ plaintext: Data, deviceID: UUID, limits: DeviceLimits, now: Date) async -> Data {
+        let head: CompanionRequestHead
+        do { head = try CompanionRequestHead(plaintext: plaintext) } catch { return Self.errorReply(id: "", error) }
+        guard let method = head.method else {
+            return Self.errorReply(id: head.id, CompanionError(.unknownMethod))
+        }
+        let device = deviceID
+        return await withTimeout(id: head.id) { [self] in
+            switch method {
+            case .statusGet: return await run(StatusGet.self, head) { _ in try await status(now: now) }
+            case .capturesSubmit:
+                return await run(CapturesSubmit.self, head) { try await submit($0, device: device, limits: limits, now: now) }
+            case .categoriesList: return await run(CategoriesList.self, head) { _ in try await categories(device: device, now: now) }
+            case .memoriesSearch: return await run(MemoriesSearch.self, head) { try await search($0, device: device, now: now) }
+            case .memoriesGet: return await run(MemoriesGet.self, head) { try await memory($0.id, device: device, now: now) }
+            case .memoriesCreate: return await run(MemoriesCreate.self, head) { try await create($0, device: device, now: now) }
+            case .memoriesUpdate: return await run(MemoriesUpdate.self, head) { try await update($0, device: device, now: now) }
+            case .memoriesArchive:
+                return await run(MemoriesArchive.self, head) { try await setStatus($0, .archived, device: device, now: now) }
+            case .memoriesRestore:
+                return await run(MemoriesRestore.self, head) { try await setStatus($0, .active, device: device, now: now) }
+            case .memoriesDelete:
+                return await run(MemoriesDelete.self, head) { try await setStatus($0, .deleted, device: device, now: now) }
+            case .inboxList: return await run(InboxList.self, head) { try await inbox($0, device: device, now: now) }
+            case .inboxApply: return await run(InboxApply.self, head) { try await apply($0, device: device, now: now) }
+            case .inboxReject: return await run(InboxReject.self, head) { try await reject($0, device: device, now: now) }
+            case .deviceUnpair: return await run(DeviceUnpair.self, head) { _ in try await unpair(device: device, now: now) }
+            }
+        }
+    }
+
+    // MARK: Methods
+
+    func status(now: Date) async throws -> CompanionStatus {
+        let pending = try await services.suggestions.pending().count
+        return CompanionStatus(macName: macName(), appVersion: appVersion, serverTime: now, inboxPending: pending, vaultActive: true)
+    }
+
+    /// Each capture on its own, so one bad capture doesn't refuse the rest. A duplicate
+    /// `captureId` is accepted without storing anything (§6).
+    func submit(_ params: CapturesSubmitParams, device: UUID, limits: DeviceLimits, now: Date) async throws -> CapturesSubmitResult {
+        try params.validate()
+        let admitted = await limits.admitCaptures(deviceID: device, count: params.captures.count, now: now)
+        var accepted: [UUID] = []
+        var rejected: [CaptureRejection] = []
+        for (index, capture) in params.captures.enumerated() {
+            guard index < admitted else {
+                rejected.append(CaptureRejection(captureId: capture.captureId, reason: .rateLimited))
+                continue
+            }
+            let text = capture.note.map { capture.text + "\n\n" + $0 } ?? capture.text
+            do {
+                _ = try await services.captures.capture(text, origin: .captureIPhone, captureID: capture.captureId,
+                                                        deviceID: device, now: now)
+                accepted.append(capture.captureId)
+            } catch let error as VaultError {
+                if error == .unauthenticated { throw error }
+                rejected.append(CaptureRejection(captureId: capture.captureId, reason: Self.code(for: error).code))
+            }
+        }
+        return CapturesSubmitResult(accepted: accepted, rejected: rejected)
+    }
+
+    func categories(device: UUID, now: Date) async throws -> [CompanionCategory] {
+        let all = try services.store.categories()
+        logRead("categories_listed", device: device, now: now)
+        return all.map(CompanionCategory.init)
+    }
+
+    func search(_ params: MemorySearchParams, device: UUID, now: Date) async throws -> MemorySearchResult {
+        try params.validate()
+        let filter = MemoryFilter(status: Self.status(params.filters?.status),
+                                  categoryKeys: Set(params.filters?.categories ?? []), kinds: Set(params.filters?.kinds ?? []),
+                                  sensitivities: Set(params.filters?.sensitivities ?? []))
+        let hits = try await services.search.vaultSearch(params.query, filter: filter, now: now)
+        let offset = params.cursor.flatMap(Self.offset(from:)) ?? 0
+        let limit = params.limit ?? 20
+        let page = Array(hits.dropFirst(offset).prefix(limit))
+        let memories = try services.store.memories(ids: page.map(\.memoryID))
+        let byID = Dictionary(uniqueKeysWithValues: memories.map { ($0.id, $0) })
+        let results = page.compactMap { byID[$0.memoryID] }.map { m in
+            MemorySummary(id: m.id, title: m.title, snippet: Self.snippet(m.body), kind: m.kind, categories: m.categoryKeys,
+                          sensitivity: m.sensitivity, updatedAt: m.updatedAt, expiresAt: m.expiresAt)
+        }
+        let next = offset + page.count < hits.count ? Self.cursor(offset + page.count) : nil
+        logRead("memories_searched", device: device, now: now, counts: ["results": results.count])
+        return MemorySearchResult(results: results, nextCursor: next)
+    }
+
+    func memory(_ id: UUID, device: UUID, now: Date) async throws -> CompanionMemory {
+        guard let memory = try services.store.memory(id: id) else { throw VaultError.notFound }
+        let provenance = try services.store.provenance(memoryID: id)
+        let deviceNames = try await deviceNames()
+        let agentNames = try await agentNames()
+        let labels = provenance.map { entry in
+            ProvenanceLabel(at: entry.at, event: entry.event.rawValue,
+                            label: Self.label(entry.actor, devices: deviceNames, agents: agentNames))
+        }
+        let shared = try await services.devices.sharing(memoryID: id)
+        logRead("memory_viewed", device: device, now: now, ids: [id])
+        return CompanionMemory(memory: memory, provenance: labels, sharedCount: shared.count, lastSharedAt: shared.last)
+    }
+
+    func create(_ params: MemoryCreateParams, device: UUID, now: Date) async throws -> MemoryCreated {
+        let memory = try await services.devices.createMemory(deviceID: device, MemoryDraft(
+            title: params.title, body: params.body, kind: params.kind, categoryKeys: params.categories,
+            sensitivity: params.sensitivity, expiresAt: params.expiresAt), now: now)
+        return MemoryCreated(id: memory.id, version: memory.version)
+    }
+
+    func update(_ params: MemoryUpdateParams, device: UUID, now: Date) async throws -> MemoryVersion {
+        guard !params.changes.isEmpty else { throw CompanionError(.invalidInput, message: "No changes") }
+        let memory = try await services.devices.updateMemory(deviceID: device, memoryID: params.id, Self.edit(params.changes),
+                                                             expectedVersion: params.version, now: now)
+        return MemoryVersion(version: memory.version)
+    }
+
+    func setStatus(_ ref: MemoryVersionRef, _ status: MemoryStatus, device: UUID, now: Date) async throws -> MemoryVersion {
+        let memory = try await services.devices.setMemoryStatus(deviceID: device, memoryID: ref.id, to: status,
+                                                                expectedVersion: ref.version, now: now)
+        return MemoryVersion(version: memory.version)
+    }
+
+    func inbox(_ params: InboxListParams, device: UUID, now: Date) async throws -> InboxListResult {
+        let pending = try await services.suggestions.pending()
+        let offset = params.cursor.flatMap(Self.offset(from:)) ?? 0
+        let page = Array(pending.dropFirst(offset).prefix(50))
+        let deviceNames = try await deviceNames()
+        let agentNames = try await agentNames()
+        let items = page.map { s in
+            InboxItem(id: s.id, origin: s.origin, action: s.action,
+                      sourceLabel: Self.sourceLabel(s, devices: deviceNames, agents: agentNames), targetMemoryId: s.targetMemoryID,
+                      title: s.title, body: s.body, kind: s.kind ?? .fact, categories: s.categoryKeys,
+                      sensitivity: s.sensitivity ?? .low, expiresAt: s.expiresAt, evidence: s.evidence, purpose: s.purpose,
+                      createdAt: s.createdAt)
+        }
+        let next = offset + page.count < pending.count ? Self.cursor(offset + page.count) : nil
+        logRead("inbox_listed", device: device, now: now, counts: ["items": items.count])
+        return InboxListResult(items: items, nextCursor: next)
+    }
+
+    func apply(_ params: InboxApplyParams, device: UUID, now: Date) async throws -> InboxApplied {
+        let edits = params.edits.map(Self.suggestionEdit) ?? SuggestionEdit()
+        let result = try await services.suggestions.apply(suggestionID: params.suggestionId, edits: edits, now: now,
+                                                          actor: .device(device), via: .companion)
+        return InboxApplied(memoryId: result.memoryID)
+    }
+
+    func reject(_ params: SuggestionID, device: UUID, now: Date) async throws -> EmptyResult {
+        try await services.suggestions.reject(suggestionID: params.suggestionId, now: now, actor: .device(device), via: .companion)
+        return EmptyResult()
+    }
+
+    func unpair(device: UUID, now: Date) async throws -> EmptyResult {
+        try await services.devices.revoke(deviceID: device, now: now, actor: .device(device))
+        return EmptyResult()
+    }
+
+    // MARK: Plumbing
+
+    private func run<Call: CompanionCall>(_ call: Call.Type, _ head: CompanionRequestHead,
+                                          _ body: (Call.Params) async throws -> Call.Result) async -> Data {
+        do {
+            let params = try head.params(Call.self)
+            let result = try await body(params)
+            return (try? CompanionResponse(id: head.id, result: result).encoded()) ?? Self.errorReply(id: head.id, CompanionError(.internalError))
+        } catch let error as CompanionError {
+            return Self.errorReply(id: head.id, error)
+        } catch let error as VaultError {
+            return Self.errorReply(id: head.id, Self.code(for: error))
+        } catch {
+            logger.error("A companion method failed")
+            return Self.errorReply(id: head.id, CompanionError(.internalError))
+        }
+    }
+
+    /// 10 s per call (§7); a slower one answers `unavailable` and keeps running to its end.
+    private func withTimeout(id: String, _ work: @escaping @Sendable () async -> Data) async -> Data {
+        await withTaskGroup(of: Data?.self) { group in
+            group.addTask { await work() }
+            group.addTask {
+                try? await Task.sleep(for: Self.callTimeout)
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first ?? Self.errorReply(id: id, CompanionError(.unavailable, message: "Timed out"))
+        }
+    }
+
+    static func errorReply(id: String, _ error: CompanionError) -> Data {
+        (try? CompanionResponse<EmptyResult>(id: id, error: error).encoded()) ?? Data()
+    }
+
+    static func code(for error: VaultError) -> CompanionError {
+        switch error {
+        case let .secretLikeContent(findings): CompanionError(.secretLikeContent, findings: findings)
+        case .notFound: CompanionError(.notFound)
+        case .versionConflict, .invalidState, .snapshotChanged, .revisionChanged: CompanionError(.conflict)
+        case .newerSchema, .unsafeFile: CompanionError(.unavailable)
+        case .unauthenticated: CompanionError(.notFound)
+        case let .invalidInput(field): CompanionError(.invalidInput, message: field)
+        case let .unknownCategory(key): CompanionError(.invalidInput, message: "Unknown category \(key)")
+        case .noCategories, .builtinCategory, .categoryExists, .categoryInUse, .onlyAllowedCategory, .nameTaken:
+            CompanionError(.invalidInput)
+        }
+    }
+
+    private func logRead(_ event: String, device: UUID, now: Date, ids: [UUID] = [], counts: [String: Int] = [:]) {
+        services.activity.record(ActivityEvent(time: now, phase: .event, actor: .device(device), via: .companion, event: event,
+                                               outcome: "ok", ids: ids, counts: counts))
+    }
+
+    private func deviceNames() async throws -> [UUID: String] {
+        Dictionary(uniqueKeysWithValues: try await services.devices.devices(includingRevoked: true).map { ($0.id, $0.name) })
+    }
+
+    private func agentNames() async throws -> [UUID: String] {
+        Dictionary(uniqueKeysWithValues: try await services.agents.agents(includingRemoved: true).map { ($0.id, $0.name) })
+    }
+
+    static func status(_ status: MemoryStatus?) -> MemoryFilter.StatusFilter {
+        switch status {
+        case .archived: .archived
+        case .deleted: .recentlyDeleted
+        case .active, nil: .active
+        }
+    }
+
+    static func snippet(_ body: String) -> String {
+        let flat = body.split(whereSeparator: \.isNewline).joined(separator: " ")
+        return flat.count <= snippetLength ? flat : String(flat.prefix(snippetLength - 1)) + "…"
+    }
+
+    static func cursor(_ offset: Int) -> String { Base64URL.encode(Data("o:\(offset)".utf8)) }
+
+    static func offset(from cursor: String) -> Int? {
+        guard let data = Base64URL.decode(cursor), let text = String(data: data, encoding: .utf8), text.hasPrefix("o:"),
+              let n = Int(text.dropFirst(2)), n >= 0 else { return nil }
+        return n
+    }
+
+    static func edit(_ changes: MemoryChanges) -> MemoryEdit {
+        MemoryEdit(title: changes.title, body: changes.body, kind: changes.kind, categoryKeys: changes.categories,
+                   sensitivity: changes.sensitivity, expiresAt: changes.expiresAt)
+    }
+
+    static func suggestionEdit(_ changes: MemoryChanges) -> SuggestionEdit {
+        SuggestionEdit(title: changes.title, body: changes.body, kind: changes.kind, categoryKeys: changes.categories,
+                       sensitivity: changes.sensitivity, expiresAt: changes.expiresAt)
+    }
+
+    static func label(_ actor: String, devices: [UUID: String], agents: [UUID: String]) -> String {
+        let parts = actor.split(separator: ":", maxSplits: 1).map(String.init)
+        guard parts.count == 2, let id = UUID(uuidString: parts[1]) else { return actor == "user" ? "You" : actor }
+        switch parts[0] {
+        case "device": return devices[id] ?? "iPhone"
+        case "agent": return agents[id] ?? "Agent"
+        case "import": return "Import"
+        default: return actor
+        }
+    }
+
+    static func sourceLabel(_ s: Suggestion, devices: [UUID: String], agents: [UUID: String]) -> String {
+        switch s.origin {
+        case .agent: s.agentID.flatMap { agents[$0] } ?? "Agent"
+        case .captureIPhone: s.deviceID.flatMap { devices[$0] } ?? "iPhone"
+        case .captureMac: "Mac"
+        case .import: "Import"
+        case .seedQuestion: "A Few Questions"
+        case .consolidation: "Funes"
+        }
+    }
+}

@@ -16,6 +16,7 @@ swift test --package-path Packages/FunesProtocol
 swift test --package-path Packages/FunesCore
 swift test --package-path Packages/FunesMCP
 swift test --package-path Packages/BridgeUI
+swift test --package-path Packages/FunesCompanion
 # The MCP tool paths over loopback, against the FUNES_MCP_TEST server.
 swift build --package-path Packages/FunesMCP --product funes-mcp-test-server
 PYTHONPYCACHEPREFIX="$PWD/build/pycache" python3 Tests/mcp/mcp_test.py \

@@ -248,7 +248,7 @@ enum ActivityText {
     /// The agent or device: "Claude Code", "iPhone", "You", "Funes Vault".
     static func who(_ entry: ActivityEntry, model: AppModel) -> String {
         if let id = entry.agentID { return model.agentName(id) }
-        if entry.deviceID != nil { return String(localized: "iPhone") }
+        if let id = entry.deviceID { return model.companion.devices.first { $0.id == id }?.name ?? String(localized: "iPhone") }
         if entry.event.actor == "user" { return String(localized: "You") }
         if entry.event.actor.hasPrefix("import:") { return String(localized: "Import") }
         return String(localized: "Funes Vault")
@@ -264,7 +264,8 @@ enum ActivityText {
         case "request_memory" where e.outcome != "fulfilled":
             let withheld = e.counts.values.reduce(0, +)
             return withheld > 0 ? String(localized: "\(withheld) withheld") : ""
-        case "import", "export", "funes_paused", "funes_resumed", "approval", "list_memory_categories", "open_in_funes":
+        case "import", "export", "funes_paused", "funes_resumed", "approval", "list_memory_categories", "open_in_funes",
+             "memories_searched", "inbox_listed", "categories_listed", "device_paired", "device_revoked":
             return ""
         default:
             let titles = e.ids.prefix(3).map(model.activity.title)
@@ -420,7 +421,8 @@ struct ActivityInspector: View {
     private var memoryIDs: [UUID] {
         switch entry.event.event {
         case "request_memory", "get_memory_request", "suggest_memory", "capture", "suggestion_applied", "suggestion_rejected",
-             "seed_question", "memory_created", "memory_edited":
+             "seed_question", "memory_created", "memory_edited", "memory_archived", "memory_restored", "memory_deleted",
+             "memory_viewed":
             entry.event.ids
         default: []
         }

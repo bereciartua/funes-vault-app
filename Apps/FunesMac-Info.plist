@@ -20,6 +20,14 @@
 	<integer>86400</integer>
 	<key>SUAllowsAutomaticUpdates</key>
 	<false/>
+	<!-- iPhone access (task 5.2): macOS asks for Local Network access before the companion
+	     listener advertises _funes._tcp over Bonjour. -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Funes Vault listens for your paired iPhone on your local network, so it can send captures and reach your vault.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_funes._tcp</string>
+	</array>
 	<key>NSServices</key>
 	<array>
 		<dict>

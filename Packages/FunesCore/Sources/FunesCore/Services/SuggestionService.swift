@@ -260,7 +260,7 @@ public final class SuggestionService: Sendable {
     /// the suggestion's status (FR-I-02). Runs validation and the secret scanner again.
     @discardableResult
     public func apply(suggestionID: UUID, edits: SuggestionEdit = SuggestionEdit(), mode: ApplyMode = .keepBoth,
-                      now: Date) async throws -> ApplyResult {
+                      now: Date, actor: Actor = .user, via: ActivityEvent.Via = .app) async throws -> ApplyResult {
         let result = try await store.writer.write { db -> ApplyResult in
             guard let s = try Self.fetch(db, id: suggestionID) else { throw VaultError.notFound }
             guard s.status == .pending else { throw VaultError.invalidState }
@@ -275,7 +275,7 @@ public final class SuggestionService: Sendable {
                let existing = try MemoryStore.fetch(db, id: target), existing.status != .deleted {
                 let m = try MemoryStore.update(db, id: target, MemoryEdit(
                     title: title, body: body, kind: edits.kind ?? s.kind, categoryKeys: categories,
-                    sensitivity: edits.sensitivity ?? s.sensitivity, expiresAt: .some(expiresAt)), actor: .user, now: now)
+                    sensitivity: edits.sensitivity ?? s.sensitivity, expiresAt: .some(expiresAt)), actor: actor, now: now)
                 memoryID = m.id
             } else {
                 let m = try MemoryStore.insert(db, MemoryDraft(
@@ -284,13 +284,13 @@ public final class SuggestionService: Sendable {
                     source: origin.source, sourceAgentID: s.agentID, sourceDeviceID: s.deviceID), actor: origin.actor, now: now)
                 memoryID = m.id
             }
-            try MemoryStore.appendProvenance(db, memoryID: memoryID, event: .appliedFromSuggestion, actor: .user, at: now)
+            try MemoryStore.appendProvenance(db, memoryID: memoryID, event: .appliedFromSuggestion, actor: actor, at: now)
             try db.execute(sql: "UPDATE suggestion SET status = 'applied', decided_at = ?, result_memory_id = ? WHERE id = ?",
                            arguments: [now, memoryID.db, suggestionID.db])
             let similar = try MemoryStore.exactDuplicates(db, title: title, body: body, excluding: memoryID)
             return ApplyResult(memoryID: memoryID, similarMemoryIDs: similar)
         }
-        activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "suggestion_applied",
+        activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "suggestion_applied",
                                       outcome: "applied", ids: [suggestionID, result.memoryID]))
         return result
     }
@@ -317,9 +317,9 @@ public final class SuggestionService: Sendable {
     }
 
     /// Reject / Discard (FR-I-02). Activity keeps the id only.
-    public func reject(suggestionID: UUID, now: Date) async throws {
+    public func reject(suggestionID: UUID, now: Date, actor: Actor = .user, via: ActivityEvent.Via = .app) async throws {
         try await setStatus(suggestionID, from: .pending, to: .rejected, now: now)
-        activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "suggestion_rejected",
+        activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "suggestion_rejected",
                                       outcome: "rejected", ids: [suggestionID]))
     }
 

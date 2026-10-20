@@ -40,7 +40,7 @@ The QR code is the out-of-band trust anchor: it carries the Mac's public keys.
    - the proof `P` is valid (constant-time comparison);
    - the device signature is valid.
 
-   It then shows **"<deviceName> wants to pair · Allow / Deny"** on the Mac. This is a second factor, so a leaked photo of the QR code isn't enough.
+   It then shows **"<deviceName> wants to pair · Allow / Deny"** on the Mac. This is a second factor, so a leaked photo of the QR code isn't enough. The HTTP request waits for the answer, up to 60 s (then it's a Deny), so the phone waits at least 65 s for this call. While the Mac asks, other attempts on the same session are refused.
 4. **On Allow,** the Mac:
    - stores the Device;
    - deletes the pairing secret (single use);
@@ -56,6 +56,7 @@ Limits: at most 5 paired devices, and 3 pairing attempts per pairing session.
   - The signature is over `"funes-pair-req-v1" ‖ v ‖ ts ‖ nonce ‖ enc ‖ ct`, with the device signing key the sealed body carries, so the Mac opens first and then verifies.
   - `|now − ts| ≤ 120 s`, otherwise `pairing_expired`.
 - **Mac → phone:** `{"v":1,"enc":…,"ct":…,"sig":…}`, sealed to the device HPKE key with `info = "funes-pair-confirm-v1"` and `aad = "funes-pair-confirm-v1" ‖ v ‖ request nonce`. Signed by the Mac over `"funes-pair-confirm-sig-v1" ‖ v ‖ request nonce ‖ enc ‖ ct`. The request nonce binds the answer to that one request.
+- **Both endpoints** take `Content-Type: application/funes-envelope+json` and `POST` only. Otherwise the reply is `415` or `405`, and an unknown path is `404`.
 - **Failures** are HTTP `403` with a plaintext `{"error":"<code>"}`: `pairing_expired` (unknown or expired session), `pairing_invalid` (wrong proof), `pairing_denied`, `too_many_attempts`, `too_many_devices`, `invalid_request` (malformed, unreadable or badly signed).
 
 ## 3. Request envelope (every call after pairing)
@@ -98,7 +99,9 @@ When a device's 10,000 slots are full, the oldest nonce is dropped and its `ts` 
 **Response JSON:** `{"id":"<call id>","result":{…}}` or `{"id":"…","error":{"code":"…","message":"…"}}`.
 
 ## 4. Methods
-All methods act as the **owner** ([access policy §6](../domain/access-policy.md#6-owner-devices-paired-iphone)). Each is logged in Activity as `device:<id>`.
+All methods act as the **owner** ([access policy §6](../domain/access-policy.md#6-owner-devices-paired-iphone)). Each is logged in Activity as `device:<id>` (via `companion`), except `status.get`, the reachability probe the phone sends on every foreground. Reads log one row without text (`memories_searched` with a result count, `memory_viewed`, `inbox_listed`, `categories_listed`). Writes log what FunesCore logs for them (`capture`, `memory_created`, `memory_edited`, `memory_archived`, `memory_restored`, `memory_deleted`, `suggestion_applied`, `suggestion_rejected`, `device_revoked`).
+
+**Implementation (task 5.2):** the Mac's side is the local package `Packages/FunesCompanion`: `CompanionListener`, `CompanionRouter`, `PairingService`, `CompanionHandlers` and `CompanionServer`, on FunesCore and BridgeKitCore's HTTP parser. The app adds only Settings ▸ iPhone and the Allow prompt. The Mac's id and keys are a Keychain item, service `com.funesvault.companion` (`.dev` for a development vault).
 
 | Method | Params | Result |
 |---|---|---|
@@ -128,7 +131,7 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 **Edits:** in `changes` (and `inbox.apply`'s `edits`), an absent field is unchanged; `"expiresAt": null` removes the expiry.
 
 ## 5. Transport and reachability
-- **Listener:** `NWListener` on TCP 47626, only while iPhone access is on. It accepts or rejects each connection by **remote address**, according to the enabled modes:
+- **Listener:** `NWListener` on TCP 47626 (the `CompanionPort` preference), only while iPhone access is on, which is off by default. With only tunnel mode on, it also sets `acceptLocalOnly`. It accepts or rejects each connection by **remote address**, according to the enabled modes:
 
 | Mode | Accepted source addresses |
 |---|---|
@@ -143,7 +146,9 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
   - `NSLocalNetworkUsageDescription`, and `NSBonjourServices = ["_funes._tcp"]` (triggers the Local Network permission prompt);
   - ATS `NSAllowsLocalNetworking` for `.local` hosts and IP addresses.
   - Tailscale is reached by its 100.x IP, not a MagicDNS name, to stay within that ATS exception. The tunnel uses HTTPS.
-- **Bonjour:** the Mac advertises `_funes._tcp` on port 47626, with TXT `v=1`, `mac=<SHA-256(macId) first 8 bytes hex>`. The phone browses with `NWBrowser` and matches the hash.
+- **Bonjour:** while Same Wi-Fi is on, the Mac advertises `_funes._tcp` on port 47626, with TXT `v=1`, `mac=<SHA-256(macId) first 8 bytes hex>` (the hash of the lowercase id string). The phone browses with `NWBrowser` and matches the hash. The Mac app's Info.plist has `NSLocalNetworkUsageDescription` and `NSBonjourServices` for macOS's Local Network permission.
+- **HTTP refusals before the envelope:** tunnel requests without the secret prefix `404`, with the wrong `Host` `421`; a `/r/…` path off the tunnel `404`; a body over 256 KiB `413`. The whole request must arrive within 10 s of its first byte (`408`), and an idle connection closes after 30 s.
+- **The QR code's addresses:** the Mac's `.local` name and its current LAN IPv4 address (Same Wi-Fi), its `100.x` address (Tailscale), and `https://<public host>/r/<secret>` (tunnel). Only enabled modes are listed. **Reset Path** in Settings makes a new secret; phones learn it by pairing again.
 - **Address selection (phone):**
   1. A Bonjour hit for the paired Mac.
   2. The saved Tailscale IP.
@@ -172,10 +177,10 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 - **Backoff:** exponential from 5 s to 30 min while unreachable. It resets on a path change or the app coming to the foreground.
 
 ## 7. Limits (per device)
-- 300 calls per minute;
-- 50 captures per call, 2,000 per day;
+- 300 calls per minute (then `rate_limited` with `retry_after_s`, inside the encrypted reply);
+- 50 captures per call, 2,000 per day (captures over the day's limit come back as `rejected` with `rate_limited`);
 - 256 KiB request body;
-- 10 s per call.
+- 10 s per call (then `unavailable`; the work still finishes on the Mac, and a capture's receipt keeps a resend from duplicating it).
 
 ## 8. Revocation and unpairing
 - **Revoke on the Mac:** the device row gets `revokedAt`. Its next request gets `401 revoked`. The phone shows the revoked state and keeps its queued captures until the user re-pairs or deletes them.

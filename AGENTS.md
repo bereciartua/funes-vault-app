@@ -16,6 +16,7 @@ When a design changes, update the spec in the same change and add an ADR for arc
 - `Packages/FunesProtocol/`: shared Mac + iOS types and logic. **No dependencies** beyond system frameworks.
 - `Packages/FunesCore/`: vault logic, Mac only. Depends on FunesProtocol and GRDB. **No AppKit, SwiftUI, MCP or networking UI** here.
 - `Packages/FunesMCP/`: the MCP adapter: tool contract (`Sources/FunesMCP/Resources/mcp-tools.json`), `RequestPipeline`, handlers, key files, and the `funes-mcp-test-server` (FUNES_MCP_TEST) the Python harness drives. Depends on FunesCore and BridgeKit; no AppKit ([ADR-0017](spec/architecture/decisions/0017-funes-mcp-package.md)).
+- `Packages/FunesCompanion/`: the Mac's side of the iPhone companion: the listener on 47626, pairing, the device registry and the method handlers, which call FunesCore as the owner. Depends on FunesCore, FunesProtocol and BridgeKitCore (its HTTP parser); no AppKit.
 - `Packages/BridgeUI/`: UI pieces copied from EK Bridge (tier 2): `Upstream/` as copied, `Sources/BridgeUI/` adapted (approval queue and panels, Activity store, agent and cloud setups, one-click setup, Remote Access page logic). See its `PROVENANCE.md`.
 - `Apps/FunesMCPLauncher/`: the `funes-mcp` launcher, embedded in `FunesVault.app/Contents/MacOS/`.
 - `FunesVault.xcodeproj`: plain Xcode project using folder-synchronized groups, so new source files in `Apps/*` need no project-file edits.
@@ -37,6 +38,9 @@ swift test --package-path Packages/FunesMCP
 ```
 ```bash
 swift test --package-path Packages/BridgeUI
+```
+```bash
+swift test --package-path Packages/FunesCompanion
 ```
 ```bash
 swift build --package-path Packages/FunesMCP --product funes-mcp-test-server

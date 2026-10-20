@@ -1,5 +1,6 @@
 import BridgeUI
 import Foundation
+import FunesCompanion
 import FunesCore
 import FunesMCP
 import FunesProtocol
@@ -20,6 +21,7 @@ final class VaultEnvironment {
     let disclosures: DisclosureService
     let suggestions: SuggestionService
     let captures: CaptureService
+    let devices: DeviceService
     let imports: ImportService
     private(set) var indexer: EmbeddingIndexer?
     private var observation: AnyObject?
@@ -54,6 +56,7 @@ final class VaultEnvironment {
         disclosures = DisclosureService(store: store, retriever: search, activity: activity, pause: pause)
         suggestions = SuggestionService(store: store, activity: activity, pause: pause, disclosures: disclosures)
         captures = CaptureService(store: store, activity: activity)
+        devices = DeviceService(store: store, activity: activity)
         imports = ImportService(store: store, activity: activity)
         if let indexer {
             try? indexer.loadIndex()
@@ -65,6 +68,12 @@ final class VaultEnvironment {
     var services: FunesServices {
         FunesServices(store: store, agents: agents, disclosures: disclosures, suggestions: suggestions, pause: pause,
                       activity: activity)
+    }
+
+    /// The vault services the iPhone companion uses (task 5.2).
+    var companionServices: CompanionServices {
+        CompanionServices(store: store, devices: devices, captures: captures, suggestions: suggestions, search: search,
+                          agents: agents, activity: activity)
     }
 
     /// Whether vault search and agent retrieval use the bundled model (ADR-0016).

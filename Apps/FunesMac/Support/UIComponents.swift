@@ -261,6 +261,7 @@ enum ErrorText {
         case .unsafeFile: return String(localized: "A vault file has unsafe permissions.")
         case .unauthenticated: return String(localized: "Not allowed.")
         case .revisionChanged: return String(localized: "It changed in the meantime. Review it again.")
+        case .versionConflict: return String(localized: "It changed in the meantime. Look again and retry.")
         }
     }
 }

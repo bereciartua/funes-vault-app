@@ -4,6 +4,14 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+### Added
+
+- **Groundwork for the iPhone app (v0.2): iPhone access on the Mac.** Hidden in Release builds until the iPhone app is out.
+  - A new Settings ▸ iPhone turns on iPhone access (off by default) and chooses how the phone reaches this Mac: Same Wi-Fi, Tailscale or a public tunnel.
+  - **Pair iPhone…** shows a QR code for 5 minutes, then asks "“Sam's iPhone” wants to pair" with Allow or Deny. Paired iPhones are listed with when they were last seen, and **Remove…** cuts one off.
+  - Everything the phone sends is end-to-end encrypted to this Mac. A paired iPhone acts as you, and what it does shows in Activity under its name.
+  - macOS asks for Local Network access the first time iPhone access is on.
+
 ## [0.1.4] - 2026-10-20
 
 ### Added
