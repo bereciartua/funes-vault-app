@@ -194,6 +194,10 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 model.section = .activity
                 model.activity.selection = model.activity.entries.first(where: { $0.event.event == "request_memory" })?.id
             }
+            // The same page at the window's minimum width, where the filters take two lines.
+            main.window?.setContentSize(NSSize(width: MainWindowController.minimumSize.width, height: 680))
+            await mainScene("activity-narrow") {}
+            main.window?.setContentSize(NSSize(width: 1_040, height: 680))
 
             // Remote Access: before setup, the guide, set up, and an agent's Cloud tab.
             let remote = model.remoteAccess

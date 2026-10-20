@@ -11,6 +11,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - Then **Address ▸ Edit…** changes the address to the one without a port.
   - BridgeKit 0.4.1.
 
+### Fixed
+
+- **Activity fits the window again.** Since the Remote Access filter, the filter row was wider than the page at the default window size, so the page slid under the sidebar and cut off the title, Pending requests and the table's first columns. The agent and period pickers and search now move to a second line when the row doesn't fit, and the Event and Detail columns can get narrower, down to the window's minimum width.
+
 ## [0.1.2] - 2026-10-19
 
 The first public preview. 0.1.0 and 0.1.1 were preview builds, kept on GitHub as pre-releases: everything in them below is in 0.1.2, with this fix in place of 0.1.1's.
