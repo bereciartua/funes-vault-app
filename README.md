@@ -239,7 +239,7 @@ Notifications, shown by macOS, never include memory text. What an agent receives
 
 ## Building from source
 
-You need macOS 15 or later, Xcode 27 and Python 3.11 (to convert the embedding model once, and for the MCP test harness).
+You need Xcode 27 (which runs on macOS 26.6 or later) and Python 3.11 (to convert the embedding model once). The app you build runs on macOS 15 or later.
 
 ```sh
 sh scripts/fetch_embedding_model.sh

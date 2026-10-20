@@ -14,14 +14,14 @@ The product is defined in [`spec/`](spec/README.md), and it's the source of trut
 
 ## Build and test
 
-You need macOS 15 or later, Xcode 27 and Python 3.11.
+You need Xcode 27 (which runs on macOS 26.6 or later) and Python 3.11 for fetching the embedding model. The app itself runs on macOS 15 or later.
 
 ```sh
 sh scripts/fetch_embedding_model.sh   # once: the bundled embedding model, cached in ~/Library/Caches/com.funesvault.dev
 sh scripts/test.sh                    # everything: package tests, the MCP harness, goldens, checks and builds
 ```
 
-`test.sh` runs the log-privacy check, the tests of the four packages, the Python MCP harness against `funes-mcp-test-server`, an unsigned Debug build, the UI-review build and the string catalog check. Without the model, the model-dependent tests skip; CI requires it. [Testing](docs/TESTING.md) lists what each part covers. To run one package:
+`test.sh` runs the log-privacy check, a check that models are called only through `ModelRouter.send`, the tests of the four packages, the Python MCP and Remote Access harnesses against `funes-mcp-test-server`, an unsigned Debug build, the UI-review build and the string catalog check. Without the model, the model-dependent tests skip; CI requires it. [Testing](docs/TESTING.md) lists what each part covers. To run one package:
 
 ```sh
 swift test --package-path Packages/FunesCore
