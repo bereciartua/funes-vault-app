@@ -285,9 +285,8 @@ public struct ApprovalPanelView: View {
     /// "Goes to": Funes's own words about where the text ends up.
     private func destinationBox(_ destination: PanelItem.Destination) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(String(localized: "Goes to")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(destination.text).fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 6) {
+                Text(String(localized: "Goes to")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 if destination.isCloud {
                     Text(String(localized: "Cloud"))
                         .font(.caption2.weight(.semibold))
@@ -297,6 +296,7 @@ public struct ApprovalPanelView: View {
                         .accessibilityLabel(String(localized: "Leaves this Mac"))
                 }
             }
+            Text(destination.text).fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
