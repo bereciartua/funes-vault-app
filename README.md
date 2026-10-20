@@ -44,12 +44,10 @@ Badges, once the listings exist:
    Funes Vault needs **macOS 15 or later**, on Apple silicon or Intel.
 
 2. **Open the app.** It lives in the menu bar. The Vault opens with a short setup checklist:
-   1. **Seed your vault.** Answer a few optional questions, import your ChatGPT memories or paste Claude's, or import a Markdown file. Everything goes to the Inbox first, and anything that looks like a secret is never imported.
-   2. **Review your Inbox.** Apply what's right; edit or reject the rest.
-   3. **Add an agent.** Pick its tile (agents found on your Mac are marked) and a starting access. The default, **Read low-sensitivity memories, ask first**, lets it read memories up to Low and asks you before each share.
-   4. **Connect it.** **Add to Claude Code…** (or Claude Desktop, Cursor or Codex) shows exactly what it will change or run first, backs up a settings file before changing it, and never writes the key into the agent's settings. For other agents, copy the setup from the agent's **Connect** tab. The step is done when the agent's first request arrives.
-
-3. **Ask your agent.** For example: *"Plan a week of dinners for me"* or *"Set up this TypeScript project the way I like it."* The agent asks Funes for context, you see the panel, and you choose what to share.
+   1. **Connect an agent.** **Add…** opens Add Agent, with the agents found on your Mac first. Pick one and a starting access: the default, **Read low-sensitivity memories, ask first**, lets it read memories up to Low and asks you before each share. For Claude Code, Claude Desktop, Cursor and Codex, **Add and Connect…** shows exactly what it will change or run first, backs up a settings file before changing it, and never writes the key into the agent's settings. For other agents, copy the setup from the agent's **Connect** tab.
+   2. **Approve its first request.** Ask your agent something, for example *"Plan a week of dinners for me"* or *"Set up this TypeScript project the way I like it."* The agent asks Funes for context, you see the panel, and you choose what to share. The step is done when the agent's first request arrives.
+   3. **Seed your vault.** Answer a few optional questions, import your ChatGPT memories or paste Claude's, or import a Markdown file. What you add goes to the Inbox first, and anything that looks like a secret is never imported. The questions end with the categories agents should never see: those get Deny for every agent, including ones you add later.
+   4. **Review your Inbox.** Apply what's right; edit or reject the rest.
 
 You can also capture a thought at any time with **⌥⌘M**, **Remember…** in the menu, or **Services ▸ Remember in Funes** in any app.
 
@@ -60,7 +58,7 @@ Setups for every agent, the tool reference and troubleshooting are in the [MCP g
 claude.ai, ChatGPT and cloud coding agents run on their vendor's servers, so they can't reach an app on your Mac directly. **Remote Access** lets them, through a tunnel you run, such as [Tailscale Funnel](https://tailscale.com/kb/1223/funnel):
 
 1. Open **Remote Access** in the sidebar and follow its four steps: choose a tunnel, turn Remote Access on and start the tunnel, paste its address, test. Funes never starts a tunnel; it shows the command.
-2. Add the agent with a cloud tile in **Add Agent…** (claude.ai, ChatGPT, …), or turn on **Allow cloud access** on an agent's **Cloud** tab.
+2. Add the agent on the **Cloud · Experimental** tab of **Add Agent…** (claude.ai, ChatGPT, …), or turn on **Allow cloud access** on an agent's **Cloud** tab.
 3. Connect it: apps that sign in (claude.ai, ChatGPT, Gemini Enterprise) use **Connect a Cloud App…** and a six-digit code you compare on the Mac; the others use the agent's remote token. The agent's **Cloud** tab shows the steps for each.
 
 <picture>
@@ -85,7 +83,7 @@ Every agent has its own access: whether it may **Read**, **Suggest** or **Write*
 
 ### You approve the exact text
 
-When an agent asks for context, Funes finds the memories that match its task and are allowed for that agent. If asking is on, a panel shows each one with a checkbox, what the agent says it's for, how long it keeps what it gets, and how many more matched but can't go to it. **Share** sends only what you ticked; **Deny** sends nothing. The agent waits up to 45 seconds. If you don't answer in time, the request waits in **Pending requests** for up to 15 minutes, and the agent picks up your answer later.
+When an agent asks for context, Funes finds the memories that match its task and are allowed for that agent. If asking is on, a panel shows each one with a checkbox, what the agent says it's for, how long it keeps what it gets, and how many more matched but can't go to it. **Share** sends only what you ticked; **Deny** sends nothing. The agent waits up to 45 seconds. If you don't answer in time, the request waits in **Pending requests** for up to 15 minutes, and the agent picks up your answer later; **More Time** moves it there at once. **Review Request (⌃⌥⌘R)** brings a waiting panel forward from any app.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/share-panel-dark.png">

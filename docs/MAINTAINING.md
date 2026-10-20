@@ -20,7 +20,7 @@ This guide is for maintainers: how a change is made, checked and released, and w
 | `scripts/release.sh` and its helpers | The release ([Releasing](#releasing)): `check_version.sh`, `check_bundle.sh`, `check_notarized.sh`, `make_dmg.sh` + `dmg_window.swift`, `release_assets.sh`, `release_notes.py`, `appcast.py`, `verify_update_signature.swift` |
 | `scripts/ui_snapshots.sh` | PNGs of every screen, light and dark, from the UI-review build (needs Screen Recording permission for the terminal) |
 | `server.json`, `.github/workflows/mcp-registry.yml` | The MCP Registry entry `com.funesvault/funes` and the workflow that publishes it |
-| `packaging/homebrew/` | The draft cask and the patch for [`bereciartua/homebrew-tap`](https://github.com/bereciartua/homebrew-tap) |
+| `packaging/homebrew/` | The cask and the patch that added it to [`bereciartua/homebrew-tap`](https://github.com/bereciartua/homebrew-tap), kept for reference |
 | `site/` | The website, funesvault.com, deployed to GitHub Pages |
 | `.github/workflows/` | `ci.yml` (pull requests that touch code, and manual runs), `release.yml` (a `v*` tag), `mcp-registry.yml`, `pages.yml` |
 
@@ -70,7 +70,7 @@ Everything goes to `dist/` (ignored). `sh scripts/release.sh --help` lists the o
 3. `git tag v<x.y.z> && git push origin v<x.y.z>`, then approve the run in Actions.
 4. Open the draft: check the notes and the five assets, download the DMG and run `shasum -a 256 -c SHA256SUMS --ignore-missing`, and install it on a clean user account.
 5. Publish. Then check that `https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml` and `…/FunesVault.dmg` resolve to this version (`curl -sIL <url> | grep -i '^location'`), that the previous version offers the update, and that the **MCP Registry** workflow published `server.json`.
-6. Update the Homebrew cask: once `packaging/homebrew/tap.patch` is applied to the tap ([packaging/homebrew](../packaging/homebrew/README.md); it isn't yet), `gh workflow run update.yml --repo bereciartua/homebrew-tap -f cask=funes-vault` (it also runs every six hours). It bumps `funes-vault` only if the DMG's build attestation shows this repository's release workflow built it from the tag and its SHA-256 matches `SHA256SUMS`.
+6. Update the Homebrew cask in [`bereciartua/homebrew-tap`](https://github.com/bereciartua/homebrew-tap) ([packaging/homebrew](../packaging/homebrew/README.md)): `gh workflow run update.yml --repo bereciartua/homebrew-tap -f cask=funes-vault` (it also runs every six hours). It bumps `funes-vault` only if the DMG's build attestation shows this repository's release workflow built it from the tag and its SHA-256 matches `SHA256SUMS`.
 
 ### The `release` environment
 

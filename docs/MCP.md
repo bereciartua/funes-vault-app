@@ -21,14 +21,16 @@ To change the port, type it in **Settings ▸ MCP ▸ Port** (1024–65535) and 
 
 ### Add an agent
 
-1. In **Agents**, choose **Add Agent…** and click your agent's tile (agents found on this Mac are marked **On this Mac**). The name is filled in from it.
+1. In **Agents**, choose **Add Agent…**. On the **On This Mac** tab, the agents found on this Mac come first (**Show All N Agents** lists the rest); click your agent's tile. The name is filled in from it.
 2. Choose its **Starting access**:
    - **Read low-sensitivity memories, ask first** (the default): Read, up to Low, in all categories.
    - **Read and suggest, ask first:** Read and Suggest, up to Internal, except Health, Finance and Legal.
    - **Nothing yet** or **Custom:** it can connect, but sees nothing until you set its access on the **Access** tab.
 
    All of them ask before sharing and before saving. **Let it ask for more access** lets Funes offer you **Not Now**, **Allow Once** (the default) or **Always Allow** when a request is refused only because a category isn't allowed, or a suggestion because the agent lacks Suggest. It asks at most once an hour per agent, category and operation; a panel you never answered doesn't count.
-3. **Add Agent** opens the agent's **Connect** tab (the **Access** tab for **Custom**). Set it up there (below). Its status changes from waiting for its first request to **Connected**, with the time of its last request.
+
+   Categories you marked as never-share (the last of **A Few Questions**, or **New agents can't read** in Categories) start as Deny for every new agent, whichever access you choose.
+3. For Claude Code, Claude Desktop, Cursor and Codex the button is **Add and Connect…**: the agent's **Connect** tab opens with the change to its settings (see One click below), then suggests a first question to ask it. For other agents, **Add Agent** opens the **Connect** tab (the **Access** tab for **Custom**); set it up there (below). Its status changes from waiting for its first request to **Connected**, with the time of its last request.
 
 Use **one agent entry per agent**, and give each only what it needs: what an agent reads goes to its AI provider.
 
@@ -214,7 +216,7 @@ Cloud agents (claude.ai, ChatGPT, cloud coding agents) run on their vendor's ser
 
 > Tell the user: "Waiting for your approval in Funes." Then call get_memory_request with request_id "…" in about a minute; it expires in 15 minutes.
 
-The request then waits in **Pending requests** (the menu bar menu, and the top of Activity) for the rest of its 15 minutes. **Review** opens the panel again with the minutes it has left. When the agent calls `get_memory_request` after you shared it, it gets the memories, once.
+The request then waits in **Pending requests** (the menu bar menu, above the Agents list, and the top of Activity) for the rest of its 15 minutes; **More Time** on the panel moves it there at once. While one waits, the menu's first item reviews it, and **Review Request (⌃⌥⌘R)** does the same from any app (change or turn off the shortcut in Settings ▸ General). **Review** opens the panel again with the minutes it has left. When the agent calls `get_memory_request` after you shared it, it gets the memories, once.
 
 What the agents measured so far did with this, from the [timeout spike and the first agent check](../spec/plans/spike-results.md#spike-3-agent-timeouts-and-the-in-call-approval):
 
@@ -234,7 +236,7 @@ All four sent `keywords` without being asked. The server answers with plain JSON
 While Remote Access is on, the vault is reachable through a public address, and what you share with a cloud agent goes to its vendor's servers, where it may stay in their logs. Use one agent per cloud app, with only the access it needs.
 
 1. Set up Remote Access on its page: choose a tunnel, turn Remote Access on and start the tunnel, paste its address, test.
-2. Turn on **Allow cloud access** for the agent (or add one with a cloud tile in **Add Agent…**, which does it for you).
+2. Turn on **Allow cloud access** for the agent (or add one on the **Cloud · Experimental** tab of **Add Agent…**, which does it for you).
 3. Connect the cloud app: with the agent's **remote token**, or by signing in with OAuth after **Connect a Cloud App…**.
 
 #### Turn on Remote Access
@@ -278,7 +280,7 @@ The tunnel must point at `http://127.0.0.1:47627`, never at 47625: the local por
 
 #### Allow cloud access
 
-An agent's **Cloud** tab shows while Remote Access is on, or while the agent has cloud access or is a cloud agent. **Allow cloud access** is off by default; its caption says what the agent can do from the internet, which is the same access it has on this Mac. With it on, the tab has the cloud agent picker (marked **Token** or **OAuth**; Codex cloud tasks isn't supported), the setup to copy with its steps, the connected cloud apps with **Revoke**, and **Copy Remote Token…** (then **Reset Remote Token…** once a token exists), **Set Up OAuth Client…** (Gemini Enterprise only) and **Connect a Cloud App…**. The last two are enabled once the address is saved.
+An agent's **Cloud** tab shows while Remote Access is on, or while the agent has cloud access or is a cloud agent. **Allow cloud access** is off by default; its caption says that text you share with a cloud agent goes to its vendor's servers, then what the agent can do from the internet, which is the same access it has on this Mac. With it on, the tab has the cloud agent picker (marked **Token** or **OAuth**; Codex cloud tasks isn't supported), the setup to copy with its steps, the connected cloud apps with **Revoke**, and **Copy Remote Token…** (then **Reset Remote Token…** once a token exists), **Set Up OAuth Client…** (Gemini Enterprise only) and **Connect a Cloud App…**. The last two are enabled once the address is saved.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/agents-cloud-dark.png">
@@ -523,7 +525,7 @@ The call never waits for you. The proposed memory must fit the agent's own acces
 | In-call wait for the Share panel | 45 seconds | `needs_approval` |
 | A pending request, and an approval | 15 minutes | `approval_expired` |
 | Time to answer a call | 55 seconds | `timeout` |
-| Items in the panel | 3 at a time ("1 of 3"); others wait until one is answered | — |
+| Items in the panel | 3 at a time, a chip each with its countdown, the most urgent first ("+2 more" for the rest); others wait until one is answered | — |
 | Asking for more access | once an hour per agent, category and operation (read or suggest) | not asked |
 | Failed sign-ins, all callers | 120 a minute | HTTP 429 for 60 seconds for requests without a valid key |
 | Remote calls per agent, on top of the above | 60 a minute, bursts of 15; suggestions 10 a minute, bursts of 5 | `rate_limited` |

@@ -4,6 +4,8 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-20
+
 ### Added
 
 - **The Share panel says where the text goes.** A "Goes to" line, built only from what Funes Vault knows: "Claude Code on this Mac. It may send what it reads to its AI service.", or for a cloud agent "claude.ai, through your Tailscale Funnel, to Anthropic's servers" with a **Cloud** chip.
@@ -12,7 +14,6 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 - **Never-share categories.** "A Few Questions" ends with "Which of these should agents never see?". The categories you tick get Deny for every agent, and new agents start with it; Categories keeps the list ("New agents can't read"). It replaces the question "What should Funes be especially careful not to share casually?", whose answer was saved as a memory that agents reading Internal could get.
 - **Add and Connect…** For Claude Code, Claude Desktop, Cursor and Codex, Add Agent goes straight to the change to the agent's settings, then suggests a first question to ask it.
 - **The capture box says when a cloud model sees the text:** "Goes to your Inbox · fields suggested by Anthropic". Settings ▸ Capture says it too.
-
 - **Remote Access offers to move a Tailscale Funnel setup on port 8443 or 10000 to 443.** claude.ai and ChatGPT only connect to 443. Setups from 0.1.1's drafts, or on a port picked by hand, showed as **Running**, or got start commands for the old port.
   - Once 443 can take Funes Vault's paths, the Tunnel row says so and shows the four commands that add them to 443, then the ones that turn off the old port's entry.
   - Then **Address ▸ Edit…** changes the address to the one without a port.
@@ -32,7 +33,6 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 - **Pending requests are easier to find:** above the Agents list, counted by the sidebar's Agents badge, with how many memories each would share and its task.
 - **The menu bar icon is the app's eye.**
 - **The sign-in panel:** Esc denies, it shows until when pairing is open, and VoiceOver reads the code digit by digit.
-
 - **funesvault.com has a new design**, built around the app icon's eye. The privacy statement's section on the website now describes its one script: the Homebrew copy button, and the eye on the home page that follows your pointer. It sends and stores nothing.
 
 ### Fixed
@@ -43,7 +43,6 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 - **Cloud setup steps point to the buttons on the same tab:** "click Connect a Cloud App… below" instead of telling you to open the agent you're already looking at. The same for Copy Remote Token… and Set Up OAuth Client….
 - **Delete Now… in Recently Deleted always asks first.** The list's context menu deleted for good without a question; it now asks "Delete this memory now?", like the detail and the bulk bar, and all three are labelled **Delete Now…**.
 - **Warnings and sensitivity badges are easier to read.** Badges show the level's name in primary text on its color (it was colored text on a light tint, about 2:1). Warnings on the Access tab, in AI Models, Settings and the import sheet are an orange icon with primary text instead of orange text. Increase Contrast darkens the icon and strengthens the badges.
-
 - **A copy built from source never checks for updates**, as the privacy docs promised. Only copies signed with Funes Vault's Developer ID check GitHub; builds from source, Xcode runs and Debug builds don't, and they hide **Check for Updates…**. Before, every build checked, because the feed and the update key are in the committed `Info.plist`.
 - **Activity fits the window again.** Since the Remote Access filter, the filter row was wider than the page at the default window size, so the page slid under the sidebar and cut off the title, Pending requests and the table's first columns. The agent and period pickers and search now move to a second line when the row doesn't fit, and the Event and Detail columns can get narrower, down to the window's minimum width.
 
@@ -135,7 +134,8 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
 - **Licences in the app**: the bundled embedding model ships inside the app with its MIT licence, and the app includes the licence texts of GRDB.swift, Sparkle and the model alongside its own `LICENSE` and `NOTICE`.
 - **Open source**: the code, the product definition in `spec/`, and the tests are public under the Apache License 2.0. See [Testing](docs/TESTING.md) for what has been checked.
 
-[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bereciartua/funes-vault-app/releases/tag/v0.1.0
