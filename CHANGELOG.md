@@ -4,6 +4,8 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-10-20
+
 ### Added
 
 - **Appearance: Automatic, Light or Dark.** In Settings ▸ General, keep Funes Vault dark while macOS is light, or the other way round. Automatic follows macOS, as before. The choice applies at once to every window and panel and to the menu bar menu, and stays after a relaunch. EK Bridge has the same setting.
@@ -145,7 +147,8 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
 - **Licences in the app**: the bundled embedding model ships inside the app with its MIT licence, and the app includes the licence texts of GRDB.swift, Sparkle and the model alongside its own `LICENSE` and `NOTICE`.
 - **Open source**: the code, the product definition in `spec/`, and the tests are public under the Apache License 2.0. See [Testing](docs/TESTING.md) for what has been checked.
 
-[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.0...v0.1.1
