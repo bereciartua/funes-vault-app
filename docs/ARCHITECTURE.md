@@ -164,7 +164,7 @@ A provider counts as **local** when its host is loopback or a private address (a
 
 ## Updates
 
-Funes Vault updates itself with [Sparkle](https://sparkle-project.org) 2.10.0, linked into the app target only. The feed is `https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml`. Each update is signed with Funes Vault's own EdDSA key (not EK Bridge's), and the app is signed with a Developer ID and notarized. The app checks once a day while **Settings ▸ Updates ▸ Check for updates every day** is on, never installs without a click, and waits to relaunch while a request is waiting for you. The committed `Info.plist` has the feed and the public key, so a build from source checks the same feed; only a build with an empty `SUFeedURL` or `SUPublicEDKey` never checks. Release steps are in [Maintaining](MAINTAINING.md).
+Funes Vault updates itself with [Sparkle](https://sparkle-project.org) 2.10.0, linked into the app target only. The feed is `https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml`. Each update is signed with Funes Vault's own EdDSA key (not EK Bridge's), and the app is signed with a Developer ID and notarized. The app checks once a day while **Settings ▸ Updates ▸ Check for updates every day** is on, never installs without a click, and waits to relaunch while a request is waiting for you. Only a copy signed with Funes Vault's Developer ID checks: a build from source never does, although the committed `Info.plist` has the feed and the public key (`SparkleUpdater.isConfigured` also checks the app's signature). Release steps are in [Maintaining](MAINTAINING.md).
 
 ## Threat model
 
