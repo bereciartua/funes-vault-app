@@ -219,6 +219,7 @@ Brings Funes to the front on the Mac, at a pending request or suggestion.
   - **Incomplete** (some paths missing) shows the missing ones.
   - Another app's entry is never "Wrong port"; only one to the local MCP port is.
   - Reset Path… shows the commands that move Funnel to the new secret's paths.
+  - A setup on 8443 or 10000 (0.1.1's drafts, or a port picked by hand) is offered the move to 443 once 443 can take the paths: the Tunnel row says claude.ai and ChatGPT only connect to 443, then shows the four 443 commands, the off commands for the old port's entry (its paths, or `--set-path /` for a whole-port entry), and Address ▸ Edit… to drop the port (`TailscaleFunnelCommand.moveTo443`, BridgeKitRemote 0.4.1).
   - BridgeKitRemote 0.4.0 (`RemotePaths`, `FunnelPorts`, `TailscaleFunnelCommand`, [plan](../plans/phase-4b-funnel-paths.md)).
   - The port can be changed in Settings (1024–65535, not the MCP or companion port).
   - The default avoids Funes's 47625 and 47626, EK Bridge's 47615 and 47616, and the EK Bridge Test copy's 47625 and 47626.

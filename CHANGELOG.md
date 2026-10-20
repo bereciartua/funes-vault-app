@@ -4,6 +4,13 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+### Added
+
+- **Remote Access offers to move a Tailscale Funnel setup on port 8443 or 10000 to 443.** claude.ai and ChatGPT only connect to 443. Setups from 0.1.1's drafts, or on a port picked by hand, showed as **Running**, or got start commands for the old port.
+  - Once 443 can take Funes Vault's paths, the Tunnel row says so and shows the four commands that add them to 443, then the ones that turn off the old port's entry.
+  - Then **Address ▸ Edit…** changes the address to the one without a port.
+  - BridgeKit 0.4.1.
+
 ## [0.1.2] - 2026-10-19
 
 The first public preview. 0.1.0 and 0.1.1 were built as draft releases only and never published: everything in them below is in 0.1.2, with this fix in place of 0.1.1's.

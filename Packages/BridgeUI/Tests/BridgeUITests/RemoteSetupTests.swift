@@ -140,6 +140,38 @@ struct RemoteSetupTests {
         return lines.joined(separator: "\n")
     }
 
+    /// The Tunnel row's move to 443 for setups left on 8443 or 10000, and where there's none.
+    static func renderFunnelMove() -> String {
+        let ours = paths.map { ($0, remotePort) }
+        let address = "https://" + tunnelHost
+        let ek = (443, [("/", 47616)], true)
+        let cases: [(String, FunnelPorts, String?)] = [
+            ("0.1.1's / on 10000", funnel([ek, (10000, [("/", remotePort)], true)]), address + ":10000"),
+            ("the four paths on 8443", funnel([ek, (8443, ours, true)]), address + ":8443"),
+            ("three of four paths on 10000", funnel([ek, (10000, Array(ours.prefix(3)), true)]), address + ":10000"),
+            ("not running, the address on 10000", funnel([ek]), address + ":10000"),
+            ("on 443 already, the address still on 10000", funnel([(443, [("/", 47616)] + ours, true)]), address + ":10000"),
+            ("on 443", funnel([(443, [("/", 47616)] + ours, true)]), address),
+            ("443 tailnet-only, on 8443", funnel([(443, [("/", 4000)], false), (8443, [("/", remotePort)], true)]),
+             address + ":8443"),
+        ]
+        var lines = [String]()
+        for (name, ports, origin) in cases {
+            lines += ["\(name):"]
+            guard let move = TailscaleFunnelCommand.moveTo443(ports, address: origin) else {
+                lines += ["no move", ""]
+                continue
+            }
+            lines += [move.intro(names: names)] + move.commands + move.after(names: names) + [""]
+        }
+        let unknownHost = FunnelPorts.Move(from: 10000, start: TailscaleFunnelCommand.start(port: remotePort, paths: paths),
+                                           off: [], address: nil)
+        lines += ["no host:", unknownHost.intro(names: names)] + unknownHost.commands + unknownHost.after(names: names)
+        let onlyAddress = FunnelPorts.Move(from: 8443, start: [], off: [], address: nil)
+        lines += ["", "no host, only the address:", onlyAddress.intro(names: names)] + onlyAddress.after(names: names)
+        return lines.joined(separator: "\n")
+    }
+
     static var fixtures: URL {
         URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("fixtures/agent-setup")
     }
@@ -153,6 +185,7 @@ struct RemoteSetupTests {
         expected["tunnel-tailscale-funnel-8443.txt"] = Self.render(.tailscaleFunnel, publicPort: 8443)
         expected["tunnel-tailscale-funnel-no-shareable-port.txt"] = Self.render(.tailscaleFunnel, publicPort: nil)
         expected["tunnel-funnel-ports.txt"] = Self.renderFunnelPorts()
+        expected["tunnel-funnel-move.txt"] = Self.renderFunnelMove()
         let folder = Self.fixtures
         if ProcessInfo.processInfo.environment["UPDATE_GOLDENS"] == "1" {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

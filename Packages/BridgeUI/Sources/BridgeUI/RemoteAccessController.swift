@@ -741,6 +741,19 @@ public final class RemoteAccessController {
         return ports.pathsToAdd
     }
 
+    /// The Tunnel row's move to 443, which claude.ai and ChatGPT need: Funnel in use on 8443 or
+    /// 10000 (0.1.1's drafts, or a port picked by hand), and 443 can take the paths now. In place
+    /// of the start commands for the old port; not while Tailscale needs a login or the policy.
+    public var inUseFunnelMove: FunnelPorts.Move? {
+        guard tunnelLabel == .tailscaleFunnel, let health = currentTunnelHealth else { return nil }
+        switch health {
+        case .running, .incomplete, .wrongPort, .notPublic: break
+        case .notRunning: guard health.showsStartCommand else { return nil }
+        case .notInstalled, .unknown: return nil
+        }
+        return TailscaleFunnelCommand.moveTo443(currentFunnelPorts, address: origin)
+    }
+
     public func dismissFunnelResetCommands() { funnelResetCommands = nil }
 
     public var waitingForTunnel: Bool {
