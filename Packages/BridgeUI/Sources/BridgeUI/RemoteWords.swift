@@ -342,6 +342,37 @@ extension FunnelPorts {
     }
 }
 
+extension FunnelPorts.Move {
+    /// The Tunnel row's line above the move's commands (`commands`, one Copy block).
+    public func intro(names: RemoteNames) -> String {
+        let port = String(from)
+        guard !commands.isEmpty else {
+            return String(localized: "claude.ai and ChatGPT only connect to Funnel's port 443, which already forwards \(names.appName)'s paths, but the address uses port \(port).")
+        }
+        return String(localized: "claude.ai and ChatGPT only connect to Funnel's port 443, and Remote Access uses port \(port). Port 443 can take \(names.appName)'s paths now, beside other apps' entries. Move them in Terminal:")
+    }
+
+    /// The lines below them: what the last commands turn off, and the address without a port.
+    public func after(names: RemoteNames) -> [String] {
+        let port = String(from)
+        var lines = [String]()
+        if off.count == 1 {
+            lines.append(String(localized: "The last command turns off \(names.appName)'s entry on port \(port)."))
+        } else if !off.isEmpty {
+            lines.append(String(localized: "The last \(String(off.count)) commands turn off \(names.appName)'s entry on port \(port)."))
+        }
+        switch (address, commands.isEmpty) {
+        case (let address?, true): lines.append(String(localized: "Change the address to \(address) with Address ▸ Edit…."))
+        case (let address?, false): lines.append(String(localized: "Then change the address to \(address) with Address ▸ Edit…."))
+        case (nil, true):
+            lines.append(String(localized: "Change the address with Address ▸ Edit… to your Mac's Funnel address without :\(port)."))
+        case (nil, false):
+            lines.append(String(localized: "Then change the address with Address ▸ Edit… to your Mac's Funnel address without :\(port)."))
+        }
+        return lines
+    }
+}
+
 extension String {
     var nilIfEmpty: String? { isEmpty ? nil : self }
 }

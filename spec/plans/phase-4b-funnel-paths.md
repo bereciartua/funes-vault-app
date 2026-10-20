@@ -121,7 +121,7 @@ Two test path entries were added to Funnel's port 10000, next to its `/` entry t
 
 - [x] `test.sh` green in all three repos, and CI green (Funes with both toolchains).
 - [x] **Live, on the user's Mac** (the user runs every `tailscale` command), on the 0.1.2 and 0.11.4 drafts, 2026-10-19:
-  1. Funes's guide offers its four path commands on 443, and nothing about `/`. Not seen live: Funes was already set up (0.1.1's `:10000`), so the four commands were run by hand and the address changed with Address ▸ Edit…. The guide's commands are covered by the goldens. An existing setup on 8443 or 10000 doesn't suggest moving to 443; that's a follow-up.
+  1. Funes's guide offers its four path commands on 443, and nothing about `/`. Not seen live: Funes was already set up (0.1.1's `:10000`), so the four commands were run by hand and the address changed with Address ▸ Edit…. The guide's commands are covered by the goldens. An existing setup on 8443 or 10000 didn't suggest moving to 443. The follow-up adds that: the Tunnel row offers the move, using `TailscaleFunnelCommand.moveTo443` (BridgeKit 0.4.1).
   2. After running them, `tailscale funnel status` shows EK Bridge's `/` and Funes's four paths on 443. Both Tunnel rows show Running.
   3. **claude.ai and ChatGPT connect to Funes** at `https://<mac>.ts.net/r/<secret>/mcp` and sign in through pairing. This is the 4b.15 check.
   4. EK Bridge's ChatGPT and claude.ai connectors still work.
