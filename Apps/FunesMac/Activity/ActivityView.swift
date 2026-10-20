@@ -60,39 +60,95 @@ struct ActivityScreen: View {
         }
     }
 
+    /// One row when the pane is wide enough; otherwise the Show segments on their own line and
+    /// the agent, period and search below, so the page never gets wider than the window.
     private var filters: some View {
-        HStack(spacing: 10) {
-            Picker(String(localized: "Show"), selection: Binding(get: { activity.kind }, set: { activity.kind = $0 })) {
-                ForEach(ActivityEntry.Kind.allCases) { kind in
-                    if kind == .problems {
-                        let count = activity.entries.filter(\.isProblem).count
-                        Text(count > 0 ? String(localized: "Problems \(count)") : kind.title).tag(kind)
-                    } else {
-                        Text(kind.title).tag(kind)
-                    }
-                }
+        FilterRow {
+            kindPicker
+            HStack(spacing: 10) {
+                pickers
+                Spacer(minLength: 8)
+                search
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
-            .accessibilityLabel(String(localized: "Show"))
-            Picker(String(localized: "Agent"), selection: Binding(get: { activity.agentFilter }, set: { activity.agentFilter = $0 })) {
-                Text(String(localized: "All agents")).tag(UUID?.none)
-                ForEach(model.allAgents) { agent in Text(model.agentName(agent.id)).tag(Optional(agent.id)) }
-            }
-            .fixedSize()
-            Picker(String(localized: "Period"), selection: Binding(get: { activity.period }, set: { activity.period = $0 })) {
-                ForEach(ActivityModel.Period.allCases) { Text($0.title).tag($0) }
-            }
-            .labelsHidden()
-            .fixedSize()
-            .accessibilityLabel(String(localized: "Period"))
-            Spacer(minLength: 8)
-            SearchField(text: Binding(get: { activity.search }, set: { activity.search = $0 }),
-                        prompt: String(localized: "Search activity"), focused: $searchFocused)
-                .frame(minWidth: 140, maxWidth: 220)
         }
         .controlSize(.small)
+    }
+
+    private var kindPicker: some View {
+        Picker(String(localized: "Show"), selection: Binding(get: { activity.kind }, set: { activity.kind = $0 })) {
+            ForEach(ActivityEntry.Kind.allCases) { kind in
+                if kind == .problems {
+                    let count = activity.entries.filter(\.isProblem).count
+                    Text(count > 0 ? String(localized: "Problems \(count)") : kind.title).tag(kind)
+                } else {
+                    Text(kind.title).tag(kind)
+                }
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+        .accessibilityLabel(String(localized: "Show"))
+    }
+
+    @ViewBuilder
+    private var pickers: some View {
+        Picker(String(localized: "Agent"), selection: Binding(get: { activity.agentFilter }, set: { activity.agentFilter = $0 })) {
+            Text(String(localized: "All agents")).tag(UUID?.none)
+            ForEach(model.allAgents) { agent in Text(model.agentName(agent.id)).tag(Optional(agent.id)) }
+        }
+        .fixedSize()
+        Picker(String(localized: "Period"), selection: Binding(get: { activity.period }, set: { activity.period = $0 })) {
+            ForEach(ActivityModel.Period.allCases) { Text($0.title).tag($0) }
+        }
+        .labelsHidden()
+        .fixedSize()
+        .accessibilityLabel(String(localized: "Period"))
+    }
+
+    private var search: some View {
+        SearchField(text: Binding(get: { activity.search }, set: { activity.search = $0 }),
+                    prompt: String(localized: "Search activity"), focused: $searchFocused)
+            .frame(minWidth: 140, idealWidth: 220, maxWidth: 220)
+    }
+}
+
+/// Two views side by side when they fit at their ideal widths, else the second below the first.
+/// The second gets the rest of the width, so its spacer and search field can stretch.
+private struct FilterRow: Layout {
+    var spacing: CGFloat = 10
+    var lineSpacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard subviews.count == 2 else { return .zero }
+        let first = subviews[0].sizeThatFits(.unspecified)
+        let ideal = subviews[1].sizeThatFits(.unspecified)
+        let width = proposal.width ?? first.width + spacing + ideal.width
+        if fitsOnOneLine(width, first: first, second: ideal) {
+            let second = subviews[1].sizeThatFits(ProposedViewSize(width: width - first.width - spacing, height: nil))
+            return CGSize(width: width, height: max(first.height, second.height))
+        }
+        let second = subviews[1].sizeThatFits(ProposedViewSize(width: width, height: nil))
+        return CGSize(width: width, height: first.height + lineSpacing + second.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard subviews.count == 2 else { return }
+        let first = subviews[0].sizeThatFits(.unspecified)
+        let ideal = subviews[1].sizeThatFits(.unspecified)
+        if fitsOnOneLine(bounds.width, first: first, second: ideal) {
+            subviews[0].place(at: CGPoint(x: bounds.minX, y: bounds.midY), anchor: .leading, proposal: .unspecified)
+            subviews[1].place(at: CGPoint(x: bounds.minX + first.width + spacing, y: bounds.midY), anchor: .leading,
+                              proposal: ProposedViewSize(width: bounds.width - first.width - spacing, height: nil))
+        } else {
+            subviews[0].place(at: CGPoint(x: bounds.minX, y: bounds.minY), proposal: .unspecified)
+            subviews[1].place(at: CGPoint(x: bounds.minX, y: bounds.minY + first.height + lineSpacing),
+                              proposal: ProposedViewSize(width: bounds.width, height: nil))
+        }
+    }
+
+    private func fitsOnOneLine(_ width: CGFloat, first: CGSize, second: CGSize) -> Bool {
+        first.width + spacing + second.width <= width
     }
 }
 
@@ -155,8 +211,8 @@ struct ActivityList: View {
         HStack(spacing: 12) {
             Text(String(localized: "Time")).frame(width: 70, alignment: .leading)
             if !isAgentScope { Text(String(localized: "Agent or device")).frame(width: 130, alignment: .leading) }
-            Text(String(localized: "Event")).frame(minWidth: 140, maxWidth: .infinity, alignment: .leading)
-            Text(String(localized: "Detail")).frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
+            Text(String(localized: "Event")).frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
+            Text(String(localized: "Detail")).frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
             Text(String(localized: "Result")).frame(width: 170, alignment: .leading)
         }
         .font(.subheadline.weight(.medium))
@@ -245,9 +301,9 @@ struct ActivityRowView: View {
                     .help(String(localized: "via Remote Access"))
                     .accessibilityLabel(String(localized: "via Remote Access"))
             }
-            Text(entry.label).lineLimit(1).frame(minWidth: 140, maxWidth: .infinity, alignment: .leading)
+            Text(entry.label).lineLimit(1).frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
             Text(ActivityText.detail(entry, model: model)).foregroundStyle(.secondary).lineLimit(1)
-                .frame(minWidth: 100, maxWidth: .infinity, alignment: .leading)
+                .frame(minWidth: 60, maxWidth: .infinity, alignment: .leading)
             Pill(label: result.text, tone: result.tone).frame(width: 170, alignment: .leading)
         }
         .padding(.vertical, 2)

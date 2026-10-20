@@ -14,6 +14,7 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 ### Fixed
 
 - **A copy built from source never checks for updates**, as the privacy docs promised. Only copies signed with Funes Vault's Developer ID check GitHub; builds from source, Xcode runs and Debug builds don't, and they hide **Check for Updates…**. Before, every build checked, because the feed and the update key are in the committed `Info.plist`.
+- **Activity fits the window again.** Since the Remote Access filter, the filter row was wider than the page at the default window size, so the page slid under the sidebar and cut off the title, Pending requests and the table's first columns. The agent and period pickers and search now move to a second line when the row doesn't fit, and the Event and Detail columns can get narrower, down to the window's minimum width.
 
 ## [0.1.2] - 2026-10-19
 
