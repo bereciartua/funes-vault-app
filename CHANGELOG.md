@@ -6,7 +6,7 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [0.1.2] - 2026-10-19
 
-The first public preview. 0.1.0 and 0.1.1 were built as draft releases only and never published: everything in them below is in 0.1.2, with this fix in place of 0.1.1's.
+The first public preview. 0.1.0 and 0.1.1 were preview builds, kept on GitHub as pre-releases: everything in them below is in 0.1.2, with this fix in place of 0.1.1's.
 
 ### Fixed
 
@@ -20,7 +20,7 @@ The first public preview. 0.1.0 and 0.1.1 were built as draft releases only and 
 
 ## [0.1.1] - 2026-10-19
 
-The first public preview. 0.1.0 was built as a draft release only and never published: everything in it below is in 0.1.1, with this fix.
+A preview build, kept as a pre-release and superseded by 0.1.2. Everything in 0.1.0 below is in it, with this fix.
 
 ### Fixed
 
@@ -44,7 +44,7 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
   - The protocol and security core is [BridgeKit](https://github.com/bereciartua/bridgekit) 0.2.0, shared with EK Bridge. It refuses JSON-RPC ids longer than 1,024 bytes, so every response fits its 200,000-byte limit.
 - **You approve the exact text.**
   - A floating Share panel shows each memory an agent may get, with a checkbox per memory, the agent's task, keywords and stated purpose, and a 45-second countdown.
-  - A request left unanswered says so on screen and waits in **Pending requests** for 15 minutes, where **Review** opens it again with the minutes it has left.
+  - A request left unanswered says so on screen and waits in **Pending requests** for 15 minutes, where **Review…** opens it again with the minutes it has left.
   - Quitting Funes Vault while an agent waits tells the agent at once (`funes_quit`), and the request stays in Pending requests.
   - Shares always fit in one result of at most 200,000 bytes: memories that wouldn't fit are left out, like those over the agent's token budget.
   - An approval is used once, within 15 minutes, and is cancelled if a memory or the agent's access changes. Refusals tell agents how many memories were withheld and why, never which ones.
@@ -69,7 +69,7 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
   - Select several to apply or reject them together. Expired suggestions can be restored for 7 days.
   - The **Save this memory?** panel appears when an agent suggests something, with **Edit…** to open it in the Inbox.
 - **Activity**: what each agent asked for and what happened, by day, with filters (Shared, Suggestions, Problems), agent, period and search.
-  - A row's details show the memories involved by their current title, what was withheld and why, and links to fix a refusal. Pending requests sit at the top with **Review**.
+  - A row's details show the memories involved by their current title, what was withheld and why, and links to fix a refusal. Pending requests sit at the top with **Review…**.
   - Activity stores ids and reason codes only, never memory text.
 - **Quick capture** with ⌥⌘M (changeable in Settings ▸ Capture), **Remember…** in the menu, or **Services ▸ Remember in Funes** in any app.
   - The box says when text looks like a secret, and saves nothing then.
@@ -80,7 +80,7 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
 - **Settings ▸ AI Models**: embeddings are built in. Classification uses Apple's on-device model by default, or a provider you add: Anthropic, OpenAI, Ollama, LM Studio or another OpenAI-compatible server, with its key in the Keychain and **Test Connection**.
   - Each choice shows where it runs and, for cloud ones, what it sends. Classification sends only new captures and your category names and descriptions; agent suggestions and imports are never sent.
   - Nothing above the cloud limit (Internal by default), and nothing that looks like a secret, goes to a cloud model.
-  - Usage counts per provider, with **Reset**.
+  - Usage counts per provider, with **Reset Usage**.
 - **More settings**
   - **General**: open at login, show Funes in the Dock, and optional notifications: a request expired, a suggestion is waiting, an agent was refused more than 5 times in 10 minutes.
   - **MCP**: turn agent access on or off, change the port, see the address, the launcher (optionally linked as `~/.local/bin/funes-mcp`) and traffic counts.
@@ -91,3 +91,8 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
 - **Accessibility**: every control works from the keyboard and has a VoiceOver label; panels, the capture box's errors and short notices are announced; badges and cards get stronger outlines with Increase Contrast, and notices don't fade with Reduce Motion.
 - **Licences in the app**: the bundled embedding model ships inside the app with its MIT licence, and the app includes the licence texts of GRDB.swift, Sparkle and the model alongside its own `LICENSE` and `NOTICE`.
 - **Open source**: the code, the product definition in `spec/`, and the tests are public under the Apache License 2.0. See [Testing](docs/TESTING.md) for what has been checked.
+
+[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/bereciartua/funes-vault-app/releases/tag/v0.1.0

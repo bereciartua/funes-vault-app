@@ -65,7 +65,7 @@ Everything goes to `dist/` (ignored). `sh scripts/release.sh --help` lists the o
 
 ### Cutting a release
 
-1. On a branch: raise the version (see the checklist), turn `## [Unreleased]` into `## [x.y.z] - YYYY-MM-DD` in the changelog (keep an empty Unreleased above it), and merge.
+1. On a branch: raise the version (see the checklist), turn `## [Unreleased]` into `## [x.y.z] - YYYY-MM-DD` in the changelog (keep an empty Unreleased above it, and update the compare links at the bottom), and merge.
 2. Rehearse on `main`: `FUNES_NOTARY_PROFILE=ekbridge FUNES_SPARKLE_KEYCHAIN=1 sh scripts/release.sh --untagged --no-release` (the `ekbridge` notary profile on the maintainer's Mac belongs to the same team). It archives, notarizes and checks the DMG, the zip and the appcast signature without touching GitHub.
 3. `git tag v<x.y.z> && git push origin v<x.y.z>`, then approve the run in Actions.
 4. Open the draft: check the notes and the five assets, download the DMG and run `shasum -a 256 -c SHA256SUMS --ignore-missing`, and install it on a clean user account.
