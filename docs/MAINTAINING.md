@@ -92,7 +92,7 @@ The MCP Registry workflow needs `MCP_REGISTRY_DNS_KEY` in its own `registry` env
 
 ## Updates
 
-The app updates itself with [Sparkle](https://sparkle-project.org) 2.10.0 (`Apps/FunesMac/Updates/SparkleUpdater.swift`). The feed (`SUFeedURL`) is `https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml`, which GitHub redirects to the newest published, non-prerelease release, so drafts and prereleases are never offered and there's no server. Checks run once a day while automatic checks are on, and from **Check for Updates…**; installing always takes a click.
+The app updates itself with [Sparkle](https://sparkle-project.org) 2.10.0 (`Apps/FunesMac/Updates/SparkleUpdater.swift`). The feed (`SUFeedURL`) is `https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml`, which GitHub redirects to the newest published, non-prerelease release, so drafts and prereleases are never offered and there's no server. Checks run once a day while automatic checks are on, and from **Check for Updates…**; installing always takes a click. Only a copy signed with the Developer ID of team `JVNJ326L7B` checks (`SparkleUpdater.isConfigured`, the team `scripts/release.sh` requires): builds from source, Xcode runs and `scripts/test.sh`'s Debug build never check, and hide **Check for Updates…**. A release rehearsal signed with the Developer ID does check.
 
 **The key** is Funes's own, not EK Bridge's. It was created once with:
 
