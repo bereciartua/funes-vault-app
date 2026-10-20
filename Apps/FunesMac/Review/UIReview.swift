@@ -136,6 +136,10 @@ final class UIReview: NSObject, NSApplicationDelegate {
         keep.append(main)
         for (appearance, suffix) in [(NSAppearance.Name.aqua, "light"), (.darkAqua, "dark")] {
             NSApp.appearance = NSAppearance(named: appearance)
+            // Both passes start alike: the default window size, not the frame the real app autosaved,
+            // and Remote Access off, as the previous pass leaves it on.
+            main.window?.setContentSize(NSSize(width: 1_040, height: 680))
+            model.remoteAccess.reviewSet(enabled: false, origin: nil, tunnel: nil)
 
             // The main window, section by section.
             func mainScene(_ name: String, _ prepare: () -> Void) async {

@@ -63,6 +63,11 @@ claude.ai, ChatGPT and cloud coding agents run on their vendor's servers, so the
 2. Add the agent with a cloud tile in **Add Agent…** (claude.ai, ChatGPT, …), or turn on **Allow cloud access** on an agent's **Cloud** tab.
 3. Connect it: apps that sign in (claude.ai, ChatGPT, Gemini Enterprise) use **Connect a Cloud App…** and a six-digit code you compare on the Mac; the others use the agent's remote token. The agent's **Cloud** tab shows the steps for each.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/remote-access-dark.png">
+  <img alt="The Remote Access page, on and marked Experimental: the tunnel is reachable and running (Tailscale Funnel, forwarding to 47627), the public address and the MCP URL with its secret path, the port, when to turn off, and the agents with cloud access." src="docs/images/remote-access-light.png" width="720">
+</picture>
+
 A cloud agent gets exactly the access you set for it, and the same panels on your Mac: if you're away, its requests wait and expire as for any agent. While Remote Access is on, the vault is reachable through a public address, and what you share with a cloud agent goes to its vendor's servers. It's off by default, and **Turn Off Remote Access** in the menu bar cuts every cloud agent off at once. The [MCP guide](docs/MCP.md#use-from-cloud-agents) has the details.
 
 ## How you stay in control
@@ -75,7 +80,7 @@ Every agent has its own access: whether it may **Read**, **Suggest** or **Write*
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/agents-access-dark.png">
-  <img alt="An agent's Access tab: switches for Read, Suggest and Write, the maximum sensitivity, allowed and denied categories, Ask before sharing, Ask before saving and an expiry date." src="docs/images/agents-access-light.png" width="640">
+  <img alt="The Agents page: each agent with its status and a summary of its access, and Claude Code's Access tab open, with switches for Read, Suggest and Write, a slider for the maximum sensitivity, and Allow or Deny for each category." src="docs/images/agents-access-light.png" width="640">
 </picture>
 
 ### You approve the exact text
@@ -95,7 +100,7 @@ Agents propose memories, and by default each one waits in the **Inbox** as a car
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/inbox-dark.png">
-  <img alt="The Inbox: suggestion cards from agents and captures, each with its proposed title, text, categories and sensitivity, and Apply, Reject and Later buttons." src="docs/images/inbox-light.png" width="720">
+  <img alt="The Inbox: a correction from Claude Code showing the old text struck out and the new text, with editable title, text, kind, sensitivity and categories, the agent's reason as reported, and Later, Reject, Keep Both and Replace buttons." src="docs/images/inbox-light.png" width="720">
 </picture>
 
 ### You see everything, and stop anything
@@ -104,7 +109,7 @@ Agents propose memories, and by default each one waits in the **Inbox** as a car
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/activity-dark.png">
-  <img alt="Activity grouped by day: each row has the time, the agent, what it asked for and the result, such as shared, denied by you or refused. The selected row's details list the memories by title and what was withheld." src="docs/images/activity-light.png" width="720">
+  <img alt="Activity: filters, two pending requests with Review… buttons, and today's rows with the time, who acted, the event and the result, such as Done, Waiting for you or Waiting in Inbox. The selected request's details show the agent and that its task text isn't stored." src="docs/images/activity-light.png" width="720">
 </picture>
 
 ### Under the hood
