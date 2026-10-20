@@ -45,9 +45,9 @@ Badges, once the listings exist:
 
 2. **Open the app.** It lives in the menu bar. The Vault opens with a short setup checklist:
    1. **Seed your vault.** Answer a few optional questions, import your ChatGPT memories or paste Claude's, or import a Markdown file. Everything goes to the Inbox first, and anything that looks like a secret is never imported.
-   2. **Review the Inbox.** Apply what's right; edit or reject the rest.
+   2. **Review your Inbox.** Apply what's right; edit or reject the rest.
    3. **Add an agent.** Pick its tile (agents found on your Mac are marked) and a starting access. The default, **Read low-sensitivity memories, ask first**, lets it read memories up to Low and asks you before each share.
-   4. **Connect it.** **Add to Claude Code…** (or Claude Desktop, Cursor or Codex) shows the exact change to the agent's settings first, keeps a backup and never writes the key into them. For other agents, copy the setup from the agent's **Connect** tab. The step is done when the agent's first request arrives.
+   4. **Connect it.** **Add to Claude Code…** (or Claude Desktop, Cursor or Codex) shows exactly what it will change or run first, backs up a settings file before changing it, and never writes the key into the agent's settings. For other agents, copy the setup from the agent's **Connect** tab. The step is done when the agent's first request arrives.
 
 3. **Ask your agent.** For example: *"Plan a week of dinners for me"* or *"Set up this TypeScript project the way I like it."* The agent asks Funes for context, you see the panel, and you choose what to share.
 
@@ -61,7 +61,12 @@ claude.ai, ChatGPT and cloud coding agents run on their vendor's servers, so the
 
 1. Open **Remote Access** in the sidebar and follow its four steps: choose a tunnel, turn Remote Access on and start the tunnel, paste its address, test. Funes never starts a tunnel; it shows the command.
 2. Add the agent with a cloud tile in **Add Agent…** (claude.ai, ChatGPT, …), or turn on **Allow cloud access** on an agent's **Cloud** tab.
-3. Connect it: apps that sign in (claude.ai, ChatGPT) use **Connect a Cloud App…** and a six-digit code you compare on the Mac; the others use the agent's remote token.
+3. Connect it: apps that sign in (claude.ai, ChatGPT, Gemini Enterprise) use **Connect a Cloud App…** and a six-digit code you compare on the Mac; the others use the agent's remote token. The agent's **Cloud** tab shows the steps for each.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/remote-access-dark.png">
+  <img alt="The Remote Access page, on and marked Experimental: the tunnel is reachable and running (Tailscale Funnel, forwarding to 47627), the public address and the MCP URL with its secret path, the port, when to turn off, and the agents with cloud access." src="docs/images/remote-access-light.png" width="720">
+</picture>
 
 A cloud agent gets exactly the access you set for it, and the same panels on your Mac: if you're away, its requests wait and expire as for any agent. While Remote Access is on, the vault is reachable through a public address, and what you share with a cloud agent goes to its vendor's servers. It's off by default, and **Turn Off Remote Access** in the menu bar cuts every cloud agent off at once. The [MCP guide](docs/MCP.md#use-from-cloud-agents) has the details.
 
@@ -75,7 +80,7 @@ Every agent has its own access: whether it may **Read**, **Suggest** or **Write*
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/agents-access-dark.png">
-  <img alt="An agent's Access tab: switches for Read, Suggest and Write, the maximum sensitivity, allowed and denied categories, Ask before sharing, Ask before saving and an expiry date." src="docs/images/agents-access-light.png" width="640">
+  <img alt="The Agents page: each agent with its status and a summary of its access, and Claude Code's Access tab open, with switches for Read, Suggest and Write, a slider for the maximum sensitivity, and Allow or Deny for each category." src="docs/images/agents-access-light.png" width="640">
 </picture>
 
 ### You approve the exact text
@@ -91,26 +96,26 @@ Nothing an agent writes in its task or purpose changes what it may see. Those wo
 
 ### Agents suggest, you decide
 
-Agents propose memories, and by default each one waits in the **Inbox** as a card you can edit before **Apply**, **Reject** or **Later**. Cards say who proposed what, quote the agent's reasons as reported, point out similar memories, and show a correction as old and new text. Your own captures and imports land there too.
+Agents propose memories, and by default each one waits in the **Inbox** as a card you can edit before **Apply** (**Replace** or **Keep Both** for a correction), **Reject** or **Later**. Cards say who proposed what, quote the agent's reasons as reported, point out similar memories, and show a correction as old and new text. Your own captures and imports land there too.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/inbox-dark.png">
-  <img alt="The Inbox: suggestion cards from agents and captures, each with its proposed title, text, categories and sensitivity, and Apply, Reject and Later buttons." src="docs/images/inbox-light.png" width="720">
+  <img alt="The Inbox: a correction from Claude Code showing the old text struck out and the new text, with editable title, text, kind, sensitivity and categories, the agent's reason as reported, and Later, Reject, Keep Both and Replace buttons." src="docs/images/inbox-light.png" width="720">
 </picture>
 
 ### You see everything, and stop anything
 
-**Activity** lists what each agent asked for and what happened, by day, with filters. Funes stores only ids and reason codes, never text: it shows the memories involved by their current title when you open a row, says what was withheld and why, and links to fix a refusal. **Pause** an agent to refuse its requests while keeping its setup, **Remove** it to cut it off, or **Pause Funes Vault** from the menu bar for an hour, until tomorrow or until you resume.
+**Activity** lists what each agent asked for and what happened, by day, with filters. Funes stores only ids and reason codes, never text: it shows the memories involved by their current title when you open a row, says what was withheld and why, and links to fix a refusal. **Pause** an agent to refuse its requests while keeping its setup, **Remove…** it to cut it off, or **Pause Funes Vault** from the menu bar for an hour, until tomorrow or until you resume.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/activity-dark.png">
-  <img alt="Activity grouped by day: each row has the time, the agent, what it asked for and the result, such as shared, denied by you or refused. The selected row's details list the memories by title and what was withheld." src="docs/images/activity-light.png" width="720">
+  <img alt="Activity: filters, two pending requests with Review… buttons, and today's rows with the time, who acted, the event and the result, such as Done, Waiting for you or Waiting in Inbox. The selected request's details show the agent and that its task text isn't stored." src="docs/images/activity-light.png" width="720">
 </picture>
 
 ### Under the hood
 
 - **Local by default.** The MCP server listens on `127.0.0.1:47625`, never on a network interface. No account, no analytics, no server of ours. Remote Access, off by default, opens a second loopback port only a tunnel you run can expose.
-- **A key per agent.** Each agent has its own 256-bit key in a private file; the vault stores only its hash. The recommended setups read the file instead of putting the key in the agent's config.
+- **A key per agent.** Each agent has its own 256-bit key in a private file; the vault stores only its hash. One-click setups and the launcher read the file instead of putting the key in the agent's config.
 - **Fail closed.** Any doubt about an agent or a request is a refusal. Refusals tell the agent *how many* memories were withheld and why, never which ones.
 - **Single use.** An approved share is delivered once, within 15 minutes, and only if the memories and the agent's access are unchanged.
 - **Secrets stay out.** A secret scanner checks captures, suggestions and imports, and everything sent to a model you chose.
@@ -179,7 +184,7 @@ No. Search uses a small model built into the app (bge-small, on your Mac). Apple
 <details>
 <summary><b>Is there an iPhone app?</b></summary>
 
-Not yet. An iPhone companion that captures thoughts and searches the vault when your Mac is reachable is planned for v0.2.
+Not yet. An iPhone companion that captures thoughts, searches the vault when your Mac is reachable and lets you approve agents' requests is planned for v0.2.
 </details>
 
 <details>
@@ -197,7 +202,7 @@ Something else? Open an [issue](https://github.com/bereciartua/funes-vault-app/i
 - **Access decisions.** Made inside Funes from the agent's access, each memory's sensitivity and categories, and your answer, never from what the agent writes. An approval is bound to the exact memories and versions you saw.
 - **Data at rest.** The vault is an SQLite file in your Application Support folder, protected by FileVault, not by its own encryption. Backups stay in the same folder.
 - **Models.** Text goes to a model provider only if you added one and chose it, never above your cloud limit for a cloud provider, and never when it looks like a secret.
-- **Remote Access (experimental, off by default).** While it's on, a second listener on `127.0.0.1:47627` answers what a tunnel you run forwards from the internet. Every route sits under a 128-bit secret path (anything else is 404), `Host` must be your tunnel's address, and every call needs a credential of an agent you allowed cloud access: its remote token, or an OAuth token from a cloud app you approved with a six-digit code while pairing was open for that agent. Local keys don't work remotely and remote credentials don't work locally. Repeated failed sign-ins from one address are locked out for 5 minutes, and remote calls have a stricter rate limit. The same access, panels and pending list apply as for agents on your Mac. Text you share with a cloud agent goes to its vendor; some tunnels (Cloudflare, ngrok) can read the traffic, while Tailscale Funnel ends TLS on your Mac.
+- **Remote Access (experimental, off by default).** While it's on, a second listener on `127.0.0.1` (port 47627 unless you change it on the Remote Access page) answers what a tunnel you run forwards from the internet. Every route sits under a 128-bit secret path (anything else is 404), `Host` must be your tunnel's address (or the loopback address, for tunnels that rewrite it), and every call needs a credential of an agent you allowed cloud access: its remote token, or an OAuth token from a cloud app you approved with a six-digit code while pairing was open for that agent. Local keys don't work remotely and remote credentials don't work locally. Repeated failed sign-ins from one address are locked out for 5 minutes, and remote calls have a stricter rate limit. The same access, panels and pending list apply as for agents on your Mac. Text you share with a cloud agent goes to its vendor; some tunnels (Cloudflare, ngrok) can read the traffic, while Tailscale Funnel ends TLS on your Mac.
 
 **These controls do not isolate another process running as the same macOS user.** Such a process can read the vault, the backups and the key files. Funes also can't recall or control text after you've shared it with an agent. An access setting is a boundary between the agents you connect, not a defense against a compromised user account. See the [threat model](docs/ARCHITECTURE.md#threat-model).
 
@@ -211,12 +216,12 @@ The app has **no analytics, telemetry or crash reporting**, and no account. Your
 | --- | --- |
 | MCP server, listening on `127.0.0.1:47625` | While **Let agents connect** is on. Loopback only: other computers can't connect. |
 | `funes-mcp` connecting to `127.0.0.1` | When an agent on your Mac starts it, to reach the MCP server. |
-| One HTTPS request to GitHub for `appcast.xml` | Once a day while **Settings ▸ Updates ▸ Check for updates every day** is on, and when you choose **Check for Updates…**. GitHub sees your IP address and the app's version. A copy built from source never checks. |
+| One HTTPS request to GitHub for `appcast.xml` | Once a day while **Settings ▸ Updates ▸ Check for updates every day** is on, and when you choose **Check for Updates…**. GitHub sees your IP address and the app's version. A copy you build from source checks the same feed. |
 | Downloading an update from GitHub | Only after you click to install it. |
-| Remote Access listener, on `127.0.0.1:47627` | Only while **Remote Access** is on (off by default). Loopback only; a tunnel you run, such as Tailscale Funnel, makes it reachable from the internet at an address you choose. Funes never starts a tunnel. |
+| Remote Access listener, on `127.0.0.1` (port 47627 by default) | Only while **Remote Access** is on (off by default). Loopback only; a tunnel you run, such as Tailscale Funnel, makes it reachable from the internet at an address you choose. Funes never starts a tunnel. |
 | One HTTPS request to your tunnel's address | When you click **Test** on the Remote Access page (and during its setup): Funes fetches its own health URL through the tunnel. |
 | One HTTPS request to a cloud app's metadata document | Only while you have pairing open, when that app starts signing in (claude.ai and ChatGPT publish one). No credential is sent. |
-| The model provider you added | Only if you add one in **Settings ▸ AI Models** and choose it: to propose a title, categories and sensitivity for each capture, and for **Load Models** and **Test Connection** (which send none of your data). A local server (Ollama, LM Studio) stays on your Mac or local network; a cloud provider gets only captures at or below your cloud limit that passed the secret scanner. |
+| The model provider you added | Only if you add one in **Settings ▸ AI Models** and choose it: to propose a title, categories and sensitivity for each capture, and for **Load Models** and **Test Connection** (which send none of your data). A local server (Ollama, LM Studio) stays on your Mac or local network; a cloud provider gets only captures at or below your cloud limit that passed the secret scanner, plus your category names and descriptions. |
 
 Notifications, shown by macOS, never include memory text. What an agent receives through Funes goes to that agent and its AI provider, under their privacy terms, so give each agent only what it needs. With Remote Access, that includes the cloud agents you allow, and the tunnel provider if its TLS ends at its edge. The full statement is in [PRIVACY.md](PRIVACY.md) and at [funesvault.com/privacy](https://funesvault.com/privacy).
 
@@ -234,7 +239,7 @@ Notifications, shown by macOS, never include memory text. What an agent receives
 
 ## Building from source
 
-You need macOS 15 or later, Xcode 27 and Python 3.11 (to convert the embedding model once).
+You need Xcode 27 (which runs on macOS 26.6 or later) and Python 3.11 (to convert the embedding model once). The app you build runs on macOS 15 or later.
 
 ```sh
 sh scripts/fetch_embedding_model.sh
@@ -245,16 +250,17 @@ The first command downloads the bundled embedding model ([bge-small-en-v1.5](htt
 
 ## Uninstall
 
-1. Quit Funes Vault from its menu.
-2. Remove Funes from your agents' configs (for example `claude mcp remove --scope user funes`).
-3. Delete the app from Applications, and its data: `~/Library/Application Support/FunesVault` (the vault, backups, agent keys and Activity). If you linked the launcher, delete `~/.local/bin/funes-mcp`. API keys for model providers you added are in the Keychain under `com.funesvault.provider`.
+1. If you used Remote Access, turn your tunnel off: the Remote Access page shows how.
+2. Quit Funes Vault from its menu.
+3. Remove Funes from your agents' configs (for example `claude mcp remove --scope user funes`).
+4. Delete the app from Applications, and its data: `~/Library/Application Support/FunesVault` (the vault, backups, agent keys and Activity). Its settings are in `~/Library/Preferences/com.funesvault.mac.plist`. If you linked the launcher, delete `~/.local/bin/funes-mcp`. API keys for model providers you added are in the Keychain under `com.funesvault.provider`.
 
-To start over without uninstalling, **Settings ▸ Data ▸ Erase All Data…** deletes every memory, suggestion, agent and key, Activity, backups and provider keys, then relaunches empty.
+To start over without uninstalling, **Settings ▸ Data ▸ Erase All Data…** deletes every memory, suggestion, agent and key, Activity, backups, provider keys and settings, then relaunches empty.
 
 Installed with Homebrew, `brew uninstall --cask funes-vault` removes the app; `brew uninstall --zap --cask funes-vault` also moves the data folder, caches and preferences to the Trash (provider API keys stay in the Keychain).
 
 ## License
 
-Funes Vault is licensed under the [Apache License 2.0](LICENSE); see [NOTICE](NOTICE). The app bundles GRDB.swift, Sparkle and the bge-small-en-v1.5 model by BAAI, each under the MIT License; their licence texts ship in the app. The license doesn't grant rights to the project's name or icon. Apple, Mac and macOS are trademarks of Apple Inc. This project is not affiliated with or endorsed by Apple, Anthropic, OpenAI or BAAI.
+Funes Vault is licensed under the [Apache License 2.0](LICENSE); see [NOTICE](NOTICE). The app bundles BridgeKit (Apache License 2.0, by the same author), and GRDB.swift, Sparkle and the bge-small-en-v1.5 model by BAAI, each under the MIT License; their licence texts ship in the app. The license doesn't grant rights to the project's name or icon. Apple, Mac and macOS are trademarks of Apple Inc. This project is not affiliated with or endorsed by Apple, Anthropic, OpenAI or BAAI.
 
 Funes Vault is made by [Martin Bereciartua](https://www.linkedin.com/in/bereciartua/), who also makes [EK Bridge](https://github.com/bereciartua/ek-bridge).

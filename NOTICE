@@ -3,12 +3,13 @@ Copyright 2026 Martin Bereciartua
 
 Licensed under the Apache License, Version 2.0 (see LICENSE).
 
-Funes Vault uses GRDB.swift (https://github.com/groue/GRDB.swift) under the
-MIT License. The Mac app as distributed will include Sparkle
-(https://sparkle-project.org), the updater, under the MIT License, and the
-bge-small-en-v1.5 embedding model by BAAI
+Funes Vault uses BridgeKit (https://github.com/bereciartua/bridgekit), by the
+same author, under the Apache License 2.0, and GRDB.swift
+(https://github.com/groue/GRDB.swift) under the MIT License. The Mac app also
+includes Sparkle (https://sparkle-project.org), the updater, under the MIT
+License, and the bge-small-en-v1.5 embedding model by BAAI
 (https://huggingface.co/BAAI/bge-small-en-v1.5), converted to Core ML, under
-the MIT License; its full licence text ships in the app's acknowledgements.
+the MIT License. Their licence texts ship in the app.
 
 Funes Vault is not affiliated with or endorsed by Apple Inc. Apple, Mac,
 iPhone and macOS are trademarks of Apple Inc., registered in the U.S. and

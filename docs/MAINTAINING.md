@@ -9,11 +9,11 @@ This guide is for maintainers: how a change is made, checked and released, and w
 | `spec/` | The source of truth: requirements, access policy and its test vectors, architecture and ADRs, phase plans |
 | `Apps/FunesMac/` | The Mac app (AppKit + SwiftUI): menu bar, windows, panels, settings, Sparkle; `Assets.xcassets` holds the app icon |
 | `Apps/FunesMCPLauncher/` | `funes-mcp`, the stdio launcher agents run, embedded in `Contents/MacOS` and signed as `com.funesvault.mac.mcp` |
-| `Apps/FunesMac-Info.plist` | Info.plist keys Xcode can't generate: Sparkle's feed and public key, the Services menu item |
+| `Apps/FunesMac-Info.plist` | Info.plist keys Xcode can't generate: Sparkle's feed, public key and check settings, the Services menu item |
 | `Packages/FunesProtocol`, `FunesCore`, `FunesMCP`, `BridgeUI` | Shared types; the vault logic; the MCP adapter; UI pieces from EK Bridge ([Architecture](ARCHITECTURE.md)) |
 | `FunesVault.xcodeproj` | Two targets, FunesMac and FunesMCPLauncher. The version lives here, once, at project level: `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` |
 | `Licenses/` | Third-party license texts (GRDB, Sparkle, the bge-small model) that ship in the app with `LICENSE` and `NOTICE` |
-| `scripts/test.sh` | Everything offline: package tests, the MCP harness, the log-privacy check, both Debug builds, the String Catalog check |
+| `scripts/test.sh` | Everything offline: package tests, the MCP and Remote Access harnesses, the log-privacy and model-call checks, both Debug builds, the String Catalog check |
 | `scripts/fetch_embedding_model.sh`, `scripts/embedding_model/` | The bundled model: fetched at a pinned revision, checksummed, converted to Core ML, cached in `~/Library/Caches/com.funesvault.dev/` ([ADR-0016](../spec/architecture/decisions/0016-bundled-bge-small-embeddings.md)) |
 | `scripts/embed_resources.sh` | The FunesMac build phase **Embed Resources**: copies the model (checked against the pinned checksums) and the license files into the app. A Release build fails without the model; a Debug build warns and falls back to the cache folder |
 | `scripts/app_icon.swift` | Draws the app icon in code and writes `AppIcon.appiconset` and the website's icons |
@@ -37,13 +37,13 @@ CI is kept cheap while macOS minutes are scarce: it runs on pull requests that t
 ## Before every release
 
 - [ ] `sh scripts/test.sh` passes with `FUNES_REQUIRE_EMBEDDING_MODEL=1`, and CI (both toolchains) is green on `main` or paused with a local run recorded.
-- [ ] A higher `CURRENT_PROJECT_VERSION` and the new `MARKETING_VERSION` in the project (project level only; `scripts/check_version.sh` rejects a target override), `version` in `server.json`, and a `## [x.y.z]` section in the changelog.
+- [ ] A higher `CURRENT_PROJECT_VERSION` and the new `MARKETING_VERSION` in the project (project level only; `scripts/check_version.sh` rejects a second, different value, such as a target override), `version` in `server.json`, and a `## [x.y.z]` section in the changelog.
 - [ ] Docs match the behaviour: README, [MCP](MCP.md), [Testing](TESTING.md), [Privacy](../PRIVACY.md), the website.
 - [ ] No personal data in the tree or the new commits: `gitleaks git` over the new commits is clean.
 - [ ] UI snapshots reviewed, light and dark.
-- [ ] The [live matrix](TESTING.md) ran for the four agents, and the results are recorded.
+- [ ] The [live matrix](TESTING.md#live-agent-matrix) ran for the four agents, and the results are recorded.
 - [ ] A rehearsal, `sh scripts/release.sh --untagged --no-release`, produced a notarized DMG and zip from the release commit, so the workflow run is a formality.
-- [ ] Before the first release and after changes to the bundle layout or the updater: the release install test and the fresh-account install test in [Testing](TESTING.md).
+- [ ] Before the first release and after changes to the bundle layout or the updater: the [release install test](TESTING.md#release-install-test) and the [fresh-account test](TESTING.md#fresh-account-test) in Testing.
 
 ## Releasing
 
@@ -65,12 +65,12 @@ Everything goes to `dist/` (ignored). `sh scripts/release.sh --help` lists the o
 
 ### Cutting a release
 
-1. On a branch: raise the version (see the checklist), turn `## [Unreleased]` into `## [x.y.z] - YYYY-MM-DD` in the changelog (keep an empty Unreleased above it), and merge.
+1. On a branch: raise the version (see the checklist), turn `## [Unreleased]` into `## [x.y.z] - YYYY-MM-DD` in the changelog (keep an empty Unreleased above it, and update the compare links at the bottom), and merge.
 2. Rehearse on `main`: `FUNES_NOTARY_PROFILE=ekbridge FUNES_SPARKLE_KEYCHAIN=1 sh scripts/release.sh --untagged --no-release` (the `ekbridge` notary profile on the maintainer's Mac belongs to the same team). It archives, notarizes and checks the DMG, the zip and the appcast signature without touching GitHub.
 3. `git tag v<x.y.z> && git push origin v<x.y.z>`, then approve the run in Actions.
 4. Open the draft: check the notes and the five assets, download the DMG and run `shasum -a 256 -c SHA256SUMS --ignore-missing`, and install it on a clean user account.
 5. Publish. Then check that `https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml` and `…/FunesVault.dmg` resolve to this version (`curl -sIL <url> | grep -i '^location'`), that the previous version offers the update, and that the **MCP Registry** workflow published `server.json`.
-6. Update the Homebrew cask: `gh workflow run update.yml --repo bereciartua/homebrew-tap`. It bumps `funes-vault` only if the DMG's build attestation shows this repository's release workflow built it from the tag and its SHA-256 matches `SHA256SUMS`.
+6. Update the Homebrew cask: once `packaging/homebrew/tap.patch` is applied to the tap ([packaging/homebrew](../packaging/homebrew/README.md); it isn't yet), `gh workflow run update.yml --repo bereciartua/homebrew-tap -f cask=funes-vault` (it also runs every six hours). It bumps `funes-vault` only if the DMG's build attestation shows this repository's release workflow built it from the tag and its SHA-256 matches `SHA256SUMS`.
 
 ### The `release` environment
 
@@ -84,7 +84,7 @@ Create it under Settings ▸ Environments with yourself as a required reviewer, 
 | `NOTARY_KEY_ID`, `NOTARY_ISSUER_ID` | The key's ID and issuer ID |
 | `SPARKLE_PRIVATE_KEY` | Funes's EdDSA private key, `generate_keys --account funes-vault -x <file>`, as the file's text. Required |
 
-The MCP Registry workflow needs `MCP_REGISTRY_DNS_KEY` too (see the workflow's header). The release workflow imports the certificate into a temporary keychain, writes the keys to files under `RUNNER_TEMP`, runs `scripts/release.sh`, attests the DMGs and the zip (`gh attestation verify FunesVault-<version>.dmg --repo bereciartua/funes-vault-app`) and deletes the keychain and keys. Keep the `.p12` and the Sparkle key backed up outside GitHub.
+The MCP Registry workflow needs `MCP_REGISTRY_DNS_KEY` in its own `registry` environment (see the workflow's header). The release workflow imports the certificate into a temporary keychain, writes the keys to files under `RUNNER_TEMP`, runs `scripts/release.sh`, attests the DMGs and the zip (`gh attestation verify FunesVault-<version>.dmg --repo bereciartua/funes-vault-app`) and deletes the keychain and keys. Keep the `.p12` and the Sparkle key backed up outside GitHub.
 
 ### By hand
 
@@ -102,11 +102,11 @@ build/source-packages/artifacts/sparkle/Sparkle/bin/generate_keys --account fune
 
 That stores the private key in the login keychain under the account `funes-vault` (EK Bridge's is the default account, `ed25519`) and prints the public key, which is `SUPublicEDKey` in `Apps/FunesMac-Info.plist`. `generate_keys --account funes-vault -x <file>` exports the private key for the `SPARKLE_PRIVATE_KEY` secret and a backup; delete the exported file afterwards. **Never change `SUPublicEDKey` in a release:** installed copies only accept updates signed with the key they shipped with, and a lost key means every user downloads the next version by hand.
 
-**Updating Sparkle:** change the exact version in the Xcode project's package reference, read Sparkle's changelog, run the update test in [Testing](TESTING.md), and note it in the changelog and `Licenses/Sparkle.txt`.
+**Updating Sparkle:** change the exact version in the Xcode project's package reference, read Sparkle's changelog, run the [update test](TESTING.md#update-test), and note it in the changelog and `Licenses/Sparkle.txt`.
 
 ## The bundled model
 
-`scripts/fetch_embedding_model.sh` pins the Hugging Face revision and the SHA-256 of every downloaded file and of the converted weights. `scripts/embed_resources.sh` and `scripts/check_bundle.sh` read those pins from it, so changing the model means changing that one script (and the cache folder name in `Apps/FunesMac/App/VaultEnvironment.swift` and the CI cache key), re-running the search regression, and writing an ADR.
+`scripts/fetch_embedding_model.sh` pins the Hugging Face revision and the SHA-256 of every downloaded file and of the converted weights. `scripts/embed_resources.sh` and `scripts/check_bundle.sh` read those pins from it, so changing the model means changing that one script (and the cache folder name in `Apps/FunesMac/App/VaultEnvironment.swift`, FunesCore's test `Fixtures.swift`, the cache paths in `ci.yml` and `release.yml`, and `Licenses/bge-small-en-v1.5.txt`), re-running the search regression, and writing an ADR.
 
 ## The app icon
 
