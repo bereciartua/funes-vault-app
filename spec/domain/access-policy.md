@@ -51,6 +51,7 @@ A denial at the gate doesn't run retrieval, and its response has no `withheld` c
    - `semantic ∈ [0,1]`: the cosine between the query embedding and the memory embedding, min-max normalized over the pool. It's 0 if embeddings aren't available (the model failed to load, or the memory has no vector yet).
 5. **Keep candidates** with `keyword ≥` the keyword floor (0.15; [memory processing §4](memory-processing.md#4-ranking)) or a **raw** cosine ≥ the model's retrieval threshold (0.55 for `bge-small-en-v1.5/coreml-int8`). Take the top 30 by score; ties go to the most recently updated.
 6. **If no candidates remain:** DENY `no_matching_memories`, with empty `withheld`.
+7. **Strong matches:** each candidate's score is kept in the request's snapshot (`candidate_snapshot[].score`, not part of `snapshot_revision`). On the Share panel, an eligible memory scoring at least **0.6 × the top eligible score** is a strong match and starts ticked; the rest start unticked under "Also matched, less closely". The top one is always strong. Snapshots without scores (stored before scores were kept, or from a retriever without them) treat every memory as strong. This changes only the panel's starting ticks, never which memories are eligible or the decision.
 
 The weights and thresholds come from [Spike 2b](../plans/spike-results.md#spike-2b-local-open-source-embeddings) and are stored per embedding model id. The task text and keywords are used only in memory. They're stored as one hash.
 
@@ -176,15 +177,15 @@ Run M3–M5 against the proposed sensitivity (default LOW) and categories. A fai
 Offered only when **all** of these hold:
 - the request was denied, or memories were withheld, **only** because of `category_not_allowed` (or `operation_not_allowed` for `suggest` or `write`);
 - the agent has `asksForAccess = true`;
-- the same agent, category and operation hasn't been asked in the last hour.
+- the same agent, category and operation hasn't been asked in the last hour. An offer the user never answered (the panel ran out or was withdrawn, `AccessAnswer.unanswered`) is forgotten, so the next request may ask again; Not Now keeps the hour.
 
-- **Panel:** "<Agent> can't read <Category>." Buttons: **Not Now**, **Allow Once** and **Always Allow**.
+- **Panel:** "<Agent> wants to read <Category>." Buttons: **Not Now** and **Allow Once** (the default), with **Always Allow** as a link on its own line, never the default (UX review F1).
   - **Allow Once** runs the request again with a temporary grant bound to this request id and the agent's revision. It isn't persisted. If that request needs approval, the grant stays with it, in memory, for its panel and its delivery (§3.6–3.7). Any change to the agent's access bumps the revision and drops the grant, so the request then fails closed with `policy_changed`.
   - **Always Allow** adds exactly that category to the allow list, or that operation, and increments the revision.
 - Never offered for sensitivity ceilings or denied categories. Those are deliberate user choices and can only be changed in the editor.
 - **When the panel shows** (task 3.6):
   - **A read that was denied or needs approval:** inside the call, within the same 45 s as the Share panel. Allow Once or Always Allow runs the request again; a request that was waiting for approval is replaced (denied with `policy_changed`, recorded as "replaced"), and the new one gets its own panel for the rest of the 45 s.
-  - **A read shared without asking** (some memories allowed, `askBeforeSharing` off): the agent gets its answer at once, and the panel offers only **Not Now** and **Always Allow**, for its next request.
+  - **A read shared without asking** (some memories allowed, `askBeforeSharing` off): the agent gets its answer at once, and the panel offers only **Not Now** and **Always Allow**, for its next request, with no default button.
   - **A suggestion:** the agent gets its refusal at once (suggestions never wait). If the user picks Allow Once or Always Allow, that suggestion is stored again and goes to the Inbox with its Save panel, even for an agent that may save without asking. Allow Once for a suggestion holds only at the agent's revision when the offer was made (a stale panel is refused with `policy_changed`), and grants only what was offered: a category, or the missing operation, never both.
 - The panel asks about one category: the primary category of the first withheld memory, in score order. Every offer records the agent's revision; Allow Once for a read is bound to that revision too, so an access change while the panel is open makes it fail closed.
 

@@ -7,6 +7,7 @@ import Synchronization
 /// Retrieval stand-in: "assume retrieval returns every active memory unless the case says otherwise".
 final class FixedRetriever: MemoryRetriever {
     private let ids = Mutex<[UUID]?>(nil)
+    private let scores = Mutex<[UUID: Double]?>(nil)
     private let calls = Mutex(0)
     let store: VaultStore
 
@@ -15,6 +16,14 @@ final class FixedRetriever: MemoryRetriever {
     /// nil: every active memory, oldest first.
     func set(_ ids: [UUID]?) { self.ids.withLock { $0 = ids } }
     var callCount: Int { calls.withLock { $0 } }
+    /// Search scores to report with the candidates; nil reports none (every candidate is strong).
+    func set(scores: [UUID: Double]?) { self.scores.withLock { $0 = scores } }
+
+    func candidates(task: String, keywords: [String], categories: [String]) async throws -> [RetrievedCandidate] {
+        let scores = self.scores.withLock { $0 }
+        return try await candidateIDs(task: task, keywords: keywords, categories: categories)
+            .map { id in RetrievedCandidate(id: id, score: scores?[id]) }
+    }
 
     func candidateIDs(task: String, keywords: [String], categories: [String]) async throws -> [UUID] {
         calls.withLock { $0 += 1 }

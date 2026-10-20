@@ -49,13 +49,13 @@ struct ModelSettingsPane: View {
                 }
             }
             Section(String(localized: "Cloud limit")) {
-                Picker(String(localized: "Never send memories above"), selection: Binding(get: { settings.cloudLimit },
+                Picker(String(localized: "Never send captures above"), selection: Binding(get: { settings.cloudLimit },
                                                                                           set: { settings.cloudLimit = $0 })) {
                     ForEach([Sensitivity.public, .low, .internal, .sensitive], id: \.self) { level in
                         Text(level.title).tag(CloudLimit.upTo(level))
                     }
                     Divider()
-                    Text(String(localized: "Never send memories")).tag(CloudLimit.never)
+                    Text(String(localized: "Never send captures")).tag(CloudLimit.never)
                 }
                 Text(String(localized: "Applies to every cloud provider. Captures are checked on this Mac first, and anything that looks like a secret is never sent."))
                     .font(.callout).foregroundStyle(.secondary)
@@ -140,7 +140,7 @@ struct ModelSettingsPane: View {
         guard let provider = settings.classifier, !classifierLocality.isLocal else { return nil }
         switch settings.cloudLimit {
         case .never:
-            return String(localized: "Classification sends nothing to \(provider.name): the cloud limit is Never send memories, so it runs on this Mac.")
+            return String(localized: "Classification sends nothing to \(provider.name): the cloud limit is Never send captures, so it runs on this Mac.")
         case .upTo(let level):
             return String(localized: "Classification sends new captures (up to \(level.title)) and your category names and descriptions to \(provider.name).")
         }

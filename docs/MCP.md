@@ -27,7 +27,7 @@ To change the port, type it in **Settings ▸ MCP ▸ Port** (1024–65535) and 
    - **Read and suggest, ask first:** Read and Suggest, up to Internal, except Health, Finance and Legal.
    - **Nothing yet** or **Custom:** it can connect, but sees nothing until you set its access on the **Access** tab.
 
-   All of them ask before sharing and before saving. **Let it ask for more access** lets Funes offer you **Not Now**, **Allow Once** or **Always Allow** when a request is refused only because a category isn't allowed, or a suggestion because the agent lacks Suggest. It asks at most once an hour per agent, category and operation.
+   All of them ask before sharing and before saving. **Let it ask for more access** lets Funes offer you **Not Now**, **Allow Once** (the default) or **Always Allow** when a request is refused only because a category isn't allowed, or a suggestion because the agent lacks Suggest. It asks at most once an hour per agent, category and operation; a panel you never answered doesn't count.
 3. **Add Agent** opens the agent's **Connect** tab (the **Access** tab for **Custom**). Set it up there (below). Its status changes from waiting for its first request to **Connected**, with the time of its last request.
 
 Use **one agent entry per agent**, and give each only what it needs: what an agent reads goes to its AI provider.

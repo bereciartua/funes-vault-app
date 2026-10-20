@@ -89,7 +89,7 @@ When an agent asks for context, Funes finds the memories that match its task and
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/share-panel-dark.png">
-  <img alt="The Share panel: an agent wants to use your memories for a task, with the keywords it is looking for, its stated purpose, a checkbox per memory with its sensitivity, a countdown, and Deny and Share buttons." src="docs/images/share-panel-light.png" width="400">
+  <img alt="The Share panel: Claude Code wants 3 memories. A Goes to line says where the text ends up, the agent's task, keywords, purpose and retention sit in a block marked not checked by Funes, then the strong match ticked and weaker matches offered unticked, each with its sensitivity, a countdown, More Time, and Deny and Share buttons." src="docs/images/share-panel-light.png" width="400">
 </picture>
 
 Nothing an agent writes in its task or purpose changes what it may see. Those words only help find relevant memories.

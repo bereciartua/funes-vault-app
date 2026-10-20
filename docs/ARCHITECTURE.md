@@ -135,7 +135,7 @@ The rules are defined, with 35 test vectors, in the [access policy](../spec/doma
 - **What agents learn from a refusal:** counts of withheld memories by reason, never ids or titles ([ADR-0012](../spec/architecture/decisions/0012-withheld-counts-not-ids.md)). `not_found` is the same answer for another agent's request as for no request.
 - **Purpose never decides.** The `task` and `keywords` only affect which memories are retrieved and what the panel shows. They are kept in memory for up to 15 minutes and stored only as a hash. The `purpose` is stored with the request and shown, never evaluated.
 - **Suggestions:** validated (lengths, known categories, the secret scanner), then the gate, then the proposed memory must fit the agent's own scope (sensitivity and categories). **Write** with **Ask before saving** off saves it; otherwise it's queued in the Inbox. Corrections are always queued.
-- **Asking for more access** (optional per agent): when a request is refused only because a category isn't allowed, a panel offers **Not Now**, **Allow Once** or **Always Allow**, at most once an hour per agent and category. Never for the sensitivity ceiling or a denied category.
+- **Asking for more access** (optional per agent): when a request is refused only because a category isn't allowed, a panel offers **Not Now** or **Allow Once** (the default), with **Always Allow** as a separate link, at most once an hour per agent and category (a panel nobody answered doesn't count). Never for the sensitivity ceiling or a denied category.
 
 ## Search
 

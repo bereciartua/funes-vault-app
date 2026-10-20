@@ -104,6 +104,7 @@
 **FR-C-01 Quick capture on the Mac** · M · v0.1
 - A global hotkey (default ⌥⌘M, configurable) opens a small capture box. The text is saved as a **capture** in the Inbox.
 - Acceptance: works from any app without stealing more focus than the capture box, and needs no macOS Accessibility permission (Carbon hotkey API).
+- The box says where the text goes: the Inbox, and the cloud provider when a cloud model proposes the fields (principle 7).
 
 **FR-C-02 Menu bar "Remember…"** · M · v0.1
 - The same capture box opens from the menu bar.
@@ -192,7 +193,8 @@
 **FR-A-10 Let it ask for more access** · S · v0.1
 - When a request is denied only because a category isn't allowed, or an operation is missing, the user is asked: **Allow Once**, **Always Allow** (adds exactly that category or operation) or **Not Now**.
 - Acceptance:
-  - Never asked more than once an hour for the same agent, category and operation.
+  - Never asked more than once an hour for the same agent, category and operation. An offer the user never answered (the panel ran out or was withdrawn) doesn't count, so the next request may ask again.
+  - **Allow Once** is the default button; **Always Allow** is never the default.
   - Never offered for sensitivity ceilings (the user changes those in the editor).
   - Off by default.
 
@@ -200,7 +202,7 @@
 - The menu bar has "Pause Funes Vault" (for 1 hour, until tomorrow, or until resumed), which refuses all agent requests with `funes_paused`.
 
 **FR-A-12 Declared retention** · C · v0.1
-- The user can note how an agent retains data (no storage, session, persistent, unknown). It's shown on approval panels as information only.
+- The user can note how an agent retains data (no storage, session, persistent, unknown). It's shown on the Share panel as "Your note", apart from what the agent says, as information only.
 
 ### Disclosure (FR-D)
 
@@ -218,14 +220,17 @@
 
 **FR-D-03 Approval panel** · M · v0.1
 - If confirmation is required, a non-activating floating panel shows:
-  - agent name, task, stated purpose ("as reported"), declared retention;
-  - the exact text of each eligible memory, with checkboxes (all checked);
+  - the agent's name and **where the text goes**, from what Funes knows (on this Mac, or the cloud agent's vendor and the tunnel);
+  - what the agent says, in a block of its own marked "not checked by Funes": task, keywords, purpose, retention and processors;
+  - the user's own retention note for the agent (FR-A-12);
+  - the exact text of each eligible memory, with checkboxes: strong matches checked, weaker ones offered unchecked (access policy §3.2);
   - sensitivity badges;
-  - **Deny** and **Share N** buttons, and a 45-second countdown.
+  - **Deny** and **Share N** buttons, a 45-second countdown, and **More Time** (moves it to Pending requests at once).
 - Acceptance:
-  - Buttons are enabled only after the panel is armed (about 0.5 s visible).
-  - Keystrokes in other apps can't answer it.
-  - VoiceOver announces it.
+  - Buttons are enabled only after the panel is armed (about 0.6 s visible).
+  - Keystrokes in other apps can't answer it. **Review Request** (a global shortcut, ⌃⌥⌘R by default, and the menu's first item) makes it key, so it can be answered from the keyboard.
+  - When several items wait, those on a clock are shown first.
+  - VoiceOver announces it, with the time to answer.
   - Text comes from the vault at panel time, never from the agent.
 
 **FR-D-04 Partial approval** · M · v0.1
@@ -519,7 +524,7 @@
 - Acceptance: keys are stored only in the Keychain (this device only). They never appear in the database, logs, exports or Activity. Removing a provider deletes its key.
 
 **FR-AI-07 Cloud sensitivity limit** · M · v0.1
-- "Never send memories above <level> to cloud models": Public, Low, Internal (default), Sensitive, or never send memories.
+- "Never send captures above <level>": Public, Low, Internal (default), Sensitive, or never send captures. (Only captures are sent in v0.1; the limit applies to anything a later version sends.)
 - Acceptance:
   - Nothing above the limit, and no secret-scanner match, is ever sent to a non-local provider (tested with request capture).
   - Captures are pre-screened on the device before cloud classification.

@@ -52,9 +52,6 @@
         }
       }
     },
-    "%@ asks for more access in Funes" : {
-
-    },
     "%@ asks to use %lld memories in Funes" : {
       "localizations" : {
         "en" : {
@@ -65,33 +62,17 @@
         }
       }
     },
+    "%@ asks to use your memories in Funes: %lld of %lld ticked" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ asks to use your memories in Funes: %2$lld of %3$lld ticked"
+          }
+        }
+      }
+    },
     "%@ can be offered personal memories. Keep Ask before sharing on." : {
-
-    },
-    "%@ can't add to %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ can't add to %2$@."
-          }
-        }
-      }
-    },
-    "%@ can't read %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ can't read %2$@."
-          }
-        }
-      }
-    },
-    "%@ can't read your memories." : {
-
-    },
-    "%@ can't suggest memories." : {
 
     },
     "%@ connected %@" : {
@@ -171,6 +152,9 @@
     "%@ isn't running, so cloud agents can't reach Funes Vault." : {
 
     },
+    "%@ on this Mac. It may send what it reads to its AI service." : {
+
+    },
     "%@ reported an error (exit code %d)." : {
       "localizations" : {
         "en" : {
@@ -190,11 +174,34 @@
     "%@ suggests a memory for Funes" : {
 
     },
+    "%@ to review" : {
+
+    },
     "%@ via Remote Access" : {
 
     },
-    "%@ wants more access" : {
+    "%@ wants %lld memories" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants %2$lld memories"
+          }
+        }
+      }
+    },
+    "%@ wants 1 memory" : {
 
+    },
+    "%@ wants to add to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants to add to %2$@"
+          }
+        }
+      }
     },
     "%@ wants to connect as %@" : {
       "localizations" : {
@@ -216,7 +223,20 @@
         }
       }
     },
-    "%@ wants to use your memories" : {
+    "%@ wants to read %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants to read %2$@"
+          }
+        }
+      }
+    },
+    "%@ wants to read your memories" : {
+
+    },
+    "%@ wants to suggest memories" : {
 
     },
     "%@ was refused repeatedly" : {
@@ -245,7 +265,16 @@
         }
       }
     },
+    "%@ · access" : {
+
+    },
     "%@ · approved, waiting for the agent" : {
+
+    },
+    "%@ · save" : {
+
+    },
+    "%@ · share" : {
 
     },
     "%@'s access changed while you were editing (for example, Always Allow from a panel). Review it again before saving." : {
@@ -277,11 +306,44 @@
         }
       }
     },
+    "%@, a cloud agent, through Remote Access" : {
+
+    },
+    "%@, a cloud agent, through your %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, a cloud agent, through your %2$@"
+          }
+        }
+      }
+    },
     "%@, done" : {
 
     },
     "%@, on this Mac" : {
 
+    },
+    "%@, through Remote Access, to %@'s servers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, through Remote Access, to %2$@'s servers"
+          }
+        }
+      }
+    },
+    "%@, through your %@, to %@'s servers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, through your %2$@, to %3$@'s servers"
+          }
+        }
+      }
     },
     "%@. %@" : {
       "localizations" : {
@@ -289,6 +351,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@. %2$@"
+          }
+        }
+      }
+    },
+    "%@: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@"
           }
         }
       }
@@ -338,6 +410,22 @@
     "%lld min left" : {
 
     },
+    "%lld minutes %lld seconds left" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld minutes %2$lld seconds left"
+          }
+        }
+      }
+    },
+    "%lld minutes left" : {
+
+    },
+    "%lld minutes to answer" : {
+
+    },
     "%lld models" : {
 
     },
@@ -360,16 +448,6 @@
     "%lld not shareable" : {
 
     },
-    "%lld of %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld of %2$lld"
-          }
-        }
-      }
-    },
     "%lld of 10,000 characters" : {
 
     },
@@ -377,6 +455,9 @@
 
     },
     "%lld rejected" : {
+
+    },
+    "%lld requests waiting in Funes" : {
 
     },
     "%lld requests · %lld tokens in · %lld out" : {
@@ -396,6 +477,9 @@
 
     },
     "%lld seconds left" : {
+
+    },
+    "%lld seconds to answer" : {
 
     },
     "%lld selected" : {
@@ -427,6 +511,9 @@
 
     },
     "+%lld" : {
+
+    },
+    "+%lld more" : {
 
     },
     "1 suggestion waiting for you" : {
@@ -700,7 +787,13 @@
     "Allow Once" : {
 
     },
-    "Allow Once is for this request only. %@" : {
+    "Allow Once is for this request only. It shares without asking, so the matching memories go to it at once." : {
+
+    },
+    "Allow Once is for this request only. Next, you'll see exactly what would be shared." : {
+
+    },
+    "Allow Once is for this request only. The suggestion still waits in your Inbox." : {
 
     },
     "Allow cloud access" : {
@@ -715,20 +808,33 @@
     "Already set up" : {
 
     },
-    "Always Allow" : {
+    "Also matched, less closely" : {
 
     },
-    "Always Allow adds %@ to %@'s categories." : {
+    "Always Allow %@ to Add to %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Always Allow adds %1$@ to %2$@'s categories."
+            "value" : "Always Allow %1$@ to Add to %2$@"
           }
         }
       }
     },
-    "Always Allow lets %@ suggest memories from now on." : {
+    "Always Allow %@ to Read" : {
+
+    },
+    "Always Allow %@ to Read %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Allow %1$@ to Read %2$@"
+          }
+        }
+      }
+    },
+    "Always Allow %@ to Suggest" : {
 
     },
     "An agent" : {
@@ -922,7 +1028,13 @@
     "Before: %@" : {
 
     },
+    "Beyond the session" : {
+
+    },
     "Both tunnels can run at the same time." : {
+
+    },
+    "Brings a waiting approval panel forward from any app, so Return and Esc answer it." : {
 
     },
     "Built in" : {
@@ -943,7 +1055,7 @@
     "Capture" : {
 
     },
-    "Capture shortcut: %@" : {
+    "Capture shortcut" : {
 
     },
     "Captured a note" : {
@@ -1089,7 +1201,7 @@
         }
       }
     },
-    "Classification sends nothing to %@: the cloud limit is Never send memories, so it runs on this Mac." : {
+    "Classification sends nothing to %@: the cloud limit is Never send captures, so it runs on this Mac." : {
 
     },
     "Claude Code" : {
@@ -1230,6 +1342,9 @@
     "Codex started from an app doesn't see your shell's environment variables, so the launcher is more reliable than direct HTTP." : {
 
     },
+    "Command" : {
+
+    },
     "Confirmed still true %@" : {
 
     },
@@ -1271,6 +1386,9 @@
 
     },
     "Continue as %@" : {
+
+    },
+    "Control" : {
 
     },
     "Copied" : {
@@ -1443,9 +1561,6 @@
     "Dismiss" : {
 
     },
-    "Doesn't keep it" : {
-
-    },
     "Don't move them" : {
 
     },
@@ -1608,9 +1723,6 @@
 
     },
     "For the session" : {
-
-    },
-    "For this session" : {
 
     },
     "Forwards to %@, the local MCP port. Use %@." : {
@@ -1800,7 +1912,13 @@
     "Goes in %@" : {
 
     },
+    "Goes to" : {
+
+    },
     "Goes to your Inbox" : {
+
+    },
+    "Goes to your Inbox · fields suggested by %@" : {
 
     },
     "HTTP %@" : {
@@ -2009,10 +2127,7 @@
     "Issued %@" : {
 
     },
-    "It already got what it may read. %@" : {
-
-    },
-    "It asked for context for" : {
+    "It already got what it may read. Always Allow is for next time." : {
 
     },
     "It can connect, but sees nothing until you give it access." : {
@@ -2084,13 +2199,10 @@
     "Keep this Mac awake while on power" : {
 
     },
-    "Keeps it" : {
-
-    },
     "Keeps what it gets" : {
 
     },
-    "Kept by the agent" : {
+    "Keeps what it gets: %@" : {
 
     },
     "Kept on this Mac: looked sensitive" : {
@@ -2133,6 +2245,9 @@
 
     },
     "Launcher" : {
+
+    },
+    "Leaves this Mac" : {
 
     },
     "Let Funes propose it" : {
@@ -2222,6 +2337,9 @@
     "Model" : {
 
     },
+    "More Time" : {
+
+    },
     "More information" : {
 
     },
@@ -2232,6 +2350,12 @@
 
     },
     "Move to %@" : {
+
+    },
+    "Moved to Pending requests. You have until %@ to answer." : {
+
+    },
+    "Moves it to Pending requests, where it waits up to 15 minutes" : {
 
     },
     "My Agent" : {
@@ -2246,10 +2370,10 @@
     "Never" : {
 
     },
-    "Never send memories" : {
+    "Never send captures" : {
 
     },
-    "Never send memories above" : {
+    "Never send captures above" : {
 
     },
     "Never shared with agents unless you raise an agent's ceiling to Secret." : {
@@ -2265,6 +2389,9 @@
 
     },
     "New captures" : {
+
+    },
+    "New captures are sent to %@ to suggest their fields, within the cloud limit in AI Models." : {
 
     },
     "New categories" : {
@@ -2283,9 +2410,6 @@
 
     },
     "New secret path. Update the URL in each cloud agent." : {
-
-    },
-    "Next request" : {
 
     },
     "No Funnel port on this Mac can take %@'s paths without changing another app: %@. Change one of them, or choose another tunnel." : {
@@ -2370,16 +2494,13 @@
     "Not allowed." : {
 
     },
+    "Not at all" : {
+
+    },
     "Not found" : {
 
     },
     "Not installed" : {
-
-    },
-    "Not kept" : {
-
-    },
-    "Not known" : {
 
     },
     "Not public" : {
@@ -2503,6 +2624,9 @@
 
     },
     "Opens the capture box from any app. Funes doesn't need Accessibility access for it." : {
+
+    },
+    "Option" : {
 
     },
     "Optionally, allow only your agent's addresses with a Traffic Policy IP restriction, for example Anthropic's 160.79.104.0/21." : {
@@ -2630,9 +2754,6 @@
 
     },
     "Preview" : {
-
-    },
-    "Previous request" : {
 
     },
     "Problems" : {
@@ -2773,9 +2894,6 @@
 
     },
     "Remote Access" : {
-
-    },
-    "Remote Access (a cloud agent)" : {
 
     },
     "Remote Access Port" : {
@@ -2973,10 +3091,39 @@
     "Revert" : {
 
     },
+    "Review %@'s Request · %@…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Review %1$@'s Request · %2$@…"
+          }
+        }
+      }
+    },
+    "Review %@'s Request · %lld min left…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Review %1$@'s Request · %2$lld min left…"
+          }
+        }
+      }
+    },
+    "Review %@'s Request…" : {
+
+    },
     "Review %@'s request" : {
 
     },
     "Review Now" : {
+
+    },
+    "Review Request" : {
+
+    },
+    "Review Request shortcut" : {
 
     },
     "Review your Inbox" : {
@@ -3202,6 +3349,9 @@
     "Shared without asking" : {
 
     },
+    "Shift" : {
+
+    },
     "Shortcut" : {
 
     },
@@ -3214,10 +3364,10 @@
     "Show All" : {
 
     },
-    "Show Setup" : {
+    "Show Less" : {
 
     },
-    "Show all" : {
+    "Show Setup" : {
 
     },
     "Show all of %@" : {
@@ -3233,9 +3383,6 @@
 
     },
     "Show in Finder" : {
-
-    },
-    "Show less" : {
 
     },
     "Show less of %@" : {
@@ -3459,9 +3606,6 @@
     "Task text not stored" : {
 
     },
-    "Task: “%@”" : {
-
-    },
     "Tasks" : {
 
     },
@@ -3529,6 +3673,9 @@
 
     },
     "The address isn't valid." : {
+
+    },
+    "The agent says · not checked by Funes" : {
 
     },
     "The agent server is off" : {
@@ -3846,6 +3993,9 @@
     "Unknown category" : {
 
     },
+    "Until %@" : {
+
+    },
     "Until I Resume" : {
 
     },
@@ -3868,6 +4018,9 @@
 
     },
     "Updates come from GitHub, signed for Funes Vault. Installing always takes a click, and waits while a request is waiting for you." : {
+
+    },
+    "Use %@" : {
 
     },
     "Use This Port" : {
@@ -3894,9 +4047,6 @@
     "Use ⌘, ⌥ or ⌃ with a key." : {
 
     },
-    "Use ⌥⌘M" : {
-
-    },
     "Uses the Classification model in AI Models; you review every proposal in the Inbox." : {
 
     },
@@ -3910,9 +4060,6 @@
 
     },
     "Very personal. Only for agents you fully trust, and always ask." : {
-
-    },
-    "Via" : {
 
     },
     "View" : {
@@ -4065,7 +4212,10 @@
     "Your ngrok dev domain, from the ngrok dashboard. The commands below use it." : {
 
     },
-    "Your note on how this agent keeps data. Shown on its panels; it doesn't change what's shared." : {
+    "Your note" : {
+
+    },
+    "Your note on how this agent keeps data. Its Share panels show it next to what the agent says; it doesn't change what's shared." : {
 
     },
     "Your previous setup couldn't be put back; it's in %@." : {

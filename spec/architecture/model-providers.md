@@ -71,7 +71,7 @@ public protocol GenerationProvider: Sendable {
   - **Model**, a pop-up filled from the provider, or free text.
   - **Status**, e.g. "Ready", "Re-embedding 1,240 / 3,000", "Unavailable: falling back to on-device".
 - **Providers list:** add or edit a provider (base URL, API key, local or cloud flag) and **Test connection** (lists models, makes one tiny call).
-- **Cloud guard:** "Never send memories above **Internal** to cloud models". Choices: Public · Low · Internal (default) · Sensitive · Never send memories. It applies to every non-local provider.
+- **Cloud guard:** "Never send captures above **Internal**". Choices: Public · Low · Internal (default) · Sensitive · Never send captures. It applies to every non-local provider (only captures are sent in v0.1). While it lets anything go, the capture box and Settings ▸ Capture name the provider.
 - **Disclosure line** under each cloud choice:
   - "Classification sends new captures (up to Internal) and your category names and descriptions to Anthropic." (v0.1 classifies captures only; agent suggestions, imports and seed answers arrive with their fields proposed.)
   - "Search embeddings send memory text (up to Internal), your searches and agents' task descriptions to OpenAI."

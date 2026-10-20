@@ -15,6 +15,7 @@ final class Preferences {
         static let notifySuggestion = "NotifySuggestionWaiting"
         static let notifyRefused = "NotifyAgentRefused"
         static let hotKey = "CaptureHotKey"
+        static let reviewHotKey = "ReviewRequestHotKey"
         static let captureSensitivity = "CaptureDefaultSensitivity"
         static let classifyCaptures = "ClassifyCaptures"
         static let checklistDismissed = "SetupChecklistDismissed"
@@ -119,6 +120,16 @@ final class Preferences {
             return (try? JSONDecoder().decode(Shortcut.self, from: data)) ?? .defaultCapture
         }
         set { defaults.set(try? JSONEncoder().encode(newValue), forKey: Key.hotKey) }
+    }
+
+    /// The Review Request hotkey: ⌃⌥⌘R until changed; nil when turned off.
+    var reviewShortcut: Shortcut? {
+        get {
+            guard let data = defaults.data(forKey: Key.reviewHotKey) else { return .defaultReview }
+            if String(decoding: data, as: UTF8.self) == "null" { return nil }
+            return (try? JSONDecoder().decode(Shortcut.self, from: data)) ?? .defaultReview
+        }
+        set { defaults.set(try? JSONEncoder().encode(newValue), forKey: Key.reviewHotKey) }
     }
 
     /// Activity retention (FR-L-03, Q20): 400 days for shares, refusals and changes, 30 for the

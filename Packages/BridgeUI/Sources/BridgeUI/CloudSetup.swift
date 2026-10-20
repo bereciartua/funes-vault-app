@@ -84,6 +84,19 @@ extension CloudAgent {
         }
     }
 
+    /// Whose servers get what this cloud agent reads: the company that runs it. A fixed table, so the
+    /// Share panel can name where text goes without guessing (UX review F2).
+    public var vendor: String {
+        switch self {
+        case .claudeAI, .anthropicAPI, .managedAgents, .claudeCodeCloud: "Anthropic"
+        case .chatGPT, .openAIResponses, .codexCloud: "OpenAI"
+        case .geminiEnterprise: "Google"
+        case .cursorCloud: "Cursor"
+        case .copilotAgent: "GitHub"
+        case .devin: "Cognition"
+        }
+    }
+
     /// Signs in with OAuth (Connect a Cloud App…). The others, except Codex cloud tasks, send the
     /// remote token.
     public var usesOAuth: Bool { [.claudeAI, .chatGPT, .geminiEnterprise].contains(self) }

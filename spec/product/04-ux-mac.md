@@ -7,7 +7,7 @@ Funes is a menu bar app (`LSUIElement`) with one main window and floating panels
 ```
 Menu bar icon ─┬─ Menu ─────────────── Remember… · Inbox (3) · Pending requests · Pause Funes Vault · Open Funes Vault · Updates · Quit
                ├─ Capture box ───────── (⌥⌘M) quick capture
-               └─ Panels (top right) ── Share with <agent>? · Save this memory? · <agent> wants more access · <app> wants to connect
+               └─ Panels (top right) ── <agent> wants N memories · Save this memory? · <agent> wants to read <category> · <app> wants to connect
 Main window ───┬─ Vault        (memories: list + detail)
                ├─ Inbox        (suggestions to review)
                ├─ Agents       (connections: access, connect, cloud, activity)
@@ -31,6 +31,8 @@ Main window ───┬─ Vault        (memories: list + detail)
 
 **Menu:**
 ```
+Review Cursor's Request · 0:13…                ⌃⌥⌘R   (only while something waits for you)
+──────────────────────
 Funes Vault is on · 3 agents
 ──────────────────────
 Remember…                         ⌥⌘M
@@ -46,13 +48,14 @@ Open Funes Vault                          ⌘O
 Check for Updates…
 Quit Funes Vault                          ⌘Q
 ```
-- The first line opens the main window on the Agents section.
+- While a panel or a pending request waits, the first item reviews it: it brings the panel forward and makes it key, so Return and Esc answer it. Its shortcut, **Review Request** (⌃⌥⌘R by default, changeable in Settings ▸ General), works from any app.
+- The status line opens the main window on the Agents section.
 - A pending request item opens its panel again.
 
 ## Capture box
 - **Window:** a small borderless window centred near the top of the screen, like Spotlight. It has:
   - a multi-line text field with the placeholder "What should Funes remember?";
-  - a footer with "⏎ Save · ⇧⏎ New line · Esc Cancel".
+  - a footer with "⏎ Save · ⇧⏎ New line · Esc Cancel" and where the text goes: "Goes to your Inbox", or, while a cloud model proposes the fields, "Goes to your Inbox · fields suggested by Anthropic" with a **Cloud** chip (principle 7).
 - **On save:**
   - The box closes and a brief HUD says "Saved to Inbox".
   - Classification runs in the background and fills in the proposed fields.
@@ -180,12 +183,12 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
 - **Devices:** name, model, paired date, last seen, connection used, and Revoke.
 
 ### Settings
-- **General:** launch at login, show in Dock, notifications.
-- **Capture:** hotkey, default sensitivity for captures ("At least <level>": a minimum no proposal, rules or model, goes below), classification on/off.
+- **General:** launch at login, show in Dock, the Review Request shortcut (⌃⌥⌘R), notifications.
+- **Capture:** hotkey, default sensitivity for captures ("At least <level>": a minimum no proposal, rules or model, goes below), classification on/off. With a cloud classifier it says "New captures are sent to <provider> to suggest their fields, within the cloud limit in AI Models."
 - **AI Models:**
   - **Tasks:** Embeddings (v0.1: "Built in (bge-small, on this Mac)", no choice; other models later), Classification (later Consolidation). Each has a provider pop-up with a locality badge (On this Mac · Local server · Apple cloud · Cloud), a model pop-up, and a status ("Ready", "Re-embedding 1,240 / 3,000", "Unavailable: using on-device").
   - **Providers:** add or edit (base URL, API key stored in the Keychain, local or cloud), **Test connection**, usage counters.
-  - **Cloud limit:** "Never send memories above **Internal** to cloud models".
+  - **Cloud limit:** "Never send captures above **Internal**" (in v0.1 only captures are classified; the limit covers anything a later version sends).
   - **Embedding options** (later): "Embed agent requests with the cloud model", shown when the embedding model is in the cloud.
   - **Disclosure:** a sentence under every non-local choice saying exactly what is sent where.
   - **Calibrate…** (later) for embedding models Funes doesn't know.
@@ -196,52 +199,62 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
 
 ## Panels
 
-All panels are non-activating floating `NSPanel`s at the top right, stacked if more than one, with a maximum of 3 visible. Their buttons are disabled for about 0.5 s after appearing ("arming"). They show a visible countdown, are announced by VoiceOver, and never take keyboard focus from the frontmost app unless clicked.
+All panels are non-activating floating `NSPanel`s at the top right. When several wait, one panel shows them one at a time, with a chip for each at the top ("Cursor · access · 0:13"), at most 3; later ones wait unseen ("+2 more").
+- **Order:** items on a clock come first, soonest first; a Save panel, which waits for nothing, comes last. Once the user picks a chip or acts on an item, a more urgent arrival doesn't replace it under the cursor.
+- **Arming:** buttons are disabled for 0.6 s after the content appears or changes.
+- **Default button:** drawn prominent, and never a choice with lasting effect: Share N, Save, or Allow Once. Return and Esc work once the panel is key: after a click, or after **Review Request** (⌃⌥⌘R, or the menu's first item).
+- **Countdown:** visible, and read as "41 seconds left" by VoiceOver.
+- **Announcements:** one VoiceOver announcement for everything that arrived together, with the time to answer and the shortcut ("Cursor wants to read Project context. 38 seconds to answer. Control-Option-Command-R to review.").
+- Panels never take keyboard focus from the frontmost app by themselves.
 
-### Share with <agent>?
+### <agent> wants N memories (Share)
 ```
 ┌─────────────────────────────────────────────────────┐
-│ ⟡ Share with Claude Code?                     0:41 │
-│ Task: "Set up a new TypeScript repo following the   │
-│ user's preferences"                                 │
-│ Looking for: package manager, test framework, …     │
-│ Purpose (as reported): "scaffold project"           │
-│ Keeps it: for this session                          │
-├─────────────────────────────────────────────────────┤
+│ ⟡ Claude Code wants 4 memories                      │
+│ ┌ Goes to ────────────────────────────────────────┐ │
+│ │ Claude Code on this Mac. It may send what it    │ │
+│ │ reads to its AI service.                        │ │
+│ └─────────────────────────────────────────────────┘ │
+│ ▍The agent says · not checked by Funes              │
+│ ▍Task          "Set up a new TypeScript repo…"      │
+│ ▍Looking for   package manager, test framework, …   │
+│ ▍Purpose       "scaffold project"                   │
+│ ▍Keeps what it gets   For the session               │
+│ Your note      Keeps what it gets: Not at all       │
 │ ☑ Prefers pnpm and Vitest                    LOW    │
 │   Use pnpm for packages and Vitest for tests…       │
 │ ☑ Repo conventions                           LOW    │
-│   Conventional commits, MIT license, …              │
 │ ☑ Current project: Funes                  INTERNAL  │
-│   Rewriting Funes as a native menu bar app…         │
-│ ☐ Work hours                              INTERNAL  │
-│   Focus time 9–12, no meetings…                     │
+│ Also matched, less closely                          │
+│ ☐ Writes Swift 6                             LOW    │
 ├─────────────────────────────────────────────────────┤
-│ 2 more matched but aren't allowed for Claude Code.  │
-│                         [ Deny ]   [ Share 3 ]      │
+│ 2 more matched but can't go to this agent (…).      │
+│ 0:41  More Time               [ Deny ]  [ Share 3 ] │
 └─────────────────────────────────────────────────────┘
 ```
-- "Looking for" lists the agent's `keywords` (as it reported them), under the task. It's cut to about two lines with "Show all", and left out when the agent sent none. The same panel serves a pending request when it's opened again; Phase 3's Pending requests list shows them too.
+- **Goes to** is built only from what Funes knows. Local agent: "<agent> on this Mac. It may send what it reads to its AI service." Cloud agent: "claude.ai, through your Tailscale Funnel, to Anthropic's servers", with a **Cloud** chip; the vendor comes from a fixed table of cloud agents, the tunnel from Remote Access ("a cloud agent, through Remote Access" when either is unknown).
+- **The agent says** holds everything the agent supplied: the task, its `keywords` ("Looking for"), purpose, how long it says it keeps what it gets, and who it says it shares with (`processors`). Long values are cut to about two lines with "Show all". None of it decides anything.
+- **Your note** is the user's own "Keeps what it gets" from the agent's Access tab, when set.
+- **Strong matches are ticked; weaker ones are offered unticked** under "Also matched, less closely" (access policy §3.2).
 - The body text is clipped to 3 lines (at most 160 characters), with "Show all" to expand. The text is the exact text that will be sent, and every row whose text is cut offers "Show all", so everything Share would release can be read first.
 - The panel is never taller than the screen's visible area: the title and the buttons stay in place and the rows between them scroll.
-- Opening a pending request again (from the menu, Pending requests or an agent's `open_in_funes`) refreshes the same panel. Rows whose memory is unchanged keep the user's ticks. If anything that would be shared changed, the buttons arm again.
-- On timeout the panel says "No answer: Claude Code was told to wait" and moves to Pending requests.
-- A request from a cloud agent gets the same panel, with "via Remote Access" under the agent's name.
+- Opening a pending request again (from the menu, Pending requests or an agent's `open_in_funes`) refreshes the same panel. Rows whose memory is unchanged keep the user's ticks. If anything that would be shared changed, the buttons arm again. It counts down to the end of its 15 minutes ("9:05").
+- **More Time** moves the request to Pending requests at once (a HUD says until when). On timeout the HUD says "No answer: Claude Code was told to wait. It's in Pending requests."
 
 ### Save this memory?
-- Shows: from <agent>, title, body, kind, categories, sensitivity, evidence (as quoted data).
-- Buttons: Discard · Later · Edit… · Save.
-- On timeout: "Saved to Inbox for later".
+- Shows: from <agent>; the memory (title and body) first; then kind, category and sensitivity; then the agent's "Why" in the agent-says block.
+- Buttons: Edit… (a link) · Discard · Later · **Save**. No countdown: it's in the Inbox either way.
 
 ### <app> wants to connect (cloud sign-in)
-- Shown only while pairing is open for one agent. Example: "**Claude** wants to connect as **claude.ai**", with the app's metadata URL, "Returns to claude.ai", and the six-digit code the browser shows ("482 913").
-- Text: "Allow only if this code matches the one in your browser. It will use claude.ai's access."
-- Buttons: Deny · Allow (armed after 1 s). A second sign-in waits until this one is answered.
+- Shown only while pairing is open for one agent. Example: "**Claude** wants to connect as **claude.ai**", with the app's metadata URL, "Returns to claude.ai", and the six-digit code the browser shows ("482 913", read digit by digit by VoiceOver).
+- Text: "Allow only if this code matches the one in your browser. It will use claude.ai's access." Shows when pairing ends ("Until 10:52").
+- Buttons: Deny (Esc) · Allow (armed after 1 s, no Return key: the codes must be compared). A second sign-in waits until this one is answered.
 
-### <agent> wants more access
-- Example: "Cursor can't read **Project Context**. It asked for context for: <task>."
-- Buttons: Not Now · Allow Once · Always Allow. When the agent already got an answer (shared without asking), only Not Now and Always Allow (access policy §7).
-- Opening a pending request from the menu or Activity counts down to the end of its 15 minutes ("9:05").
+### <agent> wants to read <category>
+- Example: "**Cursor wants to read Project context**", with the task in the agent-says block, and: "Allow Once is for this request only. Next, you'll see exactly what would be shared." (for an agent that shares without asking: "…so the matching memories go to it at once").
+- Buttons: Not Now (Esc) · **Allow Once** (the default). **Always Allow Cursor to Read Project context** is a link on its own line, never the default.
+- When the agent already got an answer (shared without asking): Not Now and the Always Allow link only, with no default (access policy §7).
+- A panel that runs out or is withdrawn counts as unanswered: Funes may ask again on the next request, while Not Now waits an hour.
 
 ## Content style (applies to both apps)
 - **Plain words:** "Share", "Save", "Agent", "Memory", "Inbox", "Paused", not "disclosure", "policy" or "client" in the UI. Those terms appear only in docs and in the API.

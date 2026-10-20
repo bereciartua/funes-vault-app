@@ -133,6 +133,10 @@ final class AppModel {
     var mcpPort: Int = 47_625
     /// Registers a new capture shortcut; false when another app has it.
     @ObservationIgnored var setCaptureShortcut: (Shortcut?) -> Bool = { _ in false }
+    /// Registers a new Review Request shortcut; false when another app has it.
+    @ObservationIgnored var setReviewShortcut: (Shortcut?) -> Bool = { _ in false }
+    /// Brings the waiting panel forward and makes it key, or opens the newest pending request.
+    @ObservationIgnored var reviewRequest: () -> Void = {}
     /// Turns the MCP server on or off (Settings ▸ MCP).
     @ObservationIgnored var setServer: (Bool) -> Void = { _ in }
     /// Moves the MCP server to another port (Settings ▸ MCP).

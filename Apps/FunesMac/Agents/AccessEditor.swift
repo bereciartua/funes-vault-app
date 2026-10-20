@@ -171,7 +171,7 @@ struct AccessEditor: View {
                 .labelsHidden()
                 .fixedSize()
             }
-            Text(String(localized: "Your note on how this agent keeps data. Shown on its panels; it doesn't change what's shared."))
+            Text(String(localized: "Your note on how this agent keeps data. Its Share panels show it next to what the agent says; it doesn't change what's shared."))
                 .font(.callout).foregroundStyle(.secondary)
         }
     }

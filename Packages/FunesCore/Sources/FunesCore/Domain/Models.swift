@@ -143,10 +143,19 @@ public struct Suggestion: Sendable, Hashable, Identifiable {
     public var resultMemoryID: UUID?
 }
 
-/// One `{memoryId, version}` of a disclosure's candidate snapshot.
+/// One `{memoryId, version}` of a disclosure's candidate snapshot, with its search score. The
+/// score only decides which panel rows start ticked; `snapshotRevision` hashes id and version alone.
+/// Rows stored before scores were kept decode with `score` nil.
 public struct SnapshotItem: Sendable, Hashable, Codable {
     public var id: UUID
     public var version: Int
+    public var score: Double?
+
+    public init(id: UUID, version: Int, score: Double? = nil) {
+        self.id = id
+        self.version = version
+        self.score = score
+    }
 }
 
 /// A request from an agent to read memories (spec/domain/domain-model.md#disclosure-a-request-from-an-agent-to-read-memories).

@@ -6,31 +6,16 @@ import SwiftUI
 /// classification on or off.
 struct CaptureSettings: View {
     let model: AppModel
-    @State private var shortcut: Shortcut?
-    @State private var recording = false
-    @State private var problem: String?
     @State private var sensitivity: Sensitivity?
     @State private var classify = true
-    @State private var monitor: Any?
+    @State private var cloudProvider: String?
 
     var body: some View {
         Form {
             Section(String(localized: "Quick capture")) {
-                LabeledContent(String(localized: "Shortcut")) {
-                    HStack {
-                        Button(recording ? String(localized: "Press the new shortcut…") : (shortcut?.display ?? String(localized: "None"))) {
-                            recording ? stopRecording() : startRecording()
-                        }
-                        .accessibilityLabel(String(localized: "Capture shortcut: \(shortcut?.display ?? String(localized: "none"))"))
-                        if shortcut != nil {
-                            Button(String(localized: "Turn Off")) { apply(nil) }
-                        }
-                        if shortcut != .defaultCapture {
-                            Button(String(localized: "Use ⌥⌘M")) { apply(.defaultCapture) }
-                        }
-                    }
-                }
-                if let problem { Text(problem).font(.callout).foregroundStyle(.red) }
+                ShortcutRecorder(title: String(localized: "Shortcut"), accessibilityName: String(localized: "Capture shortcut"),
+                                 current: model.preferences.captureShortcut, defaultShortcut: .defaultCapture,
+                                 apply: model.setCaptureShortcut)
                 Text(String(localized: "Opens the capture box from any app. Funes doesn't need Accessibility access for it."))
                     .font(.callout).foregroundStyle(.secondary)
                 Button(String(localized: "Try It")) { model.openCapture() }
@@ -46,6 +31,11 @@ struct CaptureSettings: View {
                 Text(classify ? String(localized: "Uses the Classification model in AI Models; you review every proposal in the Inbox.")
                               : String(localized: "Captures get simple proposals from rules on this Mac."))
                     .font(.callout).foregroundStyle(.secondary)
+                if classify, let cloudProvider {
+                    Label(String(localized: "New captures are sent to \(cloudProvider) to suggest their fields, within the cloud limit in AI Models."),
+                          systemImage: "arrow.up.forward.app")
+                        .font(.callout).fixedSize(horizontal: false, vertical: true)
+                }
                 Button(String(localized: "AI Models…")) { model.settingsTab = .models }
                     .buttonStyle(.link)
             }
@@ -56,11 +46,51 @@ struct CaptureSettings: View {
         }
         .formStyle(.grouped)
         .onAppear {
-            shortcut = model.preferences.captureShortcut
             sensitivity = model.preferences.captureSensitivity
             classify = model.preferences.classifyCaptures
         }
-        .onDisappear(perform: stopRecording)
+        .task { cloudProvider = await model.modelSettings.cloudClassifierName() }
+    }
+}
+
+/// A global shortcut's row: the shortcut (click, then press keys to change it), Turn Off, and
+/// back to the default. Used for capture (⌥⌘M) and Review Request (⌃⌥⌘R).
+struct ShortcutRecorder: View {
+    let title: String
+    let accessibilityName: String
+    let defaultShortcut: Shortcut
+    /// Registers the new shortcut; false when another app has it.
+    let apply: (Shortcut?) -> Bool
+    @State private var shortcut: Shortcut?
+    @State private var recording = false
+    @State private var problem: String?
+    @State private var monitor: Any?
+
+    init(title: String, accessibilityName: String, current: Shortcut?, defaultShortcut: Shortcut,
+         apply: @escaping (Shortcut?) -> Bool) {
+        self.title = title
+        self.accessibilityName = accessibilityName
+        self.defaultShortcut = defaultShortcut
+        self.apply = apply
+        _shortcut = State(initialValue: current)
+    }
+
+    var body: some View {
+        LabeledContent(title) {
+            HStack {
+                Button(recording ? String(localized: "Press the new shortcut…") : (shortcut?.display ?? String(localized: "None"))) {
+                    recording ? stopRecording() : startRecording()
+                }
+                .accessibilityLabel(String(localized: "\(accessibilityName): \(shortcut?.display ?? String(localized: "none"))"))
+                if shortcut != nil {
+                    Button(String(localized: "Turn Off")) { set(nil) }
+                }
+                if shortcut != defaultShortcut {
+                    Button(String(localized: "Use \(defaultShortcut.display)")) { set(defaultShortcut) }
+                }
+            }
+        }
+        if let problem { Text(problem).font(.callout).foregroundStyle(.red) }
     }
 
     private func startRecording() {
@@ -76,7 +106,7 @@ struct CaptureSettings: View {
                 return nil
             }
             stopRecording()
-            apply(new)
+            set(new)
             return nil
         }
     }
@@ -87,8 +117,8 @@ struct CaptureSettings: View {
         monitor = nil
     }
 
-    private func apply(_ new: Shortcut?) {
-        if model.setCaptureShortcut(new) {
+    private func set(_ new: Shortcut?) {
+        if apply(new) {
             shortcut = new
             problem = nil
         } else {
