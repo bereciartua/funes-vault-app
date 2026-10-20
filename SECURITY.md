@@ -21,7 +21,8 @@ Include the app version (Settings ▸ Updates), your macOS version, whether the 
 
 **Never include real secrets or personal data**, even in a private report:
 
-- agent keys (anything starting with `fns_mcp_v1_`) or the contents of `agent-keys/`
+- agent keys and tokens (anything starting with `fns_`, such as `fns_mcp_v1_` or `fns_mcpr_v1_`), the contents of `agent-keys/`, or `remote-connections.json`
+- your Remote Access address with its secret path (`/r/…`)
 - API keys for model providers
 - `vault.sqlite`, its backups, or a `funesvault.export.v1` file from your own vault
 - memory text, task text, or screenshots of the Vault, the Inbox or a panel that show your memories
@@ -53,4 +54,4 @@ Out of scope, as described in the [threat model](docs/ARCHITECTURE.md#threat-mod
 - The security of the tunnel software you run (Tailscale, cloudflared, ngrok).
 - What a model provider you chose does with the text Funes sent it within your cloud limit.
 - An attacker with physical access to an unlocked Mac, an administrator account, a Mac without FileVault, or System Integrity Protection turned off.
-- Bugs in BridgeKit itself that don't depend on how Funes uses it: report those to [`bereciartua/bridgekit`](https://github.com/bereciartua/bridgekit/security/advisories/new). If you're unsure, report here.
+- Bugs in BridgeKit itself that don't depend on how Funes uses it: report them here too, and they'll be moved to [`bereciartua/bridgekit`](https://github.com/bereciartua/bridgekit).
