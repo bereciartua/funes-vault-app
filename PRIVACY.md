@@ -81,7 +81,7 @@ If macOS crashes or hangs Funes Vault, macOS writes a report on your Mac. If you
 
 ## This website
 
-funesvault.com is a static site hosted on GitHub Pages. It sets no cookies, loads no fonts, scripts or images from anywhere else, and has no analytics. The only script is the copy button for the Homebrew command, which runs in your browser. GitHub, as the host, receives your IP address and request details and keeps logs under the [GitHub Privacy Statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement). Downloads and documentation links go to GitHub.
+funesvault.com is a static site hosted on GitHub Pages. It sets no cookies, loads no fonts, scripts or images from anywhere else, and has no analytics. Its one script runs in your browser and sends and stores nothing: it adds the copy button for the Homebrew command, and lets the eye on the home page follow your pointer (not if you've asked your system to reduce motion). GitHub, as the host, receives your IP address and request details and keeps logs under the [GitHub Privacy Statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement). Downloads and documentation links go to GitHub.
 
 ## Support
 

@@ -39,7 +39,7 @@ jobs:
         run: |
           # Every page the site links to exists, and nothing loads from another host.
           for page in index.html 404.html privacy/index.html support/index.html CNAME robots.txt favicon.ico \
-                      assets/style.css assets/icon-512.png assets/favicon-64.png assets/apple-touch-icon.png; do
+                      assets/style.css assets/site.js assets/icon-512.png assets/favicon-64.png assets/apple-touch-icon.png; do
             [ -f "site/$page" ] || { echo "::error::site/$page is missing"; exit 1; }
           done
           if grep -rnE '<(script|link|img|iframe)[^>]+(src|href)="(https?:)?//' site --include='*.html' | grep -v 'rel="canonical"'; then
@@ -51,7 +51,7 @@ jobs:
         # screenshots are the README's (docs/images), copied here so they live in git once.
         run: |
           rsync -a --exclude '*.md' site/ "$RUNNER_TEMP/site/"
-          for name in vault-memory share-panel inbox agents-access activity; do
+          for name in share-panel remote-access; do
             for theme in light dark; do
               cp "docs/images/$name-$theme.png" "$RUNNER_TEMP/site/assets/screenshots/"
             done

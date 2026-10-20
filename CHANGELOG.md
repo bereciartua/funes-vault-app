@@ -11,6 +11,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - Then **Address ▸ Edit…** changes the address to the one without a port.
   - BridgeKit 0.4.1.
 
+### Changed
+
+- **funesvault.com has a new design**, built around the app icon's eye. The privacy statement's section on the website now describes its one script: the Homebrew copy button, and the eye on the home page that follows your pointer. It sends and stores nothing.
+
 ### Fixed
 
 - **A copy built from source never checks for updates**, as the privacy docs promised. Only copies signed with Funes Vault's Developer ID check GitHub; builds from source, Xcode runs and Debug builds don't, and they hide **Check for Updates…**. Before, every build checked, because the feed and the update key are in the committed `Info.plist`.

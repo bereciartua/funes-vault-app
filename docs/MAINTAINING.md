@@ -121,6 +121,8 @@ build/app_icon png site/assets/apple-touch-icon.png 180
 build/app_icon png build/favicon-32.png 32   # then wrap it as site/favicon.ico (a single 32-pixel PNG entry)
 ```
 
+The website's big eye (the inline SVG in `site/index.html` and `site/404.html`) is the same large drawing, in the icon's 1024-point coordinates: the almond's corners at 196 and 828 with control points 21% in, lids at 250 and 774, a 44-point outline, a 138-point iris with its catchlight and orange rim, and the soft shadow. The page animates only its iris and a blink. If the drawing changes, change the SVG to match.
+
 ## Upgrade notes
 
 What changed in each version is in the [changelog](../CHANGELOG.md).
