@@ -241,21 +241,23 @@ import Testing
     }
 
     static let fallbackCases: [FallbackCase] = [
-        FallbackCase(name: "timeout", reply: StubURLProtocol.Reply(body: Data(), delay: .seconds(3))),
+        FallbackCase(name: "timeout", reply: StubURLProtocol.Reply(body: Data(), delay: .seconds(60))),
         FallbackCase(name: "401", reply: .json([:], status: 401)),
         FallbackCase(name: "429", reply: .json([:], status: 429, headers: ["retry-after": "30"])),
         FallbackCase(name: "500", reply: .json([:], status: 500)),
         FallbackCase(name: "bad JSON", reply: .json(["choices": [["message": ["content": "{broken"]]]])),
     ]
 
+    /// The slow reply never arrives: the router gives up on it after the timeout and cancels the
+    /// request. No wall-clock check: on a busy runner other suites hold the shared threads for
+    /// seconds, and every case went past 2 s, even the ones that fail at once (CI run 39357696614).
     @Test(arguments: fallbackCases) func failuresFallBackOnDeviceThenToRules(_ c: FallbackCase) async throws {
         let stub = StubURLProtocol.Session { _ in c.reply }
         let client = try OpenAICompatibleClient(endpoint: .openAI(), model: "m", apiKey: "k", session: stub.session)
         let withApple = ModelRouter(classifier: client, onDevice: FakeOnDevice(), generationTimeout: .milliseconds(300))
-        let start = ContinuousClock.now
         let a = await withApple.classify("likes jazz", categories: Self.cats)
         #expect(a.engine == "apple.foundation" && a.proposal.title == "On device")
-        #expect(ContinuousClock.now - start < .seconds(2))
+        #expect(stub.requests.count == 1 && stub.answers == (c.reply.delay == .zero ? 1 : 0))
         let rulesOnly = ModelRouter(classifier: client, onDevice: nil, generationTimeout: .milliseconds(300))
         let b = await rulesOnly.classify("likes jazz", categories: Self.cats)
         #expect(b.engine == "rules" && b.proposal.title == "likes jazz")
