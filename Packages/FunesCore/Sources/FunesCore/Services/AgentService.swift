@@ -102,6 +102,11 @@ public final class AgentService: Sendable {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard (1...64).contains(InputLimits.length(of: name)) else { throw VaultError.invalidInput(field: "name") }
         let key = try issuer.issue()
+        // Never-share categories: every new agent starts with Deny for them (UX review F4).
+        var access = access
+        let neverShare = try await neverShareCategories()
+        access.deniedCategoryKeys.formUnion(neverShare)
+        access.allowedCategoryKeys.subtract(neverShare)
         let agent = Agent(id: UUID(), name: name, agentKind: kind, keyIssuedAt: now, paused: false, revision: 1,
                           declaredRetention: declaredRetention, asksForAccess: asksForAccess, createdAt: now, access: access)
         try await store.writer.write { db in
@@ -113,6 +118,44 @@ public final class AgentService: Sendable {
         try keys.write(key.plaintext, agentID: agent.id)
         activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "agent_added", ids: [agent.id]))
         return (agent, key)
+    }
+
+    /// Where the never-share categories live: a JSON array in `meta`.
+    static let neverShareKey = "default_denied_categories"
+
+    /// Categories no new agent may read: each one starts with Deny for them (FR-O-02, UX review F4).
+    /// Set from the seed questions' last step or Categories; each agent's own access can change it.
+    public func neverShareCategories() async throws -> Set<String> {
+        try await store.writer.read { db in
+            let json = try String.fetchOne(db, sql: "SELECT value FROM meta WHERE key = ?", arguments: [Self.neverShareKey])
+            return Set(json.flatMap { JSON.decode([String].self, $0) } ?? [])
+        }
+    }
+
+    /// Replaces the never-share categories. With `applyToAgents`, every agent also gets Deny for
+    /// them (and loses them from its allow list); each agent that changes gets an access change, so
+    /// its revision goes up and its waiting requests must be asked again. Taking a category off the
+    /// list never lifts an agent's Deny: that's done in the agent's Access tab.
+    public func setNeverShareCategories(_ keys: Set<String>, applyToAgents: Bool, now: Date) async throws {
+        let changed = try await store.writer.write { db -> [UUID] in
+            try db.execute(sql: "INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)",
+                           arguments: [Self.neverShareKey, JSON.encode(keys.sorted())])
+            guard applyToAgents else { return [] }
+            var changed = [UUID]()
+            for agent in try AgentStore.all(db, includingRemoved: false) {
+                var access = agent.access
+                access.deniedCategoryKeys.formUnion(keys)
+                access.allowedCategoryKeys.subtract(keys)
+                guard access != agent.access else { continue }
+                try AgentStore.writeAccess(db, agentID: agent.id, access)
+                try AgentStore.bumpRevision(db, agentID: agent.id)
+                changed.append(agent.id)
+            }
+            return changed
+        }
+        for id in changed {
+            activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "access_changed", ids: [id]))
+        }
     }
 
     /// Replaces the access (FR-A-03). Revision +1 even if nothing changed: the user saved.

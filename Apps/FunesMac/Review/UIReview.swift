@@ -239,6 +239,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await sheet("new-memory-\(suffix)", NewMemorySheet(model: model) { _ in })
             await sheet("categories-\(suffix)", CategoriesSheet(model: model))
             await sheet("add-agent-\(suffix)", AddAgentSheet(model: model) { _ in })
+            await sheet("add-agent-cloud-\(suffix)", AddAgentSheet(model: model, place: .cloud) { _ in })
             await sheet("seed-questions-\(suffix)", SeedQuestionsSheet(model: model))
             await sheet("import-claude-\(suffix)", ImportSheet(model: model, kind: .claude))
             if let preview = try? await withCheckedThrowingContinuation({ (done: CheckedContinuation<OneClickPreview, Error>) in

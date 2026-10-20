@@ -107,7 +107,7 @@ Decision: [ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings
 - **Engine shown on the card:** each Inbox card shows which engine proposed its fields ("Proposed on this Mac", "Proposed by Claude via Anthropic").
 
 ## 6. Seed questions (onboarding)
-The seven prompts from the web guided interview, each answer becoming a suggestion with a preset kind, category and sensitivity:
+Six prompts from the web guided interview, each answer becoming a suggestion with a preset kind, category and sensitivity:
 
 | Id | Prompt | Kind | Category | Sensitivity |
 |---|---|---|---|---|
@@ -115,9 +115,10 @@ The seven prompts from the web guided interview, each answer becoming a suggesti
 | communication_preferences | What tone, level of detail, or format do you usually prefer? | preference | communication_style | low |
 | software_development_preferences | What should coding assistants know about how you build software? | instruction | software_development | low |
 | current_projects | Which current projects should your vault remember, and why do they matter? | project_context | project_context | internal |
-| privacy_preferences | What should Funes be especially careful not to share casually? | constraint | privacy_preferences | internal |
 | life_constraints | Are there practical constraints that often shape your work or availability? | constraint | project_context | internal |
 | long_term_goals | What long-term goals should assistants keep in mind when helping you? | goal | project_context | internal |
+
+The seventh web prompt, "What should Funes be especially careful not to share casually?", is a rule, not a memory: the sheet asks "Which of these should agents never see?" with category checkboxes, which set the vault's never-share categories (FR-O-02). Saving the answer as a memory would have offered it to any agent that reads Internal.
 
 A long answer may be split into several suggestions by the classifier, when it's available, with a "split into 3" control on the card.
 

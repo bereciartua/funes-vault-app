@@ -71,6 +71,17 @@ struct ConnectTab: View {
             }
             #endif
         }
+        .task {
+            // Add and Connect…: show the one-click change once the Add sheet has gone (UX review F9).
+            guard model.pendingOneClick == agent.id else { return }
+            model.pendingOneClick = nil
+            try? await Task.sleep(for: .milliseconds(450))
+            let setup = agent.agentKind.setupAgent
+            if setup.oneClick {
+                target = setup
+                startPreview(setup)
+            }
+        }
         .onChange(of: target) { _, agent in
             method = agent.recommended
             result = nil
@@ -120,6 +131,13 @@ struct ConnectTab: View {
                         }
                     }
                 }
+            }
+            if result != nil, agent.firstRequestAt == nil {
+                // The first approved request is the point of setup: suggest one.
+                Text(agent.access.askBeforeSharing
+                     ? String(localized: "Then ask \(target.displayName): “What do you know about how I like to work?” Funes shows you exactly what it would share.")
+                     : String(localized: "Then ask \(target.displayName): “What do you know about how I like to work?”"))
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             if let backup = result?.backup {
                 Text(String(localized: "Backup: \(backup.path)")).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)

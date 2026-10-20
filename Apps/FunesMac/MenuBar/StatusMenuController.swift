@@ -85,10 +85,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
             pending.badge = NSMenuItemBadge(count: model.pending.count)
             let submenu = NSMenu()
             for request in model.pending {
-                let minutes = request.minutesLeft(at: model.now)
-                let title = request.status == .approved
-                    ? String(localized: "\(request.agentName) · approved, waiting for the agent")
-                    : String(localized: "\(request.agentName) · \(minutes) min left")
+                let title = "\(request.agentName) · \(request.summary(at: model.now))"
                 let row = NSMenuItem(title: title, action: #selector(openPending(_:)), keyEquivalent: "")
                 row.target = self
                 row.representedObject = request.id

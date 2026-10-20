@@ -10,6 +10,8 @@ struct CategoriesSheet: View {
     @State private var editing: MemoryCategory?
     @State private var adding = false
     @State private var deleting: MemoryCategory?
+    /// Categories new agents start with Deny for (UX review F4).
+    @State private var neverShare: Set<String> = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -32,6 +34,12 @@ struct CategoriesSheet: View {
                         Spacer()
                         Text(String(localized: "New memories: \(category.defaultSensitivity.title)"))
                             .font(.caption).foregroundStyle(.secondary)
+                        Toggle(String(localized: "New agents can't read"), isOn: Binding(
+                            get: { neverShare.contains(category.key) },
+                            set: { on in setNeverShare(category.key, on) }))
+                            .toggleStyle(.checkbox)
+                            .font(.caption)
+                            .help(String(localized: "New agents start with Deny for this category. Existing agents keep their access."))
                         Button(String(localized: "Rename…")) { editing = category }
                             .accessibilityLabel(String(localized: "Rename \(category.name)"))
                         if !category.builtin {
@@ -51,10 +59,17 @@ struct CategoriesSheet: View {
             }
         }
         .padding(24)
-        .frame(width: 620, height: 520)
+        .frame(width: 720, height: 520)
+        .task { neverShare = (try? await model.services.agents.neverShareCategories()) ?? [] }
         .sheet(item: $editing) { category in CategoryForm(model: model, existing: category) }
         .sheet(isPresented: $adding) { CategoryForm(model: model, existing: nil) }
         .sheet(item: $deleting) { category in DeleteCategoryForm(model: model, category: category) }
+    }
+
+    private func setNeverShare(_ key: String, _ on: Bool) {
+        if on { neverShare.insert(key) } else { neverShare.remove(key) }
+        let keys = neverShare
+        Task { try? await model.services.agents.setNeverShareCategories(keys, applyToAgents: false, now: Date()) }
     }
 }
 

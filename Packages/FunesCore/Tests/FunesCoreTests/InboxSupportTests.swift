@@ -12,9 +12,12 @@ import Testing
         return (fx, SuggestionService(store: fx.store, activity: fx.activity, pause: fx.pause, disclosures: fx.disclosures))
     }
 
-    @Test func sevenSeedQuestionsWithTheirPresets() {
-        #expect(SeedQuestion.all.count == 7)
-        #expect(Set(SeedQuestion.all.map(\.id)).count == 7)
+    /// Six: "What should Funes be careful not to share?" became the never-share step, which sets
+    /// rules instead of saving a memory agents could read (UX review F4).
+    @Test func sixSeedQuestionsWithTheirPresets() {
+        #expect(SeedQuestion.all.count == 6)
+        #expect(Set(SeedQuestion.all.map(\.id)).count == 6)
+        #expect(!SeedQuestion.all.contains { $0.categoryKey == "privacy_preferences" })
         let projects = SeedQuestion.all.first { $0.id == "current_projects" }!
         #expect(projects.kind == .projectContext && projects.categoryKey == "project_context" && projects.sensitivity == .internal)
         let builtins = Set(MemoryCategory.builtins.map(\.key))
