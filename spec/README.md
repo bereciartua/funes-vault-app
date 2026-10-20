@@ -49,11 +49,12 @@ This folder (`spec/` in the `funes-vault-app` repo) holds the requirements, desi
    - [Users and use cases](product/02-users-and-use-cases.md): personas, jobs to be done, key scenarios.
    - [Requirements](product/03-requirements.md): 141 requirements (109 functional, 32 non-functional) with ids, priorities and acceptance criteria.
    - [UX: Mac](product/04-ux-mac.md) and [UX: iPhone](product/05-ux-iphone.md): screens, panels, flows, copy.
+   - [Words in the app](product/06-glossary.md): the one word for each thing the user sees, and the words it replaces.
 2. **Domain**
    - [Domain model](domain/domain-model.md): entities, enums, state machines.
    - [Access policy](domain/access-policy.md): **the core spec**, with 35 test vectors.
    - [Memory processing](domain/memory-processing.md): secret scanner, embeddings, ranking, classification, imports, consolidation.
-   - [Glossary](domain/glossary.md).
+   - [Glossary](domain/glossary.md): the domain terms. The words the UI uses are in [Words in the app](product/06-glossary.md).
 3. **Architecture**
    - [Overview](architecture/overview.md): components, concurrency, sequence diagrams, repo layout.
    - [MCP server](architecture/mcp-server.md): transport, auth, the 5 tools with schemas, limits.
