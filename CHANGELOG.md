@@ -11,6 +11,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - Then **Address ▸ Edit…** changes the address to the one without a port.
   - BridgeKit 0.4.1.
 
+### Fixed
+
+- **A copy built from source never checks for updates**, as the privacy docs promised. Only copies signed with Funes Vault's Developer ID check GitHub; builds from source, Xcode runs and Debug builds don't, and they hide **Check for Updates…**. Before, every build checked, because the feed and the update key are in the committed `Info.plist`.
+
 ## [0.1.2] - 2026-10-19
 
 The first public preview. 0.1.0 and 0.1.1 were preview builds, kept on GitHub as pre-releases: everything in them below is in 0.1.2, with this fix in place of 0.1.1's.

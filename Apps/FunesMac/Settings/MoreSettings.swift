@@ -225,7 +225,7 @@ struct UpdateSettings: View {
                 Text(String(localized: "Updates come from GitHub, signed for Funes Vault. Installing always takes a click, and waits while a request is waiting for you."))
                     .font(.callout).foregroundStyle(.secondary)
             } else {
-                Text(String(localized: "This copy of Funes Vault can't update itself (a development build, or one without its update key). Download new versions from GitHub."))
+                Text(String(localized: "This copy of Funes Vault doesn't check for updates (a build from source, or a development build). Download new versions from GitHub."))
                     .foregroundStyle(.secondary)
             }
             LabeledContent(String(localized: "Version"), value: model.versionText)
