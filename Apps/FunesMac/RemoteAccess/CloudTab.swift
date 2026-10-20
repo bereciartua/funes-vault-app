@@ -34,13 +34,17 @@ struct CloudTab: View {
                 Card(padding: 0) {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack(alignment: .top) {
+                            // Where shared text goes, then what this agent's access lets cloud agents do.
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(String(localized: "Allow cloud access"))
+                                Text(String(localized: "Text you share with a cloud agent goes to its vendor's servers. Use one agent per cloud app, with only the access it needs."))
+                                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                                 Text(agent.cloudAccess ? model.cloudSummary(agent)
                                                        : String(localized: "Off: cloud agents can't use this agent."))
                                     .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                                    .padding(.top, 3)
                             }
-                            Spacer()
+                            Spacer(minLength: 12)
                             Toggle(String(localized: "Allow cloud access"), isOn: Binding(
                                 get: { agent.cloudAccess }, set: { model.setCloudAccess(agent, $0) }))
                                 .toggleStyle(.switch)
@@ -53,8 +57,6 @@ struct CloudTab: View {
                 if let message = model.cloudMessage {
                     Text(message).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
-                Text(String(localized: "Text you share with a cloud agent goes to its vendor's servers. Use one agent per cloud app, with only the access it needs."))
-                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             .padding(16)
         }
@@ -69,7 +71,9 @@ struct CloudTab: View {
                 ForEach(CloudAgent.allCases) { Text($0.name).tag($0) }
             }
             .labelsHidden()
-            .fixedSize()
+            // A long name ("claude.ai · Claude Desktop · mobile") truncates rather than widening
+            // the card past its column.
+            .frame(maxWidth: 300, alignment: .leading)
         } actions: {
             Pill(label: cloudAgent.usesOAuth ? "OAuth" : cloudAgent.usesRemoteToken ? String(localized: "Token") : "—")
         }
@@ -98,10 +102,7 @@ struct CloudTab: View {
                     .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             ForEach(Array(cloudAgent.warnings(model.remoteAccess.names).enumerated()), id: \.offset) { _, warning in
-                Label { Text(warning).fixedSize(horizontal: false, vertical: true) } icon: {
-                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                }
-                .font(.callout)
+                WarningLabel(text: warning)
             }
             if let footnote = cloudAgent.footnote {
                 HStack(spacing: 4) {

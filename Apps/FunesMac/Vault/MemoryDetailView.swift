@@ -112,7 +112,7 @@ struct MemoryDetailView: View {
 
     private var similarHint: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Image(systemName: "doc.on.doc").foregroundStyle(.orange)
+            Image(systemName: "doc.on.doc").foregroundStyle(Palette.warning)
             Text(String(localized: "Similar memory exists:"))
             ForEach(similar.prefix(2)) { other in
                 Button(other.title) { model.showMemory(other.id) }.buttonStyle(.link)

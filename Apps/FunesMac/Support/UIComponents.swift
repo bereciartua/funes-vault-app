@@ -14,6 +14,12 @@ enum Palette {
     static let pane = Color(nsColor: adaptive(light: NSColor(white: 0.962, alpha: 1), dark: NSColor(white: 0.115, alpha: 1),
                                               lightContrast: NSColor(white: 0.93, alpha: 1), darkContrast: .black))
     static let separator = Color(nsColor: .separatorColor)
+    /// A warning icon's orange: darker than system orange in light mode, so the icon keeps 3:1 on
+    /// white, and darker again with Increase Contrast. Warning text stays primary.
+    static let warning = Color(nsColor: adaptive(light: NSColor(srgbRed: 0.80, green: 0.40, blue: 0, alpha: 1),
+                                                 dark: .systemOrange,
+                                                 lightContrast: NSColor(srgbRed: 0.64, green: 0.32, blue: 0, alpha: 1),
+                                                 darkContrast: NSColor(srgbRed: 1, green: 0.70, blue: 0.25, alpha: 1)))
 
     private static func adaptive(light: NSColor, dark: NSColor, lightContrast: NSColor, darkContrast: NSColor) -> NSColor {
         NSColor(name: nil) { appearance in
@@ -43,6 +49,21 @@ struct Card<Content: View>: View {
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(Palette.separator.opacity(contrast == .increased ? 1 : 0.6),
                               lineWidth: contrast == .increased ? 1 : 0.5))
+    }
+}
+
+/// A warning: an orange icon and primary text (orange text on white is under 3:1).
+struct WarningLabel: View {
+    let text: String
+    var symbol = "exclamationmark.triangle.fill"
+
+    var body: some View {
+        Label {
+            Text(text).foregroundStyle(.primary).fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: symbol).foregroundStyle(Palette.warning)
+        }
+        .font(.callout)
     }
 }
 
@@ -114,7 +135,8 @@ extension Sensitivity {
     }
 }
 
-/// The sensitivity badge: colored by level, always with its name (color is never the only cue).
+/// The sensitivity badge: the level's color in the fill and primary text, so the name reads at
+/// 4.5:1 or better (color is never the only cue).
 struct SensitivityBadge: View {
     let sensitivity: Sensitivity
     @Environment(\.colorSchemeContrast) private var contrast
@@ -125,8 +147,8 @@ struct SensitivityBadge: View {
             .tracking(0.3)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .foregroundStyle(sensitivity.tint)
-            .background(Capsule().fill(sensitivity.tint.opacity(contrast == .increased ? 0.28 : 0.14)))
+            .foregroundStyle(.primary)
+            .background(Capsule().fill(sensitivity.tint.opacity(contrast == .increased ? 0.30 : 0.18)))
             .overlay(Capsule().strokeBorder(sensitivity.tint.opacity(contrast == .increased ? 0.9 : 0), lineWidth: 1))
             .accessibilityLabel(String(localized: "Sensitivity: \(sensitivity.title)"))
     }

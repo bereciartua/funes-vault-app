@@ -247,10 +247,10 @@ struct RemoteSetupTests {
                     #expect(pieces.allSatisfy { $0.contains(url) }, "\(key)")
                     #expect(context.remoteTokenPlaceholders.contains { snippet.text.contains($0) }, "\(key)")
                     #expect(pieces.joined().contains(context.serverKey), "\(key)")
-                    #expect(snippet.steps.contains { $0.contains(Self.names.copyTokenAction) && $0.contains("Cloud section") }, "\(key)")
+                    #expect(snippet.steps.contains { $0.contains(Self.names.copyTokenAction) && $0.contains("below") }, "\(key)")
                 } else if agent.usesOAuth {
                     #expect(snippet.text == url, "\(key)")
-                    #expect(snippet.steps.contains { $0.contains("Connect a Cloud App…") && $0.contains(context.agentName) }, "\(key)")
+                    #expect(snippet.steps.contains { $0.contains("Connect a Cloud App… below") }, "\(key)")
                     #expect(agent == .geminiEnterprise || snippet.extraSnippets.isEmpty, "\(key)")
                 } else {
                     #expect(snippet.text.isEmpty && agent.footnote != nil && agent.warnings(Self.names).isEmpty, "\(key)")

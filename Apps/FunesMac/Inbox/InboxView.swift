@@ -250,7 +250,7 @@ struct SuggestionCard: View {
 
     private func hint(_ text: String, _ memories: [Memory]) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: "doc.on.doc").foregroundStyle(.orange)
+            Image(systemName: "doc.on.doc").foregroundStyle(Palette.warning)
             Text(text)
             ForEach(memories.prefix(2)) { memory in
                 Button(memory.title) { model.showMemory(memory.id) }.buttonStyle(.link)

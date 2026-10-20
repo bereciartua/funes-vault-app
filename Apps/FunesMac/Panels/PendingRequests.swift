@@ -26,18 +26,24 @@ struct PendingRequestsCard: View {
                         if let task = request.task?.split(separator: "\n").first {
                             Text("“\(task)”").foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
                         }
+                        // In the narrow list, Review… goes under the text so neither is squeezed.
+                        if compact, request.status == .needsApproval {
+                            reviewButton(request).padding(.top, 4)
+                        }
                     }
-                    Spacer()
-                    if request.status == .needsApproval {
-                        Button(String(localized: "Review…")) { model.openPendingRequest(request.id) }
-                            .accessibilityLabel(String(localized: "Review \(request.agentName)'s request"))
-                    }
+                    Spacer(minLength: 0)
                     if !compact {
+                        if request.status == .needsApproval { reviewButton(request) }
                         Button(String(localized: "Details")) { model.showActivity(.request(request.id)) }.buttonStyle(.link)
                     }
                 }
                 .font(.callout)
             }
         }
+    }
+
+    private func reviewButton(_ request: PendingRequest) -> some View {
+        Button(String(localized: "Review…")) { model.openPendingRequest(request.id) }
+            .accessibilityLabel(String(localized: "Review \(request.agentName)'s request"))
     }
 }

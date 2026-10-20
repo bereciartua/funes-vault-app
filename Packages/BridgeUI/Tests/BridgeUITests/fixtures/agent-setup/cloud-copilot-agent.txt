@@ -9,7 +9,7 @@ snippet (json):
 
 steps:
 1. In the repository on GitHub, open Settings ▸ Copilot ▸ MCP servers and paste this under MCP configuration.
-2. Add an Agents secret named COPILOT_MCP_FUNES_REMOTE_TOKEN and paste the remote token (Copy Remote Token… on the agent's Cloud section) as its value.
+2. Add an Agents secret named COPILOT_MCP_FUNES_REMOTE_TOKEN and paste the remote token (Copy Remote Token… below) as its value.
 3. The tools list holds only the read tools. Add suggest_memory only if this agent may suggest memories.
 
 warnings:

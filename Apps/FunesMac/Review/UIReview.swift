@@ -202,10 +202,6 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 model.section = .activity
                 model.activity.selection = model.activity.entries.first(where: { $0.event.event == "request_memory" })?.id
             }
-            // The same page at the window's minimum width, where the filters take two lines.
-            main.window?.setContentSize(NSSize(width: MainWindowController.minimumSize.width, height: 680))
-            await mainScene("activity-narrow") {}
-            main.window?.setContentSize(NSSize(width: 1_040, height: 680))
 
             // Remote Access: before setup, the guide, set up, and an agent's Cloud tab.
             let remote = model.remoteAccess
@@ -226,6 +222,38 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 model.agentTab = .cloud
                 model.section = .agents
             }
+
+            // Every section at the window's minimum size (04-ux-mac.md), where nothing may run off
+            // the right edge. Each is shown at the default size first and then shrunk, as a user
+            // resizing the window would. Remote Access is set up, as above.
+            func minScene(_ name: String, _ prepare: () -> Void) async {
+                main.window?.setContentSize(NSSize(width: 1_040, height: 680))
+                prepare()
+                main.show()
+                try? await Task.sleep(for: .milliseconds(300))
+                main.window?.setContentSize(MainWindowController.minimumSize)
+                await snapshot("\(name)-min-\(suffix)", main.window)
+            }
+            await minScene("agents-cloud") {}
+            await minScene("agents-access") {
+                model.selectedAgentID = fixture.agents.claudeCode.id
+                model.agentTab = .access
+            }
+            await minScene("agents-connect") {
+                model.selectedAgentID = fixture.claudeDesktop.id
+                model.agentTab = .connect
+            }
+            await minScene("remote") { model.section = .remoteAccess }
+            await minScene("vault") {
+                model.section = .vault
+                model.vault.selection = model.vault.memories.first(where: { $0.title == "Commit messages" }).map { [$0.id] } ?? []
+            }
+            await minScene("inbox") { model.section = .inbox }
+            await minScene("activity") {
+                model.section = .activity
+                model.activity.selection = model.activity.entries.first(where: { $0.event.event == "request_memory" })?.id
+            }
+            main.window?.setContentSize(NSSize(width: 1_040, height: 680))
             model.agentTab = .access
 
             let empty = MainWindowController(model: fixture.empty)

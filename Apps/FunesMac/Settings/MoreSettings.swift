@@ -36,8 +36,7 @@ struct MCPSettings: View {
                     Text(verbatim: "http://127.0.0.1:\(model.mcpPort)/mcp").font(.callout.monospaced()).textSelection(.enabled)
                 }
                 if case .failed(.portInUse) = model.mcpStatus {
-                    Text(String(localized: "Another app is using port \(String(model.mcpPort)). Quit it, then turn this off and on again, or choose another port. Funes never moves on its own, because agents' setups name the port."))
-                        .font(.callout).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                    WarningLabel(text: String(localized: "Another app is using port \(String(model.mcpPort)). Quit it, then turn this off and on again, or choose another port. Funes never moves on its own, because agents' setups name the port."))
                 }
                 if let portMessage {
                     Text(portMessage).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -139,8 +138,7 @@ struct DataSettings: View {
                     .disabled(backups.isEmpty)
                 }
                 if model.data.integrityProblem {
-                    Label(String(localized: "The weekly check found a problem with the vault file. Restore the latest backup."),
-                          systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    WarningLabel(text: String(localized: "The weekly check found a problem with the vault file. Restore the latest backup."))
                 }
                 Text(String(localized: "Funes keeps the last 7 backups in its data folder."))
                     .font(.callout).foregroundStyle(.secondary)

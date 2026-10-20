@@ -9,7 +9,7 @@ struct VaultView: View {
     @FocusState private var searchFocused: Bool
     @State private var creating = false
     @State private var managingCategories = false
-    @State private var confirmDeleteNow = false
+    @State private var deleteNow: UUID?
 
     private var vault: VaultModel { model.vault }
 
@@ -62,6 +62,14 @@ struct VaultView: View {
             }
         }
         .sheet(isPresented: $managingCategories) { CategoriesSheet(model: model) }
+        // The same question as the detail view's Delete Now… (and the bulk bar's, for several).
+        .confirmationDialog(String(localized: "Delete this memory now?"),
+                            isPresented: Binding(get: { deleteNow != nil }, set: { if !$0 { deleteNow = nil } }),
+                            presenting: deleteNow) { id in
+            Button(String(localized: "Delete Now"), role: .destructive) { Task { await vault.perform(.deleteNow, on: [id]) } }
+        } message: { _ in
+            Text(String(localized: "It's removed for good, with its history. This can't be undone."))
+        }
     }
 
     /// The toolbar, the list and the selected memory.
@@ -82,11 +90,12 @@ struct VaultView: View {
                 .padding(.bottom, 8)
             }
             Divider()
+            // Both fit the window's minimum width (860) beside the widest sidebar (260).
             HSplitView {
                 list
-                    .frame(minWidth: 280, idealWidth: 360, maxWidth: 460, maxHeight: .infinity)
+                    .frame(minWidth: 260, idealWidth: 360, maxWidth: 460, maxHeight: .infinity)
                 detail
-                    .frame(minWidth: 360, idealWidth: 520, maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(minWidth: 340, idealWidth: 520, maxWidth: .infinity, maxHeight: .infinity)
             }
         }
     }
@@ -110,32 +119,40 @@ struct VaultView: View {
                 .keyboardShortcut("n", modifiers: .command)
                 .buttonStyle(.borderedProminent)
             }
-            HStack(spacing: 6) {
-                FilterMenu(title: String(localized: "Category"), options: model.categories.map { ($0.key, $0.name) },
-                           selection: Binding(get: { vault.categoryKeys }, set: { vault.categoryKeys = $0 }))
-                FilterMenu(title: String(localized: "Kind"), options: MemoryKind.allCases.map { ($0, $0.title) },
-                           selection: Binding(get: { vault.kinds }, set: { vault.kinds = $0 }))
-                FilterMenu(title: String(localized: "Sensitivity"), options: Sensitivity.allCases.map { ($0, $0.title) },
-                           selection: Binding(get: { vault.sensitivities }, set: { vault.sensitivities = $0 }))
-                Picker(String(localized: "Status"), selection: Binding(get: { vault.status }, set: { vault.status = $0 })) {
-                    ForEach(VaultModel.StatusChoice.allCases) { Text($0.title).tag($0) }
-                }
-                .labelsHidden()
-                .fixedSize()
-                .accessibilityLabel(String(localized: "Status"))
-                FilterMenu(title: String(localized: "Source"), options: MemorySource.allCases.map { ($0, $0.title) },
-                           selection: Binding(get: { vault.sources }, set: { vault.sources = $0 }))
-                if vault.hasFilters {
-                    Button(String(localized: "Clear")) { vault.clearFilters() }.buttonStyle(.link)
-                }
-                Spacer(minLength: 8)
-                Picker(String(localized: "Sort by"), selection: Binding(get: { vault.sort }, set: { vault.sort = $0 })) {
-                    ForEach(VaultModel.SortChoice.allCases) { Text($0.title).tag($0) }
-                }
-                .fixedSize()
+            // In a narrow window the sort menu drops its label.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 6) { filters; Spacer(minLength: 8); sortPicker.fixedSize() }
+                HStack(spacing: 6) { filters; Spacer(minLength: 8); sortPicker.labelsHidden().fixedSize() }
             }
             .controlSize(.small)
         }
+    }
+
+    @ViewBuilder private var filters: some View {
+        FilterMenu(title: String(localized: "Category"), options: model.categories.map { ($0.key, $0.name) },
+                   selection: Binding(get: { vault.categoryKeys }, set: { vault.categoryKeys = $0 }))
+        FilterMenu(title: String(localized: "Kind"), options: MemoryKind.allCases.map { ($0, $0.title) },
+                   selection: Binding(get: { vault.kinds }, set: { vault.kinds = $0 }))
+        FilterMenu(title: String(localized: "Sensitivity"), options: Sensitivity.allCases.map { ($0, $0.title) },
+                   selection: Binding(get: { vault.sensitivities }, set: { vault.sensitivities = $0 }))
+        Picker(String(localized: "Status"), selection: Binding(get: { vault.status }, set: { vault.status = $0 })) {
+            ForEach(VaultModel.StatusChoice.allCases) { Text($0.title).tag($0) }
+        }
+        .labelsHidden()
+        .fixedSize()
+        .accessibilityLabel(String(localized: "Status"))
+        FilterMenu(title: String(localized: "Source"), options: MemorySource.allCases.map { ($0, $0.title) },
+                   selection: Binding(get: { vault.sources }, set: { vault.sources = $0 }))
+        if vault.hasFilters {
+            Button(String(localized: "Clear")) { vault.clearFilters() }.buttonStyle(.link)
+        }
+    }
+
+    private var sortPicker: some View {
+        Picker(String(localized: "Sort by"), selection: Binding(get: { vault.sort }, set: { vault.sort = $0 })) {
+            ForEach(VaultModel.SortChoice.allCases) { Text($0.title).tag($0) }
+        }
+        .help(String(localized: "Sort by"))
     }
 
     // MARK: List
@@ -170,7 +187,7 @@ struct VaultView: View {
         switch memory.status {
         case .deleted:
             Button(String(localized: "Restore")) { Task { await vault.perform(.restore, on: [memory.id]) } }
-            Button(String(localized: "Delete Now"), role: .destructive) { Task { await vault.perform(.deleteNow, on: [memory.id]) } }
+            Button(String(localized: "Delete Now…"), role: .destructive) { deleteNow = memory.id }
         case .archived:
             Button(String(localized: "Restore")) { Task { await vault.perform(.restore, on: [memory.id]) } }
             Button(String(localized: "Delete"), role: .destructive) { Task { await vault.perform(.delete, on: [memory.id]) } }
@@ -357,7 +374,7 @@ struct BulkBar: View {
             switch status {
             case .recentlyDeleted:
                 Button(String(localized: "Restore")) { run(.restore) }
-                Button(String(localized: "Delete Now"), role: .destructive) { confirmDelete = true }
+                Button(String(localized: "Delete Now…"), role: .destructive) { confirmDelete = true }
             case .archived:
                 Button(String(localized: "Restore")) { run(.restore) }
                 Button(String(localized: "Delete"), role: .destructive) { run(.delete) }

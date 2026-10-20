@@ -15,7 +15,7 @@ Header value: Bearer <remote token from Copy Remote Token…>
 steps:
 1. In Devin, open Customize ▸ MCPs, choose Add MCP, then Add custom MCP.
 2. Enter these values.
-3. Paste the remote token from Copy Remote Token… on the Cloud section of “Work agent” in Funes Vault.
+3. Paste the remote token from Copy Remote Token… below.
 4. Click Test tools.
 
 warnings:

@@ -660,12 +660,12 @@
     "Add an Agent" : {
 
     },
-    "Add an Agents secret named %@ and paste the remote token (%@ on the agent's Cloud section) as its value." : {
+    "Add an Agents secret named %@ and paste the remote token (%@ below) as its value." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Add an Agents secret named %1$@ and paste the remote token (%2$@ on the agent's Cloud section) as its value."
+            "value" : "Add an Agents secret named %1$@ and paste the remote token (%2$@ below) as its value."
           }
         }
       }
@@ -991,12 +991,12 @@
     "Asked for more access" : {
 
     },
-    "At claude.ai/code, edit the cloud environment and add %@=%@ under Environment variables. %@ is on the agent's Cloud section in %@." : {
+    "At claude.ai/code, edit the cloud environment and add %@=%@ under Environment variables. %@ is below." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "At claude.ai/code, edit the cloud environment and add %1$@=%2$@ under Environment variables. %3$@ is on the agent's Cloud section in %4$@."
+            "value" : "At claude.ai/code, edit the cloud environment and add %1$@=%2$@ under Environment variables. %3$@ is below."
           }
         }
       }
@@ -1259,6 +1259,9 @@
 
     },
     "Click Install in VS Code, or run the command in Terminal." : {
+
+    },
+    "Click Set Up OAuth Client… below. Enter the OAuth settings above, copying the Client ID and Client secret from that sheet." : {
 
     },
     "Click Test tools." : {
@@ -2044,16 +2047,6 @@
     "Import…" : {
 
     },
-    "In %@, click Set Up OAuth Client… on the Cloud section of “%@”. Enter the OAuth settings below, copying the Client ID and Client secret from that sheet." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "In %1$@, click Set Up OAuth Client… on the Cloud section of “%2$@”. Enter the OAuth settings below, copying the Client ID and Client secret from that sheet."
-          }
-        }
-      }
-    },
     "In ChatGPT, open Plugins, click +, then Create custom MCP server." : {
 
     },
@@ -2069,12 +2062,12 @@
     "In Devin, open Customize ▸ MCPs, choose Add MCP, then Add custom MCP." : {
 
     },
-    "In Terminal, set %@ to the remote token (%@ on the agent's Cloud section) and %@ to your API key, then run the command." : {
+    "In Terminal, set %@ to the remote token (%@ below) and %@ to your API key, then run the command." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "In Terminal, set %1$@ to the remote token (%2$@ on the agent's Cloud section) and %3$@ to your API key, then run the command."
+            "value" : "In Terminal, set %1$@ to the remote token (%2$@ below) and %3$@ to your API key, then run the command."
           }
         }
       }
@@ -2719,15 +2712,8 @@
     "Paste its address" : {
 
     },
-    "Paste the remote token from %@ on the Cloud section of “%@” in %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Paste the remote token from %1$@ on the Cloud section of “%2$@” in %3$@."
-          }
-        }
-      }
+    "Paste the remote token from %@ below." : {
+
     },
     "Paste this URL as the MCP server URL and choose OAuth 2.0. Turn on Enable PKCE Support." : {
 
@@ -4168,15 +4154,8 @@
     "When a request is refused only because a category isn't allowed, Funes asks you: Not Now, Allow Once or Always Allow. Never for the sensitivity limit or denied categories." : {
 
     },
-    "When it asks you to sign in, open “%@” in %@, choose Connect a Cloud App… on its Cloud section, and approve the code you see in both places." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "When it asks you to sign in, open “%1$@” in %2$@, choose Connect a Cloud App… on its Cloud section, and approve the code you see in both places."
-          }
-        }
-      }
+    "When it asks you to sign in, click Connect a Cloud App… below and approve the code you see in both places." : {
+
     },
     "Where it runs" : {
 
