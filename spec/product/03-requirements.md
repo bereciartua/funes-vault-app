@@ -488,6 +488,10 @@
 **FR-G-05 Data location** · M · v0.1
 - "Show Data in Finder" and "Erase All Data…", the latter with confirmation and an exported backup offered.
 
+**FR-G-06 Appearance** · S · v0.1
+- Settings ▸ General ▸ Appearance: **Automatic** (follow macOS, the default), **Light** or **Dark**, so Funes can stay dark while macOS is light, or the other way round.
+- Applies at once, app-wide (`NSApp.appearance`, set at launch before anything shows): the main window, Settings, the panels, the capture box, the menu bar menu, sheets and alerts. The app menus (File, Edit…) follow the menu bar, which macOS draws. Kept across relaunches. EK Bridge uses the same words.
+
 ### Intelligence (FR-AI)
 
 **FR-AI-01 Embeddings** · M · v0.1

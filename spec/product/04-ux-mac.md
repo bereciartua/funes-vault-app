@@ -214,7 +214,9 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
 - **Devices:** name, model, paired date, last seen, connection used, and Revoke.
 
 ### Settings
-- **General:** launch at login, show in Dock, the Review Request shortcut (⌃⌥⌘R), notifications.
+- **General:**
+  - **Appearance:** Automatic, Light or Dark (FR-G-06), a pop-up with "Automatic follows macOS." under it. Automatic is the default. The choice applies at once to every window, panel, sheet and alert, and to the menu bar menu, and is kept across relaunches. The app menus (File, Edit…) follow the menu bar, as in every app. EK Bridge has the same setting with the same words.
+  - Launch at login, show in Dock, the Review Request shortcut (⌃⌥⌘R), notifications.
 - **Capture:** hotkey, default sensitivity for captures ("At least <level>": a minimum no proposal, rules or model, goes below), classification on/off. With a cloud classifier it says "New captures are sent to <provider> to suggest their fields, within the cloud limit in AI Models."
 - **AI Models:**
   - **Tasks:** Embeddings (v0.1: "Built in (bge-small, on this Mac)", no choice; other models later), Classification (later Consolidation). Each has a provider pop-up with a locality badge (On this Mac · Local server · Apple cloud · Cloud), a model pop-up, and a status ("Ready", "Re-embedding 1,240 / 3,000", "Unavailable: using on-device").
