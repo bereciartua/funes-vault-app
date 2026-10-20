@@ -120,7 +120,7 @@
   - the site.
 
 ### 4b.15 Live check · 2 h
-- [ ] On a signed build, with Tailscale Funnel to 47627 and a development vault:
+- [ ] On a signed build, with Tailscale Funnel to 47627 and a development vault. On 2026-10-19 claude.ai and ChatGPT paired, read and suggested through the 0.1.2 draft (Funnel shared by path on 443), and EK Bridge's connectors kept working. Deny, timeout then get, Revoke, the Anthropic API and Turn Off are still open ([results](spike-results.md#phase-4b-live-check-cloud-agents-through-remote-access)):
   - **ChatGPT and claude.ai:** pair (codes match, Allow), list categories, request memory (approve, deny, timeout then get), suggest (queued), Revoke;
   - **one header agent** (the Anthropic API): the same requests with a remote token, then **Reset Remote Token…** makes the old one fail;
   - **Turn Off Remote Access** stops the URL.
