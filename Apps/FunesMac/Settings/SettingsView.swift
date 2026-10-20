@@ -62,9 +62,10 @@ struct SettingsView: View {
     }
 }
 
-/// Launch at login (FR-G-02), the Dock icon and notifications (FR-L-04).
+/// Appearance (FR-G-06), launch at login (FR-G-02), the Dock icon and notifications (FR-L-04).
 struct GeneralSettings: View {
     let model: AppModel
+    @State private var appearance = AppAppearance.automatic
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var loginError: String?
     @State private var showInDock = false
@@ -75,6 +76,17 @@ struct GeneralSettings: View {
 
     var body: some View {
         Form {
+            Section {
+                Picker(String(localized: "Appearance"), selection: $appearance) {
+                    ForEach(AppAppearance.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                .onChange(of: appearance) { _, value in
+                    model.preferences.appearance = value
+                    value.apply()
+                }
+                Text(String(localized: "Automatic follows macOS."))
+                    .font(.callout).foregroundStyle(.secondary)
+            }
             Section {
                 Toggle(String(localized: "Open Funes Vault at login"), isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, on in
@@ -116,6 +128,7 @@ struct GeneralSettings: View {
         }
         .formStyle(.grouped)
         .onAppear {
+            appearance = model.preferences.appearance
             showInDock = model.preferences.showInDock
             notifyExpired = model.preferences.notifyExpired
             notifySuggestion = model.preferences.notifySuggestion

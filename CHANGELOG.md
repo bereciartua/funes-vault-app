@@ -4,6 +4,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+### Added
+
+- **Appearance: Automatic, Light or Dark.** In Settings ▸ General, keep Funes Vault dark while macOS is light, or the other way round. Automatic follows macOS, as before. The choice applies at once to every window and panel and to the menu bar menu, and stays after a relaunch. EK Bridge has the same setting.
+
 ### Changed
 
 - **Each agent has its own row in the sidebar**, like EK Bridge's connections. The order is now Vault, Inbox, Activity, then the agents with a **+** to add one, then Remote Access and **Settings…** pinned at the bottom.

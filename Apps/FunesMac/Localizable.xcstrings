@@ -921,6 +921,9 @@
     "Anyone with this token and the URL can use %@'s access from the internet while Remote Access and Funes Vault are on. Paste it only into the cloud agent's settings. The clipboard is cleared in 90 seconds." : {
 
     },
+    "Appearance" : {
+
+    },
     "Apple Intelligence isn't available on this Mac: simple rules propose the fields." : {
 
     },
@@ -1031,6 +1034,12 @@
 
     },
     "Authorization URL" : {
+
+    },
+    "Automatic" : {
+
+    },
+    "Automatic follows macOS." : {
 
     },
     "Back" : {
@@ -1518,6 +1527,9 @@
 
     },
     "Cut" : {
+
+    },
+    "Dark" : {
 
     },
     "Data" : {
@@ -2294,6 +2306,9 @@
 
     },
     "Let it ask for more access" : {
+
+    },
+    "Light" : {
 
     },
     "Likely duplicates" : {

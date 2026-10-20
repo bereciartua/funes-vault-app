@@ -59,6 +59,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var reviewHotKey: HotKey?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Before any window, panel or alert shows (FR-G-06).
+        preferences.appearance.apply()
         AppMover.waitForPreviousCopy()
         NSApp.mainMenu = MainMenu.build(target: self)
         let environment: VaultEnvironment
@@ -432,6 +434,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = MenuBarIcon.image(.off)
         let menu = NSMenu()
+        menu.appearance = NSApp.appearance
         let line = NSMenuItem(title: String(localized: "The vault didn't open"), action: nil, keyEquivalent: "")
         line.isEnabled = false
         menu.addItem(line)

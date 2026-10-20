@@ -43,6 +43,9 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         model.tick()
         menu.removeAllItems()
+        // A status item's menu takes the menu bar's appearance; this one follows Settings ▸
+        // General ▸ Appearance like the rest of the app (FR-G-06). The icon stays the menu bar's.
+        menu.appearance = NSApp.appearance
 
         // While something waits for the user, the first item answers it (UX review F3).
         if let review = reviewTitle {

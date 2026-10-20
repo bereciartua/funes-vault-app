@@ -8,6 +8,7 @@ import FunesProtocol
 @MainActor
 final class Preferences {
     enum Key {
+        static let appearance = "Appearance"
         static let showInDock = "ShowInDock"
         static let launchAtLoginAsked = "LaunchAtLoginAsked"
         static let pausedUntil = "PausedUntil"
@@ -59,6 +60,12 @@ final class Preferences {
             Key.routineRetentionDays: 30,
             Key.automaticBackups: true,
         ])
+    }
+
+    /// Settings ▸ General ▸ Appearance; Automatic (follow macOS) until changed.
+    var appearance: AppAppearance {
+        get { AppAppearance(stored: defaults.string(forKey: Key.appearance)) }
+        set { defaults.set(newValue.rawValue, forKey: Key.appearance) }
     }
 
     var showInDock: Bool {
