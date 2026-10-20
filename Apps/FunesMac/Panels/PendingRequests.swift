@@ -5,37 +5,34 @@ import SwiftUI
 /// from when they arrived. Review opens the same Share panel again.
 struct PendingRequestsCard: View {
     let model: AppModel
-    /// The Agents list's version: no Details link and no caption, for a narrow column.
-    var compact = false
+    /// One agent's requests, on its page; every agent's otherwise (Activity).
+    var agentID: UUID?
+
+    private var requests: [PendingRequest] {
+        agentID.map { id in model.pending.filter { $0.agentID == id } } ?? model.pending
+    }
 
     var body: some View {
         Card(padding: 12) {
             HStack {
                 Label(String(localized: "Pending requests"), systemImage: "hourglass").font(.headline)
                 Spacer()
-                if !compact {
-                    Text(String(localized: "Agents get the answer when they check again.")).font(.caption).foregroundStyle(.secondary)
-                }
+                Text(String(localized: "Agents get the answer when they check again.")).font(.caption).foregroundStyle(.secondary)
             }
-            ForEach(model.pending) { request in
+            ForEach(requests) { request in
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    if let agent = model.agent(request.agentID) { AgentIcon(kind: agent.agentKind, size: 22) }
+                    // On the agent's own page its icon and name would only repeat the header's.
+                    if agentID == nil, let agent = model.agent(request.agentID) { AgentIcon(kind: agent.agentKind, size: 22) }
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(request.agentName).fontWeight(.medium)
+                        if agentID == nil { Text(request.agentName).fontWeight(.medium) }
                         Text(request.summary(at: model.now)).foregroundStyle(.secondary).monospacedDigit()
                         if let task = request.task?.split(separator: "\n").first {
                             Text("“\(task)”").foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
                         }
-                        // In the narrow list, Review… goes under the text so neither is squeezed.
-                        if compact, request.status == .needsApproval {
-                            reviewButton(request).padding(.top, 4)
-                        }
                     }
                     Spacer(minLength: 0)
-                    if !compact {
-                        if request.status == .needsApproval { reviewButton(request) }
-                        Button(String(localized: "Details")) { model.showActivity(.request(request.id)) }.buttonStyle(.link)
-                    }
+                    if request.status == .needsApproval { reviewButton(request) }
+                    Button(String(localized: "Details")) { model.showActivity(.request(request.id)) }.buttonStyle(.link)
                 }
                 .font(.callout)
             }

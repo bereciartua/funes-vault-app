@@ -67,6 +67,30 @@ A sidebar plus a content area, with a minimum size of 860×560. Every section fi
 
 Warnings are an orange icon with primary text, never orange text, which is under 3:1 on white. Text on a colored badge is primary; the color is in the fill. Text aims for 4.5:1 or better, and Increase Contrast strengthens fills, borders and the warning orange.
 
+### Sidebar
+Modelled on EK Bridge's sidebar, top to bottom:
+
+```
+Vault                 ⌘1
+Inbox             3   ⌘2
+Activity              ⌘3
+AGENTS             +
+  Claude Code     1   ● 2 min. ago
+  Cursor              ● Paused
+  claude.ai           ● Cloud · No requests yet
+──────────────────────
+Remote Access    On   ⌘5
+Settings…             ⌘,
+● Agents paused until 14:00  [Resume]
+```
+
+- **Vault, Inbox, Activity** at the top. Inbox's badge counts the suggestions waiting.
+- **Agents:** a section listing each agent (⌘4 shows the last one shown, or the first). Each row shows the agent's icon, name, a colored dot and a short status: "2 min. ago", "No requests yet", "Paused", "Access expired", with "Cloud · " in front for a cloud agent. Its badge counts that agent's pending requests. The header's **+** opens Add Agent; with no agents the section shows **Add Agent…** instead. A row's context menu has Pause or Resume and Show Activity. Removing an agent shows the first one left.
+- **Remote Access** and **Settings…** stay pinned at the bottom; agents scroll under them, which get a bar background once the list is long. Settings… opens the Settings window, as ⌘, does. It is a button, not a page.
+- **The status line** shows under them only while something's off: agents paused (with **Resume**), the agent server turned off, or the server stopped ("Port 47627 is in use by another app"). While agents can connect there is none; the menu bar icon says so.
+- **VoiceOver:** the Agents header is a heading and its + reads "Add Agent…". An agent reads as one element with its full status and waiting requests ("Claude Code, Connected · 2 min. ago, 1 request waiting"). Remote Access reads "Remote Access, On", and the status line reads as one element.
+- An Overview page, like EK Bridge's, waits until there's something for it to show that Vault and Activity don't.
+
 ### Setup checklist (until dismissed)
 A card at the top of the Vault, connecting first:
 1. **Connect an agent**: "Found on this Mac: Claude Code, Cursor". [Add…]
@@ -122,9 +146,9 @@ A card at the top of the Vault, connecting first:
 - **Correction suggestions:** when a suggestion references an existing memory, the card shows a diff (old → new) with **Replace** and **Keep both**.
 
 ### Agents
-- **Layout:** the list is 220 pt wide at the window's minimum width, growing to 300; the detail takes the rest. **Add Agent…** shows only its icon when the list is too narrow for its label.
-- **List:** each agent shows its icon (detected type), name, status ("Connected · 2 min ago", "Waiting for first request", "Paused", "Access expired") and access summary ("Reads Low and below in 3 categories · asks first").
-- **Pending requests** sit above the list while any wait ("Claude Code · 3 memories · 13 min left", the task's first line while this session holds it, [Review…]); the sidebar's Agents badge counts them. Activity shows them too, with Details.
+- **Layout:** the sidebar lists the agents (see Sidebar); the page shows the selected one.
+- **Header:** its icon (detected type), name (with a pencil to rename), status ("Connected · 2 min ago", "Waiting for first request", "Paused", "Access expired"), kind, and access summary ("Reads Low and below in 3 categories · asks first"), with Pause or Resume and Remove….
+- **Pending requests** from this agent sit under the header while any wait ("Claude Code · 3 memories · 13 min left", the task's first line while this session holds it, [Review…], Details); the agent's badge in the sidebar counts them. Activity shows every agent's, at the top.
 - **Add Agent:** two tabs, **On This Mac** (agents found on this Mac first, "Show All 11 Agents") and **Cloud · Experimental** (Remote Access's state first, with Set Up Remote Access… while it's off). Names wrap instead of truncating, and the sheet scrolls rather than outgrow the screen. For an agent with one-click setup the button is **Add and Connect…**: the agent is added and its Connect tab shows the change to its settings at once; after Add, it suggests a first question to ask the agent. New agents start with Deny for the never-share categories.
 - **Agent detail tabs:**
   - **Access:**
@@ -161,7 +185,7 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
   3. **Paste its address:** the public `https://` address, filled in when step 2 found it.
   4. **Test:** one request through the tunnel to Funes's own health URL: **Reachable**, or **Not reachable** with the reason.
 - **Once set up:** the switch at the top, then rows for **Status** (Test), **Tunnel** (Running · forwards to 47627, Not running with its command, Wrong port, Not public; **Switch Tunnel…**), **Address** (Edit…), **MCP URL** (copy, Reset Path…), **Port** (47627), **Turn off automatically** (Never, 1 hour, 8 hours, 1 day) and **Keep this Mac awake while on power**. Below them, the agents with cloud access, each linking to its Cloud section.
-- The sidebar label shows **On**, or ⚠ **Down** while the tunnel in use isn't running.
+- The sidebar row shows an **On** pill, or ⚠ **Down** while the tunnel in use isn't running.
 
 ### Activity
 - **Columns:** time, agent or device, event, detail, result.
