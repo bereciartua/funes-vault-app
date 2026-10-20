@@ -8,7 +8,8 @@
 	     private key is in the maintainer's login keychain as account funes-vault, and the
 	     SPARKLE_PRIVATE_KEY secret). Never change SUPublicEDKey in a release: installed copies
 	     only accept updates signed with the key they shipped with (docs/MAINTAINING.md, Updates).
-	     A build with either key empty never checks for updates. -->
+	     Only a copy signed with Funes's Developer ID checks for updates (SparkleUpdater.isConfigured):
+	     a build from source never does, though it has both keys. -->
 	<key>SUFeedURL</key>
 	<string>https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>

@@ -140,4 +140,4 @@ On a new macOS user account (or a macOS VM), with no agents' configs and no Fune
 - [ ] With a request waiting in Pending requests, the relaunch waits until it's answered or expires.
 - [ ] After the update: the vault, agents, keys, Activity and settings are unchanged; each connected agent reconnects without a setup change; `funes-mcp check` passes.
 
-<!-- TODO(check): EK Bridge has scripts/update_test.sh (two local builds and a local feed); there's no Funes equivalent in scripts/ yet. -->
+<!-- TODO(check): EK Bridge has scripts/update_test.sh (two local builds and a local feed); there's no Funes equivalent in scripts/ yet. Its builds must be signed with the Developer ID: other builds never check (SparkleUpdater.isConfigured). -->

@@ -216,7 +216,7 @@ The app has **no analytics, telemetry or crash reporting**, and no account. Your
 | --- | --- |
 | MCP server, listening on `127.0.0.1:47625` | While **Let agents connect** is on. Loopback only: other computers can't connect. |
 | `funes-mcp` connecting to `127.0.0.1` | When an agent on your Mac starts it, to reach the MCP server. |
-| One HTTPS request to GitHub for `appcast.xml` | Once a day while **Settings ▸ Updates ▸ Check for updates every day** is on, and when you choose **Check for Updates…**. GitHub sees your IP address and the app's version. A copy you build from source checks the same feed. |
+| One HTTPS request to GitHub for `appcast.xml` | Once a day while **Settings ▸ Updates ▸ Check for updates every day** is on, and when you choose **Check for Updates…**. GitHub sees your IP address and the app's version. A copy built from source never checks. |
 | Downloading an update from GitHub | Only after you click to install it. |
 | Remote Access listener, on `127.0.0.1` (port 47627 by default) | Only while **Remote Access** is on (off by default). Loopback only; a tunnel you run, such as Tailscale Funnel, makes it reachable from the internet at an address you choose. Funes never starts a tunnel. |
 | One HTTPS request to your tunnel's address | When you click **Test** on the Remote Access page (and during its setup): Funes fetches its own health URL through the tunnel. |
