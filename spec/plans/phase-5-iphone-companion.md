@@ -33,7 +33,7 @@
 
 ### 5.6 Approvals from the iPhone · 5 h
 *[FR-iOS-12](../product/03-requirements.md); the push channel is [Q24](open-questions.md). Decide it, as an ADR, before this task.*
-- [ ] Early in the phase: measure the chosen channel's delivery time from the Mac to a locked phone (a CloudKit doorbell first).
+- [ ] Early in the phase: measure the chosen channel's delivery time from the Mac to a locked phone (a CloudKit doorbell first). *ADR-0019 proposed and [the spike](../../spikes/cloudkit-doorbell/README.md) built; waiting for the run on the maintainer's iPhone.*
 - [ ] Mac: when a Share, Save or access request starts waiting, ring the doorbell for each paired device with approvals on. It carries only "you have a request" and an opaque id: no text, titles, task or agent name.
 - [ ] Companion methods to fetch a waiting request's panel contents and to answer it. The answer is bound to the request id and its snapshot revision, single use, with the same 15-minute and invalidation rules ([access policy](../domain/access-policy.md)); the first answer wins on the Mac or the phone.
 - [ ] iPhone: a notification (worded on the phone by a notification service extension, after fetching over the companion channel), and the Share and Save panels with checkboxes and badges. Answering needs the phone unlocked. "Mac not reachable" when it can't fetch.

@@ -344,6 +344,26 @@ Fallback, unchanged from the plan: if Claude Desktop or Cursor turns out to cut 
 
 **Q10 closed (2026-10-17):** Claude Desktop and Cursor waited the full 45 s, and Claude Code answered the real panel interactively, in the Phase 2 hands-on check. [Q10](open-questions.md) is decided: 45 s for all agents.
 
+## Q24: CloudKit doorbell delivery time
+
+**Question:** how long does a CloudKit "doorbell" take from the Mac to a **locked** iPhone, and can the phone's notification service extension reach the Mac while locked? It decides [Q24](open-questions.md) and [ADR-0019](../architecture/decisions/0019-cloudkit-doorbell-for-iphone-approvals.md), against the 45 s in-call wait ([Q10](open-questions.md)).
+
+**Spike:** [`spikes/cloudkit-doorbell`](../../spikes/cloudkit-doorbell/README.md): a Mac app that saves `Doorbell` records to the private database and times each ring on its own clock until the phone's extension acknowledges it, and an iPhone app with the extension. Both build unsigned (`xcodebuild … CODE_SIGNING_ALLOWED=NO`); running them needs the portal steps in its README and the maintainer's iPhone.
+
+**Pass:** run A (locked, Wi-Fi) delivers 20 of 20, with p90 ≤ 15 s and max ≤ 45 s, and run B (app swiped away) still delivers.
+
+### Results
+*Not run yet (2026-10-20): waiting for the portal set-up and a session with the maintainer's iPhone.*
+
+| Run | Phone | Delivered | Median | p90 | Max | Extension reached the Mac |
+|---|---|---|---|---|---|---|
+| A | Locked, Wi-Fi | | | | | |
+| B | App swiped away, locked | | | | | |
+| C | Cellular + Tailscale, locked | | | | | |
+| D | Focus on (Time Sensitive?) | | | | | |
+
+---
+
 ## Phase 0 quick check: EK Bridge's `swiftc` build linking a Swift package
 **Run:** 2026-10-16, Xcode 27.0 (Swift 6.4), macOS 27, M-series Mac. **Status:** **pass**, so ADR-0013 stands; no Xcode project for EK Bridge.
 

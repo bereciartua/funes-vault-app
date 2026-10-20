@@ -22,6 +22,7 @@
 | FunesiOS | iOS app | `com.funesvault.ios` | App Store; App Group `group.com.funesvault` |
 | FunesShareExtension | iOS share extension | `com.funesvault.ios.share` | App Group |
 | FunesIntents | App Intents / Control extension | `com.funesvault.ios.intents` | App Group |
+| FunesNotifications | Notification service extension | `com.funesvault.ios.notifications` | App Group; words approval alerts on the phone ([ADR-0019](../architecture/decisions/0019-cloudkit-doorbell-for-iphone-approvals.md)). App ID to register |
 | FunesCore | Swift package (macOS) | — | GRDB dependency |
 | FunesProtocol | Swift package (macOS + iOS) | — | No dependencies (CryptoKit, Foundation) |
 | BridgeUI | Local Swift package (macOS) | — | UI and workflow pieces copied from EK Bridge (approvals, activity, agent setup UI, app shell); Sparkle via the app target only. Becomes BridgeKitUI after v0.1 |
@@ -38,6 +39,7 @@
 | Background task (iOS) | `com.funesvault.ios.deliver` |
 | MCP server key / launcher / key prefix | `funes` / `funes-mcp` / `fns_mcp_v1_` (kept short on purpose) |
 | Bonjour service | `_funes._tcp` |
+| iCloud container (approvals doorbell only, [ADR-0019](../architecture/decisions/0019-cloudkit-doorbell-for-iphone-approvals.md)) | `iCloud.com.funesvault`, record type `Doorbell` |
 | Homebrew cask | `funes-vault` (`brew install --cask bereciartua/tap/funes-vault`) |
 | MCP Registry name | `com.funesvault/funes`, with the namespace verified via a DNS TXT record on funesvault.com |
 | Website, privacy policy, support | `https://funesvault.com`, `/privacy`, `/support` |
