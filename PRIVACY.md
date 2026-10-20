@@ -1,6 +1,6 @@
 # Privacy
 
-**Funes Vault v0.1 (public preview) · Last updated 19 October 2026**
+**Funes Vault v0.1 (public preview) · Last updated 20 October 2026**
 
 Funes Vault keeps your memories on your Mac. It has no accounts, no servers of its own, no analytics and no telemetry. This page lists everything that can leave your Mac, and when. Questions: [open an issue](https://github.com/bereciartua/funes-vault-app/issues).
 
