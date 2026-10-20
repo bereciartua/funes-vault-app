@@ -261,6 +261,7 @@ All panels are non-activating floating `NSPanel`s at the top right. When several
 - A panel that runs out or is withdrawn counts as unanswered: Funes may ask again on the next request, while Not Now waits an hour.
 
 ## Content style (applies to both apps)
+Use the words in the [glossary](06-glossary.md): one word for each thing, with the words it replaces.
 - **Plain words:** "Share", "Save", "Agent", "Memory", "Inbox", "Paused", not "disclosure", "policy" or "client" in the UI. Those terms appear only in docs and in the API.
 - **Name the agent and the exact action:** "Claude Code can't add to Health", not "Permission denied".
 - **Numbers over adjectives:** "2 more matched but aren't allowed", "3 captures waiting".
