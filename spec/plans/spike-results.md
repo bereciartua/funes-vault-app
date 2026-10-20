@@ -377,7 +377,22 @@ Fallback, unchanged from the plan: if Claude Desktop or Cursor turns out to cut 
 
 
 ## Phase 4b live check: cloud agents through Remote Access
-**Status:** prepared, not run yet (task 4b.15). The user runs it with ChatGPT and claude.ai against a test build; record the results here and in [Testing](../../docs/TESTING.md#remote-access-live-check).
+**Status:** connection and basic flows run on 2026-10-19, as reported by the user. The timeout measurement and the remaining rows are still open (task 4b.15). Results are also in [Testing](../../docs/TESTING.md#remote-access-live-check).
+
+### Results so far (2026-10-19)
+- **Build and setup:** the notarized 0.1.2 draft (build 3) installed from GitHub over the user's own app and vault, so not the development vault the set-up below describes. EK Bridge 0.11.4 (build 21) ran beside it.
+- **Tunnel:** Tailscale 1.102.4, Funnel on port 443 shared by path. EK Bridge kept its `/` entry from before; Funes added its four paths with the `--set-path` commands. `tailscale funnel status` showed both. Funes's address was moved from 0.1.1's `:10000` to the address without a port with **Address ▸ Edit…**, and **Test** said Reachable.
+- **claude.ai and ChatGPT:** both connected to Funes (custom connector with the MCP URL, pairing on the agent's Cloud tab), read memories, and suggested memories.
+- **EK Bridge:** its claude.ai and ChatGPT connectors kept working throughout.
+- **Reset Path…:** the move commands and reconnecting worked.
+- **The failed first attempt:** on 0.1.1, with Funes on port 10000, the tunnel answered from the internet (checked through Tailscale's public relays), but claude.ai and ChatGPT both said they couldn't reach it. claude.ai only connects out on 443 ([anthropics/claude-ai-mcp#373](https://github.com/anthropics/claude-ai-mcp/issues/373)), and ChatGPT behaved the same. Hence path sharing on 443 ([plan](phase-4b-funnel-paths.md)).
+- **Not recorded yet:**
+  - deny;
+  - no answer then `get_memory_request`, and how long each app waits for a tool call (the measurement below, with a Debug build and `FUNES_DEBUG_CALL_WAIT`);
+  - `keywords`;
+  - Revoke;
+  - the Anthropic API with a remote token;
+  - Turn Off Remote Access.
 
 **Why it matters:** Spike 3 measured agents on the Mac only. A cloud agent that gives up on a tool call before Funes's 45 s in-call wait ends would see an error instead of `needs_approval`. Nothing in the policy changes with the result: the request is in Pending requests either way, and `get_memory_request` collects it.
 

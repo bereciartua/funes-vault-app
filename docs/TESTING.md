@@ -77,14 +77,20 @@ Agent versions: Claude Code —, Claude Desktop —, Cursor —, Codex —. App 
 
 Phase 4b's live check (task 4b.15), on a signed build with Tailscale Funnel to 47627 and a development vault. The procedure and the timeout measurement are in [spike results](../spec/plans/spike-results.md#phase-4b-live-check-cloud-agents-through-remote-access). Record each result with the date and app version.
 
+First run on 19 Oct 2026, as reported by the user:
+- the notarized 0.1.2 draft (build 3), on the user's own vault rather than a development vault;
+- Tailscale Funnel on 443 shared by path, beside EK Bridge 0.11.4's `/` entry.
+
+Empty cells weren't checked yet. EK Bridge's own claude.ai and ChatGPT connectors kept working, and Reset Path…'s move commands worked.
+
 | Check | claude.ai | ChatGPT | Anthropic API (remote token) |
 | --- | --- | --- | --- |
-| Connect: pair (codes match, Allow), or paste the remote token | | | |
+| Connect: pair (codes match, Allow), or paste the remote token | ✓ 19 Oct, 0.1.2 | ✓ 19 Oct, 0.1.2 | |
 | `list_memory_categories` | | | |
-| `request_memory`, approved in the panel | | | |
+| `request_memory`, approved in the panel (memories read) | ✓ 19 Oct, 0.1.2 | ✓ 19 Oct, 0.1.2 | |
 | `request_memory`, denied | | | |
 | `request_memory`, no answer: what the app does, then `get_memory_request` | | | |
-| `suggest_memory` → queued, in the Inbox | | | |
+| `suggest_memory` → queued, in the Inbox | ✓ 19 Oct, 0.1.2 | ✓ 19 Oct, 0.1.2 | |
 | **Revoke** (OAuth) or **Reset Remote Token…** (token): the old credential fails | | | |
 | **Turn Off Remote Access**: the URL stops answering | | | |
 | How long it waits for a tool call | | | — |
