@@ -21,7 +21,7 @@ To change the port, type it in **Settings ▸ MCP ▸ Port** (1024–65535) and 
 
 ### Add an agent
 
-1. In **Agents**, choose **Add Agent…**. On the **On This Mac** tab, the agents found on this Mac come first (**Show All N Agents** lists the rest); click your agent's tile. The name is filled in from it.
+1. Click **+** beside **Agents** in the sidebar (or **Add Agent…** while there are none). On the **On This Mac** tab, the agents found on this Mac come first (**Show All N Agents** lists the rest); click your agent's tile. The name is filled in from it.
 2. Choose its **Starting access**:
    - **Read low-sensitivity memories, ask first** (the default): Read, up to Low, in all categories.
    - **Read and suggest, ask first:** Read and Suggest, up to Internal, except Health, Finance and Legal.
@@ -216,7 +216,7 @@ Cloud agents (claude.ai, ChatGPT, cloud coding agents) run on their vendor's ser
 
 > Tell the user: "Waiting for your approval in Funes." Then call get_memory_request with request_id "…" in about a minute; it expires in 15 minutes.
 
-The request then waits in **Pending requests** (the menu bar menu, above the Agents list, and the top of Activity) for the rest of its 15 minutes; **More Time** on the panel moves it there at once. While one waits, the menu's first item reviews it, and **Review Request (⌃⌥⌘R)** does the same from any app (change or turn off the shortcut in Settings ▸ General). **Review** opens the panel again with the minutes it has left. When the agent calls `get_memory_request` after you shared it, it gets the memories, once.
+The request then waits in **Pending requests** (the menu bar menu, the agent's page, where its row in the sidebar has a badge, and the top of Activity) for the rest of its 15 minutes; **More Time** on the panel moves it there at once. While one waits, the menu's first item reviews it, and **Review Request (⌃⌥⌘R)** does the same from any app (change or turn off the shortcut in Settings ▸ General). **Review** opens the panel again with the minutes it has left. When the agent calls `get_memory_request` after you shared it, it gets the memories, once.
 
 What the agents measured so far did with this, from the [timeout spike and the first agent check](../spec/plans/spike-results.md#spike-3-agent-timeouts-and-the-in-call-approval):
 
@@ -241,7 +241,7 @@ While Remote Access is on, the vault is reachable through a public address, and 
 
 #### Turn on Remote Access
 
-**Remote Access** has its own page in the sidebar, labelled **On** while it's on, and ⚠ **Down** while the tunnel in use isn't running. Until it's set up, the page explains what it does; **Set Up Remote Access…** starts a guide with four steps:
+**Remote Access** has its own page, pinned near the bottom of the sidebar, labelled **On** while it's on, and ⚠ **Down** while the tunnel in use isn't running. Until it's set up, the page explains what it does; **Set Up Remote Access…** starts a guide with four steps:
 
 1. **Choose a tunnel:** Tailscale Funnel (recommended: TLS ends on this Mac), Cloudflare Tunnel (your own domain), ngrok, a Cloudflare quick tunnel (testing only) or another tunnel.
 2. **Start it:** **Turn On Remote Access** (off by default; turning it on asks first). Funes then listens on `127.0.0.1:47627`, only while Remote Access is on, and creates the URL's secret path the first time. Cloudflare Tunnel and ngrok first ask for your **Hostname**. The step shows the tunnel's command to copy and run in Terminal, and checks on this Mac every 3 seconds whether the tunnel runs and forwards to 47627; once it does, it moves on by itself, filling in the address when the tunnel's tool reports it. For another tunnel, or when the check can't tell, click **I've Started It**.

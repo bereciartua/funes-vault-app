@@ -253,6 +253,16 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 model.section = .activity
                 model.activity.selection = model.activity.entries.first(where: { $0.event.event == "request_memory" })?.id
             }
+            // The sidebar's status line, which shows only while something's off. Paused without
+            // model.pause, which would add rows to the next pass's Activity.
+            await minScene("sidebar-paused") {
+                let until = Date().addingTimeInterval(3_600)
+                model.services.pause.pause(until: until)
+                model.pausedUntil = until
+                model.section = .vault
+            }
+            model.services.pause.resume()
+            model.pausedUntil = nil
             main.window?.setContentSize(NSSize(width: 1_040, height: 680))
             model.agentTab = .access
 
@@ -261,6 +271,8 @@ final class UIReview: NSObject, NSApplicationDelegate {
             fixture.empty.section = .vault
             empty.show()
             await snapshot("vault-empty-\(suffix)", empty.window)
+            fixture.empty.section = .agents
+            await snapshot("agents-empty-\(suffix)", empty.window)
             empty.close()
 
             // Sheets, as windows of their own.

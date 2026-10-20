@@ -4,6 +4,13 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+### Changed
+
+- **Each agent has its own row in the sidebar**, like EK Bridge's connections. The order is now Vault, Inbox, Activity, then the agents with a **+** to add one, then Remote Access and **Settings…** pinned at the bottom.
+  - An agent's row shows a short status ("2 min. ago", "Paused") and a badge counting its requests waiting for you. Its page shows those requests under its name, with its access summary.
+  - The View menu follows the new order: Activity is ⌘3, Agents ⌘4 (the last agent you looked at) and Remote Access ⌘5.
+  - The status line under the sidebar shows only while something's off: agents paused (with Resume), or the agent server off or stopped.
+
 ## [0.1.3] - 2026-10-20
 
 ### Added

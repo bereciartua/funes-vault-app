@@ -241,7 +241,7 @@
 
 **FR-D-05 Timeout fallback** · M · v0.1
 - If unanswered after 45 s, the tool returns `needs_approval` with a `request_id`.
-- The request then appears under **Pending requests** (the menu bar, Agents, whose sidebar badge counts them, and Activity), with how many memories it would share, and can be approved within 15 minutes. The agent retrieves the result once with `get_memory_request`.
+- The request then appears under **Pending requests** (the menu bar, the agent's page, whose row in the sidebar has a badge counting them, and Activity), with how many memories it would share, and can be approved within 15 minutes. The agent retrieves the result once with `get_memory_request`.
 
 **FR-D-06 Single use** · M · v0.1
 - An approved release can be retrieved once. Later calls return `already_delivered`.

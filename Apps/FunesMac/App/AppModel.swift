@@ -31,8 +31,10 @@ struct PendingRequest: Identifiable, Equatable {
 }
 
 /// The main window's sections (04-ux-mac.md).
+/// The main window's sections, in the View menu's order (⌘1–⌘5). Agents shows the agent selected
+/// in the sidebar's Agents list.
 enum AppSection: String, CaseIterable, Identifiable, Hashable {
-    case vault, inbox, agents, remoteAccess, activity
+    case vault, inbox, activity, agents, remoteAccess
     var id: String { rawValue }
 
     var title: String {
@@ -113,8 +115,7 @@ final class AppModel {
     var section: AppSection = .vault
     var settingsTab: SettingsTab = .general
     var agentTab: AgentTab = .access
-    /// Add Agent… from the setup checklist.
-    /// Open Add Agent when the Agents page shows (the checklist's Add…, which also switches to it).
+    /// Open the Add Agent sheet: the sidebar's +, the checklist's Add… and the empty Agents page set it.
     var wantsAddAgent = false
     /// An agent just added with Add and Connect…: its Connect tab starts one-click setup.
     var pendingOneClick: UUID?
@@ -285,6 +286,9 @@ final class AppModel {
     // MARK: Lookups
 
     func agent(_ id: UUID?) -> Agent? { id.flatMap { id in agents.first { $0.id == id } } }
+
+    /// The agent's requests waiting for you (its badge in the sidebar).
+    func pendingCount(_ agentID: UUID) -> Int { pending.filter { $0.agentID == agentID }.count }
 
     /// An agent's name; "Removed agent" once it's gone.
     func agentName(_ id: UUID) -> String {

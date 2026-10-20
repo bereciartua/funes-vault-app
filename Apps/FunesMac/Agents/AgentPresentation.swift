@@ -103,6 +103,18 @@ enum AgentText {
         }
     }
 
+    /// The sidebar's shorter line, beside a colored dot: "2 min. ago", "No requests yet", "Paused",
+    /// with "Cloud · " in front for a cloud agent.
+    static func sidebarLine(_ agent: Agent, now: Date) -> String {
+        let state = switch status(agent, now: now) {
+        case .paused: String(localized: "Paused")
+        case .expired: String(localized: "Access expired")
+        case .waiting: String(localized: "No requests yet")
+        case .connected: agent.lastRequestAt.map { RelativeTime.short($0, now: now) } ?? String(localized: "Connected")
+        }
+        return agent.agentKind.isCloud ? String(localized: "Cloud · \(state)") : state
+    }
+
     static func tone(_ agent: Agent, now: Date) -> Pill.Tone {
         switch status(agent, now: now) {
         case .connected: .good

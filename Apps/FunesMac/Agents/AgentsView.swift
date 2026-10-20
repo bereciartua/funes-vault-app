@@ -3,127 +3,31 @@ import FunesCore
 import FunesProtocol
 import SwiftUI
 
-/// Agents (04-ux-mac.md, FR-A-01..12): the list with each agent's status and access, and the
-/// selected agent's Access, Connect and Activity tabs.
+/// Agents (04-ux-mac.md, FR-A-01..12): the agent selected in the sidebar, with its Access, Connect,
+/// Cloud and Activity tabs. The sidebar lists the agents; Add Agent… is its +.
 struct AgentsView: View {
     @Bindable var model: AppModel
-    @State private var adding = false
-
-    /// The list's width for the room beside the sidebar: 220 at the window's minimum (860), up to
-    /// 300. A plain stack, not an HSplitView: on a live resize HSplitView kept its panes' widths and
-    /// ran the detail off the window's edge.
-    static func listWidth(_ available: CGFloat) -> CGFloat { min(max(available * 0.32, 220), 300) }
 
     var body: some View {
-        GeometryReader { proxy in
-            HStack(spacing: 0) {
-                list.frame(width: Self.listWidth(proxy.size.width))
-                Divider()
-                detail.frame(maxWidth: .infinity)
-            }
-        }
-        .sheet(isPresented: $adding) {
-            AddAgentSheet(model: model) { id in
-                model.selectedAgentID = id
-                model.agentTab = .connect
-            }
-        }
-        // `initial`: the checklist's Add… also switches to this page, so it may not be on screen yet.
-        .onChange(of: model.wantsAddAgent, initial: true) { _, wants in
-            if wants {
-                adding = true
-                model.wantsAddAgent = false
-            }
-        }
-        .onAppear {
-            if model.selectedAgentID == nil { model.selectedAgentID = model.agents.first?.id }
-        }
-    }
-
-    private var list: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(String(localized: "Agents")).font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
-                Spacer(minLength: 8)
-                // At the list's narrowest, the button keeps only its icon.
-                ViewThatFits(in: .horizontal) {
-                    Button { adding = true } label: { Label(String(localized: "Add Agent…"), systemImage: "plus") }
-                    Button { adding = true } label: { Label(String(localized: "Add Agent…"), systemImage: "plus").labelStyle(.iconOnly) }
-                        .help(String(localized: "Add Agent…"))
-                }
-            }
-            .padding(16)
-            Divider()
-            if !model.pending.isEmpty {
-                // Requests waiting for you, where the sidebar's badge points (UX review F12).
-                PendingRequestsCard(model: model, compact: true)
-                    .padding(10)
-                Divider()
-            }
-            if model.agents.isEmpty {
+        Group {
+            if let agent = model.agent(model.selectedAgentID) {
+                AgentDetailView(model: model, agent: agent).id(agent.id)
+            } else {
                 ContentUnavailableView {
                     Label(String(localized: "No agents yet"), systemImage: "person.2")
                 } description: {
                     Text(String(localized: "Add Claude Code, Cursor or another AI agent, then choose what it may read."))
                 } actions: {
-                    Button(String(localized: "Add Agent…")) { adding = true }
+                    Button(String(localized: "Add Agent…")) { model.wantsAddAgent = true }
                 }
-            } else {
-                List(selection: Binding(get: { model.selectedAgentID }, set: { model.selectedAgentID = $0 })) {
-                    ForEach(model.agents) { agent in
-                        AgentRow(agent: agent, model: model).tag(agent.id)
-                    }
-                }
-                .listStyle(.inset)
-                .scrollContentBackground(.hidden)
-                .accessibilityLabel(String(localized: "Agents"))
-            }
-        }
-        .frame(maxHeight: .infinity)
-        .background(Palette.card)
-    }
-
-    private var detail: some View {
-        Group {
-            if let agent = model.agent(model.selectedAgentID) {
-                AgentDetailView(model: model, agent: agent).id(agent.id)
-            } else {
-                ContentUnavailableView(String(localized: "No agent selected"), systemImage: "person.crop.circle",
-                                       description: Text(String(localized: "Select an agent to change its access or connect it.")))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Palette.pane)
-    }
-}
-
-struct AgentRow: View {
-    let agent: Agent
-    let model: AppModel
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            AgentIcon(kind: agent.agentKind, size: 30)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(agent.name).fontWeight(.medium).lineLimit(1)
-                HStack(spacing: 5) {
-                    Circle().fill(color).frame(width: 7, height: 7).accessibilityHidden(true)
-                    Text(AgentText.statusLine(agent, now: model.now)).font(.callout).foregroundStyle(.secondary).lineLimit(1)
-                }
-                Text(AgentText.accessSummary(agent.access, categories: model.categories))
-                    .font(.caption).foregroundStyle(.secondary).lineLimit(3)
-            }
-        }
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var color: Color {
-        switch AgentText.status(agent, now: model.now) {
-        case .connected: .green
-        case .waiting: .accentColor
-        case .paused: .orange
-        case .expired: .red
+        // ⌘4, the menu's Agents… and a removed agent land on the last agent shown, or the first.
+        .onChange(of: model.agents.map(\.id), initial: true) { _, ids in
+            if let id = model.selectedAgentID, ids.contains(id) { return }
+            model.selectedAgentID = ids.first
         }
     }
 }
@@ -154,6 +58,12 @@ struct AgentDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             header.padding(16)
+            if model.pendingCount(agent.id) > 0 {
+                // Where the agent's badge in the sidebar points.
+                PendingRequestsCard(model: model, agentID: agent.id)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+            }
             Picker(String(localized: "Tab"), selection: $model.agentTab) {
                 ForEach(tabs) { Text($0.title).tag($0) }
             }
@@ -226,6 +136,9 @@ struct AgentDetailView: View {
             } else {
                 HStack(spacing: 6) { status; kindText }
             }
+            Text(AgentText.accessSummary(agent.access, categories: model.categories))
+                .font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             if let error { Text(error).font(.callout).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true) }
         }
     }

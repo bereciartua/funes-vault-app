@@ -78,7 +78,7 @@ Every agent has its own access: whether it may **Read**, **Suggest** or **Write*
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/agents-access-dark.png">
-  <img alt="The Agents page: two pending requests above the list, each with its memory count, time left and Review…, then each agent with its status and a summary of its access, and Claude Code's Access tab open, with switches for Read, Suggest and Write, a slider for the maximum sensitivity, and Allow or Deny for each category." src="docs/images/agents-access-light.png" width="640">
+  <img alt="Claude Code's page: the sidebar lists each agent with a short status, Claude Code with a badge for its two waiting requests. The page shows its status and a summary of its access, the two pending requests with their memory count, time left and Review…, and the Access tab, with switches for Read, Suggest and Write, a slider for the maximum sensitivity, and Allow or Deny for each category." src="docs/images/agents-access-light.png" width="640">
 </picture>
 
 ### You approve the exact text

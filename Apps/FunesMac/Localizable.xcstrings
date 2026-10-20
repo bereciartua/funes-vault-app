@@ -286,6 +286,26 @@
     "%@'s request waited 15 minutes without an answer." : {
 
     },
+    "%@, %@, %lld requests waiting" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@, %3$lld requests waiting"
+          }
+        }
+      }
+    },
+    "%@, %@, 1 request waiting" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@, 1 request waiting"
+          }
+        }
+      }
+    },
     "%@, %lld chosen" : {
       "localizations" : {
         "en" : {
@@ -779,9 +799,6 @@
 
     },
     "Agents' access is set per category. Built-in categories can be renamed; your own can also be deleted." : {
-
-    },
-    "Agents, %lld requests waiting" : {
 
     },
     "All" : {
@@ -1328,6 +1345,9 @@
 
     },
     "Cloud sign-in" : {
+
+    },
+    "Cloud · %@" : {
 
     },
     "Cloud · Experimental" : {
@@ -2463,9 +2483,6 @@
     "No agent can be used from the cloud yet. Turn on Allow cloud access in an agent's Cloud tab, or add a cloud agent with Add Agent…." : {
 
     },
-    "No agent selected" : {
-
-    },
     "No agents yet" : {
 
     },
@@ -2500,6 +2517,9 @@
 
     },
     "No problems" : {
+
+    },
+    "No requests yet" : {
 
     },
     "No shareable port" : {
@@ -2644,6 +2664,9 @@
 
     },
     "Open Inbox (%lld)" : {
+
+    },
+    "Open Settings (⌘,)" : {
 
     },
     "Open Settings ▸ Tools ▸ AI Assistant ▸ Model Context Protocol (MCP)." : {
@@ -3269,9 +3292,6 @@
     "Select a memory to read or edit it." : {
 
     },
-    "Select an agent to change its access or connect it." : {
-
-    },
     "Select text in any app, then choose Services ▸ Remember in Funes. It goes to your Inbox." : {
 
     },
@@ -3384,6 +3404,9 @@
 
     },
     "Show" : {
+
+    },
+    "Show Activity" : {
 
     },
     "Show All" : {
