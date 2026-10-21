@@ -1,6 +1,6 @@
 # ADR-0003: The Mac is the only source of truth; the iPhone is a thin client (no CloudKit)
 
-**Status:** Accepted · 2026-10-16 · Amended by [ADR-0019](0019-cloudkit-doorbell-for-iphone-approvals.md) (proposed): CloudKit as a data-free doorbell for approvals
+**Status:** Accepted · 2026-10-16 · Amended by [ADR-0019](0019-cloudkit-doorbell-for-iphone-approvals.md): CloudKit as a data-free doorbell for approvals
 
 **Context.** An iPhone companion needs to capture memories, and ideally search and review them. Options:
 - **Replication** with CloudKit sync (CKSyncEngine with encrypted fields). This was verified to work with Developer ID.
