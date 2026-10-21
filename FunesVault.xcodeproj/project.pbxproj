@@ -20,6 +20,10 @@
 		F0000000000000000000B00B /* FunesCompanion in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D00A /* FunesCompanion */; };
 		F0000000000000000000B00C /* FunesPhone in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D00B /* FunesPhone */; };
 		F0000000000000000000B00D /* FunesProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D00C /* FunesProtocol */; };
+		F0000000000000000000B012 /* FunesPhone in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D00D /* FunesPhone */; };
+		F0000000000000000000B013 /* FunesProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D00E /* FunesProtocol */; };
+		F0000000000000000000B014 /* FunesPhone in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D00F /* FunesPhone */; };
+		F0000000000000000000B015 /* FunesProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D010 /* FunesProtocol */; };
 		F0000000000000000000B00E /* FunesShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F0000000000000000000A004 /* FunesShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F0000000000000000000B00F /* FunesIntents.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F0000000000000000000A005 /* FunesIntents.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -153,6 +157,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0000000000000000000B012 /* FunesPhone in Frameworks */,
+				F0000000000000000000B013 /* FunesProtocol in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -160,6 +166,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0000000000000000000B014 /* FunesPhone in Frameworks */,
+				F0000000000000000000B015 /* FunesProtocol in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -303,6 +311,8 @@
 			);
 			name = FunesShareExtension;
 			packageProductDependencies = (
+				F0000000000000000000D00D /* FunesPhone */,
+				F0000000000000000000D00E /* FunesProtocol */,
 			);
 			productName = FunesShareExtension;
 			productReference = F0000000000000000000A004 /* FunesShareExtension.appex */;
@@ -326,6 +336,8 @@
 			);
 			name = FunesIntents;
 			packageProductDependencies = (
+				F0000000000000000000D00F /* FunesPhone */,
+				F0000000000000000000D010 /* FunesProtocol */,
 			);
 			productName = FunesIntents;
 			productReference = F0000000000000000000A005 /* FunesIntents.appex */;
@@ -967,6 +979,26 @@
 			productName = FunesPhone;
 		};
 		F0000000000000000000D00C /* FunesProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */;
+			productName = FunesProtocol;
+		};
+		F0000000000000000000D00D /* FunesPhone */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007008 /* XCLocalSwiftPackageReference "Packages/FunesPhone" */;
+			productName = FunesPhone;
+		};
+		F0000000000000000000D00E /* FunesProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */;
+			productName = FunesProtocol;
+		};
+		F0000000000000000000D00F /* FunesPhone */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007008 /* XCLocalSwiftPackageReference "Packages/FunesPhone" */;
+			productName = FunesPhone;
+		};
+		F0000000000000000000D010 /* FunesProtocol */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */;
 			productName = FunesProtocol;

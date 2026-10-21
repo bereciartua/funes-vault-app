@@ -1,10 +1,34 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Done" : {
+    "Add a note (optional)" : {
 
     },
-    "Saving to Funes from the share sheet comes in the next build." : {
+    "Blocked: looks like a secret. Funes never stores passwords, keys or card numbers." : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Couldn't save on this iPhone. Open Funes Vault and try again." : {
+
+    },
+    "Queue full: connect to your Mac." : {
+
+    },
+    "Remember in Funes" : {
+
+    },
+    "Save" : {
+
+    },
+    "Saved on this iPhone, then sent to Funes on your Mac when it's reachable." : {
+
+    },
+    "That's over 10,000 characters. Share a shorter selection." : {
+
+    },
+    "There's no text or link to save here." : {
 
     }
   },

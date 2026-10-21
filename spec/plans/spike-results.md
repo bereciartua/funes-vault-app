@@ -19,11 +19,11 @@ Results of the [Phase 0 spikes](phase-0-spikes.md). Each section gives the quest
 | 1a | Pair on the same Wi-Fi | ✅ Paired on the first scan once Local Network was allowed, with the Allow click, over the LAN address. The Mac logged `device_paired` and then the first `status.get` over `lan` 4 s later. The phone's "Took X s" wasn't noted. |
 | 1b | Capture → delivered on the same Wi-Fi | ✅ Accepted in 42 ms. One `capture_receipt`, an Inbox suggestion, and Activity `capture … queued` under `device:<id>` via `companion`. The phone-side deletion waits for 5.4's queue. |
 | 1c | Response dropped after the commit | ✅ for the duplicate half: the same `captureId` resent was accepted in 69 ms, the Mac still has one receipt, and Activity says `duplicate`. Not tested by killing the connection on the device; `FunesPhone`'s tests drop the answer in software. |
-| 1d | Mac asleep, 3 captures, wake | ⏳ Needs the capture queue (task 5.4). |
+| 1d | Mac asleep, 3 captures, wake | ⏳ Ready to run with task 5.4's queue: capture from the app, the share sheet and the Control while the Mac sleeps, then wake it. |
 | 1e | Tailscale (phone on cellular) | ✅ after two fixes: **Connected · Tailscale** on 5G, round trip 462 ms, a test capture accepted in 287 ms, and the Mac recorded the transport as `tailscale`. The first tries failed twice, once on the Mac's listener and once on ATS; see below. |
 | 1f | Tampered ciphertext, replayed nonce, skewed clock | ✅ From the phone, with its **Secure Enclave** signing key: good envelope `ok`, the same envelope again `replay`, tampered ciphertext `invalid_signature`, clock 5 minutes behind `clock_skew`. |
 | 1g | Local Network prompt and Bonjour | ✅ Answering **Don't Allow** at the prompt gave "Funes isn't allowed on your local network…", since the browse reported `PolicyDenied`. Turned on in Settings ▸ Privacy & Security ▸ Local Network, pairing then worked. The Mac advertises `_funes._tcp` with TXT `v=1`, `mac=<tag>`. |
-| 1h | Background delivery | ⏳ Needs `BGAppRefreshTask` (task 5.4). |
+| 1h | Background delivery | ⏳ Ready to run with task 5.4's `BGAppRefreshTask` (opportunistic; Xcode's debugger can force it with `_simulateLaunchForTaskWithIdentifier:@"com.funesvault.ios.deliver"`). |
 
 **1e, the passing run:** iPhone on 5G, Tailscale connected, "Use Tailscale subnets" off. The Mac ran PR #34's Debug build with the BSD-socket listener; the iPhone ran PR #33's build, which sends plain HTTP over Network.framework. The probes showed:
 - `tailscale http://100.89.20.22:47636`: `ok`;

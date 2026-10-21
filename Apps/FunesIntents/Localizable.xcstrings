@@ -1,13 +1,40 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Funes Vault" : {
+    "Capture" : {
 
     },
-    "Open Funes Vault" : {
+    "Capture in Funes" : {
 
     },
-    "Opens Funes Vault." : {
+    "Couldn't save on this iPhone." : {
+
+    },
+    "Not saved: it looks like a password, key or card number. Funes never stores secrets." : {
+
+    },
+    "Opens Funes Vault on Capture, ready to type or dictate." : {
+
+    },
+    "Queue full: connect to your Mac." : {
+
+    },
+    "Remember in Funes" : {
+
+    },
+    "Saved" : {
+
+    },
+    "Saves text for Funes Vault on your Mac. It waits on this iPhone until your Mac has it." : {
+
+    },
+    "Text" : {
+
+    },
+    "That's over 10,000 characters." : {
+
+    },
+    "There's nothing to remember." : {
 
     }
   },

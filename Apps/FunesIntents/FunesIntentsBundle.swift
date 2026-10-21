@@ -2,8 +2,8 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// The App Intents and Control extension (`com.funesvault.ios.intents`). Task 5.3 sets up the
-/// target; task 5.4 adds "Remember in Funes" and makes the Control open Capture.
+/// The App Intents and Control extension (`com.funesvault.ios.intents`): the Control, and
+/// "Remember in Funes" (in `Apps/FunesShared`, with the Control's intent).
 @main
 struct FunesIntentsBundle: WidgetBundle {
     var body: some Widget {
@@ -11,15 +11,16 @@ struct FunesIntentsBundle: WidgetBundle {
     }
 }
 
-/// A Control Center, Lock Screen and Action button control (iOS 18).
+/// A Control Center, Lock Screen and Action button control (iOS 18) that opens Capture, ready to
+/// type or dictate.
 struct CaptureControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.funesvault.ios.capture") {
-            ControlWidgetButton(action: OpenFunesIntent()) {
-                Label("Funes Vault", systemImage: "eye")
+            ControlWidgetButton(action: OpenCaptureIntent()) {
+                Label("Capture", systemImage: "square.and.pencil")
             }
         }
-        .displayName("Funes Vault")
-        .description("Opens Funes Vault.")
+        .displayName("Capture in Funes")
+        .description("Opens Funes Vault on Capture, ready to type or dictate.")
     }
 }

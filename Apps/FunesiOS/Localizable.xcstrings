@@ -1,6 +1,19 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ Trying again %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ Trying again %2$@."
+          }
+        }
+      }
+    },
+    "%lld captures waiting" : {
+
+    },
     "Accepted %@ in %lld ms" : {
       "localizations" : {
         "en" : {
@@ -11,7 +24,19 @@
         }
       }
     },
+    "Blocked: looks like a secret (%@). Funes never stores passwords, keys or card numbers." : {
+
+    },
     "Cancel" : {
+
+    },
+    "Capture" : {
+
+    },
+    "Capture in Funes" : {
+
+    },
+    "Captures wait on this iPhone until your Mac has them, then they're deleted here." : {
 
     },
     "Check Connection" : {
@@ -38,6 +63,36 @@
     "Couldn't reach your Mac. Make sure both are on the same Wi-Fi, or set up Tailscale on both." : {
 
     },
+    "Couldn't read the queue on this iPhone." : {
+
+    },
+    "Couldn't save on this iPhone." : {
+
+    },
+    "Couldn't save on this iPhone. Try again." : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete %lld Captures" : {
+
+    },
+    "Delete Queued Captures…" : {
+
+    },
+    "Delete queued captures?" : {
+
+    },
+    "Dictate" : {
+
+    },
+    "Dictate with the Keyboard" : {
+
+    },
+    "Dictation isn't available right now. Use the microphone on the keyboard instead." : {
+
+    },
     "Done" : {
 
     },
@@ -47,7 +102,7 @@
     "Funes" : {
 
     },
-    "Funes Vault" : {
+    "Funes can't use the microphone. Turn it on in Settings ▸ Funes Vault." : {
 
     },
     "Funes isn't allowed on your local network. Turn it on in Settings ▸ Privacy & Security ▸ Local Network, then try again." : {
@@ -68,19 +123,43 @@
     "Mac not reachable" : {
 
     },
+    "Mac not reachable · %lld captures waiting" : {
+
+    },
     "Name" : {
+
+    },
+    "Not accepted by your Mac" : {
+
+    },
+    "Not accepted by your Mac (%@)" : {
+
+    },
+    "Not accepted by your Mac: looks like a secret" : {
 
     },
     "Not paired" : {
 
     },
-    "Open Funes Vault" : {
+    "Not paired · %lld captures waiting. Pair with your Mac in Settings." : {
+
+    },
+    "Not saved: it looks like a password, key or card number. Funes never stores secrets." : {
+
+    },
+    "Opens Funes Vault on Capture, ready to type or dictate." : {
+
+    },
+    "Opens the keyboard. Tap its microphone to dictate." : {
 
     },
     "Pair with Mac" : {
 
     },
     "Pair with your Mac to start" : {
+
+    },
+    "Pair with your Mac to start. Captures wait on this iPhone until then." : {
 
     },
     "Paired" : {
@@ -95,13 +174,34 @@
     "Point the camera at the code in Funes Settings ▸ iPhone on your Mac." : {
 
     },
+    "Queue" : {
+
+    },
+    "Queue full: connect to your Mac." : {
+
+    },
+    "Recent captures" : {
+
+    },
     "Rejected: %@" : {
+
+    },
+    "Remember" : {
+
+    },
+    "Remember in Funes" : {
 
     },
     "Round trip" : {
 
     },
     "Run Protocol Checks" : {
+
+    },
+    "Saved" : {
+
+    },
+    "Saves text for Funes Vault on your Mac. It waits on this iPhone until your Mac has it." : {
 
     },
     "Scan Again" : {
@@ -116,7 +216,29 @@
     "Send It Again" : {
 
     },
+    "Send Now" : {
+
+    },
     "Send a Test Capture" : {
+
+    },
+    "Sent %lld to your Mac." : {
+
+    },
+    "Sent %lld to your Mac; it didn't accept %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sent %1$lld to your Mac; it didn't accept %2$lld."
+          }
+        }
+      }
+    },
+    "Sent to Mac" : {
+
+    },
+    "Settings" : {
 
     },
     "Signing key" : {
@@ -131,7 +253,25 @@
     "Spike 1" : {
 
     },
+    "Stop Dictation" : {
+
+    },
+    "Text" : {
+
+    },
     "That isn't a Funes pairing code." : {
+
+    },
+    "That's over 10,000 characters." : {
+
+    },
+    "That's over 10,000 characters. Shorten it, or split it in two." : {
+
+    },
+    "There's nothing to remember." : {
+
+    },
+    "They haven't reached your Mac and can't be recovered." : {
 
     },
     "This code didn't match your Mac. Show a new one and scan again." : {
@@ -152,6 +292,9 @@
     "This iPhone was removed from Funes on your Mac." : {
 
     },
+    "This iPhone was removed from Funes on your Mac. Captures stay here until you pair again or delete them." : {
+
+    },
     "This iPhone's name" : {
 
     },
@@ -161,22 +304,43 @@
     "Took %@ s" : {
 
     },
+    "Trying again %@." : {
+
+    },
+    "Type or dictate something to remember." : {
+
+    },
     "Unpair" : {
 
     },
     "Unpair This iPhone…" : {
 
     },
+    "Unpair and Delete Captures" : {
+
+    },
+    "Unpair and Keep Captures" : {
+
+    },
     "Unpair this iPhone?" : {
 
     },
+    "Waiting" : {
+
+    },
     "Waiting in Inbox" : {
+
+    },
+    "What should Funes remember?" : {
 
     },
     "Your Mac asks whether “%@” may pair. This is the second check, so a photo of the code isn't enough." : {
 
     },
     "Your Mac couldn't do that (%@)." : {
+
+    },
+    "Your Mac forgets this iPhone, and this iPhone forgets its keys. %lld captures haven't reached your Mac yet: keep them to send after pairing again, or delete them." : {
 
     },
     "Your Mac forgets this iPhone, and this iPhone forgets its keys. You can pair again with a new code." : {
@@ -192,6 +356,33 @@
 
     },
     "Your vault lives on your Mac. Search and review need the Mac to be awake and reachable on the same Wi-Fi, or through Tailscale." : {
+
+    },
+    "a Funes key" : {
+
+    },
+    "a GitHub token" : {
+
+    },
+    "a Slack token" : {
+
+    },
+    "a card number" : {
+
+    },
+    "a password or key" : {
+
+    },
+    "a private key" : {
+
+    },
+    "a sign-in token" : {
+
+    },
+    "an API key" : {
+
+    },
+    "an AWS key" : {
 
     }
   },

@@ -1,8 +1,9 @@
 import FunesPhone
+import FunesProtocol
 import SwiftUI
 
 /// Funes Vault for iPhone: a thin client of the vault on the Mac (spec/product/05-ux-iphone.md).
-/// Task 5.3 is the foundation: pairing, the connection to the Mac, and its status.
+/// It opens on Capture; captures wait in the queue on this iPhone until the Mac has them.
 @main
 struct FunesApp: App {
     @State private var model = PhoneModel()
@@ -13,9 +14,17 @@ struct FunesApp: App {
             RootView(model: model)
                 .task { await model.start() }
                 .onChange(of: scenePhase) { _, phase in
-                    // `status.get` on every foreground (companion protocol §4).
-                    if phase == .active { Task { await model.refresh() } }
+                    switch phase {
+                    // `status.get` and the queue on every foreground (companion protocol §4, §6).
+                    case .active: Task { await model.foreground() }
+                    // Captures from the share sheet or the Control may come while the app is away.
+                    case .background: Task { await model.capture.scheduleBackgroundDelivery() }
+                    default: break
+                    }
                 }
+        }
+        .backgroundTask(.appRefresh(Identifiers.iOSDeliveryTaskID)) {
+            await model.backgroundDelivery()
         }
     }
 }
