@@ -4,6 +4,22 @@ Results of the [Phase 0 spikes](phase-0-spikes.md). Each section gives the quest
 
 ---
 
+## Spike 1: Companion transport
+
+**Question:** can an iPhone pair with the Mac by QR code, send signed, HPKE-sealed requests over the same Wi-Fi and Tailscale, and deliver queued captures exactly once ([plan](phase-0-spikes.md#spike-1-companion-transport-pairing-encryption-offline-capture))?
+
+### Status (2026-10-20): **not run yet**, partly covered in software
+Phase 0 deferred this spike "until just before Phase 5", and Phase 5 depends on it passing. It hasn't been run on devices.
+
+- **Covered by task 5.1** (`swift test --package-path Packages/FunesProtocol`, on macOS 15 CryptoKit):
+  - HPKE `P256_SHA256_AES_GCM_256` seal and open, and `exportSecret` for the response key, work as the protocol needs. The fallback (a second HPKE seal to the device) isn't needed.
+  - Row **1f** in software: tampered `ct`, `enc`, `sig`, `nonce` or `ts`, replayed nonces and skewed clocks are each refused with their code. Fuzzing the envelope, response, pairing and method decoders (3,000 seeded mutations each) finds no crash and nothing that opens to other bytes.
+  - The pairing exchange (§2) end to end in one process, including a wrong secret, another Mac's key, and an answer for a different request.
+- **Still to run on the maintainer's iPhone:** rows 1a–1e, 1g and 1h, plus the Secure Enclave key (1f's "on device" part).
+- **Proposal:** instead of a throwaway pair of apps, run the matrix against the real companion server (task 5.2) and the first iPhone build (task 5.3), before 5.4 starts. The CloudKit doorbell test (Q24) needs the same iPhone, so both can be done in one sitting.
+
+---
+
 ## Spike 2: Search quality and speed
 
 **Run:** 16 Oct 2026 on an M1 MacBook (8 cores, 8 GB), macOS 27.0.1, Xcode 27.0 toolchain (Swift 6.4).

@@ -6,9 +6,9 @@
 
 ## Tasks
 ### 5.1 FunesProtocol: companion · 3 h
-- [ ] Envelope types, HPKE seal and open, P-256 signatures, the response exporter key, the replay cache.
-- [ ] Method request and response types (Codable). Error codes.
-- [ ] Tests: crypto round trips, tamper, replay, skew; fuzz the envelope decoder.
+- [x] Envelope types, HPKE seal and open, P-256 signatures, the response exporter key, the replay cache.
+- [x] Method request and response types (Codable). Error codes.
+- [x] Tests: crypto round trips, tamper, replay, skew; fuzz the envelope decoder.
 
 ### 5.2 Mac: companion server · 4 h
 - [ ] `CompanionServer` on 47626 with address-based acceptance per mode; secret path and Host check for tunnel mode.
