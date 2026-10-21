@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>FunesKeychainGroup</key>
+	<string>$(AppIdentifierPrefix)com.funesvault.shared</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_funes._tcp</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Scan the pairing code shown by Funes on your Mac.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Funes connects to your Mac on your local network to send captures and search your vault.</string>
+</dict>
+</plist>

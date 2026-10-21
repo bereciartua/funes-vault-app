@@ -1,6 +1,6 @@
 # Companion protocol (Mac ↔ iPhone)
 
-**Status:** design for v0.2, to be validated in [Spike 1](../plans/phase-0-spikes.md). §2–4 are implemented in `FunesProtocol/Companion` (task 5.1), with the byte-level choices in §3.1; the Spike 1 rows that need a real iPhone haven't run yet ([results](../plans/spike-results.md#spike-1-companion-transport)).
+**Status:** design for v0.2, to be validated in [Spike 1](../plans/phase-0-spikes.md). §2–4 are implemented in `FunesProtocol/Companion` (task 5.1), with the byte-level choices in §3.1; the Mac's side in `FunesCompanion` (task 5.2) and the phone's in `FunesPhone` (task 5.3, §5). Spike 1 ran on a real iPhone on 2026-10-21: pairing, the envelope and Bonjour pass, and the Tailscale mode fails on the Mac's listener (§5, [results](../plans/spike-results.md#spike-1-companion-transport)).
 
 The iPhone is a **thin client** of the Mac. There is no replication and no cloud ([ADR-0003](decisions/0003-mac-is-the-only-source-of-truth.md)). Messages are **signed by the device and end-to-end encrypted at the application layer** ([ADR-0011](decisions/0011-app-layer-encryption-for-companion.md)). Neither the LAN, Tailscale nor a tunnel provider can read or forge them.
 
@@ -10,7 +10,7 @@ The iPhone is a **thin client** of the Mac. There is no replication and no cloud
 | Mac signing key | P-256 ECDSA | Mac Keychain, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` | Signs pairing confirmations |
 | Mac HPKE key | P-256 key agreement | Mac Keychain, same | Recipient of every phone request |
 | Device signing key | P-256 ECDSA | iPhone **Secure Enclave** (`SecureEnclave.P256.Signing`); Keychain fallback on devices without one | Signs every request |
-| Device HPKE key | P-256 key agreement | iPhone Keychain (`…ThisDeviceOnly`) | Recipient of pairing confirmations |
+| Device HPKE key | P-256 key agreement | iPhone Keychain (`…AfterFirstUnlockThisDeviceOnly`) | Recipient of pairing confirmations |
 | Pairing secret | 32 random bytes | QR code only, valid once for 5 min | Proves the phone saw the Mac's screen |
 
 - **Ciphersuite:** HPKE base mode, `P256_SHA256_AES_GCM_256` (CryptoKit `HPKE`, macOS 14+ / iOS 17+).
@@ -145,16 +145,21 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 - **iOS requirements:**
   - `NSLocalNetworkUsageDescription`, and `NSBonjourServices = ["_funes._tcp"]` (triggers the Local Network permission prompt);
   - ATS `NSAllowsLocalNetworking` for `.local` hosts and IP addresses.
-  - Tailscale is reached by its 100.x IP, not a MagicDNS name, to stay within that ATS exception. The tunnel uses HTTPS.
+  - ATS refuses plain HTTP to Tailscale's `100.64.0.0/10` addresses even with that exception (`URLError -1022`, [Spike 1e](../plans/spike-results.md#spike-1-companion-transport)). So the phone sends plain HTTP, LAN and Tailscale, over Network.framework, which ATS doesn't govern. Tailscale is reached by its 100.x IP, not a MagicDNS name. The tunnel uses HTTPS through `URLSession`.
+- **Subnet routers:** a Tailscale subnet router (or any VPN gateway) that routes the Mac's LAN presents the phone's traffic as coming from a LAN address. Same Wi-Fi mode then accepts it from anywhere on that VPN, and the phone, which tries LAN addresses first, uses it ([Spike 1e](../plans/spike-results.md#spike-1-companion-transport)). The envelope still makes every request authenticated and confidential. The phone shows "Connected · VPN" when a LAN address answers while it isn't on Wi-Fi or Ethernet.
+- **Known issue (Spike 1e, 2026-10-21):** on macOS 27, an `NWListener` gets inbound flows over Tailscale's `utun` interface but never completes the TCP handshake, so the Tailscale mode doesn't work yet. The fix belongs in `CompanionListener` (task 5.2).
 - **Bonjour:** while Same Wi-Fi is on, the Mac advertises `_funes._tcp` on port 47626, with TXT `v=1`, `mac=<SHA-256(macId) first 8 bytes hex>` (the hash of the lowercase id string). The phone browses with `NWBrowser` and matches the hash. The Mac app's Info.plist has `NSLocalNetworkUsageDescription` and `NSBonjourServices` for macOS's Local Network permission.
 - **HTTP refusals before the envelope:** tunnel requests without the secret prefix `404`, with the wrong `Host` `421`; a `/r/…` path off the tunnel `404`; a body over 256 KiB `413`. The whole request must arrive within 10 s of its first byte (`408`), and an idle connection closes after 30 s.
 - **The QR code's addresses:** the Mac's `.local` name and its current LAN IPv4 address (Same Wi-Fi), its `100.x` address (Tailscale), and `https://<public host>/r/<secret>` (tunnel). Only enabled modes are listed. **Reset Path** in Settings makes a new secret; phones learn it by pairing again.
 - **Address selection (phone):**
-  1. A Bonjour hit for the paired Mac.
+  1. A Bonjour hit for the paired Mac, or a LAN address saved from the QR code (same Wi-Fi, so whichever answers first).
   2. The saved Tailscale IP.
   3. The saved tunnel URL.
 
-  Each is probed with `status.get` (3 s timeout). The last working address is cached for 10 minutes.
+  Each is probed with `status.get` (3 s timeout), all at once, with the Bonjour browse (2 s) alongside. The best-ranked address that answers wins as soon as no better-ranked probe is still running. The last working address is cached for 10 minutes, and forgotten when `NWPathMonitor` reports a new path. If none answers, a `401 revoked` from any of them is reported as revoked; otherwise the Mac is unreachable, with "Local Network access is off" when iOS refused the browse.
+- **Before pairing,** the phone has no device id to seal a `status.get` with, so it probes the QR code's addresses (and Bonjour) with an empty `POST /c/v1/rpc`: a Funes Mac answers `401 invalid_envelope` without reading further. Only then does it send the pairing request, so an address that doesn't answer never uses up one of the session's 3 attempts. The request goes to the best-ranked address that answered.
+- **Retries (phone):** a `clock_skew` refusal is resent once, sealed with the Mac's `server_time`, and the offset is kept for later calls. A call with no answer at all (no connection, a timeout, a lost response) starts address selection over and is resent once if it's safe to repeat: `status.get`, `captures.submit` (duplicates are accepted, §6) and the reads. Edits, deletes, Inbox answers and `device.unpair` aren't resent; the user sees the error and can try again, and a stale `version` comes back as `conflict`.
+- **Implementation (task 5.3):** `Packages/FunesPhone`: `CompanionClient` (an actor), `DeviceKeyStore`, `PairingRecordStore`, `BonjourDiscovery` (an `NWBrowser`; a match is resolved to its IPv4 address by opening a TCP connection, since `URLSession` can't use a service endpoint), `NetworkPathWatcher`, and `CompanionHTTPTransport`: a small HTTP/1.1 client on `NWConnection` for `http://` (one POST per connection, `Connection: close`, the reply read to its `Content-Length`, at most 4 MiB), and an ephemeral `URLSession` for the tunnel's `https://`. Each request has a hard deadline. The device keys and the pairing record are Keychain items, service `com.funesvault.ios.companion`, in the access group the app and its extensions share. The phone waits 70 s for the pairing answer.
 
 ## 6. Offline capture queue (phone)
 - **Store:** a SQLite file in the App Group container (shared with the share extension and the App Intent).

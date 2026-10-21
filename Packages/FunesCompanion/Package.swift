@@ -14,6 +14,8 @@ let package = Package(
     dependencies: [
         .package(path: "../FunesCore"),
         .package(path: "../FunesProtocol"),
+        // Tests only: the iPhone's CompanionClient against the real router.
+        .package(path: "../FunesPhone"),
         .package(url: "https://github.com/bereciartua/bridgekit.git", exact: "0.4.1"),
     ],
     targets: [
@@ -27,7 +29,7 @@ let package = Package(
         ),
         .testTarget(
             name: "FunesCompanionTests",
-            dependencies: ["FunesCompanion", "FunesCore", "FunesProtocol"]
+            dependencies: ["FunesCompanion", "FunesCore", "FunesProtocol", "FunesPhone"]
         ),
     ]
 )

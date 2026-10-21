@@ -16,11 +16,13 @@
 - [x] `PairingService`: QR payload, 5-minute sessions, Allow prompt, device storage. Device registry (FunesCore `DeviceService`): list, revoke, last seen.
 - [x] Method handlers calling FunesCore as the owner, with Activity rows (`device:<id>`).
 - [x] Bonjour advertiser. iPhone settings section (modes, pairing sheet, devices).
+- [ ] Accept connections over Tailscale. *Spike 1e (2026-10-21): `NWListener` never completes the handshake for flows arriving on Tailscale's `utun` interface, while a POSIX socket listener does ([results](spike-results.md#spike-1-companion-transport)). Then run 1e again.*
 
 ### 5.3 iPhone app: foundation · 3 h
-- [ ] Targets: app, share extension, App Intents/Control extension, App Group.
-- [ ] Keys: Secure Enclave signing key and Keychain HPKE key.
-- [ ] Pairing record in the Keychain. `CompanionClient`: discovery, address selection, retries, `NWPathMonitor`.
+*The app's code that isn't UI is the local package `Packages/FunesPhone` (iOS and macOS, so `swift test` runs it); `FunesCompanion`'s tests run its `CompanionClient` against the real router.*
+- [x] Targets: app, share extension, App Intents/Control extension, App Group. *`FunesiOS`, `FunesShareExtension` and `FunesIntents` (a WidgetKit extension holding the Control), folder-synchronized; App Group and Keychain Sharing on all three; built in `scripts/test.sh` for `generic/platform=iOS` without signing. The extensions are shells until 5.4.*
+- [x] Keys: Secure Enclave signing key and Keychain HPKE key. *`…AfterFirstUnlockThisDeviceOnly`, in the shared access group; a Keychain software key where the Secure Enclave fails. New keys at each pairing, saved only once it succeeds.*
+- [x] Pairing record in the Keychain. `CompanionClient`: discovery, address selection, retries, `NWPathMonitor`. *Minimal UI: pair by QR (VisionKit), the connection and `status.get`, and in Debug builds Spike 1's test capture and protocol checks.*
 
 ### 5.4 Capture and queue · 3 h
 - [ ] `CaptureQueue` (App Group SQLite). Capture tab with dictation (SpeechAnalyzer on iOS 26+). Secret scanner on the phone.

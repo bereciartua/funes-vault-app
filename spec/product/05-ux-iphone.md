@@ -49,12 +49,14 @@ The app opens on **Capture**: the fastest path to the main job.
 
 ## Pairing flow
 1. On the Mac: Settings ▸ iPhone ▸ **Pair iPhone…** shows a QR code, valid for 5 minutes.
-2. On the iPhone: **Pair with Mac** opens the camera to scan the QR code.
-3. The phone creates its keys and connects to the address in the QR code. It tries the LAN address first, then Tailscale, then the tunnel URL.
+2. On the iPhone: **Pair with Mac** opens the camera to scan the QR code. Above the camera, "This iPhone's name" is filled in and can be changed: iOS tells apps only "iPhone", so this is where "Sam's iPhone" comes from.
+3. The phone creates its keys and connects to the address in the QR code. It tries the LAN address first, then Tailscale, then the tunnel URL. While the request waits, the phone says "Click Allow on “Maya's MacBook Pro”".
 4. The Mac shows "iPhone 'Sam's iPhone' wants to pair" with **Allow**, as a second check, plus the device model.
 5. Both devices show "Paired". The phone's banner turns to Connected.
 
-If the phone can't reach the Mac during pairing: "Make sure both are on the same Wi-Fi, or set up Tailscale on both." Pairing needs the devices to reach each other once.
+If the phone can't reach the Mac during pairing: "Make sure both are on the same Wi-Fi, or set up Tailscale on both." Pairing needs the devices to reach each other once. If Local Network access is off for Funes, it says so and points to Settings ▸ Privacy & Security ▸ Local Network instead.
+
+*Built so far (task 5.3):* pairing, and one screen with the Mac's name, the connection ("Connected · Wi-Fi", "Mac not reachable", revoked), the last check and its round trip, the signing key's home, and **Unpair This iPhone…**. Debug builds add Spike 1's test capture and protocol checks. The tabs come in 5.4 and 5.5.
 
 ## Capture surfaces outside the app
 - **Share extension:**
