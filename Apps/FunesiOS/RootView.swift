@@ -208,6 +208,7 @@ struct SpikeSection: View {
             Button("Send a Test Capture") { Task { await model.sendTestCapture(again: false) } }
             Button("Send It Again") { Task { await model.sendTestCapture(again: true) } }
             Button("Run Protocol Checks") { Task { await model.runProtocolChecks() } }
+            Button("Queue 1,000 Test Captures and Send") { Task { await model.queueAndDrain(1_000) } }
             ForEach(model.probes) { probe in
                 HStack {
                     Text(probe.address.description).lineLimit(1).truncationMode(.middle)

@@ -138,6 +138,24 @@ final class CaptureModel {
         }
     }
 
+    #if DEBUG
+    /// Spike 1 row 1h and the manual matrix's "queue of 1,000": fills the queue without sending.
+    func queueTestCaptures(_ count: Int) async -> Int {
+        guard let queue else { return 0 }
+        let run = UUID().uuidString.prefix(4)
+        let added = await Task.detached {
+            var added = 0
+            for i in 1...count {
+                guard (try? queue.add("Spike test capture \(i) of \(count) (\(run))", source: .typed)) != nil else { break }
+                added += 1
+            }
+            return added
+        }.value
+        reload()
+        return added
+    }
+    #endif
+
     // MARK: Deleting
 
     /// One capture the Mac turned down, or that the user no longer wants sent.

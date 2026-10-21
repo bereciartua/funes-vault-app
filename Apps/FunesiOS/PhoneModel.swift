@@ -201,6 +201,25 @@ final class PhoneModel {
         }
     }
 
+    #if DEBUG
+    /// Queues `count` test captures, then sends them and times it (row 1h, "queue of 1,000").
+    func queueAndDrain(_ count: Int) async {
+        spikeMessage = String(localized: "Queuing \(count)…")
+        let added = await capture.queueTestCaptures(count)
+        let start = ContinuousClock.now
+        await capture.deliver(.manual)
+        let seconds = Double((ContinuousClock.now - start).milliseconds) / 1000
+        switch capture.lastOutcome {
+        case let .drained(sent, rejected)?:
+            spikeMessage = String(localized: "Queued \(added); sent \(sent) in \(seconds.formatted(.number.precision(.fractionLength(1)))) s, \(rejected) not accepted, \(capture.queuedCount) left.")
+        case let .failed(error, _, sent)?:
+            spikeMessage = String(localized: "Queued \(added); sent \(sent), then: \(Self.message(for: error)) \(capture.queuedCount) left.")
+        default:
+            spikeMessage = String(localized: "Queued \(added); \(capture.queuedCount) waiting.")
+        }
+    }
+    #endif
+
     // MARK: Messages
 
     static func message(for error: CompanionClientError) -> String {
