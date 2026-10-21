@@ -52,7 +52,7 @@
 
 ### 5.8 Testing · 2 h
 - [ ] The protocol test plan ([§9](../architecture/companion-protocol.md#9-test-plan)) automated where possible.
-- [ ] A manual matrix: same Wi-Fi, Tailscale, tunnel, Mac asleep, revoked device, queue of 1,000; approvals from the phone on Wi-Fi and Tailscale, locked phone, Mac unreachable.
+- [ ] A manual matrix: same Wi-Fi, Tailscale, tunnel, Mac asleep, revoked device, queue of 1,000, background delivery (a share-sheet capture with the app in the background, then `BGAppRefreshTask` forced from the Xcode debugger; spike row 1h); approvals from the phone on Wi-Fi and Tailscale, locked phone, Mac unreachable.
 
 ## Exit criteria
 - **v0.2:**
