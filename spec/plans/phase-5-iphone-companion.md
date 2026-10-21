@@ -16,7 +16,7 @@
 - [x] `PairingService`: QR payload, 5-minute sessions, Allow prompt, device storage. Device registry (FunesCore `DeviceService`): list, revoke, last seen.
 - [x] Method handlers calling FunesCore as the owner, with Activity rows (`device:<id>`).
 - [x] Bonjour advertiser. iPhone settings section (modes, pairing sheet, devices).
-- [ ] Accept connections over Tailscale. *Spike 1e (2026-10-21): `NWListener` never completes the handshake for flows arriving on Tailscale's `utun` interface, while a POSIX socket listener does ([results](spike-results.md#spike-1-companion-transport)). Then run 1e again.*
+- [x] Accept connections over Tailscale. *Spike 1e (2026-10-21): `NWListener` never completes the handshake for flows arriving on Tailscale's `utun` interface, while a POSIX socket listener does ([results](spike-results.md#spike-1-companion-transport)). `CompanionListener` now accepts on a BSD socket; `ListenerTests` reaches it through the Mac's own 100.x address. With 5.3's ATS fix, 1e passes on the iPhone: Connected · Tailscale on 5G.*
 
 ### 5.3 iPhone app: foundation · 3 h
 *The app's code that isn't UI is the local package `Packages/FunesPhone` (iOS and macOS, so `swift test` runs it); `FunesCompanion`'s tests run its `CompanionClient` against the real router.*

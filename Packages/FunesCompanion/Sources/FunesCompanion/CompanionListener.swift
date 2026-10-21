@@ -1,15 +1,16 @@
 import BridgeKitCore
 import Foundation
+import Darwin
 import FunesProtocol
-import Network
-import os
-
-private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category: "companion")
 
 /// The companion's TCP listener (§5): every interface on 47626, but each connection is accepted
 /// or refused by its remote address before a byte is read (`AddressPolicy`). Plain HTTP/1.1:
 /// confidentiality and integrity come from the envelope. Advertises `_funes._tcp` while Same
 /// Wi-Fi is on.
+///
+/// BSD sockets with dispatch sources, not `NWListener`, which never completes the handshake for
+/// connections arriving over Tailscale (`ListeningSocket`). One dual-stack socket on `::`; in
+/// tunnel-only mode, `127.0.0.1` and `::1` instead, so nothing outside the Mac reaches the port.
 ///
 /// One request at a time per connection, with fixed deadlines that later bytes don't extend: the
 /// whole request within 10 s of its first byte, 30 s idle between requests.
@@ -37,7 +38,10 @@ public final class CompanionListener: @unchecked Sendable {
     private let modes: CompanionModes
     private let bonjour: [String: String]?
     private let handler: Handler
-    private var listener: NWListener?
+    private var sources: [DispatchSourceRead] = []
+    private let socketsClosed = DispatchGroup()
+    private var stopped = false
+    private var advertiser: BonjourAdvertiser?
     private var connections: [ObjectIdentifier: Connection] = [:]
     private var stateChanged: (@Sendable (State) -> Void)?
 
@@ -52,57 +56,74 @@ public final class CompanionListener: @unchecked Sendable {
     /// `stateChanged` is called on the main queue.
     public func start(stateChanged: @escaping @Sendable (State) -> Void) {
         queue.async { [self] in
+            guard !stopped else { return }
             self.stateChanged = stateChanged
             report(.starting)
-            let parameters = NWParameters.tcp
-            parameters.allowLocalEndpointReuse = true
-            // Tunnel-only: nothing outside the Mac needs to reach the port.
-            if modes == [.tunnel] { parameters.acceptLocalOnly = true }
-            let listener: NWListener
-            do {
-                listener = try NWListener(using: parameters, on: NWEndpoint.Port(rawValue: UInt16(clamping: port)) ?? .any)
+            let sockets: [ListeningSocket]
+            do throws(POSIXError) {
+                sockets = try Self.bind(port: port, localOnly: modes == [.tunnel])
             } catch {
-                report(.failed(Self.failure(error, port: self.port)))
+                report(.failed(error.code == .EADDRINUSE ? .portInUse(port) : .other(String(cString: strerror(error.code.rawValue)))))
                 return
             }
-            if let bonjour, modes.contains(.sameWiFi) {
-                listener.service = NWListener.Service(type: Identifiers.bonjourServiceType, txtRecord: NWTXTRecord(bonjour).data)
-            }
-            self.listener = listener
-            listener.newConnectionHandler = { [weak self] connection in self?.accept(connection) }
-            listener.stateUpdateHandler = { [weak self] state in
-                guard let self else { return }
-                switch state {
-                case .ready:
-                    self.report(.ready(port: Int(listener.port?.rawValue ?? UInt16(clamping: self.port))))
-                case let .failed(error), let .waiting(error):
-                    listener.cancel()
-                    self.closeAll()
-                    self.report(.failed(Self.failure(error, port: self.port)))
-                default: break
+            for socket in sockets {
+                let source = DispatchSource.makeReadSource(fileDescriptor: socket.fd, queue: queue)
+                source.setEventHandler { [weak self] in
+                    while let (fd, address) = socket.accept() {
+                        if let self { self.accept(fd, address: address) } else { Darwin.close(fd) }
+                    }
                 }
+                socketsClosed.enter()
+                source.setCancelHandler { [socketsClosed] in
+                    Darwin.close(socket.fd)
+                    socketsClosed.leave()
+                }
+                source.resume()
+                sources.append(source)
             }
-            listener.start(queue: queue)
+            let bound = sockets[0].port
+            if let bonjour, modes.contains(.sameWiFi) {
+                advertiser = BonjourAdvertiser(port: bound, txtRecord: bonjour, queue: queue)
+            }
+            report(.ready(port: bound))
         }
     }
 
+    /// Returns once the port is free again, so a new listener can bind it at once.
     public func stop() {
         queue.sync {
+            stopped = true
             stateChanged = nil
-            listener?.stateUpdateHandler = nil
-            listener?.cancel()
-            listener = nil
+            advertiser?.stop()
+            advertiser = nil
+            for source in sources { source.cancel() }
+            sources = []
             closeAll()
+        }
+        _ = socketsClosed.wait(timeout: .now() + 1)
+    }
+
+    /// Port 0 binds the first socket to a free port and the rest to the same one.
+    private static func bind(port: Int, localOnly: Bool) throws(POSIXError) -> [ListeningSocket] {
+        guard localOnly else { return [try ListeningSocket(.any, port: port)] }
+        let first = try ListeningSocket(.loopbackIPv4, port: port)
+        do {
+            return [first, try ListeningSocket(.loopbackIPv6, port: first.port)]
+        } catch where error.code == .EADDRNOTAVAIL || error.code == .EAFNOSUPPORT {
+            return [first]  // No IPv6 loopback.
+        } catch {
+            Darwin.close(first.fd)
+            throw error
         }
     }
 
-    private func accept(_ raw: NWConnection) {
+    private func accept(_ fd: Int32, address: [UInt8]) {
         guard connections.count < Self.maxConnections,
-              let transport = AddressPolicy.transport(for: raw.endpoint, modes: modes) else {
-            raw.cancel()
+              let transport = AddressPolicy.transport(forAddress: address, modes: modes) else {
+            Darwin.close(fd)
             return
         }
-        let connection = Connection(raw, transport: transport, queue: queue, handler: handler)
+        let connection = Connection(fd, transport: transport, queue: queue, handler: handler)
         let key = ObjectIdentifier(connection)
         connections[key] = connection
         connection.onClose = { [weak self] in self?.connections[key] = nil }
@@ -119,14 +140,10 @@ public final class CompanionListener: @unchecked Sendable {
         DispatchQueue.main.async { callback?(state) }
     }
 
-    private static func failure(_ error: Error, port: Int) -> Failure {
-        if case let .posix(code) = error as? NWError, code == .EADDRINUSE { return .portInUse(port) }
-        return .other((error as? NWError).map { "\($0)" } ?? error.localizedDescription)
-    }
-
-    /// One accepted connection. All state is touched on the listener's queue.
+    /// One accepted connection on a non-blocking socket. All state is touched on the listener's
+    /// queue. The socket is closed once every dispatch source on it has been cancelled.
     private final class Connection: @unchecked Sendable {
-        private let connection: NWConnection
+        private let fd: Int32
         private let transport: DeviceTransport
         private let queue: DispatchQueue
         private let handler: Handler
@@ -134,47 +151,64 @@ public final class CompanionListener: @unchecked Sendable {
         private var busy = false
         private var closed = false
         private var timer: DispatchSourceTimer?
+        private var reader: DispatchSourceRead?
+        private var readerSuspended = false
+        private var writer: DispatchSourceWrite?
+        private var liveSources = 0
+        private var outbox = Data()
+        private var written = 0
+        private var drained: [@Sendable () -> Void] = []
         var onClose: (@Sendable () -> Void)?
 
-        init(_ connection: NWConnection, transport: DeviceTransport, queue: DispatchQueue, handler: @escaping Handler) {
-            self.connection = connection
+        init(_ fd: Int32, transport: DeviceTransport, queue: DispatchQueue, handler: @escaping Handler) {
+            self.fd = fd
             self.transport = transport
             self.queue = queue
             self.handler = handler
         }
 
         func start() {
-            connection.stateUpdateHandler = { [weak self] state in
-                switch state {
-                case .failed, .cancelled: self?.close()
-                default: break
-                }
-            }
-            connection.start(queue: queue)
+            let reader = DispatchSource.makeReadSource(fileDescriptor: fd, queue: queue)
+            track(reader)
+            reader.setEventHandler { [weak self] in self?.readAvailable() }
+            self.reader = reader
+            reader.resume()
             arm(Self.idle)
-            receive()
         }
 
         private static let idle = CompanionListener.idleTimeout
         private static let request = CompanionListener.requestTimeout
 
+        /// Reads only while no request is being handled; bytes that arrive meanwhile wait in the
+        /// socket.
         private func receive() {
-            guard !closed, !busy else { return }
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { [weak self] data, _, isComplete, error in
-                guard let self, !self.closed else { return }
-                if let data, !data.isEmpty {
-                    if !self.parser.hasBufferedBytes { self.arm(Self.request) }
-                    self.feed(data)
-                }
-                if isComplete || error != nil { self.close() } else if !self.busy { self.receive() }
+            guard !closed, !busy, readerSuspended, let reader else { return }
+            readerSuspended = false
+            reader.resume()
+        }
+
+        private func pauseReading() {
+            guard !readerSuspended, let reader else { return }
+            readerSuspended = true
+            reader.suspend()
+        }
+
+        private func readAvailable() {
+            guard !closed else { return }
+            var buffer = [UInt8](repeating: 0, count: 65_536)
+            let count = Darwin.read(fd, &buffer, buffer.count)
+            if count > 0 {
+                if !parser.hasBufferedBytes { arm(Self.request) }
+                feed(Data(buffer[0..<count]))
+            } else if count == 0 || (errno != EAGAIN && errno != EINTR) {
+                close()
             }
         }
 
         private func feed(_ data: Data) {
             switch parser.feed(data) {
             case .needMore: break
-            case .expectContinue:
-                connection.send(content: HTTPResponse.continueBytes, completion: .contentProcessed { _ in })
+            case .expectContinue: send(HTTPResponse.continueBytes)
             case let .request(request): handle(request)
             case let .error(status): write(HTTPResponse(status: status), close: true)
             }
@@ -182,6 +216,7 @@ public final class CompanionListener: @unchecked Sendable {
 
         private func handle(_ request: HTTPRequest) {
             busy = true
+            pauseReading()
             timer?.cancel()
             let transport = self.transport, handler = self.handler
             Task {
@@ -200,10 +235,49 @@ public final class CompanionListener: @unchecked Sendable {
         }
 
         private func write(_ response: HTTPResponse, close: Bool, then: (@Sendable () -> Void)? = nil) {
-            connection.send(content: response.serialized(close: close), completion: .contentProcessed { [weak self] _ in
+            if close { pauseReading() }
+            send(response.serialized(close: close)) { [weak self] in
                 guard let self else { return }
-                self.queue.async { if close { self.close() } else if !self.closed { then?() } }
-            })
+                if close { self.close() } else if !self.closed { then?() }
+            }
+        }
+
+        /// Queues `data` and writes what the socket takes; `then` runs once all of it is written.
+        private func send(_ data: Data, then: (@Sendable () -> Void)? = nil) {
+            guard !closed else { return }
+            outbox.append(data)
+            if let then { drained.append(then) }
+            flush()
+        }
+
+        private func flush() {
+            while written < outbox.count {
+                let count = outbox.withUnsafeBytes { Darwin.write(fd, $0.baseAddress! + written, $0.count - written) }
+                if count > 0 {
+                    written += count
+                } else if count < 0, errno == EINTR {
+                    continue
+                } else if count < 0, errno == EAGAIN {
+                    if writer == nil {
+                        let writer = DispatchSource.makeWriteSource(fileDescriptor: fd, queue: queue)
+                        track(writer)
+                        writer.setEventHandler { [weak self] in self?.flush() }
+                        self.writer = writer
+                        writer.resume()
+                    }
+                    return
+                } else {
+                    close()
+                    return
+                }
+            }
+            outbox = Data()
+            written = 0
+            writer?.cancel()
+            writer = nil
+            let callbacks = drained
+            drained = []
+            for callback in callbacks { callback() }
         }
 
         private func arm(_ seconds: TimeInterval) {
@@ -222,12 +296,28 @@ public final class CompanionListener: @unchecked Sendable {
             timer = source
         }
 
+        /// The socket stays open until the kernel has let go of every source watching it.
+        private func track(_ source: DispatchSourceProtocol) {
+            liveSources += 1
+            source.setCancelHandler { [self] in
+                liveSources -= 1
+                if closed, liveSources == 0 { Darwin.close(fd) }
+            }
+        }
+
         func close() {
             guard !closed else { return }
             closed = true
             timer?.cancel()
             timer = nil
-            connection.cancel()
+            writer?.cancel()
+            writer = nil
+            if readerSuspended { reader?.resume() }  // A suspended source can't finish cancelling.
+            reader?.cancel()
+            reader = nil
+            outbox = Data()
+            drained = []
+            if liveSources == 0 { Darwin.close(fd) }
             onClose?()
             onClose = nil
         }
