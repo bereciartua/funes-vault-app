@@ -27,9 +27,9 @@ public protocol CompanionTransport: Sendable {
     func post(_ url: URL, body: Data, timeout: TimeInterval) async throws(TransportError) -> TransportResponse
 }
 
-/// Plain `URLSession`, ephemeral: no cookies, no cache, no credentials, no proxies' auth. LAN
-/// and Tailscale go over HTTP to a `.local` name or an IP address, which ATS allows with
-/// `NSAllowsLocalNetworking`; the tunnel is HTTPS.
+/// Plain `URLSession`, ephemeral: no cookies, no cache, no credentials. Used for the tunnel's
+/// HTTPS; plain HTTP goes through `NetworkHTTPTransport`, since ATS refuses it to Tailscale
+/// addresses.
 public struct URLSessionTransport: CompanionTransport {
     let session: URLSession
 
@@ -59,6 +59,8 @@ public struct URLSessionTransport: CompanionTransport {
             throw error
         } catch let error as URLError {
             throw error.code == .timedOut ? .timedOut : TransportError("URLError \(error.code.rawValue)")
+        } catch is CancellationError {
+            throw TransportError("cancelled")
         } catch {
             throw TransportError("\(type(of: error))")
         }

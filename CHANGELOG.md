@@ -13,7 +13,7 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - macOS asks for Local Network access the first time iPhone access is on.
 - **The first iPhone build, for testing (v0.2).** Not on the App Store yet.
   - **Pair with Mac** scans the code from Settings ▸ iPhone ▸ Pair iPhone…, then waits while you click Allow on the Mac. Name the iPhone before scanning: iOS only tells apps "iPhone".
-  - It then shows whether your Mac is reachable and how: "Connected · Wi-Fi", "Connected · Tailscale", or "Mac not reachable", and says so when Local Network access is off for Funes. It checks again whenever the app comes to the front or the network changes.
+  - It then shows whether your Mac is reachable and how: "Connected · Wi-Fi", "Connected · Tailscale", "Connected · VPN" (your Mac's local address through a VPN such as a Tailscale subnet router), or "Mac not reachable". It also says so when Local Network access is off for Funes. It checks again whenever the app comes to the front or the network changes.
   - The iPhone's signing key is made in the Secure Enclave and never leaves it; the keys and the pairing stay on this iPhone only.
   - **Unpair This iPhone…** tells the Mac and forgets the keys.
 

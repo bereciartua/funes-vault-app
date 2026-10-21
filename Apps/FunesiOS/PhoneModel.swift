@@ -26,6 +26,8 @@ final class PhoneModel {
     private(set) var path: NetworkPath?
     private(set) var usesSecureEnclave: Bool?
     private(set) var protocolChecks: [ProtocolCheck] = []
+    /// Each address's probe in the last check (Debug's Spike 1 section).
+    private(set) var probes: [ProbeOutcome] = []
     private(set) var spikeMessage: String?
     private var testCaptureID: UUID?
 
@@ -81,6 +83,7 @@ final class PhoneModel {
         } catch {
             reachability = Self.reachability(for: error)
         }
+        probes = await client.lastProbes
         lastChecked = Date()
     }
 

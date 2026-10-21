@@ -134,6 +134,14 @@ struct SpikeSection: View {
             Button("Send a Test Capture") { Task { await model.sendTestCapture(again: false) } }
             Button("Send It Again") { Task { await model.sendTestCapture(again: true) } }
             Button("Run Protocol Checks") { Task { await model.runProtocolChecks() } }
+            ForEach(model.probes) { probe in
+                HStack {
+                    Text(probe.address.description).lineLimit(1).truncationMode(.middle)
+                    Spacer()
+                    Text(probe.outcome).foregroundStyle(probe.outcome == "ok" ? .green : .secondary)
+                }
+                .font(.caption.monospaced())
+            }
             if let message = model.spikeMessage {
                 Text(message).font(.footnote).foregroundStyle(.secondary)
             }

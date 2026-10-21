@@ -8,7 +8,7 @@ Results of the [Phase 0 spikes](phase-0-spikes.md). Each section gives the quest
 
 **Question:** can an iPhone pair with the Mac by QR code, send signed, HPKE-sealed requests over the same Wi-Fi and Tailscale, and deliver queued captures exactly once ([plan](phase-0-spikes.md#spike-1-companion-transport-pairing-encryption-offline-capture))?
 
-### Run 1 (2026-10-21): **1a–1c, 1f and 1g pass; 1e fails on the Mac's listener**; 1d and 1h wait for task 5.4
+### Run 1 (2026-10-21): **1a–1c, 1e, 1f and 1g pass** (1e after two fixes); 1d and 1h wait for task 5.4
 **Setup:**
 - **Phone:** iPhone 13 mini (iPhone14,4), iOS 27.0.1, running a Debug build of the iPhone app from task 5.3 (PR #33), signed for development.
 - **Mac:** M-series MacBook Air, macOS 27, running a Debug build of the Mac app (Apple Development signing) with a development vault: `FUNES_DATA_DIR`, `--dev-seed`, companion port 47636, Same Wi-Fi and Tailscale on.
@@ -20,12 +20,21 @@ Results of the [Phase 0 spikes](phase-0-spikes.md). Each section gives the quest
 | 1b | Capture → delivered on the same Wi-Fi | ✅ Accepted in 42 ms. One `capture_receipt`, an Inbox suggestion, and Activity `capture … queued` under `device:<id>` via `companion`. The phone-side deletion waits for 5.4's queue. |
 | 1c | Response dropped after the commit | ✅ for the duplicate half: the same `captureId` resent was accepted in 69 ms, the Mac still has one receipt, and Activity says `duplicate`. Not tested by killing the connection on the device; `FunesPhone`'s tests drop the answer in software. |
 | 1d | Mac asleep, 3 captures, wake | ⏳ Needs the capture queue (task 5.4). |
-| 1e | Tailscale (phone on cellular) | ❌ **Not reached by its 100.x IP.** See below. |
+| 1e | Tailscale (phone on cellular) | ✅ after two fixes: **Connected · Tailscale** on 5G, round trip 462 ms, a test capture accepted in 287 ms, and the Mac recorded the transport as `tailscale`. The first tries failed twice, once on the Mac's listener and once on ATS; see below. |
 | 1f | Tampered ciphertext, replayed nonce, skewed clock | ✅ From the phone, with its **Secure Enclave** signing key: good envelope `ok`, the same envelope again `replay`, tampered ciphertext `invalid_signature`, clock 5 minutes behind `clock_skew`. |
 | 1g | Local Network prompt and Bonjour | ✅ Answering **Don't Allow** at the prompt gave "Funes isn't allowed on your local network…", since the browse reported `PolicyDenied`. Turned on in Settings ▸ Privacy & Security ▸ Local Network, pairing then worked. The Mac advertises `_funes._tcp` with TXT `v=1`, `mac=<tag>`. |
 | 1h | Background delivery | ⏳ Needs `BGAppRefreshTask` (task 5.4). |
 
-**1e in detail:**
+**1e, the passing run:** iPhone on 5G, Tailscale connected, "Use Tailscale subnets" off. The Mac ran PR #34's Debug build with the BSD-socket listener; the iPhone ran PR #33's build, which sends plain HTTP over Network.framework. The probes showed:
+- `tailscale http://100.89.20.22:47636`: `ok`;
+- the LAN IP: "Network is down" at once;
+- the `.local` name: timed out after 3 s.
+
+So Tailscale won about 3 s after the check started, once the better-ranked probes had finished.
+
+**ATS, the second cause:** with the Mac's listener fixed, the phone still never reached 100.x; Safari did. The Debug probe readout showed **`URLError -1022`**: App Transport Security refuses plain HTTP to Tailscale's `100.64.0.0/10` addresses even with `NSAllowsLocalNetworking`, which covers only `.local` names and private ranges, so nothing left the phone. Since then the iPhone sends plain HTTP (LAN and Tailscale) through its own small HTTP/1.1 client on Network.framework, which ATS doesn't govern (`NetworkHTTPTransport`), and keeps `URLSession` for the tunnel's HTTPS. This is the outcome the spike's fallback "ATS trouble with Tailscale IPs" was about. The answer is a different transport, so the tunnel isn't needed for remote access.
+
+**1e in detail, the first tries:**
 - **First try, cellular with Tailscale's subnet routes on:** the phone showed "Connected · Wi-Fi" at a 192 ms round trip. It had reached the Mac's **LAN address**, 10.0.0.118, through the subnet router. The router presents the traffic as coming from a LAN address, so the Mac recorded the transport as `lan`. ATS allowed plain HTTP to that IP literal over the VPN.
   - **Label fix:** the label said "Wi-Fi" on 5G. It now reads **Connected · VPN** when a LAN address answers while the phone isn't on Wi-Fi or Ethernet.
   - **What this means:** with a subnet router, Same Wi-Fi mode is reachable from the whole tailnet. The envelope still protects every request; [companion protocol §5](../architecture/companion-protocol.md#5-transport-and-reachability) now says so.

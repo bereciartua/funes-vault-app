@@ -31,6 +31,14 @@ public struct MacConnection: Sendable, Equatable {
     public var roundTrip: Duration
 }
 
+/// What one address's probe came to in the last address selection, for diagnosis.
+public struct ProbeOutcome: Sendable, Equatable, Identifiable {
+    public var address: MacAddress
+    /// "ok", or why not: a transport error ("URLError -1022", "timed out") or a refusal code.
+    public var outcome: String
+    public var id: String { address.description }
+}
+
 /// One of Spike 1's protocol checks (row 1f) run from the phone against the Mac.
 public struct ProtocolCheck: Sendable, Equatable, Identifiable {
     public var name: String
@@ -87,8 +95,10 @@ public actor CompanionClient {
     private var cached: (address: MacAddress, at: Date)?
     /// The Mac's clock minus ours, learnt from a `clock_skew` refusal.
     private var clockOffset: TimeInterval = 0
+    /// Each probe of the last address selection (or pairing's), in the order they finished.
+    public private(set) var lastProbes: [ProbeOutcome] = []
 
-    public init(store: any SecretStore, transport: any CompanionTransport = URLSessionTransport(),
+    public init(store: any SecretStore, transport: any CompanionTransport = CompanionHTTPTransport(),
                 discovery: any MacDiscovery = BonjourDiscovery(), secureEnclave: Bool = SecureEnclave.isAvailable,
                 clock: @escaping @Sendable () -> Date = Date.init) {
         keyStore = DeviceKeyStore(store: store)
@@ -229,6 +239,7 @@ public actor CompanionClient {
         let race = await race(saved: paired.record.addresses.macAddresses, tag: paired.record.bonjourTag) { address throws(SendFailure) in
             try await self.probe(address, paired: paired, timeout: Self.probeTimeout)
         }
+        lastProbes = race.probes
         if let (address, connection) = race.winner {
             cached = (address, clock())
             logger.info("Reached the Mac over \(address.kind.rawValue, privacy: .public)") // log-safe: an address kind, not the address
@@ -248,6 +259,7 @@ public actor CompanionClient {
     struct RaceResult<T: Sendable>: Sendable {
         var winner: (MacAddress, T)?
         var failures: [SendFailure] = []
+        var probes: [ProbeOutcome] = []
         var localNetworkDenied = false
     }
 
@@ -288,8 +300,10 @@ public actor CompanionClient {
                     switch outcome {
                     case let .success(value):
                         if result.winner.map({ address.kind.rank < $0.0.kind.rank }) ?? true { result.winner = (address, value) }
+                        result.probes.append(ProbeOutcome(address: address, outcome: "ok"))
                     case let .failure(failure):
                         result.failures.append(failure)
+                        result.probes.append(ProbeOutcome(address: address, outcome: Self.describe(failure)))
                     }
                 }
                 if let winner = result.winner, !pending.contains(where: { $0 < winner.0.kind.rank }) {
@@ -297,7 +311,19 @@ public actor CompanionClient {
                     break
                 }
             }
+            // Probes still running when a winner was picked were cancelled.
+            let finished = Set(result.probes.map(\.address))
+            result.probes += saved.filter { !finished.contains($0) }.map { ProbeOutcome(address: $0, outcome: "not needed") }
             return result
+        }
+    }
+
+    static func describe(_ failure: SendFailure) -> String {
+        switch failure {
+        case let .transport(error): error.reason
+        case let .client(.refused(refusal)): refusal.code
+        case let .client(.badResponse(status)): "HTTP \(status)"
+        case let .client(error): "\(error)"
         }
     }
 
@@ -311,6 +337,7 @@ public actor CompanionClient {
         let race = await race(saved: payload.addresses.macAddresses, tag: CompanionBonjour.macTag(payload.macID)) { address throws(SendFailure) in
             try await self.hello(address)
         }
+        lastProbes = race.probes
         guard let (address, _) = race.winner else { throw .unreachable(localNetworkDenied: race.localNetworkDenied) }
 
         let keys = DeviceKeys.fresh(secureEnclave: secureEnclave)
