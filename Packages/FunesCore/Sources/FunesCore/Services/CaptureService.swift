@@ -114,10 +114,50 @@ public final class DeviceService: Sendable {
         return device
     }
 
-    public func revoke(deviceID: UUID, now: Date) async throws {
+    /// Revoke on the Mac (`actor` the user) or unpair from the phone (the device itself). The
+    /// device's next request is refused (T35); its row stays, so Activity can name it.
+    public func revoke(deviceID: UUID, now: Date, actor: Actor = .user) async throws {
         try await store.writer.write { db in
             try db.execute(sql: "UPDATE device SET revoked_at = COALESCE(revoked_at, ?) WHERE id = ?", arguments: [now, deviceID.db])
             guard db.changesCount == 1 else { throw VaultError.notFound }
+        }
+        activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: actor == .user ? .app : .companion,
+                                      event: "device_revoked", outcome: "revoked", ids: [deviceID]))
+    }
+
+    /// Paired devices, oldest first.
+    public func devices(includingRevoked: Bool = false) async throws -> [Device] {
+        try await store.writer.read { db in
+            try Row.fetchAll(db, sql: "SELECT * FROM device \(includingRevoked ? "" : "WHERE revoked_at IS NULL ") ORDER BY paired_at")
+                .map(Device.from(row:))
+        }
+    }
+
+    public func device(id: UUID) async throws -> Device? {
+        try await store.writer.read { db in try DeviceStore.fetch(db, id: id) }
+    }
+
+    /// Last seen and how, for Settings ▸ iPhone. Written at most once a minute per device unless
+    /// the transport changed.
+    public func touch(deviceID: UUID, transport: DeviceTransport, now: Date) async throws {
+        try await store.writer.write { db in
+            try db.execute(sql: """
+                UPDATE device SET last_seen_at = ?, last_transport = ?
+                WHERE id = ? AND revoked_at IS NULL
+                  AND (last_seen_at IS NULL OR last_seen_at <= ? OR last_transport IS NOT ?)
+                """, arguments: [now, transport.rawValue, deviceID.db, now.addingTimeInterval(-60), transport.rawValue])
+        }
+    }
+
+    /// How often a memory was shared with agents, and when last (the phone's memory detail).
+    public func sharing(memoryID: UUID) async throws -> (count: Int, last: Date?) {
+        try await store.writer.read { db in
+            let row = try Row.fetchOne(db, sql: """
+                SELECT count(*) AS n, max(d.delivered_at) AS last FROM disclosure_item i
+                JOIN disclosure d ON d.id = i.disclosure_id
+                WHERE i.memory_id = ? AND d.status = 'delivered'
+                """, arguments: [memoryID.db])
+            return (row?["n"] ?? 0, row?["last"])
         }
     }
 
@@ -145,14 +185,46 @@ public final class DeviceService: Sendable {
         return memory
     }
 
+    /// `expectedVersion`: the version the phone showed. Another one is `versionConflict`, checked
+    /// in the same transaction as the write.
     @discardableResult
-    public func updateMemory(deviceID: UUID, memoryID: UUID, _ edit: MemoryEdit, now: Date) async throws -> Memory {
+    public func updateMemory(deviceID: UUID, memoryID: UUID, _ edit: MemoryEdit, expectedVersion: Int? = nil,
+                             now: Date) async throws -> Memory {
         let memory = try await store.writer.write { db -> Memory in
             guard let d = try DeviceStore.fetch(db, id: deviceID), !d.isRevoked else { throw VaultError.unauthenticated }
+            try Self.check(db, memoryID: memoryID, expectedVersion: expectedVersion)
             return try MemoryStore.update(db, id: memoryID, edit, actor: .device(deviceID), now: now)
         }
         activity.record(ActivityEvent(time: now, actor: .device(deviceID), via: .companion, event: "memory_edited",
                                       outcome: "saved", ids: [memory.id]))
         return memory
+    }
+
+    /// Archive (`archived`), restore (`active`) or delete (`deleted`) from the phone, at the
+    /// version it showed.
+    @discardableResult
+    public func setMemoryStatus(deviceID: UUID, memoryID: UUID, to status: MemoryStatus, expectedVersion: Int,
+                                now: Date) async throws -> Memory {
+        let memory = try await store.writer.write { db -> Memory in
+            guard let d = try DeviceStore.fetch(db, id: deviceID), !d.isRevoked else { throw VaultError.unauthenticated }
+            try Self.check(db, memoryID: memoryID, expectedVersion: expectedVersion)
+            return try MemoryStore.setStatus(db, id: memoryID, to: status, actor: .device(deviceID), now: now)
+        }
+        let event = switch status {
+        case .archived: "memory_archived"
+        case .active: "memory_restored"
+        case .deleted: "memory_deleted"
+        }
+        activity.record(ActivityEvent(time: now, actor: .device(deviceID), via: .companion, event: event, outcome: "saved",
+                                      ids: [memory.id]))
+        return memory
+    }
+
+    private static func check(_ db: Database, memoryID: UUID, expectedVersion: Int?) throws {
+        guard let expectedVersion else { return }
+        guard let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [memoryID.db]) else {
+            throw VaultError.notFound
+        }
+        guard version == expectedVersion else { throw VaultError.versionConflict }
     }
 }

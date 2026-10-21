@@ -202,16 +202,18 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
   - fix links ("Allow Project Context for Cursor…").
 
 ### iPhone (v0.2)
-- **Off state:** "Use Funes on your iPhone to capture and search your vault." [Turn On]
+*Built in task 5.2; hidden in Release builds until the iPhone app ships.*
+- **Off state:** an **Allow iPhone access** switch, off by default, with "A paired iPhone can capture, search, edit and review the Inbox while it can reach this Mac. What it sends is end-to-end encrypted, and your vault stays on this Mac." While on, the listener's status ("Listening on port 47626", or the port in use).
 - **Reachability:**
   - **Same Wi-Fi:** default; works at home.
   - **Tailscale:** shows "Tailscale detected · 100.x.y.z", or a link to set it up.
-  - **Public tunnel:** advanced; reuses EK Bridge's tunnel checklist.
+  - **Public tunnel:** advanced: the tunnel's public host, the URL to forward to `http://127.0.0.1:47626` (`https://<host>/r/<secret>`) and **Reset Path**. (EK Bridge's tunnel checklist later.)
 - **Pair iPhone…** shows a sheet with:
   - the QR code;
   - a 5-minute countdown;
-  - instructions: "Open Funes Vault on your iPhone and tap Pair with Mac".
-- **Devices:** name, model, paired date, last seen, connection used, and Revoke.
+  - instructions: "On your iPhone, open Funes Vault, tap Pair with Mac and scan this code."
+  - then "“Sam's iPhone” wants to pair", with the model, **Deny** and **Allow** (the second factor), and "Paired with “Sam's iPhone”."
+- **Devices:** name, model, paired date, last seen, connection used, and **Remove…** (it revokes the device). At most five.
 
 ### Settings
 - **General:**

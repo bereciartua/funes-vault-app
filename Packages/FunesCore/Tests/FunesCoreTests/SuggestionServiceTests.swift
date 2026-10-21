@@ -307,6 +307,49 @@ import Testing
         }
         #expect(try await devices.updateMemory(deviceID: phone.id, memoryID: m.id, MemoryEdit(body: "Edited"), now: t0).version == 2)
     }
+
+    /// The phone edits at the version it showed (companion protocol §4): a stale one changes nothing.
+    @Test func deviceEditsCheckTheVersion() async throws {
+        let v = try TestVault()
+        let log = InMemoryActivityLog()
+        let devices = DeviceService(store: v.store, activity: log)
+        let phone = try await devices.register(name: "Phone", model: "iPhone", signingPublicKey: Data([1]), hpkePublicKey: Data([2]), now: t0)
+        let m = try v.memory("Coffee")
+        await #expect(throws: VaultError.versionConflict) {
+            try await devices.updateMemory(deviceID: phone.id, memoryID: m.id, MemoryEdit(title: "Tea"), expectedVersion: 2, now: t0)
+        }
+        #expect(try v.store.memory(id: m.id)?.title == "Coffee")
+        let archived = try await devices.setMemoryStatus(deviceID: phone.id, memoryID: m.id, to: .archived, expectedVersion: 1, now: t0)
+        #expect(archived.status == .archived && archived.version == 2)
+        await #expect(throws: VaultError.versionConflict) {
+            try await devices.setMemoryStatus(deviceID: phone.id, memoryID: m.id, to: .active, expectedVersion: 1, now: t0)
+        }
+        await #expect(throws: VaultError.notFound) {
+            try await devices.setMemoryStatus(deviceID: phone.id, memoryID: UUID(), to: .archived, expectedVersion: 1, now: t0)
+        }
+        #expect(log.events.last?.event == "memory_archived")
+        #expect(log.events.last?.actor == "device:\(phone.id.db)")
+    }
+
+    @Test func deviceListTouchAndRevoke() async throws {
+        let v = try TestVault()
+        let log = InMemoryActivityLog()
+        let devices = DeviceService(store: v.store, activity: log)
+        let a = try await devices.register(name: "A", model: "iPhone", signingPublicKey: Data([1]), hpkePublicKey: Data([2]), now: t0)
+        let b = try await devices.register(name: "B", model: "iPhone", signingPublicKey: Data([3]), hpkePublicKey: Data([4]),
+                                           now: t0.plus(minutes: 1))
+        try await devices.touch(deviceID: a.id, transport: .tailscale, now: t0.plus(minutes: 2))
+        // Within a minute and the same transport: not written again.
+        try await devices.touch(deviceID: a.id, transport: .tailscale, now: t0.plus(minutes: 2.5))
+        #expect(try await devices.device(id: a.id)?.lastSeenAt == t0.plus(minutes: 2))
+        try await devices.touch(deviceID: a.id, transport: .lan, now: t0.plus(minutes: 2.5))
+        #expect(try await devices.device(id: a.id)?.lastTransport == .lan)
+        try await devices.revoke(deviceID: b.id, now: t0, actor: .device(b.id))
+        #expect(try await devices.devices().map(\.id) == [a.id])
+        #expect(try await devices.devices(includingRevoked: true).map(\.id) == [a.id, b.id])
+        #expect(log.events.last?.event == "device_revoked")
+        #expect(log.events.last?.via == .companion)
+    }
 }
 
 @Suite struct RulesClassifierTests {

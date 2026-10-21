@@ -14,6 +14,8 @@ public enum Identifiers {
 
     /// Keychain service for model provider API keys.
     public static let providerKeychainService = "com.funesvault.provider"
+    /// Keychain service for the Mac's companion identity (its id and P-256 keys; companion protocol §1).
+    public static let companionKeychainService = "com.funesvault.companion"
 
     /// MCP server key in agent configs, the launcher name and the agent key prefix.
     public static let mcpServerKey = "funes"

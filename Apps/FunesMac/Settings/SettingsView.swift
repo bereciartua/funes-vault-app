@@ -4,8 +4,18 @@ import ServiceManagement
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
-    case general, capture, models, mcp, data, updates, advanced
+    case general, capture, models, mcp, iphone, data, updates, advanced
     var id: String { rawValue }
+
+    /// iPhone stays hidden in Release builds until the iPhone app is out (Phase 5), unless the
+    /// `IPhoneSettingsVisible` default is on.
+    static var visible: [SettingsTab] {
+        #if DEBUG
+        allCases
+        #else
+        UserDefaults.standard.bool(forKey: "IPhoneSettingsVisible") ? allCases : allCases.filter { $0 != .iphone }
+        #endif
+    }
 
     var title: String {
         switch self {
@@ -13,6 +23,7 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
         case .capture: String(localized: "Capture")
         case .models: String(localized: "AI Models")
         case .mcp: String(localized: "MCP")
+        case .iphone: String(localized: "iPhone")
         case .data: String(localized: "Data")
         case .updates: String(localized: "Updates")
         case .advanced: String(localized: "Advanced")
@@ -25,6 +36,7 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
         case .capture: "square.and.pencil"
         case .models: "cpu"
         case .mcp: "point.3.connected.trianglepath.dotted"
+        case .iphone: "iphone"
         case .data: "externaldrive"
         case .updates: "arrow.down.circle"
         case .advanced: "slider.horizontal.3"
@@ -38,7 +50,7 @@ struct SettingsView: View {
 
     var body: some View {
         TabView(selection: $model.settingsTab) {
-            ForEach(SettingsTab.allCases) { tab in
+            ForEach(SettingsTab.visible) { tab in
                 pane(tab)
                     .tabItem { Label(tab.title, systemImage: tab.symbol) }
                     .tag(tab)
@@ -55,6 +67,7 @@ struct SettingsView: View {
         case .capture: CaptureSettings(model: model)
         case .models: ModelSettingsPane(model: model)
         case .mcp: MCPSettings(model: model)
+        case .iphone: IPhoneSettings(model: model)
         case .data: DataSettings(model: model)
         case .updates: UpdateSettings(model: model)
         case .advanced: AdvancedSettings(model: model)

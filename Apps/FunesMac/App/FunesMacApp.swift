@@ -182,6 +182,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // turn-off and the tunnel checks run even if agents can't connect yet; the host starts
             // the listener only while they can (PR #9 review).
             model.remoteAccess.launch()
+            // iPhone access is off by default; when it's on, the companion listener starts here (task 5.2).
+            model.companion.launch()
         }
         startMinuteJob(environment, model: model)
         if let movedFrom = AppMover.movedFrom(), InstallLocation.volume(of: movedFrom) == nil {

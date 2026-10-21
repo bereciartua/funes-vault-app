@@ -32,4 +32,7 @@ public enum VaultError: Error, Sendable, Equatable {
     /// The agent's access changed since the editor read it (e.g. Always Allow from a panel): "This
     /// agent's access changed; review again." Nothing was saved.
     case revisionChanged
+    /// A memory changed since the caller read it (the iPhone sends the version it saw): "Changed
+    /// on your Mac, reload?". Nothing was saved.
+    case versionConflict
 }

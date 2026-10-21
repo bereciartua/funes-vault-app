@@ -96,6 +96,8 @@ final class AppModel {
     /// Remote Access (ADR-0018): its settings, guide and tunnel checks. The app delegate gives it
     /// the listener through its host.
     let remoteAccess: RemoteAccessController
+    /// Settings ▸ iPhone: iPhone access, pairing and paired devices (task 5.2).
+    let companion: CompanionController
     /// The remote listener and OAuth server, while the app runs.
     @ObservationIgnored var remoteServer: FunesRemoteServer?
     /// Bumped when connected cloud apps or pairing change, so views re-read them.
@@ -176,6 +178,8 @@ final class AppModel {
         data = DataOperations(environment: services, preferences: preferences)
         remoteAccess = RemoteAccessController(defaults: preferences.defaults, appName: "Funes Vault", names: .funes,
                                               defaultPort: FunesRemoteConfiguration.defaultPort, host: .inert)
+        companion = CompanionController(defaults: preferences.defaults, services: services.companionServices,
+                                        appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
         pausedUntil = services.pause.pausedUntil(at: Date())
         inboxState.categories = { [weak self] in self?.categories ?? [] }
         observation = services.store.observeChanges { [weak self] in

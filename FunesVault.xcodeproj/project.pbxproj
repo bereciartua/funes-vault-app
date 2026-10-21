@@ -17,6 +17,7 @@
 		F0000000000000000000B008 /* BridgeKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D007 /* BridgeKitCore */; };
 		F0000000000000000000B009 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D008 /* Sparkle */; };
 		F0000000000000000000B00A /* BridgeKitRemote in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D009 /* BridgeKitRemote */; };
+		F0000000000000000000B00B /* FunesCompanion in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D00A /* FunesCompanion */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +73,7 @@
 				F0000000000000000000B004 /* BridgeUI in Frameworks */,
 				F0000000000000000000B008 /* BridgeKitCore in Frameworks */,
 				F0000000000000000000B00A /* BridgeKitRemote in Frameworks */,
+				F0000000000000000000B00B /* FunesCompanion in Frameworks */,
 				F0000000000000000000B009 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -143,6 +145,7 @@
 				F0000000000000000000D004 /* BridgeUI */,
 				F0000000000000000000D007 /* BridgeKitCore */,
 				F0000000000000000000D009 /* BridgeKitRemote */,
+				F0000000000000000000D00A /* FunesCompanion */,
 				F0000000000000000000D008 /* Sparkle */,
 			);
 			productName = FunesMac;
@@ -204,6 +207,7 @@
 				F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */,
 				F00000000000000000007003 /* XCLocalSwiftPackageReference "Packages/FunesMCP" */,
 				F00000000000000000007004 /* XCLocalSwiftPackageReference "Packages/BridgeUI" */,
+				F00000000000000000007007 /* XCLocalSwiftPackageReference "Packages/FunesCompanion" */,
 				F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */,
 				F00000000000000000007006 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
@@ -450,6 +454,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/BridgeUI;
 		};
+		F00000000000000000007007 /* XCLocalSwiftPackageReference "Packages/FunesCompanion" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FunesCompanion;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -511,6 +519,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F00000000000000000007005 /* XCRemoteSwiftPackageReference "bridgekit" */;
 			productName = BridgeKitRemote;
+		};
+		F0000000000000000000D00A /* FunesCompanion */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007007 /* XCLocalSwiftPackageReference "Packages/FunesCompanion" */;
+			productName = FunesCompanion;
 		};
 		F0000000000000000000D008 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

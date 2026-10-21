@@ -11,10 +11,11 @@
 - [x] Tests: crypto round trips, tamper, replay, skew; fuzz the envelope decoder.
 
 ### 5.2 Mac: companion server · 4 h
-- [ ] `CompanionServer` on 47626 with address-based acceptance per mode; secret path and Host check for tunnel mode.
-- [ ] `PairingService`: QR payload, 5-minute sessions, Allow prompt, device storage. `DeviceRegistry`: list, revoke, last seen.
-- [ ] Method handlers calling FunesCore as the owner, with Activity rows (`device:<id>`).
-- [ ] Bonjour advertiser. iPhone settings section (modes, pairing sheet, devices).
+*In `Packages/FunesCompanion`; Settings ▸ iPhone is hidden in Release builds until the iPhone app ships.*
+- [x] `CompanionServer` on 47626 with address-based acceptance per mode; secret path and Host check for tunnel mode.
+- [x] `PairingService`: QR payload, 5-minute sessions, Allow prompt, device storage. Device registry (FunesCore `DeviceService`): list, revoke, last seen.
+- [x] Method handlers calling FunesCore as the owner, with Activity rows (`device:<id>`).
+- [x] Bonjour advertiser. iPhone settings section (modes, pairing sheet, devices).
 
 ### 5.3 iPhone app: foundation · 3 h
 - [ ] Targets: app, share extension, App Intents/Control extension, App Group.

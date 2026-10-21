@@ -578,6 +578,12 @@
     "A memory can have at most 12 categories." : {
 
     },
+    "A new path stops the old URL. Paired iPhones learn the new one when they pair again." : {
+
+    },
+    "A paired iPhone can capture, search, edit and review the Inbox while it can reach this Mac. What it sends is end-to-end encrypted, and your vault stays on this Mac." : {
+
+    },
     "A panel shows exactly what would be shared, and nothing goes until you choose." : {
 
     },
@@ -828,6 +834,12 @@
     "Allow cloud access" : {
 
     },
+    "Allow iPhone access" : {
+
+    },
+    "Allow only if it's your iPhone and you just scanned the code. It will act as you: capture, search, edit and review." : {
+
+    },
     "Allow only if this code matches the one in your browser. It will use %@'s access." : {
 
     },
@@ -879,6 +891,9 @@
 
     },
     "Another app is using port %@. Quit it, then turn this off and on again, or choose another port. Funes never moves on its own, because agents' setups name the port." : {
+
+    },
+    "Another app is using port %@. Quit it, then turn this off and on again." : {
 
     },
     "Answer a Few Questions" : {
@@ -939,6 +954,9 @@
     "Applied" : {
 
     },
+    "Applied a suggestion" : {
+
+    },
     "Applied from the Inbox" : {
 
     },
@@ -982,6 +1000,9 @@
 
     },
     "Archived %@" : {
+
+    },
+    "Archived a memory" : {
 
     },
     "Archived memories are kept but never shared with agents." : {
@@ -1070,6 +1091,9 @@
 
     },
     "Beyond the session" : {
+
+    },
+    "Both need the same Wi-Fi, or Tailscale on both." : {
 
     },
     "Both tunnels can run at the same time." : {
@@ -1226,6 +1250,9 @@
     "Choose at least one category." : {
 
     },
+    "Choose at least one way to reach this Mac." : {
+
+    },
     "Choose the memories file from your ChatGPT data export (JSON). Each memory becomes a suggestion." : {
 
     },
@@ -1303,6 +1330,9 @@
 
     },
     "Cline treats a remote server without a type as legacy SSE, so only the launcher is offered." : {
+
+    },
+    "Close" : {
 
     },
     "Close Window" : {
@@ -1575,6 +1605,9 @@
         }
       }
     },
+    "Deleted a memory" : {
+
+    },
     "Deleted memories stay here for 30 days, then they're gone for good." : {
 
     },
@@ -1765,6 +1798,12 @@
     "First, turn on Remote Access. Port %@ opens on this Mac for the tunnel; nothing is reachable until the tunnel runs." : {
 
     },
+    "Five iPhones are already paired. Remove one first." : {
+
+    },
+    "Five iPhones are paired, the most Funes Vault allows. Remove one to pair another." : {
+
+    },
     "For 1 Hour" : {
 
     },
@@ -1782,6 +1821,9 @@
 
     },
     "For the session" : {
+
+    },
+    "Forward this URL to http://127.0.0.1:%@:" : {
 
     },
     "Forwards to %@, the local MCP port. Use %@." : {
@@ -2182,6 +2224,9 @@
     "It can connect, but sees nothing until you give it access." : {
 
     },
+    "It can't reach your vault any more. Captures waiting on it stay there until it pairs again." : {
+
+    },
     "It changed in the meantime. Look again and retry." : {
 
     },
@@ -2284,6 +2329,18 @@
     "Last checked" : {
 
     },
+    "Last seen %@" : {
+
+    },
+    "Last seen %@ over Tailscale" : {
+
+    },
+    "Last seen %@ over Wi-Fi" : {
+
+    },
+    "Last seen %@ through the tunnel" : {
+
+    },
     "Last use" : {
 
     },
@@ -2326,6 +2383,9 @@
     "Listed categories" : {
 
     },
+    "Listening on port %@" : {
+
+    },
     "Load Models" : {
 
     },
@@ -2357,6 +2417,9 @@
 
     },
     "MCP URL" : {
+
+    },
+    "Mac" : {
 
     },
     "Mark that you checked this memory today" : {
@@ -2522,6 +2585,9 @@
     "No credentials yet" : {
 
     },
+    "No iPhone paired yet." : {
+
+    },
     "No key" : {
 
     },
@@ -2648,6 +2714,9 @@
     "On this Mac" : {
 
     },
+    "On your iPhone, open Funes Vault, tap Pair with Mac and scan this code." : {
+
+    },
     "On, but Funes is paused" : {
 
     },
@@ -2690,7 +2759,13 @@
     "OpenAI Responses API" : {
 
     },
+    "Opened a memory" : {
+
+    },
     "Opened a request in Funes" : {
+
+    },
+    "Opened the Inbox" : {
 
     },
     "Opens the capture box from any app. Funes doesn't need Accessibility access for it." : {
@@ -2723,10 +2798,34 @@
     "Other tunnel" : {
 
     },
+    "Pair iPhone" : {
+
+    },
+    "Pair iPhone…" : {
+
+    },
+    "Paired %@" : {
+
+    },
+    "Paired iPhones" : {
+
+    },
+    "Paired with “%@”." : {
+
+    },
+    "Pairing code" : {
+
+    },
+    "Pairing didn't work. Try again with a new code." : {
+
+    },
     "Pairing is open for 10 minutes. Add the connector in the cloud app now; when it asks to connect, check the code and allow it here." : {
 
     },
     "Pairing is open. Connect the app in its settings now." : {
+
+    },
+    "Pairing was denied. The code can't be used again." : {
 
     },
     "Pass the vault in vault_ids when you create a session." : {
@@ -2859,6 +2958,12 @@
     "Public DNS can take about 10 minutes the first time." : {
 
     },
+    "Public host" : {
+
+    },
+    "Public tunnel" : {
+
+    },
     "Purpose" : {
 
     },
@@ -2875,6 +2980,9 @@
 
     },
     "Raise %@'s limit…" : {
+
+    },
+    "Reach this Mac over" : {
 
     },
     "Reachable" : {
@@ -2947,6 +3055,9 @@
     "Rejected" : {
 
     },
+    "Rejected a suggestion" : {
+
+    },
     "Relationship" : {
 
     },
@@ -3017,6 +3128,9 @@
 
     },
     "Remove Link" : {
+
+    },
+    "Remove “%@”?" : {
 
     },
     "Removed agent" : {
@@ -3133,6 +3247,9 @@
     "Restored %@" : {
 
     },
+    "Restored a memory" : {
+
+    },
     "Restricted" : {
 
     },
@@ -3228,6 +3345,9 @@
     "Running" : {
 
     },
+    "Same Wi-Fi" : {
+
+    },
     "Save" : {
 
     },
@@ -3290,6 +3410,9 @@
 
     },
     "Search memories" : {
+
+    },
+    "Searched memories" : {
 
     },
     "Secret" : {
@@ -3437,6 +3560,9 @@
 
     },
     "Show Setup" : {
+
+    },
+    "Show a New Code" : {
 
     },
     "Show all of %@" : {
@@ -3648,6 +3774,9 @@
     "Tab" : {
 
     },
+    "Tailscale" : {
+
+    },
     "Tailscale Funnel" : {
 
     },
@@ -3666,10 +3795,16 @@
     "Tailscale Serve isn't enough: cloud agents aren't on your tailnet." : {
 
     },
+    "Tailscale detected · %@" : {
+
+    },
     "Tailscale is logged out. Open Tailscale and log in." : {
 
     },
     "Tailscale is turned off. Turn it on, then start Funnel." : {
+
+    },
+    "Tailscale isn't running on this Mac. Install it on this Mac and your iPhone, signed in to the same account." : {
 
     },
     "Task" : {
@@ -3730,6 +3865,9 @@
 
     },
     "The Anthropic vault matches the credential by URL. If you reset the secret path, add the credential again." : {
+
+    },
+    "The Keychain didn't give Funes Vault its iPhone keys. Turn this off and on again." : {
 
     },
     "The MCP URL becomes %@." : {
@@ -3945,6 +4083,9 @@
     "This agent has no access yet, so cloud agents can't use anything." : {
 
     },
+    "This code expired." : {
+
+    },
     "This copy isn't signed by a developer, so its copy can't be checked. Drag it to Applications in Finder instead." : {
 
     },
@@ -3999,6 +4140,9 @@
     "Too many requests" : {
 
     },
+    "Too many tries with this code." : {
+
+    },
     "Traffic since launch" : {
 
     },
@@ -4048,6 +4192,9 @@
 
     },
     "Type" : {
+
+    },
+    "Type your tunnel's public host, then press Return." : {
 
     },
     "URL" : {
@@ -4130,6 +4277,16 @@
     },
     "VS Code (Copilot)" : {
 
+    },
+    "Valid for %lld:%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Valid for %1$lld:%2$@"
+          }
+        }
+      }
     },
     "Vault" : {
 
@@ -4432,6 +4589,15 @@
     "iPhone" : {
 
     },
+    "iPhone access couldn't start. Turn it off and on again." : {
+
+    },
+    "iPhone paired" : {
+
+    },
+    "iPhone removed" : {
+
+    },
     "in %lld categories" : {
 
     },
@@ -4576,6 +4742,9 @@
 
     },
     "“%@” (as reported)" : {
+
+    },
+    "“%@” wants to pair" : {
 
     },
     "⏎ Save · ⇧⏎ New line · Esc Cancel" : {
