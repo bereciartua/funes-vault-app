@@ -6,7 +6,7 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 |---|---|---|
 | 0001 | [Native macOS menu bar app](0001-native-menu-bar-app.md) | Accepted |
 | 0002 | [Local MCP server over loopback HTTP with a stdio launcher](0002-local-mcp-server.md) | Accepted; amended by 0018 |
-| 0003 | [The Mac is the only source of truth; the iPhone is a thin client (no CloudKit)](0003-mac-is-the-only-source-of-truth.md) | Accepted |
+| 0003 | [The Mac is the only source of truth; the iPhone is a thin client (no CloudKit)](0003-mac-is-the-only-source-of-truth.md) | Accepted; amended by 0019 |
 | 0004 | [SQLite through GRDB for storage](0004-sqlite-grdb.md) | Accepted |
 | 0005 | [On-device intelligence only (NaturalLanguage embeddings, Foundation Models)](0005-on-device-intelligence.md) | Superseded by 0014 |
 | 0006 | [Xcode project with local Swift packages](0006-xcode-project-and-packages.md) | Accepted |
@@ -22,3 +22,4 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 | 0016 | [Bundled bge-small embeddings (Core ML) and agent keywords in v0.1](0016-bundled-bge-small-embeddings.md) | Accepted |
 | 0017 | [Funes's MCP adapter is a local package, FunesMCP](0017-funes-mcp-package.md) | Accepted |
 | 0018 | [Remote Access for cloud agents in v0.1, with the same policy on every channel](0018-remote-access-in-v0.1.md) | Accepted |
+| 0019 | [A CloudKit "doorbell" wakes the iPhone for approvals (no data in iCloud)](0019-cloudkit-doorbell-for-iphone-approvals.md) | Accepted |

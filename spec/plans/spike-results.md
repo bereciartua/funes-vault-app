@@ -360,6 +360,40 @@ Fallback, unchanged from the plan: if Claude Desktop or Cursor turns out to cut 
 
 **Q10 closed (2026-10-17):** Claude Desktop and Cursor waited the full 45 s, and Claude Code answered the real panel interactively, in the Phase 2 hands-on check. [Q10](open-questions.md) is decided: 45 s for all agents.
 
+## Q24: CloudKit doorbell delivery time
+
+**Question:** how long does a CloudKit "doorbell" take from the Mac to a **locked** iPhone, and can the phone's notification service extension reach the Mac while locked? It decides [Q24](open-questions.md) and [ADR-0019](../architecture/decisions/0019-cloudkit-doorbell-for-iphone-approvals.md), against the 45 s in-call wait ([Q10](open-questions.md)).
+
+**Spike:** [`spikes/cloudkit-doorbell`](../../spikes/cloudkit-doorbell/README.md): a Mac app that saves `Doorbell` records to the private database and times each ring on its own clock until the phone's extension acknowledges it, and an iPhone app with the extension. Both build unsigned (`xcodebuild … CODE_SIGNING_ALLOWED=NO`); running them needs the portal steps in its README and the maintainer's iPhone.
+
+**Pass:** run A (locked, Wi-Fi) delivers 20 of 20, with p90 ≤ 15 s and max ≤ 45 s, and run B (app swiped away) still delivers.
+
+### Verdict (2026-10-20): **pass**, by a wide margin
+CloudKit delivers the doorbell to a locked iPhone in about a second, and the locked phone's notification service extension reaches the Mac over the LAN. That's far inside the 45 s in-call wait, so **Q24 is decided: CloudKit**, and ADR-0019 is accepted.
+
+**Set-up:** maintainer's iPhone 13 mini (iOS 27.0.1) on home Wi-Fi, charging; MacBook Air (macOS 27.0.1) on the same Wi-Fi. Both signed in to the same Apple Account. CloudKit Development environment, Apple Development signing (sandbox APNs). Times are from the start of the Mac's CloudKit save until the extension's acknowledgement arrived back at the Mac, all on the Mac's clock.
+
+| Run | Phone | Rings | Delivered | Median | p90 | Max | Extension reached the Mac |
+|---|---|---|---|---|---|---|---|
+| Check | Unlocked, app open | 1 | 1 | 1.5 s | | | yes |
+| A | Locked, Wi-Fi, every 90 s | 20 | 20 | 1.2 s | 1.5 s | 1.7 s | 20 of 20 |
+| B | App swiped away, then locked, every 30 s | 10 | 10 | about 1 s (0.7–1.4 s where visible) | | ≤ 1.7 s | 10 of 10 |
+| All | | 31 | **31** | **1.1 s** | **1.5 s** | **1.7 s** | 31 of 31 |
+
+- **The CloudKit save** itself took 0.4–1.0 s of each time; the push and the extension's start added under a second.
+- **The phone's clock agrees:** extension start minus the Mac's `sentAt`, median 1.0 s, max 1.5 s.
+- **The extension ran every time**, also after the app was swiped away, and its plain HTTP request to the Mac's LAN address worked while locked. So 5.6 can fetch the panel's details over the companion channel from the extension.
+- **Not run:** C (cellular plus Tailscale) and D (a Focus mode, and whether the Time Sensitive level gets through). Both are rows of the 5.8 manual matrix. If C shows the extension can't reach the Mac off Wi-Fi, the notification still arrives, worded "Open Funes to answer"; only the reworded text depends on reaching the Mac.
+- **Caveat:** one evening, one phone and one network, on the development push environment. Production APNs is usually as fast or faster; 5.8 re-checks with a TestFlight build.
+
+---|---|---|---|---|---|---|
+| A | Locked, Wi-Fi | | | | | |
+| B | App swiped away, locked | | | | | |
+| C | Cellular + Tailscale, locked | | | | | |
+| D | Focus on (Time Sensitive?) | | | | | |
+
+---
+
 ## Phase 0 quick check: EK Bridge's `swiftc` build linking a Swift package
 **Run:** 2026-10-16, Xcode 27.0 (Swift 6.4), macOS 27, M-series Mac. **Status:** **pass**, so ADR-0013 stands; no Xcode project for EK Bridge.
 
