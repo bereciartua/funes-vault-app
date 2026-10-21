@@ -17,6 +17,8 @@ Phase 0 deferred this spike "until just before Phase 5", and Phase 5 depends on 
   - The pairing exchange (§2) end to end in one process, including a wrong secret, another Mac's key, and an answer for a different request.
 - **Still to run on the maintainer's iPhone:** rows 1a–1e, 1g and 1h, plus the Secure Enclave key (1f's "on device" part).
 - **Proposal:** instead of a throwaway pair of apps, run the matrix against the real companion server (task 5.2) and the first iPhone build (task 5.3), before 5.4 starts. The CloudKit doorbell test (Q24) needs the same iPhone, so both can be done in one sitting.
+- **Covered by task 5.3** (`swift test --package-path Packages/FunesCompanion`, `PhoneClientTests`): the iPhone's own `CompanionClient` pairs with the real router and pairing service, calls `status.get` and `captures.submit` (a resent `captureId` is accepted once), runs the 1f checks, and sees a Deny and a revoke for what they are. `FunesPhone`'s tests cover address selection, the 3 s probe, the 10-minute cache, the `clock_skew` retry and resending after a lost answer.
+- **Ready to run on the device (2026-10-21):** a Debug build of the iPhone app (task 5.3) against a Debug Mac build. It times pairing (1a); in Debug, **Send a Test Capture** and **Send It Again** cover 1b and the duplicate half of 1c, and **Run Protocol Checks** sends a good envelope, the same one again, a tampered ciphertext and a clock 5 minutes behind (1f). 1e and 1g need only the build. Rows 1d and 1h need the capture queue and background delivery of task 5.4.
 
 ---
 

@@ -12,11 +12,13 @@ Everything is defined in [`spec/`](spec/README.md). Read the relevant part befor
 When a design changes, update the spec in the same change and add an ADR for architectural decisions. Record spike results in `spec/plans/spike-results.md`.
 
 ## Layout
-- `Apps/FunesMac/`: the Mac app target (bundle `com.funesvault.mac`, `LSUIElement`, hardened runtime, not sandboxed, macOS 15+). Later: `FunesiOS/`, `FunesShareExtension/`, `FunesIntents/`.
+- `Apps/FunesMac/`: the Mac app target (bundle `com.funesvault.mac`, `LSUIElement`, hardened runtime, not sandboxed, macOS 15+).
+- `Apps/FunesiOS/`, `Apps/FunesShareExtension/`, `Apps/FunesIntents/`: the iPhone app (`com.funesvault.ios`, iOS 18+) and its share and App Intents/Control extensions (`.share`, `.intents`), all in App Group `group.com.funesvault` and Keychain access group `<team>.com.funesvault.shared`. `Apps/FunesShared/` is compiled into the app and the Intents extension. Their Info.plists and entitlements are `Apps/<target>-Info.plist` and `Apps/<target>.entitlements`. The notification service extension (`.notifications`) comes in task 5.6.
 - `Packages/FunesProtocol/`: shared Mac + iOS types and logic. **No dependencies** beyond system frameworks.
 - `Packages/FunesCore/`: vault logic, Mac only. Depends on FunesProtocol and GRDB. **No AppKit, SwiftUI, MCP or networking UI** here.
 - `Packages/FunesMCP/`: the MCP adapter: tool contract (`Sources/FunesMCP/Resources/mcp-tools.json`), `RequestPipeline`, handlers, key files, and the `funes-mcp-test-server` (FUNES_MCP_TEST) the Python harness drives. Depends on FunesCore and BridgeKit; no AppKit ([ADR-0017](spec/architecture/decisions/0017-funes-mcp-package.md)).
-- `Packages/FunesCompanion/`: the Mac's side of the iPhone companion: the listener on 47626, pairing, the device registry and the method handlers, which call FunesCore as the owner. Depends on FunesCore, FunesProtocol and BridgeKitCore (its HTTP parser); no AppKit.
+- `Packages/FunesCompanion/`: the Mac's side of the iPhone companion: the listener on 47626, pairing, the device registry and the method handlers, which call FunesCore as the owner. Depends on FunesCore, FunesProtocol and BridgeKitCore (its HTTP parser); no AppKit. Its tests also run the iPhone's `CompanionClient` against the real router.
+- `Packages/FunesPhone/`: the iPhone's side: the device keys (Secure Enclave, with a Keychain fallback), the pairing record and `CompanionClient` (pairing, address selection, retries). iOS 18 and macOS 15, so `swift test` runs it on the Mac. Depends on FunesProtocol only.
 - `Packages/BridgeUI/`: UI pieces copied from EK Bridge (tier 2): `Upstream/` as copied, `Sources/BridgeUI/` adapted (approval queue and panels, Activity store, agent and cloud setups, one-click setup, Remote Access page logic). See its `PROVENANCE.md`.
 - `Apps/FunesMCPLauncher/`: the `funes-mcp` launcher, embedded in `FunesVault.app/Contents/MacOS/`.
 - `FunesVault.xcodeproj`: plain Xcode project using folder-synchronized groups, so new source files in `Apps/*` need no project-file edits.
@@ -43,6 +45,9 @@ swift test --package-path Packages/BridgeUI
 swift test --package-path Packages/FunesCompanion
 ```
 ```bash
+swift test --package-path Packages/FunesPhone
+```
+```bash
 swift build --package-path Packages/FunesMCP --product funes-mcp-test-server
 python3 Tests/mcp/mcp_test.py "$(swift build --package-path Packages/FunesMCP --show-bin-path)/funes-mcp-test-server" Tests/mcp/fixtures/tools.json
 python3 Tests/mcp/remote_test.py "$(swift build --package-path Packages/FunesMCP --show-bin-path)/funes-mcp-test-server"
@@ -51,7 +56,7 @@ Debug builds of the app and `funes-mcp` honour `FUNES_DATA_DIR`, so a developmen
 ```bash
 sh scripts/check_log_privacy.sh
 ```
-User-facing text lives in `Apps/FunesMac/Localizable.xcstrings` (the app's and BridgeUI's strings). After changing UI text, build the app (test.sh does) and update the catalog; test.sh fails while it's out of date:
+User-facing text lives in `Apps/FunesMac/Localizable.xcstrings` (the app's and BridgeUI's strings) and, for the iPhone, in each target's `Localizable.xcstrings` under `Apps/FunesiOS`, `Apps/FunesShareExtension` and `Apps/FunesIntents`. After changing UI text, build the app (test.sh does) and update the catalog; test.sh fails while it's out of date:
 ```bash
 sh scripts/sync_strings.sh
 ```
@@ -62,11 +67,15 @@ sh scripts/fetch_embedding_model.sh
 ```bash
 xcodebuild -project FunesVault.xcodeproj -scheme FunesMac -configuration Debug -destination 'generic/platform=macOS' -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO SWIFT_EMIT_LOC_STRINGS=YES build
 ```
+The iPhone app builds for a generic device, with no simulator runtime or signing:
+```bash
+xcodebuild -project FunesVault.xcodeproj -scheme FunesiOS -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO SWIFT_EMIT_LOC_STRINGS=YES build
+```
 The UI-review build (sample data, never the real vault) also compiles in test.sh; `sh scripts/ui_snapshots.sh` runs it and captures every screen, light and dark.
 
 ## Conventions
 - **Swift 6 language mode, strict concurrency.** Packages use `swift-tools-version: 6.0`.
-- **Never log memory text, task text or keys.** Use `Logger(subsystem: "com.funesvault.mac", category: …)`, and interpolate user content only with `privacy: .private`. No `print(` in app or package sources. `scripts/check_log_privacy.sh` enforces this in CI; a line that genuinely needs `.public` must carry a `// log-safe: <reason>` comment.
+- **Never log memory text, task text or keys.** Use `Logger(subsystem: "com.funesvault.mac", category: …)` (`com.funesvault.ios` on the iPhone), and interpolate user content only with `privacy: .private`. No `print(` in app or package sources. `scripts/check_log_privacy.sh` enforces this in CI; a line that genuinely needs `.public` must carry a `// log-safe: <reason>` comment.
 - **Fail closed.** Any doubt in an access decision is a refusal ([ADR-0009](spec/architecture/decisions/0009-fail-closed-owner-device.md)). Denials report withheld counts, never ids ([ADR-0012](spec/architecture/decisions/0012-withheld-counts-not-ids.md)).
 - **Tests:** Swift Testing (`@Test`, `#expect`) in packages; XCTest only for UI tests; Python for protocol harnesses. Golden files under `Tests/**/fixtures`, regenerated with `UPDATE_GOLDENS=1`.
 - **Dependencies:** only BridgeKit, GRDB and Sparkle, each pinned to an **exact** version, plus one bundled model asset: `bge-small-en-v1.5` (BAAI, MIT) as Core ML, fetched at a pinned revision and checksum, never committed ([ADR-0016](spec/architecture/decisions/0016-bundled-bge-small-embeddings.md)). Ask before adding anything else.

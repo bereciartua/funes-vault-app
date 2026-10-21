@@ -1,6 +1,6 @@
 #!/bin/sh
-# Offline checks: package tests, the log-privacy check, the MCP harness and an
-# unsigned build of the Mac app. Used locally and in CI.
+# Offline checks: package tests, the log-privacy check, the MCP harness and unsigned
+# builds of the Mac and iPhone apps. Used locally and in CI.
 set -eu
 cd "$(dirname "$0")/.."
 
@@ -17,6 +17,7 @@ swift test --package-path Packages/FunesCore
 swift test --package-path Packages/FunesMCP
 swift test --package-path Packages/BridgeUI
 swift test --package-path Packages/FunesCompanion
+swift test --package-path Packages/FunesPhone
 # The MCP tool paths over loopback, against the FUNES_MCP_TEST server.
 swift build --package-path Packages/FunesMCP --product funes-mcp-test-server
 PYTHONPYCACHEPREFIX="$PWD/build/pycache" python3 Tests/mcp/mcp_test.py \
@@ -32,6 +33,10 @@ xcodebuild -project FunesVault.xcodeproj -scheme FunesMac -configuration Debug \
 xcodebuild -project FunesVault.xcodeproj -scheme FunesMac -configuration Debug \
     -destination 'generic/platform=macOS' -derivedDataPath build/ui-review \
     CODE_SIGNING_ALLOWED=NO SWIFT_ACTIVE_COMPILATION_CONDITIONS='DEBUG FUNES_UI_REVIEW' build -quiet
-# Every user-facing string is in the String Catalog (NFR-L10N-01).
+# The iPhone app and its extensions (Phase 5), for a generic device: no simulator runtime needed.
+xcodebuild -project FunesVault.xcodeproj -scheme FunesiOS -configuration Debug \
+    -destination 'generic/platform=iOS' -derivedDataPath build/DerivedData \
+    CODE_SIGNING_ALLOWED=NO SWIFT_EMIT_LOC_STRINGS=YES build -quiet
+# Every user-facing string is in a String Catalog (NFR-L10N-01).
 CHECK=1 sh scripts/sync_strings.sh
 echo "test.sh: all green"

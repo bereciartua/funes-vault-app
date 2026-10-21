@@ -1,0 +1,196 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Accepted %@ in %lld ms" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Accepted %1$@ in %2$lld ms"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+
+    },
+    "Check Connection" : {
+
+    },
+    "Checking…" : {
+
+    },
+    "Click Allow on “%@”" : {
+
+    },
+    "Connected · Tailscale" : {
+
+    },
+    "Connected · Tunnel" : {
+
+    },
+    "Connected · Wi-Fi" : {
+
+    },
+    "Couldn't reach your Mac. Make sure both are on the same Wi-Fi, or set up Tailscale on both." : {
+
+    },
+    "Done" : {
+
+    },
+    "Five iPhones are already paired with this Mac. Remove one in Funes Settings ▸ iPhone." : {
+
+    },
+    "Funes" : {
+
+    },
+    "Funes Vault" : {
+
+    },
+    "Funes isn't allowed on your local network. Turn it on in Settings ▸ Privacy & Security ▸ Local Network, then try again." : {
+
+    },
+    "Keychain" : {
+
+    },
+    "Last check" : {
+
+    },
+    "Local Network access is off for Funes" : {
+
+    },
+    "Mac" : {
+
+    },
+    "Mac not reachable" : {
+
+    },
+    "Name" : {
+
+    },
+    "Not paired" : {
+
+    },
+    "Open Funes Vault" : {
+
+    },
+    "Pair with Mac" : {
+
+    },
+    "Pair with your Mac to start" : {
+
+    },
+    "Paired" : {
+
+    },
+    "Paired with “%@”" : {
+
+    },
+    "Pairing was declined on your Mac." : {
+
+    },
+    "Point the camera at the code in Funes Settings ▸ iPhone on your Mac." : {
+
+    },
+    "Rejected: %@" : {
+
+    },
+    "Round trip" : {
+
+    },
+    "Run Protocol Checks" : {
+
+    },
+    "Scan Again" : {
+
+    },
+    "Scanning needs the camera. Allow camera access for Funes in Settings, then try again." : {
+
+    },
+    "Secure Enclave" : {
+
+    },
+    "Send It Again" : {
+
+    },
+    "Send a Test Capture" : {
+
+    },
+    "Signing key" : {
+
+    },
+    "Something else answered at your Mac's address (HTTP %lld)." : {
+
+    },
+    "Something went wrong on this iPhone. Try again." : {
+
+    },
+    "Spike 1" : {
+
+    },
+    "That isn't a Funes pairing code." : {
+
+    },
+    "This code didn't match your Mac. Show a new one and scan again." : {
+
+    },
+    "This code has expired. Show a new one on your Mac." : {
+
+    },
+    "This iPhone" : {
+
+    },
+    "This iPhone isn't paired with a Mac." : {
+
+    },
+    "This iPhone was removed from Funes on your Mac" : {
+
+    },
+    "This iPhone was removed from Funes on your Mac." : {
+
+    },
+    "This iPhone's name" : {
+
+    },
+    "Too many tries with this code. Show a new one on your Mac." : {
+
+    },
+    "Took %@ s" : {
+
+    },
+    "Unpair" : {
+
+    },
+    "Unpair This iPhone…" : {
+
+    },
+    "Unpair this iPhone?" : {
+
+    },
+    "Waiting in Inbox" : {
+
+    },
+    "Your Mac asks whether “%@” may pair. This is the second check, so a photo of the code isn't enough." : {
+
+    },
+    "Your Mac couldn't do that (%@)." : {
+
+    },
+    "Your Mac forgets this iPhone, and this iPhone forgets its keys. You can pair again with a new code." : {
+
+    },
+    "Your Mac refused the request (%@)." : {
+
+    },
+    "Your Mac shows this name when it asks you to allow pairing." : {
+
+    },
+    "Your vault lives on your Mac. On the Mac, open Funes Settings ▸ iPhone ▸ Pair iPhone…, then scan the code it shows." : {
+
+    },
+    "Your vault lives on your Mac. Search and review need the Mac to be awake and reachable on the same Wi-Fi, or through Tailscale." : {
+
+    }
+  },
+  "version" : "1.0"
+}

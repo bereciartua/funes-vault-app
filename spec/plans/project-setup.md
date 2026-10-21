@@ -25,6 +25,7 @@
 | FunesNotifications | Notification service extension | `com.funesvault.ios.notifications` | App Group; words approval alerts on the phone ([ADR-0019](../architecture/decisions/0019-cloudkit-doorbell-for-iphone-approvals.md)). App ID to register |
 | FunesCore | Swift package (macOS) | — | GRDB dependency |
 | FunesProtocol | Swift package (macOS + iOS) | — | No dependencies (CryptoKit, Foundation) |
+| FunesPhone | Local Swift package (iOS + macOS) | — | The iPhone's side of the companion: device keys, pairing record, `CompanionClient`. FunesProtocol only; builds for macOS so its tests run with `swift test` (task 5.3) |
 | BridgeUI | Local Swift package (macOS) | — | UI and workflow pieces copied from EK Bridge (approvals, activity, agent setup UI, app shell); Sparkle via the app target only. Becomes BridgeKitUI after v0.1 |
 | BridgeKit (`BridgeKitCore`) | **External** Swift package, repo `bereciartua/bridgekit` | — | Shared with EK Bridge: HTTP, MCP protocol, keys, limits, launcher, safe files, config writer ([ADR-0013](../architecture/decisions/0013-shared-bridgekit-core.md)) |
 
@@ -36,6 +37,8 @@
 | Mac support folder | `~/Library/Application Support/FunesVault/` |
 | Logger subsystem | `com.funesvault.mac` / `com.funesvault.ios` |
 | Keychain service (provider keys) | `com.funesvault.provider` |
+| Keychain service (Mac companion identity) | `com.funesvault.companion` (`.dev` for a development vault) |
+| Keychain service (iPhone device keys and pairing record) | `com.funesvault.ios.companion`, access group `JVNJ326L7B.com.funesvault.shared` (Keychain Sharing, `$(AppIdentifierPrefix)com.funesvault.shared`), shared by the app and its extensions |
 | Background task (iOS) | `com.funesvault.ios.deliver` |
 | MCP server key / launcher / key prefix | `funes` / `funes-mcp` / `fns_mcp_v1_` (kept short on purpose) |
 | Bonjour service | `_funes._tcp` |
@@ -88,7 +91,9 @@ The OpenAI-compatible and Anthropic model clients are small `URLSession` code in
 - `NSCameraUsageDescription`: "Scan the pairing code shown by Funes on your Mac."
 - `NSSpeechRecognitionUsageDescription` and `NSMicrophoneUsageDescription`, for dictation.
 - ATS: `NSAllowsLocalNetworking = YES`.
-- `BGTaskSchedulerPermittedIdentifiers = ["com.funesvault.ios.deliver"]`.
+- `BGTaskSchedulerPermittedIdentifiers = ["com.funesvault.ios.deliver"]` (task 5.4).
+- `FunesKeychainGroup = $(AppIdentifierPrefix)com.funesvault.shared`, in the app's and each extension's Info.plist, so the code knows the shared Keychain access group with its team prefix.
+- The files: `Apps/FunesiOS-Info.plist`, `Apps/FunesShareExtension-Info.plist`, `Apps/FunesIntents-Info.plist`, and an `Apps/<target>.entitlements` for each (App Group and Keychain Sharing). The iOS targets inherit the project's `MARKETING_VERSION` (one version for the whole project, which `scripts/check_version.sh` requires) until the App Store release (task 5.7) decides otherwise.
 
 ## Developer environment
 - Xcode 27.x and Python 3 (for the MCP harness and appcast scripts).

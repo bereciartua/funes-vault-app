@@ -5,9 +5,11 @@
 //   swiftc -O scripts/app_icon.swift -o build/app_icon
 //   build/app_icon iconset Apps/FunesMac/Assets.xcassets/AppIcon.appiconset
 //   build/app_icon png OUT.png SIZE          one PNG, for previews, the README and the site
+//   build/app_icon ios Apps/FunesiOS/Assets.xcassets/AppIcon.appiconset
 //
 // The body follows Apple's macOS grid: an 824-point continuous-corner square centred in 1024,
-// with a soft shadow below it. Sizes of 64 pixels and below use a bolder drawing of the same eye.
+// with a soft shadow below it. The iOS icon is the full, opaque square (iOS applies the mask),
+// with the eye a little larger. Sizes of 64 pixels and below use a bolder drawing of the same eye.
 import AppKit
 import CoreGraphics
 import Foundation
@@ -23,10 +25,13 @@ func color(_ hex: Int, _ alpha: CGFloat = 1) -> CGColor {
 }
 
 let space = CGColorSpace(name: CGColorSpace.sRGB)!
+/// The iOS icon: a full-bleed opaque square, no shadow or rim.
+var fullBleed = false
 let ink = color(0x121110)
 
 /// The macOS icon body: a superellipse, close to Apple's continuous-corner square.
 func bodyPath() -> CGPath {
+    if fullBleed { return CGPath(rect: CGRect(x: 0, y: 0, width: 1024, height: 1024), transform: nil) }
     let path = CGMutablePath()
     let steps = 400
     for step in 0..<steps {
@@ -60,7 +65,8 @@ func circle(_ radius: CGFloat) -> CGRect {
 /// The icon on a 1024 canvas, scaled to `pixels`. Coordinates below run top-down, like the SVG it came from.
 func draw(pixels: Int) -> CGImage {
     guard let context = CGContext(data: nil, width: pixels, height: pixels, bitsPerComponent: 8, bytesPerRow: 0,
-                                  space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+                                  space: space,
+                                  bitmapInfo: (fullBleed ? CGImageAlphaInfo.noneSkipLast : .premultipliedLast).rawValue) else {
         fail("can't create a \(pixels)-pixel bitmap")
     }
     let scale = CGFloat(pixels) / 1024
@@ -76,7 +82,7 @@ func draw(pixels: Int) -> CGImage {
     // The body: orange, a little deeper towards the bottom, with a soft shadow below.
     let body = bodyPath()
     context.saveGState()
-    if !small {
+    if !small && !fullBleed {
         // Shadows ignore the transform, so their offsets and blurs are scaled by hand.
         context.setShadow(offset: CGSize(width: 0, height: -10 * scale), blur: 26 * scale, color: color(0x000000, 0.32))
     }
@@ -88,8 +94,9 @@ func draw(pixels: Int) -> CGImage {
     context.addPath(body)
     context.clip()
     let ground = CGGradient(colorsSpace: space, colors: [color(0xFF7A26), color(0xF04C08)] as CFArray, locations: [0, 1])!
-    context.drawLinearGradient(ground, start: CGPoint(x: 512, y: 100), end: CGPoint(x: 512, y: 924), options: [])
-    if !small {
+    let span: (CGFloat, CGFloat) = fullBleed ? (0, 1024) : (100, 924)
+    context.drawLinearGradient(ground, start: CGPoint(x: 512, y: span.0), end: CGPoint(x: 512, y: span.1), options: [])
+    if !small && !fullBleed {
         // A soft white sheen falling from the top edge.
         let sheen = CGGradient(colorsSpace: space, colors: [color(0xFFFFFF, 0.3), color(0xFFFFFF, 0)] as CFArray,
                                locations: [0, 1])!
@@ -108,6 +115,11 @@ func draw(pixels: Int) -> CGImage {
     context.restoreGState()
 
     // The eye: a white almond and a black iris inside a black outline, casting a soft shadow.
+    if fullBleed {
+        context.translateBy(x: 512, y: 512)
+        context.scaleBy(x: 1.12, y: 1.12)
+        context.translateBy(x: -512, y: -512)
+    }
     let corner: CGFloat = small ? 168 : 196
     let upper: CGFloat = small ? 236 : 250, lower: CGFloat = small ? 788 : 774
     let eye = almondPath(corner: corner, upper: upper, lower: lower)
@@ -195,10 +207,23 @@ case (3, "iconset"):
         fail("can't encode Contents.json")
     }
     try? (json + Data("\n".utf8)).write(to: URL(fileURLWithPath: "\(folder)/Contents.json"))
+case (3, "ios"):
+    let folder = arguments[2]
+    fullBleed = true
+    try? FileManager.default.createDirectory(atPath: folder, withIntermediateDirectories: true)
+    writePNG(draw(pixels: 1024), to: "\(folder)/icon_1024.png")
+    let contents: [String: Any] = [
+        "images": [["filename": "icon_1024.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"]],
+        "info": ["author": "xcode", "version": 1],
+    ]
+    guard let json = try? JSONSerialization.data(withJSONObject: contents, options: [.prettyPrinted, .sortedKeys]) else {
+        fail("can't encode Contents.json")
+    }
+    try? (json + Data("\n".utf8)).write(to: URL(fileURLWithPath: "\(folder)/Contents.json"))
 case (4, "png"):
     guard let size = Int(arguments[3]), size > 0 else { fail("SIZE must be a positive number") }
     writePNG(draw(pixels: size), to: arguments[2])
 default:
-    FileHandle.standardError.write(Data("usage: app_icon iconset FOLDER | app_icon png OUT.png SIZE\n".utf8))
+    FileHandle.standardError.write(Data("usage: app_icon iconset FOLDER | app_icon ios FOLDER | app_icon png OUT.png SIZE\n".utf8))
     exit(2)
 }
