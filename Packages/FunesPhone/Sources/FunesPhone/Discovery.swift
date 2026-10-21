@@ -124,12 +124,17 @@ public struct NetworkPath: Sendable, Equatable {
     public var isSatisfied: Bool
     public var usesWiFi: Bool
     public var usesCellular: Bool
+    public var usesWired: Bool
 
-    public init(isSatisfied: Bool, usesWiFi: Bool = false, usesCellular: Bool = false) {
+    public init(isSatisfied: Bool, usesWiFi: Bool = false, usesCellular: Bool = false, usesWired: Bool = false) {
         self.isSatisfied = isSatisfied
         self.usesWiFi = usesWiFi
         self.usesCellular = usesCellular
+        self.usesWired = usesWired
     }
+
+    /// On a local network itself, rather than reaching one through a VPN.
+    public var isLocal: Bool { usesWiFi || usesWired }
 }
 
 public enum NetworkPathWatcher {
@@ -140,7 +145,8 @@ public enum NetworkPathWatcher {
             let monitor = NWPathMonitor()
             monitor.pathUpdateHandler = { path in
                 continuation.yield(NetworkPath(isSatisfied: path.status == .satisfied, usesWiFi: path.usesInterfaceType(.wifi),
-                                               usesCellular: path.usesInterfaceType(.cellular)))
+                                               usesCellular: path.usesInterfaceType(.cellular),
+                                               usesWired: path.usesInterfaceType(.wiredEthernet)))
             }
             continuation.onTermination = { _ in monitor.cancel() }
             monitor.start(queue: DispatchQueue(label: "com.funesvault.ios.path"))

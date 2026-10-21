@@ -8,14 +8,44 @@ Results of the [Phase 0 spikes](phase-0-spikes.md). Each section gives the quest
 
 **Question:** can an iPhone pair with the Mac by QR code, send signed, HPKE-sealed requests over the same Wi-Fi and Tailscale, and deliver queued captures exactly once ([plan](phase-0-spikes.md#spike-1-companion-transport-pairing-encryption-offline-capture))?
 
-### Status (2026-10-20): **not run yet**, partly covered in software
-Phase 0 deferred this spike "until just before Phase 5", and Phase 5 depends on it passing. It hasn't been run on devices.
+### Run 1 (2026-10-21): **1a–1c, 1f and 1g pass; 1e fails on the Mac's listener**; 1d and 1h wait for task 5.4
+**Setup:**
+- **Phone:** iPhone 13 mini (iPhone14,4), iOS 27.0.1, running a Debug build of the iPhone app from task 5.3 (PR #33), signed for development.
+- **Mac:** M-series MacBook Air, macOS 27, running a Debug build of the Mac app (Apple Development signing) with a development vault: `FUNES_DATA_DIR`, `--dev-seed`, companion port 47636, Same Wi-Fi and Tailscale on.
+- **Network:** Wi-Fi 10.0.0.0/24. On the tailnet, the Mac is 100.89.20.22, and a Linux node advertises the subnet route 10.0.0.0/24.
+
+| # | Scenario | Result |
+|---|---|---|
+| 1a | Pair on the same Wi-Fi | ✅ Paired on the first scan once Local Network was allowed, with the Allow click, over the LAN address. The Mac logged `device_paired` and then the first `status.get` over `lan` 4 s later. The phone's "Took X s" wasn't noted. |
+| 1b | Capture → delivered on the same Wi-Fi | ✅ Accepted in 42 ms. One `capture_receipt`, an Inbox suggestion, and Activity `capture … queued` under `device:<id>` via `companion`. The phone-side deletion waits for 5.4's queue. |
+| 1c | Response dropped after the commit | ✅ for the duplicate half: the same `captureId` resent was accepted in 69 ms, the Mac still has one receipt, and Activity says `duplicate`. Not tested by killing the connection on the device; `FunesPhone`'s tests drop the answer in software. |
+| 1d | Mac asleep, 3 captures, wake | ⏳ Needs the capture queue (task 5.4). |
+| 1e | Tailscale (phone on cellular) | ❌ **Not reached by its 100.x IP.** See below. |
+| 1f | Tampered ciphertext, replayed nonce, skewed clock | ✅ From the phone, with its **Secure Enclave** signing key: good envelope `ok`, the same envelope again `replay`, tampered ciphertext `invalid_signature`, clock 5 minutes behind `clock_skew`. |
+| 1g | Local Network prompt and Bonjour | ✅ Answering **Don't Allow** at the prompt gave "Funes isn't allowed on your local network…", since the browse reported `PolicyDenied`. Turned on in Settings ▸ Privacy & Security ▸ Local Network, pairing then worked. The Mac advertises `_funes._tcp` with TXT `v=1`, `mac=<tag>`. |
+| 1h | Background delivery | ⏳ Needs `BGAppRefreshTask` (task 5.4). |
+
+**1e in detail:**
+- **First try, cellular with Tailscale's subnet routes on:** the phone showed "Connected · Wi-Fi" at a 192 ms round trip. It had reached the Mac's **LAN address**, 10.0.0.118, through the subnet router. The router presents the traffic as coming from a LAN address, so the Mac recorded the transport as `lan`. ATS allowed plain HTTP to that IP literal over the VPN.
+  - **Label fix:** the label said "Wi-Fi" on 5G. It now reads **Connected · VPN** when a LAN address answers while the phone isn't on Wi-Fi or Ethernet.
+  - **What this means:** with a subnet router, Same Wi-Fi mode is reachable from the whole tailnet. The envelope still protects every request; [companion protocol §5](../architecture/companion-protocol.md#5-transport-and-reachability) now says so.
+- **Second try, subnet routes off on the phone:** "Checking…", then **Mac not reachable**. The Mac's 100.x address didn't answer.
+  - **The cause is on the Mac:** the companion's `NWListener` gets the inbound flow on `utun5` (Tailscale), but Network.framework's own TCP handling never finishes the handshake (`nw_channel_reclassify_input … can't find client for slot`, then `connect_stalled`).
+  - **Reproduced from the Mac itself,** connecting to its own 100.x address: every `NWListener` variant times out (plain, `allowLocalEndpointReuse`, with or without Bonjour, interface type `other`), while a POSIX socket listener (`python3 -m http.server`) answers. An IPv4-only `NWListener` mostly answers on 100.x but became flaky on the LAN address.
+  - **Not ATS, and not the phone.**
+- **Next:** fix the Mac's listener so it accepts on Tailscale's interface, for example by accepting with a BSD socket, or a separate IPv4 listener for the Tailscale address. Then run 1e again. Until then, the spike's fallback "use the tunnel only for remote access" isn't needed: the problem is local to the listener.
+
+**Notes:**
+- **Pairing name:** without a special entitlement iOS reports the device name as "iPhone", so the Mac listed "iPhone". The pairing sheet's name field (task 5.3) is the way to set "Sam's iPhone".
+- **Launching the Debug Mac app:** run it with `open -n --env FUNES_DATA_DIR=… FunesVault.app --args --dev-seed`. Started as a background child of a shell, it exits with that shell.
+
+### Before the run (2026-10-20): partly covered in software
+Phase 0 deferred this spike "until just before Phase 5", and Phase 5 depends on it passing.
 
 - **Covered by task 5.1** (`swift test --package-path Packages/FunesProtocol`, on macOS 15 CryptoKit):
   - HPKE `P256_SHA256_AES_GCM_256` seal and open, and `exportSecret` for the response key, work as the protocol needs. The fallback (a second HPKE seal to the device) isn't needed.
   - Row **1f** in software: tampered `ct`, `enc`, `sig`, `nonce` or `ts`, replayed nonces and skewed clocks are each refused with their code. Fuzzing the envelope, response, pairing and method decoders (3,000 seeded mutations each) finds no crash and nothing that opens to other bytes.
   - The pairing exchange (§2) end to end in one process, including a wrong secret, another Mac's key, and an answer for a different request.
-- **Still to run on the maintainer's iPhone:** rows 1a–1e, 1g and 1h, plus the Secure Enclave key (1f's "on device" part).
 - **Proposal:** instead of a throwaway pair of apps, run the matrix against the real companion server (task 5.2) and the first iPhone build (task 5.3), before 5.4 starts. The CloudKit doorbell test (Q24) needs the same iPhone, so both can be done in one sitting.
 - **Covered by task 5.3** (`swift test --package-path Packages/FunesCompanion`, `PhoneClientTests`): the iPhone's own `CompanionClient` pairs with the real router and pairing service, calls `status.get` and `captures.submit` (a resent `captureId` is accepted once), runs the 1f checks, and sees a Deny and a revoke for what they are. `FunesPhone`'s tests cover address selection, the 3 s probe, the 10-minute cache, the `clock_skew` retry and resending after a lost answer.
 - **Ready to run on the device (2026-10-21):** a Debug build of the iPhone app (task 5.3) against a Debug Mac build. It times pairing (1a); in Debug, **Send a Test Capture** and **Send It Again** cover 1b and the duplicate half of 1c, and **Run Protocol Checks** sends a good envelope, the same one again, a tampered ciphertext and a clock 5 minutes behind (1f). 1e and 1g need only the build. Rows 1d and 1h need the capture queue and background delivery of task 5.4.

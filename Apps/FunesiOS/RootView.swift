@@ -54,7 +54,7 @@ struct RootView: View {
     private func macSection(_ record: PairingRecord) -> some View {
         Section {
             LabeledContent("Mac", value: record.macName)
-            ReachabilityRow(reachability: model.reachability)
+            ReachabilityRow(reachability: model.reachability, path: model.path)
             if case let .connected(connection) = model.reachability {
                 LabeledContent("Funes", value: connection.status.appVersion)
                 LabeledContent("Waiting in Inbox", value: connection.status.inboxPending.formatted())
@@ -87,6 +87,7 @@ struct RootView: View {
 /// "Connected to Maya's MacBook Pro · Wi-Fi" and the other states (UX: iPhone, States).
 struct ReachabilityRow: View {
     let reachability: PhoneModel.Reachability
+    let path: NetworkPath?
 
     var body: some View {
         switch reachability {
@@ -95,7 +96,7 @@ struct ReachabilityRow: View {
         case .checking:
             Label { Text("Checking…") } icon: { ProgressView() }
         case let .connected(connection):
-            Label(Self.connected(connection.address.connectionKind), systemImage: "checkmark.circle.fill")
+            Label(Self.connected(connection.address.connectionKind, path: path), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
         case .unreachable(localNetworkDenied: true):
             Label("Local Network access is off for Funes", systemImage: "exclamationmark.triangle.fill")
@@ -112,8 +113,10 @@ struct ReachabilityRow: View {
         }
     }
 
-    static func connected(_ kind: ConnectionKind) -> String {
+    static func connected(_ kind: ConnectionKind, path: NetworkPath?) -> String {
         switch kind {
+        // A LAN address reached off Wi-Fi, such as through a Tailscale subnet router (Spike 1e).
+        case .wifi where path.map({ !$0.isLocal }) ?? false: String(localized: "Connected · VPN")
         case .wifi: String(localized: "Connected · Wi-Fi")
         case .tailscale: String(localized: "Connected · Tailscale")
         case .tunnel: String(localized: "Connected · Tunnel")
@@ -135,9 +138,12 @@ struct SpikeSection: View {
                 Text(message).font(.footnote).foregroundStyle(.secondary)
             }
             ForEach(model.protocolChecks) { check in
-                LabeledContent(check.name) {
-                    Label(check.got, systemImage: check.passed ? "checkmark.circle.fill" : "xmark.circle.fill")
+                HStack {
+                    Text(check.name)
+                    Spacer()
+                    Image(systemName: check.passed ? "checkmark.circle.fill" : "xmark.circle.fill")
                         .foregroundStyle(check.passed ? .green : .red)
+                    Text(check.got).foregroundStyle(.secondary)
                 }
                 .font(.footnote)
             }

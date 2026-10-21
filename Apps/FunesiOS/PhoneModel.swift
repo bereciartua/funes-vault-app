@@ -22,6 +22,8 @@ final class PhoneModel {
     private(set) var record: PairingRecord?
     private(set) var reachability = Reachability.notPaired
     private(set) var lastChecked: Date?
+    /// The phone's network, for the banner: a LAN address reached off Wi-Fi goes through a VPN.
+    private(set) var path: NetworkPath?
     private(set) var usesSecureEnclave: Bool?
     private(set) var protocolChecks: [ProtocolCheck] = []
     private(set) var spikeMessage: String?
@@ -42,6 +44,7 @@ final class PhoneModel {
         Task { [weak self] in
             for await path in NetworkPathWatcher.updates() {
                 guard let self else { return }
+                self.path = path
                 await client.networkChanged()
                 // Start over on a usable path; the first update is the current path, which the
                 // foreground refresh already covers.
