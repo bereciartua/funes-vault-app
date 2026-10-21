@@ -1,15 +1,12 @@
 name: CI
 
-# Kept cheap while the repo is private (macOS minutes count 10x): pull requests that touch
-# code, and manual runs. No run on push to main, since every change lands through a tested PR.
-# Spec, spike and Markdown-only changes don't run CI. The workflow can also be paused entirely
-# with `gh workflow disable CI` (and resumed with `gh workflow enable CI`).
+# Kept cheap while the repo is private (macOS minutes count 10x): pull requests and manual runs.
+# No run on push to main, since every change lands through a tested PR. A pull request that only
+# touches spec/**, spikes/** or Markdown still reports the required "Test and build (Xcode 27.0)"
+# check, but from a stub on Ubuntu instead of the macOS job. The workflow can also be paused
+# entirely with `gh workflow disable CI` (and resumed with `gh workflow enable CI`).
 on:
   pull_request:
-    paths-ignore:
-      - "spec/**"
-      - "spikes/**"
-      - "**/*.md"
   workflow_dispatch:
     inputs:
       all_toolchains:
@@ -25,34 +22,80 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Changes
+    # Picks the test matrix. Xcode 27.0 (the release Mac; a GitHub preview image) always; 26.6
+    # (the previous major release, as in EK Bridge) only on a manual run with all_toolchains.
+    # A pull request whose files (old and new names) are all spec, spike or Markdown gets a stub
+    # row on Ubuntu instead, so the required check passes without a macOS runner. If listing the
+    # files fails, this job fails and the required check never reports, so nothing merges untested.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          ALL_TOOLCHAINS: ${{ inputs.all_toolchains }}
+        run: |
+          xcode_27='{"xcode":"27.0","runner":"xcode-27"}'
+          xcode_26='{"xcode":"26.6","runner":"macos-26"}'
+          stub='{"xcode":"27.0","runner":"ubuntu-latest","stub":true}'
+          if [ -z "$PR" ]; then
+            if [ "$ALL_TOOLCHAINS" = true ]; then matrix="[$xcode_27,$xcode_26]"; else matrix="[$xcode_27]"; fi
+          else
+            files=$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)')
+            matrix="[$stub]"
+            while IFS= read -r file; do
+              case "$file" in
+                ""|spec/*|spikes/*|*.md) ;;
+                *) echo "Code changed: $file"; matrix="[$xcode_27]"; break ;;
+              esac
+            done <<< "$files"
+          fi
+          echo "matrix=$matrix" | tee -a "$GITHUB_OUTPUT"
+
   test:
     name: Test and build (Xcode ${{ matrix.xcode }})
+    # The name is the required check in the "main requires CI" ruleset; keep it stable.
     # No secrets: package tests, the log-privacy check and an unsigned build. The bundled
     # embedding model (ADR-0016) is fetched from Hugging Face at a pinned revision, converted,
     # checksummed and cached, so the search regression runs against the real model.
-    # Xcode 27.0 (the release Mac; a GitHub preview image) always; 26.6 (the previous major
-    # release, as in EK Bridge) only on a manual run with all_toolchains.
+    # The matrix comes from the changes job; a stub row skips every step but the first.
+    needs: changes
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.all_toolchains && '[{"xcode":"27.0","runner":"xcode-27"},{"xcode":"26.6","runner":"macos-26"}]' || '[{"xcode":"27.0","runner":"xcode-27"}]') }}
+        include: ${{ fromJSON(needs.changes.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     env:
       DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
     steps:
+      - name: Nothing to test
+        if: matrix.stub
+        run: echo "Only spec, spike or Markdown files changed, so the macOS tests don't run."
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ !matrix.stub }}
         with:
           persist-credentials: false
       - name: Toolchain
+        if: ${{ !matrix.stub }}
         run: |
           sw_vers
           xcode-select -p
           xcrun swiftc --version
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        if: ${{ !matrix.stub }}
         with:
           python-version: "3.11"
       - name: Embedding model cache
+        if: ${{ !matrix.stub }}
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           # The converted model only: not the conversion venv or the downloaded weights.
@@ -62,8 +105,10 @@ jobs:
             !~/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7/hf
           key: embedding-model-${{ runner.os }}-${{ hashFiles('scripts/fetch_embedding_model.sh', 'scripts/embedding_model/**') }}
       - name: Embedding model
+        if: ${{ !matrix.stub }}
         run: FUNES_PYTHON=python3.11 sh scripts/fetch_embedding_model.sh
       - name: Tests and build
+        if: ${{ !matrix.stub }}
         env:
           # Model-dependent tests fail instead of skipping when the model is missing.
           FUNES_REQUIRE_EMBEDDING_MODEL: "1"

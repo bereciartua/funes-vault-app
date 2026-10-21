@@ -11,7 +11,7 @@ sh scripts/fetch_embedding_model.sh
 sh scripts/test.sh
 ```
 
-Continuous integration (`.github/workflows/ci.yml`) runs the same on pull requests that change code, on GitHub's macOS runners with Xcode 27.0 (and Xcode 26.6 on a manual run), with `FUNES_REQUIRE_EMBEDDING_MODEL=1`, so the model-dependent tests fail instead of skipping. No secrets are involved.
+Continuous integration (`.github/workflows/ci.yml`) runs the same on pull requests that change code (a pull request that only touches `spec/**`, `spikes/**` or Markdown gets a passing stub of the check instead), on GitHub's macOS runners with Xcode 27.0 (and Xcode 26.6 on a manual run), with `FUNES_REQUIRE_EMBEDDING_MODEL=1`, so the model-dependent tests fail instead of skipping. No secrets are involved.
 
 | Check | What it establishes |
 | --- | --- |
