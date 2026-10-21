@@ -6,7 +6,8 @@ import SwiftUI
 
 private let logger = Logger(subsystem: Identifiers.iOSLoggerSubsystem, category: "app")
 
-/// The app's state: the pairing, and how the Mac is reachable (UX: iPhone, States).
+/// The app's state: the pairing, how the Mac is reachable (UX: iPhone, States), and the
+/// capture queue.
 @MainActor @Observable
 final class PhoneModel {
     enum Reachability: Equatable {
@@ -32,11 +33,16 @@ final class PhoneModel {
     private var testCaptureID: UUID?
 
     let client: CompanionClient
+    let capture: CaptureModel
+    /// The Control asked for Capture, ready to type or dictate.
+    private(set) var captureRequests = 0
     private var started = false
     private var refreshing = false
 
     init(client: CompanionClient = CompanionClient(store: KeychainSecretStore())) {
         self.client = client
+        capture = CaptureModel(client: client)
+        capture.onOutcome = { [weak self] outcome in self?.delivered(outcome) }
     }
 
     func start() async {
@@ -50,10 +56,56 @@ final class PhoneModel {
                 await client.networkChanged()
                 // Start over on a usable path; the first update is the current path, which the
                 // foreground refresh already covers.
-                if path.isSatisfied, self.record != nil, self.lastChecked != nil { await self.refresh() }
+                if path.isSatisfied, self.record != nil, self.lastChecked != nil {
+                    await self.refresh()
+                    await self.capture.deliver(.pathChange)
+                }
             }
         }
+        // The share extension and the App Intents queued something, or the Control asked for
+        // Capture.
+        Task { [weak self] in
+            for await _ in AppSignal.queueChanged.updates() {
+                guard let self else { return }
+                self.capture.reload()
+                await self.capture.deliver(.captured)
+            }
+        }
+        Task { [weak self] in
+            for await _ in AppSignal.openCapture.updates() { self?.takeCaptureRequest() }
+        }
+        takeCaptureRequest()
         await refresh()
+        await capture.deliver(.launch)
+    }
+
+    /// Coming to the front: `status.get`, then the queue (companion protocol §4, §6).
+    func foreground() async {
+        takeCaptureRequest()
+        capture.reload()
+        guard started else { return }
+        await refresh()
+        await capture.deliver(.foreground)
+    }
+
+    /// `BGAppRefreshTask`: send what's waiting, then ask for the next refresh, since the share
+    /// extension and the Control can queue more while the app stays closed.
+    func backgroundDelivery() async {
+        capture.reload()
+        if capture.queuedCount > 0 { await capture.deliver(.background) }
+        await capture.scheduleBackgroundDelivery()
+    }
+
+    private func takeCaptureRequest() {
+        if CaptureLaunch().take() { captureRequests += 1 }
+    }
+
+    private func delivered(_ outcome: DeliveryOutcome) {
+        switch outcome {
+        case .revoked: reachability = .revoked
+        case .notPaired: reachability = .notPaired
+        default: break
+        }
     }
 
     private func reload() async {
@@ -106,12 +158,16 @@ final class PhoneModel {
         spikeMessage = nil
         testCaptureID = nil
         await refresh()
+        // Captures made before pairing, or kept from a revoked pairing, go now.
+        await capture.deliver(.manual)
         return elapsed
     }
 
-    /// Unpair on the phone (§8): tells the Mac if it can, then forgets the keys and the pairing.
-    func unpair() async {
+    /// Unpair on the phone (§8): tells the Mac if it can, then forgets the keys and the pairing,
+    /// and the queued captures if the user said so.
+    func unpair(deletingQueue: Bool) async {
         do { try await client.unpair() } catch { logger.error("Couldn't delete the pairing") }
+        if deletingQueue { capture.deleteAll() }
         await reload()
         protocolChecks = []
         spikeMessage = nil
@@ -144,6 +200,25 @@ final class PhoneModel {
             spikeMessage = Self.message(for: error)
         }
     }
+
+    #if DEBUG
+    /// Queues `count` test captures, then sends them and times it (row 1h, "queue of 1,000").
+    func queueAndDrain(_ count: Int) async {
+        spikeMessage = String(localized: "Queuing \(count)…")
+        let added = await capture.queueTestCaptures(count)
+        let start = ContinuousClock.now
+        await capture.deliver(.manual)
+        let seconds = Double((ContinuousClock.now - start).milliseconds) / 1000
+        switch capture.lastOutcome {
+        case let .drained(sent, rejected)?:
+            spikeMessage = String(localized: "Queued \(added); sent \(sent) in \(seconds.formatted(.number.precision(.fractionLength(1)))) s, \(rejected) not accepted, \(capture.queuedCount) left.")
+        case let .failed(error, _, sent)?:
+            spikeMessage = String(localized: "Queued \(added); sent \(sent), then: \(Self.message(for: error)) \(capture.queuedCount) left.")
+        default:
+            spikeMessage = String(localized: "Queued \(added); \(capture.queuedCount) waiting.")
+        }
+    }
+    #endif
 
     // MARK: Messages
 

@@ -17,6 +17,13 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - It then shows whether your Mac is reachable and how: "Connected · Wi-Fi", "Connected · Tailscale", "Connected · VPN" (your Mac's local address through a VPN such as a Tailscale subnet router), or "Mac not reachable". It also says so when Local Network access is off for Funes. It checks again whenever the app comes to the front or the network changes.
   - The iPhone's signing key is made in the Secure Enclave and never leaves it; the keys and the pairing stay on this iPhone only.
   - **Unpair This iPhone…** tells the Mac and forgets the keys.
+- **Capture on the iPhone (v0.2, for testing).** The app now opens on Capture.
+  - Type, or tap the mic to dictate (on iOS 26 and later, turned into text on the iPhone; earlier versions use the keyboard's dictation). **Remember** saves at once, even with no network, and sends it to your Mac when it's reachable.
+  - Text that looks like a password, key or card number is blocked before it's saved, with the same rules as the Mac.
+  - Recent captures show "Sent to Mac", "Waiting" or why your Mac didn't accept one. "Mac not reachable · 3 captures waiting" says what's still on the iPhone.
+  - Captures wait on the iPhone, up to 1,000, and leave it only once your Mac has them, each exactly once. Funes sends them when the app opens or comes to the front, when the network changes, right after a capture, and in the background now and then; while your Mac is away it waits longer between tries, up to 30 minutes.
+  - **Share to Funes** from any app saves the selected text or link with an optional note. **Remember in Funes** works in Shortcuts, with Siri and on the Action button. A **Capture in Funes** control for Control Center, the Lock Screen and the Action button opens Capture ready to type.
+  - Settings shows how many are waiting, with **Send Now** and **Delete Queued Captures…**. Unpairing asks whether to keep or delete captures that haven't reached your Mac.
 
 ## [0.1.4] - 2026-10-20
 

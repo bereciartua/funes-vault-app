@@ -25,9 +25,10 @@
 - [x] Pairing record in the Keychain. `CompanionClient`: discovery, address selection, retries, `NWPathMonitor`. *Minimal UI: pair by QR (VisionKit), the connection and `status.get`, and in Debug builds Spike 1's test capture and protocol checks.*
 
 ### 5.4 Capture and queue · 3 h
-- [ ] `CaptureQueue` (App Group SQLite). Capture tab with dictation (SpeechAnalyzer on iOS 26+). Secret scanner on the phone.
-- [ ] Delivery triggers and backoff; `BGAppRefreshTask`.
-- [ ] Share extension, App Intent "Remember in Funes", Control.
+*The logic is in `Packages/FunesPhone` (`CaptureQueue`, `CaptureDelivery`, `Backoff`, `AppSignal`, `CaptureLaunch`), with Swift Testing tests: persistence across connections and another process, dedupe on retry, backoff, 50-item and byte-budget batches, secret rejection, a lost reply through `CompanionClient`, and a queue of 1,000 draining.*
+- [x] `CaptureQueue` (App Group SQLite). Capture tab with dictation (SpeechAnalyzer on iOS 26+). Secret scanner on the phone. *SQLite through the system `SQLite3` library, one connection per call (no lock outlives a call, so a suspended app isn't killed for holding one in the shared container), `BEGIN IMMEDIATE` for the 1,000 cap. Rows leave on `accepted`; a final rejection stays, marked, until the user deletes it; `rate_limited`, `unavailable` and `internal_error` stay queued. Dictation is `DictationTranscriber` on iOS 26+ (the deployment target is 18, so earlier versions point to the keyboard's dictation). The scanner is FunesProtocol's `SecretScanner`, the Mac's own.*
+- [x] Delivery triggers and backoff; `BGAppRefreshTask`. *Launch, foreground, a satisfied `NWPathMonitor` path, a new capture (the extensions post a Darwin notification), the backoff's retry while the app is open, and `BGAppRefreshTask` (`com.funesvault.ios.deliver`), scheduled on going to the background and after each run. Backoff 5 s doubling to 30 min, each wait from its upper half; launch, foreground, a path change and Send Now skip it. Batches of at most 50 and 150,000 bytes of JSON, under the Mac's 256 KiB.*
+- [x] Share extension, App Intent "Remember in Funes", Control. *All three only add to the queue. The Control's `OpenCaptureIntent` leaves a request in the App Group's defaults (`CaptureLaunch`) and opens the app, which selects Capture and focuses the field. On the device (2026-10-21, [run 2](spike-results.md#run-2-2026-10-21-task-54s-queue-on-the-device-every-capture-arrived-exactly-once)): share sheet, Control and typed captures each arrived once, one made in airplane mode arrived once when the phone came back, and 1,000 drained in about 2 s. Background refresh is still to run.*
 
 ### 5.5 Search, detail, edit, Inbox · 3 h
 - [ ] Search tab, memory detail, edit/archive/delete with version conflicts handled ("Changed on your Mac, reload?").
@@ -51,7 +52,7 @@
 
 ### 5.8 Testing · 2 h
 - [ ] The protocol test plan ([§9](../architecture/companion-protocol.md#9-test-plan)) automated where possible.
-- [ ] A manual matrix: same Wi-Fi, Tailscale, tunnel, Mac asleep, revoked device, queue of 1,000; approvals from the phone on Wi-Fi and Tailscale, locked phone, Mac unreachable.
+- [ ] A manual matrix: same Wi-Fi, Tailscale, tunnel, Mac asleep, revoked device, queue of 1,000, background delivery (a share-sheet capture with the app in the background, then `BGAppRefreshTask` forced from the Xcode debugger; spike row 1h); approvals from the phone on Wi-Fi and Tailscale, locked phone, Mac unreachable.
 
 ## Exit criteria
 - **v0.2:**

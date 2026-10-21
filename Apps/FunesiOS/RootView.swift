@@ -2,12 +2,36 @@ import FunesPhone
 import FunesProtocol
 import SwiftUI
 
-/// The foundation's one screen: pair, then the Mac's connection and status. The tabs (Capture,
-/// Search, Inbox, Settings) come in tasks 5.4 and 5.5.
+/// The tabs (UX: iPhone): Capture, where the app opens, and Settings. Search and Inbox come in
+/// task 5.5.
 struct RootView: View {
+    enum Tab: Hashable {
+        case capture, settings
+    }
+
+    let model: PhoneModel
+    @State private var tab = Tab.capture
+
+    var body: some View {
+        TabView(selection: $tab) {
+            CaptureView(model: model)
+                .tabItem { Label("Capture", systemImage: "square.and.pencil") }
+                .tag(Tab.capture)
+            SettingsView(model: model)
+                .tabItem { Label("Settings", systemImage: "gear") }
+                .tag(Tab.settings)
+        }
+        // The Control opens Capture.
+        .onChange(of: model.captureRequests) { tab = .capture }
+    }
+}
+
+/// Settings: pair, the Mac's connection and status, this iPhone, and the queue.
+struct SettingsView: View {
     let model: PhoneModel
     @State private var pairing = false
     @State private var confirmingUnpair = false
+    @State private var confirmingDelete = false
 
     var body: some View {
         NavigationStack {
@@ -15,24 +39,74 @@ struct RootView: View {
                 if let record = model.record {
                     macSection(record)
                     deviceSection(record)
+                } else {
+                    notPairedSection
+                }
+                queueSection
+                if model.record != nil {
                     #if DEBUG
                     SpikeSection(model: model)
                     #endif
                     Section {
                         Button("Unpair This iPhone…", role: .destructive) { confirmingUnpair = true }
                     }
-                } else {
-                    notPairedSection
                 }
             }
-            .navigationTitle("Funes Vault")
+            .navigationTitle("Settings")
             .refreshable { await model.refresh(fresh: true) }
             .sheet(isPresented: $pairing) { PairingSheet(model: model) }
             .confirmationDialog("Unpair this iPhone?", isPresented: $confirmingUnpair, titleVisibility: .visible) {
-                Button("Unpair", role: .destructive) { Task { await model.unpair() } }
+                if model.capture.queuedCount > 0 {
+                    Button("Unpair and Keep Captures", role: .destructive) { Task { await model.unpair(deletingQueue: false) } }
+                    Button("Unpair and Delete Captures", role: .destructive) { Task { await model.unpair(deletingQueue: true) } }
+                } else {
+                    Button("Unpair", role: .destructive) { Task { await model.unpair(deletingQueue: true) } }
+                }
             } message: {
-                Text("Your Mac forgets this iPhone, and this iPhone forgets its keys. You can pair again with a new code.")
+                if model.capture.queuedCount > 0 {
+                    Text("Your Mac forgets this iPhone, and this iPhone forgets its keys. \(model.capture.queuedCount) captures haven't reached your Mac yet: keep them to send after pairing again, or delete them.")
+                } else {
+                    Text("Your Mac forgets this iPhone, and this iPhone forgets its keys. You can pair again with a new code.")
+                }
             }
+            .confirmationDialog("Delete queued captures?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+                Button("Delete \(model.capture.storedCount) Captures", role: .destructive) {
+                    model.capture.deleteAll()
+                }
+            } message: {
+                Text("They haven't reached your Mac and can't be recovered.")
+            }
+        }
+    }
+
+    /// Queue: N waiting, "Send now", "Delete queued captures…" (UX: iPhone, Settings tab).
+    private var queueSection: some View {
+        Section {
+            LabeledContent("Waiting", value: model.capture.queuedCount.formatted())
+            if let outcome = model.capture.lastOutcome, let line = Self.describe(outcome) {
+                Text(line).font(.footnote).foregroundStyle(.secondary)
+            }
+            Button("Send Now") { Task { await model.capture.deliver(.manual) } }
+                .disabled(model.record == nil || model.capture.queuedCount == 0 || model.capture.delivering)
+            Button("Delete Queued Captures…", role: .destructive) { confirmingDelete = true }
+                .disabled(model.capture.storedCount == 0)
+        } header: {
+            Text("Queue")
+        } footer: {
+            Text("Captures wait on this iPhone until your Mac has them, then they're deleted here.")
+        }
+    }
+
+    private static func describe(_ outcome: DeliveryOutcome) -> String? {
+        switch outcome {
+        case .drained(0, 0): nil
+        case let .drained(sent, 0): String(localized: "Sent \(sent) to your Mac.")
+        case let .drained(sent, rejected): String(localized: "Sent \(sent) to your Mac; it didn't accept \(rejected).")
+        case let .failed(error, retryAt, _):
+            String(localized: "\(PhoneModel.message(for: error)) Trying again \(retryAt.formatted(.relative(presentation: .named))).")
+        case .waiting(let until): String(localized: "Trying again \(until.formatted(.relative(presentation: .named))).")
+        case .storage: String(localized: "Couldn't read the queue on this iPhone.")
+        case .notPaired, .revoked, .busy: nil
         }
     }
 
@@ -134,6 +208,7 @@ struct SpikeSection: View {
             Button("Send a Test Capture") { Task { await model.sendTestCapture(again: false) } }
             Button("Send It Again") { Task { await model.sendTestCapture(again: true) } }
             Button("Run Protocol Checks") { Task { await model.runProtocolChecks() } }
+            Button("Queue 1,000 Test Captures and Send") { Task { await model.queueAndDrain(1_000) } }
             ForEach(model.probes) { probe in
                 HStack {
                     Text(probe.address.description).lineLimit(1).truncationMode(.middle)

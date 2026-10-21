@@ -8,7 +8,7 @@ Results of the [Phase 0 spikes](phase-0-spikes.md). Each section gives the quest
 
 **Question:** can an iPhone pair with the Mac by QR code, send signed, HPKE-sealed requests over the same Wi-Fi and Tailscale, and deliver queued captures exactly once ([plan](phase-0-spikes.md#spike-1-companion-transport-pairing-encryption-offline-capture))?
 
-### Run 1 (2026-10-21): **1a–1c, 1e, 1f and 1g pass** (1e after two fixes); 1d and 1h wait for task 5.4
+### Run 1 (2026-10-21): **1a–1c, 1e, 1f and 1g pass** (1e after two fixes); 1d and 1h wait for task 5.4 (see run 2)
 **Setup:**
 - **Phone:** iPhone 13 mini (iPhone14,4), iOS 27.0.1, running a Debug build of the iPhone app from task 5.3 (PR #33), signed for development.
 - **Mac:** M-series MacBook Air, macOS 27, running a Debug build of the Mac app (Apple Development signing) with a development vault: `FUNES_DATA_DIR`, `--dev-seed`, companion port 47636, Same Wi-Fi and Tailscale on.
@@ -19,11 +19,11 @@ Results of the [Phase 0 spikes](phase-0-spikes.md). Each section gives the quest
 | 1a | Pair on the same Wi-Fi | ✅ Paired on the first scan once Local Network was allowed, with the Allow click, over the LAN address. The Mac logged `device_paired` and then the first `status.get` over `lan` 4 s later. The phone's "Took X s" wasn't noted. |
 | 1b | Capture → delivered on the same Wi-Fi | ✅ Accepted in 42 ms. One `capture_receipt`, an Inbox suggestion, and Activity `capture … queued` under `device:<id>` via `companion`. The phone-side deletion waits for 5.4's queue. |
 | 1c | Response dropped after the commit | ✅ for the duplicate half: the same `captureId` resent was accepted in 69 ms, the Mac still has one receipt, and Activity says `duplicate`. Not tested by killing the connection on the device; `FunesPhone`'s tests drop the answer in software. |
-| 1d | Mac asleep, 3 captures, wake | ⏳ Needs the capture queue (task 5.4). |
+| 1d | Mac asleep, 3 captures, wake | See run 2: exactly once, but the Mac answered in dark wakes. |
 | 1e | Tailscale (phone on cellular) | ✅ after two fixes: **Connected · Tailscale** on 5G, round trip 462 ms, a test capture accepted in 287 ms, and the Mac recorded the transport as `tailscale`. The first tries failed twice, once on the Mac's listener and once on ATS; see below. |
 | 1f | Tampered ciphertext, replayed nonce, skewed clock | ✅ From the phone, with its **Secure Enclave** signing key: good envelope `ok`, the same envelope again `replay`, tampered ciphertext `invalid_signature`, clock 5 minutes behind `clock_skew`. |
 | 1g | Local Network prompt and Bonjour | ✅ Answering **Don't Allow** at the prompt gave "Funes isn't allowed on your local network…", since the browse reported `PolicyDenied`. Turned on in Settings ▸ Privacy & Security ▸ Local Network, pairing then worked. The Mac advertises `_funes._tcp` with TXT `v=1`, `mac=<tag>`. |
-| 1h | Background delivery | ⏳ Needs `BGAppRefreshTask` (task 5.4). |
+| 1h | Background delivery | See run 2: not exercised yet. |
 
 **1e, the passing run:** iPhone on 5G, Tailscale connected, "Use Tailscale subnets" off. The Mac ran PR #34's Debug build with the BSD-socket listener; the iPhone ran PR #33's build, which sends plain HTTP over Network.framework. The probes showed:
 - `tailscale http://100.89.20.22:47636`: `ok`;
@@ -51,6 +51,20 @@ So Tailscale won about 3 s after the check started, once the better-ranked probe
 **Notes:**
 - **Pairing name:** without a special entitlement iOS reports the device name as "iPhone", so the Mac listed "iPhone". The pairing sheet's name field (task 5.3) is the way to set "Sam's iPhone".
 - **Launching the Debug Mac app:** run it with `open -n --env FUNES_DATA_DIR=… FunesVault.app --args --dev-seed`. Started as a background child of a shell, it exits with that shell.
+
+### Run 2 (2026-10-21): task 5.4's queue on the device; **every capture arrived exactly once**
+**Setup:** as in run 1, with PR #35's Debug builds: the iPhone app (Capture tab, share extension, Control, App Intent) and the Mac on a copy of the same development vault, phone and Mac on the same Wi-Fi. The vault held 2 capture receipts before the run.
+
+| # | Scenario | Result |
+|---|---|---|
+| 1d | Mac asleep, captures, wake | ⚠️ **Exactly once, but delivered during sleep.** The Mac went to sleep (Apple menu ▸ Sleep) at 16:44:56 and woke fully at 16:48:17. A share-sheet capture (a link and a note), a Control capture and a typed one reached the vault at 16:46:17, 16:46:56 and 16:47:33, each in one of the DarkWakes macOS logged as `wifibt` wakes in that window (`pmset -g log`). The phone's connection attempts apparently woke the Mac over Wi-Fi ("Wake for network access"), and the Debug app answered in the dark wake. One receipt and one Inbox suggestion each, no duplicates. The "queued while unreachable" path was covered from the phone's side instead (next row). |
+| 1d′ | Phone offline (airplane mode), capture, back online | ✅ "Testing offline memory", made in airplane mode, waited on the phone and reached the vault once (16:50:11) when airplane mode went off: one receipt, one Inbox suggestion. The Mac itself was never taken off the network. |
+| 1h | Background delivery | ⏳ Not exercised: every delivery came from the open app. Needs a capture from the share sheet with the app closed and a forced refresh from the Xcode debugger (`_simulateLaunchForTaskWithIdentifier:@"com.funesvault.ios.deliver"`). |
+| Queue of 1,000 (5.8's manual matrix) | ✅ Debug **Queue 1,000 Test Captures and Send**: 1,000 receipts, 1,000 distinct texts, none twice, received by the Mac between 16:50:43.9 and 16:50:45.9, about 2 s for 20 calls of 50 (NFR-PERF-05 asks for 100 in under 3 s). |
+
+**Also seen:**
+- **"Remember my password: testqwe1234" was accepted** by the phone and the Mac. Not a queue bug: both run the same `SecretScanner`, whose `assigned_secret` rule needs `password` followed by `:` or `=` and at least 12 non-space characters. This value has 11. Whether to lower that bar (and accept more false positives such as "password: see 1Password") is a separate decision for `spec/domain/memory-processing.md`.
+- Vault totals after the run: 1,007 `capture_receipt` rows, 1,007 `capture_iphone` suggestions with distinct `capture_id`s.
 
 ### Before the run (2026-10-20): partly covered in software
 Phase 0 deferred this spike "until just before Phase 5", and Phase 5 depends on it passing.

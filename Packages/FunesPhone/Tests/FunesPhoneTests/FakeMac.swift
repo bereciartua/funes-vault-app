@@ -25,6 +25,8 @@ final class FakeMac: @unchecked Sendable {
     private var cache = ReplayCache()
     private var secret = Data()
     private var receipts: Set<UUID> = []
+    /// Captures stored, in order: a duplicate `captureId` isn't stored again.
+    private(set) var stored: [UUID] = []
     var allow = true
     private(set) var statusCalls = 0
     private(set) var captureCalls = 0
@@ -105,7 +107,7 @@ final class FakeMac: @unchecked Sendable {
             let ids = params.captures.map(\.captureId)
             lock.withLock {
                 captureCalls += 1
-                receipts.formUnion(ids)
+                for id in ids where receipts.insert(id).inserted { stored.append(id) }
             }
             reply = try! CompanionResponse(id: head.id, result: CapturesSubmitResult(accepted: ids, rejected: [])).encoded()
         case .deviceUnpair:

@@ -56,7 +56,7 @@ The app opens on **Capture**: the fastest path to the main job.
 
 If the phone can't reach the Mac during pairing: "Make sure both are on the same Wi-Fi, or set up Tailscale on both." Pairing needs the devices to reach each other once. If Local Network access is off for Funes, it says so and points to Settings ▸ Privacy & Security ▸ Local Network instead.
 
-*Built so far (task 5.3):* pairing, and one screen with the Mac's name, the connection ("Connected · Wi-Fi", "Mac not reachable", revoked), the last check and its round trip, the signing key's home, and **Unpair This iPhone…**. Debug builds add Spike 1's test capture and protocol checks. The tabs come in 5.4 and 5.5.
+*Built so far (tasks 5.3 and 5.4):* two tabs, Capture and Settings. Capture is as above, without the category and sensitivity chips; on iOS 18–25 the mic button opens the keyboard for its own dictation. Settings has pairing, the Mac's name, the connection ("Connected · Wi-Fi", "Mac not reachable", revoked), the last check and its round trip, the signing key's home, the Queue section, and **Unpair This iPhone…**, which asks whether to keep or delete captures that haven't reached the Mac. Debug builds add Spike 1's test capture and protocol checks. Search and Inbox come in 5.5.
 
 ## Capture surfaces outside the app
 - **Share extension:**

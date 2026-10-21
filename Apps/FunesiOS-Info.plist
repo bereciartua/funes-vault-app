@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.funesvault.ios.deliver</string>
+	</array>
 	<key>FunesKeychainGroup</key>
 	<string>$(AppIdentifierPrefix)com.funesvault.shared</string>
 	<key>NSAppTransportSecurity</key>
@@ -17,5 +21,13 @@
 	<string>Scan the pairing code shown by Funes on your Mac.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Funes connects to your Mac on your local network to send captures and search your vault.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Dictate what Funes should remember. Speech is turned into text on this iPhone.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Dictate what Funes should remember. Speech is turned into text on this iPhone.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+	</array>
 </dict>
 </plist>

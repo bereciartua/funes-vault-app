@@ -164,22 +164,25 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 ## 6. Offline capture queue (phone)
 - **Store:** a SQLite file in the App Group container (shared with the share extension and the App Intent).
   - File protection: `completeUntilFirstUserAuthentication`, so background delivery works after the first unlock.
-  - Rows: `{captureId UUID, text, note?, createdAt, source, attempts, lastAttemptAt, state: queued|sent}`.
+  - Rows: `{captureId UUID, text, note?, createdAt, source, attempts, lastAttemptAt, state: queued|rejected, rejectReason?}`. A capture's row is deleted when the Mac accepts it; "Sent to Mac ✓" in Recent captures is kept in memory for the session only. A `rejected` row is one the Mac won't ever take (`invalid_input`, `secret_like_content`): it stays, marked, until the user deletes it. `rate_limited`, `unavailable` and `internal_error` leave it `queued`.
+  - Each operation opens its own connection and closes it (default rollback journal, `BEGIN IMMEDIATE` for the capacity check), so the app and the extensions share the file and no lock is held while the app is suspended.
 - **Capture:** the secret scanner runs first; a match blocks the capture with an explanation. The capture is then committed locally, which is the user-visible success. At most 1,000 queued; when full, new captures are refused with "Queue full: connect to your Mac."
 - **Delivery triggers:**
   - app launch or foreground;
   - `NWPathMonitor` change to a satisfied path;
   - `BGAppRefreshTask`, opportunistic;
-  - right after each new capture while the app is open.
+  - right after each new capture while the app is open (the share extension and the App Intents post a Darwin notification the open app listens for);
+  - while the app is open, when the backoff's wait is over.
 
-  Extensions never send.
-- **Batching:** up to 50 captures per call, oldest first.
+  Extensions never send. The app schedules the background refresh each time it goes to the background and after each refresh.
+- **Implementation (task 5.4):** `Packages/FunesPhone`: `CaptureQueue` (the store and its checks: trimmed, at most 10,000 characters with the note, the secret scanner), `CaptureDelivery` (an actor: triggers, batches, the backoff) and `AppSignal`.
+- **Batching:** up to 50 captures per call, oldest first, and at most 150,000 bytes of capture JSON, so the sealed request stays under the Mac's 256 KiB (one capture always goes, however long).
 - **Exactly once:**
   - The Mac commits each capture together with its `CaptureReceipt` in **one transaction**.
   - A repeated `captureId` returns accepted without creating anything.
   - The phone deletes a capture **only after** receiving `accepted`.
   - A lost response leads to a resend, which is accepted as a duplicate. No loss and no duplicates.
-- **Backoff:** exponential from 5 s to 30 min while unreachable. It resets on a path change or the app coming to the foreground.
+- **Backoff:** exponential from 5 s to 30 min while unreachable (or while every capture in a call comes back `rate_limited`), each wait drawn from the upper half of its step. It resets on a path change, the app coming to the foreground, **Send now**, and any call that delivers. A new capture and a background refresh wait it out.
 
 ## 7. Limits (per device)
 - 300 calls per minute (then `rate_limited` with `retry_after_s`, inside the encrypted reply);
