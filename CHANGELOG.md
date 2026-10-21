@@ -18,6 +18,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - The iPhone's signing key is made in the Secure Enclave and never leaves it; the keys and the pairing stay on this iPhone only.
   - **Unpair This iPhone…** tells the Mac and forgets the keys.
 
+### Fixed
+
+- **The secret scanner blocks shorter passwords**, such as "password: testqwe1234". After `password`, `api_key`, `access_token`, `auth_token` or `client_secret` and a colon or `=`, a value of 8 or more characters that mixes letters and digits now counts as a secret; before, it needed 12. "password: see 1Password" and "my password is in the vault" still save. The Mac and the iPhone share the scanner.
+
 ## [0.1.4] - 2026-10-20
 
 ### Added

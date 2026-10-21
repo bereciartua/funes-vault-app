@@ -22,7 +22,7 @@ Everything here runs on the Mac. By default, AI tasks use **Apple's on-device mo
 | ★ openai_style_key | `\bsk-[A-Za-z0-9_-]{20,}\b` (also covers `sk-ant-…`, `sk-proj-…`) |
 | ★ github_token | `\b(ghp\|gho\|ghu\|ghs\|ghr)_[A-Za-z0-9_]{20,}\b` and `\bgithub_pat_[A-Za-z0-9_]{22,}\b` |
 | ★ jwt | `\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b` |
-| ★ assigned_secret | `\b(api[_-]?key\|access[_-]?token\|auth[_-]?token\|client[_-]?secret\|password)\b\s*[:=]\s*["']?[^"'\s]{12,}` (case-insensitive) |
+| ★ assigned_secret | `\b(api[_-]?key\|access[_-]?token\|auth[_-]?token\|client[_-]?secret\|password)\b\s*[:=]\s*["']?(?:[^"'\s]{12,}\|(?!1password\b)(?=[^"'\s]*[A-Za-z])(?=[^"'\s]*[0-9])[^"'\s]{8,})` (case-insensitive): a value of 12+ characters, or 8+ that mix letters and digits, except "1Password" |
 | slack_token | `\bxox[abposr]-[A-Za-z0-9-]{10,}\b` |
 | stripe_key | `\b(sk\|rk)_(live\|test)_[A-Za-z0-9]{16,}\b` |
 | google_api_key | `\bAIza[0-9A-Za-z_-]{35}\b` |
@@ -30,6 +30,9 @@ Everything here runs on the Mac. By default, AI tasks use **Apple's on-device mo
 | credit_card | 13–19 digits, optionally grouped, passing the Luhn check (debit and credit card numbers) |
 
 - **Before any model call:** the scanner also runs on every text sent to a non-local model provider. A match is never sent; the item is handled on the device instead.
+- **assigned_secret thresholds:** the web version needed 12+ characters, so an iPhone capture "Remember my password: testqwe1234" (11) was stored in Phase 5. Values of 8–11 characters now match when they mix letters and digits.
+  - Letters-only values under 12 ("password: changeme", "password: see 1Password") still pass. Sentences don't name a password with a token like that.
+  - "Password is <value>" phrasings are not matched: they would also block notes like "my password is 2FA-protected".
 - **False positives:** the user can't override a match in v0.1. A match that is genuinely not a secret is a scanner bug to fix with a test.
 - **Search queries** that match a pattern skip embedding and are never logged.
 
