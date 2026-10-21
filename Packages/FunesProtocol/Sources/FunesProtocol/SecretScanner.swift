@@ -42,8 +42,10 @@ public enum SecretScanner {
         (.openAIStyleKey, #"\bsk-[A-Za-z0-9_-]{20,}\b"#, []),
         (.githubToken, #"\b(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}\b|\bgithub_pat_[A-Za-z0-9_]{22,}\b"#, []),
         (.jwt, #"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b"#, []),
+        // A value of 12+ characters, or 8+ that mix letters and digits ("1Password" is a product name).
         (.assignedSecret,
-         #"\b(api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|password)\b\s*[:=]\s*["']?[^"'\s]{12,}"#,
+         #"\b(api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|password)\b\s*[:=]\s*["']?"#
+             + #"(?:[^"'\s]{12,}|(?!1password\b)(?=[^"'\s]*[A-Za-z])(?=[^"'\s]*[0-9])[^"'\s]{8,})"#,
          [.caseInsensitive]),
         (.slackToken, #"\bxox[abposr]-[A-Za-z0-9-]{10,}\b"#, []),
         (.stripeKey, #"\b(sk|rk)_(live|test)_[A-Za-z0-9]{16,}\b"#, []),

@@ -25,6 +25,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - **Share to Funes** from any app saves the selected text or link with an optional note. **Remember in Funes** works in Shortcuts, with Siri and on the Action button. A **Capture in Funes** control for Control Center, the Lock Screen and the Action button opens Capture ready to type.
   - Settings shows how many are waiting, with **Send Now** and **Delete Queued Captures…**. Unpairing asks whether to keep or delete captures that haven't reached your Mac.
 
+### Fixed
+
+- **The secret scanner blocks shorter passwords**, such as "password: testqwe1234". After `password`, `api_key`, `access_token`, `auth_token` or `client_secret` and a colon or `=`, a value of 8 or more characters that mixes letters and digits now counts as a secret; before, it needed 12. "password: see 1Password" and "my password is in the vault" still save. The Mac and the iPhone share the scanner.
+
 ## [0.1.4] - 2026-10-20
 
 ### Added
