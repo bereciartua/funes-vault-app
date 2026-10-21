@@ -179,7 +179,7 @@ final class AppModel {
         remoteAccess = RemoteAccessController(defaults: preferences.defaults, appName: "Funes Vault", names: .funes,
                                               defaultPort: FunesRemoteConfiguration.defaultPort, host: .inert)
         companion = CompanionController(defaults: preferences.defaults, services: services.companionServices,
-                                        appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
+                                        approvals: services.phoneApprovals, appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
         pausedUntil = services.pause.pausedUntil(at: Date())
         inboxState.categories = { [weak self] in self?.categories ?? [] }
         observation = services.store.observeChanges { [weak self] in

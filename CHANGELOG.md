@@ -29,6 +29,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - A memory opens with its full text, kind, categories, sensitivity, expiry, how often it was shared and its history. **Edit**, **Archive**, **Restore** and **Delete…** save on your Mac. If the memory changed on your Mac meanwhile, the iPhone asks "Changed on your Mac, reload?" instead of overwriting it. A save that fails says why and keeps your text.
   - The **Inbox** lists the suggestions waiting on your Mac. Swipe right to save one, left to reject it, or open it to **Edit & Save**. If your Mac doesn't take the answer, the suggestion comes back with the reason; one already answered on the Mac just leaves.
   - Every tab now shows how your Mac is reachable at the top: "Connected to Maya's MacBook Pro · Wi-Fi" (or Tailscale, a VPN or a tunnel), "Connecting…", or "Mac not reachable · 3 captures waiting" with **Why?**, which says what to try: the same Wi-Fi, Tailscale, waking the Mac, or Local Network access. While your Mac can't be reached, Search and the Inbox say so instead of showing old results; nothing from the vault is kept on the iPhone.
+- **Groundwork for approving requests on the iPhone (v0.2): the Mac's side.** Hidden in Release builds until the iPhone app is out.
+  - Settings ▸ iPhone has **Approve requests on this iPhone** for each paired iPhone, on by default.
+  - When a Share, Save or access request waits on your Mac, Funes rings a "doorbell" in your own iCloud for each of those iPhones. The record holds only a random tag: no memory text, titles, task or agent name, and no request id. The iPhone then gets the details straight from your Mac, end-to-end encrypted. The record is deleted once the request is answered, expires or changes. Settings ▸ iPhone says when this Mac can't notify, for example when it isn't signed in to iCloud.
+  - The first answer wins, on the Mac or the iPhone. If the iPhone answers first, the Mac's panel closes and says "Answered on Sam's iPhone." Answers from the iPhone show in Activity under its name, with the same 15-minute limit and the same checks as on the Mac.
 
 ### Fixed
 

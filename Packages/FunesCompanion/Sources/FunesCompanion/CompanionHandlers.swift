@@ -38,11 +38,15 @@ public final class CompanionHandlers: Sendable {
     let services: CompanionServices
     let macName: @Sendable () -> String
     let appVersion: String
+    /// The `approvals.*` methods (task 5.6); without it they're `unavailable`.
+    let approvals: CompanionApprovals?
 
-    public init(services: CompanionServices, macName: @escaping @Sendable () -> String, appVersion: String) {
+    public init(services: CompanionServices, macName: @escaping @Sendable () -> String, appVersion: String,
+                approvals: CompanionApprovals? = nil) {
         self.services = services
         self.macName = macName
         self.appVersion = appVersion
+        self.approvals = approvals
     }
 
     /// The reply JSON for a request's plaintext. Never throws: every failure is an error reply.
@@ -73,6 +77,16 @@ public final class CompanionHandlers: Sendable {
             case .inboxApply: return await run(InboxApply.self, head) { try await apply($0, device: device, now: now) }
             case .inboxReject: return await run(InboxReject.self, head) { try await reject($0, device: device, now: now) }
             case .deviceUnpair: return await run(DeviceUnpair.self, head) { _ in try await unpair(device: device, now: now) }
+            case .approvalsList:
+                return await run(ApprovalsList.self, head) { _ in try await desk().list(device: device, now: now) }
+            case .approvalsGet:
+                return await run(ApprovalsGet.self, head) { try await desk().detail($0, device: device, now: now) }
+            case .approvalsAnswer:
+                return await run(ApprovalsAnswer.self, head) { try await desk().answer($0, device: device, now: now) }
+            case .approvalsSettingsGet:
+                return await run(ApprovalsSettingsGet.self, head) { _ in try await desk().settings(device: device) }
+            case .approvalsSettingsSet:
+                return await run(ApprovalsSettingsSet.self, head) { try await desk().setSettings($0, device: device, now: now) }
             }
         }
     }
@@ -201,7 +215,13 @@ public final class CompanionHandlers: Sendable {
 
     func unpair(device: UUID, now: Date) async throws -> EmptyResult {
         try await services.devices.revoke(deviceID: device, now: now, actor: .device(device))
+        await approvals?.forget(deviceID: device)
         return EmptyResult()
+    }
+
+    private func desk() throws(CompanionError) -> CompanionApprovals {
+        guard let approvals else { throw CompanionError(.unavailable, message: "No approvals on this Mac") }
+        return approvals
     }
 
     // MARK: Plumbing

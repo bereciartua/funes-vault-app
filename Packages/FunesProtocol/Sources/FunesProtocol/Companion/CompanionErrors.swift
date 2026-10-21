@@ -106,6 +106,14 @@ public enum CompanionErrorCode: String, Codable, Sendable, CaseIterable {
     case unavailable
     case unknownMethod = "unknown_method"
     case internalError = "internal_error"
+    /// `approvals.*`: the request was answered first, on the Mac or another iPhone.
+    case alreadyAnswered = "already_answered"
+    /// `approvals.*`: its 15 minutes (or an access request's in-call wait) are over, or it was
+    /// withdrawn.
+    case requestExpired = "request_expired"
+    /// `approvals.answer`: the panel's revision is stale (a memory or the agent's access changed).
+    /// Fetch it again and show the new panel.
+    case requestChanged = "request_changed"
 }
 
 /// A method call's error: `{"code":"…","message":"…"}`, plus `findings` for secrets and

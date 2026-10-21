@@ -47,7 +47,8 @@ import Testing
         let calls: [any CompanionCall.Type] = [
             StatusGet.self, CapturesSubmit.self, CategoriesList.self, MemoriesSearch.self, MemoriesGet.self, MemoriesCreate.self,
             MemoriesUpdate.self, MemoriesArchive.self, MemoriesRestore.self, MemoriesDelete.self, InboxList.self, InboxApply.self,
-            InboxReject.self, DeviceUnpair.self,
+            InboxReject.self, DeviceUnpair.self, ApprovalsList.self, ApprovalsGet.self, ApprovalsAnswer.self,
+            ApprovalsSettingsGet.self, ApprovalsSettingsSet.self,
         ]
         #expect(Set(calls.map { $0.method }) == Set(CompanionMethod.allCases))
     }

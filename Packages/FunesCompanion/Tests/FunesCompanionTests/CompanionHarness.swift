@@ -15,6 +15,9 @@ final class CompanionHarness: @unchecked Sendable {
     let activity = InMemoryActivityLog()
     let identity = MacIdentity()
     let services: CompanionServices
+    let disclosures: DisclosureService
+    let doorbell = RecordingDoorbell()
+    let approvals: CompanionApprovals
     let pairing: PairingService
     let router: CompanionRouter
     let clock: Clock
@@ -40,6 +43,7 @@ final class CompanionHarness: @unchecked Sendable {
         let pause = FunesPause()
         let search = SearchService(store: store, indexer: nil)
         let disclosures = DisclosureService(store: store, retriever: search, activity: activity, pause: pause)
+        self.disclosures = disclosures
         let agents = AgentService(store: store, keys: InMemoryAgentKeyStore(), activity: activity)
         services = CompanionServices(store: store, devices: DeviceService(store: store, activity: activity),
                                      captures: CaptureService(store: store, activity: activity),
@@ -48,7 +52,9 @@ final class CompanionHarness: @unchecked Sendable {
         pairing = PairingService(identity: identity, devices: services.devices, activity: activity, promptTimeout: promptTimeout)
         let clock = Clock()
         self.clock = clock
-        let handlers = CompanionHandlers(services: services, macName: { "Maya's MacBook Pro" }, appVersion: "0.2.0")
+        approvals = CompanionApprovals(services: services, disclosures: disclosures, doorbell: doorbell)
+        let handlers = CompanionHandlers(services: services, macName: { "Maya's MacBook Pro" }, appVersion: "0.2.0",
+                                         approvals: approvals)
         router = CompanionRouter(identity: identity, devices: services.devices, pairing: pairing, handlers: handlers, gate: gate,
                                  clock: { clock.now })
     }

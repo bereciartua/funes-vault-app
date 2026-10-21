@@ -24,8 +24,18 @@ enum Schema {
         migrator.registerMigration("v2_remote_access") { db in
             try db.execute(sql: v2)
         }
+        // Approvals from the iPhone (ADR-0019, task 5.6): per device, on by default, and the
+        // doorbell's tag while they're on.
+        migrator.registerMigration("v3_device_approvals") { db in
+            try db.execute(sql: v3)
+        }
         return migrator
     }
+
+    static let v3 = """
+        ALTER TABLE device ADD COLUMN approvals_enabled INTEGER NOT NULL DEFAULT 1;
+        ALTER TABLE device ADD COLUMN doorbell_tag TEXT;
+        """
 
     static let v2 = """
         ALTER TABLE agent ADD COLUMN cloud_access INTEGER NOT NULL DEFAULT 0;

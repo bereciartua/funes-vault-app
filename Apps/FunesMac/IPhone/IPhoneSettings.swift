@@ -44,14 +44,21 @@ struct IPhoneSettings: View {
                     Text(String(localized: "No iPhone paired yet.")).foregroundStyle(.secondary)
                 }
                 ForEach(companion.activeDevices) { device in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(device.name)
-                            Text(Self.detail(device)).font(.callout).foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(device.name)
+                                Text(Self.detail(device)).font(.callout).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button(String(localized: "Remove…")) { removing = device }
                         }
-                        Spacer()
-                        Button(String(localized: "Remove…")) { removing = device }
+                        Toggle(String(localized: "Approve requests on this iPhone"), isOn: Binding(
+                            get: { device.approvalsEnabled }, set: { on in Task { await companion.setApprovals(device, on) } }))
                     }
+                }
+                if companion.activeDevices.contains(where: \.approvalsEnabled) {
+                    Text(Self.approvalsNote(companion.doorbell)).font(.callout).foregroundStyle(.secondary)
                 }
                 Button(String(localized: "Pair iPhone…")) { pairing = true }
                     .disabled(!companion.canPair)
@@ -64,7 +71,10 @@ struct IPhoneSettings: View {
         .formStyle(.grouped)
         .onAppear {
             host = companion.tunnelHost
-            Task { await companion.reloadDevices() }
+            Task {
+                await companion.reloadDevices()
+                await companion.refreshDoorbell()
+            }
         }
         .sheet(isPresented: $pairing) { PairingSheet(companion: companion) }
         .confirmationDialog(String(localized: "Remove “\(removing?.name ?? "")”?"), isPresented: Binding(
@@ -117,6 +127,20 @@ struct IPhoneSettings: View {
         } else {
             Text(String(localized: "Type your tunnel's public host, then press Return."))
                 .font(.callout).foregroundStyle(.secondary)
+        }
+    }
+
+    /// What a waiting Share, Save or access request does on the iPhone (ADR-0019 §4).
+    static func approvalsNote(_ doorbell: DoorbellAvailability) -> String {
+        switch doorbell {
+        case .available:
+            String(localized: "When a request waits on this Mac, these iPhones get a notification through iCloud. It says only that a request waits; the iPhone gets the details from this Mac, encrypted.")
+        case .noAccount:
+            String(localized: "To notify your iPhone of waiting requests, sign in to iCloud on this Mac with the same Apple Account as the iPhone. Until then, open Funes Vault on the iPhone to see them.")
+        case .restricted:
+            String(localized: "iCloud isn't available on this Mac right now, so iPhones aren't notified of waiting requests. Open Funes Vault on the iPhone to see them.")
+        case .unsupported:
+            String(localized: "This build of Funes Vault can't notify iPhones of waiting requests. Open Funes Vault on the iPhone to see them.")
         }
     }
 
