@@ -177,7 +177,43 @@
     "Queue" : {
 
     },
+    "Queue 1,000 Test Captures and Send" : {
+
+    },
     "Queue full: connect to your Mac." : {
+
+    },
+    "Queued %lld; %lld waiting." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Queued %1$lld; %2$lld waiting."
+          }
+        }
+      }
+    },
+    "Queued %lld; sent %lld in %@ s, %lld not accepted, %lld left." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Queued %1$lld; sent %2$lld in %3$@ s, %4$lld not accepted, %5$lld left."
+          }
+        }
+      }
+    },
+    "Queued %lld; sent %lld, then: %@ %lld left." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Queued %1$lld; sent %2$lld, then: %3$@ %4$lld left."
+          }
+        }
+      }
+    },
+    "Queuing %lld…" : {
 
     },
     "Recent captures" : {
