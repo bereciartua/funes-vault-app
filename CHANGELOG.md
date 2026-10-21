@@ -11,6 +11,7 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - **Pair iPhone…** shows a QR code for 5 minutes, then asks "“Sam's iPhone” wants to pair" with Allow or Deny. Paired iPhones are listed with when they were last seen, and **Remove…** cuts one off.
   - Everything the phone sends is end-to-end encrypted to this Mac. A paired iPhone acts as you, and what it does shows in Activity under its name.
   - macOS asks for Local Network access the first time iPhone access is on.
+  - With Tailscale on, the iPhone reaches this Mac through Tailscale from anywhere, not only on the same Wi-Fi.
 - **The first iPhone build, for testing (v0.2).** Not on the App Store yet.
   - **Pair with Mac** scans the code from Settings ▸ iPhone ▸ Pair iPhone…, then waits while you click Allow on the Mac. Name the iPhone before scanning: iOS only tells apps "iPhone".
   - It then shows whether your Mac is reachable and how: "Connected · Wi-Fi", "Connected · Tailscale", "Connected · VPN" (your Mac's local address through a VPN such as a Tailscale subnet router), or "Mac not reachable". It also says so when Local Network access is off for Funes. It checks again whenever the app comes to the front or the network changes.

@@ -43,6 +43,10 @@ So Tailscale won about 3 s after the check started, once the better-ranked probe
   - **Reproduced from the Mac itself,** connecting to its own 100.x address: every `NWListener` variant times out (plain, `allowLocalEndpointReuse`, with or without Bonjour, interface type `other`), while a POSIX socket listener (`python3 -m http.server`) answers. An IPv4-only `NWListener` mostly answers on 100.x but became flaky on the LAN address.
   - **Not ATS, and not the phone.**
 - **Next:** fix the Mac's listener so it accepts on Tailscale's interface, for example by accepting with a BSD socket, or a separate IPv4 listener for the Tailscale address. Then run 1e again. Until then, the spike's fallback "use the tunnel only for remote access" isn't needed: the problem is local to the listener.
+- **Fix (2026-10-21):** `CompanionListener` now accepts on a BSD socket: one dual-stack socket on `::`, or `127.0.0.1` and `::1` for tunnel-only. A dispatch source drives `accept`, and Bonjour goes through `DNSServiceRegister`.
+  - **From the Mac:** the new listener answers on its 100.x address, where the old one timed out. `ListenerTests.acceptsOverTailscale` fails against the old listener and passes against the new one.
+  - **The Debug Mac app with the fix,** from the Mac: answers on its LAN addresses and on 100.x, refuses loopback (Same Wi-Fi and Tailscale on), and advertises `_funes._tcp` with TXT `v=1`, `mac=<tag>`.
+  - **Local Network privacy also skews self-tests:** macOS drops LAN traffic, even to the Mac's own LAN address, for an executable it hasn't approved. A byte-identical copy of an approved test server failed on 10.0.0.118 from a new path. Tailscale's CGNAT range isn't gated. So the "flaky on the LAN address" result above was probably that, and the tests check Tailscale only. LAN is checked against the Debug app, which has the permission.
 
 **Notes:**
 - **Pairing name:** without a special entitlement iOS reports the device name as "iPhone", so the Mac listed "iPhone". The pairing sheet's name field (task 5.3) is the way to set "Sam's iPhone".
