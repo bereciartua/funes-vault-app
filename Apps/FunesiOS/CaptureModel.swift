@@ -32,7 +32,8 @@ final class CaptureModel {
     private(set) var storedCount = 0
     private(set) var recent: [Recent] = []
     private(set) var lastOutcome: DeliveryOutcome?
-    private(set) var delivering = false
+    /// A delivery is running.
+    var delivering: Bool { runs > 0 }
     /// The queue's file couldn't be opened (no App Group container).
     private(set) var unavailable = false
     /// Delivery's result for the rest of the app: the Mac said this iPhone was removed, say.
@@ -44,6 +45,7 @@ final class CaptureModel {
     /// Delivered this session. Kept in memory only: the phone stores just what's waiting.
     private var sent: [Recent] = []
     private var retry: Task<Void, Never>?
+    private var runs = 0
 
     static let recentLimit = 20
 
@@ -98,9 +100,9 @@ final class CaptureModel {
     func deliver(_ trigger: DeliveryTrigger) async {
         guard let delivery else { return }
         let before = stored
-        delivering = true
+        runs += 1
         let outcome = await delivery.deliver(trigger)
-        delivering = false
+        runs -= 1
         if outcome == .busy { return }
         lastOutcome = outcome
         reload()

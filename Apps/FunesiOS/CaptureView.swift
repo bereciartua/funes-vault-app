@@ -92,9 +92,11 @@ struct CaptureView: View {
     }
 
     /// The dictation so far, after what was typed.
-    private var spoken: String {
-        guard !dictation.transcript.isEmpty else { return "" }
-        return (text.isEmpty || text.hasSuffix(" ") || text.hasSuffix("\n") ? "" : " ") + dictation.transcript
+    private var spoken: String { Self.appending(dictation.transcript, to: text) }
+
+    private static func appending(_ heard: String, to text: String) -> String {
+        guard !heard.isEmpty else { return "" }
+        return (text.isEmpty || text.hasSuffix(" ") || text.hasSuffix("\n") ? "" : " ") + heard
     }
 
     @ViewBuilder private var micButton: some View {
@@ -126,10 +128,9 @@ struct CaptureView: View {
 
     private func toggleDictation() async {
         if dictation.isActive {
-            let heard = spoken
-            _ = await dictation.stop()
+            let heard = await dictation.stop()
             if !heard.isEmpty {
-                text += heard
+                text += Self.appending(heard, to: text)
                 source = .dictation
             }
         } else {
