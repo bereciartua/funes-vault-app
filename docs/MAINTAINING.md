@@ -22,7 +22,7 @@ This guide is for maintainers: how a change is made, checked and released, and w
 | `server.json`, `.github/workflows/mcp-registry.yml` | The MCP Registry entry `com.funesvault/funes` and the workflow that publishes it |
 | `packaging/homebrew/` | The cask and the patch that added it to [`bereciartua/homebrew-tap`](https://github.com/bereciartua/homebrew-tap), kept for reference |
 | `site/` | The website, funesvault.com, deployed to GitHub Pages |
-| `.github/workflows/` | `ci.yml` (pull requests that touch code, and manual runs), `release.yml` (a `v*` tag), `mcp-registry.yml`, `pages.yml` |
+| `.github/workflows/` | `ci.yml` (pull requests and manual runs; macOS only when code changed), `release.yml` (a `v*` tag), `mcp-registry.yml`, `pages.yml` |
 
 ## Working on a change
 
@@ -32,7 +32,7 @@ This guide is for maintainers: how a change is made, checked and released, and w
 4. Never use the real vault for development: Debug builds honour `FUNES_DATA_DIR`, and `--dev-seed` fills an empty one with sample data. Keep app data, keys, logs and personal memories out of commits, issues and pull requests.
 5. Add a `CHANGELOG.md` entry for every user-visible change, under `## [Unreleased]`.
 
-CI is kept cheap while macOS minutes are scarce: it runs on pull requests that touch code and by hand (`gh workflow run CI`, with `all_toolchains` before a release to add Xcode 26.6). It can be paused with `gh workflow disable CI`. When it's paused, run `sh scripts/test.sh` locally before merging.
+CI is kept cheap while macOS minutes are scarce: it runs the tests on pull requests that touch code and by hand (`gh workflow run CI`, with `all_toolchains` before a release to add Xcode 26.6). A pull request that only touches `spec/**`, `spikes/**` or Markdown gets the required `Test and build (Xcode 27.0)` check from a stub on Ubuntu, so it merges without an admin bypass and without a macOS run; the `Changes` job decides which from the pull request's file list. It can be paused with `gh workflow disable CI`. When it's paused, run `sh scripts/test.sh` locally before merging.
 
 ## Before every release
 
