@@ -38,8 +38,8 @@ The app opens on **Capture**: the fastest path to the main job.
 - Nothing is cached after leaving the screen, beyond in-memory state.
 
 ## Inbox tab
-- Same cards as on the Mac: source, proposed fields, Apply, Edit & Apply, Reject.
-- Swipe right to apply, left to reject. Pull to refresh.
+- Same cards as on the Mac: source, proposed fields, Save, Edit & Save, Reject (the [glossary](06-glossary.md)'s words).
+- Swipe right to save, left to reject. Pull to refresh.
 
 ## Settings tab
 - **Mac:** name, connection type, last contact; "Re-pair", "Unpair this iPhone…".
@@ -56,7 +56,7 @@ The app opens on **Capture**: the fastest path to the main job.
 
 If the phone can't reach the Mac during pairing: "Make sure both are on the same Wi-Fi, or set up Tailscale on both." Pairing needs the devices to reach each other once. If Local Network access is off for Funes, it says so and points to Settings ▸ Privacy & Security ▸ Local Network instead.
 
-*Built so far (tasks 5.3 and 5.4):* two tabs, Capture and Settings. Capture is as above, without the category and sensitivity chips; on iOS 18–25 the mic button opens the keyboard for its own dictation. Settings has pairing, the Mac's name, the connection ("Connected · Wi-Fi", "Mac not reachable", revoked), the last check and its round trip, the signing key's home, the Queue section, and **Unpair This iPhone…**, which asks whether to keep or delete captures that haven't reached the Mac. Debug builds add Spike 1's test capture and protocol checks. Search and Inbox come in 5.5.
+*Built so far (tasks 5.3 to 5.5):* the four tabs. Capture is as above, without the category and sensitivity chips; on iOS 18–25 the mic button opens the keyboard for its own dictation. Search and the Inbox are as above; Search also has scopes for Archived and Recently Deleted (where a memory can be restored), and a suggestion opens on its own screen with Save, Edit & Save… and Reject. The banner is on Capture, Search and Inbox, as in the States table, plus "Connecting to Maya's MacBook Pro…" while it checks, "Local Network access is off for Funes", and a connected route of Wi-Fi, VPN (the Mac's local address through a VPN such as a Tailscale subnet router), Tailscale or Tunnel. While the Mac can't be reached, Search and the Inbox show why, with **Try Again** and **Why?**; the "Why?" sheet adds what to try, from this iPhone's network and the last check. Settings has pairing, the Mac's name, the connection ("Connected · Wi-Fi", "Mac not reachable", revoked), the last check and its round trip, the signing key's home, the Queue section, and **Unpair This iPhone…**, which asks whether to keep or delete captures that haven't reached the Mac. Debug builds add Spike 1's test capture and protocol checks. Demo mode comes in 5.7.
 
 ## Capture surfaces outside the app
 - **Share extension:**

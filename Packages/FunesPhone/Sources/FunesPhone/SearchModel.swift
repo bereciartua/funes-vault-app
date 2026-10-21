@@ -22,11 +22,11 @@ public final class SearchModel {
     public private(set) var loadingMore = false
 
     private let caller: any CompanionCalling
-    private let onFailure: @MainActor (CompanionClientError) -> Void
+    /// Hears every failed call, for the reachability banner.
+    @ObservationIgnored public var onFailure: @MainActor (CompanionClientError) -> Void
     /// Bumped by each search, so an answer to an older query is dropped.
     private var generation = 0
 
-    /// `onFailure` hears every failed call, for the reachability banner.
     public init(caller: any CompanionCalling, onFailure: @escaping @MainActor (CompanionClientError) -> Void = { _ in }) {
         self.caller = caller
         self.onFailure = onFailure

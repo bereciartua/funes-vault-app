@@ -34,10 +34,11 @@ public final class MemoryDetailModel {
     /// The Mac's copy changed since this one was fetched: "Changed on your Mac, reload?".
     public var conflict = false
     /// Hears every change the Mac confirmed.
-    public var onChange: (@MainActor (Change) -> Void)?
+    @ObservationIgnored public var onChange: (@MainActor (Change) -> Void)?
 
     private let caller: any CompanionCalling
-    private let onFailure: @MainActor (CompanionClientError) -> Void
+    /// Hears every failed call, for the reachability banner.
+    @ObservationIgnored public var onFailure: @MainActor (CompanionClientError) -> Void
     private let clock: @Sendable () -> Date
 
     public init(id: UUID, caller: any CompanionCalling, onFailure: @escaping @MainActor (CompanionClientError) -> Void = { _ in },

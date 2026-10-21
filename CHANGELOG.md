@@ -24,6 +24,11 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - Captures wait on the iPhone, up to 1,000, and leave it only once your Mac has them, each exactly once. Funes sends them when the app opens or comes to the front, when the network changes, right after a capture, and in the background now and then; while your Mac is away it waits longer between tries, up to 30 minutes.
   - **Share to Funes** from any app saves the selected text or link with an optional note. **Remember in Funes** works in Shortcuts, with Siri and on the Action button. A **Capture in Funes** control for Control Center, the Lock Screen and the Action button opens Capture ready to type.
   - Settings shows how many are waiting, with **Send Now** and **Delete Queued Captures…**. Unpairing asks whether to keep or delete captures that haven't reached your Mac.
+- **Search, edit and review on the iPhone (v0.2, for testing).** New Search and Inbox tabs, which read your vault on your Mac while it's reachable.
+  - **Search** asks your Mac and lists each memory's title, two lines of its text, its categories and its sensitivity. Scopes show Archived and Recently Deleted memories too.
+  - A memory opens with its full text, kind, categories, sensitivity, expiry, how often it was shared and its history. **Edit**, **Archive**, **Restore** and **Delete…** save on your Mac. If the memory changed on your Mac meanwhile, the iPhone asks "Changed on your Mac, reload?" instead of overwriting it. A save that fails says why and keeps your text.
+  - The **Inbox** lists the suggestions waiting on your Mac. Swipe right to save one, left to reject it, or open it to **Edit & Save**. If your Mac doesn't take the answer, the suggestion comes back with the reason; one already answered on the Mac just leaves.
+  - Every tab now shows how your Mac is reachable at the top: "Connected to Maya's MacBook Pro · Wi-Fi" (or Tailscale, a VPN or a tunnel), "Connecting…", or "Mac not reachable · 3 captures waiting" with **Why?**, which says what to try: the same Wi-Fi, Tailscale, waking the Mac, or Local Network access. While your Mac can't be reached, Search and the Inbox say so instead of showing old results; nothing from the vault is kept on the iPhone.
 
 ### Fixed
 

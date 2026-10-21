@@ -33,7 +33,8 @@ public final class InboxModel {
     public var answeredElsewhere = 0
 
     private let caller: any CompanionCalling
-    private let onFailure: @MainActor (CompanionClientError) -> Void
+    /// Hears every failed call, for the reachability banner.
+    @ObservationIgnored public var onFailure: @MainActor (CompanionClientError) -> Void
     /// Answers on their way to the Mac: a refresh meanwhile doesn't bring their rows back.
     private var answering: Set<UUID> = []
 

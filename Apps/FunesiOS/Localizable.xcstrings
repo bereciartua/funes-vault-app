@@ -1,6 +1,16 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
     "%@ Trying again %@." : {
       "localizations" : {
         "en" : {
@@ -11,7 +21,20 @@
         }
       }
     },
-    "%lld captures waiting" : {
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@'s Reason" : {
+
+    },
+    "%@'s Task" : {
 
     },
     "Accepted %@ in %lld ms" : {
@@ -24,7 +47,43 @@
         }
       }
     },
+    "Active" : {
+
+    },
+    "Add a title." : {
+
+    },
+    "Add the text to remember." : {
+
+    },
+    "Already answered on your Mac" : {
+
+    },
+    "An expired memory is never shared with agents." : {
+
+    },
+    "Answered" : {
+
+    },
+    "Archive" : {
+
+    },
+    "Archive a memory" : {
+
+    },
+    "Archived" : {
+
+    },
+    "Archived. Archived memories are kept, but never shared with agents." : {
+
+    },
     "Blocked: looks like a secret (%@). Funes never stores passwords, keys or card numbers." : {
+
+    },
+    "Can't connect to your Mac" : {
+
+    },
+    "Can't connect to your Mac · %lld captures waiting" : {
 
     },
     "Cancel" : {
@@ -36,17 +95,71 @@
     "Capture in Funes" : {
 
     },
+    "Captured on %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Captured on %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Captured on your Mac · %@" : {
+
+    },
     "Captures wait on this iPhone until your Mac has them, then they're deleted here." : {
+
+    },
+    "Categories" : {
+
+    },
+    "Change to a memory" : {
+
+    },
+    "Changed on your Mac, reload?" : {
 
     },
     "Check Connection" : {
 
     },
+    "Checked %@." : {
+
+    },
     "Checking…" : {
+
+    },
+    "Choose at least one category." : {
+
+    },
+    "Cleanup suggestion · %@" : {
 
     },
     "Click Allow on “%@”" : {
 
+    },
+    "Confirmed still true" : {
+
+    },
+    "Connected to %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Connected to %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Connected to %@ · %@ · %lld captures waiting" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Connected to %1$@ · %2$@ · %3$lld captures waiting"
+          }
+        }
+      }
     },
     "Connected · Tailscale" : {
 
@@ -60,16 +173,56 @@
     "Connected · Wi-Fi" : {
 
     },
+    "Connecting to %@…" : {
+
+    },
+    "Connecting to your Mac…" : {
+
+    },
+    "Constraint" : {
+
+    },
+    "Correction from %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Correction from %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Correction suggested" : {
+
+    },
+    "Couldn't open this memory" : {
+
+    },
     "Couldn't reach your Mac. Make sure both are on the same Wi-Fi, or set up Tailscale on both." : {
 
     },
+    "Couldn't read the Inbox" : {
+
+    },
     "Couldn't read the queue on this iPhone." : {
+
+    },
+    "Couldn't reject “%@”." : {
 
     },
     "Couldn't save on this iPhone." : {
 
     },
     "Couldn't save on this iPhone. Try again." : {
+
+    },
+    "Couldn't save “%@”." : {
+
+    },
+    "Couldn't search" : {
+
+    },
+    "Created" : {
 
     },
     "Delete" : {
@@ -84,6 +237,15 @@
     "Delete queued captures?" : {
 
     },
+    "Delete this memory?" : {
+
+    },
+    "Deleted" : {
+
+    },
+    "Delete…" : {
+
+    },
     "Dictate" : {
 
     },
@@ -96,7 +258,43 @@
     "Done" : {
 
     },
+    "Edit" : {
+
+    },
+    "Edit & Save" : {
+
+    },
+    "Edit & Save…" : {
+
+    },
+    "Edit Memory" : {
+
+    },
+    "Edited" : {
+
+    },
+    "Event" : {
+
+    },
+    "Everyday preferences. Fine for most of your agents." : {
+
+    },
+    "Expires" : {
+
+    },
+    "Expires on" : {
+
+    },
+    "Fact" : {
+
+    },
+    "Fine for anyone to know." : {
+
+    },
     "Five iPhones are already paired with this Mac. Remove one in Funes Settings ▸ iPhone." : {
+
+    },
+    "Found on this Wi-Fi" : {
 
     },
     "Funes" : {
@@ -108,7 +306,40 @@
     "Funes isn't allowed on your local network. Turn it on in Settings ▸ Privacy & Security ▸ Local Network, then try again." : {
 
     },
+    "Funes isn't allowed on your local network. Turn it on in Settings ▸ Privacy & Security ▸ Local Network." : {
+
+    },
+    "Goal" : {
+
+    },
+    "History" : {
+
+    },
+    "Imported · %@" : {
+
+    },
+    "Inbox" : {
+
+    },
+    "Instruction" : {
+
+    },
+    "Internal" : {
+
+    },
+    "It moves to Recently Deleted on your Mac, where you can restore it for 30 days." : {
+
+    },
+    "It was deleted for good." : {
+
+    },
     "Keychain" : {
+
+    },
+    "Kind" : {
+
+    },
+    "Last Check" : {
 
     },
     "Last check" : {
@@ -117,7 +348,16 @@
     "Local Network access is off for Funes" : {
 
     },
+    "Local Network access is off for Funes · %lld captures waiting" : {
+
+    },
+    "Low" : {
+
+    },
     "Mac" : {
+
+    },
+    "Mac Not Reachable" : {
 
     },
     "Mac not reachable" : {
@@ -126,7 +366,28 @@
     "Mac not reachable · %lld captures waiting" : {
 
     },
+    "Make sure this iPhone is on the same Wi-Fi as your Mac." : {
+
+    },
     "Name" : {
+
+    },
+    "Never" : {
+
+    },
+    "Never shared with agents unless you raise an agent's sensitivity limit to Secret." : {
+
+    },
+    "Never shared with an agent" : {
+
+    },
+    "New memory" : {
+
+    },
+    "No memories yet" : {
+
+    },
+    "Not Now" : {
 
     },
     "Not accepted by your Mac" : {
@@ -141,10 +402,16 @@
     "Not paired" : {
 
     },
-    "Not paired · %lld captures waiting. Pair with your Mac in Settings." : {
+    "Not paired · %lld captures waiting" : {
 
     },
     "Not saved: it looks like a password, key or card number. Funes never stores secrets." : {
+
+    },
+    "Nothing archived" : {
+
+    },
+    "OK" : {
 
     },
     "Opens Funes Vault on Capture, ready to type or dictate." : {
@@ -153,13 +420,19 @@
     "Opens the keyboard. Tap its microphone to dictate." : {
 
     },
+    "Pair" : {
+
+    },
+    "Pair Again" : {
+
+    },
+    "Pair again to search and review your vault from this iPhone." : {
+
+    },
     "Pair with Mac" : {
 
     },
     "Pair with your Mac to start" : {
-
-    },
-    "Pair with your Mac to start. Captures wait on this iPhone until then." : {
 
     },
     "Paired" : {
@@ -171,7 +444,22 @@
     "Pairing was declined on your Mac." : {
 
     },
+    "Personal: health, money, family. Share rarely, and always ask." : {
+
+    },
     "Point the camera at the code in Funes Settings ▸ iPhone on your Mac." : {
+
+    },
+    "Preference" : {
+
+    },
+    "Project Context" : {
+
+    },
+    "Proposed by %@. Check it before you save it." : {
+
+    },
+    "Public" : {
 
     },
     "Queue" : {
@@ -219,7 +507,25 @@
     "Recent captures" : {
 
     },
+    "Recently Deleted" : {
+
+    },
+    "Recently Deleted is empty" : {
+
+    },
+    "Recently Deleted. Restore it within 30 days, or it's removed for good." : {
+
+    },
+    "Reject" : {
+
+    },
     "Rejected: %@" : {
+
+    },
+    "Relationship" : {
+
+    },
+    "Reload" : {
 
     },
     "Remember" : {
@@ -228,13 +534,31 @@
     "Remember in Funes" : {
 
     },
+    "Restore" : {
+
+    },
+    "Restored" : {
+
+    },
+    "Restricted" : {
+
+    },
+    "Review needs your Mac to be awake and reachable. Captures still work, and go to the Mac later." : {
+
+    },
     "Round trip" : {
 
     },
     "Run Protocol Checks" : {
 
     },
+    "Save" : {
+
+    },
     "Saved" : {
+
+    },
+    "Saved from the Inbox" : {
 
     },
     "Saves text for Funes Vault on your Mac. It waits on this iPhone until your Mac has it." : {
@@ -244,6 +568,21 @@
 
     },
     "Scanning needs the camera. Allow camera access for Funes in Settings, then try again." : {
+
+    },
+    "Search" : {
+
+    },
+    "Search needs your Mac to be awake and reachable. Captures still work, and go to the Mac later." : {
+
+    },
+    "Search reads your vault on your Mac. Pair this iPhone with it first." : {
+
+    },
+    "Search your vault" : {
+
+    },
+    "Secret" : {
 
     },
     "Secure Enclave" : {
@@ -256,6 +595,15 @@
 
     },
     "Send a Test Capture" : {
+
+    },
+    "Sensitive" : {
+
+    },
+    "Sensitivity" : {
+
+    },
+    "Sensitivity: %@" : {
 
     },
     "Sent %lld to your Mac." : {
@@ -277,19 +625,63 @@
     "Settings" : {
 
     },
+    "Shared" : {
+
+    },
+    "Shared %lld times" : {
+
+    },
+    "Shared %lld times · last %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shared %1$lld times · last %2$@"
+          }
+        }
+      }
+    },
+    "Shared once · %@" : {
+
+    },
     "Signing key" : {
 
     },
     "Something else answered at your Mac's address (HTTP %lld)." : {
 
     },
+    "Something other than Funes Vault answered at your Mac's address. Pair again so this iPhone learns the Mac's current address." : {
+
+    },
     "Something went wrong on this iPhone. Try again." : {
+
+    },
+    "Something went wrong on your Mac. Try again." : {
 
     },
     "Spike 1" : {
 
     },
     "Stop Dictation" : {
+
+    },
+    "Suggested by %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Suggested by %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Suggestions from agents, captures and imports wait here until you save or reject them." : {
+
+    },
+    "Summary" : {
+
+    },
+    "Tailscale" : {
 
     },
     "Text" : {
@@ -304,10 +696,16 @@
     "That's over 10,000 characters. Shorten it, or split it in two." : {
 
     },
+    "The Inbox lives on your Mac. Pair this iPhone with it first." : {
+
+    },
     "There's nothing to remember." : {
 
     },
     "They haven't reached your Mac and can't be recovered." : {
+
+    },
+    "This changed on your Mac." : {
 
     },
     "This code didn't match your Mac. Show a new one and scan again." : {
@@ -319,6 +717,15 @@
     "This iPhone" : {
 
     },
+    "This iPhone is offline. Captures wait here and go to your Mac once it's back online." : {
+
+    },
+    "This iPhone isn't on Wi-Fi, and your Mac had no Tailscale address when you paired. Join your Mac's Wi-Fi, or set up Tailscale on both and pair again." : {
+
+    },
+    "This iPhone isn't on Wi-Fi. Make sure Tailscale is connected on this iPhone and on your Mac." : {
+
+    },
     "This iPhone isn't paired with a Mac." : {
 
     },
@@ -328,10 +735,28 @@
     "This iPhone was removed from Funes on your Mac." : {
 
     },
-    "This iPhone was removed from Funes on your Mac. Captures stay here until you pair again or delete them." : {
+    "This iPhone's name" : {
 
     },
-    "This iPhone's name" : {
+    "This is no longer on your Mac." : {
+
+    },
+    "This looks like %@. Funes doesn't save text that looks like a password, key or card number." : {
+
+    },
+    "This looks like a password or key. Funes doesn't save text that looks like a password, key or card number." : {
+
+    },
+    "This memory changed on your Mac after it opened here. Reload shows the Mac's version, and your edits here are discarded." : {
+
+    },
+    "This memory changed on your Mac after it opened here. Reload shows the Mac's version." : {
+
+    },
+    "This memory is no longer on your Mac" : {
+
+    },
+    "Title" : {
 
     },
     "Too many tries with this code. Show a new one on your Mac." : {
@@ -340,7 +765,13 @@
     "Took %@ s" : {
 
     },
+    "Try Again" : {
+
+    },
     "Trying again %@." : {
+
+    },
+    "Tunnel" : {
 
     },
     "Type or dictate something to remember." : {
@@ -361,6 +792,15 @@
     "Unpair this iPhone?" : {
 
     },
+    "Updated" : {
+
+    },
+    "VPN" : {
+
+    },
+    "Very personal. Only for agents you fully trust, and always ask." : {
+
+    },
     "Waiting" : {
 
     },
@@ -370,10 +810,34 @@
     "What should Funes remember?" : {
 
     },
+    "What to Try" : {
+
+    },
+    "Why?" : {
+
+    },
+    "Wi-Fi" : {
+
+    },
+    "Wi-Fi address" : {
+
+    },
+    "Work or project context. Share with agents you use for that work." : {
+
+    },
+    "Your Inbox is empty" : {
+
+    },
+    "Your Mac answered, but Funes Vault didn't. Open Funes Vault on the Mac, and check that iPhone access is on in its Settings ▸ iPhone." : {
+
+    },
     "Your Mac asks whether “%@” may pair. This is the second check, so a photo of the code isn't enough." : {
 
     },
     "Your Mac couldn't do that (%@)." : {
+
+    },
+    "Your Mac didn't accept this. Check the title, the text and the categories." : {
 
     },
     "Your Mac forgets this iPhone, and this iPhone forgets its keys. %lld captures haven't reached your Mac yet: keep them to send after pairing again, or delete them." : {
@@ -382,16 +846,34 @@
     "Your Mac forgets this iPhone, and this iPhone forgets its keys. You can pair again with a new code." : {
 
     },
+    "Your Mac is busy. Try again in a moment." : {
+
+    },
+    "Your Mac may be asleep, or Funes Vault may be closed. Wake the Mac and open Funes Vault." : {
+
+    },
     "Your Mac refused the request (%@)." : {
 
     },
     "Your Mac shows this name when it asks you to allow pairing." : {
 
     },
+    "Your Mac's Funes Vault is too old for this. Update it on the Mac." : {
+
+    },
+    "Your answer · %@" : {
+
+    },
+    "Your vault isn't available on your Mac right now. Try again in a moment." : {
+
+    },
     "Your vault lives on your Mac. On the Mac, open Funes Settings ▸ iPhone ▸ Pair iPhone…, then scan the code it shows." : {
 
     },
     "Your vault lives on your Mac. Search and review need the Mac to be awake and reachable on the same Wi-Fi, or through Tailscale." : {
+
+    },
+    "Your vault lives on your Mac. Search and review need the Mac to be awake and reachable on the same Wi-Fi, or through Tailscale. Captures are safe on this iPhone and will be sent automatically." : {
 
     },
     "a Funes key" : {

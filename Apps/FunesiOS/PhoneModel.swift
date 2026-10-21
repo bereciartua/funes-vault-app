@@ -6,23 +6,15 @@ import SwiftUI
 
 private let logger = Logger(subsystem: Identifiers.iOSLoggerSubsystem, category: "app")
 
-/// The app's state: the pairing, how the Mac is reachable (UX: iPhone, States), and the
-/// capture queue.
+/// The app's state: the pairing, how the Mac is reachable (UX: iPhone, States), the capture
+/// queue, and Search and the Inbox, which read the vault on the Mac.
 @MainActor @Observable
 final class PhoneModel {
-    enum Reachability: Equatable {
-        case notPaired
-        case checking
-        case connected(MacConnection)
-        case unreachable(localNetworkDenied: Bool)
-        /// "This iPhone was removed from Funes on your Mac".
-        case revoked
-        case failed(String)
-    }
-
     private(set) var record: PairingRecord?
-    private(set) var reachability = Reachability.notPaired
-    private(set) var lastChecked: Date?
+    /// The banner's state machine (FunesPhone's `ReachabilityTracker`).
+    private(set) var tracker = ReachabilityTracker()
+    var reachability: Reachability { tracker.state }
+    var lastChecked: Date? { tracker.lastChecked }
     /// The phone's network, for the banner: a LAN address reached off Wi-Fi goes through a VPN.
     private(set) var path: NetworkPath?
     private(set) var usesSecureEnclave: Bool?
@@ -34,6 +26,13 @@ final class PhoneModel {
 
     let client: CompanionClient
     let capture: CaptureModel
+    let search: SearchModel
+    let inbox: InboxModel
+    let categories: CategoryList
+    /// The pairing sheet, opened from the banner or a disabled tab.
+    var presentingPairing = false
+    /// The "Why?" sheet.
+    var presentingWhy = false
     /// The Control asked for Capture, ready to type or dictate.
     private(set) var captureRequests = 0
     private var started = false
@@ -42,7 +41,42 @@ final class PhoneModel {
     init(client: CompanionClient = CompanionClient(store: KeychainSecretStore())) {
         self.client = client
         capture = CaptureModel(client: client)
+        search = SearchModel(caller: client)
+        inbox = InboxModel(caller: client)
+        categories = CategoryList(caller: client)
         capture.onOutcome = { [weak self] outcome in self?.delivered(outcome) }
+        search.onFailure = { [weak self] error in self?.callFailed(error) }
+        inbox.onFailure = { [weak self] error in self?.callFailed(error) }
+    }
+
+    /// What the banner at the top of each tab says.
+    var banner: BannerState {
+        BannerState(reachability, macName: record?.macName, waiting: capture.queuedCount, path: path)
+    }
+
+    /// The "Why?" sheet's suggestions.
+    var diagnosis: UnreachableDiagnosis {
+        UnreachableDiagnosis(reachability, path: path, addresses: record?.addresses ?? [], probes: probes)
+    }
+
+    /// The Inbox tab's badge: the whole list once it's read, else what `status.get` said.
+    var inboxBadge: Int {
+        if inbox.phase == .loaded, inbox.nextCursor == nil { return inbox.items.count }
+        if case let .connected(connection) = reachability { return max(connection.status.inboxPending, inbox.items.count) }
+        return inbox.items.count
+    }
+
+    /// One memory's detail, wired to the banner and to Search's list.
+    func detailModel(_ id: UUID) -> MemoryDetailModel {
+        let detail = MemoryDetailModel(id: id, caller: client)
+        detail.onFailure = { [weak self] error in self?.callFailed(error) }
+        detail.onChange = { [weak self] change in
+            switch change {
+            case let .changed(memory): self?.search.changed(memory)
+            case let .removed(id): self?.search.removed(id)
+            }
+        }
+        return detail
     }
 
     func start() async {
@@ -53,6 +87,7 @@ final class PhoneModel {
             for await path in NetworkPathWatcher.updates() {
                 guard let self else { return }
                 self.path = path
+                self.tracker.handle(.path(path))
                 await client.networkChanged()
                 // Start over on a usable path; the first update is the current path, which the
                 // foreground refresh already covers.
@@ -86,6 +121,8 @@ final class PhoneModel {
         guard started else { return }
         await refresh()
         await capture.deliver(.foreground)
+        // Suggestions may have been answered or added on the Mac meanwhile.
+        if reachability.isConnected, inbox.phase == .loaded { await inbox.load() }
     }
 
     /// `BGAppRefreshTask`: send what's waiting, then ask for the next refresh, since the share
@@ -101,9 +138,22 @@ final class PhoneModel {
     }
 
     private func delivered(_ outcome: DeliveryOutcome) {
-        switch outcome {
-        case .revoked: reachability = .revoked
-        case .notPaired: reachability = .notPaired
+        tracker.handle(.delivered(outcome))
+        leaveVaultIfGone()
+    }
+
+    /// A Search, memory or Inbox call failed: the banner hears about it.
+    private func callFailed(_ error: CompanionClientError) {
+        tracker.handle(.callFailed(error))
+        leaveVaultIfGone()
+    }
+
+    /// Unpaired or removed: what Search and the Inbox read from the Mac leaves the phone.
+    private func leaveVaultIfGone() {
+        switch reachability {
+        case .notPaired, .revoked:
+            search.clear()
+            inbox.clear()
         default: break
         }
     }
@@ -116,48 +166,46 @@ final class PhoneModel {
             record = nil
         }
         usesSecureEnclave = await client.usesSecureEnclave()
-        if record == nil { reachability = .notPaired }
+        tracker.handle(.pairing(paired: record != nil))
+        leaveVaultIfGone()
     }
 
     /// `status.get`, on the cached address or by selecting one.
     func refresh(fresh: Bool = false) async {
         guard record != nil else {
-            reachability = .notPaired
+            tracker.handle(.pairing(paired: false))
             return
         }
         // Launch and coming to the front both ask; one check at a time is enough.
         guard !refreshing else { return }
         refreshing = true
         defer { refreshing = false }
-        if case .connected = reachability {} else { reachability = .checking }
+        tracker.handle(.checkStarted)
         do {
-            reachability = .connected(try await client.status(fresh: fresh))
+            tracker.handle(.checked(.success(try await client.status(fresh: fresh)), at: Date()))
         } catch {
-            reachability = Self.reachability(for: error)
+            tracker.handle(.checked(.failure(error), at: Date()))
         }
         probes = await client.lastProbes
-        lastChecked = Date()
-    }
-
-    private static func reachability(for error: CompanionClientError) -> Reachability {
-        switch error {
-        case .notPaired: .notPaired
-        case let .unreachable(denied): .unreachable(localNetworkDenied: denied)
-        case .refused(.revoked), .refused(.unknownDevice): .revoked
-        default: .failed(Self.message(for: error))
-        }
+        leaveVaultIfGone()
+        if reachability.isConnected { await categories.load() }
     }
 
     /// Pairs with the scanned Mac. Returns how long it took, Allow click included (Spike 1a).
     func pair(_ payload: PairingQRPayload, deviceName: String) async throws(CompanionClientError) -> Duration {
         let start = ContinuousClock.now
         record = try await client.pair(payload, deviceName: deviceName, model: DeviceInfo.model)
+        tracker.handle(.pairing(paired: true))
         let elapsed = ContinuousClock.now - start
         usesSecureEnclave = await client.usesSecureEnclave()
         protocolChecks = []
         spikeMessage = nil
         testCaptureID = nil
+        // Perhaps another Mac: nothing read from the last one stays.
+        search.clear()
+        inbox.clear()
         await refresh()
+        await categories.load(force: true)
         // Captures made before pairing, or kept from a revoked pairing, go now.
         await capture.deliver(.manual)
         return elapsed
@@ -250,6 +298,34 @@ final class PhoneModel {
             String(localized: "Something else answered at your Mac's address (HTTP \(status)).")
         case .local:
             String(localized: "Something went wrong on this iPhone. Try again.")
+        }
+    }
+}
+
+extension PhoneModel {
+    /// A Search, memory or Inbox call's failure, in the words of the screen it happened on.
+    static func vaultMessage(for error: CompanionClientError) -> String {
+        guard case let .method(failure) = error else { return message(for: error) }
+        switch failure.code {
+        case .secretLikeContent:
+            if let first = failure.findings?.first {
+                return String(localized: "This looks like \(CaptureModel.name(first)). Funes doesn't save text that looks like a password, key or card number.")
+            }
+            return String(localized: "This looks like a password or key. Funes doesn't save text that looks like a password, key or card number.")
+        case .invalidInput:
+            return String(localized: "Your Mac didn't accept this. Check the title, the text and the categories.")
+        case .notFound:
+            return String(localized: "This is no longer on your Mac.")
+        case .conflict:
+            return String(localized: "This changed on your Mac.")
+        case .rateLimited:
+            return String(localized: "Your Mac is busy. Try again in a moment.")
+        case .unavailable:
+            return String(localized: "Your vault isn't available on your Mac right now. Try again in a moment.")
+        case .unknownMethod:
+            return String(localized: "Your Mac's Funes Vault is too old for this. Update it on the Mac.")
+        case .internalError:
+            return String(localized: "Something went wrong on your Mac. Try again.")
         }
     }
 }
