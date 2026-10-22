@@ -19,9 +19,7 @@ struct CaptureView: View {
     var body: some View {
         NavigationStack {
             List {
-                if let banner = QueueBanner(reachability: model.reachability, waiting: capture.queuedCount) {
-                    banner
-                }
+                BannerSection(model: model)
                 Section {
                     editor
                     if let problem {
@@ -154,44 +152,6 @@ struct CaptureView: View {
         } catch {
             problem = CaptureModel.message(for: error)
         }
-    }
-}
-
-/// "Mac not reachable · 3 captures waiting" and the other states, when there's something to say.
-struct QueueBanner: View {
-    let text: String
-    let systemImage: String
-    let tint: Color
-
-    init?(reachability: PhoneModel.Reachability, waiting: Int) {
-        switch reachability {
-        case .notPaired:
-            text = waiting > 0
-                ? String(localized: "Not paired · \(waiting) captures waiting. Pair with your Mac in Settings.")
-                : String(localized: "Pair with your Mac to start. Captures wait on this iPhone until then.")
-            systemImage = "iphone.slash"
-            tint = .secondary
-        case .unreachable, .failed:
-            guard waiting > 0 else { return nil }
-            text = String(localized: "Mac not reachable · \(waiting) captures waiting")
-            systemImage = "wifi.slash"
-            tint = .orange
-        case .revoked:
-            text = String(localized: "This iPhone was removed from Funes on your Mac. Captures stay here until you pair again or delete them.")
-            systemImage = "xmark.octagon.fill"
-            tint = .red
-        case .checking, .connected:
-            guard waiting > 0 else { return nil }
-            text = String(localized: "\(waiting) captures waiting")
-            systemImage = "tray.and.arrow.up"
-            tint = .secondary
-        }
-    }
-
-    var body: some View {
-        Label(text, systemImage: systemImage)
-            .font(.footnote)
-            .foregroundStyle(tint)
     }
 }
 

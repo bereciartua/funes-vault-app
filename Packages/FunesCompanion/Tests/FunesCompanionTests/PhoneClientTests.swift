@@ -129,4 +129,45 @@ import Testing
         try await h.services.devices.revoke(deviceID: record.deviceID, now: h.clock.now)
         await #expect(throws: CompanionClientError.refused(.revoked)) { try await phone.status() }
     }
+
+    /// Task 5.5's view models through the real client and handlers: an edit on the phone that
+    /// the Mac overtook answers `conflict`, Reload shows the Mac's text, and the next save goes
+    /// through; a suggestion saved on the Mac first leaves the phone's Inbox without an error.
+    @MainActor @Test func conflictAndInboxThroughTheRealMac() async throws {
+        let h = try CompanionHarness()
+        let phone = client(h)
+        let payload = await h.qr()
+        async let paired = phone.pair(payload, deviceName: "Sam's iPhone", model: "iPhone14,4")
+        try await h.answerWhenAsked(true)
+        _ = try await paired
+
+        let created = try await phone.call(MemoriesCreate.self, MemoryCreateParams(
+            title: "Coffee", body: "Oat flat white", kind: .preference, categories: ["personal_preferences"], sensitivity: .low))
+        let detail = MemoryDetailModel(id: created.id, caller: phone, clock: { h.clock.now })
+        await detail.load()
+        detail.startEditing()
+        detail.draft?.body = "Oat flat white, extra hot"
+        _ = try h.store.updateMemory(id: created.id, MemoryEdit(body: "Oat cortado"), now: h.clock.now)
+
+        #expect(await detail.save() == false)
+        #expect(detail.conflict)
+        #expect(detail.draft?.body == "Oat flat white, extra hot")
+        await detail.reload()
+        #expect(detail.memory?.body == "Oat cortado")
+        #expect(detail.draft?.body == "Oat cortado")
+        detail.draft?.body = "Oat cortado, extra hot"
+        #expect(await detail.save())
+        #expect(try h.store.memory(id: created.id)?.body == "Oat cortado, extra hot")
+
+        let capture = CompanionCapture(captureId: UUID(), text: "Gym on Tuesdays", createdAt: h.clock.now, source: .typed)
+        _ = try await phone.call(CapturesSubmit.self, CapturesSubmitParams(captures: [capture]))
+        let inbox = InboxModel(caller: phone)
+        await inbox.load()
+        let item = try #require(inbox.items.first)
+        _ = try await h.services.suggestions.apply(suggestionID: item.id, edits: SuggestionEdit(), now: h.clock.now)
+        #expect(await inbox.save(item.id) == false)
+        #expect(inbox.failure == nil)
+        #expect(inbox.answeredElsewhere == 1)
+        #expect(inbox.items.isEmpty)
+    }
 }

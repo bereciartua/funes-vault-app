@@ -2,11 +2,10 @@ import FunesPhone
 import FunesProtocol
 import SwiftUI
 
-/// The tabs (UX: iPhone): Capture, where the app opens, and Settings. Search and Inbox come in
-/// task 5.5.
+/// The tabs (UX: iPhone): Capture, where the app opens, Search, Inbox and Settings.
 struct RootView: View {
     enum Tab: Hashable {
-        case capture, settings
+        case capture, search, inbox, settings
     }
 
     let model: PhoneModel
@@ -17,19 +16,27 @@ struct RootView: View {
             CaptureView(model: model)
                 .tabItem { Label("Capture", systemImage: "square.and.pencil") }
                 .tag(Tab.capture)
+            SearchView(model: model)
+                .tabItem { Label("Search", systemImage: "magnifyingglass") }
+                .tag(Tab.search)
+            InboxView(model: model)
+                .tabItem { Label("Inbox", systemImage: "tray") }
+                .badge(model.inboxBadge)
+                .tag(Tab.inbox)
             SettingsView(model: model)
                 .tabItem { Label("Settings", systemImage: "gear") }
                 .tag(Tab.settings)
         }
         // The Control opens Capture.
         .onChange(of: model.captureRequests) { tab = .capture }
+        .sheet(isPresented: Bindable(model).presentingPairing) { PairingSheet(model: model) }
+        .sheet(isPresented: Bindable(model).presentingWhy) { WhySheet(model: model) }
     }
 }
 
 /// Settings: pair, the Mac's connection and status, this iPhone, and the queue.
 struct SettingsView: View {
     let model: PhoneModel
-    @State private var pairing = false
     @State private var confirmingUnpair = false
     @State private var confirmingDelete = false
 
@@ -54,7 +61,6 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .refreshable { await model.refresh(fresh: true) }
-            .sheet(isPresented: $pairing) { PairingSheet(model: model) }
             .confirmationDialog("Unpair this iPhone?", isPresented: $confirmingUnpair, titleVisibility: .visible) {
                 if model.capture.queuedCount > 0 {
                     Button("Unpair and Keep Captures", role: .destructive) { Task { await model.unpair(deletingQueue: false) } }
@@ -120,7 +126,7 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
             .padding(.vertical, 4)
-            Button("Pair with Mac") { pairing = true }
+            Button("Pair with Mac") { model.presentingPairing = true }
                 .bold()
         }
     }
@@ -158,19 +164,19 @@ struct SettingsView: View {
     }
 }
 
-/// "Connected to Maya's MacBook Pro · Wi-Fi" and the other states (UX: iPhone, States).
+/// "Connected · Wi-Fi" and the other states (UX: iPhone, States), in Settings' Mac section.
 struct ReachabilityRow: View {
-    let reachability: PhoneModel.Reachability
+    let reachability: Reachability
     let path: NetworkPath?
 
     var body: some View {
         switch reachability {
         case .notPaired:
             Label("Not paired", systemImage: "iphone.slash")
-        case .checking:
+        case .connecting:
             Label { Text("Checking…") } icon: { ProgressView() }
         case let .connected(connection):
-            Label(Self.connected(connection.address.connectionKind, path: path), systemImage: "checkmark.circle.fill")
+            Label(Self.connected(ConnectionRoute(connection.address.connectionKind, path: path)), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
         case .unreachable(localNetworkDenied: true):
             Label("Local Network access is off for Funes", systemImage: "exclamationmark.triangle.fill")
@@ -181,16 +187,16 @@ struct ReachabilityRow: View {
         case .revoked:
             Label("This iPhone was removed from Funes on your Mac", systemImage: "xmark.octagon.fill")
                 .foregroundStyle(.red)
-        case let .failed(message):
-            Label(message, systemImage: "exclamationmark.triangle.fill")
+        case let .failed(error):
+            Label(PhoneModel.message(for: error), systemImage: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
         }
     }
 
-    static func connected(_ kind: ConnectionKind, path: NetworkPath?) -> String {
-        switch kind {
+    static func connected(_ route: ConnectionRoute) -> String {
+        switch route {
         // A LAN address reached off Wi-Fi, such as through a Tailscale subnet router (Spike 1e).
-        case .wifi where path.map({ !$0.isLocal }) ?? false: String(localized: "Connected · VPN")
+        case .vpn: String(localized: "Connected · VPN")
         case .wifi: String(localized: "Connected · Wi-Fi")
         case .tailscale: String(localized: "Connected · Tailscale")
         case .tunnel: String(localized: "Connected · Tunnel")
