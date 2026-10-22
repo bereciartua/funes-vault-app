@@ -289,7 +289,8 @@ public final class DemoVault: CompanionCalling, CaptureSender {
             }
             detail.share = SharePanel(destination: ApprovalDestination(remote: false), keywords: request.keywords ?? [],
                                       purpose: request.purpose, retention: request.retention ?? .session, processors: [],
-                                      declaredRetention: request.retention, rows: rows,
+                                      // No note of the user's own: the Mac shows one only when they set it.
+                                      declaredRetention: nil, rows: rows,
                                       withheld: Dictionary(uniqueKeysWithValues: (request.withheld ?? [:]).compactMap { key, count in
                                           ReasonCode(rawValue: key).map { ($0, count) }
                                       }))
