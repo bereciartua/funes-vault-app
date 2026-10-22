@@ -21,7 +21,7 @@ Task 5.7 of [Phase 5](../../plans/phase-5-iphone-companion.md). What goes into A
 | Primary language | English (U.S.) |
 | Category | Productivity; secondary Developer Tools |
 | Age rating | 4+ (every questionnaire answer "None" or "No"; no web browsing, no user-to-user content) |
-| Price · availability | Free · all countries and regions |
+| Price · availability | Free · all countries and regions; not on Apple silicon Macs or Apple Vision Pro (the Mac has its own app; neither is tested) |
 | Content rights | Contains no third-party content |
 | Version | The project's `MARKETING_VERSION` (0.2.0 for v0.2); the build number is `CURRENT_PROJECT_VERSION`, or `FUNES_IOS_BUILD` for another upload of the same version |
 | Release | Manually, after the Mac's v0.2 (with Settings ▸ iPhone shown in Release) is out through Sparkle: without it nobody can pair |
@@ -34,7 +34,7 @@ sh scripts/ios_release.sh
 Archives the Release configuration for a generic iPhone with automatic signing for team `JVNJ326L7B`, then checks every bundle's version, build and privacy manifest, and the app's entitlements. `--export` adds an `.ipa` signed for App Store Connect in `dist/ios/` (and checks it isn't debuggable, has `aps-environment` production and an Apple Distribution signature); `--upload` sends it to App Store Connect. `--allow-provisioning-updates` lets Xcode create the Apple Distribution certificate and App Store profiles the first time. An App Store Connect API key (`FUNES_ASC_KEY`, `FUNES_ASC_KEY_ID`, `FUNES_ASC_ISSUER`) can stand in for the Xcode account. *2026-10-22: the archive passes with this Mac's development profiles; the export waits for the maintainer (step 2).*
 
 ## The maintainer's steps in App Store Connect, in order
-*Done 2026-10-22, in the browser with the maintainer signed in:* subtitle, categories, content rights and the 4+ age rating (step 1); `Doorbell` checked in CloudKit Production (step 3); App Privacy published as Data Not Collected with the policy URL (step 4); on the 1.0 version page, now 0.2.0, the promotional text, description, keywords, support and marketing URLs, copyright and manual release (step 8). *Still open:* the account's EU trader status (Digital Services Act), Pricing and Availability (Free; Apple silicon Mac and Vision Pro availability are on by default), App Review contact details and notes (that section saves only with contact details), screenshots, and steps 2, 5, 6, 7, 9 and 10.
+*Done 2026-10-22, in the browser with the maintainer signed in:* subtitle, categories, content rights and the 4+ age rating (step 1); `Doorbell` checked in CloudKit Production (step 3); App Privacy published as Data Not Collected with the policy URL (step 4); on the 1.0 version page, now 0.2.0, the promotional text, description, keywords, support and marketing URLs, copyright and manual release (step 8). Pricing and Availability: Free ($0.00) in all 175 countries or regions, and not offered on Apple silicon Macs or Apple Vision Pro. *Still open:* the account's EU trader status (Digital Services Act), App Review contact details and notes (that section saves only with contact details), screenshots, and steps 2, 5, 6, 7, 9 and 10.
 
 Anything in the Apple Developer account or App Store Connect is the maintainer's to do or approve. None of these needs a credential in the repo.
 
