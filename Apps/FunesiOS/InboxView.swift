@@ -173,7 +173,7 @@ struct InboxItemView: View {
                 }
             }
             Section {
-                LabeledContent("Kind") { Label(item.kind.title, systemImage: item.kind.symbol) }
+                KindRow(kind: item.kind)
                 LabeledContent("Categories", value: item.categories.map(model.categories.name).formatted(.list(type: .and)))
                 LabeledContent("Sensitivity") { SensitivityBadge(sensitivity: item.sensitivity) }
                 if let expiry = item.expiresAt {

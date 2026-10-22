@@ -122,3 +122,19 @@ struct CategoryChips: View {
         }
     }
 }
+
+/// "Kind" with the kind's symbol and name, as a list row. Not `LabeledContent` with a `Label`: on
+/// iOS 27 that row grew a tall empty space under it in the Save panel's sheet (demo screenshots,
+/// 2026-10-22).
+struct KindRow: View {
+    let kind: MemoryKind
+
+    var body: some View {
+        HStack {
+            Text("Kind")
+            Spacer()
+            Label(kind.title, systemImage: kind.symbol).foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
