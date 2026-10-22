@@ -4,46 +4,50 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-22
+
+Funes Vault now has an iPhone app, Funes Vault for iPhone on the App Store. It pairs with this Mac to capture, search, edit, review the Inbox and approve agents' requests. Your vault stays on your Mac.
+
 ### Added
 
-- **Groundwork for the iPhone app (v0.2): iPhone access on the Mac.** Hidden in Release builds until the iPhone app is out.
+- **iPhone access on the Mac.**
   - A new Settings ▸ iPhone turns on iPhone access (off by default) and chooses how the phone reaches this Mac: Same Wi-Fi, Tailscale or a public tunnel.
   - **Pair iPhone…** shows a QR code for 5 minutes, then asks "“Sam's iPhone” wants to pair" with Allow or Deny. Paired iPhones are listed with when they were last seen, and **Remove…** cuts one off.
   - Everything the phone sends is end-to-end encrypted to this Mac. A paired iPhone acts as you, and what it does shows in Activity under its name.
   - macOS asks for Local Network access the first time iPhone access is on.
   - With Tailscale on, the iPhone reaches this Mac through Tailscale from anywhere, not only on the same Wi-Fi.
-- **The first iPhone build, for testing (v0.2).** Not on the App Store yet.
+- **Funes Vault for iPhone: pairing.**
   - **Pair with Mac** scans the code from Settings ▸ iPhone ▸ Pair iPhone…, then waits while you click Allow on the Mac. Name the iPhone before scanning: iOS only tells apps "iPhone".
   - It then shows whether your Mac is reachable and how: "Connected · Wi-Fi", "Connected · Tailscale", "Connected · VPN" (your Mac's local address through a VPN such as a Tailscale subnet router), or "Mac not reachable". It also says so when Local Network access is off for Funes. It checks again whenever the app comes to the front or the network changes.
   - The iPhone's signing key is made in the Secure Enclave and never leaves it; the keys and the pairing stay on this iPhone only.
   - **Unpair This iPhone…** tells the Mac and forgets the keys.
-- **Capture on the iPhone (v0.2, for testing).** The app now opens on Capture.
+- **Capture on the iPhone.** The app opens on Capture.
   - Type, or tap the mic to dictate (on iOS 26 and later, turned into text on the iPhone; earlier versions use the keyboard's dictation). **Remember** saves at once, even with no network, and sends it to your Mac when it's reachable.
   - Text that looks like a password, key or card number is blocked before it's saved, with the same rules as the Mac.
   - Recent captures show "Sent to Mac", "Waiting" or why your Mac didn't accept one. "Mac not reachable · 3 captures waiting" says what's still on the iPhone.
   - Captures wait on the iPhone, up to 1,000, and leave it only once your Mac has them, each exactly once. Funes sends them when the app opens or comes to the front, when the network changes, right after a capture, and in the background now and then; while your Mac is away it waits longer between tries, up to 30 minutes.
   - **Share to Funes** from any app saves the selected text or link with an optional note. **Remember in Funes** works in Shortcuts, with Siri and on the Action button. A **Capture in Funes** control for Control Center, the Lock Screen and the Action button opens Capture ready to type.
   - Settings shows how many are waiting, with **Send Now** and **Delete Queued Captures…**. Unpairing asks whether to keep or delete captures that haven't reached your Mac.
-- **Search, edit and review on the iPhone (v0.2, for testing).** New Search and Inbox tabs, which read your vault on your Mac while it's reachable.
+- **Search, edit and review on the iPhone.** The Search and Inbox tabs read your vault on your Mac while it's reachable.
   - **Search** asks your Mac and lists each memory's title, two lines of its text, its categories and its sensitivity. Scopes show Archived and Recently Deleted memories too.
   - A memory opens with its full text, kind, categories, sensitivity, expiry, how often it was shared and its history. **Edit**, **Archive**, **Restore** and **Delete…** save on your Mac. If the memory changed on your Mac meanwhile, the iPhone asks "Changed on your Mac, reload?" instead of overwriting it. A save that fails says why and keeps your text.
   - The **Inbox** lists the suggestions waiting on your Mac. Swipe right to save one, left to reject it, or open it to **Edit & Save**. If your Mac doesn't take the answer, the suggestion comes back with the reason; one already answered on the Mac just leaves.
-  - Every tab now shows how your Mac is reachable at the top: "Connected to Maya's MacBook Pro · Wi-Fi" (or Tailscale, a VPN or a tunnel), "Connecting…", or "Mac not reachable · 3 captures waiting" with **Why?**, which says what to try: the same Wi-Fi, Tailscale, waking the Mac, or Local Network access. While your Mac can't be reached, Search and the Inbox say so instead of showing old results; nothing from the vault is kept on the iPhone.
-- **Groundwork for approving requests on the iPhone (v0.2): the Mac's side.** Hidden in Release builds until the iPhone app is out.
+  - Every tab shows how your Mac is reachable at the top: "Connected to Maya's MacBook Pro · Wi-Fi" (or Tailscale, a VPN or a tunnel), "Connecting…", or "Mac not reachable · 3 captures waiting" with **Why?**, which says what to try: the same Wi-Fi, Tailscale, waking the Mac, or Local Network access. While your Mac can't be reached, Search and the Inbox say so instead of showing old results; nothing from the vault is kept on the iPhone.
+- **Approve requests on the iPhone: the Mac's side.**
   - Settings ▸ iPhone has **Approve requests on this iPhone** for each paired iPhone, on by default.
   - When a Share, Save or access request waits on your Mac, Funes rings a "doorbell" in your own iCloud for each of those iPhones. The record holds only a random tag: no memory text, titles, task or agent name, and no request id. The iPhone then gets the details straight from your Mac, end-to-end encrypted. The record is deleted once the request is answered, expires or changes. Settings ▸ iPhone says when this Mac can't notify, for example when it isn't signed in to iCloud.
   - The first answer wins, on the Mac or the iPhone. If the iPhone answers first, the Mac's panel closes and says "Answered on Sam's iPhone." Answers from the iPhone show in Activity under its name, with the same 15-minute limit and the same checks as on the Mac.
-- **Approve requests on the iPhone (v0.2, for testing).**
+- **Approve requests on the iPhone.**
   - When an agent asks to share memories, save one or get more access, the iPhone shows a notification, also locked: "Claude Code wants 3 memories", "Cursor suggests a memory", "Codex wants to read Work". It names the agent and the count, never your memories or the task. The iPhone words it itself, after asking your Mac over the encrypted connection; if it can't reach your Mac, the notification says "Mac not reachable".
   - Tapping it opens the same panel as the Mac's: where the text goes, what the agent says (not checked by Funes), and the memories with checkboxes and sensitivity badges, weaker matches unticked under "Also matched, less closely", each with its exact text and **Show All**. **Share N** or **Deny**, **Save** or **Discard**, **Allow Once**, **Not Now** or **Always Allow…** answer it. Answering needs the iPhone unlocked.
   - The first answer counts. If your Mac answered first, the iPhone says "Answered on your Mac"; if the memories changed meanwhile, it shows the new panel to review again; after 15 minutes it says the request expired.
   - Requests still waiting are listed under **Waiting for you** at the top of Capture, for a notification you missed.
   - Settings ▸ **Approve requests on this iPhone** turns them on or off, the same switch as on the Mac. It says why notifications might not come: notifications off, the iPhone or the Mac not signed in to iCloud, or a Mac build that can't notify. The iPhone asks for notification permission once approvals are on.
-- **Demo mode on the iPhone (v0.2, for testing).** Try every screen without a Mac, for App Review and for a first look.
+- **Demo mode on the iPhone.** Try every screen without a Mac, for App Review and for a first look.
   - **Try Demo** on Capture (and in Settings, Search and the Inbox) while the iPhone isn't paired opens a sample vault built into the app: about 20 memories, three Inbox suggestions, and a Share, a Save and an access request waiting under **Waiting for you**.
   - Search, edit, archive and delete, Save and Reject in the Inbox, and answer the requests, as with a real Mac. Captures go to the demo's Inbox.
   - An orange **DEMO** banner says "Demo vault: not your data" on every tab. Nothing in the demo leaves the iPhone or touches your pairing or your real captures, and **Leave Demo** discards its changes and captures.
-- **Ready for the App Store (v0.2).** The iPhone app and its extensions carry Apple's privacy manifests: no tracking and no data collected. The privacy statement and funesvault.com/privacy now cover the iPhone app, including the iCloud doorbell for approvals, and funesvault.com/support has an iPhone section.
+- **Ready for the App Store.** The iPhone app and its extensions carry Apple's privacy manifests: no tracking and no data collected. The privacy statement and funesvault.com/privacy now cover the iPhone app, including the iCloud doorbell for approvals, and funesvault.com/support has an iPhone section.
 
 ### Fixed
 
@@ -192,7 +196,8 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
 - **Licences in the app**: the bundled embedding model ships inside the app with its MIT licence, and the app includes the licence texts of GRDB.swift, Sparkle and the model alongside its own `LICENSE` and `NOTICE`.
 - **Open source**: the code, the product definition in `spec/`, and the tests are public under the Apache License 2.0. See [Testing](docs/TESTING.md) for what has been checked.
 
-[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.1...v0.1.2

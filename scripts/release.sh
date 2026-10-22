@@ -1,8 +1,9 @@
 #!/bin/sh
 set -eu
 
-# Builds a release: the offline tests, a universal Xcode archive exported with Developer ID,
-# notarization and stapling, a DMG (also as FunesVault.dmg, a name that never changes) and a
+# Builds a release: the offline tests, a universal Xcode archive exported with Developer ID
+# and the Developer ID provisioning profile (iCloud for the iPhone's doorbell), notarization
+# and stapling, a DMG (also as FunesVault.dmg, a name that never changes) and a
 # zip, SHA-256 sums, the Sparkle appcast (when a Sparkle key is given), and a draft GitHub
 # release for the maintainer to review and publish. The release workflow runs it on a v* tag;
 # it also runs by hand on a Mac with the identity and the notary credentials.
@@ -20,6 +21,12 @@ set -eu
 # Environment:
 #   FUNES_SIGN_IDENTITY     The codesign identity. Default: the one "Developer ID Application"
 #                           identity in the keychain.
+#   FUNES_MAC_PROFILE       The name of the Developer ID provisioning profile for
+#                           com.funesvault.mac with iCloud (iCloud.com.funesvault). Default:
+#                           "Funes Vault Mac Developer ID". It must be installed in
+#                           ~/Library/Developer/Xcode/UserData/Provisioning Profiles (Xcode ▸
+#                           Settings ▸ Accounts ▸ Download Manual Profiles, or the file from the
+#                           developer site); the newest valid one of that name is used.
 #   FUNES_NOTARY_PROFILE    A notarytool keychain profile (by hand; on the maintainer's Mac
 #                           it's "ekbridge", the same team), or
 #   FUNES_NOTARY_KEY, FUNES_NOTARY_KEY_ID, FUNES_NOTARY_ISSUER
@@ -48,6 +55,9 @@ sparkle_account=${FUNES_SPARKLE_ACCOUNT:-funes-vault}
 app_name=FunesVault
 display_name="Funes Vault"
 team_id=JVNJ326L7B
+bundle_id=com.funesvault.mac
+icloud_container=iCloud.com.funesvault
+profile_name=${FUNES_MAC_PROFILE:-Funes Vault Mac Developer ID}
 
 untagged=0 notarize=1 release=1 run_tests=1
 for arg in "$@"; do
@@ -114,6 +124,54 @@ case "$FUNES_SIGN_IDENTITY" in
     "Developer ID Application: "*"($team_id)") ;;
     *) fail "a release is signed with the Developer ID Application identity of team $team_id, not \"$FUNES_SIGN_IDENTITY\"" ;;
 esac
+# The Developer ID profile that lets the app use CloudKit (ADR-0019). Without it a hardened,
+# Developer ID-signed app with the iCloud entitlement wouldn't launch. Prints its UUID.
+find_profile() {
+    set -- "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"/*.provisionprofile \
+        "$HOME/Library/MobileDevice/Provisioning Profiles"/*.provisionprofile
+    python3 - "$profile_name" "$team_id" "$bundle_id" "$icloud_container" "$@" <<'PYTHON'
+import datetime, plistlib, subprocess, sys
+name, team, bundle_id, container, *paths = sys.argv[1:]
+now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+valid, rejected = [], []
+for path in paths:
+    try:
+        decoded = subprocess.run(["security", "cms", "-D", "-i", path], capture_output=True, check=True)
+        profile = plistlib.loads(decoded.stdout)
+    except (OSError, subprocess.CalledProcessError, plistlib.InvalidFileException):
+        continue
+    if profile.get("Name") != name:
+        continue
+    entitlements = profile.get("Entitlements", {})
+    problems = []
+    if team not in profile.get("TeamIdentifier", []):
+        problems.append(f"not team {team}")
+    if entitlements.get("com.apple.application-identifier") != f"{team}.{bundle_id}":
+        problems.append(f"not for {bundle_id}")
+    if not profile.get("ProvisionsAllDevices"):
+        problems.append("not a Developer ID profile")
+    if container not in entitlements.get("com.apple.developer.icloud-container-identifiers", []):
+        problems.append(f"no iCloud container {container}")
+    if "Production" not in entitlements.get("com.apple.developer.icloud-container-environment", []):
+        problems.append("no CloudKit Production environment")
+    if profile.get("ExpirationDate", now) <= now:
+        problems.append(f"expired {profile.get('ExpirationDate'):%Y-%m-%d}")
+    if problems:
+        rejected.append(f"{path}: {', '.join(problems)}")
+    else:
+        valid.append((profile["ExpirationDate"], profile["UUID"]))
+for line in rejected:
+    print(f"release: skipping {line}", file=sys.stderr)
+if not valid:
+    sys.exit(1)
+expiry, uuid = max(valid)
+print(uuid, f"{expiry:%Y-%m-%d}")
+PYTHON
+}
+profile_line=$(find_profile) \
+    || fail "no valid Developer ID provisioning profile \"$profile_name\" for $bundle_id with $icloud_container is installed; download it in Xcode ▸ Settings ▸ Accounts (Download Manual Profiles) or set FUNES_MAC_PROFILE (docs/MAINTAINING.md)"
+profile_uuid=${profile_line%% *}
+profile_expiry=${profile_line#* }
 if [ "$notarize" = 1 ]; then
     if [ -n "${FUNES_NOTARY_PROFILE:-}" ]; then
         :
@@ -141,6 +199,7 @@ if [ "$release" = 1 ]; then
         || fail "a release $tag already exists in $repo; delete the draft first"
 fi
 printf 'Signing as %s\n' "$FUNES_SIGN_IDENTITY"
+printf 'Provisioning profile "%s" (%s, expires %s)\n' "$profile_name" "$profile_uuid" "$profile_expiry"
 
 # With an API key file, the issuer is only passed when set (individual keys have none).
 notarytool() {
@@ -197,9 +256,11 @@ else
     step "Skipping the offline tests (--skip-tests)"
 fi
 
-# 3. A universal archive, signed with the Developer ID identity (manual signing: no
-# development certificate or provisioning profile is needed, and Release injects no
-# get-task-allow). The Embed Resources phase copies the model in and fails without it.
+# 3. A universal archive, signed with the Developer ID identity and the Developer ID profile
+# (manual signing: no development certificate is needed, and Release injects no
+# get-task-allow). Only the FunesMac target reads FUNES_RELEASE_ENTITLEMENTS and
+# FUNES_RELEASE_PROFILE, so the app gets iCloud and funes-mcp stays without entitlements.
+# The Embed Resources phase copies the model in and fails without it.
 step "Archiving the universal app"
 rm -rf "$build_dir" "$dist_dir"
 mkdir -p "$build_dir" "$dist_dir"
@@ -208,9 +269,12 @@ xcodebuild -project "$project_dir/FunesVault.xcodeproj" -scheme FunesMac -config
     -clonedSourcePackagesDirPath "$packages_dir" -archivePath "$archive" \
     ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
     CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="$FUNES_SIGN_IDENTITY" DEVELOPMENT_TEAM="$team_id" \
+    FUNES_RELEASE_ENTITLEMENTS=Apps/FunesMac.entitlements FUNES_RELEASE_PROFILE="$profile_uuid" \
     archive -quiet
 
-# 4. Export with Developer ID: Xcode re-signs every piece inside out with a secure timestamp.
+# 4. Export with Developer ID: Xcode re-signs every piece inside out with a secure timestamp,
+# embeds the profile and sets the iCloud environment to Production, the one the App Store
+# iPhone app uses.
 step "Exporting with Developer ID"
 cat > "$build_dir/ExportOptions.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -225,6 +289,13 @@ cat > "$build_dir/ExportOptions.plist" <<PLIST
 	<string>$FUNES_SIGN_IDENTITY</string>
 	<key>teamID</key>
 	<string>$team_id</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>$bundle_id</key>
+		<string>$profile_uuid</string>
+	</dict>
+	<key>iCloudContainerEnvironment</key>
+	<string>Production</string>
 </dict>
 </plist>
 PLIST

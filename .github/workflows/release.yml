@@ -7,9 +7,11 @@ name: Release
 #
 # scripts/release.sh does the work, the same script that runs by hand. The workflow
 # only provides the secrets: the Developer ID certificate in a temporary
-# keychain, the notary API key and the Sparkle key as files that are deleted
-# at the end. Secrets of the "release" environment (docs/MAINTAINING.md):
+# keychain, the Developer ID provisioning profile where Xcode finds it, and the
+# notary API key and the Sparkle key as files, all deleted at the end. Secrets
+# of the "release" environment (docs/MAINTAINING.md):
 #   DEVELOPER_ID_P12, DEVELOPER_ID_P12_PASSWORD   the certificate (base64) and its password
+#   DEVELOPER_ID_PROFILE                           "Funes Vault Mac Developer ID" (base64 .provisionprofile)
 #   NOTARY_KEY, NOTARY_KEY_ID, NOTARY_ISSUER_ID    the App Store Connect API key (base64 .p8), key ID, issuer
 #   SPARKLE_PRIVATE_KEY                            the EdDSA key from generate_keys --account funes-vault -x
 
@@ -93,6 +95,22 @@ jobs:
           [ -n "$identity" ] || { echo "No Developer ID Application identity in the certificate" >&2; exit 1; }
           echo "FUNES_SIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
 
+      # iCloud for the iPhone's doorbell (ADR-0019): release.sh finds the profile by
+      # name, checks it and signs the app with it.
+      - name: Install the provisioning profile
+        env:
+          DEVELOPER_ID_PROFILE: ${{ secrets.DEVELOPER_ID_PROFILE }}
+        run: |
+          set -eu
+          [ -n "$DEVELOPER_ID_PROFILE" ] || { echo "The DEVELOPER_ID_PROFILE secret is needed" >&2; exit 1; }
+          profiles="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          mkdir -p "$profiles"
+          printf '%s' "$DEVELOPER_ID_PROFILE" | base64 --decode > "$RUNNER_TEMP/profile.provisionprofile"
+          uuid=$(security cms -D -i "$RUNNER_TEMP/profile.provisionprofile" | plutil -extract UUID raw -o - -)
+          [ -n "$uuid" ] || { echo "DEVELOPER_ID_PROFILE isn't a provisioning profile" >&2; exit 1; }
+          mv "$RUNNER_TEMP/profile.provisionprofile" "$profiles/$uuid.provisionprofile"
+          echo "RELEASE_PROFILE=$profiles/$uuid.provisionprofile" >> "$GITHUB_ENV"
+
       - name: Write the notary and Sparkle keys
         env:
           NOTARY_KEY: ${{ secrets.NOTARY_KEY }}
@@ -126,8 +144,10 @@ jobs:
             dist/*.dmg
             dist/*.zip
 
-      - name: Remove the keychain and keys
+      - name: Remove the keychain, profile and keys
         if: ${{ always() }}
         run: |
           [ -z "${RELEASE_KEYCHAIN:-}" ] || security delete-keychain "$RELEASE_KEYCHAIN" || true
-          rm -f "$RUNNER_TEMP/AuthKey.p8" "$RUNNER_TEMP/sparkle.key" "$RUNNER_TEMP/certificate.p12"
+          [ -z "${RELEASE_PROFILE:-}" ] || rm -f "$RELEASE_PROFILE"
+          rm -f "$RUNNER_TEMP/AuthKey.p8" "$RUNNER_TEMP/sparkle.key" "$RUNNER_TEMP/certificate.p12" \
+            "$RUNNER_TEMP/profile.provisionprofile"

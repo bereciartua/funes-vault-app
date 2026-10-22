@@ -202,7 +202,7 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
   - fix links ("Allow Project Context for Cursor…").
 
 ### iPhone (v0.2)
-*Built in task 5.2; hidden in Release builds until the iPhone app ships.*
+*Built in task 5.2; in Release builds from v0.2 (task 5.9).*
 - **Off state:** an **Allow iPhone access** switch, off by default, with "A paired iPhone can capture, search, edit and review the Inbox while it can reach this Mac. What it sends is end-to-end encrypted, and your vault stays on this Mac." While on, the listener's status ("Listening on port 47626", or the port in use).
 - **Reachability:**
   - **Same Wi-Fi:** default; works at home.

@@ -3,8 +3,9 @@ set -eu
 
 # Checks a built FunesVault.app before it ships: both executables have each architecture asked
 # for and the app's minimum macOS; funes-mcp is signed as com.funesvault.mac.mcp; everything is
-# signed with the hardened runtime by the app's team and nothing carries get-task-allow; it's a
-# Release build (no Debug-only code); Sparkle is embedded and the app knows its feed and key;
+# signed with the hardened runtime by the app's team and nothing carries get-task-allow; the app
+# embeds its Developer ID profile and has iCloud with CloudKit Production for the iPhone's
+# doorbell (ADR-0019), and funes-mcp has no iCloud; it's a Release build (no Debug-only code); Sparkle is embedded and the app knows its feed and key;
 # the bundled embedding model matches the pinned checksums; the icon, LICENSE, NOTICE and the
 # third-party licenses are inside; and the whole bundle verifies. Used by the release script.
 #
@@ -71,6 +72,28 @@ for part in "$@"; do
 done
 if codesign --display --entitlements - --xml "$app" 2>/dev/null | grep -q 'disable-library-validation'; then
     fail "the app must keep library validation"
+fi
+
+# CloudKit (ADR-0019): the profile that allows it, and the container in the Production
+# environment, the one the App Store iPhone app uses.
+[ -s "$contents/embedded.provisionprofile" ] || fail "the app has no embedded.provisionprofile"
+codesign --display --entitlements - --xml "$app" 2>/dev/null | python3 -c '
+import plistlib, sys
+entitlements = plistlib.loads(sys.stdin.buffer.read() or plistlib.dumps({}))
+problems = []
+if "iCloud.com.funesvault" not in entitlements.get("com.apple.developer.icloud-container-identifiers", []):
+    problems.append("no iCloud container iCloud.com.funesvault")
+if "CloudKit" not in entitlements.get("com.apple.developer.icloud-services", []):
+    problems.append("no CloudKit service")
+if entitlements.get("com.apple.developer.icloud-container-environment") != "Production":
+    problems.append("an iCloud environment other than Production")
+if entitlements.get("com.apple.application-identifier") != "JVNJ326L7B.com.funesvault.mac":
+    problems.append("no application identifier JVNJ326L7B.com.funesvault.mac")
+if problems:
+    sys.exit("check_bundle: the app has " + ", ".join(problems))
+' || exit 1
+if codesign --display --entitlements - --xml "$contents/MacOS/funes-mcp" 2>/dev/null | grep -q 'icloud'; then
+    fail "funes-mcp carries an iCloud entitlement"
 fi
 
 # Updates: the feed and the key Sparkle checks every update against.
