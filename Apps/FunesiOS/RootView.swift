@@ -9,7 +9,11 @@ struct RootView: View {
     }
 
     let model: PhoneModel
+    #if DEBUG
+    @State private var tab = ScreenshotScene.current?.tab ?? Tab.capture
+    #else
     @State private var tab = Tab.capture
+    #endif
 
     var body: some View {
         TabView(selection: $tab) {

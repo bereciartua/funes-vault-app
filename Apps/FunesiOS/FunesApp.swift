@@ -54,6 +54,9 @@ final class AppState {
         PhoneServices.discardDemo(in: Self.demoDirectory)
         model = PhoneModel(services: Self.services(demo: false))
         model.switchDemo = { [weak self] on in self?.setDemo(on) }
+        #if DEBUG
+        if ScreenshotScene.current != nil { setDemo(true) }
+        #endif
     }
 
     func setDemo(_ on: Bool) {

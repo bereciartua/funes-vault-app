@@ -127,8 +127,16 @@ final class PhoneModel {
         await reload()
         // The demo has no network to watch and no extensions' queue to read.
         if isDemo {
+            #if DEBUG
+            if let query = ScreenshotScene.current?.searchQuery { search.query = query }
+            #endif
             await refresh()
             await capture.deliver(.launch)
+            #if DEBUG
+            if let kind = ScreenshotScene.current?.approval, let item = approvals.items.first(where: { $0.kind == kind }) {
+                open(ApprovalRef(id: item.id))
+            }
+            #endif
             return
         }
         Task { [weak self] in

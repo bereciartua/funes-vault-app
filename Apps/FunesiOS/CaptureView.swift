@@ -6,7 +6,11 @@ import SwiftUI
 /// this iPhone at once, and delivery follows. Recent captures show where each one is.
 struct CaptureView: View {
     let model: PhoneModel
+    #if DEBUG
+    @State private var text = ScreenshotScene.current?.captureText ?? ""
+    #else
     @State private var text = ""
+    #endif
     @State private var source = CaptureSource.typed
     @State private var dictation = Dictation()
     @State private var problem: String?
