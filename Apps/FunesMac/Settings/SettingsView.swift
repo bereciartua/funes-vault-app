@@ -7,16 +7,6 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
     case general, capture, models, mcp, iphone, data, updates, advanced
     var id: String { rawValue }
 
-    /// iPhone stays hidden in Release builds until the iPhone app is out (Phase 5), unless the
-    /// `IPhoneSettingsVisible` default is on.
-    static var visible: [SettingsTab] {
-        #if DEBUG
-        allCases
-        #else
-        UserDefaults.standard.bool(forKey: "IPhoneSettingsVisible") ? allCases : allCases.filter { $0 != .iphone }
-        #endif
-    }
-
     var title: String {
         switch self {
         case .general: String(localized: "General")
@@ -50,7 +40,7 @@ struct SettingsView: View {
 
     var body: some View {
         TabView(selection: $model.settingsTab) {
-            ForEach(SettingsTab.visible) { tab in
+            ForEach(SettingsTab.allCases) { tab in
                 pane(tab)
                     .tabItem { Label(tab.title, systemImage: tab.symbol) }
                     .tag(tab)
