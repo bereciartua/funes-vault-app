@@ -70,7 +70,7 @@ final class PhoneModel {
     /// (a tapped notification the extension couldn't word).
     func open(_ ref: ApprovalRef?) {
         guard let ref else {
-            Task { if reachability.isConnected { await approvals.load() } }
+            Task { if reachability.isConnected { await approvals.load(force: true) } }
             return
         }
         let panel = ApprovalPanelModel(ref: ref, caller: client,
@@ -82,9 +82,9 @@ final class PhoneModel {
         openApproval = OpenApproval(panel: panel)
     }
 
-    /// A ring arrived while the app is open.
+    /// A ring arrived while the app is open: something new waits.
     func rang() {
-        Task { if reachability.isConnected { await approvals.load() } }
+        Task { if reachability.isConnected { await approvals.load(force: true) } }
     }
 
     /// What the banner at the top of each tab says.

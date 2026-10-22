@@ -552,9 +552,6 @@
     "It moves to Recently Deleted on your Mac, where you can restore it for 30 days." : {
 
     },
-    "It was answered before this iPhone's answer. Nothing more to do." : {
-
-    },
     "It was deleted for good." : {
 
     },
@@ -670,6 +667,9 @@
 
     },
     "Nothing archived" : {
+
+    },
+    "Nothing more to do here." : {
 
     },
     "Notifications are off for Funes Vault on this iPhone." : {

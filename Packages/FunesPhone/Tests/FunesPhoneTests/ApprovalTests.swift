@@ -104,18 +104,26 @@ final class FakeSubscriptions: DoorbellSubscriptions, @unchecked Sendable {
     private var ids: [String: String] = [:]
     private(set) var log: [String] = []
     var signedIn = true
+    var saveError: (any Error)?
+    var deleteError: (any Error)?
+    var listError: (any Error)?
 
     var current: [String: String] { lock.withLock { ids } }
 
     func accountAvailable() async -> Bool { signedIn }
-    func subscriptionIDs() async throws -> [String] { lock.withLock { Array(ids.keys) } }
+    func subscriptionIDs() async throws -> [String] {
+        if let listError { throw listError }
+        return lock.withLock { Array(ids.keys) }
+    }
     func subscribe(id: String, tag: String, alertBody: String) async throws {
+        if let saveError { throw saveError }
         lock.withLock {
             ids[id] = tag
             log.append("+\(id)")
         }
     }
     func unsubscribe(ids remove: [String]) async throws {
+        if let deleteError { throw deleteError }
         lock.withLock {
             remove.forEach { ids[$0] = nil }
             log += remove.map { "-\($0)" }
@@ -489,6 +497,69 @@ let ring = String(repeating: "ab", count: 16)
         let model = ApprovalSettingsModel(caller: mac, subscriptions: cloud)
         await model.load()
         #expect(model.subscription == .noICloud && cloud.log.isEmpty)
+    }
+
+    @Test func cloudKitRefusingTheSubscriptionSaysWhy() async {
+        let mac = FakeApprovals()
+        let cloud = FakeSubscriptions()
+        cloud.saveError = CocoaError(.fileWriteNoPermission)
+        let model = ApprovalSettingsModel(caller: mac, subscriptions: cloud)
+        await model.load()
+        #expect(model.subscription == .failed && model.subscriptionError?.isEmpty == false)
+        cloud.saveError = nil
+        await model.load()
+        #expect(model.subscription == .subscribed && model.subscriptionError == nil)
+    }
+
+    @Test func anOldSubscriptionCloudKitWontDeleteDoesntBlockTheNewOne() async {
+        let mac = FakeApprovals()
+        let cloud = FakeSubscriptions()
+        try? await cloud.subscribe(id: "doorbell-spike", tag: "spike", alertBody: "x")
+        cloud.deleteError = CocoaError(.fileNoSuchFile)
+        let model = ApprovalSettingsModel(caller: mac, subscriptions: cloud)
+        await model.load()
+        #expect(model.subscription == .subscribed && cloud.current["doorbell-tag-1"] == "tag-1")
+        // Said in Debug builds, but not a failure: the old tag is never rung again.
+        #expect(model.subscriptionError != nil)
+    }
+
+    @Test func aListingCloudKitCantAnswerStillSubscribes() async {
+        let mac = FakeApprovals()
+        let cloud = FakeSubscriptions()
+        cloud.listError = CocoaError(.fileReadCorruptFile)
+        let model = ApprovalSettingsModel(caller: mac, subscriptions: cloud)
+        await model.load()
+        #expect(model.subscription == .subscribed && cloud.current == ["doorbell-tag-1": "tag-1"])
+        #expect(model.subscriptionError != nil)
+    }
+
+    @Test func theListIsntReadAgainRightAway() async {
+        let mac = FakeApprovals()
+        mac.share(rows: [row("A")])
+        let now = Mutex(t0)
+        let list = ApprovalsModel(caller: mac, clock: { now.withLock { $0 } })
+        await list.load()
+        await list.load()
+        #expect(mac.calls == [.approvalsList])
+        // A ring says something changed.
+        await list.load(force: true)
+        now.withLock { $0 = t0.addingTimeInterval(ApprovalsModel.freshFor + 1) }
+        await list.load()
+        #expect(mac.calls == [.approvalsList, .approvalsList, .approvalsList])
+    }
+
+    @Test func overlappingChecksSubscribeOnce() async {
+        let mac = FakeApprovals()
+        let cloud = FakeSubscriptions()
+        let model = ApprovalSettingsModel(caller: mac, subscriptions: cloud)
+        let list = ApprovalsModel(caller: mac)
+        async let a: Void = model.load()
+        async let b: Void = model.load()
+        async let c: Void = list.load()
+        async let d: Void = list.load()
+        _ = await (a, b, c, d)
+        #expect(cloud.log == ["+doorbell-tag-1"])
+        #expect(mac.calls.filter { $0 == .approvalsList }.count <= 2)
     }
 
     @Test func aFailedSwitchKeepsTheSettings() async {

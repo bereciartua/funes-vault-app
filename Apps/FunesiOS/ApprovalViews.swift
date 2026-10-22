@@ -372,7 +372,7 @@ struct ApprovalPanelView: View {
     static func explanation(_ reason: ApprovalPanelModel.Closed) -> String {
         switch reason {
         case .answered: String(localized: "Your Mac has your answer.")
-        case .answeredOnMac: String(localized: "It was answered before this iPhone's answer. Nothing more to do.")
+        case .answeredOnMac: String(localized: "Nothing more to do here.")
         case .alreadyAnswered: String(localized: "Your answer may have reached your Mac before the connection dropped. Activity on your Mac shows what happened.")
         case .expired: String(localized: "Requests wait 15 minutes. The agent can ask again.")
         case .gone: String(localized: "It's no longer waiting on your Mac.")
@@ -419,6 +419,11 @@ struct ApprovalSettingsSection: View {
                     .font(.footnote)
                     .foregroundStyle(.orange)
             }
+            #if DEBUG
+            if let error = approvals.subscriptionError {
+                Text(error).font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
+            }
+            #endif
             if approvals.settings?.enabled == true, model.notificationsAllowed == false {
                 Button("Open Notification Settings") {
                     if let url = URL(string: UIApplication.openNotificationSettingsURLString) { UIApplication.shared.open(url) }

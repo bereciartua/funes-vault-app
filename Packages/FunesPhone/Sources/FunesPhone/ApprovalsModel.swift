@@ -13,6 +13,12 @@ public final class ApprovalsModel {
 
     public private(set) var items: [ApprovalSummary] = []
     public private(set) var phase = Phase.idle
+    /// One `approvals.list` at a time: a foreground, a network change and a ring can come together.
+    private var loading = false
+    /// When the list last came back. Each call is a row in the Mac's Activity, so a read this
+    /// recent is enough unless something says the list changed (a ring, an answer).
+    private var loadedAt: Date?
+    public static let freshFor: TimeInterval = 5
 
     private let caller: any CompanionCalling
     private let clock: @Sendable () -> Date
@@ -29,10 +35,16 @@ public final class ApprovalsModel {
         return items.filter { $0.expiresAt > now }
     }
 
-    public func load() async {
+    /// `approvals.list`, unless it came back less than `freshFor` ago; `force` after a ring.
+    public func load(force: Bool = false) async {
+        guard !loading else { return }
+        if !force, phase == .loaded, let loadedAt, clock().timeIntervalSince(loadedAt) < Self.freshFor { return }
+        loading = true
+        defer { loading = false }
         if items.isEmpty { phase = .loading }
         do {
             items = try await caller.call(ApprovalsList.self, EmptyParams()).items.sorted { $0.expiresAt < $1.expiresAt }
+            loadedAt = clock()
             phase = .loaded
         } catch {
             if items.isEmpty { phase = .failed(error) }
@@ -47,6 +59,7 @@ public final class ApprovalsModel {
     public func clear() {
         items = []
         phase = .idle
+        loadedAt = nil
     }
 }
 
@@ -104,12 +117,16 @@ public final class ApprovalSettingsModel {
 
     public private(set) var settings: ApprovalSettings?
     public private(set) var subscription = Subscription.unknown
+    /// Why CloudKit refused the subscription, as it said it (`.failed`), for Debug builds and logs.
+    public private(set) var subscriptionError: String?
     public private(set) var saving = false
     /// The switch's last change didn't reach the Mac.
     public var failure: CompanionClientError?
 
     private let caller: any CompanionCalling
     private let subscriptions: any DoorbellSubscriptions
+    /// One check at a time, so two never save or delete the same subscription at once.
+    private var syncing = false
     @ObservationIgnored public var onFailure: @MainActor (CompanionClientError) -> Void = { _ in }
     /// Approvals are on with a tag: the app asks for notification permission then.
     @ObservationIgnored public var onSubscribed: @MainActor () async -> Void = {}
@@ -149,22 +166,41 @@ public final class ApprovalSettingsModel {
 
     /// Makes the subscriptions match the settings. Nothing happens before the Mac's answer.
     public func sync() async {
-        guard let settings else { return }
+        guard let settings, !syncing else { return }
+        syncing = true
+        defer { syncing = false }
         let wantsRing = settings.enabled && settings.tag != nil
         guard await subscriptions.accountAvailable() else {
             subscription = wantsRing ? .noICloud : .off
             return
         }
+        // Listing can fail on a subscription CloudKit can no longer read back (one naming fields
+        // the record type no longer has): the current one is still saved, by its id.
+        var listingError: (any Error)?
+        let existing: [String]
+        do { existing = try await subscriptions.subscriptionIDs() } catch {
+            listingError = error
+            existing = []
+        }
+        let plan = DoorbellSubscriptionPlan(settings: settings, existing: existing)
         do {
-            let plan = DoorbellSubscriptionPlan(settings: settings, existing: try await subscriptions.subscriptionIDs())
-            if !plan.unsubscribe.isEmpty { try await subscriptions.unsubscribe(ids: plan.unsubscribe) }
+            // The current tag's subscription first: an old one that CloudKit can't delete (one
+            // naming fields the record type no longer has, say) must not keep this one away.
             if let tag = plan.subscribeTag {
                 try await subscriptions.subscribe(id: DoorbellSubscriptionPlan.id(tag), tag: tag, alertBody: ApprovalWording.generic)
             }
             subscription = wantsRing ? .subscribed : .off
+            subscriptionError = listingError.map { String(describing: $0) }
         } catch {
             subscription = .failed
+            subscriptionError = String(describing: error)
             return
+        }
+        // An old tag's subscription goes quiet anyway: the Mac never rings that tag again.
+        if !plan.unsubscribe.isEmpty {
+            do { try await subscriptions.unsubscribe(ids: plan.unsubscribe) } catch {
+                subscriptionError = String(describing: error)
+            }
         }
         if wantsRing { await onSubscribed() }
     }
