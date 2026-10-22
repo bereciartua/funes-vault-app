@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+Funes Vault for iPhone's privacy manifest (task 5.7). The same in the app and each extension.
+Data Not Collected: nothing leaves the iPhone except to the user's own paired Mac (end-to-end
+sealed) and an opaque CloudKit doorbell record in the user's own private database (ADR-0019).
+Required-reason APIs: only UserDefaults, for the App Group's defaults (CaptureLaunch, the
+Control's request to open Capture). Checked with `nm -u` on the built binaries; see
+spec/release/app-store/privacy.md.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>1C8F.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

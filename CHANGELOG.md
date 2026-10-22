@@ -39,6 +39,11 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - The first answer counts. If your Mac answered first, the iPhone says "Answered on your Mac"; if the memories changed meanwhile, it shows the new panel to review again; after 15 minutes it says the request expired.
   - Requests still waiting are listed under **Waiting for you** at the top of Capture, for a notification you missed.
   - Settings ▸ **Approve requests on this iPhone** turns them on or off, the same switch as on the Mac. It says why notifications might not come: notifications off, the iPhone or the Mac not signed in to iCloud, or a Mac build that can't notify. The iPhone asks for notification permission once approvals are on.
+- **Demo mode on the iPhone (v0.2, for testing).** Try every screen without a Mac, for App Review and for a first look.
+  - **Try Demo** on Capture (and in Settings, Search and the Inbox) while the iPhone isn't paired opens a sample vault built into the app: about 20 memories, three Inbox suggestions, and a Share, a Save and an access request waiting under **Waiting for you**.
+  - Search, edit, archive and delete, Save and Reject in the Inbox, and answer the requests, as with a real Mac. Captures go to the demo's Inbox.
+  - An orange **DEMO** banner says "Demo vault: not your data" on every tab. Nothing in the demo leaves the iPhone or touches your pairing or your real captures, and **Leave Demo** discards its changes and captures.
+- **Ready for the App Store (v0.2).** The iPhone app and its extensions carry Apple's privacy manifests: no tracking and no data collected. The privacy statement and funesvault.com/privacy now cover the iPhone app, including the iCloud doorbell for approvals, and funesvault.com/support has an iPhone section.
 
 ### Fixed
 

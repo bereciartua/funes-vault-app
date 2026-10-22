@@ -47,7 +47,9 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                if let record = model.record {
+                if model.isDemo {
+                    demoSection
+                } else if let record = model.record {
                     macSection(record)
                     ApprovalSettingsSection(model: model)
                     deviceSection(record)
@@ -98,13 +100,17 @@ struct SettingsView: View {
                 Text(line).font(.footnote).foregroundStyle(.secondary)
             }
             Button("Send Now") { Task { await model.capture.deliver(.manual) } }
-                .disabled(model.record == nil || model.capture.queuedCount == 0 || model.capture.delivering)
+                .disabled((model.record == nil && !model.isDemo) || model.capture.queuedCount == 0 || model.capture.delivering)
             Button("Delete Queued Captures…", role: .destructive) { confirmingDelete = true }
                 .disabled(model.capture.storedCount == 0)
         } header: {
             Text("Queue")
         } footer: {
-            Text("Captures wait on this iPhone until your Mac has them, then they're deleted here.")
+            if model.isDemo {
+                Text("Demo captures go to the demo Inbox, and are deleted when you leave the demo.")
+            } else {
+                Text("Captures wait on this iPhone until your Mac has them, then they're deleted here.")
+            }
         }
     }
 
@@ -133,6 +139,23 @@ struct SettingsView: View {
             .padding(.vertical, 4)
             Button("Pair with Mac") { model.presentingPairing = true }
                 .bold()
+            Button("Try the Demo") { model.switchDemo(true) }
+        } footer: {
+            Text("The demo shows every screen with a sample vault on this iPhone. Nothing is sent anywhere, and it never mixes with your own data.")
+        }
+    }
+
+    /// Demo mode (FR-iOS-10): what it is, and the way out.
+    private var demoSection: some View {
+        Section {
+            Toggle("Demo Vault", isOn: Binding(get: { model.isDemo }, set: { model.switchDemo($0) }))
+            Text("Sample memories, suggestions and requests, on this iPhone only. Nothing reaches a Mac, the network or iCloud. Changes and captures are discarded when you leave.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("Demo")
+        } footer: {
+            Text("To use your own vault, install Funes Vault on your Mac, leave the demo, and pair.")
         }
     }
 

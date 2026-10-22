@@ -1,0 +1,25 @@
+Funes Vault is a private memory for your AI agents. It lives on your Mac, and this app is its companion: capture anywhere, review what agents suggest, and decide what they may know, from your iPhone.
+
+Funes Vault for iPhone needs Funes Vault on your Mac, which is free. Your vault stays on the Mac; the iPhone keeps no copy of it. Not on a Mac yet? Try the demo, which shows every screen with sample data.
+
+CAPTURE ANYWHERE
+• Type or dictate a thought, and Funes keeps it until your Mac has it, even offline or in airplane mode.
+• Save from any app with the share sheet, from Shortcuts and Siri with "Remember in Funes", or from a Control in Control Center, on the Lock Screen or on the Action button.
+• Anything that looks like a password, key or card number is refused before it's saved.
+
+APPROVE FROM YOUR PHONE
+• When an agent wants memories, wants to save one, or asks for more access, your iPhone shows it, even locked.
+• Open it to see exactly what would be shared, untick anything you'd rather keep, and answer: Share, Deny, Save, Discard or Allow Once. The first answer, on the Mac or the phone, counts.
+• Answers need your iPhone unlocked.
+
+SEARCH, EDIT AND REVIEW
+• Search your vault on the Mac from your phone, read a memory with where it came from, and edit, archive or delete it.
+• Review the Inbox: what agents and your captures suggest. Swipe to save or reject.
+
+PRIVATE BY DESIGN
+• No account, no cloud copy, no analytics, no tracking. Data Not Collected.
+• Your iPhone talks only to your own Mac, end-to-end encrypted, over your Wi-Fi, Tailscale or a tunnel you run.
+• To wake your iPhone for a request, your Mac leaves a record holding only a random tag in your own private iCloud database: no text, no names.
+• Pairing is a QR code and a click on your Mac. Remove the iPhone on the Mac at any time.
+
+Funes Vault is open source (Apache 2.0). Funes Vault for Mac connects to agents through the Model Context Protocol (MCP), such as Claude Code, Cursor, Codex and Claude Desktop, and, with Remote Access, to cloud agents such as claude.ai and ChatGPT.

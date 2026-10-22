@@ -32,8 +32,8 @@
     <div class="wrap">
 <!-- Generated from PRIVACY.md in the repository; keep the two in step. -->
 <h1>Privacy</h1>
-<p class="updated">Funes Vault v0.1 (public preview) · Last updated 20 October 2026</p>
-<p>Funes Vault keeps your memories on your Mac. It has no accounts, no servers of its own, no analytics and no telemetry. This page lists everything that can leave your Mac, and when. Questions: <a href="https://github.com/bereciartua/funes-vault-app/issues">open an issue</a>.</p>
+<p class="updated">Funes Vault v0.1 (public preview), and Funes Vault for iPhone (v0.2, in testing) · Last updated 22 October 2026</p>
+<p>Funes Vault keeps your memories on your Mac. It has no accounts, no servers of its own, no analytics and no telemetry. This page lists everything that can leave your Mac, and when, and what the iPhone companion keeps and sends (<a href="#funes-vault-for-iphone">below</a>). Questions: <a href="https://github.com/bereciartua/funes-vault-app/issues">open an issue</a>.</p>
 <h2 id="in-short">In short</h2>
 <div class="table-wrap"><table>
 <thead><tr><th scope="col">What</th><th scope="col">Where it goes</th><th scope="col">When</th></tr></thead>
@@ -44,6 +44,8 @@
 <tr><td>One request to your tunnel's address</td><td>Your tunnel, and back to Funes Vault</td><td>When you save your tunnel's address, and when you click <strong>Test</strong> or <strong>Try Again</strong> on the Remote Access page</td></tr>
 <tr><td>An update check: the app's name and version</td><td>GitHub (the Funes Vault releases)</td><td>Once a day, if <strong>Check for updates every day</strong> is on, and when you click <strong>Check Now</strong> or <strong>Check for Updates…</strong></td></tr>
 <tr><td>Capture text, with your category names and descriptions</td><td>An AI provider you added and chose for Classification</td><td>Only if you add one and choose it, never above your cloud limit, never when it looks like a secret</td></tr>
+<tr><td>Captures, searches, edits, Inbox and approval answers from your iPhone, and the Mac's replies</td><td>Between your iPhone and your own Mac only, end-to-end encrypted, over your Wi-Fi, Tailscale or your tunnel</td><td>Only with <strong>iPhone access</strong> on (off by default), with an iPhone you paired</td></tr>
+<tr><td>A "doorbell" record holding only a random tag</td><td>Your own private iCloud database (CloudKit), whose push wakes your iPhone</td><td>When an agent's request waits for you, if a paired iPhone has approvals on. Deleted once the request is answered or over</td></tr>
 <tr><td>Anything else</td><td>Nowhere</td><td>No analytics, no crash reporting, no accounts</td></tr>
 </tbody></table></div>
 <h2 id="your-vault-stays-on-your-mac">Your vault stays on your Mac</h2>
@@ -74,6 +76,24 @@
   <li><strong>What's kept on your Mac:</strong> the remote token's file (mode 0600, the vault stores only its hash), the list of connected cloud apps with hashes of their tokens (<code>remote-connections.json</code>, mode 0600), and, in memory only, the tunnel and forwarded address of the last 50 remote requests. Nothing about your tunnel or cloud apps is sent anywhere else.</li>
   <li><strong>Turn Off Remote Access</strong> in the menu bar closes the port at once.</li>
 </ul>
+<h2 id="funes-vault-for-iphone">Funes Vault for iPhone</h2>
+<p>The iPhone app (v0.2) is a remote for your Mac: it captures, searches, edits, reviews the Inbox and answers agents' requests, all on the vault on your Mac. Its App Store privacy label is <strong>Data Not Collected</strong>: nothing it handles reaches us, or anyone but you and your Mac.</p>
+<p><strong>What stays on the iPhone</strong></p>
+<ul>
+  <li><strong>No copy of your vault.</strong> Search results, memories, the Inbox and approval panels are fetched from your Mac when you open them and kept in memory only while they're on screen.</li>
+  <li><strong>Captures waiting for your Mac,</strong> in the app's own storage on the iPhone (shared with its share sheet, Shortcuts action and Control, protected until you first unlock the iPhone after a restart). Each one is deleted as soon as your Mac has it. A capture that looks like a password, key or card number is refused before it's saved.</li>
+  <li><strong>The pairing:</strong> your Mac's name and addresses, and this iPhone's keys, in the iPhone's Keychain, usable only on this device. The signing key is in the Secure Enclave where the iPhone has one. <strong>Unpair This iPhone…</strong> deletes them, and asks whether to keep or delete captures still waiting. Removing the iPhone on your Mac (<strong>Settings ▸ iPhone</strong>) makes its keys useless at once.</li>
+</ul>
+<p><strong>What it sends, and where</strong></p>
+<ul>
+  <li><strong>Only to your own Mac,</strong> once paired by scanning a code your Mac shows. Every request and reply is end-to-end encrypted and signed for that Mac and that iPhone, so only they can read it. It travels over your Wi-Fi (the app looks for your Mac on the local network with Bonjour, which needs iOS's <strong>Local Network</strong> permission), over Tailscale, or through a tunnel you run. A tunnel or network operator sees only encrypted messages, their sizes and timing.</li>
+  <li><strong>Approvals and iCloud.</strong> When an agent's Share, Save or access request waits, your Mac saves a <code>Doorbell</code> record in <strong>your own private iCloud database</strong> (CloudKit, container <code>iCloud.com.funesvault</code>). It holds a single field, a random tag for your iPhone, under a random name: no memory text, titles, task, agent name or counts. Your iPhone subscribes to its tag, so Apple's push service wakes it. The app then asks your Mac, over the encrypted channel, what the request is, and words the notification on the iPhone ("Claude Code wants 3 memories"): it names the agent and the count or category, never memory text, because a locked screen shows it. The Mac deletes the record when the request is answered, expires or changes. Apple can see that your devices exchanged a record at a given time; we can't read your private database. This needs the same Apple Account, with iCloud, on the Mac and the iPhone. Turn approvals off on the iPhone in <strong>Settings ▸ Approvals</strong>, or for each iPhone on the Mac.</li>
+  <li><strong>Nothing else.</strong> No analytics, advertising or tracking code, no crash reporter, no accounts. The share sheet, the Shortcuts action and the Control only add to the captures waiting on the iPhone.</li>
+</ul>
+<p><strong>Dictation.</strong> On iOS 26 and later the mic button uses Apple's speech recognition on the iPhone. On earlier versions it opens the keyboard's dictation, which works under Apple's terms and your <strong>Siri &amp; Dictation</strong> settings.</p>
+<p><strong>Demo mode</strong> shows every screen with a sample vault built into the app, for App Review and for trying the app before you pair. Nothing in it is sent anywhere, it never mixes with your data, and its edits and captures are discarded when you leave it.</p>
+<p><strong>Crash reports and TestFlight.</strong> If you choose to share analytics with app developers in iOS's <strong>Settings ▸ Privacy &amp; Security ▸ Analytics &amp; Improvements</strong>, Apple may pass us crash reports under <a href="https://www.apple.com/legal/privacy/">Apple's privacy policy</a>. TestFlight testers' feedback and crash reports reach us the same way, through Apple.</p>
+<p><strong>On your Mac, iPhone access</strong> (off by default, <strong>Settings ▸ iPhone</strong>) opens a listener on port 47626 that accepts only the network addresses of the modes you turn on (your local network, Tailscale, or your tunnel through <code>127.0.0.1</code>), and, for the local network, advertises a Funes service with Bonjour, under your Mac's name as file sharing and AirPlay do, so your iPhone can find it. Each paired iPhone's requests appear in Activity under that iPhone.</p>
 <h2 id="update-checks">Update checks</h2>
 <p>Funes Vault uses <a href="https://sparkle-project.org">Sparkle</a> 2 to check for updates.</p>
 <ul>
@@ -109,7 +129,7 @@
   <li><strong>Security reports</strong> go privately through GitHub's private vulnerability reporting (<a href="https://github.com/bereciartua/funes-vault-app/blob/main/SECURITY.md">SECURITY.md</a>).</li>
 </ul>
 <h2 id="children">Children</h2>
-<p>Funes Vault isn't directed at children and collects no personal data from anyone.</p>
+<p>Funes Vault, on the Mac and the iPhone, isn't directed at children and collects no personal data from anyone.</p>
 <h2 id="changes">Changes</h2>
 <p>When this statement changes, the date at the top changes, and the change is listed in the <a href="https://github.com/bereciartua/funes-vault-app/blob/main/CHANGELOG.md">CHANGELOG</a>. A version that sends anything new will say so here before it ships.</p>
 <h2 id="contact">Contact</h2>

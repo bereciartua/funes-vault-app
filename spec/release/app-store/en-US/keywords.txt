@@ -1,0 +1,1 @@
+memory,ai,agent,mcp,private,local,mac,companion,capture,approve,context,notes,llm,assistant,offline
