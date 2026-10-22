@@ -3,7 +3,9 @@ set -eu
 
 # Checks the App Store texts in spec/release/app-store/<locale>/ against App Store Connect's
 # limits, so they paste in as they are: name and subtitle 30 characters, promotional text 170,
-# description 4,000, keywords 100 bytes with no space after a comma, and https URLs.
+# description 4,000, keywords 100 bytes with no space after a comma, and https URLs. Also
+# App Intents' titles and descriptions, which App Store Connect rejects when they name an Apple
+# product (ITMS-90626: "cannot contain 'mac'", 2026-10-22).
 #
 # Usage: sh scripts/check_app_store_metadata.sh
 cd "$(dirname "$0")/.."
@@ -25,4 +27,9 @@ for dir in spec/release/app-store/*/; do
         grep -Eqx 'https://[^ ]+' "$dir/$url.txt" || fail "$dir/$url.txt isn't one https URL"
     done
 done
+# App Intent metadata: no Apple product names, which Siri reserves.
+if grep -rnE --include='*.swift' '(IntentDescription|static let title: LocalizedStringResource|shortTitle:|\.description)\(?.*"[^"]*\b([Mm]ac|i[Pp]hone|i[Pp]ad|[Ss]iri|Apple|[Ww]atch)\b' \
+    Apps/FunesShared Apps/FunesIntents Apps/FunesiOS/FunesShortcuts.swift; then
+    fail "an App Intent's title or description names an Apple product (ITMS-90626)"
+fi
 exit "$status"
