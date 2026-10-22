@@ -83,6 +83,24 @@ So Tailscale won about 3 s after the check started, once the better-ranked probe
 
 **Not exercised:** Save by swipe (only a reject was swiped), Edit & Save, the Archived and Recently Deleted scopes, and the banner over Tailscale.
 
+### Run 4 (2026-10-22): task 5.6's approvals on the device; **all four checks pass** after a CloudKit Development reset
+**Setup:** the maintainer's iPhone 13 mini (iOS 27.0.1), with PR #39's Debug build signed by automatic signing (Apple Development, CloudKit Development, sandbox APNs). Next to the installed app, a Debug Mac app signed with the iCloud entitlement, on a new development vault (`FUNES_DATA_DIR=/tmp/funes-approvals`, `--dev-seed`, companion port 47636), with Same Wi-Fi and Tailscale on. The phone was paired with it again. Each request came from the seeded "Claude Code" agent through the Debug build's `funes-mcp`: one `request_memory` about a café order and lunch. Two memories matched; a third (the penicillin allergy) was withheld as above the agent's sensitivity limit. No agent config changed.
+
+| Check | Result |
+|---|---|
+| The locked phone shows the worded notification | ✅ "Claude Code wants 2 memories" · "Open to see exactly what would be shared." The extension's `approvals.get {ring}` reached the Mac 1.7 s after the request (Activity `approval_viewed` under the device). |
+| Answering on the phone closes the Mac's panel | ✅ Opened from the notification and shared from the phone. `approval` approved by `device:…` via `companion`, and the agent's waiting call returned `delivered` with the 2 memories 18.4 s after it asked. |
+| A Mac answer first gives "Answered on your Mac" | ✅ Approved on the Mac 6.7 s after the request (`approval` by `user`). Tapping the notification opened the panel on "Answered on your Mac". |
+| With the Mac unreachable, the phone says "Mac not reachable" | ✅ Phone on 5G with Wi-Fi and Tailscale off. The Mac rang at once, and the locked phone showed "You have a request · Mac not reachable. Answer on your Mac, or open Funes when your Mac is reachable." as Time Sensitive. Nothing from the phone reached the Mac. |
+
+**Found and fixed during the run:**
+1. **No push arrived: CloudKit refused the phone's subscription.** The first two requests rang (the Mac's CloudKit save finished about 1 s after each), but nothing reached the phone. Settings ▸ Approvals said "Couldn't set up notifications with iCloud", and the CloudKit error was `11/2003 Unknown Item`, "fieldID=21, could not find required field", when saving the subscription. The cause was the Q24 spike's own subscription, `doorbell-spike`, still in the maintainer's private database. It asked for the spike's `seq` and `sentAt` fields, which left the Development schema when it was made to match Production (task 5.6, Mac half). From then on, CloudKit couldn't list, delete or add a subscription in that database; the CloudKit Console's Subscriptions page failed the same way. Adding the two fields back didn't help, since the subscription names the old field's internal id. **Reset Environment** on Development (with the maintainer's OK) removed it and reverted the schema to Production's; the phone then subscribed at once. Production never had the spike's subscription. Lesson: delete a spike's subscriptions before removing fields they name.
+2. **The app now says why.** CloudKit's error is logged by step and shown under the warning in Debug builds; an old subscription that can't be listed or deleted no longer stops the current one being saved.
+3. **Repeated `approvals.list` calls.** Coming to the front, network changes and a ring each read the list, up to eight times in a few seconds, each one an Activity row on the Mac. One read at a time now, and none within 5 s of the last unless a ring says something changed. The subscription check also runs one at a time.
+4. **Wording:** under "Answered on your Mac", "It was answered before this iPhone's answer" read wrongly when the phone hadn't answered; it's now "Nothing more to do here."
+
+**Not exercised:** the Save and access panels on the device (both are covered by tests against the real router), Deny from the phone, a changed request (`request_changed`), the phone on Tailscale, and a Focus mode. 5.8's manual matrix has them.
+
 ### Before the run (2026-10-20): partly covered in software
 Phase 0 deferred this spike "until just before Phase 5", and Phase 5 depends on it passing.
 

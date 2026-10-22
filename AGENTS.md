@@ -13,7 +13,7 @@ When a design changes, update the spec in the same change and add an ADR for arc
 
 ## Layout
 - `Apps/FunesMac/`: the Mac app target (bundle `com.funesvault.mac`, `LSUIElement`, hardened runtime, not sandboxed, macOS 15+).
-- `Apps/FunesiOS/`, `Apps/FunesShareExtension/`, `Apps/FunesIntents/`: the iPhone app (`com.funesvault.ios`, iOS 18+) and its share and App Intents/Control extensions (`.share`, `.intents`), all in App Group `group.com.funesvault` and Keychain access group `<team>.com.funesvault.shared`. `Apps/FunesShared/` (the App Intents: "Remember in Funes" and the Control's) is compiled into the app and the Intents extension. Their Info.plists and entitlements are `Apps/<target>-Info.plist` and `Apps/<target>.entitlements`. The notification service extension (`.notifications`) comes in task 5.6.
+- `Apps/FunesiOS/`, `Apps/FunesShareExtension/`, `Apps/FunesIntents/`, `Apps/FunesNotifications/`: the iPhone app (`com.funesvault.ios`, iOS 18+) and its share, App Intents/Control and notification service extensions (`.share`, `.intents`, `.notifications`), all in App Group `group.com.funesvault` and Keychain access group `<team>.com.funesvault.shared`. `Apps/FunesShared/` (the App Intents: "Remember in Funes" and the Control's) is compiled into the app and the Intents extension. Their Info.plists and entitlements are `Apps/<target>-Info.plist` and `Apps/<target>.entitlements`. The app also has iCloud (`iCloud.com.funesvault`), Push Notifications and Time Sensitive Notifications, for approvals (task 5.6).
 - `Packages/FunesProtocol/`: shared Mac + iOS types and logic. **No dependencies** beyond system frameworks.
 - `Packages/FunesCore/`: vault logic, Mac only. Depends on FunesProtocol and GRDB. **No AppKit, SwiftUI, MCP or networking UI** here.
 - `Packages/FunesMCP/`: the MCP adapter: tool contract (`Sources/FunesMCP/Resources/mcp-tools.json`), `RequestPipeline`, handlers, key files, and the `funes-mcp-test-server` (FUNES_MCP_TEST) the Python harness drives. Depends on FunesCore and BridgeKit; no AppKit ([ADR-0017](spec/architecture/decisions/0017-funes-mcp-package.md)).
@@ -56,7 +56,7 @@ Debug builds of the app and `funes-mcp` honour `FUNES_DATA_DIR`, so a developmen
 ```bash
 sh scripts/check_log_privacy.sh
 ```
-User-facing text lives in `Apps/FunesMac/Localizable.xcstrings` (the app's and BridgeUI's strings) and, for the iPhone, in each target's `Localizable.xcstrings` under `Apps/FunesiOS`, `Apps/FunesShareExtension` and `Apps/FunesIntents`. After changing UI text, build the app (test.sh does) and update the catalog; test.sh fails while it's out of date:
+User-facing text lives in `Apps/FunesMac/Localizable.xcstrings` (the app's and BridgeUI's strings) and, for the iPhone, in each target's `Localizable.xcstrings` under `Apps/FunesiOS`, `Apps/FunesShareExtension`, `Apps/FunesIntents` and `Apps/FunesNotifications` (the app's and the notification extension's also hold FunesPhone's approval words). After changing UI text, build the app (test.sh does) and update the catalog; test.sh fails while it's out of date:
 ```bash
 sh scripts/sync_strings.sh
 ```

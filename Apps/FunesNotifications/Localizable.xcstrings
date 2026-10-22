@@ -1,0 +1,237 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ on your Mac. It may send what it reads to its AI service." : {
+
+    },
+    "%@ suggests a correction" : {
+
+    },
+    "%@ suggests a memory" : {
+
+    },
+    "%@ suggests archiving a memory" : {
+
+    },
+    "%@ wants %lld memories" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants %2$lld memories"
+          }
+        }
+      }
+    },
+    "%@ wants 1 memory" : {
+
+    },
+    "%@ wants more access" : {
+
+    },
+    "%@ wants to add to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants to add to %2$@"
+          }
+        }
+      }
+    },
+    "%@ wants to read %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants to read %2$@"
+          }
+        }
+      }
+    },
+    "%@ wants to read your memories" : {
+
+    },
+    "%@ wants to suggest memories" : {
+
+    },
+    "%@, a cloud agent, through Remote Access" : {
+
+    },
+    "%@, a cloud agent, through your %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, a cloud agent, through your %2$@"
+          }
+        }
+      }
+    },
+    "%@, through Remote Access, to %@'s servers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, through Remote Access, to %2$@'s servers"
+          }
+        }
+      }
+    },
+    "%@, through your %@, to %@'s servers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, through your %2$@, to %3$@'s servers"
+          }
+        }
+      }
+    },
+    "%lld above its sensitivity limit" : {
+
+    },
+    "%lld expired" : {
+
+    },
+    "%lld in categories it can't read" : {
+
+    },
+    "%lld more matched but can't go to this agent (%@)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld more matched but can't go to this agent (%2$@)."
+          }
+        }
+      }
+    },
+    "%lld not shareable" : {
+
+    },
+    "Allow Once is for this request only. It shares without asking, so the matching memories go to it at once." : {
+
+    },
+    "Allow Once is for this request only. Next, you'll see exactly what would be shared." : {
+
+    },
+    "Allow Once is for this request only. The suggestion still waits in your Inbox." : {
+
+    },
+    "Allowed once." : {
+
+    },
+    "Already answered" : {
+
+    },
+    "Always Allow %@ to Add to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Allow %1$@ to Add to %2$@"
+          }
+        }
+      }
+    },
+    "Always Allow %@ to Read" : {
+
+    },
+    "Always Allow %@ to Read %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Allow %1$@ to Read %2$@"
+          }
+        }
+      }
+    },
+    "Always Allow %@ to Suggest" : {
+
+    },
+    "Always allowed." : {
+
+    },
+    "Answered on your Mac" : {
+
+    },
+    "Beyond the session" : {
+
+    },
+    "Denied." : {
+
+    },
+    "Discarded." : {
+
+    },
+    "For the session" : {
+
+    },
+    "From %@. It's in your Inbox either way." : {
+
+    },
+    "It already got what it may read. Always Allow is for next time." : {
+
+    },
+    "Mac not reachable. Answer on your Mac, or open Funes when your Mac is reachable." : {
+
+    },
+    "Not at all" : {
+
+    },
+    "Not now." : {
+
+    },
+    "Not said" : {
+
+    },
+    "Open Funes to see what's waiting." : {
+
+    },
+    "Open to answer. The agent is waiting." : {
+
+    },
+    "Open to save or discard it." : {
+
+    },
+    "Open to see exactly what would be shared." : {
+
+    },
+    "Save this correction?" : {
+
+    },
+    "Save this memory?" : {
+
+    },
+    "Saved." : {
+
+    },
+    "Shared %lld memories." : {
+
+    },
+    "Shared 1 memory." : {
+
+    },
+    "There's nothing to answer any more." : {
+
+    },
+    "There's nothing to answer here." : {
+
+    },
+    "This iPhone was removed from Funes on your Mac." : {
+
+    },
+    "This request expired" : {
+
+    },
+    "This request is no longer waiting" : {
+
+    },
+    "You have a request" : {
+
+    }
+  },
+  "version" : "1.0"
+}

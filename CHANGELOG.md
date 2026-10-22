@@ -33,6 +33,12 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
   - Settings ▸ iPhone has **Approve requests on this iPhone** for each paired iPhone, on by default.
   - When a Share, Save or access request waits on your Mac, Funes rings a "doorbell" in your own iCloud for each of those iPhones. The record holds only a random tag: no memory text, titles, task or agent name, and no request id. The iPhone then gets the details straight from your Mac, end-to-end encrypted. The record is deleted once the request is answered, expires or changes. Settings ▸ iPhone says when this Mac can't notify, for example when it isn't signed in to iCloud.
   - The first answer wins, on the Mac or the iPhone. If the iPhone answers first, the Mac's panel closes and says "Answered on Sam's iPhone." Answers from the iPhone show in Activity under its name, with the same 15-minute limit and the same checks as on the Mac.
+- **Approve requests on the iPhone (v0.2, for testing).**
+  - When an agent asks to share memories, save one or get more access, the iPhone shows a notification, also locked: "Claude Code wants 3 memories", "Cursor suggests a memory", "Codex wants to read Work". It names the agent and the count, never your memories or the task. The iPhone words it itself, after asking your Mac over the encrypted connection; if it can't reach your Mac, the notification says "Mac not reachable".
+  - Tapping it opens the same panel as the Mac's: where the text goes, what the agent says (not checked by Funes), and the memories with checkboxes and sensitivity badges, weaker matches unticked under "Also matched, less closely", each with its exact text and **Show All**. **Share N** or **Deny**, **Save** or **Discard**, **Allow Once**, **Not Now** or **Always Allow…** answer it. Answering needs the iPhone unlocked.
+  - The first answer counts. If your Mac answered first, the iPhone says "Answered on your Mac"; if the memories changed meanwhile, it shows the new panel to review again; after 15 minutes it says the request expired.
+  - Requests still waiting are listed under **Waiting for you** at the top of Capture, for a notification you missed.
+  - Settings ▸ **Approve requests on this iPhone** turns them on or off, the same switch as on the Mac. It says why notifications might not come: notifications off, the iPhone or the Mac not signed in to iCloud, or a Mac build that can't notify. The iPhone asks for notification permission once approvals are on.
 
 ### Fixed
 

@@ -170,4 +170,68 @@ import Testing
         #expect(inbox.answeredElsewhere == 1)
         #expect(inbox.items.isEmpty)
     }
+
+    /// Task 5.6 from the phone's side: the extension's fetch by the ring, the panel's answer, and
+    /// a Mac answer first, through the real client, router and vault.
+    @MainActor @Test func approvalsThroughTheRealMac() async throws {
+        let h = try CompanionHarness()
+        let phone = client(h)
+        let payload = await h.qr()
+        async let paired = phone.pair(payload, deviceName: "Sam's iPhone", model: "iPhone14,4")
+        try await h.answerWhenAsked(true)
+        _ = try await paired
+        let cloud = RecordingSubscriptions()
+        let settings = ApprovalSettingsModel(caller: phone, subscriptions: cloud)
+        await settings.load()
+        let tag = try #require(settings.settings?.tag)
+        #expect(cloud.ids == ["doorbell-" + tag])
+        await h.approvals.setRinging(true)
+
+        // The ring, worded on the phone from what the Mac sends over the companion channel.
+        let (id, memories) = try await ApprovalsTests().shareRequest(h)
+        let ring = try #require(h.doorbell.rung.last)
+        #expect(ring.tag == tag)
+        let outcome = await ApprovalAlert.fetch(ring: ring.recordName, caller: phone)
+        let alert = ApprovalAlert(outcome)
+        #expect(alert.title == "Claude Code wants 1 memory" && alert.approvalID == id)
+        #expect(!alert.title.contains(ApprovalsTests.title) && !alert.body.contains(ApprovalsTests.title))
+
+        // Tapped: the panel opens by id, and Share answers it.
+        let list = ApprovalsModel(caller: phone, clock: { h.clock.now })
+        await list.load()
+        #expect(list.items.map(\.id) == [id])
+        let panel = ApprovalPanelModel(ref: try #require(ApprovalAlert.ref(fromUserInfo: alert.userInfo)), caller: phone)
+        await panel.load()
+        #expect(panel.selected == Set(memories))
+        await panel.answer(.share)
+        #expect(panel.phase == .closed(.answered(.share, count: 1)))
+        #expect(try await h.disclosures.disclosure(requestID: id)?.status == .approved)
+
+        // The next request is answered on the Mac first.
+        let (second, _) = try await ApprovalsTests().shareRequest(h)
+        let late = ApprovalPanelModel(ref: ApprovalRef(id: second), caller: phone)
+        await late.load()
+        try await h.disclosures.deny(requestID: second, now: h.clock.now, waitingOnly: true)
+        await late.answer(.share)
+        #expect(late.phase == .closed(.answeredOnMac))
+        let secondRing = try #require(h.doorbell.rung.last)
+        #expect(await ApprovalAlert.fetch(ring: secondRing.recordName, caller: phone) == .answered)
+
+        // Off from the phone: the subscription goes.
+        await settings.setEnabled(false)
+        #expect(cloud.ids.isEmpty && settings.subscription == .off)
+    }
+}
+
+/// The phone's CloudKit subscriptions, in memory.
+final class RecordingSubscriptions: DoorbellSubscriptions, @unchecked Sendable {
+    private let lock = NSLock()
+    private var saved: Set<String> = []
+
+    var ids: Set<String> { lock.withLock { saved } }
+
+    func accountAvailable() async -> Bool { true }
+    func subscriptionIDs() async throws -> [String] { lock.withLock { Array(saved) } }
+    func subscribe(id: String, tag: String, alertBody: String) async throws { _ = lock.withLock { saved.insert(id) } }
+    func unsubscribe(ids: [String]) async throws { lock.withLock { saved.subtract(ids) } }
 }

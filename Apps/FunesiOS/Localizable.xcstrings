@@ -21,6 +21,60 @@
         }
       }
     },
+    "%@ on your Mac. It may send what it reads to its AI service." : {
+
+    },
+    "%@ suggests a correction" : {
+
+    },
+    "%@ suggests a memory" : {
+
+    },
+    "%@ suggests archiving a memory" : {
+
+    },
+    "%@ wants %lld memories" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants %2$lld memories"
+          }
+        }
+      }
+    },
+    "%@ wants 1 memory" : {
+
+    },
+    "%@ wants more access" : {
+
+    },
+    "%@ wants to add to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants to add to %2$@"
+          }
+        }
+      }
+    },
+    "%@ wants to read %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants to read %2$@"
+          }
+        }
+      }
+    },
+    "%@ wants to read your memories" : {
+
+    },
+    "%@ wants to suggest memories" : {
+
+    },
     "%@ · %@" : {
       "localizations" : {
         "en" : {
@@ -35,6 +89,61 @@
 
     },
     "%@'s Task" : {
+
+    },
+    "%@, a cloud agent, through Remote Access" : {
+
+    },
+    "%@, a cloud agent, through your %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, a cloud agent, through your %2$@"
+          }
+        }
+      }
+    },
+    "%@, through Remote Access, to %@'s servers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, through Remote Access, to %2$@'s servers"
+          }
+        }
+      }
+    },
+    "%@, through your %@, to %@'s servers" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, through your %2$@, to %3$@'s servers"
+          }
+        }
+      }
+    },
+    "%lld above its sensitivity limit" : {
+
+    },
+    "%lld expired" : {
+
+    },
+    "%lld in categories it can't read" : {
+
+    },
+    "%lld more matched but can't go to this agent (%@)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld more matched but can't go to this agent (%2$@)."
+          }
+        }
+      }
+    },
+    "%lld not shareable" : {
 
     },
     "Accepted %@ in %lld ms" : {
@@ -56,13 +165,81 @@
     "Add the text to remember." : {
 
     },
+    "Allow Once" : {
+
+    },
+    "Allow Once is for this request only. It shares without asking, so the matching memories go to it at once." : {
+
+    },
+    "Allow Once is for this request only. Next, you'll see exactly what would be shared." : {
+
+    },
+    "Allow Once is for this request only. The suggestion still waits in your Inbox." : {
+
+    },
+    "Allowed once." : {
+
+    },
+    "Already answered" : {
+
+    },
     "Already answered on your Mac" : {
+
+    },
+    "Also matched, less closely" : {
+
+    },
+    "Always Allow %@ to Add to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Allow %1$@ to Add to %2$@"
+          }
+        }
+      }
+    },
+    "Always Allow %@ to Read" : {
+
+    },
+    "Always Allow %@ to Read %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Allow %1$@ to Read %2$@"
+          }
+        }
+      }
+    },
+    "Always Allow %@ to Suggest" : {
+
+    },
+    "Always allowed." : {
 
     },
     "An expired memory is never shared with agents." : {
 
     },
+    "Answer by %@" : {
+
+    },
+    "Answer here or on your Mac. The first answer counts." : {
+
+    },
+    "Answer within %@" : {
+
+    },
     "Answered" : {
+
+    },
+    "Answered on your Mac" : {
+
+    },
+    "Approvals" : {
+
+    },
+    "Approve requests on this iPhone" : {
 
     },
     "Archive" : {
@@ -75,6 +252,12 @@
 
     },
     "Archived. Archived memories are kept, but never shared with agents." : {
+
+    },
+    "Asking your Mac…" : {
+
+    },
+    "Beyond the session" : {
 
     },
     "Blocked: looks like a secret (%@). Funes never stores passwords, keys or card numbers." : {
@@ -114,6 +297,9 @@
     "Categories" : {
 
     },
+    "Category" : {
+
+    },
     "Change to a memory" : {
 
     },
@@ -138,7 +324,13 @@
     "Click Allow on “%@”" : {
 
     },
+    "Cloud" : {
+
+    },
     "Confirmed still true" : {
+
+    },
+    "Connect to your Mac to change this." : {
 
     },
     "Connected to %@ · %@" : {
@@ -198,6 +390,9 @@
     "Couldn't open this memory" : {
 
     },
+    "Couldn't open this request" : {
+
+    },
     "Couldn't reach your Mac. Make sure both are on the same Wi-Fi, or set up Tailscale on both." : {
 
     },
@@ -220,6 +415,9 @@
 
     },
     "Couldn't search" : {
+
+    },
+    "Couldn't set up notifications with iCloud. Funes tries again when it next opens." : {
 
     },
     "Created" : {
@@ -246,6 +444,12 @@
     "Delete…" : {
 
     },
+    "Denied." : {
+
+    },
+    "Deny" : {
+
+    },
     "Dictate" : {
 
     },
@@ -253,6 +457,12 @@
 
     },
     "Dictation isn't available right now. Use the microphone on the keyboard instead." : {
+
+    },
+    "Discard" : {
+
+    },
+    "Discarded." : {
 
     },
     "Done" : {
@@ -294,7 +504,13 @@
     "Five iPhones are already paired with this Mac. Remove one in Funes Settings ▸ iPhone." : {
 
     },
+    "For the session" : {
+
+    },
     "Found on this Wi-Fi" : {
+
+    },
+    "From %@. It's in your Inbox either way." : {
 
     },
     "Funes" : {
@@ -312,6 +528,9 @@
     "Goal" : {
 
     },
+    "Goes to" : {
+
+    },
     "History" : {
 
     },
@@ -327,10 +546,22 @@
     "Internal" : {
 
     },
+    "It already got what it may read. Always Allow is for next time." : {
+
+    },
     "It moves to Recently Deleted on your Mac, where you can restore it for 30 days." : {
 
     },
     "It was deleted for good." : {
+
+    },
+    "It's no longer waiting on your Mac." : {
+
+    },
+    "Keeps what it gets" : {
+
+    },
+    "Keeps what it gets: %@" : {
 
     },
     "Keychain" : {
@@ -345,10 +576,19 @@
     "Last check" : {
 
     },
+    "Later" : {
+
+    },
+    "Leaves your Mac" : {
+
+    },
     "Local Network access is off for Funes" : {
 
     },
     "Local Network access is off for Funes · %lld captures waiting" : {
+
+    },
+    "Looking for" : {
 
     },
     "Low" : {
@@ -364,6 +604,12 @@
 
     },
     "Mac not reachable · %lld captures waiting" : {
+
+    },
+    "Mac not reachable. Answer on your Mac, or open Funes when your Mac is reachable." : {
+
+    },
+    "Mac not reachable. Your answer didn't get through: try again, or answer on your Mac." : {
 
     },
     "Make sure this iPhone is on the same Wi-Fi as your Mac." : {
@@ -399,19 +645,52 @@
     "Not accepted by your Mac: looks like a secret" : {
 
     },
+    "Not at all" : {
+
+    },
+    "Not now." : {
+
+    },
     "Not paired" : {
 
     },
     "Not paired · %lld captures waiting" : {
 
     },
+    "Not said" : {
+
+    },
     "Not saved: it looks like a password, key or card number. Funes never stores secrets." : {
+
+    },
+    "Not ticked" : {
 
     },
     "Nothing archived" : {
 
     },
+    "Nothing more to do here." : {
+
+    },
+    "Notifications are off for Funes Vault on this iPhone." : {
+
+    },
     "OK" : {
+
+    },
+    "Open Funes to see what's waiting." : {
+
+    },
+    "Open Notification Settings" : {
+
+    },
+    "Open to answer. The agent is waiting." : {
+
+    },
+    "Open to save or discard it." : {
+
+    },
+    "Open to see exactly what would be shared." : {
 
     },
     "Opens Funes Vault on Capture, ready to type or dictate." : {
@@ -460,6 +739,9 @@
 
     },
     "Public" : {
+
+    },
+    "Purpose" : {
 
     },
     "Queue" : {
@@ -534,6 +816,9 @@
     "Remember in Funes" : {
 
     },
+    "Requests wait 15 minutes. The agent can ask again." : {
+
+    },
     "Restore" : {
 
     },
@@ -555,10 +840,19 @@
     "Save" : {
 
     },
+    "Save this correction?" : {
+
+    },
+    "Save this memory?" : {
+
+    },
     "Saved" : {
 
     },
     "Saved from the Inbox" : {
+
+    },
+    "Saved." : {
 
     },
     "Saves text for Funes Vault on your Mac. It waits on this iPhone until your Mac has it." : {
@@ -625,7 +919,13 @@
     "Settings" : {
 
     },
+    "Share %lld" : {
+
+    },
     "Shared" : {
+
+    },
+    "Shared %lld memories." : {
 
     },
     "Shared %lld times" : {
@@ -641,7 +941,28 @@
         }
       }
     },
+    "Shared 1 memory." : {
+
+    },
     "Shared once · %@" : {
+
+    },
+    "Shared with" : {
+
+    },
+    "Show All" : {
+
+    },
+    "Show Less" : {
+
+    },
+    "Show all of %@" : {
+
+    },
+    "Show less of %@" : {
+
+    },
+    "Sign in to iCloud on this iPhone, with the same Apple Account as your Mac, to get notifications." : {
 
     },
     "Signing key" : {
@@ -684,6 +1005,9 @@
     "Tailscale" : {
 
     },
+    "Task" : {
+
+    },
     "Text" : {
 
     },
@@ -699,10 +1023,25 @@
     "The Inbox lives on your Mac. Pair this iPhone with it first." : {
 
     },
+    "The agent says · not checked by Funes" : {
+
+    },
+    "The request waits on your Mac. Answer it there, or try again when your Mac is reachable." : {
+
+    },
+    "There's nothing to answer any more." : {
+
+    },
+    "There's nothing to answer here." : {
+
+    },
     "There's nothing to remember." : {
 
     },
     "They haven't reached your Mac and can't be recovered." : {
+
+    },
+    "This build of Funes on your Mac can't notify iPhones. Requests still show here when you open Funes." : {
 
     },
     "This changed on your Mac." : {
@@ -756,10 +1095,25 @@
     "This memory is no longer on your Mac" : {
 
     },
+    "This request changed on your Mac. Review it again." : {
+
+    },
+    "This request expired" : {
+
+    },
     "This request expired." : {
 
     },
+    "This request is no longer waiting" : {
+
+    },
     "This was already answered." : {
+
+    },
+    "Ticked" : {
+
+    },
+    "Time's up on your Mac" : {
 
     },
     "Title" : {
@@ -781,6 +1135,9 @@
 
     },
     "Type or dictate something to remember." : {
+
+    },
+    "Unlock your iPhone to answer." : {
 
     },
     "Unpair" : {
@@ -810,6 +1167,9 @@
     "Waiting" : {
 
     },
+    "Waiting for you" : {
+
+    },
     "Waiting in Inbox" : {
 
     },
@@ -817,6 +1177,12 @@
 
     },
     "What to Try" : {
+
+    },
+    "When an agent asks to share or save memories, this iPhone gets a notification and can answer, as your Mac can. The notification names the agent, never your memories." : {
+
+    },
+    "Why" : {
 
     },
     "Why?" : {
@@ -829,6 +1195,9 @@
 
     },
     "Work or project context. Share with agents you use for that work." : {
+
+    },
+    "You have a request" : {
 
     },
     "Your Inbox is empty" : {
@@ -852,7 +1221,13 @@
     "Your Mac forgets this iPhone, and this iPhone forgets its keys. You can pair again with a new code." : {
 
     },
+    "Your Mac has your answer." : {
+
+    },
     "Your Mac is busy. Try again in a moment." : {
+
+    },
+    "Your Mac isn't signed in to iCloud, so it can't notify this iPhone. Requests still show here when you open Funes." : {
 
     },
     "Your Mac may be asleep, or Funes Vault may be closed. Wake the Mac and open Funes Vault." : {
@@ -867,7 +1242,13 @@
     "Your Mac's Funes Vault is too old for this. Update it on the Mac." : {
 
     },
+    "Your answer may have reached your Mac before the connection dropped. Activity on your Mac shows what happened." : {
+
+    },
     "Your answer · %@" : {
+
+    },
+    "Your note" : {
 
     },
     "Your vault isn't available on your Mac right now. Try again in a moment." : {
@@ -907,6 +1288,9 @@
 
     },
     "an AWS key" : {
+
+    },
+    "iCloud is restricted on your Mac, so it can't notify this iPhone. Requests still show here when you open Funes." : {
 
     }
   },

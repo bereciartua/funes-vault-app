@@ -20,6 +20,7 @@ struct CaptureView: View {
         NavigationStack {
             List {
                 BannerSection(model: model)
+                ApprovalsSection(model: model)
                 Section {
                     editor
                     if let problem {
