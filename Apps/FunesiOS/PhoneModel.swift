@@ -326,6 +326,13 @@ extension PhoneModel {
             return String(localized: "Your Mac's Funes Vault is too old for this. Update it on the Mac.")
         case .internalError:
             return String(localized: "Something went wrong on your Mac. Try again.")
+        // Only `approvals.*` sends these; the approval screens (task 5.6) word them themselves.
+        case .alreadyAnswered:
+            return String(localized: "This was already answered.")
+        case .requestExpired:
+            return String(localized: "This request expired.")
+        case .requestChanged:
+            return String(localized: "This changed on your Mac.")
         }
     }
 }

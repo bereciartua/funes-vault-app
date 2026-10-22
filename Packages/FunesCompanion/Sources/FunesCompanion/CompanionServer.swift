@@ -48,11 +48,15 @@ public final class CompanionServer {
     private var router: CompanionRouter?
     private var listener: CompanionListener?
 
-    public init(identity: MacIdentity, services: CompanionServices, macName: @escaping @Sendable () -> String, appVersion: String) {
+    public let approvals: CompanionApprovals?
+
+    public init(identity: MacIdentity, services: CompanionServices, macName: @escaping @Sendable () -> String, appVersion: String,
+                approvals: CompanionApprovals? = nil) {
         self.identity = identity
         self.services = services
+        self.approvals = approvals
         pairing = PairingService(identity: identity, devices: services.devices, activity: services.activity)
-        handlers = CompanionHandlers(services: services, macName: macName, appVersion: appVersion)
+        handlers = CompanionHandlers(services: services, macName: macName, appVersion: appVersion, approvals: approvals)
     }
 
     /// Starts, restarts or stops the listener to match `configuration`.
@@ -100,6 +104,7 @@ public final class CompanionServer {
     public func revoke(deviceID: UUID) async throws {
         try await services.devices.revoke(deviceID: deviceID, now: Date(), actor: .user)
         await router?.forget(deviceID: deviceID)
+        await approvals?.forget(deviceID: deviceID)
     }
 
     /// The addresses a QR code lists, in the order the phone tries them (§5): the Mac's `.local`

@@ -207,7 +207,10 @@ CREATE TABLE device (
   paired_at          TEXT NOT NULL,
   last_seen_at       TEXT,
   last_transport     TEXT,
-  revoked_at         TEXT
+  revoked_at         TEXT,
+  -- v3_device_approvals (ADR-0019, task 5.6):
+  approvals_enabled  INTEGER NOT NULL DEFAULT 1,
+  doorbell_tag       TEXT              -- set when the phone asks, while approvals are on
 );
 
 CREATE TABLE capture_receipt (
@@ -231,6 +234,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 ## 3. Migrations
 - These are GRDB `DatabaseMigrator`, forward-only and named (`v1_initial`, `v2_…`).
 - `v2_remote_access` (v0.1, Phase 4b): adds `agent.cloud_access` (0 for every existing agent), `remote_key_digest` and `remote_key_issued_at`, and the unique index on the digest.
+- `v3_device_approvals` (v0.2, task 5.6): adds `device.approvals_enabled` (1 for every existing device) and `doorbell_tag` (empty until the phone asks for it).
 - Before running pending migrations: make an online backup to `Backups/pre-<migration>-<date>.sqlite`.
 - Each migration has a test: open a fixture database created by the previous version, migrate it, and check the data and invariants.
 - Downgrades aren't supported. An older app version that finds a newer schema refuses to open the vault, shows "Update Funes", and never writes to it.

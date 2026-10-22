@@ -1,6 +1,6 @@
 # Companion protocol (Mac ↔ iPhone)
 
-**Status:** design for v0.2, to be validated in [Spike 1](../plans/phase-0-spikes.md). §2–4 are implemented in `FunesProtocol/Companion` (task 5.1), with the byte-level choices in §3.1; the Mac's side in `FunesCompanion` (task 5.2) and the phone's in `FunesPhone` (task 5.3, §5). Spike 1 ran on a real iPhone on 2026-10-21: pairing, the envelope and Bonjour pass, and the Tailscale mode fails on the Mac's listener (§5, [results](../plans/spike-results.md#spike-1-companion-transport)).
+**Status:** design for v0.2, to be validated in [Spike 1](../plans/phase-0-spikes.md). §2–4 are implemented in `FunesProtocol/Companion` (task 5.1), with the byte-level choices in §3.1; the Mac's side in `FunesCompanion` (task 5.2) and the phone's in `FunesPhone` (task 5.3, §5). §4.1, approvals from the iPhone, is implemented on the Mac (task 5.6); the phone's panels and notification service extension come next. Spike 1 ran on a real iPhone on 2026-10-21: pairing, the envelope and Bonjour pass, and the Tailscale mode fails on the Mac's listener (§5, [results](../plans/spike-results.md#spike-1-companion-transport)).
 
 The iPhone is a **thin client** of the Mac. There is no replication and no cloud ([ADR-0003](decisions/0003-mac-is-the-only-source-of-truth.md)). Messages are **signed by the device and end-to-end encrypted at the application layer** ([ADR-0011](decisions/0011-app-layer-encryption-for-companion.md)). Neither the LAN, Tailscale nor a tunnel provider can read or forge them.
 
@@ -99,7 +99,7 @@ When a device's 10,000 slots are full, the oldest nonce is dropped and its `ts` 
 **Response JSON:** `{"id":"<call id>","result":{…}}` or `{"id":"…","error":{"code":"…","message":"…"}}`.
 
 ## 4. Methods
-All methods act as the **owner** ([access policy §6](../domain/access-policy.md#6-owner-devices-paired-iphone)). Each is logged in Activity as `device:<id>` (via `companion`), except `status.get`, the reachability probe the phone sends on every foreground. Reads log one row without text (`memories_searched` with a result count, `memory_viewed`, `inbox_listed`, `categories_listed`). Writes log what FunesCore logs for them (`capture`, `memory_created`, `memory_edited`, `memory_archived`, `memory_restored`, `memory_deleted`, `suggestion_applied`, `suggestion_rejected`, `device_revoked`).
+All methods act as the **owner** ([access policy §6](../domain/access-policy.md#6-owner-devices-paired-iphone)). Each is logged in Activity as `device:<id>` (via `companion`), except `status.get`, the reachability probe the phone sends on every foreground, and `approvals.settings.get`, which it sends as often. Reads log one row without text (`memories_searched` with a result count, `memory_viewed`, `inbox_listed`, `categories_listed`, `approvals_listed`, `approval_viewed`). Writes log what FunesCore logs for them (`capture`, `memory_created`, `memory_edited`, `memory_archived`, `memory_restored`, `memory_deleted`, `suggestion_applied`, `suggestion_rejected`, `device_revoked`, `approval`, `access_answered`, `device_approvals`).
 
 **Implementation (task 5.2):** the Mac's side is the local package `Packages/FunesCompanion`: `CompanionListener`, `CompanionRouter`, `PairingService`, `CompanionHandlers` and `CompanionServer`, on FunesCore and BridgeKitCore's HTTP parser. The app adds only Settings ▸ iPhone and the Allow prompt. The Mac's id and keys are a Keychain item, service `com.funesvault.companion` (`.dev` for a development vault).
 
@@ -117,6 +117,11 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 | `inbox.apply` | `{suggestionId, edits?}` | `{memoryId}` |
 | `inbox.reject` | `{suggestionId}` | `{}` |
 | `device.unpair` | — | `{}`. The Mac marks this device revoked (self-removal) |
+| `approvals.list` | — | `{items: [{id, kind, agentName, agentKind?, count, createdAt, expiresAt}]}`: what waits now, soonest deadline first (§4.1) |
+| `approvals.get` | `{id}` or `{ring}` (exactly one) | the panel: `{id, kind, revision, agentName, agentKind?, task?, createdAt, expiresAt, share? \| save? \| access?}` (§4.1) |
+| `approvals.answer` | `{id, revision, choice, memoryIds?}` | `{choice, memoryId?}`, or `already_answered`, `request_expired`, `request_changed` (§4.1) |
+| `approvals.settings.get` | — | `{enabled, tag?, container, recordType, doorbell}` (§4.1) |
+| `approvals.settings.set` | `{enabled}` | the same |
 
 **Error codes:**
 - `invalid_input`
@@ -127,8 +132,45 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 - `unavailable` (the vault is migrating or locked)
 - `unknown_method` (a method this Mac doesn't have, for a newer phone)
 - `internal_error`
+- `already_answered` (`approvals.*`: answered first, on the Mac or another iPhone)
+- `request_expired` (`approvals.*`: past its 15 minutes, an access request's in-call wait over, or withdrawn or invalidated)
+- `request_changed` (`approvals.answer`: a stale `revision`; fetch the panel again)
 
 **Edits:** in `changes` (and `inbox.apply`'s `edits`), an absent field is unchanged; `"expiresAt": null` removes the expiry.
+
+### 4.1 Approvals from the iPhone (task 5.6)
+[FR-iOS-12](../product/03-requirements.md), [ADR-0019](decisions/0019-cloudkit-doorbell-for-iphone-approvals.md). The Mac's side is `CompanionApprovals` in `FunesCompanion`; the types are `FunesProtocol/Companion/CompanionApprovals.swift`.
+
+**The doorbell.** When a Share, Save or access panel starts waiting on the Mac (not a pending request reopened there), the Mac saves one `Doorbell` record per paired, unrevoked device that has approvals on and has fetched its tag, in the user's private database of `iCloud.com.funesvault` (default zone):
+- the record name is 32 lowercase hex digits, a fresh random 128-bit value per ring and device; the Mac maps it to the request in memory only;
+- the only field is `tag`, the device's random tag (`approvals.settings.get`);
+- nothing else: no text, titles, task, agent name, counts or request id. The adapter takes only `{recordName, tag}`, and a test checks what it's given.
+
+The Mac rings only while iPhone access is on, at most once per request and device. It deletes the records when the request is answered (on the Mac or a phone), expires or is invalidated, when iPhone access or the device's approvals are turned off or the device is removed, and at launch (a query on the tags). The phone subscribes with a `CKQuerySubscription` on `tag == <its tag>`, firing on creation, with a fixed alert, `shouldSendMutableContent` and no desired keys (ADR-0019 §2). Its notification service extension reads the record name from the push and calls `approvals.get {ring}`.
+
+**What waits** (`approvals.list`, `approvals.get`):
+- **Share:** a request in `needs_approval` for less than 15 minutes (access policy §3.6, §3.9), listed even after a relaunch of the Mac. `id` is the request id.
+- **Save:** an agent's suggestion whose Save panel the Mac showed, while it's pending and for 15 minutes from then. `id` is the suggestion id. After that it's still in the Inbox (`inbox.apply`).
+- **Access:** "<Agent> wants to read <Category>", while the agent's in-call wait lasts. `id` is the Mac's own, in memory only.
+
+`approvals.get` builds the panel fresh, as the Mac's does. A Share request's snapshot is re-checked against the current memories and access first, so its `revision` is the current `snapshotRevision`. It has one of:
+- `share`: `{destination: {remote, vendor?, tunnel?}, keywords, purpose?, retention, processors, declaredRetention?, rows: [{id, title, body, version, kind, categories, sensitivity, weak}], withheld: {<reason code>: count}}`. The rows carry the current text in full, in score order; `weak` rows are offered unticked. Withheld memories are counts by reason, never ids (ADR-0012);
+- `save`: `{action, targetMemoryId?, title, body, kind?, categories, sensitivity?, expiresAt?, evidence?, purpose?}`. Its `revision` is a SHA-256 of what would be saved;
+- `access`: `{operation, categoryKey?, categoryName?, allowsOnce, asksBeforeSharing}`. Its `revision` is random per panel.
+
+The Mac words nothing for the phone: the panels are data, worded and localized on the phone ("Claude Code wants 3 memories"). Agent-provided fields (`task`, `keywords`, `purpose`, `evidence`) are shown as reported, never checked.
+
+**Answers** (`approvals.answer`): `choice` is `share` (with `memoryIds`, at least one, all from the panel) or `deny`; `save` or `discard` (Later is no call); `allow_once` (only when `allowsOnce`), `always_allow` or `not_now`. A choice for another kind of panel is `invalid_input`.
+- Bound to `id` and `revision`, single use. A Share answer re-checks the snapshot first, so a panel shown before a memory or the agent's access changed is `request_changed` (T22); the phone fetches it again.
+- The first answer wins, on the Mac or a phone. Share and Save are decided in FunesCore's transactions (a phone's Deny never takes back an approval given first), an access request by the Mac's panel queue. The loser gets `already_answered`, and so does every later call for it.
+- Past 15 minutes (or the in-call wait for access) it's `request_expired`, and so is a request invalidated in the meantime.
+- A revoked device's call is refused before any of this (`401 revoked`), and the Mac checks again before answering.
+- When a phone wins, the Mac's panel closes with "Answered on Sam's iPhone.", and an agent waiting in its call gets its answer at once.
+- Not resent automatically (§5): a lost reply is checked with `approvals.get`, which then says `already_answered`.
+
+**Settings** (`approvals.settings.*`): approvals per device, on by default once paired, set on the Mac (Settings ▸ iPhone) or the phone. `get` returns the device's tag while they're on, creating it the first time; turning them off drops the tag, and the next one is new, so an old subscription goes quiet. `doorbell` says whether this Mac can ring at all: `available`, `no_account` (not signed in to iCloud), `restricted`, or `unsupported` (a build without the iCloud entitlement). Without it, approvals still work on the Mac and in the phone app's list.
+
+**Activity**, under `device:<id>` via `companion`: `approvals_listed` (with the count), `approval_viewed` (with the request id for Share), the answer as FunesCore logs it (`approval` approved or denied, the suggestion applied or rejected), `access_answered` (with the choice), and `device_approvals` (on or off). `approvals.settings.get` isn't logged.
 
 ## 5. Transport and reachability
 - **Listener:** a BSD socket on TCP 47626 (the `CompanionPort` preference), only while iPhone access is on, which is off by default. It's one dual-stack socket on `::`, so it covers every interface, including Tailscale coming up later. With only tunnel mode on, it binds `127.0.0.1` and `::1` instead, so nothing outside the Mac reaches the port. It accepts or rejects each connection by **remote address**, according to the enabled modes, before reading a byte:
@@ -158,7 +200,7 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 
   Each is probed with `status.get` (3 s timeout), all at once, with the Bonjour browse (2 s) alongside. The best-ranked address that answers wins as soon as no better-ranked probe is still running. The last working address is cached for 10 minutes, and forgotten when `NWPathMonitor` reports a new path. If none answers, a `401 revoked` from any of them is reported as revoked; otherwise the Mac is unreachable, with "Local Network access is off" when iOS refused the browse.
 - **Before pairing,** the phone has no device id to seal a `status.get` with, so it probes the QR code's addresses (and Bonjour) with an empty `POST /c/v1/rpc`: a Funes Mac answers `401 invalid_envelope` without reading further. Only then does it send the pairing request, so an address that doesn't answer never uses up one of the session's 3 attempts. The request goes to the best-ranked address that answered.
-- **Retries (phone):** a `clock_skew` refusal is resent once, sealed with the Mac's `server_time`, and the offset is kept for later calls. A call with no answer at all (no connection, a timeout, a lost response) starts address selection over and is resent once if it's safe to repeat: `status.get`, `captures.submit` (duplicates are accepted, §6) and the reads. Edits, deletes, Inbox answers and `device.unpair` aren't resent; the user sees the error and can try again, and a stale `version` comes back as `conflict`.
+- **Retries (phone):** a `clock_skew` refusal is resent once, sealed with the Mac's `server_time`, and the offset is kept for later calls. A call with no answer at all (no connection, a timeout, a lost response) starts address selection over and is resent once if it's safe to repeat: `status.get`, `captures.submit` (duplicates are accepted, §6) and the reads (with `approvals.list`, `approvals.get` and `approvals.settings.get`). Edits, deletes, Inbox answers, approval answers, `approvals.settings.set` and `device.unpair` aren't resent; the user sees the error and can try again, and a stale `version` comes back as `conflict`.
 - **Implementation (task 5.3):** `Packages/FunesPhone`: `CompanionClient` (an actor), `DeviceKeyStore`, `PairingRecordStore`, `BonjourDiscovery` (an `NWBrowser`; a match is resolved to its IPv4 address by opening a TCP connection, since `URLSession` can't use a service endpoint), `NetworkPathWatcher`, and `CompanionHTTPTransport`: a small HTTP/1.1 client on `NWConnection` for `http://` (one POST per connection, `Connection: close`, the reply read to its `Content-Length`, at most 4 MiB), and an ephemeral `URLSession` for the tunnel's `https://`. Each request has a hard deadline. The device keys and the pairing record are Keychain items, service `com.funesvault.ios.companion`, in the access group the app and its extensions share. The phone waits 70 s for the pairing answer.
 
 ## 6. Offline capture queue (phone)
@@ -203,4 +245,5 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
   - 1,000 queued, then reconnect;
   - a secret blocked on the phone.
 - Reachability: same Wi-Fi, Tailscale, tunnel with the wrong path or Host, Mac asleep and then woken.
+- Approvals (§4.1): the doorbell records carry only a tag and a random name (captured); a phone answer and a Mac answer racing; a stale revision; an expired request; a revoked device's answer; Activity rows under the device; records deleted when the request stops waiting.
 - Fuzzing of the envelope parser and the method params.

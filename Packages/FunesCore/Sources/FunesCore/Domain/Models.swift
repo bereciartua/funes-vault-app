@@ -108,8 +108,15 @@ public struct Device: Sendable, Hashable, Identifiable {
     public var lastSeenAt: Date?
     public var lastTransport: DeviceTransport?
     public var revokedAt: Date?
+    /// Approvals from this iPhone (FR-iOS-12): on by default once paired.
+    public var approvalsEnabled = true
+    /// The doorbell's tag (ADR-0019): random, handed to the phone over the companion channel
+    /// while approvals are on. Nil until the phone asks, and dropped when they're turned off.
+    public var doorbellTag: String?
 
     public var isRevoked: Bool { revokedAt != nil }
+    /// The Mac rings this device when a request starts waiting.
+    public var rings: Bool { !isRevoked && approvalsEnabled && doorbellTag != nil }
 }
 
 /// A proposed memory waiting for review (spec/domain/domain-model.md#suggestion).

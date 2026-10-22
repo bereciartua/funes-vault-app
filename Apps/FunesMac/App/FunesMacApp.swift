@@ -393,6 +393,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Task {
                 _ = try? await environment.disclosures.expirePending(now: Date())
                 _ = try? await environment.suggestions.expire(now: Date())
+                // Takes back the doorbell records of requests that stopped waiting (ADR-0019).
+                await environment.phoneApprovals.sweep()
             }
         }
         job()

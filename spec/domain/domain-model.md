@@ -149,6 +149,8 @@ An MCP client the user has added. It is EK Bridge's "connection".
 | `hpkePublicKey` | P-256 | For encrypting responses to the device (see the protocol) |
 | `pairedAt`, `lastSeenAt`, `lastTransport` | | `lan` · `tailscale` · `tunnel` |
 | `revokedAt` | timestamp? | |
+| `approvalsEnabled` | bool | Default true once paired. Approvals from this iPhone, and whether the Mac rings it ([FR-iOS-12](../product/03-requirements.md)) |
+| `doorbellTag` | string? | Random, 128 bits, base64url. Made when the phone first asks for it while approvals are on, so the Mac rings only phones that subscribed; dropped when approvals are turned off ([ADR-0019](../architecture/decisions/0019-cloudkit-doorbell-for-iphone-approvals.md)) |
 
 **CaptureReceipt:** `captureId` (unique), `deviceId`, `receivedAt`, `suggestionId`. It makes delivery idempotent and is kept for 90 days.
 

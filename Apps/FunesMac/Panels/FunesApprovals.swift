@@ -1,6 +1,7 @@
 import AppKit
 import BridgeUI
 import Foundation
+import FunesCompanion
 import FunesCore
 import FunesMCP
 import FunesProtocol
@@ -16,6 +17,8 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     static let panelSeconds: TimeInterval = 45
 
     private let environment: VaultEnvironment
+    /// Approvals from the iPhone (task 5.6): the doorbell, and the phone's answers.
+    private let desk: CompanionApprovals
     @MainActor let queue = ApprovalQueue()
     /// Task text of the requests this session showed a panel for, for Activity's detail pane. In
     /// memory only: the vault keeps a hash (FR-L-01), so after a relaunch it's "Task text not stored".
@@ -36,8 +39,22 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     @MainActor
     init(environment: VaultEnvironment) {
         self.environment = environment
+        let desk = environment.phoneApprovals
+        self.desk = desk
         queue.queueChanged = { [weak self] in self?.controller.update() }
+        // A paired iPhone answered first: the Mac's panel goes, and says where.
+        Task { [weak self] in
+            await desk.onPhoneAnswered { key, deviceName in
+                Task { @MainActor in
+                    guard let self else { return }
+                    if self.queue.items.contains(where: { $0.id == key.id }) { self.queue.answer(key.id, .withdrawn) }
+                    self.notice(String(localized: "Answered on \(deviceName)."))
+                }
+            }
+        }
     }
+
+
 
     func showApproval(requestID: UUID, agentID: UUID) async {
         await present(requestID: requestID, focus: false)
@@ -79,12 +96,18 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             item.expiresAt = panel.expiresAt
             item.moreTime = nil
         }
-        await MainActor.run {
+        let shown = await MainActor.run { () -> Bool in
             // Quitting: the queue refuses it anyway; don't bring Funes forward for it.
-            guard !queue.isClosed else { return }
+            guard !queue.isClosed else { return false }
             if let task = panel.task { tasks[requestID] = task }
             queue.enqueue(item) { [weak self] answer in self?.answered(panel, answer) }
             if focus { bringForward() }
+            return true
+        }
+        // A new request rings the paired iPhones; one reopened on the Mac doesn't.
+        if shown, !focus {
+            let destination = ApprovalDestination(remote: remote, vendor: agent?.agentKind.cloudAgent?.vendor, tunnel: tunnel)
+            await desk.waiting(.share(requestID), destination: destination)
         }
     }
 
@@ -136,6 +159,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
 
     private func answered(_ panel: ApprovalPanel, _ answer: PanelAnswer) {
         let disclosures = environment.disclosures
+        let desk = self.desk
         Task {
             do {
                 switch answer {
@@ -143,8 +167,11 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
                     let ids = selected.compactMap(UUID.init(uuidString:))
                     try await disclosures.approve(requestID: panel.requestID, snapshotRevision: panel.snapshotRevision,
                                                   memoryIDs: ids, now: Date())
+                    await desk.ended(.share(panel.requestID), answered: true)
                 case .secondary:
-                    try await disclosures.deny(requestID: panel.requestID, now: Date())
+                    // Never takes back an approval an iPhone gave first.
+                    try await disclosures.deny(requestID: panel.requestID, now: Date(), waitingOnly: true)
+                    await desk.ended(.share(panel.requestID), answered: true)
                 case .expired:
                     // Unanswered: the request waits in Pending requests until its 15 minutes are up.
                     if Date() < panel.expiresAt {
@@ -162,6 +189,9 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             } catch VaultError.snapshotChanged {
                 // Something changed while the panel was up: show it again with fresh text.
                 await present(requestID: panel.requestID, focus: false)
+            } catch VaultError.invalidState {
+                // Answered first on an iPhone, or the 15 minutes ran out.
+                await desk.ended(.share(panel.requestID), answered: false)
             } catch {
                 logger.error("Answering a request failed")
             }
@@ -200,20 +230,27 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             facts: facts, primary: String(localized: "Save"), secondary: String(localized: "Later"),
             tertiary: String(localized: "Discard"), edit: String(localized: "Edit…"),
             announcement: String(localized: "\(agentName) suggests a memory for Funes"))
-        await MainActor.run {
-            guard !queue.isClosed else { return }
+        let shown = await MainActor.run { () -> Bool in
+            guard !queue.isClosed else { return false }
             queue.enqueue(item) { [weak self] answer in self?.answered(suggestion: suggestion.id, answer) }
             if focus { bringForward() } else { suggestionArrived(agentName) }
+            return true
         }
+        if shown, !focus { await desk.waiting(.save(suggestion.id)) }
     }
 
     private func answered(suggestion id: UUID, _ answer: PanelAnswer) {
         let suggestions = environment.suggestions
+        let desk = self.desk
         Task {
             do {
                 switch answer {
-                case .primary: _ = try await suggestions.apply(suggestionID: id, now: Date())
-                case .tertiary: try await suggestions.reject(suggestionID: id, now: Date())
+                case .primary:
+                    _ = try await suggestions.apply(suggestionID: id, now: Date())
+                    await desk.ended(.save(id), answered: true)
+                case .tertiary:
+                    try await suggestions.reject(suggestionID: id, now: Date())
+                    await desk.ended(.save(id), answered: true)
                 case .edit: await MainActor.run { editSuggestion(id) }
                 case .secondary, .expired, .deferred, .withdrawn: break
                 }
@@ -231,10 +268,31 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         let category = prompt.categoryKey.flatMap { key in (try? environment.store.categories())?.first { $0.key == key }?.name }
         let item = Self.accessItem(prompt, agentName: agentName, categoryName: category,
                                    asksBeforeSharing: agent?.access.askBeforeSharing ?? true)
+        let desk = self.desk, id = item.id
+        // A paired iPhone may answer it too; the queue takes whichever answer comes first. Not
+        // awaited, so the doorbell's iCloud save never holds up the panel; an answer that comes
+        // first ends it, and the desk then rings nothing.
+        let request = CompanionApprovals.AccessRequest(agentID: prompt.agentID, categoryKey: prompt.categoryKey,
+                                                       operation: prompt.operation, task: prompt.task,
+                                                       expiresAt: prompt.expiresAt, allowsOnce: prompt.allowsOnce)
+        Task {
+            await desk.waitingForAccess(id: id, request) { [weak self] choice in
+                await MainActor.run {
+                    guard let self, self.queue.items.contains(where: { $0.id == id }) else { return false }
+                    self.queue.answer(id, Self.panelAnswer(choice))
+                    return true
+                }
+            }
+        }
         return await withCheckedContinuation { continuation in
             Task { @MainActor in
                 // A closed queue (quitting) answers `.withdrawn` at once, so the call never waits.
                 queue.enqueue(item) { answer in
+                    let answered = switch answer {
+                    case .primary, .secondary, .tertiary: true
+                    case .expired, .withdrawn, .edit, .deferred: false
+                    }
+                    Task { await desk.ended(.access(id), answered: answered) }
                     switch answer {
                     case .primary: continuation.resume(returning: .alwaysAllow)
                     case .tertiary: continuation.resume(returning: prompt.allowsOnce ? .allowOnce : .notNow)
@@ -287,6 +345,15 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             primary: always, secondary: String(localized: "Not Now"),
             tertiary: prompt.allowsOnce ? String(localized: "Allow Once") : nil, expiresAt: prompt.expiresAt,
             announcement: title)
+    }
+
+    /// A phone's answer to an access panel, as the panel's own buttons give it.
+    static func panelAnswer(_ choice: ApprovalChoice) -> PanelAnswer {
+        switch choice {
+        case .alwaysAllow: .primary(selected: [])
+        case .allowOnce: .tertiary
+        default: .secondary
+        }
     }
 
     // MARK: Helpers

@@ -914,6 +914,9 @@
     "Answered a question" : {
 
     },
+    "Answered on %@." : {
+
+    },
     "Anthropic API (MCP connector)" : {
 
     },
@@ -985,6 +988,9 @@
 
     },
     "Approve its first request" : {
+
+    },
+    "Approve requests on this iPhone" : {
 
     },
     "Approved" : {
@@ -4083,6 +4089,9 @@
     "This agent has no access yet, so cloud agents can't use anything." : {
 
     },
+    "This build of Funes Vault can't notify iPhones of waiting requests. Open Funes Vault on the iPhone to see them." : {
+
+    },
     "This code expired." : {
 
     },
@@ -4117,6 +4126,9 @@
 
     },
     "Title" : {
+
+    },
+    "To notify your iPhone of waiting requests, sign in to iCloud on this Mac with the same Apple Account as the iPhone. Until then, open Funes Vault on the iPhone to see them." : {
 
     },
     "To turn it off later:" : {
@@ -4347,6 +4359,9 @@
 
     },
     "When a request is refused only because a category isn't allowed, Funes asks you: Not Now, Allow Once or Always Allow. Never for the sensitivity limit or denied categories." : {
+
+    },
+    "When a request waits on this Mac, these iPhones get a notification through iCloud. It says only that a request waits; the iPhone gets the details from this Mac, encrypted." : {
 
     },
     "When it asks you to sign in, click Connect a Cloud App… below and approve the code you see in both places." : {
@@ -4584,6 +4599,9 @@
 
     },
     "https:// and your hostname" : {
+
+    },
+    "iCloud isn't available on this Mac right now, so iPhones aren't notified of waiting requests. Open Funes Vault on the iPhone to see them." : {
 
     },
     "iPhone" : {

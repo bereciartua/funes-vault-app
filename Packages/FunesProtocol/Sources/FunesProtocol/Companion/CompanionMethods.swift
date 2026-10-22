@@ -16,6 +16,12 @@ public enum CompanionMethod: String, Codable, Sendable, CaseIterable {
     case inboxApply = "inbox.apply"
     case inboxReject = "inbox.reject"
     case deviceUnpair = "device.unpair"
+    // Approvals from the iPhone (task 5.6, FR-iOS-12).
+    case approvalsList = "approvals.list"
+    case approvalsGet = "approvals.get"
+    case approvalsAnswer = "approvals.answer"
+    case approvalsSettingsGet = "approvals.settings.get"
+    case approvalsSettingsSet = "approvals.settings.set"
 }
 
 /// A method with its parameter and result types, so calls are typed on both ends.

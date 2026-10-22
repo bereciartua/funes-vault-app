@@ -88,7 +88,7 @@ extension Device {
             id: try row.requiredUUID("id"), name: row["name"], model: row["model"],
             signingPublicKey: row["signing_public_key"], hpkePublicKey: row["hpke_public_key"],
             pairedAt: row["paired_at"], lastSeenAt: row["last_seen_at"], lastTransport: row.enumValue("last_transport"),
-            revokedAt: row["revoked_at"])
+            revokedAt: row["revoked_at"], approvalsEnabled: row["approvals_enabled"], doorbellTag: row["doorbell_tag"])
     }
 }
 

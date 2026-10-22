@@ -387,8 +387,11 @@ public final class DisclosureService: Sendable {
 
     /// Shares the chosen subset (§3.6, FR-D-04). Refused with `snapshotChanged` when the panel's
     /// revision is stale (T22), `invalidInput` for an empty or foreign subset, `invalidState` when
-    /// the request is no longer waiting (an expired one is denied with `approval_expired`).
-    public func approve(requestID: UUID, snapshotRevision: String, memoryIDs: [UUID], now: Date) async throws {
+    /// the request is no longer waiting (an expired one is denied with `approval_expired`). The
+    /// first answer wins: the Mac's panel and a paired iPhone (`actor` the device, via `companion`)
+    /// answer through here, in one transaction each.
+    public func approve(requestID: UUID, snapshotRevision: String, memoryIDs: [UUID], now: Date, actor: Actor = .user,
+                        via: ActivityEvent.Via = .app) async throws {
         enum Result { case approved, expired, error(VaultError) }
         let result = try await store.writer.write { db -> Result in
             guard let d = try Self.fetch(db, id: requestID) else { return .error(.notFound) }
@@ -410,7 +413,7 @@ public final class DisclosureService: Sendable {
         }
         switch result {
         case .approved:
-            activity.record(ActivityEvent(time: now, requestID: requestID, phase: .event, actor: .user, via: .app,
+            activity.record(ActivityEvent(time: now, requestID: requestID, phase: .event, actor: actor, via: via,
                                           event: "approval", outcome: "approved", counts: ["approved": memoryIDs.count],
                                           approval: .approved))
             notify(requestID)
@@ -422,18 +425,22 @@ public final class DisclosureService: Sendable {
         }
     }
 
-    /// Denies a waiting or approved request (`denied_by_user`).
-    public func deny(requestID: UUID, now: Date) async throws {
+    /// Denies a waiting or approved request (`denied_by_user`). `waitingOnly` is a panel's Deny,
+    /// on the Mac or a paired iPhone: it never takes back an approval another answer already gave
+    /// (the first answer wins), and is `invalidState` then.
+    public func deny(requestID: UUID, now: Date, waitingOnly: Bool = false, actor: Actor = .user,
+                     via: ActivityEvent.Via = .app) async throws {
+        let statuses = waitingOnly ? "('needs_approval')" : "('needs_approval', 'approved')"
         let changed = try await store.writer.write { db -> Bool in
             try db.execute(sql: """
-                UPDATE disclosure SET status = 'denied', reason = ?, decided_at = ? WHERE id = ? AND status IN ('needs_approval', 'approved')
+                UPDATE disclosure SET status = 'denied', reason = ?, decided_at = ? WHERE id = ? AND status IN \(statuses)
                 """, arguments: [ReasonCode.deniedByUser.rawValue, now, requestID.db])
             return db.changesCount > 0
         }
         guard changed else { throw VaultError.invalidState }
         tasks.withLock { _ = $0.removeValue(forKey: requestID) }
         requestGrants.withLock { _ = $0.removeValue(forKey: requestID) }
-        activity.record(ActivityEvent(time: now, requestID: requestID, phase: .event, actor: .user, via: .app,
+        activity.record(ActivityEvent(time: now, requestID: requestID, phase: .event, actor: actor, via: via,
                                       event: "approval", outcome: "denied", reason: .deniedByUser, approval: .denied))
         notify(requestID)
     }

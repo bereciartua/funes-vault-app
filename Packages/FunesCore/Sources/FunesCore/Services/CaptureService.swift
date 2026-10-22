@@ -1,6 +1,7 @@
 import Foundation
 import FunesProtocol
 import GRDB
+import Security
 
 public struct CaptureResult: Sendable, Hashable {
     public var suggestionID: UUID
@@ -135,6 +136,41 @@ public final class DeviceService: Sendable {
 
     public func device(id: UUID) async throws -> Device? {
         try await store.writer.read { db in try DeviceStore.fetch(db, id: id) }
+    }
+
+    /// Approvals from this iPhone on or off (Settings ▸ iPhone on the Mac, or Settings on the
+    /// phone, `actor` the device). Off drops the doorbell tag, so the phone's subscription goes
+    /// quiet and the next tag is new.
+    @discardableResult
+    public func setApprovals(deviceID: UUID, enabled: Bool, now: Date, actor: Actor = .user) async throws -> Device {
+        let (device, changed) = try await store.writer.write { db -> (Device, Bool) in
+            guard let d = try DeviceStore.fetch(db, id: deviceID), !d.isRevoked else { throw VaultError.notFound }
+            guard d.approvalsEnabled != enabled else { return (d, false) }
+            try db.execute(sql: """
+                UPDATE device SET approvals_enabled = ?, doorbell_tag = CASE WHEN ? THEN doorbell_tag END WHERE id = ?
+                """, arguments: [enabled, enabled, deviceID.db])
+            return (try DeviceStore.fetch(db, id: deviceID)!, true)
+        }
+        if changed {
+            activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: actor == .user ? .app : .companion,
+                                          event: "device_approvals", outcome: enabled ? "on" : "off", ids: [deviceID]))
+        }
+        return device
+    }
+
+    /// The device's doorbell tag while approvals are on, made the first time the phone asks
+    /// (128 random bits, base64url). Nil while they're off.
+    public func doorbellTag(deviceID: UUID) async throws -> String? {
+        try await store.writer.write { db -> String? in
+            guard let d = try DeviceStore.fetch(db, id: deviceID), !d.isRevoked else { throw VaultError.unauthenticated }
+            guard d.approvalsEnabled else { return nil }
+            if let tag = d.doorbellTag { return tag }
+            var bytes = [UInt8](repeating: 0, count: 16)
+            guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else { throw VaultError.invalidState }
+            let tag = Base64URL.encode(Data(bytes))
+            try db.execute(sql: "UPDATE device SET doorbell_tag = ? WHERE id = ?", arguments: [tag, deviceID.db])
+            return tag
+        }
     }
 
     /// Last seen and how, for Settings ▸ iPhone. Written at most once a minute per device unless

@@ -32,15 +32,19 @@ final class CompanionController {
     private(set) var pairingState = PairingService.State.idle
     /// The Keychain refused the companion keys.
     private(set) var keysUnavailable = false
+    /// Whether this Mac can ring a phone's doorbell for approvals (ADR-0019).
+    private(set) var doorbell = DoorbellAvailability.unsupported
 
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let services: CompanionServices
+    @ObservationIgnored private let approvals: CompanionApprovals
     @ObservationIgnored private let appVersion: String
     @ObservationIgnored private var server: CompanionServer?
 
-    init(defaults: UserDefaults, services: CompanionServices, appVersion: String) {
+    init(defaults: UserDefaults, services: CompanionServices, approvals: CompanionApprovals, appVersion: String) {
         self.defaults = defaults
         self.services = services
+        self.approvals = approvals
         self.appVersion = appVersion
         defaults.register(defaults: [Key.enabled: false, Key.modes: CompanionModes.default.rawValue,
                                      Key.port: Int(CompanionProtocol.port)])
@@ -54,10 +58,20 @@ final class CompanionController {
     var canPair: Bool { enabled && status == .listening(port: port) && activeDevices.count < CompanionProtocol.maxPairedDevices }
     var activeDevices: [Device] { devices.filter { !$0.isRevoked } }
 
-    /// At launch: starts the listener if iPhone access was on.
+    /// At launch: starts the listener if iPhone access was on, and deletes doorbell records a
+    /// previous run left.
     func launch() {
-        Task { await reloadDevices() }
+        Task {
+            await reloadDevices()
+            await approvals.launch()
+            await refreshDoorbell()
+        }
         apply()
+    }
+
+    /// iCloud on this Mac, for Settings ▸ iPhone's approvals line.
+    func refreshDoorbell() async {
+        doorbell = await approvals.doorbellAvailability()
     }
 
     func setEnabled(_ on: Bool) {
@@ -117,10 +131,21 @@ final class CompanionController {
         devices = (try? await services.devices.devices(includingRevoked: false)) ?? []
     }
 
+    /// Approvals from this iPhone on or off (FR-iOS-12). Off takes back its doorbell records.
+    func setApprovals(_ device: Device, _ on: Bool) async {
+        do {
+            try await approvals.setApprovals(deviceID: device.id, enabled: on)
+        } catch {
+            logger.error("Couldn't change an iPhone's approvals")
+        }
+        await reloadDevices()
+    }
+
     func remove(_ device: Device) async {
         do {
             if let server { try await server.revoke(deviceID: device.id) } else {
                 try await services.devices.revoke(deviceID: device.id, now: Date(), actor: .user)
+                await approvals.forget(deviceID: device.id)
             }
         } catch {
             logger.error("Couldn't remove a paired iPhone")
@@ -131,6 +156,8 @@ final class CompanionController {
     // MARK: Listener
 
     private func apply() {
+        let approvals = self.approvals, ringing = enabled
+        Task { await approvals.setRinging(ringing) }
         guard enabled else {
             server?.apply(CompanionServer.Configuration())
             qr = nil
@@ -152,7 +179,7 @@ final class CompanionController {
             return nil
         }
         let server = CompanionServer(identity: identity, services: services, macName: { Self.macNameNonisolated() },
-                                     appVersion: appVersion)
+                                     appVersion: appVersion, approvals: approvals)
         server.statusChanged = { [weak self] status in self?.status = status }
         Task { [weak self] in
             await server.pairing.observe { state in

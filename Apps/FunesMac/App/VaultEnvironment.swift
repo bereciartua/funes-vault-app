@@ -27,6 +27,9 @@ final class VaultEnvironment {
     private var observation: AnyObject?
     /// The Share, Save and access-request panels.
     private(set) lazy var approvals = FunesApprovals(environment: self)
+    /// Approvals from the iPhone (task 5.6): what waits, the CloudKit doorbell and the phone's answers.
+    private(set) lazy var phoneApprovals = CompanionApprovals(services: companionServices, disclosures: disclosures,
+                                                              doorbell: CloudKitDoorbell())
 
     /// `~/Library/Application Support/FunesVault`. Debug builds honour FUNES_DATA_DIR (the
     /// launcher does too), so development never touches the real vault.
