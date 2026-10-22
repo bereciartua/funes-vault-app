@@ -137,7 +137,8 @@ struct InboxItemView: View {
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: Binding(get: { draft != nil }, set: { if !$0 { draft = nil } })) {
                 MemoryEditSheet(title: "Edit & Save", saveLabel: "Save",
-                                draft: Binding(get: { draft ?? MemoryEditDraft(item) }, set: { draft = $0 }),
+                                // As in the memory detail: a closing sheet's last write doesn't reopen it.
+                                draft: Binding(get: { draft ?? MemoryEditDraft(item) }, set: { if draft != nil { draft = $0 } }),
                                 original: MemoryEditDraft(item), categories: model.categories, busy: busy,
                                 error: failure.map { PhoneModel.vaultMessage(for: $0.error) },
                                 save: { await answer(.save, edits: draft?.changes(from: MemoryEditDraft(item))) },

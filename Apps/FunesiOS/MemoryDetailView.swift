@@ -149,7 +149,10 @@ struct MemoryDetailView: View {
     @ViewBuilder private var editSheet: some View {
         if let memory = detail.memory {
             MemoryEditSheet(title: "Edit Memory", saveLabel: "Save",
-                            draft: Binding(get: { detail.draft ?? MemoryEditDraft(memory) }, set: { detail.draft = $0 }),
+                            // A closing sheet's text field writes its text back once more: only an edit in
+                            // progress takes it, or a saved edit would open again (device check).
+                            draft: Binding(get: { detail.draft ?? MemoryEditDraft(memory) },
+                                           set: { if detail.draft != nil { detail.draft = $0 } }),
                             original: MemoryEditDraft(memory), categories: model.categories, busy: detail.busy,
                             error: detail.error.map(PhoneModel.vaultMessage(for:)),
                             save: { await detail.save() }, cancel: { detail.cancelEditing() })
