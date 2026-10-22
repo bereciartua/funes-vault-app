@@ -747,7 +747,7 @@
     "This looks like a password or key. Funes doesn't save text that looks like a password, key or card number." : {
 
     },
-    "This memory changed on your Mac after it opened here. Reload shows the Mac's version, and your edits here are discarded." : {
+    "This memory changed on your Mac after it opened here. Reload puts the Mac's version in the editor, in place of your edits." : {
 
     },
     "This memory changed on your Mac after it opened here. Reload shows the Mac's version." : {
