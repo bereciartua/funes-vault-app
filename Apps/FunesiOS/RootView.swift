@@ -15,6 +15,8 @@ struct RootView: View {
         TabView(selection: $tab) {
             CaptureView(model: model)
                 .tabItem { Label("Capture", systemImage: "square.and.pencil") }
+                // Requests waiting for an answer are listed at the top of Capture.
+                .badge(model.approvals.waiting.count)
                 .tag(Tab.capture)
             SearchView(model: model)
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
@@ -31,6 +33,8 @@ struct RootView: View {
         .onChange(of: model.captureRequests) { tab = .capture }
         .sheet(isPresented: Bindable(model).presentingPairing) { PairingSheet(model: model) }
         .sheet(isPresented: Bindable(model).presentingWhy) { WhySheet(model: model) }
+        // A tapped approval notification, or a row of the list.
+        .sheet(item: Bindable(model).openApproval) { open in ApprovalPanelView(model: model, panel: open.panel) }
     }
 }
 
@@ -45,6 +49,7 @@ struct SettingsView: View {
             List {
                 if let record = model.record {
                     macSection(record)
+                    ApprovalSettingsSection(model: model)
                     deviceSection(record)
                 } else {
                     notPairedSection

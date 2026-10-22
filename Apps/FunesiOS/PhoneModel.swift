@@ -3,11 +3,13 @@ import FunesProtocol
 import Observation
 import os
 import SwiftUI
+import UIKit
 
 private let logger = Logger(subsystem: Identifiers.iOSLoggerSubsystem, category: "app")
 
 /// The app's state: the pairing, how the Mac is reachable (UX: iPhone, States), the capture
-/// queue, and Search and the Inbox, which read the vault on the Mac.
+/// queue, Search and the Inbox, which read the vault on the Mac, and the requests waiting for an
+/// answer (task 5.6).
 @MainActor @Observable
 final class PhoneModel {
     private(set) var record: PairingRecord?
@@ -29,6 +31,14 @@ final class PhoneModel {
     let search: SearchModel
     let inbox: InboxModel
     let categories: CategoryList
+    /// Requests waiting on the Mac (`approvals.list`).
+    let approvals: ApprovalsModel
+    /// This iPhone's approvals switch and its doorbell subscription.
+    let approvalSettings: ApprovalSettingsModel
+    /// The request whose panel is open, from a notification or the list.
+    var openApproval: OpenApproval?
+    /// Whether Funes may show notifications; nil until iOS has asked.
+    private(set) var notificationsAllowed: Bool?
     /// The pairing sheet, opened from the banner or a disabled tab.
     var presentingPairing = false
     /// The "Why?" sheet.
@@ -38,15 +48,43 @@ final class PhoneModel {
     private var started = false
     private var refreshing = false
 
-    init(client: CompanionClient = CompanionClient(store: KeychainSecretStore())) {
+    init(client: CompanionClient = CompanionClient(store: KeychainSecretStore()),
+         subscriptions: any DoorbellSubscriptions = CloudKitSubscriptions()) {
         self.client = client
         capture = CaptureModel(client: client)
         search = SearchModel(caller: client)
         inbox = InboxModel(caller: client)
         categories = CategoryList(caller: client)
+        approvals = ApprovalsModel(caller: client)
+        approvalSettings = ApprovalSettingsModel(caller: client, subscriptions: subscriptions)
         capture.onOutcome = { [weak self] outcome in self?.delivered(outcome) }
         search.onFailure = { [weak self] error in self?.callFailed(error) }
         inbox.onFailure = { [weak self] error in self?.callFailed(error) }
+        approvals.onFailure = { [weak self] error in self?.callFailed(error) }
+        approvalSettings.onFailure = { [weak self] error in self?.callFailed(error) }
+        // There's something to notify about now: iOS asks once.
+        approvalSettings.onSubscribed = { [weak self] in self?.notificationsAllowed = await NotificationPermission.ask() }
+    }
+
+    /// Opens a request's panel, by id or by the ring's record name; nil just reads the list again
+    /// (a tapped notification the extension couldn't word).
+    func open(_ ref: ApprovalRef?) {
+        guard let ref else {
+            Task { if reachability.isConnected { await approvals.load() } }
+            return
+        }
+        let panel = ApprovalPanelModel(ref: ref, caller: client,
+                                       // Answers need the phone unlocked (FR-iOS-12): protected data is
+                                       // available only then.
+                                       isUnlocked: { UIApplication.shared.isProtectedDataAvailable })
+        panel.onFailure = { [weak self] error in self?.callFailed(error) }
+        panel.onClosed = { [weak self] id in self?.approvals.remove(id) }
+        openApproval = OpenApproval(panel: panel)
+    }
+
+    /// A ring arrived while the app is open.
+    func rang() {
+        Task { if reachability.isConnected { await approvals.load() } }
     }
 
     /// What the banner at the top of each tab says.
@@ -123,6 +161,7 @@ final class PhoneModel {
         await capture.deliver(.foreground)
         // Suggestions may have been answered or added on the Mac meanwhile.
         if reachability.isConnected, inbox.phase == .loaded { await inbox.load() }
+        notificationsAllowed = await NotificationPermission.current()
     }
 
     /// `BGAppRefreshTask`: send what's waiting, then ask for the next refresh, since the share
@@ -154,6 +193,8 @@ final class PhoneModel {
         case .notPaired, .revoked:
             search.clear()
             inbox.clear()
+            approvals.clear()
+            openApproval = nil
         default: break
         }
     }
@@ -188,7 +229,12 @@ final class PhoneModel {
         }
         probes = await client.lastProbes
         leaveVaultIfGone()
-        if reachability.isConnected { await categories.load() }
+        guard reachability.isConnected else { return }
+        await categories.load()
+        // The tag and the subscription on every foreground (cheap, not logged), then what waits:
+        // for a notification that never came or was dismissed.
+        await approvalSettings.load()
+        await approvals.load()
     }
 
     /// Pairs with the scanned Mac. Returns how long it took, Allow click included (Spike 1a).
@@ -204,6 +250,7 @@ final class PhoneModel {
         // Perhaps another Mac: nothing read from the last one stays.
         search.clear()
         inbox.clear()
+        approvals.clear()
         await refresh()
         await categories.load(force: true)
         // Captures made before pairing, or kept from a revoked pairing, go now.
@@ -215,6 +262,8 @@ final class PhoneModel {
     /// and the queued captures if the user said so.
     func unpair(deletingQueue: Bool) async {
         do { try await client.unpair() } catch { logger.error("Couldn't delete the pairing") }
+        // No ring for this iPhone any more.
+        await approvalSettings.clear()
         if deletingQueue { capture.deleteAll() }
         await reload()
         protocolChecks = []
@@ -335,6 +384,12 @@ extension PhoneModel {
             return String(localized: "This changed on your Mac.")
         }
     }
+}
+
+/// An open approval panel, presented as a sheet.
+struct OpenApproval: Identifiable {
+    let id = UUID()
+    let panel: ApprovalPanelModel
 }
 
 extension Duration {

@@ -26,6 +26,9 @@
 		F0000000000000000000B015 /* FunesProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D010 /* FunesProtocol */; };
 		F0000000000000000000B00E /* FunesShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F0000000000000000000A004 /* FunesShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F0000000000000000000B00F /* FunesIntents.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F0000000000000000000A005 /* FunesIntents.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F0000000000000000000B010 /* FunesNotifications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F0000000000000000000A006 /* FunesNotifications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F0000000000000000000B016 /* FunesPhone in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D011 /* FunesPhone */; };
+		F0000000000000000000B017 /* FunesProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = F0000000000000000000D012 /* FunesProtocol */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,6 +53,13 @@
 			remoteGlobalIDString = F00000000000000000004005;
 			remoteInfo = FunesIntents;
 		};
+		F0000000000000000000F008 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F00000000000000000009001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F00000000000000000004006;
+			remoteInfo = FunesNotifications;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -72,6 +82,7 @@
 			files = (
 				F0000000000000000000B00E /* FunesShareExtension.appex in Embed Foundation Extensions */,
 				F0000000000000000000B00F /* FunesIntents.appex in Embed Foundation Extensions */,
+				F0000000000000000000B010 /* FunesNotifications.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -84,6 +95,7 @@
 		F0000000000000000000A003 /* FunesiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FunesiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0000000000000000000A004 /* FunesShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FunesShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0000000000000000000A005 /* FunesIntents.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FunesIntents.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0000000000000000000A006 /* FunesNotifications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FunesNotifications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -110,6 +122,11 @@
 		F0000000000000000000C005 /* FunesIntents */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = FunesIntents;
+			sourceTree = "<group>";
+		};
+		F0000000000000000000C007 /* FunesNotifications */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = FunesNotifications;
 			sourceTree = "<group>";
 		};
 		F0000000000000000000C006 /* FunesShared */ = {
@@ -171,6 +188,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F0000000000000000000E052 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0000000000000000000B016 /* FunesPhone in Frameworks */,
+				F0000000000000000000B017 /* FunesProtocol in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -190,6 +216,7 @@
 				F0000000000000000000C003 /* FunesiOS */,
 				F0000000000000000000C004 /* FunesShareExtension */,
 				F0000000000000000000C005 /* FunesIntents */,
+				F0000000000000000000C007 /* FunesNotifications */,
 				F0000000000000000000C006 /* FunesShared */,
 			);
 			path = Apps;
@@ -203,6 +230,7 @@
 				F0000000000000000000A003 /* FunesiOS.app */,
 				F0000000000000000000A004 /* FunesShareExtension.appex */,
 				F0000000000000000000A005 /* FunesIntents.appex */,
+				F0000000000000000000A006 /* FunesNotifications.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -280,6 +308,7 @@
 			dependencies = (
 				F0000000000000000000F003 /* PBXTargetDependency */,
 				F0000000000000000000F005 /* PBXTargetDependency */,
+				F0000000000000000000F007 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F0000000000000000000C003 /* FunesiOS */,
@@ -343,6 +372,30 @@
 			productReference = F0000000000000000000A005 /* FunesIntents.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		F00000000000000000004006 /* FunesNotifications */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F00000000000000000008007 /* Build configuration list for PBXNativeTarget "FunesNotifications" */;
+			buildPhases = (
+				F0000000000000000000E051 /* Sources */,
+				F0000000000000000000E052 /* Frameworks */,
+				F0000000000000000000E053 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F0000000000000000000C007 /* FunesNotifications */,
+			);
+			name = FunesNotifications;
+			packageProductDependencies = (
+				F0000000000000000000D011 /* FunesPhone */,
+				F0000000000000000000D012 /* FunesProtocol */,
+			);
+			productName = FunesNotifications;
+			productReference = F0000000000000000000A006 /* FunesNotifications.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -366,6 +419,9 @@
 						CreatedOnToolsVersion = 27.0;
 					};
 					F00000000000000000004005 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					F00000000000000000004006 = {
 						CreatedOnToolsVersion = 27.0;
 					};
 				};
@@ -399,6 +455,7 @@
 				F00000000000000000004003 /* FunesiOS */,
 				F00000000000000000004004 /* FunesShareExtension */,
 				F00000000000000000004005 /* FunesIntents */,
+				F00000000000000000004006 /* FunesNotifications */,
 			);
 		};
 /* End PBXProject section */
@@ -426,6 +483,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		F0000000000000000000E043 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0000000000000000000E053 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -492,6 +556,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F0000000000000000000E051 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -509,6 +580,11 @@
 			isa = PBXTargetDependency;
 			target = F00000000000000000004005 /* FunesIntents */;
 			targetProxy = F0000000000000000000F006 /* PBXContainerItemProxy */;
+		};
+		F0000000000000000000F007 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F00000000000000000004006 /* FunesNotifications */;
+			targetProxy = F0000000000000000000F008 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -733,6 +809,36 @@
 			};
 			name = Debug;
 		};
+		F0000000000000000000500D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Apps/FunesNotifications.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = JVNJ326L7B;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Apps/FunesNotifications-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Funes Vault Notifications";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Martin Bereciartua";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.funesvault.ios.notifications;
+				PRODUCT_NAME = FunesNotifications;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 		F0000000000000000000500A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -752,6 +858,36 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.funesvault.ios.share;
 				PRODUCT_NAME = FunesShareExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		F0000000000000000000500E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Apps/FunesNotifications.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = JVNJ326L7B;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Apps/FunesNotifications-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Funes Vault Notifications";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Martin Bereciartua";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.funesvault.ios.notifications;
+				PRODUCT_NAME = FunesNotifications;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -880,6 +1016,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		F00000000000000000008007 /* Build configuration list for PBXNativeTarget "FunesNotifications" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F0000000000000000000500D /* Debug */,
+				F0000000000000000000500E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -999,7 +1144,17 @@
 			package = F00000000000000000007008 /* XCLocalSwiftPackageReference "Packages/FunesPhone" */;
 			productName = FunesPhone;
 		};
+		F0000000000000000000D011 /* FunesPhone */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007008 /* XCLocalSwiftPackageReference "Packages/FunesPhone" */;
+			productName = FunesPhone;
+		};
 		F0000000000000000000D010 /* FunesProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */;
+			productName = FunesProtocol;
+		};
+		F0000000000000000000D012 /* FunesProtocol */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F00000000000000000007002 /* XCLocalSwiftPackageReference "Packages/FunesProtocol" */;
 			productName = FunesProtocol;

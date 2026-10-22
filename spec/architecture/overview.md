@@ -168,7 +168,8 @@ funes-vault-app/
 │   ├── FunesMCPLauncher/    # funes-mcp command-line target
 │   ├── FunesiOS/            # iPhone app target
 │   ├── FunesShareExtension/
-│   └── FunesIntents/        # App Intents / Control extension
+│   ├── FunesIntents/        # App Intents / Control extension
+│   └── FunesNotifications/  # notification service extension: words approval alerts (task 5.6)
 ├── Packages/                # each package keeps its own Tests/ (SwiftPM needs them inside the package)
 │   ├── FunesCore/           # vault logic (Mac only); Tests/FunesCoreTests: policy vectors, store, search
 │   ├── FunesProtocol/       # shared Mac + iOS; Tests/FunesProtocolTests

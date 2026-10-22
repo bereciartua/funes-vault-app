@@ -4,8 +4,10 @@
 # passes):
 #   - Apps/FunesMac/Localizable.xcstrings: the Mac app's, and BridgeUI's, whose
 #     String(localized:) calls resolve in the app's bundle;
-#   - Apps/FunesiOS, Apps/FunesShareExtension and Apps/FunesIntents: the iPhone app's and each
-#     extension's own (Apps/FunesShared is compiled into the app and the Intents extension).
+#   - Apps/FunesiOS, Apps/FunesShareExtension, Apps/FunesIntents and Apps/FunesNotifications: the
+#     iPhone app's and each extension's own (Apps/FunesShared is compiled into the app and the
+#     Intents extension). The app and the notification service extension also get FunesPhone's,
+#     the approvals' words (ApprovalWording, ApprovalAlert), which resolve in their bundles.
 # With CHECK=1 it leaves the catalogs alone and fails when one is out of date.
 set -eu
 cd "$(dirname "$0")/.."
@@ -53,9 +55,14 @@ bridgeui=$(first_dir "*/BridgeUI.build/Debug/*/Objects-normal/*" "ApprovalPanel.
 [ -n "$app" ] && [ -n "$bridgeui" ] || missing "Mac app build"
 sync Apps/FunesMac/Localizable.xcstrings "$app" "$bridgeui"
 
-for target in FunesiOS FunesShareExtension FunesIntents; do
+phone=$(first_dir "*/FunesPhone.build/Debug-iphoneos/*/Objects-normal/*" "ApprovalWording.stringsdata")
+[ -n "$phone" ] || missing "FunesPhone build for iOS"
+for target in FunesiOS FunesShareExtension FunesIntents FunesNotifications; do
     dir=$(first_dir "*/FunesVault.build/Debug-iphoneos/$target.build/Objects-normal/*" "*.stringsdata")
     [ -n "$dir" ] || missing "$target build"
-    sync "Apps/$target/Localizable.xcstrings" "$dir"
+    case "$target" in
+    FunesiOS | FunesNotifications) sync "Apps/$target/Localizable.xcstrings" "$dir" "$phone" ;;
+    *) sync "Apps/$target/Localizable.xcstrings" "$dir" ;;
+    esac
 done
 exit "$status"
