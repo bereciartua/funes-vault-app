@@ -7,7 +7,8 @@ import Testing
 @MainActor @Suite struct MemoryDetailTests {
     /// FR-iOS-08: the phone edits a memory the Mac changed meanwhile. The Mac answers `conflict`,
     /// the phone asks "Changed on your Mac, reload?", keeps the draft until it's answered, and
-    /// on Reload shows the Mac's version, which it can then edit.
+    /// on Reload puts the Mac's version in the editor, to change and save again (device check,
+    /// 2026-10-21: the editor had kept the old text).
     @Test func editThatConflictsWithAMacEditReloads() async throws {
         let vault = FakeVault()
         let original = vault.add("Seat", body: "Prefers aisle seats")
@@ -27,13 +28,13 @@ import Testing
         #expect(vault.memory(original.id)?.body == "Prefers aisle seats, front of the plane")
         #expect(vault.updates.map(\.version) == [1])
 
+        // Reload with the editor open: it stays open, now holding the Mac's version.
         await detail.reload()
         #expect(!detail.conflict)
-        #expect(detail.draft == nil)
         #expect(detail.memory?.body == "Prefers aisle seats, front of the plane")
         #expect(detail.memory?.version == 2)
+        #expect(detail.draft == MemoryEditDraft(try #require(detail.memory)))
 
-        detail.startEditing()
         detail.draft?.body = "Prefers window seats"
         #expect(await detail.save())
         #expect(detail.draft == nil)
@@ -52,6 +53,7 @@ import Testing
         #expect(vault.memory(memory.id)?.status == .active)
 
         await detail.reload()
+        #expect(detail.draft == nil)
         #expect(await detail.archive())
         #expect(detail.memory?.status == .archived)
         #expect(await detail.restore())

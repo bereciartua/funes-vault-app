@@ -17,12 +17,26 @@ struct SearchView: View {
     var body: some View {
         @Bindable var search = model.search
         NavigationStack {
-            Group {
-                if model.reachability.isConnected {
-                    results
-                } else {
-                    VaultUnavailableView(model: model, feature: .search)
+            List {
+                BannerSection(model: model)
+                if model.reachability.isConnected, !search.results.isEmpty {
+                    Section {
+                        ForEach(search.results) { summary in
+                            NavigationLink(value: summary.id) {
+                                ResultRow(summary: summary, categories: model.categories)
+                            }
+                        }
+                        if search.nextCursor != nil {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                                .task { await search.loadMore() }
+                        }
+                    }
                 }
+            }
+            .overlay { placeholder }
+            .refreshable {
+                if model.reachability.isConnected { await search.search() } else { await model.refresh(fresh: true) }
             }
             .navigationTitle("Search")
             .searchable(text: $search.query, prompt: Text("Search your vault"))
@@ -41,46 +55,32 @@ struct SearchView: View {
             .navigationDestination(for: UUID.self) { id in
                 MemoryDetailView(model: model, id: id)
             }
-            .reachabilityBanner(model)
         }
     }
 
-    @ViewBuilder private var results: some View {
+    /// What shows over the list while there are no results to list.
+    @ViewBuilder private var placeholder: some View {
         let search = model.search
-        switch search.phase {
-        case .idle:
-            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-        case .searching where search.results.isEmpty:
-            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-        case let .failed(error) where search.results.isEmpty:
-            ContentUnavailableView {
-                Label("Couldn't search", systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(PhoneModel.vaultMessage(for: error))
-            } actions: {
-                Button("Try Again") { Task { await search.search() } }
-            }
-        default:
-            if search.results.isEmpty {
+        if !model.reachability.isConnected {
+            VaultUnavailableView(model: model, feature: .search)
+        } else if search.results.isEmpty {
+            switch search.phase {
+            case .idle, .searching:
+                ProgressView()
+            case let .failed(error):
+                ContentUnavailableView {
+                    Label("Couldn't search", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(PhoneModel.vaultMessage(for: error))
+                } actions: {
+                    Button("Try Again") { Task { await search.search() } }
+                }
+            case .loaded:
                 if search.query.trimmingCharacters(in: .whitespaces).isEmpty {
                     ContentUnavailableView(Self.emptyTitle(search.scope), systemImage: "tray")
                 } else {
                     ContentUnavailableView.search(text: search.query)
                 }
-            } else {
-                List {
-                    ForEach(search.results) { summary in
-                        NavigationLink(value: summary.id) {
-                            ResultRow(summary: summary, categories: model.categories)
-                        }
-                    }
-                    if search.nextCursor != nil {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                            .task { await search.loadMore() }
-                    }
-                }
-                .refreshable { await search.search() }
             }
         }
     }

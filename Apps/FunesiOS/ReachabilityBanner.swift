@@ -2,10 +2,13 @@ import FunesPhone
 import FunesProtocol
 import SwiftUI
 
-extension View {
-    /// The banner at the top of a tab (UX: iPhone, States).
-    func reachabilityBanner(_ model: PhoneModel) -> some View {
-        safeAreaInset(edge: .top, spacing: 0) { ReachabilityBanner(model: model) }
+/// The banner at the top of a tab (UX: iPhone, States), as the list's first section. Not a
+/// `safeAreaInset`: that hid the navigation bar's large title and search field on the device.
+struct BannerSection: View {
+    let model: PhoneModel
+
+    var body: some View {
+        Section { ReachabilityBanner(model: model) }
     }
 }
 
@@ -31,10 +34,8 @@ struct ReachabilityBanner: View {
                     .font(.footnote.bold())
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(.bar)
-        .accessibilityElement(children: .combine)
+        // Each button its own target in the list row.
+        .buttonStyle(.borderless)
     }
 
     @ViewBuilder private func icon(_ state: BannerState) -> some View {

@@ -63,13 +63,18 @@ public final class MemoryDetailModel {
         }
     }
 
-    /// "Reload" on the conflict question: the Mac's version replaces this one, and the draft
-    /// with it.
+    /// "Reload" on the conflict question: the Mac's version replaces this one. While editing, the
+    /// editor stays open with the Mac's version in place of the phone's edit, to change again.
     public func reload() async {
+        let editing = draft != nil
         conflict = false
         error = nil
-        draft = nil
         await load()
+        if let memory, editing {
+            draft = MemoryEditDraft(memory)
+        } else {
+            draft = nil
+        }
     }
 
     public func startEditing() {

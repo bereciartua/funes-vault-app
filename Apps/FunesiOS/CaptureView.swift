@@ -19,6 +19,7 @@ struct CaptureView: View {
     var body: some View {
         NavigationStack {
             List {
+                BannerSection(model: model)
                 Section {
                     editor
                     if let problem {
@@ -50,7 +51,6 @@ struct CaptureView: View {
                 }
             }
             .navigationTitle("Capture")
-            .reachabilityBanner(model)
             .overlay(alignment: .bottom) {
                 if toast {
                     Label("Saved", systemImage: "checkmark.circle.fill")

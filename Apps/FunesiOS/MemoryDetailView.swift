@@ -153,10 +153,13 @@ struct MemoryDetailView: View {
                             original: MemoryEditDraft(memory), categories: model.categories, busy: detail.busy,
                             error: detail.error.map(PhoneModel.vaultMessage(for:)),
                             save: { await detail.save() }, cancel: { detail.cancelEditing() })
+                // A reload puts the Mac's version in the editor: fresh fields, not ones still
+                // showing what was typed.
+                .id(memory.version)
                 .alert("Changed on your Mac, reload?", isPresented: conflictBinding(editing: true)) {
                     conflictButtons
                 } message: {
-                    Text("This memory changed on your Mac after it opened here. Reload shows the Mac's version, and your edits here are discarded.")
+                    Text("This memory changed on your Mac after it opened here. Reload puts the Mac's version in the editor, in place of your edits.")
                 }
         }
     }

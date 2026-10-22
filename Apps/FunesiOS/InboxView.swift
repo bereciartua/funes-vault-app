@@ -18,16 +18,48 @@ struct InboxView: View {
     var body: some View {
         @Bindable var inbox = model.inbox
         NavigationStack {
-            Group {
-                if model.reachability.isConnected {
-                    list
-                } else {
-                    VaultUnavailableView(model: model, feature: .inbox)
+            List {
+                BannerSection(model: model)
+                if model.reachability.isConnected, !inbox.items.isEmpty {
+                    if inbox.answeredElsewhere > 0 {
+                        Label("Already answered on your Mac", systemImage: "checkmark.circle")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    Section {
+                        ForEach(inbox.items) { item in
+                            NavigationLink(value: Route(item: item)) {
+                                InboxRow(item: item, categories: model.categories)
+                            }
+                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                Button("Save") { Task { await inbox.save(item.id) } }
+                                    .tint(.green)
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button("Reject", role: .destructive) { Task { await inbox.reject(item.id) } }
+                            }
+                            .contextMenu {
+                                Button("Save", systemImage: "checkmark") { Task { await inbox.save(item.id) } }
+                                Button("Reject", systemImage: "xmark", role: .destructive) { Task { await inbox.reject(item.id) } }
+                            }
+                        }
+                        if inbox.nextCursor != nil {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                                .task { await inbox.loadMore() }
+                        }
+                    }
                 }
             }
+            .overlay { placeholder }
+            .refreshable {
+                inbox.answeredElsewhere = 0
+                if model.reachability.isConnected { await inbox.load() } else { await model.refresh(fresh: true) }
+            }
             .navigationTitle("Inbox")
+            // Read once on connecting; pull to refresh and coming to the front read it again.
             .task(id: model.reachability.isConnected) {
-                if model.reachability.isConnected { await inbox.load() }
+                if model.reachability.isConnected, inbox.phase != .loaded { await inbox.load() }
             }
             .navigationDestination(for: Route.self) { route in
                 InboxItemView(model: model, item: route.item)
@@ -39,61 +71,29 @@ struct InboxView: View {
             } message: { failure in
                 Text(PhoneModel.vaultMessage(for: failure.error))
             }
-            .reachabilityBanner(model)
         }
     }
 
-    @ViewBuilder private var list: some View {
+    /// What shows over the list while there are no suggestions to list.
+    @ViewBuilder private var placeholder: some View {
         let inbox = model.inbox
-        switch inbox.phase {
-        case .idle, .loading:
-            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-        case let .failed(error):
-            ContentUnavailableView {
-                Label("Couldn't read the Inbox", systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(PhoneModel.vaultMessage(for: error))
-            } actions: {
-                Button("Try Again") { Task { await inbox.load() } }
-            }
-        case .loaded:
-            List {
-                if inbox.answeredElsewhere > 0 {
-                    Label("Already answered on your Mac", systemImage: "checkmark.circle")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+        if !model.reachability.isConnected {
+            VaultUnavailableView(model: model, feature: .inbox)
+        } else if inbox.items.isEmpty {
+            switch inbox.phase {
+            case .idle, .loading:
+                ProgressView()
+            case let .failed(error):
+                ContentUnavailableView {
+                    Label("Couldn't read the Inbox", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(PhoneModel.vaultMessage(for: error))
+                } actions: {
+                    Button("Try Again") { Task { await inbox.load() } }
                 }
-                ForEach(inbox.items) { item in
-                    NavigationLink(value: Route(item: item)) {
-                        InboxRow(item: item, categories: model.categories)
-                    }
-                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                        Button("Save") { Task { await inbox.save(item.id) } }
-                            .tint(.green)
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button("Reject", role: .destructive) { Task { await inbox.reject(item.id) } }
-                    }
-                    .contextMenu {
-                        Button("Save", systemImage: "checkmark") { Task { await inbox.save(item.id) } }
-                        Button("Reject", systemImage: "xmark", role: .destructive) { Task { await inbox.reject(item.id) } }
-                    }
-                }
-                if inbox.nextCursor != nil {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .task { await inbox.loadMore() }
-                }
-            }
-            .overlay {
-                if inbox.items.isEmpty {
-                    ContentUnavailableView("Your Inbox is empty", systemImage: "tray",
-                                           description: Text("Suggestions from agents, captures and imports wait here until you save or reject them."))
-                }
-            }
-            .refreshable {
-                inbox.answeredElsewhere = 0
-                await inbox.load()
+            case .loaded:
+                ContentUnavailableView("Your Inbox is empty", systemImage: "tray",
+                                       description: Text("Suggestions from agents, captures and imports wait here until you save or reject them."))
             }
         }
     }

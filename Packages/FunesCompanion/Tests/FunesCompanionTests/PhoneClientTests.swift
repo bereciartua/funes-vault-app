@@ -154,7 +154,7 @@ import Testing
         #expect(detail.draft?.body == "Oat flat white, extra hot")
         await detail.reload()
         #expect(detail.memory?.body == "Oat cortado")
-        detail.startEditing()
+        #expect(detail.draft?.body == "Oat cortado")
         detail.draft?.body = "Oat cortado, extra hot"
         #expect(await detail.save())
         #expect(try h.store.memory(id: created.id)?.body == "Oat cortado, extra hot")
