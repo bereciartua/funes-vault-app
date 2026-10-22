@@ -23,6 +23,10 @@ set -eu
 #                  with the maintainer's go-ahead.
 #
 # Environment:
+#   FUNES_IOS_VERSION       The version (CFBundleShortVersionString). Default: the project's
+#                           MARKETING_VERSION, which the Mac shares. It has to match the version
+#                           being prepared in App Store Connect, so the iPhone's first TestFlight
+#                           builds (0.2.0) can go ahead of the Mac's release.
 #   FUNES_IOS_BUILD         The build number (CFBundleVersion). Default: the project's
 #                           CURRENT_PROJECT_VERSION. App Store Connect takes each build number
 #                           once per version, so a second upload of the same version needs a
@@ -60,7 +64,8 @@ project_setting() {
     sed -n "s/^[[:space:]]*$1 = \"\{0,1\}\([^\";]*\)\"\{0,1\};$/\1/p" \
         "$project_dir/FunesVault.xcodeproj/project.pbxproj" | head -n 1
 }
-version=$(project_setting MARKETING_VERSION)
+version=${FUNES_IOS_VERSION:-$(project_setting MARKETING_VERSION)}
+printf '%s\n' "$version" | grep -Eqx '[0-9]+\.[0-9]+\.[0-9]+' || fail "the version \"$version\" isn't x.y.z"
 build_number=${FUNES_IOS_BUILD:-$(project_setting CURRENT_PROJECT_VERSION)}
 case "$build_number" in ''|*[!0-9]*) fail "the build number \"$build_number\" isn't a whole number" ;; esac
 
@@ -93,7 +98,7 @@ mkdir -p "$build_dir"
 # shellcheck disable=SC2086 # the argument lists are meant to split
 xcodebuild -project "$project_dir/FunesVault.xcodeproj" -scheme FunesiOS -configuration Release \
     -destination 'generic/platform=iOS' -derivedDataPath "$build_dir/DerivedData" \
-    -archivePath "$archive" DEVELOPMENT_TEAM="$team_id" CURRENT_PROJECT_VERSION="$build_number" \
+    -archivePath "$archive" DEVELOPMENT_TEAM="$team_id" MARKETING_VERSION="$version" CURRENT_PROJECT_VERSION="$build_number" \
     $provisioning_args $auth_args -quiet archive \
     || fail "the archive failed (no signing profile? see --allow-provisioning-updates)"
 
@@ -122,9 +127,8 @@ for key in aps-environment com.apple.developer.icloud-container-identifiers com.
     printf '%s' "$entitlements" | grep -q "<key>$key</key>" || fail "the app isn't signed with $key"
 done
 printf '  entitlements ok (push, iCloud, Time Sensitive, App Group, Keychain group)\n'
-if [ -z "$(plist "$app/Info.plist" ITSAppUsesNonExemptEncryption)" ]; then
-    printf '  note: no ITSAppUsesNonExemptEncryption in Info.plist; App Store Connect asks about encryption for each build\n'
-fi
+# Only Apple's CryptoKit and HTTPS: exempt, so builds don't wait on the export question.
+[ "$(plist "$app/Info.plist" ITSAppUsesNonExemptEncryption)" = false ] || fail "ITSAppUsesNonExemptEncryption isn't NO in the app's Info.plist"
 
 if [ "$export_ipa" = 0 ]; then
     step "Archived: $archive"

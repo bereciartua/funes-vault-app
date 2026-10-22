@@ -23,7 +23,7 @@ Task 5.7 of [Phase 5](../../plans/phase-5-iphone-companion.md). What goes into A
 | Age rating | 4+ (every questionnaire answer "None" or "No"; no web browsing, no user-to-user content) |
 | Price · availability | Free · all countries and regions; not on Apple silicon Macs or Apple Vision Pro (the Mac has its own app; neither is tested) |
 | Content rights | Contains no third-party content |
-| Version | The project's `MARKETING_VERSION` (0.2.0 for v0.2); the build number is `CURRENT_PROJECT_VERSION`, or `FUNES_IOS_BUILD` for another upload of the same version |
+| Version | The project's `MARKETING_VERSION` (0.2.0 for v0.2), or `FUNES_IOS_VERSION` for iPhone builds ahead of the Mac's release; the build number is `CURRENT_PROJECT_VERSION`, or `FUNES_IOS_BUILD` for another upload of the same version |
 | Release | Manually, after the Mac's v0.2 (with Settings ▸ iPhone shown in Release) is out through Sparkle: without it nobody can pair |
 | Sign-in for App Review | Not required: demo mode ([review notes](en-US/review-notes.txt)) |
 
@@ -42,7 +42,7 @@ Anything in the Apple Developer account or App Store Connect is the maintainer's
 2. **Signing for distribution.** Run `sh scripts/ios_release.sh --export --allow-provisioning-updates` (or say go, and it's run for you): Xcode, signed in to the team, creates an Apple Distribution certificate (or uses cloud signing) and App Store profiles for the app and its three extensions. The App IDs already have their capabilities (iCloud with `iCloud.com.funesvault`, Push Notifications, Time Sensitive Notifications and the App Group on the app; the App Group on each extension).
 3. **CloudKit Production.** In the CloudKit Console, `iCloud.com.funesvault` ▸ Production: check that the `Doorbell` record type (only `tag`; `tag` and `recordName` queryable) is there, as deployed on 2026-10-21. The Development reset of 2026-10-22 didn't touch Production. A TestFlight or App Store build uses Production.
 4. **App Privacy:** "No, we do not collect data from this app", the privacy policy URL, then **Publish** ([privacy.md](privacy.md)).
-5. **Export compliance:** the app uses only Apple's CryptoKit and HTTPS (review notes, last section). Answer the encryption questions once; if they come to "exempt", add `ITSAppUsesNonExemptEncryption = NO` to `Apps/FunesiOS-Info.plist` so builds don't wait on the question.
+5. **Export compliance:** the app uses only Apple's CryptoKit and HTTPS (review notes, last section), which is exempt. `ITSAppUsesNonExemptEncryption = NO` is in `Apps/FunesiOS-Info.plist` (decided 2026-10-22), so builds don't wait on the question; `ios_release.sh` checks it.
 6. **Upload the first build:** `sh scripts/ios_release.sh --upload` from a clean, tagged tree, with the version bumped for v0.2. Uploading needs the maintainer's go-ahead each time.
 7. **TestFlight.** Create an internal group ("Funes Internal": the maintainer and anyone on the team), add the build, and fill in Test Information (beta app description, feedback email). For outside testers, an external group ("Funes Beta") goes through Beta App Review with the same [review notes](en-US/review-notes.txt). Run 5.8's manual matrix on the TestFlight build: it's the first one on CloudKit Production.
 8. **Version page:** paste the [texts](en-US/), upload the [screenshots](screenshots.md), set the support, marketing and privacy URLs, and choose "Manually release this version".
