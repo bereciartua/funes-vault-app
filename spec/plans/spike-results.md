@@ -66,6 +66,23 @@ So Tailscale won about 3 s after the check started, once the better-ranked probe
 - **"Remember my password: testqwe1234" was accepted** by the phone and the Mac. Not a queue bug: both run the same `SecretScanner`, whose `assigned_secret` rule needs `password` followed by `:` or `=` and at least 12 non-space characters. This value has 11. Whether to lower that bar (and accept more false positives such as "password: see 1Password") is a separate decision for `spec/domain/memory-processing.md`.
 - Vault totals after the run: 1,007 `capture_receipt` rows, 1,007 `capture_iphone` suggestions with distinct `capture_id`s.
 
+### Run 3 (2026-10-21): task 5.5's Search, edit and Inbox on the device; **all four checks pass** after three fixes
+**Setup:** as in run 2, with PR #37's Debug builds: the iPhone app (Search and Inbox tabs, the banner) and the Mac on a copy of run 2's development vault (11 memories, 1,012 suggestions), over Wi-Fi. The Mac also has Ethernet.
+
+| Check | Result |
+|---|---|
+| Search | ✅ "Connected to MacBook Air (3463) · Wi-Fi"; results with snippets, sensitivity badges and category names; Activity `memories_searched` and `memory_viewed` under the device. |
+| Edit that conflicts with a Mac edit | ✅ after fixes 1 and 3. The phone's save of a stale version got `conflict` and asked "Changed on your Mac, reload?". Reload fetched the Mac's version, the next save went through, and the Mac shows the phone's text. |
+| Inbox swipe | ✅ A swipe left rejected a suggestion (`suggestion_rejected` via `companion`); the badge counted 1,011. |
+| Banner with the Mac unreachable | ✅ The Mac couldn't be put to sleep, and turning its Wi-Fi off changed nothing (Ethernet), so the Debug Mac app was quit instead: "Mac not reachable" with **Why?**, and Search showed "Mac not reachable" with **Try Again** and **Why?**. |
+
+**Fixed during the run:**
+1. **Reload left the old text in the editor.** The edit sheet stayed open with the fields as typed. Reload now keeps the editor open and fills it with the Mac's version (`MemoryDetailModel.reload`), and the form is rebuilt for the new version.
+2. **Missing large titles and search field.** The banner, put above each tab's list with `safeAreaInset(edge: .top)`, hid the navigation bar's large title and the search field on iOS 27. It's now the list's first section.
+3. **The edit sheet reopened after Save.** As the sheet closed, its text field wrote its text back through the draft binding, which recreated the draft and presented the sheet again with that text. The binding now ignores writes once the edit is saved or cancelled (the Inbox's Edit & Save too).
+
+**Not exercised:** Save by swipe (only a reject was swiped), Edit & Save, the Archived and Recently Deleted scopes, and the banner over Tailscale.
+
 ### Before the run (2026-10-20): partly covered in software
 Phase 0 deferred this spike "until just before Phase 5", and Phase 5 depends on it passing.
 
