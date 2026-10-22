@@ -41,6 +41,8 @@ final class CaptureModel {
 
     private let queue: CaptureQueue?
     private let delivery: CaptureDelivery?
+    /// Demo mode: its captures go to the demo vault, and there's no background refresh.
+    let isDemo: Bool
     private var stored: [QueuedCapture] = []
     /// Delivered this session. Kept in memory only: the phone stores just what's waiting.
     private var sent: [Recent] = []
@@ -49,16 +51,12 @@ final class CaptureModel {
 
     static let recentLimit = 20
 
-    init(client: CompanionClient) {
-        do {
-            let queue = try CaptureQueue.appGroup()
-            self.queue = queue
-            delivery = CaptureDelivery(queue: queue, sender: client)
-        } catch {
-            queue = nil
-            delivery = nil
-            unavailable = true
-        }
+    /// `queue` is nil when its file can't be had (no App Group container).
+    init(queue: CaptureQueue?, sender: any CaptureSender, isDemo: Bool = false) {
+        self.queue = queue
+        delivery = queue.map { CaptureDelivery(queue: $0, sender: sender) }
+        unavailable = queue == nil
+        self.isDemo = isDemo
         reload()
     }
 
@@ -130,6 +128,7 @@ final class CaptureModel {
     /// Asks iOS for a background refresh, so captures from the share sheet or the Control go
     /// even if the app isn't opened: not before the backoff allows, nor in under 15 minutes.
     func scheduleBackgroundDelivery() async {
+        guard !isDemo else { return }
         let earliest = max(Date(timeIntervalSinceNow: 15 * 60), await delivery?.nextAttempt ?? .distantPast)
         let request = BGAppRefreshTaskRequest(identifier: Identifiers.iOSDeliveryTaskID)
         request.earliestBeginDate = earliest

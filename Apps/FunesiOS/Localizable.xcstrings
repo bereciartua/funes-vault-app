@@ -423,6 +423,9 @@
     "Created" : {
 
     },
+    "DEMO" : {
+
+    },
     "Delete" : {
 
     },
@@ -442,6 +445,18 @@
 
     },
     "Delete…" : {
+
+    },
+    "Demo" : {
+
+    },
+    "Demo Vault" : {
+
+    },
+    "Demo captures go to the demo Inbox, and are deleted when you leave the demo." : {
+
+    },
+    "Demo vault: not your data" : {
 
     },
     "Denied." : {
@@ -579,6 +594,9 @@
     "Later" : {
 
     },
+    "Leave Demo" : {
+
+    },
     "Leaves your Mac" : {
 
     },
@@ -628,6 +646,9 @@
 
     },
     "New memory" : {
+
+    },
+    "No Mac yet? See every screen with sample data. Nothing leaves this iPhone." : {
 
     },
     "No memories yet" : {
@@ -837,6 +858,9 @@
     "Run Protocol Checks" : {
 
     },
+    "Sample memories, suggestions and requests, on this iPhone only. Nothing reaches a Mac, the network or iCloud. Changes and captures are discarded when you leave." : {
+
+    },
     "Save" : {
 
     },
@@ -855,7 +879,7 @@
     "Saved." : {
 
     },
-    "Saves text for Funes Vault on your Mac. It waits on this iPhone until your Mac has it." : {
+    "Saves text to your Funes vault. It waits here until your vault has it." : {
 
     },
     "Scan Again" : {
@@ -914,6 +938,9 @@
       }
     },
     "Sent to Mac" : {
+
+    },
+    "Sent to the demo Inbox" : {
 
     },
     "Settings" : {
@@ -1026,6 +1053,9 @@
     "The agent says · not checked by Funes" : {
 
     },
+    "The demo shows every screen with a sample vault on this iPhone. Nothing is sent anywhere, and it never mixes with your own data." : {
+
+    },
     "The request waits on your Mac. Answer it there, or try again when your Mac is reachable." : {
 
     },
@@ -1119,6 +1149,9 @@
     "Title" : {
 
     },
+    "To use your own vault, install Funes Vault on your Mac, leave the demo, and pair." : {
+
+    },
     "Too many tries with this code. Show a new one on your Mac." : {
 
     },
@@ -1126,6 +1159,12 @@
 
     },
     "Try Again" : {
+
+    },
+    "Try Demo" : {
+
+    },
+    "Try the Demo" : {
 
     },
     "Trying again %@." : {

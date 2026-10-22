@@ -1,0 +1,74 @@
+{
+  "macName": "Demo Mac",
+  "categories": [
+    { "key": "communication_style", "name": "Communication style", "description": "How you like answers written", "defaultSensitivity": "low" },
+    { "key": "personal_preferences", "name": "Personal preferences", "description": "Likes, dislikes and habits", "defaultSensitivity": "low" },
+    { "key": "software_development", "name": "Software development", "description": "Languages, tools and conventions", "defaultSensitivity": "low" },
+    { "key": "project_context", "name": "Project context", "description": "What you're working on", "defaultSensitivity": "internal" },
+    { "key": "privacy_preferences", "name": "Privacy preferences", "description": "What agents may and may not do", "defaultSensitivity": "internal" },
+    { "key": "health", "name": "Health", "description": "Allergies, routines, appointments", "defaultSensitivity": "sensitive" },
+    { "key": "finance", "name": "Finance", "description": "Budgets and accounts, never numbers", "defaultSensitivity": "restricted" },
+    { "key": "legal", "name": "Legal", "description": "Contracts and obligations", "defaultSensitivity": "restricted" }
+  ],
+  "memories": [
+    { "title": "Answer briefly, then offer detail", "body": "Lead with the answer in one or two sentences. Offer the longer explanation only if I ask for it.", "kind": "preference", "categories": ["communication_style"], "sensitivity": "low", "daysAgo": 40, "sharedCount": 12 },
+    { "title": "British spelling in writing", "body": "Use British spelling (colour, organise) in anything I'll publish. Code identifiers stay American.", "kind": "instruction", "categories": ["communication_style"], "sensitivity": "public", "daysAgo": 38, "sharedCount": 4 },
+    { "title": "No emoji in commit messages", "body": "Commit messages: imperative mood, no emoji, a blank line before the body.", "kind": "instruction", "categories": ["software_development", "communication_style"], "sensitivity": "public", "daysAgo": 35, "sharedCount": 9 },
+    { "title": "Swift 6 with strict concurrency", "body": "New Swift code uses Swift 6 language mode with strict concurrency. Prefer actors and Sendable value types over locks.", "kind": "preference", "categories": ["software_development"], "sensitivity": "low", "daysAgo": 30, "sharedCount": 7 },
+    { "title": "Tests use Swift Testing", "body": "Write new tests with Swift Testing (@Test, #expect). Keep XCTest only for UI tests.", "kind": "instruction", "categories": ["software_development"], "sensitivity": "low", "daysAgo": 29, "sharedCount": 6 },
+    { "title": "Prefer SQLite over Core Data", "body": "For local storage I reach for SQLite (GRDB on the Mac) rather than Core Data: easier to inspect and migrate.", "kind": "preference", "categories": ["software_development"], "sensitivity": "low", "daysAgo": 27, "sharedCount": 3 },
+    { "title": "Garden planner app", "body": "Side project: an iPhone app that plans which vegetables to sow each week, from the last frost date. SwiftUI, no account, data stays on the phone.", "kind": "project_context", "categories": ["project_context"], "sensitivity": "internal", "daysAgo": 21, "sharedCount": 5 },
+    { "title": "Garden planner: next milestone", "body": "Next milestone is the sowing calendar view. Beta to friends by the end of the month.", "kind": "goal", "categories": ["project_context"], "sensitivity": "internal", "daysAgo": 6, "expiresInDays": 30, "sharedCount": 2 },
+    { "title": "Team uses trunk-based development", "body": "At work we merge small changes to main several times a day, behind feature flags. No long-lived branches.", "kind": "fact", "categories": ["project_context", "software_development"], "sensitivity": "internal", "daysAgo": 19, "sharedCount": 3 },
+    { "title": "Never share client names", "body": "Agents may help with client work, but client names stay out of anything that leaves my Mac.", "kind": "constraint", "categories": ["privacy_preferences"], "sensitivity": "internal", "daysAgo": 45, "sharedCount": 1 },
+    { "title": "Ask before sending email", "body": "Draft emails for me, but never send one without showing me the final text first.", "kind": "constraint", "categories": ["privacy_preferences"], "sensitivity": "low", "daysAgo": 44, "sharedCount": 2 },
+    { "title": "Vegetarian, eats fish", "body": "Pescatarian: no meat, fish is fine. Suggest recipes accordingly.", "kind": "preference", "categories": ["personal_preferences"], "sensitivity": "low", "daysAgo": 60, "sharedCount": 4 },
+    { "title": "Mornings are for deep work", "body": "Keep 8:00 to 11:00 free of meetings when suggesting times.", "kind": "preference", "categories": ["personal_preferences"], "sensitivity": "low", "daysAgo": 25, "sharedCount": 5 },
+    { "title": "Prefers trains to short flights", "body": "For trips under five hours by rail, suggest the train first.", "kind": "preference", "categories": ["personal_preferences"], "sensitivity": "low", "daysAgo": 18, "sharedCount": 1 },
+    { "title": "Running three times a week", "body": "Training for a 10 km race: runs on Tuesday, Thursday and Saturday mornings.", "kind": "goal", "categories": ["health", "personal_preferences"], "sensitivity": "sensitive", "daysAgo": 12, "sharedCount": 0 },
+    { "title": "Allergic to penicillin", "body": "Penicillin allergy. Mention it whenever medication comes up.", "kind": "fact", "categories": ["health"], "sensitivity": "restricted", "daysAgo": 90, "sharedCount": 0 },
+    { "title": "Monthly budget review", "body": "Budget review on the first Sunday of each month. Categories only; never ask for account numbers.", "kind": "instruction", "categories": ["finance"], "sensitivity": "restricted", "daysAgo": 33, "sharedCount": 0 },
+    { "title": "Flat lease renews in March", "body": "The flat's lease renews on 1 March; notice is due two months before.", "kind": "event", "categories": ["legal"], "sensitivity": "sensitive", "daysAgo": 15, "sharedCount": 0 },
+    { "title": "Conference talk accepted", "body": "My talk on local-first apps was accepted for the autumn conference. Slides due three weeks before.", "kind": "event", "categories": ["project_context"], "sensitivity": "low", "daysAgo": 3, "sharedCount": 1 },
+    { "title": "Reading list: systems design", "body": "Currently reading a book on data-intensive applications, chapter 7 (transactions).", "kind": "fact", "categories": ["personal_preferences"], "sensitivity": "low", "daysAgo": 9, "sharedCount": 0 },
+    { "title": "Old phone number", "body": "Replaced: the old work phone number is no longer in use.", "kind": "fact", "categories": ["personal_preferences"], "sensitivity": "internal", "status": "archived", "daysAgo": 80, "sharedCount": 0 },
+    { "title": "Tabs, not spaces", "body": "Outdated: the team switched to four spaces.", "kind": "preference", "categories": ["software_development"], "sensitivity": "low", "status": "deleted", "daysAgo": 2, "sharedCount": 0 }
+  ],
+  "inbox": [
+    { "origin": "agent", "action": "create", "sourceLabel": "Claude Code", "title": "Uses Xcode Cloud for CI", "body": "The garden planner app builds and tests on Xcode Cloud on every push to main.", "kind": "project_context", "categories": ["project_context", "software_development"], "sensitivity": "internal", "evidence": "Read from the project's ci_scripts folder.", "purpose": "So future sessions know how the app is built.", "hoursAgo": 2 },
+    { "origin": "agent", "action": "update", "sourceLabel": "Cursor", "updates": "Mornings are for deep work", "title": "Mornings are for deep work", "body": "Keep 8:00 to 11:30 free of meetings when suggesting times.", "kind": "preference", "categories": ["personal_preferences"], "sensitivity": "low", "evidence": "You moved this week's stand-up to 11:30.", "hoursAgo": 20 },
+    { "origin": "capture_mac", "action": "create", "sourceLabel": "Captured on your Mac", "title": "Book the dentist", "body": "Book a dentist check-up before the end of the year.", "kind": "goal", "categories": ["health"], "sensitivity": "sensitive", "hoursAgo": 30 }
+  ],
+  "approvals": [
+    {
+      "kind": "share",
+      "agentName": "Claude Code",
+      "agentKind": "claude_code",
+      "task": "Set up the test target for the garden planner app",
+      "keywords": ["testing", "swift", "conventions"],
+      "purpose": "Follow your coding conventions",
+      "retention": "session",
+      "rows": [
+        { "memory": "Tests use Swift Testing", "weak": false },
+        { "memory": "Swift 6 with strict concurrency", "weak": false },
+        { "memory": "Garden planner app", "weak": false },
+        { "memory": "No emoji in commit messages", "weak": true }
+      ],
+      "withheld": { "above_sensitivity_ceiling": 1 }
+    },
+    {
+      "kind": "save",
+      "agentName": "Cursor",
+      "agentKind": "cursor",
+      "task": "Refactor the sowing calendar",
+      "save": { "action": "create", "title": "Calendar weeks start on Monday", "body": "In the garden planner, calendar weeks start on Monday, whatever the phone's region says.", "kind": "project_context", "categories": ["project_context"], "sensitivity": "internal", "evidence": "You changed firstWeekday to 2 in the calendar view.", "purpose": "To keep the calendar consistent in later edits." }
+    },
+    {
+      "kind": "access",
+      "agentName": "Codex",
+      "agentKind": "codex",
+      "task": "Plan next week's training runs",
+      "access": { "operation": "read", "categoryKey": "health", "categoryName": "Health", "allowsOnce": true, "asksBeforeSharing": true }
+    }
+  ]
+}

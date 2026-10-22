@@ -1,8 +1,8 @@
 # Privacy
 
-**Funes Vault v0.1 (public preview) · Last updated 20 October 2026**
+**Funes Vault v0.1 (public preview), and Funes Vault for iPhone (v0.2, in testing) · Last updated 22 October 2026**
 
-Funes Vault keeps your memories on your Mac. It has no accounts, no servers of its own, no analytics and no telemetry. This page lists everything that can leave your Mac, and when. Questions: [open an issue](https://github.com/bereciartua/funes-vault-app/issues).
+Funes Vault keeps your memories on your Mac. It has no accounts, no servers of its own, no analytics and no telemetry. This page lists everything that can leave your Mac, and when, and what the iPhone companion keeps and sends ([below](#funes-vault-for-iphone)). Questions: [open an issue](https://github.com/bereciartua/funes-vault-app/issues).
 
 ## In short
 
@@ -14,6 +14,8 @@ Funes Vault keeps your memories on your Mac. It has no accounts, no servers of i
 | One request to your tunnel's address | Your tunnel, and back to Funes Vault | When you save your tunnel's address, and when you click **Test** or **Try Again** on the Remote Access page |
 | An update check: the app's name and version | GitHub (the Funes Vault releases) | Once a day, if **Check for updates every day** is on, and when you click **Check Now** or **Check for Updates…** |
 | Capture text, with your category names and descriptions | An AI provider you added and chose for Classification | Only if you add one and choose it, never above your cloud limit, never when it looks like a secret |
+| Captures, searches, edits, Inbox and approval answers from your iPhone, and the Mac's replies | Between your iPhone and your own Mac only, end-to-end encrypted, over your Wi-Fi, Tailscale or your tunnel | Only with **iPhone access** on (off by default), with an iPhone you paired |
+| A "doorbell" record holding only a random tag | Your own private iCloud database (CloudKit), whose push wakes your iPhone | When an agent's request waits for you, if a paired iPhone has approvals on. Deleted once the request is answered or over |
 | Anything else | Nowhere | No analytics, no crash reporting, no accounts |
 
 ## Your vault stays on your Mac
@@ -45,6 +47,28 @@ Remote Access is **off by default**. While you have it on, a second listener on 
 - **Funes Vault makes two kinds of outbound requests for Remote Access:** a test that fetches its own health address through your tunnel (when you save the address, and when you click **Test** or **Try Again**), and, only while you have pairing open, a fetch of the signing-in app's public metadata document (https only, to a public address, no credential, only the app's name and version as User-Agent, at most 16 KB).
 - **What's kept on your Mac:** the remote token's file (mode 0600, the vault stores only its hash), the list of connected cloud apps with hashes of their tokens (`remote-connections.json`, mode 0600), and, in memory only, the tunnel and forwarded address of the last 50 remote requests. Nothing about your tunnel or cloud apps is sent anywhere else.
 - **Turn Off Remote Access** in the menu bar closes the port at once.
+
+## Funes Vault for iPhone
+
+The iPhone app (v0.2) is a remote for your Mac: it captures, searches, edits, reviews the Inbox and answers agents' requests, all on the vault on your Mac. Its App Store privacy label is **Data Not Collected**: nothing it handles reaches us, or anyone but you and your Mac.
+
+**What stays on the iPhone**
+- **No copy of your vault.** Search results, memories, the Inbox and approval panels are fetched from your Mac when you open them and kept in memory only while they're on screen.
+- **Captures waiting for your Mac,** in the app's own storage on the iPhone (shared with its share sheet, Shortcuts action and Control, protected until you first unlock the iPhone after a restart). Each one is deleted as soon as your Mac has it. A capture that looks like a password, key or card number is refused before it's saved.
+- **The pairing:** your Mac's name and addresses, and this iPhone's keys, in the iPhone's Keychain, usable only on this device. The signing key is in the Secure Enclave where the iPhone has one. **Unpair This iPhone…** deletes them, and asks whether to keep or delete captures still waiting. Removing the iPhone on your Mac (**Settings ▸ iPhone**) makes its keys useless at once.
+
+**What it sends, and where**
+- **Only to your own Mac,** once paired by scanning a code your Mac shows. Every request and reply is end-to-end encrypted and signed for that Mac and that iPhone, so only they can read it. It travels over your Wi-Fi (the app looks for your Mac on the local network with Bonjour, which needs iOS's **Local Network** permission), over Tailscale, or through a tunnel you run. A tunnel or network operator sees only encrypted messages, their sizes and timing.
+- **Approvals and iCloud.** When an agent's Share, Save or access request waits, your Mac saves a `Doorbell` record in **your own private iCloud database** (CloudKit, container `iCloud.com.funesvault`). It holds a single field, a random tag for your iPhone, under a random name: no memory text, titles, task, agent name or counts. Your iPhone subscribes to its tag, so Apple's push service wakes it. The app then asks your Mac, over the encrypted channel, what the request is, and words the notification on the iPhone ("Claude Code wants 3 memories"): it names the agent and the count or category, never memory text, because a locked screen shows it. The Mac deletes the record when the request is answered, expires or changes. Apple can see that your devices exchanged a record at a given time; we can't read your private database. This needs the same Apple Account, with iCloud, on the Mac and the iPhone. Turn approvals off on the iPhone in **Settings ▸ Approvals**, or for each iPhone on the Mac.
+- **Nothing else.** No analytics, advertising or tracking code, no crash reporter, no accounts. The share sheet, the Shortcuts action and the Control only add to the captures waiting on the iPhone.
+
+**Dictation.** On iOS 26 and later the mic button uses Apple's speech recognition on the iPhone. On earlier versions it opens the keyboard's dictation, which works under Apple's terms and your **Siri & Dictation** settings.
+
+**Demo mode** shows every screen with a sample vault built into the app, for App Review and for trying the app before you pair. Nothing in it is sent anywhere, it never mixes with your data, and its edits and captures are discarded when you leave it.
+
+**Crash reports and TestFlight.** If you choose to share analytics with app developers in iOS's **Settings ▸ Privacy & Security ▸ Analytics & Improvements**, Apple may pass us crash reports under [Apple's privacy policy](https://www.apple.com/legal/privacy/). TestFlight testers' feedback and crash reports reach us the same way, through Apple.
+
+**On your Mac, iPhone access** (off by default, **Settings ▸ iPhone**) opens a listener on port 47626 that accepts only the network addresses of the modes you turn on (your local network, Tailscale, or your tunnel through `127.0.0.1`), and, for the local network, advertises a Funes service with Bonjour, under your Mac's name as file sharing and AirPlay do, so your iPhone can find it. Each paired iPhone's requests appear in Activity under that iPhone.
 
 ## Update checks
 
@@ -90,7 +114,7 @@ funesvault.com is a static site hosted on GitHub Pages. It sets no cookies, load
 
 ## Children
 
-Funes Vault isn't directed at children and collects no personal data from anyone.
+Funes Vault, on the Mac and the iPhone, isn't directed at children and collects no personal data from anyone.
 
 ## Changes
 

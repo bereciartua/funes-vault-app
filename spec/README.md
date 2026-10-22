@@ -69,6 +69,7 @@ This folder (`spec/` in the `funes-vault-app` repo) holds the requirements, desi
    - [Open questions](plans/open-questions.md): 24 decisions with recommendations. Already decided include Q1 (name), Q3 (license), Q4 (repo), Q5 (minimum macOS), Q8 (BridgeKit), Q9 (Xcode project), Q14 (AI models), Q15 (Remote Access in v0.1), Q16 (iPhone approvals in v0.2), Q17 (web version), Q23 (domain).
 5. **Roadmap**
    - [Roadmap](roadmap/roadmap.md): timeline, milestones, release scopes.
+   - [App Store](release/app-store/README.md): the iPhone app's App Store texts, privacy answers, screenshots plan, App Review notes and the steps in App Store Connect.
    - [Backlog](roadmap/backlog.md): epics mapped to requirements and phases.
 
 ## Key decisions (summary)

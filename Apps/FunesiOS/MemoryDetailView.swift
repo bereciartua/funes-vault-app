@@ -85,7 +85,7 @@ struct MemoryDetailView: View {
                 }
             }
             Section {
-                LabeledContent("Kind") { Label(memory.kind.title, systemImage: memory.kind.symbol) }
+                KindRow(kind: memory.kind)
                 LabeledContent("Categories", value: memory.categoryKeys.map(model.categories.name).formatted(.list(type: .and)))
                 LabeledContent("Sensitivity") { SensitivityBadge(sensitivity: memory.sensitivity) }
                 LabeledContent("Expires") {

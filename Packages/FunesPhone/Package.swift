@@ -14,7 +14,7 @@ let package = Package(
         .package(path: "../FunesProtocol"),
     ],
     targets: [
-        .target(name: "FunesPhone", dependencies: ["FunesProtocol"]),
+        .target(name: "FunesPhone", dependencies: ["FunesProtocol"], resources: [.process("Resources")]),
         .testTarget(name: "FunesPhoneTests", dependencies: ["FunesPhone", "FunesProtocol"]),
     ]
 )

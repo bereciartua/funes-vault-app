@@ -5,6 +5,8 @@ set -eu
 cd "$(dirname "$0")/.."
 
 sh scripts/check_log_privacy.sh
+# The App Store texts fit App Store Connect's limits (task 5.7).
+sh scripts/check_app_store_metadata.sh
 # Text reaches a model only through ModelRouter.send, whose guardrails can't be skipped (model
 # providers §5, PR #3 review 4304236136).
 if grep -rn --include='*.swift' '\.generate(' Apps Packages | grep -v '/Tests/' \

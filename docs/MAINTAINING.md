@@ -90,6 +90,10 @@ The MCP Registry workflow needs `MCP_REGISTRY_DNS_KEY` in its own `registry` env
 
 `release.sh` finds the one `Developer ID Application` identity in the keychain (or takes `FUNES_SIGN_IDENTITY`). `FUNES_SPARKLE_KEYCHAIN=1` signs the appcast with the key in the login keychain (account `funes-vault`, `FUNES_SPARKLE_ACCOUNT` to change it), so it never has to be exported on the maintainer's Mac. For notarization, `FUNES_NOTARY_PROFILE=<profile>` uses a `notarytool store-credentials` profile; `FUNES_NOTARY_KEY`, `FUNES_NOTARY_KEY_ID` and `FUNES_NOTARY_ISSUER` use an API key file. The draft needs `gh` signed in. A full run from a tagged commit behaves like the workflow, minus the attestations.
 
+### The iPhone app
+
+The iPhone app ships through App Store Connect, not GitHub. `sh scripts/ios_release.sh` archives it (Release, automatic signing for team JVNJ326L7B) and checks the archive; `--export` signs an `.ipa` for App Store Connect into `dist/ios/`, and `--upload` sends it to TestFlight. `FUNES_IOS_BUILD` sets a higher build number for another upload of the same version. The texts, privacy answers, screenshots plan, App Review notes and the steps in App Store Connect are in [spec/release/app-store](../spec/release/app-store/README.md).
+
 ## Updates
 
 The app updates itself with [Sparkle](https://sparkle-project.org) 2.10.0 (`Apps/FunesMac/Updates/SparkleUpdater.swift`). The feed (`SUFeedURL`) is `https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml`, which GitHub redirects to the newest published, non-prerelease release, so drafts and prereleases are never offered and there's no server. Checks run once a day while automatic checks are on, and from **Check for Updates…**; installing always takes a click. Only a copy signed with the Developer ID of team `JVNJ326L7B` checks (`SparkleUpdater.isConfigured`, the team `scripts/release.sh` requires): builds from source, Xcode runs and `scripts/test.sh`'s Debug build never check, and hide **Check for Updates…**. A release rehearsal signed with the Developer ID does check.

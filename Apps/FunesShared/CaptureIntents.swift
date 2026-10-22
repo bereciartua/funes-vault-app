@@ -7,7 +7,7 @@ import FunesProtocol
 /// In the app and the Intents extension both, so the system can run it in either.
 struct RememberInFunesIntent: AppIntent {
     static let title: LocalizedStringResource = "Remember in Funes"
-    static let description = IntentDescription("Saves text for Funes Vault on your Mac. It waits on this iPhone until your Mac has it.")
+    static let description = IntentDescription("Saves text to your Funes vault. It waits here until your vault has it.")
 
     @Parameter(title: "Text", inputOptions: String.IntentInputOptions(multiline: true))
     var text: String

@@ -6,9 +6,61 @@ import SwiftUI
 /// `safeAreaInset`: that hid the navigation bar's large title and search field on the device.
 struct BannerSection: View {
     let model: PhoneModel
+    /// Capture, where the app opens, offers the demo while there's no Mac (FR-iOS-10).
+    var offersDemo = false
 
     var body: some View {
-        Section { ReachabilityBanner(model: model) }
+        Section {
+            if model.isDemo {
+                DemoBanner(model: model)
+            } else {
+                ReachabilityBanner(model: model)
+                if offersDemo, case .notPaired = model.banner {
+                    TryDemoRow(model: model)
+                }
+            }
+        }
+    }
+}
+
+/// "Demo vault: not your data" (UX: iPhone, States), with the way out.
+struct DemoBanner: View {
+    let model: PhoneModel
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("DEMO")
+                .font(.caption2.bold())
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(.orange, in: Capsule())
+                .foregroundStyle(.white)
+                .accessibilityHidden(true)
+            Text("Demo vault: not your data")
+                .font(.footnote)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Leave Demo") { model.switchDemo(false) }
+                .font(.footnote.bold())
+        }
+        .buttonStyle(.borderless)
+        .accessibilityElement(children: .contain)
+    }
+}
+
+/// For someone without the Mac app yet, or App Review: every screen with sample data.
+struct TryDemoRow: View {
+    let model: PhoneModel
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("No Mac yet? See every screen with sample data. Nothing leaves this iPhone.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button("Try Demo") { model.switchDemo(true) }
+                .font(.footnote.bold())
+        }
+        .buttonStyle(.borderless)
     }
 }
 
@@ -195,6 +247,7 @@ struct VaultUnavailableView: View {
             } actions: {
                 Button("Pair with Mac") { model.presentingPairing = true }
                     .buttonStyle(.borderedProminent)
+                Button("Try Demo") { model.switchDemo(true) }
             }
         case let .connecting(name, _):
             ContentUnavailableView {

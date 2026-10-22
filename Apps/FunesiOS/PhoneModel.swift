@@ -9,7 +9,8 @@ private let logger = Logger(subsystem: Identifiers.iOSLoggerSubsystem, category:
 
 /// The app's state: the pairing, how the Mac is reachable (UX: iPhone, States), the capture
 /// queue, Search and the Inbox, which read the vault on the Mac, and the requests waiting for an
-/// answer (task 5.6).
+/// answer (task 5.6). In demo mode (FR-iOS-10) the same models read the demo vault instead, and
+/// nothing reaches the network, the pairing or CloudKit.
 @MainActor @Observable
 final class PhoneModel {
     private(set) var record: PairingRecord?
@@ -26,7 +27,11 @@ final class PhoneModel {
     private(set) var spikeMessage: String?
     private var testCaptureID: UUID?
 
-    let client: CompanionClient
+    /// The paired Mac's client, or the demo vault (`PhoneServices`).
+    let services: PhoneServices
+    var isDemo: Bool { services.isDemo }
+    /// Turns demo mode on or off: the app builds a new model (`AppState`).
+    @ObservationIgnored var switchDemo: (Bool) -> Void = { _ in }
     let capture: CaptureModel
     let search: SearchModel
     let inbox: InboxModel
@@ -48,15 +53,14 @@ final class PhoneModel {
     private var started = false
     private var refreshing = false
 
-    init(client: CompanionClient = CompanionClient(store: KeychainSecretStore()),
-         subscriptions: any DoorbellSubscriptions = CloudKitSubscriptions()) {
-        self.client = client
-        capture = CaptureModel(client: client)
-        search = SearchModel(caller: client)
-        inbox = InboxModel(caller: client)
-        categories = CategoryList(caller: client)
-        approvals = ApprovalsModel(caller: client)
-        approvalSettings = ApprovalSettingsModel(caller: client, subscriptions: subscriptions)
+    init(services: PhoneServices) {
+        self.services = services
+        capture = CaptureModel(queue: services.queue, sender: services.sender, isDemo: services.isDemo)
+        search = SearchModel(caller: services.caller)
+        inbox = InboxModel(caller: services.caller)
+        categories = CategoryList(caller: services.caller)
+        approvals = ApprovalsModel(caller: services.caller)
+        approvalSettings = ApprovalSettingsModel(caller: services.caller, subscriptions: services.subscriptions)
         capture.onOutcome = { [weak self] outcome in self?.delivered(outcome) }
         search.onFailure = { [weak self] error in self?.callFailed(error) }
         inbox.onFailure = { [weak self] error in self?.callFailed(error) }
@@ -73,7 +77,7 @@ final class PhoneModel {
             Task { if reachability.isConnected { await approvals.load(force: true) } }
             return
         }
-        let panel = ApprovalPanelModel(ref: ref, caller: client,
+        let panel = ApprovalPanelModel(ref: ref, caller: services.caller,
                                        // Answers need the phone unlocked (FR-iOS-12): protected data is
                                        // available only then.
                                        isUnlocked: { UIApplication.shared.isProtectedDataAvailable })
@@ -106,7 +110,7 @@ final class PhoneModel {
 
     /// One memory's detail, wired to the banner and to Search's list.
     func detailModel(_ id: UUID) -> MemoryDetailModel {
-        let detail = MemoryDetailModel(id: id, caller: client)
+        let detail = MemoryDetailModel(id: id, caller: services.caller)
         detail.onFailure = { [weak self] error in self?.callFailed(error) }
         detail.onChange = { [weak self] change in
             switch change {
@@ -121,12 +125,26 @@ final class PhoneModel {
         guard !started else { return }
         started = true
         await reload()
+        // The demo has no network to watch and no extensions' queue to read.
+        if isDemo {
+            #if DEBUG
+            if let query = ScreenshotScene.current?.searchQuery { search.query = query }
+            #endif
+            await refresh()
+            await capture.deliver(.launch)
+            #if DEBUG
+            if let kind = ScreenshotScene.current?.approval, let item = approvals.items.first(where: { $0.kind == kind }) {
+                open(ApprovalRef(id: item.id))
+            }
+            #endif
+            return
+        }
         Task { [weak self] in
             for await path in NetworkPathWatcher.updates() {
                 guard let self else { return }
                 self.path = path
                 self.tracker.handle(.path(path))
-                await client.networkChanged()
+                await self.services.client?.networkChanged()
                 // Start over on a usable path; the first update is the current path, which the
                 // foreground refresh already covers.
                 if path.isSatisfied, self.record != nil, self.lastChecked != nil {
@@ -161,12 +179,13 @@ final class PhoneModel {
         await capture.deliver(.foreground)
         // Suggestions may have been answered or added on the Mac meanwhile.
         if reachability.isConnected, inbox.phase == .loaded { await inbox.load() }
-        notificationsAllowed = await NotificationPermission.current()
+        if !isDemo { notificationsAllowed = await NotificationPermission.current() }
     }
 
     /// `BGAppRefreshTask`: send what's waiting, then ask for the next refresh, since the share
     /// extension and the Control can queue more while the app stays closed.
     func backgroundDelivery() async {
+        guard !isDemo else { return }
         capture.reload()
         if capture.queuedCount > 0 { await capture.deliver(.background) }
         await capture.scheduleBackgroundDelivery()
@@ -200,6 +219,12 @@ final class PhoneModel {
     }
 
     private func reload() async {
+        guard let client = services.client else {
+            // Demo mode: "connected" to the demo vault, never paired.
+            record = nil
+            tracker.handle(.pairing(paired: true))
+            return
+        }
         do {
             record = try await client.record()
         } catch {
@@ -213,7 +238,13 @@ final class PhoneModel {
 
     /// `status.get`, on the cached address or by selecting one.
     func refresh(fresh: Bool = false) async {
-        guard record != nil else {
+        if let demo = services.demo {
+            tracker.handle(.checked(.success(demo.connection), at: Date()))
+            await categories.load()
+            await approvals.load()
+            return
+        }
+        guard let client = services.client, record != nil else {
             tracker.handle(.pairing(paired: false))
             return
         }
@@ -239,6 +270,7 @@ final class PhoneModel {
 
     /// Pairs with the scanned Mac. Returns how long it took, Allow click included (Spike 1a).
     func pair(_ payload: PairingQRPayload, deviceName: String) async throws(CompanionClientError) -> Duration {
+        guard let client = services.client else { throw .notPaired }
         let start = ContinuousClock.now
         record = try await client.pair(payload, deviceName: deviceName, model: DeviceInfo.model)
         tracker.handle(.pairing(paired: true))
@@ -261,6 +293,7 @@ final class PhoneModel {
     /// Unpair on the phone (§8): tells the Mac if it can, then forgets the keys and the pairing,
     /// and the queued captures if the user said so.
     func unpair(deletingQueue: Bool) async {
+        guard let client = services.client else { return }
         do { try await client.unpair() } catch { logger.error("Couldn't delete the pairing") }
         // No ring for this iPhone any more.
         await approvalSettings.clear()
@@ -273,6 +306,7 @@ final class PhoneModel {
     // MARK: Spike 1 (Debug builds)
 
     func runProtocolChecks() async {
+        guard let client = services.client else { return }
         do { protocolChecks = try await client.protocolChecks() } catch {
             protocolChecks = []
             spikeMessage = Self.message(for: error)
@@ -282,6 +316,7 @@ final class PhoneModel {
     /// Sends a capture to the Mac (rows 1b and 1c); `again` resends the last one with the same id,
     /// which the Mac accepts as a duplicate without storing it twice.
     func sendTestCapture(again: Bool) async {
+        guard let client = services.client else { return }
         let id = again ? (testCaptureID ?? UUID()) : UUID()
         testCaptureID = id
         let capture = CompanionCapture(captureId: id, text: "Spike 1 test capture \(id.uuidString.prefix(8))", createdAt: Date(),

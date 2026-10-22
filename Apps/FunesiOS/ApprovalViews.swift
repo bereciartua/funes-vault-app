@@ -269,7 +269,7 @@ struct ApprovalPanelView: View {
                 Text(save.body).textSelection(.enabled)
             }
             .padding(.vertical, 4)
-            if let kind = save.kind { LabeledContent("Kind") { Label(kind.title, systemImage: kind.symbol) } }
+            if let kind = save.kind { KindRow(kind: kind) }
             if !save.categories.isEmpty {
                 LabeledContent("Category", value: save.categories.map(model.categories.name).formatted(.list(type: .and)))
             }

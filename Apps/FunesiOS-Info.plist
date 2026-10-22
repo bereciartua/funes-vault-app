@@ -8,6 +8,8 @@
 	</array>
 	<key>FunesKeychainGroup</key>
 	<string>$(AppIdentifierPrefix)com.funesvault.shared</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

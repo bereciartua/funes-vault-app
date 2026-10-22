@@ -63,6 +63,24 @@
       <h3>How do I uninstall it?</h3>
       <p>If you used Remote Access, turn your tunnel off first; the Remote Access page shows how. Then remove Funes Vault from your agents’ MCP settings, quit the app from its menu, and move <code>FunesVault.app</code> to the Trash. Your vault stays in <code>~/Library/Application Support/FunesVault</code> until you delete that folder; the app’s settings are in <code>~/Library/Preferences/com.funesvault.mac.plist</code>, and if you linked the launcher, delete <code>~/.local/bin/funes-mcp</code>. If you installed with Homebrew, <code>brew uninstall --zap --cask funes-vault</code> removes the app and moves the data folder, caches and preferences to the Trash. API keys for AI providers you added are in your Keychain under <code>com.funesvault.provider</code>.</p>
 
+      <h2 id="iphone">Funes Vault for iPhone</h2>
+      <p>The iPhone app is a companion to Funes Vault on your Mac: your vault lives on the Mac, and the iPhone captures, searches, edits, reviews the Inbox and answers agents’ requests there. It needs Funes Vault on a Mac (macOS 15 or later). Without one, <strong>Try Demo</strong> on the Capture tab shows every screen with sample data.</p>
+
+      <h3>How do I pair my iPhone?</h3>
+      <p>On the Mac, open <strong>Funes Vault Settings ▸ iPhone</strong>, turn on <strong>Allow iPhone access</strong> and click <strong>Pair iPhone…</strong>. On the iPhone, tap <strong>Pair with Mac</strong> and scan the code, then click <strong>Allow</strong> on the Mac. The two need to reach each other: the same Wi-Fi, Tailscale on both, or a tunnel you set up for Remote Access.</p>
+
+      <h3>The iPhone says “Mac not reachable”</h3>
+      <p>Tap <strong>Why?</strong> on the banner: it lists what it tried and what to check. Usually the Mac is asleep, Funes Vault isn’t running, the two aren’t on the same Wi-Fi, or <strong>Local Network</strong> access is off for Funes in the iPhone’s <strong>Settings ▸ Privacy &amp; Security</strong>. Captures wait on the iPhone and go to the Mac by themselves once it’s back.</p>
+
+      <h3>Approval notifications don’t arrive</h3>
+      <p>They need notifications on for Funes, approvals on in the iPhone’s <strong>Settings ▸ Approvals</strong> and for that iPhone on the Mac, and the same Apple Account with iCloud on both devices. The iPhone’s <strong>Settings ▸ Approvals</strong> says which is missing. Requests still show under <strong>Waiting for you</strong> on the Capture tab, and on the Mac.</p>
+
+      <h3>What does the iPhone keep?</h3>
+      <p>No copy of your vault: only captures waiting for your Mac, and the pairing keys in its Keychain. <strong>Unpair This iPhone…</strong> in Settings removes them; removing the iPhone on the Mac in <strong>Settings ▸ iPhone</strong> cuts it off at once, for a lost phone. The <a href="/privacy/#funes-vault-for-iphone">privacy statement</a> has the details.</p>
+
+      <h3>Reporting an iPhone problem</h3>
+      <p>Open an issue as above, with your iOS version and iPhone model, the Funes Vault version on both devices (the iPhone’s is in the App Store or TestFlight), and how the two connect (Wi-Fi, Tailscale or a tunnel).</p>
+
       <h3>More questions</h3>
       <p>See the <a href="https://github.com/bereciartua/funes-vault-app#faq">FAQ in the README</a> and the <a href="https://github.com/bereciartua/funes-vault-app/blob/main/docs/MCP.md">MCP guide</a>.</p>
     </div>

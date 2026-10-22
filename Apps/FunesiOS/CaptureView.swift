@@ -6,7 +6,11 @@ import SwiftUI
 /// this iPhone at once, and delivery follows. Recent captures show where each one is.
 struct CaptureView: View {
     let model: PhoneModel
+    #if DEBUG
+    @State private var text = ScreenshotScene.current?.captureText ?? ""
+    #else
     @State private var text = ""
+    #endif
     @State private var source = CaptureSource.typed
     @State private var dictation = Dictation()
     @State private var problem: String?
@@ -19,7 +23,7 @@ struct CaptureView: View {
     var body: some View {
         NavigationStack {
             List {
-                BannerSection(model: model)
+                BannerSection(model: model, offersDemo: true)
                 ApprovalsSection(model: model)
                 Section {
                     editor
@@ -41,7 +45,7 @@ struct CaptureView: View {
                 if !capture.recent.isEmpty {
                     Section("Recent captures") {
                         ForEach(capture.recent) { item in
-                            RecentRow(item: item)
+                            RecentRow(item: item, isDemo: model.isDemo)
                                 .swipeActions {
                                     if item.status != .sent {
                                         Button("Delete", role: .destructive) { capture.delete(item.id) }
@@ -158,6 +162,8 @@ struct CaptureView: View {
 
 struct RecentRow: View {
     let item: CaptureModel.Recent
+    /// Demo captures are labelled as such (UX: iPhone, Demo mode).
+    var isDemo = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -174,6 +180,7 @@ struct RecentRow: View {
 
     @ViewBuilder private var status: some View {
         switch item.status {
+        case .sent where isDemo: Label("Sent to the demo Inbox", systemImage: "checkmark").foregroundStyle(.green)
         case .sent: Label("Sent to Mac", systemImage: "checkmark").foregroundStyle(.green)
         case .waiting: Label("Waiting", systemImage: "clock").foregroundStyle(.secondary)
         case let .rejected(code): Label(CaptureModel.message(for: code), systemImage: "xmark.octagon").foregroundStyle(.red)
