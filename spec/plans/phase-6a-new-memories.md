@@ -6,12 +6,12 @@
 
 ## Tasks
 ### 6a.1 Extraction · 4 h
-- [ ] Chunking (about 2,000 characters on paragraph or sentence boundaries, previous chunk as context), per-provider token budgets, up to 8 pieces per chunk and 40 per input.
-- [ ] The extraction request and schema ([§5.3](../domain/memory-processing.md#53-extraction)), with the first-person and about-the-user variants, through `ModelRouter` with typed items.
-- [ ] Validation ([§5.4](../domain/memory-processing.md#54-validation-code)): evidence quotes, the support check if Spike E asks for it, secret scan, the sensitivity floor (model, category default, hint, pre-screen, agent's declared level, original memory), length, categories, dedupe within the input; the original stays if everything fails.
+- [ ] Chunking (about 2,000 characters on paragraph or sentence boundaries, previous chunk as context), per-provider token budgets, up to 30 pieces per chunk and 40 per input. Apple on-device classifies only, no split ([Spike E](spike-results.md#spike-e-extraction-linking-and-tidy-up-quality)).
+- [ ] The extraction request and schema ([§5.3](../domain/memory-processing.md#53-extraction)), with the first-person and about-the-user variants, through `ModelRouter` with typed items; start from Spike E's [`prompts.py`](../../spikes/memory-processing/prompts.py).
+- [ ] Validation ([§5.4](../domain/memory-processing.md#54-validation-code)): evidence quotes (delimiter tags stripped, empty quotes ignored), the support check (a flag keeps the piece out of auto-apply), secret scan, the sensitivity floor (model, category default, hint, pre-screen, agent's declared level, original memory), length, categories, dedupe within the input; the original stays if everything fails.
 
 ### 6a.2 Linking · 4 h
-- [ ] The related-memories finder (bge-small and FTS5, Spike E's threshold), excluding the original and sibling pieces; shared with 6b.
+- [ ] The related-memories finder (bge-small and FTS5, related at cosine ≥ 0.70 or a keyword hit, top 5), excluding the original and sibling pieces; shared with 6b.
 - [ ] One decision call per input with dates; `create` / `update` / `duplicate` / `retract`; targets validated and version-pinned.
 - [ ] Agent input: Inbox proposals link against all memories; anything auto-applied for an agent only against memories it can read.
 
@@ -29,7 +29,7 @@
 
 ### 6a.5 Auto-apply for new memories · 3 h
 - [ ] The levels of [§5.7](../domain/memory-processing.md#57-auto-apply-for-new-memories): trust (changes to existing memories only from typed or dictated text), agents by their own access, chosen engine only, the policy-engine check that no agent gains access, each change in one transaction with its undo entry.
-- [ ] Levels stay disabled until Spike E's fixtures show their target precision.
+- [ ] A level is offered only for engines that reached 95% on Spike E's fixtures (GPT-6-Luna did for both levels); `confidence` gates nothing, the gate is atomic plus the support check.
 
 ### 6a.6 Inbox and Settings · 4 h
 - [ ] Group card, row badges, Apply all, Keep as one (only while nothing is decided), the "Split into N?" offer, Split this memory, the flagged rows, the engine line.

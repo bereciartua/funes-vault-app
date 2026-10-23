@@ -28,6 +28,7 @@
 - **The Inbox** gets a Tidy-up section and an Applied automatically list; the iPhone shows these cards as "Review on your Mac" until it gets its own.
 - **The model's role grows** from proposing fields to proposing changes. Every change is validated in code, traceable in provenance and reversible.
 - **A cloud provider receives existing memories,** within the cloud limit. Memories above it are tidied only by a local provider or the code-only rules.
+- **Model proposals start review-only** ([Spike E](../../plans/spike-results.md#spike-e-extraction-linking-and-tidy-up-quality)): GPT-6-Luna got 19 of 20 actions right, but no engine reached 95% on enough actions, and confidence doesn't separate right from wrong. Auto-apply covers the code-only rules until a larger cluster set shows the target. Apple on-device isn't offered for the tidy-up (8 of 49 right).
 
 **Alternatives considered.**
 - **Port the web job (pairs, archive only):** can't merge or update.

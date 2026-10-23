@@ -2,7 +2,7 @@
 
 **Goal:** before building Phase 6, measure whether models can split input into atomic memories, link them, and judge tidy-up clusters well enough, and on which providers. The answers set prompt shapes, token budgets, thresholds and what Apple on-device is used for ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)).
 
-**Duration:** 1 weekend. **Depends on:** nothing (throwaway code in `spikes/`, like Phase 0). **Output:** a "Spike E" section in [spike results](spike-results.md), and the fixtures, kept for 6a and 6b's tests. Specs: [memory processing §5, §9](../domain/memory-processing.md#5-new-memories-split-classify-link).
+**Duration:** 1 weekend. **Depends on:** nothing (throwaway code in `spikes/`, like Phase 0). **Output:** a "Spike E" section in [spike results](spike-results.md#spike-e-extraction-linking-and-tidy-up-quality), and the fixtures in [`spikes/memory-processing/fixtures/`](../../spikes/memory-processing/fixtures/), kept for 6a and 6b's tests. Specs: [memory processing §5, §9](../domain/memory-processing.md#5-new-memories-split-classify-link).
 
 ## Questions
 1. **Can Apple on-device split?** Its ~4k-token window must hold the instructions, categories, schema and output. Does it refuse sensitive text (health, money), which is exactly what the cloud limit keeps on the Mac? If it can't, the no-key default stays one suggestion per input, classified.
@@ -16,18 +16,18 @@
 
 ## Tasks
 ### E.1 Fixtures · 3 h
-- [ ] ~80 **synthetic** inputs with expected pieces (the repo is public; no real data): typed captures, dictated rambles, shared web snippets, agent dumps written to resemble ChatGPT's memory paragraph, Claude and Markdown import items, seed answers. Cover negation, corrections, "used to … now …", hypotheticals, quoted speech, lists, single facts (must stay one), third-person summaries, agent self-statements, secrets, Spanish, and injection attempts.
-- [ ] A small vault (~150 memories, from the Spike 2 set plus additions) so linking has real neighbours, with expected link decisions.
-- [ ] ~40 tidy-up clusters: duplicates, rewordings, superseded values, complementary facts, real conflicts, merges that would lose a constraint, mixed-sensitivity and mixed-category pairs, injection inside an agent-written memory.
+- [x] ~80 **synthetic** inputs with expected pieces (the repo is public; no real data): typed captures, dictated rambles, shared web snippets, agent dumps written to resemble ChatGPT's memory paragraph, Claude and Markdown import items, seed answers. Cover negation, corrections, "used to … now …", hypotheticals, quoted speech, lists, single facts (must stay one), third-person summaries, agent self-statements, secrets, Spanish, and injection attempts.
+- [x] A small vault (~150 memories, from the Spike 2 set plus additions) so linking has real neighbours, with expected link decisions.
+- [x] ~40 tidy-up clusters: duplicates, rewordings, superseded values, complementary facts, real conflicts, merges that would lose a constraint, mixed-sensitivity and mixed-category pairs, injection inside an agent-written memory.
 
 ### E.2 Harness · 2 h
-- [ ] A script that runs the prompts of [memory processing §5.3, §5.5, §9.3](../domain/memory-processing.md) against a provider, applies the code validation of §5.4 and §9.4, and scores: claim recall, invented claims, unsupported additions, over-splitting, link accuracy, tidy-up precision per action, refusals, tokens and requests per input.
-- [ ] Providers: Apple on-device (Foundation Models), one small cloud model each from Anthropic, OpenAI and Gemini, one Ollama model.
+- [x] A script that runs the prompts of [memory processing §5.3, §5.5, §9.3](../domain/memory-processing.md) against a provider, applies the code validation of §5.4 and §9.4, and scores: claim recall, invented claims, unsupported additions, over-splitting, link accuracy, tidy-up precision per action, refusals, tokens and requests per input.
+- [x] Providers: Apple on-device (Foundation Models), one small cloud model each from Anthropic, OpenAI and Gemini, one Ollama model. Run: Apple, OpenAI GPT-6-Luna (through the Codex CLI) and Ollama qwen3 4B; Anthropic and Gemini not run (no API keys).
 
 ### E.3 Run and record · 3 h
-- [ ] Run every provider; both prompt variants; one call vs two.
-- [ ] Record in `spike-results.md`: a table per question, the chosen prompt shape and token budgets, the related threshold, tidy-up thresholds per auto-apply level with their precision, and Apple on-device's role (split, or classify only).
-- [ ] Update the specs where the numbers change them (memory processing §5, §9; ADR-0020/0021 consequences if a decision moves).
+- [x] Run every provider; both prompt variants; one call vs two.
+- [x] Record in `spike-results.md`: a table per question, the chosen prompt shape and token budgets, the related threshold, tidy-up thresholds per auto-apply level with their precision, and Apple on-device's role (split, or classify only).
+- [x] Update the specs where the numbers change them (memory processing §5, §9; ADR-0020/0021 consequences if a decision moves).
 
 ## Exit criteria
 - Every question above has a measured answer.

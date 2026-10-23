@@ -18,7 +18,7 @@
 
 ### 6b.3 The model call and validation · 4 h
 - [ ] The request and schema of [§9.3](../domain/memory-processing.md#93-the-model-call), through `ModelRouter` with typed items.
-- [ ] Validation of [§9.4](../domain/memory-processing.md#94-validation-code): ids, one action per memory, full text only, the access-safe rules (sensitivity floor, merges only with the same sensitivity and categories, updates keep categories), secret scan, thresholds from Spike E, version pinning.
+- [ ] Validation of [§9.4](../domain/memory-processing.md#94-validation-code): ids, one action per memory, full text only, the access-safe rules (sensitivity floor, merges only with the same sensitivity and categories, updates keep categories), secret scan, version pinning (Spike E: `confidence` is recorded, not used as a threshold).
 
 ### 6b.4 Applying and auto-apply · 4 h
 - [ ] Suggestions with `suggestion_target` rows; the watermark set to the result's version in the same transaction as an applied change.
@@ -38,4 +38,4 @@
 
 ## Exit criteria
 - On the author's vault, a week of daily runs with a cloud model: proposals reviewed, no oscillation, no access widened.
-- Auto-apply levels enabled only where the fixtures reach the target precision.
+- Auto-apply levels enabled only where the fixtures reach the target precision (Spike E: none yet for model actions, so they're review-only; code-only rules apply at Duplicates only).

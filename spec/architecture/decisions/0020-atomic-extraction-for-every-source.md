@@ -27,7 +27,8 @@
 - **More text goes to the chosen provider:** agent suggestions, imports and related existing memories, not only captures. The disclosure line says so, within the cloud limit.
 - **New foundations first** ([Phase 6.1](../../plans/phase-6-1-foundations.md)): per-action apply (today only `update` + Replace really applies; everything else inserts a new memory), version-checked targeted suggestions, a durable processing queue, a multi-item cloud guard, `memory.trust`, the `split` suggestion status, provenance links, the undo log.
 - **The Inbox gets group cards;** the iPhone shows pieces as ordinary suggestions and new card types as "Review on your Mac" until it gets its own cards.
-- **Apple on-device may only classify.** Its ~4k-token window and refusals on sensitive text may rule out splitting; Spike E decides.
+- **Apple on-device only classifies** ([Spike E](../../plans/spike-results.md#spike-e-extraction-linking-and-tidy-up-quality)): it fits its ~4k-token window and refused nothing, but found 64% of the claims and 12% of its pieces were wrong. Splitting needs a local server or a cloud model; with Apple on-device, input stays one classified suggestion.
+- **`confidence` gates nothing** (Spike E: 0.9–1.0 for nearly every piece). Auto-apply uses `atomic`, the support check and the trust rule, and a level is offered only for engines that reached 95% on the fixtures.
 - **Quality depends on the model,** measured on a synthetic fixture set (the repo is public), including injection attempts.
 
 **Alternatives considered.**
