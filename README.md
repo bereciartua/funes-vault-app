@@ -1,6 +1,6 @@
 <h1 align="center">Funes Vault</h1>
 <p align="center"><b>Give AI agents your memory. Not all of it.</b><br>
-A free, open-source Mac menu bar app that keeps your personal context in a private vault on your Mac, and shares it with Claude, Cursor, Codex and other AI agents only as you allow.</p>
+A free, open-source Mac menu bar app that keeps your personal context in a private vault on your Mac, and shares it with Claude, Cursor, Codex and other AI agents only as you allow. Its iPhone app captures thoughts anywhere and answers agents' requests from your pocket.</p>
 
 <!--
 Badges, once the listings exist:
@@ -14,6 +14,7 @@ Badges, once the listings exist:
 
 <p align="center">
   <a href="https://github.com/bereciartua/funes-vault-app/releases/latest/download/FunesVault.dmg"><b>Download for Mac</b></a> ·
+  <a href="https://apps.apple.com/app/id6823794639"><b>iPhone app</b></a> ·
   <a href="#get-started">Get started</a> ·
   <a href="docs/MCP.md">Agent setups</a> ·
   <a href="CHANGELOG.md">Changelog</a>
@@ -29,9 +30,10 @@ Badges, once the listings exist:
 - **Each agent gets only what you choose.** Its own key, and the access you set: read, suggest or save; up to a sensitivity level; in the categories you pick. A new agent can start with nothing.
 - **You approve the exact text.** Before a memory goes to an agent, a small panel shows it, and you can untick what shouldn't go. An approval is used once, within 15 minutes, and is cancelled if anything changes.
 - **Agents suggest; you decide.** What an agent wants to remember waits in your Inbox, where you edit it, apply it or reject it.
+- **Answer from your iPhone.** When an agent asks while you're away from your Mac, your iPhone shows the request, and you share, save or deny it there. Capture a thought anywhere; it reaches your vault when your Mac does.
 - **Everything stays on your Mac.** No account, no server of ours, no cloud copy. Search runs on a small model built into the app. Cloud agents such as claude.ai and ChatGPT can reach it only through a tunnel you run, with Remote Access (experimental, off by default).
 
-**Status:** public preview (v0.1), with best-effort support. **Works with** Claude Code, Claude Desktop, Cursor and Codex, with ready-made setups for VS Code (Copilot), Gemini CLI, Zed, Cline, JetBrains AI Assistant, Devin Desktop and any other MCP client. **From the cloud (experimental):** claude.ai, ChatGPT, Gemini Enterprise, the Anthropic and OpenAI APIs, and cloud coding agents, through Remote Access.
+**Status:** public preview (v0.2), with best-effort support. The iPhone app needs Funes Vault on a Mac. **Works with** Claude Code, Claude Desktop, Cursor and Codex, with ready-made setups for VS Code (Copilot), Gemini CLI, Zed, Cline, JetBrains AI Assistant, Devin Desktop and any other MCP client. **From the cloud (experimental):** claude.ai, ChatGPT, Gemini Enterprise, the Anthropic and OpenAI APIs, and cloud coding agents, through Remote Access.
 
 ## Get started
 
@@ -52,6 +54,16 @@ Badges, once the listings exist:
 You can also capture a thought at any time with **⌥⌘M**, **Remember…** in the menu, or **Services ▸ Remember in Funes** in any app.
 
 Setups for every agent, the tool reference and troubleshooting are in the [MCP guide](docs/MCP.md).
+
+### On your iPhone
+
+Get [Funes Vault for iPhone](https://apps.apple.com/app/id6823794639) from the App Store (iOS 18 or later). On the Mac, open **Settings ▸ iPhone**, turn on **Allow iPhone access** and click **Pair iPhone…**; on the iPhone, tap **Pair with Mac** and scan the code, then click **Allow** on the Mac. The two reach each other on the same Wi-Fi, through Tailscale, or through your Remote Access tunnel.
+
+- **Capture** with the keyboard or by voice, from the share sheet, from Shortcuts and Siri ("Remember in Funes"), or from a Control. Captures wait on the iPhone until your Mac has them, even offline.
+- **Approve** agents' Share, Save and access requests from a notification, with the same panel as on the Mac. The notification names the agent and the count, never memory text. It reaches the iPhone through a record holding only a random tag in your own iCloud ([ADR-0019](spec/architecture/decisions/0019-cloudkit-doorbell-for-iphone-approvals.md)); the request itself comes from your Mac, end-to-end encrypted. This needs the same Apple Account on both.
+- **Search, edit and review the Inbox** while your Mac is reachable. The iPhone keeps no copy of your vault.
+
+No Mac yet? **Try Demo** on the Capture tab shows every screen with sample data.
 
 ### From cloud agents (experimental)
 
@@ -158,7 +170,7 @@ By default, yes: every starting access asks before each share. You can turn **As
 <details>
 <summary><b>What if I'm not at my Mac when an agent asks?</b></summary>
 
-The agent waits 45 seconds, then is told the request is waiting for your approval. The request stays in **Pending requests** in the menu bar menu for 15 minutes. If you share it in that time, the agent gets the memories the next time it checks.
+The agent waits 45 seconds, then is told the request is waiting for your approval. The request stays in **Pending requests** in the menu bar menu for 15 minutes. If you share it in that time, the agent gets the memories the next time it checks. With the [iPhone app](#on-your-iphone) paired, your iPhone gets a notification, and you can answer there.
 </details>
 
 <details>
@@ -182,7 +194,7 @@ No. Search uses a small model built into the app (bge-small, on your Mac). Apple
 <details>
 <summary><b>Is there an iPhone app?</b></summary>
 
-Not yet. An iPhone companion that captures thoughts, searches the vault when your Mac is reachable and lets you approve agents' requests is planned for v0.2.
+Yes: [Funes Vault for iPhone](https://apps.apple.com/app/id6823794639), free on the App Store. It pairs with Funes Vault on your Mac, captures anywhere, searches and edits the vault while your Mac is reachable, and answers agents' requests. Its App Store privacy label is "Data Not Collected". See [On your iPhone](#on-your-iphone).
 </details>
 
 <details>
@@ -216,6 +228,8 @@ The app has **no analytics, telemetry or crash reporting**, and no account. Your
 | `funes-mcp` connecting to `127.0.0.1` | When an agent on your Mac starts it, to reach the MCP server. |
 | One HTTPS request to GitHub for `appcast.xml` | Once a day while **Settings ▸ Updates ▸ Check for updates every day** is on, and when you choose **Check for Updates…**. GitHub sees your IP address and the app's version. A copy built from source never checks. |
 | Downloading an update from GitHub | Only after you click to install it. |
+| iPhone listener, on port 47626 | Only while **Settings ▸ iPhone ▸ Allow iPhone access** is on (off by default), accepting only the addresses of the ways you allow (same Wi-Fi, Tailscale, or your tunnel through `127.0.0.1`). Every request from a paired iPhone is end-to-end encrypted and signed. |
+| A doorbell record in your private iCloud database | When an agent's request waits and a paired iPhone has approvals on: a record holding only a random tag, deleted once the request is answered or over. |
 | Remote Access listener, on `127.0.0.1` (port 47627 by default) | Only while **Remote Access** is on (off by default). Loopback only; a tunnel you run, such as Tailscale Funnel, makes it reachable from the internet at an address you choose. Funes never starts a tunnel. |
 | One HTTPS request to your tunnel's address | When you click **Test** on the Remote Access page (and during its setup): Funes fetches its own health URL through the tunnel. |
 | One HTTPS request to a cloud app's metadata document | Only while you have pairing open, when that app starts signing in (claude.ai and ChatGPT publish one). No credential is sent. |

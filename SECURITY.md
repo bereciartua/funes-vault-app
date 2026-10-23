@@ -1,6 +1,6 @@
 # Security policy
 
-Funes Vault keeps personal memories on your Mac and gives AI agents scoped access to them through a local MCP server. Please report security problems privately.
+Funes Vault keeps personal memories on your Mac and gives AI agents scoped access to them through a local MCP server; its iPhone app is a paired client of that vault. Please report security problems privately.
 
 ## Supported versions
 
@@ -40,6 +40,7 @@ In scope:
 - The local MCP server on `127.0.0.1:47625`: key authentication, the `Host`, `Origin` and forwarding-header checks, input validation, rate limits and the failed-sign-in lockout.
 - The `funes-mcp` launcher: key-file handling, the check of the listening app, and the `headers` command.
 - Remote Access (experimental, off by default): the remote listener's secret path, `Host` check and per-address lockout; remote tokens and their separation from local keys; the OAuth server (pairing, the six-digit code panel, PKCE, refresh rotation and reuse detection, revocation); the client-metadata fetch (SSRF); and any way a cloud agent gets a different decision than the same agent locally.
+- The iPhone companion: pairing (the QR code, the Allow prompt), the sealed and signed envelopes (HPKE, P-256, replay and clock checks), the companion listener on port 47626 and its address checks, device removal, the capture queue on the iPhone, and approvals answered from the phone, including what the CloudKit doorbell record and the notification reveal.
 - Suggestions: validation, the secret scanner, and an agent planting memories outside its scope.
 - File permissions of the vault, backups, key files and Activity in `~/Library/Application Support/FunesVault/`.
 - What reaches a model provider: the secret scanner and the cloud limit in front of every model call.
@@ -53,5 +54,6 @@ Out of scope, as described in the [threat model](docs/ARCHITECTURE.md#threat-mod
 - What an AI agent, or its provider, does with memories you shared with it, including a cloud agent's vendor and a tunnel provider that ends TLS at its edge.
 - The security of the tunnel software you run (Tailscale, cloudflared, ngrok).
 - What a model provider you chose does with the text Funes sent it within your cloud limit.
+- Apple's own services the iPhone app relies on (iCloud and CloudKit, the push service), and an attacker with an unlocked iPhone that's paired; remove it on the Mac in **Settings ▸ iPhone**.
 - An attacker with physical access to an unlocked Mac, an administrator account, a Mac without FileVault, or System Integrity Protection turned off.
 - Bugs in BridgeKit itself that don't depend on how Funes uses it: report them here too, and they'll be moved to [`bereciartua/bridgekit`](https://github.com/bereciartua/bridgekit).
