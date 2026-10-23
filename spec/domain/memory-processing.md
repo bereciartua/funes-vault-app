@@ -192,7 +192,7 @@ The setting is shared with the tidy-up (Settings ▸ AI Models ▸ Apply changes
 | Everything except conflicts | Pieces that are atomic and pass the support check are saved; updates and retractions are applied **only from text the user typed or dictated** (shared and Services captures and imports can at most create pieces). Uncertain pieces (not atomic, failed support check, possibly sensitive above the user's hint) go to the Inbox |
 
 **At every level:**
-- **Only engines that reached the target:** a level is offered for an engine only if what it applies was at least 95% right on Spike E's fixtures (at least 20 applied items). Spike E: GPT-6-Luna reached both (duplicates 17/17; Everything except conflicts 84/86, 76% of pieces applied); Apple on-device doesn't split. Other engines need a run on the fixtures first.
+- **Only engines that reached the target:** a level is offered for an engine only if what it applies was at least 95% right on Spike E's fixtures (at least 20 applied items). Spike E: GPT-6-Luna reached both (duplicates 17/17; Everything except conflicts 84/86, 76% of pieces applied); GPT-5.6-Terra reached Duplicates only (22/23) but not Everything except conflicts (93%: it over-splits into fragments that lose their meaning alone); Apple on-device doesn't split. Other engines need a run on the fixtures first.
 - **Agents follow their own access** (§5.6), never this setting.
 - **Only the chosen engine:** output from a fallback engine goes to the Inbox.
 - **No new access:** before applying, the policy engine confirms that no agent could read the result without having been able to read what it came from.
@@ -271,6 +271,7 @@ Prompt rules: be cautious; a newer date alone doesn't mean replacement; keep dis
 
 ### 9.4 Validation (code)
 - Ids from the cluster only; a memory in at most one action; a survivor isn't archived; a merge has ≥ 2 sources; no change to a memory whose full text wasn't in the prompt.
+- **An update and an archive whose survivor is that update's target are one change**, a merge in effect: shown as one card and applied together or not at all, so a level that doesn't apply the update doesn't apply the archive either. Spike E: GPT-5.6-Terra answered 10 clusters this way, all right as pairs.
 - **Access-safe results:** sensitivity ≥ the highest of every memory whose text was in the call; **merges only between memories with the same sensitivity and the same categories** (otherwise `conflict` or nothing); an update keeps its target's categories; split pieces never go below the original's sensitivity.
 - Secret scan and length limits on new text. `confidence` is recorded but not used: in Spike E every action scored 0.95–1.0, right or wrong.
 - Each suggestion records the versions it was computed on; a change before review marks it stale, and it's re-queued for the next run.
@@ -287,7 +288,7 @@ Prompt rules: be cautious; a newer date alone doesn't mean replacement; keep dis
 
   **Never on the strength of untrusted text** (§5.7): an action whose text or reason comes from an untrusted memory goes to the Inbox, except archiving the untrusted copy of an exact duplicate. Only the chosen engine's output; never a result an agent could read without having been able to read every source.
 
-  **Target:** as in §5.7, 95% of what a level applies right, on at least 20 applied actions on the fixtures. Spike E: no engine reached it (GPT-6-Luna 8/9 for Duplicates only, 14/15 for Everything except conflicts: right often, but too few actions to show 95%). **So 6b ships model proposals review-only**, with the code-only rules applied at Duplicates only, until a larger cluster set shows the target.
+  **Target:** as in §5.7, 95% of what a level applies right, on at least 20 applied actions on the fixtures. Spike E, 100 clusters: **Duplicates only** reached it with GPT-6-Luna (19/20) and GPT-5.6-Terra (23/24); **Everything except conflicts** didn't (Luna 38/42, Terra 60/66: updates that copy one memory's detail into another, non-atomic memories rewritten instead of split, a value archived on its date alone). So 6b offers Duplicates only for those engines, and keeps every other model proposal in the Inbox.
 - **Undo** for 30 days, from the Applied automatically list: an update restores the previous text; a merge or split restores the originals and archives the new memories; after later changes, Undo offers "Undo this and N later changes".
 - **Dismissals** are remembered per memory set, keyed on ids and a content hash; "Both are true" is remembered the same way.
 - **A notification** after a run with results: "Funes applied 3 changes and has 2 for you to review." No memory text.

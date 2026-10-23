@@ -608,6 +608,28 @@
       "finance"
      ],
      "minSensitivity": "sensitive"
+    },
+    {
+     "claim": "Already has a PPR",
+     "keys": [
+      "ppr"
+     ],
+     "link": {
+      "decision": [
+       "duplicate",
+       "create"
+      ],
+      "target": [
+       "m163"
+      ]
+     },
+     "related": [
+      "m163"
+     ],
+     "intent": [
+      "assertion"
+     ],
+     "optional": true
     }
    ],
    "mustNot": [
@@ -3148,11 +3170,16 @@
      ],
      "link": {
       "decision": [
-       "create"
+       "create",
+       "duplicate"
       ],
-      "target": []
+      "target": [
+       "m039"
+      ]
      },
-     "related": [],
+     "related": [
+      "m039"
+     ],
      "intent": [
       "assertion"
      ],
@@ -3424,6 +3451,30 @@
      "categories": [
       "personal_preferences"
      ]
+    },
+    {
+     "claim": "Only drinks green tea",
+     "keys": [
+      "verde|green tea"
+     ],
+     "link": {
+      "decision": [
+       "create",
+       "update"
+      ],
+      "target": [
+       "m024",
+       "m025"
+      ]
+     },
+     "related": [
+      "m024",
+      "m025"
+     ],
+     "intent": [
+      "assertion"
+     ],
+     "optional": true
     }
    ],
    "mustNot": [
@@ -3959,15 +4010,21 @@
     {
      "claim": "Priya has 8 years of Kotlin and Android",
      "keys": [
-      "kotlin|android"
+      "kotlin|android|experience"
      ],
      "link": {
       "decision": [
-       "create"
+       "create",
+       "duplicate",
+       "update"
       ],
-      "target": []
+      "target": [
+       "m117"
+      ]
      },
-     "related": [],
+     "related": [
+      "m117"
+     ],
      "intent": [
       "assertion"
      ],
@@ -4516,6 +4573,23 @@
       "personal_preferences",
       "health"
      ]
+    },
+    {
+     "claim": "Ran 21 km this morning",
+     "keys": [
+      "21 km"
+     ],
+     "link": {
+      "decision": [
+       "create"
+      ],
+      "target": []
+     },
+     "related": [],
+     "intent": [
+      "assertion"
+     ],
+     "optional": true
     }
    ],
    "mustNot": [],
@@ -5225,6 +5299,23 @@
      ],
      "group": "lab",
      "timeLimited": true
+    },
+    {
+     "claim": "Haemoglobin normal",
+     "keys": [
+      "haemoglobin|hemoglobin"
+     ],
+     "link": {
+      "decision": [
+       "create"
+      ],
+      "target": []
+     },
+     "related": [],
+     "intent": [
+      "assertion"
+     ],
+     "optional": true
     }
    ],
    "mustNot": [

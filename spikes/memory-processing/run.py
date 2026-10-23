@@ -3,7 +3,7 @@
 
   python3 run.py <provider> <experiment> [--only in01,in02] [--jobs N] [--chunk 2000] [--tag name]
 
-Providers: apple, apple-permissive, ollama, codex. Experiments:
+Providers: apple, apple-permissive, ollama, codex (GPT-6-Luna), codex-terra (GPT-5.6-Terra). Experiments:
   extract          extraction with the input's prompt variant (two-call path, step 1)
   extract-swapped  extraction with the other variant (question 5)
   decide           one decision call per input on `extract`'s validated pieces (two-call path, step 2)
@@ -116,7 +116,7 @@ class Runner:
         self.provider_name = provider_name
         base = provider_name.split("-")[0]
         self.base = base
-        kw = {"guardrails": "permissive"} if provider_name == "apple-permissive" else {}
+        kw = {"apple-permissive": {"guardrails": "permissive"}, "codex-terra": {"model": "gpt-5.6-terra"}}.get(provider_name, {})
         self.p = make(base, **kw)
         self.experiment = experiment
         self.chunk_size = chunk_size

@@ -38,4 +38,4 @@
 
 ## Exit criteria
 - On the author's vault, a week of daily runs with a cloud model: proposals reviewed, no oscillation, no access widened.
-- Auto-apply levels enabled only where the fixtures reach the target precision (Spike E: none yet for model actions, so they're review-only; code-only rules apply at Duplicates only).
+- Auto-apply levels enabled only where the fixtures reach the target precision (Spike E: Duplicates only with GPT-6-Luna or GPT-5.6-Terra; Everything except conflicts not yet, so updates, merges and splits stay in the Inbox). An update and an archive with that update's target as survivor are applied together or not at all.

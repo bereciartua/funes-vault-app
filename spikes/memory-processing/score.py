@@ -260,8 +260,27 @@ def judge(cl, a):
     return any(spec_match(e, a) for e in cl["expected"] + cl["acceptable"])
 
 
+def pair_updates(cl, kept):
+    """An update of S plus an archive whose survivor is S is one change, a merge of the two (§9.4): judged as a
+    merge with the update's text, both right or both wrong. Returns {id(action): verdict} for paired actions."""
+    out = {}
+    updates = {a.get("target"): a for a in kept if a.get("type") == "update"}
+    for a in kept:
+        u = updates.get(a.get("survivor")) if a.get("type") == "archive" else None
+        if u is None:
+            continue
+        merged = {"type": "merge", "sources": [u["target"], a["target"]], "title": u.get("title", ""), "body": u.get("body", "")}
+        ok = judge(cl, merged)
+        out[id(a)] = out[id(u)] = ok
+    return out
+
+
 def untrusted_involved(cl, a):
+    """§9.5's trust rule, conservatively: new text (update, merge) in a cluster that holds untrusted text may come
+    from it, and an archive or conflict naming an untrusted memory leans on it."""
     mems = {m["id"]: m for m in cl["memories"]}
+    if a.get("type") in ("update", "merge") and any(m.get("trust") == "untrusted" for m in mems.values()):
+        return True
     ids = [a.get("target"), a.get("survivor")] + list(a.get("sources") or []) + list(a.get("ids") or [])
     return any(mems.get(i, {}).get("trust") == "untrusted" for i in ids if i)
 
@@ -288,23 +307,25 @@ def score_tidy(recs):
             continue
         s["clusters"] += 1
         kept = r.get("actions") or []
+        paired = pair_updates(cl, kept)
+        s["paired"] += len(paired) // 2
         for a in kept:
-            ok = judge(cl, a)
+            ok = paired.get(id(a), judge(cl, a))
             acts.append({"cluster": cid, "type": a.get("type"), "conf": a.get("confidence") or 0, "correct": ok,
                          "reason": a.get("archiveReason"), "untrusted": untrusted_involved(cl, a),
-                         "exact": a.get("type") == "archive" and exact_dup(cl, a), "a": a,
+                         "exact": a.get("type") == "archive" and exact_dup(cl, a), "a": a, "paired": id(a) in paired,
                          "tags": cl["tags"]})
         for b in r.get("blocked") or []:
             blocked.append({"cluster": cid, "type": b.get("type"), "why": b.get("blockReason"),
                             "wouldBeCorrect": judge(cl, b)})
         if cl["expected"]:
             s["action_clusters"] += 1
-            s["action_clusters_resolved"] += any(judge(cl, a) for a in kept if a.get("type") != "conflict" or
+            s["action_clusters_resolved"] += any(paired.get(id(a), judge(cl, a)) for a in kept if a.get("type") != "conflict" or
                                                  any(e["type"] == "conflict" for e in cl["expected"]))
         # recall of expected actions
         for e in cl["expected"]:
             s["expected"] += 1
-            s["expected_hit"] += any(spec_match(e, a) and judge(cl, a) for a in kept)
+            s["expected_hit"] += any(spec_match(e, a) and paired.get(id(a), judge(cl, a)) for a in kept)
         if not cl["expected"] and not cl["acceptable"]:
             s["noaction_clusters"] += 1
             s["noaction_fp"] += bool(kept)
@@ -318,7 +339,8 @@ def autoapply(acts, level, t):
     sel = []
     for x in acts:
         if level == "duplicates":
-            if x["type"] == "archive" and (x["exact"] or (x["reason"] == "duplicate" and x["conf"] >= t)):
+            # An archive paired with an update applies only with it, and this level applies no updates.
+            if x["type"] == "archive" and not x["paired"] and (x["exact"] or (x["reason"] == "duplicate" and x["conf"] >= t)):
                 if x["untrusted"] and not x["exact"] and x["a"].get("target") and True:
                     # Archiving an untrusted copy is allowed only for exact duplicates (§9.5).
                     continue

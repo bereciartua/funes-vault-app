@@ -9,7 +9,12 @@ codex)
   python3 run.py codex tidy --jobs 4
   python3 run.py codex decide --jobs 4
   python3 run.py codex onecall --jobs 4
-  python3 run.py codex extract-swapped --jobs 4 ;;
+  python3 run.py codex extract-swapped --jobs 4
+  python3 run.py codex tidy-v2 --jobs 3 ;;
+codex-terra)
+  python3 run.py codex-terra extract --jobs 4
+  python3 run.py codex-terra decide --jobs 4
+  python3 run.py codex-terra tidy-v2 --jobs 3 ;;
 apple)
   # ~60 s a call on the 8 GB M1 under memory pressure: secondary experiments on the inputs that answer them.
   SENS=in14,in23,in24,in29,in38,in39,in40,in41,in42,in43,in72,in77,in79

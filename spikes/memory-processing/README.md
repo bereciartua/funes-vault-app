@@ -8,7 +8,8 @@ Throwaway harness for [Phase 6.0](../../spec/plans/phase-6-0-spike-e.md). Result
   ChatGPT's memory paragraph, Claude, Markdown and ChatGPT import items) with their expected pieces, link decisions
   and wrong claims to catch. Built by `build_fixtures.py`, whose docstring gives the matching rules.
 - `fixtures/vault.json`: the 200 Spike 2 memories with dates, source and trust: the vault the inputs link against.
-- `fixtures/clusters.json`: 40 tidy-up clusters with expected, acceptable and forbidden actions.
+- `fixtures/clusters.json`: 100 tidy-up clusters with expected, acceptable and forbidden actions (k41–k100 held out from the
+  second tidy-up prompt's design).
 
 ## Running
 ```bash
@@ -38,8 +39,9 @@ python3 related.py
 - `autoapply_new.py`: §5.7 auto-apply simulated per gate, for the target precision.
 - `revalidate.py`: re-applies validation to stored results after a validation change; `failed.py` lists ids whose calls failed.
 - Providers: Apple on-device (`apple`, and `apple-permissive` with `.permissiveContentTransformations`
-  guardrails), Ollama (`qwen3:4b-instruct-2507-q4_K_M`, 4k context), and OpenAI GPT-6-Luna through the Codex CLI
-  (`codex exec --output-schema`, the task instructions as `model_instructions_file`) on a ChatGPT subscription.
+  guardrails), Ollama (`qwen3:4b-instruct-2507-q4_K_M`, 4k context), and OpenAI GPT-6-Luna (`codex`) and GPT-5.6-Terra
+  (`codex-terra`) through the Codex CLI (`codex exec --output-schema`, the task instructions as
+  `model_instructions_file`) on a ChatGPT subscription.
   Anthropic and Gemini weren't run (no API keys).
 - Code: `prompts.py` (the prompts and schemas), `validate.py` (§1 secret scanner port, §5.4 and §9.4 validation),
   `finder.py` (§5.5 related-memories finder), `providers.py`.
