@@ -8,7 +8,9 @@ import sys
 from score import INPUTS, load, score_extraction
 
 prov = sys.argv[1]
-res = score_extraction(load(prov, "extract"), decisions=load(prov, "decide"))
+dec = load(prov, "decide")
+# Only inputs that have a decision run (Ollama's is a 30-input subset).
+res = score_extraction({k: v for k, v in load(prov, "extract").items() if k in dec}, decisions=dec)
 rows = [r for r in res["rows"] if INPUTS[r["input"]]["type"] != "agent"]
 for r in rows:
     # Optional pieces carry no link expectation: creating them is fine.

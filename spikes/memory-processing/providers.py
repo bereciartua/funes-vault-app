@@ -64,7 +64,7 @@ class Ollama:
         try:
             req = urllib.request.Request("http://127.0.0.1:11434/api/chat", data=json.dumps(body).encode(),
                                          headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=600) as resp:
+            with urllib.request.urlopen(req, timeout=1800) as resp:
                 r = json.loads(resp.read())
         except Exception as e:  # noqa: BLE001 - recorded as a failure
             return {"ok": False, "errorKind": "http", "error": str(e)[:300], "ms": int((time.time() - start) * 1000)}

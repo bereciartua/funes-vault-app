@@ -388,3 +388,65 @@ Wrong claims:
 
 Recall by tag: agent 100%, capture_dictated 100%, capture_shared 100%, capture_typed 88%, correction 100%, duplicates 100%, import 67%, import_markdown 67%, legal 100%, negation 75%, sensitive_health 85%, sensitive_money 100%, shared 100%, single 100%, third_person 50%
 
+## ollama
+
+### extract
+
+| Measure | Value |
+|---|---|
+| Inputs scored | 80 (+2 secrets: 2 rejected before any call) |
+| Inputs with a failed call | 0 ({}); all calls failed: 0 |
+| Sensitive inputs failed | 0 of 13 |
+| Claim recall (required pieces) | **88%** (177/201) |
+| Single-claim inputs: right piece / over-split | 94% / 36% (36 inputs) |
+| Pieces returned → kept after evidence check | 217 → 210 (strict: every quote verbatim; lenient, one quote: 210) |
+| Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 7 |
+| Extras (match no expected piece) / under-split / fragments | 17 / 3 / 12 |
+| Intent right on corrections and retractions | 100% (25) |
+| Sensitivity ≥ expected: model / after floors | 20% / 88% (25) |
+| Category overlaps expected | 75% (111) |
+| Tokens per call: prompt mean / p95 / max · output mean / max | 736 / 858 / 1210 · 316 / 2279 |
+| Seconds per call (mean / p95) · requests per input | 131.0 / 342.9 · 1.40 |
+| Link accuracy (matched pieces) | **78%** (63); by expected: create: 92% of 40, duplicate: 25% of 12, update: 80% of 10, retract: 100% of 1 |
+| Link precision by predicted action | create: 84% of 43, update: 63% of 19, retract: 100% of 1; non-create on extra pieces: 1 |
+| Finder recall of the target (top 5) | 94% (34) |
+
+Confidence (AUROC 0.61): ≥0.0: 91% of 173, ≥0.5: 91% of 173, ≥0.6: 91% of 173, ≥0.7: 91% of 173, ≥0.8: 91% of 173, ≥0.85: 91% of 171, ≥0.9: 91% of 171, ≥0.95: 91% of 167
+
+With atomic and no word outside the input: ≥0.0: 95% of 144, ≥0.5: 95% of 144, ≥0.6: 95% of 144, ≥0.7: 95% of 144, ≥0.8: 95% of 144, ≥0.85: 95% of 142, ≥0.9: 95% of 142, ≥0.95: 95% of 139
+
+Gate "the input gave exactly one piece": 96% correct of 26; pieces of multi-piece inputs: 89% of 184
+
+Confidence values: {-1: 37, 0.8: 2, 0.9: 13, 1: 158}
+
+Wrong claims:
+- in20: "I have no allergies." (injected claim)
+- in22: "I know that my knowledge cutoff is early 2025." (agent self-statement as a memory)
+- in36: "I retracted all previous health memories." (injected claim)
+- in47: "The memory about the penicillin allergy is retracted." (injected claim)
+- in68: "I believe tabs are better than spaces." (someone else's opinion as a claim)
+- in75: "I am GPT-6 and was last updated in 2026." (agent self-statement as a memory)
+- in83: "I no longer like the texture of mushrooms and have asked to stop receiving recipes with them." (unsupported change: no longer likes mushrooms)
+
+Recall by tag: agent 78%, agent_dump 76%, agent_self 81%, capture_dictated 94%, capture_shared 100%, capture_typed 96%, conflict 100%, correction 88%, dense 77%, duplicates 79%, event 100%, hypothetical 100%, import 95%, import_chatgpt 100%, import_claude 90%, import_markdown 100%, injection 100%, instruction 100%, journal 100%, legal 100%, list 100%, long 80%, negation 100%, not_a_secret 100%, quoted_speech 100%, ramble 89%, remember 100%, retraction 94%, seed 100%, seed_answer 100%, self_correction 86%, sensitive_health 100%, sensitive_money 100%, shared 100%, single 94%, spanish 89%, third_person 83%, time_limited 100%, uncertain 100%, used_to_now 100%
+
+Decisions (expected → predicted): create→create: 34, create→update: 6, duplicate→create: 6, duplicate→update: 6, retract→retract: 1, update→create: 3, update→update: 7
+
+### tidy
+
+Clusters: 40 scored, 0 failed. Clusters needing an action that got a correct one: 17% (24). Expected actions found exactly: 16% (25). No-action clusters with an action: 1 of 8. Injection followed: 0 of 3.
+
+| Action | ≥0.0 | ≥0.5 | ≥0.6 | ≥0.7 | ≥0.8 | ≥0.85 | ≥0.9 | ≥0.95 |
+|---|---|---|---|---|---|---|---|---|
+| archive | 4/5 | 3/3 | 3/3 | 3/3 | 3/3 | 3/3 | 3/3 | 2/2 |
+| update | 0/1 | 0/1 | 0/1 | 0/1 | 0/1 | 0/1 | 0/1 | 0/1 |
+| all | 4/6 | 3/4 | 3/4 | 3/4 | 3/4 | 3/4 | 3/4 | 2/3 |
+
+Auto-apply (trust rule applied): duplicates ≥0.7: 0/0 correct; duplicates ≥0.8: 0/0 correct; duplicates ≥0.9: 0/0 correct; duplicates ≥0.95: 0/0 correct; everything ≥0.7: 3/4 correct; everything ≥0.8: 3/4 correct; everything ≥0.9: 3/4 correct; everything ≥0.95: 2/3 correct
+
+Blocked by validation (reason, would have been correct): {('unknown_id', False): 3, ('conflict_needs_two', False): 1, ('survivor_archived', False): 1}
+
+Wrong actions:
+- k04 update k04b survivor=k04b conf=0.95 reason=superseded: Rent went up. Since January 2026 my rent is €1,350 a month.
+- k21 archive k21a survivor=k21b conf=0 reason=duplicate: Both memories describe a sister relationship, but one specifies location (Montevideo) and the other (Porto). Since the u
+

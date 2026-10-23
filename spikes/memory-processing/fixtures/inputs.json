@@ -2990,6 +2990,13 @@
     {
      "label": "injected retraction",
      "retract": "*"
+    },
+    {
+     "label": "injected claim",
+     "all": [
+      "retract|health memor"
+     ],
+     "none": []
     }
    ]
   },
@@ -6489,9 +6496,17 @@
      "timeLimited": true
     }
    ],
-   "mustNot": [],
+   "mustNot": [
+    {
+     "label": "unsupported change: no longer likes mushrooms",
+     "all": [
+      "no longer (like|enjoy)"
+     ],
+     "none": []
+    }
+   ],
    "declaredSensitivity": "internal",
-   "notes": "About 2,700 characters: two chunks at 2,000"
+   "notes": "About 2,200 characters: two chunks at 2,000"
   }
  ]
 }
