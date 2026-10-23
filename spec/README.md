@@ -30,6 +30,7 @@ This folder (`spec/` in the `funes-vault-app` repo) holds the requirements, desi
   - **Everything is local:** no account, no server, no cloud copy. With Remote Access on, the vault answers through your tunnel, and what you share with a cloud agent goes to its vendor.
   - **AI is local by default:** search uses a small embedding model built into the app (bge-small, Core ML), and classification uses Apple's on-device models, with no API keys.
   - **Any model you prefer, per task:** a local server (Ollama, LM Studio) or a cloud model (Claude, GPT, Gemini…). Funes shows what it sends, never sends secrets, and never sends memories above your cloud sensitivity limit.
+- **Memory processing (v0.3, Phase 6):** everything that arrives (captures, agent suggestions and writes, imports) is split into atomic memories and linked to the vault; a daily tidy-up proposes updates, merges, splits and archives; auto-apply with Undo is the user's choice, and never acts on untrusted text ([ADR-0020](architecture/decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](architecture/decisions/0021-daily-tidy-up.md)).
 - **iPhone (v0.2):**
   - a **thin client** paired by QR code;
   - signed and end-to-end encrypted messages over the same Wi-Fi, Tailscale or an optional tunnel;
@@ -47,13 +48,13 @@ This folder (`spec/` in the `funes-vault-app` repo) holds the requirements, desi
 1. **Product**
    - [Vision](product/01-vision.md): problem, product, principles, non-goals, success.
    - [Users and use cases](product/02-users-and-use-cases.md): personas, jobs to be done, key scenarios.
-   - [Requirements](product/03-requirements.md): 141 requirements (109 functional, 32 non-functional) with ids, priorities and acceptance criteria.
+   - [Requirements](product/03-requirements.md): 145 requirements (113 functional, 32 non-functional) with ids, priorities and acceptance criteria.
    - [UX: Mac](product/04-ux-mac.md) and [UX: iPhone](product/05-ux-iphone.md): screens, panels, flows, copy.
    - [Words in the app](product/06-glossary.md): the one word for each thing the user sees, and the words it replaces.
 2. **Domain**
    - [Domain model](domain/domain-model.md): entities, enums, state machines.
    - [Access policy](domain/access-policy.md): **the core spec**, with 35 test vectors.
-   - [Memory processing](domain/memory-processing.md): secret scanner, embeddings, ranking, classification, imports, consolidation.
+   - [Memory processing](domain/memory-processing.md): secret scanner, embeddings, ranking, New memories (split, classify, link), imports, the daily tidy-up.
    - [Glossary](domain/glossary.md): the domain terms. The words the UI uses are in [Words in the app](product/06-glossary.md).
 3. **Architecture**
    - [Overview](architecture/overview.md): components, concurrency, sequence diagrams, repo layout.

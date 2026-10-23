@@ -235,6 +235,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - These are GRDB `DatabaseMigrator`, forward-only and named (`v1_initial`, `v2_…`).
 - `v2_remote_access` (v0.1, Phase 4b): adds `agent.cloud_access` (0 for every existing agent), `remote_key_digest` and `remote_key_issued_at`, and the unique index on the digest.
 - `v3_device_approvals` (v0.2, task 5.6): adds `device.approvals_enabled` (1 for every existing device) and `doorbell_tag` (empty until the phone asks for it).
+- `v4_memory_processing` (v0.3, Phase 6.1; [ADR-0020](decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](decisions/0021-daily-tidy-up.md)): `memory.trust` (`trusted` for every existing memory except `agent_write` ones, which are `untrusted`) and `memory.reconciled_version` (null); `suggestion.target_memory_version`, `group_id`, `intent`, `outside_scope`, and the `split` status; tables `suggestion_target`, `suggestion_group`, `processing_job`, `undo_entry`, `tidy_up_run` and `tidy_up_dismissal`; `provenance.related_memory_id` and `engine`. Fields as in the [domain model](../domain/domain-model.md#suggestion). The physical DDL is written with the migration.
 - Before running pending migrations: make an online backup to `Backups/pre-<migration>-<date>.sqlite`.
 - Each migration has a test: open a fixture database created by the previous version, migrate it, and check the data and invariants.
 - Downgrades aren't supported. An older app version that finds a newer schema refuses to open the vault, shows "Update Funes", and never writes to it.
@@ -245,6 +246,8 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - **Disclosure items:** written only in delivery transactions.
 - **Captures:** `capture_receipt` is inserted in the same transaction as its suggestion.
 - **Purging** a deleted memory removes its FTS rows, embedding and provenance (cascade). `disclosure_item` rows keep the memory id for Activity labelling, shown as "(deleted memory)".
+- **Purging (v0.3)** also removes the memory's `undo_entry` rows and the source text of any `suggestion_group` it came from, so no copy of its text outlives it (FR-V-04). Delete Now does the same at once.
+- **Auto-apply (v0.3):** each automatic change, its `undo_entry`, its provenance and the watermark update are written in one transaction, after re-checking every involved memory's version.
 
 ## 5. Maintenance jobs
 | Job | When | What |
@@ -252,7 +255,10 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 | Purge deleted | launch, then daily | Hard-delete memories deleted more than 30 days ago |
 | Expire suggestions | launch, then hourly | `pending` → `expired` after 30 days; delete expired ones after 7 more days, except while a capture receipt still points at them (receipts keep captures idempotent for 90 days) |
 | Expire disclosures | every minute while any are pending | needs_approval older than 15 min → denied |
-| Re-embed | on change; when the bundled model version changes; later, when the user switches the embedding model (batched, resumable, with progress; see [model providers §7](model-providers.md#7-switching-the-embedding-model)) | Write vectors for the new `model_id`; switch `active_embedding_model` atomically when complete; delete old vectors |
+| Re-embed | on change; when the bundled model version changes; v0.3, when the user adds a provider embedding model (batched, resumable, with progress; see [model providers §7](model-providers.md#7-choosing-a-provider-embedding-model)) | Bundled: write vectors for the new `model_id`, switch when complete, delete old vectors. Provider (second index): write vectors for memories within the cloud limit; delete them when the limit drops, a memory's sensitivity rises above it, or the provider model is removed |
+| Processing jobs (v0.3) | continuously, one at a time; resumed at launch | New memories processing of queued inputs ([memory processing §5.2](../domain/memory-processing.md#52-which-inputs-phase-6)) |
+| Daily tidy-up (v0.3) | daily at the user's time (`NSBackgroundActivityScheduler`), on demand, or on the next launch or wake after a missed run; only while on | [Memory processing §9](../domain/memory-processing.md#9-daily-tidy-up) |
+| Undo log cleanup (v0.3) | daily | Delete `undo_entry` rows past 30 days; drop source text of fully decided suggestion groups |
 | Backup | daily, and before migrations | Keep the last 7 |
 | Activity compaction | launch, every 6 h, above 8 MB | Retention per FR-L-03 |
 | Receipt cleanup | daily | Delete capture receipts older than 90 days |

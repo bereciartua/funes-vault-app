@@ -113,9 +113,9 @@
 - In any app, Services ▸ "Remember in Funes" captures the selected text.
 
 **FR-C-04 Capture classification** · S · v0.1
-- New captures get a proposed title, kind, categories and sensitivity from the classification model the user chose (default: Apple's on-device Foundation Models), or from rules when no model is available (FR-AI-05).
+- New captures get a proposed title, kind, categories and sensitivity from the classification model the user chose (default: Apple's on-device Foundation Models), or from rules when no model is available (FR-AI-05). From v0.3, captures are also split into atomic pieces (FR-AI-13).
 - Acceptance:
-  - Proposals are always editable before applying and never auto-applied.
+  - Proposals are always editable before applying, and applied automatically only when the user turned on auto-apply (FR-AI-14).
   - Classification runs off the main thread and never blocks capture.
 
 **FR-C-05 Idempotent captures** · M · v0.2
@@ -128,23 +128,24 @@
   - agent suggestions;
   - captures (Mac and iPhone);
   - imports;
-  - later, consolidation proposals.
-- Each item shows the source, time and proposed fields.
+  - from v0.3, the daily tidy-up's proposals (FR-AI-03), in a Tidy-up section, and an **Applied automatically** list with Undo (FR-AI-14).
+- Each item shows the source, time and proposed fields. From v0.3, the pieces of a split input are shown together as a group card, with the original text, **Apply all** and **Keep as one** (offered only while no piece is decided).
 
 **FR-I-02 Review an item** · M · v0.1
 - Actions: **Apply** (create the memory), **Edit & Apply**, **Reject** and **Later**.
 - Acceptance:
   - Apply runs the secret scanner and the duplicate hint, then creates the memory with provenance linked to the suggestion.
+  - **Each action applies as itself:** create inserts, update edits (Replace) or inserts (Keep both), archive archives, already saved does nothing, split and merge create the new memories and archive the originals, and conflict records the user's answer. A targeted suggestion whose memory changed since it was made says so and asks again (v0.3; today only update + Replace applies as itself).
   - Reject keeps an id-only record in Activity.
 
 **FR-I-03 Bulk review** · S · v0.1
-- Multi-select Apply or Reject, with per-item results ("12 applied, 1 blocked by the secret scanner").
+- Multi-select Apply or Reject, with per-item results ("12 applied, 1 blocked by the secret scanner"). Each item applies with its own action, never Keep both for everything; pieces flagged "Outside <agent>'s scope" are left out.
 
 **FR-I-04 Badge** · M · v0.1
 - The menu bar icon and the Inbox tab show the pending count.
 
 **FR-I-05 Stale suggestions** · S · v0.1
-- Suggestions expire after 30 days; they move to "Expired suggestions" and can be restored for 7 more days.
+- Suggestions expire after 30 days; they move to "Expired suggestions" and can be restored for 7 more days. A group of split pieces expires as one.
 
 ### Agents and access (FR-A)
 
@@ -282,6 +283,7 @@
 
 **FR-S-03 Direct write** · M · v0.1
 - An agent with Write and ask before saving **off** saves directly, within its ceiling and categories, with result `saved`. Otherwise it falls back to Suggest rules.
+- From v0.3, the saved memory is then split in the background (FR-AI-13): with auto-apply at Everything except conflicts, its pieces within the agent's scope replace it (create-only); otherwise a Split this memory suggestion goes to the Inbox. The result returned to the agent doesn't change.
 
 **FR-S-04 Denied suggestions** · M · v0.1
 - If neither Write nor Suggest allows it, nothing is stored. The result is `denied` with a reason, and Activity logs an id-less refusal.
@@ -430,6 +432,7 @@
 
 **FR-X-04 Import preview** · M (if any import ships) · v0.1
 - Shows the count, likely duplicates and secret-scanner blocks before creating suggestions. Imports never create agents or access.
+- From v0.3, with splitting on: the estimated model requests next to what's left of today's cap (FR-AI-15), and **Import without splitting**. A Funes export restore is never split.
 
 **FR-X-05 Export** · M · v0.1
 - `funesvault.export.v1` JSON with categories and memories (optionally archived ones). It never includes keys, devices, agents' access or Activity.
@@ -501,8 +504,15 @@
 **FR-AI-02 Classification** · S · v0.1
 - See FR-C-04.
 
-**FR-AI-03 Consolidation suggestions** · L · v0.3
-- Weekly or on-demand detection of duplicate, conflicting or superseded memories, using lexical and semantic candidates plus judgment from the chosen generation model. Results are review-only suggestions to archive one memory of a pair.
+**FR-AI-03 Daily tidy-up** · L · v0.3 ([ADR-0021](../architecture/decisions/0021-daily-tidy-up.md))
+- Daily (at a time the user picks) or on demand (**Tidy up now**), off by default: changed memories are compared with their local neighbours, and the chosen model proposes **update**, **merge**, **split**, **archive** (duplicate or superseded) or **conflict** (a question for the user). See [memory processing §9](../domain/memory-processing.md#9-daily-tidy-up).
+- Acceptance:
+  - Results go to the Inbox's Tidy-up section, or are applied under FR-AI-14.
+  - A result's sensitivity is never lower than that of any memory whose text was in the call; merges only join memories with the same sensitivity and categories; an update keeps its target's categories.
+  - Complementary facts yield no action; conflicts are never resolved by the model.
+  - Suggestions are pinned to versions and become stale when a memory changes; dismissals aren't asked again.
+  - The tidy-up never re-inspects its own changes, and memories it can't send are marked inspected.
+  - Memories above the cloud limit are tidied only by a local provider or by the code-only rules (exact duplicates, expiry).
 
 **FR-AI-04 Remote Access for cloud agents** · M · v0.1 (experimental; [ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md))
 - claude.ai, ChatGPT and Gemini Enterprise sign in with OAuth; header-based cloud agents (the Anthropic and OpenAI APIs, Claude Code on the web, Cursor and Copilot cloud agents, Devin) use a remote token. They reach a separate loopback listener (47627) through a tunnel the user runs, via EK Bridge's Remote Access (`BridgeKitRemote`). See [MCP server §12](../architecture/mcp-server.md#12-remote-transport).
@@ -518,7 +528,7 @@
   - Activity marks remote rows ("via Remote Access") and stores no forwarded address.
 
 **FR-AI-05 Choose models per task** · M · v0.1
-- Settings ▸ AI Models has one row per task (Embeddings, built in with no choice in v0.1; Classification; later Consolidation), each with a provider and a model.
+- Settings ▸ AI Models has one row per task, each with a provider and a model: Embeddings (built in with no choice until v0.3, then optionally a provider model, FR-AI-11); Classification, renamed **New memories** in v0.3 (FR-AI-13); and from v0.3 **Daily tidy-up** (FR-AI-03).
 - **Providers:** Apple on-device (default), Apple Private Cloud Compute, Ollama, LM Studio, OpenAI, Anthropic, Google Gemini, OpenRouter, and custom OpenAI-compatible endpoints.
 - Acceptance:
   - The defaults send nothing off the Mac.
@@ -532,29 +542,57 @@
 
 **FR-AI-07 Cloud sensitivity limit** · M · v0.1
 - "Never send captures above <level>": Public, Low, Internal (default), Sensitive, or never send captures. (Only captures are sent in v0.1; the limit applies to anything a later version sends.)
+- **From v0.3** ([ADR-0022](../architecture/decisions/0022-cloud-limit-and-daily-cap.md)): "Send memories to cloud models up to: Public · Low · Internal (recommended) · Sensitive · Restricted · Everything, including Secret · Nothing". One limit for every task. Choosing above Internal asks once to confirm, naming the provider.
 - Acceptance:
   - Nothing above the limit, and no secret-scanner match, is ever sent to a non-local provider (tested with request capture).
-  - Captures are pre-screened on the device before cloud classification.
-  - Later, with a cloud embedding model, memories above the limit are keyword-only, and the vault shows this.
+  - **Every item in a call is checked,** and the call uses the highest sensitivity among them (v0.3).
+  - Captures, agent input and imports are pre-screened on the device; the guard uses the higher of the pre-screen and any declared sensitivity.
+  - With a provider embedding model, memories above the limit keep only their bundled vector (FR-AI-11).
 
 **FR-AI-08 Disclosure of model use** · M · v0.1
-- Under each non-local choice, a plain sentence says what is sent where. For example: "Search embeddings send memory text (up to Internal), your searches and agents' task descriptions to OpenAI."
-- Inbox cards show which engine proposed their fields.
+- Under each non-local choice, a plain sentence says what is sent where. For example: "Search embeddings send memory text (up to Internal), your searches and agents' task descriptions to OpenAI." From v0.3: "New memories sends captures, agent suggestions and imports, plus related memories (up to Internal) and your category names, to Anthropic."
+- Inbox cards show which engine proposed their fields, and Applied automatically rows which engine proposed the change.
 
-**FR-AI-09 Agent task text and cloud embeddings** · M · later (ADR-0016)
-- When the embedding model is in the cloud, a switch controls whether agents' task text is embedded with it (default on, stated in the disclosure). When off, agent retrieval is keyword-only.
+**FR-AI-09 Agent task text and cloud embeddings** · M · v0.3 (ADR-0016, ADR-0023)
+- When the embedding model is in the cloud, a switch controls whether agents' task text is embedded with it (default on, stated in the disclosure). When off, agent retrieval uses the bundled index only.
 
 **FR-AI-10 Fallbacks** · M · v0.1
 - If a provider fails, times out or returns invalid output:
   - classification falls back to on-device, then to rules;
-  - embedding queries fall back to keyword-only.
+  - embedding queries fall back to keyword-only (from v0.3, to the bundled index when a provider model is chosen);
+  - fallback output is never auto-applied (FR-AI-14);
+  - at the daily cap, see FR-AI-15.
 - Acceptance: capture, the Inbox and MCP requests never wait more than the provider timeout (embeddings 10 s, generation 20 s), and never fail because of a provider.
 
-**FR-AI-11 Switch the embedding model** · M · later (ADR-0016)
-- Changing the embedding model re-embeds the vault in the background, with progress and cancel. Search uses the old vectors until the new set is complete. Thresholds are per model, with **Calibrate** for unknown models.
+**FR-AI-11 Provider embedding model** · M · v0.3 ([ADR-0023](../architecture/decisions/0023-provider-embeddings-second-index.md))
+- A provider embedding model is added as a **second index**: bge-small vectors stay on every memory, and the provider's vectors are computed in the background, with progress and cancel, for memories within the cloud limit. Search uses provider scores where a memory has one, bge scores otherwise. Thresholds are per model, with **Calibrate** for unknown models.
+- Acceptance: it ships only with a benchmark gain over bge-small (raw tasks or a Spanish set); a provider vector is deleted when the limit drops or a memory's sensitivity rises above it.
 
 **FR-AI-12 Usage counters** · S · v0.1
 - Per-provider request and token counts (from provider responses), with reset. No prices.
+
+**FR-AI-13 New memories: split, classify, link** · L · v0.3 ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md))
+- Every new input (captures, seed answers, agent suggestions and direct writes, ChatGPT, Claude and Markdown imports) is split by the chosen model into atomic pieces, each classified and linked to related memories as new, update, already saved or retract. Not split: agent corrections and Funes export restores. See [memory processing §5](../domain/memory-processing.md#5-new-memories-split-classify-link).
+- Acceptance:
+  - Input is stored at once and processed by a durable queue; nothing waits on a model, and quitting loses nothing.
+  - Every piece quotes its evidence verbatim from the input; a piece's sensitivity is never lower than the input's known or pre-screened level; if every piece fails, the original stays.
+  - A suggestion is replaced by its pieces only if it's still pending, unedited and has no panel open; its id stays valid.
+  - Pieces of agent input outside that agent's scope go to the Inbox flagged, never auto-applied (access policy §5.3).
+  - An agent's direct write returns `saved` as today; its memory is raised at once if found more sensitive than declared.
+  - With no model, or splitting off, behaviour is v0.2's.
+
+**FR-AI-14 Auto-apply with undo** · M · v0.3 ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](../architecture/decisions/0021-daily-tidy-up.md))
+- Settings ▸ AI Models ▸ Apply changes automatically: **Off** (default) · Duplicates only · Everything except conflicts. Covers new memories (FR-AI-13) and the daily tidy-up (FR-AI-03).
+- Acceptance:
+  - Never changes or archives a memory on the strength of untrusted text (agent direct writes, imports, shared and Services captures), except archiving the untrusted copy of an exact duplicate.
+  - Agents follow their own access, never this setting.
+  - Only the chosen engine's output; never a result an agent could read without having been able to read every source (checked with the policy engine); conflicts always go to the user.
+  - Every automatic change is listed under Applied automatically with Undo for 30 days, including "undo this and N later changes"; undo data is purged with its memories.
+  - A level can't be enabled until its thresholds reach the target precision on the fixtures.
+
+**FR-AI-15 Daily request cap** · S · v0.3 ([ADR-0022](../architecture/decisions/0022-cloud-limit-and-daily-cap.md))
+- At most N cloud generation requests per local day (default 300, adjustable), shared by FR-AI-13 and FR-AI-03; embeddings don't count. Agents may use at most 40% of it.
+- Acceptance: the count survives restarts; at the cap the user's captures fall back to on-device, while agent input, imports and the tidy-up wait for the next day; a notice says so once a day.
 
 ---
 

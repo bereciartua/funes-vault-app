@@ -21,7 +21,7 @@ Epics map requirements to phases.
 | Secret scanner | NFR-SEC-06 | 1 | S | M |
 | Hybrid search: FTS5 porter + bundled bge-small Core ML (WordPiece, index, min-max fusion) + Spike 2b recall regression | FR-V-10, FR-AI-01 | 1 | M | M |
 | `keywords` on `request_memory` (schema, retrieval, panel) | FR-D-01 | 2 | M | S |
-| Choose another embedding model, re-embedding, calibration | FR-AI-09, FR-AI-11 | later | S | M |
+| Provider embedding model as a second index, re-embedding, calibration (ADR-0023) | FR-AI-09, FR-AI-11 | 6c | M | M |
 | Model providers for classification: protocols, ModelRouter, Apple / OpenAI-compatible / Anthropic adapters, guardrails, Keychain keys | FR-AI-05..08, 10 | 1 | M | M |
 | Provenance | FR-V-12 | 1 | S | M |
 
@@ -143,10 +143,24 @@ Epics map requirements to phases.
 | iPhone: notification (worded on the phone), Share and Save panels, unlock to answer | FR-iOS-12 | 5 | M | M |
 | Tests: no text in the push, races, revoked device | FR-iOS-12 | 5 | S | M |
 
+## E13: Memory processing (Phase 6, v0.3)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| Spike E: extraction, linking and tidy-up quality per provider; synthetic fixtures | ADR-0020, ADR-0021 | 6.0 | M | M |
+| Per-action apply (archive, duplicate, split, merge, conflict) everywhere; version-checked targets; Mac editor expected version | FR-I-02, FR-I-03 | 6.1 | M | M |
+| Schema v4: trust, watermark, groups, targets, jobs, undo, runs, dismissals, provenance links | ADR-0020, ADR-0021 | 6.1 | M | M |
+| Durable processing queue for every ingest path (iPhone captures included) | FR-AI-13 | 6.1 | M | M |
+| Multi-item cloud guard, on-device pre-screen for agent and import text, new cloud limit levels, daily cap | FR-AI-07, FR-AI-15 | 6.1 | M | M |
+| Undo log with purge; Activity events; export and restore of status and links | FR-AI-14, FR-V-04 | 6.1 | M | M |
+| iPhone: unknown actions as "Review on your Mac"; per-action `inbox.apply` | FR-iOS-09 | 6.1 | S | M |
+| Extraction, validation, linking, groups, agent policy (scope flags, direct writes) | FR-AI-13 | 6a | L | M |
+| Auto-apply for new memories; Inbox group cards; Applied automatically with Undo; Settings | FR-AI-14, FR-I-01 | 6a | M | M |
+| Daily tidy-up: scheduling, clusters, model call, validation, auto-apply, Inbox section, notifications | FR-AI-03, FR-AI-14 | 6b | L | M |
+| Provider embeddings: benchmark, adapter, second index, re-embedding, calibration | FR-AI-09, FR-AI-11 | 6c | M | S |
+
 ## E12: Later
 | Item | Covers | Size |
 |---|---|---|
-| Consolidation suggestions | FR-AI-03 | L |
 | BridgeKitUI extraction (after v0.1), with the Remote Access views | ADR-0013 | L |
 | `funes` CLI | Q18 | M |
 | Localization (Spanish) | Q19 | M |

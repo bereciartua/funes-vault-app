@@ -149,6 +149,8 @@ G1–G3 as in §3.1.
 ### 5.3 Scope check for the proposed memory
 Run M3–M5 against the proposed sensitivity (default LOW) and categories. A failure means `denied` with that reason. An agent can't plant memories outside its own scope.
 
+**After splitting** (Phase 6, [ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md)): Funes's own classification of the pieces of an accepted suggestion may put a piece outside the agent's scope (another category, a higher sensitivity). Such a piece is never saved for the agent and never auto-applied: it goes to the Inbox flagged "Outside <agent>'s scope" and is left out of Apply all. The agent can't *save* outside its scope; its input can still be *proposed* to the user. The agent learns nothing about it ([memory processing §5.6](memory-processing.md#56-agent-input-and-the-policy)).
+
 ### 5.4 Decision
 | Condition | Effect | Result |
 |---|---|---|
@@ -159,6 +161,7 @@ Run M3–M5 against the proposed sensitivity (default LOW) and categories. A fai
 - `suggest_memory` never blocks waiting for the user. The panel is a convenience; the result is final when returned.
 - Caller metadata is stored as inert JSON under `callerMetadata` and is never interpreted.
 - Corrections (`target_memory_id`) always create `action = update` suggestions, even for an agent with `write` and ask before saving off: agents can't edit or delete in v0.1 ([FR-S-06](../product/03-requirements.md), Q12). Applying one offers Replace or Keep both.
+- **Splitting** (Phase 6): a queued suggestion may become a group of suggestions; a saved memory may be replaced by its pieces (create-only, within the agent's write scope) when the user allows auto-apply, or get a Split this memory suggestion. The result returned to the agent doesn't change. Updates and retractions derived from agent input are always suggestions, whatever the auto-apply setting. A memory an agent saved directly is **untrusted**: auto-apply never changes or archives another memory on its strength ([memory processing §5.7](memory-processing.md#57-auto-apply-for-new-memories)).
 - **Defaults:** kind `fact`; categories from the rules classifier, falling back to `personal_preferences`; sensitivity LOW raised to the categories' default (so a Health suggestion without a sensitivity is SENSITIVE, and is checked as such in §5.3).
 - **Rate limits:** see the MCP spec (writes: 20 per minute, bursts of 10; 250 per day).
 
@@ -171,7 +174,7 @@ Run M3–M5 against the proposed sensitivity (default LOW) and categories. A fai
   - input validation;
   - rate limits;
   - Activity logging (`actor = device:<id>`).
-- A capture from a device always becomes a **suggestion** (`origin = capture_iphone`), never an active memory directly. Direct create and edit from the phone's memory screens are allowed, because the user is acting.
+- A capture from a device becomes a **suggestion** (`origin = capture_iphone`), never an active memory directly, unless the user turned on auto-apply (Phase 6), in which case its pieces follow [memory processing §5.7](memory-processing.md#57-auto-apply-for-new-memories) like a capture on the Mac. Direct create and edit from the phone's memory screens are allowed, because the user is acting.
 
 ## 7. Let it ask for more access (optional per agent)
 Offered only when **all** of these hold:

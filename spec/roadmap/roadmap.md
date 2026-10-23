@@ -6,6 +6,8 @@ Planned as a **side project**: about one weekend (around 8–10 h) per week. Dat
 
 **Status (2026-10-19):** Phases 0–3 and Phase 4's preparation are done. [Phase 4b](../plans/phase-4b-remote-access.md) (Remote Access, [ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)) comes before the launch. The chart starts from today's state.
 
+**Update (2026-10-23):** the Mac's v0.2.0 is out and Phase 5 is finishing. **Phase 6** (memory processing, v0.3) is planned next: see [v0.3](#v03-memory-processing-phase-6) below. Its own chart is in that section.
+
 ```mermaid
 gantt
     title Funes (weekends from 24 Oct 2026)
@@ -63,7 +65,7 @@ That's roughly **10–11 weekends to v0.1** and **16–17 weekends to v0.2**, in
 
 **Out:**
 - the iPhone app;
-- consolidation;
+- consolidation (v0.3, the daily tidy-up);
 - the allow window;
 - a CLI;
 - localization.
@@ -74,8 +76,38 @@ That's roughly **10–11 weekends to v0.1** and **16–17 weekends to v0.2**, in
 - **iPhone:** capture (in-app, share sheet, App Intent, Control, dictation), the offline queue with exactly-once delivery, search, detail, edit, Inbox review, demo mode, App Store.
 - **Approvals from the iPhone:** a notification for each request waiting for approval, answered on the phone. The push carries no memory text; the channel is [Q24](../plans/open-questions.md).
 
-### v0.3+: Later (unordered; pick by real usage)
-- **Consolidation:** duplicate, conflict and stale detection, review-only ([processing §9](../domain/memory-processing.md#9-consolidation-v03-later)).
+### v0.3: Memory processing (Phase 6)
+Brings back, and extends, what the web version did with a model ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md) to [ADR-0023](../architecture/decisions/0023-provider-embeddings-second-index.md)). Mac only, plus a small iPhone change. About 11–14 weekends.
+
+```mermaid
+gantt
+    title Phase 6 (weekends after Phase 5)
+    dateFormat  YYYY-MM-DD
+    axisFormat  %d %b
+    section Phase 6
+    6.0 Spike E                    :e0, 2026-11-07, 7d
+    6.1 Foundations                :f1, 2026-11-07, 21d
+    6a New memories                :a1, after f1, 28d
+    6b Daily tidy-up               :b1, after a1, 28d
+    6c Provider embeddings         :c1, after b1, 14d
+```
+
+| Step | Plan | Exit criteria |
+|---|---|---|
+| **6.0 Spike E** | [plan](../plans/phase-6-0-spike-e.md) | Measured answers: Apple on-device's role, one call or two, unsupported additions, whether confidence gates auto-apply, tidy-up precision per level; synthetic fixtures committed |
+| **6.1 Foundations** | [plan](../plans/phase-6-1-foundations.md) | Every suggestion action applies as itself everywhere; durable processing queue; multi-item guard and daily cap; undo log; schema v4 migrated |
+| **6a New memories** | [plan](../plans/phase-6a-new-memories.md) | Every input split, classified and linked; auto-apply never on untrusted text; a week of daily use |
+| **6b Daily tidy-up** | [plan](../plans/phase-6b-daily-tidy-up.md) | A week of daily runs on the author's vault, with no oscillation and no access widened |
+| **6c Provider embeddings** | [plan](../plans/phase-6c-provider-embeddings.md) | A benchmark gain over bge-small; sensitive memories keep semantic search |
+
+**In:**
+- **New memories:** every input (captures, seed answers, agent suggestions and writes, imports) split into atomic pieces, classified and linked (new, update, already saved, retract).
+- **Daily tidy-up:** update, merge, split, archive and conflict proposals, daily or on demand.
+- **Auto-apply** (off by default) with Undo for 30 days, never on the strength of untrusted text.
+- **Cloud limit up to everything,** one limit for every task, and a daily cap on cloud requests.
+- **Provider embeddings** as a second index, if the benchmark shows a gain.
+
+### v0.4+: Later (unordered; pick by real usage)
 - **Allow window** for low-sensitivity sharing (if panels cause fatigue).
 - **BridgeKitUI extraction** (approvals, activity, agent setup UI, app shell, and the Remote Access views) after v0.1. BridgeKitRemote is extracted in Phase 4b.
 - **`funes` CLI** for scripts.
@@ -83,7 +115,6 @@ That's roughly **10–11 weekends to v0.1** and **16–17 weekends to v0.2**, in
 - **Pricing decision** at 1.0.
 - **At production readiness (1.0):** add a "no longer maintained" note to `funes-vault`'s README, linking to the new repo ([ADR-0010](../architecture/decisions/0010-start-from-scratch.md)).
 - **An agent `update_memory` tool** behind Write plus ask-before-saving.
-- **Choose another embedding model** ([ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings.md)): Ollama (`nomic-embed-text`), LM Studio or cloud models in Settings ▸ AI Models ▸ Embeddings, with re-embedding and calibration. Must match bge-small on the benchmark.
 - **Multilingual embeddings** with Spanish: multilingual-e5-small (MIT) after a Spanish-memory benchmark.
 - **Local open-source LLM** (Core AI / MLX) as an upgrade path.
 

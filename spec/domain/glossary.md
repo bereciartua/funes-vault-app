@@ -18,7 +18,13 @@
 | **Release** / **Bundle** | The set of memory texts sent to an agent, with instructions, within a token budget. |
 | **Approval** | The user choosing which eligible memories to release. Single use, valid 15 minutes, invalidated by changes. |
 | **Pending request** | A request that is waiting for approval after the panel timed out. It can be approved for up to 15 minutes. |
-| **Suggestion** | A proposed new memory, or a change to one, from an agent, a capture, an import, a seed question or consolidation. Waits in the Inbox. |
+| **Suggestion** | A proposed new memory, or a change to one, from an agent, a capture, an import, a seed question or the daily tidy-up. Waits in the Inbox, unless the user lets Funes apply it automatically. |
+| **Atomic memory** | A memory that holds one independent claim. New memories processing splits input into atomic pieces (Phase 6). |
+| **New memories processing** | Splitting every new input (captures, agent suggestions and writes, imports) into atomic pieces, classifying each and linking it to related memories (create, update, already saved, retract). Settings ▸ AI Models ▸ New memories. |
+| **Daily tidy-up** | The daily job that compares changed memories with related ones and proposes updates, merges, splits, archives and conflicts. It replaces the earlier "consolidation" design. |
+| **Auto-apply** | The user's setting (Off · Duplicates only · Everything except conflicts) that lets Funes apply its own proposals, with Undo for 30 days. Never on the strength of untrusted text; conflicts always go to the user. |
+| **Trusted / untrusted memory** | Where a memory's text came from: trusted if the user typed, dictated or applied it; untrusted if an agent saved it directly, or auto-apply saved it from an import or shared text. |
+| **Daily cap** | The most cloud generation requests Funes makes in a day (300 by default); embeddings don't count. |
 | **Capture** | A quick note from the hotkey, the Services menu or the iPhone. It becomes a suggestion. |
 | **Inbox** | Where suggestions are reviewed: apply, edit, reject. |
 | **Activity** | The append-only log of everything that happened. It stores ids, never memory text. |
