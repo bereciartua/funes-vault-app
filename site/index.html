@@ -25,6 +25,7 @@
       <a class="brand" href="/"><img src="/assets/icon-512.png" alt="" width="34" height="34">Funes Vault</a>
       <nav aria-label="Site">
         <a class="wide" href="#see">How it works</a>
+        <a class="wide" href="#iphone">iPhone</a>
         <a href="#install">Install</a>
         <a class="wide" href="/privacy/">Privacy</a>
         <a class="wide" href="/support/">Support</a>
@@ -60,7 +61,7 @@
         <a class="button" href="https://github.com/bereciartua/funes-vault-app/releases/latest/download/FunesVault.dmg">Download for Mac</a>
         <a class="button light" href="#see">See how it works</a>
       </div>
-      <p class="meta">Free and open source · macOS 15 or later · Apple silicon and Intel</p>
+      <p class="meta">Free and open source · macOS 15 or later · Apple silicon and Intel · <a href="#iphone">and an iPhone app</a></p>
     </div>
   </header>
 
@@ -182,6 +183,24 @@
       </div>
     </section>
 
+    <section id="iphone" class="tight" aria-labelledby="phone-h">
+      <div class="wrap">
+        <h2 id="phone-h">In your pocket, too.</h2>
+        <p class="intro">Funes Vault for iPhone pairs with your Mac. It keeps no copy of your vault.</p>
+        <div class="ra phone-ra">
+          <div>
+            <p><strong>Answer agents from anywhere.</strong> When an agent asks and you’re away from your Mac, your iPhone shows it, even locked: the agent and the count, never the text. Open it for the same panel, untick what shouldn’t go, then Share, Save or Deny.</p>
+            <p><strong>Capture anywhere.</strong> Type, dictate, share from any app, or ask Siri to remember. Captures wait on the iPhone until your Mac has them, even offline.</p>
+            <p><strong>Search and review</strong> your vault and Inbox while your Mac is reachable, on the same Wi-Fi or through Tailscale.</p>
+            <p><strong>Private by design.</strong> Your iPhone talks only to your Mac, end-to-end encrypted. To wake it for a request, your Mac leaves a record holding only a random tag in your own iCloud. Data Not Collected.</p>
+            <div class="actions"><a class="button contrast" href="https://apps.apple.com/app/id6823794639">Get the iPhone app</a></div>
+            <p class="meta">iOS 18 or later · Pairs with Funes Vault on your Mac · No Mac yet? Try the demo in the app</p>
+          </div>
+          <img class="shot phone" src="/assets/screenshots/iphone-approval.png" alt="Funes Vault for iPhone: Claude Code wants 4 memories. The panel shows where they go, what the agent says, and the memories with checkboxes, with Deny and Share 3." width="588" height="1280" loading="lazy">
+        </div>
+      </div>
+    </section>
+
     <section class="tight" aria-labelledby="nope-h">
       <div class="wrap">
         <h2 id="nope-h">Things Funes doesn’t have</h2>
@@ -190,7 +209,7 @@
           <li>An account</li><li>A server</li><li>A cloud copy</li><li>Analytics</li><li>Telemetry</li><li>A crash reporter</li><li>Cookies on this site</li>
         </ul>
         <div class="honest">
-          <p><strong>What does leave:</strong> what you let agents have, a daily update check to GitHub, and, only if you add an AI provider, capture text at or below your cloud limit, never anything that looks like a secret. With Remote Access on, also a test request through your tunnel and, while pairing, the signing-in app’s public metadata.</p>
+          <p><strong>What does leave:</strong> what you let agents have, a daily update check to GitHub, and, only if you add an AI provider, capture text at or below your cloud limit, never anything that looks like a secret. With Remote Access on, also a test request through your tunnel and, while pairing, the signing-in app’s public metadata. With the iPhone app, everything goes between your iPhone and your Mac, end-to-end encrypted, plus a doorbell record with only a random tag in your own iCloud.</p>
           <p><strong>The honest limits:</strong> other programs running as you can read the vault, and Funes can’t take text back once an agent has it.</p>
           <p><a href="/privacy/">Privacy statement</a> · <a href="https://github.com/bereciartua/funes-vault-app/blob/main/SECURITY.md">Security policy</a></p>
         </div>
@@ -207,6 +226,7 @@
             <div class="actions"><a class="button" href="https://github.com/bereciartua/funes-vault-app/releases/latest/download/FunesVault.dmg">Download for Mac</a></div>
             <div class="command"><code id="brew-command">brew install --cask bereciartua/tap/funes-vault</code><button type="button" data-copy="brew-command" hidden>Copy</button></div>
             <p class="meta">macOS 15 or later · Apple silicon and Intel · <a href="https://github.com/bereciartua/funes-vault-app/releases/latest">Release notes</a></p>
+            <p class="meta">On your iPhone: <a href="https://apps.apple.com/app/id6823794639">Funes Vault on the App Store</a>, then <strong>Settings ▸ iPhone ▸ Pair iPhone…</strong> on your Mac.</p>
           </div>
         </div>
       </div>
@@ -240,7 +260,7 @@
           <details><summary>What if I’m away when an agent asks?</summary><p>The agent waits 45 seconds, then is told the request is waiting. It stays in Pending requests in the menu bar for 15 minutes; share it then and the agent gets it the next time it checks.</p></details>
           <details><summary>Can an agent change or delete my memories?</summary><p>No. Agents can only propose new memories and corrections. One you give Write, with Ask before saving off, can save new memories directly within its limits; its corrections still wait in your Inbox.</p></details>
           <details><summary>Does it need Apple Intelligence?</summary><p>No. Search uses a small model built into the app. On macOS 26 with Apple Intelligence, Apple’s on-device model proposes titles and categories for captures; otherwise simple rules do.</p></details>
-          <details><summary>Is there an iPhone app?</summary><p>Not yet. An iPhone companion that captures thoughts and searches your vault is planned.</p></details>
+          <details><summary>Is there an iPhone app?</summary><p>Yes, free on the <a href="https://apps.apple.com/app/id6823794639">App Store</a>. It pairs with Funes Vault on your Mac to capture anywhere, search your vault and answer agents’ requests. See <a href="#iphone">In your pocket</a>.</p></details>
         </div>
       </div>
     </section>

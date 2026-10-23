@@ -95,6 +95,8 @@ section.tight { padding-top: 0; }
 .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
 .button { display: inline-block; padding: 14px 26px; border-radius: 16px; font-weight: 800; text-decoration: none; background: var(--ink); color: var(--paper) !important; border: 2.5px solid var(--ink); box-shadow: 4px 4px 0 rgba(18, 17, 16, .35); }
 .button.light { background: var(--paper); color: var(--ink) !important; }
+/* On the page's own background: dark on the light theme, light on the dark one. */
+.button.contrast { background: var(--outline); border-color: var(--outline); color: var(--bg) !important; }
 .hero .meta { text-align: center; font-size: .9rem; margin: 18px 0 0; font-weight: 600; }
 
 /* The agent picker: radio buttons, then the chips, the rule and the cards they style */
@@ -192,6 +194,8 @@ section.tight { padding-top: 0; }
 .ra { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 32px; align-items: center; }
 .ra p { color: var(--muted); margin: 0 0 10px; }
 .ra strong { color: var(--text); }
+.phone-ra { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.shot.phone { justify-self: center; width: 100%; max-width: 300px; height: auto; border-radius: 32px; }
 
 /* Things it doesn't have */
 .nope { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 28px; padding: 0; list-style: none; }
