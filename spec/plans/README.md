@@ -11,6 +11,11 @@
 | [Phase 4b follow-up 2: Funnel paths](phase-4b-funnel-paths.md) | claude.ai and ChatGPT only connect to port 443, so every app shares Funnel's 443 by adding only its own paths. BridgeKit 0.4.0, Funes 0.1.2, EK Bridge 0.11.4. Before the launch |
 | [Phase 4: Ship v0.1](phase-4-ship-mac-preview.md) | Release pipeline, Homebrew, MCP Registry, docs, live matrix, launch (4.4 and 4.5 wait for Phase 4b) |
 | [Phase 5: iPhone companion](phase-5-iphone-companion.md) | Companion server, pairing, iPhone app, approvals from the iPhone, App Store |
+| [Phase 6.0: Spike E](phase-6-0-spike-e.md) | Measure extraction, linking and tidy-up quality per provider (Apple on-device included) on synthetic fixtures, before building Phase 6 |
+| [Phase 6.1: Foundations](phase-6-1-foundations.md) | Per-action apply, version-checked targets, schema v4, a durable processing queue, the multi-item cloud guard and daily cap, the undo log, iPhone and export changes |
+| [Phase 6a: New memories](phase-6a-new-memories.md) | Split every new input into atomic pieces, classify and link them, auto-apply with undo ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md)) |
+| [Phase 6b: Daily tidy-up](phase-6b-daily-tidy-up.md) | Daily update, merge, split, archive and conflict proposals, with optional auto-apply ([ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)) |
+| [Phase 6c: Provider embeddings](phase-6c-provider-embeddings.md) | A provider embedding model as a second index next to bge-small, gated on a benchmark gain ([ADR-0023](../architecture/decisions/0023-provider-embeddings-second-index.md)) |
 | [Project setup](project-setup.md) | Repo, targets, bundle IDs, platforms, dependencies, signing, conventions |
 | [Testing strategy](testing-strategy.md) | Test layers, privacy assertions, fixtures, definition of done |
 | [Release and distribution](release-and-distribution.md) | Versioning, channels, release checklist, support |

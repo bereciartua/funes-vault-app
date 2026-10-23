@@ -1,6 +1,8 @@
 # Memory processing
 
-Everything here runs on the Mac. By default, AI tasks use **Apple's on-device models**, so nothing leaves the Mac. The user can choose other models per task: a local server (Ollama, LM Studio) or a cloud provider (OpenAI, Anthropic, Gemini, OpenRouter, any OpenAI-compatible endpoint). Guardrails apply: the secret scanner and a sensitivity limit for cloud models. See [model providers](../architecture/model-providers.md) and [ADR-0014](../architecture/decisions/0014-user-selectable-models.md).
+Everything here runs on the Mac. By default, AI tasks use **Apple's on-device models**, so nothing leaves the Mac. The user can choose other models per task: a local server (Ollama, LM Studio) or a cloud provider (OpenAI, Anthropic, Gemini, OpenRouter, any OpenAI-compatible endpoint). Guardrails apply: the secret scanner and a sensitivity limit for cloud models, which the user sets ([ADR-0022](../architecture/decisions/0022-cloud-limit-and-daily-cap.md)). See [model providers](../architecture/model-providers.md) and [ADR-0014](../architecture/decisions/0014-user-selectable-models.md).
+
+**Phase 6** ([plans](../plans/phase-6-0-spike-e.md)) adds two model tasks: every new memory is split into atomic pieces and linked to the vault (§5, [ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md)), and a daily tidy-up proposes, or applies, updates, merges, splits and archives (§9, [ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)). Until it lands, §5.1 describes what ships.
 
 ## 1. Secret scanner
 
@@ -45,10 +47,10 @@ Decision: [ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings
   - **Runtime:** `MLComputeUnits.cpuOnly`: 3.6 ms per query and 4.7 ms per memory on an M1.
   - **Tokenizer:** a WordPiece tokenizer in FunesCore (no dependency), with the model's bundled vocabulary. It must match Hugging Face's token ids on the fixture texts.
   - **Model id:** `bge-small-en-v1.5/coreml-int8`.
-  - **Later:** choosing another embedding model (Ollama such as `nomic-embed-text`, LM Studio, or a cloud model) in Settings ▸ AI Models ▸ Embeddings, with re-embedding and calibration ([model providers](../architecture/model-providers.md)). Not in v0.1.
+  - **Phase 6c:** adding a provider embedding model (Ollama such as `nomic-embed-text`, LM Studio, or a cloud model) in Settings ▸ AI Models ▸ Embeddings, as a **second index** next to bge-small, with re-embedding and calibration ([ADR-0023](../architecture/decisions/0023-provider-embeddings-second-index.md), [model providers §7](../architecture/model-providers.md#7-choosing-a-provider-embedding-model)).
   - **Normalization:** all vectors are L2-normalized, so similarity is a plain dot product, whatever the provider.
-  - **One embedding model is active at a time.** Switching (later) re-embeds in the background ([model providers §7](../architecture/model-providers.md#7-switching-the-embedding-model)).
-  - **Cloud limit (later, cloud models only):** memories above the cloud sensitivity limit get no vector and are found by keyword only.
+  - **bge-small vectors stay on every memory.** A provider model adds a second vector for memories within the cloud limit; a memory uses its provider score when it has one, and its bge score otherwise (each min-max normalized over its own pool). The related-memories finder (§5.5, §9) always uses bge-small.
+  - **Cloud limit (provider models only):** memories above the limit get no provider vector and keep their bge vector; a provider vector is deleted when the limit drops or the memory's sensitivity rises above it.
 - **Input text:**
   - **Memories:** `"<title>\n<kind>\n<category names>\n<body>"`, truncated to 256 tokens.
   - **Queries:** bge's retrieval instruction prefix plus the query text (for agents: the task plus any `keywords`).
@@ -74,17 +76,20 @@ Decision: [ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings
 - **Vault search (UI):** filters apply before ranking.
 - **Agent retrieval:** see [access policy §3.2](access-policy.md#32-retrieval-which-memories-are-relevant): the same rule, with the retrieval threshold and the top 30.
 - **Tuning:** thresholds are stored **per embedding model id** and measured with the 200-memory and 30-query benchmark (raw and agent-expanded queries), kept as constants with tests.
-  - Unknown models (later) use top-K semantic candidates (K = 10) plus all keyword hits, until the user runs **Calibrate** ([model providers §8](../architecture/model-providers.md#8-calibration-thresholds-per-model)).
+  - Unknown models (later) use top-K semantic candidates (K = 10) plus all keyword hits, until the user runs **Calibrate** ([model providers §8](../architecture/model-providers.md#8-calibration-thresholds-per-model-v03)).
 - **Regression baselines** (Spike 2b, re-measured in FunesCore before freezing):
   - hybrid recall@5 ≥ 0.92 on `queries-30-expanded`, and ≥ 0.68 on raw `queries-30`;
   - keyword-only (the fallback path) ≥ 0.82 on `queries-30-expanded`.
 
-## 5. Classification of captures and suggestions
-**Goal:** make Inbox review fast by proposing a title, kind, categories and sensitivity. It **never** auto-applies.
+## 5. New memories: split, classify, link
+**Goal:** make every new memory small, single-claim and connected to what the vault already holds, and make Inbox review fast. Today (§5.1) one capture gets proposed fields. Phase 6 (§5.2–§5.8) splits every source into atomic pieces and links each to related memories ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md)).
 
-**v0.1 classifies captures only.** Agent suggestions, imports and seed answers keep the fields they arrive with, and are never sent to a classification model.
+### 5.1 Classification (shipped; also the fallback when splitting is off)
+**Shipped behaviour:** v0.1 classifies captures only. Agent suggestions, imports and seed answers keep the fields they arrive with, and are never sent to a classification model. With Phase 6, classification becomes part of the extraction call (§5.3); this section stays the behaviour with no model, or with splitting off.
 
-- **Engine:** user-selectable (Settings ▸ AI Models ▸ Classification); see [model providers](../architecture/model-providers.md).
+Classification proposes a title, kind, categories and sensitivity. On its own it never applies anything; auto-apply (§5.7) is a Phase 6 setting.
+
+- **Engine:** user-selectable (Settings ▸ AI Models ▸ New memories, "Classification" until Phase 6); see [model providers](../architecture/model-providers.md).
   - **Default:** the Apple Foundation Models on-device model (macOS 26+ with Apple Intelligence), using guided generation.
   - **Other providers:** local or cloud generation models receive the same instructions and an equivalent **JSON schema** (structured output). Cloud classification of captures follows an on-device sensitivity pre-screen ([model providers §5](../architecture/model-providers.md#5-guardrails-all-non-local-providers)).
 
@@ -109,6 +114,90 @@ Decision: [ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings
 - **Apple Private Cloud Compute** is one of the selectable providers. It's free for Small Business Program developers under 2M first-time downloads, within daily limits, and labelled as Apple cloud.
 - **Engine shown on the card:** each Inbox card shows which engine proposed its fields ("Proposed on this Mac", "Proposed by Claude via Anthropic").
 
+### 5.2 Which inputs (Phase 6)
+| Input | Today | With splitting on |
+|---|---|---|
+| Captures (Mac hotkey, menu bar, Services; iPhone) | One suggestion, classified | A group of suggestions in the Inbox |
+| Seed answers | One suggestion with preset fields | Split; the preset kind and category are hints |
+| Agent `suggest_memory`, queued (Suggest, or Write with Ask before saving) | One suggestion | A group in the Inbox; the response is unchanged (`queued`, `suggestion_id` = the group) |
+| Agent `suggest_memory`, saved directly (Write, Ask before saving off) | One memory | Saved as today, then split in the background (§5.6) |
+| Agent corrections (`target_memory_id`) | An update suggestion | Not split |
+| Imports: ChatGPT, Claude, Markdown | One suggestion per item | Each item split; short items batched several per call |
+| Funes export restore | Memories or suggestions as exported | Not split: a backup of reviewed memories |
+
+**Flow:**
+1. Validation and the secret scanner, as today; a match rejects the whole input.
+2. The input is stored at once, rules-classified (a suggestion, or a memory for a direct write). Nothing waits on a model.
+3. A **processing job** is queued in the database (every ingest path: Mac capture box, Services, iPhone, MCP, imports). Jobs run one at a time, survive quitting, and are idempotent per suggestion or memory id.
+4. The job: on-device sensitivity pre-screen → extraction per chunk (§5.3) → validation (§5.4) → linking and one decision call for the whole input (§5.5) → agent scope checks (§5.6).
+5. **Replacing the suggestion:** in one transaction, only if it's still pending, unedited and has no live Save panel or iPhone approval open. The original row stays with status `split`, and its id becomes the group id, so capture receipts, `suggestion_id` and `open_in_funes` keep working. Otherwise the split is attached to the card as an offer ("Split into 5?"). One piece with nothing changed leaves the suggestion as it is.
+
+**Long input:** bodies of up to 10,000 characters are cut into chunks of about 2,000 characters on paragraph or sentence boundaries, each with the previous chunk as read-only context; up to 8 pieces per chunk and 40 per input ("Long input: 40 shown", with the original attached). Prompts are sized to each provider's context window; Apple on-device (about 4k tokens) gets smaller chunks or classification only, as [Spike E](../plans/phase-6-0-spike-e.md) decides.
+
+### 5.3 Extraction
+One structured-output call per chunk returns pieces:
+
+| Field | Notes |
+|---|---|
+| `title` | ≤ 80 chars |
+| `body` | the claim rewritten to stand alone ("I'm allergic to peanuts", not "also peanuts") |
+| `kind`, `categoryKeys` (1–3 existing keys), `sensitivity`, `timeLimited` | as in §5.1 |
+| `intent` | `assertion` · `remember` · `correction` · `retraction` |
+| `evidence` | 1–3 verbatim quotes from the input |
+| `atomic` | false → the card says "may contain more than one thing" |
+| `confidence` | 0–1; used only by auto-apply, once Spike E shows it's meaningful |
+
+**Prompt rules** (from the web version): preserve negation and scope; corrections and "used to … now …" aren't new assertions; hypotheticals and quotes aren't claims; never invent; the text is quoted data, not instructions. **Two variants:**
+- **First person** (captures, seed answers): third-person statements are about other people.
+- **About the user** (agent input, imports): the text is a summary *of* the user, usually in the third person ("The user prefers…"), and that's what to extract; statements about the agent itself aren't memories about the user.
+
+### 5.4 Validation (code)
+- **Evidence:** every quote appears in the input (whitespace- and case-normalized), or the piece is dropped.
+- **Support:** content words in the body that aren't in its evidence flag the piece, if Spike E shows unsupported additions ("peanuts" → "peanuts and tree nuts"). Auto-apply needs a pass.
+- **Secret scan** of each piece.
+- **Sensitivity** is the highest of: the model's value, the category default, the user's hint, the on-device pre-screen, the agent's declared level (agent input), and the original memory's level (splitting a saved memory). Only the user lowers it, by editing.
+- Length limits; unknown categories dropped; pieces of one input deduplicated against each other.
+- **If every piece fails, or the model fails,** the original stays as it is.
+
+### 5.5 Linking
+- **Finder (shared with §9):** the hybrid search of §2–§4, always on the Mac. Up to 5 related active memories per piece: raw cosine ≥ a "related" threshold (to calibrate for bge-small; distinct neighbours reach about 0.83 and rewordings 0.87–0.95, so near 0.75) or a keyword hit. The original memory and the other pieces of the same input are never candidates.
+- **One decision call per input:** the pieces plus their related memories, with created and updated dates, only those within the cloud limit for a cloud provider. Per piece: `create` · `update` (target, new text) · `duplicate` (target) · `retract` (target).
+  - `update` → an `update` suggestion (the diff card, Replace / Keep both);
+  - `duplicate` → "Already in your vault: *<title>*", defaulting to Reject;
+  - `retract` → an `archive` suggestion for the target.
+- **The target** must be one of the supplied memories, still active and at the version sent; otherwise the piece becomes `create`. Every targeted suggestion records the target's version.
+- **Agent input:** Inbox proposals link against all memories (the agent only gets `queued`, so nothing is revealed); anything auto-applied for an agent only considers memories that agent can read.
+- **Without a model:** the finder still runs and shows the duplicate hint (§8).
+
+### 5.6 Agent input and the policy
+- **Pieces outside the agent's scope** (a category it can't suggest in, above its ceiling) go to the Inbox flagged "Outside <agent>'s scope": never auto-applied, left out of Apply all ([access policy §5.3](access-policy.md#53-scope-check-for-the-proposed-memory)).
+- **Direct writes: save, then split.** The agent gets `saved` and the `memory_id` as today. If extraction finds the content more sensitive than declared, the memory's sensitivity is raised at once. Then:
+  - at **Everything except conflicts**, pieces within the agent's write scope replace the original, create-only: new memories, the original archived and linked "split into", listed under Applied automatically. Pieces count toward the agent's write rate limit;
+  - otherwise a **Split this memory** suggestion shows the original and its pieces.
+- A later correction targeting a split original is redirected to the pieces the agent can read.
+- **Updates and retractions from agent input** are always suggestions (FR-S-06).
+- **Caller metadata** is never sent to a model; the agent's `evidence` is sent as quoted data.
+
+### 5.7 Auto-apply for new memories
+The setting is shared with the tidy-up (Settings ▸ AI Models ▸ Apply changes automatically: **Off** · Duplicates only · Everything except conflicts; [model providers §4](../architecture/model-providers.md#4-configuration-settings--ai-models)).
+
+| Level | The user's captures and imports |
+|---|---|
+| Off | Everything to the Inbox, as today |
+| Duplicates only | Pieces that duplicate a memory are dropped, listed as "Skipped: already saved"; the rest to the Inbox |
+| Everything except conflicts | Confident pieces are saved; updates and retractions are applied **only from text the user typed or dictated** (shared and Services captures and imports can at most create pieces). Uncertain pieces (low confidence, not atomic, failed support check, possibly sensitive above the user's hint) go to the Inbox |
+
+**At every level:**
+- **Agents follow their own access** (§5.6), never this setting.
+- **Only the chosen engine:** output from a fallback engine goes to the Inbox.
+- **No new access:** before applying, the policy engine confirms that no agent could read the result without having been able to read what it came from.
+- **Undo** for 30 days in the Inbox's **Applied automatically** list: undoing a saved piece moves it to Recently Deleted; undoing an update restores the previous text.
+
+A memory's **trust** records where its text came from: *trusted* if the user typed or dictated it or applied it from a suggestion; *untrusted* if an agent saved it directly or auto-apply saved it from an import or shared text. Auto-apply never changes or archives a memory on the strength of untrusted text (§9.5).
+
+### 5.8 Cost
+One extraction call per chunk and one decision call per input. Calls to cloud providers count toward the daily cap ([ADR-0022](../architecture/decisions/0022-cloud-limit-and-daily-cap.md)): at the cap the user's captures fall back to on-device, and agent input and imports wait for the next day. Import previews show the estimated requests next to what's left today, and offer "Import without splitting".
+
 ## 6. Seed questions (onboarding)
 Six prompts from the web guided interview, each answer becoming a suggestion with a preset kind, category and sensitivity:
 
@@ -123,10 +212,10 @@ Six prompts from the web guided interview, each answer becoming a suggestion wit
 
 The seventh web prompt, "What should Funes be especially careful not to share casually?", is a rule, not a memory: the sheet asks "Which of these should agents never see?" with category checkboxes, which set the vault's never-share categories (FR-O-02). Saving the answer as a memory would have offered it to any agent that reads Internal.
 
-A long answer may be split into several suggestions by the classifier, when it's available, with a "split into 3" control on the card.
+A long answer is split into several suggestions by New memories processing (§5), when a model is available; the preset kind and category become hints.
 
 ## 7. Import parsers
-All imports create **suggestions** (`origin = import`, with an `importRunId`) after a preview.
+All imports create **suggestions** (`origin = import`, with an `importRunId`) after a preview. With splitting on (§5), each item is then split, except a Funes export restore.
 
 | Source | Input | Parsing |
 |---|---|---|
@@ -144,13 +233,59 @@ On create or apply, show "Similar memory exists" if:
 
 It's a hint only.
 
-## 9. Consolidation (v0.3, later)
-Carries over the web design's logic, review-only, using the model chosen for Consolidation (default: same as Classification):
-- **Candidate pairs:**
-  - exact normalized duplicates;
-  - lexical similarity ≥ 0.34;
-  - semantic similarity ≥ 0.72, up to 8 neighbours per memory.
-- **Judge:** at most 30 pairs per run go to the chosen generation model (cloud models only receive pairs within the cloud sensitivity limit), which returns `{archive: left|right, reason: duplicate|conflict|superseded, confidence}`, kept if confidence ≥ 0.65.
-- **Output:** `action = archive` suggestions in an Inbox "Cleanup" section. Never applied automatically.
-- **Excluded:** memories above INTERNAL, unless the user enables it.
-- **Schedule:** weekly, or "Find duplicates now".
+## 9. Daily tidy-up
+Phase 6b ([ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)); replaces the web version's archive-only consolidation, planned here for v0.3.
+
+### 9.1 Schedule
+- Settings ▸ AI Models ▸ **Daily tidy-up:** Daily (at a time, default 03:00) · Off; off by default. **Tidy up now** runs it on demand.
+- Runs from the daily maintenance with `NSBackgroundActivityScheduler`; after a missed run, on the next launch or wake.
+- Model: the one chosen for the tidy-up (default: the same as New memories).
+
+### 9.2 What it looks at
+- **Changed:** active memories with `version > reconciled_version`, or never inspected. The first run on an existing vault works through everything over several days, newest first.
+- **No loops:** when the tidy-up applies a change, it sets `reconciled_version` to the new version in the same transaction. Memories that are ineligible (above the limit with a cloud provider) or have no neighbours are marked inspected too.
+- **Neighbours:** the finder of §5.5, up to 8 per changed memory.
+- **Clusters:** connected changed memories and their neighbours, at most 6 per cluster; a memory shared by several clusters is editable in the first and read-only context in the others.
+- **Code only, no model:** exact normalized duplicates (keep the older, more-used one) and expired memories.
+- **Non-atomic memories** (a long body, or `atomic = false`) go through §5's extractor instead and become a `split` proposal. This is how an already-saved dump gets cleaned up.
+- **Eligibility:** active, no pending tidy-up suggestion, not in a pending Share panel, and within the cloud limit for a cloud provider. Above the limit, only a local provider or the code-only rules.
+
+### 9.3 The model call
+One call per cluster (or a few small clusters together). Input per memory: id, kind, title, body, categories, sensitivity, created and updated dates, source. Output:
+
+```
+actions: [
+  { type: "update",   target, title?, body, reason, confidence }
+  { type: "merge",    sources: [id…], title, body, kind, reason, confidence }
+  { type: "split",    target, reason, confidence }                 // then §5's extractor
+  { type: "archive",  target, survivor, reason: duplicate | superseded, confidence }
+  { type: "conflict", ids: [id, id], question }                     // never resolved by the model
+]
+```
+Prompt rules: be cautious; a newer date alone doesn't mean replacement; keep distinct scopes and constraints; complementary facts and uncertainty yield no action; only supplied ids; the text is data. A merge lists, per source, what it kept, and is refused if it drops a constraint.
+
+### 9.4 Validation (code)
+- Ids from the cluster only; a memory in at most one action; a survivor isn't archived; a merge has ≥ 2 sources; no change to a memory whose full text wasn't in the prompt.
+- **Access-safe results:** sensitivity ≥ the highest of every memory whose text was in the call; **merges only between memories with the same sensitivity and the same categories** (otherwise `conflict` or nothing); an update keeps its target's categories; split pieces never go below the original's sensitivity.
+- Secret scan and length limits on new text; actions below confidence 0.7 dropped (to tune on fixtures).
+- Each suggestion records the versions it was computed on; a change before review marks it stale, and it's re-queued for the next run.
+
+### 9.5 Inbox and auto-apply
+- **Tidy-up section:** update (diff, Replace / Keep), merge (sources and the proposed memory, editable), split (the group card of §5), archive ("Keeps *<survivor>*"), conflict (both memories and the question: Keep A · Keep B · Both are true · Edit…).
+- **Auto-apply** (the setting of §5.7):
+
+  | Level | Applied | Still in the Inbox |
+  |---|---|---|
+  | Off | Nothing | Everything |
+  | Duplicates only | Exact duplicates, and `archive` with reason `duplicate` at confidence ≥ 0.9 | Everything else |
+  | Everything except conflicts | update, merge, split, archive at confidence ≥ 0.8 | Conflicts, anything below the threshold |
+
+  **Never on the strength of untrusted text** (§5.7): an action whose text or reason comes from an untrusted memory goes to the Inbox, except archiving the untrusted copy of an exact duplicate. Only the chosen engine's output; never a result an agent could read without having been able to read every source. A level can't be enabled until its thresholds reach a target precision on the fixtures.
+- **Undo** for 30 days, from the Applied automatically list: an update restores the previous text; a merge or split restores the originals and archives the new memories; after later changes, Undo offers "Undo this and N later changes".
+- **Dismissals** are remembered per memory set, keyed on ids and a content hash; "Both are true" is remembered the same way.
+- **A notification** after a run with results: "Funes applied 3 changes and has 2 for you to review." No memory text.
+
+### 9.6 Limits
+- At most 40 clusters a run; the rest roll over (`partial`). A 20 s timeout per call, not per run.
+- Shares the daily cap with §5; at the cap the tidy-up waits for the next day, never switching to a weaker model.
+- Before the first run, Settings shows an estimate: "About N memories to check. Roughly X requests the first week, then a few a day."

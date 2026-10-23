@@ -19,6 +19,10 @@ erDiagram
     AGENT ||--o{ SUGGESTION : "proposes"
     DEVICE ||--o{ CAPTURE_RECEIPT : "delivers"
     CAPTURE_RECEIPT ||--|| SUGGESTION : "creates"
+    SUGGESTION ||--o{ SUGGESTION : "split into (group)"
+    SUGGESTION ||--o{ SUGGESTION_TARGET : "references (Phase 6)"
+    MEMORY ||--o{ SUGGESTION_TARGET : ""
+    MEMORY ||--o{ UNDO_ENTRY : "auto-applied (Phase 6)"
 ```
 
 ### Memory
@@ -34,12 +38,14 @@ A durable piece of personal context.
 | `status` | `active` · `archived` · `deleted` | Expiry is computed, not a status |
 | `expiresAt` | date? | Treated as expired when `expiresAt <= now` |
 | `confidence` | 0–1? | From suggestions; informational |
-| `source` | MemorySource | `manual` · `capture_mac` · `capture_iphone` · `agent_suggestion` · `agent_write` · `import_chatgpt` · `import_claude` · `import_markdown` · `import_funes` · `seed_question` |
+| `source` | MemorySource | `manual` · `capture_mac` · `capture_iphone` · `agent_suggestion` · `agent_write` · `import_chatgpt` · `import_claude` · `import_markdown` · `import_funes` · `seed_question` · `tidy_up` (Phase 6: a merge or split result) |
 | `sourceAgentId` / `sourceDeviceId` | UUID? | Who it came from |
 | `createdAt`, `updatedAt` | timestamps | |
 | `lastConfirmedAt` | timestamp? | "Still true" |
 | `deletedAt` | timestamp? | Set with status `deleted`; purged 30 days later |
 | `version` | int | +1 on every change to the title, body, kind, categories, sensitivity, status or expiry. Used to invalidate disclosures |
+| `trust` | `trusted` · `untrusted` | Phase 6. Where the text came from: `trusted` if the user typed or dictated it or applied it from a suggestion; `untrusted` if an agent saved it directly, or auto-apply saved it from an import or shared text. Auto-apply never changes or archives a memory on the strength of untrusted text ([memory processing §5.7](memory-processing.md#57-auto-apply-for-new-memories)). A user edit or Apply makes it trusted |
+| `reconciledVersion` | int? | Phase 6. The `version` the daily tidy-up last inspected ([memory processing §9.2](memory-processing.md#92-what-it-looks-at)) |
 
 **Invariants:**
 - A memory has at least one category.
@@ -72,19 +78,31 @@ A proposed memory waiting for review. It is separate from Memory, so memories ne
 | Field | Type | Notes |
 |---|---|---|
 | `id` | UUID | |
-| `origin` | `agent` · `capture_mac` · `capture_iphone` · `import` · `seed_question` · `consolidation` (later) | |
+| `origin` | `agent` · `capture_mac` · `capture_iphone` · `import` · `seed_question` · `consolidation` (the daily tidy-up, Phase 6) | |
 | `agentId` / `deviceId` / `importRunId` | UUID? | |
 | `captureId` | UUID? | Idempotency key for iPhone captures (unique) |
 | `targetMemoryId` | UUID? | Set when the suggestion is a correction of an existing memory |
-| `action` | `create` · `update` · `archive` (consolidation only) | |
+| `targetMemoryVersion` | int? | Phase 6. The target's version when the suggestion was made; checked when it's applied (stale → the card says so) |
+| `action` | `create` · `update` · `archive` · Phase 6: `duplicate` (already saved) · `split` · `merge` · `conflict` | Each action has its own apply ([memory processing §5.5](memory-processing.md#55-linking), [§9.5](memory-processing.md#95-inbox-and-auto-apply)). Today only `update` + Replace applies as itself; Phase 6.1 implements the rest |
+| `groupId` | UUID? | Phase 6. The original suggestion a piece was split from (status `split`) |
+| `intent` | `assertion` · `remember` · `correction` · `retraction`? | Phase 6, from extraction |
+| `outsideScope` | bool | Phase 6. A piece of an agent's input outside that agent's scope: never auto-applied, left out of Apply all |
 | `title`, `body`, `kind`, `categoryKeys`, `sensitivity`, `expiresAt`, `confidence` | proposed values | All editable before apply |
 | `evidence` | string?, ≤ 2,000 | Quoted support from the agent; shown as data |
 | `purpose` | string?, ≤ 160 | As reported by the agent |
 | `callerMetadata` | JSON? | Inert. Never interpreted |
 | `classification` | JSON? | Proposed fields plus the engine that produced them (`apple.foundation`, `rules`, or a provider and model id such as `anthropic/<model>`), and whether the capture was kept on the device by the pre-screen |
-| `status` | `pending` · `applied` · `rejected` · `expired` | |
-| `createdAt`, `decidedAt`, `expiresAt` | | Expires 30 days after creation |
+| `status` | `pending` · `applied` · `rejected` · `expired` · `split` (Phase 6: replaced by its pieces; the row stays for receipts and idempotency) | |
+| `createdAt`, `decidedAt`, `expiresAt` | | Expires 30 days after creation; a group expires as one |
 | `resultMemoryId` | UUID? | The memory created or updated when it was applied |
+
+**Phase 6 additions** ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)):
+- **SuggestionTarget:** `suggestionId`, `memoryId`, `memoryVersion`, `role` (`target` · `source` · `survivor`), so a merge, split or conflict can reference several memories.
+- **SuggestionGroup:** `id` (the original suggestion's id), `origin`, `agentId?`, `sourceText`, `engine`, `createdAt`. The source text is dropped once every piece is decided, and purged with its memories.
+- **ProcessingJob:** `id`, `subject` (suggestion or memory id), `kind` (`split` · `tidy_up`), `state` (`queued` · `running` · `done` · `failed`), `attempts`, `engine`, `createdAt`. Durable, one at a time, idempotent per subject.
+- **UndoEntry:** `id`, `createdAt`, `runId?`, `action`, memory ids, the before-state (JSON, including old text), `expiresAt` (30 days). Purged after 30 days and with its memories when they're purged or deleted now. Never exported.
+- **TidyUpRun:** `id`, `startedAt`, `finishedAt`, `engine`, counts (memories inspected, clusters, suggestions, applied), `partial`, error code.
+- **TidyUpDismissal:** sorted memory ids plus a content hash, `dismissedAt`.
 
 ### Agent
 An MCP client the user has added. It is EK Bridge's "connection".
@@ -155,7 +173,7 @@ An MCP client the user has added. It is EK Bridge's "connection".
 **CaptureReceipt:** `captureId` (unique), `deviceId`, `receivedAt`, `suggestionId`. It makes delivery idempotent and is kept for 90 days.
 
 ### Provenance entry
-`memoryId`, `at`, `event` (`created` · `edited` · `archived` · `restored` · `deleted` · `shared` · `suggested_correction` · `applied_from_suggestion` · `confirmed`), `actor` (`user` · `agent:<id>` · `device:<id>` · `import:<id>`), `fieldsChanged` (names only). No text.
+`memoryId`, `at`, `event` (`created` · `edited` · `archived` · `restored` · `deleted` · `shared` · `suggested_correction` · `applied_from_suggestion` · `confirmed`; Phase 6: `split_into` · `split_from` · `merged_into` · `merged_from` · `auto_applied` · `undone`), `actor` (`user` · `agent:<id>` · `device:<id>` · `import:<id>`; Phase 6: `system`), `fieldsChanged` (names only), `relatedMemoryId` (Phase 6: the other side of a split or merge), `engine` (Phase 6: the model that proposed an auto-applied change). No text.
 
 ### Activity record
 Stored in an append-only JSONL file (the EK Bridge `ActivityStore` pattern):
@@ -175,7 +193,9 @@ No text, task, keys or bodies.
 | Operation | `read`, `suggest`, `write` |
 | Retention | `none`, `session`, `persistent`, `unknown` |
 | DisclosureStatus | `evaluating`, `fulfilled`, `needs_approval`, `approved`, `delivered`, `denied`, `failed` |
-| SuggestionStatus | `pending`, `applied`, `rejected`, `expired` |
+| SuggestionStatus | `pending`, `applied`, `rejected`, `expired`, `split` (Phase 6) |
+| SuggestionAction | `create`, `update`, `archive`; Phase 6: `duplicate`, `split`, `merge`, `conflict` |
+| MemoryTrust | `trusted`, `untrusted` (Phase 6) |
 
 Reason codes are listed in [access policy](access-policy.md#8-reason-codes).
 
@@ -205,13 +225,17 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
     [*] --> pending
-    pending --> applied: Apply / Save (creates or updates memory)
+    pending --> applied: Apply / Save (per action: creates, updates, archives, merges or splits)
+    pending --> applied: auto-apply (Phase 6, the user's setting)
+    pending --> split: replaced by its pieces (Phase 6)
     pending --> rejected: Reject / Discard
     pending --> expired: 30 days
     expired --> pending: Restore (within 7 days; another 30 days)
     applied --> [*]
     rejected --> [*]
+    split --> [*]
 ```
+- A targeted suggestion whose memory changed since it was made is **stale**: Apply shows the current memory and asks again (Phase 6).
 
 ### Memory
 ```mermaid

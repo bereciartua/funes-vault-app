@@ -133,7 +133,7 @@ A card at the top of the Vault, connecting first:
 | Secret | Never shared with agents unless you raise an agent's ceiling to Secret. |
 
 ### Inbox
-- **Sections:** From agents · Captures · Imports · Your answers (seed questions) · (later) Cleanup suggestions. Expired suggestions (FR-I-05) sit at the end with Restore.
+- **Sections:** From agents · Captures · Imports · Your answers (seed questions) · Tidy-up (v0.3) · Applied automatically (v0.3). Expired suggestions (FR-I-05) sit at the end with Restore.
 - **Item card:**
   - source line ("Suggested by Claude Code · 10:31", "Captured on iPhone · yesterday", "Imported from ChatGPT");
   - proposed title and body, editable inline;
@@ -143,7 +143,15 @@ A card at the top of the Vault, connecting first:
   - the engine that proposed the fields ("Proposed on this Mac", "Proposed by Claude via Anthropic", "Kept on this Mac: looked sensitive").
 - **Apply stores exactly what the card shows.** A card the user hasn't edited follows background classification; an edited one keeps the user's values.
 - **Actions:** Apply (⌘⏎), Reject (⌫ when no field is being edited, ⌘⌫ anytime), Later. Click a card to make it the one the keys act on. Multi-select gives "Apply 12" and "Reject 12", with per-item results ("12 applied, 1 blocked by the secret scanner").
-- **Correction suggestions:** when a suggestion references an existing memory, the card shows a diff (old → new) with **Replace** and **Keep both**.
+- **Correction suggestions:** when a suggestion references an existing memory, the card shows a diff (old → new) with **Replace** and **Keep both**. Only `update` suggestions offer that choice; every other action applies as itself (v0.3, FR-I-02). If the memory changed since the suggestion was made, the card says "Changed since this was suggested" and shows the current text.
+
+**From v0.3** (Phase 6, [memory processing §5](../domain/memory-processing.md#5-new-memories-split-classify-link) and [§9](../domain/memory-processing.md#9-daily-tidy-up)):
+- **Group card** for a split input: the source line ("From ChatGPT · 12 pieces"), the original text (collapsible), then one row per piece with its own Apply / Reject / edit, and a badge: New · Updates *<memory>* · Already saved · Removes *<memory>* · Outside <agent>'s scope. **Apply all** applies each row with its own action and skips flagged rows; **Keep as one** (restores the original) shows only while no piece is decided. Engine line: "Split by Claude via Anthropic", "Split on this Mac", "Kept on this Mac: looked sensitive".
+- **Split offer:** if the user was editing a card, or a panel was open, when its split arrived, the card keeps its content and shows "Split into 5?" instead of changing under the cursor.
+- **Split this memory:** for an agent's directly saved memory, the memory and its proposed pieces.
+- **Tidy-up section:** update (diff, Replace / Keep) · merge (sources, and the proposed memory, editable) · split (the group card) · archive ("Keeps *<survivor>*") · conflict (both memories and the question: **Keep A**, **Keep B**, **Both are true**, **Edit…**). Header: "Last tidy-up: today 03:04 · 37 memories checked · 4 suggestions" and **Tidy up now**.
+- **Applied automatically:** one row per automatic change (what changed, when, the engine), with **Undo** for 30 days; after later changes, "Undo this and N later changes", listing them.
+- **Notification** after a tidy-up with results: "Funes applied 3 changes and has 2 for you to review." No memory text.
 
 ### Agents
 - **Layout:** the sidebar lists the agents (see Sidebar); the page shows the selected one.
@@ -219,14 +227,16 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
 - **General:**
   - **Appearance:** Automatic, Light or Dark (FR-G-06), a pop-up with "Automatic follows macOS." under it. Automatic is the default. The choice applies at once to every window, panel, sheet and alert, and to the menu bar menu, and is kept across relaunches. The app menus (File, Edit…) follow the menu bar, as in every app. EK Bridge has the same setting with the same words.
   - Launch at login, show in Dock, the Review Request shortcut (⌃⌥⌘R), notifications.
-- **Capture:** hotkey, default sensitivity for captures ("At least <level>": a minimum no proposal, rules or model, goes below), classification on/off. With a cloud classifier it says "New captures are sent to <provider> to suggest their fields, within the cloud limit in AI Models."
+- **Capture:** hotkey, default sensitivity for captures ("At least <level>": a minimum no proposal, rules or model, goes below), classification on/off. With a cloud classifier it says "New captures are sent to <provider> to suggest their fields, within the cloud limit in AI Models." In v0.3 the classification switch moves to AI Models ▸ New memories, next to the split switch.
 - **AI Models:**
-  - **Tasks:** Embeddings (v0.1: "Built in (bge-small, on this Mac)", no choice; other models later), Classification (later Consolidation). Each has a provider pop-up with a locality badge (On this Mac · Local server · Apple cloud · Cloud), a model pop-up, and a status ("Ready", "Re-embedding 1,240 / 3,000", "Unavailable: using on-device").
+  - **Tasks:** Embeddings (v0.1: "Built in (bge-small, on this Mac)", no choice; v0.3: optionally a provider model as a second index), Classification (v0.3: **New memories**, with "Split into separate memories"), and from v0.3 **Daily tidy-up** (Daily at <time> · Off, **Tidy up now**, "Last tidy-up: …"). Each has a provider pop-up with a locality badge (On this Mac · Local server · Apple cloud · Cloud), a model pop-up, and a status ("Ready", "Re-embedding 1,240 / 3,000", "Unavailable: using on-device").
+  - **Apply changes automatically** (v0.3): Off (recommended) · Duplicates only · Everything except conflicts, with one line each on what it does and "Agents always follow their own access." A level whose thresholds haven't reached their target precision is disabled.
+  - **Cloud requests per day** (v0.3): 300 by default, with today's count ("112 of 300 today"; agents 40 of 120).
   - **Providers:** add or edit (base URL, API key stored in the Keychain, local or cloud), **Test connection**, usage counters.
-  - **Cloud limit:** "Never send captures above **Internal**" (in v0.1 only captures are classified; the limit covers anything a later version sends).
-  - **Embedding options** (later): "Embed agent requests with the cloud model", shown when the embedding model is in the cloud.
+  - **Cloud limit:** "Never send captures above **Internal**" (in v0.1 only captures are classified; the limit covers anything a later version sends). v0.3: "Send memories to cloud models up to: Public · Low · **Internal (recommended)** · Sensitive · Restricted · Everything, including Secret · Nothing", one limit for every task; above Internal asks once, naming the provider.
+  - **Embedding options** (v0.3): "Embed agent requests with the cloud model", shown when the embedding model is in the cloud.
   - **Disclosure:** a sentence under every non-local choice saying exactly what is sent where.
-  - **Calibrate…** (later) for embedding models Funes doesn't know.
+  - **Calibrate…** (v0.3) for embedding models Funes doesn't know.
 - **MCP:** server on/off, port (47625 by default; changing it says which agents need their setup again), launcher location, protocol log counts (no bodies).
 - **Data:** backups, export, import, Show in Finder, Erase All Data. Restore from Backup relaunches; before the chosen backup replaces the vault, the current vault is saved as a self-contained `pre-restore-…` backup (an SQLite online backup, so nothing still in the WAL is lost).
 - **Updates:** automatic checks, Check Now.
