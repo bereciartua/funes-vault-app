@@ -101,6 +101,34 @@ So Tailscale won about 3 s after the check started, once the better-ranked probe
 
 **Not exercised:** the Save and access panels on the device (both are covered by tests against the real router), Deny from the phone, a changed request (`request_changed`), the phone on Tailscale, and a Focus mode. 5.8's manual matrix has them.
 
+### Run 5 (planned): task 5.8's manual matrix on the TestFlight build
+**What's automated first (task 5.8):** `FunesCompanion`'s `TestPlanTests` runs the iPhone's `CompanionClient` against the real router and vault for what §9's other tests checked from one side only: Same Wi-Fi, then Tailscale, then the tunnel as each network goes away (the Mac records each call's transport); a tunnel URL with the wrong path (`404`) or Host (`421`) shown as "not reachable" with the probe's reason; the Mac asleep with 1,000 queued, then woken (exactly once, 20 calls of 50, banner Not reachable then Connected); a wrong secret, a 4th attempt and a code that expired on the Mac, seen by the phone; a phone clock 5 minutes off; a device the Mac no longer knows; and fuzzed params for every method but `device.unpair` through the real handlers (no `internal_error`, the Mac still answers). `FunesPhone`'s `CaptureDeliveryTests` adds a share-sheet capture sent by a later background refresh in a new process. The rest needs the phone, the network and the Mac's sleep, so it's this run.
+
+**Setup:**
+- **Phone:** the maintainer's iPhone 13 mini, iOS 27, with the TestFlight build 0.2.0 (7) or later ("Funes Internal"). That build is Release: CloudKit **Production**, production APNs, and none of the Debug tools (no Send a Test Capture, Run Protocol Checks or Queue 1,000). Out of demo mode (task 5.7), which never calls a Mac.
+- **Mac:** a Debug build of the Mac app from `main` on a new throwaway vault, never the installed Funes Vault or its vault:
+  `open -n --env FUNES_DATA_DIR=/tmp/funes-matrix FunesVault.app --args --dev-seed`, companion port 47636, iPhone access on with Same Wi-Fi, Tailscale and Public tunnel. Pair the phone again by QR (it was paired with run 4's vault).
+- **Tunnel:** a Cloudflare quick tunnel (`cloudflared tunnel --url http://127.0.0.1:47636`), its `*.trycloudflare.com` host typed as the tunnel's public host. Not Tailscale Funnel: its 443 is the installed apps' Remote Access. The quick tunnel is public while it runs; stop it after the tunnel row.
+- **Approvals need CloudKit Production on the Mac.** The TestFlight app subscribes in Production; a Debug Mac rings in Development, so its doorbell would never reach it. Either the v0.2 Mac release (Developer ID profile embedded; not landed when this was written), or a Debug Mac signed with `com.apple.developer.icloud-container-environment` = `Production` added to a copy of `Apps/FunesMac.entitlements` (passed as `CODE_SIGN_ENTITLEMENTS` to `xcodebuild`, not committed). The Mac team profile for `com.funesvault.mac` allows both environments.
+- **Background delivery needs a debugger,** which can't attach to a TestFlight build. Row 1h therefore runs on a Debug build from Xcode (it replaces the TestFlight app; the pairing in the shared Keychain group stays), after the TestFlight rows, and TestFlight is reinstalled after.
+- **Agent requests:** the seeded "Claude Code" agent through the Debug build's `funes-mcp`, as in run 4. No agent config changes.
+
+| # | Check | How | Pass when | Result |
+|---|---|---|---|---|
+| M1 | Same Wi-Fi | Phone and Mac on the home Wi-Fi. Open the app; Search; a typed capture | "Connected to … · Wi-Fi"; Activity rows under the device via `lan`; the capture in the Inbox once | ⏳ |
+| M2 | Tailscale | Phone on 5G, Wi-Fi off, Tailscale on (subnet routes off). Search; a capture | "· Tailscale"; Settings ▸ iPhone says "Last seen … over Tailscale"; one Inbox row | ⏳ |
+| M3 | Tunnel | Phone on 5G, Tailscale off; the quick tunnel running. Search; a capture | "· Tunnel"; "Last seen … through the tunnel"; one Inbox row. Then Reset Path on the Mac: the phone says "Mac not reachable" until paired again | ⏳ |
+| M4 | Mac asleep | Mac on battery, Apple menu ▸ Sleep. Three captures (typed, share sheet, Control). Wake the Mac; open the app | Each capture in the vault exactly once. Record whether they came in dark wakes (as in run 2) or after the wake (`pmset -g log`) | ⏳ |
+| M5 | Revoked device | Remove the iPhone in Settings ▸ iPhone with a capture queued | "This iPhone was removed from Funes on your Mac"; the capture stays on the phone; after pairing again it arrives once | ⏳ |
+| M6 | Queue of 1,000 | Airplane mode; a Shortcut repeating "Remember in Funes" 1,000 times (then one more, refused as full); airplane mode off; open the app | 1,000 receipts, none twice; how long the drain took (NFR-PERF-05: 100 in under 3 s) | ⏳ |
+| M7 | Background delivery (1h) | Debug build. Share a link from Safari with the app in the background; pause in Xcode and run `e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.funesvault.ios.deliver"]`; continue | The capture reaches the vault without opening the app; a new refresh is scheduled | ⏳ |
+| M8 | Approval on Wi-Fi | A `request_memory`; answer Share from the notification on the phone | The worded notification ("Claude Code wants N memories"); the agent gets `delivered`; the Mac's panel closes with "Answered on <iPhone>" | ⏳ |
+| M9 | Approval on Tailscale | As M8 with the phone on 5G and Tailscale; also Deny on one | As M8; a Deny releases the agent with nothing shared | ⏳ |
+| M10 | Locked phone | Phone locked when the request comes; answer from the lock screen | The notification shows only the agent and a count; answering asks for Face ID or the passcode first | ⏳ |
+| M11 | Mac unreachable | Phone on 5G, Tailscale off and no tunnel; a request | "You have a request · Mac not reachable…", Time Sensitive; nothing from the phone reaches the Mac; answered on the Mac instead | ⏳ |
+
+**Seen while automating:** address selection probes every saved address at once, so the probes that lose also reach the Mac and update the device's last transport. Settings ▸ iPhone's "Last seen … through …" can name the losing route for a moment after the phone reconnects.
+
 ### Before the run (2026-10-20): partly covered in software
 Phase 0 deferred this spike "until just before Phase 5", and Phase 5 depends on it passing.
 

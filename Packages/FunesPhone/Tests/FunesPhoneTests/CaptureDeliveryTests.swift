@@ -152,6 +152,31 @@ struct DeliveryRig {
         #expect(try rig.queue.queuedCount() == 0)
     }
 
+    /// Background delivery (spike row 1h, the 5.8 matrix): the share extension queues through its
+    /// own connection while the app is suspended, and the `BGAppRefreshTask` launch, with a new
+    /// `CaptureDelivery` and no backoff in memory, sends it. A refresh that comes while the
+    /// launch is still backing off waits instead of calling.
+    @Test func aShareSheetCaptureGoesOnTheNextBackgroundRefresh() async throws {
+        let unreachable = CompanionClientError.unreachable(localNetworkDenied: false)
+        let rig = DeliveryRig([.fail(unreachable)])
+        let shareExtension = CaptureQueue(url: rig.queue.url)
+        let shared = try shareExtension.add("https://example.com/article", note: "Read later", source: .share, now: t0).id
+
+        // The Mac doesn't answer the first refresh; the next one inside the backoff doesn't call.
+        #expect(await rig.delivery.deliver(.background) == .failed(unreachable, retryAt: t0.addingTimeInterval(5), sent: 0))
+        #expect(await rig.delivery.deliver(.background) == .waiting(until: t0.addingTimeInterval(5)))
+        #expect(rig.sender.calls.count == 1)
+
+        // iOS ended the app; the next refresh is a new launch.
+        let clock = rig.clock
+        clock.advance(15 * 60)
+        let relaunched = CaptureDelivery(queue: CaptureQueue(url: rig.queue.url), sender: rig.sender, clock: { clock.now }, jitter: { 1 })
+        #expect(await relaunched.deliver(.background) == .drained(sent: 1, rejected: 0))
+        #expect(rig.sender.stored == [shared])
+        #expect(rig.sender.calls.last?.first?.note == "Read later")
+        #expect(try shareExtension.queuedCount() == 0)
+    }
+
     @Test func backsOffWhileUnreachable() async throws {
         let unreachable = CompanionClientError.unreachable(localNetworkDenied: false)
         let rig = DeliveryRig([.fail(unreachable), .fail(unreachable), .fail(unreachable)])

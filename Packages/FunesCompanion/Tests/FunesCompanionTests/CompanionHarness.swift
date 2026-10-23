@@ -13,7 +13,7 @@ final class CompanionHarness: @unchecked Sendable {
     let directory: URL
     let store: VaultStore
     let activity = InMemoryActivityLog()
-    let identity = MacIdentity()
+    let identity: MacIdentity
     let services: CompanionServices
     let disclosures: DisclosureService
     let doorbell = RecordingDoorbell()
@@ -36,7 +36,9 @@ final class CompanionHarness: @unchecked Sendable {
         var deviceID: UUID?
     }
 
-    init(gate: TunnelGate? = nil, promptTimeout: TimeInterval = PairingService.defaultPromptTimeout) throws {
+    init(gate: TunnelGate? = nil, promptTimeout: TimeInterval = PairingService.defaultPromptTimeout,
+         identity: MacIdentity = MacIdentity()) throws {
+        self.identity = identity
         directory = FileManager.default.temporaryDirectory.appending(path: "funes-companion-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         store = try VaultStore.open(directory: directory)
