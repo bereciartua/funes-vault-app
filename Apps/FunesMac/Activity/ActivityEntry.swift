@@ -45,7 +45,7 @@ struct ActivityEntry: Identifiable, Equatable {
 
     var isSuggestion: Bool {
         ["suggest_memory", "capture", "suggestion_applied", "suggestion_rejected", "seed_question", "import", "auto_applied",
-         "split", "undone", "tidy_up_run"].contains(event.event)
+         "split", "sensitivity_raised", "undone", "tidy_up_run"].contains(event.event)
     }
 
     /// Refusals by policy, rate limits, expired requests; a user's own No isn't a problem.
@@ -130,7 +130,10 @@ struct ActivityEntry: Identifiable, Equatable {
         case "access_request": return String(localized: "Asked for more access")
         // Memory processing, as Funes Vault (actor `system`; v0.3).
         case "auto_applied": return String(localized: "Applied a change automatically")
-        case "split": return String(localized: "Split a memory")
+        case "split":
+            if let pieces = e.counts["pieces"] { return String(localized: "Split into \(pieces) pieces") }
+            return String(localized: "Split a memory")
+        case "sensitivity_raised": return String(localized: "Raised a memory's sensitivity")
         case "undone":
             let count = e.counts["changes"] ?? 1
             return count == 1 ? String(localized: "Undid a change") : String(localized: "Undid \(count) changes")
@@ -166,6 +169,10 @@ struct ActivityEntry: Identifiable, Equatable {
         case ("suggest_memory", "saved"): return (String(localized: "Saved"), .good)
         case ("suggestion_applied", _): return (String(localized: "Applied"), .good)
         case ("suggestion_rejected", _): return (String(localized: "Rejected"), .neutral)
+        case ("split", "offered"): return (String(localized: "Waiting in Inbox"), .accent)
+        case ("split", "kept_as_one"): return (String(localized: "Kept as one"), .neutral)
+        case ("split", "split"): return (String(localized: "Waiting in Inbox"), .accent)
+        case ("sensitivity_raised", _): return (String(localized: "Saved"), .good)
         case ("auto_applied", _), ("split", _): return (String(localized: "Applied"), .good)
         case ("undone", _): return (String(localized: "Undone"), .neutral)
         case ("tidy_up_run", _):

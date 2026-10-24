@@ -425,6 +425,9 @@
     "%lld changed since suggested" : {
 
     },
+    "%lld changes undone" : {
+
+    },
     "%lld couldn't be changed" : {
 
     },
@@ -874,6 +877,9 @@
     "Already in your vault: “%@”" : {
 
     },
+    "Already saved" : {
+
+    },
     "Already set up" : {
 
     },
@@ -991,6 +997,9 @@
     "Applied a suggestion" : {
 
     },
+    "Applied automatically (%lld)" : {
+
+    },
     "Applied from the Inbox" : {
 
     },
@@ -1012,7 +1021,13 @@
     "Apply (⌘⏎)" : {
 
     },
+    "Apply All" : {
+
+    },
     "Apply changes automatically" : {
+
+    },
+    "Apply each piece as it says. Pieces outside an agent's scope wait for you." : {
 
     },
     "Apply what's right." : {
@@ -1049,6 +1064,9 @@
 
     },
     "Archived memories are kept, but never shared with agents." : {
+
+    },
+    "Archived “%@”" : {
 
     },
     "Archives “%@”" : {
@@ -1181,10 +1199,16 @@
     "Captured on iPhone · %@" : {
 
     },
+    "Captured on iPhone · %lld pieces" : {
+
+    },
     "Captured on this Mac" : {
 
     },
     "Captured on this Mac · %@" : {
+
+    },
+    "Captured on this Mac · %lld pieces" : {
 
     },
     "Captures" : {
@@ -1194,6 +1218,9 @@
 
     },
     "Captures get simple proposals from rules on this Mac. Turn on proposals in AI Models ▸ New memories." : {
+
+    },
+    "Captures, your answers, agents' suggestions and imports become one suggestion per claim, each marked new, an update, already saved or a removal. You review every piece in the Inbox." : {
 
     },
     "Categories" : {
@@ -1239,6 +1266,12 @@
 
     },
     "Changed since this was suggested." : {
+
+    },
+    "Changed “%@”" : {
+
+    },
+    "Changes Funes made without asking. You can undo each for 30 days." : {
 
     },
     "Changes to the file" : {
@@ -1586,6 +1619,9 @@
     "Couldn't start" : {
 
     },
+    "Couldn't undo: the memory changed since." : {
+
+    },
     "Counts only: Funes never logs what agents send or receive." : {
 
     },
@@ -1930,7 +1966,26 @@
     "From" : {
 
     },
+    "From %@ · %lld pieces" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "From %1$@ · %2$lld pieces"
+          }
+        }
+      }
+    },
     "From %@. It's in your Inbox either way." : {
+
+    },
+    "From ChatGPT · %lld pieces" : {
+
+    },
+    "From Claude · %lld pieces" : {
+
+    },
+    "From Markdown · %lld pieces" : {
 
     },
     "From a merge or split" : {
@@ -1940,6 +1995,9 @@
 
     },
     "From other apps" : {
+
+    },
+    "From: “%@”" : {
 
     },
     "Funes Vault" : {
@@ -2097,6 +2155,9 @@
     "HTTP %@" : {
 
     },
+    "Has words that aren't in the original: check the wording." : {
+
+    },
     "Have it rewrite Host to 127.0.0.1 and the port, or keep its public hostname, which must then be the address you paste." : {
 
     },
@@ -2145,6 +2206,9 @@
     "Import ChatGPT Memories…" : {
 
     },
+    "Import Without Splitting" : {
+
+    },
     "Import a Funes Vault Export" : {
 
     },
@@ -2185,6 +2249,9 @@
 
     },
     "Imported · %@" : {
+
+    },
+    "Imported · %lld pieces" : {
 
     },
     "Imports" : {
@@ -2362,6 +2429,9 @@
     "Keep This" : {
 
     },
+    "Keep as One" : {
+
+    },
     "Keep everything else" : {
 
     },
@@ -2384,6 +2454,9 @@
 
     },
     "Keeps “%@”" : {
+
+    },
+    "Kept as one" : {
 
     },
     "Kept on this Mac: looked sensitive" : {
@@ -2485,6 +2558,9 @@
     "Location" : {
 
     },
+    "Long input: %lld shown. The original text is attached." : {
+
+    },
     "Long items:" : {
 
     },
@@ -2524,6 +2600,9 @@
     "Maximum sensitivity" : {
 
     },
+    "May contain more than one thing." : {
+
+    },
     "Memories" : {
 
     },
@@ -2553,6 +2632,9 @@
 
     },
     "Merged into a new memory %@" : {
+
+    },
+    "Merged into “%@”" : {
 
     },
     "Merges %lld memories into one:" : {
@@ -2606,6 +2688,9 @@
     "Never shared with an agent" : {
 
     },
+    "New" : {
+
+    },
     "New Memory" : {
 
     },
@@ -2645,6 +2730,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "New memories sends new captures (up to %1$@) and your category names and descriptions to %2$@."
+          }
+        }
+      }
+    },
+    "New memories sends new captures, your answers, agents' suggestions and saved memories, and imports (up to %@), then each piece with up to 5 related memories, and your category names and descriptions, to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New memories sends new captures, your answers, agents' suggestions and saved memories, and imports (up to %1$@), then each piece with up to 5 related memories, and your category names and descriptions, to %2$@."
           }
         }
       }
@@ -2824,7 +2919,7 @@
     "Off: cloud agents can't use this agent." : {
 
     },
-    "Off: every proposal waits for you in the Inbox. The other levels come once Funes's proposals are accurate enough, each with Undo." : {
+    "Off: every proposal waits for you in the Inbox. No model has been accurate enough yet to save new memories by itself, so the other levels stay off. Agents always follow their own access." : {
 
     },
     "Off: it saves memories directly. On: they wait in your Inbox." : {
@@ -2920,6 +3015,9 @@
     "Or set it up yourself" : {
 
     },
+    "Original text" : {
+
+    },
     "Other" : {
 
     },
@@ -2930,6 +3028,9 @@
 
     },
     "Other tunnel" : {
+
+    },
+    "Outside %@'s scope" : {
 
     },
     "Pair iPhone" : {
@@ -3020,6 +3121,12 @@
 
     },
     "Personal: health, money, family. Share rarely, and always ask." : {
+
+    },
+    "Piece: %@" : {
+
+    },
+    "Pieces that change other memories stay in your Inbox to review on their own." : {
 
     },
     "Point the tunnel at http://127.0.0.1 and the Remote Access port, never at the port local agents use." : {
@@ -3119,6 +3226,9 @@
     "Raise %@'s limit…" : {
 
     },
+    "Raised a memory's sensitivity" : {
+
+    },
     "Reach this Mac over" : {
 
     },
@@ -3190,6 +3300,9 @@
 
     },
     "Reject (⌫ or ⌘⌫)" : {
+
+    },
+    "Reject “%@”" : {
 
     },
     "Rejected" : {
@@ -3283,6 +3396,9 @@
 
     },
     "Removed." : {
+
+    },
+    "Removes “%@”" : {
 
     },
     "Remove…" : {
@@ -3534,6 +3650,9 @@
     "Saved to Inbox" : {
 
     },
+    "Saved “%@”" : {
+
+    },
     "Saved. A similar memory exists:" : {
 
     },
@@ -3544,6 +3663,9 @@
 
     },
     "Saving cancels %@'s pending requests; it can ask again." : {
+
+    },
+    "Says “%@” is no longer true" : {
 
     },
     "Scopes" : {
@@ -3765,6 +3887,9 @@
     "Similar memory exists:" : {
 
     },
+    "Skipped: already saved “%@”" : {
+
+    },
     "Some memories are only in this category. Choose a replacement." : {
 
     },
@@ -3806,16 +3931,38 @@
     "Space" : {
 
     },
+    "Split" : {
+
+    },
     "Split Them" : {
 
     },
     "Split a memory" : {
 
     },
+    "Split by %@" : {
+
+    },
+    "Split by %@ via %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Split by %1$@ via %2$@"
+          }
+        }
+      }
+    },
     "Split from another memory %@" : {
 
     },
     "Split into %lld" : {
+
+    },
+    "Split into %lld pieces" : {
+
+    },
+    "Split into %lld?" : {
 
     },
     "Split into a new memory %@" : {
@@ -3824,12 +3971,31 @@
     "Split into separate memories" : {
 
     },
+    "Split suggestion with %lld pieces" : {
+
+    },
+    "Split “%@”" : {
+
+    },
     "Splits “%@” into %lld" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Splits “%1$@” into %2$lld"
+          }
+        }
+      }
+    },
+    "Splitting needs a local server or a cloud model. Apple's on-device model proposes fields only." : {
+
+    },
+    "Splitting them into separate memories takes about %lld requests to %@. With a cloud model, %lld of today's requests are left; the rest wait for tomorrow." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Splitting them into separate memories takes about %1$lld requests to %2$@. With a cloud model, %3$lld of today's requests are left; the rest wait for tomorrow."
           }
         }
       }
@@ -4305,7 +4471,13 @@
     "This version of Funes Vault can't apply this suggestion. Update the app, or reject it." : {
 
     },
+    "Throw the pieces away and keep what arrived as one suggestion." : {
+
+    },
     "Tidied up the vault" : {
+
+    },
+    "Tidy-up · %lld pieces" : {
 
     },
     "Time" : {
@@ -4432,6 +4604,12 @@
     "Undo" : {
 
     },
+    "Undo This and %lld Later Changes" : {
+
+    },
+    "Undo: %@" : {
+
+    },
     "Undone" : {
 
     },
@@ -4465,10 +4643,16 @@
     "Update the URL in: %@." : {
 
     },
+    "Updated “%@”" : {
+
+    },
     "Updates" : {
 
     },
     "Updates come from GitHub, signed for Funes Vault. Installing always takes a click, and waits while a request is waiting for you." : {
+
+    },
+    "Updates “%@”" : {
 
     },
     "Use %@" : {
@@ -4651,7 +4835,7 @@
     "You rejected a suggestion" : {
 
     },
-    "You review every proposal in the Inbox. Splitting what arrives into single memories comes in a later version." : {
+    "You review every proposal in the Inbox." : {
 
     },
     "You're all set" : {
@@ -4664,6 +4848,9 @@
 
     },
     "Your answer · %@" : {
+
+    },
+    "Your answer · %lld pieces" : {
 
     },
     "Your answers" : {
@@ -4703,6 +4890,9 @@
 
     },
     "a card number" : {
+
+    },
+    "a memory" : {
 
     },
     "a password or secret" : {
@@ -4941,6 +5131,9 @@
 
     },
     "that address" : {
+
+    },
+    "the agent" : {
 
     },
     "the cloud providers you choose" : {

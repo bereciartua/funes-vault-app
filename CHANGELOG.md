@@ -11,6 +11,13 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Added
 
+- **Split into separate memories** (Settings ▸ AI Models ▸ New memories, off by default). With a local server or a cloud model chosen, captures, your answers, agents' suggestions and imports are split into one suggestion per claim, each linked to what your vault already holds.
+  - The Inbox shows them on one card: "From ChatGPT · 12 pieces", the original text, and each piece marked **New**, **Updates** *a memory*, **Already saved** or **Removes** *a memory*, with its own Apply and Reject. **Apply All** applies each as it says; **Keep as One** puts the original back while nothing is decided.
+  - A card you're editing, or one in a Save panel, isn't changed under you: it offers "Split into 5?" instead.
+  - A piece an agent couldn't save itself (another category, or more sensitive than its limit) says **Outside** *agent*'s **scope**, and Apply All leaves it for you. A memory an agent saved directly is offered as **Split This Memory**, and is made more sensitive at once if a piece is.
+  - Imports show how many requests splitting takes and what's left of today's cloud requests, and offer **Import Without Splitting**. At the daily limit, agents' input and imports wait for the next day.
+  - Apple's on-device model doesn't split: it keeps proposing fields only. Nothing is applied automatically yet: no model was accurate enough on Funes's test set, so **Apply changes automatically** stays Off. The **Applied automatically** list in the Inbox, with Undo, is ready for when it is.
+  - What goes to the provider with splitting on is in [PRIVACY.md](PRIVACY.md#ai-models).
 - **More choice for the cloud limit.** Settings ▸ AI Models ▸ Cloud limit now goes from Public to Restricted, **Everything, including Secret**, or **Nothing**. Choosing a level above Internal asks you to confirm first. Text that looks like a secret is never sent, whatever the limit.
 - **Cloud requests per day.** A daily limit on requests to cloud providers, 300 by default, set in Settings ▸ AI Models, which shows today's count. Agents' input may use at most 40% of it. At the limit, new captures are classified on this Mac until the next day, and Funes says so once.
 

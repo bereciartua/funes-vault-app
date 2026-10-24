@@ -149,18 +149,13 @@ public final class UndoLog: Sendable {
         }
     }
 
-    /// The daily job (storage §5): entries past 30 days are deleted, and suggestion groups whose
-    /// pieces are all decided drop their source text.
+    /// The daily job (storage §5): entries past 30 days are deleted. Decided groups' text is
+    /// dropped by `SuggestionService.dropDecidedGroupText`, which waits for expired pieces too.
     @discardableResult
     public func cleanup(now: Date) async throws -> Int {
         try await store.writer.write { db in
             try db.execute(sql: "DELETE FROM undo_entry WHERE expires_at <= ?", arguments: [now])
-            let deleted = db.changesCount
-            try db.execute(sql: """
-                UPDATE suggestion_group SET source_text = NULL WHERE source_text IS NOT NULL
-                  AND NOT EXISTS (SELECT 1 FROM suggestion WHERE group_id = suggestion_group.id AND status = 'pending')
-                """)
-            return deleted
+            return db.changesCount
         }
     }
 

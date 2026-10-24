@@ -71,6 +71,24 @@ The [content style](04-ux-mac.md#content-style-applies-to-both-apps) still appli
 | **Reject** | "Discard" | Turn a suggestion down. It leaves the Inbox, and Activity records it. | Inbox (7), Save panel (1) |
 | **Share**, **Deny** | "Approve" as a button | Answering a Share panel. "Approved" is kept only in Activity, for a share that was approved and is waiting for the agent to pick it up. | Share panel, Activity (13 "approve" strings) |
 
+## Splitting and the tidy-up (v0.3)
+New words for [memory processing §5 and §9](../domain/memory-processing.md#5-new-memories-split-classify-link), added before the Phase 6a UI.
+
+| Use | Stop using | Means | Where |
+|---|---|---|---|
+| **split**, **pieces** | "chunks", "atoms", "fragments", "extracted" | What Funes does with a new input when a local server or cloud model is chosen: one suggestion per claim. The card's source line: "From ChatGPT · 12 pieces". The switch: "Split into separate memories". | Inbox group card, AI Models |
+| **Split by \<model> via \<provider>** | "Extracted by" | The group card's engine line; "Kept on this Mac: looked sensitive" when the cloud limit kept it here. | Inbox |
+| **Split into N?** | "Accept split" | The offer on a card that was open when its pieces arrived; its buttons are **Split** and **Keep as One**. | Inbox |
+| **Keep as One** | "Undo split", "Merge back" | Throws the pieces away and keeps the input as one suggestion. Only while no piece is decided. | Inbox group card |
+| **Apply All** | "Accept all" | Applies each undecided piece with its own action, skipping the ones outside the agent's scope. Follows **D3** if it goes to Save ("Save All"). | Inbox group card |
+| **New**, **Updates \<memory>**, **Already saved**, **Removes \<memory>** | "create", "update", "duplicate", "retract" | A piece's badge: what applying it does. "Already saved" defaults to Reject. | Inbox group card |
+| **Outside \<agent>'s scope** | "out of scope", "not allowed", "flagged" | A piece of an agent's input in a category or above a level that agent can't save to. Only you can apply it. | Inbox group card |
+| **may contain more than one thing** | "not atomic" | A piece the model couldn't make a single claim. | Inbox group card |
+| **has words that aren't in the original** | "unsupported", "failed the support check" | A piece whose text adds words the input didn't have (usually a paraphrase). Never applied automatically. | Inbox group card |
+| **Split This Memory** | "Split suggestion" | An agent's directly saved memory and the pieces Funes proposes for it. | Inbox |
+| **Applied automatically** | "auto-applied", "auto-apply", "Applied by Funes" | The Inbox list of changes Funes made without asking, each with **Undo** for 30 days ("Undo This and 2 Later Changes"). The setting is "Apply changes automatically". | Inbox, AI Models, Activity |
+| **Tidy up**, **daily tidy-up** (6b) | "consolidation", "cleanup", "reconcile" | The daily pass that proposes updates, merges, splits and archives. "Tidy Up Now". | Inbox, AI Models |
+
 ## Activity (F23)
 Activity explains what happened in the user's words, and never leads with internals.
 

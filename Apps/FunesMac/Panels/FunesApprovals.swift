@@ -201,8 +201,13 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     // MARK: Save this memory?
 
     private func present(suggestionID: UUID, focus: Bool) async {
-        guard let suggestion = try? await environment.suggestions.suggestion(id: suggestionID),
-              suggestion.status == .pending else { return }
+        guard let suggestion = try? await environment.suggestions.suggestion(id: suggestionID) else { return }
+        // A split input is reviewed on its group card in the Inbox, not in a Save panel.
+        if suggestion.status == .split {
+            if focus { await MainActor.run { editSuggestion(suggestionID) } }
+            return
+        }
+        guard suggestion.status == .pending else { return }
         let agentName = (try? await suggestion.agentID.asyncMap { try await environment.agents.agent(id: $0) })??.name
             ?? String(localized: "An agent")
         let names = Dictionary(uniqueKeysWithValues: ((try? environment.store.categories()) ?? []).map { ($0.key, $0.name) })
@@ -232,6 +237,8 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             announcement: String(localized: "\(agentName) suggests a memory for Funes"))
         let shown = await MainActor.run { () -> Bool in
             guard !queue.isClosed else { return false }
+            // While the panel (or the iPhone's approval) is up, a split arriving is offered instead.
+            environment.holds.hold(suggestion.id, .savePanel)
             queue.enqueue(item) { [weak self] answer in self?.answered(suggestion: suggestion.id, answer) }
             if focus { bringForward() } else { suggestionArrived(agentName) }
             return true
@@ -241,6 +248,8 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
 
     private func answered(suggestion id: UUID, _ answer: PanelAnswer) {
         let suggestions = environment.suggestions
+        let holds = environment.holds
+        holds.release(id, .savePanel)
         let desk = self.desk
         Task {
             do {

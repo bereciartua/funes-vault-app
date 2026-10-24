@@ -372,7 +372,7 @@ public struct NewMemoryProcessor: Sendable {
                                               outcome: "offered", ids: [id, m.id], counts: ["pieces": result.pieces.count]))
             case let .replaced(ids):
                 activity.record(ActivityEvent(time: now, phase: .event, actor: .system, via: .app, event: "split",
-                                              outcome: "split", ids: [m.id] + ids, counts: ["pieces": ids.count]))
+                                              outcome: "applied", ids: [m.id] + ids, counts: ["pieces": ids.count]))
             }
         }
         return .done(engine: result.engine)

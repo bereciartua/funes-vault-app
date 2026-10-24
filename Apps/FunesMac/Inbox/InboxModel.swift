@@ -16,6 +16,12 @@ final class InboxModel {
     var result: String?
     private(set) var importSources: [UUID: ImportSource] = [:]
     private(set) var restorable: [Suggestion] = []
+    /// Split inputs, offers and Split this memory suggestions with an undecided piece, by id.
+    private(set) var groups: [UUID: SuggestionGroup] = [:]
+    /// The Applied automatically list (memory processing §5.7, §9.5): changes Funes made, newest first.
+    private(set) var applied: [UndoEntry] = []
+    /// Titles of the memories the Applied automatically rows name.
+    private(set) var appliedTitles: [UUID: String] = [:]
     /// What each card shows, kept while the Inbox reloads (edited ones keep the user's values).
     var drafts: [UUID: SuggestionDraft] = [:]
     @ObservationIgnored var categories: () -> [MemoryCategory] = { [] }
@@ -27,6 +33,30 @@ final class InboxModel {
     func load() async {
         importSources = (try? await services.suggestions.importSources()) ?? [:]
         restorable = (try? await services.suggestions.restorable(now: Date())) ?? []
+        groups = Dictionary(uniqueKeysWithValues: ((try? await services.suggestions.openGroups()) ?? []).map { ($0.id, $0) })
+        applied = (try? await UndoLog(store: services.store, activity: services.activity).entries(now: Date())) ?? []
+        let ids = Array(Set(applied.flatMap(\.memoryIDs)))
+        appliedTitles = Dictionary(uniqueKeysWithValues: ((try? services.store.memories(ids: ids)) ?? []).map { ($0.id, $0.title) })
+    }
+
+    /// One card in a section: a suggestion, or a split input's pieces together.
+    enum Entry: Identifiable {
+        case single(Suggestion)
+        case group(id: UUID, pieces: [Suggestion])
+
+        var id: UUID {
+            switch self {
+            case let .single(s): s.id
+            case let .group(id, _): id
+            }
+        }
+
+        var first: Suggestion {
+            switch self {
+            case let .single(s): s
+            case let .group(_, pieces): pieces[0]
+            }
+        }
     }
 
     enum Group: String, CaseIterable, Identifiable {
@@ -52,13 +82,36 @@ final class InboxModel {
         }
     }
 
-    /// Pending suggestions by section, Later ones last within each.
-    func grouped(_ inbox: [Suggestion]) -> [(Group, [Suggestion])] {
-        Group.allCases.compactMap { group in
-            let items = inbox.filter { Group.of($0) == group }
+    /// Pending suggestions by section, Later ones last within each. The pieces of a split input
+    /// are one card, where its first piece would be.
+    func grouped(_ inbox: [Suggestion]) -> [(Group, [Entry])] {
+        var entries: [Entry] = []
+        var seen = Set<UUID>()
+        for s in inbox {
+            if let group = s.groupID {
+                guard seen.insert(group).inserted else { continue }
+                // In the order they were made, as the input reads.
+                let order = Dictionary(uniqueKeysWithValues: (groups[group]?.pieces ?? []).enumerated().map { ($1.id, $0) })
+                entries.append(.group(id: group, pieces: inbox.filter { $0.groupID == group }
+                    .sorted { (order[$0.id] ?? .max, $0.createdAt) < (order[$1.id] ?? .max, $1.createdAt) }))
+            } else {
+                entries.append(.single(s))
+            }
+        }
+        return Group.allCases.compactMap { group in
+            let items = entries.filter { Group.of($0.first) == group }
             guard !items.isEmpty else { return nil }
             return (group, items.filter { !later.contains($0.id) } + items.filter { later.contains($0.id) })
         }
+    }
+
+    /// The user changed a card: a split arriving now is offered instead (memory processing §5.2).
+    func edited(_ id: UUID) { services.holds.hold(id, .editing) }
+
+    private func done(_ id: UUID) {
+        drafts[id] = nil
+        selection.remove(id)
+        services.holds.release(id, .editing)
     }
 
     // MARK: Actions
@@ -78,15 +131,59 @@ final class InboxModel {
     func apply(_ suggestion: Suggestion, mode: ApplyMode? = nil, edits: SuggestionEdit? = nil) async throws -> ApplyResult {
         let edit = edits ?? draft(for: suggestion).edit
         let result = try await services.suggestions.apply(suggestionID: suggestion.id, edits: edit, mode: mode, now: Date())
-        drafts[suggestion.id] = nil
-        selection.remove(suggestion.id)
+        done(suggestion.id)
         return result
     }
 
     func reject(_ suggestion: Suggestion) async throws {
         try await services.suggestions.reject(suggestionID: suggestion.id, now: Date())
-        drafts[suggestion.id] = nil
-        selection.remove(suggestion.id)
+        done(suggestion.id)
+    }
+
+    // MARK: Groups (Phase 6a)
+
+    /// Apply All: each piece with its own action and the card's edits, skipping pieces outside the
+    /// agent's scope; per-row results.
+    func applyAll(_ group: SuggestionGroup) async {
+        if group.isOffer { try? await services.suggestions.acceptSplit(groupID: group.id, now: Date()) }
+        await bulk(apply: true, group.pending)
+        await load()
+    }
+
+    func keepAsOne(_ group: SuggestionGroup) async {
+        do {
+            try await services.suggestions.keepAsOne(groupID: group.id, now: Date())
+            for piece in group.pieces { done(piece.id) }
+        } catch {
+            result = ErrorText.message(error)
+        }
+        await load()
+    }
+
+    func acceptSplit(_ group: SuggestionGroup) async {
+        do {
+            try await services.suggestions.acceptSplit(groupID: group.id, now: Date())
+            done(group.id)
+        } catch {
+            result = ErrorText.message(error)
+        }
+        await load()
+    }
+
+    /// Undo for an automatic change; with `includingLater`, the later ones that depend on it first.
+    /// Returns how many later changes it needs when it can't go alone.
+    func undo(_ entry: UndoEntry, includingLater: Bool = false) async -> Int? {
+        do {
+            let undone = try await UndoLog(store: services.store, activity: services.activity)
+                .undo(entryID: entry.id, includingLater: includingLater, now: Date())
+            result = undone.count == 1 ? String(localized: "Undone") : String(localized: "\(undone.count) changes undone")
+        } catch VaultError.undoNeedsLater(let later) {
+            return later
+        } catch {
+            result = String(localized: "Couldn't undo: the memory changed since.")
+        }
+        await load()
+        return nil
     }
 
     /// Apply N / Reject N with per-item results (FR-I-03): "12 applied, 1 blocked by the secret
