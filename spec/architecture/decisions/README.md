@@ -17,7 +17,7 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 | 0011 | [App-layer end-to-end encryption for companion traffic (HPKE + P-256 Secure Enclave signing)](0011-app-layer-encryption-for-companion.md) | Proposed (validate in Spike 1) |
 | 0012 | [Denials report withheld counts, not memory ids](0012-withheld-counts-not-ids.md) | Accepted |
 | 0013 | [Share code with EK Bridge in tiers, extracting BridgeKitCore now](0013-shared-bridgekit-core.md) | Accepted; amended by 0018 |
-| 0014 | [User-selectable AI models, on-device by default](0014-user-selectable-models.md) | Accepted; amended by 0016, 0020, 0021, 0022 and 0023 |
+| 0014 | [User-selectable AI models, on-device by default](0014-user-selectable-models.md) | Accepted; amended by 0016, 0020, 0021, 0022, 0023 and 0024 |
 | 0015 | [Keyword search in v0.1; semantic search later, as an embedding model the user chooses](0015-keyword-search-first.md) | Superseded by 0016 |
 | 0016 | [Bundled bge-small embeddings (Core ML) and agent keywords in v0.1](0016-bundled-bge-small-embeddings.md) | Accepted; amended by 0023 |
 | 0017 | [Funes's MCP adapter is a local package, FunesMCP](0017-funes-mcp-package.md) | Accepted |
@@ -27,3 +27,4 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 | 0021 | [A daily tidy-up updates, merges, splits and archives, with optional auto-apply](0021-daily-tidy-up.md) | Accepted |
 | 0022 | [The user sets the cloud limit, up to everything; one limit for every task; a daily request cap](0022-cloud-limit-and-daily-cap.md) | Accepted |
 | 0023 | [Provider embeddings are a second index next to the bundled one](0023-provider-embeddings-second-index.md) | Accepted |
+| 0024 | [Claude and ChatGPT subscriptions as model providers, through the user's own Claude Code and Codex](0024-subscription-providers.md) | Accepted |

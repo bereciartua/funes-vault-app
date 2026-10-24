@@ -134,7 +134,7 @@ Classification proposes a title, kind, categories and sensitivity. On its own it
 
 **Long input:** bodies of up to 10,000 characters are cut into chunks of about 2,000 characters on paragraph or sentence boundaries, each with the previous chunk as read-only context; up to 30 pieces per chunk and 40 per input ("Long input: 40 shown", with the original attached). [Spike E](../plans/spike-results.md#spike-e-extraction-linking-and-tidy-up-quality) saw up to 34 pieces from one dense 1,500-character agent paragraph, so the first plan's 8 per chunk was too few.
 
-**Engine:** splitting and the decision call need a local server or a cloud model. **Apple on-device only classifies** (§5.1): one suggestion per input, and the finder's duplicate hint (§8). In Spike E it fit its 4k window and refused nothing, but found 64% of the claims, and 12% of its pieces were wrong (invented details, other people's facts as the user's).
+**Engine:** splitting and the decision call need a local server or a cloud model, which can be the user's Claude or ChatGPT plan through their own Claude Code or Codex ([ADR-0024](../architecture/decisions/0024-subscription-providers.md)). **Apple on-device only classifies** (§5.1): one suggestion per input, and the finder's duplicate hint (§8). In Spike E it fit its 4k window and refused nothing, but found 64% of the claims, and 12% of its pieces were wrong (invented details, other people's facts as the user's).
 
 ### 5.3 Extraction
 One structured-output call per chunk returns pieces:

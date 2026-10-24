@@ -25,6 +25,7 @@
 | **Auto-apply** | The user's setting (Off · Duplicates only · Everything except conflicts) that lets Funes apply its own proposals, with Undo for 30 days. Never on the strength of untrusted text; conflicts always go to the user. |
 | **Trusted / untrusted memory** | Where a memory's text came from: trusted if the user typed, dictated or applied it; untrusted if an agent saved it directly, or auto-apply saved it from an import or shared text. |
 | **Daily cap** | The most cloud generation requests Funes makes in a day (300 by default); embeddings don't count. |
+| **Subscription provider** | A model provider reached through the user's own Claude Code or Codex, signed in to their Claude or ChatGPT plan, instead of an API key. Funes never handles the plan's credentials, and runs the CLI with every tool off. |
 | **Capture** | A quick note from the hotkey, the Services menu or the iPhone. It becomes a suggestion. |
 | **Inbox** | Where suggestions are reviewed: apply, edit, reject. |
 | **Activity** | The append-only log of everything that happened. It stores ids, never memory text. |

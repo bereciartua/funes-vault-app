@@ -48,7 +48,7 @@ This folder (`spec/` in the `funes-vault-app` repo) holds the requirements, desi
 1. **Product**
    - [Vision](product/01-vision.md): problem, product, principles, non-goals, success.
    - [Users and use cases](product/02-users-and-use-cases.md): personas, jobs to be done, key scenarios.
-   - [Requirements](product/03-requirements.md): 145 requirements (113 functional, 32 non-functional) with ids, priorities and acceptance criteria.
+   - [Requirements](product/03-requirements.md): 146 requirements (114 functional, 32 non-functional) with ids, priorities and acceptance criteria.
    - [UX: Mac](product/04-ux-mac.md) and [UX: iPhone](product/05-ux-iphone.md): screens, panels, flows, copy.
    - [Words in the app](product/06-glossary.md): the one word for each thing the user sees, and the words it replaces.
 2. **Domain**

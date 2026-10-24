@@ -1,6 +1,6 @@
 # AI model providers
 
-How Funes uses AI models, how users choose them, and what protects their data. Decisions: [ADR-0014](decisions/0014-user-selectable-models.md), and [ADR-0016](decisions/0016-bundled-bge-small-embeddings.md) (**v0.1 embeddings use the bundled bge-small model**). Phase 6 (v0.3): [ADR-0020](decisions/0020-atomic-extraction-for-every-source.md) (New memories), [ADR-0021](decisions/0021-daily-tidy-up.md) (daily tidy-up), [ADR-0022](decisions/0022-cloud-limit-and-daily-cap.md) (cloud limit up to everything, daily cap), [ADR-0023](decisions/0023-provider-embeddings-second-index.md) (provider embeddings as a second index).
+How Funes uses AI models, how users choose them, and what protects their data. Decisions: [ADR-0014](decisions/0014-user-selectable-models.md), and [ADR-0016](decisions/0016-bundled-bge-small-embeddings.md) (**v0.1 embeddings use the bundled bge-small model**). Phase 6 (v0.3): [ADR-0020](decisions/0020-atomic-extraction-for-every-source.md) (New memories), [ADR-0021](decisions/0021-daily-tidy-up.md) (daily tidy-up), [ADR-0022](decisions/0022-cloud-limit-and-daily-cap.md) (cloud limit up to everything, daily cap), [ADR-0023](decisions/0023-provider-embeddings-second-index.md) (provider embeddings as a second index), [ADR-0024](decisions/0024-subscription-providers.md) (Claude and ChatGPT subscriptions through Claude Code and Codex).
 
 ## 1. Tasks that use a model
 | Task | Model type | Input sent to the model | Default | Used by |
@@ -25,6 +25,8 @@ How Funes uses AI models, how users choose them, and what protects their data. D
 | **Google Gemini** | Cloud | Gemini embedding models (OpenAI-compatible endpoint) | Gemini models | API key |
 | **OpenRouter** | Cloud | If offered | Many models | API key |
 | **Custom OpenAI-compatible** | Local or cloud (the user marks which) | If offered | Chat completions | Base URL, optional key, locality flag |
+| **Claude (Claude Code)** (subscription, v0.3) | Cloud | — | Claude models through the user's own `claude` CLI, signed in to their Claude plan ([ADR-0024](decisions/0024-subscription-providers.md)) | Claude Code installed and signed in; no key in Funes |
+| **ChatGPT (Codex)** (subscription, v0.3) | Cloud | — | OpenAI models through the user's own `codex` CLI, signed in to their ChatGPT plan | Codex installed and signed in; no key in Funes |
 
 - **"Local"** means the endpoint's host resolves to loopback or a private address, and the user hasn't marked it as cloud. Funes treats any other host as **cloud** for the guardrails, whatever the user called it.
 - **Model lists** come from the provider's `/v1/models` (or the equivalent), with free text as a fallback. Funes doesn't hard-code model names, except one suggested default per provider (a small, fast model is enough for classification), shown as a suggestion.
@@ -49,7 +51,8 @@ public protocol GenerationProvider: Sendable {
   - `AppleFoundationGenerator` (guided generation with a dynamic schema); `ApplePCCGenerator` later, when the entitlement is granted;
   - `OpenAICompatibleClient`: chat with `response_format: json_schema` (strict) and the model list; embeddings later (ADR-0016);
   - `AnthropicClient` (generation only; Messages API with structured output via `output_config.format`, type `json_schema`; suggested default `claude-haiku-5-5`);
-  - `RulesClassifier`, the always-available fallback and the capture pre-screen.
+  - `RulesClassifier`, the always-available fallback and the capture pre-screen;
+  - v0.3 ([ADR-0024](decisions/0024-subscription-providers.md)): `ClaudeCodeClient` and `CodexClient` (generation only), on a shared `CLIRunner`: finds the executable (BridgeKitCore's `ExecutableLocator`), checks its version and sign-in, and runs each call as a child process in a new empty temporary directory with API keys removed from its environment, a 90 s timeout, and the call's prompt on stdin. Each parses the CLI's JSON event stream, and stops the run and discards its output on any tool or command event (§5.8).
 - **Schemas** are a small `JSONSchema` type that serializes to the strict subset both APIs accept (closed objects, all properties required, no length or size constraints, which are re-checked by validation) and converts to Foundation Models' `DynamicGenerationSchema`.
 - **Locality:** a literal loopback, RFC 1918, link-local or IPv6 unique-local address, `localhost`, or a host whose every resolved address is one of those, is local; anything else is cloud. Cloud endpoints must be `https://`.
 - **`ModelRouter`:**
@@ -72,6 +75,7 @@ public protocol GenerationProvider: Sendable {
   - **Model**, a pop-up filled from the provider, or free text.
   - **Status**, e.g. "Ready", "Re-embedding 1,240 / 3,000", "Unavailable: falling back to on-device".
 - **Providers list:** add or edit a provider (base URL, API key, local or cloud flag) and **Test connection** (lists models, makes one tiny call).
+  - **Use your subscription** (v0.3): **Claude (Claude Code)** and **ChatGPT (Codex)**, shown when the CLI is found on the Mac, with its version and sign-in state ("Signed in to Claude Code", "Not signed in: run `claude` in Terminal and sign in", "Update Claude Code to use it", "This Codex version isn't supported yet"). The model is free text with suggestions (Claude: `haiku`, `opus`; ChatGPT: the models Spike E measured). Funes never asks for, reads or stores the plan's credentials.
 - **Cloud guard:** "Never send captures above **Internal**". Choices: Public · Low · Internal (default) · Sensitive · Never send captures. It applies to every non-local provider (only captures are sent in v0.1). While it lets anything go, the capture box and Settings ▸ Capture name the provider.
   - **v0.3** ([ADR-0022](decisions/0022-cloud-limit-and-daily-cap.md)): "Send memories to cloud models up to: Public · Low · **Internal (recommended)** · Sensitive · Restricted · Everything, including Secret · Nothing". One limit for every task; above Internal asks once, naming the provider.
 - **Apply changes automatically** (v0.3): Off (default) · Duplicates only · Everything except conflicts ([memory processing §5.7](../domain/memory-processing.md#57-auto-apply-for-new-memories), [§9.5](../domain/memory-processing.md#95-inbox-and-auto-apply)).
@@ -80,6 +84,7 @@ public protocol GenerationProvider: Sendable {
   - "Classification sends new captures (up to Internal) and your category names and descriptions to Anthropic." (v0.1 classifies captures only; agent suggestions, imports and seed answers arrive with their fields proposed.)
   - "Search embeddings send memory text (up to Internal), your searches and agents' task descriptions to OpenAI."
   - v0.3: "New memories sends captures, agent suggestions and imports, plus related memories (up to Internal) and your category names, to Anthropic." · "The daily tidy-up sends related memories (up to Internal) to Anthropic."
+  - v0.3, subscriptions: "… to Claude through your Claude Code sign-in. It counts toward your plan's limits, and your Claude account's training setting applies." (the same for ChatGPT through Codex), with a link to the vendor's privacy settings.
 - **Usage counters** per provider (requests and tokens, from provider responses where available), resettable.
 - **Storage:**
   - API keys go in the Keychain (`kSecClassGenericPassword`, service `com.funesvault.provider`, account = provider id, `…AfterFirstUnlockThisDeviceOnly`);
@@ -101,6 +106,12 @@ public protocol GenerationProvider: Sendable {
 6. **One way out.** Every call to a model goes through `ModelRouter.send`, which applies 1–2 before any request: the secret scanner for every provider that isn't on this Mac, and the cloud limit (with an unknown sensitivity treated as above it) for cloud providers. A refusal is `ProviderError.blocked`. `scripts/test.sh` fails if anything else calls a provider's `generate`.
    - **v0.3:** `send` takes **typed items** (each text with its sensitivity, or unknown) and guards on the highest of them, since extraction, linking and tidy-up calls carry several memories. It also counts the call against the daily cap, and refuses with `ProviderError.capReached` when the cap or the agents' share is used up.
 7. **Test connection** classifies a made-up note among the built-in categories as Funes ships them, never the user's category names, descriptions or custom categories.
+8. **Subscription CLIs run isolated, and fail closed** (v0.3, [ADR-0024](decisions/0024-subscription-providers.md)):
+   - **Every call:** a new empty temporary directory outside any repository; `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `CODEX_API_KEY` and `OPENAI_API_KEY` removed from the child's environment; no session files kept; telemetry and error reporting off where the CLI allows it.
+   - **Claude Code:** `claude -p --safe-mode --tools "" --disallowedTools "mcp__*" --strict-mcp-config --settings '{"disableAllHooks": true}' --no-session-persistence --system-prompt <instructions> --json-schema <schema> --output-format stream-json --verbose --model <model>`. Never `--bare` (it skips subscription sign-in). The `system/init` event must list no MCP servers, plugins or hooks, and no tool except the structured-output one; the result is read from `structured_output`.
+   - **Codex:** `codex exec --ignore-user-config --ignore-rules --ephemeral --skip-git-repo-check --sandbox read-only -C <empty dir> --output-schema <file> --json -m <model>`, plus `--disable` for every tool feature (`shell_tool`, `unified_exec`, `browser_use`, `browser_use_external`, `in_app_browser`, `computer_use`, `apps`, `plugins`, `hooks`, `image_generation`, `view_image`, and any others the supported versions have). Before the first call and after each Codex update, Funes reads `codex features list`; **any enabled feature not on Funes's list of features known to be safe** makes the provider unavailable. Codex's schema can't carry item counts, so the adapter strips `minItems`/`maxItems` (validation re-checks them).
+   - **Any tool or command event** in either CLI's stream stops the run, discards its output, logs `provider_tool_blocked` (no text), and marks the provider unavailable until Test connection passes again.
+   - **Minimum versions:** Claude Code with `--safe-mode`, `--tools` and `--json-schema`; Codex with `--ignore-user-config`, `--output-schema` and `--disable`.
 
 ## 6. Fallbacks and failure
 | Situation | Behaviour |
@@ -112,6 +123,9 @@ public protocol GenerationProvider: Sendable {
 | Daily cap reached (v0.3) | The user's captures: on-device. Agent input, imports, the tidy-up: wait for the next day. One notice a day |
 | Rate-limited (429) | Respect `retry-after`; background re-embedding pauses |
 | API key invalid or revoked | Status "Unavailable: check API key", plus a notification once a day |
+| Subscription CLI missing, signed out, too old, or an unsupported Codex feature (v0.3) | Status says which ("Not signed in to Claude Code", "Update Codex"…), notification once a day; calls fall back as for a provider that's down |
+| Subscription plan limit reached (v0.3) | Treated like a 429: back off until the CLI's reset time if it gives one, otherwise an hour; captures fall back to on-device meanwhile |
+| A tool or command event in a CLI run (v0.3) | Stop the run, discard its output, mark the provider unavailable until Test connection passes |
 
 ## 7. Choosing a provider embedding model
 v0.3 ([ADR-0023](decisions/0023-provider-embeddings-second-index.md)): a **second index**; the bundled bge-small vectors stay on every memory.
@@ -133,4 +147,5 @@ v0.3 ([ADR-0023](decisions/0023-provider-embeddings-second-index.md)): a **secon
 - **Fallback tests:** timeouts, 401, 429, 500, and malformed JSON, each giving the defined behaviour.
 - **Re-embedding tests:** adding a provider model mid-way, a cancel, then a resume; search stays bge-only until the provider set is complete; lowering the limit deletes provider vectors.
 - **v0.3 guardrail tests:** multi-item calls guard on the highest item; an agent declaring Low with pre-screened Sensitive text is blocked; related memories above the limit never appear in a cloud request; the cap and the agents' share refuse calls and survive a restart.
-- **Optional live smoke tests** (manual, with the developer's keys) for OpenAI, Anthropic, Gemini, Ollama and LM Studio before each release that changes the adapters.
+- **v0.3 subscription CLIs:** contract tests over recorded `claude` and `codex` JSON streams (success, schema failure, signed out, plan limit, an injected tool call that must be stopped); argument and environment tests (no API keys, empty directory, the isolation flags); the Codex feature-list check (an unknown enabled feature makes it unavailable).
+- **Optional live smoke tests** (manual, with the developer's keys and subscriptions) for OpenAI, Anthropic, Gemini, Ollama, LM Studio, Claude Code and Codex before each release that changes the adapters. For the CLIs it also checks, in the start event, that no tools, MCP servers, plugins or hooks are loaded.
