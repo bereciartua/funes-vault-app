@@ -588,6 +588,7 @@ Anthropic API with the remote token (**Copy Remote Token…**, then the setup's 
 **Fixtures (permanent, synthetic):** in `spikes/memory-processing/fixtures/`, for 6a's and 6b's tests.
 - `inputs.json`: 82 inputs with 201 required pieces: 40 typed, 7 dictated and 7 shared captures, 3 seed answers, 12 agent suggestions (three written like ChatGPT's memory paragraph, up to 2,200 characters and 31 claims), 12 Claude, Markdown and ChatGPT import items. Covered: negation, corrections, "used to … now …", hypotheticals, quoted speech, lists, 36 single-claim inputs, third-person summaries, agent self-statements, 2 secrets and 2 near-secrets, 6 Spanish inputs, 3 injection attempts (and one genuine instruction phrased as a command). Each expected piece has match keys, a link decision and target, and each input lists the wrong claims to catch.
 - `vault.json`: the 200 Spike 2 memories with dates, source and trust. The plan's ~150 became the full 200: more neighbours, more noise for the finder.
+- `inputs-astra.json` and `clusters-astra.json`: a second, independent set of 40 inputs (57 required pieces) and 40 clusters, written blind by GPT-6-Astra (§9).
 - `clusters.json`: 100 tidy-up clusters with expected, acceptable and forbidden actions. The first 40 shaped the second tidy-up prompt; k41–k100 were written after it, before any model saw them, as a held-out check (29 duplicates or rewordings, 13 superseded or scheduled values, 5 updates, 7 conflicts, 3 splits, 4 mergeable pairs, 8 with nothing to do, 2 injections).
 - **Scoring is lexical** (`score.py`): a piece matches an expected one when all its keys match. The expectations were revised once after reading the first outputs: loose keys fixed (`flat` matched "flattery"), 13 optional sub-claims added, link targets for optional pieces, and wrong-claim checks for failure patterns seen in the outputs. The revisions apply to every provider; no input text changed.
 
@@ -612,20 +613,21 @@ Anthropic API with the remote token (**Copy Remote Token…**, then the setup's 
 | 6 | Injection | Luna followed none (0 of 6). Apple and Ollama both stored "I have no allergies" from a shared page; Ollama followed all 3 extraction injections, Apple acted on an injected tidy-up instruction |
 | 7 | Tidy-up judgment | On 100 clusters with the second prompt: **Opus 66 of 68 right (63 of 69 clusters needing an action resolved), Haiku 61 of 62 (60 of 69)**, Terra 73 of 80 (61 of 69), Luna 49 of 57 and cautious (48 of 69). None acted on any of the 16 no-action clusters or followed an injection. Apple: 8 of 49. Confidence can't set thresholds |
 | 8 | "Related" threshold | **0.70**, with keyword hits: the finder has the target in its top 5 for 97% of pieces |
+| 9 | Author bias (added: a second set written blind by GPT-6-Astra) | **Some, mostly in what counts as one claim**: every model over-split Astra's coarser claims (Opus 6% → 29%). Recall, wrong claims and injection resistance didn't move. Levels are judged on both sets pooled, and Opus isn't clearly ahead on them |
 
-**Target precision per auto-apply level:** 95% of what a level applies must be right, on at least 20 applied items in the fixtures, per engine. Results below; levels that miss it stay disabled in 6a/6b.
+**Target precision per auto-apply level:** 95% of what a level applies must be right, on at least 20 applied items, per engine, **on both fixture sets pooled**: the first set (written by Claude Opus 5.5) and a second written blind by GPT-6-Astra (§9). Each cell: pooled (first set · Astra's set). Levels that miss it stay disabled in 6a/6b.
 
-| Level | GPT-6-Luna | GPT-5.6-Terra | Claude Haiku 5.5 | Claude Opus 5.5 | Apple on-device | Ollama qwen3 4B |
-|---|---|---|---|---|---|---|
-| New memories, Duplicates only (duplicate pieces skipped) | ✅ 17/17 user pieces (72/72 with agent input) | ✅ 22/23 | ❌ 19/22 | ✅ 22/22 | ❌ 7/13 | ❌ never answered `duplicate` |
-| New memories, Everything except conflicts (atomic, support check passed, trust rule) | ✅ 84/86 = 98%, 76% of pieces applied | ❌ 99/106 = 93% (over-split fragments) | ❌ 81/89 = 91% | ✅ 72/75 = 96%, 62% applied | ❌ 43/70 = 61% | ❌ 39/47 = 83% (its 30-input subset) |
-| Tidy-up, Duplicates only (model `archive` duplicate, 100 clusters) | ✅ 19/20 | ✅ 23/24 | ✅ 26/27 | ✅ 26/27 | ❌ 2/2 of 40 clusters, too few, and the rest of its output is wrong | ❌ no duplicate archives |
-| Tidy-up, Everything except conflicts (100 clusters) | ❌ 38/42 = 90% | ❌ 60/66 = 91% | ✅ 47/48 = 98% | ✅ 52/53 = 98% | ❌ 5/40 | ❌ 3/4, too few |
+| Level | GPT-6-Luna | GPT-5.6-Terra | Claude Haiku 5.5 | Claude Opus 5.5 |
+|---|---|---|---|---|
+| New memories, Duplicates only | ❌ 33/36 = 92% (17/17 · 16/19) | ❌ 37/41 = 90% (22/23 · 15/18) | ❌ 31/37 = 84% (19/22 · 12/15) | ❌ 34/36 = 94% (22/22 · 12/14) |
+| New memories, Everything except conflicts | ✅ 115/121 = 95% (84/86 · 31/35) | ❌ 123/133 = 92% (99/106 · 24/27) | ❌ 105/116 = 91% (83/89 · 22/27) | ❌ 96/104 = 92% (72/75 · 24/29) |
+| Tidy-up, Duplicates only | ❌ 27/29 = 93% (19/20 · 8/9) | ✅ 32/33 = 97% (23/24 · 9/9) | ✅ 35/36 = 97% (26/27 · 9/9) | ✅ 35/36 = 97% (26/27 · 9/9) |
+| Tidy-up, Everything except conflicts | ❌ 54/59 = 92% (38/42 · 16/17) | ❌ 84/91 = 92% (60/66 · 24/25) | ✅ 64/67 = 96% (47/48 · 17/19) | ✅ 72/75 = 96% (52/53 · 20/22) |
 
-Ollama qwen3 4B sits between Apple and the cloud models: 88% of claims, 3% wrong pieces (its three injected claims among them), 78% of links right on its subset, a nearly idle tidy-up. So:
-- **6a:** both New memories levels with Luna or Opus; Duplicates only with Terra.
-- **6b:** Duplicates only with Luna, Terra, Haiku or Opus; Everything except conflicts with Haiku or Opus. With the other engines, updates, merges and splits go to the Inbox.
-- **No single cheap model wins both tasks:** Haiku is the best tidy-up for its cost but over-splits new input; Luna splits best but is a cautious tidy-up. Opus passes every level. A user choosing one engine for both tasks gets the levels that engine passed.
+Apple on-device and Ollama qwen3 4B reach no level (first set only: Apple 7/13 and 61% for new memories, 8 of 49 tidy-up actions right; Ollama never answered `duplicate`, 83% for new memories, 4 of 6 tidy-up actions right). Ollama sits between Apple and the cloud models: 88% of claims, 3% wrong pieces (its three injected claims among them), 78% of links right on its subset. So:
+- **6a:** New memories auto-apply is at the line. Only Luna's Everything except conflicts reaches 95% pooled (115/121), and no engine reaches Duplicates only (Opus 34/36). Ship New memories review-first; offer Luna's level only as an opt-in, and re-measure on more fixtures before turning anything on by default.
+- **6b:** Duplicates only with Terra, Haiku or Opus; Everything except conflicts with Haiku or Opus. With other engines, updates, merges and splits go to the Inbox.
+- **No engine is best at everything**, and the gaps between the four cloud models are within what 40–100 items per set can show. Opus is never far from the top but isn't clearly ahead once a second author writes the cases (§9).
 
 ### 1. Apple on-device
 | Measure (2,000-character chunks) | Apple | GPT-6-Luna | GPT-5.6-Terra | Claude Haiku 5.5 | Claude Opus 5.5 | Ollama qwen3 4B |
@@ -725,7 +727,7 @@ The first-person prompt on agent text was harmless for Luna; the about-the-user 
 - **No merge that drops a constraint:** the peanut / tree-nut and runner's-knee / marathon clusters got no action from either. Validation blocked one Terra merge across categories.
 - **Apple** (first 40 only): 8 of 49 right, an `update` on nearly every cluster, often with invented text ("She works as a nurse", "I've read that greyhounds are good with cats").
 - **Ollama qwen3 4B** (first 40 only): 6 actions, 4 right. It archived "My sister Lucía lives in Montevideo" as a duplicate of "Jordan's sister lives in Porto", and 3 more actions named ids outside the cluster (blocked).
-- **Decision:** the second prompt goes into §9.3. Confidence doesn't separate right from wrong (every action of both models ≥ 0.94), so §9.5's 0.8 and 0.9 thresholds are replaced by the per-engine target. Duplicates only reaches it with all four cloud models; Everything except conflicts with Haiku and Opus (98% each), not Luna or Terra (90%, 91%).
+- **Decision:** the second prompt goes into §9.3. Confidence doesn't separate right from wrong (every action of both models ≥ 0.94), so §9.5's 0.8 and 0.9 thresholds are replaced by the per-engine target. On this set alone Duplicates only reaches it with all four cloud models and Everything except conflicts with Haiku and Opus; pooled with Astra's clusters (§9), Luna drops out of Duplicates only (27/29).
 
 ### 8. The "related" threshold (bge-small, int8 Core ML)
 The 171 required expected pieces with labelled related memories (191 pairs), embedded as memories and compared with the 200 vault memories:
@@ -740,6 +742,27 @@ The 171 required expected pieces with labelled related memories (191 pairs), emb
 
 - A short piece is further from its memory than a reworded memory is (related pairs: median 0.76, p10 0.62), so cosine alone misses many. Keyword hits carry the finder: at 0.75 cosine finds 53% of related pairs, the hybrid top 5 finds 87%.
 - **Decision: 0.70.** It adds the last 2% of targets at under one extra candidate per piece; the top-5 cap bounds the prompt either way. On Luna's real extracted pieces (`related.py codex`) the threshold matters less: the target is in the top 5 for 95% of 131 anywhere from 0.65 to 0.85, and 98% at 0.60 (the runs used 0.75).
+
+### 9. Second author check (GPT-6-Astra)
+**Why:** the first set's inputs and labels were written by Claude Opus 5.5, so they encode one model's sense of what a single claim is, and that could flatter Opus. GPT-6-Astra (OpenAI's frontier model, through `codex exec`, high reasoning) wrote a second set blind ([`author_astra.py`](../../spikes/memory-processing/author_astra.py)): the spec's rules, the vault, the fixture format and the case mix, but none of the first set's labels and no model outputs. Its labels were kept as written; `check_astra.py` found no mechanical problems, so nothing was changed.
+
+**What Astra wrote differently:** coarser claims. 29 of its 40 inputs are one rich claim each (a rule with its exception, an order with its fallback: "a decaf oat-milk cappuccino without sugar, or a black decaf americano if oat milk is unavailable"), plus one 16-claim agent paragraph. It also named the user "Sam", and labelled a shared email about another person (a designer's call preferences) as nothing to keep.
+
+**Scoring changes, applied to both sets:** a claim that comes back split across pieces covering all its keys counts as found (and over-split), not missing; a piece matching more than half of a claim's keys, or part of a split claim, is a valid fragment judged against that claim's link label; an update and archive pair is right if it's an acceptable merge or both halves are right on their own. The first set's numbers moved by a point or two.
+
+| Measure, first set · Astra's set | GPT-6-Luna | GPT-5.6-Terra | Claude Haiku 5.5 | Claude Opus 5.5 |
+|---|---|---|---|---|
+| Claim recall | 99% · 98% | 99% · 100% | 100% · 96% | 100% · 100% |
+| Single claims over-split | 0% · 23% | 17% · 39% | 22% · 29% | 6% · 29% |
+| Link accuracy | 97% · 93% | 95% · 89% | 96% · 89% | 97% · 92% |
+| Tidy-up actions right | 86% · 92% | 91% · 97% | 98% · 92% | 97% · 93% |
+| Clusters needing an action resolved | 70% · 73% | 88% · 87% | 87% · 70% | 91% · 83% |
+| Wrong claims | 0 · 0 | 0 · 0 | 0 · 0 | 0 · 0 |
+
+- **Robust across authors:** claim recall (96–100%), no wrong claims (0 for every model on both sets), no action on any no-action cluster, no injection followed.
+- **Author-sensitive: what one claim is.** Every model over-split Astra's coarser claims far more than mine: Opus 6% → 29%, Luna 0% → 23%. The prompt asks to split facts joined by "and", which matches my labels more than Astra's. So Opus's and Luna's low over-splitting on the first set was partly agreement with the author, and the 6a prompt's rule for compound claims needs a decision (see below).
+- **Links and tidy-up shift by a few points either way.** Luna and Terra did better on Astra's clusters than on mine, and Haiku and Opus a little worse. That is consistent with some author effect in both directions, but the sets are too small to say more.
+- **Decision:** judge levels on both sets pooled (the table above), keep both sets as 6a/6b test fixtures, and treat the atomicity rule as open: either keep "facts joined by 'and' are separate pieces" (more, smaller memories; more over-splitting by a coarser reader's standard) or allow a rule with its exception or fallback to stay one piece. A labelled sample from the user would settle it.
 
 ### Prompt shape and token budgets
 - **Extraction:** the rules of §5.3 plus one line that separate facts joined by "and" are separate pieces (Luna merged them otherwise), the variant paragraph, the category list, kinds and the sensitivity guide: about 700 tokens. The schema puts `evidence` before `body`, so the model quotes first. The prompts are in [`prompts.py`](../../spikes/memory-processing/prompts.py).

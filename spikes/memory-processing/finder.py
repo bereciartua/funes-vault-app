@@ -13,6 +13,8 @@ import os
 import re
 import subprocess
 import tempfile
+import threading
+import time
 from pathlib import Path
 
 from prompts import CATEGORIES
@@ -34,13 +36,25 @@ def memory_text(title, kind, categories, body):
 
 class Embeddings:
     def __init__(self):
-        self.cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
+        self.cache = {}
+        for _ in range(10):
+            try:
+                self.cache = json.loads(CACHE.read_text()) if CACHE.exists() else {}
+                break
+            except json.JSONDecodeError:
+                time.sleep(1)  # another run is writing it
 
     @staticmethod
     def key(t):
         return hashlib.sha256(t.encode()).hexdigest()[:24]
 
+    _lock = threading.Lock()
+
     def embed(self, texts):
+        with self._lock:
+            return self._embed(texts)
+
+    def _embed(self, texts):
         missing = list(dict.fromkeys(t for t in texts if self.key(t) not in self.cache))
         if missing:
             with tempfile.TemporaryDirectory() as d:
@@ -50,7 +64,10 @@ class Embeddings:
                 for t, v in zip(missing, json.loads(out.read_text())):
                     self.cache[self.key(t)] = [round(x, 6) for x in v]
             CACHE.parent.mkdir(parents=True, exist_ok=True)
-            CACHE.write_text(json.dumps(self.cache))
+            # Atomic replace: parallel runs share this cache.
+            tmp = CACHE.with_suffix(f".{os.getpid()}.tmp")
+            tmp.write_text(json.dumps(self.cache))
+            os.replace(tmp, CACHE)
         return [self.cache[self.key(t)] for t in texts]
 
 

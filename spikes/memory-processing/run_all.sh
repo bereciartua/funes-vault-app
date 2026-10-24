@@ -39,4 +39,10 @@ claude)
     python3 run.py $m decide --jobs 4
     python3 run.py $m tidy-v2 --jobs 4
   done ;;
+astra)
+  # The second author's fixtures (GPT-6-Astra, blind), on the four cloud models; Codex and Claude in parallel.
+  export SPIKE_SET=astra
+  (for m in codex codex-terra; do python3 run.py $m extract --jobs 4; python3 run.py $m decide --jobs 4; python3 run.py $m tidy-v2 --jobs 4; done) &
+  (for m in claude-haiku claude-opus; do python3 run.py $m extract --jobs 4; python3 run.py $m decide --jobs 4; python3 run.py $m tidy-v2 --jobs 4; done) &
+  wait ;;
 esac

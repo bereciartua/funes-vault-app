@@ -9,7 +9,8 @@ from run import rebuild
 from score import INPUTS
 
 prov, exp = sys.argv[1], sys.argv[2]
-f = Path(__file__).resolve().parent / "results" / prov / f"{exp}.jsonl"
+from score import SUFFIX
+f = Path(__file__).resolve().parent / "results" / prov / f"{exp}{SUFFIX}.jsonl"
 recs = [json.loads(l) for l in f.read_text().splitlines()]
 changed = 0
 for r in recs:
@@ -18,7 +19,7 @@ for r in recs:
     before = [p["body"] for p in r.get("pieces") or []]
     rebuild(r, INPUTS[r["id"]], with_link=exp == "onecall")
     changed += before != [p["body"] for p in r["pieces"]]
-dec = f.parent / "decide.jsonl"
+dec = f.parent / f"decide{SUFFIX}.jsonl"
 if exp == "extract" and changed and dec.exists():
     sys.exit(f"{changed} inputs changed but {dec} already used the old pieces; not writing")
 f.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in recs))

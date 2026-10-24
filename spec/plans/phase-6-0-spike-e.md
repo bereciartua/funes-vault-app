@@ -22,7 +22,7 @@
 
 ### E.2 Harness · 2 h
 - [x] A script that runs the prompts of [memory processing §5.3, §5.5, §9.3](../domain/memory-processing.md) against a provider, applies the code validation of §5.4 and §9.4, and scores: claim recall, invented claims, unsupported additions, over-splitting, link accuracy, tidy-up precision per action, refusals, tokens and requests per input.
-- [x] Providers: Apple on-device (Foundation Models), one small cloud model each from Anthropic, OpenAI and Gemini, one Ollama model. Run: Apple, OpenAI GPT-6-Luna and GPT-5.6-Terra (through the Codex CLI), Anthropic Claude Haiku 5.5 and Opus 5.5 (through the Claude CLI), and Ollama qwen3 4B; Gemini not run (no API key).
+- [x] Providers: Apple on-device (Foundation Models), one small cloud model each from Anthropic, OpenAI and Gemini, one Ollama model. Run: Apple, OpenAI GPT-6-Luna and GPT-5.6-Terra (through the Codex CLI), Anthropic Claude Haiku 5.5 and Opus 5.5 (through the Claude CLI), and Ollama qwen3 4B; Gemini not run (no API key). Added: a second fixture set written blind by GPT-6-Astra, to check author bias.
 
 ### E.3 Run and record · 3 h
 - [x] Run every provider; both prompt variants; one call vs two.

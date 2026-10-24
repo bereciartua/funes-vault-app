@@ -29,7 +29,8 @@
 
 ### 6a.5 Auto-apply for new memories · 3 h
 - [ ] The levels of [§5.7](../domain/memory-processing.md#57-auto-apply-for-new-memories): trust (changes to existing memories only from typed or dictated text), agents by their own access, chosen engine only, the policy-engine check that no agent gains access, each change in one transaction with its undo entry.
-- [ ] A level is offered only for engines that reached 95% on Spike E's fixtures (GPT-6-Luna and Claude Opus 5.5 both levels, GPT-5.6-Terra Duplicates only, Claude Haiku 5.5 neither); `confidence` gates nothing, the gate is atomic plus the support check.
+- [ ] A level is offered only for engines that reached 95% on Spike E's two fixture sets pooled: none for Duplicates only, GPT-6-Luna exactly at the line for Everything except conflicts. Ship review-first; `confidence` gates nothing, the gate is atomic plus the support check.
+- [ ] Decide the atomicity rule for compound claims (a rule with its exception, a fact with its fallback) before freezing the extraction prompt: Spike E's second author counted them as one claim, and every model split them.
 
 ### 6a.6 Inbox and Settings · 4 h
 - [ ] Group card, row badges, Apply all, Keep as one (only while nothing is decided), the "Split into N?" offer, Split this memory, the flagged rows, the engine line.

@@ -6,6 +6,7 @@
 See build_fixtures.py for the matching rules.
 """
 import json
+import os
 import re
 import statistics
 import sys
@@ -15,8 +16,11 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 FIX = HERE / "fixtures"
 RES = HERE / "results"
-INPUTS = {i["id"]: i for i in json.loads((FIX / "inputs.json").read_text())["inputs"]}
-CLUSTERS = {c["id"]: c for c in json.loads((FIX / "clusters.json").read_text())["clusters"]}
+# SPIKE_SET=astra scores the second author's fixtures (inputs-astra.json, results *-astra.jsonl).
+SET = os.environ.get("SPIKE_SET", "")
+SUFFIX = f"-{SET}" if SET else ""
+INPUTS = {i["id"]: i for i in json.loads((FIX / f"inputs{SUFFIX}.json").read_text())["inputs"]}
+CLUSTERS = {c["id"]: c for c in json.loads((FIX / f"clusters{SUFFIX}.json").read_text())["clusters"]}
 VAULT = {m["id"]: m for m in json.loads((FIX / "vault.json").read_text())["memories"]}
 SENS = ["public", "low", "internal", "sensitive", "restricted", "secret"]
 THRESHOLDS = [0.0, 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95]
@@ -27,7 +31,7 @@ def rx(p):
 
 
 def load(provider, experiment):
-    f = RES / provider / f"{experiment}.jsonl"
+    f = RES / provider / f"{experiment}{SUFFIX}.jsonl"
     if not f.exists():
         return None
     recs = {}
@@ -44,6 +48,17 @@ def text_of(p):
 def matches(exp, piece):
     t = text_of(piece)
     return all(rx(k).search(t) for k in exp["keys"])
+
+
+def partial(exp, piece):
+    """The piece matches at least one of the expected piece's keys."""
+    t = text_of(piece)
+    return any(rx(k).search(t) for k in exp["keys"])
+
+
+def split_cover(exp, pieces):
+    """The expected piece came back split: no single piece matches it, but every key matches some piece."""
+    return all(any(rx(k).search(text_of(p)) for p in pieces) for k in exp["keys"])
 
 
 def violations(inp, piece, decision=None):
@@ -132,8 +147,14 @@ def score_extraction(recs, decisions=None, onecall=False):
             dec_by_piece = {x["piece"]: x for x in d.get("decisions") or []}
             cands = {int(k): v for k, v in (d.get("candidates") or {}).items()}
         group_hits = Counter()
+        whole = {i for i, e in enumerate(exp) if any(matches(e, p) for p in pieces)}
+        split = {i for i, e in enumerate(exp) if i not in whole and split_cover(e, pieces)}
         for pi, p in enumerate(pieces):
             m = [i for i, e in enumerate(exp) if matches(e, p)]
+            # A fragment: more than half of an expected piece's keys, without all of them (a sub-claim of it).
+            # Or part of an expected piece that came back split across several pieces.
+            frag = [i for i, e in enumerate(exp) if (i in split and partial(e, p)) or
+                    sum(bool(rx(k).search(text_of(p))) for k in e["keys"]) > len(e["keys"]) / 2] if not m else []
             m_req = [i for i in m if i in req]
             groups = {exp[i].get("group") or f"_{i}" for i in m_req}
             dec = dec_by_piece.get(pi) if decisions is not None else (
@@ -143,7 +164,8 @@ def score_extraction(recs, decisions=None, onecall=False):
             for i in m_req:
                 group_hits[i] += 1
             hit.update(m_req)
-            correct = bool(m) and not under and not v
+            # A fragment is a valid piece (counted as over-splitting, not as an extra).
+            correct = bool(m or frag) and not under and not v
             row = {"input": iid, "conf": p.get("confidence"), "atomic": p.get("atomic"), "correct": correct,
                    "matched": bool(m), "under": under, "violations": v, "single": bool(inp.get("singleClaim")),
                    "support": p.get("support", {}), "body": p.get("body"), "evidence": p.get("evidence"),
@@ -153,7 +175,9 @@ def score_extraction(recs, decisions=None, onecall=False):
             rows.append(row)
             if v:
                 wrong.append((iid, p.get("body"), v))
-            if not m:
+            if frag:
+                s["fragments_of_split"] += 1
+            elif not m:
                 s["extras"] += 1
             if under:
                 s["under_split"] += 1
@@ -175,7 +199,7 @@ def score_extraction(recs, decisions=None, onecall=False):
             def link_ok(e):
                 return dec.get("action") in e["link"]["decision"] and (
                     dec.get("action") == "create" or dec.get("target") in e["link"]["target"])
-            cands_e = [exp[i] for i in (m_req or m)]
+            cands_e = [exp[i] for i in (m_req or m or frag)]
             # A piece matching several expected pieces is judged against the one its decision fits best.
             cands_e.sort(key=lambda e: not link_ok(e) if dec is not None else 0)
             for e in cands_e[:1]:
@@ -196,11 +220,12 @@ def score_extraction(recs, decisions=None, onecall=False):
                     row["link_ok"] = ok
                     row["action"] = act
                     row["dconf"] = dec.get("confidence")
-            if dec is not None and not m and dec.get("action") not in (None, "create"):
+            if dec is not None and not m and not frag and dec.get("action") not in (None, "create"):
                 link["extra_noncreate"] += 1
         s["fragments"] += sum(c - 1 for c in group_hits.values() if c > 1)
         s["req"] += len(req)
         s["req_hit"] += len(hit)
+        s["req_split"] += len([i for i in split if i in req])
         nonopt_preds = [p for p in pieces if not any(matches(exp[i], p) for i in range(len(exp)) if exp[i].get("optional"))
                         or any(matches(exp[i], p) for i in req)]
         if inp.get("singleClaim"):
@@ -270,7 +295,8 @@ def pair_updates(cl, kept):
         if u is None:
             continue
         merged = {"type": "merge", "sources": [u["target"], a["target"]], "title": u.get("title", ""), "body": u.get("body", "")}
-        ok = judge(cl, merged)
+        # Right as a merge, or as an update and an archive that are each right on their own.
+        ok = judge(cl, merged) or (judge(cl, u) and judge(cl, a))
         out[id(a)] = out[id(u)] = ok
     return out
 
@@ -366,11 +392,11 @@ def extraction_section(name, res):
     L.append(f"| Inputs scored | {s['inputs']} (+{s['secret_inputs']} secrets: {s['secret_rejected']} rejected before any call) |")
     L.append(f"| Inputs with a failed call | {s['inputs_failed']} ({dict(res['errors'])}); all calls failed: {s['inputs_all_failed']} |")
     L.append(f"| Sensitive inputs failed | {s['sensitive_failed']} of {s['sensitive_inputs']} |")
-    L.append(f"| Claim recall (required pieces) | **{pct(s['req_hit'], s['req'])}** ({s['req_hit']}/{s['req']}) |")
+    L.append(f"| Claim recall (required pieces) | **{pct(s['req_hit'] + s['req_split'], s['req'])}** ({s['req_hit']} whole + {s['req_split']} split / {s['req']}) |")
     L.append(f"| Single-claim inputs: right piece / over-split | {pct(s['single_hit'], s['single_inputs'])} / {pct(s['single_oversplit'], s['single_inputs'])} ({s['single_inputs']} inputs) |")
     L.append(f"| Pieces returned → kept after evidence check | {s['pieces_raw']} → {s['pieces_kept']} (strict: every quote verbatim; lenient, one quote: {s['lenient_kept']}) |")
     L.append(f"| Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | {s['wrong_claims']} |")
-    L.append(f"| Extras (match no expected piece) / under-split / fragments | {s['extras']} / {s['under_split']} / {s['fragments']} |")
+    L.append(f"| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | {s['extras']} / {s['under_split']} / {s['fragments']} / {s['fragments_of_split']} |")
     L.append(f"| Intent right on corrections and retractions | {pct(s['intent_ok'], s['intent_checked'])} ({s['intent_checked']}) |")
     L.append(f"| Sensitivity ≥ expected: model / after floors | {pct(s['sens_model_ok'], s['sens_checked'])} / {pct(s['sens_final_ok'], s['sens_checked'])} ({s['sens_checked']}) |")
     L.append(f"| Category overlaps expected | {pct(s['cat_ok'], s['cat_checked'])} ({s['cat_checked']}) |")
@@ -478,11 +504,11 @@ def report(providers):
                       out.append(f"- {a['cluster']} {a['type']} {ids} survivor={x.get('survivor')} conf={a['conf']} "
                                  f"reason={x.get('archiveReason')}: {(x.get('body') or x.get('question') or x.get('reason') or '')[:120]}")
                   out.append("")
-    (RES / "report.md").write_text("\n".join(out) + "\n")
+    (RES / f"report{SUFFIX}.md").write_text("\n".join(out) + "\n")
     return scores
 
 
 if __name__ == "__main__":
     provs = sys.argv[1:] or sorted(p.name for p in RES.iterdir() if p.is_dir())
     report(provs)
-    print((RES / "report.md").read_text())
+    print((RES / f"report{SUFFIX}.md").read_text())

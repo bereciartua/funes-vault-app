@@ -38,4 +38,4 @@
 
 ## Exit criteria
 - On the author's vault, a week of daily runs with a cloud model: proposals reviewed, no oscillation, no access widened.
-- Auto-apply levels enabled only where the fixtures reach the target precision (Spike E: Duplicates only with GPT-6-Luna, GPT-5.6-Terra, Claude Haiku 5.5 or Opus 5.5; Everything except conflicts with Haiku or Opus; otherwise updates, merges and splits stay in the Inbox). An update and an archive with that update's target as survivor are applied together or not at all.
+- Auto-apply levels enabled only where the fixtures reach the target precision (Spike E, both fixture sets pooled: Duplicates only with GPT-5.6-Terra, Claude Haiku 5.5 or Opus 5.5; Everything except conflicts with Haiku or Opus; otherwise updates, merges and splits stay in the Inbox). An update and an archive with that update's target as survivor are applied together or not at all.

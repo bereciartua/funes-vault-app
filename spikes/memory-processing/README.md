@@ -7,6 +7,9 @@ Throwaway harness for [Phase 6.0](../../spec/plans/phase-6-0-spike-e.md). Result
 - `fixtures/inputs.json`: 82 inputs (typed, dictated and shared captures, seed answers, agent suggestions written like
   ChatGPT's memory paragraph, Claude, Markdown and ChatGPT import items) with their expected pieces, link decisions
   and wrong claims to catch. Built by `build_fixtures.py`, whose docstring gives the matching rules.
+- `fixtures/inputs-astra.json`, `fixtures/clusters-astra.json`: a second set (40 inputs, 40 clusters) written blind by
+  GPT-6-Astra (`author_astra.py`, converted and checked by `check_astra.py`). Run and score it with `SPIKE_SET=astra`;
+  `compare_sets.py` puts both sets side by side.
 - `fixtures/vault.json`: the 200 Spike 2 memories with dates, source and trust: the vault the inputs link against.
 - `fixtures/clusters.json`: 100 tidy-up clusters with expected, acceptable and forbidden actions (k41–k100 held out from the
   second tidy-up prompt's design).

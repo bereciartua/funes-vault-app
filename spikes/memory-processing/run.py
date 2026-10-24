@@ -14,6 +14,7 @@ Results: results/<provider>/<experiment>[-<tag>].jsonl, one line per input or cl
 """
 import argparse
 import json
+import os
 import re
 import sys
 import threading
@@ -27,6 +28,8 @@ from validate import scan_secrets, validate_actions, validate_pieces
 
 HERE = Path(__file__).resolve().parent
 FIX = HERE / "fixtures"
+# SPIKE_SET=astra runs the second author's fixtures (inputs-astra.json, clusters-astra.json) into *-astra.jsonl.
+SUFFIX = f"-{os.environ['SPIKE_SET']}" if os.environ.get("SPIKE_SET") else ""
 SEED_QUESTIONS = {
     "collaboration_style": "How do you like AI assistants to collaborate with you?",
     "communication_preferences": "What tone, level of detail, or format do you usually prefer?",
@@ -42,9 +45,9 @@ MAX_PIECES_PER_INPUT = 40
 
 
 def load():
-    inputs = json.loads((FIX / "inputs.json").read_text())["inputs"]
+    inputs = json.loads((FIX / f"inputs{SUFFIX}.json").read_text())["inputs"]
     vault = json.loads((FIX / "vault.json").read_text())["memories"]
-    clusters = json.loads((FIX / "clusters.json").read_text())["clusters"]
+    clusters = json.loads((FIX / f"clusters{SUFFIX}.json").read_text())["clusters"]
     return inputs, vault, clusters
 
 
@@ -124,7 +127,7 @@ class Runner:
         self.context_chars = context_chars
         self.out_dir = HERE / "results" / provider_name
         self.out_dir.mkdir(parents=True, exist_ok=True)
-        self.out = self.out_dir / f"{experiment}{'-' + tag if tag else ''}.jsonl"
+        self.out = self.out_dir / f"{experiment}{SUFFIX}{'-' + tag if tag else ''}.jsonl"
         self.done = {json.loads(l)["id"] for l in self.out.read_text().splitlines()} if self.out.exists() else set()
         self.lock = threading.Lock()
         self.inputs, self.vault, self.clusters = load()
@@ -248,7 +251,7 @@ class Runner:
             elif self.experiment == "onecall":
                 work = lambda i: self.extract(i, i["variant"], with_link=True)
             elif self.experiment == "decide":
-                ext_path = self.out_dir / "extract.jsonl"
+                ext_path = self.out_dir / f"extract{SUFFIX}.jsonl"
                 ext = {json.loads(l)["id"]: json.loads(l) for l in ext_path.read_text().splitlines()}
                 items = [i for i in items if i["id"] in ext]
                 work = lambda i: self.decide(i, ext[i["id"]])
