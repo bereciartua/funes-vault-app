@@ -31,6 +31,11 @@ struct ImportSheet: View {
     @State private var asMemories = false
     @State private var error: String?
     @State private var done: String?
+    /// Today's cloud requests, for the split estimate (memory processing §5.8).
+    @State private var today: CloudRequestCap.Day?
+
+    /// Splitting is on and this import would be split.
+    private var splits: Bool { model.preferences.splitNewMemories && kind != .funes && model.modelSettings.classifier != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -125,6 +130,13 @@ struct ImportSheet: View {
             if preview.duplicates > 0 {
                 Toggle(String(localized: "Import likely duplicates too"), isOn: $includeDuplicates)
             }
+            if splits {
+                let estimate = preview.estimatedRequests(includeDuplicates: includeDuplicates)
+                let left = max(0, model.modelSettings.dailyCap - (today?.total ?? 0))
+                Text(String(localized: "Splitting them into separate memories takes about \(estimate) requests to \(model.modelSettings.classifier?.name ?? ""). With a cloud model, \(left) of today's requests are left; the rest wait for tomorrow."))
+                    .font(.callout).foregroundStyle(.secondary)
+                    .task { today = try? await model.modelSettings.cap(store: model.services.store, activity: model.services.activity).today(now: Date()) }
+            }
             if kind == .funes {
                 Toggle(String(localized: "Restore as memories, not suggestions"), isOn: $asMemories)
                 if asMemories {
@@ -135,6 +147,10 @@ struct ImportSheet: View {
                 Spacer()
                 Button(String(localized: "Cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
                 let count = ready + (includeDuplicates ? preview.duplicates : 0)
+                if splits {
+                    Button(String(localized: "Import Without Splitting")) { commit(preview, split: false) }
+                        .disabled(count == 0 || preview.tooLong > 0)
+                }
                 Button(asMemories ? String(localized: "Restore \(count)") : String(localized: "Send \(count) to Inbox")) { commit(preview) }
                     .keyboardShortcut(.defaultAction)
                     .disabled(count == 0 || preview.tooLong > 0)
@@ -212,11 +228,11 @@ struct ImportSheet: View {
         }
     }
 
-    private func commit(_ preview: ImportPreview) {
+    private func commit(_ preview: ImportPreview, split: Bool = true) {
         Task {
             do {
                 let result = try await model.services.imports.commit(preview, includeDuplicates: includeDuplicates,
-                                                                     asMemories: asMemories, now: Date())
+                                                                     asMemories: asMemories, split: split, now: Date())
                 model.preferences.set(Preferences.Key.checklistSeeded, true)
                 let count = result.suggestionIDs.count + result.memoryIDs.count
                 done = asMemories ? String(localized: "\(count) memories restored.") : String(localized: "\(count) suggestions are in your Inbox.")

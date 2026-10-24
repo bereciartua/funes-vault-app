@@ -76,6 +76,20 @@ import Testing
         #expect(try await env.suggestions.isAwaitingReview(id: group.id) == false)
     }
 
+    @Test func purgingAMemoryDropsItsGroupsText() async throws {
+        let env = try Env()
+        let group = try await Self.split(env)
+        let applied = try await env.suggestions.apply(suggestionID: group.pieces[0].id, now: t0)
+        try await env.v.store.writer.write { db in
+            _ = try MemoryStore.setStatus(db, id: applied.memoryID, to: .deleted, actor: .user, now: t0)
+            try MemoryStore.purge(db, id: applied.memoryID)
+        }
+        let after = try #require(try await env.suggestions.group(id: group.id))
+        #expect(after.sourceText == nil && after.original.body.isEmpty)
+        #expect(after.pieces[0].body.isEmpty && after.pieces[0].evidence == nil)
+        #expect(after.pieces[1].body == group.pieces[1].body)  // the others keep theirs until decided
+    }
+
     @Test func rejectingASplitThisMemorySuggestionRejectsItsPieces() async throws {
         let env = try Env()
         let group = try await Self.split(env)

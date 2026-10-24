@@ -13,6 +13,9 @@ struct ModelSettingsPane: View {
     @State private var confirming: CloudLimit?
     /// Mirrors `Preferences.classifyCaptures` (moved here from Settings ▸ Capture, task 6.1.8).
     @State private var classify = true
+    /// Mirrors `Preferences.splitNewMemories` and `applyAutomatically` (task 6a.6).
+    @State private var split = false
+    @State private var autoApply = AutoApplyLevel.off
     @State private var today: CloudRequestCap.Day?
 
     private var settings: ModelSettings { model.modelSettings }
@@ -53,18 +56,19 @@ struct ModelSettingsPane: View {
                 }
                 Toggle(String(localized: "Propose a title, kind and categories"), isOn: $classify)
                     .onChange(of: classify) { _, on in model.preferences.classifyCaptures = on }
-                Toggle(String(localized: "Split into separate memories"), isOn: .constant(false))
-                    .disabled(true)
-                Text(classify ? String(localized: "You review every proposal in the Inbox. Splitting what arrives into single memories comes in a later version.")
-                              : String(localized: "Captures get simple proposals from rules on this Mac."))
-                    .font(.callout).foregroundStyle(.secondary)
-                Picker(String(localized: "Apply changes automatically"), selection: .constant(0)) {
-                    Text(String(localized: "Off")).tag(0)
-                    Text(String(localized: "Duplicates only")).tag(1)
-                    Text(String(localized: "Everything except conflicts")).tag(2)
+                Toggle(String(localized: "Split into separate memories"), isOn: $split)
+                    .disabled(!canSplit)
+                    .onChange(of: split) { _, on in model.preferences.splitNewMemories = on }
+                Text(splitCaption).font(.callout).foregroundStyle(.secondary)
+                Picker(String(localized: "Apply changes automatically"), selection: $autoApply) {
+                    Text(String(localized: "Off")).tag(AutoApplyLevel.off)
+                    Text(String(localized: "Duplicates only")).tag(AutoApplyLevel.duplicatesOnly)
+                        .disabled(NewMemoryAutoApply.highestAvailable < .duplicatesOnly)
+                    Text(String(localized: "Everything except conflicts")).tag(AutoApplyLevel.exceptConflicts)
+                        .disabled(NewMemoryAutoApply.highestAvailable < .exceptConflicts)
                 }
-                .disabled(true)
-                Text(String(localized: "Off: every proposal waits for you in the Inbox. The other levels come once Funes's proposals are accurate enough, each with Undo."))
+                .onChange(of: autoApply) { _, level in model.preferences.applyAutomatically = level }
+                Text(String(localized: "Off: every proposal waits for you in the Inbox. No model has been accurate enough yet to save new memories by itself, so the other levels stay off. Agents always follow their own access."))
                     .font(.callout).foregroundStyle(.secondary)
             }
             Section(String(localized: "Cloud limit")) {
@@ -140,7 +144,11 @@ struct ModelSettingsPane: View {
         .sheet(item: $editing) { ProviderSheet(model: model, provider: $0, isNew: false) }
         .sheet(item: $adding) { ProviderSheet(model: model, provider: $0, isNew: true) }
         .task(id: settings.providers) { await resolveLocalities() }
-        .onAppear { classify = model.preferences.classifyCaptures }
+        .onAppear {
+            classify = model.preferences.classifyCaptures
+            split = model.preferences.splitNewMemories
+            autoApply = model.preferences.applyAutomatically
+        }
         .task(id: model.activityGeneration) {
             today = try? await settings.cap(store: model.services.store, activity: model.services.activity).today(now: Date())
         }
@@ -178,6 +186,24 @@ struct ModelSettingsPane: View {
         return String(localized: "Today: \(total) of \(cap), agents \(byAgents) of \(agents). Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow.")
     }
 
+    /// Splitting needs a local server or a cloud model with a model chosen; Apple on-device only
+    /// proposes fields (memory processing §5.2).
+    private var canSplit: Bool {
+        guard let provider = settings.classifier, !provider.model.isEmpty else { return false }
+        return classifierLocality != .onDevice
+    }
+
+    private var splitCaption: String {
+        guard canSplit else {
+            return String(localized: "Splitting needs a local server or a cloud model. Apple's on-device model proposes fields only.")
+        }
+        if split {
+            return String(localized: "Captures, your answers, agents' suggestions and imports become one suggestion per claim, each marked new, an update, already saved or a removal. You review every piece in the Inbox.")
+        }
+        return classify ? String(localized: "You review every proposal in the Inbox.")
+                        : String(localized: "Captures get simple proposals from rules on this Mac.")
+    }
+
     private var classifierLocality: Locality {
         guard let provider = settings.classifier else { return .onDevice }
         return localities[provider.id] ?? (provider.endpoint.markedCloud ? .cloud : .localServer)
@@ -203,6 +229,8 @@ struct ModelSettingsPane: View {
         switch settings.cloudLimit {
         case .never:
             return String(localized: "New memories sends nothing to \(provider.name): the cloud limit is Nothing, so it runs on this Mac.")
+        case .upTo(let level) where split && canSplit:
+            return String(localized: "New memories sends new captures, your answers, agents' suggestions and saved memories, and imports (up to \(Self.title(.upTo(level)))), then each piece with up to 5 related memories, and your category names and descriptions, to \(provider.name).")
         case .upTo(let level):
             return String(localized: "New memories sends new captures (up to \(Self.title(.upTo(level)))) and your category names and descriptions to \(provider.name).")
         }

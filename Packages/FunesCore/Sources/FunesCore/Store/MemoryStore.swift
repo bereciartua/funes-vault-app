@@ -345,16 +345,34 @@ enum MemoryStore {
         }
         guard status == MemoryStatus.deleted.rawValue else { throw VaultError.invalidState }
         try UndoLog.purge(db, memoryIDs: [id.db])
+        try dropGroupText(db, memoryIDs: [id.db])
         try db.execute(sql: "DELETE FROM memory WHERE id = ?", arguments: [id.db])
     }
 
     /// The daily job: purges memories deleted more than 30 days before `now`. Returns how many.
     static func purgeDeleted(_ db: Database, now: Date) throws -> Int {
         let cutoff = now.addingTimeInterval(-deletedRetention)
-        try UndoLog.purge(db, memoryIDs: try String.fetchAll(db, sql: "SELECT id FROM memory WHERE status = 'deleted' AND deleted_at <= ?",
-                                                             arguments: [cutoff]))
+        let ids = try String.fetchAll(db, sql: "SELECT id FROM memory WHERE status = 'deleted' AND deleted_at <= ?", arguments: [cutoff])
+        try UndoLog.purge(db, memoryIDs: ids)
+        try dropGroupText(db, memoryIDs: ids)
         try db.execute(sql: "DELETE FROM memory WHERE status = 'deleted' AND deleted_at <= ?", arguments: [cutoff])
         return db.changesCount
+    }
+
+    /// A purged memory leaves no copy of its text (FR-V-04, storage §2): the piece it was saved
+    /// from, and its split input's original text, lose theirs.
+    static func dropGroupText(_ db: Database, memoryIDs: [String]) throws {
+        guard !memoryIDs.isEmpty else { return }
+        let marks = databaseQuestionMarks(count: memoryIDs.count)
+        let groups = try String.fetchAll(db, sql: """
+            SELECT DISTINCT group_id FROM suggestion WHERE group_id IS NOT NULL AND result_memory_id IN (\(marks))
+            """, arguments: StatementArguments(memoryIDs))
+        try db.execute(sql: "UPDATE suggestion SET title = '', body = '', evidence = NULL WHERE group_id IS NOT NULL AND result_memory_id IN (\(marks))",
+                       arguments: StatementArguments(memoryIDs))
+        for group in groups {
+            try db.execute(sql: "UPDATE suggestion_group SET source_text = NULL WHERE id = ?", arguments: [group])
+            try db.execute(sql: "UPDATE suggestion SET title = '', body = '' WHERE id = ? AND status = 'split'", arguments: [group])
+        }
     }
 
     static func setCategories(_ db: Database, memoryID: UUID, keys: [String]) throws {

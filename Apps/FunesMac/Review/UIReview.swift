@@ -173,6 +173,11 @@ final class UIReview: NSObject, NSApplicationDelegate {
             model.vault.status = .active
             await model.vault.load()
             await mainScene("inbox") { model.section = .inbox }
+            // Phase 6a: a card whose split arrived while it was open, and Applied automatically below.
+            model.inboxState.focused = model.inboxState.groups.values.first(where: \.isOffer)?.id
+            try? await Task.sleep(for: .milliseconds(600))
+            await snapshot("inbox-split-offer-\(suffix)", main.window)
+            model.inboxState.focused = nil
             await mainScene("agents-access") {
                 model.selectedAgentID = fixture.agents.claudeCode.id
                 model.agentTab = .access

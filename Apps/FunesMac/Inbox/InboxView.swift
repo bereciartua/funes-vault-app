@@ -20,6 +20,7 @@ struct InboxView: View {
             if model.inbox.isEmpty {
                 empty
             } else {
+                ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 14, pinnedViews: []) {
                         ForEach(inbox.grouped(model.inbox), id: \.0) { group, items in
@@ -28,16 +29,26 @@ struct InboxView: View {
                                 .foregroundStyle(.secondary)
                                 .accessibilityAddTraits(.isHeader)
                                 .padding(.top, 6)
-                            ForEach(items) { suggestion in
-                                SuggestionCard(model: model, suggestion: suggestion)
-                                    .id(suggestion.id)
+                            ForEach(items) { entry in
+                                switch entry {
+                                case let .single(suggestion):
+                                    SuggestionCard(model: model, suggestion: suggestion).id(suggestion.id)
+                                case let .group(id, pieces):
+                                    GroupCard(model: model, groupID: id, pieces: pieces).id(id)
+                                }
                             }
                         }
+                        AppliedAutomaticallyList(model: model)
                         restorable
                     }
                     .padding(20)
                     .frame(maxWidth: 820)
                     .frame(maxWidth: .infinity)
+                }
+                // A card opened from elsewhere (open_in_funes, a Save panel's Edit…) comes into view.
+                .onChange(of: inbox.focused) { _, id in
+                    if let id { withAnimation { proxy.scrollTo(id) } }
+                }
                 }
                 .focusable()
                 .focused($listFocused)
@@ -85,8 +96,14 @@ struct InboxView: View {
         VStack(spacing: 18) {
             ContentUnavailableView(String(localized: "Your Inbox is empty"), systemImage: "tray",
                                    description: Text(String(localized: "Suggestions from agents, captures and imports wait here until you apply or reject them.")))
-            if !inbox.restorable.isEmpty {
-                ScrollView { restorable.padding(20).frame(maxWidth: 820) }
+            if !inbox.restorable.isEmpty || !inbox.applied.isEmpty {
+                ScrollView {
+                    VStack(alignment: .leading) {
+                        AppliedAutomaticallyList(model: model)
+                        restorable
+                    }
+                    .padding(20).frame(maxWidth: 820)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -164,6 +181,7 @@ struct SuggestionCard: View {
                 }
             } else if let binding = formBinding {
                 if stale { staleBanner }
+                if let offer = inbox.groups[suggestion.id], offer.isOffer { SplitOffer(model: model, group: offer) }
                 context(binding)
                 if let evidence = suggestion.evidence, !evidence.isEmpty {
                     Text(String(localized: "Why, as reported: “\(evidence)”"))
@@ -199,6 +217,7 @@ struct SuggestionCard: View {
         return Binding(get: { form! }, set: { value in
             form = value
             inbox.drafts[suggestion.id] = value
+            if value.touched { inbox.edited(suggestion.id) }
         })
     }
 
@@ -236,9 +255,17 @@ struct SuggestionCard: View {
         case .split:
             if let target { quoted(String(localized: "Splits “\(target.title)” into \(pieces.count)"), target) }
             ForEach(pieces) { piece in
-                Label { Text(piece.title).fontWeight(.medium) + Text(" · \(piece.body)").foregroundStyle(.secondary) }
-                    icon: { Image(systemName: "plus.circle") }
-                    .font(.callout).lineLimit(2)
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    ForEach(GroupText.badges(piece, target: nil, agentName: piece.agentID.map(model.agentName)), id: \.0) {
+                        Pill(label: $0.0, tone: $0.1)
+                    }
+                    Text(piece.title).fontWeight(.medium) + Text(" · \(piece.body)").foregroundStyle(.secondary)
+                }
+                .font(.callout).lineLimit(2)
+            }
+            if pieces.contains(where: { $0.action == .update || $0.action == .archive }) {
+                Text(String(localized: "Pieces that change other memories stay in your Inbox to review on their own."))
+                    .font(.caption).foregroundStyle(.secondary)
             }
         case .merge:
             let sources = role(.source)
@@ -333,7 +360,8 @@ struct SuggestionCard: View {
                 primary(String(localized: "Already Saved")).disabled(stale)
                     .help(String(localized: "Nothing changes: it's already in your vault."))
             case .split:
-                primary(String(localized: "Split into \(pieces.count)")).disabled(stale || pieces.isEmpty)
+                primary(String(localized: "Split into \(pieces.filter { $0.action == .create }.count)"))
+                    .disabled(stale || !pieces.contains { $0.action == .create })
             case .merge:
                 primary(String(localized: "Merge")).disabled(stale || incomplete)
             case .conflict:

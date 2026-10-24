@@ -44,7 +44,8 @@ final class DataOperations {
     // MARK: Jobs
 
     /// At launch (after a short delay) and then hourly, runs whatever is due: the daily backup,
-    /// purging memories deleted over 30 days ago, old capture receipts, and the weekly check.
+    /// purging memories deleted over 30 days ago, old capture receipts, decided groups' text, and the
+    /// weekly check.
     func startJobs() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in MainActor.assumeIsolated { self?.runDueJobs() } }
         let timer = Timer(timeInterval: 3_600, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.runDueJobs() } }
@@ -62,10 +63,13 @@ final class DataOperations {
         let captures = environment.captures
         let processing = ProcessingQueue(store: store, activity: environment.activity)
         let undo = UndoLog(store: store, activity: environment.activity)
+        let suggestions = environment.suggestions
         Task {
             _ = try? await captures.cleanupReceipts(now: now)
             _ = try? await processing.cleanup(now: now)
             _ = try? await undo.cleanup(now: now)
+            // Split inputs whose every piece is decided keep no copy of their text (storage §5).
+            _ = try? await suggestions.dropDecidedGroupText()
         }
         let lastCheck = preferences.defaults.object(forKey: Preferences.Key.lastIntegrityCheck) as? Date
         if lastCheck.map({ now.timeIntervalSince($0) >= 7 * 86_400 }) ?? true {

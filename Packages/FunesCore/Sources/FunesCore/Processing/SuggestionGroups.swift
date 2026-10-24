@@ -136,3 +136,10 @@ extension SuggestionService {
         }
     }
 }
+
+extension Suggestion {
+    /// The proposal and engine its `classification` column records, if any.
+    public var classificationRecord: ClassificationRecord? { JSON.decode(ClassificationRecord.self, classification) }
+    /// What extraction and linking said about a piece of a split input.
+    public var pieceRecord: PieceRecord? { classificationRecord?.piece }
+}
