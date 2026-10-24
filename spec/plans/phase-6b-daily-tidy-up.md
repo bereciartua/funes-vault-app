@@ -29,7 +29,7 @@
 - [x] Tidy-up section: update, merge, split, archive and conflict cards; header with the last run and Tidy up now.
 - [x] Applied automatically rows for tidy-up changes; undo of merges and splits restores the originals.
 - [x] The notification after a run (no memory text); Settings ▸ AI Models ▸ Daily tidy-up.
-- [x] String catalog, UI snapshots, accessibility.
+- [ ] String catalog and accessibility labels done; the UI-review build has an `inbox-tidy-up` scene, but its snapshots weren't captured (window capture was refused in the implementing session): run `sh scripts/ui_snapshots.sh`.
 
 ### 6b.6 Tests and docs · 3 h
 - [x] Spike E's tidy-up fixtures as tests: no action for complementary facts, `conflict` never archived, merges that lose a constraint refused, mixed-sensitivity and mixed-category merges refused, injection in an agent-written memory never auto-applied.
