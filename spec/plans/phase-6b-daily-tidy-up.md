@@ -6,35 +6,35 @@
 
 ## Tasks
 ### 6b.1 Scheduling and runs · 3 h
-- [ ] Daily at the user's time via `NSBackgroundActivityScheduler`, a catch-up run at launch or wake after a missed one, **Tidy up now**; off by default.
-- [ ] `tidy_up_run` records; at most 40 clusters per run, newest changes first, `partial` with roll-over; a 20 s timeout per call; stops at the daily cap and resumes the next day.
-- [ ] First-run estimate in Settings.
+- [x] Daily at the user's time via `NSBackgroundActivityScheduler`, a catch-up run at launch or wake after a missed one, **Tidy up now**; off by default.
+- [x] `tidy_up_run` records; at most 40 clusters per run, newest changes first, `partial` with roll-over; a 20 s timeout per call; stops at the daily cap and resumes the next day.
+- [x] First-run estimate in Settings.
 
 ### 6b.2 Candidates and clusters · 3 h
-- [ ] Changed memories by watermark; neighbours by the shared finder (up to 8); clusters of at most 6, with shared memories read-only after the first cluster.
-- [ ] Code-only actions: exact duplicates, expiry.
-- [ ] Eligibility: no pending tidy-up suggestion, not in a pending Share panel, within the cloud limit for a cloud provider; ineligible and neighbourless memories marked inspected.
-- [ ] Non-atomic memories routed to 6a's extractor as `split` proposals.
+- [x] Changed memories by watermark; neighbours by the shared finder (up to 8); clusters of at most 6, with shared memories read-only after the first cluster.
+- [x] Code-only actions: exact duplicates, expiry.
+- [x] Eligibility: no pending tidy-up suggestion, not in a pending Share panel, within the cloud limit for a cloud provider; ineligible and neighbourless memories marked inspected.
+- [x] Non-atomic memories routed to 6a's extractor as `split` proposals.
 
 ### 6b.3 The model call and validation · 4 h
-- [ ] The request and schema of [§9.3](../domain/memory-processing.md#93-the-model-call), through `ModelRouter` with typed items.
-- [ ] Validation of [§9.4](../domain/memory-processing.md#94-validation-code): ids, one action per memory, full text only, the access-safe rules (sensitivity floor, merges only with the same sensitivity and categories, updates keep categories), secret scan, version pinning (Spike E: `confidence` is recorded, not used as a threshold).
+- [x] The request and schema of [§9.3](../domain/memory-processing.md#93-the-model-call), through `ModelRouter` with typed items.
+- [x] Validation of [§9.4](../domain/memory-processing.md#94-validation-code): ids, one action per memory, full text only, the access-safe rules (sensitivity floor, merges only with the same sensitivity and categories, updates keep categories), secret scan, version pinning (Spike E: `confidence` is recorded, not used as a threshold).
 
 ### 6b.4 Applying and auto-apply · 4 h
-- [ ] Suggestions with `suggestion_target` rows; the watermark set to the result's version in the same transaction as an applied change.
-- [ ] Auto-apply per level, never on the strength of untrusted text (except archiving the untrusted copy of an exact duplicate), chosen engine only, the policy-engine access check, conflicts always to the user; undo entries.
-- [ ] Dismissals keyed on ids plus a content hash; "Both are true" remembered.
+- [x] Suggestions with `suggestion_target` rows; the watermark set to the result's version in the same transaction as an applied change.
+- [x] Auto-apply per level, never on the strength of untrusted text (except archiving the untrusted copy of an exact duplicate), chosen engine only, the policy-engine access check, conflicts always to the user; undo entries.
+- [x] Dismissals keyed on ids plus a content hash; "Both are true" remembered.
 
 ### 6b.5 Inbox, notifications, Settings · 4 h
-- [ ] Tidy-up section: update, merge, split, archive and conflict cards; header with the last run and Tidy up now.
-- [ ] Applied automatically rows for tidy-up changes; undo of merges and splits restores the originals.
-- [ ] The notification after a run (no memory text); Settings ▸ AI Models ▸ Daily tidy-up.
-- [ ] String catalog, UI snapshots, accessibility.
+- [x] Tidy-up section: update, merge, split, archive and conflict cards; header with the last run and Tidy up now.
+- [x] Applied automatically rows for tidy-up changes; undo of merges and splits restores the originals.
+- [x] The notification after a run (no memory text); Settings ▸ AI Models ▸ Daily tidy-up.
+- [x] String catalog, UI snapshots (the `inbox-tidy-up` scene and Settings ▸ AI Models, light and dark), accessibility.
 
 ### 6b.6 Tests and docs · 3 h
-- [ ] Spike E's tidy-up fixtures as tests: no action for complementary facts, `conflict` never archived, merges that lose a constraint refused, mixed-sensitivity and mixed-category merges refused, injection in an agent-written memory never auto-applied.
-- [ ] Loops: a second run after applying finds nothing new; dismissals aren't re-asked; partial runs resume.
-- [ ] When the code lands: PRIVACY.md, README, docs, CHANGELOG.
+- [x] Spike E's tidy-up fixtures as tests: no action for complementary facts, `conflict` never archived, merges that lose a constraint refused, mixed-sensitivity and mixed-category merges refused, injection in an agent-written memory never auto-applied.
+- [x] Loops: a second run after applying finds nothing new; dismissals aren't re-asked; partial runs resume.
+- [x] When the code lands: PRIVACY.md, README, docs, CHANGELOG.
 
 ## Exit criteria
 - On the author's vault, a week of daily runs with a cloud model: proposals reviewed, no oscillation, no access widened.

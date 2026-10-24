@@ -322,16 +322,18 @@ import Testing
     }
 
     /// Task 6.1.1/6.1.7: `inbox.apply` applies each suggestion as its own action, refuses a
-    /// changed target with `target_changed`, and leaves merge, split and conflict to the Mac.
+    /// changed target with `target_changed`, and leaves merge, split and conflict to the Mac, and
+    /// the tidy-up's proposals too (ADR-0021).
     @Test func inboxApplyIsPerAction() async throws {
         let h = try CompanionHarness()
         let phone = try await h.pairedPhone()
         let old = try h.store.createMemory(MemoryDraft(title: "Editor", body: "Uses Vim", categoryKeys: ["software_development"]), now: t0)
         let dup = try h.store.createMemory(MemoryDraft(title: "Copy", body: "Copy body", categoryKeys: ["personal_preferences"]), now: t0)
-        func suggest(_ action: SuggestionAction, target: UUID? = nil, targets: [(UUID, SuggestionTarget.Role)] = []) throws -> UUID {
+        func suggest(_ action: SuggestionAction, target: UUID? = nil, targets: [(UUID, SuggestionTarget.Role)] = [],
+                     origin: SuggestionOrigin = .agent) throws -> UUID {
             try h.store.writer.write { db in
                 try SuggestionService.insertSuggestion(
-                    db, origin: .consolidation, action: action,
+                    db, origin: origin, action: action,
                     input: SuggestInput(title: "Editor", body: "Uses Zed", categories: ["software_development"], targetMemoryID: target),
                     categories: ["software_development"], sensitivity: .low, targets: targets, now: t0)
             }
@@ -339,9 +341,15 @@ import Testing
         let update = try suggest(.update, target: old.id)
         let archive = try suggest(.archive, target: dup.id)
         let merge = try suggest(.merge, targets: [(old.id, .source), (dup.id, .source)])
+        let tidied = try suggest(.archive, target: old.id, origin: .consolidation)
         let items = try await h.result(InboxList.self, InboxListParams(), phone: phone).items
         #expect(items.first { $0.id == update }?.targetMemoryVersion == 1)
         #expect(items.first { $0.id == merge }?.action == .merge)
+        #expect(items.first { $0.id == tidied }?.action == .unknown)  // "Review on your Mac"
+        await #expect(throws: CompanionError(.unsupportedAction)) {
+            try await h.result(InboxApply.self, InboxApplyParams(suggestionId: tidied), phone: phone)
+        }
+        try await h.services.suggestions.reject(suggestionID: tidied, now: t0)
 
         let archived = try await h.result(InboxApply.self, InboxApplyParams(suggestionId: archive), phone: phone)
         #expect(try archived.memoryId == dup.id && h.store.memory(id: dup.id)?.status == .archived)

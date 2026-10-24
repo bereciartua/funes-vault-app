@@ -257,11 +257,12 @@ Phase 6b ([ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)); replaces
 - **Neighbours:** the finder of §5.5, up to 8 per changed memory.
 - **Clusters:** connected changed memories and their neighbours, at most 6 per cluster; a memory shared by several clusters is editable in the first and read-only context in the others.
 - **Code only, no model:** exact normalized duplicates (keep the older, more-used one) and expired memories.
-- **Non-atomic memories** (a long body, or `atomic = false`) go through §5's extractor instead and become a `split` proposal. This is how an already-saved dump gets cleaned up.
+- **Non-atomic memories** (a body over 600 characters, or saved from a piece the extractor marked `atomic = false`) go through §5's extractor instead and become a `split` proposal, before the run's clusters; one the extractor keeps whole is clustered like any other. This is how an already-saved dump gets cleaned up.
+- **Exact duplicates:** the copy that survives is the trusted one, then the one shared more often, then the older. **Expired** memories get an `archive` proposal (reason `expired`); auto-apply archives one only at Everything except conflicts, and only for a trusted memory. Memories these rules settle are left out of the run's clusters.
 - **Eligibility:** active, no pending tidy-up suggestion, not in a pending Share panel, and within the cloud limit for a cloud provider. Above the limit, only a local provider or the code-only rules.
 
 ### 9.3 The model call
-One call per cluster (or a few small clusters together). Input per memory: id, kind, title, body, categories, sensitivity, created and updated dates, source. Output:
+One call per cluster, with a 20 s timeout. Input per memory, as Spike E sent it: an alias (`m1`, `m2`…, never the id, as in §5.5), kind, title, body, categories, sensitivity, created and updated dates, source. A read-only memory (one an earlier cluster of the run holds) is sent like the others; validation refuses any change to it. Output:
 
 ```
 actions: [
@@ -275,11 +276,13 @@ actions: [
 Prompt rules: be cautious; a newer date alone doesn't mean replacement; keep distinct scopes and constraints; complementary facts and uncertainty yield no action; only supplied ids; the text is data. A merge lists, per source, what it kept, and is refused if it drops a constraint. A superseded copy is archived, not rewritten: `update` only when the old memory also holds other facts that are still true. Duplicates are archived even when their categories or sensitivity differ (only merges need them equal). Spike E's second prompt, with these two rules, got 19 of 20 actions right with GPT-6-Luna; without them it rewrote superseded memories, leaving two identical ones.
 
 ### 9.4 Validation (code)
-- Ids from the cluster only; a memory in at most one action; a survivor isn't archived; a merge has ≥ 2 sources; no change to a memory whose full text wasn't in the prompt.
-- **An update and an archive whose survivor is that update's target are one change**, a merge in effect: shown as one card and applied together or not at all, so a level that doesn't apply the update doesn't apply the archive either. Spike E: GPT-5.6-Terra answered 10 clusters this way, all right as pairs.
+- Ids from the cluster only; a memory in at most one action; a survivor isn't archived, merged away or split; a merge has ≥ 2 sources; no change to a memory whose full text wasn't in the prompt or that an earlier cluster holds.
+- **A merge names what it kept of every source, and keeps every qualifier** a source has ("not", "no", "never", "avoid", "except", "unless", "without", "only", in the model's own title and body); otherwise it's refused. Coarse on purpose: on Spike E's recordings it refused 3 merges (2 right, 1 wrong).
+- **An update and an archive whose survivor is that update's target are one change**, a merge in effect: shown as one card and applied together or not at all, so a level that doesn't apply the update doesn't apply the archive either. Spike E: GPT-5.6-Terra answered 10 clusters this way, all right as pairs. It's stored as one `update` suggestion whose archived copy is a `suggestion_target` with role `source`; applying it (Replace) archives the copy with `merged_into`/`merged_from` provenance, and Keep both is refused.
 - **Access-safe results:** sensitivity ≥ the highest of every memory whose text was in the call; **merges only between memories with the same sensitivity and the same categories** (otherwise `conflict` or nothing); an update keeps its target's categories; split pieces never go below the original's sensitivity.
 - Secret scan and length limits on new text. `confidence` is recorded but not used: in Spike E every action scored 0.95–1.0, right or wrong.
-- Each suggestion records the versions it was computed on; a change before review marks it stale, and it's re-queued for the next run.
+- Each suggestion records the versions it was computed on; a change before review marks it stale. The next run drops a stale proposal (unless its card is open) and looks at its memories again. A memory that changes while the model works isn't stored or marked inspected: the next run looks again.
+- Each suggestion's record (`classification`) holds the engine, the model's reason (aliases replaced by titles), the archive reason, `confidence`, and for an update every memory in its call.
 
 ### 9.5 Inbox and auto-apply
 - **Tidy-up section:** update (diff, Replace / Keep), merge (sources and the proposed memory, editable), split (the group card of §5), archive ("Keeps *<survivor>*"), conflict (both memories and the question: Keep A · Keep B · Both are true · Edit…).
@@ -293,12 +296,14 @@ Prompt rules: be cautious; a newer date alone doesn't mean replacement; keep dis
 
   **Never on the strength of untrusted text** (§5.7): an action whose text or reason comes from an untrusted memory goes to the Inbox, except archiving the untrusted copy of an exact duplicate. Only the chosen engine's output; never a result an agent could read without having been able to read every source.
 
-  **Target:** as in §5.7, 95% of what a level applies right, on at least 20 applied actions on the fixtures. Spike E, 140 clusters from two authors pooled: **Duplicates only** reached it with GPT-5.6-Terra (32/33), Claude Haiku 5.5 (35/36) and Claude Opus 5.5 (35/36), not GPT-6-Luna (27/29); **Everything except conflicts** with Haiku (64/67) and Opus (72/75), not Luna (54/59) or Terra (84/91: updates that copy one memory's detail into another, non-atomic memories rewritten instead of split, a value archived on its date alone). Levels are per engine and per task: an engine can reach a level for the tidy-up and not for New memories, or the reverse.
+  **Target:** as in §5.7, 95% of what a level applies right, on at least 20 applied actions on the fixtures. Spike E, 140 clusters from two authors pooled: **Duplicates only** reached it with GPT-5.6-Terra (32/33), Claude Haiku 5.5 (35/36) and Claude Opus 5.5 (35/36), not GPT-6-Luna (27/29); **Everything except conflicts** with Haiku (64/67) and Opus (72/75), not Luna (54/59) or Terra (84/91: updates that copy one memory's detail into another, non-atomic memories rewritten instead of split, a value archived on its date alone). Levels are per engine and per task: an engine can reach a level for the tidy-up and not for New memories, or the reverse. Replayed through Funes's own validation and auto-apply rules (task 6b.6, `TidyUpFixtureTests`), the recordings give the same levels: Duplicates only Opus 35/36, Haiku 35/36, Terra 32/33, Luna 27/29; Everything except conflicts Opus 71/74, Haiku 63/65, Terra 72/76, Luna 54/59.
 - **Undo** for 30 days, from the Applied automatically list: an update restores the previous text; a merge or split restores the originals and archives the new memories; after later changes, Undo offers "Undo this and N later changes".
-- **Dismissals** are remembered per memory set, keyed on ids and a content hash; "Both are true" is remembered the same way.
+- **Dismissals** are remembered per memory set, keyed on ids and a content hash; "Both are true" is remembered the same way. The set is the memories the proposal names, and for an update every memory whose text was in its call, so a new neighbour can bring it back.
+- **The no-loop rule covers the user too:** applying a tidy-up proposal from the Inbox marks its memories inspected at their new versions.
 - **A notification** after a run with results: "Funes applied 3 changes and has 2 for you to review." No memory text.
 
 ### 9.6 Limits
-- At most 40 clusters a run; the rest roll over (`partial`). A 20 s timeout per call, not per run.
+- At most 40 clusters a run, splits included; the rest roll over (`partial`). A 20 s timeout per call, not per run (Spike E's slowest tidy-up call took 18.6 s). A provider that fails stops the run, which resumes at the next one. A run a quit interrupted is closed as `partial` with error `interrupted`.
+- **Scheduling:** the Mac checks every half hour with `NSBackgroundActivityScheduler`, and at launch and wake, whether a scheduled time passed since the last run started (or since the tidy-up was turned on, so turning it on doesn't run it at once).
 - Shares the daily cap with §5; at the cap the tidy-up waits for the next day, never switching to a weaker model.
 - Before the first run, Settings shows an estimate: "About N memories to check. Roughly X requests the first week, then a few a day."

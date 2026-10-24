@@ -142,10 +142,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                           body: String(localized: "Its weekly check found a problem. Restore a backup in Settings ▸ Data."))
         }
         model.data.startJobs()
-        // Find the subscription CLIs first, so the processing queue can use a chosen plan (ADR-0024).
+        // Find the subscription CLIs first, so the processing queue and the tidy-up can use a
+        // chosen plan (ADR-0024).
+        model.tidyUp.finished = { [notifier] run in
+            notifier.post(.tidyUp, title: String(localized: "Tidy-up finished"), body: TidyUpController.notice(run))
+        }
         Task { @MainActor in
             await model.modelSettings.refreshSubscriptions()
             model.processing.kick()
+            model.tidyUp.start()
         }
         model.processing.start()
         model.changed = { [weak menu] in menu?.update() }
@@ -302,7 +307,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         notifier.onOpen = { kind, agent in
             switch kind {
-            case .suggestion: model.show(.inbox)
+            case .suggestion, .tidyUp: model.show(.inbox)
             case .expired, .refused: model.showActivity(agent.map(ActivityFocus.agent))
             case .tunnelDown: model.show(.remoteAccess)
             }

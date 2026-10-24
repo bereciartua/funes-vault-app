@@ -431,6 +431,8 @@ public struct TidyUpService: Sendable {
             } catch let error as ProviderError {
                 // At the cap the tidy-up waits for the next day; a provider that fails stops the run.
                 throw Stop.from(error)
+            } catch {
+                throw Stop(code: "provider_failed")
             }
             let outcome = TidyUpValidator.validate(output, cluster: cluster)
             let engine = ModelRouter.engine(provider)

@@ -17,6 +17,9 @@ struct ModelSettingsPane: View {
     @State private var split = false
     @State private var autoApply = AutoApplyLevel.off
     @State private var today: CloudRequestCap.Day?
+    /// Mirrors `Preferences.tidyUpDaily` and `tidyUpSchedule` (task 6b.5).
+    @State private var tidyUpDaily = false
+    @State private var tidyUpTime = Date()
 
     private var settings: ModelSettings { model.modelSettings }
 
@@ -65,16 +68,16 @@ struct ModelSettingsPane: View {
                     .disabled(!canSplit)
                     .onChange(of: split) { _, on in model.preferences.splitNewMemories = on }
                 Text(splitCaption).font(.callout).foregroundStyle(.secondary)
+                tidyUpRows
                 Picker(String(localized: "Apply changes automatically"), selection: $autoApply) {
                     Text(String(localized: "Off")).tag(AutoApplyLevel.off)
                     Text(String(localized: "Duplicates only")).tag(AutoApplyLevel.duplicatesOnly)
-                        .disabled(NewMemoryAutoApply.highestAvailable < .duplicatesOnly)
+                        .disabled(highestLevel < .duplicatesOnly)
                     Text(String(localized: "Everything except conflicts")).tag(AutoApplyLevel.exceptConflicts)
-                        .disabled(NewMemoryAutoApply.highestAvailable < .exceptConflicts)
+                        .disabled(highestLevel < .exceptConflicts)
                 }
                 .onChange(of: autoApply) { _, level in model.preferences.applyAutomatically = level }
-                Text(String(localized: "Off: every proposal waits for you in the Inbox. No model has been accurate enough yet to save new memories by itself, so the other levels stay off. Agents always follow their own access."))
-                    .font(.callout).foregroundStyle(.secondary)
+                Text(autoApplyCaption).font(.callout).foregroundStyle(.secondary)
             }
             Section(String(localized: "Cloud limit")) {
                 Picker(String(localized: "Send memories to cloud models up to"), selection: Binding(get: { settings.cloudLimit },
@@ -161,7 +164,11 @@ struct ModelSettingsPane: View {
             classify = model.preferences.classifyCaptures
             split = model.preferences.splitNewMemories
             autoApply = model.preferences.applyAutomatically
+            tidyUpDaily = model.preferences.tidyUpDaily
+            let schedule = model.preferences.tidyUpSchedule
+            tidyUpTime = Calendar.current.date(bySettingHour: schedule.hour, minute: schedule.minute, second: 0, of: Date()) ?? Date()
         }
+        .task { await model.tidyUp.load() }
         .task(id: model.activityGeneration) {
             today = try? await settings.cap(store: model.services.store, activity: model.services.activity).today(now: Date())
         }
@@ -197,6 +204,99 @@ struct ModelSettingsPane: View {
         let agents = Int((Double(cap) * CloudRequestCap.agentShare).rounded(.down))
         let total = today?.total ?? 0, byAgents = today?.agents ?? 0
         return String(localized: "Today: \(total) of \(cap), agents \(byAgents) of \(agents). Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow.")
+    }
+
+    // MARK: Daily tidy-up (memory processing §9, task 6b.5)
+
+    @ViewBuilder
+    private var tidyUpRows: some View {
+        LabeledContent(String(localized: "Daily tidy-up")) {
+            HStack(spacing: 8) {
+                Picker(String(localized: "Daily tidy-up"), selection: $tidyUpDaily) {
+                    Text(String(localized: "Off")).tag(false)
+                    Text(String(localized: "Daily")).tag(true)
+                }
+                .labelsHidden().fixedSize()
+                .onChange(of: tidyUpDaily) { _, on in
+                    guard on != model.preferences.tidyUpDaily else { return }
+                    model.preferences.tidyUpDaily = on
+                    // The notification after a run with results (§9.5).
+                    if on { model.requestNotificationPermission { _ in } }
+                }
+                if tidyUpDaily {
+                    DatePicker(String(localized: "At"), selection: $tidyUpTime, displayedComponents: .hourAndMinute)
+                        .labelsHidden().fixedSize()
+                        .onChange(of: tidyUpTime) { _, time in
+                            let c = Calendar.current.dateComponents([.hour, .minute], from: time)
+                            model.preferences.tidyUpSchedule = TidyUpSchedule(hour: c.hour ?? 3, minute: c.minute ?? 0)
+                        }
+                }
+                Button(model.tidyUp.running ? String(localized: "Tidying Up…") : String(localized: "Tidy Up Now")) {
+                    Task { await model.tidyUp.runNow() }
+                }
+                .disabled(model.tidyUp.running)
+            }
+        }
+        LabeledContent(String(localized: "Tidy-up model")) {
+            Picker(String(localized: "Tidy-up model"), selection: Binding(get: { settings.tidyUpID }, set: { settings.setTidyUp($0) })) {
+                Text(String(localized: "Same as New memories")).tag(String?.none)
+                ForEach(settings.providers) { provider in
+                    Text("\(provider.name) · \(provider.model.isEmpty ? String(localized: "no model") : provider.model)")
+                        .tag(Optional(provider.id))
+                }
+                ForEach(SubscriptionConfig.Kind.allCases) { kind in
+                    if settings.executables[kind] != nil || settings.tidyUpID == kind.rawValue {
+                        Text("\(kind.name) · \(settings.subscription(kind).model)").tag(Optional(kind.rawValue))
+                    }
+                }
+            }
+            .labelsHidden().fixedSize()
+        }
+        Text(tidyUpCaption).font(.callout).foregroundStyle(.secondary)
+        if let disclosure = tidyUpDisclosure { WarningLabel(text: disclosure, symbol: "arrow.up.forward.app") }
+    }
+
+    /// Compares changed memories with related ones and proposes updates, merges, splits, archives
+    /// and questions; the last run, or before the first, the estimate (§9.6).
+    private var tidyUpCaption: String {
+        var lines = [settings.tidyUpName == nil
+            ? String(localized: "Finds exact duplicates and expired memories on this Mac. Choose a local server or a cloud model to also find updates, merges, splits and conflicts; Apple's on-device model isn't used for this.")
+            : String(localized: "Compares memories that changed with related ones and proposes updates, merges, splits and archives, and asks you about conflicts. Proposals wait in the Inbox's Tidy-up section.")]
+        if let run = model.tidyUp.lastRun {
+            lines.append(TidyUpController.summary(run))
+        } else if let estimate = model.tidyUp.estimate, settings.tidyUpName != nil {
+            lines.append(String(localized: "About \(estimate.memories) memories to check. Roughly \(estimate.requests) requests the first week, then a few a day."))
+        }
+        return lines.joined(separator: " ")
+    }
+
+    /// "The daily tidy-up sends related memories (up to Internal) to Anthropic." (model providers §4)
+    private var tidyUpDisclosure: String? {
+        guard let name = settings.tidyUpName, let modelID = settings.tidyUpModel, !modelID.isEmpty else { return nil }
+        let isPlan = SubscriptionConfig.Kind(rawValue: settings.tidyUpID ?? settings.classifierID ?? "") != nil
+        if !isPlan, let id = settings.tidyUpID ?? settings.classifierID, let provider = settings.providers.first(where: { $0.id == id }),
+           (localities[provider.id] ?? (provider.endpoint.markedCloud ? .cloud : .localServer)).isLocal {
+            return nil
+        }
+        switch settings.cloudLimit {
+        case .never: return String(localized: "The daily tidy-up sends nothing to \(name): the cloud limit is Nothing, so only exact duplicates and expired memories are found.")
+        case .upTo(let level): return String(localized: "The daily tidy-up sends related memories (up to \(Self.title(.upTo(level)))), with their dates and sources, to \(name).")
+        }
+    }
+
+    /// The highest level either task's engine reached: New memories' (none yet) or the tidy-up's.
+    private var highestLevel: AutoApplyLevel {
+        max(NewMemoryAutoApply.highestAvailable, settings.tidyUpModel.map(TidyUpAutoApply.reached(model:)) ?? .off)
+    }
+
+    private var autoApplyCaption: String {
+        let tidy = settings.tidyUpModel.map(TidyUpAutoApply.reached(model:)) ?? .off
+        let tidyLine = switch tidy {
+        case .off: String(localized: "The tidy-up's model hasn't been accurate enough to change memories by itself, so its proposals all wait for you.")
+        case .duplicatesOnly: String(localized: "With this model the tidy-up can archive duplicates by itself; everything else waits for you.")
+        case .exceptConflicts: String(localized: "With this model the tidy-up can apply updates, merges, splits and archives by itself; conflicts always wait for you.")
+        }
+        return String(localized: "Off: every proposal waits for you in the Inbox. No model has been accurate enough yet to save new memories by itself. Agents always follow their own access.") + " " + tidyLine + " " + String(localized: "Undo any automatic change for 30 days in the Inbox.")
     }
 
     /// Splitting needs a local server or a cloud model with a model chosen; Apple on-device only
