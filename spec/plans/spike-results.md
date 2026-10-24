@@ -857,7 +857,7 @@ R@30 follows R@5: Qwen3 on every memory reaches 0.89–0.96 R@30 on the raw-task
 1. **At the Internal limit, the OpenAI models gain within the limit and barely touch the rest.** Raw English goes from 0.69 to 0.77, Spanish tasks against English memories from 0.31 to 0.48–0.52. The bge-only labels move both ways: across the 7 sets (182 label slots), 3-small and 3-large each end one label down. Where one drops, it falls from the top 5 to #6–8, still within the 30 that agent retrieval returns. What pushes it down is a non-relevant memory on the same topic that has a provider vector (for "My head hurts after a long day at the computer", *drinking water* and *desk set-up* now rank above *migraine*), not a relevant one.
 2. **ADR-0023's per-index min-max is fine for cloud models.** Z-scoring each index over its own pool does worse for 3-large (net −5 label slots instead of −1). It does better for Qwen3 at the limit (−1 instead of −4), but a local model has no bge-only memories, so that case doesn't arise. Keep decision 2 as it is.
 3. **The cloud limit caps a cloud model's Spanish gain.** At Internal, the 37% of relevant labels on Sensitive and Restricted memories stay at bge's level, which for Spanish tasks against English memories is 0.12. 3-large's cross-lingual 0.72 on every memory becomes 0.52 at the limit, and the mixed vault gains little (0.36 → 0.40).
-4. **For Spanish, a local multilingual model beats a cloud model at the limit.** Qwen3-Embedding-0.6B (Apache-2.0, 1,024 dimensions, 95 ms per query on MPS fp16) embeds every memory, so it doesn't lose the sensitive ones. It beats 3-large at Internal on every Spanish set but one (0.62 vs 0.52 cross-lingual, 0.66 vs 0.40 mixed; the Spanish vault with raw tasks is 0.67 vs 0.61). It's free, and nothing leaves the Mac. Ollama serves it as `qwen3-embedding:0.6b` (about 640 MB). Its queries need the task instruction, which is the "query and document roles" 6c.2 already plans. Ollama's GGUF build wasn't measured.
+4. **For Spanish, a local multilingual model beats a cloud model at the limit.** Qwen3-Embedding-0.6B (Apache-2.0, 1,024 dimensions, 95 ms per query on MPS fp16) embeds every memory, so it doesn't lose the sensitive ones. It beats 3-large at Internal on every Spanish set but one (0.62 vs 0.52 cross-lingual, 0.66 vs 0.40 mixed; the Spanish vault with raw tasks is 0.67 vs 0.61). It's free, and nothing leaves the Mac. Ollama serves it as `qwen3-embedding:0.6b` (about 640 MB), and its build scores the same (below). Its queries need the task instruction, which is the "query and document roles" 6c.2 already plans.
 5. **The OpenAI models would be best with no limit,** but that means sending Health and Finance memories to OpenAI. 3-large on every memory: 0.82 raw English, 0.72 cross-lingual, 0.95 on the Spanish vault with keywords.
 6. **The strong models would do better with less keyword weight.** On raw tasks, 3-small alone (embedding only) reaches 0.85 against 0.77 in the hybrid, and 0.78 cross-lingual against 0.67. The 0.30 keyword weight was tuned for bge-small. Per-index weights are a possible later gain, not part of 6c.
 7. **Spanish against Spanish memories is better than Spike 2b's cross-lingual number suggested:** bge-small hybrid gets 0.58 raw and 0.83 with keywords, mostly from FTS5 (0.56 / 0.77), since the words match. Cross-lingual (Spanish tasks, English memories) is the hard case: 0.31.
@@ -872,13 +872,27 @@ Retrieval at their 90th percentile (bge: 0.54; it ships 0.55), vault at the 78th
 | `text-embedding-3-small` | 0.20 | 0.25 |
 | `text-embedding-3-large` | 0.18 | 0.22 |
 | Qwen3-Embedding-0.6B | 0.24 | 0.28 |
+| Ollama's `qwen3-embedding:0.6b` (Q8_0) | 0.24 | 0.29 |
 | nomic v1.5 (without prefixes) | 0.52 (0.45) | 0.55 (0.48) |
 | multilingual-e5-small | 0.79 | 0.80 |
 
 They're measured on the same fixture they're used on, so they're slightly optimistic. The first three are 6c's built-in thresholds; Calibrate uses the same rule, and run on bge-small it gives back 0.50 / 0.54.
 
+### Ollama's build of Qwen3 (24 Oct 2026, Ollama 0.40.10)
+`qwen3-embedding:0.6b` is the same model quantized to Q8_0 (595.78M parameters, 1,024 dimensions, 639 MB). Through Ollama's `/v1/embeddings` with the task instruction on queries:
+
+| Qwen3-Embedding-0.6B, every memory (R@5) | EN, raw | EN, + keywords | EN vault, ES tasks | ES, raw | ES, + keywords | mixed, ES tasks | mixed, EN tasks |
+|---|---|---|---|---|---|---|---|
+| Hugging Face weights (fp16, sentence-transformers) | 0.73 | 0.93 | 0.62 | 0.67 | 0.88 | 0.66 | 0.71 |
+| Ollama, Q8_0 | 0.73 | 0.93 | 0.61 | 0.66 | 0.89 | 0.66 | 0.69 |
+
+- Document vectors match the Hugging Face ones (cosine ≥ 0.999); so do query vectors, but only with the instruction. Without it they fall to a median of 0.89, and so does the score, so an Ollama setup that sends queries without the instruction loses most of the gain. Funes's adapter adds it (`EmbeddingCatalog`). A first pass of this benchmark sent Ollama's queries without it (a bug in `bench6c.py`'s OpenAI-compatible path, fixed; the OpenAI models use no prefix, so their numbers didn't change) and got 0.65 on raw English.
+- Batching doesn't change Ollama's vectors (one text or 40 per call: cosine 1.000).
+- **Calibrate** in FunesCore against it (`liveOllamaQwen3Calibration`, `FUNES_LIVE_OLLAMA=1`) gives **0.24 / 0.29** (7,785 tokens, 12 s), and this benchmark's rule the same. The built-in 0.24 / 0.28 stays: one hundredth lower keeps a few more candidates, within noise.
+- 46 ms per query through Ollama (Metal), against 95 ms for sentence-transformers on MPS fp16.
+
 ### Not measured
 - Gemini embedding (left out at the author's choice). `gemini-001` and `gemini-001-task` stay in `bench6c.py` for later.
-- Ollama's GGUF builds (`nomic-embed-text`, `qwen3-embedding:0.6b`); Ollama isn't installed. The local numbers above are the Hugging Face weights.
+- LM Studio's build of Qwen3, and Ollama's `nomic-embed-text`.
 - Larger multilingual models (bge-m3, 2.2 GB; EmbeddingGemma-300m, gated on Hugging Face, about 620 MB in Ollama).
 - The 10,000-memory corpus.

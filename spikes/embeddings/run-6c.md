@@ -1,6 +1,6 @@
 # Phase 6c.1: provider embeddings as a second index
 
-Date: 2026-10-24 13:26. Fixtures: memories-200 (EN) and memories-200-es (ES translation), queries-30 (raw EN), queries-30-expanded (EN task + keywords), queries-30-es (raw ES), queries-30-es-expanded (ES task + ES keywords). Cloud limit `internal`: 141 of 200 memories get a provider vector; 59 keep only bge, holding 26 of 71 relevant labels.
+Date: 2026-10-24 14:10. Fixtures: memories-200 (EN) and memories-200-es (ES translation), queries-30 (raw EN), queries-30-expanded (EN task + keywords), queries-30-es (raw ES), queries-30-es-expanded (ES task + ES keywords). Cloud limit `internal`: 141 of 200 memories get a provider vector; 59 keep only bge, holding 26 of 71 relevant labels.
 
 Methods: **hybrid** = the model's vectors on every memory (as for a local model, or a cloud limit of Secret); **dual@limit** = ADR-0023: provider score where the memory has a provider vector (within the limit), bge-small's otherwise, each min-max normalized over its own pool (bge over the whole vault); **dual-b@limit** = the same with bge normalized over the bge-only memories; **ens** = mean of the two normalized scores where both exist. **dualz** / **dualq** = the same with each index z-scored / percentile-ranked over its own pool. "R@5 bge-only" = micro recall@5 of the relevant labels on memories above the limit.
 
@@ -13,6 +13,7 @@ Thresholds: percentiles of non-relevant cosines on raw EN tasks: vault p78.1 (wh
 | nomic-v1.5-noprefix | nomic-ai/nomic-embed-text-v1.5 | 768 | 0.45 / 0.48 | 27.7 | sentence-transformers, PyTorch 2.14.1 mps fp32 |
 | me5-small | intfloat/multilingual-e5-small | 384 | 0.79 / 0.80 | 14.6 | sentence-transformers, PyTorch 2.14.1 mps fp32 |
 | qwen3-0.6b | Qwen/Qwen3-Embedding-0.6B | 1024 | 0.24 / 0.28 | 95.2 | sentence-transformers, PyTorch 2.14.1 mps fp16 |
+| ollama-qwen3-0.6b | qwen3-embedding:0.6b | 1024 | 0.24 / 0.29 | 45.7 | http://127.0.0.1:11434/v1 (openai) |
 | oai-3-small | text-embedding-3-small | 1536 | 0.20 / 0.25 | 208.7 | https://api.openai.com/v1 (openai) |
 | oai-3-large | text-embedding-3-large | 3072 | 0.18 / 0.22 | 236.6 | https://api.openai.com/v1 (openai) |
 
@@ -54,6 +55,14 @@ Thresholds: percentiles of non-relevant cosines on raw EN tasks: vault p78.1 (wh
 | qwen3-0.6b dualq@limit | 0.594 | 0.944 | 0.786 | 0.538 |
 | qwen3-0.6b ens@all | 0.722 | 0.961 | 0.842 | 0.731 |
 | qwen3-0.6b ens@limit | 0.678 | 0.939 | 0.858 | 0.692 |
+| ollama-qwen3-0.6b alone | 0.722 | 0.956 | 0.853 | 0.692 |
+| ollama-qwen3-0.6b hybrid | 0.728 | 0.961 | 0.840 | 0.731 |
+| ollama-qwen3-0.6b dual@limit | 0.694 | 0.928 | 0.852 | 0.692 |
+| ollama-qwen3-0.6b dual-b@limit | 0.661 | 0.928 | 0.852 | 0.731 |
+| ollama-qwen3-0.6b dualz@limit | 0.756 | 0.956 | 0.825 | 0.731 |
+| ollama-qwen3-0.6b dualq@limit | 0.594 | 0.944 | 0.787 | 0.538 |
+| ollama-qwen3-0.6b ens@all | 0.722 | 0.961 | 0.842 | 0.731 |
+| ollama-qwen3-0.6b ens@limit | 0.678 | 0.939 | 0.858 | 0.692 |
 | oai-3-small alone | 0.850 | 0.933 | 0.936 | 0.846 |
 | oai-3-small hybrid | 0.767 | 0.939 | 0.872 | 0.769 |
 | oai-3-small dual@limit | 0.772 | 0.928 | 0.836 | 0.769 |
@@ -109,6 +118,14 @@ Thresholds: percentiles of non-relevant cosines on raw EN tasks: vault p78.1 (wh
 | qwen3-0.6b dualq@limit | 0.872 | 1.000 | 0.916 | 0.885 |
 | qwen3-0.6b ens@all | 0.944 | 1.000 | 0.967 | 0.962 |
 | qwen3-0.6b ens@limit | 0.967 | 1.000 | 0.967 | 0.962 |
+| ollama-qwen3-0.6b alone | 0.911 | 1.000 | 0.975 | 0.962 |
+| ollama-qwen3-0.6b hybrid | 0.933 | 1.000 | 0.983 | 0.962 |
+| ollama-qwen3-0.6b dual@limit | 0.933 | 1.000 | 0.961 | 0.885 |
+| ollama-qwen3-0.6b dual-b@limit | 0.894 | 1.000 | 0.961 | 0.885 |
+| ollama-qwen3-0.6b dualz@limit | 0.944 | 1.000 | 0.967 | 0.962 |
+| ollama-qwen3-0.6b dualq@limit | 0.872 | 1.000 | 0.916 | 0.885 |
+| ollama-qwen3-0.6b ens@all | 0.944 | 1.000 | 0.967 | 0.962 |
+| ollama-qwen3-0.6b ens@limit | 0.967 | 1.000 | 0.967 | 0.962 |
 | oai-3-small alone | 0.922 | 1.000 | 1.000 | 0.962 |
 | oai-3-small hybrid | 0.928 | 1.000 | 0.983 | 0.962 |
 | oai-3-small dual@limit | 0.928 | 1.000 | 0.978 | 0.923 |
@@ -164,6 +181,14 @@ Thresholds: percentiles of non-relevant cosines on raw EN tasks: vault p78.1 (wh
 | qwen3-0.6b dualq@limit | 0.472 | 0.661 | 0.532 | 0.115 |
 | qwen3-0.6b ens@all | 0.583 | 0.844 | 0.622 | 0.423 |
 | qwen3-0.6b ens@limit | 0.478 | 0.633 | 0.529 | 0.115 |
+| ollama-qwen3-0.6b alone | 0.650 | 0.917 | 0.777 | 0.577 |
+| ollama-qwen3-0.6b hybrid | 0.611 | 0.872 | 0.747 | 0.538 |
+| ollama-qwen3-0.6b dual@limit | 0.461 | 0.661 | 0.594 | 0.115 |
+| ollama-qwen3-0.6b dual-b@limit | 0.461 | 0.661 | 0.592 | 0.115 |
+| ollama-qwen3-0.6b dualz@limit | 0.472 | 0.661 | 0.594 | 0.115 |
+| ollama-qwen3-0.6b dualq@limit | 0.472 | 0.661 | 0.532 | 0.115 |
+| ollama-qwen3-0.6b ens@all | 0.572 | 0.828 | 0.621 | 0.385 |
+| ollama-qwen3-0.6b ens@limit | 0.478 | 0.633 | 0.529 | 0.115 |
 | oai-3-small alone | 0.778 | 0.900 | 0.954 | 0.808 |
 | oai-3-small hybrid | 0.667 | 0.800 | 0.839 | 0.654 |
 | oai-3-small dual@limit | 0.478 | 0.594 | 0.634 | 0.115 |
@@ -219,6 +244,14 @@ Thresholds: percentiles of non-relevant cosines on raw EN tasks: vault p78.1 (wh
 | qwen3-0.6b dualq@limit | 0.556 | 0.861 | 0.801 | 0.423 |
 | qwen3-0.6b ens@all | 0.611 | 0.900 | 0.785 | 0.615 |
 | qwen3-0.6b ens@limit | 0.567 | 0.844 | 0.795 | 0.462 |
+| ollama-qwen3-0.6b alone | 0.706 | 0.939 | 0.775 | 0.692 |
+| ollama-qwen3-0.6b hybrid | 0.656 | 0.939 | 0.787 | 0.654 |
+| ollama-qwen3-0.6b dual@limit | 0.567 | 0.861 | 0.766 | 0.462 |
+| ollama-qwen3-0.6b dual-b@limit | 0.583 | 0.833 | 0.781 | 0.500 |
+| ollama-qwen3-0.6b dualz@limit | 0.594 | 0.861 | 0.791 | 0.462 |
+| ollama-qwen3-0.6b dualq@limit | 0.556 | 0.861 | 0.801 | 0.423 |
+| ollama-qwen3-0.6b ens@all | 0.611 | 0.900 | 0.769 | 0.615 |
+| ollama-qwen3-0.6b ens@limit | 0.567 | 0.844 | 0.778 | 0.462 |
 | oai-3-small alone | 0.756 | 0.928 | 0.879 | 0.769 |
 | oai-3-small hybrid | 0.711 | 0.944 | 0.849 | 0.769 |
 | oai-3-small dual@limit | 0.600 | 0.861 | 0.784 | 0.500 |
@@ -274,6 +307,14 @@ Thresholds: percentiles of non-relevant cosines on raw EN tasks: vault p78.1 (wh
 | qwen3-0.6b dualq@limit | 0.800 | 0.950 | 0.893 | 0.769 |
 | qwen3-0.6b ens@all | 0.883 | 0.983 | 0.928 | 0.846 |
 | qwen3-0.6b ens@limit | 0.850 | 0.983 | 0.908 | 0.808 |
+| ollama-qwen3-0.6b alone | 0.872 | 0.972 | 0.983 | 0.923 |
+| ollama-qwen3-0.6b hybrid | 0.894 | 0.983 | 0.967 | 0.962 |
+| ollama-qwen3-0.6b dual@limit | 0.817 | 0.972 | 0.922 | 0.731 |
+| ollama-qwen3-0.6b dual-b@limit | 0.761 | 0.956 | 0.939 | 0.731 |
+| ollama-qwen3-0.6b dualz@limit | 0.850 | 0.950 | 0.942 | 0.731 |
+| ollama-qwen3-0.6b dualq@limit | 0.800 | 0.950 | 0.893 | 0.769 |
+| ollama-qwen3-0.6b ens@all | 0.883 | 0.983 | 0.928 | 0.846 |
+| ollama-qwen3-0.6b ens@limit | 0.850 | 0.983 | 0.908 | 0.808 |
 | oai-3-small alone | 0.900 | 1.000 | 0.983 | 0.923 |
 | oai-3-small hybrid | 0.906 | 1.000 | 0.967 | 0.923 |
 | oai-3-small dual@limit | 0.850 | 0.989 | 0.923 | 0.731 |
@@ -329,6 +370,14 @@ Thresholds: percentiles of non-relevant cosines on raw EN tasks: vault p78.1 (wh
 | qwen3-0.6b dualq@limit | 0.378 | 0.783 | 0.514 | 0.385 |
 | qwen3-0.6b ens@all | 0.383 | 0.694 | 0.551 | 0.385 |
 | qwen3-0.6b ens@limit | 0.350 | 0.617 | 0.532 | 0.385 |
+| ollama-qwen3-0.6b alone | 0.672 | 0.922 | 0.755 | 0.654 |
+| ollama-qwen3-0.6b hybrid | 0.661 | 0.889 | 0.643 | 0.692 |
+| ollama-qwen3-0.6b dual@limit | 0.389 | 0.767 | 0.571 | 0.385 |
+| ollama-qwen3-0.6b dual-b@limit | 0.361 | 0.706 | 0.565 | 0.385 |
+| ollama-qwen3-0.6b dualz@limit | 0.478 | 0.783 | 0.611 | 0.385 |
+| ollama-qwen3-0.6b dualq@limit | 0.367 | 0.783 | 0.517 | 0.346 |
+| ollama-qwen3-0.6b ens@all | 0.383 | 0.706 | 0.551 | 0.385 |
+| ollama-qwen3-0.6b ens@limit | 0.350 | 0.617 | 0.532 | 0.385 |
 | oai-3-small alone | 0.678 | 0.833 | 0.797 | 0.654 |
 | oai-3-small hybrid | 0.539 | 0.800 | 0.606 | 0.654 |
 | oai-3-small dual@limit | 0.361 | 0.683 | 0.547 | 0.346 |
@@ -384,6 +433,14 @@ Thresholds: percentiles of non-relevant cosines on raw EN tasks: vault p78.1 (wh
 | qwen3-0.6b dualq@limit | 0.550 | 0.783 | 0.648 | 0.385 |
 | qwen3-0.6b ens@all | 0.650 | 0.900 | 0.754 | 0.577 |
 | qwen3-0.6b ens@limit | 0.594 | 0.756 | 0.744 | 0.462 |
+| ollama-qwen3-0.6b alone | 0.722 | 0.956 | 0.828 | 0.692 |
+| ollama-qwen3-0.6b hybrid | 0.694 | 0.900 | 0.783 | 0.692 |
+| ollama-qwen3-0.6b dual@limit | 0.622 | 0.756 | 0.750 | 0.462 |
+| ollama-qwen3-0.6b dual-b@limit | 0.622 | 0.756 | 0.733 | 0.462 |
+| ollama-qwen3-0.6b dualz@limit | 0.606 | 0.756 | 0.722 | 0.462 |
+| ollama-qwen3-0.6b dualq@limit | 0.550 | 0.783 | 0.653 | 0.385 |
+| ollama-qwen3-0.6b ens@all | 0.650 | 0.900 | 0.754 | 0.577 |
+| ollama-qwen3-0.6b ens@limit | 0.594 | 0.756 | 0.744 | 0.462 |
 | oai-3-small alone | 0.756 | 0.911 | 0.867 | 0.731 |
 | oai-3-small hybrid | 0.689 | 0.917 | 0.848 | 0.654 |
 | oai-3-small dual@limit | 0.611 | 0.783 | 0.758 | 0.462 |
@@ -431,6 +488,12 @@ Thresholds: percentiles of non-relevant cosines on raw EN tasks: vault p78.1 (wh
 | qwen3-0.6b dualq@limit | 0.59 (0.54) | 0.87 (0.88) | 0.47 (0.12) | 0.56 (0.42) | 0.80 (0.77) | 0.38 (0.38) | 0.55 (0.38) |
 | qwen3-0.6b ens@all | 0.72 (0.73) | 0.94 (0.96) | 0.58 (0.42) | 0.61 (0.62) | 0.88 (0.85) | 0.38 (0.38) | 0.65 (0.58) |
 | qwen3-0.6b ens@limit | 0.68 (0.69) | 0.97 (0.96) | 0.48 (0.12) | 0.57 (0.46) | 0.85 (0.81) | 0.35 (0.38) | 0.59 (0.46) |
+| ollama-qwen3-0.6b hybrid | 0.73 (0.73) | 0.93 (0.96) | 0.61 (0.54) | 0.66 (0.65) | 0.89 (0.96) | 0.66 (0.69) | 0.69 (0.69) |
+| ollama-qwen3-0.6b dual@limit | 0.69 (0.69) | 0.93 (0.88) | 0.46 (0.12) | 0.57 (0.46) | 0.82 (0.73) | 0.39 (0.38) | 0.62 (0.46) |
+| ollama-qwen3-0.6b dualz@limit | 0.76 (0.73) | 0.94 (0.96) | 0.47 (0.12) | 0.59 (0.46) | 0.85 (0.73) | 0.48 (0.38) | 0.61 (0.46) |
+| ollama-qwen3-0.6b dualq@limit | 0.59 (0.54) | 0.87 (0.88) | 0.47 (0.12) | 0.56 (0.42) | 0.80 (0.77) | 0.37 (0.35) | 0.55 (0.38) |
+| ollama-qwen3-0.6b ens@all | 0.72 (0.73) | 0.94 (0.96) | 0.57 (0.38) | 0.61 (0.62) | 0.88 (0.85) | 0.38 (0.38) | 0.65 (0.58) |
+| ollama-qwen3-0.6b ens@limit | 0.68 (0.69) | 0.97 (0.96) | 0.48 (0.12) | 0.57 (0.46) | 0.85 (0.81) | 0.35 (0.38) | 0.59 (0.46) |
 | oai-3-small hybrid | 0.77 (0.77) | 0.93 (0.96) | 0.67 (0.65) | 0.71 (0.77) | 0.91 (0.92) | 0.54 (0.65) | 0.69 (0.65) |
 | oai-3-small dual@limit | 0.77 (0.77) | 0.93 (0.92) | 0.48 (0.12) | 0.60 (0.50) | 0.85 (0.73) | 0.36 (0.35) | 0.61 (0.46) |
 | oai-3-small dualz@limit | 0.78 (0.73) | 0.93 (0.92) | 0.47 (0.08) | 0.60 (0.46) | 0.86 (0.73) | 0.47 (0.38) | 0.60 (0.42) |
