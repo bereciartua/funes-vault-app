@@ -146,6 +146,22 @@
     "%@ has no access yet. It can connect, but sees nothing until you change its access." : {
 
     },
+    "%@ is an embedding model, so it can't answer chat requests. Choose it in AI Models ▸ Embeddings, and test a chat model here." : {
+
+    },
+    "%@ is an embedding model: choose a chat model in %@'s settings. Until then: on-device, then rules." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is an embedding model: choose a chat model in %2$@'s settings. Until then: on-device, then rules."
+          }
+        }
+      }
+    },
+    "%@ is an embedding model: it can't propose fields or split memories. Choose it in AI Models ▸ Embeddings instead, and put a chat model here, or leave this empty." : {
+
+    },
     "%@ isn't installed on this Mac" : {
 
     },
@@ -1337,6 +1353,9 @@
 
     },
     "Change…" : {
+
+    },
+    "Chat model" : {
 
     },
     "ChatGPT" : {
@@ -4632,6 +4651,9 @@
     "The provider asked to slow down; continuing at %@." : {
 
     },
+    "The provider refused the request (400). Check that %@ is a chat model the provider has." : {
+
+    },
     "The provider says to slow down. Try again later." : {
 
     },
@@ -5070,6 +5092,9 @@
 
     },
     "Use ⌘, ⌥ or ⌃ with a key." : {
+
+    },
+    "Used for New memories and the tidy-up. Embedding models are chosen in AI Models ▸ Embeddings; leave this empty if you only use this provider for embeddings." : {
 
     },
     "Uses your plan's limits, through the Claude Code or Codex you installed and signed in to. Funes never sees your sign-in. Your account's training setting applies." : {

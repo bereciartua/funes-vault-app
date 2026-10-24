@@ -320,6 +320,9 @@ struct ModelSettingsPane: View {
         }
         if let provider = settings.classifier {
             if provider.model.isEmpty { return String(localized: "Choose a model in \(provider.name)'s settings. Until then: on-device, then rules.") }
+            if EmbeddingCatalog.isEmbeddingModel(provider.model) {
+                return String(localized: "\(provider.model) is an embedding model: choose a chat model in \(provider.name)'s settings. Until then: on-device, then rules.")
+            }
             if provider.endpoint.kind == .anthropic && !settings.hasKey(provider.id) {
                 return String(localized: "Unavailable: check API key. Using on-device instead.")
             }
@@ -398,7 +401,7 @@ struct ProviderSheet: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 HStack {
-                    TextField(String(localized: "Model"), text: $provider.model)
+                    TextField(String(localized: "Chat model"), text: $provider.model)
                     if !models.isEmpty {
                         Menu(String(localized: "Choose")) {
                             ForEach(models, id: \.self) { name in Button(name) { provider.model = name } }
@@ -407,6 +410,10 @@ struct ProviderSheet: View {
                     }
                     Button(String(localized: "Load Models")) { loadModels() }
                 }
+                Text(EmbeddingCatalog.isEmbeddingModel(provider.model)
+                    ? String(localized: "\(provider.model) is an embedding model: it can't propose fields or split memories. Choose it in AI Models ▸ Embeddings instead, and put a chat model here, or leave this empty.")
+                    : String(localized: "Used for New memories and the tidy-up. Embedding models are chosen in AI Models ▸ Embeddings; leave this empty if you only use this provider for embeddings."))
+                    .font(.caption).foregroundStyle(.secondary)
             }
             .formStyle(.grouped)
             HStack {
@@ -473,6 +480,11 @@ struct ProviderSheet: View {
                 let proposal = try await ModelRouter.testConnection(try scratch.client(for: draft))
                 let seconds = Date().timeIntervalSince(started).formatted(.number.precision(.fractionLength(1)))
                 status = String(localized: "Works: it proposed “\(proposal.title)” in \(seconds) s.")
+            } catch ProviderError.server(status: 400) {
+                // A chat request the provider refused: usually a model that can't chat (an embedding model).
+                status = EmbeddingCatalog.isEmbeddingModel(provider.model)
+                    ? String(localized: "\(provider.model) is an embedding model, so it can't answer chat requests. Choose it in AI Models ▸ Embeddings, and test a chat model here.")
+                    : String(localized: "The provider refused the request (400). Check that \(provider.model) is a chat model the provider has.")
             } catch {
                 status = Self.text(error)
             }

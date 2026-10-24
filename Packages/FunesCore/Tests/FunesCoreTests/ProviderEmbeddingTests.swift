@@ -110,6 +110,12 @@ final class TranslatingEmbedder: EmbeddingProvider {
         #expect(EmbeddingCatalog.lookup("Qwen/Qwen3-Embedding-0.6B")?.retrievalThreshold == 0.28)
         #expect(EmbeddingCatalog.lookup("qwen3-embedding:4b")?.retrievalThreshold == nil)
         #expect(EmbeddingCatalog.lookup("openai/text-embedding-3-large")?.dimensions == 3072)
+        for name in ["qwen3-embedding:0.6b", "nomic-embed-text", "mxbai-embed-large", "bge-m3", "text-embedding-3-small"] {
+            #expect(EmbeddingCatalog.isEmbeddingModel(name), "\(name)")
+        }
+        for name in ["llama3.2", "qwen3:8b", "gpt-5-mini", "claude-haiku-5-5", ""] {
+            #expect(!EmbeddingCatalog.isEmbeddingModel(name), "\(name)")
+        }
         #expect(throws: ProviderError.insecureEndpoint) {
             try OpenAICompatibleEmbedder(endpoint: ProviderEndpoint(id: "x", kind: .openAICompatible,
                                                                     baseURL: URL(string: "http://api.example.com/v1")!),
