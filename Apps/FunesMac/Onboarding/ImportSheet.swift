@@ -35,7 +35,7 @@ struct ImportSheet: View {
     @State private var today: CloudRequestCap.Day?
 
     /// Splitting is on and this import would be split.
-    private var splits: Bool { model.preferences.splitNewMemories && kind != .funes && model.modelSettings.classifier != nil }
+    private var splits: Bool { model.preferences.splitNewMemories && kind != .funes && model.modelSettings.chosenName != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -133,7 +133,7 @@ struct ImportSheet: View {
             if splits {
                 let estimate = preview.estimatedRequests(includeDuplicates: includeDuplicates)
                 let left = max(0, model.modelSettings.dailyCap - (today?.total ?? 0))
-                Text(String(localized: "Splitting them into separate memories takes about \(estimate) requests to \(model.modelSettings.classifier?.name ?? ""). With a cloud model, \(left) of today's requests are left; the rest wait for tomorrow."))
+                Text(String(localized: "Splitting them into separate memories takes about \(estimate) requests to \(model.modelSettings.chosenName ?? ""). With a cloud model, \(left) of today's requests are left; the rest wait for tomorrow."))
                     .font(.callout).foregroundStyle(.secondary)
                     .task { today = try? await model.modelSettings.cap(store: model.services.store, activity: model.services.activity).today(now: Date()) }
             }

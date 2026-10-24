@@ -176,7 +176,7 @@ No. Agents can only propose new memories and corrections. An agent you give **Wr
 <details>
 <summary><b>Does it need Apple Intelligence?</b></summary>
 
-No. Search uses a small model built into the app (bge-small, on your Mac). Apple's on-device model, when your Mac has it (macOS 26 or later with Apple Intelligence), proposes titles, categories and sensitivity for captures; otherwise simple rules do. You can also choose Ollama, LM Studio, Anthropic, OpenAI or another OpenAI-compatible server for that in **Settings ▸ AI Models**, and with one of those, turn on **Split into separate memories**, which splits captures, agents' suggestions and imports into single memories and links them to what your vault holds. Every piece waits for you in the Inbox.
+No. Search uses a small model built into the app (bge-small, on your Mac). Apple's on-device model, when your Mac has it (macOS 26 or later with Apple Intelligence), proposes titles, categories and sensitivity for captures; otherwise simple rules do. You can also choose Ollama, LM Studio, Anthropic, OpenAI or another OpenAI-compatible server for that in **Settings ▸ AI Models**, or your Claude or ChatGPT plan through the Claude Code or Codex you already use (no API key), and with one of those, turn on **Split into separate memories**, which splits captures, agents' suggestions and imports into single memories and links them to what your vault holds. Every piece waits for you in the Inbox.
 </details>
 
 <details>
