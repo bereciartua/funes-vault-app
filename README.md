@@ -98,7 +98,7 @@ Agents propose memories, and by default each one waits in the **Inbox** as a car
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/inbox-dark.png">
-  <img alt="The Inbox: a correction from Claude Code showing the old text struck out and the new text, with editable title, text, kind, sensitivity and categories, the agent's reason as reported, and Later, Reject, Keep Both and Replace buttons." src="docs/images/inbox-light.png" width="720">
+  <img alt="The Inbox: a note from Claude Code split into 5 pieces on one card, split by the chosen model. One piece is marked Already saved, one Updates “Coffee order” and shows the old text struck out with the new text, and one is New with editable title, text, categories and sensitivity. Each piece shows the words it came from and has its own Reject and Apply buttons." src="docs/images/inbox-light.png" width="720">
 </picture>
 
 ### You see everything, and stop anything
