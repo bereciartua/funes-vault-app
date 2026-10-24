@@ -114,6 +114,12 @@ public enum CompanionErrorCode: String, Codable, Sendable, CaseIterable {
     /// `approvals.answer`: the panel's revision is stale (a memory or the agent's access changed).
     /// Fetch it again and show the new panel.
     case requestChanged = "request_changed"
+    /// `inbox.apply`: a memory the suggestion changes was edited, archived or deleted since it was
+    /// suggested. The suggestion is still waiting; review it on the Mac.
+    case targetChanged = "target_changed"
+    /// `inbox.apply`: merge, split and conflict suggestions (and actions this phone doesn't
+    /// know) are answered on the Mac.
+    case unsupportedAction = "unsupported_action"
 }
 
 /// A method call's error: `{"code":"…","message":"…"}`, plus `findings` for secrets and

@@ -114,7 +114,7 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 | `memories.update` | `{id, version, changes}` | `{version}`, or `conflict` if the version is stale |
 | `memories.archive` / `memories.restore` / `memories.delete` | `{id, version}` | `{version}` / `conflict` |
 | `inbox.list` | `{cursor?}` | `{items: [suggestion…], nextCursor?}` |
-| `inbox.apply` | `{suggestionId, edits?}` | `{memoryId}` |
+| `inbox.apply` | `{suggestionId, edits?}` | `{memoryId}`, or `target_changed` / `unsupported_action` (Phase 6) |
 | `inbox.reject` | `{suggestionId}` | `{}` |
 | `device.unpair` | — | `{}`. The Mac marks this device revoked (self-removal) |
 | `approvals.list` | — | `{items: [{id, kind, agentName, agentKind?, count, createdAt, expiresAt}]}`: what waits now, soonest deadline first (§4.1) |
@@ -135,13 +135,15 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 - `already_answered` (`approvals.*`: answered first, on the Mac or another iPhone)
 - `request_expired` (`approvals.*`: past its 15 minutes, an access request's in-call wait over, or withdrawn or invalidated)
 - `request_changed` (`approvals.answer`: a stale `revision`; fetch the panel again)
+- `target_changed` (`inbox.apply`: a memory the suggestion changes was edited, archived or deleted since it was suggested; the suggestion is still waiting, to be reviewed again on the Mac)
+- `unsupported_action` (`inbox.apply`: merge, split, conflict and unknown actions are answered on the Mac)
 
 **Edits:** in `changes` (and `inbox.apply`'s `edits`), an absent field is unchanged; `"expiresAt": null` removes the expiry.
 
 **Phase 6 (v0.3) Inbox changes** ([ADR-0020](decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](decisions/0021-daily-tidy-up.md)):
 - `inbox.list` items gain `groupId?`, `groupLabel?` ("ChatGPT · 12 pieces"), `outsideScope` and `targetMemoryVersion?`. `action` gains `duplicate`, `split`, `merge` and `conflict`.
 - The phone decodes an action it doesn't know as `unknown` and shows such items as "Review on your Mac". Both apps are updated together (there are no external users yet), so the Mac doesn't filter by phone version.
-- `inbox.apply` applies the suggestion's own action (the same per-action apply as the Mac). A stale target returns `conflict`. Merge, split and conflict suggestions are answered on the Mac until the phone gets their cards; `inbox.apply` refuses them from the phone with `unsupported_action`.
+- `inbox.apply` applies the suggestion's own action (the same per-action apply as the Mac): `create` saves, `update` replaces its target, `archive` archives it, `duplicate` changes nothing. A stale target returns `target_changed` (not `conflict`, which the phone's Inbox reads as "answered on your Mac"). Merge, split and conflict suggestions are answered on the Mac until the phone gets their cards; `inbox.apply` refuses them from the phone with `unsupported_action`.
 
 ### 4.1 Approvals from the iPhone (task 5.6)
 [FR-iOS-12](../product/03-requirements.md), [ADR-0019](decisions/0019-cloudkit-doorbell-for-iphone-approvals.md). The Mac's side is `CompanionApprovals` in `FunesCompanion`; the types are `FunesProtocol/Companion/CompanionApprovals.swift`.

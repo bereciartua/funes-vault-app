@@ -116,12 +116,21 @@ struct InboxView: View {
 }
 
 /// One suggestion: its source, the proposal (editable), evidence as quoted data, a duplicate
-/// hint, the engine that proposed it, and for a correction the change it makes.
+/// hint, the engine that proposed it, and what it does to the memories it refers to. Each action
+/// has its own buttons: Replace / Keep Both only for a correction.
 struct SuggestionCard: View {
     let model: AppModel
     let suggestion: Suggestion
     @State private var form: SuggestionDraft?
     @State private var target: Memory?
+    /// A merge's sources, a conflict's two memories, an archive's survivor, by id.
+    @State private var others: [SuggestionTarget] = []
+    @State private var memories: [UUID: Memory] = [:]
+    @State private var pieces: [Suggestion] = []
+    /// A memory it changes was edited, archived or deleted since it was suggested.
+    @State private var stale = false
+    /// A conflict's Edit…: the text that replaces the first memory.
+    @State private var conflictEdit: (title: String, body: String)?
     @State private var similar: [Memory] = []
     @State private var error: String?
     @State private var applied: [Memory] = []
@@ -154,8 +163,8 @@ struct SuggestionCard: View {
                     Button(String(localized: "Review Now")) { inbox.later.remove(suggestion.id) }
                 }
             } else if let binding = formBinding {
-                if let target { CorrectionDiff(old: target, new: binding.wrappedValue) }
-                fields(binding)
+                if stale { staleBanner }
+                context(binding)
                 if let evidence = suggestion.evidence, !evidence.isEmpty {
                     Text(String(localized: "Why, as reported: “\(evidence)”"))
                         .font(.callout).italic().foregroundStyle(.secondary)
@@ -191,6 +200,86 @@ struct SuggestionCard: View {
             form = value
             inbox.drafts[suggestion.id] = value
         })
+    }
+
+    private var staleBanner: some View {
+        HStack(spacing: 8) {
+            Label(String(localized: "Changed since this was suggested"), systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(Palette.warning)
+            Spacer()
+            Button(String(localized: "Review Again")) { reviewAgain() }
+                .help(String(localized: "Compare with the memory as it is now, then decide again."))
+        }
+        .font(.callout)
+    }
+
+    private func memory(_ id: UUID) -> Memory? { id == target?.id ? target : memories[id] }
+
+    private func role(_ role: SuggestionTarget.Role) -> [Memory] {
+        others.filter { $0.role == role }.compactMap { memory($0.memoryID) }
+    }
+
+    /// What the suggestion does, per action.
+    @ViewBuilder
+    private func context(_ binding: Binding<SuggestionDraft>) -> some View {
+        switch suggestion.action {
+        case .create:
+            fields(binding)
+        case .update:
+            if let target { CorrectionDiff(old: target, new: binding.wrappedValue) }
+            fields(binding)
+        case .archive:
+            if let target { quoted(String(localized: "Archives “\(target.title)”"), target) }
+            if let survivor = role(.survivor).first { quoted(String(localized: "Keeps “\(survivor.title)”"), survivor) }
+        case .duplicate:
+            if let target { quoted(String(localized: "Already in your vault: “\(target.title)”"), target) }
+        case .split:
+            if let target { quoted(String(localized: "Splits “\(target.title)” into \(pieces.count)"), target) }
+            ForEach(pieces) { piece in
+                Label { Text(piece.title).fontWeight(.medium) + Text(" · \(piece.body)").foregroundStyle(.secondary) }
+                    icon: { Image(systemName: "plus.circle") }
+                    .font(.callout).lineLimit(2)
+            }
+        case .merge:
+            let sources = role(.source)
+            Text(String(localized: "Merges \(sources.count) memories into one:")).font(.callout.weight(.medium))
+            ForEach(sources) { source in
+                Label(source.title, systemImage: "arrow.triangle.merge").font(.callout).lineLimit(1)
+            }
+            fields(binding)
+        case .conflict:
+            Text(String(localized: "These disagree. Which is true?")).font(.callout.weight(.medium))
+            ForEach(role(.target)) { m in
+                HStack(alignment: .top) {
+                    quoted(m.title, m)
+                    Button(String(localized: "Keep This")) { apply(.keep(m.id)) }
+                        .disabled(stale || conflictEdit != nil)
+                        .accessibilityLabel(String(localized: "Keep “\(m.title)”"))
+                }
+            }
+            if conflictEdit != nil {
+                TextField(String(localized: "Title"), text: Binding(get: { conflictEdit?.title ?? "" },
+                                                                   set: { conflictEdit?.title = $0 }))
+                    .textFieldStyle(.roundedBorder).font(.headline)
+                TextField(String(localized: "Text"), text: Binding(get: { conflictEdit?.body ?? "" },
+                                                                  set: { conflictEdit?.body = $0 }), axis: .vertical)
+                    .textFieldStyle(.roundedBorder).lineLimit(2...8)
+            }
+        case .unknown:
+            Text(String(localized: "This version of Funes Vault can't apply this suggestion. Update the app, or reject it."))
+                .font(.callout).foregroundStyle(.secondary)
+        }
+    }
+
+    private func quoted(_ heading: String, _ memory: Memory) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Button(heading) { model.showMemory(memory.id) }.buttonStyle(.link).font(.callout.weight(.medium))
+            Text(memory.body).font(.callout).foregroundStyle(.secondary).lineLimit(4)
+                .textSelection(.enabled)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.08)))
     }
 
     private func fields(_ form: Binding<SuggestionDraft>) -> some View {
@@ -232,20 +321,50 @@ struct SuggestionCard: View {
             Button(String(localized: "Reject"), role: .destructive) { reject() }
                 .keyboardShortcut(isFocused ? KeyboardShortcut(.delete, modifiers: .command) : nil)
                 .help(String(localized: "Reject (⌫ or ⌘⌫)"))
-            if target != nil {
+            switch suggestion.action {
+            case .update:
                 Button(String(localized: "Keep Both")) { apply(.keepBoth) }
-                Button(String(localized: "Replace")) { apply(.replace) }
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut(isFocused ? KeyboardShortcut(.return, modifiers: .command) : nil)
-            } else {
-                Button(String(localized: "Apply")) { apply(.keepBoth) }
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut(isFocused ? KeyboardShortcut(.return, modifiers: .command) : nil)
-                    .help(String(localized: "Apply (⌘⏎)"))
-                    .disabled(form.map { $0.title.trimmingCharacters(in: .whitespaces).isEmpty
-                        || $0.body.trimmingCharacters(in: .whitespaces).isEmpty || $0.categoryKeys.isEmpty } ?? true)
+                primary(String(localized: "Replace"), .replace).disabled(stale || target == nil || incomplete)
+            case .create:
+                primary(String(localized: "Apply")).help(String(localized: "Apply (⌘⏎)")).disabled(incomplete)
+            case .archive:
+                primary(String(localized: "Archive")).disabled(stale)
+            case .duplicate:
+                primary(String(localized: "Already Saved")).disabled(stale)
+                    .help(String(localized: "Nothing changes: it's already in your vault."))
+            case .split:
+                primary(String(localized: "Split into \(pieces.count)")).disabled(stale || pieces.isEmpty)
+            case .merge:
+                primary(String(localized: "Merge")).disabled(stale || incomplete)
+            case .conflict:
+                if let edit = conflictEdit, let first = role(.target).first {
+                    Button(String(localized: "Cancel")) { conflictEdit = nil }
+                    Button(String(localized: "Save")) {
+                        apply(.keep(first.id), edits: SuggestionEdit(title: edit.title, body: edit.body))
+                    }
+                    .buttonStyle(.borderedProminent).disabled(stale)
+                } else {
+                    Button(String(localized: "Edit…")) {
+                        if let first = role(.target).first { conflictEdit = (first.title, first.body) }
+                    }
+                    .disabled(stale)
+                    Button(String(localized: "Both Are True")) { apply(.bothTrue) }.disabled(stale)
+                }
+            case .unknown:
+                EmptyView()
             }
         }
+    }
+
+    private var incomplete: Bool {
+        form.map { $0.title.trimmingCharacters(in: .whitespaces).isEmpty
+            || $0.body.trimmingCharacters(in: .whitespaces).isEmpty || $0.categoryKeys.isEmpty } ?? true
+    }
+
+    private func primary(_ title: String, _ mode: ApplyMode? = nil) -> some View {
+        Button(title) { apply(mode) }
+            .buttonStyle(.borderedProminent)
+            .keyboardShortcut(isFocused ? KeyboardShortcut(.return, modifiers: .command) : nil)
     }
 
     private func hint(_ text: String, _ memories: [Memory]) -> some View {
@@ -285,6 +404,14 @@ struct SuggestionCard: View {
         let services = model.services
         form = inbox.draft(for: suggestion)
         if let id = suggestion.targetMemoryID { target = try? services.store.memory(id: id) }
+        others = (try? await services.suggestions.targets(suggestionID: suggestion.id)) ?? []
+        memories = Dictionary(uniqueKeysWithValues: ((try? services.store.memories(ids: others.map(\.memoryID))) ?? []).map { ($0.id, $0) })
+        pieces = suggestion.action == .split ? (try? await services.suggestions.pieces(groupID: suggestion.id)) ?? [] : []
+        stale = (try? await services.suggestions.isStale(suggestion)) ?? false
+        guard suggestion.action == .create || suggestion.action == .update || suggestion.action == .merge else {
+            similar = []
+            return
+        }
         var ids = (try? services.store.exactDuplicates(title: suggestion.title, body: suggestion.body)) ?? []
         let names = suggestion.categoryKeys.map(model.categoryName)
         let near = (try? await services.search.nearDuplicates(title: suggestion.title, body: suggestion.body,
@@ -294,17 +421,34 @@ struct SuggestionCard: View {
         similar = (try? services.store.memories(ids: ids)) ?? []
     }
 
-    private func apply(_ mode: ApplyMode) {
+    private func apply(_ mode: ApplyMode?, edits: SuggestionEdit? = nil) {
         Task {
             do {
-                let result = try await inbox.apply(suggestion, mode: mode)
+                let result = try await inbox.apply(suggestion, mode: mode, edits: edits)
                 error = nil
                 if !result.similarMemoryIDs.isEmpty {
                     inbox.result = String(localized: "Applied “\(suggestion.title)”. A similar memory exists.")
                 }
+            } catch VaultError.targetChanged {
+                stale = true
+                await load()
             } catch {
                 self.error = ErrorText.message(error)
             }
+        }
+    }
+
+    private func reviewAgain() {
+        Task {
+            do {
+                try await model.services.suggestions.reviewAgain(suggestionID: suggestion.id)
+                error = nil
+            } catch VaultError.targetChanged {
+                error = String(localized: "A memory it changes was archived or deleted. Reject it, or restore that memory first.")
+            } catch {
+                self.error = ErrorText.message(error)
+            }
+            await load()
         }
     }
 

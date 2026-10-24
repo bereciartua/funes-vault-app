@@ -75,11 +75,27 @@ public struct SuggestionEdit: Sendable, Hashable {
     }
 }
 
-/// Applying a correction (FR-S-06): replace the existing memory, or keep both.
-public enum ApplyMode: Sendable, Hashable { case replace, keepBoth }
+/// How to apply a suggestion (FR-I-02). An `update` takes Replace (the default) or Keep both
+/// (FR-S-06); a `conflict` needs the user's answer. Every other action applies one way and
+/// refuses a mode.
+public enum ApplyMode: Sendable, Hashable {
+    /// `update`: the target takes the proposal.
+    case replace
+    /// `update`: the proposal becomes a new memory and the target stays as it is.
+    case keepBoth
+    /// `conflict`: keep this memory, changed by the edits if there are any ("Edit…"), and archive
+    /// the other.
+    case keep(UUID)
+    /// `conflict`: both are true; no memory changes.
+    case bothTrue
+}
 
 public struct ApplyResult: Sendable, Hashable {
+    /// The memory created or updated; the target of an archive or a duplicate; the memory kept
+    /// in a conflict (the first for Both are true); a split's first piece.
     public var memoryID: UUID
+    /// Every memory created, changed or archived, in that order.
+    public var memoryIDs: [UUID]
     /// "Similar memory exists" (FR-V-13): active memories with the same normalized text. A hint only.
     public var similarMemoryIDs: [UUID]
 }
@@ -221,20 +237,39 @@ public final class SuggestionService: Sendable {
         return try MemoryStore.validateCategories(db, proposal.categoryKeys)
     }
 
+    /// Stores a pending suggestion. A targeted one records its target's current version, which
+    /// apply checks (`targetChanged`); `targets` are a merge's, split's or conflict's other
+    /// memories, at their current versions. `action` defaults to `update` with a target and
+    /// `create` without.
     static func insertSuggestion(_ db: Database, origin: SuggestionOrigin, agentID: UUID? = nil, deviceID: UUID? = nil,
-                                 importRunID: UUID? = nil, captureID: UUID? = nil, input: SuggestInput, categories: [String],
-                                 sensitivity: Sensitivity?, classification: String? = nil, now: Date) throws -> UUID {
+                                 importRunID: UUID? = nil, captureID: UUID? = nil, action: SuggestionAction? = nil,
+                                 input: SuggestInput, categories: [String], sensitivity: Sensitivity?,
+                                 classification: String? = nil, targets: [(UUID, SuggestionTarget.Role)] = [],
+                                 groupID: UUID? = nil, now: Date) throws -> UUID {
         let id = UUID()
+        let targetVersion = try input.targetMemoryID.flatMap {
+            try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [$0.db])
+        }
+        if input.targetMemoryID != nil, targetVersion == nil { throw VaultError.notFound }
         try db.execute(sql: """
-            INSERT INTO suggestion (id, origin, agent_id, device_id, import_run_id, capture_id, target_memory_id, action,
-              title, body, kind, category_keys, sensitivity, expires_at, confidence, evidence, purpose, caller_metadata,
-              classification, status, created_at, expires_after)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+            INSERT INTO suggestion (id, origin, agent_id, device_id, import_run_id, capture_id, target_memory_id,
+              target_memory_version, action, title, body, kind, category_keys, sensitivity, expires_at, confidence,
+              evidence, purpose, caller_metadata, classification, status, created_at, expires_after, group_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
             """, arguments: [id.db, origin.rawValue, agentID?.db, deviceID?.db, importRunID?.db, captureID?.db,
-                             input.targetMemoryID?.db, (input.targetMemoryID == nil ? SuggestionAction.create : .update).rawValue,
+                             input.targetMemoryID?.db, targetVersion,
+                             (action ?? (input.targetMemoryID == nil ? .create : .update)).rawValue,
                              input.title, input.body, input.kind?.rawValue, JSON.encode(categories), sensitivity?.rawValue,
                              input.expiresAt, input.confidence, input.evidence, input.purpose, input.metadataJSON,
-                             classification, now, now + lifetime])
+                             classification, now, now + lifetime, groupID?.db])
+        for (position, (memoryID, role)) in targets.enumerated() {
+            guard let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [memoryID.db]) else {
+                throw VaultError.notFound
+            }
+            try db.execute(sql: """
+                INSERT INTO suggestion_target (suggestion_id, memory_id, memory_version, role, position) VALUES (?, ?, ?, ?, ?)
+                """, arguments: [id.db, memoryID.db, version, role.rawValue, position])
+        }
         return id
     }
 
@@ -256,43 +291,255 @@ public final class SuggestionService: Sendable {
         }
     }
 
-    /// Creates (or, for a correction with `.replace`, updates) the memory, in one transaction with
-    /// the suggestion's status (FR-I-02). Runs validation and the secret scanner again.
+    /// The memories a suggestion refers to beyond its single target: a merge's sources, a
+    /// conflict's two memories, an archive's survivor. In order.
+    public func targets(suggestionID: UUID) async throws -> [SuggestionTarget] {
+        try await store.writer.read { db in try Self.extraTargets(db, suggestionID: suggestionID) }
+    }
+
+    /// The pending pieces of a split (or of a split input), in the order they were made.
+    public func pieces(groupID: UUID) async throws -> [Suggestion] {
+        try await store.writer.read { db in try Self.pieces(db, groupID: groupID) }
+    }
+
+    /// True when a memory the suggestion refers to changed, or was archived or deleted, since it
+    /// was suggested: Apply would refuse it with `targetChanged` (Keep both excepted).
+    public func isStale(_ suggestion: Suggestion) async throws -> Bool {
+        try await store.writer.read { db in
+            do {
+                _ = try Self.checked(db, Self.refs(db, suggestion))
+                return false
+            } catch VaultError.targetChanged {
+                return true
+            }
+        }
+    }
+
+    /// Review Again for a stale suggestion (domain model: stale → Apply shows the current memory
+    /// and asks again): records its memories' current versions, so the next Apply checks against
+    /// what the card shows now. A memory that is no longer active can't be reviewed again:
+    /// `targetChanged`, and the suggestion stays as it was.
+    public func reviewAgain(suggestionID: UUID) async throws {
+        try await store.writer.write { db in
+            guard let s = try Self.fetch(db, id: suggestionID) else { throw VaultError.notFound }
+            guard s.status == .pending else { throw VaultError.invalidState }
+            let current = try Self.checked(db, Self.refs(db, s).map { Ref(memoryID: $0.memoryID, version: nil, role: $0.role) })
+            if let target = s.targetMemoryID, let m = current[target] {
+                try db.execute(sql: "UPDATE suggestion SET target_memory_version = ? WHERE id = ?",
+                               arguments: [m.version, suggestionID.db])
+            }
+            for (id, m) in current {
+                try db.execute(sql: "UPDATE suggestion_target SET memory_version = ? WHERE suggestion_id = ? AND memory_id = ?",
+                               arguments: [m.version, suggestionID.db, id.db])
+            }
+        }
+    }
+
+    /// Applies the suggestion as its own action, in one transaction with its status (FR-I-02):
+    /// `create` saves a memory; `update` changes its target (Replace) or saves a new memory
+    /// (Keep both); `archive` archives its target; `duplicate` changes nothing; `split` saves its
+    /// pending pieces and archives the original; `merge` saves one memory and archives its
+    /// sources; `conflict` keeps the memory the user chose. Every memory changed or archived
+    /// must still be active at the version the suggestion was made on (`targetChanged`).
+    /// New text goes through validation and the secret scanner again.
     @discardableResult
-    public func apply(suggestionID: UUID, edits: SuggestionEdit = SuggestionEdit(), mode: ApplyMode = .keepBoth,
+    public func apply(suggestionID: UUID, edits: SuggestionEdit = SuggestionEdit(), mode: ApplyMode? = nil,
                       now: Date, actor: Actor = .user, via: ActivityEvent.Via = .app) async throws -> ApplyResult {
         let result = try await store.writer.write { db -> ApplyResult in
             guard let s = try Self.fetch(db, id: suggestionID) else { throw VaultError.notFound }
             guard s.status == .pending else { throw VaultError.invalidState }
-            let title = edits.title ?? s.title, body = edits.body ?? s.body
-            var categories = edits.categoryKeys ?? s.categoryKeys
-            if categories.isEmpty { categories = ["personal_preferences"] }
-            categories = try MemoryStore.validateCategories(db, categories)
-            let expiresAt = edits.expiresAt ?? s.expiresAt
-            let origin = try Self.originActor(db, s)
-            let memoryID: UUID
-            if s.action == .update, mode == .replace, let target = s.targetMemoryID,
-               let existing = try MemoryStore.fetch(db, id: target), existing.status != .deleted {
-                let m = try MemoryStore.update(db, id: target, MemoryEdit(
-                    title: title, body: body, kind: edits.kind ?? s.kind, categoryKeys: categories,
-                    sensitivity: edits.sensitivity ?? s.sensitivity, expiresAt: .some(expiresAt)), actor: actor, now: now)
-                memoryID = m.id
-            } else {
-                let m = try MemoryStore.insert(db, MemoryDraft(
-                    title: title, body: body, kind: edits.kind ?? s.kind ?? .fact, categoryKeys: categories,
-                    sensitivity: edits.sensitivity ?? s.sensitivity, expiresAt: expiresAt, confidence: s.confidence,
-                    source: origin.source, sourceAgentID: s.agentID, sourceDeviceID: s.deviceID), actor: origin.actor, now: now)
-                memoryID = m.id
-            }
-            try MemoryStore.appendProvenance(db, memoryID: memoryID, event: .appliedFromSuggestion, actor: actor, at: now)
+            let result = try Self.applyAction(db, s, edits: edits, mode: mode, now: now, actor: actor)
             try db.execute(sql: "UPDATE suggestion SET status = 'applied', decided_at = ?, result_memory_id = ? WHERE id = ?",
-                           arguments: [now, memoryID.db, suggestionID.db])
-            let similar = try MemoryStore.exactDuplicates(db, title: title, body: body, excluding: memoryID)
-            return ApplyResult(memoryID: memoryID, similarMemoryIDs: similar)
+                           arguments: [now, result.memoryID.db, suggestionID.db])
+            return result
         }
         activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "suggestion_applied",
-                                      outcome: "applied", ids: [suggestionID, result.memoryID]))
+                                      outcome: "applied", ids: [suggestionID] + result.memoryIDs))
         return result
+    }
+
+    /// A memory the suggestion refers to, at the version it was made on (nil: made before v0.3,
+    /// so only checked for being active).
+    struct Ref {
+        var memoryID: UUID
+        var version: Int?
+        var role: SuggestionTarget.Role
+    }
+
+    static func extraTargets(_ db: Database, suggestionID: UUID) throws -> [SuggestionTarget] {
+        try Row.fetchAll(db, sql: "SELECT * FROM suggestion_target WHERE suggestion_id = ? ORDER BY position",
+                         arguments: [suggestionID.db]).map { row in
+            SuggestionTarget(memoryID: try row.requiredUUID("memory_id"), memoryVersion: row["memory_version"],
+                             role: try row.required("role"))
+        }
+    }
+
+    static func pieces(_ db: Database, groupID: UUID) throws -> [Suggestion] {
+        try Row.fetchAll(db, sql: "SELECT * FROM suggestion WHERE group_id = ? AND status = 'pending' ORDER BY created_at, rowid",
+                         arguments: [groupID.db]).map(Suggestion.from(row:))
+    }
+
+    /// The single target first, then the others in order.
+    static func refs(_ db: Database, _ s: Suggestion) throws -> [Ref] {
+        var refs = s.targetMemoryID.map { [Ref(memoryID: $0, version: s.targetMemoryVersion, role: .target)] } ?? []
+        for t in try extraTargets(db, suggestionID: s.id) where t.memoryID != s.targetMemoryID {
+            refs.append(Ref(memoryID: t.memoryID, version: t.memoryVersion, role: t.role))
+        }
+        return refs
+    }
+
+    /// The memories, each still active at its version; otherwise `targetChanged`.
+    static func checked(_ db: Database, _ refs: [Ref]) throws -> [UUID: Memory] {
+        var out: [UUID: Memory] = [:]
+        for ref in refs {
+            guard let m = try MemoryStore.fetch(db, id: ref.memoryID), m.status == .active,
+                  ref.version.map({ $0 == m.version }) ?? true else { throw VaultError.targetChanged }
+            out[ref.memoryID] = m
+        }
+        return out
+    }
+
+    /// The proposal with the user's edits, validated; `fallback` categories when it has none.
+    static func draft(_ db: Database, _ s: Suggestion, _ edits: SuggestionEdit, fallback: [String] = ["personal_preferences"],
+                      kind: MemoryKind = .fact, sensitivity: Sensitivity? = nil, source: MemorySource,
+                      actor: Actor) throws -> MemoryDraft {
+        var categories = edits.categoryKeys ?? s.categoryKeys
+        if categories.isEmpty { categories = fallback }
+        return MemoryDraft(
+            title: edits.title ?? s.title, body: edits.body ?? s.body, kind: edits.kind ?? s.kind ?? kind,
+            categoryKeys: try MemoryStore.validateCategories(db, categories),
+            sensitivity: edits.sensitivity ?? s.sensitivity ?? sensitivity, expiresAt: edits.expiresAt ?? s.expiresAt,
+            confidence: s.confidence, source: source, sourceAgentID: s.agentID, sourceDeviceID: s.deviceID,
+            // The owner applying it vouches for it; anything else (auto-apply) doesn't.
+            trust: actor.isOwner ? .trusted : .untrusted)
+    }
+
+    static func applyAction(_ db: Database, _ s: Suggestion, edits: SuggestionEdit, mode: ApplyMode?, now: Date,
+                            actor: Actor) throws -> ApplyResult {
+        let refs = try refs(db, s)
+        let origin = try originActor(db, s)
+        func similar(_ m: Memory) throws -> [UUID] { try MemoryStore.exactDuplicates(db, title: m.title, body: m.body, excluding: m.id) }
+        func applied(_ id: UUID, related: UUID? = nil) throws {
+            try MemoryStore.appendProvenance(db, memoryID: id, event: .appliedFromSuggestion, actor: actor, at: now,
+                                             relatedMemoryID: related)
+        }
+        func saveProposal() throws -> ApplyResult {
+            let m = try MemoryStore.insert(db, draft(db, s, edits, source: origin.source, actor: actor), actor: origin.actor, now: now)
+            try applied(m.id)
+            return ApplyResult(memoryID: m.id, memoryIDs: [m.id], similarMemoryIDs: try similar(m))
+        }
+
+        switch s.action {
+        case .create:
+            guard mode == nil || mode == .keepBoth else { throw VaultError.unsupportedAction }
+            return try saveProposal()
+
+        case .update:
+            switch mode ?? .replace {
+            case .keepBoth:
+                return try saveProposal()
+            case .replace:
+                guard let target = refs.first(where: { $0.role == .target }) else { throw VaultError.targetChanged }
+                _ = try checked(db, [target])
+                let d = try draft(db, s, edits, source: origin.source, actor: actor)
+                let m = try MemoryStore.update(db, id: target.memoryID, MemoryEdit(
+                    title: d.title, body: d.body, kind: edits.kind ?? s.kind, categoryKeys: d.categoryKeys,
+                    sensitivity: d.sensitivity, expiresAt: .some(d.expiresAt)), actor: actor, now: now)
+                try applied(m.id)
+                return ApplyResult(memoryID: m.id, memoryIDs: [m.id], similarMemoryIDs: try similar(m))
+            case .keep, .bothTrue:
+                throw VaultError.unsupportedAction
+            }
+
+        case .archive:
+            guard mode == nil else { throw VaultError.unsupportedAction }
+            guard let target = refs.first(where: { $0.role == .target }) else { throw VaultError.targetChanged }
+            _ = try checked(db, refs)
+            let survivor = refs.first { $0.role == .survivor }?.memoryID
+            try MemoryStore.setStatus(db, id: target.memoryID, to: .archived, actor: actor, now: now)
+            try applied(target.memoryID, related: survivor)
+            return ApplyResult(memoryID: target.memoryID, memoryIDs: [target.memoryID], similarMemoryIDs: [])
+
+        case .duplicate:
+            guard mode == nil else { throw VaultError.unsupportedAction }
+            guard let target = refs.first else { throw VaultError.targetChanged }
+            _ = try checked(db, refs)
+            return ApplyResult(memoryID: target.memoryID, memoryIDs: [], similarMemoryIDs: [])
+
+        case .split:
+            guard mode == nil else { throw VaultError.unsupportedAction }
+            guard let target = refs.first(where: { $0.role == .target }),
+                  let original = try checked(db, refs)[target.memoryID] else { throw VaultError.targetChanged }
+            let pieces = try pieces(db, groupID: s.id)
+            guard !pieces.isEmpty else { throw VaultError.invalidState }
+            var ids: [UUID] = []
+            for piece in pieces {
+                // A piece never goes below the original's sensitivity (memory processing §9.4).
+                var d = try draft(db, piece, SuggestionEdit(), fallback: original.categoryKeys, kind: original.kind,
+                                  source: .tidyUp, actor: actor)
+                d.sensitivity = max(try d.sensitivity ?? MemoryStore.defaultSensitivity(db, categoryKeys: d.categoryKeys),
+                                    original.sensitivity)
+                d.sourceAgentID = original.sourceAgentID
+                d.sourceDeviceID = original.sourceDeviceID
+                let m = try MemoryStore.insert(db, d, actor: actor, now: now)
+                try MemoryStore.appendProvenance(db, memoryID: m.id, event: .splitFrom, actor: actor, at: now, relatedMemoryID: original.id)
+                try MemoryStore.appendProvenance(db, memoryID: original.id, event: .splitInto, actor: actor, at: now, relatedMemoryID: m.id)
+                try db.execute(sql: "UPDATE suggestion SET status = 'applied', decided_at = ?, result_memory_id = ? WHERE id = ?",
+                               arguments: [now, m.id.db, piece.id.db])
+                ids.append(m.id)
+            }
+            try MemoryStore.setStatus(db, id: original.id, to: .archived, actor: actor, now: now)
+            try applied(original.id)
+            return ApplyResult(memoryID: ids[0], memoryIDs: ids + [original.id], similarMemoryIDs: [])
+
+        case .merge:
+            guard mode == nil else { throw VaultError.unsupportedAction }
+            let sources = refs.filter { $0.role == .source }
+            guard sources.count >= 2 else { throw VaultError.invalidState }
+            let current = try checked(db, sources)
+            let first = current[sources[0].memoryID]!
+            var d = try draft(db, s, edits, fallback: first.categoryKeys, kind: first.kind,
+                              sensitivity: current.values.map(\.sensitivity).max(), source: .tidyUp, actor: actor)
+            d.sourceAgentID = nil
+            d.sourceDeviceID = nil
+            let m = try MemoryStore.insert(db, d, actor: actor, now: now)
+            try applied(m.id)
+            for source in sources {
+                try MemoryStore.appendProvenance(db, memoryID: m.id, event: .mergedFrom, actor: actor, at: now,
+                                                 relatedMemoryID: source.memoryID)
+                try MemoryStore.setStatus(db, id: source.memoryID, to: .archived, actor: actor, now: now)
+                try MemoryStore.appendProvenance(db, memoryID: source.memoryID, event: .mergedInto, actor: actor, at: now,
+                                                 relatedMemoryID: m.id)
+            }
+            return ApplyResult(memoryID: m.id, memoryIDs: [m.id] + sources.map(\.memoryID), similarMemoryIDs: try similar(m))
+
+        case .conflict:
+            let pair = refs.filter { $0.role == .target }
+            guard pair.count == 2 else { throw VaultError.invalidState }
+            switch mode {
+            case .bothTrue:
+                _ = try checked(db, pair)
+                return ApplyResult(memoryID: pair[0].memoryID, memoryIDs: [], similarMemoryIDs: [])
+            case let .keep(kept) where pair.contains(where: { $0.memoryID == kept }):
+                _ = try checked(db, pair)
+                var ids = [kept]
+                let edit = MemoryEdit(title: edits.title, body: edits.body, kind: edits.kind, categoryKeys: edits.categoryKeys,
+                                      sensitivity: edits.sensitivity, expiresAt: edits.expiresAt)
+                if edit != MemoryEdit() { try MemoryStore.update(db, id: kept, edit, actor: actor, now: now) }
+                try applied(kept)
+                for other in pair where other.memoryID != kept {
+                    try MemoryStore.setStatus(db, id: other.memoryID, to: .archived, actor: actor, now: now)
+                    try applied(other.memoryID, related: kept)
+                    ids.append(other.memoryID)
+                }
+                return ApplyResult(memoryID: kept, memoryIDs: ids, similarMemoryIDs: [])
+            default:
+                throw VaultError.unsupportedAction
+            }
+
+        case .unknown:
+            throw VaultError.unsupportedAction
+        }
     }
 
     /// The memory source and provenance actor for a suggestion's origin.
@@ -301,7 +548,8 @@ public final class SuggestionService: Sendable {
         case .agent: return (.agentSuggestion, s.agentID.map(Actor.agent) ?? .user)
         case .captureMac: return (.captureMac, .user)
         case .captureIPhone: return (.captureIPhone, s.deviceID.map(Actor.device) ?? .user)
-        case .seedQuestion, .consolidation: return (.seedQuestion, .user)
+        case .seedQuestion: return (.seedQuestion, .user)
+        case .consolidation: return (.tidyUp, .system)
         case .import:
             let source = try s.importRunID.flatMap {
                 try String.fetchOne(db, sql: "SELECT source FROM import_run WHERE id = ?", arguments: [$0.db])

@@ -537,10 +537,22 @@ public struct InboxItem: Codable, Sendable, Equatable, Identifiable {
     public var evidence: String?
     public var purpose: String?
     public var createdAt: Date
+    /// The target's version when it was suggested; the Mac refuses a changed one (`target_changed`).
+    public var targetMemoryVersion: Int?
+    /// The input this piece was split from (Phase 6), and how the Mac words it ("ChatGPT · 12 pieces").
+    public var groupId: UUID?
+    public var groupLabel: String?
+    /// Outside the agent's scope: never applied in bulk.
+    public var outsideScope: Bool
 
     public init(id: UUID, origin: SuggestionOrigin, action: SuggestionAction, sourceLabel: String, targetMemoryId: UUID? = nil,
                 title: String, body: String, kind: MemoryKind, categories: [String], sensitivity: Sensitivity,
-                expiresAt: Date? = nil, evidence: String? = nil, purpose: String? = nil, createdAt: Date) {
+                expiresAt: Date? = nil, evidence: String? = nil, purpose: String? = nil, createdAt: Date,
+                targetMemoryVersion: Int? = nil, groupId: UUID? = nil, groupLabel: String? = nil, outsideScope: Bool = false) {
+        self.targetMemoryVersion = targetMemoryVersion
+        self.groupId = groupId
+        self.groupLabel = groupLabel
+        self.outsideScope = outsideScope
         self.id = id
         self.origin = origin
         self.action = action

@@ -30,10 +30,13 @@ import Testing
         #expect(DisclosureStatus.allCases.map(\.rawValue) == [
             "evaluating", "fulfilled", "needs_approval", "approved", "delivered", "denied", "failed",
         ])
-        #expect(SuggestionStatus.allCases.map(\.rawValue) == ["pending", "applied", "rejected", "expired"])
+        #expect(SuggestionStatus.allCases.map(\.rawValue) == ["pending", "applied", "rejected", "expired", "split"])
+        #expect(SuggestionAction.allCases.map(\.rawValue) == [
+            "create", "update", "archive", "duplicate", "split", "merge", "conflict", "unknown",
+        ])
         #expect(MemorySource.allCases.map(\.rawValue) == [
             "manual", "capture_mac", "capture_iphone", "agent_suggestion", "agent_write", "import_chatgpt",
-            "import_claude", "import_markdown", "import_funes", "seed_question",
+            "import_claude", "import_markdown", "import_funes", "seed_question", "tidy_up",
         ])
         #expect(SuggestionOrigin.allCases.map(\.rawValue) == [
             "agent", "capture_mac", "capture_iphone", "import", "seed_question", "consolidation",
@@ -46,6 +49,13 @@ import Testing
             "secret_like_content", "rate_limited", "funes_quit",
         ])
         #expect(MemoryKind.projectContext.words == "project context")
+    }
+
+    /// Companion protocol §4: an action from a newer Mac decodes as `unknown`, answered on the Mac.
+    @Test func unknownSuggestionActionsDecode() throws {
+        let decoded = try JSONDecoder().decode([SuggestionAction].self, from: Data(#"["merge","reword_later"]"#.utf8))
+        #expect(decoded == [.merge, .unknown])
+        #expect(SuggestionAction.allCases.filter(\.appliesOnPhone) == [.create, .update, .archive, .duplicate])
     }
 
     @Test func inputLimitsMatchTheSpec() {

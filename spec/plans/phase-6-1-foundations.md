@@ -9,18 +9,18 @@
 ## Tasks
 ### 6.1.1 Per-action apply · 4 h
 *Today `SuggestionService.apply` only treats `update` + Replace as itself; every other action inserts a new memory, so an `archive` suggestion creates a memory instead of archiving one. The Mac shows Replace / Keep both for any targeted suggestion; the iPhone and bulk apply always use Keep both.*
-- [ ] FunesCore: apply per action: `create`, `update` (Replace or Keep both), `archive`, and the new `duplicate` (no-op), `split`, `merge`, `conflict` (answer: keep A, keep B, both true, edit). One transaction each, with provenance.
-- [ ] The Mac's card offers Replace / Keep both for `update` only; bulk apply uses each row's own action; clients refuse actions they don't support.
-- [ ] Tests for every action, from the Mac, bulk and the companion handler.
+- [x] FunesCore: apply per action: `create`, `update` (Replace or Keep both), `archive`, and the new `duplicate` (no-op), `split`, `merge`, `conflict` (answer: keep A, keep B, both true, edit). One transaction each, with provenance.
+- [x] The Mac's card offers Replace / Keep both for `update` only; bulk apply uses each row's own action; clients refuse actions they don't support.
+- [x] Tests for every action, from the Mac, bulk and the companion handler.
 
 ### 6.1.2 Version-checked targets · 2 h
-- [ ] `suggestion.target_memory_version`, set whenever a suggestion targets a memory (agent corrections included); apply checks it in the transaction and refuses a stale or archived target (the card says "Changed since this was suggested").
-- [ ] The Mac's memory editor passes an expected version, like the phone, so it can't silently overwrite a change made meanwhile.
+- [x] `suggestion.target_memory_version`, set whenever a suggestion targets a memory (agent corrections included); apply checks it in the transaction and refuses a stale or archived target (the card says "Changed since this was suggested").
+- [x] The Mac's memory editor passes an expected version, like the phone, so it can't silently overwrite a change made meanwhile.
 
 ### 6.1.3 Schema `v4_memory_processing` · 3 h
-- [ ] The migration of [storage §3](../architecture/storage.md#3-migrations): `memory.trust` (`agent_write` memories start `untrusted`), `memory.reconciled_version`, the suggestion fields and `split` status, `suggestion_target`, `suggestion_group`, `processing_job`, `undo_entry`, `tidy_up_run`, `tidy_up_dismissal`, provenance `related_memory_id` and `engine`. Migration test from a v0.2 fixture.
-- [ ] `MemorySource.tidy_up`; `originActor` stops mapping `.consolidation` to seed question.
-- [ ] Trust rules in `MemoryStore`: user create, edit or apply → trusted; agent direct write → untrusted.
+- [x] The migration of [storage §3](../architecture/storage.md#3-migrations): `memory.trust` (`agent_write` memories start `untrusted`), `memory.reconciled_version`, the suggestion fields and `split` status, `suggestion_target`, `suggestion_group`, `processing_job`, `undo_entry`, `tidy_up_run`, `tidy_up_dismissal`, provenance `related_memory_id` and `engine`. Migration test from a v0.2 fixture. *(Landed with 6.1.1–6.1.2, which need its columns.)*
+- [x] `MemorySource.tidy_up`; `originActor` stops mapping `.consolidation` to seed question.
+- [x] Trust rules in `MemoryStore`: user create, edit or apply → trusted; agent direct write → untrusted.
 
 ### 6.1.4 Durable processing queue · 4 h
 - [ ] `ProcessingQueue` in FunesCore over `processing_job`: enqueue in the same transaction as the input, one job at a time, resumed at launch, idempotent per subject, retries with backoff, Activity rows without text.
@@ -39,9 +39,9 @@
 - [ ] Purge with the memory (daily purge, Delete Now, Erase All Data); daily cleanup after 30 days; never exported.
 
 ### 6.1.7 iPhone and companion · 2 h
-- [ ] FunesProtocol: `SuggestionAction` gains the new cases and an `unknown` fallback when decoding; `InboxItem` gains `groupId`, `groupLabel`, `outsideScope`, `targetMemoryVersion`.
-- [ ] The phone shows unknown actions, and merge, split and conflict, as "Review on your Mac"; `inbox.apply` refuses them with `unsupported_action` and applies the rest per action (6.1.1).
-- [ ] Shipped together with the Mac change.
+- [x] FunesProtocol: `SuggestionAction` gains the new cases and an `unknown` fallback when decoding; `InboxItem` gains `groupId`, `groupLabel`, `outsideScope`, `targetMemoryVersion`.
+- [x] The phone shows unknown actions, and merge, split and conflict, as "Review on your Mac"; `inbox.apply` refuses them with `unsupported_action` and applies the rest per action (6.1.1). A stale target is `target_changed`.
+- [x] Shipped together with the Mac change.
 
 ### 6.1.8 Export, restore, Activity, settings · 3 h
 - [ ] Export and restore keep a memory's status (archived stays archived) and its split and merge links; restore sets `reconciled_version` so the tidy-up doesn't re-split restored memories.

@@ -32,14 +32,18 @@ struct InboxView: View {
                                 InboxRow(item: item, categories: model.categories)
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                Button("Save") { Task { await inbox.save(item.id) } }
-                                    .tint(.green)
+                                if item.action.appliesOnPhone {
+                                    Button("Save") { Task { await inbox.save(item.id) } }
+                                        .tint(.green)
+                                }
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button("Reject", role: .destructive) { Task { await inbox.reject(item.id) } }
                             }
                             .contextMenu {
-                                Button("Save", systemImage: "checkmark") { Task { await inbox.save(item.id) } }
+                                if item.action.appliesOnPhone {
+                                    Button("Save", systemImage: "checkmark") { Task { await inbox.save(item.id) } }
+                                }
                                 Button("Reject", systemImage: "xmark", role: .destructive) { Task { await inbox.reject(item.id) } }
                             }
                         }
@@ -187,11 +191,17 @@ struct InboxItemView: View {
                 Section("\(item.sourceLabel)'s Task") { Text(purpose) }
             }
             Section {
-                Button("Save") { Task { await answer(.save, edits: nil) } }
-                if item.action != .archive {
-                    Button("Edit & Save…") { draft = MemoryEditDraft(item) }
+                if item.action.appliesOnPhone {
+                    Button("Save") { Task { await answer(.save, edits: nil) } }
+                    if item.action == .create || item.action == .update {
+                        Button("Edit & Save…") { draft = MemoryEditDraft(item) }
+                    }
                 }
                 Button("Reject", role: .destructive) { Task { await answer(.reject, edits: nil) } }
+            } footer: {
+                if !item.action.appliesOnPhone {
+                    Text("Review on your Mac: it shows every memory this changes.")
+                }
             }
             .disabled(busy)
         }
@@ -239,6 +249,11 @@ struct InboxItemView: View {
         case .create: String(localized: "New memory")
         case .update: String(localized: "Change to a memory")
         case .archive: String(localized: "Archive a memory")
+        case .duplicate: String(localized: "Already in your vault")
+        case .split: String(localized: "Split a memory")
+        case .merge: String(localized: "Merge memories")
+        case .conflict: String(localized: "Memories that disagree")
+        case .unknown: String(localized: "Review on your Mac")
         }
     }
 }

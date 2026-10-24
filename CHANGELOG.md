@@ -4,6 +4,15 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+### Fixed
+
+- **Inbox: every suggestion applies as what it says.** Applying a suggestion to archive a memory used to save a new memory instead; it now archives that memory. A correction replaces the memory when you click Replace or Save on the iPhone (Keep Both is only offered on the Mac, for corrections). Selecting several suggestions and clicking Apply applies each as its own kind.
+- **No more silent overwrites.** A correction whose memory was edited, archived or deleted after it was suggested says "Changed since this was suggested" instead of overwriting the newer text; **Review Again** shows the memory as it is now. The Mac's memory editor also refuses to save over a change made meanwhile (from the iPhone, for example) and offers to reload.
+
+### Changed
+
+- The vault moves to a new format for v0.3's memory processing. Funes backs it up first (`Backups/pre-v4_memory_processing-….sqlite`).
+
 ## [0.2.0] - 2026-10-22
 
 Funes Vault now has an iPhone app, Funes Vault for iPhone on the App Store. It pairs with this Mac to capture, search, edit, review the Inbox and approve agents' requests. Your vault stays on your Mac.

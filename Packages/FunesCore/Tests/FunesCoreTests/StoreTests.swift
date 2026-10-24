@@ -13,7 +13,8 @@ import Testing
         }
         #expect(tables == ["access", "access_category", "agent", "capture_receipt", "category", "device", "disclosure",
                            "disclosure_item", "embedding", "import_run", "memory", "memory_category", "memory_fts",
-                           "meta", "provenance", "suggestion"])
+                           "meta", "processing_job", "provenance", "suggestion", "suggestion_group", "suggestion_target",
+                           "tidy_up_dismissal", "tidy_up_run", "undo_entry"])
         #expect(try v.store.categories().map(\.key) == MemoryCategory.builtins.map(\.key))
         #expect(try v.store.categories().first { $0.key == "health" }?.defaultSensitivity == .sensitive)
         #expect(try v.store.meta("active_embedding_model") == "bge-small-en-v1.5/coreml-int8")

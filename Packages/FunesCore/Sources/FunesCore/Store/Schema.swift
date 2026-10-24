@@ -29,8 +29,99 @@ enum Schema {
         migrator.registerMigration("v3_device_approvals") { db in
             try db.execute(sql: v3)
         }
+        // Memory processing (v0.3, Phase 6.1; ADR-0020, ADR-0021, storage §3): trust and the
+        // tidy-up's reconciled version, multi-target and grouped suggestions, the processing
+        // queue, the undo log and the tidy-up's runs and dismissals.
+        migrator.registerMigration("v4_memory_processing") { db in
+            try db.execute(sql: v4)
+        }
         return migrator
     }
+
+    /// `suggestion.group_id` and `suggestion_target.memory_id` carry no foreign key: a piece
+    /// outlives its group's source text, and a target that was purged must read as changed, not
+    /// vanish from a merge.
+    static let v4 = """
+        ALTER TABLE memory ADD COLUMN trust TEXT NOT NULL DEFAULT 'trusted' CHECK (trust IN ('trusted','untrusted'));
+        UPDATE memory SET trust = 'untrusted' WHERE source = 'agent_write';
+        ALTER TABLE memory ADD COLUMN reconciled_version INTEGER;
+
+        ALTER TABLE suggestion ADD COLUMN target_memory_version INTEGER;
+        ALTER TABLE suggestion ADD COLUMN group_id TEXT;
+        ALTER TABLE suggestion ADD COLUMN intent TEXT CHECK (intent IN ('assertion','remember','correction','retraction'));
+        ALTER TABLE suggestion ADD COLUMN outside_scope INTEGER NOT NULL DEFAULT 0;
+        CREATE INDEX suggestion_by_group ON suggestion(group_id) WHERE group_id IS NOT NULL;
+
+        CREATE TABLE suggestion_target (
+          suggestion_id  TEXT NOT NULL REFERENCES suggestion(id) ON DELETE CASCADE,
+          memory_id      TEXT NOT NULL,
+          memory_version INTEGER NOT NULL,
+          role           TEXT NOT NULL CHECK (role IN ('target','source','survivor')),
+          position       INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (suggestion_id, memory_id)
+        );
+        CREATE INDEX suggestion_target_memory ON suggestion_target(memory_id);
+
+        CREATE TABLE suggestion_group (
+          id          TEXT PRIMARY KEY,
+          origin      TEXT NOT NULL,
+          agent_id    TEXT REFERENCES agent(id),
+          source_text TEXT,
+          engine      TEXT,
+          created_at  TEXT NOT NULL
+        );
+
+        CREATE TABLE processing_job (
+          id         TEXT PRIMARY KEY,
+          subject    TEXT NOT NULL,
+          kind       TEXT NOT NULL CHECK (kind IN ('new_memory','tidy_up')),
+          state      TEXT NOT NULL DEFAULT 'queued' CHECK (state IN ('queued','running','done','failed')),
+          attempts   INTEGER NOT NULL DEFAULT 0,
+          engine     TEXT,
+          not_before TEXT,
+          error      TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+        CREATE UNIQUE INDEX processing_job_subject ON processing_job(subject, kind);
+        CREATE INDEX processing_job_queue ON processing_job(state, created_at);
+
+        CREATE TABLE undo_entry (
+          id            TEXT PRIMARY KEY,
+          created_at    TEXT NOT NULL,
+          run_id        TEXT,
+          suggestion_id TEXT,
+          action        TEXT NOT NULL,
+          memory_ids    TEXT NOT NULL DEFAULT '[]',
+          before_state  TEXT NOT NULL,
+          undone_at     TEXT,
+          expires_at    TEXT NOT NULL
+        );
+        CREATE INDEX undo_entry_created ON undo_entry(created_at DESC);
+
+        CREATE TABLE tidy_up_run (
+          id          TEXT PRIMARY KEY,
+          started_at  TEXT NOT NULL,
+          finished_at TEXT,
+          engine      TEXT,
+          inspected   INTEGER NOT NULL DEFAULT 0,
+          clusters    INTEGER NOT NULL DEFAULT 0,
+          suggestions INTEGER NOT NULL DEFAULT 0,
+          applied     INTEGER NOT NULL DEFAULT 0,
+          partial     INTEGER NOT NULL DEFAULT 0,
+          error       TEXT
+        );
+
+        CREATE TABLE tidy_up_dismissal (
+          memory_ids   TEXT NOT NULL,
+          content_hash TEXT NOT NULL,
+          dismissed_at TEXT NOT NULL,
+          PRIMARY KEY (memory_ids, content_hash)
+        );
+
+        ALTER TABLE provenance ADD COLUMN related_memory_id TEXT;
+        ALTER TABLE provenance ADD COLUMN engine TEXT;
+        """
 
     static let v3 = """
         ALTER TABLE device ADD COLUMN approvals_enabled INTEGER NOT NULL DEFAULT 1;

@@ -417,6 +417,10 @@ extension PhoneModel {
             return String(localized: "This request expired.")
         case .requestChanged:
             return String(localized: "This changed on your Mac.")
+        case .targetChanged:
+            return String(localized: "The memory it changes was edited on your Mac since this was suggested. Review it on your Mac.")
+        case .unsupportedAction:
+            return String(localized: "Review this on your Mac.")
         }
     }
 }

@@ -7,6 +7,9 @@
     " and %lld more" : {
 
     },
+    " · %@" : {
+
+    },
     "%@ (%lld)" : {
       "localizations" : {
         "en" : {
@@ -409,6 +412,9 @@
     "%lld changed" : {
 
     },
+    "%lld changed since suggested" : {
+
+    },
     "%lld couldn't be changed" : {
 
     },
@@ -469,6 +475,9 @@
 
     },
     "%lld moved to Recently Deleted" : {
+
+    },
+    "%lld need your answer" : {
 
     },
     "%lld not shareable" : {
@@ -576,6 +585,9 @@
 
     },
     "A memory can have at most 12 categories." : {
+
+    },
+    "A memory it changes was archived or deleted. Reject it, or restore that memory first." : {
 
     },
     "A new path stops the old URL. Paired iPhones learn the new one when they pair again." : {
@@ -843,7 +855,13 @@
     "Allow only if this code matches the one in your browser. It will use %@'s access." : {
 
     },
+    "Already Saved" : {
+
+    },
     "Already delivered" : {
+
+    },
+    "Already in your vault: “%@”" : {
 
     },
     "Already set up" : {
@@ -1017,6 +1035,9 @@
     "Archived memories are kept, but never shared with agents." : {
 
     },
+    "Archives “%@”" : {
+
+    },
     "Are there practical constraints that often shape your work or availability?" : {
 
     },
@@ -1097,6 +1118,9 @@
 
     },
     "Beyond the session" : {
+
+    },
+    "Both Are True" : {
 
     },
     "Both need the same Wi-Fi, or Tailscale on both." : {
@@ -1183,7 +1207,16 @@
     "Change tunnel" : {
 
     },
+    "Changed automatically" : {
+
+    },
     "Changed since approval" : {
+
+    },
+    "Changed since this was suggested" : {
+
+    },
+    "Changed since this was suggested." : {
 
     },
     "Changes to the file" : {
@@ -1251,6 +1284,9 @@
       }
     },
     "Choose a tunnel" : {
+
+    },
+    "Choose an answer first." : {
 
     },
     "Choose at least one category." : {
@@ -1432,6 +1468,9 @@
 
     },
     "Command" : {
+
+    },
+    "Compare with the memory as it is now, then decide again." : {
 
     },
     "Confirmed still true %@" : {
@@ -1873,6 +1912,9 @@
     "From %@. It's in your Inbox either way." : {
 
     },
+    "From a merge or split" : {
+
+    },
     "From agents" : {
 
     },
@@ -2287,6 +2329,9 @@
     "Keep Both" : {
 
     },
+    "Keep This" : {
+
+    },
     "Keep everything else" : {
 
     },
@@ -2299,10 +2344,16 @@
     "Keep this Mac awake while on power" : {
 
     },
+    "Keep “%@”" : {
+
+    },
     "Keeps what it gets" : {
 
     },
     "Keeps what it gets: %@" : {
+
+    },
+    "Keeps “%@”" : {
 
     },
     "Kept on this Mac: looked sensitive" : {
@@ -2450,6 +2501,18 @@
 
     },
     "Memories stay in a vault on this Mac." : {
+
+    },
+    "Merge" : {
+
+    },
+    "Merged from another memory %@" : {
+
+    },
+    "Merged into a new memory %@" : {
+
+    },
+    "Merges %lld memories into one:" : {
 
     },
     "Method" : {
@@ -2655,6 +2718,9 @@
 
     },
     "Nothing archived" : {
+
+    },
+    "Nothing changes: it's already in your vault." : {
 
     },
     "Nothing expired" : {
@@ -3067,6 +3133,9 @@
     "Relationship" : {
 
     },
+    "Reload" : {
+
+    },
     "Remember" : {
 
     },
@@ -3301,6 +3370,9 @@
 
     },
     "Review %@'s request" : {
+
+    },
+    "Review Again" : {
 
     },
     "Review Now" : {
@@ -3659,6 +3731,25 @@
     },
     "Split Them" : {
 
+    },
+    "Split from another memory %@" : {
+
+    },
+    "Split into %lld" : {
+
+    },
+    "Split into a new memory %@" : {
+
+    },
+    "Splits “%@” into %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Splits “%1$@” into %2$lld"
+          }
+        }
+      }
     },
     "Start" : {
 
@@ -4070,6 +4161,9 @@
     "These cloud apps are disconnected and have to connect again: %@." : {
 
     },
+    "These disagree. Which is true?" : {
+
+    },
     "They skip the Inbox. Only do this with your own export." : {
 
     },
@@ -4110,6 +4204,9 @@
     "This looks like %@. Funes never stores secrets." : {
 
     },
+    "This memory changed since you started editing. Reload it to see the change; your edits will be lost." : {
+
+    },
     "This memory is gone" : {
 
     },
@@ -4120,6 +4217,9 @@
 
     },
     "This vault was written by a newer Funes Vault. Update the app." : {
+
+    },
+    "This version of Funes Vault can't apply this suggestion. Update the app, or reject it." : {
 
     },
     "Time" : {
@@ -4222,6 +4322,9 @@
 
     },
     "Undo" : {
+
+    },
+    "Undone %@" : {
 
     },
     "Unknown" : {

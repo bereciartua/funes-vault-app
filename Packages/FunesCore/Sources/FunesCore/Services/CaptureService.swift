@@ -228,7 +228,7 @@ public final class DeviceService: Sendable {
                              now: Date) async throws -> Memory {
         let memory = try await store.writer.write { db -> Memory in
             guard let d = try DeviceStore.fetch(db, id: deviceID), !d.isRevoked else { throw VaultError.unauthenticated }
-            try Self.check(db, memoryID: memoryID, expectedVersion: expectedVersion)
+            try MemoryStore.checkVersion(db, id: memoryID, expected: expectedVersion)
             return try MemoryStore.update(db, id: memoryID, edit, actor: .device(deviceID), now: now)
         }
         activity.record(ActivityEvent(time: now, actor: .device(deviceID), via: .companion, event: "memory_edited",
@@ -243,7 +243,7 @@ public final class DeviceService: Sendable {
                                 now: Date) async throws -> Memory {
         let memory = try await store.writer.write { db -> Memory in
             guard let d = try DeviceStore.fetch(db, id: deviceID), !d.isRevoked else { throw VaultError.unauthenticated }
-            try Self.check(db, memoryID: memoryID, expectedVersion: expectedVersion)
+            try MemoryStore.checkVersion(db, id: memoryID, expected: expectedVersion)
             return try MemoryStore.setStatus(db, id: memoryID, to: status, actor: .device(deviceID), now: now)
         }
         let event = switch status {
@@ -254,13 +254,5 @@ public final class DeviceService: Sendable {
         activity.record(ActivityEvent(time: now, actor: .device(deviceID), via: .companion, event: event, outcome: "saved",
                                       ids: [memory.id]))
         return memory
-    }
-
-    private static func check(_ db: Database, memoryID: UUID, expectedVersion: Int?) throws {
-        guard let expectedVersion else { return }
-        guard let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [memoryID.db]) else {
-            throw VaultError.notFound
-        }
-        guard version == expectedVersion else { throw VaultError.versionConflict }
     }
 }

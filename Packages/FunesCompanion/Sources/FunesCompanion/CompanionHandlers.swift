@@ -194,14 +194,19 @@ public final class CompanionHandlers: Sendable {
                       sourceLabel: Self.sourceLabel(s, devices: deviceNames, agents: agentNames), targetMemoryId: s.targetMemoryID,
                       title: s.title, body: s.body, kind: s.kind ?? .fact, categories: s.categoryKeys,
                       sensitivity: s.sensitivity ?? .low, expiresAt: s.expiresAt, evidence: s.evidence, purpose: s.purpose,
-                      createdAt: s.createdAt)
+                      createdAt: s.createdAt, targetMemoryVersion: s.targetMemoryVersion, groupId: s.groupID,
+                      outsideScope: s.outsideScope)
         }
         let next = offset + page.count < pending.count ? Self.cursor(offset + page.count) : nil
         logRead("inbox_listed", device: device, now: now, counts: ["items": items.count])
         return InboxListResult(items: items, nextCursor: next)
     }
 
+    /// The suggestion's own action (6.1.1): an update replaces its target. Merge, split and
+    /// conflict are answered on the Mac (companion protocol §4).
     func apply(_ params: InboxApplyParams, device: UUID, now: Date) async throws -> InboxApplied {
+        guard let suggestion = try await services.suggestions.suggestion(id: params.suggestionId) else { throw VaultError.notFound }
+        guard suggestion.action.appliesOnPhone else { throw VaultError.unsupportedAction }
         let edits = params.edits.map(Self.suggestionEdit) ?? SuggestionEdit()
         let result = try await services.suggestions.apply(suggestionID: params.suggestionId, edits: edits, now: now,
                                                           actor: .device(device), via: .companion)
@@ -265,6 +270,8 @@ public final class CompanionHandlers: Sendable {
         case let .secretLikeContent(findings): CompanionError(.secretLikeContent, findings: findings)
         case .notFound: CompanionError(.notFound)
         case .versionConflict, .invalidState, .snapshotChanged, .revisionChanged: CompanionError(.conflict)
+        case .targetChanged: CompanionError(.targetChanged)
+        case .unsupportedAction: CompanionError(.unsupportedAction)
         case .newerSchema, .unsafeFile: CompanionError(.unavailable)
         case .unauthenticated: CompanionError(.notFound)
         case let .invalidInput(field): CompanionError(.invalidInput, message: field)
@@ -320,7 +327,7 @@ public final class CompanionHandlers: Sendable {
 
     static func label(_ actor: String, devices: [UUID: String], agents: [UUID: String]) -> String {
         let parts = actor.split(separator: ":", maxSplits: 1).map(String.init)
-        guard parts.count == 2, let id = UUID(uuidString: parts[1]) else { return actor == "user" ? "You" : actor }
+        guard parts.count == 2, let id = UUID(uuidString: parts[1]) else { return actor == "user" ? "You" : actor == "system" ? "Funes" : actor }
         switch parts[0] {
         case "device": return devices[id] ?? "iPhone"
         case "agent": return agents[id] ?? "Agent"
