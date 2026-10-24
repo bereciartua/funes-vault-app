@@ -281,7 +281,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                           body: String(localized: "\(name) suggested a memory. Review it in the Inbox."))
         }
         model.requestNotificationPermission = { done in notifier.requestPermission(done) }
-        model.activityAppended = { event in
+        model.activityAppended = { [hud] event in
+            // The daily cap's notice (ADR-0022): Activity has the row once a day; no text.
+            if event.event == "cap_reached", event.actor == "system" {
+                hud.show(String(localized: "Today's cloud requests are used up. New captures are classified on this Mac until tomorrow."),
+                         symbol: "gauge.with.dots.needle.100percent", seconds: 6)
+                return
+            }
             guard preferences.notifyRefused, event.outcome == "denied", event.actor.hasPrefix("agent:"),
                   let id = UUID(uuidString: String(event.actor.dropFirst(6))),
                   notifier.noteRefusal(agentID: id, at: event.time) else { return }

@@ -352,8 +352,8 @@ import Testing
                                                     locality: locality)
             let request = ClassificationPrompt.request("Likes tea", categories: Self.categories)
             await #expect(throws: ProviderError.blocked) {
-                _ = try await ModelRouter.send(request, to: client, sensitivity: .low, cloudLimit: .upTo(.internal),
-                                               timeout: .seconds(5))
+                _ = try await ModelRouter.send(request, items: [ModelItem("Likes tea", sensitivity: .low)], to: client,
+                                               cloudLimit: .upTo(.internal), timeout: .seconds(5))
             }
             let router = ModelRouter(classifier: client, onDevice: nil, generationTimeout: .milliseconds(300))
             let record = await router.classify("Likes tea", categories: Self.categories)
@@ -368,12 +368,82 @@ import Testing
         let request = ClassificationPrompt.request("Likes tea", categories: MemoryCategory.builtins)
         for (sensitivity, limit) in [(Sensitivity?.some(.sensitive), CloudLimit.upTo(.internal)), (.low, .never), (nil, .upTo(.secret))] {
             await #expect(throws: ProviderError.blocked) {
-                _ = try await ModelRouter.send(request, to: client, sensitivity: sensitivity, cloudLimit: limit, timeout: .seconds(5))
+                _ = try await ModelRouter.send(request, items: [ModelItem("Likes tea", sensitivity: sensitivity)], to: client,
+                                               cloudLimit: limit, timeout: .seconds(5))
             }
         }
         #expect(stub.requests.isEmpty)
-        _ = try await ModelRouter.send(request, to: client, sensitivity: .low, cloudLimit: .upTo(.internal), timeout: .seconds(5))
+        _ = try await ModelRouter.send(request, items: [ModelItem("Likes tea", sensitivity: .low)], to: client,
+                                       cloudLimit: .upTo(.internal), timeout: .seconds(5))
         #expect(stub.requests.count == 1)
+    }
+
+    // MARK: v0.3 (task 6.1.5, model providers §9)
+
+    /// A call carrying several memories is guarded on the highest; a secret in any item blocks it.
+    @Test func multiItemCallsGuardOnTheHighestItem() async throws {
+        let stub = StubURLProtocol.Session { _ in .json(ModelRouterTests.proposal()) }
+        let client = try OpenAICompatibleClient(endpoint: .openAI(), model: "m", apiKey: "k", session: stub.session)
+        let request = ClassificationPrompt.request("pieces", categories: MemoryCategory.builtins)
+        let blocked: [[ModelItem]] = [
+            [ModelItem("SENTINEL-A", sensitivity: .low), ModelItem("SENTINEL-B", sensitivity: .sensitive)],
+            [ModelItem("SENTINEL-A", sensitivity: .low), ModelItem("SENTINEL-C", sensitivity: nil)],
+            [ModelItem("SENTINEL-A", sensitivity: .low), ModelItem("key \(Self.secret)", sensitivity: .public)],
+            [],
+        ]
+        for items in blocked {
+            await #expect(throws: ProviderError.blocked) {
+                _ = try await ModelRouter.send(request, items: items, to: client, cloudLimit: .upTo(.internal), timeout: .seconds(5))
+            }
+        }
+        #expect(stub.requests.isEmpty)
+        // Restricted and Everything (ADR-0022) let more through; the scanner still applies.
+        _ = try await ModelRouter.send(request, items: [ModelItem("SENTINEL-A", sensitivity: .low), ModelItem("SENTINEL-B", sensitivity: .secret)],
+                                       to: client, cloudLimit: .upTo(.secret), timeout: .seconds(5))
+        #expect(stub.requests.count == 1)
+        #expect(CloudLimit.upTo(.restricted).needsConfirmation && !CloudLimit.upTo(.internal).needsConfirmation && !CloudLimit.never.needsConfirmation)
+    }
+
+    /// An agent declaring Low can't get text the pre-screen finds Sensitive past the guard.
+    @Test func preScreenedAgentTextIsGuarded() async throws {
+        let stub = StubURLProtocol.Session { _ in .json(ModelRouterTests.proposal()) }
+        let client = try OpenAICompatibleClient(endpoint: .openAI(), model: "m", apiKey: "k", session: stub.session)
+        let router = ModelRouter(classifier: client, onDevice: nil, generationTimeout: .milliseconds(300))
+        let text = "SENTINEL-AGENT my doctor changed the medication"
+        #expect(ModelRouter.prescreen(text, categories: MemoryCategory.builtins, declared: .low) == .sensitive)
+        let record = await router.classify(text, categories: MemoryCategory.builtins, knownSensitivity: .low, requester: .agent)
+        #expect(record.keptOnDevice && stub.requests.isEmpty)
+    }
+
+    /// The cap and the agents' share refuse calls, survive a restart, and start again the next day;
+    /// the user's captures fall back to on-device at the cap.
+    @Test func theDailyCapHoldsAcrossARestart() async throws {
+        let v = try TestVault()
+        let log = InMemoryActivityLog()
+        let utc = TimeZone(identifier: "UTC")!
+        let cap = CloudRequestCap(store: v.store, limit: 5, activity: log, timeZone: utc)
+        #expect(cap.agentLimit == 2)
+        try await cap.consume(.agent, now: t0)
+        try await cap.consume(.agent, now: t0)
+        await #expect(throws: ProviderError.capReached) { try await cap.consume(.agent, now: t0) }
+        try await cap.consume(.user, now: t0)
+        let restarted = CloudRequestCap(store: try VaultStore.open(directory: v.directory), limit: 5, activity: log, timeZone: utc)
+        try await restarted.consume(.user, now: t0)
+        try await restarted.consume(.user, now: t0)
+        await #expect(throws: ProviderError.capReached) { try await restarted.consume(.user, now: t0) }
+        await #expect(throws: ProviderError.capReached) { try await restarted.consume(.user, now: t0) }
+        #expect(try await restarted.today(now: t0) == CloudRequestCap.Day(day: cap.key(t0), total: 5, agents: 2, reached: true))
+        #expect(log.events.filter { $0.event == "cap_reached" }.count == 1)  // once a day
+        try await restarted.consume(.agent, now: t0.plus(days: 1))
+        #expect(try await restarted.today(now: t0.plus(days: 1)).total == 1)
+        for _ in 1...4 { try await restarted.consume(.user, now: t0.plus(days: 1)) }
+
+        let stub = StubURLProtocol.Session { _ in .json(ModelRouterTests.proposal()) }
+        let client = try OpenAICompatibleClient(endpoint: .openAI(), model: "m", apiKey: "k", session: stub.session)
+        let router = ModelRouter(classifier: client, onDevice: ModelRouterTests.FakeOnDevice(), generationTimeout: .milliseconds(300),
+                                 cap: restarted)
+        let record = await router.classify("likes jazz", categories: MemoryCategory.builtins, now: t0.plus(days: 1))
+        #expect(record.engine == "apple.foundation" && stub.requests.isEmpty)
     }
 }
 

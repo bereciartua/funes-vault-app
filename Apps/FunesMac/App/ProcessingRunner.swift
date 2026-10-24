@@ -21,7 +21,9 @@ final class ProcessingRunner {
         queue = ProcessingQueue(store: environment.store, activity: environment.activity)
         processor = NewMemoryProcessor(
             store: environment.store, captures: environment.captures,
-            router: { @MainActor in preferences.classifyCaptures ? settings.makeRouter() : nil },
+            router: { @MainActor [store = environment.store, activity = environment.activity] in
+                preferences.classifyCaptures ? settings.makeRouter(cap: settings.cap(store: store, activity: activity)) : nil
+            },
             finished: { @MainActor router in settings.collectUsage(from: router) })
     }
 

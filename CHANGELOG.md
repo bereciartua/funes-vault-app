@@ -9,6 +9,11 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 - **Inbox: every suggestion applies as what it says.** Applying a suggestion to archive a memory used to save a new memory instead; it now archives that memory. A correction replaces the memory when you click Replace or Save on the iPhone (Keep Both is only offered on the Mac, for corrections). Selecting several suggestions and clicking Apply applies each as its own kind.
 - **No more silent overwrites.** A correction whose memory was edited, archived or deleted after it was suggested says "Changed since this was suggested" instead of overwriting the newer text; **Review Again** shows the memory as it is now. The Mac's memory editor also refuses to save over a change made meanwhile (from the iPhone, for example) and offers to reload.
 
+### Added
+
+- **More choice for the cloud limit.** Settings ▸ AI Models ▸ Cloud limit now goes from Public to Restricted, **Everything, including Secret**, or **Nothing**. Choosing a level above Internal asks you to confirm first. Text that looks like a secret is never sent, whatever the limit.
+- **Cloud requests per day.** A daily limit on requests to cloud providers, 300 by default, set in Settings ▸ AI Models, which shows today's count. Agents' input may use at most 40% of it. At the limit, new captures are classified on this Mac until the next day, and Funes says so once.
+
 ### Changed
 
 - **iPhone captures get proposed fields too.** They're classified by the model chosen in Settings ▸ AI Models, like captures on the Mac, instead of only by Funes's built-in rules. Captures still being classified when Funes quits are finished at the next launch.

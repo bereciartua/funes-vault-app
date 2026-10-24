@@ -109,6 +109,9 @@ public enum ProviderError: Error, Sendable, Equatable {
     /// (model providers §5). Nothing left the Mac.
     case blocked
     case transport
+    /// Funes didn't send it: today's cloud request cap, or the agents' share of it, is used up
+    /// (ADR-0022). Nothing left the Mac.
+    case capReached
 }
 
 /// A model that answers structured requests (model providers §3).
