@@ -1,0 +1,2266 @@
+{
+  "format": "funes.fixture.memories.v1",
+  "note": "Synthetic data for the search benchmark (Spike 2). Every person, place and number is invented.",
+  "memories": [
+    {
+      "id": "m001",
+      "key": "cs_concise",
+      "title": "Keep answers short",
+      "body": "I prefer concise answers: lead with the answer, then at most three short paragraphs of supporting detail. Skip preambles like \"Great question\".",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m002",
+      "key": "cs_bullets",
+      "title": "Bullet points for options",
+      "body": "When comparing options, use a bulleted list or a small table rather than long prose.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m003",
+      "key": "cs_no_emoji",
+      "title": "No emojis",
+      "body": "Don't use emojis in anything you write for me, including commit messages, documents and chat replies.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m004",
+      "key": "cs_spelling",
+      "title": "British spelling in writing",
+      "body": "Use British English spelling (colour, organise, licence) in documents and emails. Code identifiers can stay American.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m005",
+      "key": "cs_email_tone",
+      "title": "Email tone with clients",
+      "body": "Client emails should be warm but brief: greet them by first name, two or three short paragraphs, a clear next step, and sign off with \"Best, Sam\".",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m006",
+      "key": "cs_spanish_family",
+      "title": "Writing to my family in Spanish",
+      "body": "I write to my parents and my sister in Spanish (Rioplatense, using \"vos\"). Messages to them should be informal and affectionate.",
+      "kind": "relationship",
+      "categories": [
+        "communication_style",
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m007",
+      "key": "cs_feedback",
+      "title": "How I like feedback",
+      "body": "Give direct critical feedback first, then what works. I'd rather hear that a plan has a flaw than be reassured.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m008",
+      "key": "cs_meeting_notes",
+      "title": "Meeting notes format",
+      "body": "Meeting summaries: decisions first, then action items with an owner and a date, then open questions. No transcript-style narration.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m009",
+      "key": "cs_explain_level",
+      "title": "Technical depth of explanations",
+      "body": "I'm a senior engineer: skip beginner explanations of programming concepts, but do explain unfamiliar domain terms (medical, legal, tax).",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m010",
+      "key": "cs_questions",
+      "title": "Ask before assuming",
+      "body": "If a request is ambiguous in a way that changes the result, ask one clarifying question instead of guessing. For small details, pick a sensible default and say so.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m011",
+      "key": "cs_slack",
+      "title": "Slack style with the Harbor team",
+      "body": "Slack messages to the Harbor team should be one or two lines, no headings; use threads for anything longer.",
+      "kind": "preference",
+      "categories": [
+        "communication_style",
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m012",
+      "key": "cs_time_format",
+      "title": "Dates and times",
+      "body": "Use 24-hour time and day-month-year dates (16 Oct 2026). My time zone is Europe/Lisbon.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m013",
+      "key": "cs_units",
+      "title": "Metric units",
+      "body": "Use metric units: kilometres, kilograms, degrees Celsius. Convert recipes from cups and ounces to grams and millilitres.",
+      "kind": "preference",
+      "categories": [
+        "communication_style",
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m014",
+      "key": "cs_no_flattery",
+      "title": "No flattery",
+      "body": "Don't praise my questions or ideas. A neutral, matter-of-fact tone works best for me.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m015",
+      "key": "cs_writing_voice",
+      "title": "Blog writing voice",
+      "body": "For my blog posts: first person, plain words, short sentences, one idea per paragraph, and no marketing language like \"unlock\" or \"supercharge\".",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m016",
+      "key": "cs_presentations",
+      "title": "Slide decks",
+      "body": "Slides should carry one message each and at most 20 words of text; put the detail in the speaker notes.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m017",
+      "key": "cs_reading_lists",
+      "title": "Summaries of articles",
+      "body": "When summarizing an article, give a three-sentence summary and then the one claim I should double-check.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m018",
+      "key": "cs_apologies",
+      "title": "When you make a mistake",
+      "body": "If you got something wrong, say what was wrong and fix it. No long apologies.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m019",
+      "key": "cs_portuguese",
+      "title": "Learning Portuguese",
+      "body": "I'm learning European Portuguese (around A2). When I ask, correct my Portuguese gently and explain the grammar rule in English.",
+      "kind": "goal",
+      "categories": [
+        "communication_style",
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m020",
+      "key": "cs_calls",
+      "title": "Prefer async communication",
+      "body": "I prefer async written communication over calls. Suggest a call only when a thread has gone back and forth more than three times.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m021",
+      "key": "cs_proposals",
+      "title": "Proposals to new clients",
+      "body": "Proposals should start with the client's problem in their own words, then scope, timeline, price, and what is out of scope.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style",
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m022",
+      "key": "cs_headings",
+      "title": "Long documents",
+      "body": "Documents longer than a page need headings and a short summary at the top.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m023",
+      "key": "cs_club_language",
+      "title": "Language with the sailing club",
+      "body": "Emails to the sailing club can be in English; they usually reply in Portuguese, which I can read slowly.",
+      "kind": "fact",
+      "categories": [
+        "communication_style",
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m024",
+      "key": "pp_coffee",
+      "title": "Coffee order",
+      "body": "Oat milk flat white, no sugar. If oat milk isn't available, a black americano.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m025",
+      "key": "pp_coffee_home",
+      "title": "Coffee at home",
+      "body": "On weekend mornings I make pour-over coffee with a V60 and light-roast beans, ground fresh.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m026",
+      "key": "pp_cafe",
+      "title": "Favourite café to work from",
+      "body": "I work from Café Lume most Tuesday and Thursday mornings: good wifi, quiet until 11.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m027",
+      "key": "pp_vegetarian",
+      "title": "Vegetarian",
+      "body": "I've been vegetarian since 2019. I eat eggs and dairy but no meat or fish, including fish sauce and gelatin.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m028",
+      "key": "pp_cuisine",
+      "title": "Favourite cuisines",
+      "body": "I love Japanese, Ethiopian and South Indian food. Not a fan of very sweet desserts.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m029",
+      "key": "pp_music_focus",
+      "title": "Focus music",
+      "body": "For deep work I listen to ambient or instrumental post-rock; lyrics distract me.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m030",
+      "key": "pp_reading",
+      "title": "Reading taste",
+      "body": "I read mostly science fiction and popular history, and prefer paper books to e-books.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m031",
+      "key": "pp_travel_style",
+      "title": "Travel style",
+      "body": "I prefer trains over flights for trips under six hours, aisle seats, and small guesthouses over big hotel chains.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m032",
+      "key": "pp_sailing",
+      "title": "Sailing",
+      "body": "I sail dinghies at the Tejo Sailing Club on weekends from April to October.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m033",
+      "key": "pp_bouldering",
+      "title": "Bouldering",
+      "body": "I go bouldering twice a week, usually Monday and Wednesday evenings.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m034",
+      "key": "pp_running",
+      "title": "Running routine",
+      "body": "I run three times a week, about 30 km in total, mostly along the river early in the morning.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m035",
+      "key": "pp_morning",
+      "title": "Best hours for focused work",
+      "body": "I do my best focused work between 7:00 and 11:00. Avoid scheduling meetings for me before 11:00.",
+      "kind": "constraint",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m036",
+      "key": "pp_desk",
+      "title": "Desk setup",
+      "body": "I use a standing desk, a split keyboard and a single 27-inch monitor.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m037",
+      "key": "pp_plants",
+      "title": "Houseplants",
+      "body": "I keep about fifteen houseplants, mostly tropical, and I'm bad at remembering to water them.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m038",
+      "key": "pp_balcony",
+      "title": "Balcony garden",
+      "body": "I grow tomatoes, basil and chillies on the balcony; I usually plant in March.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m039",
+      "key": "pp_cat",
+      "title": "My cat",
+      "body": "I have a grey cat called Miso, six years old and indoor only. A neighbour feeds her when I travel.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m040",
+      "key": "pp_gifts",
+      "title": "Gift ideas for Jordan",
+      "body": "Jordan likes ceramics, specialty tea and hiking gear. Avoid scented candles.",
+      "kind": "relationship",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m041",
+      "key": "pp_partner",
+      "title": "Partner",
+      "body": "My partner is Jordan; we've lived together since 2022. Jordan is a nurse who works rotating shifts.",
+      "kind": "relationship",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m042",
+      "key": "pp_sister",
+      "title": "Sister",
+      "body": "My sister Lucía lives in Montevideo with her two kids, aged 8 and 5.",
+      "kind": "relationship",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m043",
+      "key": "pp_parents",
+      "title": "Parents",
+      "body": "My parents live in Buenos Aires. I call them on Sunday afternoons, Lisbon time.",
+      "kind": "relationship",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m044",
+      "key": "pp_birthdays",
+      "title": "Family birthdays",
+      "body": "Jordan's birthday is 12 March and Lucía's is 30 July. Remind me two weeks ahead so I can send something.",
+      "kind": "event",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m045",
+      "key": "pp_sizes",
+      "title": "Clothing sizes",
+      "body": "Shirt size M, trousers 32/32, shoes EU 43.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m046",
+      "key": "pp_films",
+      "title": "Films",
+      "body": "I like slow science fiction and documentaries. I dislike horror.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m047",
+      "key": "pp_podcasts",
+      "title": "Podcasts",
+      "body": "On runs I listen to podcasts about history and economics; no true crime.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m048",
+      "key": "pp_cooking",
+      "title": "Cooking on weeknights",
+      "body": "I cook most weeknights and like one-pot recipes that take under 40 minutes. I have a pressure cooker and a cast-iron pan.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m049",
+      "key": "pp_languages",
+      "title": "Languages I speak",
+      "body": "Native Spanish speaker, fluent in English, learning Portuguese.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences",
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m050",
+      "key": "pp_weekend_offline",
+      "title": "Saturdays offline",
+      "body": "I try to stay offline on Saturdays: no work email or Slack until Sunday evening.",
+      "kind": "constraint",
+      "categories": [
+        "personal_preferences",
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m051",
+      "key": "pp_japan",
+      "title": "Japan trip",
+      "body": "Planning two weeks in Japan in April 2027: Tokyo, Kanazawa and Kyoto, travelling by rail.",
+      "kind": "event",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m052",
+      "key": "pp_no_car",
+      "title": "No car",
+      "body": "I don't own a car; I get around by metro, bike and the occasional car share.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m053",
+      "key": "pp_alcohol",
+      "title": "Alcohol",
+      "body": "I rarely drink, at most a glass of wine at the weekend. I prefer alcohol-free options at events.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m054",
+      "key": "sd_swift_style",
+      "title": "Swift style",
+      "body": "Swift: prefer value types and protocols, avoid force unwraps outside tests, use guard for early exits, and keep functions under about 40 lines.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m055",
+      "key": "sd_swift_concurrency",
+      "title": "Swift concurrency",
+      "body": "Use async/await and actors instead of completion handlers or GCD in new code, with strict concurrency checking on.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m056",
+      "key": "sd_swift_testing",
+      "title": "Swift Testing",
+      "body": "New Swift tests use Swift Testing (@Test, #expect), not XCTest, except for UI tests.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m057",
+      "key": "sd_python",
+      "title": "Python conventions",
+      "body": "Python scripts: Python 3.12, type hints everywhere, ruff for lint and format, pathlib instead of os.path, and a main() guarded by __name__.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m058",
+      "key": "sd_ts",
+      "title": "TypeScript conventions",
+      "body": "TypeScript in strict mode, no 'any', zod for runtime validation, pnpm as the package manager.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m059",
+      "key": "sd_commits",
+      "title": "Commit messages",
+      "body": "Commit messages: imperative subject under 60 characters, a blank line, then why the change was made. No conventional-commit prefixes.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m060",
+      "key": "sd_branching",
+      "title": "Git workflow",
+      "body": "Feature branches off main, squash-merged via pull request. Rebase rather than merge to update a branch. Never force-push to main.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m061",
+      "key": "sd_tests",
+      "title": "Testing approach",
+      "body": "Write tests for behaviour, not implementation. Prefer fakes over mocks. A bug fix starts with a failing test.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m062",
+      "key": "sd_review",
+      "title": "Code review style",
+      "body": "In code reviews, separate blocking issues from nits and label nits as \"nit:\". Suggest code rather than only describing the problem.",
+      "kind": "instruction",
+      "categories": [
+        "software_development",
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m063",
+      "key": "sd_editor",
+      "title": "Editors",
+      "body": "I use Xcode for Swift and Neovim for everything else, with a light theme during the day.",
+      "kind": "fact",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m064",
+      "key": "sd_shell",
+      "title": "Shell tools",
+      "body": "zsh with a minimal prompt; ripgrep, fd, jq and fzf daily. Prefer one-liners that work with macOS's BSD tools.",
+      "kind": "preference",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m065",
+      "key": "sd_deps",
+      "title": "Third-party dependencies",
+      "body": "Be conservative with third-party dependencies: pin exact versions, check the licence and maintenance activity, and prefer the standard library.",
+      "kind": "constraint",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m066",
+      "key": "sd_sql",
+      "title": "Databases",
+      "body": "Default to SQLite for local apps and Postgres for servers. Write SQL by hand; avoid heavy ORMs.",
+      "kind": "preference",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m067",
+      "key": "sd_docs",
+      "title": "Documentation",
+      "body": "Every repository gets a README covering what it does, how to run it and how to test it. Decisions go in short ADRs.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m068",
+      "key": "sd_errors",
+      "title": "Error handling",
+      "body": "Use typed errors and never swallow errors silently. Log with context but never log user data or secrets.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m069",
+      "key": "sd_logging",
+      "title": "Server logs",
+      "body": "Server logs must not include request bodies or personal data; IDs and timings only.",
+      "kind": "constraint",
+      "categories": [
+        "software_development",
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m070",
+      "key": "sd_ci",
+      "title": "Continuous integration",
+      "body": "GitHub Actions for CI: every pull request must pass lint, tests and a build, and pipelines should stay under 10 minutes.",
+      "kind": "preference",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m071",
+      "key": "sd_infra",
+      "title": "Hosting side projects",
+      "body": "I host side projects on a single Hetzner VPS with Docker Compose and Caddy. No Kubernetes.",
+      "kind": "fact",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m072",
+      "key": "sd_api_design",
+      "title": "API design",
+      "body": "REST APIs: plural nouns, cursor pagination, ISO-8601 UTC timestamps, and error bodies with a machine-readable code.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m073",
+      "key": "sd_naming",
+      "title": "Naming",
+      "body": "Prefer descriptive names over abbreviations; booleans read as assertions (isEnabled, hasAccess).",
+      "kind": "preference",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m074",
+      "key": "sd_formatting",
+      "title": "Code formatting",
+      "body": "Swift is formatted with swift-format: 4-space indentation and a 120-column limit.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m075",
+      "key": "sd_accessibility",
+      "title": "Accessibility",
+      "body": "UI work must support VoiceOver, Dynamic Type and dark mode from the start, not as a follow-up.",
+      "kind": "constraint",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m076",
+      "key": "sd_perf",
+      "title": "Performance work",
+      "body": "Measure before optimizing, and include before/after numbers in pull requests that claim speedups.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m077",
+      "key": "sd_secrets",
+      "title": "Secrets in code",
+      "body": "Never put API keys in source or config files committed to git. Use the Keychain locally and environment variables in CI.",
+      "kind": "constraint",
+      "categories": [
+        "software_development",
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m078",
+      "key": "sd_ai_code",
+      "title": "Code you write for me",
+      "body": "When you write code for me, give the complete file or a precise diff, and say what you didn't test.",
+      "kind": "instruction",
+      "categories": [
+        "software_development",
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m079",
+      "key": "sd_languages",
+      "title": "Programming languages I know",
+      "body": "Strong in Swift, Python, TypeScript and SQL; comfortable with Go; rusty in Java; never used Rust in production.",
+      "kind": "fact",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m080",
+      "key": "sd_platforms",
+      "title": "Target platforms",
+      "body": "My apps target macOS 15+ and iOS 18+. I don't support older OS versions in new projects.",
+      "kind": "constraint",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m081",
+      "key": "sd_hardware",
+      "title": "Development machine",
+      "body": "My main machine is a MacBook Pro M1 with 16 GB of RAM; builds shouldn't assume more memory than that.",
+      "kind": "fact",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m082",
+      "key": "sd_data",
+      "title": "Data analysis",
+      "body": "For quick data analysis I use Python with pandas in Jupyter, and plain matplotlib charts.",
+      "kind": "preference",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m083",
+      "key": "sd_license",
+      "title": "Open-source licence",
+      "body": "My open-source projects use the Apache-2.0 licence.",
+      "kind": "fact",
+      "categories": [
+        "software_development",
+        "legal"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m084",
+      "key": "sd_dates",
+      "title": "Dates in code",
+      "body": "Store timestamps in UTC and convert to local time only at the edges. Never parse dates with hand-written regexes.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m085",
+      "key": "sd_small_steps",
+      "title": "Work in small steps",
+      "body": "I like to work in small reviewable steps: propose a plan first for anything bigger than one file.",
+      "kind": "instruction",
+      "categories": [
+        "software_development",
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m086",
+      "key": "sd_destructive",
+      "title": "Destructive commands",
+      "body": "Before running destructive shell commands (rm -rf, force-push, dropping tables), stop and ask me.",
+      "kind": "constraint",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m087",
+      "key": "sd_swiftui",
+      "title": "SwiftUI",
+      "body": "SwiftUI with the Observation framework (@Observable), no Combine in new code, and a preview for every view.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m088",
+      "key": "sd_backups",
+      "title": "Backups of my work",
+      "body": "Projects live in ~/Projects and are backed up with Time Machine plus a nightly restic job to remote storage.",
+      "kind": "fact",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m089",
+      "key": "sd_learning",
+      "title": "Technical learning goals",
+      "body": "This year I want to learn Rust well enough to ship a small CLI, and get better at database internals.",
+      "kind": "goal",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m090",
+      "key": "pc_harbor",
+      "title": "Harbor app",
+      "body": "Harbor is a booking app I'm building for the Tejo Sailing Club: members reserve dinghies and instructors. iOS app plus a small Go API.",
+      "kind": "project_context",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m091",
+      "key": "pc_harbor_client",
+      "title": "Harbor client contact",
+      "body": "The Harbor project is paid for by the sailing club. The treasurer, Marta Silva, approves invoices and prefers email to phone calls.",
+      "kind": "relationship",
+      "categories": [
+        "project_context",
+        "finance"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m092",
+      "key": "pc_harbor_stack",
+      "title": "Harbor tech stack",
+      "body": "Harbor: SwiftUI app, Go API on the VPS, Postgres, push notifications via APNs. Payments are out of scope for v1.",
+      "kind": "project_context",
+      "categories": [
+        "project_context",
+        "software_development"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m093",
+      "key": "pc_harbor_dates",
+      "title": "Harbor milestones",
+      "body": "Harbor beta to club members by 15 Jan 2027; App Store submission by 1 March 2027.",
+      "kind": "event",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m094",
+      "key": "pc_harbor_design",
+      "title": "Harbor design decisions",
+      "body": "Harbor shows bookings in a calendar grid, has a 48-hour cancellation rule, and lets instructors block out times.",
+      "kind": "project_context",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m095",
+      "key": "pc_harbor_users",
+      "title": "Harbor's users",
+      "body": "About 120 club members, many over 60 and not comfortable with technology; large text and simple flows matter.",
+      "kind": "project_context",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m096",
+      "key": "pc_harbor_bug",
+      "title": "Harbor known issue",
+      "body": "Harbor beta blocker: booking confirmations show the wrong time zone for members abroad.",
+      "kind": "project_context",
+      "categories": [
+        "project_context",
+        "software_development"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m097",
+      "key": "pc_ledgerly",
+      "title": "Ledgerly",
+      "body": "Ledgerly is my open-source command-line budgeting tool in Python. It imports bank CSV exports and categorizes transactions with rules.",
+      "kind": "project_context",
+      "categories": [
+        "project_context",
+        "software_development",
+        "finance"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m098",
+      "key": "pc_ledgerly_next",
+      "title": "Ledgerly roadmap",
+      "body": "Next for Ledgerly: support for Portuguese bank CSV formats and a monthly report command.",
+      "kind": "goal",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m099",
+      "key": "pc_ledgerly_users",
+      "title": "Ledgerly community",
+      "body": "Ledgerly has about 300 GitHub stars and a few regular contributors; I want to keep it dependency-light.",
+      "kind": "summary",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m100",
+      "key": "pc_atlas",
+      "title": "Nordwind Atlas migration",
+      "body": "Contract with Nordwind Logistics: migrating their Atlas dispatch system from a PHP monolith to a TypeScript service, two days a week until December 2026.",
+      "kind": "project_context",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m101",
+      "key": "pc_atlas_nda",
+      "title": "Nordwind confidentiality",
+      "body": "Nordwind's code and data are under NDA. Never paste their code, schemas or customer names into external tools or chatbots.",
+      "kind": "constraint",
+      "categories": [
+        "project_context",
+        "privacy_preferences",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m102",
+      "key": "pc_atlas_people",
+      "title": "Nordwind contacts",
+      "body": "At Nordwind my lead is Erik Halvorsen, the CTO. Standups are at 9:30 CET on Tuesdays and Thursdays.",
+      "kind": "relationship",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m103",
+      "key": "pc_book",
+      "title": "Book project",
+      "body": "I'm writing a short beginner's book on balcony gardening: target 40,000 words, first draft due June 2027.",
+      "kind": "project_context",
+      "categories": [
+        "project_context",
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m104",
+      "key": "pc_blog",
+      "title": "Blog",
+      "body": "I blog monthly on my personal site about indie app development; posts run 800 to 1,500 words.",
+      "kind": "project_context",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m105",
+      "key": "pc_kitchen",
+      "title": "Kitchen renovation",
+      "body": "Planning a kitchen renovation for spring 2027 with a budget of €12,000. We want an induction hob and more counter space.",
+      "kind": "project_context",
+      "categories": [
+        "project_context",
+        "finance"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m106",
+      "key": "pc_marathon",
+      "title": "Marathon goal",
+      "body": "Training for the Lisbon Marathon in October 2027, aiming to finish under 3h45.",
+      "kind": "goal",
+      "categories": [
+        "project_context",
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m107",
+      "key": "pc_capacity",
+      "title": "Availability for new work",
+      "body": "I'm fully booked until January 2027; new client work can start in February at the earliest.",
+      "kind": "constraint",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m108",
+      "key": "pc_rate",
+      "title": "Day rate",
+      "body": "My freelance day rate is €650; the minimum engagement is five days.",
+      "kind": "fact",
+      "categories": [
+        "project_context",
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m109",
+      "key": "pc_talk",
+      "title": "Conference talk",
+      "body": "Giving a talk on offline-first iOS apps at a Swift conference in Porto in May 2027; slides due in April.",
+      "kind": "event",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m110",
+      "key": "pc_mentoring",
+      "title": "Mentoring",
+      "body": "I mentor two junior developers through a local women-in-tech programme, one hour every other Friday.",
+      "kind": "fact",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m111",
+      "key": "pc_ideas",
+      "title": "Idea backlog",
+      "body": "Ideas I keep coming back to: a plant-watering reminder app, a recipe scaler, and a CLI that checks weather windows for dinghy sailing.",
+      "kind": "goal",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m112",
+      "key": "pc_gpx",
+      "title": "Open-source GPX library",
+      "body": "I maintain a small Swift library for parsing GPX files and triage its issues on Sunday evenings.",
+      "kind": "project_context",
+      "categories": [
+        "project_context",
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m113",
+      "key": "pc_cowork",
+      "title": "Coworking desk",
+      "body": "I rent a desk at a coworking space in Cais do Sodré on Mondays and Fridays.",
+      "kind": "fact",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m114",
+      "key": "pc_q4",
+      "title": "Q4 2026 priorities",
+      "body": "Q4 2026 priorities: ship the Harbor beta, finish Nordwind phase 2, and publish two blog posts.",
+      "kind": "goal",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m115",
+      "key": "pc_course",
+      "title": "Distributed systems course",
+      "body": "I'm taking an online course on distributed systems; assignments are due every Sunday.",
+      "kind": "fact",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m116",
+      "key": "pc_travel_work",
+      "title": "Working while travelling",
+      "body": "When I travel I keep client work to mornings and stay reachable by email only.",
+      "kind": "constraint",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m117",
+      "key": "pc_android",
+      "title": "Harbor Android subcontractor",
+      "body": "For Harbor's Android version I may subcontract to Priya, a Kotlin developer I've worked with before.",
+      "kind": "relationship",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m118",
+      "key": "pc_tracking",
+      "title": "Task tracking",
+      "body": "I track client tasks in Linear and personal projects in plain Markdown files.",
+      "kind": "fact",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m119",
+      "key": "pv_address",
+      "title": "Home address",
+      "body": "Never share my home address or put it in documents for clients; use the coworking address for business mail.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m120",
+      "key": "pv_kids",
+      "title": "Nieces and nephews",
+      "body": "Don't mention my sister's children by name or share their photos in anything public.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m121",
+      "key": "pv_health_work",
+      "title": "Health information and work",
+      "body": "Health details must never be shared with work-related agents or included in client communications.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences",
+        "health"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m122",
+      "key": "pv_location",
+      "title": "Location and routine",
+      "body": "Don't reveal my real-time location or daily routine (gym times, café visits) to third parties.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m123",
+      "key": "pv_screenshots",
+      "title": "Screenshots",
+      "body": "Blur names and email addresses in any screenshot used in blog posts or bug reports.",
+      "kind": "instruction",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m124",
+      "key": "pv_phone",
+      "title": "Phone number",
+      "body": "My phone number is only for family and close friends. Clients get email and Slack.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m125",
+      "key": "pv_social",
+      "title": "Social media",
+      "body": "I'm not on Facebook or Instagram, only Mastodon and LinkedIn. Don't suggest posting personal news publicly.",
+      "kind": "preference",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m126",
+      "key": "pv_ai_training",
+      "title": "Opting out of AI training",
+      "body": "I prefer tools that don't train on my data, and opt out of model training wherever there's a setting.",
+      "kind": "preference",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m127",
+      "key": "pv_analytics",
+      "title": "Analytics in my apps",
+      "body": "My apps use privacy-preserving analytics only: no third-party trackers and no advertising identifiers.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences",
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m128",
+      "key": "pv_finance",
+      "title": "Financial details",
+      "body": "Don't share my income, account balances or rates with anyone except my accountant.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences",
+        "finance"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m129",
+      "key": "pv_partner",
+      "title": "Jordan's privacy",
+      "body": "Jordan prefers not to be named online; refer to \"my partner\" in public writing.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m130",
+      "key": "pv_photos",
+      "title": "Photo metadata",
+      "body": "Strip location metadata from photos before sharing them.",
+      "kind": "instruction",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m131",
+      "key": "pv_passwords",
+      "title": "Passwords",
+      "body": "All passwords live in a password manager. Never ask me to paste a password or recovery code into a chat.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m132",
+      "key": "pv_aliases",
+      "title": "Email aliases",
+      "body": "I use a separate email alias for every online service, so sign-ups should use a fresh alias.",
+      "kind": "preference",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m133",
+      "key": "pv_recordings",
+      "title": "Recording calls",
+      "body": "Don't record or transcribe calls without asking everyone on the call first.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m134",
+      "key": "pv_client_data",
+      "title": "Client data retention",
+      "body": "Delete client datasets from my machine within 30 days of a project ending.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences",
+        "legal"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m135",
+      "key": "h_penicillin",
+      "title": "Penicillin allergy",
+      "body": "I'm allergic to penicillin (it gives me hives), and to amoxicillin too.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m136",
+      "key": "h_peanut",
+      "title": "Peanut allergy",
+      "body": "Mild peanut allergy: no peanuts or peanut oil. Tree nuts are fine.",
+      "kind": "fact",
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m137",
+      "key": "h_migraine",
+      "title": "Migraines",
+      "body": "I get migraines about twice a month, often triggered by poor sleep or skipped meals. I take sumatriptan when one starts.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m138",
+      "key": "h_back",
+      "title": "Lower back pain",
+      "body": "My lower back flares up when I sit too long, so I stand every hour and do physio exercises.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m139",
+      "key": "h_physio",
+      "title": "Physio routine",
+      "body": "Daily physio routine: cat-cow, bird-dog and glute bridges, about ten minutes.",
+      "kind": "instruction",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m140",
+      "key": "h_sleep",
+      "title": "Sleep",
+      "body": "I aim for 7.5 hours of sleep and to be in bed by 23:00, with screens off 30 minutes before.",
+      "kind": "goal",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m141",
+      "key": "h_caffeine",
+      "title": "Caffeine cutoff",
+      "body": "No caffeine after 14:00 because it ruins my sleep. Decaf or herbal tea in the afternoon.",
+      "kind": "constraint",
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m142",
+      "key": "h_vitamin_d",
+      "title": "Supplements and medication",
+      "body": "Vitamin D daily in winter. No regular prescription medication apart from migraine tablets when needed.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m143",
+      "key": "h_gp",
+      "title": "Family doctor",
+      "body": "My GP is Dr. Ana Ferreira at the local health centre; I book appointments through the health service app.",
+      "kind": "relationship",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m144",
+      "key": "h_dentist",
+      "title": "Dental check-ups",
+      "body": "Dental check-up every six months; the next one is in December 2026.",
+      "kind": "event",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m145",
+      "key": "h_eyes",
+      "title": "Eye strain",
+      "body": "I get eye strain after long screen sessions. I follow the 20-20-20 rule and have computer glasses.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m146",
+      "key": "h_knee",
+      "title": "Runner's knee",
+      "body": "Recovering from runner's knee in my left knee: avoid downhill running and keep long runs under 18 km until January.",
+      "kind": "constraint",
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m147",
+      "key": "h_lactose",
+      "title": "Lactose intolerance",
+      "body": "I'm slightly lactose intolerant: small amounts of cheese are fine, but I avoid drinking milk.",
+      "kind": "fact",
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m148",
+      "key": "h_blood_test",
+      "title": "Blood test results",
+      "body": "Annual blood test in September 2026: everything normal except slightly low iron. The doctor suggested more legumes and leafy greens.",
+      "kind": "event",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m149",
+      "key": "h_stress",
+      "title": "Stress and tension headaches",
+      "body": "When my workload gets heavy I get tension headaches; a 20-minute walk helps more than anything.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m150",
+      "key": "h_therapy",
+      "title": "Therapy sessions",
+      "body": "I see a therapist every other Thursday evening; don't schedule anything then.",
+      "kind": "constraint",
+      "categories": [
+        "health",
+        "privacy_preferences"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m151",
+      "key": "h_vaccines",
+      "title": "Vaccinations",
+      "body": "Flu shot every October; tetanus booster due in 2029.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m152",
+      "key": "h_water",
+      "title": "Drinking water",
+      "body": "Remind me to drink water during long coding sessions; I forget.",
+      "kind": "instruction",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m153",
+      "key": "h_heart_rate",
+      "title": "Heart-rate zones",
+      "body": "Easy runs at a heart rate under 145 bpm; my measured maximum is 188.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m154",
+      "key": "h_protein",
+      "title": "Protein intake",
+      "body": "As a vegetarian runner I aim for about 100 g of protein a day from eggs, tofu, tempeh and lentils.",
+      "kind": "goal",
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m155",
+      "key": "h_insurance",
+      "title": "Health insurance",
+      "body": "Private health insurance through my employer-independent plan; it partly covers dental.",
+      "kind": "fact",
+      "categories": [
+        "health",
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m156",
+      "key": "h_sun",
+      "title": "Sun protection",
+      "body": "Fair skin that burns easily: SPF 50 for sailing and running, plus a hat.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m157",
+      "key": "h_hayfever",
+      "title": "Hay fever",
+      "body": "Seasonal pollen allergy in April and May; cetirizine helps.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m158",
+      "key": "h_shoes",
+      "title": "Running shoes",
+      "body": "I run in neutral cushioned shoes and replace them every 700 km.",
+      "kind": "fact",
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m159",
+      "key": "f_bank",
+      "title": "Bank accounts",
+      "body": "A personal current account at a Portuguese bank, plus a multi-currency account for client payments in euros and pounds.",
+      "kind": "fact",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m160",
+      "key": "f_budget",
+      "title": "Monthly budget",
+      "body": "Monthly budget: rent €1,350, groceries €450, transport €60, eating out €200. I review it on the first Sunday of the month.",
+      "kind": "fact",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m161",
+      "key": "f_savings",
+      "title": "Emergency fund",
+      "body": "Keep six months of expenses as an emergency fund; currently at about four months.",
+      "kind": "goal",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m162",
+      "key": "f_invest",
+      "title": "Investing approach",
+      "body": "Low-cost index funds only, with monthly automatic contributions. No individual stocks.",
+      "kind": "preference",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m163",
+      "key": "f_retirement",
+      "title": "Retirement plan",
+      "body": "Contribute to a Portuguese PPR retirement plan every December for the tax deduction.",
+      "kind": "instruction",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m164",
+      "key": "f_social_security",
+      "title": "Freelance social security",
+      "body": "As a self-employed freelancer I file quarterly social security declarations in January, April, July and October.",
+      "kind": "fact",
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m165",
+      "key": "f_irs",
+      "title": "Annual tax return",
+      "body": "The annual income tax return is due between April and June; my accountant files it.",
+      "kind": "event",
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m166",
+      "key": "f_accountant",
+      "title": "Accountant",
+      "body": "My accountant, Rui Costa, handles taxes and VAT. Send him invoices and receipts by the 10th of each month.",
+      "kind": "relationship",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m167",
+      "key": "f_vat",
+      "title": "VAT on invoices",
+      "body": "I charge 23% VAT to Portuguese clients; EU business clients get the reverse charge, with their VAT number on the invoice.",
+      "kind": "fact",
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m168",
+      "key": "f_vat_returns",
+      "title": "Quarterly VAT returns",
+      "body": "VAT returns are quarterly, due by the 20th of the second month after each quarter ends.",
+      "kind": "event",
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m169",
+      "key": "f_invoicing",
+      "title": "Invoicing terms",
+      "body": "Invoices are due net 30 and are issued on the last working day of the month through certified invoicing software.",
+      "kind": "instruction",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m170",
+      "key": "f_late",
+      "title": "Late payments",
+      "body": "If a client is more than 15 days late, send a polite payment reminder; after 30 days, a firmer one that mentions late fees.",
+      "kind": "instruction",
+      "categories": [
+        "finance",
+        "communication_style"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m171",
+      "key": "f_currency",
+      "title": "Currency for quotes",
+      "body": "Quote prices in euros; UK clients may pay in pounds at the day's exchange rate.",
+      "kind": "preference",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m172",
+      "key": "f_subscriptions",
+      "title": "Subscriptions",
+      "body": "Review subscriptions every quarter and cancel anything I haven't used in two months.",
+      "kind": "instruction",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m173",
+      "key": "f_rent",
+      "title": "Rent payment",
+      "body": "Rent is €1,350, paid on the 1st by bank transfer to the landlord, Mr. Duarte.",
+      "kind": "fact",
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m174",
+      "key": "f_expenses",
+      "title": "Business expenses",
+      "body": "Keep receipts for hardware, software, coworking and conference travel; they're business expenses.",
+      "kind": "instruction",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m175",
+      "key": "f_flat",
+      "title": "Buying a flat",
+      "body": "Considering buying a flat in 2028; I'd need about €60,000 for the down payment and costs.",
+      "kind": "goal",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m176",
+      "key": "f_insurance",
+      "title": "Insurance renewals",
+      "body": "Home contents insurance and professional liability insurance both renew in February.",
+      "kind": "fact",
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m177",
+      "key": "f_donations",
+      "title": "Donations",
+      "body": "I donate 2% of my income each year, split between a climate charity and a local food bank.",
+      "kind": "fact",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m178",
+      "key": "f_parents",
+      "title": "Supporting my parents",
+      "body": "I send my parents €200 a month by transfer; the amount can vary with the exchange rate.",
+      "kind": "fact",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m179",
+      "key": "f_crypto",
+      "title": "No crypto",
+      "body": "I don't buy cryptocurrency or NFTs and don't want suggestions about them.",
+      "kind": "constraint",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m180",
+      "key": "f_cards",
+      "title": "Which card to use",
+      "body": "Use the credit card for travel bookings because of its travel insurance; the debit card for everything else.",
+      "kind": "preference",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m181",
+      "key": "f_tracking",
+      "title": "Spending tracking",
+      "body": "I track spending with Ledgerly in these categories: housing, food, transport, health, fun and business.",
+      "kind": "fact",
+      "categories": [
+        "finance",
+        "project_context"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m182",
+      "key": "f_income",
+      "title": "Income",
+      "body": "Freelance income in 2025 was roughly €78,000 before tax, varying a lot month to month.",
+      "kind": "fact",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m183",
+      "key": "f_japan_budget",
+      "title": "Japan trip budget",
+      "body": "Budget for the April 2027 Japan trip: €4,000 for two people, not counting flights.",
+      "kind": "fact",
+      "categories": [
+        "finance",
+        "personal_preferences"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m184",
+      "key": "f_kitchen_funding",
+      "title": "Paying for the renovation",
+      "body": "The kitchen renovation will be paid from savings, not with a loan.",
+      "kind": "constraint",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m185",
+      "key": "l_lease",
+      "title": "Rental lease",
+      "body": "The rental lease runs until 31 August 2027. Notice of non-renewal must be given 120 days before, and rent increases are capped by law.",
+      "kind": "fact",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m186",
+      "key": "l_business",
+      "title": "Business structure",
+      "body": "I work as a self-employed sole trader, not a company. I'm considering forming a limited company in 2027 if income keeps growing.",
+      "kind": "fact",
+      "categories": [
+        "legal",
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m187",
+      "key": "l_contracts",
+      "title": "Client contracts",
+      "body": "Every client engagement needs a signed contract with scope, payment terms, IP assignment on full payment, and liability capped at the fees paid.",
+      "kind": "instruction",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m188",
+      "key": "l_nda",
+      "title": "NDAs",
+      "body": "I sign mutual NDAs only; one-way NDAs need review by my lawyer first.",
+      "kind": "constraint",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m189",
+      "key": "l_lawyer",
+      "title": "Lawyer",
+      "body": "My lawyer, Inês Matos, reviews contracts over €10,000 and anything with non-compete clauses.",
+      "kind": "relationship",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m190",
+      "key": "l_noncompete",
+      "title": "Non-compete clauses",
+      "body": "Never accept a non-compete clause longer than six months.",
+      "kind": "constraint",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m191",
+      "key": "l_will",
+      "title": "Will",
+      "body": "I have a will, drafted in 2025, naming Jordan as executor; the original is with the notary.",
+      "kind": "fact",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m192",
+      "key": "l_residency",
+      "title": "Residency status",
+      "body": "I'm an EU citizen living in Portugal with a registration certificate.",
+      "kind": "fact",
+      "categories": [
+        "legal",
+        "privacy_preferences"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m193",
+      "key": "l_gdpr_harbor",
+      "title": "GDPR for Harbor",
+      "body": "Harbor stores members' names, phone numbers and booking history. The sailing club is the data controller and I'm the processor under a data processing agreement.",
+      "kind": "project_context",
+      "categories": [
+        "legal",
+        "project_context",
+        "privacy_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m194",
+      "key": "l_privacy_labels",
+      "title": "App privacy labels",
+      "body": "Every app I ship needs an accurate App Store privacy label and a privacy policy page.",
+      "kind": "instruction",
+      "categories": [
+        "legal",
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m195",
+      "key": "l_trademark",
+      "title": "Ledgerly name",
+      "body": "I checked that the name Ledgerly has no trademark conflict in the EU; it isn't registered.",
+      "kind": "fact",
+      "categories": [
+        "legal",
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m196",
+      "key": "l_dco",
+      "title": "Contributor terms",
+      "body": "Ledgerly accepts contributions under the DCO sign-off; no CLA.",
+      "kind": "fact",
+      "categories": [
+        "legal",
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m197",
+      "key": "l_ip",
+      "title": "IP ownership",
+      "body": "Code I write for clients belongs to them once paid; I keep the right to reuse general-purpose utilities.",
+      "kind": "fact",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m198",
+      "key": "l_poa",
+      "title": "Power of attorney",
+      "body": "My sister Lucía holds power of attorney for my affairs in Uruguay.",
+      "kind": "fact",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m199",
+      "key": "l_dispute",
+      "title": "Dispute with a former client",
+      "body": "A small claim against a former client over an unpaid €2,400 invoice settled in July 2026. Don't work with them again.",
+      "kind": "event",
+      "categories": [
+        "legal",
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m200",
+      "key": "l_tos",
+      "title": "Reading terms of service",
+      "body": "When summarizing terms of service, flag data sharing, auto-renewal, arbitration and liability limits.",
+      "kind": "instruction",
+      "categories": [
+        "legal",
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    }
+  ]
+}

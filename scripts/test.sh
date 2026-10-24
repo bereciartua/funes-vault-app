@@ -14,6 +14,15 @@ if grep -rn --include='*.swift' '\.generate(' Apps Packages | grep -v '/Tests/' 
     echo "test.sh: call models through ModelRouter.send, not .generate(" >&2
     exit 1
 fi
+# Memory text reaches a provider embedding model only through ModelRouter.embed (ADR-0023); only
+# the bundled index (EmbeddingIndexer, on-device by precondition) calls its model directly.
+if grep -rn --include='*.swift' '\.embed(' Apps Packages | grep -v '/Tests/' | grep -v 'ModelRouter\.embed(' \
+    | grep -v 'indexer\.provider\.embed(' \
+    | grep -v '^Packages/FunesCore/Sources/FunesCore/Search/EmbeddingIndex.swift:.*try await provider.embed(' \
+    | grep -v '^Packages/FunesCore/Sources/FunesCore/Models/ModelRouter.swift:.*provider.embed('; then
+    echo "test.sh: call provider embedding models through ModelRouter.embed, not .embed(" >&2
+    exit 1
+fi
 swift test --package-path Packages/FunesProtocol
 swift test --package-path Packages/FunesCore
 swift test --package-path Packages/FunesMCP

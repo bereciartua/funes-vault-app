@@ -2,6 +2,7 @@ import Foundation
 import FunesProtocol
 import GRDB
 import os
+import Synchronization
 
 /// One ranked memory. `cosine` is the raw query–memory cosine; `semantic` is its min-max
 /// normalized value over the pool; `keyword` is BM25 divided by the best score.
@@ -64,11 +65,28 @@ enum KeywordSearch {
     }
 }
 
+/// A provider embedding model as the second index (ADR-0023): its indexer, and whether agents'
+/// task text may be embedded with it (FR-AI-09; a local server's always may).
+public struct SecondIndex: Sendable {
+    public let indexer: ProviderEmbeddingIndexer
+    public let embedsAgentTasks: Bool
+
+    public init(indexer: ProviderEmbeddingIndexer, embedsAgentTasks: Bool = true) {
+        self.indexer = indexer
+        self.embedsAgentTasks = embedsAgentTasks || indexer.provider.locality.isLocal
+    }
+}
+
 /// Hybrid search for the vault UI and for agent retrieval (memory processing §4, access policy
 /// §3.2, ADR-0016): `score = 0.30 × keyword + 0.70 × semantic`, with the cosine min-max
 /// normalized over the pool. A memory is kept if its keyword score reaches the keyword floor or
 /// its raw cosine reaches the model's threshold. Without a model (it failed to load, or a memory
 /// has no vector yet) semantic is 0 and search is keyword-only; it never fails because of the model.
+///
+/// With a second index (ADR-0023), once its set is complete: a memory with a provider vector uses
+/// the provider's cosine, min-max normalized over the memories that have one, and the provider's
+/// threshold (the top 10 for an uncalibrated model); the others keep bge's, normalized over the
+/// whole pool. If the provider fails or times out, that search is bge-only (FR-AI-10).
 public final class SearchService: Sendable {
     public static let keywordWeight: Float = 0.30
     public static let semanticWeight: Float = 0.70
@@ -81,12 +99,19 @@ public final class SearchService: Sendable {
     public let store: VaultStore
     public let indexer: EmbeddingIndexer?
     public let keywordFloor: Float
+    private let second = Mutex<SecondIndex?>(nil)
     private let logger = Logger(subsystem: "com.funesvault.mac", category: "search")
 
     public init(store: VaultStore, indexer: EmbeddingIndexer?, keywordFloor: Float = SearchService.defaultKeywordFloor) {
         self.store = store
         self.indexer = indexer
         self.keywordFloor = keywordFloor
+    }
+
+    /// The provider model's index, or nil for bge-only search.
+    public var secondIndex: SecondIndex? {
+        get { second.withLock { $0 } }
+        set { second.withLock { $0 = newValue } }
     }
 
     /// Vault search (FR-V-10): filters apply before ranking; the vault threshold; prefix matching
@@ -98,7 +123,7 @@ public final class SearchService: Sendable {
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return pool.map { SearchHit(memoryID: $0.id, score: 0, keyword: 0, semantic: 0, cosine: nil) }
         }
-        return try await rank(text: query, pool: pool, prefix: true, threshold: \.vaultThreshold, limit: nil)
+        return try await rank(text: query, pool: pool, prefix: true, threshold: \.vaultThreshold, agentTask: false, limit: nil)
     }
 
     /// Agent retrieval (access policy §3.2): active memories including expired ones (so expiry shows
@@ -122,7 +147,7 @@ public final class SearchService: Sendable {
             }
         }
         let text = ([task] + keywords).joined(separator: " ")
-        return try await rank(text: text, pool: pool, prefix: false, threshold: \.retrievalThreshold, limit: nil)
+        return try await rank(text: text, pool: pool, prefix: false, threshold: \.retrievalThreshold, agentTask: true, limit: nil)
     }
 
     /// The duplicate hint's semantic half (memory processing §8): active memories whose raw cosine
@@ -141,7 +166,7 @@ public final class SearchService: Sendable {
     }
 
     private func rank(text: String, pool: [(id: UUID, updatedAt: Date)], prefix: Bool,
-                      threshold: KeyPath<EmbeddingModelInfo, Float>, limit: Int?) async throws -> [SearchHit] {
+                      threshold: KeyPath<EmbeddingModelInfo, Float>, agentTask: Bool, limit: Int?) async throws -> [SearchHit] {
         guard !pool.isEmpty else { return [] }
         let poolIDs = Set(pool.map(\.id))
         let keyword = try await store.writer.read { db in try KeywordSearch.scores(db, text: text, prefix: prefix, pool: poolIDs) }
@@ -162,12 +187,37 @@ public final class SearchService: Sendable {
         let lo = cosines.values.min() ?? 0, hi = cosines.values.max() ?? 0
         let span = hi - lo
 
+        // The second index: provider cosines for the memories that have a provider vector.
+        var provider: [UUID: Float] = [:]
+        var providerCut: Float = .infinity
+        var providerTop: Set<UUID>?
+        if let second = secondIndex, second.indexer.isComplete, !agentTask || second.embedsAgentTasks,
+           SecretScanner.scan(text).isEmpty, let q = await second.indexer.queryVector(text) {
+            provider = second.indexer.index.cosines(q).filter { poolIDs.contains($0.key) }
+            let model = second.indexer.provider.model
+            if model.isCalibrated {
+                providerCut = model[keyPath: threshold]
+            } else {
+                providerTop = Set(provider.sorted { $0.value > $1.value }.prefix(EmbeddingModelInfo.topK).map(\.key))
+            }
+        }
+        let plo = provider.values.min() ?? 0, phi = provider.values.max() ?? 0
+        let pspan = phi - plo
+
         var hits: [(SearchHit, Date)] = []
         for (id, updatedAt) in pool {
             let k = keyword[id] ?? 0
-            let c = cosines[id]
-            guard k >= keywordFloor && k > 0 || (c ?? -1) >= cut else { continue }
-            let s: Float = if let c, span > 0 { (c - lo) / span } else { 0 }
+            let c: Float?, s: Float, semanticKeep: Bool
+            if let pc = provider[id] {
+                c = pc
+                s = pspan > 0 ? (pc - plo) / pspan : 0
+                semanticKeep = providerTop.map { $0.contains(id) } ?? (pc >= providerCut)
+            } else {
+                c = cosines[id]
+                s = if let c, span > 0 { (c - lo) / span } else { 0 }
+                semanticKeep = (c ?? -1) >= cut
+            }
+            guard k >= keywordFloor && k > 0 || semanticKeep else { continue }
             hits.append((SearchHit(memoryID: id, score: Self.keywordWeight * k + Self.semanticWeight * s,
                                    keyword: k, semantic: s, cosine: c), updatedAt))
         }

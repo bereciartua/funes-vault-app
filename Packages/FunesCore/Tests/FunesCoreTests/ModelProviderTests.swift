@@ -272,9 +272,9 @@ import Testing
         #expect(stub.requests.count == 2)
     }
 
-    @Test func embeddingQueriesGoThroughTheRouter() async {
-        let router = ModelRouter(classifier: nil, onDevice: nil)
-        #expect(await router.embedQuery("x", with: FakeEmbedder())?.count == 64)
+    @Test func embeddingQueriesGoThroughTheRouter() async throws {
+        let (vectors, usage) = try await ModelRouter.embed([.query("x")], as: .query, with: FakeEmbedder(), cloudLimit: .never)
+        #expect(vectors.first?.count == 64 && usage.requests == 1)
     }
 
     // MARK: Keys

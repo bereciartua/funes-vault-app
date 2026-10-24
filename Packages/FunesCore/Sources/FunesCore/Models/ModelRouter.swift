@@ -142,6 +142,21 @@ public enum CloudLimit: Sendable, Hashable, Codable {
     }
 }
 
+/// One text an embedding call carries (model providers §5): a memory with its sensitivity (nil when
+/// unknown, which never goes to a cloud provider), a search query or agent task, or made-up text
+/// (Calibrate, the dimensions probe).
+public enum EmbeddingItem: Sendable, Hashable {
+    case memory(String, sensitivity: Sensitivity?)
+    case query(String)
+    case synthetic(String)
+
+    public var text: String {
+        switch self {
+        case let .memory(text, _), let .query(text), let .synthetic(text): text
+        }
+    }
+}
+
 /// One piece of user text a model call carries, with its sensitivity, or nil when it isn't known
 /// (model providers §5.6). The guard uses the highest item; an unknown one never goes to a cloud
 /// provider.
@@ -283,11 +298,6 @@ public final class ModelRouter: Sendable {
         }
     }
 
-    /// Embeds with the bundled model, keyword-only on failure or after 10 s (FR-AI-10).
-    public func embedQuery(_ text: String, with provider: any EmbeddingProvider) async -> [Float]? {
-        try? await withTimeout(.seconds(10)) { try await provider.embed([text], as: .query).first ?? [] }
-    }
-
     private func record(_ used: ProviderUsage, for id: ProviderID) {
         usage.withLock { u in
             var current = u[id] ?? ProviderUsage()
@@ -385,6 +395,31 @@ extension ModelRouter {
             try await cap?.consume(requester, now: now)
         }
         return try await withTimeout(timeout) { try await provider.generate(request) }
+    }
+
+    /// The only way text reaches a provider embedding model (model providers §5; test.sh fails on
+    /// any other embedding call outside the bundled index). For a provider not on this Mac, a
+    /// secret-scanner match in any item refuses the call. A cloud provider also gets nothing when a
+    /// memory is above the cloud limit or of unknown sensitivity, or when there are no items. Either
+    /// refusal is `ProviderError.blocked`, before any request. Queries and synthetic text carry no
+    /// memory: the disclosure line names them (searches, agents' tasks when the user allows it).
+    /// Embeddings don't count against the daily cap (ADR-0022).
+    public static func embed(_ items: [EmbeddingItem], as role: EmbeddingRole, with provider: any EmbeddingProvider,
+                             cloudLimit: CloudLimit, timeout: Duration = .seconds(10)) async throws -> ([[Float]], ProviderUsage) {
+        guard !items.isEmpty else { throw ProviderError.blocked }
+        if provider.locality != .onDevice, !SecretScanner.scan(items.map(\.text)).isEmpty { throw ProviderError.blocked }
+        if !provider.locality.isLocal {
+            for item in items {
+                if case let .memory(_, sensitivity) = item, !(sensitivity.map(cloudLimit.allows) ?? false) {
+                    throw ProviderError.blocked
+                }
+            }
+        }
+        let texts = items.map(\.text)
+        return try await withTimeout(timeout) {
+            if let counting = provider as? OpenAICompatibleEmbedder { return try await counting.embedCounting(texts, as: role) }
+            return (try await provider.embed(texts, as: role), ProviderUsage(requests: 1))
+        }
     }
 
     // MARK: Test connection
