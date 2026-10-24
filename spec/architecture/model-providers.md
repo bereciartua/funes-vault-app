@@ -149,6 +149,8 @@ Shipped in Phase 6c with Qwen3-Embedding-0.6B (local) and OpenAI `text-embedding
   | `text-embedding-3-large` | 0.18 | 0.22 |
   | Qwen3-Embedding-0.6B (`qwen3-embedding:0.6b` and other names with "qwen3-embedding" and "0.6b") | 0.24 | 0.28 |
 
+  Ollama's Q8_0 build of Qwen3 scores the same as the Hugging Face weights it was measured on, and Calibrate gives it 0.24 / 0.29 (spike results, Phase 6c.1).
+
   `EmbeddingCatalog` also knows the prefixes of other Qwen3-Embedding sizes (the task instruction on queries) and of nomic-embed-text (`search_query: ` / `search_document: `), without thresholds.
 - **Unknown models:** instead of a threshold, use **top-K**: semantic candidates are the K = 10 most similar, plus all keyword hits. Offer "Calibrate…", which runs the bundled benchmark (the 200 synthetic memories and 30 tasks, about 7,000 tokens, sent to the chosen provider after confirmation) with the same rule and stores the thresholds per model id in user defaults.
 

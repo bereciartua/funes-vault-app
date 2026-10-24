@@ -20,7 +20,7 @@
 - [x] "Embed agent requests with the cloud model" (FR-AI-09) and the disclosure line.
 
 ### 6c.4 Tests and docs · 2 h
-- [x] Adapter contract tests, guardrail tests (nothing above the limit embedded by the provider), re-embedding switch, cancel and resume, fallback to bge when the provider is down. *(`ProviderEmbeddingTests`, plus an opt-in live OpenAI test; Ollama's GGUF build of Qwen3 not measured.)*
+- [x] Adapter contract tests, guardrail tests (nothing above the limit embedded by the provider), re-embedding switch, cancel and resume, fallback to bge when the provider is down. *(`ProviderEmbeddingTests`, plus opt-in live tests: OpenAI's embeddings, and Calibrate against Ollama's `qwen3-embedding:0.6b`, which gives 0.24 / 0.29 against the built-in 0.24 / 0.28.)*
 - [x] When the code lands: PRIVACY.md, README, docs, CHANGELOG.
 
 ## Exit criteria
