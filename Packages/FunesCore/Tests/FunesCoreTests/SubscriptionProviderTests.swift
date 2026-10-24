@@ -311,11 +311,22 @@ import Testing
             let recorder = Recorder()
             let client = make(path, recorder)
             CLIRunner.unblock(client.id)
-            guard case .ready = await client.status() else { Issue.record("\(name) isn't ready"); continue }
-            let proposal = try await ModelRouter.testConnection(client, timeout: CLIRunner.timeout)
-            #expect(!proposal.title.isEmpty, "\(name)")
-            #expect(!CLIRunner.isBlocked(client.id), "\(name)")
+            let status = await client.status()
+            guard case .ready = status else { Issue.record("\(name) isn't ready: \(status)"); continue }
+            // Only the model call is kept: the status checks print account details.
+            recorder.lines.withLock { $0 = [] }
+            // One call; on failure the events are still saved, so nothing has to be retried.
+            let outcome: Result<CaptureProposal, any Error>
+            do { outcome = .success(try await ModelRouter.testConnection(client, timeout: CLIRunner.timeout)) } catch { outcome = .failure(error) }
             let events = recorder.lines.withLock { $0 }
+            if let folder = ProcessInfo.processInfo.environment["FUNES_LIVE_EVENTS_DIR"] {
+                try? events.joined(separator: "\n").write(toFile: folder + "/\(name)-events.jsonl", atomically: true, encoding: .utf8)
+            }
+            switch outcome {
+            case let .success(proposal): #expect(!proposal.title.isEmpty, "\(name)")
+            case let .failure(error): Issue.record("\(name) failed: \(error)")
+            }
+            #expect(!CLIRunner.isBlocked(client.id), "\(name)")
             if name == "claude" {
                 let initEvent = events.compactMap { try? JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any] }
                     .first { $0["type"] as? String == "system" && $0["subtype"] as? String == "init" }
