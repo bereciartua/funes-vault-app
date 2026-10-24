@@ -58,7 +58,7 @@ public protocol GenerationProvider: Sendable {
 - **`ModelRouter`:**
   - resolves the configured provider per task;
   - applies the guardrails (§5);
-  - handles timeouts (embeddings 10 s, generation 20 s) and fallbacks (§6);
+  - handles timeouts (embeddings 10 s, classification 20 s, each extraction or decision call 180 s: up to 30 pieces, minutes on a small local model) and fallbacks (§6);
   - counts usage.
 - **Structured output:** classification, extraction, linking and the tidy-up use JSON schemas ([memory processing §5](../domain/memory-processing.md#5-new-memories-split-classify-link), [§9](../domain/memory-processing.md#9-daily-tidy-up)). Results are **always validated**:
   - unknown categories are dropped;

@@ -117,7 +117,7 @@ struct HTTPClient: Sendable {
         for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
         if let body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [.sortedKeys])
+            request.httpBody = try JSONWriter.data(body)
         }
         let data: Data, response: URLResponse
         do {
