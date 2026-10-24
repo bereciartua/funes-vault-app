@@ -451,8 +451,8 @@ public struct TidyUpAutoApply: Sendable, Hashable {
     /// duplicate; an expiry is archived only for a memory the user vouched for.
     static func applies(_ action: TidyUpAction, level: AutoApplyLevel, untrusted: Bool) -> Bool {
         if action.type == .conflict || level == .off { return false }
-        if action.type == .archive, action.exact { return true }
         if untrusted { return false }
+        if action.type == .archive, action.exact { return true }
         switch level {
         case .off: return false
         case .duplicatesOnly: return action.type == .archive && action.archiveReason == .duplicate
@@ -461,9 +461,13 @@ public struct TidyUpAutoApply: Sendable, Hashable {
     }
 
     /// §9.5's trust rule: new text (update, merge) may come from any memory in the call; an
-    /// archive, split or conflict leans on the memories it names.
+    /// archive, split or conflict leans on the memories it names. Archiving the untrusted copy of
+    /// an exact duplicate doesn't: only keeping an untrusted copy over a trusted one does.
     static func leansOnUntrusted(_ action: TidyUpAction, cluster: TidyUpCluster) -> Bool {
-        switch action.type {
+        if action.type == .archive, action.exact, let target = action.target, let survivor = action.survivor {
+            return cluster.member(id: survivor)?.trust == .untrusted && cluster.member(id: target)?.trust == .trusted
+        }
+        return switch action.type {
         case .update, .merge: cluster.hasUntrustedText
         case .archive, .split, .conflict: action.named.contains { cluster.member(id: $0)?.trust == .untrusted }
         }
