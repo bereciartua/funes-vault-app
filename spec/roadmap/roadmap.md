@@ -104,6 +104,7 @@ gantt
 - **New memories:** every input (captures, seed answers, agent suggestions and writes, imports) split into atomic pieces, classified and linked (new, update, already saved, retract).
 - **Daily tidy-up:** update, merge, split, archive and conflict proposals, daily or on demand.
 - **Auto-apply** (off by default) with Undo for 30 days, never on the strength of untrusted text.
+- **Subscription providers:** the user's Claude or ChatGPT plan through their own Claude Code or Codex, isolated and fail-closed ([ADR-0024](../architecture/decisions/0024-subscription-providers.md)).
 - **Cloud limit up to everything,** one limit for every task, and a daily cap on cloud requests.
 - **Provider embeddings** as a second index, if the benchmark shows a gain.
 

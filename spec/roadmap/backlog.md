@@ -153,6 +153,7 @@ Epics map requirements to phases.
 | Multi-item cloud guard, on-device pre-screen for agent and import text, new cloud limit levels, daily cap | FR-AI-07, FR-AI-15 | 6.1 | M | M |
 | Undo log with purge; Activity events; export and restore of status and links | FR-AI-14, FR-V-04 | 6.1 | M | M |
 | iPhone: unknown actions as "Review on your Mac"; per-action `inbox.apply` | FR-iOS-09 | 6.1 | S | M |
+| Subscription providers: Claude Code and Codex CLIs, isolated and fail-closed (ADR-0024) | FR-AI-16 | 6a | M | M |
 | Extraction, validation, linking, groups, agent policy (scope flags, direct writes) | FR-AI-13 | 6a | L | M |
 | Auto-apply for new memories; Inbox group cards; Applied automatically with Undo; Settings | FR-AI-14, FR-I-01 | 6a | M | M |
 | Daily tidy-up: scheduling, clusters, model call, validation, auto-apply, Inbox section, notifications | FR-AI-03, FR-AI-14 | 6b | L | M |

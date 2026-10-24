@@ -529,7 +529,7 @@
 
 **FR-AI-05 Choose models per task** · M · v0.1
 - Settings ▸ AI Models has one row per task, each with a provider and a model: Embeddings (built in with no choice until v0.3, then optionally a provider model, FR-AI-11); Classification, renamed **New memories** in v0.3 (FR-AI-13); and from v0.3 **Daily tidy-up** (FR-AI-03).
-- **Providers:** Apple on-device (default), Apple Private Cloud Compute, Ollama, LM Studio, OpenAI, Anthropic, Google Gemini, OpenRouter, and custom OpenAI-compatible endpoints.
+- **Providers:** Apple on-device (default), Apple Private Cloud Compute, Ollama, LM Studio, OpenAI, Anthropic, Google Gemini, OpenRouter, and custom OpenAI-compatible endpoints; from v0.3, the user's Claude or ChatGPT plan through their own Claude Code or Codex (FR-AI-16).
 - Acceptance:
   - The defaults send nothing off the Mac.
   - Every choice shows a locality badge: On this Mac · Local server · Apple cloud · Cloud.
@@ -593,6 +593,15 @@
 **FR-AI-15 Daily request cap** · S · v0.3 ([ADR-0022](../architecture/decisions/0022-cloud-limit-and-daily-cap.md))
 - At most N cloud generation requests per local day (default 300, adjustable), shared by FR-AI-13 and FR-AI-03; embeddings don't count. Agents may use at most 40% of it.
 - Acceptance: the count survives restarts; at the cap the user's captures fall back to on-device, while agent input, imports and the tidy-up wait for the next day; a notice says so once a day.
+
+**FR-AI-16 Subscription providers** · M · v0.3 ([ADR-0024](../architecture/decisions/0024-subscription-providers.md))
+- Settings ▸ AI Models offers **Claude (Claude Code)** and **ChatGPT (Codex)** when the CLI is installed: generation runs through the user's own signed-in CLI, on their plan, with no API key in Funes.
+- Acceptance:
+  - Funes never asks for, reads, stores or passes on the plan's credentials, and never bundles, installs or modifies the CLI.
+  - Every call runs in an empty temporary directory with API keys removed from the environment, without the user's CLI configuration, MCP servers, hooks or plugins, and with every tool off; any tool or command event stops the run and discards its output (tested with recorded streams, including an injected tool call).
+  - A Codex version with an enabled feature Funes doesn't know is safe, or a CLI below the minimum version, is shown as unavailable and never called.
+  - The cloud limit, secret scanner and daily cap apply as for any cloud provider; the disclosure line names the plan and says its training setting applies.
+  - Signed out, plan limit reached and missing CLI each show a clear status and fall back like a provider that's down.
 
 ---
 
