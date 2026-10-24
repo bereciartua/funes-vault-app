@@ -387,6 +387,11 @@ public final class SuggestionService: Sendable {
             let result = try Self.applyAction(db, s, edits: edits, mode: mode, now: now, actor: actor)
             try db.execute(sql: "UPDATE suggestion SET status = 'applied', decided_at = ?, result_memory_id = ? WHERE id = ?",
                            arguments: [now, result.memoryID.db, suggestionID.db])
+            if s.origin == .consolidation {
+                // The tidy-up doesn't re-inspect its own changes, and Both are true isn't asked again (§9.5).
+                try TidyUpService.markInspected(db, result.memoryIDs)
+                if mode == .bothTrue { try TidyUpDismissals.record(db, s, now: now) }
+            }
             // Applied as one: an offered split is dropped.
             if s.action != .split { try db.execute(sql: "DELETE FROM suggestion WHERE group_id = ? AND status = 'pending'",
                                                    arguments: [suggestionID.db]) }
@@ -474,18 +479,28 @@ public final class SuggestionService: Sendable {
             return try saveProposal()
 
         case .update:
+            // A tidy-up update may absorb a copy of its target: archived with it, or neither (§9.4).
+            let absorbed = refs.filter { $0.role == .source }
             switch mode ?? .replace {
             case .keepBoth:
+                guard absorbed.isEmpty else { throw VaultError.unsupportedAction }
                 return try saveProposal()
             case .replace:
                 guard let target = refs.first(where: { $0.role == .target }) else { throw VaultError.targetChanged }
-                _ = try checked(db, [target])
+                _ = try checked(db, [target] + absorbed)
                 let d = try draft(db, s, edits, source: origin.source, actor: actor)
                 let m = try MemoryStore.update(db, id: target.memoryID, MemoryEdit(
                     title: d.title, body: d.body, kind: edits.kind ?? s.kind, categoryKeys: d.categoryKeys,
                     sensitivity: d.sensitivity, expiresAt: .some(d.expiresAt)), actor: actor, now: now)
                 try applied(m.id)
-                return ApplyResult(memoryID: m.id, memoryIDs: [m.id], similarMemoryIDs: try similar(m))
+                for copy in absorbed {
+                    try MemoryStore.setStatus(db, id: copy.memoryID, to: .archived, actor: actor, now: now)
+                    try MemoryStore.appendProvenance(db, memoryID: copy.memoryID, event: .mergedInto, actor: actor, at: now,
+                                                     relatedMemoryID: m.id)
+                    try MemoryStore.appendProvenance(db, memoryID: m.id, event: .mergedFrom, actor: actor, at: now,
+                                                     relatedMemoryID: copy.memoryID)
+                }
+                return ApplyResult(memoryID: m.id, memoryIDs: [m.id] + absorbed.map(\.memoryID), similarMemoryIDs: try similar(m))
             case .keep, .bothTrue:
                 throw VaultError.unsupportedAction
             }
@@ -613,11 +628,13 @@ public final class SuggestionService: Sendable {
     /// Reject / Discard (FR-I-02). Activity keeps the id only.
     /// Rejecting a suggestion with an offered split, or a Split this memory suggestion, rejects
     /// its undecided pieces too.
+    /// A tidy-up proposal's memories and their text are remembered, so it isn't asked again (§9.5).
     public func reject(suggestionID: UUID, now: Date, actor: Actor = .user, via: ActivityEvent.Via = .app) async throws {
         try await setStatus(suggestionID, from: .pending, to: .rejected, now: now)
         try await store.writer.write { db in
             try db.execute(sql: "UPDATE suggestion SET status = 'rejected', decided_at = ? WHERE group_id = ? AND status = 'pending'",
                            arguments: [now, suggestionID.db])
+            if let s = try Self.fetch(db, id: suggestionID) { try TidyUpDismissals.record(db, s, now: now) }
         }
         activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "suggestion_rejected",
                                       outcome: "rejected", ids: [suggestionID]))

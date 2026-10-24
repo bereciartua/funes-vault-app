@@ -258,14 +258,15 @@ public final class ModelRouter: Sendable {
         provider.id == "apple.foundation" ? "apple.foundation" : "\(provider.id)/\(provider.modelID)"
     }
 
-    /// One call of the splitting tasks through the guardrails (`send`), counted in the usage
-    /// counters. A provider that rate-limited is skipped until its backoff ends.
+    /// One call of the splitting tasks or the tidy-up through the guardrails (`send`), counted in
+    /// the usage counters, within `timeout` (the split timeout by default). A provider that
+    /// rate-limited is skipped until its backoff ends.
     func call<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem], with provider: any GenerationProvider,
-                                       requester: CloudRequestCap.Requester, now: Date) async throws -> T {
+                                       requester: CloudRequestCap.Requester, timeout: Duration? = nil, now: Date) async throws -> T {
         if let until = backoff.withLock({ $0[provider.id] }), now < until { throw ProviderError.rateLimited(retryAfter: until.timeIntervalSince(now)) }
         do {
             let (output, used) = try await Self.send(request, items: items, to: provider, cloudLimit: cloudLimit, cap: cap,
-                                                     requester: requester, timeout: splitTimeout, now: now)
+                                                     requester: requester, timeout: timeout ?? splitTimeout, now: now)
             record(used, for: provider.id)
             return output
         } catch let error as ProviderError {
@@ -277,7 +278,7 @@ public final class ModelRouter: Sendable {
             default:
                 record(ProviderUsage(requests: 1), for: provider.id)
             }
-            logger.error("Splitting provider \(provider.id.rawValue, privacy: .public) failed: \(String(describing: error), privacy: .public)") // log-safe: provider id and error code, no text
+            logger.error("Provider \(provider.id.rawValue, privacy: .public) failed: \(String(describing: error), privacy: .public)") // log-safe: provider id and error code, no text
             throw error
         }
     }
