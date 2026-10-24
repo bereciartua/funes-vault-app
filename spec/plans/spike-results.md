@@ -1,6 +1,6 @@
 # Spike results
 
-Results of the [Phase 0 spikes](phase-0-spikes.md) and of [Spike E](phase-6-0-spike-e.md) (Phase 6.0). Each section gives the question, what was run, the numbers, and the decision it feeds.
+Results of the [Phase 0 spikes](phase-0-spikes.md), of [Spike E](phase-6-0-spike-e.md) (Phase 6.0) and of the [Phase 6c benchmark](phase-6c-provider-embeddings.md). Each section gives the question, what was run, the numbers, and the decision it feeds.
 
 ---
 
@@ -808,3 +808,91 @@ All of it is logged in the fixture notes. Then extraction and linking were rerun
 - Gemini (no key), and other Anthropic and OpenAI models. Their levels stay unproven until run on these fixtures.
 - Apple and Ollama on clusters k41–k100 (Apple's tidy-up was already ruled out; Ollama is too slow on this Mac).
 - Latency on an unloaded Mac.
+
+---
+
+## Phase 6c.1: Provider embeddings as a second index
+
+**Run:** 24 Oct 2026, same M1 (8 GB). **Question:** does a provider embedding model, added next to bge-small as [ADR-0023](../architecture/decisions/0023-provider-embeddings-second-index.md) describes, gain on raw tasks or Spanish without losing where some memories have only a bge vector?
+**Code:** [`spikes/embeddings/bench6c.py`](../../spikes/embeddings/bench6c.py) (embeds with sentence-transformers or a provider's API, then scores as `SearchService.rank` does: FTS5 porter BM25 divided by the best, min-max semantic, 0.30/0.70, keyword floor 0.15, per-index thresholds). Full output: [`run-6c.md`](../../spikes/embeddings/run-6c.md).
+**Fixtures:** the 200 memories and 30 tasks (raw, and with agent keywords), plus new spike-only Spanish sets: [`memories-200-es.json`](../../spikes/embeddings/memories-200-es.json) (a Rioplatense translation of the 200 memories, Spanish category names) and [`queries-30-es-expanded.json`](../../spikes/embeddings/queries-30-es-expanded.json) (Spike 2b's Spanish tasks with Spanish keywords). Seven query/vault pairs: the English vault with raw English, keyword-expanded English and raw Spanish tasks; the Spanish vault with raw and keyword-expanded Spanish tasks; and a mixed vault (every other memory in Spanish) with raw Spanish and raw English tasks.
+**Cloud limit:** at the recommended Internal, 141 of 200 memories get a provider vector and 59 (Sensitive, Restricted) keep only bge. **26 of the 71 relevant labels are on those 59**, so this fixture tests the mixed case hard.
+
+### Verdict
+
+| Model and set-up | Gate: gain on raw tasks or Spanish | Gate: no loss on bge-only memories | Result |
+|---|---|---|---|
+| **Qwen3-Embedding-0.6B, local** (every memory: the cloud limit doesn't apply to local providers) | ✅ Spanish +0.05 to +0.31, raw English +0.04 | ✅ none exist | **passes** |
+| **`text-embedding-3-large` at Internal** (ADR-0023 scoring) | ✅ raw English +0.08, Spanish +0.03 to +0.21 | ⚠️ net −1 of 182 bge-only label slots: some fall from the top 5 to #6–8 | **passes, barely** |
+| **`text-embedding-3-small` at Internal** | ✅ raw English +0.08, Spanish 0 to +0.17 | ⚠️ net −1 of 182, as above | **passes, barely** |
+| nomic-embed-text v1.5, local | ❌ +0.01 raw, −0.04 to −0.01 on Spanish tasks, with its documented prefixes | ✅ | fails |
+| multilingual-e5-small, local | ❌ −0.07 raw English; +0.16 only cross-lingual | ✅ | fails |
+| Gemini embedding | not run (left out at the author's choice) | | — |
+
+Baselines reproduce Phase 1 exactly: FTS5 0.567 / 0.828, bge-small hybrid 0.689 / 0.939 (raw / keywords). OpenAI cost: 18,601 tokens per model (about $0.003 for both).
+
+### R@5 by vault and query (R@5 on the 26 labels held by bge-only memories in brackets)
+
+"Every memory" is a local model, or a cloud model with the limit at Secret. "At Internal" is a cloud model at the recommended limit, scored as ADR-0023 says (per-index min-max) unless marked z-scored.
+
+| Method | EN, raw | EN, + keywords | EN vault, ES tasks | ES, raw | ES, + keywords | mixed, ES tasks | mixed, EN tasks |
+|---|---|---|---|---|---|---|---|
+| FTS5 porter | 0.57 (0.46) | 0.83 (0.88) | 0.19 (0.08) | 0.56 (0.42) | 0.77 (0.73) | 0.31 (0.31) | 0.38 (0.15) |
+| **bge-small hybrid (today)** | **0.69** (0.73) | **0.94** (0.96) | **0.31** (0.12) | **0.58** (0.46) | **0.83** (0.81) | **0.36** (0.38) | **0.52** (0.42) |
+| nomic v1.5, every memory | 0.70 (0.73) | 0.94 (0.96) | 0.27 (0.12) | 0.56 (0.46) | 0.82 (0.73) | 0.33 (0.35) | 0.58 (0.46) |
+| nomic v1.5 without prefixes, every memory | 0.76 (0.77) | 0.94 (0.96) | 0.40 (0.23) | 0.59 (0.50) | 0.83 (0.85) | 0.33 (0.38) | 0.56 (0.46) |
+| multilingual-e5-small, every memory | 0.62 (0.54) | 0.94 (0.96) | 0.47 (0.38) | 0.58 (0.50) | 0.84 (0.85) | 0.38 (0.38) | 0.52 (0.38) |
+| **Qwen3-0.6B, every memory** | 0.73 (0.73) | 0.93 (0.96) | **0.62** (0.54) | **0.67** (0.69) | **0.88** (0.96) | **0.66** (0.69) | **0.71** (0.69) |
+| 3-small, every memory | 0.77 (0.77) | 0.93 (0.96) | 0.67 (0.65) | 0.71 (0.77) | 0.91 (0.92) | 0.54 (0.65) | 0.69 (0.65) |
+| 3-large, every memory | **0.82** (0.81) | 0.95 (0.96) | **0.72** (0.65) | **0.77** (0.77) | **0.95** (0.96) | 0.56 (0.62) | **0.80** (0.77) |
+| **3-small at Internal** | 0.77 (0.77) | 0.93 (0.92) | 0.48 (0.12) | 0.60 (0.50) | 0.85 (0.73) | 0.36 (0.35) | 0.61 (0.46) |
+| **3-large at Internal** | 0.77 (0.77) | 0.94 (0.92) | 0.52 (0.12) | 0.61 (0.42) | 0.89 (0.77) | 0.40 (0.38) | 0.64 (0.46) |
+| 3-large at Internal, z-scored | 0.77 (0.69) | 0.96 (0.92) | 0.51 (0.08) | 0.65 (0.46) | 0.88 (0.73) | 0.45 (0.38) | 0.62 (0.42) |
+| Qwen3-0.6B at Internal (as if it were a cloud model) | 0.69 (0.69) | 0.93 (0.88) | 0.47 (0.12) | 0.57 (0.46) | 0.82 (0.73) | 0.39 (0.38) | 0.62 (0.46) |
+| Qwen3-0.6B at Internal, z-scored | 0.76 (0.73) | 0.94 (0.96) | 0.47 (0.12) | 0.61 (0.46) | 0.85 (0.73) | 0.48 (0.38) | 0.61 (0.46) |
+
+R@30 follows R@5: Qwen3 on every memory reaches 0.89–0.96 R@30 on the raw-task sets, 3-large at Internal 0.64–0.93 (bge-small: 0.42–0.89). The full output also has each model alone (embedding only), bge normalized over the bge-only memories (worse), percentile ranks (worse), and averaging the two scores where both exist (between the two).
+
+### Findings
+1. **At the Internal limit, the OpenAI models gain within the limit and barely touch the rest.** Raw English goes from 0.69 to 0.77, Spanish tasks against English memories from 0.31 to 0.48–0.52. The bge-only labels move both ways: across the 7 sets (182 label slots), 3-small and 3-large each end one label down. Where one drops, it falls from the top 5 to #6–8, still within the 30 that agent retrieval returns. What pushes it down is a non-relevant memory on the same topic that has a provider vector (for "My head hurts after a long day at the computer", *drinking water* and *desk set-up* now rank above *migraine*), not a relevant one.
+2. **ADR-0023's per-index min-max is fine for cloud models.** Z-scoring each index over its own pool does worse for 3-large (net −5 label slots instead of −1). It does better for Qwen3 at the limit (−1 instead of −4), but a local model has no bge-only memories, so that case doesn't arise. Keep decision 2 as it is.
+3. **The cloud limit caps a cloud model's Spanish gain.** At Internal, the 37% of relevant labels on Sensitive and Restricted memories stay at bge's level, which for Spanish tasks against English memories is 0.12. 3-large's cross-lingual 0.72 on every memory becomes 0.52 at the limit, and the mixed vault gains little (0.36 → 0.40).
+4. **For Spanish, a local multilingual model beats a cloud model at the limit.** Qwen3-Embedding-0.6B (Apache-2.0, 1,024 dimensions, 95 ms per query on MPS fp16) embeds every memory, so it doesn't lose the sensitive ones. It beats 3-large at Internal on every Spanish set but one (0.62 vs 0.52 cross-lingual, 0.66 vs 0.40 mixed; the Spanish vault with raw tasks is 0.67 vs 0.61). It's free, and nothing leaves the Mac. Ollama serves it as `qwen3-embedding:0.6b` (about 640 MB), and its build scores the same (below). Its queries need the task instruction, which is the "query and document roles" 6c.2 already plans.
+5. **The OpenAI models would be best with no limit,** but that means sending Health and Finance memories to OpenAI. 3-large on every memory: 0.82 raw English, 0.72 cross-lingual, 0.95 on the Spanish vault with keywords.
+6. **The strong models would do better with less keyword weight.** On raw tasks, 3-small alone (embedding only) reaches 0.85 against 0.77 in the hybrid, and 0.78 cross-lingual against 0.67. The 0.30 keyword weight was tuned for bge-small. Per-index weights are a possible later gain, not part of 6c.
+7. **Spanish against Spanish memories is better than Spike 2b's cross-lingual number suggested:** bge-small hybrid gets 0.58 raw and 0.83 with keywords, mostly from FTS5 (0.56 / 0.77), since the words match. Cross-lingual (Spanish tasks, English memories) is the hard case: 0.31.
+8. **nomic and multilingual-e5-small don't earn a second index.** nomic's documented prefixes score worse than no prefixes on raw tasks (0.70 vs 0.76). With 71 labels that difference is near noise, so its apparent gain means little.
+9. **Noise:** 30 queries and 71 labels; differences under ~0.05 R@5 are noise, and on the 26 bge-only labels each label is 0.04.
+
+### Thresholds (raw cosine, from the cosines of non-relevant memories on raw English tasks)
+Retrieval at their 90th percentile (bge: 0.54; it ships 0.55), vault at the 78th, where bge's 0.50 sits. Retrieval at bge's own percentile (p93) costs the OpenAI models 0.02–0.04 on Spanish tasks against English memories, whose cosines run lower, so p90 stays.
+
+| Model | Vault | Retrieval |
+|---|---|---|
+| `text-embedding-3-small` | 0.20 | 0.25 |
+| `text-embedding-3-large` | 0.18 | 0.22 |
+| Qwen3-Embedding-0.6B | 0.24 | 0.28 |
+| Ollama's `qwen3-embedding:0.6b` (Q8_0) | 0.24 | 0.29 |
+| nomic v1.5 (without prefixes) | 0.52 (0.45) | 0.55 (0.48) |
+| multilingual-e5-small | 0.79 | 0.80 |
+
+They're measured on the same fixture they're used on, so they're slightly optimistic. The first three are 6c's built-in thresholds; Calibrate uses the same rule, and run on bge-small it gives back 0.50 / 0.54.
+
+### Ollama's build of Qwen3 (24 Oct 2026, Ollama 0.40.10)
+`qwen3-embedding:0.6b` is the same model quantized to Q8_0 (595.78M parameters, 1,024 dimensions, 639 MB). Through Ollama's `/v1/embeddings` with the task instruction on queries:
+
+| Qwen3-Embedding-0.6B, every memory (R@5) | EN, raw | EN, + keywords | EN vault, ES tasks | ES, raw | ES, + keywords | mixed, ES tasks | mixed, EN tasks |
+|---|---|---|---|---|---|---|---|
+| Hugging Face weights (fp16, sentence-transformers) | 0.73 | 0.93 | 0.62 | 0.67 | 0.88 | 0.66 | 0.71 |
+| Ollama, Q8_0 | 0.73 | 0.93 | 0.61 | 0.66 | 0.89 | 0.66 | 0.69 |
+
+- Document vectors match the Hugging Face ones (cosine ≥ 0.999); so do query vectors, but only with the instruction. Without it they fall to a median of 0.89, and so does the score, so an Ollama setup that sends queries without the instruction loses most of the gain. Funes's adapter adds it (`EmbeddingCatalog`). A first pass of this benchmark sent Ollama's queries without it (a bug in `bench6c.py`'s OpenAI-compatible path, fixed; the OpenAI models use no prefix, so their numbers didn't change) and got 0.65 on raw English.
+- Batching doesn't change Ollama's vectors (one text or 40 per call: cosine 1.000).
+- **Calibrate** in FunesCore against it (`liveOllamaQwen3Calibration`, `FUNES_LIVE_OLLAMA=1`) gives **0.24 / 0.29** (7,785 tokens, 12 s), and this benchmark's rule the same. The built-in 0.24 / 0.28 stays: one hundredth lower keeps a few more candidates, within noise.
+- 46 ms per query through Ollama (Metal), against 95 ms for sentence-transformers on MPS fp16.
+
+### Not measured
+- Gemini embedding (left out at the author's choice). `gemini-001` and `gemini-001-task` stay in `bench6c.py` for later.
+- LM Studio's build of Qwen3, and Ollama's `nomic-embed-text`.
+- Larger multilingual models (bge-m3, 2.2 GB; EmbeddingGemma-300m, gated on Hugging Face, about 620 MB in Ollama).
+- The 10,000-memory corpus.

@@ -116,7 +116,7 @@ gantt
 - **Pricing decision** at 1.0.
 - **At production readiness (1.0):** add a "no longer maintained" note to `funes-vault`'s README, linking to the new repo ([ADR-0010](../architecture/decisions/0010-start-from-scratch.md)).
 - **An agent `update_memory` tool** behind Write plus ask-before-saving.
-- **Multilingual embeddings** with Spanish: multilingual-e5-small (MIT) after a Spanish-memory benchmark.
+- **Multilingual embeddings built in,** with the Spanish localization. The [Phase 6c benchmark](../plans/spike-results.md#phase-6c1-provider-embeddings-as-a-second-index) ruled out multilingual-e5-small (no gain with Spanish memories, a loss on raw English tasks). Qwen3-Embedding-0.6B (Apache-2.0) is the measured candidate: an optional provider model since 6c (Ollama, LM Studio), with recall@5 from 0.31 to 0.62 for Spanish tasks on English memories. Bundling it instead of bge-small would need its own decision: about 600 MB even at 8 bits (bge-small: 32 MB), and 46–95 ms per query against bge's 4 ms.
 - **Local open-source LLM** (Core AI / MLX) as an upgrade path.
 
 ## Tracking progress

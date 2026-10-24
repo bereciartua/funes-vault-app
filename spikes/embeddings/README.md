@@ -24,3 +24,18 @@ cd spikes/search && MODE=2b MODELS=bge-small,bge-small-coreml-cpu,bge-small-noin
 - `make_query_variants.py` wrote `queries-30-expanded.json` (FunesCore fixture) and `queries-30-es.json` (here).
 - `tokcheck.py` writes Hugging Face token ids to check the Swift WordPiece tokenizer (`TOKCHECK=`).
 - EmbeddingGemma-300m is listed in `embed.py` but wasn't run. The repository is gated: even signed in, the download returns 403 until the account accepts the Gemma terms at huggingface.co/google/embeddinggemma-300m.
+
+## Phase 6c.1: provider embeddings as a second index
+
+`bench6c.py` embeds the English and Spanish fixtures (`memories-200-es.json`, `queries-30-es-expanded.json`) and scores bge-small with a second index as `SearchService.rank` does. Results: [`spec/plans/spike-results.md`](../../spec/plans/spike-results.md#phase-6c1-provider-embeddings-as-a-second-index); raw output: `run-6c.md`. Vectors go to `vectors6c/` (git-ignored).
+
+```bash
+cd spikes/embeddings && HF_HUB_OFFLINE=1 .venv/bin/python -I bench6c.py embed bge-small nomic-v1.5 nomic-v1.5-noprefix me5-small qwen3-0.6b
+```
+```bash
+cd spikes/embeddings && .venv/bin/python -I bench6c.py score nomic-v1.5 nomic-v1.5-noprefix me5-small qwen3-0.6b oai-3-small oai-3-large > run-6c.md
+```
+Cloud models read `OPENAI_API_KEY` / `GEMINI_API_KEY` from the environment and send only the synthetic fixtures (`bench6c.py tokens` prints the input size):
+```bash
+cd spikes/embeddings && .venv/bin/python -I bench6c.py embed oai-3-small oai-3-large
+```

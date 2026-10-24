@@ -6,8 +6,8 @@
 
 ## Tasks
 ### 6c.1 Benchmark first · 3 h
-- [ ] Run the 200-memory / 30-query benchmark (raw and agent-expanded) and a new Spanish set against `text-embedding-3-small`, `-3-large`, a Gemini embedding model and `nomic-embed-text`, alone and fused with bge-small as a second index.
-- [ ] Record in [spike results](spike-results.md). Go on only for models with a gain on raw tasks or Spanish, and no loss where some memories have only a bge vector.
+- [x] Run the 200-memory / 30-query benchmark (raw and agent-expanded) and a new Spanish set against `text-embedding-3-small`, `-3-large`, a Gemini embedding model and `nomic-embed-text`, alone and fused with bge-small as a second index. *(2026-10-24: Gemini left out at the author's choice; multilingual-e5-small and Qwen3-Embedding-0.6B added.)*
+- [x] Record in [spike results](spike-results.md#phase-6c1-provider-embeddings-as-a-second-index). Go on only for models with a gain on raw tasks or Spanish, and no loss where some memories have only a bge vector. *(Qwen3-0.6B, local, passes; `text-embedding-3-small` and `-large` at Internal pass barely, with net −1 of 182 bge-only label slots; nomic and multilingual-e5-small fail.)*
 
 ### 6c.2 Adapter and index · 4 h
 - [ ] `/v1/embeddings` in `OpenAICompatibleClient` (OpenAI, Gemini's compatible endpoint, OpenRouter, Ollama, LM Studio), with query and document roles for models that use prefixes.

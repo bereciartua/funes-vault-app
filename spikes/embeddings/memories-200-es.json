@@ -1,0 +1,2276 @@
+{
+  "format": "funes.fixture.memories.v1",
+  "note": "Rioplatense Spanish translation of memories-200 (titles and bodies only) for the Phase 6c embeddings benchmark. Synthetic data: every person, place and number is invented.",
+  "category_names": {
+    "communication_style": "Estilo de comunicación",
+    "personal_preferences": "Preferencias personales",
+    "software_development": "Desarrollo de software",
+    "project_context": "Contexto de proyectos",
+    "privacy_preferences": "Preferencias de privacidad",
+    "health": "Salud",
+    "finance": "Finanzas",
+    "legal": "Legal"
+  },
+  "memories": [
+    {
+      "id": "m001",
+      "key": "cs_concise",
+      "title": "Respuestas cortas",
+      "body": "Prefiero respuestas concisas: primero la respuesta y después, como mucho, tres párrafos cortos con los detalles que la respaldan. Saltate los preámbulos tipo \"Excelente pregunta\".",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m002",
+      "key": "cs_bullets",
+      "title": "Viñetas para las opciones",
+      "body": "Cuando compares opciones, usá una lista con viñetas o una tabla chica en vez de párrafos largos.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m003",
+      "key": "cs_no_emoji",
+      "title": "Nada de emojis",
+      "body": "No uses emojis en nada que escribas para mí, incluidos los mensajes de commit, los documentos y las respuestas en el chat.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m004",
+      "key": "cs_spelling",
+      "title": "Ortografía británica al escribir",
+      "body": "Usá la ortografía del inglés británico (colour, organise, licence) en documentos y correos. Los identificadores en el código pueden quedar en inglés americano.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m005",
+      "key": "cs_email_tone",
+      "title": "Tono de los correos a clientes",
+      "body": "Los correos a clientes tienen que ser cálidos pero breves: saludarlos por el nombre de pila, dos o tres párrafos cortos, un próximo paso claro y despedirse con \"Best, Sam\".",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m006",
+      "key": "cs_spanish_family",
+      "title": "Cómo le escribo a mi familia en español",
+      "body": "A mis viejos y a mi hermana les escribo en español (rioplatense, con \"vos\"). Los mensajes para ellos tienen que ser informales y cariñosos.",
+      "kind": "relationship",
+      "categories": [
+        "communication_style",
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m007",
+      "key": "cs_feedback",
+      "title": "Cómo me gusta recibir feedback",
+      "body": "Primero dame la crítica directa y después lo que funciona. Prefiero que me digan que un plan tiene una falla antes que me tranquilicen.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m008",
+      "key": "cs_meeting_notes",
+      "title": "Formato de las notas de reunión",
+      "body": "Resúmenes de reunión: primero las decisiones, después las tareas pendientes con un responsable y una fecha, y al final las preguntas abiertas. Nada de narración estilo transcripción.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m009",
+      "key": "cs_explain_level",
+      "title": "Nivel técnico de las explicaciones",
+      "body": "Soy ingeniero senior: saltate las explicaciones para principiantes sobre conceptos de programación, pero sí explicame los términos de áreas que no conozco (médicos, legales, impositivos).",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m010",
+      "key": "cs_questions",
+      "title": "Preguntá antes de suponer",
+      "body": "Si un pedido es ambiguo de una forma que cambia el resultado, hacé una pregunta para aclararlo en vez de adivinar. Para detalles menores, elegí un valor por defecto razonable y avisame.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m011",
+      "key": "cs_slack",
+      "title": "Estilo en Slack con el equipo de Harbor",
+      "body": "Los mensajes de Slack al equipo de Harbor tienen que ser de una o dos líneas, sin títulos; para cualquier cosa más larga, usá hilos.",
+      "kind": "preference",
+      "categories": [
+        "communication_style",
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m012",
+      "key": "cs_time_format",
+      "title": "Fechas y horas",
+      "body": "Usá el formato de 24 horas y fechas día-mes-año (16 Oct 2026). Mi zona horaria es Europe/Lisbon.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m013",
+      "key": "cs_units",
+      "title": "Unidades métricas",
+      "body": "Usá unidades métricas: kilómetros, kilogramos, grados Celsius. Pasá las recetas de tazas y onzas a gramos y mililitros.",
+      "kind": "preference",
+      "categories": [
+        "communication_style",
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m014",
+      "key": "cs_no_flattery",
+      "title": "Sin halagos",
+      "body": "No elogies mis preguntas ni mis ideas. Lo que mejor me funciona es un tono neutro y objetivo.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m015",
+      "key": "cs_writing_voice",
+      "title": "Voz para el blog",
+      "body": "Para los posts del blog: primera persona, palabras simples, oraciones cortas, una idea por párrafo y nada de lenguaje de marketing como \"desbloqueá\" o \"potenciá al máximo\".",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m016",
+      "key": "cs_presentations",
+      "title": "Presentaciones con diapositivas",
+      "body": "Cada diapositiva tiene que transmitir un solo mensaje y tener como mucho 20 palabras de texto; el detalle va en las notas del orador.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m017",
+      "key": "cs_reading_lists",
+      "title": "Resúmenes de artículos",
+      "body": "Cuando resumas un artículo, dame un resumen de tres oraciones y después la afirmación que debería verificar.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m018",
+      "key": "cs_apologies",
+      "title": "Cuando te equivocás",
+      "body": "Si algo te salió mal, decí qué estaba mal y corregilo. Nada de disculpas largas.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m019",
+      "key": "cs_portuguese",
+      "title": "Aprendiendo portugués",
+      "body": "Estoy aprendiendo portugués europeo (más o menos nivel A2). Cuando te lo pida, corregí mi portugués con suavidad y explicame la regla gramatical en inglés.",
+      "kind": "goal",
+      "categories": [
+        "communication_style",
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m020",
+      "key": "cs_calls",
+      "title": "Prefiero la comunicación asincrónica",
+      "body": "Prefiero la comunicación escrita asincrónica a las llamadas. Sugerí una llamada solo cuando un hilo fue y vino más de tres veces.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m021",
+      "key": "cs_proposals",
+      "title": "Propuestas para clientes nuevos",
+      "body": "Las propuestas tienen que empezar con el problema del cliente en sus propias palabras, y después el alcance, los plazos, el precio y lo que queda fuera del alcance.",
+      "kind": "instruction",
+      "categories": [
+        "communication_style",
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m022",
+      "key": "cs_headings",
+      "title": "Documentos largos",
+      "body": "Los documentos de más de una página necesitan títulos y un resumen corto al principio.",
+      "kind": "preference",
+      "categories": [
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m023",
+      "key": "cs_club_language",
+      "title": "Idioma con el club de vela",
+      "body": "Los correos al club de vela pueden ir en inglés; en general contestan en portugués, que puedo leer despacio.",
+      "kind": "fact",
+      "categories": [
+        "communication_style",
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m024",
+      "key": "pp_coffee",
+      "title": "Mi pedido de café",
+      "body": "Flat white con leche de avena, sin azúcar. Si no hay leche de avena, un americano solo.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m025",
+      "key": "pp_coffee_home",
+      "title": "Café en casa",
+      "body": "Los fines de semana a la mañana me hago café de filtro con una V60 y granos de tueste claro, recién molidos.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m026",
+      "key": "pp_cafe",
+      "title": "Mi café favorito para trabajar",
+      "body": "La mayoría de los martes y jueves a la mañana trabajo desde el Café Lume: buen wifi y tranquilo hasta las 11.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m027",
+      "key": "pp_vegetarian",
+      "title": "Vegetariano",
+      "body": "Soy vegetariano desde 2019. Como huevos y lácteos, pero nada de carne ni pescado, incluidas la salsa de pescado y la gelatina.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m028",
+      "key": "pp_cuisine",
+      "title": "Cocinas favoritas",
+      "body": "Me encanta la comida japonesa, etíope y del sur de la India. No soy muy fan de los postres muy dulces.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m029",
+      "key": "pp_music_focus",
+      "title": "Música para concentrarme",
+      "body": "Para el trabajo profundo escucho ambient o post-rock instrumental; las letras me distraen.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m030",
+      "key": "pp_reading",
+      "title": "Gustos de lectura",
+      "body": "Leo sobre todo ciencia ficción e historia de divulgación, y prefiero los libros en papel a los e-books.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m031",
+      "key": "pp_travel_style",
+      "title": "Cómo me gusta viajar",
+      "body": "Para viajes de menos de seis horas prefiero el tren al avión, asiento de pasillo, y pensiones chicas antes que grandes cadenas hoteleras.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m032",
+      "key": "pp_sailing",
+      "title": "Vela",
+      "body": "Navego en botes a vela en el Tejo Sailing Club los fines de semana, de abril a octubre.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m033",
+      "key": "pp_bouldering",
+      "title": "Boulder",
+      "body": "Hago boulder dos veces por semana, en general los lunes y miércoles a la tardecita.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m034",
+      "key": "pp_running",
+      "title": "Rutina de running",
+      "body": "Salgo a correr tres veces por semana, unos 30 km en total, casi siempre por la costa del río, temprano a la mañana.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m035",
+      "key": "pp_morning",
+      "title": "Mejores horas para concentrarme",
+      "body": "Mi mejor trabajo concentrado lo hago entre las 7:00 y las 11:00. Evitá agendarme reuniones antes de las 11:00.",
+      "kind": "constraint",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m036",
+      "key": "pp_desk",
+      "title": "Mi escritorio",
+      "body": "Uso un escritorio de pie, un teclado partido y un solo monitor de 27 pulgadas.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m037",
+      "key": "pp_plants",
+      "title": "Plantas de interior",
+      "body": "Tengo unas quince plantas de interior, casi todas tropicales, y soy malísimo para acordarme de regarlas.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m038",
+      "key": "pp_balcony",
+      "title": "Huerta en el balcón",
+      "body": "Cultivo tomates, albahaca y ajíes en el balcón; en general planto en marzo.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m039",
+      "key": "pp_cat",
+      "title": "Mi gata",
+      "body": "Tengo una gata gris que se llama Miso, de seis años y que nunca sale de casa. Cuando viajo, una vecina le da de comer.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m040",
+      "key": "pp_gifts",
+      "title": "Ideas de regalo para Jordan",
+      "body": "A Jordan le gustan la cerámica, el té de especialidad y el equipo de trekking. Evitá las velas aromáticas.",
+      "kind": "relationship",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m041",
+      "key": "pp_partner",
+      "title": "Pareja",
+      "body": "Mi pareja es Jordan; vivimos juntos desde 2022. Jordan trabaja en enfermería, con turnos rotativos.",
+      "kind": "relationship",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m042",
+      "key": "pp_sister",
+      "title": "Hermana",
+      "body": "Mi hermana Lucía vive en Montevideo con sus dos hijos, de 8 y 5 años.",
+      "kind": "relationship",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m043",
+      "key": "pp_parents",
+      "title": "Mis viejos",
+      "body": "Mis viejos viven en Buenos Aires. Los llamo los domingos a la tarde, hora de Lisboa.",
+      "kind": "relationship",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m044",
+      "key": "pp_birthdays",
+      "title": "Cumpleaños de la familia",
+      "body": "El cumpleaños de Jordan es el 12 de marzo y el de Lucía el 30 de julio. Avisame con dos semanas de anticipación para poder mandarles algo.",
+      "kind": "event",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m045",
+      "key": "pp_sizes",
+      "title": "Talles de ropa",
+      "body": "Camisa talle M, pantalón 32/32, zapatos EU 43.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m046",
+      "key": "pp_films",
+      "title": "Películas",
+      "body": "Me gusta la ciencia ficción lenta y los documentales. No me gusta el terror.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m047",
+      "key": "pp_podcasts",
+      "title": "Podcasts que escucho",
+      "body": "Cuando salgo a correr escucho podcasts de historia y economía; nada de true crime.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m048",
+      "key": "pp_cooking",
+      "title": "Cocinar entre semana",
+      "body": "Cocino casi todas las noches entre semana y me gustan las recetas de una sola olla que lleven menos de 40 minutos. Tengo una olla a presión y una sartén de hierro fundido.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m049",
+      "key": "pp_languages",
+      "title": "Idiomas que hablo",
+      "body": "Mi lengua materna es el español, hablo inglés con fluidez y estoy aprendiendo portugués.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences",
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m050",
+      "key": "pp_weekend_offline",
+      "title": "Sábados desconectado",
+      "body": "Trato de estar desconectado los sábados: nada de correo del trabajo ni Slack hasta el domingo a la noche.",
+      "kind": "constraint",
+      "categories": [
+        "personal_preferences",
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m051",
+      "key": "pp_japan",
+      "title": "Viaje a Japón",
+      "body": "Estoy planeando dos semanas en Japón en abril de 2027: Tokio, Kanazawa y Kioto, viajando en tren.",
+      "kind": "event",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m052",
+      "key": "pp_no_car",
+      "title": "Sin auto",
+      "body": "No tengo auto; me muevo en metro, en bici y de vez en cuando con un auto compartido.",
+      "kind": "fact",
+      "categories": [
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m053",
+      "key": "pp_alcohol",
+      "title": "Consumo de alcohol",
+      "body": "Casi no tomo, como mucho una copa de vino el fin de semana. En los eventos prefiero opciones sin alcohol.",
+      "kind": "preference",
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m054",
+      "key": "sd_swift_style",
+      "title": "Estilo en Swift",
+      "body": "Swift: preferí value types y protocolos, evitá los force unwraps fuera de los tests, usá guard para las salidas tempranas y mantené las funciones por debajo de unas 40 líneas.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m055",
+      "key": "sd_swift_concurrency",
+      "title": "Concurrencia en Swift",
+      "body": "En código nuevo usá async/await y actors en lugar de completion handlers o GCD, con el chequeo estricto de concurrencia activado.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m056",
+      "key": "sd_swift_testing",
+      "title": "Tests con Swift Testing",
+      "body": "Los tests nuevos en Swift usan Swift Testing (@Test, #expect), no XCTest, salvo los tests de UI.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m057",
+      "key": "sd_python",
+      "title": "Convenciones de Python",
+      "body": "Scripts en Python: Python 3.12, type hints en todos lados, ruff para lint y formato, pathlib en vez de os.path y un main() protegido con __name__.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m058",
+      "key": "sd_ts",
+      "title": "Convenciones de TypeScript",
+      "body": "TypeScript en modo estricto, nada de 'any', zod para la validación en tiempo de ejecución y pnpm como gestor de paquetes.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m059",
+      "key": "sd_commits",
+      "title": "Mensajes de commit",
+      "body": "Mensajes de commit: asunto en imperativo de menos de 60 caracteres, una línea en blanco y después por qué se hizo el cambio. Sin prefijos de conventional commits.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m060",
+      "key": "sd_branching",
+      "title": "Flujo de trabajo con git",
+      "body": "Ramas de feature a partir de main, integradas con squash merge vía pull request. Para actualizar una rama, rebase en vez de merge. Nunca hacer force push a main.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m061",
+      "key": "sd_tests",
+      "title": "Enfoque de testing",
+      "body": "Escribí tests del comportamiento, no de la implementación. Preferí fakes antes que mocks. Un bug fix empieza con un test que falla.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m062",
+      "key": "sd_review",
+      "title": "Estilo de code review",
+      "body": "En los code reviews, separá los problemas bloqueantes de los detalles menores y marcá esos detalles como \"nit:\". Sugerí código en vez de solo describir el problema.",
+      "kind": "instruction",
+      "categories": [
+        "software_development",
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m063",
+      "key": "sd_editor",
+      "title": "Editores",
+      "body": "Uso Xcode para Swift y Neovim para todo lo demás, con un tema claro durante el día.",
+      "kind": "fact",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m064",
+      "key": "sd_shell",
+      "title": "Herramientas de terminal",
+      "body": "zsh con un prompt minimalista; ripgrep, fd, jq y fzf todos los días. Preferí one-liners que funcionen con las herramientas BSD de macOS.",
+      "kind": "preference",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m065",
+      "key": "sd_deps",
+      "title": "Dependencias de terceros",
+      "body": "Sé conservador con las dependencias de terceros: fijá versiones exactas, revisá la licencia y la actividad de mantenimiento, y preferí la biblioteca estándar.",
+      "kind": "constraint",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m066",
+      "key": "sd_sql",
+      "title": "Bases de datos",
+      "body": "Por defecto, SQLite para apps locales y Postgres para servidores. Escribí el SQL a mano; evitá los ORMs pesados.",
+      "kind": "preference",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m067",
+      "key": "sd_docs",
+      "title": "Documentación",
+      "body": "Todo repositorio lleva un README que explique qué hace, cómo correrlo y cómo testearlo. Las decisiones van en ADRs cortos.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m068",
+      "key": "sd_errors",
+      "title": "Manejo de errores",
+      "body": "Usá errores tipados y nunca te tragues errores en silencio. Logueá con contexto, pero nunca datos de usuarios ni secretos.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m069",
+      "key": "sd_logging",
+      "title": "Logs del servidor",
+      "body": "Los logs del servidor no pueden incluir cuerpos de requests ni datos personales; solo IDs y tiempos.",
+      "kind": "constraint",
+      "categories": [
+        "software_development",
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m070",
+      "key": "sd_ci",
+      "title": "Integración continua",
+      "body": "GitHub Actions para CI: todo pull request tiene que pasar lint, tests y un build, y los pipelines tienen que durar menos de 10 minutos.",
+      "kind": "preference",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m071",
+      "key": "sd_infra",
+      "title": "Hosting de proyectos personales",
+      "body": "Mis proyectos personales los hosteo en un único VPS de Hetzner con Docker Compose y Caddy. Nada de Kubernetes.",
+      "kind": "fact",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m072",
+      "key": "sd_api_design",
+      "title": "Diseño de APIs",
+      "body": "APIs REST: sustantivos en plural, paginación con cursor, timestamps ISO-8601 en UTC y cuerpos de error con un código legible por máquina.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m073",
+      "key": "sd_naming",
+      "title": "Nombres",
+      "body": "Preferí nombres descriptivos antes que abreviaturas; los booleanos se leen como afirmaciones (isEnabled, hasAccess).",
+      "kind": "preference",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m074",
+      "key": "sd_formatting",
+      "title": "Formato del código",
+      "body": "El código Swift se formatea con swift-format: indentación de 4 espacios y un límite de 120 columnas.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m075",
+      "key": "sd_accessibility",
+      "title": "Accesibilidad",
+      "body": "El trabajo de UI tiene que soportar VoiceOver, Dynamic Type y modo oscuro desde el principio, no como algo para después.",
+      "kind": "constraint",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m076",
+      "key": "sd_perf",
+      "title": "Trabajo de performance",
+      "body": "Medí antes de optimizar, e incluí números de antes y después en los pull requests que dicen mejorar la velocidad.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m077",
+      "key": "sd_secrets",
+      "title": "Secretos en el código",
+      "body": "Nunca pongas API keys en archivos de código o de configuración commiteados en git. Usá el Keychain en local y variables de entorno en CI.",
+      "kind": "constraint",
+      "categories": [
+        "software_development",
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m078",
+      "key": "sd_ai_code",
+      "title": "El código que escribís para mí",
+      "body": "Cuando me escribas código, dame el archivo completo o un diff preciso, y decime qué no probaste.",
+      "kind": "instruction",
+      "categories": [
+        "software_development",
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m079",
+      "key": "sd_languages",
+      "title": "Lenguajes de programación que sé",
+      "body": "Fuerte en Swift, Python, TypeScript y SQL; me manejo bien con Go; oxidado en Java; nunca usé Rust en producción.",
+      "kind": "fact",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m080",
+      "key": "sd_platforms",
+      "title": "Plataformas objetivo",
+      "body": "Mis apps apuntan a macOS 15+ e iOS 18+. En proyectos nuevos no doy soporte a versiones viejas del sistema.",
+      "kind": "constraint",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m081",
+      "key": "sd_hardware",
+      "title": "Máquina de desarrollo",
+      "body": "Mi máquina principal es una MacBook Pro M1 con 16 GB de RAM; los builds no deberían asumir más memoria que eso.",
+      "kind": "fact",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m082",
+      "key": "sd_data",
+      "title": "Análisis de datos",
+      "body": "Para análisis de datos rápidos uso Python con pandas en Jupyter, y gráficos simples de matplotlib.",
+      "kind": "preference",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m083",
+      "key": "sd_license",
+      "title": "Licencia open source",
+      "body": "Mis proyectos open source usan la licencia Apache-2.0.",
+      "kind": "fact",
+      "categories": [
+        "software_development",
+        "legal"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m084",
+      "key": "sd_dates",
+      "title": "Fechas en el código",
+      "body": "Guardá los timestamps en UTC y convertí a hora local solo en los bordes. Nunca parsees fechas con regex escritas a mano.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m085",
+      "key": "sd_small_steps",
+      "title": "Trabajar en pasos chicos",
+      "body": "Me gusta trabajar en pasos chicos y revisables: para cualquier cosa que abarque más de un archivo, proponé un plan primero.",
+      "kind": "instruction",
+      "categories": [
+        "software_development",
+        "communication_style"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m086",
+      "key": "sd_destructive",
+      "title": "Comandos destructivos",
+      "body": "Antes de correr comandos de shell destructivos (rm -rf, force push, borrar tablas), frená y preguntame.",
+      "kind": "constraint",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m087",
+      "key": "sd_swiftui",
+      "title": "Convenciones de SwiftUI",
+      "body": "SwiftUI con el framework Observation (@Observable), nada de Combine en código nuevo y un preview para cada vista.",
+      "kind": "instruction",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m088",
+      "key": "sd_backups",
+      "title": "Backups de mi trabajo",
+      "body": "Los proyectos viven en ~/Projects y se respaldan con Time Machine más un job nocturno de restic a un almacenamiento remoto.",
+      "kind": "fact",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m089",
+      "key": "sd_learning",
+      "title": "Objetivos de aprendizaje técnico",
+      "body": "Este año quiero aprender Rust lo suficiente como para sacar un CLI chico, y mejorar en internals de bases de datos.",
+      "kind": "goal",
+      "categories": [
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m090",
+      "key": "pc_harbor",
+      "title": "App Harbor",
+      "body": "Harbor es una app de reservas que estoy construyendo para el Tejo Sailing Club: los socios reservan botes e instructores. App para iOS más una API chica en Go.",
+      "kind": "project_context",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m091",
+      "key": "pc_harbor_client",
+      "title": "Contacto del cliente de Harbor",
+      "body": "El proyecto Harbor lo paga el club de vela. La tesorera, Marta Silva, aprueba las facturas y prefiere el correo a las llamadas.",
+      "kind": "relationship",
+      "categories": [
+        "project_context",
+        "finance"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m092",
+      "key": "pc_harbor_stack",
+      "title": "Stack técnico de Harbor",
+      "body": "Harbor: app en SwiftUI, API en Go en el VPS, Postgres, notificaciones push vía APNs. Los pagos quedan fuera del alcance de la v1.",
+      "kind": "project_context",
+      "categories": [
+        "project_context",
+        "software_development"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m093",
+      "key": "pc_harbor_dates",
+      "title": "Hitos de Harbor",
+      "body": "Beta de Harbor para los socios del club antes del 15 de enero de 2027; envío al App Store antes del 1 de marzo de 2027.",
+      "kind": "event",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m094",
+      "key": "pc_harbor_design",
+      "title": "Decisiones de diseño de Harbor",
+      "body": "Harbor muestra las reservas en una grilla de calendario, tiene una regla de cancelación de 48 horas y permite que los instructores bloqueen horarios.",
+      "kind": "project_context",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m095",
+      "key": "pc_harbor_users",
+      "title": "Los usuarios de Harbor",
+      "body": "Unos 120 socios del club, muchos de más de 60 y poco cómodos con la tecnología; importan el texto grande y los flujos simples.",
+      "kind": "project_context",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m096",
+      "key": "pc_harbor_bug",
+      "title": "Problema conocido de Harbor",
+      "body": "Bloqueante de la beta de Harbor: las confirmaciones de reserva muestran la zona horaria equivocada para los socios que están en el exterior.",
+      "kind": "project_context",
+      "categories": [
+        "project_context",
+        "software_development"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m097",
+      "key": "pc_ledgerly",
+      "title": "Proyecto Ledgerly",
+      "body": "Ledgerly es mi herramienta open source de presupuesto por línea de comandos, en Python. Importa los CSV que exportan los bancos y categoriza las transacciones con reglas.",
+      "kind": "project_context",
+      "categories": [
+        "project_context",
+        "software_development",
+        "finance"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m098",
+      "key": "pc_ledgerly_next",
+      "title": "Roadmap de Ledgerly",
+      "body": "Lo próximo para Ledgerly: soporte para los formatos CSV de bancos portugueses y un comando de reporte mensual.",
+      "kind": "goal",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m099",
+      "key": "pc_ledgerly_users",
+      "title": "Comunidad de Ledgerly",
+      "body": "Ledgerly tiene unas 300 estrellas en GitHub y algunos colaboradores habituales; quiero que siga teniendo pocas dependencias.",
+      "kind": "summary",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m100",
+      "key": "pc_atlas",
+      "title": "Migración de Atlas para Nordwind",
+      "body": "Contrato con Nordwind Logistics: migrar su sistema de despacho Atlas de un monolito en PHP a un servicio en TypeScript, dos días por semana hasta diciembre de 2026.",
+      "kind": "project_context",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m101",
+      "key": "pc_atlas_nda",
+      "title": "Confidencialidad de Nordwind",
+      "body": "El código y los datos de Nordwind están bajo NDA. Nunca pegues su código, sus esquemas ni nombres de sus clientes en herramientas externas o chatbots.",
+      "kind": "constraint",
+      "categories": [
+        "project_context",
+        "privacy_preferences",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m102",
+      "key": "pc_atlas_people",
+      "title": "Contactos en Nordwind",
+      "body": "En Nordwind mi referente es Erik Halvorsen, el CTO. Las standups son a las 9:30 CET los martes y jueves.",
+      "kind": "relationship",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m103",
+      "key": "pc_book",
+      "title": "Proyecto de libro",
+      "body": "Estoy escribiendo un libro corto para principiantes sobre huertas en el balcón: objetivo de 40,000 palabras, primer borrador para junio de 2027.",
+      "kind": "project_context",
+      "categories": [
+        "project_context",
+        "personal_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m104",
+      "key": "pc_blog",
+      "title": "Mi blog",
+      "body": "Escribo en el blog de mi sitio personal una vez por mes sobre desarrollo de apps independiente; los posts tienen entre 800 y 1,500 palabras.",
+      "kind": "project_context",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m105",
+      "key": "pc_kitchen",
+      "title": "Reforma de la cocina",
+      "body": "Estamos planeando una reforma de la cocina para la primavera de 2027 con un presupuesto de €12,000. Queremos un anafe de inducción y más espacio de mesada.",
+      "kind": "project_context",
+      "categories": [
+        "project_context",
+        "finance"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m106",
+      "key": "pc_marathon",
+      "title": "Objetivo de maratón",
+      "body": "Me estoy entrenando para el Maratón de Lisboa de octubre de 2027, con el objetivo de terminar en menos de 3h45.",
+      "kind": "goal",
+      "categories": [
+        "project_context",
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m107",
+      "key": "pc_capacity",
+      "title": "Disponibilidad para trabajos nuevos",
+      "body": "Tengo la agenda completa hasta enero de 2027; el trabajo con clientes nuevos puede empezar en febrero como muy temprano.",
+      "kind": "constraint",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m108",
+      "key": "pc_rate",
+      "title": "Tarifa diaria",
+      "body": "Mi tarifa diaria como freelance es €650; el compromiso mínimo es de cinco días.",
+      "kind": "fact",
+      "categories": [
+        "project_context",
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m109",
+      "key": "pc_talk",
+      "title": "Charla en una conferencia",
+      "body": "Voy a dar una charla sobre apps iOS offline-first en una conferencia de Swift en Oporto en mayo de 2027; las diapositivas tienen que estar en abril.",
+      "kind": "event",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m110",
+      "key": "pc_mentoring",
+      "title": "Mentoría",
+      "body": "Soy mentor de dos desarrolladoras junior a través de un programa local de mujeres en tecnología, una hora cada dos viernes.",
+      "kind": "fact",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m111",
+      "key": "pc_ideas",
+      "title": "Lista de ideas",
+      "body": "Ideas a las que siempre vuelvo: una app que recuerde regar las plantas, un escalador de recetas y un CLI que revise las ventanas de clima para navegar en bote a vela.",
+      "kind": "goal",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m112",
+      "key": "pc_gpx",
+      "title": "Biblioteca open source de GPX",
+      "body": "Mantengo una biblioteca chica en Swift para parsear archivos GPX y reviso sus issues los domingos a la noche.",
+      "kind": "project_context",
+      "categories": [
+        "project_context",
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m113",
+      "key": "pc_cowork",
+      "title": "Escritorio en coworking",
+      "body": "Alquilo un escritorio en un coworking en Cais do Sodré los lunes y viernes.",
+      "kind": "fact",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m114",
+      "key": "pc_q4",
+      "title": "Prioridades del Q4 2026",
+      "body": "Prioridades del Q4 2026: sacar la beta de Harbor, terminar la fase 2 de Nordwind y publicar dos posts en el blog.",
+      "kind": "goal",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m115",
+      "key": "pc_course",
+      "title": "Curso de sistemas distribuidos",
+      "body": "Estoy haciendo un curso online de sistemas distribuidos; las entregas son todos los domingos.",
+      "kind": "fact",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m116",
+      "key": "pc_travel_work",
+      "title": "Trabajar mientras viajo",
+      "body": "Cuando viajo, el trabajo con clientes lo hago solo a la mañana y me pueden contactar únicamente por correo.",
+      "kind": "constraint",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m117",
+      "key": "pc_android",
+      "title": "Subcontratista de Android para Harbor",
+      "body": "Para la versión de Android de Harbor puede que subcontrate a Priya, una desarrolladora Kotlin con la que ya trabajé.",
+      "kind": "relationship",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m118",
+      "key": "pc_tracking",
+      "title": "Seguimiento de tareas",
+      "body": "Las tareas de clientes las sigo en Linear y los proyectos personales en archivos Markdown simples.",
+      "kind": "fact",
+      "categories": [
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m119",
+      "key": "pv_address",
+      "title": "Dirección de mi casa",
+      "body": "Nunca compartas la dirección de mi casa ni la pongas en documentos para clientes; para el correo de trabajo usá la dirección del coworking.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m120",
+      "key": "pv_kids",
+      "title": "Sobrinos",
+      "body": "No menciones por nombre a los hijos de mi hermana ni compartas sus fotos en nada público.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m121",
+      "key": "pv_health_work",
+      "title": "Información de salud y trabajo",
+      "body": "Los detalles de salud nunca se comparten con agentes relacionados con el trabajo ni se incluyen en comunicaciones con clientes.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences",
+        "health"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m122",
+      "key": "pv_location",
+      "title": "Ubicación y rutina",
+      "body": "No reveles a terceros mi ubicación en tiempo real ni mi rutina diaria (horarios del gimnasio, visitas al café).",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m123",
+      "key": "pv_screenshots",
+      "title": "Capturas de pantalla",
+      "body": "Difuminá los nombres y las direcciones de correo en cualquier captura de pantalla que use en posts del blog o reportes de bugs.",
+      "kind": "instruction",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m124",
+      "key": "pv_phone",
+      "title": "Número de teléfono",
+      "body": "Mi número de teléfono es solo para la familia y los amigos cercanos. A los clientes les doy correo y Slack.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m125",
+      "key": "pv_social",
+      "title": "Redes sociales",
+      "body": "No estoy en Facebook ni en Instagram, solo en Mastodon y LinkedIn. No me sugieras publicar novedades personales en público.",
+      "kind": "preference",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m126",
+      "key": "pv_ai_training",
+      "title": "Excluirme del entrenamiento de IA",
+      "body": "Prefiero herramientas que no entrenen con mis datos, y me excluyo del entrenamiento de modelos siempre que haya una opción para hacerlo.",
+      "kind": "preference",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m127",
+      "key": "pv_analytics",
+      "title": "Analytics en mis apps",
+      "body": "Mis apps usan solo analytics que respetan la privacidad: nada de trackers de terceros ni identificadores publicitarios.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences",
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m128",
+      "key": "pv_finance",
+      "title": "Datos financieros",
+      "body": "No compartas mis ingresos, saldos de cuentas ni tarifas con nadie salvo mi contador.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences",
+        "finance"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m129",
+      "key": "pv_partner",
+      "title": "La privacidad de Jordan",
+      "body": "Jordan prefiere que su nombre no aparezca en internet; en lo que escriba en público, decí \"mi pareja\".",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m130",
+      "key": "pv_photos",
+      "title": "Metadatos de fotos",
+      "body": "Sacales los metadatos de ubicación a las fotos antes de compartirlas.",
+      "kind": "instruction",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m131",
+      "key": "pv_passwords",
+      "title": "Contraseñas",
+      "body": "Todas las contraseñas están en un gestor de contraseñas. Nunca me pidas que pegue una contraseña o un código de recuperación en un chat.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m132",
+      "key": "pv_aliases",
+      "title": "Alias de correo",
+      "body": "Uso un alias de correo distinto para cada servicio online, así que los registros tienen que usar un alias nuevo.",
+      "kind": "preference",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m133",
+      "key": "pv_recordings",
+      "title": "Grabar llamadas",
+      "body": "No grabes ni transcribas llamadas sin preguntarles antes a todos los que participan.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m134",
+      "key": "pv_client_data",
+      "title": "Retención de datos de clientes",
+      "body": "Borrá los datasets de clientes de mi máquina dentro de los 30 días después de que termine un proyecto.",
+      "kind": "constraint",
+      "categories": [
+        "privacy_preferences",
+        "legal"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m135",
+      "key": "h_penicillin",
+      "title": "Alergia a la penicilina",
+      "body": "Soy alérgico a la penicilina (me da urticaria), y también a la amoxicilina.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m136",
+      "key": "h_peanut",
+      "title": "Alergia al maní",
+      "body": "Alergia leve al maní: nada de maní ni aceite de maní. Los frutos secos de árbol están bien.",
+      "kind": "fact",
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m137",
+      "key": "h_migraine",
+      "title": "Migrañas",
+      "body": "Tengo migrañas unas dos veces por mes, muchas veces por dormir mal o saltearme comidas. Cuando empieza una, tomo sumatriptán.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m138",
+      "key": "h_back",
+      "title": "Dolor lumbar",
+      "body": "La zona lumbar se me inflama cuando paso mucho tiempo sentado, así que me paro cada hora y hago ejercicios de kinesiología.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m139",
+      "key": "h_physio",
+      "title": "Rutina de kinesiología",
+      "body": "Rutina diaria de kinesiología: gato-vaca, bird-dog y puente de glúteos, unos diez minutos.",
+      "kind": "instruction",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m140",
+      "key": "h_sleep",
+      "title": "Sueño",
+      "body": "Apunto a dormir 7.5 horas y a estar en la cama a las 23:00, con las pantallas apagadas 30 minutos antes.",
+      "kind": "goal",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m141",
+      "key": "h_caffeine",
+      "title": "Límite de cafeína",
+      "body": "Nada de cafeína después de las 14:00 porque me arruina el sueño. A la tarde, descafeinado o té de hierbas.",
+      "kind": "constraint",
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m142",
+      "key": "h_vitamin_d",
+      "title": "Suplementos y medicación",
+      "body": "Vitamina D todos los días en invierno. Ninguna medicación recetada habitual, salvo las pastillas para la migraña cuando hacen falta.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m143",
+      "key": "h_gp",
+      "title": "Médico de cabecera",
+      "body": "Mi médica de cabecera es la Dra. Ana Ferreira, del centro de salud del barrio; saco los turnos con la app del servicio de salud.",
+      "kind": "relationship",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m144",
+      "key": "h_dentist",
+      "title": "Controles odontológicos",
+      "body": "Control con el dentista cada seis meses; el próximo es en diciembre de 2026.",
+      "kind": "event",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m145",
+      "key": "h_eyes",
+      "title": "Vista cansada",
+      "body": "Se me cansa la vista después de muchas horas frente a la pantalla. Sigo la regla 20-20-20 y tengo anteojos para la computadora.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m146",
+      "key": "h_knee",
+      "title": "Rodilla de corredor",
+      "body": "Me estoy recuperando de una rodilla de corredor en la rodilla izquierda: evitar correr en bajada y mantener las salidas largas por debajo de 18 km hasta enero.",
+      "kind": "constraint",
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m147",
+      "key": "h_lactose",
+      "title": "Intolerancia a la lactosa",
+      "body": "Soy un poco intolerante a la lactosa: un poco de queso está bien, pero evito tomar leche.",
+      "kind": "fact",
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m148",
+      "key": "h_blood_test",
+      "title": "Resultados del análisis de sangre",
+      "body": "Análisis de sangre anual en septiembre de 2026: todo normal salvo el hierro un poco bajo. El médico me sugirió más legumbres y verduras de hoja verde.",
+      "kind": "event",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m149",
+      "key": "h_stress",
+      "title": "Estrés y cefaleas tensionales",
+      "body": "Cuando tengo mucha carga de trabajo me agarran cefaleas tensionales; una caminata de 20 minutos me ayuda más que cualquier otra cosa.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m150",
+      "key": "h_therapy",
+      "title": "Sesiones de terapia",
+      "body": "Voy a terapia cada dos jueves a la noche; no agendes nada en ese horario.",
+      "kind": "constraint",
+      "categories": [
+        "health",
+        "privacy_preferences"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m151",
+      "key": "h_vaccines",
+      "title": "Vacunas",
+      "body": "Vacuna antigripal todos los octubres; el refuerzo antitetánico me toca en 2029.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m152",
+      "key": "h_water",
+      "title": "Tomar agua",
+      "body": "Recordame tomar agua durante las sesiones largas de programación; me olvido.",
+      "kind": "instruction",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m153",
+      "key": "h_heart_rate",
+      "title": "Zonas de frecuencia cardíaca",
+      "body": "Salidas suaves con la frecuencia cardíaca por debajo de 145 ppm; mi máxima medida es 188.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m154",
+      "key": "h_protein",
+      "title": "Consumo de proteínas",
+      "body": "Como corredor vegetariano apunto a unos 100 g de proteína por día, de huevos, tofu, tempeh y lentejas.",
+      "kind": "goal",
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m155",
+      "key": "h_insurance",
+      "title": "Seguro de salud",
+      "body": "Seguro de salud privado con un plan propio, independiente de cualquier empleador; cubre parte del dentista.",
+      "kind": "fact",
+      "categories": [
+        "health",
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m156",
+      "key": "h_sun",
+      "title": "Protección solar",
+      "body": "Piel clara que se quema fácil: protector FPS 50 para navegar y correr, más un gorro.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m157",
+      "key": "h_hayfever",
+      "title": "Alergia estacional",
+      "body": "Alergia al polen en abril y mayo; la cetirizina me ayuda.",
+      "kind": "fact",
+      "categories": [
+        "health"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m158",
+      "key": "h_shoes",
+      "title": "Zapatillas de running",
+      "body": "Corro con zapatillas neutras con amortiguación y las cambio cada 700 km.",
+      "kind": "fact",
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m159",
+      "key": "f_bank",
+      "title": "Cuentas bancarias",
+      "body": "Una cuenta corriente personal en un banco portugués, más una cuenta multimoneda para los pagos de clientes en euros y libras.",
+      "kind": "fact",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m160",
+      "key": "f_budget",
+      "title": "Presupuesto mensual",
+      "body": "Presupuesto mensual: alquiler €1,350, supermercado €450, transporte €60, comer afuera €200. Lo reviso el primer domingo de cada mes.",
+      "kind": "fact",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m161",
+      "key": "f_savings",
+      "title": "Fondo de emergencia",
+      "body": "Tener seis meses de gastos como fondo de emergencia; ahora estoy en unos cuatro meses.",
+      "kind": "goal",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m162",
+      "key": "f_invest",
+      "title": "Cómo invierto",
+      "body": "Solo fondos indexados de bajo costo, con aportes automáticos mensuales. Nada de acciones individuales.",
+      "kind": "preference",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m163",
+      "key": "f_retirement",
+      "title": "Plan de jubilación",
+      "body": "Aportar a un plan de jubilación PPR portugués cada diciembre por la deducción impositiva.",
+      "kind": "instruction",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m164",
+      "key": "f_social_security",
+      "title": "Seguridad social como freelance",
+      "body": "Como freelance autónomo presento declaraciones trimestrales a la seguridad social en enero, abril, julio y octubre.",
+      "kind": "fact",
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m165",
+      "key": "f_irs",
+      "title": "Declaración anual de impuestos",
+      "body": "La declaración anual del impuesto a la renta vence entre abril y junio; la presenta mi contador.",
+      "kind": "event",
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m166",
+      "key": "f_accountant",
+      "title": "Contador",
+      "body": "Mi contador, Rui Costa, se ocupa de los impuestos y del IVA. Mandale las facturas y los comprobantes antes del 10 de cada mes.",
+      "kind": "relationship",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m167",
+      "key": "f_vat",
+      "title": "IVA en las facturas",
+      "body": "A los clientes portugueses les cobro 23% de IVA; a los clientes empresa de la UE se les aplica la inversión del sujeto pasivo, con su número de IVA en la factura.",
+      "kind": "fact",
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m168",
+      "key": "f_vat_returns",
+      "title": "Declaraciones trimestrales de IVA",
+      "body": "Las declaraciones de IVA son trimestrales y vencen el 20 del segundo mes después del cierre de cada trimestre.",
+      "kind": "event",
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m169",
+      "key": "f_invoicing",
+      "title": "Condiciones de facturación",
+      "body": "Las facturas vencen a 30 días y se emiten el último día hábil del mes con un software de facturación certificado.",
+      "kind": "instruction",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m170",
+      "key": "f_late",
+      "title": "Pagos atrasados",
+      "body": "Si un cliente se atrasa más de 15 días, mandale un recordatorio de pago amable; después de 30 días, uno más firme que mencione los recargos por mora.",
+      "kind": "instruction",
+      "categories": [
+        "finance",
+        "communication_style"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m171",
+      "key": "f_currency",
+      "title": "Moneda para los presupuestos",
+      "body": "Cotizá los precios en euros; los clientes del Reino Unido pueden pagar en libras al tipo de cambio del día.",
+      "kind": "preference",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m172",
+      "key": "f_subscriptions",
+      "title": "Suscripciones",
+      "body": "Revisar las suscripciones cada trimestre y dar de baja todo lo que no usé en dos meses.",
+      "kind": "instruction",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m173",
+      "key": "f_rent",
+      "title": "Pago del alquiler",
+      "body": "El alquiler es de €1,350 y se paga el 1 de cada mes por transferencia bancaria al dueño, el Sr. Duarte.",
+      "kind": "fact",
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m174",
+      "key": "f_expenses",
+      "title": "Gastos del negocio",
+      "body": "Guardar los comprobantes de hardware, software, coworking y viajes a conferencias; son gastos del negocio.",
+      "kind": "instruction",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m175",
+      "key": "f_flat",
+      "title": "Comprar un departamento",
+      "body": "Estoy pensando en comprar un departamento en 2028; necesitaría unos €60,000 para el anticipo y los gastos.",
+      "kind": "goal",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m176",
+      "key": "f_insurance",
+      "title": "Renovación de seguros",
+      "body": "El seguro del contenido de la casa y el seguro de responsabilidad profesional se renuevan los dos en febrero.",
+      "kind": "fact",
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m177",
+      "key": "f_donations",
+      "title": "Donaciones",
+      "body": "Dono el 2% de mis ingresos cada año, repartido entre una organización benéfica por el clima y un banco de alimentos local.",
+      "kind": "fact",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m178",
+      "key": "f_parents",
+      "title": "Ayuda a mis viejos",
+      "body": "Les mando a mis viejos €200 por mes por transferencia; el monto puede variar según el tipo de cambio.",
+      "kind": "fact",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m179",
+      "key": "f_crypto",
+      "title": "Nada de cripto",
+      "body": "No compro criptomonedas ni NFTs y no quiero sugerencias sobre eso.",
+      "kind": "constraint",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m180",
+      "key": "f_cards",
+      "title": "Qué tarjeta usar",
+      "body": "Usá la tarjeta de crédito para las reservas de viaje por su seguro de viaje; la de débito para todo lo demás.",
+      "kind": "preference",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m181",
+      "key": "f_tracking",
+      "title": "Seguimiento de gastos",
+      "body": "Registro mis gastos con Ledgerly en estas categorías: vivienda, comida, transporte, salud, ocio y negocio.",
+      "kind": "fact",
+      "categories": [
+        "finance",
+        "project_context"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m182",
+      "key": "f_income",
+      "title": "Ingresos",
+      "body": "Los ingresos como freelance en 2025 fueron de unos €78,000 antes de impuestos, con mucha variación de un mes a otro.",
+      "kind": "fact",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m183",
+      "key": "f_japan_budget",
+      "title": "Presupuesto del viaje a Japón",
+      "body": "Presupuesto para el viaje a Japón de abril de 2027: €4,000 para dos personas, sin contar los vuelos.",
+      "kind": "fact",
+      "categories": [
+        "finance",
+        "personal_preferences"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m184",
+      "key": "f_kitchen_funding",
+      "title": "Cómo pagar la reforma",
+      "body": "La reforma de la cocina se va a pagar con ahorros, no con un préstamo.",
+      "kind": "constraint",
+      "categories": [
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m185",
+      "key": "l_lease",
+      "title": "Contrato de alquiler",
+      "body": "El contrato de alquiler vence el 31 de agosto de 2027. El aviso de no renovación hay que darlo 120 días antes, y los aumentos del alquiler tienen un tope por ley.",
+      "kind": "fact",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m186",
+      "key": "l_business",
+      "title": "Estructura del negocio",
+      "body": "Trabajo como autónomo unipersonal, no como empresa. Estoy evaluando armar una sociedad de responsabilidad limitada en 2027 si los ingresos siguen creciendo.",
+      "kind": "fact",
+      "categories": [
+        "legal",
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m187",
+      "key": "l_contracts",
+      "title": "Contratos con clientes",
+      "body": "Todo trabajo con un cliente necesita un contrato firmado con alcance, condiciones de pago, cesión de la propiedad intelectual al pago total y responsabilidad limitada a los honorarios cobrados.",
+      "kind": "instruction",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m188",
+      "key": "l_nda",
+      "title": "NDAs que firmo",
+      "body": "Solo firmo NDAs mutuos; los NDAs unilaterales primero tiene que revisarlos mi abogada.",
+      "kind": "constraint",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m189",
+      "key": "l_lawyer",
+      "title": "Abogada",
+      "body": "Mi abogada, Inês Matos, revisa los contratos de más de €10,000 y cualquier cosa con cláusulas de no competencia.",
+      "kind": "relationship",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m190",
+      "key": "l_noncompete",
+      "title": "Cláusulas de no competencia",
+      "body": "Nunca aceptes una cláusula de no competencia de más de seis meses.",
+      "kind": "constraint",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m191",
+      "key": "l_will",
+      "title": "Testamento",
+      "body": "Tengo un testamento, redactado en 2025, que nombra a Jordan como albacea; el original lo tiene el escribano.",
+      "kind": "fact",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m192",
+      "key": "l_residency",
+      "title": "Situación de residencia",
+      "body": "Soy ciudadano de la UE y vivo en Portugal con un certificado de registro.",
+      "kind": "fact",
+      "categories": [
+        "legal",
+        "privacy_preferences"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m193",
+      "key": "l_gdpr_harbor",
+      "title": "RGPD para Harbor",
+      "body": "Harbor guarda los nombres, teléfonos e historial de reservas de los socios. El club de vela es el responsable del tratamiento y yo soy el encargado, bajo un acuerdo de tratamiento de datos.",
+      "kind": "project_context",
+      "categories": [
+        "legal",
+        "project_context",
+        "privacy_preferences"
+      ],
+      "sensitivity": "internal"
+    },
+    {
+      "id": "m194",
+      "key": "l_privacy_labels",
+      "title": "Etiquetas de privacidad de las apps",
+      "body": "Toda app que publique necesita una etiqueta de privacidad precisa en el App Store y una página con la política de privacidad.",
+      "kind": "instruction",
+      "categories": [
+        "legal",
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m195",
+      "key": "l_trademark",
+      "title": "Nombre de Ledgerly",
+      "body": "Verifiqué que el nombre Ledgerly no tiene conflictos de marca en la UE; no está registrado.",
+      "kind": "fact",
+      "categories": [
+        "legal",
+        "project_context"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m196",
+      "key": "l_dco",
+      "title": "Condiciones para colaboradores",
+      "body": "Ledgerly acepta contribuciones con el sign-off del DCO; sin CLA.",
+      "kind": "fact",
+      "categories": [
+        "legal",
+        "software_development"
+      ],
+      "sensitivity": "low"
+    },
+    {
+      "id": "m197",
+      "key": "l_ip",
+      "title": "Propiedad intelectual",
+      "body": "El código que escribo para clientes es de ellos una vez que lo pagan; me reservo el derecho de reutilizar utilidades de uso general.",
+      "kind": "fact",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m198",
+      "key": "l_poa",
+      "title": "Poder notarial",
+      "body": "Mi hermana Lucía tiene un poder para manejar mis asuntos en Uruguay.",
+      "kind": "fact",
+      "categories": [
+        "legal"
+      ],
+      "sensitivity": "restricted"
+    },
+    {
+      "id": "m199",
+      "key": "l_dispute",
+      "title": "Disputa con un ex cliente",
+      "body": "Un reclamo de menor cuantía contra un ex cliente por una factura impaga de €2,400 se resolvió en julio de 2026. No volver a trabajar con ellos.",
+      "kind": "event",
+      "categories": [
+        "legal",
+        "finance"
+      ],
+      "sensitivity": "sensitive"
+    },
+    {
+      "id": "m200",
+      "key": "l_tos",
+      "title": "Leer términos de servicio",
+      "body": "Cuando resumas términos de servicio, señalá el uso compartido de datos, la renovación automática, el arbitraje y los límites de responsabilidad.",
+      "kind": "instruction",
+      "categories": [
+        "legal",
+        "privacy_preferences"
+      ],
+      "sensitivity": "low"
+    }
+  ]
+}
