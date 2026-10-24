@@ -82,7 +82,7 @@ This folder (`spec/` in the `funes-vault-app` repo) holds the requirements, desi
 | Data location | The Mac only; the iPhone is a thin client; no CloudKit | [ADR-0003](architecture/decisions/0003-mac-is-the-only-source-of-truth.md) |
 | Storage | SQLite + FTS5 via GRDB | [ADR-0004](architecture/decisions/0004-sqlite-grdb.md) |
 | AI models | Apple on-device by default; user-selectable per task (local servers or cloud providers) with a cloud sensitivity limit and disclosures | [ADR-0014](architecture/decisions/0014-user-selectable-models.md) (supersedes 0005) |
-| Search | Hybrid: FTS5 with stemming + bundled bge-small embeddings (Core ML, on the Mac); agents add `keywords`; other embedding models later | [ADR-0016](architecture/decisions/0016-bundled-bge-small-embeddings.md) (supersedes 0015) |
+| Search | Hybrid: FTS5 with stemming + bundled bge-small embeddings (Core ML, on the Mac); agents add `keywords`; v0.3: optionally a provider embedding model as a second index (ADR-0023) | [ADR-0016](architecture/decisions/0016-bundled-bge-small-embeddings.md) (supersedes 0015) |
 | Build | Xcode project + local Swift packages | [ADR-0006](architecture/decisions/0006-xcode-project-and-packages.md) |
 | Distribution | Developer ID, not sandboxed (Mac); App Store (iPhone) | [ADR-0007](architecture/decisions/0007-developer-id-not-sandboxed.md) |
 | Code reuse | Shared library **BridgeKit** with EK Bridge: protocol and security core extracted now (`BridgeKitCore`, EK Bridge adopts it first); UI pieces copied, extracted after v0.1; Remote Access extracted now as `BridgeKitRemote` (0.2.0) | [ADR-0013](architecture/decisions/0013-shared-bridgekit-core.md) (supersedes 0008), [ADR-0018](architecture/decisions/0018-remote-access-in-v0.1.md) |

@@ -74,13 +74,14 @@ CREATE VIRTUAL TABLE memory_fts USING fts5(
 
 CREATE TABLE embedding (           -- ADR-0016: about 15 MB of vectors at 10,000 memories
   memory_id    TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
-  model_id     TEXT NOT NULL,      -- v0.1: "bge-small-en-v1.5/coreml-int8" (384 dims); later e.g. "openai/text-embedding-3-small"
+  model_id     TEXT NOT NULL,      -- "bge-small-en-v1.5/coreml-int8" (384 dims) on every memory; v0.3 a second index, "<provider>/<model>", e.g. "openai/text-embedding-3-small" (1,536)
   dims         INTEGER NOT NULL,
   vector       BLOB NOT NULL,      -- Float32 little-endian, L2-normalized
   content_hash TEXT NOT NULL,      -- SHA-256 of the embedded text
-  PRIMARY KEY (memory_id, model_id)  -- two models coexist only while re-embedding
+  PRIMARY KEY (memory_id, model_id)  -- bge-small and, v0.3, one provider model (ADR-0023)
 );
--- meta('active_embedding_model') names the model search uses; meta('embedding_thresholds') holds per-model thresholds (JSON)
+-- v0.3: meta('provider_embeddings') = {"modelID", "limit"} once the provider set is complete for that model and
+-- cloud limit (search uses it only then). The choice and Calibrate's thresholds live in user defaults (AI Models).
 
 CREATE TABLE provenance (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,

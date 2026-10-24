@@ -498,7 +498,7 @@
 ### Intelligence (FR-AI)
 
 **FR-AI-01 Embeddings** · M · v0.1
-- Embeddings for active memories, computed on the Mac with the bundled `bge-small-en-v1.5` Core ML model (ADR-0016), recomputed when the title or body changes, and stored on the Mac only. Choosing another embedding model comes later (FR-AI-11).
+- Embeddings for active memories, computed on the Mac with the bundled `bge-small-en-v1.5` Core ML model (ADR-0016), recomputed when the title or body changes, and stored on the Mac only. From v0.3 a provider model can be added as a second index (FR-AI-11).
 - Acceptance: on the Spike 2 benchmark, hybrid recall@5 ≥ 0.92 with agent keywords and ≥ 0.68 on raw tasks; if the model can't load, search continues keyword-only. Embeddings are recomputed when the title or body changes, and stored on the Mac only.
 
 **FR-AI-02 Classification** · S · v0.1
