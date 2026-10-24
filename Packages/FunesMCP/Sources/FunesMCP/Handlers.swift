@@ -346,7 +346,9 @@ extension RequestPipeline {
         } else if let text = call.arguments["suggestion_id"] as? String {
             guard let id = UUID(uuidString: text),
                   let suggestion = try? await services.suggestions.suggestion(id: id),
-                  suggestion.agentID == agent.id, suggestion.status == .pending else {
+                  suggestion.agentID == agent.id,
+                  // A split suggestion stays open while one of its pieces is (memory processing §5.2).
+                  (try? await services.suggestions.isAwaitingReview(id: id)) == true else {
                 record(call, agent.id, outcome: "not_found", reason: .notFound)
                 return notFound
             }

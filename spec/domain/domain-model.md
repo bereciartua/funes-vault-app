@@ -98,7 +98,7 @@ A proposed memory waiting for review. It is separate from Memory, so memories ne
 
 **Phase 6 additions** ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)):
 - **SuggestionTarget:** `suggestionId`, `memoryId`, `memoryVersion`, `role` (`target` · `source` · `survivor`), so a merge, split or conflict can reference several memories.
-- **SuggestionGroup:** `id` (the original suggestion's id), `origin`, `agentId?`, `sourceText`, `engine`, `createdAt`. The source text is dropped once every piece is decided, and purged with its memories.
+- **SuggestionGroup:** `id` (the original suggestion's id, or a Split this memory suggestion's), `origin`, `agentId?`, `sourceText`, `engine`, `createdAt`. The source text is dropped once every piece is decided (with the original row's title and body), and purged with its memories. While the original is still `pending`, its pieces are an offer ("Split into N?") shown only on its card.
 - **ProcessingJob:** `id`, `subject` (suggestion or memory id), `kind` (`new_memory`: classification today, splitting from 6a · `tidy_up`), `state` (`queued` · `running` · `done` · `failed`), `attempts`, `engine`, `createdAt`. Durable, one at a time, idempotent per subject and kind.
 - **UndoEntry:** `id`, `createdAt`, `runId?`, `action`, memory ids, the before-state (JSON, including old text), `expiresAt` (30 days). Purged after 30 days and with its memories when they're purged or deleted now. Never exported.
 - **TidyUpRun:** `id`, `startedAt`, `finishedAt`, `engine`, counts (memories inspected, clusters, suggestions, applied), `partial`, error code.

@@ -5,11 +5,13 @@ import FunesProtocol
 /// strict subset OpenAI-compatible and Anthropic endpoints accept (every object closed, every
 /// property required, no numeric, string-length or array-size constraints), and converts to Apple
 /// Foundation Models' dynamic schemas. Constraints the wire format can't carry are re-checked by
-/// the caller's validation.
+/// the caller's validation. Properties keep their order on the wire: models generate in that
+/// order, so the extraction schema can ask for the evidence before the body (memory processing §5.3).
 public indirect enum JSONSchema: Sendable, Hashable {
     case string(description: String? = nil, oneOf: [String]? = nil)
     case boolean(description: String? = nil)
     case number(description: String? = nil)
+    case integer(description: String? = nil)
     case array(of: JSONSchema, description: String? = nil, minItems: Int? = nil, maxItems: Int? = nil)
     /// Properties in order; all required.
     case object(name: String, description: String? = nil, properties: [(String, JSONSchema)])
@@ -29,6 +31,8 @@ public indirect enum JSONSchema: Sendable, Hashable {
             return description.map { ["type": "boolean", "description": $0] } ?? ["type": "boolean"]
         case let .number(description):
             return description.map { ["type": "number", "description": $0] } ?? ["type": "number"]
+        case let .integer(description):
+            return description.map { ["type": "integer", "description": $0] } ?? ["type": "integer"]
         case let .array(items, description, _, _):
             var o: [String: Any] = ["type": "array", "items": items.wire]
             if let description { o["description"] = description }
@@ -36,17 +40,59 @@ public indirect enum JSONSchema: Sendable, Hashable {
         case let .object(_, description, properties):
             var o: [String: Any] = [
                 "type": "object", "additionalProperties": false, "required": properties.map(\.0),
-                "properties": Dictionary(uniqueKeysWithValues: properties.map { ($0.0, $0.1.wire) }),
+                "properties": OrderedJSONObject(properties.map { ($0.0, $0.1.wire) }),
             ]
             if let description { o["description"] = description }
             return o
         }
     }
 
-    /// Canonical JSON text (sorted keys).
-    public var json: String {
-        let data = (try? JSONSerialization.data(withJSONObject: wire, options: [.sortedKeys])) ?? Data()
-        return String(decoding: data, as: UTF8.self)
+    /// Canonical JSON text (sorted keys, properties in their order).
+    public var json: String { String(decoding: (try? JSONWriter.data(wire)) ?? Data(), as: UTF8.self) }
+}
+
+/// A JSON object whose keys go on the wire in this order.
+struct OrderedJSONObject: @unchecked Sendable {
+    let pairs: [(String, Any)]
+    init(_ pairs: [(String, Any)]) { self.pairs = pairs }
+}
+
+/// JSON text from dictionaries (sorted keys), `OrderedJSONObject`s (in order), arrays and
+/// JSONSerialization's leaf values.
+enum JSONWriter {
+    static func data(_ value: Any) throws -> Data {
+        var out = Data()
+        try write(value, to: &out)
+        return out
+    }
+
+    private static func write(_ value: Any, to out: inout Data) throws {
+        switch value {
+        case let object as OrderedJSONObject:
+            try writeObject(object.pairs, to: &out)
+        case let dictionary as [String: Any]:
+            try writeObject(dictionary.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }, to: &out)
+        case let array as [Any]:
+            out.append(UInt8(ascii: "["))
+            for (i, element) in array.enumerated() {
+                if i > 0 { out.append(UInt8(ascii: ",")) }
+                try write(element, to: &out)
+            }
+            out.append(UInt8(ascii: "]"))
+        default:
+            out.append(try JSONSerialization.data(withJSONObject: value, options: [.fragmentsAllowed]))
+        }
+    }
+
+    private static func writeObject(_ pairs: [(String, Any)], to out: inout Data) throws {
+        out.append(UInt8(ascii: "{"))
+        for (i, (key, element)) in pairs.enumerated() {
+            if i > 0 { out.append(UInt8(ascii: ",")) }
+            out.append(try JSONSerialization.data(withJSONObject: key, options: [.fragmentsAllowed]))
+            out.append(UInt8(ascii: ":"))
+            try write(element, to: &out)
+        }
+        out.append(UInt8(ascii: "}"))
     }
 }
 

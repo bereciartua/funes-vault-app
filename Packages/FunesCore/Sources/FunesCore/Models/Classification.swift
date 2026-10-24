@@ -59,6 +59,40 @@ public struct ClassificationRecord: Sendable, Hashable, Codable {
     public var proposal: CaptureProposal
     public var keptOnDevice: Bool
     public var hint: Sensitivity? = nil
+    /// A piece of a split input (Phase 6a): what extraction and linking said about it.
+    public var piece: PieceRecord? = nil
+    /// A split input: pieces beyond the 40 kept ("Long input: 40 shown").
+    public var truncated: Int? = nil
+
+    public init(engine: String, proposal: CaptureProposal, keptOnDevice: Bool, hint: Sensitivity? = nil,
+                piece: PieceRecord? = nil, truncated: Int? = nil) {
+        self.engine = engine
+        self.proposal = proposal
+        self.keptOnDevice = keptOnDevice
+        self.hint = hint
+        self.piece = piece
+        self.truncated = truncated
+    }
+}
+
+/// What extraction and linking said about a piece (memory processing §5.3–§5.5), for its row in
+/// the group card. No text beyond the piece's own.
+public struct PieceRecord: Sendable, Hashable, Codable {
+    /// False: "may contain more than one thing".
+    public var atomic: Bool
+    /// False: words in the body that aren't in the input; never auto-applied.
+    public var supported: Bool
+    /// Recorded and shown, never a gate.
+    public var confidence: Double?
+    /// What the decision call made of it.
+    public var action: LinkAction
+    public var reason: String?
+    /// The memories the finder supplied: the duplicate hint without a model.
+    public var related: [UUID]
+    public var modelSensitivity: Sensitivity?
+    public var timeLimited: Bool
+    /// An update's own claim; the suggestion's body is the target's new text.
+    public var claim: String? = nil
 }
 
 /// The always-available fallback (memory processing §5): title from the first line, kind `fact`,

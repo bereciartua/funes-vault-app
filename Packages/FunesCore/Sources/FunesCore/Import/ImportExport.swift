@@ -236,6 +236,20 @@ public struct ImportPreview: Sendable, Hashable {
     public var blocked: Int { entries.filter { if case .blocked = $0.status { true } else { false } }.count }
     public var tooLong: Int { entries.filter { $0.status == .tooLong }.count }
 
+    /// Model requests splitting would make for the items that would be stored (memory processing
+    /// §5.8): one extraction call per chunk and one decision call per item, at most. Shown next to
+    /// what's left of today's cap; a Funes export restore isn't split.
+    public func estimatedRequests(includeDuplicates: Bool = false) -> Int {
+        guard source != .funes else { return 0 }
+        return entries.filter { e in
+            switch e.status {
+            case .ready: true
+            case .duplicate: includeDuplicates
+            default: false
+            }
+        }.reduce(0) { $0 + Chunker.chunks($1.item.body).count + 1 }
+    }
+
     public enum LongItems: Sendable { case split, truncate }
 
     /// Resolves over-long items the user's way, then re-checks them.
@@ -319,7 +333,8 @@ public final class ImportService: Sendable {
     /// user confirms) creates memories instead of suggestions, keeping each one's status, its id
     /// when the vault doesn't have it yet, and its split and merge links; they're marked
     /// reconciled, so the tidy-up doesn't split restored memories again.
-    public func commit(_ preview: ImportPreview, includeDuplicates: Bool = false, asMemories: Bool = false,
+    /// `split` false is "Import without splitting": the items are stored as they are, as in v0.2.
+    public func commit(_ preview: ImportPreview, includeDuplicates: Bool = false, asMemories: Bool = false, split: Bool = true,
                        now: Date) async throws -> ImportResult {
         guard !asMemories || preview.source == .funes else { throw VaultError.invalidInput(field: "as_memories") }
         let runID = UUID()
@@ -382,7 +397,7 @@ public final class ImportService: Sendable {
                         input: SuggestInput(title: item.title, body: item.body, kind: item.kind, expiresAt: item.expiresAt),
                         categories: keys, sensitivity: sensitivity,
                         // A Funes export restore is reviewed memories: not processed again (§5.2).
-                        process: preview.source != .funes, now: now)
+                        process: split && preview.source != .funes, now: now)
                     out.suggestionIDs.append(id)
                 }
             }

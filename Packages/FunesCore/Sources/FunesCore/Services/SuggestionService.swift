@@ -160,9 +160,16 @@ public final class SuggestionService: Sendable {
             if input.categories.contains(where: { !known.contains($0) }) { return .done(.denied(.unknownCategory)) }
             let findings = SecretScanner.scan([input.title, input.body, input.evidence ?? "", input.metadataJSON ?? ""])
             if !findings.isEmpty { return .done(.denied(.secretLikeContent, findings: findings)) }
+            var input = input
             if let target = input.targetMemoryID {
+                // A correction of a memory that was split goes to the piece it's about, among the
+                // pieces this agent can read (memory processing §5.6).
+                if let m = try MemoryStore.fetch(db, id: target), m.status == .archived,
+                   let piece = try Self.splitRedirect(db, from: m, input: input, access: access, now: now) {
+                    input.targetMemoryID = piece
+                }
                 // Never reveal that a memory exists: anything this agent couldn't read is not_found.
-                guard let m = try MemoryStore.fetch(db, id: target),
+                guard let m = try MemoryStore.fetch(db, id: input.targetMemoryID!),
                       PolicyEngine.eligibility(m, access: access, now: now) == nil else { return .done(.denied(.notFound)) }
             }
 
@@ -218,6 +225,20 @@ public final class SuggestionService: Sendable {
         return outcome
     }
 
+    /// The active piece of a split memory that this agent can read and that best matches the
+    /// correction's words (the first piece when none matches); nil when it can read none.
+    static func splitRedirect(_ db: Database, from original: Memory, input: SuggestInput, access: Access, now: Date) throws -> UUID? {
+        let pieces = try MemoryStore.provenance(db, memoryID: original.id).filter { $0.event == .splitInto }.compactMap(\.relatedMemoryID)
+        let readable = try MemoryStore.fetch(db, ids: pieces).filter { PolicyEngine.eligibility($0, access: access, now: now) == nil }
+        guard !readable.isEmpty else { return nil }
+        let scores = try KeywordSearch.scores(db, text: input.title + " " + input.body, prefix: false, pool: Set(readable.map(\.id)))
+        let order = Dictionary(uniqueKeysWithValues: pieces.enumerated().map { ($1, $0) })
+        return readable.max { a, b in
+            let (sa, sb) = (scores[a.id] ?? 0, scores[b.id] ?? 0)
+            return sa != sb ? sa < sb : (order[a.id] ?? 0) > (order[b.id] ?? 0)
+        }?.id
+    }
+
     static func invalid(_ input: SuggestInput, now: Date) -> ReasonCode? {
         let len = InputLimits.length(of:)
         guard InputLimits.title.contains(len(input.title)), InputLimits.body.contains(len(input.body)),
@@ -244,12 +265,14 @@ public final class SuggestionService: Sendable {
     /// memories, at their current versions. `action` defaults to `update` with a target and
     /// `create` without. `process` queues the new input's processing job in the same transaction
     /// (memory processing §5.2): every ingest path, but not corrections, tidy-up proposals, the
-    /// pieces of a split or a Funes export restore.
+    /// pieces of a split or a Funes export restore. A piece takes its group's `expiresAfter`, so
+    /// the group expires as one (FR-I-05).
     static func insertSuggestion(_ db: Database, origin: SuggestionOrigin, agentID: UUID? = nil, deviceID: UUID? = nil,
                                  importRunID: UUID? = nil, captureID: UUID? = nil, action: SuggestionAction? = nil,
                                  input: SuggestInput, categories: [String], sensitivity: Sensitivity?,
                                  classification: String? = nil, targets: [(UUID, SuggestionTarget.Role)] = [],
-                                 groupID: UUID? = nil, process: Bool = true, now: Date) throws -> UUID {
+                                 groupID: UUID? = nil, process: Bool = true, expiresAfter: Date? = nil,
+                                 intent: SuggestionIntent? = nil, outsideScope: Bool = false, now: Date) throws -> UUID {
         let id = UUID()
         let targetVersion = try input.targetMemoryID.flatMap {
             try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [$0.db])
@@ -258,14 +281,15 @@ public final class SuggestionService: Sendable {
         try db.execute(sql: """
             INSERT INTO suggestion (id, origin, agent_id, device_id, import_run_id, capture_id, target_memory_id,
               target_memory_version, action, title, body, kind, category_keys, sensitivity, expires_at, confidence,
-              evidence, purpose, caller_metadata, classification, status, created_at, expires_after, group_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+              evidence, purpose, caller_metadata, classification, status, created_at, expires_after, group_id, intent,
+              outside_scope)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)
             """, arguments: [id.db, origin.rawValue, agentID?.db, deviceID?.db, importRunID?.db, captureID?.db,
                              input.targetMemoryID?.db, targetVersion,
                              (action ?? (input.targetMemoryID == nil ? .create : .update)).rawValue,
                              input.title, input.body, input.kind?.rawValue, JSON.encode(categories), sensitivity?.rawValue,
                              input.expiresAt, input.confidence, input.evidence, input.purpose, input.metadataJSON,
-                             classification, now, now + lifetime, groupID?.db])
+                             classification, now, expiresAfter ?? now + lifetime, groupID?.db, intent?.rawValue, outsideScope])
         if process, origin != .consolidation, groupID == nil, input.targetMemoryID == nil, targets.isEmpty {
             try ProcessingQueue.enqueue(db, subject: id, now: now)
         }
@@ -290,11 +314,16 @@ public final class SuggestionService: Sendable {
         try Row.fetchOne(db, sql: "SELECT * FROM suggestion WHERE id = ?", arguments: [id.db]).map(Suggestion.from(row:))
     }
 
-    /// Pending suggestions, newest first (FR-I-01). `count` is the badge (FR-I-04).
+    /// Pending suggestions, newest first (FR-I-01). `count` is the badge (FR-I-04). Pieces whose
+    /// original is still pending are left out: an offer ("Split into N?") or a Split this memory
+    /// suggestion shows them on its own card.
     public func pending() async throws -> [Suggestion] {
         try await store.writer.read { db in
-            try Row.fetchAll(db, sql: "SELECT * FROM suggestion WHERE status = 'pending' ORDER BY created_at DESC")
-                .map(Suggestion.from(row:))
+            try Row.fetchAll(db, sql: """
+                SELECT * FROM suggestion s WHERE status = 'pending'
+                  AND NOT (group_id IS NOT NULL AND EXISTS (SELECT 1 FROM suggestion o WHERE o.id = s.group_id AND o.status = 'pending'))
+                ORDER BY created_at DESC
+                """).map(Suggestion.from(row:))
         }
     }
 
@@ -358,6 +387,9 @@ public final class SuggestionService: Sendable {
             let result = try Self.applyAction(db, s, edits: edits, mode: mode, now: now, actor: actor)
             try db.execute(sql: "UPDATE suggestion SET status = 'applied', decided_at = ?, result_memory_id = ? WHERE id = ?",
                            arguments: [now, result.memoryID.db, suggestionID.db])
+            // Applied as one: an offered split is dropped.
+            if s.action != .split { try db.execute(sql: "DELETE FROM suggestion WHERE group_id = ? AND status = 'pending'",
+                                                   arguments: [suggestionID.db]) }
             return result
         }
         activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "suggestion_applied",
@@ -477,8 +509,15 @@ public final class SuggestionService: Sendable {
             guard mode == nil else { throw VaultError.unsupportedAction }
             guard let target = refs.first(where: { $0.role == .target }),
                   let original = try checked(db, refs)[target.memoryID] else { throw VaultError.targetChanged }
-            let pieces = try pieces(db, groupID: s.id)
+            // New pieces become memories and a piece already in the vault is settled; a piece that
+            // updates or removes another memory stays in the Inbox as its own suggestion.
+            let all = try pieces(db, groupID: s.id)
+            let pieces = all.filter { $0.action == .create }
             guard !pieces.isEmpty else { throw VaultError.invalidState }
+            for duplicate in all where duplicate.action == .duplicate {
+                try db.execute(sql: "UPDATE suggestion SET status = 'applied', decided_at = ?, result_memory_id = ? WHERE id = ?",
+                               arguments: [now, duplicate.targetMemoryID?.db, duplicate.id.db])
+            }
             var ids: [UUID] = []
             for piece in pieces {
                 // A piece never goes below the original's sensitivity (memory processing §9.4).
@@ -572,19 +611,30 @@ public final class SuggestionService: Sendable {
     }
 
     /// Reject / Discard (FR-I-02). Activity keeps the id only.
+    /// Rejecting a suggestion with an offered split, or a Split this memory suggestion, rejects
+    /// its undecided pieces too.
     public func reject(suggestionID: UUID, now: Date, actor: Actor = .user, via: ActivityEvent.Via = .app) async throws {
         try await setStatus(suggestionID, from: .pending, to: .rejected, now: now)
+        try await store.writer.write { db in
+            try db.execute(sql: "UPDATE suggestion SET status = 'rejected', decided_at = ? WHERE group_id = ? AND status = 'pending'",
+                           arguments: [now, suggestionID.db])
+        }
         activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "suggestion_rejected",
                                       outcome: "rejected", ids: [suggestionID]))
     }
 
     /// Restores an expired suggestion within 7 days of its expiry (FR-I-05), for another 30 days.
+    /// A group expires and comes back as one: its other expired pieces, and an offer's original,
+    /// are restored with it.
     public func restore(suggestionID: UUID, now: Date) async throws {
         try await store.writer.write { db in
             guard let s = try Self.fetch(db, id: suggestionID) else { throw VaultError.notFound }
             guard s.status == .expired, now < s.expiresAfter + Self.restorable else { throw VaultError.invalidState }
-            try db.execute(sql: "UPDATE suggestion SET status = 'pending', decided_at = NULL, expires_after = ? WHERE id = ?",
-                           arguments: [now + Self.lifetime, suggestionID.db])
+            let group = s.groupID ?? suggestionID
+            try db.execute(sql: """
+                UPDATE suggestion SET status = 'pending', decided_at = NULL, expires_after = ?
+                WHERE status = 'expired' AND (id = ? OR group_id = ? OR (id = ? AND ? IS NOT NULL))
+                """, arguments: [now + Self.lifetime, suggestionID.db, group.db, group.db, s.groupID?.db])
         }
     }
 
