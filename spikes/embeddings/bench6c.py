@@ -40,6 +40,7 @@ MODELS = {
     "qwen3-0.6b": ("st", "Qwen/Qwen3-Embedding-0.6B", f"Instruct: {QWEN_TASK}\nQuery:", "", {"fp16": True}),
     "oai-3-small": ("openai", "text-embedding-3-small", "", "", {"base": "https://api.openai.com/v1", "key": "OPENAI_API_KEY"}),
     "oai-3-large": ("openai", "text-embedding-3-large", "", "", {"base": "https://api.openai.com/v1", "key": "OPENAI_API_KEY"}),
+    "ollama-qwen3-0.6b": ("openai", "qwen3-embedding:0.6b", f"Instruct: {QWEN_TASK}\nQuery:", "", {"base": "http://127.0.0.1:11434/v1", "key": None}),
     "gemini-001": ("openai", "gemini-embedding-001", "", "", {"base": "https://generativelanguage.googleapis.com/v1beta/openai", "key": "GEMINI_API_KEY"}),
     "gemini-001-task": ("gemini", "gemini-embedding-001", "RETRIEVAL_QUERY", "RETRIEVAL_DOCUMENT", {"key": "GEMINI_API_KEY"}),
 }
@@ -138,15 +139,15 @@ def post(url, body, headers):
 
 
 def embed_remote(name, backend, model_id, qp, dp, opts, docs, queries):
-    key = os.environ[opts["key"]]
+    key = os.environ[opts["key"]] if opts["key"] else None
     usage = {"tokens": 0}
 
-    def enc(texts, role):
+    def enc(texts, role):  # role: the prefix (OpenAI-compatible) or the task type (Gemini native)
         vecs = []
         for i in range(0, len(texts), 96):
             batch = texts[i:i + 96]
             if backend == "openai":
-                r = post(f"{opts['base']}/embeddings", {"model": model_id, "input": batch}, {"Authorization": f"Bearer {key}"})
+                r = post(f"{opts['base']}/embeddings", {"model": model_id, "input": [role + t for t in batch]}, {"Authorization": f"Bearer {key}"} if key else {})
                 usage["tokens"] += (r.get("usage") or {}).get("prompt_tokens", 0)
                 vecs += [d["embedding"] for d in sorted(r["data"], key=lambda d: d["index"])]
             else:  # Gemini native, with task types
