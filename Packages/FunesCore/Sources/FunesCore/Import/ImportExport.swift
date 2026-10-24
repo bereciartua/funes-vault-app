@@ -342,7 +342,9 @@ public final class ImportService: Sendable {
                     let id = try SuggestionService.insertSuggestion(
                         db, origin: .import, importRunID: runID,
                         input: SuggestInput(title: item.title, body: item.body, kind: item.kind, expiresAt: item.expiresAt),
-                        categories: keys, sensitivity: sensitivity, now: now)
+                        categories: keys, sensitivity: sensitivity,
+                        // A Funes export restore is reviewed memories: not processed again (§5.2).
+                        process: preview.source != .funes, now: now)
                     out.suggestionIDs.append(id)
                 }
             }

@@ -7,8 +7,8 @@ import SwiftUI
 private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category: "capture")
 
 /// Quick capture (FR-C-01..04): the box from the hotkey, the menu's Remember… and Services ▸
-/// Remember in Funes. A capture always goes to the Inbox; classification fills in the proposal
-/// afterwards and never holds up saving.
+/// Remember in Funes. A capture always goes to the Inbox; its processing job, queued with it,
+/// fills in the proposal afterwards (ProcessingRunner) and never holds up saving.
 @MainActor
 final class CaptureController: NSObject {
     private let model: AppModel
@@ -61,21 +61,10 @@ final class CaptureController: NSObject {
         }
         let hint = model.preferences.captureSensitivity
         let services = model.services
-        let classify = model.preferences.classifyCaptures
-        let settings = model.modelSettings
         Task {
             do {
-                let result = try await services.captures.capture(body, sensitivityHint: hint, now: Date())
+                try await services.captures.capture(body, sensitivityHint: hint, now: Date())
                 hud.show(String(localized: "Saved to Inbox"))
-                guard classify else { return }
-                let router = settings.makeRouter()
-                let categories = (try? services.store.categories()) ?? []
-                let record = await router.classify(body, categories: categories, hint: hint)
-                settings.collectUsage(from: router)
-                if record.engine != RulesClassifier.engine || record.keptOnDevice {
-                    // "At least <level>" holds whatever the model proposed (PR #3 review 4304236141).
-                    try? await services.captures.reclassify(suggestionID: result.suggestionID, record: record, floor: hint)
-                }
             } catch let error as VaultError {
                 show(text: body, error: ErrorText.message(error))
             } catch {

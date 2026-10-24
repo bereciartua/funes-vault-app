@@ -60,7 +60,11 @@ final class DataOperations {
         }
         _ = try? store.purgeDeletedMemories(now: now)
         let captures = environment.captures
-        Task { _ = try? await captures.cleanupReceipts(now: now) }
+        let processing = ProcessingQueue(store: store, activity: environment.activity)
+        Task {
+            _ = try? await captures.cleanupReceipts(now: now)
+            _ = try? await processing.cleanup(now: now)
+        }
         let lastCheck = preferences.defaults.object(forKey: Preferences.Key.lastIntegrityCheck) as? Date
         if lastCheck.map({ now.timeIntervalSince($0) >= 7 * 86_400 }) ?? true {
             preferences.defaults.set(now, forKey: Preferences.Key.lastIntegrityCheck)

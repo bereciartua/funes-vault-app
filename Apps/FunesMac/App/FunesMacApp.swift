@@ -142,6 +142,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                           body: String(localized: "Its weekly check found a problem. Restore a backup in Settings ▸ Data."))
         }
         model.data.startJobs()
+        model.processing.start()
         model.changed = { [weak menu] in menu?.update() }
 
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"

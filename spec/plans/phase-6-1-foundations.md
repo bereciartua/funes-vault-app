@@ -23,9 +23,9 @@
 - [x] Trust rules in `MemoryStore`: user create, edit or apply → trusted; agent direct write → untrusted.
 
 ### 6.1.4 Durable processing queue · 4 h
-- [ ] `ProcessingQueue` in FunesCore over `processing_job`: enqueue in the same transaction as the input, one job at a time, resumed at launch, idempotent per subject, retries with backoff, Activity rows without text.
-- [ ] Every ingest path enqueues: the Mac capture box (replacing today's fire-and-forget `Task` in `CaptureController`), Services, iPhone captures (which get no model processing today), MCP suggestions and writes, imports.
-- [ ] In this step the job only runs today's classification, so behaviour is unchanged; 6a adds splitting.
+- [x] `ProcessingQueue` in FunesCore over `processing_job`: enqueue in the same transaction as the input, one job at a time, resumed at launch, idempotent per subject, retries with backoff, Activity rows without text.
+- [x] Every ingest path enqueues: the Mac capture box (replacing today's fire-and-forget `Task` in `CaptureController`), Services, iPhone captures (which get no model processing today), MCP suggestions and writes, imports. *(Also seed answers. Not corrections, tidy-up proposals, split pieces or a Funes export restore, which §5.2 doesn't split.)*
+- [x] In this step the job only runs today's classification, so behaviour is unchanged; 6a adds splitting. *(`NewMemoryProcessor`: captures only; the Mac's `ProcessingRunner` drives it.)*
 
 ### 6.1.5 Multi-item cloud guard, pre-screen and daily cap · 4 h
 - [ ] `ModelRouter.send` takes typed items (text plus sensitivity or unknown) and guards on the highest; the secret scanner covers every item.
