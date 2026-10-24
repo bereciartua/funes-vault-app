@@ -187,6 +187,8 @@ public final class SuggestionService: Sendable {
                     title: input.title, body: input.body, kind: input.kind ?? .fact, categoryKeys: categories,
                     sensitivity: sensitivity, expiresAt: input.expiresAt, confidence: input.confidence ?? 0.5,
                     source: .agentWrite, sourceAgentID: agentID), actor: .agent(agentID), now: now)
+                // Saved, then processed in the background (memory processing §5.6).
+                try ProcessingQueue.enqueue(db, subject: m.id, now: now)
                 return .done(SuggestOutcome(status: .saved, memoryID: m.id, findings: []))
             }
             if ops.contains(.suggest) || ops.contains(.write) {
@@ -240,12 +242,14 @@ public final class SuggestionService: Sendable {
     /// Stores a pending suggestion. A targeted one records its target's current version, which
     /// apply checks (`targetChanged`); `targets` are a merge's, split's or conflict's other
     /// memories, at their current versions. `action` defaults to `update` with a target and
-    /// `create` without.
+    /// `create` without. `process` queues the new input's processing job in the same transaction
+    /// (memory processing §5.2): every ingest path, but not corrections, tidy-up proposals, the
+    /// pieces of a split or a Funes export restore.
     static func insertSuggestion(_ db: Database, origin: SuggestionOrigin, agentID: UUID? = nil, deviceID: UUID? = nil,
                                  importRunID: UUID? = nil, captureID: UUID? = nil, action: SuggestionAction? = nil,
                                  input: SuggestInput, categories: [String], sensitivity: Sensitivity?,
                                  classification: String? = nil, targets: [(UUID, SuggestionTarget.Role)] = [],
-                                 groupID: UUID? = nil, now: Date) throws -> UUID {
+                                 groupID: UUID? = nil, process: Bool = true, now: Date) throws -> UUID {
         let id = UUID()
         let targetVersion = try input.targetMemoryID.flatMap {
             try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [$0.db])
@@ -262,6 +266,9 @@ public final class SuggestionService: Sendable {
                              input.title, input.body, input.kind?.rawValue, JSON.encode(categories), sensitivity?.rawValue,
                              input.expiresAt, input.confidence, input.evidence, input.purpose, input.metadataJSON,
                              classification, now, now + lifetime, groupID?.db])
+        if process, origin != .consolidation, groupID == nil, input.targetMemoryID == nil, targets.isEmpty {
+            try ProcessingQueue.enqueue(db, subject: id, now: now)
+        }
         for (position, (memoryID, role)) in targets.enumerated() {
             guard let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [memoryID.db]) else {
                 throw VaultError.notFound

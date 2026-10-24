@@ -51,12 +51,14 @@ public struct CaptureProposal: Sendable, Hashable, Codable {
     }
 }
 
-/// What a suggestion's `classification` column records: the proposal, the engine, and whether the
-/// cloud pre-screen kept the text on the Mac.
+/// What a suggestion's `classification` column records: the proposal, the engine, whether the
+/// cloud pre-screen kept the text on the Mac, and the "at least" level the user picked when
+/// capturing, which the processing queue keeps as the floor for a model's proposal.
 public struct ClassificationRecord: Sendable, Hashable, Codable {
     public var engine: String
     public var proposal: CaptureProposal
     public var keptOnDevice: Bool
+    public var hint: Sensitivity? = nil
 }
 
 /// The always-available fallback (memory processing §5): title from the first line, kind `fact`,

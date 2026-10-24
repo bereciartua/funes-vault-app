@@ -93,6 +93,8 @@ final class AppModel {
     let checklist: ChecklistModel
     let modelSettings: ModelSettings
     let data: DataOperations
+    /// Classification (and from 6a, splitting) of everything that arrives, in the background.
+    let processing: ProcessingRunner
     /// Remote Access (ADR-0018): its settings, guide and tunnel checks. The app delegate gives it
     /// the listener through its host.
     let remoteAccess: RemoteAccessController
@@ -176,6 +178,7 @@ final class AppModel {
         checklist = ChecklistModel(preferences: preferences)
         self.modelSettings = modelSettings ?? ModelSettings(defaults: preferences.defaults, keys: ModelSettings.keychain())
         data = DataOperations(environment: services, preferences: preferences)
+        processing = ProcessingRunner(environment: services, preferences: preferences, settings: self.modelSettings)
         remoteAccess = RemoteAccessController(defaults: preferences.defaults, appName: "Funes Vault", names: .funes,
                                               defaultPort: FunesRemoteConfiguration.defaultPort, host: .inert)
         companion = CompanionController(defaults: preferences.defaults, services: services.companionServices,
@@ -183,7 +186,10 @@ final class AppModel {
         pausedUntil = services.pause.pausedUntil(at: Date())
         inboxState.categories = { [weak self] in self?.categories ?? [] }
         observation = services.store.observeChanges { [weak self] in
-            Task { @MainActor in self?.scheduleRefresh() }
+            Task { @MainActor in
+                self?.scheduleRefresh()
+                self?.processing.kick()
+            }
         }
         services.activity.onAppend = { [weak self] event in
             Task { @MainActor in

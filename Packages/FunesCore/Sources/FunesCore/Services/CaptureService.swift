@@ -22,8 +22,8 @@ public final class CaptureService: Sendable {
         self.activity = activity
     }
 
-    /// Stores a capture as a pending suggestion, classified by the rules (a model can refine it
-    /// later; capture never waits for one). iPhone captures need a paired, unrevoked device and are
+    /// Stores a capture as a pending suggestion, classified by the rules, with a processing job
+    /// in the same transaction (a model refines it later; capture never waits for one). iPhone captures need a paired, unrevoked device and are
     /// idempotent by `captureID`, with the receipt in the same transaction (NFR-REL-04).
     @discardableResult
     public func capture(_ text: String, origin: SuggestionOrigin = .captureMac, captureID: UUID? = nil, deviceID: UUID? = nil,
@@ -45,7 +45,8 @@ public final class CaptureService: Sendable {
             let findings = SecretScanner.scan(body)
             guard findings.isEmpty else { throw VaultError.secretLikeContent(findings) }
             let proposal = RulesClassifier.propose(body, categories: try CategoryStore.all(db), hint: sensitivityHint)
-            let record = ClassificationRecord(engine: RulesClassifier.engine, proposal: proposal, keptOnDevice: false)
+            let record = ClassificationRecord(engine: RulesClassifier.engine, proposal: proposal, keptOnDevice: false,
+                                              hint: sensitivityHint)
             let id = try SuggestionService.insertSuggestion(
                 db, origin: origin, deviceID: deviceID, captureID: captureID,
                 input: SuggestInput(title: proposal.title, body: body, kind: proposal.kind),
@@ -70,7 +71,8 @@ public final class CaptureService: Sendable {
             try db.execute(sql: """
                 UPDATE suggestion SET title = ?, kind = ?, category_keys = ?, sensitivity = ?, classification = ? WHERE id = ?
                 """, arguments: [p.title, p.kind.rawValue, JSON.encode(p.categoryKeys), p.sensitivity.rawValue,
-                                 JSON.encode(ClassificationRecord(engine: record.engine, proposal: p, keptOnDevice: record.keptOnDevice)),
+                                 JSON.encode(ClassificationRecord(engine: record.engine, proposal: p, keptOnDevice: record.keptOnDevice,
+                                                                  hint: floor ?? record.hint)),
                                  suggestionID.db])
         }
     }
