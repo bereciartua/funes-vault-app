@@ -19,9 +19,18 @@ public struct ImportItem: Sendable, Hashable {
     public var sensitivity: Sensitivity?
     public var expiresAt: Date?
     public var createdAt: Date?
+    /// From a Funes export: the memory's id there, its status and its split and merge links, which
+    /// a restore as memories keeps (archived stays archived).
+    public var exportID: UUID?
+    public var status: MemoryStatus?
+    public var links: [FunesExport.Link]
 
     public init(title: String, body: String, categoryKeys: [String] = [], unmatchedHeading: String? = nil,
-                kind: MemoryKind? = nil, sensitivity: Sensitivity? = nil, expiresAt: Date? = nil, createdAt: Date? = nil) {
+                kind: MemoryKind? = nil, sensitivity: Sensitivity? = nil, expiresAt: Date? = nil, createdAt: Date? = nil,
+                exportID: UUID? = nil, status: MemoryStatus? = nil, links: [FunesExport.Link] = []) {
+        self.exportID = exportID
+        self.status = status
+        self.links = links
         self.title = title
         self.body = body
         self.categoryKeys = categoryKeys
@@ -178,6 +187,21 @@ public struct FunesExport: Codable, Sendable, Hashable {
         public var expiresAt: Date?
         public var createdAt: Date
         public var updatedAt: Date
+        /// Split and merge links to other exported memories (v0.3); absent in older exports.
+        public var links: [Link]?
+    }
+
+    /// One side of a split or merge: the provenance event and the other memory's id.
+    public struct Link: Codable, Sendable, Hashable {
+        public var event: ProvenanceEvent
+        public var memoryId: UUID
+
+        public init(event: ProvenanceEvent, memoryId: UUID) {
+            self.event = event
+            self.memoryId = memoryId
+        }
+
+        static let events: [ProvenanceEvent] = [.splitInto, .splitFrom, .mergedInto, .mergedFrom]
     }
 
     public var format: String
@@ -285,14 +309,16 @@ public final class ImportService: Sendable {
     public func preview(funesExport export: FunesExport) async throws -> ImportPreview {
         let items = export.memories.filter { $0.status != .deleted }.map {
             ImportItem(title: $0.title, body: $0.body, categoryKeys: $0.categories, kind: $0.kind, sensitivity: $0.sensitivity,
-                       expiresAt: $0.expiresAt, createdAt: $0.createdAt)
+                       expiresAt: $0.expiresAt, createdAt: $0.createdAt, exportID: $0.id, status: $0.status, links: $0.links ?? [])
         }
         return try await preview(items, source: .funes, newCategories: export.categories)
     }
 
     /// Stores the ready items (and duplicates when asked) in one transaction, with an import run.
     /// Blocked and over-long items are never stored. `asMemories` (Funes exports only, after the
-    /// user confirms) creates active memories instead of suggestions.
+    /// user confirms) creates memories instead of suggestions, keeping each one's status, its id
+    /// when the vault doesn't have it yet, and its split and merge links; they're marked
+    /// reconciled, so the tidy-up doesn't split restored memories again.
     public func commit(_ preview: ImportPreview, includeDuplicates: Bool = false, asMemories: Bool = false,
                        now: Date) async throws -> ImportResult {
         guard !asMemories || preview.source == .funes else { throw VaultError.invalidInput(field: "as_memories") }
@@ -310,6 +336,8 @@ public final class ImportService: Sendable {
             let categories = try CategoryStore.all(db)
             let known = Set(categories.map(\.key))
             var out = ImportResult(importRunID: runID, suggestionIDs: [], memoryIDs: [], skipped: 0)
+            var restored: [UUID: UUID] = [:]
+            var links: [(UUID, [FunesExport.Link])] = []
             for entry in preview.entries {
                 switch entry.status {
                 case .ready: break
@@ -333,9 +361,19 @@ public final class ImportService: Sendable {
                 var keys = item.categoryKeys.filter(known.contains)
                 if keys.isEmpty { keys = RulesClassifier.propose(item.title + "\n" + item.body, categories: categories).categoryKeys }
                 if asMemories {
-                    let m = try MemoryStore.insert(db, MemoryDraft(
+                    let free = try item.exportID.map { try MemoryStore.fetch(db, id: $0) == nil } ?? false
+                    var m = try MemoryStore.insert(db, MemoryDraft(
                         title: item.title, body: item.body, kind: item.kind ?? .fact, categoryKeys: keys,
-                        sensitivity: item.sensitivity, expiresAt: item.expiresAt, source: .importFunes), actor: .importRun(runID), now: now)
+                        sensitivity: item.sensitivity, expiresAt: item.expiresAt, source: .importFunes), actor: .importRun(runID), now: now,
+                        id: free ? item.exportID! : UUID())
+                    if item.status == .archived {
+                        m = try MemoryStore.setStatus(db, id: m.id, to: .archived, actor: .importRun(runID), now: now)
+                    }
+                    try db.execute(sql: "UPDATE memory SET reconciled_version = version WHERE id = ?", arguments: [m.id.db])
+                    if let exportID = item.exportID {
+                        restored[exportID] = m.id
+                        if !item.links.isEmpty { links.append((m.id, item.links)) }
+                    }
                     out.memoryIDs.append(m.id)
                 } else {
                     let sensitivity = try item.sensitivity ?? MemoryStore.defaultSensitivity(db, categoryKeys: keys)
@@ -346,6 +384,14 @@ public final class ImportService: Sendable {
                         // A Funes export restore is reviewed memories: not processed again (§5.2).
                         process: preview.source != .funes, now: now)
                     out.suggestionIDs.append(id)
+                }
+            }
+            // Links between memories restored together.
+            for (memoryID, memoryLinks) in links {
+                for link in memoryLinks where FunesExport.Link.events.contains(link.event) {
+                    guard let other = restored[link.memoryId] else { continue }
+                    try MemoryStore.appendProvenance(db, memoryID: memoryID, event: link.event, actor: .importRun(runID), at: now,
+                                                     relatedMemoryID: other)
                 }
             }
             try db.execute(sql: "UPDATE import_run SET blocked = ? WHERE id = ?", arguments: [blocked, runID.db])
@@ -365,10 +411,17 @@ public final class ImportService: Sendable {
             }
             var memories = try MemoryStore.list(db, filter: MemoryFilter(status: .activeIncludingExpired, sort: .created), now: now)
             if includeArchived { memories += try MemoryStore.list(db, filter: MemoryFilter(status: .archived, sort: .created), now: now) }
-            return FunesExport(format: FunesExport.formatID, exportedAt: now, categories: categories, memories: memories.map {
-                FunesExport.Memory(id: $0.id, title: $0.title, body: $0.body, kind: $0.kind, categories: $0.categoryKeys,
-                                   sensitivity: $0.sensitivity, status: $0.status, expiresAt: $0.expiresAt,
-                                   createdAt: $0.createdAt, updatedAt: $0.updatedAt)
+            let exported = Set(memories.map(\.id))
+            return FunesExport(format: FunesExport.formatID, exportedAt: now, categories: categories, memories: try memories.map { m in
+                // Split and merge links to other memories in the export; never the undo log.
+                let links = try MemoryStore.provenance(db, memoryID: m.id).compactMap { entry -> FunesExport.Link? in
+                    guard FunesExport.Link.events.contains(entry.event), let other = entry.relatedMemoryID,
+                          exported.contains(other) else { return nil }
+                    return FunesExport.Link(event: entry.event, memoryId: other)
+                }
+                return FunesExport.Memory(id: m.id, title: m.title, body: m.body, kind: m.kind, categories: m.categoryKeys,
+                                          sensitivity: m.sensitivity, status: m.status, expiresAt: m.expiresAt,
+                                          createdAt: m.createdAt, updatedAt: m.updatedAt, links: links.isEmpty ? nil : links)
             })
         }
         let encoder = JSONEncoder()

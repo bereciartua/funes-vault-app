@@ -44,7 +44,8 @@ struct ActivityEntry: Identifiable, Equatable {
     }
 
     var isSuggestion: Bool {
-        ["suggest_memory", "capture", "suggestion_applied", "suggestion_rejected", "seed_question", "import"].contains(event.event)
+        ["suggest_memory", "capture", "suggestion_applied", "suggestion_rejected", "seed_question", "import", "auto_applied",
+         "split", "undone", "tidy_up_run"].contains(event.event)
     }
 
     /// Refusals by policy, rate limits, expired requests; a user's own No isn't a problem.
@@ -127,6 +128,15 @@ struct ActivityEntry: Identifiable, Equatable {
         case "import": return String(localized: "Imported \((e.counts["suggestions"] ?? 0) + (e.counts["memories"] ?? 0)) items")
         case "export": return String(localized: "Exported the vault")
         case "access_request": return String(localized: "Asked for more access")
+        // Memory processing, as Funes Vault (actor `system`; v0.3).
+        case "auto_applied": return String(localized: "Applied a change automatically")
+        case "split": return String(localized: "Split a memory")
+        case "undone":
+            let count = e.counts["changes"] ?? 1
+            return count == 1 ? String(localized: "Undid a change") : String(localized: "Undid \(count) changes")
+        case "tidy_up_run": return String(localized: "Tidied up the vault")
+        case "cap_reached": return String(localized: "Reached today's cloud requests")
+        case "processing_job": return String(localized: "Processed a new memory")
         default: return e.event.replacingOccurrences(of: "_", with: " ").capitalized
         }
     }
@@ -156,6 +166,12 @@ struct ActivityEntry: Identifiable, Equatable {
         case ("suggest_memory", "saved"): return (String(localized: "Saved"), .good)
         case ("suggestion_applied", _): return (String(localized: "Applied"), .good)
         case ("suggestion_rejected", _): return (String(localized: "Rejected"), .neutral)
+        case ("auto_applied", _), ("split", _): return (String(localized: "Applied"), .good)
+        case ("undone", _): return (String(localized: "Undone"), .neutral)
+        case ("tidy_up_run", _):
+            return (String(localized: "\(e.counts["applied"] ?? 0) applied, \(e.counts["suggestions"] ?? 0) to review"), .neutral)
+        case ("cap_reached", _): return (String(localized: "On this Mac until tomorrow"), .warning)
+        case ("processing_job", "failed"): return (String(localized: "Failed: proposed by rules"), .warning)
         default: return (e.outcome.map { $0.replacingOccurrences(of: "_", with: " ").capitalized } ?? String(localized: "Done"), .neutral)
         }
     }

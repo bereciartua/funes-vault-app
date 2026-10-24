@@ -35,8 +35,8 @@
 - [x] Guardrail tests ([model providers §9](../architecture/model-providers.md#9-testing)).
 
 ### 6.1.6 Undo log · 3 h
-- [ ] `UndoLog` over `undo_entry`: record the before-state of an automatic change in its transaction; undo one change, or a change and the later ones that depend on it; refuse with an explanation otherwise.
-- [ ] Purge with the memory (daily purge, Delete Now, Erase All Data); daily cleanup after 30 days; never exported.
+- [x] `UndoLog` over `undo_entry`: record the before-state of an automatic change in its transaction; undo one change, or a change and the later ones that depend on it; refuse with an explanation otherwise.
+- [x] Purge with the memory (daily purge, Delete Now, Erase All Data); daily cleanup after 30 days; never exported. *(Erase All Data deletes the vault file, undo log included. The daily cleanup also drops the source text of fully decided suggestion groups.)*
 
 ### 6.1.7 iPhone and companion · 2 h
 - [x] FunesProtocol: `SuggestionAction` gains the new cases and an `unknown` fallback when decoding; `InboxItem` gains `groupId`, `groupLabel`, `outsideScope`, `targetMemoryVersion`.
@@ -44,9 +44,9 @@
 - [x] Shipped together with the Mac change.
 
 ### 6.1.8 Export, restore, Activity, settings · 3 h
-- [ ] Export and restore keep a memory's status (archived stays archived) and its split and merge links; restore sets `reconciled_version` so the tidy-up doesn't re-split restored memories.
-- [ ] Activity events with `actor = system`: `auto_applied`, `undone`, `split`, `tidy_up_run`, `cap_reached` (ids and counts only).
-- [ ] Settings ▸ AI Models: rename Classification to New memories (split switch disabled until 6a), the cloud limit's new wording, the daily cap row, Apply changes automatically (levels disabled until 6a/6b reach their precision). The Settings ▸ Capture classification switch moves here.
+- [x] Export and restore keep a memory's status (archived stays archived) and its split and merge links; restore sets `reconciled_version` so the tidy-up doesn't re-split restored memories. *(Restore as memories; links via the export's new optional `links`, and a memory keeps its id when the vault doesn't have it.)*
+- [x] Activity events with `actor = system`: `auto_applied`, `undone`, `split`, `tidy_up_run`, `cap_reached` (ids and counts only). *(Worded in Activity; `cap_reached`, `undone` and `processing_job` are recorded now, the others by 6a/6b.)*
+- [x] Settings ▸ AI Models: rename Classification to New memories (split switch disabled until 6a), the cloud limit's new wording, the daily cap row, Apply changes automatically (levels disabled until 6a/6b reach their precision). The Settings ▸ Capture classification switch moves here.
 
 ## Exit criteria
 - Every suggestion action applies as itself on the Mac, in bulk and from the iPhone; stale targets are refused.

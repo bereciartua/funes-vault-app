@@ -11,6 +11,8 @@ struct ModelSettingsPane: View {
     @State private var localities: [String: Locality] = [:]
     /// A cloud limit above Internal waiting for its one-time confirmation (ADR-0022).
     @State private var confirming: CloudLimit?
+    /// Mirrors `Preferences.classifyCaptures` (moved here from Settings ▸ Capture, task 6.1.8).
+    @State private var classify = true
     @State private var today: CloudRequestCap.Day?
 
     private var settings: ModelSettings { model.modelSettings }
@@ -30,10 +32,10 @@ struct ModelSettingsPane: View {
                 }
                 Text(String(localized: "Search and agents' requests are matched on this Mac. Other embedding models come in a later version."))
                     .font(.callout).foregroundStyle(.secondary)
-                LabeledContent(String(localized: "Classification")) {
+                LabeledContent(String(localized: "New memories")) {
                     HStack(spacing: 6) {
-                        Picker(String(localized: "Classification"), selection: Binding(get: { settings.classifierID },
-                                                                                      set: { settings.setClassifier($0) })) {
+                        Picker(String(localized: "New memories"), selection: Binding(get: { settings.classifierID },
+                                                                                    set: { settings.setClassifier($0) })) {
                             Text(String(localized: "Apple on-device")).tag(String?.none)
                             ForEach(settings.providers) { provider in
                                 Text("\(provider.name) · \(provider.model.isEmpty ? String(localized: "no model") : provider.model)")
@@ -49,6 +51,21 @@ struct ModelSettingsPane: View {
                 if let disclosure = classificationDisclosure {
                     WarningLabel(text: disclosure, symbol: "arrow.up.forward.app")
                 }
+                Toggle(String(localized: "Propose a title, kind and categories"), isOn: $classify)
+                    .onChange(of: classify) { _, on in model.preferences.classifyCaptures = on }
+                Toggle(String(localized: "Split into separate memories"), isOn: .constant(false))
+                    .disabled(true)
+                Text(classify ? String(localized: "You review every proposal in the Inbox. Splitting what arrives into single memories comes in a later version.")
+                              : String(localized: "Captures get simple proposals from rules on this Mac."))
+                    .font(.callout).foregroundStyle(.secondary)
+                Picker(String(localized: "Apply changes automatically"), selection: .constant(0)) {
+                    Text(String(localized: "Off")).tag(0)
+                    Text(String(localized: "Duplicates only")).tag(1)
+                    Text(String(localized: "Everything except conflicts")).tag(2)
+                }
+                .disabled(true)
+                Text(String(localized: "Off: every proposal waits for you in the Inbox. The other levels come once Funes's proposals are accurate enough, each with Undo."))
+                    .font(.callout).foregroundStyle(.secondary)
             }
             Section(String(localized: "Cloud limit")) {
                 Picker(String(localized: "Send memories to cloud models up to"), selection: Binding(get: { settings.cloudLimit },
@@ -123,6 +140,7 @@ struct ModelSettingsPane: View {
         .sheet(item: $editing) { ProviderSheet(model: model, provider: $0, isNew: false) }
         .sheet(item: $adding) { ProviderSheet(model: model, provider: $0, isNew: true) }
         .task(id: settings.providers) { await resolveLocalities() }
+        .onAppear { classify = model.preferences.classifyCaptures }
         .task(id: model.activityGeneration) {
             today = try? await settings.cap(store: model.services.store, activity: model.services.activity).today(now: Date())
         }
@@ -178,15 +196,15 @@ struct ModelSettingsPane: View {
             : String(localized: "Apple Intelligence isn't available on this Mac: simple rules propose the fields.")
     }
 
-    /// "Classification sends new captures (up to Internal) and your category names and descriptions to
+    /// "New memories sends new captures (up to Internal) and your category names and descriptions to
     /// Anthropic." (FR-AI-08) Only captures are classified in v0.1.
     private var classificationDisclosure: String? {
         guard let provider = settings.classifier, !classifierLocality.isLocal else { return nil }
         switch settings.cloudLimit {
         case .never:
-            return String(localized: "Classification sends nothing to \(provider.name): the cloud limit is Nothing, so it runs on this Mac.")
+            return String(localized: "New memories sends nothing to \(provider.name): the cloud limit is Nothing, so it runs on this Mac.")
         case .upTo(let level):
-            return String(localized: "Classification sends new captures (up to \(level.title)) and your category names and descriptions to \(provider.name).")
+            return String(localized: "New memories sends new captures (up to \(Self.title(.upTo(level)))) and your category names and descriptions to \(provider.name).")
         }
     }
 

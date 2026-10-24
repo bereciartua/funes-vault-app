@@ -403,6 +403,16 @@
     "%lld applied" : {
 
     },
+    "%lld applied, %lld to review" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld applied, %2$lld to review"
+          }
+        }
+      }
+    },
     "%lld archived" : {
 
     },
@@ -975,6 +985,9 @@
     "Applied" : {
 
     },
+    "Applied a change automatically" : {
+
+    },
     "Applied a suggestion" : {
 
     },
@@ -997,6 +1010,9 @@
 
     },
     "Apply (⌘⏎)" : {
+
+    },
+    "Apply changes automatically" : {
 
     },
     "Apply what's right." : {
@@ -1177,6 +1193,9 @@
     "Captures get simple proposals from rules on this Mac." : {
 
     },
+    "Captures get simple proposals from rules on this Mac. Turn on proposals in AI Models ▸ New memories." : {
+
+    },
     "Categories" : {
 
     },
@@ -1299,22 +1318,6 @@
 
     },
     "Choose the memories file from your ChatGPT data export (JSON). Each memory becomes a suggestion." : {
-
-    },
-    "Classification" : {
-
-    },
-    "Classification sends new captures (up to %@) and your category names and descriptions to %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Classification sends new captures (up to %1$@) and your category names and descriptions to %2$@."
-          }
-        }
-      }
-    },
-    "Classification sends nothing to %@: the cloud limit is Nothing, so it runs on this Mac." : {
 
     },
     "Claude Code" : {
@@ -1719,6 +1722,9 @@
     "Downloads" : {
 
     },
+    "Duplicates only" : {
+
+    },
     "Each agent gets its own key and only the access you give it." : {
 
     },
@@ -1789,6 +1795,9 @@
     "Everyday preferences. Fine for most of your agents." : {
 
     },
+    "Everything except conflicts" : {
+
+    },
     "Everything, including Secret" : {
 
     },
@@ -1826,6 +1835,9 @@
 
     },
     "Fact" : {
+
+    },
+    "Failed: proposed by rules" : {
 
     },
     "Fetch Funes Vault's health URL through the tunnel" : {
@@ -1982,6 +1994,9 @@
 
     },
     "Funes notes that you checked it today." : {
+
+    },
+    "Funes proposes a title, kind and categories with the New memories model in AI Models; you review every proposal in the Inbox." : {
 
     },
     "Funes relaunches with the vault as it was then. The current vault is kept in Backups first." : {
@@ -2299,6 +2314,9 @@
     "It stops working now. To use it again, connect it again." : {
 
     },
+    "It was changed since, so it can't be undone." : {
+
+    },
     "It was deleted for good." : {
 
     },
@@ -2417,6 +2435,9 @@
 
     },
     "Later" : {
+
+    },
+    "Later changes depend on this one. Undo it together with the %lld later changes." : {
 
     },
     "Launcher" : {
@@ -2615,6 +2636,22 @@
     "New key issued. The old one no longer works." : {
 
     },
+    "New memories" : {
+
+    },
+    "New memories sends new captures (up to %@) and your category names and descriptions to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New memories sends new captures (up to %1$@) and your category names and descriptions to %2$@."
+          }
+        }
+      }
+    },
+    "New memories sends nothing to %@: the cloud limit is Nothing, so it runs on this Mac." : {
+
+    },
     "New memories start at" : {
 
     },
@@ -2787,6 +2824,9 @@
     "Off: cloud agents can't use this agent." : {
 
     },
+    "Off: every proposal waits for you in the Inbox. The other levels come once Funes's proposals are accurate enough, each with Undo." : {
+
+    },
     "Off: it saves memories directly. On: they wait in your Inbox." : {
 
     },
@@ -2803,6 +2843,9 @@
 
     },
     "On this Mac" : {
+
+    },
+    "On this Mac until tomorrow" : {
 
     },
     "On your iPhone, open Funes Vault, tap Pair with Mac and scan this code." : {
@@ -3015,6 +3058,9 @@
     "Problems %lld" : {
 
     },
+    "Processed a new memory" : {
+
+    },
     "Project Context" : {
 
     },
@@ -3077,6 +3123,9 @@
 
     },
     "Reachable" : {
+
+    },
+    "Reached today's cloud requests" : {
 
     },
     "Read" : {
@@ -3760,6 +3809,9 @@
     "Split Them" : {
 
     },
+    "Split a memory" : {
+
+    },
     "Split from another memory %@" : {
 
     },
@@ -3767,6 +3819,9 @@
 
     },
     "Split into a new memory %@" : {
+
+    },
+    "Split into separate memories" : {
 
     },
     "Splits “%@” into %lld" : {
@@ -4250,6 +4305,9 @@
     "This version of Funes Vault can't apply this suggestion. Update the app, or reject it." : {
 
     },
+    "Tidied up the vault" : {
+
+    },
     "Time" : {
 
     },
@@ -4365,7 +4423,16 @@
     "Unavailable: keyword search only" : {
 
     },
+    "Undid %lld changes" : {
+
+    },
+    "Undid a change" : {
+
+    },
     "Undo" : {
+
+    },
+    "Undone" : {
 
     },
     "Undone %@" : {
@@ -4429,9 +4496,6 @@
 
     },
     "Use ⌘, ⌥ or ⌃ with a key." : {
-
-    },
-    "Uses the Classification model in AI Models; you review every proposal in the Inbox." : {
 
     },
     "VS Code (Copilot)" : {
@@ -4585,6 +4649,9 @@
 
     },
     "You rejected a suggestion" : {
+
+    },
+    "You review every proposal in the Inbox. Splitting what arrives into single memories comes in a later version." : {
 
     },
     "You're all set" : {
