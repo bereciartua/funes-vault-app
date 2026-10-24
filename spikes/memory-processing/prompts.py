@@ -62,21 +62,80 @@ EXTRACT_RULES_V2 = EXTRACT_RULES.replace(
 assert EXTRACT_RULES_V2 != EXTRACT_RULES
 
 
+# --- Spike F: pieces that make sense alone --------------------------------------------------------------
+# B: the shipped granularity (v2), but every body names its subject, time anchor and status, from the whole note
+# (its title and written date included). Examples are invented, not taken from the fixtures.
+F_CONTEXT_RULE = """- body: the claim rewritten to stand alone, in the note's language. An assistant will later see only this piece's title and body: never the note, its title, its date or the other pieces. So each body must make sense to someone who knows nothing else:
+  - Name its subject: who or what it is about, by name (the company, the role, the person, the trip, the project, the illness, the place). Never "the role", "the company", "the trip", "the interview", "he", "she" or "it" for something the note names elsewhere: repeat the name, from the note's title or other sentences.
+  - Anchor it in time when it belongs to one: the date, month or year it happened, was said or applies ("on 2 May 2026", "in May 2026"). Resolve "yesterday", "last week" or "next Monday" against the date the note was written. A lasting fact or preference ("I'm allergic to peanuts", "I prefer window seats") gets no date.
+  - Keep its status: an interview, an offer under discussion, a plan, a past trip or a former job is not the user's current situation. "The salary was €90,000" becomes "The Data Lead role Ferncliff Labs offered me in May 2026 paid €90,000", not "I earn €90,000".
+  The subject, time and status are context for the claim, not extra claims. Use only what the note says: the evidence, plus names and dates from elsewhere in the note (its title and written date included). Never add other details, never generalize ("peanuts" stays "peanuts")."""
+F_TITLE_RULE = "- title: at most 80 characters, naming the subject too. timeLimited: true if only true for a while (a trip, an appointment, this week)."
+# C: B plus a durability filter.
+F_DURABLE_RULE = """- Keep only what could help an assistant later: lasting facts, preferences, decisions, outcomes, feedback, commitments, and upcoming dates or to-dos. Leave out what won't matter again: logistics already done (booking a slot, rescheduling, a delayed bag, a fee someone else paid), how a document could be sent, questions the user asked to understand a word or a process, small talk and incidental details (parking, someone joining late). When unsure, keep it."""
+# D: topic-level splitting, as a comparison.
+F_TOPIC_RULE = """- Make one piece per episode or entity the note is about (an interview process, an offer, a trip, an illness, a project, a contract): its body keeps that episode's details together in a few sentences, with its names and dates. Split out as separate pieces only facts about something else that stay true on their own: a general preference, a lasting fact about the user, another person, another project. A note with one claim gives exactly one piece."""
+
+
+# Second round (B2, C2), after the first run: B and C stamped the written date on 20-30% of pieces from short captures
+# ("As of 23 October 2026, I order a cortado"), and a later chunk's pieces lacked the name its context block held.
+F_TIME_RULE = """  - Anchor it in time when it belongs to one: the date, month or year it happened, was said or applies ("on 2 May 2026", "in May 2026"). Resolve "yesterday", "last week" or "next Monday" against the date the note was written. A lasting fact or preference ("I'm allergic to peanuts", "I prefer window seats") gets no date."""
+F_TIME_RULE_2 = """  - Anchor in time what belongs to an episode or a moment (an interview, an offer, a trip, an appointment, an illness, a deadline): the date, month or year the note gives for it ("on 2 May 2026", "in May 2026"), or else the month the note was written. Resolve "yesterday", "last week" or "next Monday" against the written date. Never put a date on a lasting fact or preference, even a new or changed one: "I no longer drink coffee after lunch", not "As of 3 May 2026, I no longer drink coffee after lunch"."""
+assert F_TIME_RULE in F_CONTEXT_RULE
+CONTEXT_NOTE = "(The context is the text just before the note, for reference only: extract nothing from it.)"
+CONTEXT_NOTE_2 = ("(The context is the text just before the note: extract nothing from it, but use its names to say who or "
+                  "what a piece is about.)")
+
+
+# Third round (C3): C2's filter dropped an offer's own terms once (GPT-5.6-Terra kept 8 of 17 pieces of a recruiter
+# pitch), so the filter keeps every fact about the subject itself and leaves out only logistics and trivia.
+F_DURABLE_RULE_3 = """- Keep only what could help an assistant later. Keep every fact about the note's subject itself, even a small one: an offer's or a contract's terms, a diagnosis and its advice, a plan, a decision, an outcome, feedback, the people involved, upcoming dates and to-dos, and lasting facts and preferences. Leave out only what won't matter again: logistics already done (booking a slot, rescheduling, a delayed bag, a fee someone else paid), how a document could be sent, questions the user asked to understand a word or a process, small talk and incidental details (parking, someone joining late). When unsure, keep it."""
+
+
+def _rules_f(version):
+    third = version == "fC3"
+    if third:
+        version = "fC2"
+    second = version in ("fB2", "fC2")
+    version = version.rstrip("2")
+    r = EXTRACT_RULES_V2
+    r = r.replace("""- body: the claim rewritten to stand alone ("I'm allergic to peanuts", not "also peanuts"), in the note's language. Use only what the evidence says: never add details, never generalize ("peanuts" stays "peanuts").""", F_CONTEXT_RULE)
+    r = r.replace("- title: at most 80 characters. timeLimited: true if only true for a while (a trip, an appointment, this week).", F_TITLE_RULE)
+    if version == "fC":
+        r = r.replace("- evidence: 1 to 3", F_DURABLE_RULE + "\n- evidence: 1 to 3")
+    if version == "fD":
+        r = r.replace(r.split("\n")[4], F_TOPIC_RULE)
+        r = r.replace("You split a note into atomic memories", "You split a note into memories")
+        r = r.replace("- atomic: false if the piece still holds more than one claim.", "- atomic: false if the piece holds more than one claim (an episode piece usually does).")
+    assert r.count(F_CONTEXT_RULE) == 1 and r.count(F_TITLE_RULE) == 1
+    if second:
+        r = r.replace(F_TIME_RULE, F_TIME_RULE_2)
+    if third:
+        assert r.count(F_DURABLE_RULE) == 1
+        r = r.replace(F_DURABLE_RULE, F_DURABLE_RULE_3)
+    return r
+
+
 def extraction_instructions(variant, version=1):
-    rules = EXTRACT_RULES_V2 if version == 2 else EXTRACT_RULES
+    rules = _rules_f(version) if version in ("fB", "fC", "fD", "fB2", "fC2", "fC3") else EXTRACT_RULES_V2 if version in (2, "fA") else EXTRACT_RULES
     return (f"{rules}\n{VARIANTS[variant]}\n\nCategories (1 to 3 keys from this list only):\n{CATEGORY_LIST}\n"
             f"Kinds: {', '.join(KINDS)}.\n{SENSITIVITY_GUIDE}")
 
 
-def extraction_prompt(chunk, context=None, hint=None):
+def extraction_prompt(chunk, context=None, hint=None, header=None, context_names=False):
+    """header (Spike F): {"title", "written"} of the memory or suggestion the note comes from. context_names (Spike F's
+    second round): the context block may name a piece's subject."""
     parts = []
     if hint:
         parts.append(f"The note answers the question: \"{hint['question']}\" (likely kind {hint['kind']}, category "
                      f"{hint['category']}).")
     if context:
-        parts.append(f"<context>\n{context}\n</context>\n(The context is the text just before the note, for reference "
-                     "only: extract nothing from it.)")
-    parts.append(f"<note>\n{chunk}\n</note>")
+        parts.append(f"<context>\n{context}\n</context>\n{CONTEXT_NOTE_2 if context_names else CONTEXT_NOTE}")
+    if header:
+        attrs = (f' title="{header["title"]}"' if header.get("title") else "") + f' written="{header["written"]}"'
+        parts.append(f"<note{attrs}>\n{chunk}\n</note>")
+    else:
+        parts.append(f"<note>\n{chunk}\n</note>")
     return "\n".join(parts)
 
 

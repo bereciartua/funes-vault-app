@@ -1,4 +1,4 @@
-# Spike E: extraction and tidy-up quality
+# Spikes E and F: extraction and tidy-up quality
 
 Throwaway harness for [Phase 6.0](../../spec/plans/phase-6-0-spike-e.md). Results: the "Spike E" section of
 [spike results](../../spec/plans/spike-results.md). The fixtures are kept for 6a and 6b's tests.
@@ -52,3 +52,16 @@ python3 related.py
   subscription. Gemini wasn't run (no API key).
 - Code: `prompts.py` (the prompts and schemas), `validate.py` (§1 secret scanner port, §5.4 and §9.4 validation),
   `finder.py` (§5.5 related-memories finder), `providers.py`.
+
+## Spike F: pieces that make sense alone
+Results: the "Spike F" section of [spike results](../../spec/plans/spike-results.md).
+- `fixtures/episodes.json`: 10 long agent-written memories, one episode or entity each (two hiring processes and an
+  interview outcome, a confidential recruiter pitch, a trip, a knee injury, a side project, a contract, a lease, a
+  conference talk, a wedding in Spanish), 167 labelled facts. Built by `build_episodes.py`, whose docstring gives the
+  labels (keep, drop, either; timed; about something else) and matching rules.
+- `spike_f.py`: extraction with five variants (A as shipped; A+ with the memory's title and date; B pieces name their
+  subject, time and status; C B plus a durability filter; D topic-level), the two-step judge (a blind reader that sees
+  only `title: body`, then a grader with the original), `score` (`results/spike-f/report.md`) and `sample`
+  (`results/spike-f/spot-check.md`).
+- `run.py` experiments `extract-fB`, `extract-fC`, `decide-fB`, `decide-fC`: Spike E's fixtures with B and C.
+- `./run_f.sh extract|judge|regression|decide fB` reruns everything.

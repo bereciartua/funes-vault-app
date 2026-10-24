@@ -5,7 +5,7 @@ import importlib
 import os
 import sys
 
-MODELS = ["codex", "codex-terra", "claude-haiku", "claude-opus"]
+MODELS = ["codex", "codex-terra", "claude-haiku", "claude-opus", "codex-sol"]
 
 
 def numbers(set_name, ext_name="extract", dec_name="decide"):
