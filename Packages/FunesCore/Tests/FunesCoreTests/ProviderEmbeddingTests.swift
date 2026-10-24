@@ -425,3 +425,18 @@ func liveOpenAIEmbeddings() async throws {
     #expect(indexer.takeUsage() == ProviderUsage(requests: 2, inputTokens: 100))
     #expect(try v.count("SELECT count(*) FROM embedding WHERE model_id = 'openai/text-embedding-3-small' AND dims = 1536") == 9)
 }
+
+/// Calibrate against a running Ollama with `qwen3-embedding:0.6b` (FUNES_LIVE_OLLAMA=1; off in test.sh
+/// and CI): its GGUF build should land near the built-in thresholds, measured on the Hugging Face
+/// weights. FUNES_LIVE_OUT=<file> also writes what it measured.
+@Test(.enabled(if: ProcessInfo.processInfo.environment["FUNES_LIVE_OLLAMA"] == "1"))
+func liveOllamaQwen3Calibration() async throws {
+    let e = try OpenAICompatibleEmbedder(endpoint: .ollama(), model: "qwen3-embedding:0.6b", apiKey: nil)
+    let (info, usage) = try await EmbeddingCalibration.run(e)
+    if let out = ProcessInfo.processInfo.environment["FUNES_LIVE_OUT"] {
+        let text = "dims \(info.dimensions) vault \(info.vaultThreshold) retrieval \(info.retrievalThreshold) tokens \(usage.inputTokens)\n"
+        try Data(text.utf8).write(to: URL(fileURLWithPath: out))
+    }
+    #expect(info.dimensions == e.model.dimensions)
+    #expect(abs(info.vaultThreshold - e.model.vaultThreshold) <= 0.02 && abs(info.retrievalThreshold - e.model.retrievalThreshold) <= 0.02)
+}
