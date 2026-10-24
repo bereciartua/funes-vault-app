@@ -58,6 +58,7 @@ public struct AppleFoundationGenerator: GenerationProvider {
             return DynamicGenerationSchema(type: String.self)
         case .boolean: return DynamicGenerationSchema(type: Bool.self)
         case .number: return DynamicGenerationSchema(type: Double.self)
+        case .integer: return DynamicGenerationSchema(type: Int.self)
         case let .array(items, _, minItems, maxItems):
             return DynamicGenerationSchema(arrayOf: dynamic(items, name: name + "Item"), minimumElements: minItems,
                                            maximumElements: maxItems)
@@ -73,7 +74,7 @@ public struct AppleFoundationGenerator: GenerationProvider {
 extension JSONSchema {
     var description: String? {
         switch self {
-        case let .string(d, _), let .boolean(d), let .number(d), let .array(_, d, _, _), let .object(_, d, _): d
+        case let .string(d, _), let .boolean(d), let .number(d), let .integer(d), let .array(_, d, _, _), let .object(_, d, _): d
         }
     }
 }
@@ -164,6 +165,9 @@ public final class ModelRouter: Sendable {
     public let generationTimeout: Duration
     /// The daily cap on cloud requests; nil counts nothing (tests, Test connection).
     public let cap: CloudRequestCap?
+    /// Per call of the splitting tasks: an extraction can return 30 pieces (Spike E: up to 21 s a
+    /// call on a cloud model, minutes on a small local one).
+    public let splitTimeout: Duration
 
     private let usage = Mutex<[ProviderID: ProviderUsage]>([:])
     private let backoff = Mutex<[ProviderID: Date]>([:])
@@ -173,11 +177,12 @@ public final class ModelRouter: Sendable {
     /// Apple model when available.
     public init(classifier: (any GenerationProvider)?, onDevice: (any GenerationProvider)? = AppleFoundationGenerator(),
                 cloudLimit: CloudLimit = .upTo(.internal), generationTimeout: Duration = .seconds(20),
-                cap: CloudRequestCap? = nil) {
+                splitTimeout: Duration = .seconds(180), cap: CloudRequestCap? = nil) {
         self.classifier = classifier
         self.onDevice = onDevice
         self.cloudLimit = cloudLimit
         self.generationTimeout = generationTimeout
+        self.splitTimeout = splitTimeout
         self.cap = cap
     }
 
@@ -238,6 +243,43 @@ public final class ModelRouter: Sendable {
             }
         }
         return ClassificationRecord(engine: RulesClassifier.engine, proposal: rules, keptOnDevice: keptOnDevice)
+    }
+
+    /// The New memories engine that splits and links (memory processing §5.2): the chosen
+    /// provider when it's a local server or a cloud model. Apple on-device only classifies (Spike
+    /// E §1), so with it, or with no choice, nothing is split.
+    public var splitter: (any GenerationProvider)? {
+        guard let classifier, classifier.locality != .onDevice else { return nil }
+        return classifier
+    }
+
+    /// How a proposal names its engine: `apple.foundation`, or `<provider>/<model>`.
+    public static func engine(_ provider: any GenerationProvider) -> String {
+        provider.id == "apple.foundation" ? "apple.foundation" : "\(provider.id)/\(provider.modelID)"
+    }
+
+    /// One call of the splitting tasks through the guardrails (`send`), counted in the usage
+    /// counters. A provider that rate-limited is skipped until its backoff ends.
+    func call<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem], with provider: any GenerationProvider,
+                                       requester: CloudRequestCap.Requester, now: Date) async throws -> T {
+        if let until = backoff.withLock({ $0[provider.id] }), now < until { throw ProviderError.rateLimited(retryAfter: until.timeIntervalSince(now)) }
+        do {
+            let (output, used) = try await Self.send(request, items: items, to: provider, cloudLimit: cloudLimit, cap: cap,
+                                                     requester: requester, timeout: splitTimeout, now: now)
+            record(used, for: provider.id)
+            return output
+        } catch let error as ProviderError {
+            switch error {
+            case .blocked, .capReached: break
+            case let .rateLimited(retryAfter):
+                record(ProviderUsage(requests: 1), for: provider.id)
+                backoff.withLock { $0[provider.id] = now + (retryAfter ?? 60) }
+            default:
+                record(ProviderUsage(requests: 1), for: provider.id)
+            }
+            logger.error("Splitting provider \(provider.id.rawValue, privacy: .public) failed: \(String(describing: error), privacy: .public)") // log-safe: provider id and error code, no text
+            throw error
+        }
     }
 
     /// Embeds with the bundled model, keyword-only on failure or after 10 s (FR-AI-10).

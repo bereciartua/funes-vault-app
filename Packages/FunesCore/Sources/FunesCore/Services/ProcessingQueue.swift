@@ -49,6 +49,9 @@ public final class ProcessingQueue: Sendable {
         case done(engine: String?)
         /// Try again later (a provider was unavailable or rate-limited); counts as an attempt.
         case retry(code: String)
+        /// Wait until then without counting an attempt: agent input and imports at the daily cap
+        /// wait for the next day (ADR-0022).
+        case later(until: Date, code: String)
     }
 
     public let store: VaultStore
@@ -105,6 +108,12 @@ public final class ProcessingQueue: Sendable {
                 try db.execute(sql: "UPDATE processing_job SET state = 'done', engine = ?, error = NULL, not_before = NULL, updated_at = ? WHERE id = ?",
                                arguments: [engine, now, job.id.db])
             }
+        case let .later(until, code):
+            state = .queued
+            try await store.writer.write { db in
+                try db.execute(sql: "UPDATE processing_job SET state = 'queued', attempts = MAX(0, attempts - 1), error = ?, not_before = ?, updated_at = ? WHERE id = ?",
+                               arguments: [code, until, now, job.id.db])
+            }
         case let .retry(code):
             state = job.attempts >= Self.maxAttempts ? .failed : .queued
             try await store.writer.write { db in
@@ -160,48 +169,5 @@ public final class ProcessingQueue: Sendable {
                            arguments: [now - Self.retention])
             return db.changesCount
         }
-    }
-}
-
-/// The `new_memory` job until Phase 6a adds splitting: today's classification of captures, from
-/// the Mac or the iPhone, with the capture's "at least" level as the floor. Agent input, seed
-/// answers and imports keep the fields they arrived with (memory processing §5.1).
-public struct NewMemoryProcessor: Sendable {
-    public let store: VaultStore
-    public let captures: CaptureService
-    /// The router for classification, or nil while classification is off (the rules' proposal
-    /// stays).
-    public let router: @Sendable () async -> ModelRouter?
-    /// Hands the router back after a job, for the usage counters.
-    public let finished: @Sendable (ModelRouter) async -> Void
-
-    public init(store: VaultStore, captures: CaptureService, router: @escaping @Sendable () async -> ModelRouter?,
-                finished: @escaping @Sendable (ModelRouter) async -> Void = { _ in }) {
-        self.store = store
-        self.captures = captures
-        self.router = router
-        self.finished = finished
-    }
-
-    public func process(_ job: ProcessingJob) async throws -> ProcessingQueue.Outcome {
-        guard job.kind == .newMemory else { return .done(engine: nil) }
-        let suggestion = try await store.writer.read { db in try SuggestionService.fetch(db, id: job.subject) }
-        guard let s = suggestion, s.status == .pending, s.origin == .captureMac || s.origin == .captureIPhone else {
-            return .done(engine: nil)
-        }
-        guard let router = await router() else { return .done(engine: nil) }
-        let hint = JSON.decode(ClassificationRecord.self, s.classification)?.hint
-        let categories = try store.categories()
-        let record = await router.classify(s.body, categories: categories, hint: hint)
-        await finished(router)
-        if record.engine != RulesClassifier.engine || record.keptOnDevice {
-            do {
-                // "At least <level>" holds whatever the model proposed (PR #3 review 4304236141).
-                try await captures.reclassify(suggestionID: s.id, record: record, floor: hint)
-            } catch VaultError.invalidState {
-                // Applied or rejected while the model worked: nothing to update.
-            }
-        }
-        return .done(engine: record.engine)
     }
 }
