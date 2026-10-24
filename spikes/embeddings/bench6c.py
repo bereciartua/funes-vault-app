@@ -25,7 +25,7 @@ FIX = HERE.parents[1] / "Packages/FunesCore/Tests/FunesCoreTests/fixtures"
 OUT = HERE / "vectors6c"
 MAX_TOKENS = 256
 KW_W, SEM_W, KW_FLOOR, TOP = 0.30, 0.70, 0.15, 30
-BGE_THRESHOLD = 0.55  # bge-small's retrieval threshold (EmbeddingModelInfo)
+BGE_THRESHOLD, BGE_VAULT_THRESHOLD = 0.55, 0.50  # bge-small's thresholds (EmbeddingModelInfo)
 ORDER = ["public", "low", "internal", "sensitive", "restricted", "secret"]
 CLOUD_LIMIT = "internal"  # the recommended default
 
@@ -301,13 +301,20 @@ def score(names):
     def cosines(name, corpus, qset):
         return vecs[name][f"q_{qset}"] @ docvecs(name, corpus).T  # (30, n)
 
-    # Per-model threshold: bge keeps its shipped value; others use the 90th percentile of the cosines
-    # of non-relevant memories (EN vault, raw EN tasks), the rule that gives bge 0.54.
-    thresholds = {"bge-small": BGE_THRESHOLD}
-    for name in names:
+    # Per-model thresholds, from the cosines of non-relevant memories (EN vault, raw EN tasks): retrieval
+    # at their 90th percentile (bge: 0.54, shipped 0.55; bge's own p93 costs the cloud models 0.02-0.04
+    # cross-lingually), vault at the percentile where bge's 0.50 sits. FunesCore's built-in thresholds
+    # and Calibrate use the same rule.
+    def others(name):
         c = cosines(name, "en", "original")
-        other = [c[q, i] for q in range(len(rel)) for i in range(n) if ids[i] not in rel[q]]
-        thresholds[name] = float(np.percentile(other, 90))
+        return np.array([c[q, i] for q in range(len(rel)) for i in range(n) if ids[i] not in rel[q]])
+    ob = others("bge-small")
+    vault_pct, retrieval_pct = (ob < BGE_VAULT_THRESHOLD).mean() * 100, 90
+    thresholds, vault_thresholds = {"bge-small": BGE_THRESHOLD}, {"bge-small": BGE_VAULT_THRESHOLD}
+    for name in names:
+        o = others(name)
+        thresholds[name] = float(np.percentile(o, retrieval_pct))
+        vault_thresholds[name] = float(np.percentile(o, vault_pct))
 
     kw_cache = {(c, q): [kw_idx[c].scores(t) for t in queries[q]] for c, q in scenarios}
     none = np.zeros(n, bool)
@@ -358,11 +365,12 @@ def score(names):
           "bge normalized over the bge-only memories; **ens** = mean of the two normalized scores where both exist. "
           "**dualz** / **dualq** = the same with each index z-scored / percentile-ranked over its own pool. "
           "\"R@5 bge-only\" = micro recall@5 of the relevant labels on memories above the limit.\n")
-    print("| Model | Model id | Dims | Threshold (raw cosine) | Query ms p50 | Runtime |")
+    print(f"Thresholds: percentiles of non-relevant cosines on raw EN tasks: vault p{vault_pct:.1f} (where bge's 0.50 sits), retrieval p{retrieval_pct}.\n")
+    print("| Model | Model id | Dims | Vault / retrieval threshold (raw cosine) | Query ms p50 | Runtime |")
     print("|---|---|---|---|---|---|")
     for name in ["bge-small"] + names:
         m = metas[name]
-        print(f"| {name} | {m['model']} | {m['dims']} | {thresholds[name]:.2f} | {m['query_ms_p50']:.1f} | {m['runtime']} |")
+        print(f"| {name} | {m['model']} | {m['dims']} | {vault_thresholds[name]:.2f} / {thresholds[name]:.2f} | {m['query_ms_p50']:.1f} | {m['runtime']} |")
     print()
 
     summary = {}

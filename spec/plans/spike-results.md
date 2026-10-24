@@ -864,8 +864,18 @@ R@30 follows R@5: Qwen3 on every memory reaches 0.89–0.96 R@30 on the raw-task
 8. **nomic and multilingual-e5-small don't earn a second index.** nomic's documented prefixes score worse than no prefixes on raw tasks (0.70 vs 0.76). With 71 labels that difference is near noise, so its apparent gain means little.
 9. **Noise:** 30 queries and 71 labels; differences under ~0.05 R@5 are noise, and on the 26 bge-only labels each label is 0.04.
 
-### Thresholds (raw cosine, 90th percentile of non-relevant memories on raw English tasks; this rule gives bge 0.54, shipped 0.55)
-`text-embedding-3-small` 0.25, `text-embedding-3-large` 0.22, Qwen3-0.6B 0.28, nomic v1.5 0.55 (0.48 without prefixes), multilingual-e5-small 0.80. They're measured on the same fixture they're used on, so they're slightly optimistic. They are candidates for the built-in thresholds in 6c.3.
+### Thresholds (raw cosine, from the cosines of non-relevant memories on raw English tasks)
+Retrieval at their 90th percentile (bge: 0.54; it ships 0.55), vault at the 78th, where bge's 0.50 sits. Retrieval at bge's own percentile (p93) costs the OpenAI models 0.02–0.04 on Spanish tasks against English memories, whose cosines run lower, so p90 stays.
+
+| Model | Vault | Retrieval |
+|---|---|---|
+| `text-embedding-3-small` | 0.20 | 0.25 |
+| `text-embedding-3-large` | 0.18 | 0.22 |
+| Qwen3-Embedding-0.6B | 0.24 | 0.28 |
+| nomic v1.5 (without prefixes) | 0.52 (0.45) | 0.55 (0.48) |
+| multilingual-e5-small | 0.79 | 0.80 |
+
+They're measured on the same fixture they're used on, so they're slightly optimistic. The first three are 6c's built-in thresholds; Calibrate uses the same rule, and run on bge-small it gives back 0.50 / 0.54.
 
 ### Not measured
 - Gemini embedding (left out at the author's choice). `gemini-001` and `gemini-001-task` stay in `bench6c.py` for later.

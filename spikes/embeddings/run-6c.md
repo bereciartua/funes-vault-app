@@ -1,18 +1,20 @@
 # Phase 6c.1: provider embeddings as a second index
 
-Date: 2026-10-24 13:15. Fixtures: memories-200 (EN) and memories-200-es (ES translation), queries-30 (raw EN), queries-30-expanded (EN task + keywords), queries-30-es (raw ES), queries-30-es-expanded (ES task + ES keywords). Cloud limit `internal`: 141 of 200 memories get a provider vector; 59 keep only bge, holding 26 of 71 relevant labels.
+Date: 2026-10-24 13:26. Fixtures: memories-200 (EN) and memories-200-es (ES translation), queries-30 (raw EN), queries-30-expanded (EN task + keywords), queries-30-es (raw ES), queries-30-es-expanded (ES task + ES keywords). Cloud limit `internal`: 141 of 200 memories get a provider vector; 59 keep only bge, holding 26 of 71 relevant labels.
 
 Methods: **hybrid** = the model's vectors on every memory (as for a local model, or a cloud limit of Secret); **dual@limit** = ADR-0023: provider score where the memory has a provider vector (within the limit), bge-small's otherwise, each min-max normalized over its own pool (bge over the whole vault); **dual-b@limit** = the same with bge normalized over the bge-only memories; **ens** = mean of the two normalized scores where both exist. **dualz** / **dualq** = the same with each index z-scored / percentile-ranked over its own pool. "R@5 bge-only" = micro recall@5 of the relevant labels on memories above the limit.
 
-| Model | Model id | Dims | Threshold (raw cosine) | Query ms p50 | Runtime |
+Thresholds: percentiles of non-relevant cosines on raw EN tasks: vault p78.1 (where bge's 0.50 sits), retrieval p90.
+
+| Model | Model id | Dims | Vault / retrieval threshold (raw cosine) | Query ms p50 | Runtime |
 |---|---|---|---|---|---|
-| bge-small | BAAI/bge-small-en-v1.5 | 384 | 0.55 | 16.4 | sentence-transformers, PyTorch 2.14.1 mps fp32 |
-| nomic-v1.5 | nomic-ai/nomic-embed-text-v1.5 | 768 | 0.55 | 30.4 | sentence-transformers, PyTorch 2.14.1 mps fp32 |
-| nomic-v1.5-noprefix | nomic-ai/nomic-embed-text-v1.5 | 768 | 0.48 | 27.7 | sentence-transformers, PyTorch 2.14.1 mps fp32 |
-| me5-small | intfloat/multilingual-e5-small | 384 | 0.80 | 14.6 | sentence-transformers, PyTorch 2.14.1 mps fp32 |
-| qwen3-0.6b | Qwen/Qwen3-Embedding-0.6B | 1024 | 0.28 | 95.2 | sentence-transformers, PyTorch 2.14.1 mps fp16 |
-| oai-3-small | text-embedding-3-small | 1536 | 0.25 | 208.7 | https://api.openai.com/v1 (openai) |
-| oai-3-large | text-embedding-3-large | 3072 | 0.22 | 236.6 | https://api.openai.com/v1 (openai) |
+| bge-small | BAAI/bge-small-en-v1.5 | 384 | 0.50 / 0.55 | 16.4 | sentence-transformers, PyTorch 2.14.1 mps fp32 |
+| nomic-v1.5 | nomic-ai/nomic-embed-text-v1.5 | 768 | 0.52 / 0.55 | 30.4 | sentence-transformers, PyTorch 2.14.1 mps fp32 |
+| nomic-v1.5-noprefix | nomic-ai/nomic-embed-text-v1.5 | 768 | 0.45 / 0.48 | 27.7 | sentence-transformers, PyTorch 2.14.1 mps fp32 |
+| me5-small | intfloat/multilingual-e5-small | 384 | 0.79 / 0.80 | 14.6 | sentence-transformers, PyTorch 2.14.1 mps fp32 |
+| qwen3-0.6b | Qwen/Qwen3-Embedding-0.6B | 1024 | 0.24 / 0.28 | 95.2 | sentence-transformers, PyTorch 2.14.1 mps fp16 |
+| oai-3-small | text-embedding-3-small | 1536 | 0.20 / 0.25 | 208.7 | https://api.openai.com/v1 (openai) |
+| oai-3-large | text-embedding-3-large | 3072 | 0.18 / 0.22 | 236.6 | https://api.openai.com/v1 (openai) |
 
 ## EN vault, raw EN tasks
 
