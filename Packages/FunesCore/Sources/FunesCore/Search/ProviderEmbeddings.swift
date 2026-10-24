@@ -51,6 +51,13 @@ public enum EmbeddingCatalog {
         return models.first { $0.tokens.allSatisfy(name.contains) }
     }
 
+    /// Whether a model name looks like an embedding-only model (it can't answer chat requests):
+    /// one in the catalog, or a name with "embed" or "bge" in it, as most are named.
+    public static func isEmbeddingModel(_ model: String) -> Bool {
+        let name = model.lowercased()
+        return lookup(model) != nil || name.contains("embed") || name.contains("bge")
+    }
+
     /// The suggestions Settings offers for a provider: OpenAI's for a cloud endpoint, Qwen3 for a
     /// local server.
     public static func suggestions(cloud: Bool) -> [String] {

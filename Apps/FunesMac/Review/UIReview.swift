@@ -294,6 +294,10 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await sheet("new-memory-\(suffix)", NewMemorySheet(model: model) { _ in })
             await sheet("categories-\(suffix)", CategoriesSheet(model: model))
             await sheet("add-agent-\(suffix)", AddAgentSheet(model: model) { _ in })
+            // An embedding model typed as a provider's chat model: the sheet explains it.
+            await sheet("provider-embedding-model-\(suffix)",
+                        ProviderSheet(model: model, provider: ProviderConfig(endpoint: .ollama(), name: "Ollama",
+                                                                             model: "qwen3-embedding:0.6b"), isNew: false))
             await sheet("add-agent-cloud-\(suffix)", AddAgentSheet(model: model, place: .cloud) { _ in })
             await sheet("seed-questions-\(suffix)", SeedQuestionsSheet(model: model))
             await sheet("import-claude-\(suffix)", ImportSheet(model: model, kind: .claude))
