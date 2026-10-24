@@ -153,6 +153,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             model.tidyUp.start()
         }
         model.processing.start()
+        model.embeddings.apply()
         model.changed = { [weak menu] in menu?.update() }
 
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"

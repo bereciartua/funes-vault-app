@@ -83,9 +83,38 @@ struct SubscriptionConfig: Codable, Hashable, Identifiable {
     var id: String { kind.rawValue }
 }
 
+/// A provider embedding model as the second index (ADR-0023, FR-AI-11): which provider and model,
+/// its dimensions when Funes doesn't know the model, and whether agents' tasks are embedded with it
+/// (FR-AI-09, on by default).
+struct EmbeddingChoice: Codable, Hashable {
+    var provider: String
+    var model: String
+    var dimensions: Int?
+    var embedsAgentTasks = true
+}
+
+/// A provider embedding model's client, before its locality is resolved.
+struct EmbeddingRecipe: Sendable {
+    var endpoint: ProviderEndpoint
+    var model: String
+    var info: EmbeddingModelInfo?
+    var dimensions: Int?
+    var key: String?
+
+    func make() throws -> OpenAICompatibleEmbedder {
+        try OpenAICompatibleEmbedder(endpoint: endpoint, model: model, info: info, dimensions: dimensions, apiKey: key)
+    }
+}
+
+/// Thresholds Calibrate measured for a model (model providers §8).
+struct CalibratedThresholds: Codable, Hashable {
+    var dimensions: Int
+    var vault: Float
+    var retrieval: Float
+}
+
 /// Settings ▸ AI Models (FR-AI-05..08, FR-AI-12): providers, the Classification choice, the cloud
-/// limit and usage counters, in user defaults (storage §1). v0.1's embeddings are the bundled
-/// bge-small only (ADR-0016), so there's nothing to choose for them.
+/// limit, usage counters and, from v0.3, a provider embedding model, in user defaults (storage §1).
 @MainActor @Observable
 final class ModelSettings {
     struct Stored: Codable {
@@ -103,10 +132,17 @@ final class ModelSettings {
         /// The Daily tidy-up's provider (memory processing §9.1): a provider id or a plan; nil is the
         /// same as New memories.
         var tidyUp: String?
+        /// The provider embedding model (v0.3); nil: bge-small only.
+        var embedding: EmbeddingChoice?
+        /// Calibrate's thresholds, by stored model id (`<provider>/<model>`).
+        var calibrations: [String: CalibratedThresholds]?
     }
 
     static let defaultsKey = "AIModels"
     private let defaults: UserDefaults
+    /// Called when anything the provider embedding index depends on changes: the choice, the cloud
+    /// limit, or a provider's address or key.
+    @ObservationIgnored var embeddingInputsChanged: () -> Void = {}
     let keys: any ProviderKeyStore
     private(set) var stored: Stored
 
@@ -125,7 +161,7 @@ final class ModelSettings {
     var classifierID: String? { stored.classifier }
     var cloudLimit: CloudLimit {
         get { stored.cloudLimit }
-        set { stored.cloudLimit = newValue; save() }
+        set { stored.cloudLimit = newValue; save(); embeddingInputsChanged() }
     }
 
     var classifier: ProviderConfig? { stored.classifier.flatMap { id in providers.first { $0.id == id } } }
@@ -253,6 +289,7 @@ final class ModelSettings {
             stored.providers.append(provider)
         }
         save()
+        if stored.embedding?.provider == provider.id { embeddingInputsChanged() }
     }
 
     /// Removing a provider deletes its key (FR-AI-06).
@@ -262,7 +299,10 @@ final class ModelSettings {
         if stored.classifier == id { stored.classifier = nil }
         if stored.tidyUp == id { stored.tidyUp = nil }
         stored.usage[id] = nil
+        let embedded = stored.embedding?.provider == id
+        if embedded { stored.embedding = nil }
         save()
+        if embedded { embeddingInputsChanged() }
     }
 
     func hasKey(_ id: String) -> Bool { ((try? keys.key(for: ProviderID(rawValue: id))) ?? nil)?.isEmpty == false }
@@ -302,6 +342,60 @@ final class ModelSettings {
     /// Today's cloud request cap on this vault.
     func cap(store: VaultStore, activity: any ActivityRecorder) -> CloudRequestCap {
         CloudRequestCap(store: store, limit: dailyCap, activity: activity)
+    }
+
+    // MARK: Embeddings (ADR-0023)
+
+    var embedding: EmbeddingChoice? { stored.embedding }
+
+    /// The providers that offer `/v1/embeddings`: every OpenAI-compatible one (not Anthropic).
+    var embeddingProviders: [ProviderConfig] { providers.filter { $0.endpoint.kind == .openAICompatible } }
+
+    var embeddingProvider: ProviderConfig? { stored.embedding.flatMap { e in providers.first { $0.id == e.provider } } }
+
+    func setEmbedding(_ choice: EmbeddingChoice?) {
+        guard choice != stored.embedding else { return }
+        stored.embedding = choice
+        save()
+        embeddingInputsChanged()
+    }
+
+    func setEmbedsAgentTasks(_ on: Bool) {
+        guard var choice = stored.embedding, choice.embedsAgentTasks != on else { return }
+        choice.embedsAgentTasks = on
+        setEmbedding(choice)
+    }
+
+    func setCalibration(_ thresholds: CalibratedThresholds, for modelID: String) {
+        var all = stored.calibrations ?? [:]
+        all[modelID] = thresholds
+        stored.calibrations = all
+        save()
+        embeddingInputsChanged()
+    }
+
+    /// What it takes to build the chosen provider model's client: the endpoint, model, key and any
+    /// calibrated thresholds. `make()` resolves the locality (a DNS lookup), so call it off the
+    /// main thread.
+    func embeddingRecipe(_ choice: EmbeddingChoice? = nil) -> EmbeddingRecipe? {
+        guard let choice = choice ?? stored.embedding, let provider = providers.first(where: { $0.id == choice.provider }),
+              provider.endpoint.kind == .openAICompatible else { return nil }
+        let id = OpenAICompatibleEmbedder.modelID(provider: provider.endpoint.id, model: choice.model)
+        let info = stored.calibrations?[id].map {
+            EmbeddingModelInfo(id: id, dimensions: $0.dimensions, vaultThreshold: $0.vault, retrievalThreshold: $0.retrieval)
+        }
+        return EmbeddingRecipe(endpoint: provider.endpoint, model: choice.model, info: info, dimensions: choice.dimensions,
+                               key: (try? keys.key(for: provider.endpoint.id)) ?? nil)
+    }
+
+    /// Adds embedding tokens to a provider's counters (FR-AI-12).
+    func addUsage(_ used: ProviderUsage, for id: String) {
+        guard used.requests > 0 else { return }
+        var total = stored.usage[id] ?? ProviderUsage()
+        total.requests += used.requests
+        total.inputTokens += used.inputTokens
+        stored.usage[id] = total
+        save()
     }
 
     /// Adds a router's counts to the stored ones and resets the router (FR-AI-12).

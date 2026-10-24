@@ -387,3 +387,41 @@ func liveOpenAIEmbeddings() async throws {
         #expect(vectors.count == 2 && vectors.allSatisfy { $0.count == dims } && usage.inputTokens > 0)
     }
 }
+
+/// The whole path over HTTP: OpenAI's adapter against a stub that answers with hashed bags of words
+/// (Spanish words mapped to English), feeding the indexer and search.
+@Test func secondIndexOverHTTPEndToEnd() async throws {
+    @Sendable func vector(_ text: String) -> [Double] {
+        var v = [Double](repeating: 0, count: 1536)
+        for word in text.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber }) {
+            let w = TranslatingEmbedder.words[String(word)] ?? String(word)
+            var h: UInt64 = 1_469_598_103_934_665_603
+            for b in w.utf8 { h = (h ^ UInt64(b)) &* 1_099_511_628_211 }
+            v[Int(h % 1536)] += 1
+        }
+        return v
+    }
+    let stub = StubURLProtocol.Session { req in
+        let inputs = req.json["input"] as? [String] ?? []
+        return .json(["data": inputs.enumerated().map { ["index": $0.offset, "embedding": vector($0.element)] },
+                      "usage": ["prompt_tokens": inputs.count * 10]])
+    }
+    let v = try TestVault()
+    let dinner = try v.memory("Dinner", "pasta for dinner on weekdays")
+    try v.memory("Allergy", "peanut allergy, carry the pen", categories: ["health"], sensitivity: .sensitive)
+    for i in 0..<8 { try v.memory("Filler \(i)", "unrelated note number \(i)") }
+    let bge = EmbeddingIndexer(store: v.store, provider: FakeEmbedder())
+    try await bge.embedPending()
+    let embedder = try OpenAICompatibleEmbedder(endpoint: .openAI(), model: "text-embedding-3-small", apiKey: "test-key",
+                                                session: stub.session)
+    let indexer = ProviderEmbeddingIndexer(store: v.store, provider: embedder, cloudLimit: .upTo(.internal))
+    let search = SearchService(store: v.store, indexer: bge)
+    search.secondIndex = SecondIndex(indexer: indexer)
+    #expect(try await indexer.embedPending() == 9)
+    #expect(stub.requests.count == 1 && stub.requests.allSatisfy { !$0.text.contains("carry the pen") })
+    #expect(stub.requests.allSatisfy { $0.headers["Authorization"] == "Bearer test-key" })
+    #expect(try await search.retrieve(task: "ideas para la cena").first?.memoryID == dinner.id)
+    #expect(stub.requests.count == 2 && stub.requests.last?.json["input"] as? [String] == ["ideas para la cena"])
+    #expect(indexer.takeUsage() == ProviderUsage(requests: 2, inputTokens: 100))
+    #expect(try v.count("SELECT count(*) FROM embedding WHERE model_id = 'openai/text-embedding-3-small' AND dims = 1536") == 9)
+}

@@ -346,6 +346,13 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 settings.show()
                 await snapshot("settings-\(tab.rawValue)-\(suffix)", settings.window)
             }
+            // A provider embedding model (task 6c.3): with no Ollama running, its status says so.
+            model.modelSettings.setEmbedding(EmbeddingChoice(provider: "ollama", model: "qwen3-embedding:0.6b"))
+            model.settingsTab = .models
+            settings.show()
+            try? await Task.sleep(for: .seconds(1))
+            await snapshot("settings-models-embedding-\(suffix)", settings.window)
+            model.modelSettings.setEmbedding(nil)
             settings.close()
         }
         main.close()
