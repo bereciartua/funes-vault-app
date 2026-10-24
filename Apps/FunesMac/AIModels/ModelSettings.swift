@@ -33,6 +33,8 @@ final class ModelSettings {
         var classifier: String?
         var cloudLimit: CloudLimit = .upTo(.internal)
         var usage: [String: ProviderUsage] = [:]
+        /// Cloud requests per day (ADR-0022); nil is the default, 300.
+        var dailyCap: Int?
     }
 
     static let defaultsKey = "AIModels"
@@ -59,6 +61,12 @@ final class ModelSettings {
     }
 
     var classifier: ProviderConfig? { stored.classifier.flatMap { id in providers.first { $0.id == id } } }
+
+    /// Cloud requests per day, shared by New memories and the tidy-up (ADR-0022).
+    var dailyCap: Int {
+        get { stored.dailyCap ?? CloudRequestCap.defaultLimit }
+        set { stored.dailyCap = max(10, min(10_000, newValue)); save() }
+    }
 
     func setClassifier(_ id: String?) {
         stored.classifier = id
@@ -111,10 +119,16 @@ final class ModelSettings {
         return local ? nil : provider.name
     }
 
-    /// The router for this choice: the chosen provider, then Apple on-device, then rules.
-    func makeRouter() -> ModelRouter {
+    /// The router for this choice: the chosen provider, then Apple on-device, then rules, with
+    /// cloud requests counted against `cap`.
+    func makeRouter(cap: CloudRequestCap?) -> ModelRouter {
         let chosen = classifier.flatMap { try? client(for: $0) }
-        return ModelRouter(classifier: chosen, cloudLimit: cloudLimit)
+        return ModelRouter(classifier: chosen, cloudLimit: cloudLimit, cap: cap)
+    }
+
+    /// Today's cloud request cap on this vault.
+    func cap(store: VaultStore, activity: any ActivityRecorder) -> CloudRequestCap {
+        CloudRequestCap(store: store, limit: dailyCap, activity: activity)
     }
 
     /// Adds a router's counts to the stored ones and resets the router (FR-AI-12).

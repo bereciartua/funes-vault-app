@@ -9,6 +9,9 @@ struct ModelSettingsPane: View {
     @State private var editing: ProviderConfig?
     @State private var adding: ProviderConfig?
     @State private var localities: [String: Locality] = [:]
+    /// A cloud limit above Internal waiting for its one-time confirmation (ADR-0022).
+    @State private var confirming: CloudLimit?
+    @State private var today: CloudRequestCap.Day?
 
     private var settings: ModelSettings { model.modelSettings }
 
@@ -48,16 +51,23 @@ struct ModelSettingsPane: View {
                 }
             }
             Section(String(localized: "Cloud limit")) {
-                Picker(String(localized: "Never send captures above"), selection: Binding(get: { settings.cloudLimit },
-                                                                                          set: { settings.cloudLimit = $0 })) {
-                    ForEach([Sensitivity.public, .low, .internal, .sensitive], id: \.self) { level in
-                        Text(level.title).tag(CloudLimit.upTo(level))
+                Picker(String(localized: "Send memories to cloud models up to"), selection: Binding(get: { settings.cloudLimit },
+                                                                                                   set: { choose($0) })) {
+                    ForEach([Sensitivity.public, .low, .internal, .sensitive, .restricted], id: \.self) { level in
+                        Text(level == .internal ? String(localized: "Internal (recommended)") : level.title).tag(CloudLimit.upTo(level))
                     }
+                    Text(String(localized: "Everything, including Secret")).tag(CloudLimit.upTo(.secret))
                     Divider()
-                    Text(String(localized: "Never send captures")).tag(CloudLimit.never)
+                    Text(String(localized: "Nothing")).tag(CloudLimit.never)
                 }
-                Text(String(localized: "Applies to every cloud provider. Captures are checked on this Mac first, and anything that looks like a secret is never sent."))
+                Text(String(localized: "Applies to every cloud provider and every task. Text is checked on this Mac first, and anything that looks like a secret is never sent, whatever the limit."))
                     .font(.callout).foregroundStyle(.secondary)
+            }
+            Section(String(localized: "Cloud requests per day")) {
+                Stepper(value: Binding(get: { settings.dailyCap }, set: { settings.dailyCap = $0 }), in: 10...10_000, step: 50) {
+                    LabeledContent(String(localized: "At most"), value: settings.dailyCap.formatted())
+                }
+                Text(capLine).font(.callout).foregroundStyle(.secondary)
             }
             Section(String(localized: "Providers")) {
                 if settings.providers.isEmpty {
@@ -113,6 +123,41 @@ struct ModelSettingsPane: View {
         .sheet(item: $editing) { ProviderSheet(model: model, provider: $0, isNew: false) }
         .sheet(item: $adding) { ProviderSheet(model: model, provider: $0, isNew: true) }
         .task(id: settings.providers) { await resolveLocalities() }
+        .task(id: model.activityGeneration) {
+            today = try? await settings.cap(store: model.services.store, activity: model.services.activity).today(now: Date())
+        }
+        .alert(String(localized: "Send more sensitive memories to cloud models?"),
+               isPresented: Binding(get: { confirming != nil }, set: { if !$0 { confirming = nil } }), presenting: confirming) { limit in
+            Button(String(localized: "Send Up to \(Self.title(limit))")) { settings.cloudLimit = limit }
+            Button(String(localized: "Cancel"), role: .cancel) {}
+        } message: { limit in
+            Text(String(localized: "Memories up to \(Self.title(limit)) can then be sent to \(settings.classifier?.name ?? String(localized: "the cloud providers you choose")). They can include health, money, family or legal matters. Funes still never sends anything that looks like a secret."))
+        }
+    }
+
+    /// Above Internal asks once to confirm, naming the provider (ADR-0022).
+    private func choose(_ limit: CloudLimit) {
+        if limit.needsConfirmation, !settings.cloudLimit.needsConfirmation {
+            confirming = limit
+        } else {
+            settings.cloudLimit = limit
+        }
+    }
+
+    static func title(_ limit: CloudLimit) -> String {
+        switch limit {
+        case .upTo(.secret): String(localized: "Everything, including Secret")
+        case let .upTo(level): level.title
+        case .never: String(localized: "Nothing")
+        }
+    }
+
+    /// "Today: 12 of 300 (agents 3 of 120)." (ADR-0022)
+    private var capLine: String {
+        let cap = settings.dailyCap
+        let agents = Int((Double(cap) * CloudRequestCap.agentShare).rounded(.down))
+        let total = today?.total ?? 0, byAgents = today?.agents ?? 0
+        return String(localized: "Today: \(total) of \(cap), agents \(byAgents) of \(agents). Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow.")
     }
 
     private var classifierLocality: Locality {
@@ -139,7 +184,7 @@ struct ModelSettingsPane: View {
         guard let provider = settings.classifier, !classifierLocality.isLocal else { return nil }
         switch settings.cloudLimit {
         case .never:
-            return String(localized: "Classification sends nothing to \(provider.name): the cloud limit is Never send captures, so it runs on this Mac.")
+            return String(localized: "Classification sends nothing to \(provider.name): the cloud limit is Nothing, so it runs on this Mac.")
         case .upTo(let level):
             return String(localized: "Classification sends new captures (up to \(level.title)) and your category names and descriptions to \(provider.name).")
         }
@@ -291,6 +336,7 @@ struct ProviderSheet: View {
         case .insecureEndpoint?: String(localized: "Cloud providers need an https:// address.")
         case .unavailable?: String(localized: "Check the address and the key.")
         case .blocked?: String(localized: "Funes didn't send it: it looked like a secret, or was above the cloud limit.")
+        case .capReached?: String(localized: "Today's cloud requests are used up. Try again tomorrow, or raise the limit.")
         case .transport?, nil: String(localized: "Couldn't reach the server.")
         }
     }

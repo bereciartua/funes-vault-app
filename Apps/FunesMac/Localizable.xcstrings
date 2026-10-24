@@ -987,7 +987,7 @@
     "Applied. Similar memory exists:" : {
 
     },
-    "Applies to every cloud provider. Captures are checked on this Mac first, and anything that looks like a secret is never sent." : {
+    "Applies to every cloud provider and every task. Text is checked on this Mac first, and anything that looks like a secret is never sent, whatever the limit." : {
 
     },
     "Apply" : {
@@ -1073,6 +1073,9 @@
 
     },
     "At least %@" : {
+
+    },
+    "At most" : {
 
     },
     "At most 20,000 important rows are kept. Older rows go at the next cleanup (at launch and every 6 hours)." : {
@@ -1311,7 +1314,7 @@
         }
       }
     },
-    "Classification sends nothing to %@: the cloud limit is Never send captures, so it runs on this Mac." : {
+    "Classification sends nothing to %@: the cloud limit is Nothing, so it runs on this Mac." : {
 
     },
     "Claude Code" : {
@@ -1420,6 +1423,9 @@
 
     },
     "Cloud providers need an https:// address." : {
+
+    },
+    "Cloud requests per day" : {
 
     },
     "Cloud sessions load .mcp.json only when the session has one repository." : {
@@ -1781,6 +1787,9 @@
 
     },
     "Everyday preferences. Fine for most of your agents." : {
+
+    },
+    "Everything, including Secret" : {
 
     },
     "Experimental" : {
@@ -2257,6 +2266,9 @@
     "Internal" : {
 
     },
+    "Internal (recommended)" : {
+
+    },
     "Invalid input" : {
 
     },
@@ -2503,6 +2515,16 @@
     "Memories stay in a vault on this Mac." : {
 
     },
+    "Memories up to %@ can then be sent to %@. They can include health, money, family or legal matters. Funes still never sends anything that looks like a secret." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Memories up to %1$@ can then be sent to %2$@. They can include health, money, family or legal matters. Funes still never sends anything that looks like a secret."
+          }
+        }
+      }
+    },
     "Merge" : {
 
     },
@@ -2555,12 +2577,6 @@
 
     },
     "Never" : {
-
-    },
-    "Never send captures" : {
-
-    },
-    "Never send captures above" : {
 
     },
     "Never shared with agents unless you raise an agent's ceiling to Secret." : {
@@ -2715,6 +2731,9 @@
 
     },
     "Not tested" : {
+
+    },
+    "Nothing" : {
 
     },
     "Nothing archived" : {
@@ -3514,6 +3533,15 @@
     "Send %lld to Inbox" : {
 
     },
+    "Send Up to %@" : {
+
+    },
+    "Send memories to cloud models up to" : {
+
+    },
+    "Send more sensitive memories to cloud models?" : {
+
+    },
     "Sensitive" : {
 
     },
@@ -4243,6 +4271,22 @@
     "Today" : {
 
     },
+    "Today's cloud requests are used up. New captures are classified on this Mac until tomorrow." : {
+
+    },
+    "Today's cloud requests are used up. Try again tomorrow, or raise the limit." : {
+
+    },
+    "Today: %lld of %lld, agents %lld of %lld. Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Today: %1$lld of %2$lld, agents %3$lld of %4$lld. Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow."
+          }
+        }
+      }
+    },
     "Token" : {
 
     },
@@ -4830,6 +4874,9 @@
 
     },
     "that address" : {
+
+    },
+    "the cloud providers you choose" : {
 
     },
     "the disk image" : {

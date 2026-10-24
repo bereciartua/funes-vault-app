@@ -28,11 +28,11 @@
 - [x] In this step the job only runs today's classification, so behaviour is unchanged; 6a adds splitting. *(`NewMemoryProcessor`: captures only; the Mac's `ProcessingRunner` drives it.)*
 
 ### 6.1.5 Multi-item cloud guard, pre-screen and daily cap · 4 h
-- [ ] `ModelRouter.send` takes typed items (text plus sensitivity or unknown) and guards on the highest; the secret scanner covers every item.
-- [ ] On-device pre-screen for agent and import text; the guard uses the higher of the pre-screen and the declared level.
-- [ ] The cloud limit's new levels (Restricted, Everything) with a one-time confirmation above Internal ([ADR-0022](../architecture/decisions/0022-cloud-limit-and-daily-cap.md)).
-- [ ] The daily cap: a per-local-day counter kept across restarts, the agents' 40% share, `ProviderError.capReached`, a once-a-day notice. Embeddings excluded.
-- [ ] Guardrail tests ([model providers §9](../architecture/model-providers.md#9-testing)).
+- [x] `ModelRouter.send` takes typed items (text plus sensitivity or unknown) and guards on the highest; the secret scanner covers every item.
+- [x] On-device pre-screen for agent and import text; the guard uses the higher of the pre-screen and the declared level. *(`ModelRouter.prescreen`, the rules classifier; the on-device model joins it with 6a's extraction.)*
+- [x] The cloud limit's new levels (Restricted, Everything) with a one-time confirmation above Internal ([ADR-0022](../architecture/decisions/0022-cloud-limit-and-daily-cap.md)).
+- [x] The daily cap: a per-local-day counter kept across restarts, the agents' 40% share, `ProviderError.capReached`, a once-a-day notice. Embeddings excluded. *(`CloudRequestCap`, in the vault's `meta` table; the notice is a HUD on the day's `cap_reached` Activity row.)*
+- [x] Guardrail tests ([model providers §9](../architecture/model-providers.md#9-testing)).
 
 ### 6.1.6 Undo log · 3 h
 - [ ] `UndoLog` over `undo_entry`: record the before-state of an automatic change in its transaction; undo one change, or a change and the later ones that depend on it; refuse with an explanation otherwise.
