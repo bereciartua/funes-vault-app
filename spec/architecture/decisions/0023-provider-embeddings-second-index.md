@@ -1,6 +1,6 @@
 # ADR-0023: Provider embeddings are a second index next to the bundled one
 
-**Status:** Accepted · 2026-10-23 · **Amends** [ADR-0014](0014-user-selectable-models.md) decision 5 ("one embedding model at a time") and [ADR-0016](0016-bundled-bge-small-embeddings.md) (choosing another embedding model, "later")
+**Status:** Accepted · 2026-10-23 · Implemented in Phase 6c (2026-10-24; benchmark in [spike results](../../plans/spike-results.md#phase-6c1-provider-embeddings-as-a-second-index): Qwen3-Embedding-0.6B and OpenAI `text-embedding-3-small` / `-large` passed; decision 2's per-index min-max kept over z-scores) · **Amends** [ADR-0014](0014-user-selectable-models.md) decision 5 ("one embedding model at a time") and [ADR-0016](0016-bundled-bge-small-embeddings.md) (choosing another embedding model, "later")
 
 **Context.**
 - **Choosing another embedding model is specified but deferred:** switching re-embeds the vault, search uses one model's vectors, and memories above the cloud limit get no vector, so they're found by keyword only ([model providers §7–8](../model-providers.md#7-choosing-a-provider-embedding-model)).

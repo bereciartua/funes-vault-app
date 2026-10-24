@@ -174,6 +174,9 @@
         }
       }
     },
+    "%@ runs on this Mac or your local network, so every memory is embedded and nothing leaves it." : {
+
+    },
     "%@ runs, but isn't connected yet." : {
 
     },
@@ -666,6 +669,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "About %1$lld memories to check. Roughly %2$lld requests the first week, then a few a day."
+          }
+        }
+      }
+    },
+    "About %lld tokens go to %@. Memories above %@ stay on this Mac's index only." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "About %1$lld tokens go to %2$@. Memories above %3$@ stay on this Mac's index only."
           }
         }
       }
@@ -1207,6 +1220,18 @@
 
     },
     "Built-in categories can be renamed but not deleted." : {
+
+    },
+    "Calibrate" : {
+
+    },
+    "Calibrate %@?" : {
+
+    },
+    "Calibrate…" : {
+
+    },
+    "Calibrating…" : {
 
     },
     "Can't check on this Mac" : {
@@ -1844,6 +1869,32 @@
     "Edit…" : {
 
     },
+    "Embed" : {
+
+    },
+    "Embed %lld memories with %@?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Embed %1$lld memories with %2$@?"
+          }
+        }
+      }
+    },
+    "Embed agent requests with the cloud model" : {
+
+    },
+    "Embedding %lld of %lld. Search uses bge-small until it's done." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Embedding %1$lld of %2$lld. Search uses bge-small until it's done."
+          }
+        }
+      }
+    },
     "Embeddings" : {
 
     },
@@ -2116,6 +2167,12 @@
     "Funes has %lld tidy-up suggestions for you to review." : {
 
     },
+    "Funes hasn't measured this model, so search keeps its 10 closest matches until you calibrate it." : {
+
+    },
+    "Funes hasn't measured this model, so search keeps its 10 closest matches. Calibrate measures where its matches start with Funes's made-up benchmark." : {
+
+    },
     "Funes keeps the last 7 backups in its data folder." : {
 
     },
@@ -2132,6 +2189,9 @@
 
     },
     "Funes runs this command:" : {
+
+    },
+    "Funes sends its 230 made-up benchmark texts, none of your memories, to %@: about 7,000 tokens." : {
 
     },
     "Funes shows Connected here after the first request from %@." : {
@@ -2489,6 +2549,9 @@
 
     },
     "Its remote token and every connected cloud app stop working now. Its access on this Mac isn't affected." : {
+
+    },
+    "Its vectors are deleted and search uses bge-small alone." : {
 
     },
     "Its weekly check found a problem. Restore a backup in Settings ▸ Data." : {
@@ -3135,6 +3198,12 @@
     "Option" : {
 
     },
+    "Optional: a provider's embedding model as a second index next to bge-small, mainly for tasks without keywords and for other languages. Add Ollama, LM Studio or OpenAI under Providers first." : {
+
+    },
+    "Optional: a provider's embedding model as a second index next to bge-small, mainly for tasks without keywords and for other languages. Funes has measured Qwen3-Embedding-0.6B (Ollama, LM Studio) and OpenAI's text-embedding-3. Memories above the cloud limit keep bge-small only." : {
+
+    },
     "Optionally, allow only your agent's addresses with a Traffic Policy IP restriction, for example Anthropic's 160.79.104.0/21." : {
 
     },
@@ -3328,6 +3397,9 @@
     "Proposed on this Mac" : {
 
     },
+    "Provider model" : {
+
+    },
     "Providers" : {
 
     },
@@ -3406,6 +3478,26 @@
     },
     "Ready. If it fails, Funes uses the on-device model, then rules." : {
 
+    },
+    "Ready: %lld memories use %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ready: %1$lld memories use %2$@."
+          }
+        }
+      }
+    },
+    "Ready: %lld memories use %@; those above %@ use bge-small." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ready: %1$lld memories use %2$@; those above %3$@ use bge-small."
+          }
+        }
+      }
     },
     "Recently Deleted" : {
 
@@ -3659,6 +3751,9 @@
     "Resume Funes Vault" : {
 
     },
+    "Retry" : {
+
+    },
     "Returns to %@" : {
 
     },
@@ -3812,13 +3907,48 @@
     "Search activity" : {
 
     },
-    "Search and agents' requests are matched on this Mac. Other embedding models come in a later version." : {
+    "Search embeddings send memory text (up to %@) and your searches to %@. Agents' requests are matched on this Mac." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search embeddings send memory text (up to %1$@) and your searches to %2$@. Agents' requests are matched on this Mac."
+          }
+        }
+      }
+    },
+    "Search embeddings send memory text (up to %@), your searches and agents' task descriptions to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search embeddings send memory text (up to %1$@), your searches and agents' task descriptions to %2$@."
+          }
+        }
+      }
+    },
+    "Search embeddings send your searches and agents' task descriptions to %@, but no memory text: the cloud limit is Nothing." : {
+
+    },
+    "Search embeddings send your searches to %@, but no memory text: the cloud limit is Nothing." : {
+
+    },
+    "Search keeps using bge-small until it's done; you can cancel any time." : {
 
     },
     "Search memories" : {
 
     },
+    "Search uses bge-small meanwhile." : {
+
+    },
+    "Search uses bge-small." : {
+
+    },
     "Searched memories" : {
+
+    },
+    "Searched on this Mac only (above cloud limit)." : {
 
     },
     "Secret" : {
@@ -4191,6 +4321,15 @@
     "Still True…" : {
 
     },
+    "Stop Using %@…" : {
+
+    },
+    "Stop Using It" : {
+
+    },
+    "Stop using %@?" : {
+
+    },
     "Stopped after an error" : {
 
     },
@@ -4346,6 +4485,9 @@
     "That isn't a Funes Vault export." : {
 
     },
+    "That model didn't return usable vectors. Check it's an embedding model." : {
+
+    },
     "That name can't be used for a category." : {
 
     },
@@ -4485,6 +4627,9 @@
 
     },
     "The provider answered with an error (%lld)." : {
+
+    },
+    "The provider asked to slow down; continuing at %@." : {
 
     },
     "The provider says to slow down. Try again later." : {
@@ -4884,6 +5029,16 @@
     "Updates “%@”" : {
 
     },
+    "Updating: %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Updating: %1$lld of %2$lld"
+          }
+        }
+      }
+    },
     "Use %@" : {
 
     },
@@ -4918,6 +5073,9 @@
 
     },
     "Uses your plan's limits, through the Claude Code or Codex you installed and signed in to. Funes never sees your sign-in. Your account's training setting applies." : {
+
+    },
+    "Use…" : {
 
     },
     "VS Code (Copilot)" : {

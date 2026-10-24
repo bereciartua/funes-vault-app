@@ -149,7 +149,8 @@ struct HTTPClient: Sendable {
 }
 
 /// OpenAI, Ollama, LM Studio, Gemini, OpenRouter and custom endpoints: chat completions with
-/// `response_format: json_schema` (strict), and the model list. Embeddings come later (ADR-0016).
+/// `response_format: json_schema` (strict), and the model list. Embeddings are
+/// `OpenAICompatibleEmbedder`.
 public struct OpenAICompatibleClient: GenerationProvider {
     public let id: ProviderID
     public let locality: Locality
@@ -192,6 +193,68 @@ public struct OpenAICompatibleClient: GenerationProvider {
     public func listModels() async throws -> [String] {
         let response = try await http.send("models", method: "GET", headers: headers, body: nil)
         return ((response["data"] as? [[String: Any]]) ?? []).compactMap { $0["id"] as? String }.sorted()
+    }
+}
+
+/// The same endpoints' `/v1/embeddings` (ADR-0023, model providers §7): a provider model's vectors
+/// for the second index. Models that expect role prefixes get them here (`EmbeddingCatalog`).
+/// Call it only through `ModelRouter.embed`, which applies the guardrails.
+public struct OpenAICompatibleEmbedder: EmbeddingProvider {
+    public let id: ProviderID
+    public let locality: Locality
+    public let model: EmbeddingModelInfo
+    /// The provider's model name, e.g. `text-embedding-3-small` or `qwen3-embedding:0.6b`.
+    public let modelName: String
+    public let queryPrefix: String
+    public let documentPrefix: String
+    let http: HTTPClient
+    let apiKey: String?
+
+    /// `info` nil: the catalog's dimensions and thresholds for a known model, or an uncalibrated
+    /// model of `dimensions` (from `probeDimensions`).
+    public init(endpoint: ProviderEndpoint, model: String, info: EmbeddingModelInfo? = nil, dimensions: Int? = nil,
+                apiKey: String?, session: URLSession = .shared, locality: Locality? = nil) throws {
+        let locality = locality ?? endpoint.locality()
+        let known = EmbeddingCatalog.lookup(model)
+        let id = Self.modelID(provider: endpoint.id, model: model)
+        guard let info = info ?? known.flatMap({ $0.info(id: id) })
+            ?? (dimensions ?? known?.dimensions).map({ EmbeddingModelInfo.uncalibrated(id: id, dimensions: $0) }) else {
+            throw ProviderError.unavailable
+        }
+        self.id = endpoint.id
+        self.locality = locality
+        self.model = info
+        modelName = model
+        queryPrefix = known?.queryPrefix ?? ""
+        documentPrefix = known?.documentPrefix ?? ""
+        self.apiKey = apiKey
+        http = try HTTPClient(endpoint: endpoint, session: session, locality: locality)
+    }
+
+    /// The id stored with its vectors: `<provider id>/<model name>`.
+    public static func modelID(provider: ProviderID, model: String) -> String { "\(provider.rawValue)/\(model)" }
+
+    var headers: [String: String] { apiKey.map { ["Authorization": "Bearer \($0)"] } ?? [:] }
+
+    public func embed(_ texts: [String], as role: EmbeddingRole) async throws -> [[Float]] {
+        try await embedCounting(texts, as: role).0
+    }
+
+    /// The vectors, in input order, and the tokens the provider reports.
+    public func embedCounting(_ texts: [String], as role: EmbeddingRole) async throws -> ([[Float]], ProviderUsage) {
+        guard !texts.isEmpty else { return ([], ProviderUsage()) }
+        let prefix = role == .query ? queryPrefix : documentPrefix
+        let body: [String: Any] = ["model": modelName, "input": texts.map { prefix + $0 }, "encoding_format": "float"]
+        let response = try await http.send("embeddings", headers: headers, body: body)
+        guard let data = response["data"] as? [[String: Any]], data.count == texts.count else { throw ProviderError.invalidOutput }
+        let ordered = data.enumerated().sorted { ($0.element["index"] as? Int ?? $0.offset) < ($1.element["index"] as? Int ?? $1.offset) }
+        let vectors = try ordered.map { item -> [Float] in
+            guard let values = item.element["embedding"] as? [NSNumber], !values.isEmpty else { throw ProviderError.invalidOutput }
+            return values.map(\.floatValue)
+        }
+        guard Set(vectors.map(\.count)).count == 1 else { throw ProviderError.invalidOutput }
+        let usage = response["usage"] as? [String: Any]
+        return (vectors, ProviderUsage(requests: 1, inputTokens: usage?["prompt_tokens"] as? Int ?? 0))
     }
 }
 

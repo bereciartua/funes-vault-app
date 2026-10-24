@@ -1,6 +1,6 @@
 # Privacy
 
-**Funes Vault v0.1 (public preview), and Funes Vault for iPhone (v0.2, in testing) · Last updated 22 October 2026**
+**Funes Vault v0.1 (public preview), and Funes Vault for iPhone (v0.2, in testing) · Last updated 24 October 2026**
 
 Funes Vault keeps your memories on your Mac. It has no accounts, no servers of its own, no analytics and no telemetry. This page lists everything that can leave your Mac, and when, and what the iPhone companion keeps and sends ([below](#funes-vault-for-iphone)). Questions: [open an issue](https://github.com/bereciartua/funes-vault-app/issues).
 
@@ -15,6 +15,7 @@ Funes Vault keeps your memories on your Mac. It has no accounts, no servers of i
 | An update check: the app's name and version | GitHub (the Funes Vault releases) | Once a day, if **Check for updates every day** is on, and when you click **Check Now** or **Check for Updates…** |
 | Capture text (from your Mac or your iPhone), with your category names and descriptions | An AI provider you added and chose for New memories | Only if you add one and choose it, never above your cloud limit, never when it looks like a secret, and at most your daily number of cloud requests |
 | With the **Daily tidy-up** on, or **Tidy Up Now**: the titles, text, kind, categories, sensitivity, dates and source of groups of up to 6 related memories | A local server or cloud provider you added and chose for the tidy-up (the one for New memories unless you pick another) | Only if you turn it on (off by default) or click Tidy Up Now and such a provider is chosen, under the same cloud limit, secret check and daily number; memories above the cloud limit are never sent |
+| With a **provider embedding model** chosen: the text of memories up to your cloud limit (title, kind, category names, text), your vault searches, and agents' requests unless you turn that off | The local server or cloud provider you chose in **Settings ▸ AI Models ▸ Embeddings** | Only if you choose one (none by default), never above your cloud limit, never when it looks like a secret |
 | With **Split into separate memories** on: the text of new captures, seed answers, agents' suggestions and saved memories, and imported items; then each piece with the titles, text and dates of up to 5 related memories | A local server or cloud provider you added and chose for New memories | Only if you turn splitting on (off by default) and choose such a provider, under the same cloud limit, secret check and daily number; related memories above the cloud limit are left out |
 | Captures, searches, edits, Inbox and approval answers from your iPhone, and the Mac's replies | Between your iPhone and your own Mac only, end-to-end encrypted, over your Wi-Fi, Tailscale or your tunnel | Only with **iPhone access** on (off by default), with an iPhone you paired |
 | A "doorbell" record holding only a random tag | Your own private iCloud database (CloudKit), whose push wakes your iPhone | When an agent's request waits for you, if a paired iPhone has approvals on. Deleted once the request is answered or over |
@@ -23,7 +24,7 @@ Funes Vault keeps your memories on your Mac. It has no accounts, no servers of i
 ## Your vault stays on your Mac
 
 - Your memories, the Inbox, your agents and their keys, Activity and settings are stored in `~/Library/Application Support/FunesVault/` (folder mode 0700, files 0600) and the app's preferences. They aren't uploaded anywhere. There's no Funes Vault cloud, sync service or account.
-- Search runs on your Mac. Memories, your searches and agents' requests are matched with a small embedding model built into the app (bge-small-en-v1.5, run with Core ML on the CPU), plus keyword search. Nothing is downloaded or sent for this.
+- Search runs on your Mac by default. Memories, your searches and agents' requests are matched with a small embedding model built into the app (bge-small-en-v1.5, run with Core ML on the CPU), plus keyword search. Nothing is downloaded or sent for this unless you also choose a provider embedding model ([below](#search-embeddings)).
 - Funes Vault doesn't add its own database encryption. Your data at rest is protected by macOS and FileVault, like your other files. Other programs running as you can read it, as they can read most apps' data.
 - The app's logs (macOS unified logging) hold ids, labels and error codes, never memory text, task text or keys. They stay on your Mac unless you share them yourself, for example in a system diagnostic report.
 - Notifications are shown by macOS on your Mac. The optional ones are off until you turn them on in **Settings ▸ General**, and none includes memory or task text: they name agents and counts.
@@ -99,7 +100,15 @@ Funes Vault proposes a title, kind, categories and sensitivity for each new capt
 - **Your Claude or ChatGPT plan** (optional, in **Settings ▸ AI Models ▸ Use your subscription**): instead of an API key, Funes Vault can run the Claude Code or Codex you installed and signed in to. It sends the same text as for any cloud provider, under the same cloud limit, secret check and daily number, but through your own account: it counts toward your plan's limits, and **your account's training setting applies** (API use isn't used for training; a consumer plan follows the setting in your Claude or ChatGPT privacy settings, linked from that page). Funes Vault never asks for, reads or stores your sign-in, runs each request in a new empty folder with no tools, plugins of your own, MCP servers or hooks, and stops any run that tries to use one. Codex can't have its ability to run commands that read files switched off, so ChatGPT (Codex) stays off unless you turn on "Use Codex even though it can read files on this Mac": it then runs read-only, in an empty folder, with no internet, and any run that uses a command is discarded, but a file could be read, and seen by OpenAI, before Funes stops it.
 - **Your provider's terms apply** to what you send it, including whether it keeps or trains on it. Funes Vault shows request and token counts per provider; costs are between you and the provider.
 
-Search embeddings aren't configurable in v0.1: they always run on your Mac with the built-in model.
+### Search embeddings
+
+Search always uses the embedding model built into the app, on your Mac, for every memory. You can add a provider's embedding model as a second index (**Settings ▸ AI Models ▸ Embeddings**, none by default), for example Qwen3-Embedding in Ollama or LM Studio, or OpenAI's text-embedding-3, which mainly helps with requests that come without keywords and with other languages.
+
+- **What it receives:** for each memory up to your cloud limit, its title, kind, category names and text (the first 1,000 characters), once, and again when the memory changes; then each vault search you type, and each agent's request (its task and keywords) unless you turn off **Embed agent requests with the cloud model**. With that off, agents' requests are matched on your Mac only.
+- **Memories above your cloud limit are never sent** to a cloud provider. They keep the built-in model only, so they're still found, and their page says "Searched on this Mac only (above cloud limit)". Lowering the limit, or making a memory more sensitive, deletes its provider vector. Anything that looks like a secret is never sent. A local server (on your Mac or your local network) gets every memory.
+- **Before the first run**, Funes Vault says how many memories and roughly how many tokens it will send, and you can cancel any time. Cancelling, or **Stop Using**, deletes the provider's vectors. They're stored in your vault, on your Mac.
+- **Choosing a model** sends one made-up sentence to check it. **Calibrate…**, for a model Funes Vault hasn't measured, sends its 230 made-up benchmark texts, none of your memories.
+- Embedding requests don't count toward your daily number of cloud requests; their requests and tokens show with the provider's counts. Your provider's terms apply to what it receives.
 
 ## No analytics, no crash reports
 

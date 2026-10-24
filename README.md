@@ -146,7 +146,7 @@ Yes. Funes Vault is open source under the Apache License 2.0, with no account or
 <details>
 <summary><b>Do my memories leave my Mac?</b></summary>
 
-Only what you share with an agent, which then goes to that agent and its AI provider under their terms. Funes itself has no server. Search, and the proposals for new captures, run on your Mac by default. If you choose a cloud model for those proposals, Funes says what it sends, and never sends anything above your cloud limit (Internal by default). [Privacy](#privacy) lists every connection the app makes.
+Only what you share with an agent, which then goes to that agent and its AI provider under their terms. Funes itself has no server. Search, and the proposals for new captures, run on your Mac by default. If you choose a cloud model for those proposals, or a provider's embedding model for search, Funes says what it sends, and never sends anything above your cloud limit (Internal by default). [Privacy](#privacy) lists every connection the app makes.
 </details>
 
 <details>
@@ -176,7 +176,7 @@ No. Agents can only propose new memories and corrections. An agent you give **Wr
 <details>
 <summary><b>Does it need Apple Intelligence?</b></summary>
 
-No. Search uses a small model built into the app (bge-small, on your Mac). Apple's on-device model, when your Mac has it (macOS 26 or later with Apple Intelligence), proposes titles, categories and sensitivity for captures; otherwise simple rules do. You can also choose Ollama, LM Studio, Anthropic, OpenAI or another OpenAI-compatible server for that in **Settings ▸ AI Models**, or your Claude or ChatGPT plan through the Claude Code or Codex you already use (no API key), and with one of those, turn on **Split into separate memories**, which splits captures, agents' suggestions and imports into single memories and links them to what your vault holds, and the **Daily tidy-up**, which proposes updates, merges, splits and archives of related memories. Every proposal waits for you in the Inbox unless you choose **Apply changes automatically**, which applies only what the chosen model was accurate enough at, with Undo for 30 days.
+No. Search uses a small model built into the app (bge-small, on your Mac); you can add a provider's embedding model next to it (Qwen3-Embedding in Ollama or LM Studio, or OpenAI's text-embedding-3), which helps most with other languages. Apple's on-device model, when your Mac has it (macOS 26 or later with Apple Intelligence), proposes titles, categories and sensitivity for captures; otherwise simple rules do. You can also choose Ollama, LM Studio, Anthropic, OpenAI or another OpenAI-compatible server for that in **Settings ▸ AI Models**, or your Claude or ChatGPT plan through the Claude Code or Codex you already use (no API key), and with one of those, turn on **Split into separate memories**, which splits captures, agents' suggestions and imports into single memories and links them to what your vault holds, and the **Daily tidy-up**, which proposes updates, merges, splits and archives of related memories. Every proposal waits for you in the Inbox unless you choose **Apply changes automatically**, which applies only what the chosen model was accurate enough at, with Undo for 30 days.
 </details>
 
 <details>

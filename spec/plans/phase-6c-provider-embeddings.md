@@ -10,18 +10,18 @@
 - [x] Record in [spike results](spike-results.md#phase-6c1-provider-embeddings-as-a-second-index). Go on only for models with a gain on raw tasks or Spanish, and no loss where some memories have only a bge vector. *(Qwen3-0.6B, local, passes; `text-embedding-3-small` and `-large` at Internal pass barely, with net −1 of 182 bge-only label slots; nomic and multilingual-e5-small fail.)*
 
 ### 6c.2 Adapter and index · 4 h
-- [ ] `/v1/embeddings` in `OpenAICompatibleClient` (OpenAI, Gemini's compatible endpoint, OpenRouter, Ollama, LM Studio), with query and document roles for models that use prefixes.
-- [ ] A second vector per memory within the cloud limit; per-index candidate thresholds and min-max normalization; provider score where present, bge otherwise.
-- [ ] Deletion when the limit drops, a memory's sensitivity rises above it, or the provider model is removed.
+- [x] `/v1/embeddings` in `OpenAICompatibleClient` (OpenAI, Gemini's compatible endpoint, OpenRouter, Ollama, LM Studio), with query and document roles for models that use prefixes. *(`OpenAICompatibleEmbedder`, a separate type next to the chat client; prefixes from `EmbeddingCatalog`; every call through `ModelRouter.embed`, enforced by test.sh.)*
+- [x] A second vector per memory within the cloud limit; per-index candidate thresholds and min-max normalization; provider score where present, bge otherwise.
+- [x] Deletion when the limit drops, a memory's sensitivity rises above it, or the provider model is removed.
 
 ### 6c.3 Re-embedding and calibration · 3 h
-- [ ] Background job: batched, resumable, rate-limit aware, progress and cancel; search stays bge-only until the set is complete.
-- [ ] Built-in thresholds for the benchmarked models; top-K plus **Calibrate…** for others (synthetic data only, after confirmation).
-- [ ] "Embed agent requests with the cloud model" (FR-AI-09) and the disclosure line.
+- [x] Background job: batched, resumable, rate-limit aware, progress and cancel; search stays bge-only until the set is complete.
+- [x] Built-in thresholds for the benchmarked models; top-K plus **Calibrate…** for others (synthetic data only, after confirmation). *(Qwen3-0.6B 0.24 / 0.28, 3-small 0.20 / 0.25, 3-large 0.18 / 0.22; Calibrate's rule gives bge-small its own thresholds back.)*
+- [x] "Embed agent requests with the cloud model" (FR-AI-09) and the disclosure line.
 
 ### 6c.4 Tests and docs · 2 h
-- [ ] Adapter contract tests, guardrail tests (nothing above the limit embedded by the provider), re-embedding switch, cancel and resume, fallback to bge when the provider is down.
-- [ ] When the code lands: PRIVACY.md, README, docs, CHANGELOG.
+- [x] Adapter contract tests, guardrail tests (nothing above the limit embedded by the provider), re-embedding switch, cancel and resume, fallback to bge when the provider is down. *(`ProviderEmbeddingTests`, plus opt-in live tests: OpenAI's embeddings, and Calibrate against Ollama's `qwen3-embedding:0.6b`, which gives 0.24 / 0.29 against the built-in 0.24 / 0.28.)*
+- [x] When the code lands: PRIVACY.md, README, docs, CHANGELOG.
 
 ## Exit criteria
 - A benchmark gain recorded for each built-in model; sensitive memories keep semantic search at the recommended limit.

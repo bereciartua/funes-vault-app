@@ -90,6 +90,10 @@ struct MemoryDetailView: View {
             Text(String(localized: "Archived memories are kept, but never shared with agents."))
                 .font(.callout).foregroundStyle(.secondary)
         }
+        if model.embeddings.searchedOnThisMacOnly(memory.sensitivity) {
+            Text(String(localized: "Searched on this Mac only (above cloud limit)."))
+                .font(.callout).foregroundStyle(.secondary)
+        }
     }
 
     private var saveRow: some View {

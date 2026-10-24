@@ -2,8 +2,8 @@ import FunesCore
 import FunesProtocol
 import SwiftUI
 
-/// Settings ▸ AI Models (04-ux-mac.md, model-providers.md §4, FR-AI-05..08, FR-AI-12). v0.1's
-/// embeddings are the bundled bge-small only (ADR-0016): shown, with nothing to choose.
+/// Settings ▸ AI Models (04-ux-mac.md, model-providers.md §4, FR-AI-05..08, FR-AI-12). Embeddings:
+/// the bundled bge-small, plus optionally a provider model as a second index (ADR-0023).
 struct ModelSettingsPane: View {
     let model: AppModel
     @State private var editing: ProviderConfig?
@@ -26,18 +26,7 @@ struct ModelSettingsPane: View {
     var body: some View {
         Form {
             Section(String(localized: "Tasks")) {
-                LabeledContent(String(localized: "Embeddings")) {
-                    Text(String(localized: "Built in (bge-small, on this Mac)")).fixedSize()
-                }
-                LabeledContent(String(localized: "Status")) {
-                    HStack(spacing: 6) {
-                        Text(model.services.hasEmbeddings ? String(localized: "Ready")
-                                                          : String(localized: "Unavailable: keyword search only"))
-                        Pill(label: Locality.onDevice.title, tone: .good)
-                    }
-                }
-                Text(String(localized: "Search and agents' requests are matched on this Mac. Other embedding models come in a later version."))
-                    .font(.callout).foregroundStyle(.secondary)
+                EmbeddingRows(model: model)
                 LabeledContent(String(localized: "New memories")) {
                     HStack(spacing: 6) {
                         Picker(String(localized: "New memories"), selection: Binding(get: { settings.classifierID },

@@ -47,7 +47,7 @@ Decision: [ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings
   - **Runtime:** `MLComputeUnits.cpuOnly`: 3.6 ms per query and 4.7 ms per memory on an M1.
   - **Tokenizer:** a WordPiece tokenizer in FunesCore (no dependency), with the model's bundled vocabulary. It must match Hugging Face's token ids on the fixture texts.
   - **Model id:** `bge-small-en-v1.5/coreml-int8`.
-  - **Phase 6c:** adding a provider embedding model (Ollama such as `nomic-embed-text`, LM Studio, or a cloud model) in Settings ▸ AI Models ▸ Embeddings, as a **second index** next to bge-small, with re-embedding and calibration ([ADR-0023](../architecture/decisions/0023-provider-embeddings-second-index.md), [model providers §7](../architecture/model-providers.md#7-choosing-a-provider-embedding-model)).
+  - **Phase 6c:** adding a provider embedding model (Qwen3-Embedding-0.6B in Ollama or LM Studio, OpenAI's `text-embedding-3-small` / `-large`, or another model, uncalibrated) in Settings ▸ AI Models ▸ Embeddings, as a **second index** next to bge-small, with re-embedding and calibration ([ADR-0023](../architecture/decisions/0023-provider-embeddings-second-index.md), [model providers §7–8](../architecture/model-providers.md#7-choosing-a-provider-embedding-model)).
   - **Normalization:** all vectors are L2-normalized, so similarity is a plain dot product, whatever the provider.
   - **bge-small vectors stay on every memory.** A provider model adds a second vector for memories within the cloud limit; a memory uses its provider score when it has one, and its bge score otherwise (each min-max normalized over its own pool). The related-memories finder (§5.5, §9) always uses bge-small.
   - **Cloud limit (provider models only):** memories above the limit get no provider vector and keep their bge vector; a provider vector is deleted when the limit drops or the memory's sensitivity rises above it.
@@ -71,12 +71,12 @@ Decision: [ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings
   - `semantic` is the query–memory cosine, **min-max normalized over the candidate pool for this query**: `(cos − min) / (max − min)`, or 0 if `max = min`.
   - Modern models compress cosines (bge: unrelated memories around 0.45, relevant ones around 0.64), so raw-cosine fusion lets the keyword term dominate. Min-max 0.30/0.70 was the best or tied for best for every open model in Spike 2b.
 - **Keeping candidates:** keep a memory if `keyword > 0`, or its **raw** cosine ≥ the model's threshold.
-  - **Thresholds for `bge-small-en-v1.5/coreml-int8`:** vault **0.50**, retrieval **0.55**.
+  - **Thresholds for `bge-small-en-v1.5/coreml-int8`:** vault **0.50**, retrieval **0.55**. Provider models have their own ([model providers §8](../architecture/model-providers.md#8-calibration-thresholds-per-model-v03)); with a second index, a memory with a provider vector is kept on the provider's threshold, the others on bge's.
   - **Keyword floor: 0.15.** Broad agent keywords match many memories (about 17% of the vault per query in Spike 2b), so a memory kept on its keyword score alone needs `keyword ≥ 0.15`. Tuned in Phase 1: the highest floor that loses no recall on the benchmark, cutting kept memories by about a fifth. It applies in keyword-only mode too.
 - **Vault search (UI):** filters apply before ranking.
 - **Agent retrieval:** see [access policy §3.2](access-policy.md#32-retrieval-which-memories-are-relevant): the same rule, with the retrieval threshold and the top 30.
 - **Tuning:** thresholds are stored **per embedding model id** and measured with the 200-memory and 30-query benchmark (raw and agent-expanded queries), kept as constants with tests.
-  - Unknown models (later) use top-K semantic candidates (K = 10) plus all keyword hits, until the user runs **Calibrate** ([model providers §8](../architecture/model-providers.md#8-calibration-thresholds-per-model-v03)).
+  - Unknown provider models (v0.3) use top-K semantic candidates (K = 10) plus all keyword hits, until the user runs **Calibrate** ([model providers §8](../architecture/model-providers.md#8-calibration-thresholds-per-model-v03)).
 - **Regression baselines** (Spike 2b, re-measured in FunesCore before freezing):
   - hybrid recall@5 ≥ 0.92 on `queries-30-expanded`, and ≥ 0.68 on raw `queries-30`;
   - keyword-only (the fallback path) ≥ 0.82 on `queries-30-expanded`.

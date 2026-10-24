@@ -92,6 +92,8 @@ final class AppModel {
     let activity: ActivityModel
     let checklist: ChecklistModel
     let modelSettings: ModelSettings
+    /// The provider embedding model's index (ADR-0023, task 6c.3).
+    let embeddings: EmbeddingController
     let data: DataOperations
     /// Classification (and from 6a, splitting) of everything that arrives, in the background.
     let processing: ProcessingRunner
@@ -182,12 +184,14 @@ final class AppModel {
         data = DataOperations(environment: services, preferences: preferences)
         processing = ProcessingRunner(environment: services, preferences: preferences, settings: self.modelSettings)
         tidyUp = TidyUpController(environment: services, preferences: preferences, settings: self.modelSettings)
+        embeddings = EmbeddingController(environment: services, settings: self.modelSettings)
         remoteAccess = RemoteAccessController(defaults: preferences.defaults, appName: "Funes Vault", names: .funes,
                                               defaultPort: FunesRemoteConfiguration.defaultPort, host: .inert)
         companion = CompanionController(defaults: preferences.defaults, services: services.companionServices,
                                         approvals: services.phoneApprovals, appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
         pausedUntil = services.pause.pausedUntil(at: Date())
         inboxState.categories = { [weak self] in self?.categories ?? [] }
+        self.modelSettings.embeddingInputsChanged = { [weak self] in self?.embeddings.apply() }
         observation = services.store.observeChanges { [weak self] in
             Task { @MainActor in
                 self?.scheduleRefresh()
