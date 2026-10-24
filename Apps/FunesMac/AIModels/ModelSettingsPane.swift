@@ -44,6 +44,11 @@ struct ModelSettingsPane: View {
                                 Text("\(provider.name) · \(provider.model.isEmpty ? String(localized: "no model") : provider.model)")
                                     .tag(Optional(provider.id))
                             }
+                            ForEach(SubscriptionConfig.Kind.allCases) { kind in
+                                if settings.executables[kind] != nil || settings.classifierID == kind.rawValue {
+                                    Text("\(kind.name) · \(settings.subscription(kind).model)").tag(Optional(kind.rawValue))
+                                }
+                            }
                         }
                         .labelsHidden()
                         .fixedSize()
@@ -89,6 +94,13 @@ struct ModelSettingsPane: View {
                     LabeledContent(String(localized: "At most"), value: settings.dailyCap.formatted())
                 }
                 Text(capLine).font(.callout).foregroundStyle(.secondary)
+            }
+            Section(String(localized: "Use your subscription")) {
+                ForEach(SubscriptionConfig.Kind.allCases) { kind in
+                    SubscriptionRow(model: model, kind: kind)
+                }
+                Text(String(localized: "Uses your plan's limits, through the Claude Code or Codex you installed and signed in to. Funes never sees your sign-in. Your account's training setting applies."))
+                    .font(.callout).foregroundStyle(.secondary)
             }
             Section(String(localized: "Providers")) {
                 if settings.providers.isEmpty {
@@ -144,6 +156,7 @@ struct ModelSettingsPane: View {
         .sheet(item: $editing) { ProviderSheet(model: model, provider: $0, isNew: false) }
         .sheet(item: $adding) { ProviderSheet(model: model, provider: $0, isNew: true) }
         .task(id: settings.providers) { await resolveLocalities() }
+        .task { await settings.refreshSubscriptions() }
         .onAppear {
             classify = model.preferences.classifyCaptures
             split = model.preferences.splitNewMemories
@@ -157,7 +170,7 @@ struct ModelSettingsPane: View {
             Button(String(localized: "Send Up to \(Self.title(limit))")) { settings.cloudLimit = limit }
             Button(String(localized: "Cancel"), role: .cancel) {}
         } message: { limit in
-            Text(String(localized: "Memories up to \(Self.title(limit)) can then be sent to \(settings.classifier?.name ?? String(localized: "the cloud providers you choose")). They can include health, money, family or legal matters. Funes still never sends anything that looks like a secret."))
+            Text(String(localized: "Memories up to \(Self.title(limit)) can then be sent to \(settings.chosenName ?? String(localized: "the cloud providers you choose")). They can include health, money, family or legal matters. Funes still never sends anything that looks like a secret."))
         }
     }
 
@@ -189,6 +202,7 @@ struct ModelSettingsPane: View {
     /// Splitting needs a local server or a cloud model with a model chosen; Apple on-device only
     /// proposes fields (memory processing §5.2).
     private var canSplit: Bool {
+        if let plan = settings.chosenSubscription { return !plan.model.isEmpty }
         guard let provider = settings.classifier, !provider.model.isEmpty else { return false }
         return classifierLocality != .onDevice
     }
@@ -205,11 +219,16 @@ struct ModelSettingsPane: View {
     }
 
     private var classifierLocality: Locality {
+        if settings.chosenSubscription != nil { return .cloud }
         guard let provider = settings.classifier else { return .onDevice }
         return localities[provider.id] ?? (provider.endpoint.markedCloud ? .cloud : .localServer)
     }
 
     private var classificationStatus: String {
+        if let plan = settings.chosenSubscription {
+            let status = settings.subscriptionStatus[plan.kind].map { SubscriptionRow.text($0, plan.kind) } ?? String(localized: "Checking…")
+            return status + " " + String(localized: "If it fails, Funes uses the on-device model, then rules.")
+        }
         if let provider = settings.classifier {
             if provider.model.isEmpty { return String(localized: "Choose a model in \(provider.name)'s settings. Until then: on-device, then rules.") }
             if provider.endpoint.kind == .anthropic && !settings.hasKey(provider.id) {
@@ -225,6 +244,16 @@ struct ModelSettingsPane: View {
     /// "New memories sends new captures (up to Internal) and your category names and descriptions to
     /// Anthropic." (FR-AI-08) Only captures are classified in v0.1.
     private var classificationDisclosure: String? {
+        if let plan = settings.chosenSubscription {
+            switch settings.cloudLimit {
+            case .never:
+                return String(localized: "New memories sends nothing to \(plan.kind.plan): the cloud limit is Nothing, so it runs on this Mac.")
+            case .upTo(let level) where split:
+                return String(localized: "New memories sends captures, agent suggestions and imports, plus related memories (up to \(Self.title(.upTo(level)))), to \(plan.kind.plan) through your \(plan.kind == .claudeCode ? "Claude Code" : "Codex") sign-in. It counts toward your plan's limits, and your \(plan.kind.plan) account's training setting applies.")
+            case .upTo(let level):
+                return String(localized: "New memories sends new captures (up to \(Self.title(.upTo(level)))) and your category names and descriptions to \(plan.kind.plan) through your \(plan.kind == .claudeCode ? "Claude Code" : "Codex") sign-in. It counts toward your plan's limits, and your \(plan.kind.plan) account's training setting applies.")
+            }
+        }
         guard let provider = settings.classifier, !classifierLocality.isLocal else { return nil }
         switch settings.cloudLimit {
         case .never:
@@ -384,6 +413,92 @@ struct ProviderSheet: View {
         case .blocked?: String(localized: "Funes didn't send it: it looked like a secret, or was above the cloud limit.")
         case .capReached?: String(localized: "Today's cloud requests are used up. Try again tomorrow, or raise the limit.")
         case .transport?, nil: String(localized: "Couldn't reach the server.")
+        }
+    }
+}
+
+/// One plan in Use your subscription (ADR-0024): whether its CLI is found and signed in, the
+/// command to sign in, the model, Test Connection (one made-up note), and the vendor's privacy
+/// settings. No key field: Funes never handles the plan's credentials.
+struct SubscriptionRow: View {
+    let model: AppModel
+    let kind: SubscriptionConfig.Kind
+    @State private var modelName = ""
+    @State private var testing = false
+    @State private var result: String?
+
+    private var settings: ModelSettings { model.modelSettings }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Text(kind.name).fontWeight(.medium)
+                Pill(label: Locality.cloud.title, tone: .warning)
+                Spacer()
+                Text(settings.subscriptionStatus[kind].map { Self.text($0, kind) } ?? String(localized: "Checking…"))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if settings.executables[kind] != nil {
+                HStack {
+                    TextField(String(localized: "Model"), text: $modelName)
+                        .onSubmit { settings.setSubscriptionModel(kind, modelName) }
+                    Menu(String(localized: "Choose")) {
+                        ForEach(kind.suggestedModels, id: \.self) { name in
+                            Button(name) {
+                                modelName = name
+                                settings.setSubscriptionModel(kind, name)
+                            }
+                        }
+                    }
+                    .fixedSize()
+                    Button(testing ? String(localized: "Testing…") : String(localized: "Test Connection")) { test() }
+                        .disabled(testing || modelName.isEmpty)
+                }
+                HStack {
+                    if let result { Text(result).font(.caption).foregroundStyle(.secondary) }
+                    Spacer()
+                    Link(String(localized: "\(kind.plan) Privacy Settings"), destination: kind.privacySettings).font(.caption)
+                }
+            }
+        }
+        .onAppear { modelName = settings.subscription(kind).model }
+        .accessibilityElement(children: .contain)
+    }
+
+    /// "Signed in to Claude Code", "Not signed in: run `claude` in Terminal and sign in"…
+    static func text(_ status: SubscriptionStatus, _ kind: SubscriptionConfig.Kind) -> String {
+        let tool = kind == .claudeCode ? "Claude Code" : "Codex"
+        switch status {
+        case let .ready(version): return String(localized: "Signed in to \(tool) \(version)")
+        case .notInstalled: return String(localized: "\(tool) isn't installed on this Mac")
+        case .notSignedIn: return String(localized: "Not signed in: run `\(kind.signIn)` in Terminal and sign in with \(kind.plan)")
+        case .needsUpdate: return String(localized: "Update \(tool) to use it")
+        case .unsupportedFeatures: return String(localized: "This \(tool) version isn't supported yet")
+        case .blocked: return String(localized: "Unavailable: it tried to use a tool. Test Connection to try again.")
+        }
+    }
+
+    /// One made-up note through the same guardrails, after clearing a tool block.
+    private func test() {
+        settings.setSubscriptionModel(kind, modelName)
+        guard let client = settings.subscriptionClient(kind) else { return }
+        testing = true
+        Task {
+            CLIRunner.unblock(client.id)
+            do {
+                let proposal = try await ModelRouter.testConnection(client, timeout: CLIRunner.timeout)
+                result = String(localized: "Works: proposed “\(proposal.title)”.")
+            } catch {
+                result = switch error as? ProviderError {
+                case .unauthorized?: String(localized: "Not signed in: run `\(kind.signIn)` in Terminal and sign in with \(kind.plan).")
+                case .rateLimited?: String(localized: "Your \(kind.plan) plan's limit is reached. Try again later.")
+                case .timeout?: String(localized: "No answer within 90 seconds.")
+                case .unavailable?: String(localized: "Unavailable: see the status above.")
+                default: ProviderSheet.text(error)
+                }
+            }
+            await settings.refreshSubscriptions()
+            testing = false
         }
     }
 }
