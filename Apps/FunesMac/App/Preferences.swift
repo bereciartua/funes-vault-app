@@ -1,5 +1,6 @@
 import BridgeUI
 import Foundation
+import FunesCore
 import FunesMCP
 import FunesProtocol
 
@@ -19,6 +20,8 @@ final class Preferences {
         static let reviewHotKey = "ReviewRequestHotKey"
         static let captureSensitivity = "CaptureDefaultSensitivity"
         static let classifyCaptures = "ClassifyCaptures"
+        static let splitNewMemories = "SplitNewMemories"
+        static let applyAutomatically = "ApplyChangesAutomatically"
         static let checklistDismissed = "SetupChecklistDismissed"
         static let checklistSeeded = "SetupChecklistSeeded"
         static let checklistReviewed = "SetupChecklistReviewed"
@@ -103,6 +106,20 @@ final class Preferences {
     var classifyCaptures: Bool {
         get { defaults.bool(forKey: Key.classifyCaptures) }
         set { defaults.set(newValue, forKey: Key.classifyCaptures) }
+    }
+
+    /// Settings ▸ AI Models ▸ New memories ▸ Split into separate memories (Phase 6a). Off until
+    /// the user turns it on: it sends agent input and imports to the chosen model too.
+    var splitNewMemories: Bool {
+        get { defaults.bool(forKey: Key.splitNewMemories) }
+        set { defaults.set(newValue, forKey: Key.splitNewMemories) }
+    }
+
+    /// Settings ▸ AI Models ▸ Apply changes automatically: Off until the user picks a level that
+    /// an engine reached (memory processing §5.7).
+    var applyAutomatically: AutoApplyLevel {
+        get { AutoApplyLevel(rawValue: defaults.integer(forKey: Key.applyAutomatically)) ?? .off }
+        set { defaults.set(newValue.rawValue, forKey: Key.applyAutomatically) }
     }
 
     var mcpEnabled: Bool {

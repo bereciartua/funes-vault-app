@@ -42,15 +42,15 @@
 - [x] The extraction prompt uses the user's compound-claim rule (Spike E §10, `prompts.EXTRACT_RULES_V2`).
 
 ### 6a.6 Inbox and Settings · 4 h
-- [ ] Group card, row badges, Apply all, Keep as one (only while nothing is decided), the "Split into N?" offer, Split this memory, the flagged rows, the engine line.
-- [ ] Applied automatically list with Undo (and "undo this and N later changes").
-- [ ] Settings ▸ AI Models ▸ New memories: the split switch, the disclosure line; import preview with the request estimate, today's remaining cap, and Import without splitting.
-- [ ] New UI words (split, pieces, Applied automatically, Outside <agent>'s scope; and 6b's Tidy up) added to [Words in the app](../product/06-glossary.md) first; string catalog, UI snapshots (light and dark), accessibility labels.
+- [x] Group card, row badges, Apply all, Keep as one (only while nothing is decided), the "Split into N?" offer, Split this memory, the flagged rows, the engine line.
+- [x] Applied automatically list with Undo (and "undo this and N later changes").
+- [x] Settings ▸ AI Models ▸ New memories: the split switch, the disclosure line; import preview with the request estimate, today's remaining cap, and Import without splitting.
+- [x] New UI words (split, pieces, Applied automatically, Outside <agent>'s scope; and 6b's Tidy up) added to [Words in the app](../product/06-glossary.md) first; string catalog, UI snapshots (light and dark), accessibility labels.
 
 ### 6a.7 Tests and docs · 3 h
 - [x] Spike E's fixtures as FunesCore tests against a recorded or fake provider: claim recall, no invented claims, links, injection attempts.
 - [x] Concurrency: a split arriving while the card is edited, applied on the iPhone, or in a Save panel.
-- [ ] When the code lands: PRIVACY.md (what goes to a provider now), README, docs, CHANGELOG.
+- [x] When the code lands: PRIVACY.md (what goes to a provider now), README, docs, CHANGELOG.
 
 ## Exit criteria
 - A ChatGPT-style dump from an agent becomes a group of single-claim pieces, with duplicates and updates of existing memories recognised.

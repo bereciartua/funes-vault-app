@@ -23,6 +23,9 @@ final class VaultEnvironment {
     let captures: CaptureService
     let devices: DeviceService
     let imports: ImportService
+    /// Inbox cards being edited and Save panels on screen: a split arriving for one is offered,
+    /// not applied under the cursor (memory processing §5.2).
+    let holds = SuggestionHolds()
     private(set) var indexer: EmbeddingIndexer?
     private var observation: AnyObject?
     /// The Share, Save and access-request panels.

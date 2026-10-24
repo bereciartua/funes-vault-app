@@ -246,7 +246,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - **Disclosure items:** written only in delivery transactions.
 - **Captures:** `capture_receipt` is inserted in the same transaction as its suggestion.
 - **Purging** a deleted memory removes its FTS rows, embedding and provenance (cascade). `disclosure_item` rows keep the memory id for Activity labelling, shown as "(deleted memory)".
-- **Purging (v0.3)** also removes the memory's `undo_entry` rows and the source text of any `suggestion_group` it came from, so no copy of its text outlives it (FR-V-04). Delete Now does the same at once.
+- **Purging (v0.3)** also removes the memory's `undo_entry` rows, the text of the piece it was saved from, and the source text of the `suggestion_group` that piece belongs to (with the original row's title and body), so no copy of its text outlives it (FR-V-04). Delete Now does the same at once.
 - **Auto-apply (v0.3):** each automatic change, its `undo_entry`, its provenance and the watermark update are written in one transaction, after re-checking every involved memory's version.
 
 ## 5. Maintenance jobs

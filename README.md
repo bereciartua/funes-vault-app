@@ -94,11 +94,11 @@ Nothing an agent writes in its task or purpose changes what it may see. Those wo
 
 ### Agents suggest, you decide
 
-Agents propose memories, and by default each one waits in the **Inbox** as a card you can edit before **Apply** (**Replace** or **Keep Both** for a correction), **Reject** or **Later**. Cards say who proposed what, quote the agent's reasons as reported, point out similar memories, and show a correction as old and new text. Your own captures and imports land there too.
+Agents propose memories, and by default each one waits in the **Inbox** as a card you can edit before **Apply** (**Replace** or **Keep Both** for a correction), **Reject** or **Later**. Cards say who proposed what, quote the agent's reasons as reported, point out similar memories, and show a correction as old and new text. Your own captures and imports land there too. With **Split into separate memories** on (Settings ▸ AI Models, with a local server or cloud model), what arrives is split into one suggestion per claim, each marked New, Updates *a memory*, Already saved or Removes *a memory*, on one card with **Apply All** and **Keep as One**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/inbox-dark.png">
-  <img alt="The Inbox: a correction from Claude Code showing the old text struck out and the new text, with editable title, text, kind, sensitivity and categories, the agent's reason as reported, and Later, Reject, Keep Both and Replace buttons." src="docs/images/inbox-light.png" width="720">
+  <img alt="The Inbox: a note from Claude Code split into 5 pieces on one card, split by the chosen model. One piece is marked Already saved, one Updates “Coffee order” and shows the old text struck out with the new text, and one is New with editable title, text, categories and sensitivity. Each piece shows the words it came from and has its own Reject and Apply buttons." src="docs/images/inbox-light.png" width="720">
 </picture>
 
 ### You see everything, and stop anything
@@ -176,7 +176,7 @@ No. Agents can only propose new memories and corrections. An agent you give **Wr
 <details>
 <summary><b>Does it need Apple Intelligence?</b></summary>
 
-No. Search uses a small model built into the app (bge-small, on your Mac). Apple's on-device model, when your Mac has it (macOS 26 or later with Apple Intelligence), proposes titles, categories and sensitivity for captures; otherwise simple rules do. You can also choose Ollama, LM Studio, Anthropic, OpenAI or another OpenAI-compatible server for that in **Settings ▸ AI Models**.
+No. Search uses a small model built into the app (bge-small, on your Mac). Apple's on-device model, when your Mac has it (macOS 26 or later with Apple Intelligence), proposes titles, categories and sensitivity for captures; otherwise simple rules do. You can also choose Ollama, LM Studio, Anthropic, OpenAI or another OpenAI-compatible server for that in **Settings ▸ AI Models**, and with one of those, turn on **Split into separate memories**, which splits captures, agents' suggestions and imports into single memories and links them to what your vault holds. Every piece waits for you in the Inbox.
 </details>
 
 <details>
@@ -219,7 +219,7 @@ The app has **no analytics, telemetry or crash reporting**, and no account. Your
 | Remote Access listener, on `127.0.0.1` (port 47627 by default) | Only while **Remote Access** is on (off by default). Loopback only; a tunnel you run, such as Tailscale Funnel, makes it reachable from the internet at an address you choose. Funes never starts a tunnel. |
 | One HTTPS request to your tunnel's address | When you click **Test** on the Remote Access page (and during its setup): Funes fetches its own health URL through the tunnel. |
 | One HTTPS request to a cloud app's metadata document | Only while you have pairing open, when that app starts signing in (claude.ai and ChatGPT publish one). No credential is sent. |
-| The model provider you added | Only if you add one in **Settings ▸ AI Models** and choose it: to propose a title, categories and sensitivity for each capture, and for **Load Models** and **Test Connection** (which send none of your data). A local server (Ollama, LM Studio) stays on your Mac or local network; a cloud provider gets only captures at or below your cloud limit that passed the secret scanner, plus your category names and descriptions. |
+| The model provider you added | Only if you add one in **Settings ▸ AI Models** and choose it: to propose a title, categories and sensitivity for each capture, and for **Load Models** and **Test Connection** (which send none of your data). A local server (Ollama, LM Studio) stays on your Mac or local network; a cloud provider gets only captures at or below your cloud limit that passed the secret scanner, plus your category names and descriptions. With **Split into separate memories** on, it also gets agents' suggestions, your answers and imported items, and each piece with up to 5 related memories, under the same limit and scanner ([PRIVACY.md](PRIVACY.md#ai-models)). |
 
 Notifications, shown by macOS, never include memory text. What an agent receives through Funes goes to that agent and its AI provider, under their privacy terms, so give each agent only what it needs. With Remote Access, that includes the cloud agents you allow, and the tunnel provider if its TLS ends at its edge. The full statement is in [PRIVACY.md](PRIVACY.md) and at [funesvault.com/privacy](https://funesvault.com/privacy).
 

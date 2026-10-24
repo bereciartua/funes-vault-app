@@ -7,7 +7,8 @@ private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category:
 
 /// Runs the durable processing queue (memory processing §5.2, task 6.1.4): at launch, resuming
 /// what a quit left; after every vault change, since every ingest path queues its job with its
-/// input; and once a minute, for retries that came due. One job at a time.
+/// input; and once a minute, for retries that came due. One job at a time. With splitting on,
+/// each job splits its input (task 6a).
 @MainActor
 final class ProcessingRunner {
     private let queue: ProcessingQueue
@@ -21,8 +22,15 @@ final class ProcessingRunner {
         queue = ProcessingQueue(store: environment.store, activity: environment.activity)
         processor = NewMemoryProcessor(
             store: environment.store, captures: environment.captures,
-            router: { @MainActor [store = environment.store, activity = environment.activity] in
-                preferences.classifyCaptures ? settings.makeRouter(cap: settings.cap(store: store, activity: activity)) : nil
+            finder: RelatedMemoryFinder(store: environment.store, indexer: environment.indexer), holds: environment.holds,
+            configuration: { @MainActor [store = environment.store, activity = environment.activity] in
+                // Splitting needs the router even with proposals off; the job splits only with a
+                // local server or cloud model chosen (memory processing §5.2).
+                let split = preferences.splitNewMemories
+                let router = preferences.classifyCaptures || split
+                    ? settings.makeRouter(cap: settings.cap(store: store, activity: activity)) : nil
+                return NewMemoryProcessor.Configuration(router: router, split: split,
+                                                        autoApply: NewMemoryAutoApply(level: preferences.applyAutomatically))
             },
             finished: { @MainActor router in settings.collectUsage(from: router) })
     }
