@@ -290,9 +290,22 @@ enum GroupText {
         return out
     }
 
-    /// What an automatic change did: "Saved “Prefers tea”", "Updated “Coffee order”".
+    /// What an automatic change did: "Saved “Prefers tea”", "Updated “Coffee order”"; the
+    /// tidy-up's: "Tidy-up: merged 2 memories into “Harbor dates”".
     static func change(_ entry: UndoEntry, titles: [UUID: String]) -> String {
         let title = entry.memoryIDs.lazy.compactMap { titles[$0] }.first ?? String(localized: "a memory")
+        if entry.runID != nil {
+            // The memories it named come first, then the ones it created.
+            let last = entry.memoryIDs.last.flatMap { titles[$0] } ?? title
+            switch entry.action {
+            case "update" where entry.memoryIDs.count > 1: return String(localized: "Tidy-up: updated “\(title)” and archived a copy")
+            case "update": return String(localized: "Tidy-up: updated “\(title)”")
+            case "archive": return String(localized: "Tidy-up: archived “\(title)”")
+            case "merge": return String(localized: "Tidy-up: merged \(entry.memoryIDs.count - 1) memories into “\(last)”")
+            case "split": return String(localized: "Tidy-up: split “\(title)” into \(entry.memoryIDs.count - 1)")
+            default: return String(localized: "Tidy-up: changed “\(title)”")
+            }
+        }
         switch entry.action {
         case "create": return String(localized: "Saved “\(title)”")
         case "update": return String(localized: "Updated “\(title)”")

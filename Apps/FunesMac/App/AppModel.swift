@@ -95,6 +95,8 @@ final class AppModel {
     let data: DataOperations
     /// Classification (and from 6a, splitting) of everything that arrives, in the background.
     let processing: ProcessingRunner
+    /// The daily tidy-up: its schedule, Tidy Up Now and the last run (memory processing §9).
+    let tidyUp: TidyUpController
     /// Remote Access (ADR-0018): its settings, guide and tunnel checks. The app delegate gives it
     /// the listener through its host.
     let remoteAccess: RemoteAccessController
@@ -179,6 +181,7 @@ final class AppModel {
         self.modelSettings = modelSettings ?? ModelSettings(defaults: preferences.defaults, keys: ModelSettings.keychain())
         data = DataOperations(environment: services, preferences: preferences)
         processing = ProcessingRunner(environment: services, preferences: preferences, settings: self.modelSettings)
+        tidyUp = TidyUpController(environment: services, preferences: preferences, settings: self.modelSettings)
         remoteAccess = RemoteAccessController(defaults: preferences.defaults, appName: "Funes Vault", names: .funes,
                                               defaultPort: FunesRemoteConfiguration.defaultPort, host: .inert)
         companion = CompanionController(defaults: preferences.defaults, services: services.companionServices,

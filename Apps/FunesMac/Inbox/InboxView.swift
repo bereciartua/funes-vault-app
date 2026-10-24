@@ -23,12 +23,17 @@ struct InboxView: View {
                 ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 14, pinnedViews: []) {
-                        ForEach(inbox.grouped(model.inbox), id: \.0) { group, items in
-                            Text(group.title)
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
-                                .accessibilityAddTraits(.isHeader)
-                                .padding(.top, 6)
+                        let sections = inbox.grouped(model.inbox)
+                        ForEach(sections, id: \.0) { group, items in
+                            if group == .tidyUp {
+                                TidyUpHeader(model: model).padding(.top, 6)
+                            } else {
+                                Text(group.title)
+                                    .font(.headline)
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityAddTraits(.isHeader)
+                                    .padding(.top, 6)
+                            }
                             ForEach(items) { entry in
                                 switch entry {
                                 case let .single(suggestion):
@@ -37,6 +42,9 @@ struct InboxView: View {
                                     GroupCard(model: model, groupID: id, pieces: pieces).id(id)
                                 }
                             }
+                        }
+                        if !sections.contains(where: { $0.0 == .tidyUp }), model.preferences.tidyUpDaily || model.tidyUp.lastRun != nil {
+                            TidyUpHeader(model: model).padding(.top, 6)
                         }
                         AppliedAutomaticallyList(model: model)
                         restorable
@@ -65,6 +73,7 @@ struct InboxView: View {
         }
         .background(Palette.pane)
         .task { await inbox.load() }
+        .task { await model.tidyUp.load() }
         .onChange(of: model.dataGeneration) { _, _ in Task { await inbox.load() } }
     }
 
@@ -96,9 +105,10 @@ struct InboxView: View {
         VStack(spacing: 18) {
             ContentUnavailableView(String(localized: "Your Inbox is empty"), systemImage: "tray",
                                    description: Text(String(localized: "Suggestions from agents, captures and imports wait here until you apply or reject them.")))
-            if !inbox.restorable.isEmpty || !inbox.applied.isEmpty {
+            if !inbox.restorable.isEmpty || !inbox.applied.isEmpty || model.preferences.tidyUpDaily || model.tidyUp.lastRun != nil {
                 ScrollView {
                     VStack(alignment: .leading) {
+                        if model.preferences.tidyUpDaily || model.tidyUp.lastRun != nil { TidyUpHeader(model: model) }
                         AppliedAutomaticallyList(model: model)
                         restorable
                     }
@@ -153,6 +163,8 @@ struct SuggestionCard: View {
     @State private var applied: [Memory] = []
 
     private var inbox: InboxModel { model.inboxState }
+    /// The tidy-up's engine, reason and what it was computed on (memory processing §9).
+    private var tidyUp: TidyUpRecord? { TidyUpRecord.decode(suggestion) }
     private var isLater: Bool { inbox.later.contains(suggestion.id) }
     private var isFocused: Bool { inbox.focused == suggestion.id }
 
@@ -183,6 +195,12 @@ struct SuggestionCard: View {
                 if stale { staleBanner }
                 if let offer = inbox.groups[suggestion.id], offer.isOffer { SplitOffer(model: model, group: offer) }
                 context(binding)
+                if let reason = tidyUp?.reason {
+                    Text(String(localized: "Why, as the model put it: “\(reason)”"))
+                        .font(.callout).italic().foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if let evidence = suggestion.evidence, !evidence.isEmpty {
                     Text(String(localized: "Why, as reported: “\(evidence)”"))
                         .font(.callout).italic().foregroundStyle(.secondary)
@@ -246,10 +264,16 @@ struct SuggestionCard: View {
             fields(binding)
         case .update:
             if let target { CorrectionDiff(old: target, new: binding.wrappedValue) }
+            // A tidy-up update that absorbs a copy archives it too, or neither (§9.4).
+            ForEach(role(.source)) { copy in quoted(String(localized: "Also archives “\(copy.title)”"), copy) }
             fields(binding)
         case .archive:
+            if let reason = tidyUp?.archiveReason { Pill(label: Self.title(reason), tone: reason == .expired ? .neutral : .warning) }
             if let target { quoted(String(localized: "Archives “\(target.title)”"), target) }
             if let survivor = role(.survivor).first { quoted(String(localized: "Keeps “\(survivor.title)”"), survivor) }
+            if tidyUp?.archiveReason == .expired, let date = target?.expiresAt {
+                Text(String(localized: "It expired \(RelativeTime.full(date)).")).font(.callout).foregroundStyle(.secondary)
+            }
         case .duplicate:
             if let target { quoted(String(localized: "Already in your vault: “\(target.title)”"), target) }
         case .split:
@@ -271,7 +295,12 @@ struct SuggestionCard: View {
             let sources = role(.source)
             Text(String(localized: "Merges \(sources.count) memories into one:")).font(.callout.weight(.medium))
             ForEach(sources) { source in
-                Label(source.title, systemImage: "arrow.triangle.merge").font(.callout).lineLimit(1)
+                VStack(alignment: .leading, spacing: 1) {
+                    Label(source.title, systemImage: "arrow.triangle.merge").font(.callout).lineLimit(1)
+                    if let kept = tidyUp?.kept?[source.id] {
+                        Text(String(localized: "Keeps: \(kept)")).font(.caption).foregroundStyle(.secondary).padding(.leading, 22)
+                    }
+                }
             }
             fields(binding)
         case .conflict:
@@ -295,6 +324,14 @@ struct SuggestionCard: View {
         case .unknown:
             Text(String(localized: "This version of Funes Vault can't apply this suggestion. Update the app, or reject it."))
                 .font(.callout).foregroundStyle(.secondary)
+        }
+    }
+
+    static func title(_ reason: TidyUpArchiveReason) -> String {
+        switch reason {
+        case .duplicate: String(localized: "A copy")
+        case .superseded: String(localized: "Out of date")
+        case .expired: String(localized: "Expired")
         }
     }
 
@@ -350,7 +387,8 @@ struct SuggestionCard: View {
                 .help(String(localized: "Reject (⌫ or ⌘⌫)"))
             switch suggestion.action {
             case .update:
-                Button(String(localized: "Keep Both")) { apply(.keepBoth) }
+                // A tidy-up update replaces or is rejected: keeping both would leave two copies.
+                if suggestion.origin != .consolidation { Button(String(localized: "Keep Both")) { apply(.keepBoth) } }
                 primary(String(localized: "Replace"), .replace).disabled(stale || target == nil || incomplete)
             case .create:
                 primary(String(localized: "Apply")).help(String(localized: "Apply (⌘⏎)")).disabled(incomplete)
@@ -416,7 +454,7 @@ struct SuggestionCard: View {
         case .captureMac: return String(localized: "Captured on this Mac · \(time)")
         case .captureIPhone: return String(localized: "Captured on iPhone · \(time)")
         case .seedQuestion: return String(localized: "Your answer · \(time)")
-        case .consolidation: return String(localized: "Cleanup suggestion · \(time)")
+        case .consolidation: return String(localized: "Tidy-up · \(time)")
         case .import:
             switch suggestion.importRunID.flatMap({ inbox.importSources[$0] }) {
             case .chatgpt: return String(localized: "Imported from ChatGPT · \(time)")
@@ -512,5 +550,27 @@ struct CorrectionDiff: View {
                 .accessibilityLabel(String(localized: "After: \(after)"))
         }
         .textSelection(.enabled)
+    }
+}
+
+/// The Tidy-up section's header (04-ux-mac.md): "Last tidy-up: today 03:04 · 37 memories checked
+/// · 4 suggestions" and Tidy Up Now.
+struct TidyUpHeader: View {
+    let model: AppModel
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(InboxModel.Group.tidyUp.title).font(.headline).foregroundStyle(.secondary).accessibilityAddTraits(.isHeader)
+                Text(model.tidyUp.lastRun.map(TidyUpController.summary) ?? String(localized: "No tidy-up yet"))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button(model.tidyUp.running ? String(localized: "Tidying Up…") : String(localized: "Tidy Up Now")) {
+                Task { await model.tidyUp.runNow() }
+            }
+            .disabled(model.tidyUp.running)
+            .help(String(localized: "Look for duplicates, outdated memories and conflicts now."))
+        }
     }
 }

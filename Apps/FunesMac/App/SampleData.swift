@@ -86,7 +86,30 @@ enum SampleData {
                                                              source: .claude)
         _ = try await environment.imports.commit(preview, now: now.addingTimeInterval(-2 * 86_400))
         try await split(environment, claude: claude, now: now)
+        try await tidyUp(environment, now: now)
         return Agents(claudeCode: claude, cursor: cursor, codex: codex)
+    }
+
+    /// Phase 6b's Tidy-up section, through the real run with a canned model: a duplicate archived
+    /// automatically, a merge and a conflict left for the user.
+    private static func tidyUp(_ environment: VaultEnvironment, now: Date) async throws {
+        let store = environment.store
+        let pairs: [(String, String, String, Sensitivity, Int)] = [
+            ("Prefers dark mode", "Use dark mode in every app.", "personal_preferences", .low, 50),
+            ("Dark mode", "Dark mode everywhere, please.", "personal_preferences", .low, 2),
+            ("Running days", "I run on Tuesdays and Saturdays.", "personal_preferences", .low, 80),
+            ("Running schedule", "I run on Mondays and Thursdays.", "personal_preferences", .low, 1),
+            ("Harbor beta", "Harbor beta to club members by 31 January.", "project_context", .internal, 20),
+            ("Harbor submission", "Harbor App Store submission by 1 March.", "project_context", .internal, 3),
+        ]
+        for (title, body, category, sensitivity, days) in pairs {
+            _ = try store.createMemory(MemoryDraft(title: title, body: body, categoryKeys: [category], sensitivity: sensitivity),
+                                       now: now.addingTimeInterval(-Double(days) * 86_400))
+        }
+        let router = ModelRouter(classifier: SampleTidyUp(), onDevice: nil)
+        _ = try await TidyUpService(store: store, activity: environment.activity).run(
+            .init(router: router, autoApply: TidyUpAutoApply(level: .exceptConflicts, qualified: ["sample": .duplicatesOnly])),
+            now: now.addingTimeInterval(-3 * 3_600))
     }
 
     /// Phase 6a's Inbox: an agent's dump split into a group (new pieces, an update, one already
@@ -160,6 +183,39 @@ private struct SampleSplitter: GenerationProvider {
             object = ["pieces": []]
         }
         let json = String(decoding: try JSONSerialization.data(withJSONObject: object), as: UTF8.self)
+        return (try JSONDecoder().decode(T.self, from: Data(json.utf8)), ProviderUsage(requests: 1))
+    }
+}
+
+/// The canned model behind SampleData's tidy-up: the dark-mode pair is a duplicate, the Harbor
+/// dates merge, and the running days disagree.
+private struct SampleTidyUp: GenerationProvider {
+    let id: ProviderID = "sample"
+    let locality = Locality.localServer
+    let modelID = "sample"
+
+    func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage) {
+        var aliases: [String: String] = [:]
+        let lines = request.prompt.split(separator: "\n").map(String.init)
+        for (i, line) in lines.enumerated() where line.hasPrefix("<memory id=\"") && i + 1 < lines.count {
+            aliases[lines[i + 1]] = String(line.dropFirst(12).prefix { $0 != "\"" })
+        }
+        func alias(_ prefix: String) -> String? { aliases.first { $0.key.hasPrefix(prefix) }?.value }
+        var actions: [[String: Any]] = []
+        if let old = alias("Prefers dark mode"), let new = alias("Dark mode.") {
+            actions.append(["type": "archive", "target": new, "survivor": old, "archiveReason": "duplicate",
+                            "reason": "\(new) says the same as \(old).", "confidence": 0.95])
+        }
+        if let a = alias("Running days"), let b = alias("Running schedule") {
+            actions.append(["type": "conflict", "ids": [a, b], "question": "Which days do you run now: Tuesdays and Saturdays, or Mondays and Thursdays?"])
+        }
+        if let a = alias("Harbor beta"), let b = alias("Harbor submission") {
+            actions.append(["type": "merge", "sources": [a, b], "title": "Harbor dates", "kind": "project_context",
+                            "body": "Harbor beta to club members by 31 January; App Store submission by 1 March.",
+                            "keptPerSource": [["id": a, "kept": "the beta date"], ["id": b, "kept": "the submission date"]],
+                            "reason": "Two dates of the same release plan.", "confidence": 0.9])
+        }
+        let json = String(decoding: try JSONSerialization.data(withJSONObject: ["actions": actions]), as: UTF8.self)
         return (try JSONDecoder().decode(T.self, from: Data(json.utf8)), ProviderUsage(requests: 1))
     }
 }

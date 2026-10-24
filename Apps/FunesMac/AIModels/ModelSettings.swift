@@ -100,6 +100,9 @@ final class ModelSettings {
         var subscriptions: [SubscriptionConfig]?
         /// The user accepted that Codex can run commands that read files (ADR-0024); off by default.
         var codexAllowsFileReads: Bool?
+        /// The Daily tidy-up's provider (memory processing §9.1): a provider id or a plan; nil is the
+        /// same as New memories.
+        var tidyUp: String?
     }
 
     static let defaultsKey = "AIModels"
@@ -200,6 +203,46 @@ final class ModelSettings {
         save()
     }
 
+    // MARK: Daily tidy-up (memory processing §9)
+
+    /// The tidy-up's own choice; nil follows New memories.
+    var tidyUpID: String? { stored.tidyUp }
+
+    func setTidyUp(_ id: String?) {
+        stored.tidyUp = id
+        save()
+    }
+
+    /// The provider the tidy-up uses: its own choice, or New memories'. Nil for Apple on-device,
+    /// which the tidy-up never uses (Spike E: 8 of 49 actions right).
+    private var tidyUpChoice: String? { stored.tidyUp ?? stored.classifier }
+
+    private func generator(_ id: String?) -> (any GenerationProvider)? {
+        guard let id else { return nil }
+        if let kind = SubscriptionConfig.Kind(rawValue: id) { return subscriptionClient(kind) }
+        return providers.first { $0.id == id }.flatMap { try? client(for: $0) }
+    }
+
+    /// "Claude (Claude Code)", "Anthropic"; nil when only the code-only rules run.
+    var tidyUpName: String? {
+        guard let id = tidyUpChoice else { return nil }
+        if let kind = SubscriptionConfig.Kind(rawValue: id) { return kind.name }
+        return providers.first { $0.id == id }?.name
+    }
+
+    /// The model id the tidy-up's auto-apply levels are measured on ("claude-opus-5-5", "haiku").
+    var tidyUpModel: String? {
+        guard let id = tidyUpChoice else { return nil }
+        if let kind = SubscriptionConfig.Kind(rawValue: id) { return subscription(kind).model }
+        return providers.first { $0.id == id }?.model
+    }
+
+    /// The tidy-up's router: its provider and no on-device fallback; with none, only the code-only
+    /// rules run. At the cap it waits for the next day (ADR-0022).
+    func makeTidyUpRouter(cap: CloudRequestCap?) -> ModelRouter {
+        ModelRouter(classifier: generator(tidyUpChoice), onDevice: nil, cloudLimit: cloudLimit, cap: cap)
+    }
+
     func upsert(_ provider: ProviderConfig, key: String?) throws {
         if let key {
             if key.isEmpty { try keys.deleteKey(for: provider.endpoint.id) } else { try keys.setKey(key, for: provider.endpoint.id) }
@@ -217,6 +260,7 @@ final class ModelSettings {
         try? keys.deleteKey(for: ProviderID(rawValue: id))
         stored.providers.removeAll { $0.id == id }
         if stored.classifier == id { stored.classifier = nil }
+        if stored.tidyUp == id { stored.tidyUp = nil }
         stored.usage[id] = nil
         save()
     }

@@ -60,7 +60,7 @@ final class InboxModel {
     }
 
     enum Group: String, CaseIterable, Identifiable {
-        case agents, captures, imports, answers
+        case agents, captures, imports, answers, tidyUp
         var id: String { rawValue }
 
         var title: String {
@@ -69,6 +69,7 @@ final class InboxModel {
             case .captures: String(localized: "Captures")
             case .imports: String(localized: "Imports")
             case .answers: String(localized: "Your answers")
+            case .tidyUp: String(localized: "Tidy-up")
             }
         }
 
@@ -77,7 +78,8 @@ final class InboxModel {
             case .agent: .agents
             case .captureMac, .captureIPhone: .captures
             case .import: .imports
-            case .seedQuestion, .consolidation: .answers
+            case .seedQuestion: .answers
+            case .consolidation: .tidyUp
             }
         }
     }
@@ -230,6 +232,12 @@ final class InboxModel {
 /// Anthropic", "Kept on this Mac: looked sensitive".
 enum EngineText {
     static func text(_ suggestion: Suggestion, agentName: String?, providerName: (String) -> String?) -> String? {
+        if let record = TidyUpRecord.decode(suggestion) {
+            guard record.engine != TidyUpRecord.rulesEngine else { return String(localized: "Found on this Mac") }
+            let parts = record.engine.split(separator: "/", maxSplits: 1).map(String.init)
+            guard parts.count == 2 else { return String(localized: "Proposed by \(record.engine)") }
+            return String(localized: "Proposed by \(parts[1]) via \(providerName(parts[0]) ?? parts[0])")
+        }
         guard let json = suggestion.classification, let data = json.data(using: .utf8),
               let record = try? JSONDecoder().decode(ClassificationRecord.self, from: data) else {
             if let agentName { return String(localized: "Proposed by \(agentName)") }

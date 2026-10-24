@@ -177,6 +177,10 @@ final class UIReview: NSObject, NSApplicationDelegate {
             model.inboxState.focused = model.inboxState.groups.values.first(where: \.isOffer)?.id
             try? await Task.sleep(for: .milliseconds(600))
             await snapshot("inbox-split-offer-\(suffix)", main.window)
+            // Phase 6b: the Tidy-up section, with a merge, a conflict and its header.
+            model.inboxState.focused = model.inbox.first(where: { $0.origin == .consolidation })?.id
+            try? await Task.sleep(for: .milliseconds(600))
+            await snapshot("inbox-tidy-up-\(suffix)", main.window)
             model.inboxState.focused = nil
             await mainScene("agents-access") {
                 model.selectedAgentID = fixture.agents.claudeCode.id

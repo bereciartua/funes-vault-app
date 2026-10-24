@@ -190,7 +190,9 @@ public final class CompanionHandlers: Sendable {
         let deviceNames = try await deviceNames()
         let agentNames = try await agentNames()
         let items = page.map { s in
-            InboxItem(id: s.id, origin: s.origin, action: s.action,
+            // The tidy-up's cards are answered on the Mac until the iPhone gets its own (ADR-0021):
+            // an update there may also archive a copy, and an archive names what it keeps.
+            InboxItem(id: s.id, origin: s.origin, action: s.origin == .consolidation ? .unknown : s.action,
                       sourceLabel: Self.sourceLabel(s, devices: deviceNames, agents: agentNames), targetMemoryId: s.targetMemoryID,
                       title: s.title, body: s.body, kind: s.kind ?? .fact, categories: s.categoryKeys,
                       sensitivity: s.sensitivity ?? .low, expiresAt: s.expiresAt, evidence: s.evidence, purpose: s.purpose,
@@ -203,10 +205,10 @@ public final class CompanionHandlers: Sendable {
     }
 
     /// The suggestion's own action (6.1.1): an update replaces its target. Merge, split and
-    /// conflict are answered on the Mac (companion protocol §4).
+    /// conflict, and the tidy-up's proposals, are answered on the Mac (companion protocol §4).
     func apply(_ params: InboxApplyParams, device: UUID, now: Date) async throws -> InboxApplied {
         guard let suggestion = try await services.suggestions.suggestion(id: params.suggestionId) else { throw VaultError.notFound }
-        guard suggestion.action.appliesOnPhone else { throw VaultError.unsupportedAction }
+        guard suggestion.action.appliesOnPhone, suggestion.origin != .consolidation else { throw VaultError.unsupportedAction }
         let edits = params.edits.map(Self.suggestionEdit) ?? SuggestionEdit()
         let result = try await services.suggestions.apply(suggestionID: params.suggestionId, edits: edits, now: now,
                                                           actor: .device(device), via: .companion)

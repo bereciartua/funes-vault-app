@@ -136,14 +136,14 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 - `request_expired` (`approvals.*`: past its 15 minutes, an access request's in-call wait over, or withdrawn or invalidated)
 - `request_changed` (`approvals.answer`: a stale `revision`; fetch the panel again)
 - `target_changed` (`inbox.apply`: a memory the suggestion changes was edited, archived or deleted since it was suggested; the suggestion is still waiting, to be reviewed again on the Mac)
-- `unsupported_action` (`inbox.apply`: merge, split, conflict and unknown actions are answered on the Mac)
+- `unsupported_action` (`inbox.apply`: merge, split, conflict and unknown actions, and the daily tidy-up's proposals, are answered on the Mac)
 
 **Edits:** in `changes` (and `inbox.apply`'s `edits`), an absent field is unchanged; `"expiresAt": null` removes the expiry.
 
 **Phase 6 (v0.3) Inbox changes** ([ADR-0020](decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](decisions/0021-daily-tidy-up.md)):
 - `inbox.list` items gain `groupId?`, `groupLabel?` ("ChatGPT · 12 pieces"), `outsideScope` and `targetMemoryVersion?`. `action` gains `duplicate`, `split`, `merge` and `conflict`.
 - The phone decodes an action it doesn't know as `unknown` and shows such items as "Review on your Mac". Both apps are updated together (there are no external users yet), so the Mac doesn't filter by phone version.
-- `inbox.apply` applies the suggestion's own action (the same per-action apply as the Mac): `create` saves, `update` replaces its target, `archive` archives it, `duplicate` changes nothing. A stale target returns `target_changed` (not `conflict`, which the phone's Inbox reads as "answered on your Mac"). Merge, split and conflict suggestions are answered on the Mac until the phone gets their cards; `inbox.apply` refuses them from the phone with `unsupported_action`.
+- `inbox.apply` applies the suggestion's own action (the same per-action apply as the Mac): `create` saves, `update` replaces its target, `archive` archives it, `duplicate` changes nothing. A stale target returns `target_changed` (not `conflict`, which the phone's Inbox reads as "answered on your Mac"). Merge, split and conflict suggestions are answered on the Mac until the phone gets their cards; `inbox.apply` refuses them from the phone with `unsupported_action`. So are the daily tidy-up's proposals (origin `consolidation`, whatever their action, ADR-0021): `inbox.list` sends them with action `unknown`, so the phone shows "Review on your Mac", because a tidy-up update may also archive a copy and an archive names the memory it keeps, which the phone's cards don't show. The phone may still reject them.
 
 ### 4.1 Approvals from the iPhone (task 5.6)
 [FR-iOS-12](../product/03-requirements.md), [ADR-0019](decisions/0019-cloudkit-doorbell-for-iphone-approvals.md). The Mac's side is `CompanionApprovals` in `FunesCompanion`; the types are `FunesProtocol/Companion/CompanionApprovals.swift`.

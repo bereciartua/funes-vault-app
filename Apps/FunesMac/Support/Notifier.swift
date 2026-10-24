@@ -3,10 +3,11 @@ import UserNotifications
 
 /// The optional notifications (FR-L-04): a request expired unanswered, a suggestion is waiting, an
 /// agent was refused repeatedly, Remote Access's tunnel stopped. Each is off until turned on in Settings ▸ General; permission is
-/// asked then, never at launch. Notifications name agents and counts, never memory or task text.
+/// asked then, never at launch. A daily tidy-up with results says so (memory processing §9.5);
+/// permission is asked when it's turned on. Notifications name agents and counts, never memory or task text.
 @MainActor
 final class Notifier: NSObject, UNUserNotificationCenterDelegate {
-    enum Kind: String { case expired, suggestion, refused, tunnelDown }
+    enum Kind: String { case expired, suggestion, refused, tunnelDown, tidyUp }
 
     /// A click: which kind, and the agent it's about.
     var onOpen: (Kind, UUID?) -> Void = { _, _ in }
