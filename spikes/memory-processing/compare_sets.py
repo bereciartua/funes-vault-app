@@ -8,14 +8,14 @@ import sys
 MODELS = ["codex", "codex-terra", "claude-haiku", "claude-opus"]
 
 
-def numbers(set_name):
+def numbers(set_name, ext_name="extract", dec_name="decide"):
     os.environ["SPIKE_SET"] = set_name
     for m in ("score",):
         sys.modules.pop(m, None)
     score = importlib.import_module("score")
     out = {}
     for prov in MODELS:
-        ext, dec, tidy = score.load(prov, "extract"), score.load(prov, "decide"), score.load(prov, "tidy-v2")
+        ext, dec, tidy = score.load(prov, ext_name), score.load(prov, dec_name), score.load(prov, "tidy-v2")
         if not ext:
             continue
         res = score.score_extraction(ext, decisions=dec)

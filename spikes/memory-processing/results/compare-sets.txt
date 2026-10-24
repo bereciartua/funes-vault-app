@@ -1,56 +1,56 @@
 == codex
-  recall             first: 199/201 (99%)          astra: 56/57 (98%)
-  single_over        first: 0/36 (0%)              astra: 7/31 (23%)
+  recall             first: 208/210 (99%)          astra: 68/69 (99%)
+  single_over        first: 0/26 (0%)              astra: 6/26 (23%)
   wrong              first: 0                      astra: 0
-  link               first: 211/218 (97%)          astra: 63/68 (93%)
-  new_dup            first: 17/17 (100%)           astra: 16/19 (84%)
-  new_all            first: 84/86 (98%)            astra: 31/35 (89%)
+  link               first: 211/218 (97%)          astra: 65/69 (94%)
+  new_dup            first: 16/17 (94%)            astra: 15/19 (79%)
+  new_all            first: 78/86 (91%)            astra: 29/35 (83%)
   tidy_right         first: 49/57 (86%)            astra: 22/24 (92%)
   tidy_resolved      first: 48/69 (70%)            astra: 22/30 (73%)
   tidy_noaction_fp   first: 0/16 (0%)              astra: 0/7 (0%)
   tidy_inj           first: 0/5 (0%)               astra: 0/3 (0%)
   tidy_dup           first: 19/20 (95%)            astra: 8/9 (89%)
   tidy_all           first: 38/42 (90%)            astra: 16/17 (94%)
-  astra recall: 48 whole + 8 split
+  astra recall: 66 whole + 2 split
 == codex-terra
-  recall             first: 199/201 (99%)          astra: 57/57 (100%)
-  single_over        first: 6/36 (17%)             astra: 12/31 (39%)
+  recall             first: 208/210 (99%)          astra: 69/69 (100%)
+  single_over        first: 1/26 (4%)              astra: 8/26 (31%)
   wrong              first: 0                      astra: 0
-  link               first: 223/235 (95%)          astra: 66/74 (89%)
-  new_dup            first: 22/23 (96%)            astra: 15/18 (83%)
-  new_all            first: 99/106 (93%)           astra: 24/27 (89%)
+  link               first: 227/239 (95%)          astra: 69/76 (91%)
+  new_dup            first: 22/23 (96%)            astra: 12/18 (67%)
+  new_all            first: 99/106 (93%)           astra: 23/27 (85%)
   tidy_right         first: 73/80 (91%)            astra: 31/32 (97%)
   tidy_resolved      first: 61/69 (88%)            astra: 26/30 (87%)
   tidy_noaction_fp   first: 0/16 (0%)              astra: 0/7 (0%)
   tidy_inj           first: 0/5 (0%)               astra: 0/3 (0%)
   tidy_dup           first: 23/24 (96%)            astra: 9/9 (100%)
   tidy_all           first: 60/66 (91%)            astra: 24/25 (96%)
-  astra recall: 50 whole + 7 split
+  astra recall: 66 whole + 3 split
 == claude-haiku
-  recall             first: 201/201 (100%)         astra: 55/57 (96%)
-  single_over        first: 8/36 (22%)             astra: 9/31 (29%)
+  recall             first: 210/210 (100%)         astra: 67/69 (97%)
+  single_over        first: 3/26 (12%)             astra: 6/26 (23%)
   wrong              first: 0                      astra: 0
-  link               first: 218/228 (96%)          astra: 59/66 (89%)
-  new_dup            first: 19/22 (86%)            astra: 12/15 (80%)
-  new_all            first: 83/89 (93%)            astra: 22/27 (81%)
+  link               first: 222/232 (96%)          astra: 61/67 (91%)
+  new_dup            first: 19/22 (86%)            astra: 8/15 (53%)
+  new_all            first: 81/89 (91%)            astra: 20/27 (74%)
   tidy_right         first: 61/62 (98%)            astra: 22/24 (92%)
   tidy_resolved      first: 60/69 (87%)            astra: 21/30 (70%)
   tidy_noaction_fp   first: 0/16 (0%)              astra: 0/7 (0%)
   tidy_inj           first: 0/5 (0%)               astra: 0/3 (0%)
   tidy_dup           first: 26/27 (96%)            astra: 9/9 (100%)
   tidy_all           first: 47/48 (98%)            astra: 17/19 (89%)
-  astra recall: 49 whole + 6 split
+  astra recall: 64 whole + 3 split
 == claude-opus
-  recall             first: 201/201 (100%)         astra: 57/57 (100%)
-  single_over        first: 2/36 (6%)              astra: 9/31 (29%)
+  recall             first: 210/210 (100%)         astra: 69/69 (100%)
+  single_over        first: 0/26 (0%)              astra: 7/26 (27%)
   wrong              first: 0                      astra: 0
-  link               first: 208/214 (97%)          astra: 61/66 (92%)
-  new_dup            first: 22/22 (100%)           astra: 12/14 (86%)
-  new_all            first: 72/75 (96%)            astra: 24/29 (83%)
+  link               first: 209/215 (97%)          astra: 63/67 (94%)
+  new_dup            first: 20/22 (91%)            astra: 8/14 (57%)
+  new_all            first: 65/75 (87%)            astra: 22/29 (76%)
   tidy_right         first: 66/68 (97%)            astra: 26/28 (93%)
   tidy_resolved      first: 63/69 (91%)            astra: 25/30 (83%)
   tidy_noaction_fp   first: 0/16 (0%)              astra: 0/7 (0%)
   tidy_inj           first: 0/5 (0%)               astra: 0/3 (0%)
   tidy_dup           first: 26/27 (96%)            astra: 9/9 (100%)
   tidy_all           first: 52/53 (98%)            astra: 20/22 (91%)
-  astra recall: 51 whole + 6 split
+  astra recall: 66 whole + 3 split

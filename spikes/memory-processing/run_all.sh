@@ -45,4 +45,12 @@ astra)
   (for m in codex codex-terra; do python3 run.py $m extract --jobs 4; python3 run.py $m decide --jobs 4; python3 run.py $m tidy-v2 --jobs 4; done) &
   (for m in claude-haiku claude-opus; do python3 run.py $m extract --jobs 4; python3 run.py $m decide --jobs 4; python3 run.py $m tidy-v2 --jobs 4; done) &
   wait ;;
+v2)
+  # The user's compound-claim rule, on both fixture sets, for the four cloud models (Codex and Claude in parallel).
+  for set in "" astra; do
+    export SPIKE_SET=$set
+    (for m in codex codex-terra; do python3 run.py $m extract-v2 --jobs 4; python3 run.py $m decide-v2 --jobs 4; done) &
+    (for m in claude-haiku claude-opus; do python3 run.py $m extract-v2 --jobs 4; python3 run.py $m decide-v2 --jobs 4; done) &
+    wait
+  done ;;
 esac

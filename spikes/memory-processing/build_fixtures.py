@@ -5,6 +5,12 @@ Writes fixtures/inputs.json, fixtures/vault.json and fixtures/clusters.json. Eve
 the same freelancer as the Spike 2 memories (Packages/FunesCore/Tests/FunesCoreTests/fixtures/
 memories-200.json), which is the vault the inputs link against.
 
+Compound claims follow the user's labels (2026-10-23, 21 items across both sets): split lists, a rule and its
+exception, a fact and its consequence, and facts joined by "and"; keep as one only what loses its meaning apart (a
+fallback that only applies to the main preference, measurements of one object, a value with its target, a plan
+with its hedges). Applying that rule to this set's own labels split in50, in51, in60, in66 and in77 and made a second
+piece optional (either way is right) for in02, in17, in38, in42 and in44.
+
 Matching rules used by the scorer (score.py):
 - An expected piece matches a model piece when every regex group in `keys` matches the piece's title or
   body (case-insensitive; a group is "a|b|c").
@@ -89,7 +95,8 @@ I("in01", "capture_typed", ["single"], "Miso's vet is Dr. Okafor at the Clínica
      cats=["personal_preferences"])], single=True)
 I("in02", "capture_typed", ["single", "correction"], "Switched my coffee order to a cortado, no oat milk anymore.",
   [P("Coffee order is now a cortado, without oat milk", ["cortado"], "update", "m024", intent="correction|assertion",
-     cats=["personal_preferences"])], single=True)
+     cats=["personal_preferences"]),
+   P("No more oat milk in my coffee", ["oat", NEG], "update|duplicate|create|retract", "m024", opt=True)])
 I("in03", "capture_typed", ["list", "negation", "correction"],
   "Peanuts are out but tree nuts are fine. Also I can't stand coriander, and I've started eating fish again on weekends.",
   [P("Allergic to peanuts; tree nuts are fine", ["peanut"], "duplicate|update", "m136", cats=["health"], sens="sensitive"),
@@ -124,10 +131,10 @@ I("in09", "capture_typed", ["quoted_speech"],
   must_not=[M("quoted advice as a claim", [r"should (really )?open|needs? to open|plans? to open|will open"], [r"said|advised|suggested|recommend|accountant"])])
 I("in10", "capture_typed", ["list"],
   "Packing list for sailing: always bring SPF 50, a spare dry bag, and my own life jacket (the club ones don't fit me).",
-  [P("Bring a life jacket of my own when sailing", ["life jacket|lifejacket|buoyancy"], group="pack",
+  [P("Bring a life jacket of my own when sailing", ["life jacket|lifejacket|buoyancy"],
      cats=["personal_preferences"]),
-   P("Bring a spare dry bag when sailing", ["dry bag"], group="pack", cats=["personal_preferences"]),
-   P("Bring SPF 50 when sailing", ["spf|sunscreen"], "create|duplicate", "m156", group="pack",
+   P("Bring a spare dry bag when sailing", ["dry bag"], cats=["personal_preferences"]),
+   P("Bring SPF 50 when sailing", ["spf|sunscreen"], "create|duplicate", "m156",
      cats=["personal_preferences", "health"]),
    P("The club's life jackets don't fit", ["club", "fit", NEG], opt=True)])
 I("in11", "capture_typed", ["single"], "My standing desk's sit height is 72 cm and standing height is 110 cm.",
@@ -139,9 +146,8 @@ I("in12", "capture_typed", ["single", "third_person"], "Jordan's night shifts ar
   must_not=[M("third person attributed to the user", [r"night shift"], [r"jordan|partner"])],
   single=True)
 I("in13", "capture_typed", ["third_person"], "My sister is vegan now, so no cheese board when she visits in December.",
-  [P("Sister is vegan now", ["sister|lucía|lucia", "vegan"], "create|update", "m042", group="sis",
-     cats=["personal_preferences"]),
-   P("Sister visits in December; no cheese board", ["december|cheese"], group="sis", opt=True)],
+  [P("Sister is vegan now", ["sister|lucía|lucia", "vegan"], "create|update", "m042", cats=["personal_preferences"]),
+   P("Sister visits in December; no cheese board", ["december|cheese"])],
   must_not=[M("third person attributed to the user", [r"\b(I'm|I am|the user is|user is) vegan"], [])])
 I("in14", "capture_typed", ["correction", "sensitive_health"],
   "Correction: my penicillin allergy is actually to amoxicillin only, not penicillin in general. The allergist tested me last week.",
@@ -155,8 +161,8 @@ I("in15", "capture_typed", ["retraction"], "Forget the Japan trip, we cancelled 
 I("in16", "capture_typed", ["secret"], "Home wifi password: tejo-Lisboa-2291 in case I forget",
   [], rejected="assigned_secret")
 I("in17", "capture_typed", ["not_a_secret"], "My password manager is 1Password. password: see 1Password for everything.",
-  [P("Uses 1Password as password manager", ["1password"], "create|duplicate|update", "m131", cats=["privacy_preferences"])],
-  single=True)
+  [P("Uses 1Password as password manager", ["1password"], "create|duplicate|update", "m131", cats=["privacy_preferences"]),
+   P("All passwords are in 1Password", ["1password", "password"], "create|duplicate|update", "m131", opt=True)])
 
 # --- Shared captures (Share sheet, Services: untrusted text) ---------------------------------------
 I("in18", "capture_shared", ["shared", "remember"],
@@ -243,9 +249,9 @@ I("in52", "capture_dictated", ["ramble", "long", "self_correction", "retraction"
   must_not=[M("self-corrected statement kept", [r"japan"], [r"cancel"])])
 I("in66", "capture_dictated", ["third_person", "single"],
   "remind me Jordan hates surprise parties so nothing big for the birthday",
-  [P("Jordan hates surprise parties; nothing big for the birthday", ["surprise"], rel=["m040", "m044"],
-     cats=["personal_preferences"])],
-  must_not=[M("third person attributed to the user", [r"surprise part"], [r"jordan|partner"])], single=True)
+  [P("Jordan hates surprise parties", ["surprise"], rel=["m040", "m044"], cats=["personal_preferences"]),
+   P("Nothing big for Jordan's birthday", ["birthday", "nothing big|low.key|small|no big|quiet|simple|modest"], rel=["m044"])],
+  must_not=[M("third person attributed to the user", [r"surprise part"], [r"jordan|partner"])])
 I("in73", "capture_dictated", ["correction", "single"], "note for Harbor: payments are now in scope for v1, the club wants MB Way",
   [P("Harbor v1 now includes payments", ["payment"], "update", "m092", group="pay",
      intent="correction|assertion", cats=["project_context", "software_development"]),
@@ -259,8 +265,9 @@ I("in36", "capture_typed", ["injection"],
 I("in38", "capture_typed", ["negation", "sensitive_health"],
   "Not allergic to shellfish: the reaction last summer was food poisoning.",
   [P("Not allergic to shellfish; last summer's reaction was food poisoning", ["shellfish", NEG + r"|food poisoning"],
-     cats=["health"], sens="sensitive")],
-  must_not=[M("negation lost", [r"allergic to shellfish|shellfish allergy"], [NEG, r"food poisoning"])], single=True)
+     cats=["health"], sens="sensitive"),
+   P("Last summer's reaction was food poisoning", ["food poisoning"], opt=True)],
+  must_not=[M("negation lost", [r"allergic to shellfish|shellfish allergy"], [NEG, r"food poisoning"])])
 I("in39", "capture_typed", ["third_person", "sensitive_health"],
   "Jordan's allergic to cats, but we keep Miso anyway; Jordan takes antihistamines.",
   [P("Jordan is allergic to cats and takes antihistamines", ["jordan", "allerg|antihistamine"], rel=["m041", "m039"],
@@ -276,11 +283,13 @@ I("in41", "capture_typed", ["sensitive_money"], "Paid off the last of the credit
   single=True)
 I("in42", "capture_typed", ["sensitive_money"], "My income this year will be about €95k, way up from last year.",
   [P("Income this year (2026) will be about €95k, up from last year", ["95"], "create|update", "m182", cats=["finance"],
-     sens="sensitive")], single=True)
+     sens="sensitive"),
+   P("Income is up from last year", ["last year", "up|more|higher|increase"], "create|update", "m182", opt=True)])
 I("in44", "capture_typed", ["spanish", "single"],
   "No me gusta que me tuteen en los mails de clientes; prefiero un tono formal en español.",
   [P("Prefers a formal tone (no tuteo) in Spanish client emails", ["formal|tute|usted"], rel=["m005", "m006"],
-     cats=["communication_style"])], single=True)
+     cats=["communication_style"]),
+   P("Prefers a formal tone in Spanish", ["formal"], rel=["m005", "m006"], opt=True)])
 I("in45", "capture_typed", ["spanish", "negation", "correction"], "Ya no tomo café, solo té verde.",
   [P("No longer drinks coffee, only green tea", ["caf|coffee", NEG + r"|solo|only"], "update|retract", "m024|m025",
      intent="correction|assertion", cats=["personal_preferences"]),
@@ -288,28 +297,30 @@ I("in45", "capture_typed", ["spanish", "negation", "correction"], "Ya no tomo ca
   must_not=[M("negation lost", [r"caf[eé]|coffee"], [NEG, r"solo|only|t[eé] verde|green tea"])], single=True)
 I("in50", "capture_typed", ["time_limited", "single"],
   "This week I'm working from Montevideo, so I'm on UYT (UTC−3) until Sunday.",
-  [P("Working from Montevideo on UTC−3 until Sunday", ["montevideo|uyt|utc"], rel=["m012"], cats=["personal_preferences"],
-     time_limited=True)], single=True)
+  [P("Working from Montevideo this week", ["montevideo"], rel=["m012"], cats=["personal_preferences"], time_limited=True),
+   P("On UYT (UTC−3) until Sunday", ["uyt|utc"], rel=["m012"], time_limited=True)])
 I("in51", "capture_typed", ["correction", "single"],
   "My GP moved: Dr. Ana Ferreira now works at the Estrela health centre, same booking app.",
   [P("GP Dr. Ana Ferreira now works at the Estrela health centre", ["estrela"], "update", "m143",
-     intent="correction|assertion", cats=["health"], sens="sensitive")], single=True)
+     intent="correction|assertion", cats=["health"], sens="sensitive"),
+   P("Same booking app for the GP", ["app"], "duplicate|create|update", "m143")])
 I("in53", "capture_typed", ["remember"],
   "Remember: Miso needs her kidney diet food, Royal Canin Renal, and no more dry treats.",
-  [P("Miso needs kidney diet food (Royal Canin Renal)", ["renal|kidney"], rel=["m039"], group="miso",
+  [P("Miso needs kidney diet food (Royal Canin Renal)", ["renal|kidney"], rel=["m039"],
      intent="remember|assertion", cats=["personal_preferences"]),
-   P("Miso gets no more dry treats", ["treat"], group="miso", intent="remember|assertion")],
+   P("Miso gets no more dry treats", ["treat"], intent="remember|assertion")],
   must_not=[M("negation lost: dry treats", [r"treat"], [NEG])])
 I("in55", "capture_typed", ["uncertain"], "I think my passport expires in 2028? need to check.",
   [P("Passport might expire in 2028 (to check)", ["passport"], opt=True)],
   must_not=[M("uncertain claim stated as fact", [r"passport"], [HEDGE, r"verify|confirm|unsure|not sure|believe"])])
 I("in59", "capture_typed", ["list"], "Groceries I always keep stocked: tofu, tempeh, red lentils, oat milk.",
-  [P("Keeps tofu stocked", ["tofu"], group="g", rel=["m154"], cats=["personal_preferences"]),
-   P("Keeps tempeh stocked", ["tempeh"], group="g"), P("Keeps red lentils stocked", ["lentil"], group="g"),
-   P("Keeps oat milk stocked", ["oat milk"], group="g")])
+  [P("Keeps tofu stocked", ["tofu"], rel=["m154"], cats=["personal_preferences"]),
+   P("Keeps tempeh stocked", ["tempeh"]), P("Keeps red lentils stocked", ["lentil"]),
+   P("Keeps oat milk stocked", ["oat milk"])])
 I("in60", "capture_typed", ["event"], "Lucía and the kids are coming to Lisbon 20 to 30 December; they'll stay with us.",
-  [P("Lucía and her kids visit Lisbon 20–30 December, staying with us", ["luc[ií]a|sister", "december|20"],
-     rel=["m042", "m120"], cats=["personal_preferences"], time_limited=True)], single=True)
+  [P("Lucía and her kids visit Lisbon 20–30 December", ["luc[ií]a|sister|kids", "december|20"],
+     rel=["m042", "m120"], cats=["personal_preferences"], time_limited=True),
+   P("They'll stay with us", ["stay"], rel=["m042"], time_limited=True)])
 I("in63", "capture_typed", ["instruction", "single"], "From now on, answer in Spanish when I write in Spanish.",
   [P("Answer in Spanish when I write in Spanish", ["spanish|español"], rel=["m006", "m049"], cats=["communication_style"])],
   must_not=[M("instruction turned into a self-description", [r"\b(I (respond|reply|answer)|respondo)"], [])], single=True)
@@ -456,14 +467,14 @@ I("in25", "agent", ["agent_dump", "long", "dense", "duplicates"],
    P("Lives in Lisbon", ["lisbon"], opt=True),
    P("Stopped using Notion", ["notion"], opt=True),
    P("Originally from Buenos Aires", ["buenos aires"], rel=["m043"]),
-   P("Prefers concise answers", ["concise"], "duplicate", "m001", group="g1"),
-   P("No flattery", ["flatter"], "duplicate", "m014", group="g1"),
+   P("Prefers concise answers", ["concise"], "duplicate", "m001"),
+   P("No flattery", ["flatter"], "duplicate", "m014"),
    P("Critical feedback before praise", ["feedback|critic"], "duplicate", "m007"),
    P("Swift with strict concurrency", ["concurrency"], "duplicate", "m055"),
    P("Swift Testing for new tests", ["swift testing"], "duplicate", "m056"),
    P("Side projects on a Hetzner VPS with Docker Compose", ["hetzner"], "duplicate", "m071"),
-   P("Building Harbor, a sailing club booking app", ["harbor", "booking|sailing"], "duplicate", "m090", group="harbor"),
-   P("Harbor beta planned for January 2027", ["beta"], "duplicate|update", "m093", group="harbor"),
+   P("Building Harbor, a sailing club booking app", ["harbor", "booking|sailing"], "duplicate", "m090"),
+   P("Harbor beta planned for January 2027", ["beta"], "duplicate|update", "m093"),
    P("Maintains Ledgerly, an open-source budgeting CLI in Python", ["ledgerly"], "duplicate", "m097"),
    P("Vegetarian", ["vegetarian"], "duplicate", "m027"),
    P("Mild peanut allergy", ["peanut"], "duplicate", "m136", sens="sensitive"),
@@ -474,8 +485,8 @@ I("in25", "agent", ["agent_dump", "long", "dense", "duplicates"],
    P("Learning European Portuguese, around A2", ["portuguese"], "duplicate", "m019"),
    P("Uses a Kinesis Advantage keyboard", ["kinesis"], "create|update", "m036"),
    P("Prefers trains to flights for short trips", ["train"], "duplicate", "m031"),
-   P("Saving for a flat", ["\\bflat\\b"], "duplicate|update", "m175", group="money"),
-   P("Emergency fund covers about four months", ["emergency"], "duplicate", "m161", group="money"),
+   P("Saving for a flat", ["\\bflat\\b"], "duplicate|update", "m175"),
+   P("Emergency fund covers about four months", ["emergency"], "duplicate", "m161"),
    P("Wants to take a pottery class in spring", ["pottery"]),
    P("No cryptocurrency suggestions", ["crypto"], "duplicate", "m179"),
    P("Keeps notes in Obsidian, stopped using Notion", ["obsidian"], rel=["m118"]),
@@ -636,8 +647,9 @@ I("in57", "import_markdown", ["import", "single", "conflict"],
    P("2-space indentation", ["2.space|two.space"], "update", "m074", group="fmt")])
 I("in77", "import_markdown", ["import", "single", "duplicates", "sensitive_money"],
   "## Finance\n- Rent: €1,350, due on the 1st, paid to Mr. Duarte by transfer",
-  [P("Rent €1,350, due on the 1st, paid to Mr. Duarte by transfer", ["1,?350|duarte"], "duplicate", "m173",
-     cats=["finance"], sens="sensitive")], single=True)
+  [P("Rent is €1,350", ["1,?350"], "duplicate", "m173", cats=["finance"], sens="sensitive"),
+   P("Rent is due on the 1st", ["1st|first"], "duplicate", "m173"),
+   P("Rent is paid to Mr. Duarte by transfer", ["duarte|transfer"], "duplicate", "m173")])
 I("in31", "import_chatgpt", ["import", "correction"],
   "Is planning a kitchen renovation; budget increased to €15,000 and they chose a gas hob instead of induction.",
   [P("Kitchen renovation budget increased to €15,000", ["15,?000"], "update", "m105", intent="correction|assertion",
@@ -650,9 +662,11 @@ I("in58", "import_chatgpt", ["import", "single"], "Has a cat named Miso who is 7
   [P("Cat Miso is 7 years old", ["miso"], "update|duplicate", "m039", cats=["personal_preferences"])], single=True)
 I("in56", "import_claude", ["import", "duplicates"],
   "Uses Postgres for servers and SQLite locally; dislikes ORMs; recently tried Drizzle and liked it.",
-  [P("Postgres for servers, SQLite locally", ["postgres|sqlite"], "duplicate", "m066", group="db"),
-   P("Dislikes ORMs", ["orm"], "duplicate", "m066", group="db"),
-   P("Tried Drizzle recently and liked it", ["drizzle"], rel=["m066"])])
+  [P("Postgres for servers", ["postgres"], "duplicate", "m066"),
+   P("SQLite locally", ["sqlite"], "duplicate", "m066"),
+   P("Dislikes ORMs", ["\\borms?\\b"], "duplicate", "m066"),
+   P("Recently tried Drizzle", ["drizzle", "tried|try"], rel=["m066"]),
+   P("Liked Drizzle", ["drizzle", "like|enjoy"], rel=["m066"])])
 I("in76", "import_claude", ["import", "duplicates"], "Lives with partner (Jordan) and a cat",
   [P("Lives with partner Jordan", ["jordan|partner"], "duplicate", "m041", group="home"),
    P("Has a cat", ["cat"], "duplicate", "m039", group="home")])

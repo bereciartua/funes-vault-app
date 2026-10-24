@@ -1,6 +1,6 @@
 {
  "format": "funes.fixture.extraction.v1",
- "note": "Second-author fixtures, written blind by GPT-6-Astra (author_astra.py). Synthetic; judgments as Astra wrote them; mechanical fixes: none.",
+ "note": "Second-author fixtures, written blind by GPT-6-Astra (author_astra.py). Synthetic; judgments as Astra wrote them; mechanical fixes: none; the user's compound-claim labels replace Astra's for a04, a36, a09, a28, a29, a17, a20; the user's rule applied to a03, a35, a06, a08, a40.",
  "now": "2026-10-23",
  "inputs": [
   {
@@ -96,11 +96,10 @@
    "text": "Cryptocurrency and NFTs aren't things I buy, and recommendations to invest in either are unwanted.",
    "expected": [
     {
-     "claim": "I do not buy cryptocurrency or NFTs and do not want investment recommendations for them.",
+     "claim": "I don't buy cryptocurrency",
      "keys": [
       "crypto|cripto",
-      "\\bNFTs?\\b",
-      "not|no\\b|never|avoid|unwanted|don't|reject|nunca|evito"
+      "n't|\\bnot\\b|\\bno\\b|never|avoid|unwanted|nunca"
      ],
      "link": {
       "decision": [
@@ -115,11 +114,48 @@
      ],
      "intent": [
       "assertion"
+     ]
+    },
+    {
+     "claim": "I don't buy NFTs",
+     "keys": [
+      "\\bNFTs?\\b",
+      "n't|\\bnot\\b|\\bno\\b|never|avoid|unwanted|nunca"
      ],
-     "categories": [
-      "finance"
+     "link": {
+      "decision": [
+       "duplicate"
+      ],
+      "target": [
+       "m179"
+      ]
+     },
+     "related": [
+      "m179"
      ],
-     "minSensitivity": "sensitive"
+     "intent": [
+      "assertion"
+     ]
+    },
+    {
+     "claim": "No recommendations to invest in either",
+     "keys": [
+      "recommend|suggest|recomend"
+     ],
+     "link": {
+      "decision": [
+       "duplicate"
+      ],
+      "target": [
+       "m179"
+      ]
+     },
+     "related": [
+      "m179"
+     ],
+     "intent": [
+      "assertion"
+     ]
     }
    ],
    "mustNot": [
@@ -133,8 +169,7 @@
       "\\b(no|not|never|don't|nunca|ni|sin)\\b|avoid|unwanted|reject|evit|abstain"
      ]
     }
-   ],
-   "singleClaim": true
+   ]
   },
   {
    "id": "a04",
@@ -147,12 +182,9 @@
    "text": "For fresh Swift test code, use Swift Testing rather than XCTest; UI tests are the exception and can still use XCTest.",
    "expected": [
     {
-     "claim": "New Swift tests use Swift Testing rather than XCTest, except for UI tests.",
+     "claim": "Use Swift Testing rather than XCTest for new Swift tests",
      "keys": [
-      "Swift Testing",
-      "XCTest",
-      "\\bUI\\b|interfaz",
-      "except|salvo"
+      "swift testing"
      ],
      "link": {
       "decision": [
@@ -167,9 +199,28 @@
      ],
      "intent": [
       "assertion"
+     ]
+    },
+    {
+     "claim": "UI tests can still use XCTest",
+     "keys": [
+      "\\bUI\\b|interfaz",
+      "xctest"
      ],
-     "categories": [
-      "software_development"
+     "link": {
+      "decision": [
+       "duplicate",
+       "create"
+      ],
+      "target": [
+       "m056"
+      ]
+     },
+     "related": [
+      "m056"
+     ],
+     "intent": [
+      "assertion"
      ]
     }
    ],
@@ -251,10 +302,32 @@
      "categories": [
       "project_context"
      ]
+    },
+    {
+     "claim": "No replacement speaking engagement",
+     "keys": [
+      "replacement|reemplazo"
+     ],
+     "link": {
+      "decision": [
+       "create",
+       "retract",
+       "update"
+      ],
+      "target": [
+       "m109"
+      ]
+     },
+     "related": [
+      "m109"
+     ],
+     "intent": [
+      "assertion"
+     ],
+     "optional": true
     }
    ],
-   "mustNot": [],
-   "singleClaim": true
+   "mustNot": []
   },
   {
    "id": "a07",
@@ -340,7 +413,6 @@
     }
    ],
    "mustNot": [],
-   "singleClaim": true,
    "notes": "Frequency and distance describe one routine."
   },
   {
@@ -354,10 +426,50 @@
    "text": "For clothes shopping, my sizes are medium shirts, 32/32 trousers, and EU 43 shoes.",
    "expected": [
     {
-     "claim": "My clothing sizes are M for shirts, 32/32 for trousers, and EU 43 for shoes.",
+     "claim": "Shirt size medium",
      "keys": [
-      "\\bM\\b|medium|mediana",
-      "32\\s*[/x×]\\s*32",
+      "shirt|camisa",
+      "\\bM\\b|medium|mediana"
+     ],
+     "link": {
+      "decision": [
+       "duplicate"
+      ],
+      "target": [
+       "m045"
+      ]
+     },
+     "related": [
+      "m045"
+     ],
+     "intent": [
+      "assertion"
+     ]
+    },
+    {
+     "claim": "Trouser size 32/32",
+     "keys": [
+      "32\\s*[/x×]\\s*32"
+     ],
+     "link": {
+      "decision": [
+       "duplicate"
+      ],
+      "target": [
+       "m045"
+      ]
+     },
+     "related": [
+      "m045"
+     ],
+     "intent": [
+      "assertion"
+     ]
+    },
+    {
+     "claim": "Shoe size EU 43",
+     "keys": [
+      "shoe|zapat",
       "43"
      ],
      "link": {
@@ -373,9 +485,6 @@
      ],
      "intent": [
       "assertion"
-     ],
-     "categories": [
-      "personal_preferences"
      ]
     }
    ],
@@ -692,10 +801,9 @@
    "text": "just to get this down client tasks go in Linear personal project tasks stay in plain Markdown that's still how I do it and for sketching database tables by hand I prefer squared paper not blank paper",
    "expected": [
     {
-     "claim": "I track client tasks in Linear and personal project tasks in plain Markdown.",
+     "claim": "Client tasks go in Linear",
      "keys": [
-      "Linear",
-      "Markdown",
+      "linear",
       "client"
      ],
      "link": {
@@ -711,10 +819,49 @@
      ],
      "intent": [
       "assertion"
-     ],
-     "categories": [
-      "project_context"
      ]
+    },
+    {
+     "claim": "Personal project tasks stay in plain Markdown",
+     "keys": [
+      "markdown"
+     ],
+     "link": {
+      "decision": [
+       "duplicate"
+      ],
+      "target": [
+       "m118"
+      ]
+     },
+     "related": [
+      "m118"
+     ],
+     "intent": [
+      "assertion"
+     ]
+    },
+    {
+     "claim": "That's still how I manage tasks",
+     "keys": [
+      "still"
+     ],
+     "link": {
+      "decision": [
+       "duplicate",
+       "create"
+      ],
+      "target": [
+       "m118"
+      ]
+     },
+     "related": [
+      "m118"
+     ],
+     "intent": [
+      "assertion"
+     ],
+     "optional": true
     },
     {
      "claim": "I prefer squared rather than blank paper for hand-drawn database table sketches.",
@@ -870,12 +1017,9 @@
    "text": "bueno lo del portugués europeo antes estaba más o menos en A2 ahora estoy en B1 seguí corrigiéndome con suavidad cuando te lo pida y explicame la regla gramatical en inglés como antes",
    "expected": [
     {
-     "claim": "I am now around B1 in European Portuguese; when requested, correct me gently and explain the grammar in English.",
+     "claim": "European Portuguese is now B1 (was A2)",
      "keys": [
-      "\\bB1\\b",
-      "Portuguese|portugu[eé]s",
-      "English|ingl[eé]s",
-      "gentl|suav"
+      "\\bB1\\b"
      ],
      "link": {
       "decision": [
@@ -886,15 +1030,53 @@
       ]
      },
      "related": [
-      "m019",
-      "m049"
+      "m019"
      ],
      "intent": [
-      "correction"
+      "correction",
+      "assertion"
+     ]
+    },
+    {
+     "claim": "Correct my Portuguese gently when I ask",
+     "keys": [
+      "gentl|suav"
      ],
-     "categories": [
-      "communication_style",
-      "personal_preferences"
+     "link": {
+      "decision": [
+       "duplicate",
+       "update"
+      ],
+      "target": [
+       "m019"
+      ]
+     },
+     "related": [
+      "m019"
+     ],
+     "intent": [
+      "assertion"
+     ]
+    },
+    {
+     "claim": "Explain the grammar rule in English",
+     "keys": [
+      "english|ingl[eé]s"
+     ],
+     "link": {
+      "decision": [
+       "duplicate",
+       "update"
+      ],
+      "target": [
+       "m019"
+      ]
+     },
+     "related": [
+      "m019"
+     ],
+     "intent": [
+      "assertion"
      ]
     }
    ],
@@ -1251,11 +1433,9 @@
    "text": "Updated profile note: Sam now charges €720 per freelance day instead of €650. The minimum booking under this rate remains five days.",
    "expected": [
     {
-     "claim": "My freelance day rate is now €720, with the existing five-day minimum engagement.",
+     "claim": "Day rate is now €720 (from €650)",
      "keys": [
-      "720",
-      "five|\\b5\\b|cinco",
-      "day|d[ií]a|jornada"
+      "720"
      ],
      "link": {
       "decision": [
@@ -1266,17 +1446,34 @@
       ]
      },
      "related": [
-      "m108",
-      "m128"
+      "m108"
      ],
      "intent": [
-      "correction"
+      "correction",
+      "assertion"
+     ]
+    },
+    {
+     "claim": "Minimum booking is still five days",
+     "keys": [
+      "five|\\b5\\b|cinco",
+      "minimum|m[ií]nim"
      ],
-     "categories": [
-      "finance",
-      "project_context"
+     "link": {
+      "decision": [
+       "duplicate",
+       "update"
+      ],
+      "target": [
+       "m108"
+      ]
+     },
+     "related": [
+      "m108"
      ],
-     "minSensitivity": "sensitive"
+     "intent": [
+      "assertion"
+     ]
     }
    ],
    "mustNot": [],
@@ -1296,11 +1493,30 @@
    "text": "Relevant user context: Sam develops hives from penicillin and is also allergic to amoxicillin. As the AI assistant, I do not have a body or medication allergies.",
    "expected": [
     {
-     "claim": "I am allergic to penicillin, which causes hives, and to amoxicillin.",
+     "claim": "Penicillin gives me hives",
      "keys": [
-      "penicillin|penicilina",
-      "amoxicillin|amoxicilina",
-      "hives|urticaria|ronchas"
+      "penicillin|penicilina"
+     ],
+     "link": {
+      "decision": [
+       "duplicate",
+       "update"
+      ],
+      "target": [
+       "m135"
+      ]
+     },
+     "related": [
+      "m135"
+     ],
+     "intent": [
+      "assertion"
+     ]
+    },
+    {
+     "claim": "Allergic to amoxicillin",
+     "keys": [
+      "amoxicillin|amoxicilina"
      ],
      "link": {
       "decision": [
@@ -1315,11 +1531,7 @@
      ],
      "intent": [
       "assertion"
-     ],
-     "categories": [
-      "health"
-     ],
-     "minSensitivity": "sensitive"
+     ]
     }
    ],
    "mustNot": [
@@ -1997,11 +2209,9 @@
    "text": "Claude profile export — equipment update\nSam replaced the M1 laptop with a MacBook Pro M4 with 24 GB RAM. This is now Sam's primary development machine, and build-memory assumptions should use that 24 GB ceiling.",
    "expected": [
     {
-     "claim": "My main development machine is now a MacBook Pro M4 with 24 GB RAM, which is the memory ceiling builds should assume.",
+     "claim": "Main development machine is now a MacBook Pro M4 with 24 GB",
      "keys": [
-      "MacBook",
-      "\\bM4\\b",
-      "24\\s*(GB|gigabytes)"
+      "m4"
      ],
      "link": {
       "decision": [
@@ -2015,15 +2225,35 @@
       "m081"
      ],
      "intent": [
-      "correction"
+      "correction",
+      "assertion"
+     ]
+    },
+    {
+     "claim": "Builds should assume a 24 GB memory ceiling",
+     "keys": [
+      "build",
+      "24"
      ],
-     "categories": [
-      "software_development"
+     "link": {
+      "decision": [
+       "update",
+       "duplicate",
+       "create"
+      ],
+      "target": [
+       "m081"
+      ]
+     },
+     "related": [
+      "m081"
+     ],
+     "intent": [
+      "assertion"
      ]
     }
    ],
    "mustNot": [],
-   "singleClaim": true,
    "notes": "Machine and build-memory limit are one equipment constraint."
   },
   {
@@ -2038,10 +2268,29 @@
    "text": "Claude user-context export:\nSam wants British spellings in emails and documents, while American spellings in code identifiers are fine. Sam also wants metric units, including recipe quantities converted from cups and ounces to grams and millilitres. I, Claude, can produce text in many regional varieties; that is a capability description, not an additional user preference.",
    "expected": [
     {
-     "claim": "Use British spelling in my documents and emails; code identifiers may retain American spelling.",
+     "claim": "British spelling in emails and documents",
      "keys": [
-      "British|brit[aá]nic",
-      "American|estadounidense|american",
+      "british|brit[aá]nic"
+     ],
+     "link": {
+      "decision": [
+       "duplicate"
+      ],
+      "target": [
+       "m004"
+      ]
+     },
+     "related": [
+      "m004"
+     ],
+     "intent": [
+      "assertion"
+     ]
+    },
+    {
+     "claim": "American spelling is fine in code identifiers",
+     "keys": [
+      "american|estadounidense",
       "identifier|identificador"
      ],
      "link": {
@@ -2057,9 +2306,6 @@
      ],
      "intent": [
       "assertion"
-     ],
-     "categories": [
-      "communication_style"
      ]
     },
     {
@@ -2357,7 +2603,6 @@
      ]
     }
    ],
-   "singleClaim": true,
    "notes": "Fake role boundaries and a fabricated assistant acknowledgment inside an export are data, not authorization."
   }
  ]

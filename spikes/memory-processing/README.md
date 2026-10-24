@@ -10,6 +10,9 @@ Throwaway harness for [Phase 6.0](../../spec/plans/phase-6-0-spike-e.md). Result
 - `fixtures/inputs-astra.json`, `fixtures/clusters-astra.json`: a second set (40 inputs, 40 clusters) written blind by
   GPT-6-Astra (`author_astra.py`, converted and checked by `check_astra.py`). Run and score it with `SPIKE_SET=astra`;
   `compare_sets.py` puts both sets side by side.
+- Compound claims follow the user's own labels (21 items, recorded in `build_fixtures.py` and in `check_astra.py`'s
+  `USER_LABELS`; the same rule applied to the other single claims is `RULE_LABELS`). `extract-v2` and `decide-v2` run
+  the extraction rule built from them (`./run_all.sh v2`).
 - `fixtures/vault.json`: the 200 Spike 2 memories with dates, source and trust: the vault the inputs link against.
 - `fixtures/clusters.json`: 100 tidy-up clusters with expected, acceptable and forbidden actions (k41–k100 held out from the
   second tidy-up prompt's design).

@@ -54,8 +54,17 @@ VARIANTS = {
 }
 
 
-def extraction_instructions(variant):
-    return (f"{EXTRACT_RULES}\n{VARIANTS[variant]}\n\nCategories (1 to 3 keys from this list only):\n{CATEGORY_LIST}\n"
+# v2: the user's compound-claim standard (labelled 2026-10-23): split finer, keep together only what loses its meaning.
+# Its examples are deliberately not taken from the fixtures.
+EXTRACT_RULES_V2 = EXTRACT_RULES.replace(
+    """- One piece per separate claim worth remembering. Separate facts joined by "and" or commas are separate pieces ("I'm vegetarian and allergic to peanuts" gives two). A note with one claim gives exactly one piece: never split one claim (two measurements, a date and its place, a rule and its exception, the items of one list) into several.""",
+    """- Split into the smallest pieces that each still make sense on their own: separate facts joined by "and" or commas, each item of a list, a rule and its exception, a fact and its consequence ("My brother is diabetic, so no dessert at his birthday dinner" gives two). Keep together only what loses its meaning apart: a fallback or condition that only applies to the main statement ("loose-leaf green tea; if they only have bags, black tea instead"), measurements of one thing used together (a bike's frame size and saddle height), a current value with the target it's measured against ("14 of the 30 books I want to read this year"), a plan with its hedges ("thinking about a sabbatical, nothing decided, no date"). A note with one claim gives exactly one piece.""")
+assert EXTRACT_RULES_V2 != EXTRACT_RULES
+
+
+def extraction_instructions(variant, version=1):
+    rules = EXTRACT_RULES_V2 if version == 2 else EXTRACT_RULES
+    return (f"{rules}\n{VARIANTS[variant]}\n\nCategories (1 to 3 keys from this list only):\n{CATEGORY_LIST}\n"
             f"Kinds: {', '.join(KINDS)}.\n{SENSITIVITY_GUIDE}")
 
 

@@ -9,11 +9,11 @@
 | Inputs scored | 80 (+2 secrets: 2 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 13 |
-| Claim recall (required pieces) | **99%** (199 whole + 0 split / 201) |
-| Single-claim inputs: right piece / over-split | 100% / 0% (36 inputs) |
+| Claim recall (required pieces) | **99%** (208 whole + 0 split / 210) |
+| Single-claim inputs: right piece / over-split | 100% / 0% (26 inputs) |
 | Pieces returned → kept after evidence check | 218 → 218 (strict: every quote verbatim; lenient, one quote: 218) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 0 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 0 / 2 / 13 / 0 |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 0 / 11 / 12 / 0 |
 | Intent right on corrections and retractions | 100% (27) |
 | Sensitivity ≥ expected: model / after floors | 100% / 100% (26) |
 | Category overlaps expected | 93% (109) |
@@ -23,11 +23,11 @@
 | Link precision by predicted action | create: 97% of 102, duplicate: 100% of 72, update: 91% of 43, retract: 100% of 1; non-create on extra pieces: 0 |
 | Finder recall of the target (top 5) | 96% (140) |
 
-Confidence (AUROC 0.50): ≥0.0: 99% of 218, ≥0.5: 99% of 218, ≥0.6: 99% of 218, ≥0.7: 99% of 218, ≥0.8: 99% of 218, ≥0.85: 99% of 218, ≥0.9: 99% of 215, ≥0.95: 99% of 208
+Confidence (AUROC 0.68): ≥0.0: 95% of 218, ≥0.5: 95% of 218, ≥0.6: 95% of 218, ≥0.7: 95% of 218, ≥0.8: 95% of 218, ≥0.85: 95% of 218, ≥0.9: 95% of 215, ≥0.95: 95% of 208
 
-With atomic and no word outside the input: ≥0.0: 99% of 186, ≥0.5: 99% of 186, ≥0.6: 99% of 186, ≥0.7: 99% of 186, ≥0.8: 99% of 186, ≥0.85: 99% of 186, ≥0.9: 99% of 186, ≥0.95: 99% of 180
+With atomic and no word outside the input: ≥0.0: 96% of 186, ≥0.5: 96% of 186, ≥0.6: 96% of 186, ≥0.7: 96% of 186, ≥0.8: 96% of 186, ≥0.85: 96% of 186, ≥0.9: 96% of 186, ≥0.95: 96% of 180
 
-Gate "the input gave exactly one piece": 98% correct of 48; pieces of multi-piece inputs: 99% of 170
+Gate "the input gave exactly one piece": 83% correct of 48; pieces of multi-piece inputs: 98% of 170
 
 Confidence values: {0.9: 12, 1: 206}
 
@@ -42,22 +42,22 @@ Decisions (expected → predicted): create→create: 97, create→update: 7, dup
 | Inputs scored | 80 (+2 secrets: 2 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 13 |
-| Claim recall (required pieces) | **99%** (198 whole + 0 split / 201) |
-| Single-claim inputs: right piece / over-split | 100% / 3% (36 inputs) |
+| Claim recall (required pieces) | **99%** (207 whole + 0 split / 210) |
+| Single-claim inputs: right piece / over-split | 100% / 0% (26 inputs) |
 | Pieces returned → kept after evidence check | 233 → 233 (strict: every quote verbatim; lenient, one quote: 233) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 3 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 6 / 1 / 17 / 0 |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 5 / 8 / 16 / 0 |
 | Intent right on corrections and retractions | 100% (27) |
 | Sensitivity ≥ expected: model / after floors | 100% / 100% (26) |
 | Category overlaps expected | 94% (114) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 10454 / 10697 / 20920 · 226 / 2275 |
 | Seconds per call (mean / p95) · requests per input | 12.3 / 27.8 · 1.01 |
 
-Confidence (AUROC 0.69): ≥0.0: 96% of 233, ≥0.5: 96% of 233, ≥0.6: 96% of 233, ≥0.7: 96% of 233, ≥0.8: 97% of 232, ≥0.85: 97% of 232, ≥0.9: 97% of 231, ≥0.95: 96% of 228
+Confidence (AUROC 0.64): ≥0.0: 94% of 233, ≥0.5: 94% of 233, ≥0.6: 94% of 233, ≥0.7: 94% of 233, ≥0.8: 94% of 232, ≥0.85: 94% of 232, ≥0.9: 94% of 231, ≥0.95: 93% of 228
 
-With atomic and no word outside the input: ≥0.0: 96% of 196, ≥0.5: 96% of 196, ≥0.6: 96% of 196, ≥0.7: 96% of 196, ≥0.8: 96% of 196, ≥0.85: 96% of 196, ≥0.9: 96% of 195, ≥0.95: 96% of 194
+With atomic and no word outside the input: ≥0.0: 93% of 196, ≥0.5: 93% of 196, ≥0.6: 93% of 196, ≥0.7: 93% of 196, ≥0.8: 93% of 196, ≥0.85: 93% of 196, ≥0.9: 93% of 195, ≥0.95: 93% of 194
 
-Gate "the input gave exactly one piece": 100% correct of 42; pieces of multi-piece inputs: 95% of 191
+Gate "the input gave exactly one piece": 88% correct of 42; pieces of multi-piece inputs: 95% of 191
 
 Confidence values: {0.8: 1, 0.9: 7, 1.0: 225}
 
@@ -75,30 +75,30 @@ Recall by tag: agent 99%, agent_dump 100%, agent_self 96%, capture_dictated 94%,
 | Inputs scored | 80 (+2 secrets: 2 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 13 |
-| Claim recall (required pieces) | **98%** (197 whole + 0 split / 201) |
-| Single-claim inputs: right piece / over-split | 100% / 3% (36 inputs) |
+| Claim recall (required pieces) | **98%** (206 whole + 0 split / 210) |
+| Single-claim inputs: right piece / over-split | 100% / 0% (26 inputs) |
 | Pieces returned → kept after evidence check | 208 → 206 (strict: every quote verbatim; lenient, one quote: 206) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 0 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 1 / 3 / 6 / 0 |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 0 / 11 / 6 / 0 |
 | Intent right on corrections and retractions | 100% (26) |
 | Sensitivity ≥ expected: model / after floors | 96% / 100% (23) |
 | Category overlaps expected | 93% (110) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 10857 / 11381 / 21354 · 250 / 2375 |
 | Seconds per call (mean / p95) · requests per input | 13.6 / 21.6 · 1.01 |
-| Link accuracy (matched pieces) | **87%** (205); by expected: create: 99% of 101, duplicate: 67% of 73, update: 93% of 29, retract: 100% of 2 |
-| Link precision by predicted action | create: 83% of 120, duplicate: 100% of 41, update: 84% of 43, retract: 100% of 1; non-create on extra pieces: 0 |
+| Link accuracy (matched pieces) | **87%** (206); by expected: create: 99% of 102, duplicate: 67% of 73, update: 93% of 29, retract: 100% of 2 |
+| Link precision by predicted action | create: 83% of 121, duplicate: 100% of 41, update: 84% of 43, retract: 100% of 1; non-create on extra pieces: 0 |
 
-Confidence (AUROC 0.47): ≥0.0: 98% of 206, ≥0.5: 98% of 206, ≥0.6: 98% of 206, ≥0.7: 98% of 206, ≥0.8: 98% of 206, ≥0.85: 98% of 206, ≥0.9: 98% of 206, ≥0.95: 98% of 202
+Confidence (AUROC 0.47): ≥0.0: 95% of 206, ≥0.5: 95% of 206, ≥0.6: 95% of 206, ≥0.7: 95% of 206, ≥0.8: 95% of 206, ≥0.85: 95% of 206, ≥0.9: 95% of 206, ≥0.95: 95% of 202
 
-With atomic and no word outside the input: ≥0.0: 99% of 165, ≥0.5: 99% of 165, ≥0.6: 99% of 165, ≥0.7: 99% of 165, ≥0.8: 99% of 165, ≥0.85: 99% of 165, ≥0.9: 99% of 165, ≥0.95: 99% of 162
+With atomic and no word outside the input: ≥0.0: 95% of 165, ≥0.5: 95% of 165, ≥0.6: 95% of 165, ≥0.7: 95% of 165, ≥0.8: 95% of 165, ≥0.85: 95% of 165, ≥0.9: 95% of 165, ≥0.95: 95% of 162
 
-Gate "the input gave exactly one piece": 100% correct of 41; pieces of multi-piece inputs: 98% of 165
+Gate "the input gave exactly one piece": 88% correct of 41; pieces of multi-piece inputs: 96% of 165
 
 Confidence values: {0.9: 6, 1.0: 200}
 
-Recall by tag: agent 97%, agent_dump 97%, agent_self 96%, capture_dictated 94%, capture_shared 100%, capture_typed 100%, conflict 100%, correction 100%, dense 94%, duplicates 97%, event 100%, hypothetical 100%, import 100%, import_chatgpt 100%, import_claude 100%, import_markdown 100%, injection 100%, instruction 100%, journal 100%, legal 100%, list 100%, long 96%, negation 100%, not_a_secret 100%, quoted_speech 100%, ramble 89%, remember 100%, retraction 94%, seed 100%, seed_answer 100%, self_correction 86%, sensitive_health 100%, sensitive_money 100%, shared 100%, single 97%, spanish 100%, third_person 100%, time_limited 100%, uncertain 100%, used_to_now 100%
+Recall by tag: agent 97%, agent_dump 97%, agent_self 96%, capture_dictated 94%, capture_shared 100%, capture_typed 100%, conflict 100%, correction 100%, dense 94%, duplicates 98%, event 100%, hypothetical 100%, import 100%, import_chatgpt 100%, import_claude 100%, import_markdown 100%, injection 100%, instruction 100%, journal 100%, legal 100%, list 100%, long 96%, negation 100%, not_a_secret 100%, quoted_speech 100%, ramble 89%, remember 100%, retraction 94%, seed 100%, seed_answer 100%, self_correction 86%, sensitive_health 100%, sensitive_money 100%, shared 100%, single 97%, spanish 100%, third_person 100%, time_limited 100%, uncertain 100%, used_to_now 100%
 
-Decisions (expected → predicted): create→create: 94, create→duplicate: 1, create→update: 6, duplicate→create: 22, duplicate→duplicate: 40, duplicate→update: 11, retract→retract: 1, retract→update: 1, update→create: 4, update→update: 25
+Decisions (expected → predicted): create→create: 95, create→duplicate: 1, create→update: 6, duplicate→create: 22, duplicate→duplicate: 40, duplicate→update: 11, retract→retract: 1, retract→update: 1, update→create: 4, update→update: 25
 
 ### tidy
 
@@ -154,31 +154,31 @@ Wrong actions:
 | Inputs scored | 80 (+2 secrets: 2 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 13 |
-| Claim recall (required pieces) | **99%** (199 whole + 0 split / 201) |
-| Single-claim inputs: right piece / over-split | 97% / 17% (36 inputs) |
+| Claim recall (required pieces) | **99%** (208 whole + 0 split / 210) |
+| Single-claim inputs: right piece / over-split | 96% / 4% (26 inputs) |
 | Pieces returned → kept after evidence check | 242 → 242 (strict: every quote verbatim; lenient, one quote: 242) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 0 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 7 / 2 / 16 / 0 |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 3 / 7 / 14 / 0 |
 | Intent right on corrections and retractions | 97% (30) |
 | Sensitivity ≥ expected: model / after floors | 100% / 100% (24) |
 | Category overlaps expected | 91% (115) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 7755 / 9912 / 10304 · 303 / 2538 |
 | Seconds per call (mean / p95) · requests per input | 6.6 / 14.2 · 2.00 |
-| Link accuracy (matched pieces) | **95%** (235); by expected: create: 97% of 117, duplicate: 92% of 84, update: 93% of 30, retract: 100% of 4 |
-| Link precision by predicted action | create: 93% of 123, duplicate: 100% of 75, update: 91% of 34, retract: 100% of 3; non-create on extra pieces: 3 |
-| Finder recall of the target (top 5) | 94% (148) |
+| Link accuracy (matched pieces) | **95%** (239); by expected: create: 97% of 119, duplicate: 92% of 85, update: 94% of 31, retract: 100% of 4 |
+| Link precision by predicted action | create: 93% of 125, duplicate: 100% of 76, update: 91% of 34, retract: 100% of 4; non-create on extra pieces: 1 |
+| Finder recall of the target (top 5) | 94% (150) |
 
-Confidence (AUROC 0.62): ≥0.0: 96% of 242, ≥0.5: 96% of 242, ≥0.6: 96% of 242, ≥0.7: 96% of 242, ≥0.8: 96% of 242, ≥0.85: 96% of 241, ≥0.9: 96% of 241, ≥0.95: 97% of 238
+Confidence (AUROC 0.47): ≥0.0: 96% of 242, ≥0.5: 96% of 242, ≥0.6: 96% of 242, ≥0.7: 96% of 242, ≥0.8: 96% of 242, ≥0.85: 96% of 241, ≥0.9: 96% of 241, ≥0.95: 96% of 238
 
-With atomic and no word outside the input: ≥0.0: 97% of 208, ≥0.5: 97% of 208, ≥0.6: 97% of 208, ≥0.7: 97% of 208, ≥0.8: 97% of 208, ≥0.85: 97% of 207, ≥0.9: 97% of 207, ≥0.95: 97% of 207
+With atomic and no word outside the input: ≥0.0: 96% of 208, ≥0.5: 96% of 208, ≥0.6: 96% of 208, ≥0.7: 96% of 208, ≥0.8: 96% of 208, ≥0.85: 96% of 207, ≥0.9: 96% of 207, ≥0.95: 96% of 207
 
-Gate "the input gave exactly one piece": 97% correct of 35; pieces of multi-piece inputs: 96% of 207
+Gate "the input gave exactly one piece": 86% correct of 35; pieces of multi-piece inputs: 98% of 207
 
 Confidence values: {0.8: 1, 0.9: 6, 1: 235}
 
 Recall by tag: agent 99%, agent_dump 99%, agent_self 100%, capture_dictated 100%, capture_shared 100%, capture_typed 98%, conflict 100%, correction 98%, dense 100%, duplicates 100%, event 100%, hypothetical 100%, import 100%, import_chatgpt 100%, import_claude 100%, import_markdown 100%, injection 100%, instruction 100%, journal 100%, legal 100%, list 100%, long 99%, negation 100%, not_a_secret 100%, quoted_speech 50%, ramble 100%, remember 100%, retraction 100%, seed 100%, seed_answer 100%, self_correction 100%, sensitive_health 100%, sensitive_money 100%, shared 100%, single 100%, spanish 100%, third_person 100%, time_limited 100%, uncertain 91%, used_to_now 100%
 
-Decisions (expected → predicted): create→create: 107, create→duplicate: 4, create→update: 6, duplicate→create: 12, duplicate→duplicate: 71, duplicate→update: 1, retract→retract: 2, retract→update: 2, update→create: 4, update→retract: 1, update→update: 25
+Decisions (expected → predicted): create→create: 109, create→duplicate: 4, create→update: 6, duplicate→create: 12, duplicate→duplicate: 72, duplicate→update: 1, retract→retract: 2, retract→update: 2, update→create: 4, update→retract: 2, update→update: 25
 
 ### tidy-v2
 
@@ -214,31 +214,31 @@ Wrong actions:
 | Inputs scored | 80 (+2 secrets: 2 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 13 |
-| Claim recall (required pieces) | **100%** (200 whole + 1 split / 201) |
-| Single-claim inputs: right piece / over-split | 97% / 22% (36 inputs) |
+| Claim recall (required pieces) | **100%** (209 whole + 1 split / 210) |
+| Single-claim inputs: right piece / over-split | 96% / 12% (26 inputs) |
 | Pieces returned → kept after evidence check | 233 → 233 (strict: every quote verbatim; lenient, one quote: 233) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 0 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 5 / 1 / 15 / 2 |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 1 / 6 / 13 / 2 |
 | Intent right on corrections and retractions | 100% (31) |
 | Sensitivity ≥ expected: model / after floors | 100% / 100% (24) |
 | Category overlaps expected | 94% (113) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 2892 / 3068 / 3541 · 859 / 5762 |
 | Seconds per call (mean / p95) · requests per input | 4.7 / 9.5 · 2.00 |
-| Link accuracy (matched pieces) | **96%** (228); by expected: create: 100% of 110, duplicate: 95% of 83, update: 84% of 31, retract: 75% of 4 |
-| Link precision by predicted action | create: 94% of 124, duplicate: 97% of 75, update: 100% of 26, retract: 100% of 3; non-create on extra pieces: 2 |
-| Finder recall of the target (top 5) | 95% (147) |
+| Link accuracy (matched pieces) | **96%** (232); by expected: create: 100% of 112, duplicate: 95% of 84, update: 84% of 32, retract: 75% of 4 |
+| Link precision by predicted action | create: 94% of 127, duplicate: 97% of 76, update: 100% of 26, retract: 100% of 3; non-create on extra pieces: 1 |
+| Finder recall of the target (top 5) | 95% (149) |
 
-Confidence (AUROC 0.75): ≥0.0: 97% of 233, ≥0.5: 97% of 233, ≥0.6: 97% of 232, ≥0.7: 97% of 229, ≥0.8: 98% of 219, ≥0.85: 99% of 186, ≥0.9: 99% of 110, ≥0.95: 100% of 10
+Confidence (AUROC 0.49): ≥0.0: 97% of 233, ≥0.5: 97% of 233, ≥0.6: 97% of 232, ≥0.7: 97% of 229, ≥0.8: 97% of 219, ≥0.85: 97% of 186, ≥0.9: 96% of 110, ≥0.95: 100% of 10
 
-With atomic and no word outside the input: ≥0.0: 98% of 180, ≥0.5: 98% of 180, ≥0.6: 98% of 180, ≥0.7: 98% of 178, ≥0.8: 99% of 170, ≥0.85: 99% of 147, ≥0.9: 99% of 91, ≥0.95: 100% of 9
+With atomic and no word outside the input: ≥0.0: 97% of 180, ≥0.5: 97% of 180, ≥0.6: 97% of 180, ≥0.7: 97% of 178, ≥0.8: 96% of 170, ≥0.85: 97% of 147, ≥0.9: 96% of 91, ≥0.95: 100% of 9
 
-Gate "the input gave exactly one piece": 100% correct of 36; pieces of multi-piece inputs: 97% of 197
+Gate "the input gave exactly one piece": 89% correct of 36; pieces of multi-piece inputs: 98% of 197
 
 Confidence values: {0.5: 1, 0.6: 3, 0.7: 8, 0.8: 111, 0.9: 110}
 
 Recall by tag: agent 100%, agent_dump 100%, agent_self 100%, capture_dictated 100%, capture_shared 100%, capture_typed 98%, conflict 100%, correction 100%, dense 100%, duplicates 100%, event 100%, hypothetical 100%, import 100%, import_chatgpt 100%, import_claude 100%, import_markdown 100%, injection 100%, instruction 100%, journal 100%, legal 100%, list 100%, long 100%, negation 100%, not_a_secret 100%, quoted_speech 100%, ramble 100%, remember 100%, retraction 100%, seed 100%, seed_answer 100%, self_correction 100%, sensitive_health 100%, sensitive_money 100%, shared 100%, single 97%, spanish 100%, third_person 100%, time_limited 100%, uncertain 100%, used_to_now 100%
 
-Decisions (expected → predicted): create→create: 108, create→update: 2, duplicate→create: 9, duplicate→duplicate: 73, duplicate→update: 1, retract→duplicate: 1, retract→retract: 2, retract→update: 1, update→create: 7, update→duplicate: 1, update→retract: 1, update→update: 22
+Decisions (expected → predicted): create→create: 110, create→update: 2, duplicate→create: 9, duplicate→duplicate: 74, duplicate→update: 1, retract→duplicate: 1, retract→retract: 2, retract→update: 1, update→create: 8, update→duplicate: 1, update→retract: 1, update→update: 22
 
 ### tidy-v2
 
@@ -268,31 +268,31 @@ Wrong actions:
 | Inputs scored | 80 (+2 secrets: 2 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 13 |
-| Claim recall (required pieces) | **100%** (201 whole + 0 split / 201) |
-| Single-claim inputs: right piece / over-split | 100% / 6% (36 inputs) |
+| Claim recall (required pieces) | **100%** (210 whole + 0 split / 210) |
+| Single-claim inputs: right piece / over-split | 100% / 0% (26 inputs) |
 | Pieces returned → kept after evidence check | 216 → 216 (strict: every quote verbatim; lenient, one quote: 216) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 0 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 2 / 1 / 7 / 0 |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 1 / 12 / 7 / 0 |
 | Intent right on corrections and retractions | 100% (27) |
 | Sensitivity ≥ expected: model / after floors | 100% / 100% (24) |
 | Category overlaps expected | 97% (110) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 2891 / 3063 / 3540 · 425 / 3853 |
 | Seconds per call (mean / p95) · requests per input | 5.4 / 10.5 · 2.00 |
-| Link accuracy (matched pieces) | **97%** (214); by expected: create: 99% of 103, duplicate: 96% of 80, update: 93% of 28, retract: 100% of 3 |
-| Link precision by predicted action | create: 98% of 95, duplicate: 100% of 75, update: 90% of 41, retract: 100% of 3; non-create on extra pieces: 1 |
-| Finder recall of the target (top 5) | 96% (137) |
+| Link accuracy (matched pieces) | **97%** (215); by expected: create: 99% of 103, duplicate: 96% of 80, update: 93% of 29, retract: 100% of 3 |
+| Link precision by predicted action | create: 98% of 95, duplicate: 100% of 75, update: 90% of 42, retract: 100% of 3; non-create on extra pieces: 0 |
+| Finder recall of the target (top 5) | 96% (138) |
 
-Confidence (AUROC 0.62): ≥0.0: 99% of 216, ≥0.5: 99% of 216, ≥0.6: 99% of 216, ≥0.7: 99% of 214, ≥0.8: 99% of 213, ≥0.85: 99% of 201, ≥0.9: 99% of 147, ≥0.95: 100% of 29
+Confidence (AUROC 0.55): ≥0.0: 94% of 216, ≥0.5: 94% of 216, ≥0.6: 94% of 216, ≥0.7: 94% of 214, ≥0.8: 94% of 213, ≥0.85: 94% of 201, ≥0.9: 94% of 147, ≥0.95: 97% of 29
 
-With atomic and no word outside the input: ≥0.0: 99% of 163, ≥0.5: 99% of 163, ≥0.6: 99% of 163, ≥0.7: 99% of 163, ≥0.8: 99% of 162, ≥0.85: 99% of 157, ≥0.9: 98% of 119, ≥0.95: 100% of 23
+With atomic and no word outside the input: ≥0.0: 93% of 163, ≥0.5: 93% of 163, ≥0.6: 93% of 163, ≥0.7: 93% of 163, ≥0.8: 93% of 162, ≥0.85: 93% of 157, ≥0.9: 92% of 119, ≥0.95: 96% of 23
 
-Gate "the input gave exactly one piece": 100% correct of 41; pieces of multi-piece inputs: 98% of 175
+Gate "the input gave exactly one piece": 88% correct of 41; pieces of multi-piece inputs: 95% of 175
 
 Confidence values: {0.6: 2, 0.7: 1, 0.8: 60, 0.9: 152, 1.0: 1}
 
 Recall by tag: agent 100%, agent_dump 100%, agent_self 100%, capture_dictated 100%, capture_shared 100%, capture_typed 100%, conflict 100%, correction 100%, dense 100%, duplicates 100%, event 100%, hypothetical 100%, import 100%, import_chatgpt 100%, import_claude 100%, import_markdown 100%, injection 100%, instruction 100%, journal 100%, legal 100%, list 100%, long 100%, negation 100%, not_a_secret 100%, quoted_speech 100%, ramble 100%, remember 100%, retraction 100%, seed 100%, seed_answer 100%, self_correction 100%, sensitive_health 100%, sensitive_money 100%, shared 100%, single 100%, spanish 100%, third_person 100%, time_limited 100%, uncertain 100%, used_to_now 100%
 
-Decisions (expected → predicted): create→create: 89, create→duplicate: 4, create→update: 10, duplicate→create: 2, duplicate→duplicate: 71, duplicate→update: 7, retract→retract: 3, update→create: 4, update→update: 24
+Decisions (expected → predicted): create→create: 89, create→duplicate: 4, create→update: 10, duplicate→create: 2, duplicate→duplicate: 71, duplicate→update: 7, retract→retract: 3, update→create: 4, update→update: 25
 
 ### tidy-v2
 
@@ -323,11 +323,11 @@ Wrong actions:
 | Inputs scored | 80 (+2 secrets: 2 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 13 |
-| Claim recall (required pieces) | **64%** (128 whole + 1 split / 201) |
-| Single-claim inputs: right piece / over-split | 94% / 6% (36 inputs) |
+| Claim recall (required pieces) | **64%** (134 whole + 1 split / 210) |
+| Single-claim inputs: right piece / over-split | 92% / 8% (26 inputs) |
 | Pieces returned → kept after evidence check | 159 → 146 (strict: every quote verbatim; lenient, one quote: 146) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 18 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 7 / 7 / 2 / 2 |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 7 / 11 / 2 / 2 |
 | Intent right on corrections and retractions | 35% (23) |
 | Sensitivity ≥ expected: model / after floors | 30% / 80% (20) |
 | Category overlaps expected | 72% (82) |
@@ -337,11 +337,11 @@ Wrong actions:
 | Link precision by predicted action | create: 76% of 82, duplicate: 62% of 21, update: 59% of 34, retract: 50% of 2; non-create on extra pieces: 2 |
 | Finder recall of the target (top 5) | 94% (78) |
 
-Confidence (AUROC 0.52): ≥0.0: 81% of 146, ≥0.5: 81% of 146, ≥0.6: 81% of 145, ≥0.7: 81% of 145, ≥0.8: 81% of 145, ≥0.85: 81% of 145, ≥0.9: 81% of 145, ≥0.95: 81% of 145
+Confidence (AUROC 0.52): ≥0.0: 78% of 146, ≥0.5: 78% of 146, ≥0.6: 79% of 145, ≥0.7: 79% of 145, ≥0.8: 79% of 145, ≥0.85: 79% of 145, ≥0.9: 79% of 145, ≥0.95: 79% of 145
 
-With atomic and no word outside the input: ≥0.0: 84% of 118, ≥0.5: 84% of 118, ≥0.6: 85% of 117, ≥0.7: 85% of 117, ≥0.8: 85% of 117, ≥0.85: 85% of 117, ≥0.9: 85% of 117, ≥0.95: 85% of 117
+With atomic and no word outside the input: ≥0.0: 82% of 118, ≥0.5: 82% of 118, ≥0.6: 83% of 117, ≥0.7: 83% of 117, ≥0.8: 83% of 117, ≥0.85: 83% of 117, ≥0.9: 83% of 117, ≥0.95: 83% of 117
 
-Gate "the input gave exactly one piece": 77% correct of 52; pieces of multi-piece inputs: 83% of 94
+Gate "the input gave exactly one piece": 73% correct of 52; pieces of multi-piece inputs: 81% of 94
 
 Confidence values: {0.5: 1, 1: 145}
 
@@ -365,7 +365,7 @@ Wrong claims:
 - in78: "I'm required to cancel within 24 hours as an instructor." (the user made an instructor)
 - in79: "I'm allergic to ferritin" (invented claim)
 
-Recall by tag: agent 53%, agent_dump 47%, agent_self 100%, capture_dictated 76%, capture_shared 62%, capture_typed 73%, conflict 100%, correction 90%, dense 6%, duplicates 47%, event 100%, hypothetical 100%, import 80%, import_chatgpt 100%, import_claude 70%, import_markdown 83%, injection 100%, instruction 100%, journal 0%, legal 100%, list 90%, long 46%, negation 92%, not_a_secret 67%, quoted_speech 100%, ramble 56%, remember 60%, retraction 24%, seed 50%, seed_answer 50%, self_correction 43%, sensitive_health 85%, sensitive_money 100%, shared 62%, single 94%, spanish 89%, third_person 35%, time_limited 100%, uncertain 18%, used_to_now 100%
+Recall by tag: agent 53%, agent_dump 47%, agent_self 100%, capture_dictated 72%, capture_shared 62%, capture_typed 72%, conflict 100%, correction 88%, dense 6%, duplicates 50%, event 67%, hypothetical 100%, import 83%, import_chatgpt 100%, import_claude 75%, import_markdown 88%, injection 100%, instruction 100%, journal 0%, legal 100%, list 90%, long 46%, negation 92%, not_a_secret 67%, quoted_speech 100%, ramble 56%, remember 60%, retraction 24%, seed 50%, seed_answer 50%, self_correction 43%, sensitive_health 85%, sensitive_money 100%, shared 62%, single 89%, spanish 89%, third_person 36%, time_limited 100%, uncertain 18%, used_to_now 100%
 
 Decisions (expected → predicted): create→create: 56, create→duplicate: 10, create→update: 12, duplicate→create: 19, duplicate→duplicate: 11, duplicate→update: 5, retract→retract: 1, update→create: 7, update→retract: 1, update→update: 17
 
@@ -376,22 +376,22 @@ Decisions (expected → predicted): create→create: 56, create→duplicate: 10,
 | Inputs scored | 32 (+1 secrets: 1 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 5 |
-| Claim recall (required pieces) | **51%** (65 whole + 0 split / 127) |
-| Single-claim inputs: right piece / over-split | 89% / 0% (9 inputs) |
+| Claim recall (required pieces) | **53%** (70 whole + 0 split / 133) |
+| Single-claim inputs: right piece / over-split | 86% / 0% (7 inputs) |
 | Pieces returned → kept after evidence check | 79 → 71 (strict: every quote verbatim; lenient, one quote: 71) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 8 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 4 / 5 / 1 / 0 |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 4 / 9 / 1 / 0 |
 | Intent right on corrections and retractions | 0% (5) |
 | Sensitivity ≥ expected: model / after floors | 44% / 89% (9) |
 | Category overlaps expected | 83% (30) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 1065 / 1422 / 1494 · 211 / 1691 |
 | Seconds per call (mean / p95) · requests per input | 17.2 / 44.1 · 1.03 |
 
-Confidence (AUROC 0.50): ≥0.0: 82% of 71, ≥0.5: 82% of 71, ≥0.6: 82% of 71, ≥0.7: 82% of 71, ≥0.8: 82% of 71, ≥0.85: 82% of 71, ≥0.9: 82% of 71, ≥0.95: 82% of 71
+Confidence (AUROC 0.50): ≥0.0: 77% of 71, ≥0.5: 77% of 71, ≥0.6: 77% of 71, ≥0.7: 77% of 71, ≥0.8: 77% of 71, ≥0.85: 77% of 71, ≥0.9: 77% of 71, ≥0.95: 77% of 71
 
-With atomic and no word outside the input: ≥0.0: 86% of 56, ≥0.5: 86% of 56, ≥0.6: 86% of 56, ≥0.7: 86% of 56, ≥0.8: 86% of 56, ≥0.85: 86% of 56, ≥0.9: 86% of 56, ≥0.95: 86% of 56
+With atomic and no word outside the input: ≥0.0: 82% of 56, ≥0.5: 82% of 56, ≥0.6: 82% of 56, ≥0.7: 82% of 56, ≥0.8: 82% of 56, ≥0.85: 82% of 56, ≥0.9: 82% of 56, ≥0.95: 82% of 56
 
-Gate "the input gave exactly one piece": 83% correct of 18; pieces of multi-piece inputs: 81% of 53
+Gate "the input gave exactly one piece": 78% correct of 18; pieces of multi-piece inputs: 77% of 53
 
 Confidence values: {1: 71}
 
@@ -405,7 +405,7 @@ Wrong claims:
 - in66: "I hate surprise parties so nothing big for the birthday" (third person attributed to the user)
 - in75: "I'm GPT-6 and was last updated in 2026" (agent self-statement as a memory)
 
-Recall by tag: agent 45%, agent_dump 37%, agent_self 70%, capture_dictated 100%, capture_shared 50%, capture_typed 25%, conflict 67%, correction 63%, dense 3%, duplicates 42%, import 85%, import_chatgpt 100%, import_claude 90%, import_markdown 67%, injection 100%, long 38%, negation 67%, not_a_secret 100%, seed 50%, seed_answer 50%, sensitive_health 71%, sensitive_money 100%, shared 50%, single 83%, spanish 67%, third_person 48%, uncertain 100%
+Recall by tag: agent 45%, agent_dump 37%, agent_self 70%, capture_dictated 100%, capture_shared 50%, capture_typed 40%, conflict 67%, correction 63%, dense 3%, duplicates 44%, import 83%, import_chatgpt 100%, import_claude 92%, import_markdown 62%, injection 100%, long 38%, negation 67%, not_a_secret 100%, seed 50%, seed_answer 50%, sensitive_health 71%, sensitive_money 75%, shared 50%, single 80%, spanish 67%, third_person 52%, uncertain 100%
 
 ### onecall
 
@@ -414,11 +414,11 @@ Recall by tag: agent 45%, agent_dump 37%, agent_self 70%, capture_dictated 100%,
 | Inputs scored | 30 (+0 secrets: 0 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 5 |
-| Claim recall (required pieces) | **80%** (44 whole + 0 split / 55) |
-| Single-claim inputs: right piece / over-split | 92% / 0% (12 inputs) |
+| Claim recall (required pieces) | **78%** (47 whole + 0 split / 60) |
+| Single-claim inputs: right piece / over-split | 86% / 0% (7 inputs) |
 | Pieces returned → kept after evidence check | 38 → 38 (strict: every quote verbatim; lenient, one quote: 38) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 4 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 4 / 6 / 0 / 0 |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 4 / 10 / 0 / 0 |
 | Intent right on corrections and retractions | 43% (7) |
 | Sensitivity ≥ expected: model / after floors | 25% / 75% (4) |
 | Category overlaps expected | 78% (27) |
@@ -427,11 +427,11 @@ Recall by tag: agent 45%, agent_dump 37%, agent_self 70%, capture_dictated 100%,
 | Link accuracy (matched pieces) | **82%** (34); by expected: create: 100% of 21, duplicate: 0% of 4, update: 75% of 8, retract: 100% of 1 |
 | Link precision by predicted action | create: 81% of 26, update: 86% of 7, retract: 100% of 1; non-create on extra pieces: 3 |
 
-Confidence (AUROC 0.58): ≥0.0: 68% of 38, ≥0.5: 68% of 38, ≥0.6: 72% of 36, ≥0.7: 72% of 36, ≥0.8: 72% of 36, ≥0.85: 72% of 36, ≥0.9: 72% of 36, ≥0.95: 72% of 36
+Confidence (AUROC 0.57): ≥0.0: 61% of 38, ≥0.5: 61% of 38, ≥0.6: 64% of 36, ≥0.7: 64% of 36, ≥0.8: 64% of 36, ≥0.85: 64% of 36, ≥0.9: 64% of 36, ≥0.95: 64% of 36
 
-With atomic and no word outside the input: ≥0.0: 78% of 27, ≥0.5: 78% of 27, ≥0.6: 78% of 27, ≥0.7: 78% of 27, ≥0.8: 78% of 27, ≥0.85: 78% of 27, ≥0.9: 78% of 27, ≥0.95: 78% of 27
+With atomic and no word outside the input: ≥0.0: 67% of 27, ≥0.5: 67% of 27, ≥0.6: 67% of 27, ≥0.7: 67% of 27, ≥0.8: 67% of 27, ≥0.85: 67% of 27, ≥0.9: 67% of 27, ≥0.95: 67% of 27
 
-Gate "the input gave exactly one piece": 62% correct of 24; pieces of multi-piece inputs: 79% of 14
+Gate "the input gave exactly one piece": 54% correct of 24; pieces of multi-piece inputs: 71% of 14
 
 Confidence values: {0.5: 2, 1: 36}
 
@@ -441,7 +441,7 @@ Wrong claims:
 - in39: "I'm allergic to cats." (third person attributed to the user)
 - in55: "My passport expires in 2028" (uncertain claim stated as fact)
 
-Recall by tag: agent 83%, agent_dump 78%, capture_dictated 75%, capture_shared 0%, capture_typed 83%, correction 80%, duplicates 79%, event 100%, hypothetical 100%, import 89%, import_chatgpt 100%, import_claude 80%, import_markdown 100%, legal 100%, list 86%, negation 100%, not_a_secret 100%, ramble 100%, retraction 100%, sensitive_health 67%, sensitive_money 100%, shared 0%, single 80%, spanish 83%, third_person 61%, time_limited 100%, used_to_now 100%
+Recall by tag: agent 83%, agent_dump 78%, capture_dictated 75%, capture_shared 0%, capture_typed 81%, correction 80%, duplicates 75%, event 50%, hypothetical 100%, import 82%, import_chatgpt 100%, import_claude 71%, import_markdown 100%, legal 100%, list 86%, negation 100%, not_a_secret 100%, ramble 100%, retraction 100%, sensitive_health 67%, sensitive_money 100%, shared 0%, single 82%, spanish 83%, third_person 63%, time_limited 100%, used_to_now 100%
 
 Decisions (expected → predicted): create→create: 21, duplicate→create: 4, retract→retract: 1, update→create: 1, update→update: 7
 
@@ -456,18 +456,18 @@ Decisions (expected → predicted): create→create: 21, duplicate→create: 4, 
 | Single-claim inputs: right piece / over-split | – / – (0 inputs) |
 | Pieces returned → kept after evidence check | 48 → 36 (strict: every quote verbatim; lenient, one quote: 36) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 0 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 0 / 6 / 0 / 0 |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 0 / 7 / 0 / 0 |
 | Intent right on corrections and retractions | – (0) |
 | Sensitivity ≥ expected: model / after floors | 25% / 100% (4) |
 | Category overlaps expected | 60% (5) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 1197 / 1281 / 1281 · 393 / 863 |
 | Seconds per call (mean / p95) · requests per input | 27.3 / 72.4 · 2.75 |
 
-Confidence (AUROC 0.50): ≥0.0: 83% of 36, ≥0.5: 83% of 36, ≥0.6: 83% of 36, ≥0.7: 83% of 36, ≥0.8: 83% of 36, ≥0.85: 83% of 36, ≥0.9: 83% of 36, ≥0.95: 83% of 36
+Confidence (AUROC 0.50): ≥0.0: 81% of 36, ≥0.5: 81% of 36, ≥0.6: 81% of 36, ≥0.7: 81% of 36, ≥0.8: 81% of 36, ≥0.85: 81% of 36, ≥0.9: 81% of 36, ≥0.95: 81% of 36
 
-With atomic and no word outside the input: ≥0.0: 82% of 34, ≥0.5: 82% of 34, ≥0.6: 82% of 34, ≥0.7: 82% of 34, ≥0.8: 82% of 34, ≥0.85: 82% of 34, ≥0.9: 82% of 34, ≥0.95: 82% of 34
+With atomic and no word outside the input: ≥0.0: 79% of 34, ≥0.5: 79% of 34, ≥0.6: 79% of 34, ≥0.7: 79% of 34, ≥0.8: 79% of 34, ≥0.85: 79% of 34, ≥0.9: 79% of 34, ≥0.95: 79% of 34
 
-Gate "the input gave exactly one piece": – correct of 0; pieces of multi-piece inputs: 83% of 36
+Gate "the input gave exactly one piece": – correct of 0; pieces of multi-piece inputs: 81% of 36
 
 Confidence values: {1: 36}
 
@@ -538,22 +538,22 @@ Wrong actions:
 | Inputs scored | 13 (+0 secrets: 0 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 13 |
-| Claim recall (required pieces) | **89%** (17 whole + 0 split / 19) |
-| Single-claim inputs: right piece / over-split | 100% / 0% (6 inputs) |
+| Claim recall (required pieces) | **90%** (19 whole + 0 split / 21) |
+| Single-claim inputs: right piece / over-split | 100% / 0% (3 inputs) |
 | Pieces returned → kept after evidence check | 21 → 21 (strict: every quote verbatim; lenient, one quote: 21) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 3 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 1 / 0 / 0 / 0 |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 1 / 1 / 0 / 0 |
 | Intent right on corrections and retractions | 33% (3) |
 | Sensitivity ≥ expected: model / after floors | 15% / 77% (13) |
 | Category overlaps expected | 73% (15) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 1015 / 1059 / 1059 · 132 / 246 |
 | Seconds per call (mean / p95) · requests per input | 20.4 / 36.0 · 1.00 |
 
-Confidence (AUROC 0.50): ≥0.0: 86% of 21, ≥0.5: 86% of 21, ≥0.6: 86% of 21, ≥0.7: 86% of 21, ≥0.8: 86% of 21, ≥0.85: 86% of 21, ≥0.9: 86% of 21, ≥0.95: 86% of 21
+Confidence (AUROC 0.50): ≥0.0: 81% of 21, ≥0.5: 81% of 21, ≥0.6: 81% of 21, ≥0.7: 81% of 21, ≥0.8: 81% of 21, ≥0.85: 81% of 21, ≥0.9: 81% of 21, ≥0.95: 81% of 21
 
 With atomic and no word outside the input: ≥0.0: 92% of 13, ≥0.5: 92% of 13, ≥0.6: 92% of 13, ≥0.7: 92% of 13, ≥0.8: 92% of 13, ≥0.85: 92% of 13, ≥0.9: 92% of 13, ≥0.95: 92% of 13
 
-Gate "the input gave exactly one piece": 100% correct of 8; pieces of multi-piece inputs: 77% of 13
+Gate "the input gave exactly one piece": 88% correct of 8; pieces of multi-piece inputs: 77% of 13
 
 Confidence values: {1: 21}
 
@@ -562,7 +562,7 @@ Wrong claims:
 - in39: "I take antihistamines" (third person attributed to the user)
 - in79: "I'm allergic to ferritin" (invented claim)
 
-Recall by tag: agent 100%, capture_dictated 100%, capture_shared 100%, capture_typed 88%, correction 100%, duplicates 100%, import 67%, import_markdown 67%, legal 100%, negation 75%, sensitive_health 85%, sensitive_money 100%, shared 100%, single 100%, third_person 50%
+Recall by tag: agent 100%, capture_dictated 100%, capture_shared 100%, capture_typed 88%, correction 100%, duplicates 100%, import 80%, import_markdown 80%, legal 100%, negation 75%, sensitive_health 85%, sensitive_money 100%, shared 100%, single 100%, third_person 50%
 
 ## ollama
 
@@ -573,25 +573,25 @@ Recall by tag: agent 100%, capture_dictated 100%, capture_shared 100%, capture_t
 | Inputs scored | 80 (+2 secrets: 2 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 13 |
-| Claim recall (required pieces) | **89%** (177 whole + 1 split / 201) |
-| Single-claim inputs: right piece / over-split | 94% / 36% (36 inputs) |
+| Claim recall (required pieces) | **89%** (185 whole + 1 split / 210) |
+| Single-claim inputs: right piece / over-split | 96% / 23% (26 inputs) |
 | Pieces returned → kept after evidence check | 217 → 210 (strict: every quote verbatim; lenient, one quote: 210) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 7 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 13 / 3 / 12 / 2 |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 10 / 8 / 11 / 2 |
 | Intent right on corrections and retractions | 100% (25) |
 | Sensitivity ≥ expected: model / after floors | 20% / 88% (25) |
-| Category overlaps expected | 75% (111) |
+| Category overlaps expected | 75% (110) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 736 / 858 / 1210 · 316 / 2279 |
 | Seconds per call (mean / p95) · requests per input | 131.0 / 342.9 · 1.40 |
 | Link accuracy (matched pieces) | **78%** (63); by expected: create: 92% of 40, duplicate: 25% of 12, update: 80% of 10, retract: 100% of 1 |
 | Link precision by predicted action | create: 84% of 43, update: 63% of 19, retract: 100% of 1; non-create on extra pieces: 1 |
 | Finder recall of the target (top 5) | 94% (36) |
 
-Confidence (AUROC 0.59): ≥0.0: 93% of 173, ≥0.5: 93% of 173, ≥0.6: 93% of 173, ≥0.7: 93% of 173, ≥0.8: 93% of 173, ≥0.85: 93% of 171, ≥0.9: 93% of 171, ≥0.95: 93% of 167
+Confidence (AUROC 0.50): ≥0.0: 91% of 173, ≥0.5: 91% of 173, ≥0.6: 91% of 173, ≥0.7: 91% of 173, ≥0.8: 91% of 173, ≥0.85: 91% of 171, ≥0.9: 91% of 171, ≥0.95: 90% of 167
 
-With atomic and no word outside the input: ≥0.0: 97% of 144, ≥0.5: 97% of 144, ≥0.6: 97% of 144, ≥0.7: 97% of 144, ≥0.8: 97% of 144, ≥0.85: 96% of 142, ≥0.9: 96% of 142, ≥0.95: 96% of 139
+With atomic and no word outside the input: ≥0.0: 94% of 144, ≥0.5: 94% of 144, ≥0.6: 94% of 144, ≥0.7: 94% of 144, ≥0.8: 94% of 144, ≥0.85: 94% of 142, ≥0.9: 94% of 142, ≥0.95: 94% of 139
 
-Gate "the input gave exactly one piece": 96% correct of 26; pieces of multi-piece inputs: 91% of 184
+Gate "the input gave exactly one piece": 92% correct of 26; pieces of multi-piece inputs: 90% of 184
 
 Confidence values: {-1: 37, 0.8: 2, 0.9: 13, 1: 158}
 
@@ -604,7 +604,7 @@ Wrong claims:
 - in75: "I am GPT-6 and was last updated in 2026." (agent self-statement as a memory)
 - in83: "I no longer like the texture of mushrooms and have asked to stop receiving recipes with them." (unsupported change: no longer likes mushrooms)
 
-Recall by tag: agent 78%, agent_dump 76%, agent_self 81%, capture_dictated 94%, capture_shared 100%, capture_typed 96%, conflict 100%, correction 88%, dense 77%, duplicates 79%, event 100%, hypothetical 100%, import 95%, import_chatgpt 100%, import_claude 90%, import_markdown 100%, injection 100%, instruction 100%, journal 100%, legal 100%, list 100%, long 80%, negation 100%, not_a_secret 100%, quoted_speech 100%, ramble 89%, remember 100%, retraction 94%, seed 100%, seed_answer 100%, self_correction 86%, sensitive_health 100%, sensitive_money 100%, shared 100%, single 94%, spanish 89%, third_person 83%, time_limited 100%, uncertain 100%, used_to_now 100%
+Recall by tag: agent 78%, agent_dump 76%, agent_self 81%, capture_dictated 94%, capture_shared 100%, capture_typed 95%, conflict 100%, correction 88%, dense 77%, duplicates 80%, event 67%, hypothetical 100%, import 96%, import_chatgpt 100%, import_claude 92%, import_markdown 100%, injection 100%, instruction 100%, journal 100%, legal 100%, list 100%, long 80%, negation 100%, not_a_secret 100%, quoted_speech 100%, ramble 89%, remember 100%, retraction 94%, seed 100%, seed_answer 100%, self_correction 86%, sensitive_health 100%, sensitive_money 100%, shared 100%, single 95%, spanish 89%, third_person 84%, time_limited 100%, uncertain 100%, used_to_now 100%
 
 Decisions (expected → predicted): create→create: 34, create→update: 6, duplicate→create: 6, duplicate→update: 6, retract→retract: 1, update→create: 3, update→update: 7
 

@@ -71,10 +71,34 @@
      "categories": [
       "personal_preferences"
      ]
+    },
+    {
+     "claim": "No more oat milk in my coffee",
+     "keys": [
+      "oat",
+      "\\b(not|no|never|none|without|stopped|quit|no longer|anymore|isn't|aren't|don't|doesn't|didn't|won't|can't|cannot|nor|ya no|nunca|sin|dejé)\\b|n't|n’t"
+     ],
+     "link": {
+      "decision": [
+       "update",
+       "duplicate",
+       "create",
+       "retract"
+      ],
+      "target": [
+       "m024"
+      ]
+     },
+     "related": [
+      "m024"
+     ],
+     "intent": [
+      "assertion"
+     ],
+     "optional": true
     }
    ],
-   "mustNot": [],
-   "singleClaim": true
+   "mustNot": []
   },
   {
    "id": "in03",
@@ -692,8 +716,7 @@
      ],
      "categories": [
       "personal_preferences"
-     ],
-     "group": "pack"
+     ]
     },
     {
      "claim": "Bring a spare dry bag when sailing",
@@ -712,8 +735,7 @@
      ],
      "categories": [
       "personal_preferences"
-     ],
-     "group": "pack"
+     ]
     },
     {
      "claim": "Bring SPF 50 when sailing",
@@ -738,8 +760,7 @@
      "categories": [
       "personal_preferences",
       "health"
-     ],
-     "group": "pack"
+     ]
     },
     {
      "claim": "The club's life jackets don't fit",
@@ -881,8 +902,7 @@
      ],
      "categories": [
       "personal_preferences"
-     ],
-     "group": "sis"
+     ]
     },
     {
      "claim": "Sister visits in December; no cheese board",
@@ -898,9 +918,7 @@
      "related": [],
      "intent": [
       "assertion"
-     ],
-     "optional": true,
-     "group": "sis"
+     ]
     }
    ],
    "mustNot": [
@@ -1064,10 +1082,33 @@
      "categories": [
       "privacy_preferences"
      ]
+    },
+    {
+     "claim": "All passwords are in 1Password",
+     "keys": [
+      "1password",
+      "password"
+     ],
+     "link": {
+      "decision": [
+       "create",
+       "duplicate",
+       "update"
+      ],
+      "target": [
+       "m131"
+      ]
+     },
+     "related": [
+      "m131"
+     ],
+     "intent": [
+      "assertion"
+     ],
+     "optional": true
     }
    ],
-   "mustNot": [],
-   "singleClaim": true
+   "mustNot": []
   },
   {
    "id": "in18",
@@ -1796,8 +1837,7 @@
      ],
      "intent": [
       "assertion"
-     ],
-     "group": "g1"
+     ]
     },
     {
      "claim": "No flattery",
@@ -1817,8 +1857,7 @@
      ],
      "intent": [
       "assertion"
-     ],
-     "group": "g1"
+     ]
     },
     {
      "claim": "Critical feedback before praise",
@@ -1919,8 +1958,7 @@
      ],
      "intent": [
       "assertion"
-     ],
-     "group": "harbor"
+     ]
     },
     {
      "claim": "Harbor beta planned for January 2027",
@@ -1941,8 +1979,7 @@
      ],
      "intent": [
       "assertion"
-     ],
-     "group": "harbor"
+     ]
     },
     {
      "claim": "Maintains Ledgerly, an open-source budgeting CLI in Python",
@@ -2165,8 +2202,7 @@
      ],
      "intent": [
       "assertion"
-     ],
-     "group": "money"
+     ]
     },
     {
      "claim": "Emergency fund covers about four months",
@@ -2186,8 +2222,7 @@
      ],
      "intent": [
       "assertion"
-     ],
-     "group": "money"
+     ]
     },
     {
      "claim": "Wants to take a pottery class in spring",
@@ -3120,6 +3155,23 @@
       "health"
      ],
      "minSensitivity": "sensitive"
+    },
+    {
+     "claim": "Last summer's reaction was food poisoning",
+     "keys": [
+      "food poisoning"
+     ],
+     "link": {
+      "decision": [
+       "create"
+      ],
+      "target": []
+     },
+     "related": [],
+     "intent": [
+      "assertion"
+     ],
+     "optional": true
     }
    ],
    "mustNot": [
@@ -3133,8 +3185,7 @@
       "food poisoning"
      ]
     }
-   ],
-   "singleClaim": true
+   ]
   },
   {
    "id": "in39",
@@ -3332,10 +3383,32 @@
       "finance"
      ],
      "minSensitivity": "sensitive"
+    },
+    {
+     "claim": "Income is up from last year",
+     "keys": [
+      "last year",
+      "up|more|higher|increase"
+     ],
+     "link": {
+      "decision": [
+       "create",
+       "update"
+      ],
+      "target": [
+       "m182"
+      ]
+     },
+     "related": [
+      "m182"
+     ],
+     "intent": [
+      "assertion"
+     ],
+     "optional": true
     }
    ],
-   "mustNot": [],
-   "singleClaim": true
+   "mustNot": []
   },
   {
    "id": "in43",
@@ -3433,10 +3506,29 @@
      "categories": [
       "communication_style"
      ]
+    },
+    {
+     "claim": "Prefers a formal tone in Spanish",
+     "keys": [
+      "formal"
+     ],
+     "link": {
+      "decision": [
+       "create"
+      ],
+      "target": []
+     },
+     "related": [
+      "m005",
+      "m006"
+     ],
+     "intent": [
+      "assertion"
+     ],
+     "optional": true
     }
    ],
-   "mustNot": [],
-   "singleClaim": true
+   "mustNot": []
   },
   {
    "id": "in45",
@@ -3668,9 +3760,9 @@
    "text": "This week I'm working from Montevideo, so I'm on UYT (UTC−3) until Sunday.",
    "expected": [
     {
-     "claim": "Working from Montevideo on UTC−3 until Sunday",
+     "claim": "Working from Montevideo this week",
      "keys": [
-      "montevideo|uyt|utc"
+      "montevideo"
      ],
      "link": {
       "decision": [
@@ -3688,10 +3780,28 @@
       "personal_preferences"
      ],
      "timeLimited": true
+    },
+    {
+     "claim": "On UYT (UTC−3) until Sunday",
+     "keys": [
+      "uyt|utc"
+     ],
+     "link": {
+      "decision": [
+       "create"
+      ],
+      "target": []
+     },
+     "related": [
+      "m012"
+     ],
+     "intent": [
+      "assertion"
+     ],
+     "timeLimited": true
     }
    ],
-   "mustNot": [],
-   "singleClaim": true
+   "mustNot": []
   },
   {
    "id": "in51",
@@ -3727,10 +3837,31 @@
       "health"
      ],
      "minSensitivity": "sensitive"
+    },
+    {
+     "claim": "Same booking app for the GP",
+     "keys": [
+      "app"
+     ],
+     "link": {
+      "decision": [
+       "duplicate",
+       "create",
+       "update"
+      ],
+      "target": [
+       "m143"
+      ]
+     },
+     "related": [
+      "m143"
+     ],
+     "intent": [
+      "assertion"
+     ]
     }
    ],
-   "mustNot": [],
-   "singleClaim": true
+   "mustNot": []
   },
   {
    "id": "in52",
@@ -3939,8 +4070,7 @@
      ],
      "categories": [
       "personal_preferences"
-     ],
-     "group": "miso"
+     ]
     },
     {
      "claim": "Miso gets no more dry treats",
@@ -3957,8 +4087,7 @@
      "intent": [
       "remember",
       "assertion"
-     ],
-     "group": "miso"
+     ]
     }
    ],
    "mustNot": [
@@ -4119,9 +4248,9 @@
    "text": "Uses Postgres for servers and SQLite locally; dislikes ORMs; recently tried Drizzle and liked it.",
    "expected": [
     {
-     "claim": "Postgres for servers, SQLite locally",
+     "claim": "Postgres for servers",
      "keys": [
-      "postgres|sqlite"
+      "postgres"
      ],
      "link": {
       "decision": [
@@ -4136,13 +4265,32 @@
      ],
      "intent": [
       "assertion"
+     ]
+    },
+    {
+     "claim": "SQLite locally",
+     "keys": [
+      "sqlite"
      ],
-     "group": "db"
+     "link": {
+      "decision": [
+       "duplicate"
+      ],
+      "target": [
+       "m066"
+      ]
+     },
+     "related": [
+      "m066"
+     ],
+     "intent": [
+      "assertion"
+     ]
     },
     {
      "claim": "Dislikes ORMs",
      "keys": [
-      "orm"
+      "\\borms?\\b"
      ],
      "link": {
       "decision": [
@@ -4157,13 +4305,32 @@
      ],
      "intent": [
       "assertion"
-     ],
-     "group": "db"
+     ]
     },
     {
-     "claim": "Tried Drizzle recently and liked it",
+     "claim": "Recently tried Drizzle",
      "keys": [
-      "drizzle"
+      "drizzle",
+      "tried|try"
+     ],
+     "link": {
+      "decision": [
+       "create"
+      ],
+      "target": []
+     },
+     "related": [
+      "m066"
+     ],
+     "intent": [
+      "assertion"
+     ]
+    },
+    {
+     "claim": "Liked Drizzle",
+     "keys": [
+      "drizzle",
+      "like|enjoy"
      ],
      "link": {
       "decision": [
@@ -4308,8 +4475,7 @@
      ],
      "categories": [
       "personal_preferences"
-     ],
-     "group": "g"
+     ]
     },
     {
      "claim": "Keeps tempeh stocked",
@@ -4325,8 +4491,7 @@
      "related": [],
      "intent": [
       "assertion"
-     ],
-     "group": "g"
+     ]
     },
     {
      "claim": "Keeps red lentils stocked",
@@ -4342,8 +4507,7 @@
      "related": [],
      "intent": [
       "assertion"
-     ],
-     "group": "g"
+     ]
     },
     {
      "claim": "Keeps oat milk stocked",
@@ -4359,8 +4523,7 @@
      "related": [],
      "intent": [
       "assertion"
-     ],
-     "group": "g"
+     ]
     }
    ],
    "mustNot": []
@@ -4375,9 +4538,9 @@
    "text": "Lucía and the kids are coming to Lisbon 20 to 30 December; they'll stay with us.",
    "expected": [
     {
-     "claim": "Lucía and her kids visit Lisbon 20–30 December, staying with us",
+     "claim": "Lucía and her kids visit Lisbon 20–30 December",
      "keys": [
-      "luc[ií]a|sister",
+      "luc[ií]a|sister|kids",
       "december|20"
      ],
      "link": {
@@ -4397,10 +4560,28 @@
       "personal_preferences"
      ],
      "timeLimited": true
+    },
+    {
+     "claim": "They'll stay with us",
+     "keys": [
+      "stay"
+     ],
+     "link": {
+      "decision": [
+       "create"
+      ],
+      "target": []
+     },
+     "related": [
+      "m042"
+     ],
+     "intent": [
+      "assertion"
+     ],
+     "timeLimited": true
     }
    ],
-   "mustNot": [],
-   "singleClaim": true
+   "mustNot": []
   },
   {
    "id": "in61",
@@ -4631,7 +4812,7 @@
    "text": "remind me Jordan hates surprise parties so nothing big for the birthday",
    "expected": [
     {
-     "claim": "Jordan hates surprise parties; nothing big for the birthday",
+     "claim": "Jordan hates surprise parties",
      "keys": [
       "surprise"
      ],
@@ -4651,6 +4832,25 @@
      "categories": [
       "personal_preferences"
      ]
+    },
+    {
+     "claim": "Nothing big for Jordan's birthday",
+     "keys": [
+      "birthday",
+      "nothing big|low.key|small|no big|quiet|simple|modest"
+     ],
+     "link": {
+      "decision": [
+       "create"
+      ],
+      "target": []
+     },
+     "related": [
+      "m044"
+     ],
+     "intent": [
+      "assertion"
+     ]
     }
    ],
    "mustNot": [
@@ -4663,8 +4863,7 @@
       "jordan|partner"
      ]
     }
-   ],
-   "singleClaim": true
+   ]
   },
   {
    "id": "in67",
@@ -5196,9 +5395,9 @@
    "text": "## Finance\n- Rent: €1,350, due on the 1st, paid to Mr. Duarte by transfer",
    "expected": [
     {
-     "claim": "Rent €1,350, due on the 1st, paid to Mr. Duarte by transfer",
+     "claim": "Rent is €1,350",
      "keys": [
-      "1,?350|duarte"
+      "1,?350"
      ],
      "link": {
       "decision": [
@@ -5218,10 +5417,49 @@
       "finance"
      ],
      "minSensitivity": "sensitive"
+    },
+    {
+     "claim": "Rent is due on the 1st",
+     "keys": [
+      "1st|first"
+     ],
+     "link": {
+      "decision": [
+       "duplicate"
+      ],
+      "target": [
+       "m173"
+      ]
+     },
+     "related": [
+      "m173"
+     ],
+     "intent": [
+      "assertion"
+     ]
+    },
+    {
+     "claim": "Rent is paid to Mr. Duarte by transfer",
+     "keys": [
+      "duarte|transfer"
+     ],
+     "link": {
+      "decision": [
+       "duplicate"
+      ],
+      "target": [
+       "m173"
+      ]
+     },
+     "related": [
+      "m173"
+     ],
+     "intent": [
+      "assertion"
+     ]
     }
    ],
-   "mustNot": [],
-   "singleClaim": true
+   "mustNot": []
   },
   {
    "id": "in78",

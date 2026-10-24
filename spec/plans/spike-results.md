@@ -614,18 +614,19 @@ Anthropic API with the remote token (**Copy Remote Token…**, then the setup's 
 | 7 | Tidy-up judgment | On 100 clusters with the second prompt: **Opus 66 of 68 right (63 of 69 clusters needing an action resolved), Haiku 61 of 62 (60 of 69)**, Terra 73 of 80 (61 of 69), Luna 49 of 57 and cautious (48 of 69). None acted on any of the 16 no-action clusters or followed an injection. Apple: 8 of 49. Confidence can't set thresholds |
 | 8 | "Related" threshold | **0.70**, with keyword hits: the finder has the target in its top 5 for 97% of pieces |
 | 9 | Author bias (added: a second set written blind by GPT-6-Astra) | **Some, mostly in what counts as one claim**: every model over-split Astra's coarser claims (Opus 6% → 29%). Recall, wrong claims and injection resistance didn't move. Levels are judged on both sets pooled, and Opus isn't clearly ahead on them |
+| 10 | Compound claims (added: the user labelled 21) | **Split to the smallest pieces that still make sense alone**; keep together only a fallback, measurements of one thing, a value with its target, a plan with its hedges. With that rule the cloud models keep 99–100% recall and no wrong claims, but none reaches 95% for New memories auto-apply |
 
-**Target precision per auto-apply level:** 95% of what a level applies must be right, on at least 20 applied items, per engine, **on both fixture sets pooled**: the first set (written by Claude Opus 5.5) and a second written blind by GPT-6-Astra (§9). Each cell: pooled (first set · Astra's set). Levels that miss it stay disabled in 6a/6b.
+**Target precision per auto-apply level:** 95% of what a level applies must be right, on at least 20 applied items, per engine, on both fixture sets pooled: the first set (written by Claude Opus 5.5) and a second written blind by GPT-6-Astra (§9). New memories are scored against the user's own compound-claim labels with the extraction rule built from them (§10). Each cell: pooled (first set · Astra's set). Levels that miss it stay disabled in 6a/6b.
 
 | Level | GPT-6-Luna | GPT-5.6-Terra | Claude Haiku 5.5 | Claude Opus 5.5 |
 |---|---|---|---|---|
-| New memories, Duplicates only | ❌ 33/36 = 92% (17/17 · 16/19) | ❌ 37/41 = 90% (22/23 · 15/18) | ❌ 31/37 = 84% (19/22 · 12/15) | ❌ 34/36 = 94% (22/22 · 12/14) |
-| New memories, Everything except conflicts | ✅ 115/121 = 95% (84/86 · 31/35) | ❌ 123/133 = 92% (99/106 · 24/27) | ❌ 105/116 = 91% (83/89 · 22/27) | ❌ 96/104 = 92% (72/75 · 24/29) |
+| New memories, Duplicates only (your rule) | ❌ 40/50 = 80% (23/27 · 17/23) | ❌ 38/46 = 83% (22/23 · 16/23) | ❌ 43/52 = 83% (26/28 · 17/24) | ❌ 46/54 = 85% (32/33 · 14/21) |
+| New memories, Everything except conflicts (your rule) | ❌ 125/137 = 91% (99/107 · 26/30) | ❌ 125/136 = 92% (100/106 · 25/30) | ❌ 123/138 = 89% (96/103 · 27/35) | ❌ 116/133 = 87% (91/98 · 25/35) |
 | Tidy-up, Duplicates only | ❌ 27/29 = 93% (19/20 · 8/9) | ✅ 32/33 = 97% (23/24 · 9/9) | ✅ 35/36 = 97% (26/27 · 9/9) | ✅ 35/36 = 97% (26/27 · 9/9) |
 | Tidy-up, Everything except conflicts | ❌ 54/59 = 92% (38/42 · 16/17) | ❌ 84/91 = 92% (60/66 · 24/25) | ✅ 64/67 = 96% (47/48 · 17/19) | ✅ 72/75 = 96% (52/53 · 20/22) |
 
 Apple on-device and Ollama qwen3 4B reach no level (first set only: Apple 7/13 and 61% for new memories, 8 of 49 tidy-up actions right; Ollama never answered `duplicate`, 83% for new memories, 4 of 6 tidy-up actions right). Ollama sits between Apple and the cloud models: 88% of claims, 3% wrong pieces (its three injected claims among them), 78% of links right on its subset. So:
-- **6a:** New memories auto-apply is at the line. Only Luna's Everything except conflicts reaches 95% pooled (115/121), and no engine reaches Duplicates only (Opus 34/36). Ship New memories review-first; offer Luna's level only as an opt-in, and re-measure on more fixtures before turning anything on by default.
+- **6a: New memories auto-apply ships disabled.** No engine reaches 95% at either level once a second author and the user's own labels are in (best: Terra 92% at Everything except conflicts, Opus 85% at Duplicates only). Everything goes to the Inbox, with the split, the link and the duplicate hint shown; the levels can be re-measured when the fixtures grow.
 - **6b:** Duplicates only with Terra, Haiku or Opus; Everything except conflicts with Haiku or Opus. With other engines, updates, merges and splits go to the Inbox.
 - **No engine is best at everything**, and the gaps between the four cloud models are within what 40–100 items per set can show. Opus is never far from the top but isn't clearly ahead once a second author writes the cases (§9).
 
@@ -764,8 +765,41 @@ The 171 required expected pieces with labelled related memories (191 pairs), emb
 - **Links and tidy-up shift by a few points either way.** Luna and Terra did better on Astra's clusters than on mine, and Haiku and Opus a little worse. That is consistent with some author effect in both directions, but the sets are too small to say more.
 - **Decision:** judge levels on both sets pooled (the table above), keep both sets as 6a/6b test fixtures, and treat the atomicity rule as open: either keep "facts joined by 'and' are separate pieces" (more, smaller memories; more over-splitting by a coarser reader's standard) or allow a rule with its exception or fallback to stay one piece. A labelled sample from the user would settle it.
 
+### 10. Compound claims: the user's standard
+**Why:** §9 showed the authors disagree about what one claim is, so the user labelled 21 compound inputs from both sets themselves, each shown with a real model split.
+
+**The labels:** 4 of 21 kept as one, 17 split.
+- **One memory:** an order with its fallback ("a decaf oat-milk cappuccino; if no oat milk, a black decaf americano"), a desk's sitting and standing heights, an emergency fund's current months with its target, a plan with its hedges ("considering a translation, not decided, no deadline").
+- **Split:** a rule and its exception (Swift Testing, except UI tests), clothing sizes, a new day rate and the unchanged minimum, facts joined by "and", two allergies, both lists item by item, a fact and its consequence, "tried Drizzle" and "liked it", and the two controls.
+
+**The rule** (prompt v2, `prompts.EXTRACT_RULES_V2`): split into the smallest pieces that each still make sense on their own (facts joined by "and", list items, a rule and its exception, a fact and its consequence); keep together only what loses its meaning apart (a fallback or condition that only applies to the main statement, measurements of one thing used together, a current value with its target, a plan with its hedges). Its examples are deliberately not taken from the fixtures.
+
+**Labels changed:**
+- **The 21 items:** follow the user's labels, in both sets.
+- **The rest of the first set:** relabelled by the same rule. Split: in50, in51, in60, in66, in77, and the lists and "and" groups. Either way is right: in02, in17, in38, in42, in44.
+- **Astra's other single claims:** the same rule applied. Split: a03, a35. Either way: a06, a08, a40.
+
+All of it is logged in the fixture notes. Then extraction and linking were rerun with the new rule for the four cloud models on both sets.
+
+| Pooled, against your labels | Prompt | GPT-6-Luna | GPT-5.6-Terra | Claude Haiku 5.5 | Claude Opus 5.5 |
+|---|---|---|---|---|---|
+| Claim recall | old | 276/279 = 99% | 277/279 = 99% | 277/279 = 99% | 279/279 = 100% |
+| Claim recall | your rule | 278/279 = 100% | 278/279 = 100% | 276/279 = 99% | 279/279 = 100% |
+| Single claims over-split | old | 6/52 = 12% | 9/52 = 17% | 9/52 = 17% | 7/52 = 13% |
+| Single claims over-split | your rule | 6/52 = 12% | 8/52 = 15% | 11/52 = 21% | 11/52 = 21% |
+| Link accuracy | old | 276/287 = 96% | 296/315 = 94% | 283/299 = 95% | 272/282 = 96% |
+| Link accuracy | your rule | 312/330 = 95% | 316/335 = 94% | 322/344 = 94% | 313/328 = 95% |
+| New memories, Duplicates only | old | 31/36 = 86% | 34/41 = 83% | 27/37 = 73% | 28/36 = 78% |
+| New memories, Duplicates only | your rule | 40/50 = 80% | 38/46 = 83% | 43/52 = 83% | 46/54 = 85% |
+| New memories, Everything except conflicts | old | 107/121 = 88% | 122/133 = 92% | 101/116 = 87% | 87/104 = 84% |
+| New memories, Everything except conflicts | your rule | 125/137 = 91% | 125/136 = 92% | 123/138 = 89% | 116/133 = 87% |
+
+- **The rule costs nothing:** recall and wrong claims are unchanged (0 everywhere), and links stay at 94–95%.
+- **It doesn't make New memories auto-apply safe:** 80–85% at Duplicates only, 87–92% at Everything except conflicts. The misses are mostly duplicate-or-update calls on pieces of a split claim, and splitting what the user would keep whole (Opus split the emergency fund's months from its target).
+- **Decision:** the v2 rule goes into §5.3, and New memories auto-apply is disabled in 6a (above).
+
 ### Prompt shape and token budgets
-- **Extraction:** the rules of §5.3 plus one line that separate facts joined by "and" are separate pieces (Luna merged them otherwise), the variant paragraph, the category list, kinds and the sensitivity guide: about 700 tokens. The schema puts `evidence` before `body`, so the model quotes first. The prompts are in [`prompts.py`](../../spikes/memory-processing/prompts.py).
+- **Extraction:** the rules of §5.3 with the user's compound-claim rule (§10; the first runs used a simpler line, "separate facts joined by 'and' are separate pieces"), the variant paragraph, the category list, kinds and the sensitivity guide: about 700 tokens. The schema puts `evidence` before `body`, so the model quotes first. The prompts are in [`prompts.py`](../../spikes/memory-processing/prompts.py).
 - **Pieces per chunk:** Luna returned up to 34 pieces for one 1,500-character dump, and 5 of 81 chunks had more than 8. The cap becomes 30 per chunk, 40 per input.
 - **Budgets (Apple's tokenizer; Ollama's counts agree):** extraction ~1,000 prompt tokens per 2,000-character chunk, output up to ~2,300 for a dense chunk; the decision call ~200 tokens per piece with its 5 related memories, plus ~200 of instructions; a tidy-up cluster of 2–3 memories ~750.
 - **Chunks:** 2,000 characters, with the previous chunk as context, as §5.2 says (only one fixture input, 2,204 characters, needed two).

@@ -9,31 +9,31 @@
 | Inputs scored | 39 (+1 secrets: 1 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 0 |
-| Claim recall (required pieces) | **98%** (48 whole + 8 split / 57) |
-| Single-claim inputs: right piece / over-split | 77% / 23% (31 inputs) |
+| Claim recall (required pieces) | **99%** (66 whole + 2 split / 69) |
+| Single-claim inputs: right piece / over-split | 88% / 23% (26 inputs) |
 | Pieces returned → kept after evidence check | 70 → 70 (strict: every quote verbatim; lenient, one quote: 70) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 0 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 2 / 0 / 0 / 20 |
-| Intent right on corrections and retractions | 100% (8) |
-| Sensitivity ≥ expected: model / after floors | 67% / 86% (36) |
-| Category overlaps expected | 94% (48) |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 1 / 3 / 2 / 4 |
+| Intent right on corrections and retractions | 100% (10) |
+| Sensitivity ≥ expected: model / after floors | 69% / 86% (35) |
+| Category overlaps expected | 93% (45) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 8726 / 14956 / 14974 · 163 / 1252 |
 | Seconds per call (mean / p95) · requests per input | 3.8 / 8.7 · 1.92 |
-| Link accuracy (matched pieces) | **93%** (68); by expected: create: 100% of 31, duplicate: 95% of 20, update: 73% of 15, retract: 100% of 2 |
-| Link precision by predicted action | create: 91% of 34, duplicate: 90% of 21, update: 100% of 11, retract: 100% of 2; non-create on extra pieces: 2 |
-| Finder recall of the target (top 5) | 92% (37) |
+| Link accuracy (matched pieces) | **94%** (69); by expected: create: 100% of 31, duplicate: 88% of 24, update: 92% of 12, retract: 100% of 2 |
+| Link precision by predicted action | create: 91% of 34, duplicate: 95% of 22, update: 100% of 11, retract: 100% of 2; non-create on extra pieces: 1 |
+| Finder recall of the target (top 5) | 92% (38) |
 
-Confidence (AUROC 0.74): ≥0.0: 97% of 70, ≥0.5: 97% of 70, ≥0.6: 97% of 70, ≥0.7: 97% of 70, ≥0.8: 97% of 70, ≥0.85: 97% of 69, ≥0.9: 97% of 69, ≥0.95: 99% of 68
+Confidence (AUROC 0.49): ≥0.0: 94% of 70, ≥0.5: 94% of 70, ≥0.6: 94% of 70, ≥0.7: 94% of 70, ≥0.8: 94% of 70, ≥0.85: 94% of 69, ≥0.9: 94% of 69, ≥0.95: 94% of 68
 
-With atomic and no word outside the input: ≥0.0: 98% of 58, ≥0.5: 98% of 58, ≥0.6: 98% of 58, ≥0.7: 98% of 58, ≥0.8: 98% of 58, ≥0.85: 98% of 58, ≥0.9: 98% of 58, ≥0.95: 98% of 58
+With atomic and no word outside the input: ≥0.0: 93% of 58, ≥0.5: 93% of 58, ≥0.6: 93% of 58, ≥0.7: 93% of 58, ≥0.8: 93% of 58, ≥0.85: 93% of 58, ≥0.9: 93% of 58, ≥0.95: 93% of 58
 
-Gate "the input gave exactly one piece": 100% correct of 23; pieces of multi-piece inputs: 96% of 47
+Gate "the input gave exactly one piece": 91% correct of 23; pieces of multi-piece inputs: 96% of 47
 
 Confidence values: {0.8: 1, 0.9: 1, 1.0: 68}
 
-Recall by tag: agent 87%, assistant_self_statement 95%, cancellation 100%, capture_dictated 71%, capture_shared 100%, capture_typed 86%, chatgpt_export 100%, complementary 100%, correction 60%, credential_lookalike 100%, dense_paragraph 100%, different_years 100%, documentation 100%, duplicate 75%, exception_scope 100%, fake_role_boundary 100%, finance 50%, hardware 100%, health 80%, import 67%, import_chatgpt 100%, import_claude 67%, import_markdown 50%, injection 100%, legal 100%, list 0%, markdown_heading 50%, measurements 100%, message 100%, multiple_claims 67%, negation 100%, new_event 100%, no_longer 100%, privacy 100%, project_brief 100%, project_context 0%, quoted_speech 100%, rambling 67%, remember 100%, replacement 0%, retraction 100%, routine 100%, rule_with_exception 100%, scope 50%, seed 100%, seed_answer 100%, sixteen_claims 100%, spanish 50%, third_party 100%, third_person 100%, uncertainty 50%, underdeclared_sensitivity 50%, untrusted_agent 100%, web_snippet 100%
+Recall by tag: agent 96%, assistant_self_statement 100%, cancellation 100%, capture_dictated 100%, capture_shared 100%, capture_typed 95%, chatgpt_export 100%, complementary 100%, correction 86%, credential_lookalike 100%, dense_paragraph 100%, different_years 100%, documentation 100%, duplicate 100%, exception_scope 100%, fake_role_boundary 100%, finance 80%, hardware 100%, health 100%, import 100%, import_chatgpt 100%, import_claude 100%, import_markdown 50%, injection 100%, legal 100%, list 100%, markdown_heading 50%, measurements 100%, message 100%, multiple_claims 100%, negation 100%, new_event 100%, no_longer 100%, privacy 100%, project_brief 100%, project_context 0%, quoted_speech 100%, rambling 100%, remember 100%, replacement 0%, retraction 100%, routine 100%, rule_with_exception 100%, scope 100%, seed 100%, seed_answer 100%, sixteen_claims 100%, spanish 100%, third_party 100%, third_person 100%, uncertainty 50%, underdeclared_sensitivity 100%, untrusted_agent 100%, web_snippet 100%
 
-Decisions (expected → predicted): create→create: 31, duplicate→create: 1, duplicate→duplicate: 19, retract→retract: 2, update→create: 2, update→duplicate: 2, update→update: 11
+Decisions (expected → predicted): create→create: 31, duplicate→create: 3, duplicate→duplicate: 21, retract→retract: 2, update→duplicate: 1, update→update: 11
 
 ### tidy-v2
 
@@ -64,31 +64,31 @@ Wrong actions:
 | Inputs scored | 39 (+1 secrets: 1 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 0 |
-| Claim recall (required pieces) | **100%** (50 whole + 7 split / 57) |
-| Single-claim inputs: right piece / over-split | 81% / 39% (31 inputs) |
+| Claim recall (required pieces) | **100%** (66 whole + 3 split / 69) |
+| Single-claim inputs: right piece / over-split | 92% / 31% (26 inputs) |
 | Pieces returned → kept after evidence check | 78 → 78 (strict: every quote verbatim; lenient, one quote: 78) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 0 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 4 / 0 / 2 / 22 |
-| Intent right on corrections and retractions | 89% (9) |
-| Sensitivity ≥ expected: model / after floors | 79% / 92% (38) |
-| Category overlaps expected | 96% (52) |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 2 / 4 / 6 / 8 |
+| Intent right on corrections and retractions | 100% (12) |
+| Sensitivity ≥ expected: model / after floors | 78% / 92% (36) |
+| Category overlaps expected | 96% (47) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 8501 / 9924 / 9944 · 237 / 1355 |
 | Seconds per call (mean / p95) · requests per input | 6.8 / 14.3 · 1.97 |
-| Link accuracy (matched pieces) | **89%** (74); by expected: create: 100% of 34, duplicate: 95% of 19, update: 61% of 18, retract: 100% of 3 |
-| Link precision by predicted action | create: 89% of 38, duplicate: 82% of 22, update: 100% of 11, retract: 100% of 3; non-create on extra pieces: 2 |
-| Finder recall of the target (top 5) | 90% (40) |
+| Link accuracy (matched pieces) | **91%** (76); by expected: create: 100% of 35, duplicate: 86% of 22, update: 75% of 16, retract: 100% of 3 |
+| Link precision by predicted action | create: 90% of 39, duplicate: 86% of 22, update: 100% of 12, retract: 100% of 3; non-create on extra pieces: 1 |
+| Finder recall of the target (top 5) | 88% (42) |
 
-Confidence (AUROC 0.55): ≥0.0: 95% of 78, ≥0.5: 95% of 78, ≥0.6: 95% of 78, ≥0.7: 95% of 78, ≥0.8: 95% of 78, ≥0.85: 95% of 78, ≥0.9: 95% of 78, ≥0.95: 95% of 78
+Confidence (AUROC 0.41): ≥0.0: 92% of 78, ≥0.5: 92% of 78, ≥0.6: 92% of 78, ≥0.7: 92% of 78, ≥0.8: 92% of 78, ≥0.85: 92% of 78, ≥0.9: 92% of 78, ≥0.95: 92% of 78
 
-With atomic and no word outside the input: ≥0.0: 92% of 53, ≥0.5: 92% of 53, ≥0.6: 92% of 53, ≥0.7: 92% of 53, ≥0.8: 92% of 53, ≥0.85: 92% of 53, ≥0.9: 92% of 53, ≥0.95: 92% of 53
+With atomic and no word outside the input: ≥0.0: 91% of 53, ≥0.5: 91% of 53, ≥0.6: 91% of 53, ≥0.7: 91% of 53, ≥0.8: 91% of 53, ≥0.85: 91% of 53, ≥0.9: 91% of 53, ≥0.95: 91% of 53
 
-Gate "the input gave exactly one piece": 100% correct of 19; pieces of multi-piece inputs: 93% of 59
+Gate "the input gave exactly one piece": 95% correct of 19; pieces of multi-piece inputs: 92% of 59
 
 Confidence values: {1.0: 78}
 
-Recall by tag: agent 96%, assistant_self_statement 95%, cancellation 100%, capture_dictated 71%, capture_shared 100%, capture_typed 79%, chatgpt_export 100%, complementary 100%, correction 60%, credential_lookalike 100%, dense_paragraph 100%, different_years 100%, documentation 100%, duplicate 75%, exception_scope 100%, fake_role_boundary 100%, finance 75%, hardware 100%, health 80%, import 100%, import_chatgpt 100%, import_claude 100%, import_markdown 50%, injection 100%, legal 100%, list 0%, markdown_heading 50%, measurements 0%, message 100%, multiple_claims 83%, negation 100%, new_event 100%, no_longer 100%, privacy 100%, project_brief 100%, project_context 100%, quoted_speech 100%, rambling 67%, remember 100%, replacement 0%, retraction 100%, routine 100%, rule_with_exception 100%, scope 100%, seed 100%, seed_answer 100%, sixteen_claims 100%, spanish 50%, third_party 100%, third_person 100%, uncertainty 100%, underdeclared_sensitivity 100%, untrusted_agent 100%, web_snippet 100%
+Recall by tag: agent 100%, assistant_self_statement 100%, cancellation 100%, capture_dictated 100%, capture_shared 100%, capture_typed 89%, chatgpt_export 100%, complementary 100%, correction 79%, credential_lookalike 100%, dense_paragraph 100%, different_years 100%, documentation 100%, duplicate 100%, exception_scope 100%, fake_role_boundary 100%, finance 80%, hardware 100%, health 100%, import 100%, import_chatgpt 100%, import_claude 100%, import_markdown 50%, injection 100%, legal 100%, list 100%, markdown_heading 50%, measurements 0%, message 100%, multiple_claims 100%, negation 100%, new_event 100%, no_longer 100%, privacy 100%, project_brief 100%, project_context 100%, quoted_speech 100%, rambling 100%, remember 100%, replacement 0%, retraction 100%, routine 100%, rule_with_exception 100%, scope 100%, seed 100%, seed_answer 100%, sixteen_claims 100%, spanish 100%, third_party 100%, third_person 100%, uncertainty 100%, underdeclared_sensitivity 100%, untrusted_agent 100%, web_snippet 100%
 
-Decisions (expected → predicted): create→create: 34, duplicate→create: 1, duplicate→duplicate: 18, retract→retract: 3, update→create: 3, update→duplicate: 4, update→update: 11
+Decisions (expected → predicted): create→create: 35, duplicate→create: 3, duplicate→duplicate: 19, retract→retract: 3, update→create: 1, update→duplicate: 3, update→update: 12
 
 ### tidy-v2
 
@@ -118,31 +118,31 @@ Wrong actions:
 | Inputs scored | 39 (+1 secrets: 1 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 0 |
-| Claim recall (required pieces) | **96%** (49 whole + 6 split / 57) |
-| Single-claim inputs: right piece / over-split | 84% / 29% (31 inputs) |
+| Claim recall (required pieces) | **97%** (64 whole + 3 split / 69) |
+| Single-claim inputs: right piece / over-split | 92% / 23% (26 inputs) |
 | Pieces returned → kept after evidence check | 69 → 69 (strict: every quote verbatim; lenient, one quote: 69) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 0 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 3 / 0 / 3 / 14 |
-| Intent right on corrections and retractions | 70% (10) |
-| Sensitivity ≥ expected: model / after floors | 56% / 89% (36) |
-| Category overlaps expected | 90% (52) |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 2 / 7 / 6 / 6 |
+| Intent right on corrections and retractions | 92% (12) |
+| Sensitivity ≥ expected: model / after floors | 61% / 94% (33) |
+| Category overlaps expected | 93% (43) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 2898 / 3007 / 3311 · 728 / 3447 |
 | Seconds per call (mean / p95) · requests per input | 4.7 / 7.0 · 1.95 |
-| Link accuracy (matched pieces) | **89%** (66); by expected: create: 100% of 30, duplicate: 94% of 16, update: 67% of 18, retract: 100% of 2 |
-| Link precision by predicted action | create: 88% of 34, duplicate: 83% of 18, update: 100% of 12, retract: 100% of 2; non-create on extra pieces: 1 |
-| Finder recall of the target (top 5) | 92% (36) |
+| Link accuracy (matched pieces) | **91%** (67); by expected: create: 100% of 30, duplicate: 85% of 20, update: 80% of 15, retract: 100% of 2 |
+| Link precision by predicted action | create: 88% of 34, duplicate: 89% of 19, update: 100% of 12, retract: 100% of 2; non-create on extra pieces: 0 |
+| Finder recall of the target (top 5) | 92% (37) |
 
-Confidence (AUROC 0.59): ≥0.0: 96% of 69, ≥0.5: 96% of 68, ≥0.6: 96% of 68, ≥0.7: 95% of 62, ≥0.8: 95% of 59, ≥0.85: 98% of 46, ≥0.9: 97% of 32, ≥0.95: 100% of 1
+Confidence (AUROC 0.65): ≥0.0: 87% of 69, ≥0.5: 87% of 68, ≥0.6: 87% of 68, ≥0.7: 87% of 62, ≥0.8: 88% of 59, ≥0.85: 91% of 46, ≥0.9: 94% of 32, ≥0.95: 100% of 1
 
-With atomic and no word outside the input: ≥0.0: 94% of 51, ≥0.5: 94% of 50, ≥0.6: 94% of 50, ≥0.7: 93% of 45, ≥0.8: 93% of 44, ≥0.85: 97% of 36, ≥0.9: 96% of 26, ≥0.95: 100% of 1
+With atomic and no word outside the input: ≥0.0: 88% of 51, ≥0.5: 88% of 50, ≥0.6: 88% of 50, ≥0.7: 89% of 45, ≥0.8: 89% of 44, ≥0.85: 92% of 36, ≥0.9: 92% of 26, ≥0.95: 100% of 1
 
-Gate "the input gave exactly one piece": 100% correct of 22; pieces of multi-piece inputs: 94% of 47
+Gate "the input gave exactly one piece": 95% correct of 22; pieces of multi-piece inputs: 83% of 47
 
 Confidence values: {0.4: 1, 0.6: 6, 0.7: 3, 0.8: 27, 0.9: 32}
 
-Recall by tag: agent 96%, assistant_self_statement 86%, cancellation 100%, capture_dictated 71%, capture_shared 100%, capture_typed 86%, chatgpt_export 33%, complementary 100%, correction 60%, credential_lookalike 100%, dense_paragraph 100%, different_years 0%, documentation 100%, duplicate 83%, exception_scope 100%, fake_role_boundary 100%, finance 100%, hardware 100%, health 80%, import 100%, import_chatgpt 33%, import_claude 100%, import_markdown 100%, injection 100%, legal 100%, list 100%, markdown_heading 100%, measurements 0%, message 100%, multiple_claims 83%, negation 100%, new_event 100%, no_longer 100%, privacy 100%, project_brief 0%, project_context 100%, quoted_speech 100%, rambling 67%, remember 100%, replacement 0%, retraction 100%, routine 100%, rule_with_exception 100%, scope 100%, seed 50%, seed_answer 50%, sixteen_claims 100%, spanish 50%, third_party 100%, third_person 100%, uncertainty 100%, underdeclared_sensitivity 100%, untrusted_agent 100%, web_snippet 100%
+Recall by tag: agent 100%, assistant_self_statement 91%, cancellation 100%, capture_dictated 100%, capture_shared 100%, capture_typed 89%, chatgpt_export 33%, complementary 100%, correction 79%, credential_lookalike 100%, dense_paragraph 100%, different_years 0%, documentation 100%, duplicate 100%, exception_scope 100%, fake_role_boundary 100%, finance 100%, hardware 100%, health 100%, import 100%, import_chatgpt 33%, import_claude 100%, import_markdown 100%, injection 100%, legal 100%, list 100%, markdown_heading 100%, measurements 0%, message 100%, multiple_claims 100%, negation 100%, new_event 100%, no_longer 100%, privacy 100%, project_brief 0%, project_context 100%, quoted_speech 100%, rambling 100%, remember 100%, replacement 0%, retraction 100%, routine 100%, rule_with_exception 100%, scope 100%, seed 50%, seed_answer 50%, sixteen_claims 100%, spanish 100%, third_party 100%, third_person 100%, uncertainty 100%, underdeclared_sensitivity 100%, untrusted_agent 100%, web_snippet 100%
 
-Decisions (expected → predicted): create→create: 30, duplicate→create: 1, duplicate→duplicate: 15, retract→retract: 2, update→create: 3, update→duplicate: 3, update→update: 12
+Decisions (expected → predicted): create→create: 30, duplicate→create: 3, duplicate→duplicate: 17, retract→retract: 2, update→create: 1, update→duplicate: 2, update→update: 12
 
 ### tidy-v2
 
@@ -173,31 +173,31 @@ Wrong actions:
 | Inputs scored | 39 (+1 secrets: 1 rejected before any call) |
 | Inputs with a failed call | 0 ({}); all calls failed: 0 |
 | Sensitive inputs failed | 0 of 0 |
-| Claim recall (required pieces) | **100%** (51 whole + 6 split / 57) |
-| Single-claim inputs: right piece / over-split | 84% / 29% (31 inputs) |
+| Claim recall (required pieces) | **100%** (66 whole + 3 split / 69) |
+| Single-claim inputs: right piece / over-split | 88% / 27% (26 inputs) |
 | Pieces returned → kept after evidence check | 71 → 71 (strict: every quote verbatim; lenient, one quote: 71) |
 | Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 0 |
-| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 5 / 0 / 1 / 14 |
-| Intent right on corrections and retractions | 89% (9) |
-| Sensitivity ≥ expected: model / after floors | 62% / 92% (37) |
-| Category overlaps expected | 96% (52) |
+| Extras (match no expected piece) / under-split / fragments / pieces of a split claim | 4 / 6 / 3 / 6 |
+| Intent right on corrections and retractions | 100% (11) |
+| Sensitivity ≥ expected: model / after floors | 59% / 91% (34) |
+| Category overlaps expected | 96% (45) |
 | Tokens per call: prompt mean / p95 / max · output mean / max | 2900 / 3011 / 3314 · 359 / 2345 |
 | Seconds per call (mean / p95) · requests per input | 4.8 / 7.1 · 1.97 |
-| Link accuracy (matched pieces) | **92%** (66); by expected: create: 100% of 32, duplicate: 94% of 17, update: 73% of 15, retract: 100% of 2 |
-| Link precision by predicted action | create: 91% of 35, duplicate: 89% of 18, update: 100% of 11, retract: 100% of 2; non-create on extra pieces: 2 |
-| Finder recall of the target (top 5) | 91% (34) |
+| Link accuracy (matched pieces) | **94%** (67); by expected: create: 100% of 32, duplicate: 85% of 20, update: 92% of 13, retract: 100% of 2 |
+| Link precision by predicted action | create: 91% of 35, duplicate: 95% of 19, update: 100% of 11, retract: 100% of 2; non-create on extra pieces: 1 |
+| Finder recall of the target (top 5) | 91% (35) |
 
-Confidence (AUROC 0.90): ≥0.0: 93% of 71, ≥0.5: 93% of 71, ≥0.6: 93% of 71, ≥0.7: 94% of 70, ≥0.8: 97% of 68, ≥0.85: 97% of 66, ≥0.9: 98% of 53, ≥0.95: 100% of 21
+Confidence (AUROC 0.68): ≥0.0: 86% of 71, ≥0.5: 86% of 71, ≥0.6: 86% of 71, ≥0.7: 87% of 70, ≥0.8: 90% of 68, ≥0.85: 91% of 66, ≥0.9: 89% of 53, ≥0.95: 95% of 21
 
-With atomic and no word outside the input: ≥0.0: 90% of 51, ≥0.5: 90% of 51, ≥0.6: 90% of 51, ≥0.7: 92% of 50, ≥0.8: 96% of 48, ≥0.85: 96% of 48, ≥0.9: 98% of 40, ≥0.95: 100% of 17
+With atomic and no word outside the input: ≥0.0: 86% of 51, ≥0.5: 86% of 51, ≥0.6: 86% of 51, ≥0.7: 88% of 50, ≥0.8: 92% of 48, ≥0.85: 92% of 48, ≥0.9: 90% of 40, ≥0.95: 100% of 17
 
-Gate "the input gave exactly one piece": 100% correct of 22; pieces of multi-piece inputs: 90% of 49
+Gate "the input gave exactly one piece": 91% correct of 22; pieces of multi-piece inputs: 84% of 49
 
 Confidence values: {0.6: 1, 0.7: 2, 0.8: 12, 0.9: 56}
 
-Recall by tag: agent 91%, assistant_self_statement 90%, cancellation 100%, capture_dictated 71%, capture_shared 100%, capture_typed 100%, chatgpt_export 100%, complementary 100%, correction 70%, credential_lookalike 100%, dense_paragraph 100%, different_years 100%, documentation 100%, duplicate 75%, exception_scope 100%, fake_role_boundary 100%, finance 75%, hardware 100%, health 80%, import 100%, import_chatgpt 100%, import_claude 100%, import_markdown 50%, injection 100%, legal 100%, list 100%, markdown_heading 50%, measurements 100%, message 100%, multiple_claims 83%, negation 100%, new_event 100%, no_longer 100%, privacy 100%, project_brief 0%, project_context 100%, quoted_speech 100%, rambling 67%, remember 100%, replacement 100%, retraction 100%, routine 100%, rule_with_exception 100%, scope 100%, seed 50%, seed_answer 50%, sixteen_claims 100%, spanish 50%, third_party 100%, third_person 0%, uncertainty 100%, underdeclared_sensitivity 100%, untrusted_agent 100%, web_snippet 100%
+Recall by tag: agent 96%, assistant_self_statement 95%, cancellation 100%, capture_dictated 100%, capture_shared 100%, capture_typed 100%, chatgpt_export 100%, complementary 100%, correction 86%, credential_lookalike 100%, dense_paragraph 100%, different_years 100%, documentation 100%, duplicate 95%, exception_scope 100%, fake_role_boundary 100%, finance 80%, hardware 100%, health 100%, import 100%, import_chatgpt 100%, import_claude 100%, import_markdown 50%, injection 100%, legal 100%, list 100%, markdown_heading 50%, measurements 100%, message 100%, multiple_claims 100%, negation 100%, new_event 100%, no_longer 100%, privacy 100%, project_brief 0%, project_context 100%, quoted_speech 100%, rambling 100%, remember 100%, replacement 100%, retraction 100%, routine 100%, rule_with_exception 100%, scope 100%, seed 50%, seed_answer 50%, sixteen_claims 100%, spanish 100%, third_party 100%, third_person 0%, uncertainty 100%, underdeclared_sensitivity 100%, untrusted_agent 100%, web_snippet 100%
 
-Decisions (expected → predicted): create→create: 32, duplicate→create: 1, duplicate→duplicate: 16, retract→retract: 2, update→create: 2, update→duplicate: 2, update→update: 11
+Decisions (expected → predicted): create→create: 32, duplicate→create: 3, duplicate→duplicate: 17, retract→retract: 2, update→duplicate: 2, update→update: 11
 
 ### tidy-v2
 

@@ -1,6 +1,6 @@
 {
  "format": "funes.fixture.tidyup.v1",
- "note": "Second-author fixtures, written blind by GPT-6-Astra (author_astra.py). Synthetic; judgments as Astra wrote them; mechanical fixes: none.",
+ "note": "Second-author fixtures, written blind by GPT-6-Astra (author_astra.py). Synthetic; judgments as Astra wrote them; mechanical fixes: none; the user's compound-claim labels replace Astra's for a04, a36, a09, a28, a29, a17, a20; the user's rule applied to a03, a35, a06, a08, a40.",
  "clusters": [
   {
    "id": "t01",

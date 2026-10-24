@@ -5,6 +5,8 @@
 
 Providers: apple, apple-permissive, ollama, codex (GPT-6-Luna), codex-terra (GPT-5.6-Terra), claude-haiku, claude-opus (Claude CLI). Experiments:
   extract          extraction with the input's prompt variant (two-call path, step 1)
+  extract-v2       extraction with the user's compound-claim rule (prompts.EXTRACT_RULES_V2)
+  decide-v2        decisions on extract-v2's pieces
   extract-swapped  extraction with the other variant (question 5)
   decide           one decision call per input on `extract`'s validated pieces (two-call path, step 2)
   onecall          extraction and linking in one call per chunk
@@ -149,7 +151,7 @@ class Runner:
         return hint, inp.get("declaredSensitivity")
 
     # --- extraction ---------------------------------------------------------------------------------
-    def extract(self, inp, variant, with_link=False):
+    def extract(self, inp, variant, with_link=False, version=1):
         rec = {"id": inp["id"], "variant": variant, "calls": []}
         secrets = scan_secrets(inp["text"])
         if secrets:
@@ -164,7 +166,7 @@ class Runner:
                 pr = prompts.one_call_prompt(c, [self.finder.by_id[m] for m in cand], ctx, hint_of(inp))
             else:
                 cand = None
-                ins = prompts.extraction_instructions(variant)
+                ins = prompts.extraction_instructions(variant, version)
                 pr = prompts.extraction_prompt(c, ctx, hint_of(inp))
             r = self.p.generate(ins, pr, prompts.extraction_schema(with_link))
             call = {k: r.get(k) for k in ("ok", "errorKind", "error", "promptTokens", "outputTokens", "reasoningTokens",
@@ -245,20 +247,22 @@ class Runner:
             items = [i for i in self.inputs if i["id"] not in self.done and (not only or i["id"] in only)]
             if self.experiment == "extract":
                 work = lambda i: self.extract(i, i["variant"])
+            elif self.experiment == "extract-v2":
+                work = lambda i: self.extract(i, i["variant"], version=2)
             elif self.experiment == "extract-swapped":
                 other = {"first_person": "about_user", "about_user": "first_person"}
                 work = lambda i: self.extract(i, other[i["variant"]])
             elif self.experiment == "onecall":
                 work = lambda i: self.extract(i, i["variant"], with_link=True)
-            elif self.experiment == "decide":
-                ext_path = self.out_dir / f"extract{SUFFIX}.jsonl"
+            elif self.experiment in ("decide", "decide-v2"):
+                ext_path = self.out_dir / f"{self.experiment.replace('decide', 'extract')}{SUFFIX}.jsonl"
                 ext = {json.loads(l)["id"]: json.loads(l) for l in ext_path.read_text().splitlines()}
                 items = [i for i in items if i["id"] in ext]
                 work = lambda i: self.decide(i, ext[i["id"]])
             else:
                 sys.exit(f"unknown experiment {self.experiment}")
         print(f"{self.provider_name} {self.experiment}: {len(items)} to run", flush=True)
-        if self.experiment == "decide" or self.experiment == "onecall":
+        if self.experiment in ("decide", "decide-v2", "onecall"):
             self.finder  # build once before threads
 
         def one(item):
