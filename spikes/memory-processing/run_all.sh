@@ -32,4 +32,11 @@ ollama)
   python3 run.py ollama extract
   python3 run.py ollama tidy
   python3 run.py ollama decide --only in04,in05,in06,in07,in08,in10,in12,in13,in15,in17,in21,in29,in30,in38,in39,in40,in43,in44,in50,in54,in55,in56,in58,in59,in60,in69,in70,in71,in73,in76 ;;
+claude)
+  # Anthropic through the Claude CLI on the user's subscription, low effort like the Codex models' low reasoning.
+  for m in claude-haiku claude-opus; do
+    python3 run.py $m extract --jobs 4
+    python3 run.py $m decide --jobs 4
+    python3 run.py $m tidy-v2 --jobs 4
+  done ;;
 esac

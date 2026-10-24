@@ -42,6 +42,7 @@ python3 related.py
   guardrails), Ollama (`qwen3:4b-instruct-2507-q4_K_M`, 4k context), and OpenAI GPT-6-Luna (`codex`) and GPT-5.6-Terra
   (`codex-terra`) through the Codex CLI (`codex exec --output-schema`, the task instructions as
   `model_instructions_file`) on a ChatGPT subscription.
-  Anthropic and Gemini weren't run (no API keys).
+  Anthropic Claude Haiku 5.5 (`claude-haiku`) and Opus 5.5 (`claude-opus`) through `claude -p --json-schema` on a Claude
+  subscription. Gemini wasn't run (no API key).
 - Code: `prompts.py` (the prompts and schemas), `validate.py` (§1 secret scanner port, §5.4 and §9.4 validation),
   `finder.py` (§5.5 related-memories finder), `providers.py`.

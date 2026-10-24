@@ -630,6 +630,28 @@
       "assertion"
      ],
      "optional": true
+    },
+    {
+     "claim": "Has an accountant",
+     "keys": [
+      "accountant"
+     ],
+     "link": {
+      "decision": [
+       "duplicate",
+       "create"
+      ],
+      "target": [
+       "m166"
+      ]
+     },
+     "related": [
+      "m166"
+     ],
+     "intent": [
+      "assertion"
+     ],
+     "optional": true
     }
    ],
    "mustNot": [
@@ -2988,9 +3010,12 @@
      ],
      "link": {
       "decision": [
-       "create"
+       "create",
+       "update"
       ],
-      "target": []
+      "target": [
+       "m158"
+      ]
      },
      "related": [
       "m158"

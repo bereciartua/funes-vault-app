@@ -598,7 +598,8 @@ Anthropic API with the remote token (**Copy Remote Token…**, then the setup's 
 | OpenAI GPT-6-Luna, low reasoning | `codex exec --output-schema` on the user's ChatGPT subscription; the task instructions replace Codex's base instructions | Codex adds its tool definitions (6–9k tokens a call), so its token counts aren't the task's; item counts can't be in the schema |
 | Ollama `qwen3:4b-instruct-2507-q4_K_M` | `/api/chat` with the schema as `format`, temperature 0, 4k context | About 2 min a call on this Mac (7 calls timed out at 10 min and were rerun); decisions on the same 30-input subset as Apple's one-call run; no one-call or swapped-variant run |
 | OpenAI GPT-5.6-Terra, low reasoning | the same, `codex exec -m gpt-5.6-terra` | Added in a second round with the 100 clusters: extraction, decisions and the second tidy-up prompt; about 7 s a call |
-| Anthropic, Gemini | not run | No API keys; the user chose Codex models only |
+| Anthropic Claude Haiku 5.5 and Opus 5.5, low effort | `claude -p --json-schema`, the task instructions as `--system-prompt`, no tools, on the user's Claude subscription | Third round: extraction, decisions and the second tidy-up prompt on 100 clusters; about 5 s a call, ~3k prompt tokens (1.4k of Claude Code's own). List-price equivalent of the runs: Haiku $0.16, Opus $4.42 |
+| Gemini | not run | No API key |
 
 ### Verdict
 | # | Question | Answer |
@@ -609,34 +610,34 @@ Anthropic API with the remote token (**Copy Remote Token…**, then the setup's 
 | 4 | Does `confidence` mean anything? | **No.** Luna gives 0.9–1.0 to 99% of pieces and actions (AUROC 0.50), Apple 1.0 to all. Auto-apply gates on atomic + support check + trust instead |
 | 5 | Prompt variants | **Keep both.** The wrong variant made a shared profile of someone else into the user's facts |
 | 6 | Injection | Luna followed none (0 of 6). Apple and Ollama both stored "I have no allergies" from a shared page; Ollama followed all 3 extraction injections, Apple acted on an injected tidy-up instruction |
-| 7 | Tidy-up judgment | On 100 clusters with the second prompt: Luna 49 of 57 actions right and cautious (48 of 69 clusters needing an action resolved); Terra 73 of 80 right and thorough (61 of 69). Neither acted on any of the 16 no-action clusters or followed an injection. Apple: 8 of 49. Confidence can't set thresholds |
+| 7 | Tidy-up judgment | On 100 clusters with the second prompt: **Opus 66 of 68 right (63 of 69 clusters needing an action resolved), Haiku 61 of 62 (60 of 69)**, Terra 73 of 80 (61 of 69), Luna 49 of 57 and cautious (48 of 69). None acted on any of the 16 no-action clusters or followed an injection. Apple: 8 of 49. Confidence can't set thresholds |
 | 8 | "Related" threshold | **0.70**, with keyword hits: the finder has the target in its top 5 for 97% of pieces |
 
 **Target precision per auto-apply level:** 95% of what a level applies must be right, on at least 20 applied items in the fixtures, per engine. Results below; levels that miss it stay disabled in 6a/6b.
 
-| Level | GPT-6-Luna | GPT-5.6-Terra | Apple on-device | Ollama qwen3 4B |
-|---|---|---|---|---|
-| New memories, Duplicates only (duplicate pieces skipped) | ✅ 17/17 user pieces (72/72 with agent input) | ✅ 22/23 = 96% | ❌ 7/13 | ❌ never answered `duplicate` |
-| New memories, Everything except conflicts (atomic, support check passed, trust rule) | ✅ 84/86 = 98%, 76% of pieces applied | ❌ 99/106 = 93% (over-split fragments) | ❌ 43/70 = 61% | ❌ 39/47 = 83% (its 30-input subset) |
-| Tidy-up, Duplicates only (model `archive` duplicate, 100 clusters) | ✅ 19/20 = 95% | ✅ 23/24 = 96% | ❌ 2/2 of 40 clusters, too few, and the rest of its output is wrong | ❌ no duplicate archives |
-| Tidy-up, Everything except conflicts (100 clusters) | ❌ 38/42 = 90% | ❌ 60/66 = 91% | ❌ 5/40 | ❌ 3/4, too few |
+| Level | GPT-6-Luna | GPT-5.6-Terra | Claude Haiku 5.5 | Claude Opus 5.5 | Apple on-device | Ollama qwen3 4B |
+|---|---|---|---|---|---|---|
+| New memories, Duplicates only (duplicate pieces skipped) | ✅ 17/17 user pieces (72/72 with agent input) | ✅ 22/23 | ❌ 19/22 | ✅ 22/22 | ❌ 7/13 | ❌ never answered `duplicate` |
+| New memories, Everything except conflicts (atomic, support check passed, trust rule) | ✅ 84/86 = 98%, 76% of pieces applied | ❌ 99/106 = 93% (over-split fragments) | ❌ 81/89 = 91% | ✅ 72/75 = 96%, 62% applied | ❌ 43/70 = 61% | ❌ 39/47 = 83% (its 30-input subset) |
+| Tidy-up, Duplicates only (model `archive` duplicate, 100 clusters) | ✅ 19/20 | ✅ 23/24 | ✅ 26/27 | ✅ 26/27 | ❌ 2/2 of 40 clusters, too few, and the rest of its output is wrong | ❌ no duplicate archives |
+| Tidy-up, Everything except conflicts (100 clusters) | ❌ 38/42 = 90% | ❌ 60/66 = 91% | ✅ 47/48 = 98% | ✅ 52/53 = 98% | ❌ 5/40 | ❌ 3/4, too few |
 
 Ollama qwen3 4B sits between Apple and the cloud models: 88% of claims, 3% wrong pieces (its three injected claims among them), 78% of links right on its subset, a nearly idle tidy-up. So:
-- **6a:** both New memories levels with Luna, Duplicates only with Terra.
-- **6b:** Duplicates only applies the code-only rules plus model `archive` duplicates from Luna or Terra. Everything except conflicts stays disabled, so other model proposals go to the Inbox.
+- **6a:** both New memories levels with Luna or Opus; Duplicates only with Terra.
+- **6b:** Duplicates only with Luna, Terra, Haiku or Opus; Everything except conflicts with Haiku or Opus. With the other engines, updates, merges and splits go to the Inbox.
+- **No single cheap model wins both tasks:** Haiku is the best tidy-up for its cost but over-splits new input; Luna splits best but is a cautious tidy-up. Opus passes every level. A user choosing one engine for both tasks gets the levels that engine passed.
 
 ### 1. Apple on-device
-| Measure (2,000-character chunks) | Apple | GPT-6-Luna | GPT-5.6-Terra | Ollama qwen3 4B |
-|---|---|---|---|---|
-| Claim recall | 64% (128/201) | 99% (199/201) | 99% (199/201) | 88% (177/201) |
-| Single-claim inputs: right piece / over-split | 94% / 11% | 100% / 0% | 97% / 22% | 94% / 36% |
-| Wrong claims (pieces) | 18 of 146 (12%) | 0 of 218 | 0 of 242 | 7 of 210 (3%) |
-| Intent right on corrections and retractions | 35% | 100% | 97% | 100% |
-| Model sensitivity ≥ expected (before floors) | 30% | 100% | 100% | 20% |
-| Dense dump (in25, 31 claims) | 1 piece | 34 pieces | 33 pieces | 20 pieces (the schema's cap, which Ollama enforces) |
-| Link accuracy (two calls) | 68% | 97% | 94% | 78% (subset) |
-| Refusals | 0 of 80 inputs, 0 of 40 clusters | 0 | 0 | 0 |
-| Seconds per call (mean) | 32 | 21 | 7 | 131 |
+| Measure (2,000-character chunks) | Apple | GPT-6-Luna | GPT-5.6-Terra | Claude Haiku 5.5 | Claude Opus 5.5 | Ollama qwen3 4B |
+|---|---|---|---|---|---|---|
+| Claim recall | 64% (128/201) | 99% (199/201) | 99% (199/201) | 100% (200/201) | 100% (201/201) | 88% (177/201) |
+| Single-claim inputs: right piece / over-split | 94% / 11% | 100% / 0% | 97% / 22% | 97% / 22% | 100% / 6% | 94% / 36% |
+| Wrong claims (pieces) | 18 of 146 (12%) | 0 of 218 | 0 of 242 | 0 of 233 | 0 of 216 | 7 of 210 (3%) |
+| Intent right on corrections and retractions | 35% | 100% | 97% | 100% | 100% | 100% |
+| Model sensitivity ≥ expected (before floors) | 30% | 100% | 100% | 100% | 100% | 20% |
+| Link accuracy (two calls) | 68% | 97% | 94% | 96% | 97% | 78% (subset) |
+| Refusals | 0 of 80 inputs, 0 of 40 clusters | 0 | 0 | 0 | 0 | 0 |
+| Seconds per call (mean) | 32 | 21 | 7 | 5 | 5 | 131 |
 
 - **Window:** with the extraction instructions (about 700 tokens), the schema (283) and a 2,000-character chunk, prompts averaged 1,039 tokens (max 1,532), and the largest prompt plus output was 3,125 of 4,096. The decision call peaked at 1,617 with 3 pieces a call, one call with candidates at 2,530, the tidy-up at 1,239. Nothing hit `exceededContextWindowSize`.
 - **Refusals:** none, with default guardrails, on 13 health, money and legal inputs (ADHD and medication, therapy, debt, income, lab results) and 40 clusters with health and money memories. The permissive guardrails gave identical results on the 13. Spike 2's refusals were in re-ranking, not here.
@@ -663,14 +664,14 @@ Ollama qwen3 4B sits between Apple and the cloud models: 88% of claims, 3% wrong
 
 ### 3. Unsupported additions and the support check
 - **Every piece flagged was read** (words in the body that aren't anywhere in the input). Luna: 30 of 218 flagged, none a real addition (paraphrase: "set a personal best" for "PB"). Apple: 28 of 146 flagged, 8 real errors among them: 3 pure additions (an age, "I run the marathon" from the race date, "allergic to ferritin") and 5 changes of meaning or person. About 5 more Apple errors carried no new word (the wrong-claim checks catch them).
-- Terra: 31 of 242 flagged, none a real addition (paraphrase and Spanish rewordings).
+- Terra: 31 of 242 flagged, none a real addition (paraphrase and Spanish rewordings). Haiku 47 of 233 and Opus 53 of 216, none invented; both resolve relative dates against today ("last week" → "around mid-October 2026", "today" → "2026-10-23"), which the check flags and the user can see.
 - Ollama: 39 of 210 flagged; 1 real addition ("I no longer like the texture of mushrooms" from "realised they really don't like the texture") and 1 injected claim ("I retracted all previous health memories").
 - No provider wrote "peanuts and tree nuts"; the fixture's check for it stayed at 0.
 - **Strict evidence** (every quote verbatim, after whitespace, case and quote-mark normalization) cost Luna nothing: 0 pieces dropped. Apple lost 13 of 159, mostly to quotes wrapped in `<note>` tags or empty, which validation now strips and ignores.
 - **Decision:** keep the support check, as an auto-apply gate (a flagged piece goes to the Inbox), never as a reason to drop a piece: it flags 14% (Luna) to 19% (Apple, Ollama) of pieces, almost all fine.
 
 ### 4. Confidence and the auto-apply gate
-- Luna: 206 of 218 pieces at 1.0, 12 at 0.9; actions 0.95–1.0. AUROC of confidence against "the piece is right" 0.50 (two calls), 0.57 (one call). Apple: 1.0 on every piece but one; its tidy-up actions 0.5, 0.9 or 1.0 with no relation to being right. Ollama: 158 of 210 pieces at 1.0 and 37 at −1 (outside the range; validation should clamp or drop it), AUROC 0.61. A threshold can't separate anything.
+- Luna: 206 of 218 pieces at 1.0, 12 at 0.9; actions 0.95–1.0. AUROC of confidence against "the piece is right" 0.50 (two calls), 0.57 (one call). Apple: 1.0 on every piece but one; its tidy-up actions 0.5, 0.9 or 1.0 with no relation to being right. Ollama: 158 of 210 pieces at 1.0 and 37 at −1 (outside the range; validation should clamp or drop it), AUROC 0.61. Haiku spreads its values (0.6–0.95) but AUROC is 0.57. Opus is the exception, at 0.72: its 29 pieces at ≥ 0.95 were all right. Still, no threshold works across engines.
 - **Gates that can be computed** (Luna, user input, agents excluded since they follow their own access):
 
   | Gate for Everything except conflicts | Right | Applied |
@@ -679,7 +680,7 @@ Ollama qwen3 4B sits between Apple and the cloud models: 88% of claims, 3% wrong
   | **Atomic and the support check passes** | **98% (84/86)** | 76% |
   | The input gave exactly one piece (the plan's fallback) | 93% (39/42) | 37% |
 
-  Terra with the same gate: 93% (99/106) at 76% applied; without it 93% (124/134).
+  Same gate, other engines: Terra 93% (99/106), Haiku 91% (81/89), Opus 96% (72/75, 62% applied; 97% without the gate).
 
 - **Decision:** `confidence` stays in the schema for display and analysis but gates nothing. Auto-apply uses the chosen engine, `atomic`, the support check and the trust rule. The single-claim fallback isn't needed.
 
@@ -708,22 +709,23 @@ The first-person prompt on agent text was harmless for Luna; the about-the-user 
 - **First prompt:** for a superseded value (rent €1,250 → €1,350) Luna rewrote the old memory with the new value instead of archiving it, which leaves two identical memories. The second prompt says to archive a superseded copy and update only when the old memory holds other still-true facts, and that duplicates are archived even when their metadata differ.
 
 **The second prompt on 100 clusters:**
-| | GPT-6-Luna | GPT-5.6-Terra |
-|---|---|---|
-| Actions right, all 100 | 49/57 (archive 27/28, update 12/16, conflict 8/11, merge 2/2) | **73/80** (archive 52/57, update 8/10, conflict 9/9, merge 4/4) |
-| Actions right, held-out k41–k100 | 30/37 | 52/56 |
-| Clusters needing an action that got a right one | 48 of 69 | **61 of 69** |
-| No-action clusters with an action | 0 of 16 | 0 of 16 |
-| Injection followed | 0 of 5 | 0 of 5 |
-| Update + archive pairs (see below) | 0 | 10, all right as merges |
+| | GPT-6-Luna | GPT-5.6-Terra | Claude Haiku 5.5 | Claude Opus 5.5 |
+|---|---|---|---|---|
+| Actions right, all 100 | 49/57 (archive 27/28, update 12/16, conflict 8/11, merge 2/2) | 73/80 (archive 52/57, update 8/10, conflict 9/9, merge 4/4) | **61/62** (archive 43/44, update 6/6, conflict 10/10, merge 2/2) | **66/68** (archive 44/46, update 6/6, conflict 10/10, merge 6/6) |
+| Actions right, held-out k41–k100 | 30/37 | 52/56 | 42/43 | 45/47 |
+| Clusters needing an action that got a right one | 48 of 69 | 61 of 69 | 60 of 69 | **63 of 69** |
+| No-action clusters with an action | 0 of 16 | 0 of 16 | 0 of 16 | 0 of 16 |
+| Injection followed | 0 of 5 | 0 of 5 | 0 of 5 | 0 of 5 |
+| Update + archive pairs (see below) | 0 | 10, all right as merges | 0 | 0 |
 
 - **Luna is precise but cautious.** Its archives were right 27 of 28 times, but it asked needless questions where the newer memory said "now" or "stopped" (3 conflicts), and it updated a short memory with a longer one's detail (3 times), leaving two near-identical memories. It also rewrote "client tasks in Linear" from an agent-written "switched to Jira" (the trust rule keeps that in the Inbox).
 - **Terra is thorough.** It resolved 61 of 69 clusters. Its errors: archiving €650 as superseded by €700 with no word saying so, rewriting two non-atomic summaries instead of splitting them, and archiving a fragment into one of them.
+- **Haiku and Opus** archive superseded and duplicate copies, update only where the old memory holds more, and raise the real conflicts without asking needless ones. Opus's two wrong actions were archives; Haiku's one was too.
 - **Update and archive as a pair:** for 10 update clusters Terra updated the complete memory with the new fact, then archived the fragment with that memory as its survivor. Together that's a correct merge; the archive alone would lose the fact. Scored as one change, and §9.4 now says such a pair is applied together or not at all (so Duplicates only, which applies no updates, skips its archive).
 - **No merge that drops a constraint:** the peanut / tree-nut and runner's-knee / marathon clusters got no action from either. Validation blocked one Terra merge across categories.
 - **Apple** (first 40 only): 8 of 49 right, an `update` on nearly every cluster, often with invented text ("She works as a nurse", "I've read that greyhounds are good with cats").
 - **Ollama qwen3 4B** (first 40 only): 6 actions, 4 right. It archived "My sister Lucía lives in Montevideo" as a duplicate of "Jordan's sister lives in Porto", and 3 more actions named ids outside the cluster (blocked).
-- **Decision:** the second prompt goes into §9.3. Confidence doesn't separate right from wrong (every action of both models ≥ 0.94), so §9.5's 0.8 and 0.9 thresholds are replaced by the per-engine target. Duplicates only reaches it with Luna and Terra; Everything except conflicts doesn't (90%, 91%).
+- **Decision:** the second prompt goes into §9.3. Confidence doesn't separate right from wrong (every action of both models ≥ 0.94), so §9.5's 0.8 and 0.9 thresholds are replaced by the per-engine target. Duplicates only reaches it with all four cloud models; Everything except conflicts with Haiku and Opus (98% each), not Luna or Terra (90%, 91%).
 
 ### 8. The "related" threshold (bge-small, int8 Core ML)
 The 171 required expected pieces with labelled related memories (191 pairs), embedded as memories and compared with the 200 vault memories:
@@ -746,6 +748,6 @@ The 171 required expected pieces with labelled related memories (191 pairs), emb
 - **Chunks:** 2,000 characters, with the previous chunk as context, as §5.2 says (only one fixture input, 2,204 characters, needed two).
 
 ### Not measured
-- Anthropic and Gemini models (no keys). Their levels stay unproven until run on these fixtures.
+- Gemini (no key), and other Anthropic and OpenAI models. Their levels stay unproven until run on these fixtures.
 - Apple and Ollama on clusters k41–k100 (Apple's tidy-up was already ruled out; Ollama is too slow on this Mac).
 - Latency on an unloaded Mac.

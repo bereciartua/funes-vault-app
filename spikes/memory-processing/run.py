@@ -3,7 +3,7 @@
 
   python3 run.py <provider> <experiment> [--only in01,in02] [--jobs N] [--chunk 2000] [--tag name]
 
-Providers: apple, apple-permissive, ollama, codex (GPT-6-Luna), codex-terra (GPT-5.6-Terra). Experiments:
+Providers: apple, apple-permissive, ollama, codex (GPT-6-Luna), codex-terra (GPT-5.6-Terra), claude-haiku, claude-opus (Claude CLI). Experiments:
   extract          extraction with the input's prompt variant (two-call path, step 1)
   extract-swapped  extraction with the other variant (question 5)
   decide           one decision call per input on `extract`'s validated pieces (two-call path, step 2)
@@ -37,7 +37,7 @@ SEED_QUESTIONS = {
 }
 # Decision-call batch size per provider: Apple's 4k window and Ollama's 8k context can't take every piece of a
 # long input with 5 related memories each.
-DECISION_BATCH = {"apple": 3, "ollama": 4, "codex": 100}
+DECISION_BATCH = {"apple": 3, "ollama": 4, "codex": 100, "claude": 100}
 MAX_PIECES_PER_INPUT = 40
 
 
@@ -116,7 +116,8 @@ class Runner:
         self.provider_name = provider_name
         base = provider_name.split("-")[0]
         self.base = base
-        kw = {"apple-permissive": {"guardrails": "permissive"}, "codex-terra": {"model": "gpt-5.6-terra"}}.get(provider_name, {})
+        kw = {"apple-permissive": {"guardrails": "permissive"}, "codex-terra": {"model": "gpt-5.6-terra"},
+              "claude-haiku": {"model": "haiku"}, "claude-opus": {"model": "opus"}}.get(provider_name, {})
         self.p = make(base, **kw)
         self.experiment = experiment
         self.chunk_size = chunk_size
@@ -164,7 +165,7 @@ class Runner:
                 pr = prompts.extraction_prompt(c, ctx, hint_of(inp))
             r = self.p.generate(ins, pr, prompts.extraction_schema(with_link))
             call = {k: r.get(k) for k in ("ok", "errorKind", "error", "promptTokens", "outputTokens", "reasoningTokens",
-                                          "schemaTokens", "ms", "truncated") if r.get(k) is not None}
+                                          "schemaTokens", "ms", "truncated", "costUSD", "modelId") if r.get(k) is not None}
             call["chunk"] = ci
             call["chunkChars"] = len(c)
             if cand is not None:
@@ -202,7 +203,7 @@ class Runner:
             pr = prompts.decision_prompt(part, {i: [self.finder.by_id[m] for m in cands[i]] for i, _ in part})
             r = self.p.generate(prompts.DECISION_RULES, pr, prompts.decision_schema())
             call = {k: r.get(k) for k in ("ok", "errorKind", "error", "promptTokens", "outputTokens", "reasoningTokens",
-                                          "ms", "truncated") if r.get(k) is not None}
+                                          "ms", "truncated", "costUSD", "modelId") if r.get(k) is not None}
             call["pieces"] = [i for i, _ in part]
             call["raw"] = r.get("content")
             rec["calls"].append(call)
@@ -226,7 +227,7 @@ class Runner:
         rules = prompts.TIDY_RULES_V2 if self.experiment == "tidy-v2" else prompts.TIDY_RULES
         r = self.p.generate(rules, prompts.tidy_prompt(cl["memories"]), prompts.tidy_schema())
         call = {k: r.get(k) for k in ("ok", "errorKind", "error", "promptTokens", "outputTokens", "reasoningTokens",
-                                      "ms") if r.get(k) is not None}
+                                      "ms", "costUSD", "modelId") if r.get(k) is not None}
         rec = {"id": cl["id"], "calls": [call], "raw": r.get("content")}
         if r.get("ok"):
             kept, blocked = validate_actions((r["content"] or {}).get("actions"), cl)

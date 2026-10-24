@@ -28,7 +28,7 @@
 - **The Inbox** gets a Tidy-up section and an Applied automatically list; the iPhone shows these cards as "Review on your Mac" until it gets its own.
 - **The model's role grows** from proposing fields to proposing changes. Every change is validated in code, traceable in provenance and reversible.
 - **A cloud provider receives existing memories,** within the cloud limit. Memories above it are tidied only by a local provider or the code-only rules.
-- **Auto-apply starts with duplicates only** ([Spike E](../../plans/spike-results.md#spike-e-extraction-linking-and-tidy-up-quality), 100 clusters): model `archive` duplicates reached 95% with GPT-6-Luna and GPT-5.6-Terra; updates, merges and splits didn't (90–91%), so they stay in the Inbox. Confidence doesn't separate right from wrong, so levels are per engine, not per threshold. Apple on-device isn't offered for the tidy-up (8 of 49 right).
+- **Levels per engine** ([Spike E](../../plans/spike-results.md#spike-e-extraction-linking-and-tidy-up-quality), 100 clusters): model `archive` duplicates reached 95% with GPT-6-Luna, GPT-5.6-Terra, Claude Haiku 5.5 and Claude Opus 5.5; Everything except conflicts only with Haiku and Opus (98%). With other engines, updates, merges and splits stay in the Inbox. Confidence doesn't separate right from wrong, so levels are per engine, not per threshold. Apple on-device isn't offered for the tidy-up (8 of 49 right).
 
 **Alternatives considered.**
 - **Port the web job (pairs, archive only):** can't merge or update.

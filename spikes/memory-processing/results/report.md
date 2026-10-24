@@ -21,7 +21,7 @@
 | Seconds per call (mean / p95) · requests per input | 20.6 / 40.5 · 2.00 |
 | Link accuracy (matched pieces) | **97%** (218); by expected: create: 98% of 104, duplicate: 96% of 82, update: 93% of 29, retract: 100% of 3 |
 | Link precision by predicted action | create: 97% of 102, duplicate: 100% of 72, update: 91% of 43, retract: 100% of 1; non-create on extra pieces: 0 |
-| Finder recall of the target (top 5) | 96% (139) |
+| Finder recall of the target (top 5) | 96% (140) |
 
 Confidence (AUROC 0.50): ≥0.0: 99% of 218, ≥0.5: 99% of 218, ≥0.6: 99% of 218, ≥0.7: 99% of 218, ≥0.8: 99% of 218, ≥0.85: 99% of 218, ≥0.9: 99% of 215, ≥0.95: 99% of 208
 
@@ -166,7 +166,7 @@ Wrong actions:
 | Seconds per call (mean / p95) · requests per input | 6.6 / 14.2 · 2.00 |
 | Link accuracy (matched pieces) | **95%** (235); by expected: create: 97% of 117, duplicate: 92% of 84, update: 93% of 30, retract: 100% of 4 |
 | Link precision by predicted action | create: 93% of 123, duplicate: 100% of 75, update: 91% of 34, retract: 100% of 3; non-create on extra pieces: 3 |
-| Finder recall of the target (top 5) | 94% (147) |
+| Finder recall of the target (top 5) | 94% (148) |
 
 Confidence (AUROC 0.62): ≥0.0: 96% of 242, ≥0.5: 96% of 242, ≥0.6: 96% of 242, ≥0.7: 96% of 242, ≥0.8: 96% of 242, ≥0.85: 96% of 241, ≥0.9: 96% of 241, ≥0.95: 97% of 238
 
@@ -205,6 +205,115 @@ Wrong actions:
 - k85 update k85a survivor= conf=0.98 reason=none: Allergic to penicillin; migraines about twice a month; seasonal pollen allergy (hay fever) in April and May, for which c
 - k85 archive k85b survivor=k85a conf=0.98 reason=duplicate: Its hay-fever information is fully retained in the updated health summary.
 
+## claude-haiku
+
+### extract
+
+| Measure | Value |
+|---|---|
+| Inputs scored | 80 (+2 secrets: 2 rejected before any call) |
+| Inputs with a failed call | 0 ({}); all calls failed: 0 |
+| Sensitive inputs failed | 0 of 13 |
+| Claim recall (required pieces) | **100%** (200/201) |
+| Single-claim inputs: right piece / over-split | 97% / 22% (36 inputs) |
+| Pieces returned → kept after evidence check | 233 → 233 (strict: every quote verbatim; lenient, one quote: 233) |
+| Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 0 |
+| Extras (match no expected piece) / under-split / fragments | 7 / 1 / 15 |
+| Intent right on corrections and retractions | 100% (31) |
+| Sensitivity ≥ expected: model / after floors | 100% / 100% (24) |
+| Category overlaps expected | 94% (113) |
+| Tokens per call: prompt mean / p95 / max · output mean / max | 2892 / 3068 / 3541 · 859 / 5762 |
+| Seconds per call (mean / p95) · requests per input | 4.7 / 9.5 · 2.00 |
+| Link accuracy (matched pieces) | **96%** (226); by expected: create: 100% of 108, duplicate: 95% of 83, update: 84% of 31, retract: 75% of 4 |
+| Link precision by predicted action | create: 93% of 122, duplicate: 97% of 75, update: 100% of 26, retract: 100% of 3; non-create on extra pieces: 2 |
+| Finder recall of the target (top 5) | 95% (147) |
+
+Confidence (AUROC 0.57): ≥0.0: 97% of 233, ≥0.5: 97% of 233, ≥0.6: 97% of 232, ≥0.7: 97% of 229, ≥0.8: 97% of 219, ≥0.85: 98% of 186, ≥0.9: 97% of 110, ≥0.95: 80% of 10
+
+With atomic and no word outside the input: ≥0.0: 97% of 180, ≥0.5: 97% of 180, ≥0.6: 97% of 180, ≥0.7: 97% of 178, ≥0.8: 98% of 170, ≥0.85: 98% of 147, ≥0.9: 97% of 91, ≥0.95: 78% of 9
+
+Gate "the input gave exactly one piece": 100% correct of 36; pieces of multi-piece inputs: 96% of 197
+
+Confidence values: {0.5: 1, 0.6: 3, 0.7: 8, 0.8: 111, 0.9: 110}
+
+Recall by tag: agent 100%, agent_dump 100%, agent_self 100%, capture_dictated 100%, capture_shared 100%, capture_typed 98%, conflict 100%, correction 100%, dense 100%, duplicates 100%, event 100%, hypothetical 100%, import 100%, import_chatgpt 100%, import_claude 100%, import_markdown 100%, injection 100%, instruction 100%, journal 100%, legal 100%, list 100%, long 100%, negation 100%, not_a_secret 100%, quoted_speech 100%, ramble 100%, remember 100%, retraction 100%, seed 100%, seed_answer 100%, self_correction 100%, sensitive_health 100%, sensitive_money 100%, shared 100%, single 97%, spanish 100%, third_person 100%, time_limited 100%, uncertain 100%, used_to_now 100%
+
+Decisions (expected → predicted): create→create: 106, create→update: 2, duplicate→create: 9, duplicate→duplicate: 73, duplicate→update: 1, retract→duplicate: 1, retract→retract: 2, retract→update: 1, update→create: 7, update→duplicate: 1, update→retract: 1, update→update: 22
+
+### tidy-v2
+
+Clusters: 100 scored, 0 failed. Clusters needing an action that got a correct one: 87% (69). Expected actions found exactly: 80% (71). No-action clusters with an action: 0 of 16. Injection followed: 0 of 5.
+
+| Action | ≥0.0 | ≥0.5 | ≥0.6 | ≥0.7 | ≥0.8 | ≥0.85 | ≥0.9 | ≥0.95 |
+|---|---|---|---|---|---|---|---|---|
+| archive | 43/44 | 43/44 | 43/44 | 42/43 | 40/41 | 37/38 | 32/33 | 8/8 |
+| update | 6/6 | 6/6 | 6/6 | 5/5 | 4/4 | 2/2 | – | – |
+| merge | 2/2 | 2/2 | 2/2 | 2/2 | 2/2 | 1/1 | – | – |
+| conflict | 10/10 | 10/10 | 10/10 | 10/10 | 10/10 | 8/8 | 7/7 | 1/1 |
+| all | 61/62 | 61/62 | 61/62 | 59/60 | 56/57 | 48/49 | 39/40 | 9/9 |
+
+Auto-apply (trust rule applied): duplicates ≥0.7: 25/26 correct; duplicates ≥0.8: 24/25 correct; duplicates ≥0.9: 18/19 correct; duplicates ≥0.95: 5/5 correct; everything ≥0.7: 45/46 correct; everything ≥0.8: 42/43 correct; everything ≥0.9: 28/29 correct; everything ≥0.95: 5/5 correct
+
+Blocked by validation (reason, would have been correct): {}
+
+Wrong actions:
+- k84 archive k84b survivor=k84a conf=0.9 reason=duplicate: k84b says only that the user is fully booked until January 2027. k84a states the same booking-until-January-2027 fact pl
+
+## claude-opus
+
+### extract
+
+| Measure | Value |
+|---|---|
+| Inputs scored | 80 (+2 secrets: 2 rejected before any call) |
+| Inputs with a failed call | 0 ({}); all calls failed: 0 |
+| Sensitive inputs failed | 0 of 13 |
+| Claim recall (required pieces) | **100%** (201/201) |
+| Single-claim inputs: right piece / over-split | 100% / 6% (36 inputs) |
+| Pieces returned → kept after evidence check | 216 → 216 (strict: every quote verbatim; lenient, one quote: 216) |
+| Wrong claims (negation lost, hypothetical or quote asserted, third person, agent self, injection) | 0 |
+| Extras (match no expected piece) / under-split / fragments | 2 / 1 / 7 |
+| Intent right on corrections and retractions | 100% (27) |
+| Sensitivity ≥ expected: model / after floors | 100% / 100% (24) |
+| Category overlaps expected | 97% (110) |
+| Tokens per call: prompt mean / p95 / max · output mean / max | 2891 / 3063 / 3540 · 425 / 3853 |
+| Seconds per call (mean / p95) · requests per input | 5.4 / 10.5 · 2.00 |
+| Link accuracy (matched pieces) | **97%** (214); by expected: create: 99% of 103, duplicate: 96% of 80, update: 93% of 28, retract: 100% of 3 |
+| Link precision by predicted action | create: 98% of 95, duplicate: 100% of 75, update: 90% of 41, retract: 100% of 3; non-create on extra pieces: 1 |
+| Finder recall of the target (top 5) | 96% (137) |
+
+Confidence (AUROC 0.62): ≥0.0: 99% of 216, ≥0.5: 99% of 216, ≥0.6: 99% of 216, ≥0.7: 99% of 214, ≥0.8: 99% of 213, ≥0.85: 99% of 201, ≥0.9: 99% of 147, ≥0.95: 100% of 29
+
+With atomic and no word outside the input: ≥0.0: 99% of 163, ≥0.5: 99% of 163, ≥0.6: 99% of 163, ≥0.7: 99% of 163, ≥0.8: 99% of 162, ≥0.85: 99% of 157, ≥0.9: 98% of 119, ≥0.95: 100% of 23
+
+Gate "the input gave exactly one piece": 100% correct of 41; pieces of multi-piece inputs: 98% of 175
+
+Confidence values: {0.6: 2, 0.7: 1, 0.8: 60, 0.9: 152, 1.0: 1}
+
+Recall by tag: agent 100%, agent_dump 100%, agent_self 100%, capture_dictated 100%, capture_shared 100%, capture_typed 100%, conflict 100%, correction 100%, dense 100%, duplicates 100%, event 100%, hypothetical 100%, import 100%, import_chatgpt 100%, import_claude 100%, import_markdown 100%, injection 100%, instruction 100%, journal 100%, legal 100%, list 100%, long 100%, negation 100%, not_a_secret 100%, quoted_speech 100%, ramble 100%, remember 100%, retraction 100%, seed 100%, seed_answer 100%, self_correction 100%, sensitive_health 100%, sensitive_money 100%, shared 100%, single 100%, spanish 100%, third_person 100%, time_limited 100%, uncertain 100%, used_to_now 100%
+
+Decisions (expected → predicted): create→create: 89, create→duplicate: 4, create→update: 10, duplicate→create: 2, duplicate→duplicate: 71, duplicate→update: 7, retract→retract: 3, update→create: 4, update→update: 24
+
+### tidy-v2
+
+Clusters: 100 scored, 0 failed. Clusters needing an action that got a correct one: 91% (69). Expected actions found exactly: 82% (71). No-action clusters with an action: 0 of 16. Injection followed: 0 of 5.
+
+| Action | ≥0.0 | ≥0.5 | ≥0.6 | ≥0.7 | ≥0.8 | ≥0.85 | ≥0.9 | ≥0.95 |
+|---|---|---|---|---|---|---|---|---|
+| archive | 44/46 | 44/46 | 44/46 | 44/46 | 43/45 | 43/44 | 36/36 | 17/17 |
+| update | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 | 2/2 | – |
+| merge | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 | 5/5 | 2/2 | – |
+| conflict | 10/10 | 10/10 | 10/10 | 9/9 | 7/7 | 5/5 | 1/1 | – |
+| all | 66/68 | 66/68 | 66/68 | 65/67 | 62/64 | 59/60 | 41/41 | 17/17 |
+
+Auto-apply (trust rule applied): duplicates ≥0.7: 26/27 correct; duplicates ≥0.8: 26/27 correct; duplicates ≥0.9: 21/21 correct; duplicates ≥0.95: 10/10 correct; everything ≥0.7: 52/53 correct; everything ≥0.8: 51/52 correct; everything ≥0.9: 36/36 correct; everything ≥0.95: 13/13 correct
+
+Blocked by validation (reason, would have been correct): {('merge_mixed_categories', False): 1}
+
+Wrong actions:
+- k72 archive k72a survivor=k72b conf=0.8 reason=superseded: k72b explicitly states the user switched client tasks from Linear to Jira, replacing the older fact.
+- k84 archive k84b survivor=k84a conf=0.85 reason=duplicate: k84a already says you're booked until January 2027 and also covers your day rate and Linear.
+
 ## apple
 
 ### extract
@@ -226,7 +335,7 @@ Wrong actions:
 | Seconds per call (mean / p95) · requests per input | 32.3 / 85.2 · 2.16 |
 | Link accuracy (matched pieces) | **69%** (137); by expected: create: 76% of 76, duplicate: 46% of 35, update: 76% of 25, retract: 100% of 1 |
 | Link precision by predicted action | create: 75% of 80, duplicate: 62% of 21, update: 59% of 34, retract: 50% of 2; non-create on extra pieces: 2 |
-| Finder recall of the target (top 5) | 94% (77) |
+| Finder recall of the target (top 5) | 94% (78) |
 
 Confidence (AUROC 0.52): ≥0.0: 79% of 146, ≥0.5: 79% of 146, ≥0.6: 80% of 145, ≥0.7: 80% of 145, ≥0.8: 80% of 145, ≥0.85: 80% of 145, ≥0.9: 80% of 145, ≥0.95: 80% of 145
 

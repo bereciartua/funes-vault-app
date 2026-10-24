@@ -134,5 +134,41 @@ class Codex:
         return out
 
 
+class ClaudeCLI:
+    """Anthropic models through `claude -p` on the user's Claude subscription: the task instructions as the system
+    prompt, no tools, structured output with --json-schema, run from an empty directory (no CLAUDE.md)."""
+    name = "claude"
+
+    def __init__(self, model="haiku", effort="low"):
+        self.model, self.effort = model, effort
+        self.label = f"Anthropic {model} ({effort} effort, via the Claude CLI)"
+        self.dir = Path(tempfile.mkdtemp(prefix="spike-e-claude-"))
+
+    def generate(self, instructions, prompt, schema):
+        cmd = ["claude", "-p", "--model", self.model, "--effort", self.effort, "--system-prompt", instructions,
+               "--tools", "", "--strict-mcp-config", "--no-session-persistence",
+               "--json-schema", json.dumps(for_provider(schema, "codex")), "--output-format", "json"]
+        start = time.time()
+        try:
+            p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=300, cwd=self.dir)
+        except subprocess.TimeoutExpired:
+            return {"ok": False, "errorKind": "timeout", "error": "300 s", "ms": 300000}
+        out = {"ms": int((time.time() - start) * 1000)}
+        try:
+            d = json.loads(p.stdout)
+        except json.JSONDecodeError:
+            return {**out, "ok": False, "errorKind": "cli", "error": (p.stderr or p.stdout)[-300:]}
+        usage = next(iter((d.get("modelUsage") or {}).values()), {})
+        out["promptTokens"] = sum(usage.get(k) or 0 for k in ("inputTokens", "cacheReadInputTokens", "cacheCreationInputTokens"))
+        out["outputTokens"] = usage.get("outputTokens")
+        out["reasoningTokens"] = usage.get("thinkingTokens")
+        out["costUSD"] = d.get("total_cost_usd")
+        out["modelId"] = usage.get("canonicalModel")
+        if d.get("is_error") or not isinstance(d.get("structured_output"), dict):
+            return {**out, "ok": False, "errorKind": "refusal" if d.get("stop_reason") == "refusal" else "cli",
+                    "error": str(d.get("result"))[:300]}
+        return {**out, "ok": True, "content": d["structured_output"]}
+
+
 def make(name, **kw):
-    return {"apple": Apple, "ollama": Ollama, "codex": Codex}[name](**kw)
+    return {"apple": Apple, "ollama": Ollama, "codex": Codex, "claude": ClaudeCLI}[name](**kw)
