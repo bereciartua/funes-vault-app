@@ -76,6 +76,13 @@ public final class CloudRequestCap: Sendable {
         try await store.writer.read { db in try Self.read(db, key: self.key(now)) }
     }
 
+    /// The start of the next local day, when the cap resets.
+    public func nextDay(after now: Date) -> Date {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        return calendar.nextDate(after: now, matching: DateComponents(hour: 0, minute: 0, second: 0), matchingPolicy: .nextTime) ?? now + 86_400
+    }
+
     func key(_ now: Date) -> String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
