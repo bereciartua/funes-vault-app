@@ -178,8 +178,14 @@ final class UIReview: NSObject, NSApplicationDelegate {
             try? await Task.sleep(for: .milliseconds(600))
             await snapshot("inbox-split-offer-\(suffix)", main.window)
             // Phase 6b: the Tidy-up section, with a merge, a conflict and its header.
-            model.inboxState.focused = model.inbox.first(where: { $0.origin == .consolidation })?.id
+            // The lazy list lays the far rows out on the way: scroll again once it has.
+            let tidied = model.inbox.first(where: { $0.origin == .consolidation })?.id
+            model.inboxState.focused = tidied
             try? await Task.sleep(for: .milliseconds(600))
+            model.inboxState.focused = nil
+            try? await Task.sleep(for: .milliseconds(100))
+            model.inboxState.focused = tidied
+            try? await Task.sleep(for: .milliseconds(900))
             await snapshot("inbox-tidy-up-\(suffix)", main.window)
             model.inboxState.focused = nil
             await mainScene("agents-access") {
