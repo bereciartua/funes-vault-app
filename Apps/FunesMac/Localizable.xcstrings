@@ -42,6 +42,9 @@
         }
       }
     },
+    "%@ Privacy Settings" : {
+
+    },
     "%@ access" : {
 
     },
@@ -141,6 +144,9 @@
       }
     },
     "%@ has no access yet. It can connect, but sees nothing until you change its access." : {
+
+    },
+    "%@ isn't installed on this Mac" : {
 
     },
     "%@ isn't installed on this Mac." : {
@@ -1286,6 +1292,9 @@
     "ChatGPT" : {
 
     },
+    "ChatGPT (Codex)" : {
+
+    },
     "ChatGPT Memories…" : {
 
     },
@@ -1305,6 +1314,9 @@
 
     },
     "Checked a request" : {
+
+    },
+    "Checking…" : {
 
     },
     "Choose" : {
@@ -1351,6 +1363,9 @@
 
     },
     "Choose the memories file from your ChatGPT data export (JSON). Each memory becomes a suggestion." : {
+
+    },
+    "Claude (Claude Code)" : {
 
     },
     "Claude Code" : {
@@ -2197,6 +2212,9 @@
     "If TLS ends at the provider's edge, the provider can read the traffic." : {
 
     },
+    "If it fails, Funes uses the on-device model, then rules." : {
+
+    },
     "Import" : {
 
     },
@@ -2724,6 +2742,26 @@
     "New memories" : {
 
     },
+    "New memories sends captures, agent suggestions and imports, plus related memories (up to %@), to %@ through your %@ sign-in. It counts toward your plan's limits, and your %@ account's training setting applies." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New memories sends captures, agent suggestions and imports, plus related memories (up to %1$@), to %2$@ through your %3$@ sign-in. It counts toward your plan's limits, and your %4$@ account's training setting applies."
+          }
+        }
+      }
+    },
+    "New memories sends new captures (up to %@) and your category names and descriptions to %@ through your %@ sign-in. It counts toward your plan's limits, and your %@ account's training setting applies." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New memories sends new captures (up to %1$@) and your category names and descriptions to %2$@ through your %3$@ sign-in. It counts toward your plan's limits, and your %4$@ account's training setting applies."
+          }
+        }
+      }
+    },
     "New memories sends new captures (up to %@) and your category names and descriptions to %@." : {
       "localizations" : {
         "en" : {
@@ -2788,6 +2826,9 @@
 
     },
     "No answer within 20 seconds." : {
+
+    },
+    "No answer within 90 seconds." : {
 
     },
     "No answer." : {
@@ -2861,6 +2902,26 @@
     },
     "Not said" : {
 
+    },
+    "Not signed in: run `%@` in Terminal and sign in with %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not signed in: run `%1$@` in Terminal and sign in with %2$@"
+          }
+        }
+      }
+    },
+    "Not signed in: run `%@` in Terminal and sign in with %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not signed in: run `%1$@` in Terminal and sign in with %2$@."
+          }
+        }
+      }
     },
     "Not tested" : {
 
@@ -3884,6 +3945,16 @@
     "Sign up at ngrok.com, then put your authtoken and your free dev domain from the dashboard into the commands." : {
 
     },
+    "Signed in to %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Signed in to %1$@ %2$@"
+          }
+        }
+      }
+    },
     "Similar memory exists:" : {
 
     },
@@ -4419,6 +4490,9 @@
     "They're removed for good, with their history. This can't be undone." : {
 
     },
+    "This %@ version isn't supported yet" : {
+
+    },
     "This address goes through %@, not %@." : {
       "localizations" : {
         "en" : {
@@ -4592,7 +4666,13 @@
     "Unavailable: check the API key." : {
 
     },
+    "Unavailable: it tried to use a tool. Test Connection to try again." : {
+
+    },
     "Unavailable: keyword search only" : {
+
+    },
+    "Unavailable: see the status above." : {
 
     },
     "Undid %lld changes" : {
@@ -4629,6 +4709,9 @@
 
     },
     "Until Tomorrow" : {
+
+    },
+    "Update %@ to use it" : {
 
     },
     "Update the URL in" : {
@@ -4679,7 +4762,13 @@
     "Use your own ~/.cursor/mcp.json, never a project's .cursor/mcp.json, which often gets committed." : {
 
     },
+    "Use your subscription" : {
+
+    },
     "Use ⌘, ⌥ or ⌃ with a key." : {
+
+    },
+    "Uses your plan's limits, through the Claude Code or Codex you installed and signed in to. Funes never sees your sign-in. Your account's training setting applies." : {
 
     },
     "VS Code (Copilot)" : {
@@ -4805,6 +4894,9 @@
         }
       }
     },
+    "Works: proposed “%@”." : {
+
+    },
     "Write" : {
 
     },
@@ -4839,6 +4931,9 @@
 
     },
     "You're all set" : {
+
+    },
+    "Your %@ plan's limit is reached. Try again later." : {
 
     },
     "Your Inbox is empty" : {

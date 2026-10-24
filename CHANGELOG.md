@@ -11,6 +11,7 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Added
 
+- **Use your Claude or ChatGPT plan** (Settings ▸ AI Models ▸ Use your subscription). If you have Claude Code or Codex installed and signed in, Funes can use it for New memories instead of an API key. Settings shows whether each is found and signed in, and the command to sign in if not; Test Connection sends one made-up note. Funes never sees your sign-in, runs each request with no tools, plugins, MCP servers or hooks, and stops a run that tries to use one. Requests count toward your plan's limits and your account's training setting applies ([PRIVACY.md](PRIVACY.md#ai-models)).
 - **Split into separate memories** (Settings ▸ AI Models ▸ New memories, off by default). With a local server or a cloud model chosen, captures, your answers, agents' suggestions and imports are split into one suggestion per claim, each linked to what your vault already holds.
   - The Inbox shows them on one card: "From ChatGPT · 12 pieces", the original text, and each piece marked **New**, **Updates** *a memory*, **Already saved** or **Removes** *a memory*, with its own Apply and Reject. **Apply All** applies each as it says; **Keep as One** puts the original back while nothing is decided.
   - A card you're editing, or one in a Save panel, isn't changed under you: it offers "Split into 5?" instead.

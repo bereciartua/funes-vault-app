@@ -142,6 +142,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                           body: String(localized: "Its weekly check found a problem. Restore a backup in Settings ▸ Data."))
         }
         model.data.startJobs()
+        // Find the subscription CLIs first, so the processing queue can use a chosen plan (ADR-0024).
+        Task { @MainActor in
+            await model.modelSettings.refreshSubscriptions()
+            model.processing.kick()
+        }
         model.processing.start()
         model.changed = { [weak menu] in menu?.update() }
 
