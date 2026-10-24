@@ -578,3 +578,19 @@ extension ScriptedTidy {
     /// This provider's answer, for another that should answer the same.
     func answerFor(_ memories: [(String, String)]) -> [[String: Any]] { answer(memories) }
 }
+
+extension TidyUpServiceTests {
+    /// Only the untrusted copy of an exact duplicate may be archived without review, never the
+    /// user's copy in favour of an agent's.
+    @Test func anExactCopyIsArchivedOnlyInFavourOfTheTrustedOne() {
+        let c = Self.cluster([("Use metric units", ["personal_preferences"], .low, .trusted, true),
+                              ("Use metric units", ["personal_preferences"], .low, .untrusted, true)])
+        let keepsMine = Self.validate(c, [.init(type: "archive", target: "m2", survivor: "m1", archiveReason: "duplicate")]).actions[0]
+        let keepsAgents = Self.validate(c, [.init(type: "archive", target: "m1", survivor: "m2", archiveReason: "duplicate")]).actions[0]
+        #expect(keepsMine.exact && keepsAgents.exact)
+        #expect(!TidyUpAutoApply.leansOnUntrusted(keepsMine, cluster: c))
+        #expect(TidyUpAutoApply.leansOnUntrusted(keepsAgents, cluster: c))
+        #expect(TidyUpAutoApply.applies(keepsMine, level: .duplicatesOnly, untrusted: false))
+        #expect(!TidyUpAutoApply.applies(keepsAgents, level: .exceptConflicts, untrusted: true))
+    }
+}
