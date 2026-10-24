@@ -52,7 +52,7 @@ Identifiers are final from the first public release: the bundle IDs `com.funesva
 
 ## Pull requests
 
-`main` is always releasable. Work on a branch; pull requests are squash-merged, so the pull request's title and description become the commit. Continuous integration runs `sh scripts/test.sh` on pull requests that change code. Releases are tags `vX.Y.Z`; see [Maintaining](docs/MAINTAINING.md).
+`main` is always releasable. Work on a branch; pull requests are merged with a merge commit, so the branch's commits stay in the history; write each commit message to stand on its own. Continuous integration runs `sh scripts/test.sh` on pull requests that change code. Releases are tags `vX.Y.Z`; see [Maintaining](docs/MAINTAINING.md).
 
 ## Personal data
 

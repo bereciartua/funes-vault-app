@@ -83,4 +83,4 @@ The UI-review build (sample data, never the real vault) also compiles in test.sh
 - **Dependencies:** only BridgeKit, GRDB and Sparkle, each pinned to an **exact** version, plus one bundled model asset: `bge-small-en-v1.5` (BAAI, MIT) as Core ML, fetched at a pinned revision and checksum, never committed ([ADR-0016](spec/architecture/decisions/0016-bundled-bge-small-embeddings.md)). Ask before adding anything else.
 - **Errors:** typed enums; user-facing text in String Catalogs; reason codes for agents.
 - **Identifiers are final** from the first public release: bundle IDs `com.funesvault.*`, support folder `~/Library/Application Support/FunesVault/`, Keychain service `com.funesvault.provider`. See `spec/plans/project-setup.md`.
-- **Git:** `main` is always releasable; feature branches, squash-merged; releases are tags `vX.Y.Z`. Add a `CHANGELOG.md` entry for every user-visible change.
+- **Git:** `main` is always releasable; feature branches, merged with a merge commit (squash merging is off), so each branch keeps its commits; releases are tags `vX.Y.Z`. Add a `CHANGELOG.md` entry for every user-visible change.
