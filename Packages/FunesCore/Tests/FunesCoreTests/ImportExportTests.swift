@@ -161,6 +161,38 @@ import Testing
         #expect(try await importer.preview(funesExport: export).duplicates == 2)
     }
 
+    /// Task 6.1.8: a restore keeps status and split and merge links, marks memories reconciled,
+    /// and the export never carries the undo log.
+    @Test func restoreKeepsStatusLinksAndReconciles() async throws {
+        let v = try TestVault()
+        let original = try v.memory("Dump", "Peanuts. Lisbon.")
+        let piece = try v.memory("Peanuts", "Allergic to peanuts")
+        try await v.store.writer.write { db in
+            try MemoryStore.appendProvenance(db, memoryID: piece.id, event: .splitFrom, actor: .user, at: t0, relatedMemoryID: original.id)
+            try MemoryStore.appendProvenance(db, memoryID: original.id, event: .splitInto, actor: .user, at: t0, relatedMemoryID: piece.id)
+            try MemoryStore.setStatus(db, id: original.id, to: .archived, actor: .user, now: t0)
+            try UndoLog.record(db, action: "update", memoryIDs: [piece.id], now: t0) {
+                try MemoryStore.update(db, id: piece.id, MemoryEdit(title: "Peanut allergy"), actor: .system, now: t0)
+                return []
+            }
+        }
+        let service = ImportService(store: v.store, activity: InMemoryActivityLog())
+        let data = try await service.export(includeArchived: true, now: t0)
+        #expect(!String(decoding: data, as: UTF8.self).contains("before_state"))
+        let export = try ImportParser.funesExport(data)
+        #expect(export.memories.first { $0.id == piece.id }?.links == [FunesExport.Link(event: .splitFrom, memoryId: original.id)])
+
+        let fresh = try TestVault()
+        let importer = ImportService(store: fresh.store, activity: InMemoryActivityLog())
+        let result = try await importer.commit(try await importer.preview(funesExport: export), asMemories: true, now: t0)
+        #expect(Set(result.memoryIDs) == [original.id, piece.id])
+        #expect(try fresh.store.memory(id: original.id)?.status == .archived)
+        #expect(try fresh.store.provenance(memoryID: piece.id).last?.event == .splitFrom)
+        #expect(try fresh.store.provenance(memoryID: piece.id).last?.relatedMemoryID == original.id)
+        #expect(try fresh.count("SELECT COUNT(*) FROM memory WHERE reconciled_version = version") == 2)
+        #expect(try fresh.count("SELECT COUNT(*) FROM undo_entry") == 0)
+    }
+
     @Test func exportsNeverContainKeysAgentsOrDevices() async throws {
         let v = try TestVault()
         try v.memory("Fact", "A fact")

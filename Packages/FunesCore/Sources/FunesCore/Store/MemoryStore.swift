@@ -336,20 +336,24 @@ enum MemoryStore {
         try appendProvenance(db, memoryID: id, event: .confirmed, actor: actor, at: now)
     }
 
-    /// Hard-deletes a deleted memory: its row, categories, FTS rows, embeddings and provenance.
+    /// Hard-deletes a deleted memory: its row, categories, FTS rows, embeddings, provenance and
+    /// the undo entries holding its earlier text.
     /// Disclosure items keep the id for Activity labels.
     static func purge(_ db: Database, id: UUID) throws {
         guard let status = try String.fetchOne(db, sql: "SELECT status FROM memory WHERE id = ?", arguments: [id.db]) else {
             throw VaultError.notFound
         }
         guard status == MemoryStatus.deleted.rawValue else { throw VaultError.invalidState }
+        try UndoLog.purge(db, memoryIDs: [id.db])
         try db.execute(sql: "DELETE FROM memory WHERE id = ?", arguments: [id.db])
     }
 
     /// The daily job: purges memories deleted more than 30 days before `now`. Returns how many.
     static func purgeDeleted(_ db: Database, now: Date) throws -> Int {
-        try db.execute(sql: "DELETE FROM memory WHERE status = 'deleted' AND deleted_at <= ?",
-                       arguments: [now.addingTimeInterval(-deletedRetention)])
+        let cutoff = now.addingTimeInterval(-deletedRetention)
+        try UndoLog.purge(db, memoryIDs: try String.fetchAll(db, sql: "SELECT id FROM memory WHERE status = 'deleted' AND deleted_at <= ?",
+                                                             arguments: [cutoff]))
+        try db.execute(sql: "DELETE FROM memory WHERE status = 'deleted' AND deleted_at <= ?", arguments: [cutoff])
         return db.changesCount
     }
 

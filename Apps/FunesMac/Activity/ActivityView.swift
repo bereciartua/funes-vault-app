@@ -265,7 +265,8 @@ enum ActivityText {
             let withheld = e.counts.values.reduce(0, +)
             return withheld > 0 ? String(localized: "\(withheld) withheld") : ""
         case "import", "export", "funes_paused", "funes_resumed", "approval", "list_memory_categories", "open_in_funes",
-             "memories_searched", "inbox_listed", "categories_listed", "device_paired", "device_revoked":
+             "memories_searched", "inbox_listed", "categories_listed", "device_paired", "device_revoked", "cap_reached",
+             "tidy_up_run", "undone":
             return ""
         default:
             let titles = e.ids.prefix(3).map(model.activity.title)

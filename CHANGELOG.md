@@ -16,6 +16,8 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Changed
 
+- **Settings ▸ AI Models ▸ New memories** replaces Classification. The switch for proposing a title, kind and categories moved here from Settings ▸ Capture, next to two settings for later versions: splitting what arrives into separate memories, and applying changes automatically (Off for now).
+- **Exports keep more.** Restoring a Funes export as memories keeps archived memories archived and keeps the links between memories that were split or merged.
 - **iPhone captures get proposed fields too.** They're classified by the model chosen in Settings ▸ AI Models, like captures on the Mac, instead of only by Funes's built-in rules. Captures still being classified when Funes quits are finished at the next launch.
 - The vault moves to a new format for v0.3's memory processing. Funes backs it up first (`Backups/pre-v4_memory_processing-….sqlite`).
 

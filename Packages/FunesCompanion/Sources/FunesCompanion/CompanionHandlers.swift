@@ -272,6 +272,7 @@ public final class CompanionHandlers: Sendable {
         case .versionConflict, .invalidState, .snapshotChanged, .revisionChanged: CompanionError(.conflict)
         case .targetChanged: CompanionError(.targetChanged)
         case .unsupportedAction: CompanionError(.unsupportedAction)
+        case .undoNeedsLater, .undoNotPossible: CompanionError(.conflict)
         case .newerSchema, .unsafeFile: CompanionError(.unavailable)
         case .unauthenticated: CompanionError(.notFound)
         case let .invalidInput(field): CompanionError(.invalidInput, message: field)

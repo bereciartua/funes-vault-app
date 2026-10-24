@@ -265,6 +265,8 @@ enum ErrorText {
         case .versionConflict: return String(localized: "It changed in the meantime. Look again and retry.")
         case .targetChanged: return String(localized: "Changed since this was suggested.")
         case .unsupportedAction: return String(localized: "Choose an answer first.")
+        case .undoNeedsLater(let count): return String(localized: "Later changes depend on this one. Undo it together with the \(count) later changes.")
+        case .undoNotPossible: return String(localized: "It was changed since, so it can't be undone.")
         }
     }
 }

@@ -41,4 +41,9 @@ public enum VaultError: Error, Sendable, Equatable {
     /// The suggestion's action can't be applied this way: a conflict without an answer, or an
     /// answer meant for another action. Nothing was saved.
     case unsupportedAction
+    /// Later automatic changes depend on this one: "Undo this and N later changes".
+    case undoNeedsLater(Int)
+    /// A memory it changed was changed again since by someone other than Funes, or the change is
+    /// gone, expired or already undone. Nothing was undone.
+    case undoNotPossible
 }

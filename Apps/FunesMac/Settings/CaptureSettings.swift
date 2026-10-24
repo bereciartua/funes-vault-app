@@ -2,12 +2,11 @@ import AppKit
 import FunesProtocol
 import SwiftUI
 
-/// Settings ▸ Capture (04-ux-mac.md): the hotkey, the default sensitivity for captures, and
-/// classification on or off.
+/// Settings ▸ Capture (04-ux-mac.md): the hotkey and the default sensitivity for captures.
+/// Whether captures get proposed fields is in Settings ▸ AI Models ▸ New memories (task 6.1.8).
 struct CaptureSettings: View {
     let model: AppModel
     @State private var sensitivity: Sensitivity?
-    @State private var classify = true
     @State private var cloudProvider: String?
 
     var body: some View {
@@ -26,12 +25,11 @@ struct CaptureSettings: View {
                     ForEach(Sensitivity.allCases, id: \.self) { Text(String(localized: "At least \($0.title)")).tag(Optional($0)) }
                 }
                 .onChange(of: sensitivity) { _, value in model.preferences.captureSensitivity = value }
-                Toggle(String(localized: "Propose a title, kind and categories"), isOn: $classify)
-                    .onChange(of: classify) { _, on in model.preferences.classifyCaptures = on }
-                Text(classify ? String(localized: "Uses the Classification model in AI Models; you review every proposal in the Inbox.")
-                              : String(localized: "Captures get simple proposals from rules on this Mac."))
+                Text(model.preferences.classifyCaptures
+                     ? String(localized: "Funes proposes a title, kind and categories with the New memories model in AI Models; you review every proposal in the Inbox.")
+                     : String(localized: "Captures get simple proposals from rules on this Mac. Turn on proposals in AI Models ▸ New memories."))
                     .font(.callout).foregroundStyle(.secondary)
-                if classify, let cloudProvider {
+                if model.preferences.classifyCaptures, let cloudProvider {
                     Label(String(localized: "New captures are sent to \(cloudProvider) to suggest their fields, within the cloud limit in AI Models."),
                           systemImage: "arrow.up.forward.app")
                         .font(.callout).fixedSize(horizontal: false, vertical: true)
@@ -47,7 +45,6 @@ struct CaptureSettings: View {
         .formStyle(.grouped)
         .onAppear {
             sensitivity = model.preferences.captureSensitivity
-            classify = model.preferences.classifyCaptures
         }
         .task { cloudProvider = await model.modelSettings.cloudClassifierName() }
     }
