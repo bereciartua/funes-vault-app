@@ -143,6 +143,7 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         case .inboxApply:
             let params = params as! InboxApplyParams
             guard let index = state.inbox.firstIndex(where: { $0.id == params.suggestionId }) else { throw CompanionError(.notFound) }
+            guard state.inbox[index].action.appliesOnPhone else { throw CompanionError(.unsupportedAction) }
             let item = state.inbox.remove(at: index)
             let id = applySuggestion(item.memoryChanges.merged(params.edits), action: item.action, target: item.targetMemoryId,
                                      source: item.origin == .agent ? .agentSuggestion : .captureIPhone, label: item.sourceLabel,
@@ -251,12 +252,16 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         state.provenance[memory.id] = [ProvenanceLabel(at: memory.createdAt, event: event.rawValue, label: label)]
     }
 
-    /// An Inbox Save or a Save request's answer: a new memory, or a correction to its target.
+    /// An Inbox Save or a Save request's answer, as its own action: a new memory, a correction or
+    /// an archive of its target, or nothing for a duplicate.
     private static func applySuggestion(_ fields: MemoryChanges, action: SuggestionAction, target: UUID?, source: MemorySource,
                                         label: String, now: Date, in state: inout State) -> UUID {
         if action != .create, let target, var memory = state.memories[target] {
-            apply(fields, to: &memory)
-            if action == .archive { memory.status = .archived }
+            switch action {
+            case .duplicate: return target
+            case .archive: memory.status = .archived
+            default: apply(fields, to: &memory)
+            }
             _ = save(memory, event: .appliedFromSuggestion, now: now, in: &state)
             return target
         }

@@ -426,7 +426,7 @@ public actor CompanionApprovals {
 
     private func saveEnding(_ s: Suggestion, now: Date) -> Ending? {
         switch s.status {
-        case .applied, .rejected: return .answered
+        case .applied, .rejected, .split: return .answered
         case .expired: return .expired
         case .pending: return now < (started[.save(s.id)] ?? s.createdAt) + Self.window ? nil : .expired
         }

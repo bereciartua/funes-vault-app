@@ -71,10 +71,12 @@ final class InboxModel {
         return draft
     }
 
-    /// Applies exactly what the card shows (every field, so a change underneath can't slip in).
-    /// Returns the similar memories to point out, or throws.
-    func apply(_ suggestion: Suggestion, mode: ApplyMode = .keepBoth) async throws -> ApplyResult {
-        let edit = draft(for: suggestion).edit
+    /// Applies the suggestion as its own action, with exactly what the card shows (every field,
+    /// so a change underneath can't slip in), or `edits` for a conflict's Edit…. `mode` nil is
+    /// the action's own way: Replace for an update. Returns the similar memories to point out,
+    /// or throws.
+    func apply(_ suggestion: Suggestion, mode: ApplyMode? = nil, edits: SuggestionEdit? = nil) async throws -> ApplyResult {
+        let edit = edits ?? draft(for: suggestion).edit
         let result = try await services.suggestions.apply(suggestionID: suggestion.id, edits: edit, mode: mode, now: Date())
         drafts[suggestion.id] = nil
         selection.remove(suggestion.id)
@@ -87,21 +89,35 @@ final class InboxModel {
         selection.remove(suggestion.id)
     }
 
-    /// Apply N / Reject N with per-item results (FR-I-03): "12 applied, 1 blocked by the secret scanner".
+    /// Apply N / Reject N with per-item results (FR-I-03): "12 applied, 1 blocked by the secret
+    /// scanner". Each row applies as its own action; conflicts (which need an answer) and rows
+    /// outside an agent's scope are left for the user.
     func bulk(apply: Bool, _ items: [Suggestion]) async {
-        var done = 0, secrets = 0, failed = 0
+        var done = 0, secrets = 0, changed = 0, left = 0, failed = 0
         for item in items {
             do {
-                if apply { _ = try await self.apply(item) } else { try await reject(item) }
+                if apply {
+                    guard item.action != .conflict, !item.outsideScope else {
+                        left += 1
+                        continue
+                    }
+                    _ = try await self.apply(item)
+                } else {
+                    try await reject(item)
+                }
                 done += 1
             } catch VaultError.secretLikeContent {
                 secrets += 1
+            } catch VaultError.targetChanged {
+                changed += 1
             } catch {
                 failed += 1
             }
         }
         var parts = [apply ? String(localized: "\(done) applied") : String(localized: "\(done) rejected")]
         if secrets > 0 { parts.append(String(localized: "\(secrets) blocked by the secret scanner")) }
+        if changed > 0 { parts.append(String(localized: "\(changed) changed since suggested")) }
+        if left > 0 { parts.append(String(localized: "\(left) need your answer")) }
         if failed > 0 { parts.append(String(localized: "\(failed) couldn't be changed")) }
         result = parts.joined(separator: ", ")
         selection = []

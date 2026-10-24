@@ -186,6 +186,9 @@
     "Already answered on your Mac" : {
 
     },
+    "Already in your vault" : {
+
+    },
     "Also matched, less closely" : {
 
     },
@@ -301,6 +304,9 @@
 
     },
     "Change to a memory" : {
+
+    },
+    "Changed automatically" : {
 
     },
     "Changed on your Mac, reload?" : {
@@ -633,6 +639,18 @@
     "Make sure this iPhone is on the same Wi-Fi as your Mac." : {
 
     },
+    "Memories that disagree" : {
+
+    },
+    "Merge memories" : {
+
+    },
+    "Merged from another memory" : {
+
+    },
+    "Merged into a new memory" : {
+
+    },
     "Name" : {
 
     },
@@ -852,6 +870,15 @@
     "Review needs your Mac to be awake and reachable. Captures still work, and go to the Mac later." : {
 
     },
+    "Review on your Mac" : {
+
+    },
+    "Review on your Mac: it shows every memory this changes." : {
+
+    },
+    "Review this on your Mac." : {
+
+    },
     "Round trip" : {
 
     },
@@ -1010,6 +1037,15 @@
     "Spike 1" : {
 
     },
+    "Split a memory" : {
+
+    },
+    "Split from another memory" : {
+
+    },
+    "Split into a new memory" : {
+
+    },
     "Stop Dictation" : {
 
     },
@@ -1054,6 +1090,9 @@
 
     },
     "The demo shows every screen with a sample vault on this iPhone. Nothing is sent anywhere, and it never mixes with your own data." : {
+
+    },
+    "The memory it changes was edited on your Mac since this was suggested. Review it on your Mac." : {
 
     },
     "The request waits on your Mac. Answer it there, or try again when your Mac is reachable." : {
@@ -1174,6 +1213,9 @@
 
     },
     "Type or dictate something to remember." : {
+
+    },
+    "Undone" : {
 
     },
     "Unlock your iPhone to answer." : {

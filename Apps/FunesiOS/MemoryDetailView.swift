@@ -197,6 +197,12 @@ struct MemoryDetailView: View {
         case .confirmed: String(localized: "Confirmed still true")
         case .suggestedCorrection: String(localized: "Correction suggested")
         case .appliedFromSuggestion: String(localized: "Saved from the Inbox")
+        case .splitInto: String(localized: "Split into a new memory")
+        case .splitFrom: String(localized: "Split from another memory")
+        case .mergedInto: String(localized: "Merged into a new memory")
+        case .mergedFrom: String(localized: "Merged from another memory")
+        case .autoApplied: String(localized: "Changed automatically")
+        case .undone: String(localized: "Undone")
         case nil: raw
         }
     }

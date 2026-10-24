@@ -16,10 +16,13 @@ public struct MemoryDraft: Sendable, Hashable {
     public var source: MemorySource
     public var sourceAgentID: UUID?
     public var sourceDeviceID: UUID?
+    /// `nil`: untrusted for an agent's direct write, trusted otherwise.
+    public var trust: MemoryTrust?
 
     public init(title: String, body: String, kind: MemoryKind = .fact, categoryKeys: [String],
                 sensitivity: Sensitivity? = nil, expiresAt: Date? = nil, confidence: Double? = nil,
-                source: MemorySource = .manual, sourceAgentID: UUID? = nil, sourceDeviceID: UUID? = nil) {
+                source: MemorySource = .manual, sourceAgentID: UUID? = nil, sourceDeviceID: UUID? = nil,
+                trust: MemoryTrust? = nil) {
         self.title = title
         self.body = body
         self.kind = kind
@@ -30,6 +33,7 @@ public struct MemoryDraft: Sendable, Hashable {
         self.source = source
         self.sourceAgentID = sourceAgentID
         self.sourceDeviceID = sourceDeviceID
+        self.trust = trust
     }
 }
 
@@ -185,8 +189,22 @@ enum MemoryStore {
         try Row.fetchAll(db, sql: "SELECT * FROM provenance WHERE memory_id = ? ORDER BY id", arguments: [memoryID.db])
             .map { row in
                 ProvenanceEntry(memoryID: memoryID, at: row["at"], event: try row.required("event"), actor: row["actor"],
-                                fieldsChanged: JSON.decode([String].self, row["fields_changed"]) ?? [])
+                                fieldsChanged: JSON.decode([String].self, row["fields_changed"]) ?? [],
+                                relatedMemoryID: row.uuid("related_memory_id"), engine: row["engine"])
             }
+    }
+
+    /// `expected`: the version the caller showed. Another one is `versionConflict`; nil skips the check.
+    static func checkVersion(_ db: Database, id: UUID, expected: Int?) throws {
+        guard let expected else { return }
+        guard let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [id.db]) else {
+            throw VaultError.notFound
+        }
+        guard version == expected else { throw VaultError.versionConflict }
+    }
+
+    static func trust(_ db: Database, id: UUID) throws -> MemoryTrust? {
+        try String.fetchOne(db, sql: "SELECT trust FROM memory WHERE id = ?", arguments: [id.db]).flatMap(MemoryTrust.init)
     }
 
     // MARK: Validation
@@ -234,20 +252,22 @@ enum MemoryStore {
             id: id, title: draft.title, body: draft.body, kind: draft.kind, categoryKeys: keys, sensitivity: sensitivity,
             expiresAt: draft.expiresAt, confidence: draft.confidence, source: draft.source,
             sourceAgentID: draft.sourceAgentID, sourceDeviceID: draft.sourceDeviceID, createdAt: now, updatedAt: now)
+        let trust = draft.trust ?? (draft.source == .agentWrite ? .untrusted : .trusted)
         try db.execute(sql: """
             INSERT INTO memory (id, title, body, kind, sensitivity, status, expires_at, confidence, source,
-              source_agent_id, source_device_id, created_at, updated_at, version)
-            VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, 1)
+              source_agent_id, source_device_id, created_at, updated_at, version, trust)
+            VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, 1, ?)
             """, arguments: [memory.id.db, memory.title, memory.body, memory.kind.rawValue, sensitivity.rawValue,
                              memory.expiresAt, memory.confidence, memory.source.rawValue, memory.sourceAgentID?.db,
-                             memory.sourceDeviceID?.db, now, now])
+                             memory.sourceDeviceID?.db, now, now, trust.rawValue])
         try setCategories(db, memoryID: memory.id, keys: keys)
         try appendProvenance(db, memoryID: memory.id, event: .created, actor: actor, at: now)
         return memory
     }
 
     /// Applies `edit` to an active or archived memory. Versioned fields that actually change bump
-    /// the version once and add one `edited` provenance row naming them.
+    /// the version once and add one `edited` provenance row naming them. A change by the owner
+    /// (the user, or a paired iPhone) makes the memory trusted.
     @discardableResult
     static func update(_ db: Database, id: UUID, _ edit: MemoryEdit, actor: Actor, now: Date,
                        event: ProvenanceEvent = .edited) throws -> Memory {
@@ -280,6 +300,9 @@ enum MemoryStore {
             """, arguments: [m.title, m.body, m.kind.rawValue, m.sensitivity.rawValue, m.expiresAt, m.confidence,
                              m.updatedAt, m.version, id.db])
         if changed.contains("categories") { try setCategories(db, memoryID: id, keys: m.categoryKeys) }
+        if !changed.isEmpty, actor.isOwner {
+            try db.execute(sql: "UPDATE memory SET trust = 'trusted' WHERE id = ?", arguments: [id.db])
+        }
         try appendProvenance(db, memoryID: id, event: event, actor: actor, at: now,
                              fields: changed + (confidenceChanged ? ["confidence"] : []))
         return m
@@ -339,9 +362,12 @@ enum MemoryStore {
     }
 
     static func appendProvenance(_ db: Database, memoryID: UUID, event: ProvenanceEvent, actor: Actor, at: Date,
-                                 fields: [String] = []) throws {
-        try db.execute(sql: "INSERT INTO provenance (memory_id, at, event, actor, fields_changed) VALUES (?, ?, ?, ?, ?)",
-                       arguments: [memoryID.db, at, event.rawValue, actor.description, fields.isEmpty ? nil : JSON.encode(fields)])
+                                 fields: [String] = [], relatedMemoryID: UUID? = nil, engine: String? = nil) throws {
+        try db.execute(sql: """
+            INSERT INTO provenance (memory_id, at, event, actor, fields_changed, related_memory_id, engine)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, arguments: [memoryID.db, at, event.rawValue, actor.description, fields.isEmpty ? nil : JSON.encode(fields),
+                             relatedMemoryID?.db, engine])
     }
 
     /// Lowercased with whitespace collapsed: the duplicate hint's exact match (memory processing §8).
@@ -381,33 +407,49 @@ extension VaultStore {
         try writer.read { db in try MemoryStore.provenance(db, memoryID: memoryID) }
     }
 
+    public func trust(memoryID: UUID) throws -> MemoryTrust? {
+        try writer.read { db in try MemoryStore.trust(db, id: memoryID) }
+    }
+
     /// Creates a memory (FR-V-01). Runs validation and the secret scanner.
     @discardableResult
     public func createMemory(_ draft: MemoryDraft, actor: Actor = .user, now: Date) throws -> Memory {
         try writer.write { db in try MemoryStore.insert(db, draft, actor: actor, now: now) }
     }
 
-    /// Edits a memory (FR-V-02).
+    /// Edits a memory (FR-V-02). `expectedVersion` is the version the editor showed: another one
+    /// is `versionConflict` and nothing is saved, so a change made meanwhile isn't overwritten.
     @discardableResult
-    public func updateMemory(id: UUID, _ edit: MemoryEdit, actor: Actor = .user, now: Date) throws -> Memory {
-        try writer.write { db in try MemoryStore.update(db, id: id, edit, actor: actor, now: now) }
+    public func updateMemory(id: UUID, _ edit: MemoryEdit, expectedVersion: Int? = nil, actor: Actor = .user,
+                             now: Date) throws -> Memory {
+        try writer.write { db in
+            try MemoryStore.checkVersion(db, id: id, expected: expectedVersion)
+            return try MemoryStore.update(db, id: id, edit, actor: actor, now: now)
+        }
     }
 
     @discardableResult
-    public func archiveMemory(id: UUID, actor: Actor = .user, now: Date) throws -> Memory {
-        try writer.write { db in try MemoryStore.setStatus(db, id: id, to: .archived, actor: actor, now: now) }
+    public func archiveMemory(id: UUID, expectedVersion: Int? = nil, actor: Actor = .user, now: Date) throws -> Memory {
+        try setStatus(id: id, to: .archived, expectedVersion: expectedVersion, actor: actor, now: now)
     }
 
     /// Restores an archived memory, or a deleted one within 30 days.
     @discardableResult
-    public func restoreMemory(id: UUID, actor: Actor = .user, now: Date) throws -> Memory {
-        try writer.write { db in try MemoryStore.setStatus(db, id: id, to: .active, actor: actor, now: now) }
+    public func restoreMemory(id: UUID, expectedVersion: Int? = nil, actor: Actor = .user, now: Date) throws -> Memory {
+        try setStatus(id: id, to: .active, expectedVersion: expectedVersion, actor: actor, now: now)
     }
 
     /// Moves a memory to Recently Deleted (FR-V-04).
     @discardableResult
-    public func deleteMemory(id: UUID, actor: Actor = .user, now: Date) throws -> Memory {
-        try writer.write { db in try MemoryStore.setStatus(db, id: id, to: .deleted, actor: actor, now: now) }
+    public func deleteMemory(id: UUID, expectedVersion: Int? = nil, actor: Actor = .user, now: Date) throws -> Memory {
+        try setStatus(id: id, to: .deleted, expectedVersion: expectedVersion, actor: actor, now: now)
+    }
+
+    private func setStatus(id: UUID, to status: MemoryStatus, expectedVersion: Int?, actor: Actor, now: Date) throws -> Memory {
+        try writer.write { db in
+            try MemoryStore.checkVersion(db, id: id, expected: expectedVersion)
+            return try MemoryStore.setStatus(db, id: id, to: status, actor: actor, now: now)
+        }
     }
 
     /// Delete Now: purges a deleted memory immediately.

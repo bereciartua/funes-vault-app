@@ -83,7 +83,7 @@ A proposed memory waiting for review. It is separate from Memory, so memories ne
 | `captureId` | UUID? | Idempotency key for iPhone captures (unique) |
 | `targetMemoryId` | UUID? | Set when the suggestion is a correction of an existing memory |
 | `targetMemoryVersion` | int? | Phase 6. The target's version when the suggestion was made; checked when it's applied (stale → the card says so) |
-| `action` | `create` · `update` · `archive` · Phase 6: `duplicate` (already saved) · `split` · `merge` · `conflict` | Each action has its own apply ([memory processing §5.5](memory-processing.md#55-linking), [§9.5](memory-processing.md#95-inbox-and-auto-apply)). Today only `update` + Replace applies as itself; Phase 6.1 implements the rest |
+| `action` | `create` · `update` · `archive` · Phase 6: `duplicate` (already saved) · `split` · `merge` · `conflict` | Each action has its own apply ([memory processing §5.5](memory-processing.md#55-linking), [§9.5](memory-processing.md#95-inbox-and-auto-apply)), below |
 | `groupId` | UUID? | Phase 6. The original suggestion a piece was split from (status `split`) |
 | `intent` | `assertion` · `remember` · `correction` · `retraction`? | Phase 6, from extraction |
 | `outsideScope` | bool | Phase 6. A piece of an agent's input outside that agent's scope: never auto-applied, left out of Apply all |
@@ -99,7 +99,7 @@ A proposed memory waiting for review. It is separate from Memory, so memories ne
 **Phase 6 additions** ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)):
 - **SuggestionTarget:** `suggestionId`, `memoryId`, `memoryVersion`, `role` (`target` · `source` · `survivor`), so a merge, split or conflict can reference several memories.
 - **SuggestionGroup:** `id` (the original suggestion's id), `origin`, `agentId?`, `sourceText`, `engine`, `createdAt`. The source text is dropped once every piece is decided, and purged with its memories.
-- **ProcessingJob:** `id`, `subject` (suggestion or memory id), `kind` (`split` · `tidy_up`), `state` (`queued` · `running` · `done` · `failed`), `attempts`, `engine`, `createdAt`. Durable, one at a time, idempotent per subject.
+- **ProcessingJob:** `id`, `subject` (suggestion or memory id), `kind` (`new_memory`: classification today, splitting from 6a · `tidy_up`), `state` (`queued` · `running` · `done` · `failed`), `attempts`, `engine`, `createdAt`. Durable, one at a time, idempotent per subject and kind.
 - **UndoEntry:** `id`, `createdAt`, `runId?`, `action`, memory ids, the before-state (JSON, including old text), `expiresAt` (30 days). Purged after 30 days and with its memories when they're purged or deleted now. Never exported.
 - **TidyUpRun:** `id`, `startedAt`, `finishedAt`, `engine`, counts (memories inspected, clusters, suggestions, applied), `partial`, error code.
 - **TidyUpDismissal:** sorted memory ids plus a content hash, `dismissedAt`.
@@ -235,7 +235,16 @@ stateDiagram-v2
     rejected --> [*]
     split --> [*]
 ```
-- A targeted suggestion whose memory changed since it was made is **stale**: Apply shows the current memory and asks again (Phase 6).
+- **Apply per action** (Phase 6.1), each in one transaction with the suggestion's status and provenance:
+  - `create`: a new memory.
+  - `update`: **Replace** (the default: the target takes the proposal) or **Keep both** (a new memory; Mac only).
+  - `archive`: archives the target; a `survivor` must still be active.
+  - `duplicate`: no memory changes.
+  - `split`: the pending pieces of its group become memories (source `tidy_up`, never below the original's sensitivity, `split_from`/`split_into` provenance) and the original is archived.
+  - `merge`: one new memory (source `tidy_up`, at least the highest source sensitivity unless the user lowers it), the sources archived (`merged_from`/`merged_into`).
+  - `conflict`: the user's answer: **Keep** one (optionally edited, "Edit…"), archiving the other, or **Both are true** (no change).
+  - Applying by the user, on the Mac or a paired iPhone, makes the result trusted.
+- A targeted suggestion whose memory changed since it was made (another version, archived or deleted) is **stale**: Apply refuses it ("Changed since this was suggested"), except Keep both; **Review Again** records the current versions so the card shows the memory as it is and asks again. A memory that is no longer active can't be reviewed again.
 
 ### Memory
 ```mermaid

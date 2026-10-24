@@ -72,13 +72,15 @@ extension Suggestion {
         Suggestion(
             id: try row.requiredUUID("id"), origin: try row.required("origin"), agentID: row.uuid("agent_id"),
             deviceID: row.uuid("device_id"), importRunID: row.uuid("import_run_id"), captureID: row.uuid("capture_id"),
-            targetMemoryID: row.uuid("target_memory_id"), action: try row.required("action"),
+            targetMemoryID: row.uuid("target_memory_id"), targetMemoryVersion: row["target_memory_version"],
+            action: try row.required("action"),
             title: row["title"], body: row["body"], kind: row.enumValue("kind"),
             categoryKeys: JSON.decode([String].self, row["category_keys"]) ?? [],
             sensitivity: row.sensitivity("sensitivity"), expiresAt: row["expires_at"], confidence: row["confidence"],
             evidence: row["evidence"], purpose: row["purpose"], callerMetadata: row["caller_metadata"],
             classification: row["classification"], status: try row.required("status"), createdAt: row["created_at"],
-            decidedAt: row["decided_at"], expiresAfter: row["expires_after"], resultMemoryID: row.uuid("result_memory_id"))
+            decidedAt: row["decided_at"], expiresAfter: row["expires_after"], resultMemoryID: row.uuid("result_memory_id"),
+            groupID: row.uuid("group_id"), intent: row.enumValue("intent"), outsideScope: row["outside_scope"])
     }
 }
 

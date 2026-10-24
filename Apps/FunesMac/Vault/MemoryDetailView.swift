@@ -10,6 +10,11 @@ struct MemoryDetailView: View {
     @State private var memory: Memory?
     @State private var history: [ProvenanceEntry] = []
     @State private var form = MemoryForm()
+    /// The version the form was filled from: Save sends it, so a change made meanwhile (from the
+    /// iPhone, the Inbox, an import) isn't silently overwritten (6.1.2).
+    @State private var formVersion: Int?
+    /// Save found a newer version: offer to reload it.
+    @State private var changedMeanwhile = false
     @State private var error: String?
     @State private var similar: [Memory] = []
     @State private var confirmStillTrue = false
@@ -98,11 +103,11 @@ struct MemoryDetailView: View {
                 Text(problem).font(.callout).foregroundStyle(.secondary)
             }
             Spacer()
-            Button(String(localized: "Revert")) {
-                if let memory { form = MemoryForm(memory) }
+            Button(changedMeanwhile ? String(localized: "Reload") : String(localized: "Revert")) {
+                load(resetForm: true)
                 error = nil
             }
-            .disabled(!dirty)
+            .disabled(!dirty && !changedMeanwhile)
             Button(String(localized: "Save")) { save() }
                 .keyboardShortcut("s", modifiers: .command)
                 .buttonStyle(.borderedProminent)
@@ -149,17 +154,23 @@ struct MemoryDetailView: View {
             case .active:
                 Button(String(localized: "Still True…")) { confirmStillTrue = true }
                     .help(String(localized: "Mark that you checked this memory today"))
-                Button(String(localized: "Archive")) { act { try model.services.store.archiveMemory(id: memoryID, now: Date()) } }
+                Button(String(localized: "Archive")) {
+                    act { try model.services.store.archiveMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
+                }
                 Button(String(localized: "Delete"), role: .destructive) {
-                    act { try model.services.store.deleteMemory(id: memoryID, now: Date()) }
+                    act { try model.services.store.deleteMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
                 }
             case .archived:
-                Button(String(localized: "Restore")) { act { try model.services.store.restoreMemory(id: memoryID, now: Date()) } }
+                Button(String(localized: "Restore")) {
+                    act { try model.services.store.restoreMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
+                }
                 Button(String(localized: "Delete"), role: .destructive) {
-                    act { try model.services.store.deleteMemory(id: memoryID, now: Date()) }
+                    act { try model.services.store.deleteMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
                 }
             case .deleted:
-                Button(String(localized: "Restore")) { act { try model.services.store.restoreMemory(id: memoryID, now: Date()) } }
+                Button(String(localized: "Restore")) {
+                    act { try model.services.store.restoreMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
+                }
                 Button(String(localized: "Delete Now…"), role: .destructive) { confirmDeleteNow = true }
             }
             Spacer()
@@ -178,7 +189,11 @@ struct MemoryDetailView: View {
             let changed = memory?.version != found.version
             memory = found
             history = (try? model.services.store.provenance(memoryID: memoryID)) ?? []
-            if resetForm || (changed && !dirty) { form = MemoryForm(found) }
+            if resetForm || (changed && !dirty) {
+                form = MemoryForm(found)
+                formVersion = found.version
+                changedMeanwhile = false
+            }
         } catch {
             missing = true
         }
@@ -187,12 +202,18 @@ struct MemoryDetailView: View {
     private func save() {
         guard let memory else { return }
         do {
-            let saved = try model.services.store.updateMemory(id: memoryID, form.edit(from: memory), now: Date())
+            let saved = try model.services.store.updateMemory(id: memoryID, form.edit(from: memory),
+                                                              expectedVersion: formVersion ?? memory.version, now: Date())
             self.memory = saved
             form = MemoryForm(saved)
+            formVersion = saved.version
+            changedMeanwhile = false
             error = nil
             history = (try? model.services.store.provenance(memoryID: memoryID)) ?? []
             Task { similar = await DuplicateHint.similar(to: saved, in: model) }
+        } catch VaultError.versionConflict {
+            changedMeanwhile = true
+            self.error = String(localized: "This memory changed since you started editing. Reload it to see the change; your edits will be lost.")
         } catch {
             self.error = ErrorText.message(error)
         }
@@ -274,6 +295,12 @@ struct HistoryList: View {
         case .confirmed: return String(localized: "Confirmed still true \(who)")
         case .suggestedCorrection: return String(localized: "Correction suggested \(who)")
         case .appliedFromSuggestion: return String(localized: "Applied from the Inbox")
+        case .splitInto: return String(localized: "Split into a new memory \(who)")
+        case .splitFrom: return String(localized: "Split from another memory \(who)")
+        case .mergedInto: return String(localized: "Merged into a new memory \(who)")
+        case .mergedFrom: return String(localized: "Merged from another memory \(who)")
+        case .autoApplied: return String(localized: "Changed automatically")
+        case .undone: return String(localized: "Undone \(who)")
         }
     }
 
