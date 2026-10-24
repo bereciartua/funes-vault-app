@@ -1509,6 +1509,9 @@
     "Codex" : {
 
     },
+    "Codex can run commands that read files on this Mac. Funes runs it in an empty folder, read-only, with no internet, and discards any run that uses a command, but it can't switch this ability off. Use it only if you accept that." : {
+
+    },
     "Codex cloud tasks" : {
 
     },
@@ -2981,6 +2984,9 @@
 
     },
     "Off: every proposal waits for you in the Inbox. No model has been accurate enough yet to save new memories by itself, so the other levels stay off. Agents always follow their own access." : {
+
+    },
+    "Off: it can read files on this Mac. Turn on the switch below to use it anyway." : {
 
     },
     "Off: it saves memories directly. On: they wait in your Inbox." : {
@@ -4739,6 +4745,9 @@
 
     },
     "Use %@" : {
+
+    },
+    "Use Codex even though it can read files on this Mac" : {
 
     },
     "Use This Port" : {

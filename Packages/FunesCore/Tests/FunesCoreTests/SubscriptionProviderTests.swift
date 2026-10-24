@@ -54,8 +54,13 @@ import Testing
 
     // MARK: Claude Code
 
+    /// As Claude Code 2.1.310 starts with Funes's flags: its built-in plugins and agent types listed.
     static let claudeInit = json(["type": "system", "subtype": "init", "tools": ["StructuredOutput"], "mcp_servers": [],
-                                  "plugins": [], "apiKeySource": "none", "model": "claude-haiku-5-5"])
+                                  "plugins": [["name": "cc-plugin-agents-md", "path": "builtin", "source": "cc-plugin-agents-md@builtin"],
+                                              ["name": "cc-plugin-plugin-authoring", "path": "builtin",
+                                               "source": "cc-plugin-plugin-authoring@builtin"]],
+                                  "agents": ["claude", "Explore", "general-purpose", "Plan"], "skills": ["debug"],
+                                  "apiKeySource": "none", "model": "claude-haiku-5-5"])
     static func claudeResult(_ output: [String: Any]? = ["title": "Green tea"], error: String? = nil, subtype: String = "success") -> String {
         var event: [String: Any] = ["type": "result", "subtype": subtype, "is_error": error != nil,
                                     "modelUsage": ["claude-haiku-5-5": ["inputTokens": 1_200, "cacheReadInputTokens": 300, "outputTokens": 40]]]
@@ -104,8 +109,15 @@ import Testing
         let tools = Self.json(["type": "system", "subtype": "init", "tools": ["StructuredOutput", "Read"], "apiKeySource": "none"])
         let apiKey = Self.json(["type": "system", "subtype": "init", "tools": ["StructuredOutput"], "apiKeySource": "ANTHROPIC_API_KEY"])
         let hook = Self.json(["type": "system", "subtype": "hook_started", "hook_name": "SessionStart"])
+        let installed = Self.json(["type": "system", "subtype": "init", "tools": ["StructuredOutput"], "apiKeySource": "none",
+                                   "plugins": [["name": "my-plugin", "path": "/Users/test/.claude/plugins/my-plugin"]]])
+        let newBuiltin = Self.json(["type": "system", "subtype": "init", "tools": ["StructuredOutput"], "apiKeySource": "none",
+                                    "plugins": [["name": "cc-plugin-new-thing", "path": "builtin"]]])
+        let hooks = Self.json(["type": "system", "subtype": "init", "tools": ["StructuredOutput"], "apiKeySource": "none",
+                               "hooks": ["SessionStart": ["x"]]])
         for stream in [[mcp, Self.claudeResult()], [Self.claudeInit, bash, Self.claudeResult()], [tools, Self.claudeResult()],
-                       [apiKey, Self.claudeResult()], [Self.claudeInit, hook, Self.claudeResult()]] {
+                       [apiKey, Self.claudeResult()], [Self.claudeInit, hook, Self.claudeResult()], [installed, Self.claudeResult()],
+                       [newBuiltin, Self.claudeResult()], [hooks, Self.claudeResult()]] {
             CLIRunner.unblock(ClaudeCodeClient.providerID)
             let (client, _) = Self.claude(stream)
             await #expect(throws: ProviderError.unavailable) { try await client.generate(Self.request) }
@@ -171,7 +183,7 @@ import Testing
     static let featuresOK = ["fast_mode stable true", "apps stable false", "shell_tool stable false", "collaboration_modes removed true",
                              "chronicle under development false"]
 
-    static func codex(_ events: [String], features: [String] = featuresOK, exitCode: Int32 = 0,
+    static func codex(_ events: [String], features: [String] = featuresOK, exitCode: Int32 = 0, allowsFileReads: Bool = false,
                       lastMessage: String? = #"{"title":"Green tea"}"#) -> (CodexClient, FakeCLI) {
         let cli = FakeCLI { inv in
             switch inv.arguments.first {
@@ -182,8 +194,8 @@ import Testing
             default: FakeCLI.Reply(lines: events, exitCode: exitCode, lastMessage: lastMessage)
             }
         }
-        return (CodexClient(executable: "/x/codex-\(UUID().uuidString.prefix(6))", model: "gpt-6-luna", runner: cli,
-                            environment: environment), cli)
+        return (CodexClient(executable: "/x/codex-\(UUID().uuidString.prefix(6))", model: "gpt-6-luna",
+                            allowsFileReads: allowsFileReads, runner: cli, environment: environment), cli)
     }
 
     @Test func codexRunsIsolatedWithEveryToolOff() async throws {
@@ -236,6 +248,34 @@ import Testing
         await #expect(throws: ProviderError.invalidOutput) { try await garbled.generate(Self.request) }
         let (ready, _) = Self.codex(Self.codexEvents)
         #expect(await ready.status() == .ready(version: "0.164.0"))
+    }
+
+    /// Codex 0.164 keeps `unified_exec` on whatever Funes asks: only the user's opt-in accepts it,
+    /// nothing else, and a command is still stopped and discarded.
+    @Test func codexFileReadsNeedTheOptIn() async throws {
+        CLIRunner.unblock(CodexClient.providerID)
+        let withExec = Self.featuresOK + ["unified_exec stable true"]
+        let (off, offCLI) = Self.codex(Self.codexEvents, features: withExec)
+        #expect(await off.status() == .fileReadsNotAllowed(version: "0.164.0"))
+        await #expect(throws: ProviderError.unavailable) { try await off.generate(Self.request) }
+        #expect(!offCLI.invocations.contains { $0.arguments.first == "exec" && !$0.arguments.contains("--help") })
+
+        let (on, onCLI) = Self.codex(Self.codexEvents, features: withExec, allowsFileReads: true)
+        #expect(await on.status() == .ready(version: "0.164.0"))
+        #expect(try await on.generate(Self.request).0.title == "Green tea")
+        let run = try #require(onCLI.invocations.last)
+        #expect(zip(run.arguments, run.arguments.dropFirst()).contains { $0 == "--disable" && $1 == "shell_tool" })
+        #expect(run.arguments[run.arguments.firstIndex(of: "--sandbox")! + 1] == "read-only")
+
+        // Another unknown feature still refuses, opt-in or not.
+        let (other, _) = Self.codex(Self.codexEvents, features: withExec + ["telepathy stable true"], allowsFileReads: true)
+        #expect(await other.status() == .unsupportedFeatures(version: "0.164.0", features: ["telepathy"]))
+        // A command is still stopped and discarded with the opt-in on.
+        let command = Self.json(["type": "item.started", "item": ["id": "9", "type": "command_execution", "command": "cat ~/notes"]])
+        let (reading, _) = Self.codex([command] + Self.codexEvents, features: withExec, allowsFileReads: true)
+        await #expect(throws: ProviderError.unavailable) { try await reading.generate(Self.request) }
+        #expect(CLIRunner.isBlocked(CodexClient.providerID))
+        CLIRunner.unblock(CodexClient.providerID)
     }
 
     // MARK: The process runner
@@ -305,7 +345,7 @@ import Testing
         for (name, make) in [("claude", { (path: String, r: Recorder) -> any SubscriptionClient in
                                   ClaudeCodeClient(executable: path, model: "haiku", runner: r) }),
                               ("codex", { (path: String, r: Recorder) -> any SubscriptionClient in
-                                  CodexClient(executable: path, model: "gpt-6-luna", runner: r) })] {
+                                  CodexClient(executable: path, model: "gpt-6-luna", allowsFileReads: true, runner: r) })] {
             guard let path = [home + "/.local/bin/\(name)", "/opt/homebrew/bin/\(name)", "/usr/local/bin/\(name)"]
                 .first(where: FileManager.default.isExecutableFile(atPath:)) else { continue }
             let recorder = Recorder()

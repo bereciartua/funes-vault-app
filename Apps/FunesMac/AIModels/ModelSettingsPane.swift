@@ -426,6 +426,7 @@ struct SubscriptionRow: View {
     @State private var modelName = ""
     @State private var testing = false
     @State private var result: String?
+    @State private var allowFileReads = false
 
     private var settings: ModelSettings { model.modelSettings }
 
@@ -437,6 +438,14 @@ struct SubscriptionRow: View {
                 Spacer()
                 Text(settings.subscriptionStatus[kind].map { Self.text($0, kind) } ?? String(localized: "Checking…"))
                     .font(.caption).foregroundStyle(.secondary)
+            }
+            if settings.executables[kind] != nil, kind == .codex {
+                Toggle(String(localized: "Use Codex even though it can read files on this Mac"), isOn: $allowFileReads)
+                    .onChange(of: allowFileReads) { _, on in
+                        settings.codexAllowsFileReads = on
+                        Task { await settings.refreshSubscriptions() }
+                    }
+                WarningLabel(text: String(localized: "Codex can run commands that read files on this Mac. Funes runs it in an empty folder, read-only, with no internet, and discards any run that uses a command, but it can't switch this ability off. Use it only if you accept that."))
             }
             if settings.executables[kind] != nil {
                 HStack {
@@ -461,7 +470,10 @@ struct SubscriptionRow: View {
                 }
             }
         }
-        .onAppear { modelName = settings.subscription(kind).model }
+        .onAppear {
+            modelName = settings.subscription(kind).model
+            allowFileReads = settings.codexAllowsFileReads
+        }
         .accessibilityElement(children: .contain)
     }
 
@@ -474,6 +486,7 @@ struct SubscriptionRow: View {
         case .notSignedIn: return String(localized: "Not signed in: run `\(kind.signIn)` in Terminal and sign in with \(kind.plan)")
         case .needsUpdate: return String(localized: "Update \(tool) to use it")
         case .unsupportedFeatures: return String(localized: "This \(tool) version isn't supported yet")
+        case .fileReadsNotAllowed: return String(localized: "Off: it can read files on this Mac. Turn on the switch below to use it anyway.")
         case .blocked: return String(localized: "Unavailable: it tried to use a tool. Test Connection to try again.")
         }
     }

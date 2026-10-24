@@ -98,6 +98,8 @@ final class ModelSettings {
         var dailyCap: Int?
         /// The plans' models (ADR-0024); nil before v0.3.
         var subscriptions: [SubscriptionConfig]?
+        /// The user accepted that Codex can run commands that read files (ADR-0024); off by default.
+        var codexAllowsFileReads: Bool?
     }
 
     static let defaultsKey = "AIModels"
@@ -130,6 +132,12 @@ final class ModelSettings {
     /// Each plan's model; the first suggestion until the user picks another.
     func subscription(_ kind: SubscriptionConfig.Kind) -> SubscriptionConfig {
         stored.subscriptions?.first { $0.kind == kind } ?? SubscriptionConfig(kind: kind, model: kind.suggestedModels[0])
+    }
+
+    /// Settings ▸ Use your subscription ▸ ChatGPT (Codex): the opt-in, off by default.
+    var codexAllowsFileReads: Bool {
+        get { stored.codexAllowsFileReads ?? false }
+        set { stored.codexAllowsFileReads = newValue; save() }
     }
 
     func setSubscriptionModel(_ kind: SubscriptionConfig.Kind, _ model: String) {
@@ -177,7 +185,7 @@ final class ModelSettings {
         let model = subscription(kind).model
         switch kind {
         case .claudeCode: return ClaudeCodeClient(executable: path, model: model)
-        case .codex: return CodexClient(executable: path, model: model)
+        case .codex: return CodexClient(executable: path, model: model, allowsFileReads: codexAllowsFileReads)
         }
     }
 

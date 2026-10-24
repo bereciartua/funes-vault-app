@@ -599,7 +599,7 @@
 - Acceptance:
   - Funes never asks for, reads, stores or passes on the plan's credentials, and never bundles, installs or modifies the CLI.
   - Every call runs in an empty temporary directory with API keys removed from the environment, without the user's CLI configuration, MCP servers, hooks or plugins, and with every tool off; any tool or command event stops the run and discards its output (tested with recorded streams, including an injected tool call).
-  - A Codex version with an enabled feature Funes doesn't know is safe, or a CLI below the minimum version, is shown as unavailable and never called.
+  - A Codex version with an enabled feature Funes doesn't know is safe, or a CLI below the minimum version, is shown as unavailable and never called. Codex's `unified_exec` (commands that can read files), which can't be switched off, is accepted only with the user's opt-in, off by default and shown with a warning; Claude Code's built-in plugins are accepted only from a known list.
   - The cloud limit, secret scanner and daily cap apply as for any cloud provider; the disclosure line names the plan and says its training setting applies.
   - Signed out, plan limit reached and missing CLI each show a clear status and fall back like a provider that's down.
 

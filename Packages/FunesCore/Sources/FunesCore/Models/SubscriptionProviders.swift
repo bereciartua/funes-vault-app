@@ -13,6 +13,8 @@ public enum SubscriptionStatus: Sendable, Hashable {
     case needsUpdate(version: String?)
     /// Codex has a feature on that Funes doesn't know to be safe: "This Codex version isn't supported yet".
     case unsupportedFeatures(version: String, features: [String])
+    /// Codex can run commands that read files, and the user hasn't accepted that (the opt-in is off).
+    case fileReadsNotAllowed(version: String)
     /// A run showed a tool or command event: off until Test connection passes.
     case blocked
 
@@ -55,6 +57,10 @@ public struct ClaudeCodeClient: SubscriptionClient {
     public static let providerID: ProviderID = "claude-code"
     /// The tool Claude Code adds for `--json-schema`; the only one a run may show.
     static let structuredOutputTool = "StructuredOutput"
+    /// Plugins that ship inside Claude Code (path "builtin") and that `--safe-mode` doesn't turn off,
+    /// read from 2.1.310's start event. With no tool but the structured-output one they can't act.
+    /// Any other plugin, installed or a new built-in, stops the run until Funes knows it.
+    static let knownBuiltinPlugins: Set<String> = ["cc-plugin-agents-md", "cc-plugin-plugin-authoring"]
     /// Flags Funes needs; a CLI without them is "Update Claude Code to use it".
     static let requiredFlags = ["--safe-mode", "--tools", "--disallowedTools", "--strict-mcp-config", "--settings",
                                 "--no-session-persistence", "--json-schema", "--output-format", "--system-prompt"]
@@ -150,15 +156,21 @@ final class ClaudeStream: @unchecked Sendable {
         case ("system", "init"):
             let tools = (event["tools"] as? [Any]) ?? []
             let allowed = tools.allSatisfy { ($0 as? String) == ClaudeCodeClient.structuredOutputTool }
-            let empty = ["mcp_servers", "plugins", "hooks", "agents"].allSatisfy { key in
+            // Built-in agent types and skills are allowed: without the Agent or Skill tool they can't run.
+            let empty = ["mcp_servers", "hooks"].allSatisfy { key in
                 guard let value = event[key] else { return true }
                 if let list = value as? [Any] { return list.isEmpty }
                 if let map = value as? [String: Any] { return map.isEmpty }
                 return false
             }
+            let plugins = (event["plugins"] as? [Any]) ?? (event["plugins"] == nil ? [] : [event["plugins"] as Any])
+            let builtins = plugins.allSatisfy { plugin in
+                guard let p = plugin as? [String: Any], p["path"] as? String == "builtin", let name = p["name"] as? String else { return false }
+                return ClaudeCodeClient.knownBuiltinPlugins.contains(name)
+            }
             // A key or helper in managed settings would bill the API, not the plan.
             let plan = (event["apiKeySource"] as? String).map { $0 == "none" } ?? true
-            if !allowed || !empty || !plan { return stop() }
+            if !allowed || !empty || !builtins || !plan { return stop() }
         case ("system", let sub?) where sub.hasPrefix("hook"):
             return stop()
         case ("assistant", _):
@@ -254,14 +266,23 @@ public struct CodexClient: SubscriptionClient {
     public let modelID: String
     public let executable: String
     public let effort: String
+    /// The user's opt-in (Settings, off by default): Codex 0.164 keeps `unified_exec`, which can run
+    /// commands that read files, on whatever Funes asks. Only with it does the feature check accept
+    /// `unified_exec`, and only that; a run that uses a command is still stopped and discarded.
+    public let allowsFileReads: Bool
     let runner: any CLIProcessRunning
     let baseEnvironment: [String: String]
 
-    public init(executable: String, model: String, effort: String = "low", runner: any CLIProcessRunning = SystemCLIProcess(),
+    /// The feature the opt-in accepts.
+    static let fileReadFeature = "unified_exec"
+
+    public init(executable: String, model: String, effort: String = "low", allowsFileReads: Bool = false,
+                runner: any CLIProcessRunning = SystemCLIProcess(),
                 environment: [String: String] = ProcessInfo.processInfo.environment) {
         self.executable = executable
         modelID = model
         self.effort = effort
+        self.allowsFileReads = allowsFileReads
         self.runner = runner
         baseEnvironment = environment
     }
@@ -332,27 +353,34 @@ public struct CodexClient: SubscriptionClient {
             version = CLIRunner.version(in: run.lines.joined(separator: " "))
         }
         guard let version else { return .notInstalled }
-        let key = "\(executable)@\(version)"
+        let key = "\(executable)@\(version)/\(allowsFileReads)"
         if let cached = Self.checked.withLock({ $0[key] }) { return cached }
         guard let list = await Self.check(runner, executable, ["features", "list"] + disableArguments, environment: environment),
               list.exitCode == 0 else {
             // A feature Funes turns off is gone from this version: Funes needs updating first.
             return .unsupportedFeatures(version: version, features: [])
         }
-        let unknown = Self.unknownEnabled(list.lines)
-        let status: SubscriptionStatus = unknown.isEmpty ? .ready(version: version) : .unsupportedFeatures(version: version, features: unknown)
+        let unknown = Self.unknownEnabled(list.lines, allowing: allowsFileReads ? [Self.fileReadFeature] : [])
+        let status: SubscriptionStatus = if unknown.isEmpty {
+            .ready(version: version)
+        } else if unknown == [Self.fileReadFeature] {
+            .fileReadsNotAllowed(version: version)
+        } else {
+            .unsupportedFeatures(version: version, features: unknown)
+        }
         Self.checked.withLock { $0[key] = status }
         return status
     }
 
-    /// Lines of `name stage state`: features that are on, not removed, and not known to be safe.
-    static func unknownEnabled(_ lines: [String]) -> [String] {
+    /// Lines of `name stage state`: features that are on, not removed, and not known to be safe
+    /// (or accepted by the user's opt-in).
+    static func unknownEnabled(_ lines: [String], allowing accepted: Set<String> = []) -> [String] {
         lines.compactMap { line -> String? in
             let fields = line.split(whereSeparator: \.isWhitespace).map(String.init)
             guard fields.count >= 3, fields.last == "true" else { return nil }
             let name = fields[0]
             if fields.dropFirst().dropLast().joined(separator: " ") == "removed" { return nil }
-            return safeFeatures.contains(name) ? nil : name
+            return safeFeatures.contains(name) || accepted.contains(name) ? nil : name
         }
     }
 }
