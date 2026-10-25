@@ -1,6 +1,6 @@
 # Architecture and security boundary
 
-This page describes Funes Vault for the Mac as it ships in v0.1. The full design, with the reasons behind it, is in [`spec/`](../spec/README.md): the [architecture overview](../spec/architecture/overview.md), the [access policy](../spec/domain/access-policy.md) and the [decision records](../spec/architecture/decisions/README.md). When this page and the spec disagree, the spec is the source of truth and this page has a bug.
+This page describes Funes Vault for the Mac as it ships in v0.2, with its iPhone companion. The full design, with the reasons behind it, is in [`spec/`](../spec/README.md): the [architecture overview](../spec/architecture/overview.md), the [access policy](../spec/domain/access-policy.md) and the [decision records](../spec/architecture/decisions/README.md). When this page and the spec disagree, the spec is the source of truth and this page has a bug.
 
 ## Components and data flow
 
@@ -21,9 +21,13 @@ flowchart LR
       C --> E[bge-small Core ML model<br/>Contents/Resources]
       C --> R[ModelRouter<br/>guardrails]
       P --> A[Activity log<br/>ids only]
+      CS[FunesCompanion<br/>companion listener, only while on] --> C
     end
+    Ph[Funes Vault for iPhone<br/>paired, keys on the iPhone] -->|sealed and signed requests<br/>port 47626, Wi-Fi, Tailscale or tunnel| CS
     R -.->|only if you chose one| M[Model provider<br/>local server or cloud]
     App -.->|daily update check| GH[(GitHub Releases<br/>appcast.xml)]
+    App -.->|a doorbell record, only a random tag| CK[(Your private iCloud<br/>CloudKit)]
+    CK -.->|push| Ph
 ```
 
 Agents are untrusted parties with scoped access; their keys separate them from each other. Cloud agents are Funes agents too: the remote listener is a second door to the same MCP server and pipeline, with its own credentials. Model providers you add receive only what the guardrails allow. Other software running as your macOS user is out of scope (see [Threat model](#threat-model)).
@@ -32,13 +36,16 @@ Agents are untrusted parties with scoped access; their keys separate them from e
 
 | Part | What it holds | Depends on |
 | --- | --- | --- |
-| `Packages/FunesProtocol` | Types shared by the Mac and the future iPhone app: memories, categories, sensitivity, reason codes, input limits, identifiers, and the secret scanner. | System frameworks only |
+| `Packages/FunesProtocol` | Types shared by the Mac and the iPhone app, and the companion protocol (envelopes, pairing, methods): memories, categories, sensitivity, reason codes, input limits, identifiers, and the secret scanner. | System frameworks only |
 | `Packages/FunesCore` | The vault, Mac only: the GRDB store and migrations, the policy engine, retrieval and search, the bundle compiler, disclosures (requests, approvals, delivery), suggestions, captures, agents and their keys, import and export, and the AI model providers with `ModelRouter`. No AppKit, SwiftUI or MCP. | FunesProtocol, [GRDB.swift](https://github.com/groue/GRDB.swift) 7.11.1 |
 | `Packages/FunesMCP` | The MCP adapter: the tool contract (`Sources/FunesMCP/Resources/mcp-tools.json`), tool visibility, Funes's server configuration (port, key prefix, limits, wording), key lookup, `RequestPipeline` and the five handlers, the Remote Access server (`FunesRemoteServer`), and `funes-mcp-test-server`, the test build the Python harness drives ([ADR-0017](../spec/architecture/decisions/0017-funes-mcp-package.md)). No AppKit. | FunesCore, BridgeKitCore, BridgeKitRemote |
 | `Packages/BridgeUI` | UI and workflow pieces adapted from EK Bridge: the approval queue and panels, the Activity store, agent detection, agent setups and one-click setup, `RemoteAccessController` and the cloud and tunnel setups (`CloudSetup`, `RemoteWords`), the app mover and the updater's relaunch gate. `Upstream/` keeps the copied originals; see its `PROVENANCE.md`. | BridgeKit |
 | BridgeKit (`BridgeKitCore`, `BridgeKitRemote`) | External package, [`bereciartua/bridgekit`](https://github.com/bereciartua/bridgekit), pinned to exactly **0.4.1**, shared with EK Bridge. BridgeKitCore: the loopback HTTP listener, JSON-RPC and MCP protocol versions, the JSON Schema validator, keys, rate limits, safe files, the launcher and the agent config writer ([ADR-0013](../spec/architecture/decisions/0013-shared-bridgekit-core.md)). BridgeKitRemote: Remote Access's listener and gate, the OAuth server and its store, the client-metadata fetch, the tunnel checks, and the path sharing for Tailscale Funnel (`RemotePaths`) ([ADR-0018](../spec/architecture/decisions/0018-remote-access-in-v0.1.md)). | System frameworks only |
+| `Packages/FunesCompanion` | The Mac's side of the iPhone companion: the listener on port 47626, pairing, the device registry and the companion methods, which call FunesCore as the owner. | FunesCore, FunesProtocol, BridgeKitCore |
+| `Packages/FunesPhone` | The iPhone's side: device keys (Secure Enclave), the pairing record, `CompanionClient`, the capture queue and its delivery, the screens' models, and demo mode. | FunesProtocol |
 | `Apps/FunesMac` | The app target, `FunesVault.app` (bundle ID `com.funesvault.mac`): the menu bar, the main window (Vault, Inbox, Agents, Remote Access, Activity), the Cloud tab and the sign-in panel (`RemoteAccess/`), Settings, the capture box, the panels' wiring, the Sparkle wrapper and the app's lifecycle. A menu bar app (`LSUIElement`), hardened runtime, not sandboxed, macOS 15 or later, Developer ID ([ADR-0007](../spec/architecture/decisions/0007-developer-id-not-sandboxed.md)). | All of the above, [Sparkle](https://sparkle-project.org) 2.10.0 |
 | `Apps/FunesMCPLauncher` | The `funes-mcp` command-line tool, signed with its own identifier `com.funesvault.mac.mcp` and embedded at `FunesVault.app/Contents/MacOS/funes-mcp`. It links BridgeKitCore and FunesProtocol only, so it carries no vault code. | BridgeKit, FunesProtocol |
+| `Apps/FunesiOS` and its extensions | Funes Vault for iPhone (`com.funesvault.ios`, iOS 18 or later), with the share extension, the App Intents and Control extension, and the notification service extension that words approval notifications on the phone. | FunesPhone, FunesProtocol |
 
 Every dependency is pinned to an exact version. The bundled model isn't a package: it's fetched and converted by `scripts/fetch_embedding_model.sh` at a pinned revision and checksum, and copied into the app by the build ([ADR-0016](../spec/architecture/decisions/0016-bundled-bge-small-embeddings.md)). The app also ships its own `LICENSE` and `NOTICE` in `Contents/Resources/`, and the licence texts of GRDB.swift, Sparkle and the model in `Contents/Resources/Licenses/`.
 
@@ -164,6 +171,12 @@ A provider counts as **local** when its host is loopback or a private address (a
 3. **No text in errors or logs:** provider errors are logged with the status code and provider id only.
 
 `scripts/test.sh` fails if anything calls a provider directly instead of through `ModelRouter.send`. **Test Connection** classifies a made-up note among the built-in categories, never your own data. Model output is always validated (unknown categories dropped, sensitivity raised to the category's default) and only ever proposed: you apply it from the Inbox.
+
+## The iPhone companion
+
+The iPhone app is a client of the vault on the Mac, and keeps no copy of it. It pairs by scanning a QR code the Mac shows, then every call is an HPKE-sealed, P-256-signed envelope for that Mac, sent over the same Wi-Fi, Tailscale or your Remote Access tunnel ([companion protocol](../spec/architecture/companion-protocol.md)). The Mac accepts a connection only from the addresses of the ways you turned on, while **Settings ▸ iPhone ▸ Allow iPhone access** is on, and a removed iPhone's keys stop working at once. Captures wait in a queue on the iPhone until the Mac has them, each exactly once.
+
+Approvals reach a locked iPhone through a CloudKit "doorbell": the Mac saves a record holding only a random per-device tag in your own private iCloud database, and the iPhone's notification service extension fetches the request from the Mac over the companion channel to word the notification ([ADR-0019](../spec/architecture/decisions/0019-cloudkit-doorbell-for-iphone-approvals.md)). An answer from the phone goes through the same approval rules as one on the Mac, and the first answer counts.
 
 ## Updates
 

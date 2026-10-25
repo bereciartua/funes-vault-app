@@ -2,7 +2,8 @@
 set -eu
 
 # Captures the iPhone app's App Store screenshots (spec/release/app-store/screenshots.md) from
-# demo mode, at 6.9" (1320 × 2868), on an iPhone 17 Pro Max simulator. A Debug build opens each
+# demo mode, at 6.9" (1320 × 2868), on an iPhone 17 Pro Max simulator, with 1206 × 2622 copies in
+# 6.3-inch/ for App Store Connect's main iPhone slot. A Debug build opens each
 # scene itself with -FunesScreenshot <scene> (Apps/FunesiOS/ScreenshotScene.swift), so nothing is
 # tapped. Needs an iOS simulator runtime (xcodebuild -downloadPlatform iOS).
 #
@@ -56,7 +57,10 @@ for scene in $scenes; do
     # Demo mode, the first loads and a sheet's animation.
     sleep "$wait"
     xcrun simctl io "$udid" screenshot "$out/$n-$scene.png" > /dev/null 2>&1
+    # The same proportions at 6.3", the size App Store Connect's main iPhone slot takes.
+    mkdir -p "$out/6.3-inch"
+    sips -z 2622 1206 "$out/$n-$scene.png" --out "$out/6.3-inch/$n-$scene.png" > /dev/null
     printf '  %s\n' "$out/$n-$scene.png"
 done
 xcrun simctl terminate "$udid" com.funesvault.ios 2>/dev/null || true
-printf '==> %s screenshots in %s (1320 × 2868)\n' "$count" "$out"
+printf '==> %s screenshots in %s (1320 × 2868; 1206 × 2622 in 6.3-inch/)\n' "$count" "$out"
