@@ -61,6 +61,23 @@ final class InboxModel {
             case let .group(_, pieces): pieces[0]
             }
         }
+
+        /// The row's identity in the list. A split input's group card and the card it replaces
+        /// share an id, so they need different keys, or the list keeps the old card on screen.
+        var key: String {
+            switch self {
+            case let .single(s): "single-\(s.id)"
+            case let .group(id, _): "group-\(id)"
+            }
+        }
+
+        /// The card shows this suggestion: itself, or one of its pieces.
+        func shows(_ id: UUID) -> Bool {
+            switch self {
+            case let .single(s): s.id == id
+            case let .group(group, pieces): group == id || pieces.contains { $0.id == id }
+            }
+        }
     }
 
     enum Group: String, CaseIterable, Identifiable {
