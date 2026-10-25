@@ -421,6 +421,8 @@ extension PhoneModel {
             return String(localized: "The memory it changes was edited on your Mac since this was suggested. Review it on your Mac.")
         case .unsupportedAction:
             return String(localized: "Review this on your Mac.")
+        case .processing:
+            return String(localized: "Still processing on your Mac. It can be saved once it's done.")
         }
     }
 }

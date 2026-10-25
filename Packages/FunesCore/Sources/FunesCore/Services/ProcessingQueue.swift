@@ -52,6 +52,9 @@ public final class ProcessingQueue: Sendable {
         /// Wait until then without counting an attempt: agent input and imports at the daily cap
         /// wait for the next day (ADR-0022).
         case later(until: Date, code: String)
+        /// Given up at once: splitting failed, and the card offers Try again and Keep as one
+        /// (memory processing §5.2).
+        case failed(code: String)
     }
 
     public let store: VaultStore
@@ -114,6 +117,12 @@ public final class ProcessingQueue: Sendable {
                 try db.execute(sql: "UPDATE processing_job SET state = 'queued', attempts = MAX(0, attempts - 1), error = ?, not_before = ?, updated_at = ? WHERE id = ?",
                                arguments: [code, until, now, job.id.db])
             }
+        case let .failed(code):
+            state = .failed
+            try await store.writer.write { db in
+                try db.execute(sql: "UPDATE processing_job SET state = 'failed', error = ?, not_before = NULL, updated_at = ? WHERE id = ?",
+                               arguments: [code, now, job.id.db])
+            }
         case let .retry(code):
             state = job.attempts >= Self.maxAttempts ? .failed : .queued
             try await store.writer.write { db in
@@ -133,15 +142,19 @@ public final class ProcessingQueue: Sendable {
         min(3_600, 30 * pow(4, Double(max(0, attempts - 1))))
     }
 
-    /// Runs due jobs one at a time until none is left, with `work` doing each. Returns how many ran.
+    /// Runs due jobs one at a time until none is left, with `work` doing each. `finished` hears
+    /// each job once its outcome is recorded (the Mac shows an agent's Save panels then). Returns
+    /// how many ran.
     @discardableResult
     public func drain(now: @Sendable () -> Date = { Date() },
+                      finished: @Sendable (ProcessingJob) async -> Void = { _ in },
                       _ work: @Sendable (ProcessingJob) async throws -> Outcome) async throws -> Int {
         var ran = 0
         while let job = try await claim(now: now()) {
             let outcome: Outcome
             do { outcome = try await work(job) } catch { outcome = .retry(code: "error") }
             try await finish(job, outcome, now: now())
+            await finished(job)
             ran += 1
         }
         return ran

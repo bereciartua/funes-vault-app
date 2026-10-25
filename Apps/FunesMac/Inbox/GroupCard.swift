@@ -199,26 +199,6 @@ struct PieceRow: View {
     }
 }
 
-/// "Split into 5?" on a card that was open when its pieces arrived.
-struct SplitOffer: View {
-    let model: AppModel
-    let group: SuggestionGroup
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Label(String(localized: "Split into \(group.pending.count)?"), systemImage: "square.split.2x1")
-                .font(.callout.weight(.medium))
-            Text(group.pending.prefix(3).map(\.title).joined(separator: " · "))
-                .font(.callout).foregroundStyle(.secondary).lineLimit(1)
-            Spacer()
-            Button(String(localized: "Keep as One")) { Task { await model.inboxState.keepAsOne(group) } }
-            Button(String(localized: "Split")) { Task { await model.inboxState.acceptSplit(group) } }
-        }
-        .padding(10)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.accentColor.opacity(0.08)))
-    }
-}
-
 /// The Applied automatically list (memory processing §5.7, §9.5): one row per change Funes made,
 /// with Undo for 30 days, and "Undo This and N Later Changes" when later ones depend on it.
 struct AppliedAutomaticallyList: View {

@@ -425,6 +425,9 @@
     "%lld above its sensitivity limit" : {
 
     },
+    "%lld ahead of it" : {
+
+    },
     "%lld applied" : {
 
     },
@@ -561,6 +564,9 @@
     "%lld selected" : {
 
     },
+    "%lld still processing" : {
+
+    },
     "%lld suggestions" : {
 
     },
@@ -593,6 +599,9 @@
 
     },
     "+%lld more" : {
+
+    },
+    "1 ahead of it" : {
 
     },
     "1 memory" : {
@@ -1382,6 +1391,9 @@
     "Check the address and the key." : {
 
     },
+    "Check the provider's API key." : {
+
+    },
     "Checked a request" : {
 
     },
@@ -1701,6 +1713,9 @@
 
     },
     "Couldn't reach the server." : {
+
+    },
+    "Couldn't split" : {
 
     },
     "Couldn't start" : {
@@ -2513,6 +2528,9 @@
     "It already got what it may read. Always Allow is for next time." : {
 
     },
+    "It can be saved once it's split." : {
+
+    },
     "It can connect, but sees nothing until you give it access." : {
 
     },
@@ -2941,6 +2959,9 @@
     "New secret path. Update the URL in each cloud agent." : {
 
     },
+    "Next in line" : {
+
+    },
     "No Funnel port on this Mac can take %@'s paths without changing another app: %@. Change one of them, or choose another tunnel." : {
       "localizations" : {
         "en" : {
@@ -3104,6 +3125,9 @@
 
     },
     "Nothing to import was found." : {
+
+    },
+    "Nothing usable came back." : {
 
     },
     "Nothing waiting" : {
@@ -3389,6 +3413,9 @@
 
     },
     "Processed a new memory" : {
+
+    },
+    "Processing…" : {
 
     },
     "Project Context" : {
@@ -3817,6 +3844,9 @@
     "Review Request shortcut" : {
 
     },
+    "Review it as it is, as one memory." : {
+
+    },
     "Review your Inbox" : {
 
     },
@@ -4228,9 +4258,6 @@
     "Space" : {
 
     },
-    "Split" : {
-
-    },
     "Split Them" : {
 
     },
@@ -4257,9 +4284,6 @@
 
     },
     "Split into %lld pieces" : {
-
-    },
-    "Split into %lld?" : {
 
     },
     "Split into a new memory %@" : {
@@ -4296,6 +4320,12 @@
           }
         }
       }
+    },
+    "Splitting with %@…" : {
+
+    },
+    "Splitting…" : {
+
     },
     "Start" : {
 
@@ -4338,6 +4368,9 @@
 
     },
     "Still True…" : {
+
+    },
+    "Still processing. It can be saved once it's done." : {
 
     },
     "Stop Using %@…" : {
@@ -4630,6 +4663,18 @@
     "The model declined." : {
 
     },
+    "The model failed." : {
+
+    },
+    "The model isn't available." : {
+
+    },
+    "The model took too long." : {
+
+    },
+    "The model's answer wasn't usable." : {
+
+    },
     "The model's answer wasn't usable. Try another model." : {
 
     },
@@ -4649,6 +4694,9 @@
 
     },
     "The provider asked to slow down; continuing at %@." : {
+
+    },
+    "The provider is busy." : {
 
     },
     "The provider refused the request (400). Check that %@ is a chat model the provider has." : {
@@ -5141,6 +5189,12 @@
 
     },
     "Waiting in Inbox" : {
+
+    },
+    "Waiting to try again" : {
+
+    },
+    "Waiting: today's model limit reached" : {
 
     },
     "What belongs here (agents see this)" : {

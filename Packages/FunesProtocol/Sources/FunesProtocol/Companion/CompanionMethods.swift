@@ -15,6 +15,9 @@ public enum CompanionMethod: String, Codable, Sendable, CaseIterable {
     case inboxList = "inbox.list"
     case inboxApply = "inbox.apply"
     case inboxReject = "inbox.reject"
+    /// Try again / Keep as one on an item whose split failed (memory processing §5.2).
+    case inboxRetry = "inbox.retry"
+    case inboxKeep = "inbox.keep"
     case deviceUnpair = "device.unpair"
     // Approvals from the iPhone (task 5.6, FR-iOS-12).
     case approvalsList = "approvals.list"
@@ -544,11 +547,16 @@ public struct InboxItem: Codable, Sendable, Equatable, Identifiable {
     public var groupLabel: String?
     /// Outside the agent's scope: never applied in bulk.
     public var outsideScope: Bool
+    /// New memories processing hasn't finished with it (`processing`: greyed, can't be saved,
+    /// only rejected), or its split failed (`failed`: Try again or Keep as one). Nil otherwise.
+    public var processing: InboxProcessing?
 
     public init(id: UUID, origin: SuggestionOrigin, action: SuggestionAction, sourceLabel: String, targetMemoryId: UUID? = nil,
                 title: String, body: String, kind: MemoryKind, categories: [String], sensitivity: Sensitivity,
                 expiresAt: Date? = nil, evidence: String? = nil, purpose: String? = nil, createdAt: Date,
-                targetMemoryVersion: Int? = nil, groupId: UUID? = nil, groupLabel: String? = nil, outsideScope: Bool = false) {
+                targetMemoryVersion: Int? = nil, groupId: UUID? = nil, groupLabel: String? = nil, outsideScope: Bool = false,
+                processing: InboxProcessing? = nil) {
+        self.processing = processing
         self.targetMemoryVersion = targetMemoryVersion
         self.groupId = groupId
         self.groupLabel = groupLabel
@@ -568,6 +576,14 @@ public struct InboxItem: Codable, Sendable, Equatable, Identifiable {
         self.purpose = purpose
         self.createdAt = createdAt
     }
+}
+
+/// An Inbox item New memories processing holds (memory processing §5.2).
+public enum InboxProcessing: String, Codable, Sendable, Equatable {
+    /// Queued, running or waiting: "Processing…". `inbox.apply` refuses it with `processing`.
+    case processing
+    /// The split failed: "Couldn't split", with Try again (`inbox.retry`) and Keep as one (`inbox.keep`).
+    case failed
 }
 
 public struct InboxListResult: Codable, Sendable, Equatable {
@@ -605,6 +621,20 @@ public struct InboxApplied: Codable, Sendable, Equatable {
 
 public enum InboxReject: CompanionCall {
     public static let method = CompanionMethod.inboxReject
+    public typealias Params = SuggestionID
+    public typealias Result = EmptyResult
+}
+
+/// Try again: a failed split goes back to the queue. `conflict` when it isn't failed any more.
+public enum InboxRetry: CompanionCall {
+    public static let method = CompanionMethod.inboxRetry
+    public typealias Params = SuggestionID
+    public typealias Result = EmptyResult
+}
+
+/// Keep as one: a failed split stays one suggestion, then saved like any other.
+public enum InboxKeep: CompanionCall {
+    public static let method = CompanionMethod.inboxKeep
     public typealias Params = SuggestionID
     public typealias Result = EmptyResult
 }

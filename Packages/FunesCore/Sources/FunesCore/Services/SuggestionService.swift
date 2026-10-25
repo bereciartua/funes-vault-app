@@ -110,12 +110,16 @@ public final class SuggestionService: Sendable {
     public let pause: FunesPause
     /// Asking for access shares DisclosureService's once-an-hour throttle.
     public let disclosures: DisclosureService?
+    /// Whether new inputs are split now: a card waiting for its split can't be applied (§5.2).
+    public let splitting: SplittingSwitch
 
-    public init(store: VaultStore, activity: any ActivityRecorder, pause: FunesPause, disclosures: DisclosureService? = nil) {
+    public init(store: VaultStore, activity: any ActivityRecorder, pause: FunesPause, disclosures: DisclosureService? = nil,
+                splitting: SplittingSwitch = SplittingSwitch()) {
         self.store = store
         self.activity = activity
         self.pause = pause
         self.disclosures = disclosures
+        self.splitting = splitting
     }
 
     // MARK: - suggest_memory
@@ -315,8 +319,8 @@ public final class SuggestionService: Sendable {
     }
 
     /// Pending suggestions, newest first (FR-I-01). `count` is the badge (FR-I-04). Pieces whose
-    /// original is still pending are left out: an offer ("Split into N?") or a Split this memory
-    /// suggestion shows them on its own card.
+    /// original is still pending are left out: a Split this memory suggestion shows them on its
+    /// own card.
     public func pending() async throws -> [Suggestion] {
         try await store.writer.read { db in
             try Row.fetchAll(db, sql: """
@@ -377,13 +381,16 @@ public final class SuggestionService: Sendable {
     /// pending pieces and archives the original; `merge` saves one memory and archives its
     /// sources; `conflict` keeps the memory the user chose. Every memory changed or archived
     /// must still be active at the version the suggestion was made on (`targetChanged`).
-    /// New text goes through validation and the secret scanner again.
+    /// New text goes through validation and the secret scanner again. A new input still being
+    /// split is refused (`processing`, memory processing §5.2).
     @discardableResult
     public func apply(suggestionID: UUID, edits: SuggestionEdit = SuggestionEdit(), mode: ApplyMode? = nil,
                       now: Date, actor: Actor = .user, via: ActivityEvent.Via = .app) async throws -> ApplyResult {
+        let splitting = self.splitting.isOn
         let result = try await store.writer.write { db -> ApplyResult in
             guard let s = try Self.fetch(db, id: suggestionID) else { throw VaultError.notFound }
             guard s.status == .pending else { throw VaultError.invalidState }
+            guard !(try Self.isProcessing(db, suggestionID, splitting: splitting, now: now)) else { throw VaultError.processing }
             let result = try Self.applyAction(db, s, edits: edits, mode: mode, now: now, actor: actor)
             try db.execute(sql: "UPDATE suggestion SET status = 'applied', decided_at = ?, result_memory_id = ? WHERE id = ?",
                            arguments: [now, result.memoryID.db, suggestionID.db])
@@ -392,9 +399,6 @@ public final class SuggestionService: Sendable {
                 try TidyUpService.markInspected(db, result.memoryIDs)
                 if mode == .bothTrue { try TidyUpDismissals.record(db, s, now: now) }
             }
-            // Applied as one: an offered split is dropped.
-            if s.action != .split { try db.execute(sql: "DELETE FROM suggestion WHERE group_id = ? AND status = 'pending'",
-                                                   arguments: [suggestionID.db]) }
             return result
         }
         activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "suggestion_applied",
@@ -626,14 +630,15 @@ public final class SuggestionService: Sendable {
     }
 
     /// Reject / Discard (FR-I-02). Activity keeps the id only.
-    /// Rejecting a suggestion with an offered split, or a Split this memory suggestion, rejects
-    /// its undecided pieces too.
+    /// Rejecting a Split this memory suggestion rejects its undecided pieces too. Rejecting a new
+    /// input that is still processing cancels its job (memory processing §5.2).
     /// A tidy-up proposal's memories and their text are remembered, so it isn't asked again (§9.5).
     public func reject(suggestionID: UUID, now: Date, actor: Actor = .user, via: ActivityEvent.Via = .app) async throws {
         try await setStatus(suggestionID, from: .pending, to: .rejected, now: now)
         try await store.writer.write { db in
             try db.execute(sql: "UPDATE suggestion SET status = 'rejected', decided_at = ? WHERE group_id = ? AND status = 'pending'",
                            arguments: [now, suggestionID.db])
+            try Self.cancelProcessing(db, suggestionID, now: now)
             if let s = try Self.fetch(db, id: suggestionID) { try TidyUpDismissals.record(db, s, now: now) }
         }
         activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "suggestion_rejected",

@@ -62,6 +62,8 @@ final class UIReview: NSObject, NSApplicationDelegate {
         try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         let defaults = UserDefaults(suiteName: suiteName)!
         let preferences = Preferences(defaults: defaults)
+        // Splitting on, so the sample capture being split shows "Processing…".
+        preferences.splitNewMemories = true
         let environment = try VaultEnvironment(dataFolder: scratch.appendingPathComponent("vault"))
         let agents = try await SampleData.fill(environment)
         let (claudeDesktop, _) = try await environment.agents.create(name: "Claude Desktop", kind: .claudeDesktop,
@@ -173,10 +175,10 @@ final class UIReview: NSObject, NSApplicationDelegate {
             model.vault.status = .active
             await model.vault.load()
             await mainScene("inbox") { model.section = .inbox }
-            // Phase 6a: a card whose split arrived while it was open, and Applied automatically below.
-            model.inboxState.focused = model.inboxState.groups.values.first(where: \.isOffer)?.id
+            // Phase 6a: a capture still processing, one whose split failed, and Applied automatically below.
+            model.inboxState.focused = model.inboxState.processing.keys.first
             try? await Task.sleep(for: .milliseconds(600))
-            await snapshot("inbox-split-offer-\(suffix)", main.window)
+            await snapshot("inbox-processing-\(suffix)", main.window)
             // Phase 6b: the Tidy-up section, with a merge, a conflict and its header.
             // The lazy list lays the far rows out on the way: scroll again once it has.
             let tidied = model.inbox.first(where: { $0.origin == .consolidation })?.id

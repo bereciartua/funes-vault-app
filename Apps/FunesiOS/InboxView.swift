@@ -4,7 +4,8 @@ import SwiftUI
 
 /// The Inbox tab (UX: iPhone, Inbox tab; FR-iOS-09): the Mac's waiting suggestions. Swipe right
 /// to save, left to reject, pull to refresh; every action is also in the row's context menu and
-/// on the suggestion's own screen, with Edit & Save.
+/// on the suggestion's own screen, with Edit & Save. A row the Mac is still splitting is greyed
+/// and can only be rejected; one whose split failed offers Try Again and Keep as One.
 struct InboxView: View {
     let model: PhoneModel
 
@@ -32,7 +33,10 @@ struct InboxView: View {
                                 InboxRow(item: item, categories: model.categories)
                             }
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                if item.action.appliesOnPhone {
+                                if item.processing == .failed {
+                                    Button("Try Again") { Task { await inbox.retry(item.id) } }
+                                        .tint(.blue)
+                                } else if item.action.appliesOnPhone, item.processing == nil {
                                     Button("Save") { Task { await inbox.save(item.id) } }
                                         .tint(.green)
                                 }
@@ -41,7 +45,10 @@ struct InboxView: View {
                                 Button("Reject", role: .destructive) { Task { await inbox.reject(item.id) } }
                             }
                             .contextMenu {
-                                if item.action.appliesOnPhone {
+                                if item.processing == .failed {
+                                    Button("Try Again", systemImage: "arrow.clockwise") { Task { await inbox.retry(item.id) } }
+                                    Button("Keep as One", systemImage: "square") { Task { await inbox.keepAsOne(item.id) } }
+                                } else if item.action.appliesOnPhone, item.processing == nil {
                                     Button("Save", systemImage: "checkmark") { Task { await inbox.save(item.id) } }
                                 }
                                 Button("Reject", systemImage: "xmark", role: .destructive) { Task { await inbox.reject(item.id) } }
@@ -111,6 +118,15 @@ struct InboxRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(InboxItemView.sourceLine(item)).font(.caption).foregroundStyle(.secondary)
+            switch item.processing {
+            case .processing:
+                Label("Processing…", systemImage: "hourglass").font(.caption.weight(.medium)).foregroundStyle(.secondary)
+            case .failed:
+                Label("Couldn't split", systemImage: "exclamationmark.triangle.fill").font(.caption.weight(.medium))
+                    .foregroundStyle(.orange)
+            case nil:
+                EmptyView()
+            }
             Text(item.title).font(.headline).lineLimit(2)
             Text(item.body).font(.subheadline).foregroundStyle(.secondary).lineLimit(3)
             HStack(spacing: 4) {
@@ -121,6 +137,8 @@ struct InboxRow: View {
             .lineLimit(1)
         }
         .padding(.vertical, 2)
+        // Greyed while the Mac is still splitting it: it can't be saved yet.
+        .opacity(item.processing == .processing ? 0.5 : 1)
         .accessibilityElement(children: .combine)
     }
 }
@@ -135,6 +153,9 @@ struct InboxItemView: View {
     /// Why the last answer didn't go through. Shown here rather than on the list underneath.
     @State private var failure: InboxModel.Failure?
     @Environment(\.dismiss) private var dismiss
+
+    /// As the list has it now: Try Again and Keep as One change it in place.
+    private var processing: InboxProcessing? { model.inbox.items.first { $0.id == item.id }?.processing ?? item.processing }
 
     var body: some View {
         details
@@ -191,16 +212,31 @@ struct InboxItemView: View {
                 Section("\(item.sourceLabel)'s Task") { Text(purpose) }
             }
             Section {
-                if item.action.appliesOnPhone {
-                    Button("Save") { Task { await answer(.save, edits: nil) } }
-                    if item.action == .create || item.action == .update {
-                        Button("Edit & Save…") { draft = MemoryEditDraft(item) }
+                switch processing {
+                case .processing:
+                    EmptyView()
+                case .failed:
+                    Button("Try Again") { Task { await answer(.retry, edits: nil) } }
+                    Button("Keep as One") { Task { await answer(.keep, edits: nil) } }
+                case nil:
+                    if item.action.appliesOnPhone {
+                        Button("Save") { Task { await answer(.save, edits: nil) } }
+                        if item.action == .create || item.action == .update {
+                            Button("Edit & Save…") { draft = MemoryEditDraft(item) }
+                        }
                     }
                 }
                 Button("Reject", role: .destructive) { Task { await answer(.reject, edits: nil) } }
             } footer: {
-                if !item.action.appliesOnPhone {
-                    Text("Review on your Mac: it shows every memory this changes.")
+                switch processing {
+                case .processing:
+                    Text("Your Mac is still splitting this into separate memories. It can be saved once that's done.")
+                case .failed:
+                    Text("Your Mac couldn't split this. Try again, or keep it as one memory.")
+                case nil:
+                    if !item.action.appliesOnPhone {
+                        Text("Review on your Mac: it shows every memory this changes.")
+                    }
                 }
             }
             .disabled(busy)
@@ -208,25 +244,34 @@ struct InboxItemView: View {
     }
 
     /// Saves or rejects. Done (or answered on the Mac first): back to the list. Failed: the
-    /// reason shows here, and an edit stays open with its text.
+    /// reason shows here, and an edit stays open with its text. Try Again and Keep as One stay.
     private func answer(_ answer: InboxModel.Answer, edits: MemoryChanges?) async {
         busy = true
         defer { busy = false }
         failure = nil
         let inbox = model.inbox
-        let done = answer == .save ? await inbox.save(item.id, edits: edits) : await inbox.reject(item.id)
+        let done = switch answer {
+        case .save: await inbox.save(item.id, edits: edits)
+        case .reject: await inbox.reject(item.id)
+        case .retry: await inbox.retry(item.id)
+        case .keep: await inbox.keepAsOne(item.id)
+        }
         if let failed = inbox.failure, failed.id == item.id {
             failure = failed
             inbox.failure = nil
-        } else if done || !inbox.items.contains(where: { $0.id == item.id }) {
+        } else if (done && (answer == .save || answer == .reject)) || !inbox.items.contains(where: { $0.id == item.id }) {
             draft = nil
             dismiss()
         }
     }
 
     static func failureTitle(_ failure: InboxModel.Failure) -> String {
-        failure.answer == .save ? String(localized: "Couldn't save “\(failure.item.title)”.")
-                                : String(localized: "Couldn't reject “\(failure.item.title)”.")
+        switch failure.answer {
+        case .save: String(localized: "Couldn't save “\(failure.item.title)”.")
+        case .reject: String(localized: "Couldn't reject “\(failure.item.title)”.")
+        case .retry: String(localized: "Couldn't try “\(failure.item.title)” again.")
+        case .keep: String(localized: "Couldn't keep “\(failure.item.title)” as one.")
+        }
     }
 
     /// "Suggested by Claude Code · 2 h ago", as the Mac's Inbox words it.

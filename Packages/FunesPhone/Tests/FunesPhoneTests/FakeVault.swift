@@ -26,11 +26,18 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
     }
 
     @discardableResult
-    func suggest(_ title: String) -> InboxItem {
+    func suggest(_ title: String, processing: InboxProcessing? = nil) -> InboxItem {
         let item = InboxItem(id: UUID(), origin: .agent, action: .create, sourceLabel: "Claude Code", title: title, body: "Body of \(title)",
-                             kind: .preference, categories: ["work"], sensitivity: .low, createdAt: t0)
+                             kind: .preference, categories: ["work"], sensitivity: .low, createdAt: t0, processing: processing)
         lock.withLock { suggestions.append(item) }
         return item
+    }
+
+    /// The Mac's processing moved on (finished, failed again).
+    func setProcessing(_ id: UUID, _ processing: InboxProcessing?) {
+        lock.withLock {
+            if let index = suggestions.firstIndex(where: { $0.id == id }) { suggestions[index].processing = processing }
+        }
     }
 
     /// An edit made on the Mac: the version moves on.
@@ -119,6 +126,7 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
         case .inboxApply:
             let params = params as! InboxApplyParams
             guard let index = suggestions.firstIndex(where: { $0.id == params.suggestionId }) else { throw .method(CompanionError(.notFound)) }
+            guard suggestions[index].processing != .processing else { throw .method(CompanionError(.processing)) }
             suggestions.remove(at: index)
             applied.append(params)
             return InboxApplied(memoryId: UUID())
@@ -127,6 +135,12 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
             guard let index = suggestions.firstIndex(where: { $0.id == id }) else { throw .method(CompanionError(.notFound)) }
             suggestions.remove(at: index)
             rejected.append(id)
+            return EmptyResult()
+        case .inboxRetry, .inboxKeep:
+            let id = (params as! SuggestionID).suggestionId
+            guard let index = suggestions.firstIndex(where: { $0.id == id }) else { throw .method(CompanionError(.notFound)) }
+            guard suggestions[index].processing == .failed else { throw .method(CompanionError(.conflict)) }
+            suggestions[index].processing = method == .inboxRetry ? .processing : nil
             return EmptyResult()
         default:
             throw .method(CompanionError(.unknownMethod))

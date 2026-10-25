@@ -15,8 +15,6 @@ public struct SuggestionGroup: Sendable, Hashable, Identifiable {
     /// `<provider>/<model>` that split it.
     public var engine: String?
 
-    /// Pieces arrived while the card was open: the card keeps its content and offers "Split into N?".
-    public var isOffer: Bool { original.status == .pending && original.action != .split }
     public var pending: [Suggestion] { pieces.filter { $0.status == .pending } }
     /// Keep as one shows only while no piece is decided.
     public var canKeepAsOne: Bool { original.status == .split && pieces.allSatisfy { $0.status == .pending } }
@@ -39,7 +37,7 @@ extension SuggestionService {
         try await store.writer.read { db in try Self.group(db, id: id) }
     }
 
-    /// Groups with an undecided piece, newest first: split inputs, offers and Split this memory.
+    /// Groups with an undecided piece, newest first: split inputs and Split this memory.
     public func openGroups() async throws -> [SuggestionGroup] {
         try await store.writer.read { db in
             let ids = try String.fetchAll(db, sql: """
@@ -70,25 +68,14 @@ extension SuggestionService {
         }
     }
 
-    /// "Split into N?" accepted: the original is replaced by its pieces, if it's still pending.
-    public func acceptSplit(groupID: UUID, now: Date) async throws {
-        try await store.writer.write { db in
-            guard let s = try Self.fetch(db, id: groupID), s.action != .split else { throw VaultError.notFound }
-            guard s.status == .pending, !(try Self.pieces(db, groupID: groupID)).isEmpty else { throw VaultError.invalidState }
-            try db.execute(sql: "UPDATE suggestion SET status = 'split', decided_at = ? WHERE id = ?", arguments: [now, groupID.db])
-        }
-        activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "split", outcome: "split",
-                                      ids: [groupID]))
-    }
-
-    /// Keep as one, or an offer declined: the pieces go and the original stays, or comes back,
-    /// as one suggestion. Only while no piece is decided.
+    /// Keep as one: the pieces go and the original comes back as one suggestion. Only while no
+    /// piece is decided.
     public func keepAsOne(groupID: UUID, now: Date) async throws {
         try await store.writer.write { db in
             guard let s = try Self.fetch(db, id: groupID), s.action != .split else { throw VaultError.notFound }
             let decided = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM suggestion WHERE group_id = ? AND status != 'pending'",
                                            arguments: [groupID.db]) ?? 0
-            guard decided == 0, s.status == .pending || s.status == .split else { throw VaultError.invalidState }
+            guard decided == 0, s.status == .split else { throw VaultError.invalidState }
             try db.execute(sql: "DELETE FROM suggestion WHERE group_id = ?", arguments: [groupID.db])
             try db.execute(sql: "DELETE FROM suggestion_group WHERE id = ?", arguments: [groupID.db])
             try db.execute(sql: "UPDATE suggestion SET status = 'pending', decided_at = NULL WHERE id = ?", arguments: [groupID.db])
@@ -100,7 +87,6 @@ extension SuggestionService {
     /// Apply all: each undecided row with its own action, skipping flagged rows; per-row results.
     public func applyAll(groupID: UUID, now: Date, actor: Actor = .user, via: ActivityEvent.Via = .app) async throws -> GroupApplyResult {
         guard let group = try await group(id: groupID) else { throw VaultError.notFound }
-        if group.isOffer { try await acceptSplit(groupID: groupID, now: now) }
         var result = GroupApplyResult(applied: [:], failed: [:], skipped: [])
         for piece in group.pending {
             if piece.outsideScope {

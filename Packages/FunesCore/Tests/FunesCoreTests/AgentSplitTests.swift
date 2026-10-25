@@ -75,7 +75,7 @@ import Testing
         let split = try #require(try await env.suggestions.pending().first { $0.action == .split })
         #expect(split.targetMemoryID == memoryID && split.targetMemoryVersion == memory.version && split.agentID == fx.agentID)
         let group = try #require(try await env.suggestions.group(id: split.id))
-        #expect(group.pieces.count == 4 && group.sourceText == nil && !group.isOffer)
+        #expect(group.pieces.count == 4 && group.sourceText == nil)
         #expect(group.pieces.allSatisfy { $0.sensitivity! >= .sensitive })  // never below the original
         #expect(group.pieces.map(\.outsideScope) == [true, true, true, true])  // the raised level is above Internal
 

@@ -3,9 +3,10 @@ import GRDB
 
 extension VaultStore {
     /// Tables a change to which the app's screens show: memories, categories, suggestions, agents
-    /// and their access, and disclosures (Pending requests).
+    /// and their access, disclosures (Pending requests), and processing jobs (an Inbox card's
+    /// "Processing…" line).
     static let observedTables = ["memory", "memory_category", "category", "suggestion", "agent", "access",
-                                 "access_category", "disclosure"]
+                                 "access_category", "disclosure", "processing_job"]
 
     /// Calls `onChange` after every committed transaction that touched what the app shows,
     /// whoever wrote it (the app, an agent's request, an import). Keep the returned object to keep

@@ -235,6 +235,30 @@ import Testing
         #expect(inbox.failure == nil)
     }
 
+    /// A row the Mac is still processing can't be saved, only rejected; a failed split offers
+    /// Try again and Keep as one, and the row stays (memory processing §5.2).
+    @Test func processingRowsWaitAndFailedOnesOfferTryAgainAndKeepAsOne() async throws {
+        let vault = FakeVault()
+        let a = vault.suggest("A", processing: .processing), b = vault.suggest("B", processing: .failed)
+        let inbox = InboxModel(caller: vault)
+        await inbox.load()
+        #expect(inbox.items.map(\.processing) == [.processing, .failed])
+        #expect(await inbox.save(a.id) == false)
+        #expect(vault.applied.isEmpty && inbox.items.count == 2)
+        #expect(await inbox.retry(a.id) == false)  // only a failed one
+
+        #expect(await inbox.retry(b.id))
+        #expect(inbox.items.map(\.processing) == [.processing, .processing])
+        // The Mac failed it again: Keep as one, then it saves like any other.
+        vault.setProcessing(b.id, .failed)
+        await inbox.load()
+        #expect(await inbox.keepAsOne(b.id))
+        #expect(inbox.items.map(\.processing) == [.processing, nil])
+        #expect(await inbox.save(b.id))
+        #expect(await inbox.reject(a.id))
+        #expect(inbox.items.isEmpty && vault.rejected == [a.id])
+    }
+
     /// A reject that doesn't reach the Mac: the row comes back where it was, and the failure is
     /// shown and reported.
     @Test func failedRejectPutsTheRowBack() async throws {

@@ -191,9 +191,11 @@ struct SuggestionCard: View {
                     Spacer()
                     Button(String(localized: "Review Now")) { inbox.later.remove(suggestion.id) }
                 }
+            } else if let state = inbox.processing[suggestion.id] {
+                // Not editable or appliable until the split replaces it (memory processing §5.2).
+                ProcessingBody(model: model, suggestion: suggestion, state: state)
             } else if let binding = formBinding {
                 if stale { staleBanner }
-                if let offer = inbox.groups[suggestion.id], offer.isOffer { SplitOffer(model: model, group: offer) }
                 context(binding)
                 if let reason = tidyUp?.reason {
                     Text(String(localized: "Why, as the model put it: “\(reason)”"))
