@@ -26,7 +26,7 @@
 - [x] Agent input: Inbox proposals link against all memories; anything auto-applied for an agent only against memories it can read.
 
 ### 6a.3 Replacing suggestions with groups · 3 h
-- [x] The job replaces a suggestion with its group in one transaction, only if it's pending, unedited and has no Save panel or iPhone approval open; otherwise it attaches a "Split into N?" offer. The original row becomes `split` and its id the group id.
+- [x] The job replaces a suggestion with its group in one transaction, only if it's pending, unedited and has no Save panel or iPhone approval open; otherwise it attaches a "Split into N?" offer. The original row becomes `split` and its id the group id. *Since replaced: while processing, the card shows "Processing…" and can't be applied or edited, so the result always replaces it; a failed split offers Try again and Keep as one (memory processing §5.2).*
 - [x] Capture receipts and idempotency unchanged (a resent iPhone capture is still a duplicate).
 - [x] Group expiry as one (FR-I-05); the group's source text dropped once every piece is decided.
 
@@ -43,7 +43,7 @@
 - [x] The extraction prompt uses the user's compound-claim rule (Spike E §10, `prompts.EXTRACT_RULES_V2`).
 
 ### 6a.6 Inbox and Settings · 4 h
-- [x] Group card, row badges, Apply all, Keep as one (only while nothing is decided), the "Split into N?" offer, Split this memory, the flagged rows, the engine line.
+- [x] Group card, row badges, Apply all, Keep as one (only while nothing is decided), the "Split into N?" offer, Split this memory, the flagged rows, the engine line. *The offer has since given way to the Processing… and Couldn't split cards.*
 - [x] Applied automatically list with Undo (and "undo this and N later changes").
 - [x] Settings ▸ AI Models ▸ New memories: the split switch, the disclosure line; import preview with the request estimate, today's remaining cap, and Import without splitting.
 - [x] New UI words (split, pieces, Applied automatically, Outside <agent>'s scope; and 6b's Tidy up) added to [Words in the app](../product/06-glossary.md) first; string catalog, UI snapshots (light and dark), accessibility labels.

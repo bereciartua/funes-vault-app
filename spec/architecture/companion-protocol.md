@@ -114,8 +114,10 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 | `memories.update` | `{id, version, changes}` | `{version}`, or `conflict` if the version is stale |
 | `memories.archive` / `memories.restore` / `memories.delete` | `{id, version}` | `{version}` / `conflict` |
 | `inbox.list` | `{cursor?}` | `{items: [suggestion…], nextCursor?}` |
-| `inbox.apply` | `{suggestionId, edits?}` | `{memoryId}`, or `target_changed` / `unsupported_action` (Phase 6) |
-| `inbox.reject` | `{suggestionId}` | `{}` |
+| `inbox.apply` | `{suggestionId, edits?}` | `{memoryId}`, or `target_changed` / `unsupported_action` / `processing` (Phase 6) |
+| `inbox.reject` | `{suggestionId}` | `{}`. A suggestion still processing may be rejected; its processing is cancelled |
+| `inbox.retry` | `{suggestionId}` | `{}`: Try again on a failed split (its job is queued again), or `conflict` if it isn't failed |
+| `inbox.keep` | `{suggestionId}` | `{}`: Keep as one on a failed split (an ordinary suggestion from then on), or `conflict` if it isn't failed |
 | `device.unpair` | — | `{}`. The Mac marks this device revoked (self-removal) |
 | `approvals.list` | — | `{items: [{id, kind, agentName, agentKind?, count, createdAt, expiresAt}]}`: what waits now, soonest deadline first (§4.1) |
 | `approvals.get` | `{id}` or `{ring}` (exactly one) | the panel: `{id, kind, revision, agentName, agentKind?, task?, createdAt, expiresAt, share? \| save? \| access?}` (§4.1) |
@@ -137,11 +139,13 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 - `request_changed` (`approvals.answer`: a stale `revision`; fetch the panel again)
 - `target_changed` (`inbox.apply`: a memory the suggestion changes was edited, archived or deleted since it was suggested; the suggestion is still waiting, to be reviewed again on the Mac)
 - `unsupported_action` (`inbox.apply`: merge, split, conflict and unknown actions, and the daily tidy-up's proposals, are answered on the Mac)
+- `processing` (`inbox.apply`, `approvals.answer`: New memories processing hasn't finished with the suggestion; list the Inbox again later)
 
 **Edits:** in `changes` (and `inbox.apply`'s `edits`), an absent field is unchanged; `"expiresAt": null` removes the expiry.
 
 **Phase 6 (v0.3) Inbox changes** ([ADR-0020](decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](decisions/0021-daily-tidy-up.md)):
 - `inbox.list` items gain `groupId?`, `groupLabel?` ("ChatGPT · 12 pieces"), `outsideScope` and `targetMemoryVersion?`. `action` gains `duplicate`, `split`, `merge` and `conflict`.
+- `inbox.list` items gain `processing?`: `processing` while New memories processing holds the suggestion (memory processing §5.2: its job is queued or running with splitting on), `failed` when its split failed; absent otherwise. A `processing` item is shown greyed and can't be saved (`inbox.apply` answers `processing`), only rejected, which cancels its job. A `failed` one offers Try again (`inbox.retry`) and Keep as one (`inbox.keep`). Both apps are updated together.
 - The phone decodes an action it doesn't know as `unknown` and shows such items as "Review on your Mac". Both apps are updated together (there are no external users yet), so the Mac doesn't filter by phone version.
 - `inbox.apply` applies the suggestion's own action (the same per-action apply as the Mac): `create` saves, `update` replaces its target, `archive` archives it, `duplicate` changes nothing. A stale target returns `target_changed` (not `conflict`, which the phone's Inbox reads as "answered on your Mac"). Merge, split and conflict suggestions are answered on the Mac until the phone gets their cards; `inbox.apply` refuses them from the phone with `unsupported_action`. So are the daily tidy-up's proposals (origin `consolidation`, whatever their action, ADR-0021): `inbox.list` sends them with action `unknown`, so the phone shows "Review on your Mac", because a tidy-up update may also archive a copy and an archive names the memory it keeps, which the phone's cards don't show. The phone may still reject them.
 
@@ -157,7 +161,7 @@ The Mac rings only while iPhone access is on, at most once per request and devic
 
 **What waits** (`approvals.list`, `approvals.get`):
 - **Share:** a request in `needs_approval` for less than 15 minutes (access policy §3.6, §3.9), listed even after a relaunch of the Mac. `id` is the request id.
-- **Save:** an agent's suggestion whose Save panel the Mac showed, while it's pending and for 15 minutes from then. `id` is the suggestion id. After that it's still in the Inbox (`inbox.apply`).
+- **Save:** an agent's suggestion whose Save panel the Mac showed, while it's pending and for 15 minutes from then. `id` is the suggestion id. After that it's still in the Inbox (`inbox.apply`). With splitting on, the Mac shows the panel only once New memories processing is done (memory processing §5.6), so there's no Save approval for a suggestion still processing; a split one rings once per piece, each with the piece's id.
 - **Access:** "<Agent> wants to read <Category>", while the agent's in-call wait lasts. `id` is the Mac's own, in memory only.
 
 `approvals.get` builds the panel fresh, as the Mac's does. A Share request's snapshot is re-checked against the current memories and access first, so its `revision` is the current `snapshotRevision`. It has one of:

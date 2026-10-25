@@ -78,7 +78,8 @@ New words for [memory processing §5 and §9](../domain/memory-processing.md#5-n
 |---|---|---|---|
 | **split**, **pieces** | "chunks", "atoms", "fragments", "extracted" | What Funes does with a new input when a local server or cloud model is chosen: one suggestion per claim. The card's source line: "From ChatGPT · 12 pieces". The switch: "Split into separate memories". | Inbox group card, AI Models |
 | **Split by \<model> via \<provider>** | "Extracted by" | The group card's engine line; "Kept on this Mac: looked sensitive" when the cloud limit kept it here. | Inbox |
-| **Split into N?** | "Accept split" | The offer on a card that was open when its pieces arrived; its buttons are **Split** and **Keep as One**. | Inbox |
+| **Processing…** | "Pending", "Working" | A new input whose split hasn't finished: its card can only be rejected. The line under it says why it waits ("Splitting with Claude…", "2 ahead of it"). | Inbox (Mac and iPhone) |
+| **Couldn't split** | "Split failed", "Error" | A split that failed; its buttons are **Try Again** and **Keep as One**. | Inbox (Mac and iPhone) |
 | **Keep as One** | "Undo split", "Merge back" | Throws the pieces away and keeps the input as one suggestion. Only while no piece is decided. | Inbox group card |
 | **Apply All** | "Accept all" | Applies each undecided piece with its own action, skipping the ones outside the agent's scope. Follows **D3** if it goes to Save ("Save All"). | Inbox group card |
 | **New**, **Updates \<memory>**, **Already saved**, **Removes \<memory>** | "create", "update", "duplicate", "retract" | A piece's badge: what applying it does. "Already saved" defaults to Reject. | Inbox group card |

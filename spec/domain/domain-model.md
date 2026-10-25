@@ -98,8 +98,9 @@ A proposed memory waiting for review. It is separate from Memory, so memories ne
 
 **Phase 6 additions** ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)):
 - **SuggestionTarget:** `suggestionId`, `memoryId`, `memoryVersion`, `role` (`target` · `source` · `survivor`), so a merge, split or conflict can reference several memories.
-- **SuggestionGroup:** `id` (the original suggestion's id, or a Split this memory suggestion's), `origin`, `agentId?`, `sourceText`, `engine`, `createdAt`. The source text is dropped once every piece is decided (with the original row's title and body), and purged with its memories. While the original is still `pending`, its pieces are an offer ("Split into N?") shown only on its card.
-- **ProcessingJob:** `id`, `subject` (suggestion or memory id), `kind` (`new_memory`: classification today, splitting from 6a · `tidy_up`), `state` (`queued` · `running` · `done` · `failed`), `attempts`, `engine`, `createdAt`. Durable, one at a time, idempotent per subject and kind.
+- **SuggestionGroup:** `id` (the original suggestion's id, or a Split this memory suggestion's), `origin`, `agentId?`, `sourceText`, `engine`, `createdAt`. The source text is dropped once every piece is decided (with the original row's title and body), and purged with its memories. A Split this memory suggestion's pieces show only on its card while it's `pending`.
+- **ProcessingJob:** `id`, `subject` (suggestion or memory id), `kind` (`new_memory`: classification today, splitting from 6a · `tidy_up`), `state` (`queued` · `running` · `done` · `failed`), `attempts`, `engine`, `error` (why it failed or waits: `timeout`, `cap_reached`…; `cancelled` and `kept_as_one` on a `done` job the user ended), `notBefore`, `createdAt`. Durable, one at a time, idempotent per subject and kind. A `new_memory` split that fails is `failed` at once; Try again sets it `queued` again with no attempts.
+- **A pending suggestion's processing** (memory processing §5.2), derived from its `new_memory` job, never stored on the suggestion: **processing** (the job is queued or running, splitting is on, and it's a new input: no group, no target, not the tidy-up's) can't be applied or edited, only rejected, which cancels the job; **failed** (the job failed) offers Try again and Keep as one; otherwise it's an ordinary pending suggestion.
 - **UndoEntry:** `id`, `createdAt`, `runId?`, `action`, memory ids, the before-state (JSON, including old text), `expiresAt` (30 days). Purged after 30 days and with its memories when they're purged or deleted now. Never exported.
 - **TidyUpRun:** `id`, `startedAt`, `finishedAt`, `engine`, counts (memories inspected, clusters, suggestions, applied), `partial`, error code.
 - **TidyUpDismissal:** sorted memory ids plus a content hash, `dismissedAt`.
@@ -227,7 +228,7 @@ stateDiagram-v2
     [*] --> pending
     pending --> applied: Apply / Save (per action: creates, updates, archives, merges or splits)
     pending --> applied: auto-apply (Phase 6, the user's setting)
-    pending --> split: replaced by its pieces (Phase 6)
+    pending --> split: replaced by its pieces once processed (Phase 6)
     pending --> rejected: Reject / Discard
     pending --> expired: 30 days
     expired --> pending: Restore (within 7 days; another 30 days)
@@ -235,6 +236,7 @@ stateDiagram-v2
     rejected --> [*]
     split --> [*]
 ```
+- **Processing** (Phase 6, memory processing §5.2): a new input waits in `pending` while its job splits it; Apply is refused (`processing`) until the result replaces it or the split fails.
 - **Apply per action** (Phase 6.1), each in one transaction with the suggestion's status and provenance:
   - `create`: a new memory.
   - `update`: **Replace** (the default: the target takes the proposal) or **Keep both** (a new memory; Mac only).
