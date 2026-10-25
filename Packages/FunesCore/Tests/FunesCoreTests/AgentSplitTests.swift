@@ -50,7 +50,8 @@ import Testing
         #expect(group.pieces.allSatisfy { $0.agentID == fx.agentID && $0.origin == .agent && $0.callerMetadata == nil })
         // The about-the-user prompt, and the agent's declared level as a floor.
         #expect(provider.extractions.first?.instructions.contains("written by an AI assistant") == true)
-        #expect(provider.extractions.first?.prompt.contains("About the user") == false)  // the body only
+        // The body, with the agent's title in the note tag (Spike F); never its evidence or metadata.
+        #expect(provider.extractions.first?.prompt.contains("<note title=\"About the user\" written=\"") == true)
         let applied = try await env.suggestions.applyAll(groupID: id, now: t0)
         #expect(applied.skipped == [group.pieces[1].id] && applied.applied.count == 3)
         #expect(try await env.suggestions.isAwaitingReview(id: id))  // the flagged piece is still the user's to decide

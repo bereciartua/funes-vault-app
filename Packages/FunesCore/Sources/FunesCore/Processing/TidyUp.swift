@@ -405,6 +405,9 @@ public struct TidyUpRecord: Sendable, Hashable, Codable {
     public var context: [UUID]?
     /// An archive of an exact copy.
     public var exact: Bool?
+    /// split: the extraction prompt's version (`ExtractionPrompt.version`). A pending split made
+    /// with an older one is made again (§9.5); nil is version 1.
+    public var extractionPrompt: Int? = nil
 
     public static let rulesEngine = "rules"
 

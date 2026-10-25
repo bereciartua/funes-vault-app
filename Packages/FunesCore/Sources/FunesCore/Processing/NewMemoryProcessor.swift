@@ -112,20 +112,25 @@ public struct NewMemoryProcessor: Sendable {
         return .done(engine: record.engine)
     }
 
-    /// The variant and floors per input (memory processing §5.3–§5.4). Nil: not split.
+    /// The variant, note tag and floors per input (memory processing §5.3–§5.4). Nil: not split.
+    /// An agent's or import item's title goes in the note tag; a capture's and a seed answer's
+    /// title isn't the user's, so they get the date only.
     func splitRequest(for s: Suggestion, hint: Sensitivity?) -> SplitRequest? {
         switch s.origin {
         case .captureMac, .captureIPhone:
-            return SplitRequest(text: s.body, variant: .firstPerson, sensitivityHint: hint)
+            return SplitRequest(text: s.body, note: ExtractionNote(title: nil, written: s.createdAt), variant: .firstPerson,
+                                sensitivityHint: hint)
         case .seedQuestion:
             let question = SeedQuestion.all.first { $0.title == s.title }
-            return SplitRequest(text: s.body, variant: .firstPerson,
+            return SplitRequest(text: s.body, note: ExtractionNote(title: nil, written: s.createdAt), variant: .firstPerson,
                                 hint: question.map { ExtractionHint(question: $0.prompt, kind: $0.kind, categoryKey: $0.categoryKey) },
                                 declared: s.sensitivity)
         case .agent:
-            return SplitRequest(text: s.body, variant: .aboutUser, declared: s.sensitivity, requester: .agent)
+            return SplitRequest(text: s.body, note: ExtractionNote(title: s.title, written: s.createdAt), variant: .aboutUser,
+                                declared: s.sensitivity, requester: .agent)
         case .import:
-            return SplitRequest(text: s.body, variant: .aboutUser, declared: s.sensitivity)
+            return SplitRequest(text: s.body, note: ExtractionNote(title: s.title, written: s.createdAt), variant: .aboutUser,
+                                declared: s.sensitivity)
         case .consolidation:
             return nil
         }
@@ -333,8 +338,9 @@ public struct NewMemoryProcessor: Sendable {
         let result: SplitResult
         do {
             result = try await MemorySplitter(store: store, router: router, finder: finder).split(
-                SplitRequest(text: m.body, variant: .aboutUser, declared: m.sensitivity, original: m.sensitivity, excluding: [m.id],
-                             linkPool: pool, requester: .agent), now: now)
+                SplitRequest(text: m.body, note: ExtractionNote(title: m.title, written: m.createdAt), variant: .aboutUser,
+                             declared: m.sensitivity, original: m.sensitivity, excluding: [m.id], linkPool: pool, requester: .agent),
+                now: now)
         } catch SplitError.capReached {
             return .later(until: router.cap?.nextDay(after: now) ?? now + 3_600, code: "cap_reached")
         } catch is SplitError {

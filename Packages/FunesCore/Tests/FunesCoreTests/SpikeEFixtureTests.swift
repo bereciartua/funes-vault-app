@@ -6,14 +6,16 @@ import Testing
 
 /// Phase 6a (task 6a.7): Spike E's fixtures through the whole pipeline (every ingest path, the
 /// processing job, extraction, validation, the finder, the decision call and the group), with
-/// Claude Opus 5.5's recorded outputs (the v2 extraction prompt) replayed by `RecordedProvider`.
+/// Claude Opus 5.5's recorded outputs replayed by `RecordedProvider`: Spike F's C3 extraction
+/// prompt, the one Funes ships, and its decisions.
 /// Measures claim recall, wrong claims (including the injection attempts), links and the
 /// rejected secrets, on both fixture sets.
 ///
 /// The finder uses bge-small when it's fetched (`sh scripts/fetch_embedding_model.sh`) and is
-/// keyword-only otherwise. Measured 2026-10-24 (both ways within a point): set 1 recall 207/210
-/// (in25's 33 claims meet the 30-a-chunk cap), links 230/240; set 2 recall 69/69, links 63/65; no
-/// wrong claims. Spike E (Opus, v2, the Python stand-in finder): recall 100%, links 95%.
+/// keyword-only otherwise. Measured 2026-10-24 with C3 (the same both ways): set 1 recall 208/210,
+/// links 229/240; set 2 recall 69/69, links 62/65; no wrong claims. With Spike E's v2 recordings:
+/// 207/210 and 230/240, 69/69 and 63/65. Spike F (Opus, C3, the Python stand-in finder): recall
+/// 100%, links 95%.
 @Suite(.serialized) struct SpikeEFixtureTests {
     struct Measured {
         var required = 0, found = 0

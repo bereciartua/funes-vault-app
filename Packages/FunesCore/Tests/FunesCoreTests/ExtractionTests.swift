@@ -67,6 +67,51 @@ import Testing
         #expect((try JSONSerialization.jsonObject(with: Data(json.utf8))) is [String: Any])
     }
 
+    /// Spike F: the note tag carries the title and written date, the rules ask each piece to name its
+    /// subject and an episode's time, and the context may supply names.
+    @Test func theNoteTagCarriesTheTitleAndDate() {
+        let utc = TimeZone(identifier: "UTC")!
+        let written = SpikeE.day("2026-10-14")
+        let note = ExtractionNote(title: "Interview loop at \"Verdant\" Grid\n(Staff Data Engineer)", written: written)
+        let prompt = ExtractionPrompt.prompt(chunk: "The user completed the loop.", context: "Earlier text", hint: nil, note: note,
+                                             timeZone: utc)
+        #expect(prompt.hasSuffix("""
+            <note title="Interview loop at 'Verdant' Grid (Staff Data Engineer)" written="Wednesday 14 October 2026">
+            The user completed the loop.
+            </note>
+            """))
+        #expect(prompt.contains("</context>\n(The context is the text just before the note: extract nothing from it, but use its names"))
+        // A capture's title isn't the user's: the date only.
+        let capture = ExtractionPrompt.prompt(chunk: "Ran 21 km this morning.", context: nil, hint: nil,
+                                              note: ExtractionNote(title: nil, written: written), timeZone: utc)
+        #expect(capture == "<note written=\"Wednesday 14 October 2026\">\nRan 21 km this morning.\n</note>")
+        #expect(note.header(timeZone: utc) == "Interview loop at 'Verdant' Grid (Staff Data Engineer)\nWednesday 14 October 2026\n")
+        let rules = ExtractionPrompt.instructions(.aboutUser, categories: Self.categories)
+        for rule in ["Name its subject: who or what it is about, by name", "Anchor in time what belongs to an episode or a moment",
+                     "Never put a date on a lasting fact or preference", "Keep its status:",
+                     "Keep only what could help an assistant later. Keep every fact about the note's subject itself",
+                     "title: at most 80 characters, naming the subject too."] {
+            #expect(rules.contains(rule), "\(rule)")
+        }
+        #expect(ExtractionPrompt.version == 2)
+    }
+
+    /// Validation compares quotes and words against the title and date as well as the text.
+    @Test func aNameFromTheTitleIsSupported() throws {
+        let utc = TimeZone(identifier: "UTC")!
+        let note = ExtractionNote(title: "Interview loop at Verdant Grid", written: SpikeE.day("2026-10-14"))
+        let text = "The hiring manager said the role is fully remote."
+        let piece = Self.raw("The Staff role at Verdant Grid is fully remote (October 2026).",
+                             quote: "<note title=\"Interview loop at Verdant Grid\" written=\"Wednesday 14 October 2026\">the role is fully remote")
+        let fromTitle = Self.raw("I interviewed at Verdant Grid.", quote: "Interview loop at Verdant Grid")
+        let with = Self.validate([[piece, fromTitle]], source: note.header(timeZone: utc) + text)
+        #expect(with.pieces.count == 2)
+        #expect(with.pieces[0].unsupportedWords == ["staff"])
+        let without = Self.validate([[piece, fromTitle]], source: text)
+        #expect(without.pieces.count == 1 && without.dropped[.evidence] == 1)
+        #expect(without.pieces[0].unsupportedWords == ["2026", "grid", "october", "staff", "verdant"])
+    }
+
     // MARK: Validation
 
     @Test func evidenceMustBeVerbatimAfterNormalizing() {

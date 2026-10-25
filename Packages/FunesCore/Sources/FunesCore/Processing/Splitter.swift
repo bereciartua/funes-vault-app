@@ -5,6 +5,9 @@ import GRDB
 /// One input for the splitter (memory processing §5.2, step 4).
 public struct SplitRequest: Sendable {
     public var text: String
+    /// The title and written date for the note tag (§5.3): a suggestion's or memory's title and
+    /// date, a capture's date only. Nil: the text alone.
+    public var note: ExtractionNote?
     public var variant: ExtractionVariant
     public var hint: ExtractionHint?
     /// The "at least" level the user picked when capturing.
@@ -19,10 +22,11 @@ public struct SplitRequest: Sendable {
     public var linkPool: Set<UUID>?
     public var requester: CloudRequestCap.Requester
 
-    public init(text: String, variant: ExtractionVariant, hint: ExtractionHint? = nil, sensitivityHint: Sensitivity? = nil,
-                declared: Sensitivity? = nil, original: Sensitivity? = nil, excluding: Set<UUID> = [], linkPool: Set<UUID>? = nil,
-                requester: CloudRequestCap.Requester = .user) {
+    public init(text: String, note: ExtractionNote? = nil, variant: ExtractionVariant, hint: ExtractionHint? = nil,
+                sensitivityHint: Sensitivity? = nil, declared: Sensitivity? = nil, original: Sensitivity? = nil,
+                excluding: Set<UUID> = [], linkPool: Set<UUID>? = nil, requester: CloudRequestCap.Requester = .user) {
         self.text = text
+        self.note = note
         self.variant = variant
         self.hint = hint
         self.sensitivityHint = sensitivityHint
@@ -90,7 +94,10 @@ public struct MemorySplitter: Sendable {
         guard let provider = router.splitter else { throw SplitError.noSplitter }
         let categories = try store.categories()
         let text = String(input.text.prefix(Chunker.maxInput))
-        let estimate = max(ModelRouter.prescreen(text, categories: categories, declared: input.declared, hint: input.sensitivityHint),
+        // The title is sent with every chunk and is part of what quotes and words are checked against.
+        let header = input.note?.header() ?? ""
+        let estimate = max(ModelRouter.prescreen(header + text, categories: categories, declared: input.declared,
+                                                 hint: input.sensitivityHint),
                            input.original ?? .public)
         var calls = 0
 
@@ -99,13 +106,14 @@ public struct MemorySplitter: Sendable {
         var raw: [[ExtractionPrompt.RawPiece]] = []
         for (i, chunk) in chunks.enumerated() {
             let context = i > 0 ? String(chunks[i - 1].suffix(Self.contextCharacters)) : nil
-            let request = ExtractionPrompt.request(chunk: chunk, context: context, hint: input.hint, variant: input.variant,
-                                                   categories: categories)
-            let items = ([chunk] + (context.map { [$0] } ?? [])).map { ModelItem($0, sensitivity: estimate) }
+            let request = ExtractionPrompt.request(chunk: chunk, context: context, hint: input.hint, note: input.note,
+                                                   variant: input.variant, categories: categories)
+            let items = ([chunk] + (context.map { [$0] } ?? []) + (input.note?.titleText.map { [$0] } ?? []))
+                .map { ModelItem($0, sensitivity: estimate) }
             calls += 1
             raw.append(try await call(request, items: items, provider: provider, input: input, now: now).pieces)
         }
-        let outcome = ExtractionValidator.validate(raw, source: text, categories: categories, floors: input.floors)
+        let outcome = ExtractionValidator.validate(raw, source: header + text, categories: categories, floors: input.floors)
         var result = SplitResult(engine: ModelRouter.engine(provider), pieces: [], truncated: outcome.truncated,
                                  dropped: Dictionary(uniqueKeysWithValues: outcome.dropped.map { ($0.key.rawValue, $0.value) }),
                                  calls: calls)

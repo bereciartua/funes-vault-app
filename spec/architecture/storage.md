@@ -230,6 +230,8 @@ CREATE TABLE import_run (
 );
 
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema version, vault id, etc.
+-- v0.3: meta('tidy_up_split_prompt') = the extraction prompt version whose one-time clearing of older split
+-- dismissals has run (memory processing §9.5).
 ```
 
 ## 3. Migrations
