@@ -65,8 +65,8 @@ public struct NewMemoryAutoApply: Sendable, Hashable {
 }
 
 /// Suggestions the user has open closely: a card being edited in the Inbox, a Save panel on the
-/// Mac, an approval on the iPhone. A split that arrives meanwhile is attached as an offer
-/// ("Split into 5?") instead of changing the card under the cursor (memory processing §5.2).
+/// Mac, an approval on the iPhone. The tidy-up never withdraws one of its proposals from under
+/// them (§9.5). New memories don't need it: a card can't be edited or saved while it's processing.
 public final class SuggestionHolds: Sendable {
     public enum Reason: String, Sendable, Hashable {
         case editing, savePanel, phoneApproval

@@ -321,6 +321,50 @@ import Testing
         #expect(try await h.result(StatusGet.self, EmptyParams(), phone: phone).inboxPending == 0)
     }
 
+    /// A capture New memories processing hasn't finished with is listed as `processing`, can't be
+    /// saved (`processing`), only rejected; a failed split is `failed`, with Try again and Keep as
+    /// one (memory processing §5.2). With splitting off nothing waits.
+    @Test func inboxItemsWaitForProcessing() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let a = capture("Ana's birthday is 3 May"), b = capture("Gym on Tuesdays")
+        _ = try await h.result(CapturesSubmit.self, CapturesSubmitParams(captures: [a, b]), phone: phone)
+        #expect(try await h.result(InboxList.self, InboxListParams(), phone: phone).items.allSatisfy { $0.processing == nil })
+
+        h.services.suggestions.splitting.set(true)
+        var items = try await h.result(InboxList.self, InboxListParams(), phone: phone).items
+        #expect(items.allSatisfy { $0.processing == .processing })
+        let ana = try #require(items.first { $0.body.hasPrefix("Ana") }).id
+        let gym = try #require(items.first { $0.body.hasPrefix("Gym") }).id
+        await #expect(throws: CompanionError(.processing)) {
+            try await h.result(InboxApply.self, InboxApplyParams(suggestionId: ana), phone: phone)
+        }
+        // Reject is allowed, and cancels the job.
+        _ = try await h.result(InboxReject.self, SuggestionID(suggestionId: gym), phone: phone)
+        let queue = ProcessingQueue(store: h.store, activity: h.activity)
+        #expect(try await queue.job(subject: gym)?.state == .done)
+
+        // The split failed: Try again, then Keep as one.
+        func fail() throws {
+            try h.store.writer.write { db in
+                try db.execute(sql: "UPDATE processing_job SET state = 'failed', error = 'timeout' WHERE subject = ?", arguments: [ana.db])
+            }
+        }
+        try fail()
+        items = try await h.result(InboxList.self, InboxListParams(), phone: phone).items
+        #expect(items.map(\.processing) == [.failed])
+        _ = try await h.result(InboxRetry.self, SuggestionID(suggestionId: ana), phone: phone)
+        #expect(try await h.result(InboxList.self, InboxListParams(), phone: phone).items.map(\.processing) == [.processing])
+        await #expect(throws: CompanionError(.conflict)) {
+            try await h.result(InboxKeep.self, SuggestionID(suggestionId: ana), phone: phone)
+        }
+        try fail()
+        _ = try await h.result(InboxKeep.self, SuggestionID(suggestionId: ana), phone: phone)
+        #expect(try await h.result(InboxList.self, InboxListParams(), phone: phone).items.map(\.processing) == [nil])
+        _ = try await h.result(InboxApply.self, InboxApplyParams(suggestionId: ana), phone: phone)
+        #expect(try await h.services.suggestions.pending().isEmpty)
+    }
+
     /// Task 6.1.1/6.1.7: `inbox.apply` applies each suggestion as its own action, refuses a
     /// changed target with `target_changed`, and leaves merge, split and conflict to the Mac, and
     /// the tidy-up's proposals too (ADR-0021).

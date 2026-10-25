@@ -52,16 +52,6 @@ import Testing
         let restored = try #require(try await env.suggestions.group(id: group.id))
         #expect(restored.pieces.allSatisfy { $0.status == .pending && $0.expiresAfter == later + SuggestionService.lifetime })
         #expect(restored.original.status == .split)  // the original stays replaced
-
-        // An offer (its original still pending) expires and returns with its original.
-        let holds = SuggestionHolds()
-        let capture = try await env.captures.capture("I'm vegetarian and I run on Tuesdays. My coffee order is now a cortado!", now: t0)
-        holds.hold(capture.suggestionID, .editing)
-        _ = try await env.run(splittingProcessor(env.v, ScriptedSplitter(extract: NewMemoryPipelineTests.threePieces), holds: holds))
-        #expect(try await env.suggestions.expire(now: later).expired == 4)
-        try await env.suggestions.restore(suggestionID: capture.suggestionID, now: later)
-        let offer = try #require(try await env.suggestions.group(id: capture.suggestionID))
-        #expect(offer.isOffer && offer.pending.count == 3)
     }
 
     @Test func theSourceTextIsDroppedOnceEveryPieceIsDecided() async throws {

@@ -35,6 +35,10 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     @MainActor var remoteTunnel: (UUID) -> String? = { _ in nil }
     /// A suggestion arrived (for the optional notification).
     @MainActor var suggestionArrived: (String) -> Void = { _ in }
+    /// Agents' suggestions whose Save panels wait for New memories processing: they show with the
+    /// result, one per piece (memory processing §5.2). In memory only: after a relaunch they're
+    /// in the Inbox.
+    @MainActor private var awaitingProcessing = Set<UUID>()
 
     @MainActor
     init(environment: VaultEnvironment) {
@@ -200,14 +204,39 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
 
     // MARK: Save this memory?
 
+    /// A processing job's outcome is recorded: the Save panels waiting for it show now.
+    func processingEnded(_ id: UUID) async {
+        guard await MainActor.run(body: { awaitingProcessing.contains(id) }) else { return }
+        await present(suggestionID: id, focus: false)
+    }
+
+    /// The Save panels for an agent's suggestion, once New memories processing is done with it:
+    /// one per piece of a split, or the suggestion itself. While it's processing nothing shows
+    /// (opened from elsewhere, its "Processing…" card in the Inbox) and `processingEnded` comes
+    /// back to it. With splitting off nothing waits.
     private func present(suggestionID: UUID, focus: Bool) async {
-        guard let suggestion = try? await environment.suggestions.suggestion(id: suggestionID) else { return }
-        // A split input is reviewed on its group card in the Inbox, not in a Save panel.
-        if suggestion.status == .split {
+        await MainActor.run { _ = awaitingProcessing.insert(suggestionID) }
+        let ids: [UUID]?
+        do { ids = try await environment.suggestions.savePanels(for: suggestionID, now: Date()) } catch { ids = [] }
+        guard let ids else {
             if focus { await MainActor.run { editSuggestion(suggestionID) } }
             return
         }
-        guard suggestion.status == .pending else { return }
+        // The job's end and the arrival may both get here: the first one shows the panels.
+        guard await MainActor.run(body: { awaitingProcessing.remove(suggestionID) != nil }) else { return }
+        // Opened from elsewhere, a split input is reviewed on its group card in the Inbox.
+        if focus, ids != [suggestionID] {
+            if !ids.isEmpty { await MainActor.run { editSuggestion(suggestionID) } }
+            return
+        }
+        // The pieces queue behind each other ("+N more"); the notification comes once.
+        for (i, id) in ids.enumerated() { await presentPanel(id, focus: focus, announce: i == 0) }
+    }
+
+    private func presentPanel(_ suggestionID: UUID, focus: Bool, announce: Bool) async {
+        guard let suggestion = try? await environment.suggestions.suggestion(id: suggestionID), suggestion.status == .pending else {
+            return
+        }
         let agentName = (try? await suggestion.agentID.asyncMap { try await environment.agents.agent(id: $0) })??.name
             ?? String(localized: "An agent")
         let names = Dictionary(uniqueKeysWithValues: ((try? environment.store.categories()) ?? []).map { ($0.key, $0.name) })
@@ -237,10 +266,10 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             announcement: String(localized: "\(agentName) suggests a memory for Funes"))
         let shown = await MainActor.run { () -> Bool in
             guard !queue.isClosed else { return false }
-            // While the panel (or the iPhone's approval) is up, a split arriving is offered instead.
+            // While the panel (or the iPhone's approval) is up, the tidy-up leaves it alone.
             environment.holds.hold(suggestion.id, .savePanel)
             queue.enqueue(item) { [weak self] answer in self?.answered(suggestion: suggestion.id, answer) }
-            if focus { bringForward() } else { suggestionArrived(agentName) }
+            if focus { bringForward() } else if announce { suggestionArrived(agentName) }
             return true
         }
         if shown, !focus { await desk.waiting(.save(suggestion.id)) }

@@ -41,6 +41,7 @@ The app opens on **Capture**: the fastest path to the main job.
 - Same cards as on the Mac: source, proposed fields, Save, Edit & Save, Reject (the [glossary](06-glossary.md)'s words).
 - Swipe right to save, left to reject. Pull to refresh.
 - **From v0.3** (Phase 6): pieces of a split input are ordinary suggestions, shown one per row with "Part of: <source>". Tidy-up cards (merge, split, conflict) and anything else the phone doesn't know yet show as one row, "N to review on your Mac", until a later iPhone update adds them. Saving a piece applies its own action (new, update, already saved, removes), never Keep both for everything.
+- **Processing** (memory processing §5.2): a suggestion the Mac is still splitting is a greyed **Processing…** row that can't be saved or edited (no Save swipe or button; "Your Mac is still splitting this into separate memories. It can be saved once that's done."); **Reject** works and cancels it. Pull to refresh shows the result. A split that failed shows **Couldn't split** with **Try Again** (also the leading swipe) and **Keep as One**, after which it's an ordinary suggestion. A Save approval for an agent's suggestion only arrives once processing is done, one per piece.
 
 ## Approvals (FR-iOS-12)
 When an agent's Share, Save or access request waits on the Mac, the Mac rings a CloudKit doorbell and this iPhone shows a notification, also locked ([ADR-0019](../architecture/decisions/0019-cloudkit-doorbell-for-iphone-approvals.md)).

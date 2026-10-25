@@ -280,6 +280,7 @@
 **FR-S-02 Save panel** · M · v0.1
 - When a suggestion arrives and the Mac is attended, a **Save this memory?** panel offers Save, Edit…, Later or Discard, with a 45 s countdown.
 - Acceptance: on timeout the suggestion stays in the Inbox. The tool result says `queued`.
+- From v0.3, with splitting on (FR-AI-13), the panel waits for the suggestion's processing: none shows while it's processing, then one per resulting piece, queued with the panel's chips, or one for the suggestion when nothing changed or the split failed. The tool result is unchanged and never waits. The iPhone's Save approval follows the same rule. With splitting off or no model, the panel shows at once.
 
 **FR-S-03 Direct write** · M · v0.1
 - An agent with Write and ask before saving **off** saves directly, within its ceiling and categories, with result `saved`. Otherwise it falls back to Suggest rules.
@@ -575,8 +576,10 @@
 - Every new input (captures, seed answers, agent suggestions and direct writes, ChatGPT, Claude and Markdown imports) is split by the chosen model into atomic pieces, each classified and linked to related memories as new, update, already saved or retract. Not split: agent corrections and Funes export restores. See [memory processing §5](../domain/memory-processing.md#5-new-memories-split-classify-link).
 - Acceptance:
   - Input is stored at once and processed by a durable queue; nothing waits on a model, and quitting loses nothing.
-  - Every piece quotes its evidence verbatim from the input; a piece's sensitivity is never lower than the input's known or pre-screened level; if every piece fails, the original stays.
-  - A suggestion is replaced by its pieces only if it's still pending, unedited and has no panel open; its id stays valid.
+  - Every piece quotes its evidence verbatim from the input; a piece's sensitivity is never lower than the input's known or pre-screened level.
+  - While its processing job is queued or running, a new input's card shows "Processing…" with the reason it waits; it can't be applied or edited (on the Mac or the iPhone), bulk Apply skips it, and Reject cancels the job.
+  - When processing finishes, the card is replaced by the result (pieces, an update, already saved, or the same card); its id stays valid. One rejected meanwhile gets nothing.
+  - If processing fails (provider, timeout, invalid output, a blocked CLI run, no valid piece), the card says "Couldn't split" and offers Try again (re-queued) and Keep as one (the original as a normal suggestion).
   - Pieces of agent input outside that agent's scope go to the Inbox flagged, never auto-applied (access policy §5.3).
   - An agent's direct write returns `saved` as today; its memory is raised at once if found more sensitive than declared.
   - With no model, or splitting off, behaviour is v0.2's.

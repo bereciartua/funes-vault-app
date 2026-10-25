@@ -34,12 +34,12 @@ struct InboxView: View {
                                     .accessibilityAddTraits(.isHeader)
                                     .padding(.top, 6)
                             }
-                            ForEach(items) { entry in
+                            ForEach(items, id: \.key) { entry in
                                 switch entry {
                                 case let .single(suggestion):
-                                    SuggestionCard(model: model, suggestion: suggestion).id(suggestion.id)
+                                    SuggestionCard(model: model, suggestion: suggestion).id(entry.key)
                                 case let .group(id, pieces):
-                                    GroupCard(model: model, groupID: id, pieces: pieces).id(id)
+                                    GroupCard(model: model, groupID: id, pieces: pieces).id(entry.key)
                                 }
                             }
                         }
@@ -53,9 +53,11 @@ struct InboxView: View {
                     .frame(maxWidth: 820)
                     .frame(maxWidth: .infinity)
                 }
-                // A card opened from elsewhere (open_in_funes, a Save panel's Edit…) comes into view.
+                // A card opened from elsewhere (open_in_funes, a Save panel's Edit…) comes into view,
+                // a piece's on its group card.
                 .onChange(of: inbox.focused) { _, id in
-                    if let id { withAnimation { proxy.scrollTo(id) } }
+                    guard let id, let entry = inbox.grouped(model.inbox).flatMap(\.1).first(where: { $0.shows(id) }) else { return }
+                    withAnimation { proxy.scrollTo(entry.key) }
                 }
                 }
                 .focusable()
@@ -191,9 +193,11 @@ struct SuggestionCard: View {
                     Spacer()
                     Button(String(localized: "Review Now")) { inbox.later.remove(suggestion.id) }
                 }
+            } else if let state = inbox.processing[suggestion.id] {
+                // Not editable or appliable until the split replaces it (memory processing §5.2).
+                ProcessingBody(model: model, suggestion: suggestion, state: state)
             } else if let binding = formBinding {
                 if stale { staleBanner }
-                if let offer = inbox.groups[suggestion.id], offer.isOffer { SplitOffer(model: model, group: offer) }
                 context(binding)
                 if let reason = tidyUp?.reason {
                     Text(String(localized: "Why, as the model put it: “\(reason)”"))

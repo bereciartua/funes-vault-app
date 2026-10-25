@@ -76,6 +76,8 @@ public final class CompanionHandlers: Sendable {
             case .inboxList: return await run(InboxList.self, head) { try await inbox($0, device: device, now: now) }
             case .inboxApply: return await run(InboxApply.self, head) { try await apply($0, device: device, now: now) }
             case .inboxReject: return await run(InboxReject.self, head) { try await reject($0, device: device, now: now) }
+            case .inboxRetry: return await run(InboxRetry.self, head) { try await retry($0, device: device, now: now) }
+            case .inboxKeep: return await run(InboxKeep.self, head) { try await keep($0, device: device, now: now) }
             case .deviceUnpair: return await run(DeviceUnpair.self, head) { _ in try await unpair(device: device, now: now) }
             case .approvalsList:
                 return await run(ApprovalsList.self, head) { _ in try await desk().list(device: device, now: now) }
@@ -189,6 +191,7 @@ public final class CompanionHandlers: Sendable {
         let page = Array(pending.dropFirst(offset).prefix(50))
         let deviceNames = try await deviceNames()
         let agentNames = try await agentNames()
+        let processing = try await services.suggestions.processing(now: now)
         let items = page.map { s in
             // The tidy-up's cards are answered on the Mac until the iPhone gets its own (ADR-0021):
             // an update there may also archive a copy, and an archive names what it keeps.
@@ -197,7 +200,7 @@ public final class CompanionHandlers: Sendable {
                       title: s.title, body: s.body, kind: s.kind ?? .fact, categories: s.categoryKeys,
                       sensitivity: s.sensitivity ?? .low, expiresAt: s.expiresAt, evidence: s.evidence, purpose: s.purpose,
                       createdAt: s.createdAt, targetMemoryVersion: s.targetMemoryVersion, groupId: s.groupID,
-                      outsideScope: s.outsideScope)
+                      outsideScope: s.outsideScope, processing: processing[s.id].map { $0.isProcessing ? .processing : .failed })
         }
         let next = offset + page.count < pending.count ? Self.cursor(offset + page.count) : nil
         logRead("inbox_listed", device: device, now: now, counts: ["items": items.count])
@@ -206,6 +209,7 @@ public final class CompanionHandlers: Sendable {
 
     /// The suggestion's own action (6.1.1): an update replaces its target. Merge, split and
     /// conflict, and the tidy-up's proposals, are answered on the Mac (companion protocol §4).
+    /// One still processing is refused (`processing`) by FunesCore.
     func apply(_ params: InboxApplyParams, device: UUID, now: Date) async throws -> InboxApplied {
         guard let suggestion = try await services.suggestions.suggestion(id: params.suggestionId) else { throw VaultError.notFound }
         guard suggestion.action.appliesOnPhone, suggestion.origin != .consolidation else { throw VaultError.unsupportedAction }
@@ -217,6 +221,17 @@ public final class CompanionHandlers: Sendable {
 
     func reject(_ params: SuggestionID, device: UUID, now: Date) async throws -> EmptyResult {
         try await services.suggestions.reject(suggestionID: params.suggestionId, now: now, actor: .device(device), via: .companion)
+        return EmptyResult()
+    }
+
+    func retry(_ params: SuggestionID, device: UUID, now: Date) async throws -> EmptyResult {
+        try await services.suggestions.retryProcessing(suggestionID: params.suggestionId, now: now, actor: .device(device),
+                                                       via: .companion)
+        return EmptyResult()
+    }
+
+    func keep(_ params: SuggestionID, device: UUID, now: Date) async throws -> EmptyResult {
+        try await services.suggestions.keepAsOne(suggestionID: params.suggestionId, now: now, actor: .device(device), via: .companion)
         return EmptyResult()
     }
 
@@ -274,6 +289,7 @@ public final class CompanionHandlers: Sendable {
         case .versionConflict, .invalidState, .snapshotChanged, .revisionChanged: CompanionError(.conflict)
         case .targetChanged: CompanionError(.targetChanged)
         case .unsupportedAction: CompanionError(.unsupportedAction)
+        case .processing: CompanionError(.processing)
         case .undoNeedsLater, .undoNotPossible: CompanionError(.conflict)
         case .newerSchema, .unsafeFile: CompanionError(.unavailable)
         case .unauthenticated: CompanionError(.notFound)

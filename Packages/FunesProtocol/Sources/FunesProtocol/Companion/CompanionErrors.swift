@@ -120,6 +120,9 @@ public enum CompanionErrorCode: String, Codable, Sendable, CaseIterable {
     /// `inbox.apply`: merge, split and conflict suggestions (and actions this phone doesn't
     /// know) are answered on the Mac.
     case unsupportedAction = "unsupported_action"
+    /// `inbox.apply`: New memories processing hasn't finished with this suggestion (the item's
+    /// `processing` is `processing`). Its result replaces it; list the Inbox again later.
+    case processing
 }
 
 /// A method call's error: `{"code":"…","message":"…"}`, plus `findings` for secrets and

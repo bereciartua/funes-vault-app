@@ -30,7 +30,10 @@ struct ModelSettingsPane: View {
                 LabeledContent(String(localized: "New memories")) {
                     HStack(spacing: 6) {
                         Picker(String(localized: "New memories"), selection: Binding(get: { settings.classifierID },
-                                                                                    set: { settings.setClassifier($0) })) {
+                                                                                    set: {
+                                                                                        settings.setClassifier($0)
+                                                                                        model.processing.updateSplitting()
+                                                                                    })) {
                             Text(String(localized: "Apple on-device")).tag(String?.none)
                             ForEach(settings.providers) { provider in
                                 Text("\(provider.name) · \(provider.model.isEmpty ? String(localized: "no model") : provider.model)")
@@ -55,7 +58,10 @@ struct ModelSettingsPane: View {
                     .onChange(of: classify) { _, on in model.preferences.classifyCaptures = on }
                 Toggle(String(localized: "Split into separate memories"), isOn: $split)
                     .disabled(!canSplit)
-                    .onChange(of: split) { _, on in model.preferences.splitNewMemories = on }
+                    .onChange(of: split) { _, on in
+                        model.preferences.splitNewMemories = on
+                        model.processing.updateSplitting()
+                    }
                 Text(splitCaption).font(.callout).foregroundStyle(.secondary)
                 tidyUpRows
                 Picker(String(localized: "Apply changes automatically"), selection: $autoApply) {

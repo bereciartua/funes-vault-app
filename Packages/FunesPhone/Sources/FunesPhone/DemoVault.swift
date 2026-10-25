@@ -144,6 +144,7 @@ public final class DemoVault: CompanionCalling, CaptureSender {
             let params = params as! InboxApplyParams
             guard let index = state.inbox.firstIndex(where: { $0.id == params.suggestionId }) else { throw CompanionError(.notFound) }
             guard state.inbox[index].action.appliesOnPhone else { throw CompanionError(.unsupportedAction) }
+            guard state.inbox[index].processing != .processing else { throw CompanionError(.processing) }
             let item = state.inbox.remove(at: index)
             let id = applySuggestion(item.memoryChanges.merged(params.edits), action: item.action, target: item.targetMemoryId,
                                      source: item.origin == .agent ? .agentSuggestion : .captureIPhone, label: item.sourceLabel,
@@ -153,6 +154,13 @@ public final class DemoVault: CompanionCalling, CaptureSender {
             let id = (params as! SuggestionID).suggestionId
             guard let index = state.inbox.firstIndex(where: { $0.id == id }) else { throw CompanionError(.notFound) }
             state.inbox.remove(at: index)
+            return EmptyResult()
+        case .inboxRetry, .inboxKeep:
+            let id = (params as! SuggestionID).suggestionId
+            guard let index = state.inbox.firstIndex(where: { $0.id == id }) else { throw CompanionError(.notFound) }
+            guard state.inbox[index].processing == .failed else { throw CompanionError(.conflict) }
+            // The demo never splits: tried again, it comes back as it was.
+            state.inbox[index].processing = nil
             return EmptyResult()
         case .deviceUnpair:
             return EmptyResult()

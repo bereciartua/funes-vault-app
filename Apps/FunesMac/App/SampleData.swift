@@ -113,26 +113,30 @@ enum SampleData {
     }
 
     /// Phase 6a's Inbox: an agent's dump split into a group (new pieces, an update, one already
-    /// saved, one outside its scope), a capture whose split arrived while its card was open (an
-    /// offer), and a seed answer applied automatically, all through the real pipeline with a
-    /// canned model.
+    /// saved, one outside its scope) and a seed answer applied automatically, all through the real
+    /// pipeline with a canned model; then a capture still being split ("Processing…") and one
+    /// whose split failed ("Couldn't split").
     private static func split(_ environment: VaultEnvironment, claude: Agent, now: Date) async throws {
         let dump = "The user is vegetarian and switched their coffee order to a cortado. They run 30 km a week and are "
             + "recovering from runner's knee. They prefer short, direct answers."
         _ = try await environment.suggestions.suggest(agentID: claude.id, SuggestInput(
             title: "What I know about you", body: dump, kind: .summary, categories: ["personal_preferences"], sensitivity: .low),
             now: now.addingTimeInterval(-40 * 60))
-        let offer = try await environment.captures.capture("Learning Portuguese on Duolingo, and I read before bed", now: now.addingTimeInterval(-5 * 60))
         _ = try await environment.suggestions.seed(SeedQuestion.all[1], answer: "Bullet points for lists. No emojis.", now: now)
         let router = ModelRouter(classifier: SampleSplitter(), onDevice: nil)
-        let holds = SuggestionHolds()
-        holds.hold(offer.suggestionID, .editing)
         let processor = NewMemoryProcessor(
-            store: environment.store, captures: environment.captures, holds: holds, now: { now },
+            store: environment.store, captures: environment.captures, now: { now },
             configuration: { .init(router: router, split: true,
                                    autoApply: NewMemoryAutoApply(level: .exceptConflicts, qualified: ["sample": .exceptConflicts])) })
         let queue = ProcessingQueue(store: environment.store, activity: environment.activity)
         try await queue.drain(now: { now }, processor.process)
+        // The failed one's job gave up; the other's stays running, so nothing else is taken.
+        _ = try await environment.captures.capture("Dentist on the 14th at 9:30, and renew the car insurance",
+                                                   now: now.addingTimeInterval(-8 * 60))
+        if let job = try await queue.claim(now: now) { try await queue.finish(job, .failed(code: "timeout"), now: now) }
+        _ = try await environment.captures.capture("Learning Portuguese on Duolingo, and I read before bed",
+                                                   now: now.addingTimeInterval(-60))
+        _ = try await queue.claim(now: now)
     }
 }
 
@@ -172,9 +176,6 @@ private struct SampleSplitter: GenerationProvider {
                 piece("I prefer short, direct answers.", "They prefer short, direct answers", "Short, direct answers",
                       "communication_style"),
             ]]
-        } else if request.prompt.contains("Learning Portuguese") {
-            object = ["pieces": [piece("I'm learning Portuguese on Duolingo.", "Learning Portuguese on Duolingo", "Learning Portuguese"),
-                                 piece("I read before bed.", "I read before bed", "Reads before bed")]]
         } else if request.prompt.contains("Bullet points") {
             object = ["pieces": [piece("I like bullet points for lists.", "Bullet points for lists", "Bullet points for lists",
                                        "communication_style"),

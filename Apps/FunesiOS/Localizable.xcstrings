@@ -393,6 +393,9 @@
     "Correction suggested" : {
 
     },
+    "Couldn't keep “%@” as one." : {
+
+    },
     "Couldn't open this memory" : {
 
     },
@@ -424,6 +427,12 @@
 
     },
     "Couldn't set up notifications with iCloud. Funes tries again when it next opens." : {
+
+    },
+    "Couldn't split" : {
+
+    },
+    "Couldn't try “%@” again." : {
 
     },
     "Created" : {
@@ -577,6 +586,9 @@
 
     },
     "It's no longer waiting on your Mac." : {
+
+    },
+    "Keep as One" : {
 
     },
     "Keeps what it gets" : {
@@ -769,6 +781,9 @@
 
     },
     "Preference" : {
+
+    },
+    "Processing…" : {
 
     },
     "Project Context" : {
@@ -1046,6 +1061,9 @@
     "Split into a new memory" : {
 
     },
+    "Still processing on your Mac. It can be saved once it's done." : {
+
+    },
     "Stop Dictation" : {
 
     },
@@ -1293,6 +1311,9 @@
     "Your Mac couldn't do that (%@)." : {
 
     },
+    "Your Mac couldn't split this. Try again, or keep it as one memory." : {
+
+    },
     "Your Mac didn't accept this. Check the title, the text and the categories." : {
 
     },
@@ -1306,6 +1327,9 @@
 
     },
     "Your Mac is busy. Try again in a moment." : {
+
+    },
+    "Your Mac is still splitting this into separate memories. It can be saved once that's done." : {
 
     },
     "Your Mac isn't signed in to iCloud, so it can't notify this iPhone. Requests still show here when you open Funes." : {

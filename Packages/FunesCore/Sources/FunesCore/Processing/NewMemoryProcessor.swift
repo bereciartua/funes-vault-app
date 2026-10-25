@@ -4,9 +4,10 @@ import GRDB
 
 /// The `new_memory` job (memory processing §5.2, step 4): every new input is split into atomic
 /// pieces, each classified and linked to related memories, when splitting is on and a local
-/// server or cloud model is chosen. Otherwise, or when splitting fails, v0.2's behaviour: captures
-/// are classified (the capture's "at least" level as the floor) and everything else keeps the
-/// fields it arrived with.
+/// server or cloud model is chosen; meanwhile its card shows "Processing…". Otherwise v0.2's
+/// behaviour: captures are classified (the capture's "at least" level as the floor) and
+/// everything else keeps the fields it arrived with. A failed split is a failed job: the card
+/// offers Try again and Keep as one (a capture is classified first, for Keep as one).
 public struct NewMemoryProcessor: Sendable {
     /// What a job may use, read fresh for each job (the user's settings).
     public struct Configuration: Sendable {
@@ -26,20 +27,18 @@ public struct NewMemoryProcessor: Sendable {
     public let store: VaultStore
     public let captures: CaptureService
     public let finder: RelatedMemoryFinder
-    public let holds: SuggestionHolds
     public let configuration: @Sendable () async -> Configuration
     /// Hands the router back after a job, for the usage counters.
     public let finished: @Sendable (ModelRouter) async -> Void
     public let now: @Sendable () -> Date
 
     public init(store: VaultStore, captures: CaptureService, finder: RelatedMemoryFinder? = nil,
-                holds: SuggestionHolds = SuggestionHolds(), now: @escaping @Sendable () -> Date = { Date() },
+                now: @escaping @Sendable () -> Date = { Date() },
                 configuration: @escaping @Sendable () async -> Configuration,
                 finished: @escaping @Sendable (ModelRouter) async -> Void = { _ in }) {
         self.store = store
         self.captures = captures
         self.finder = finder ?? RelatedMemoryFinder(store: store, indexer: nil)
-        self.holds = holds
         self.now = now
         self.configuration = configuration
         self.finished = finished
@@ -79,6 +78,7 @@ public struct NewMemoryProcessor: Sendable {
         let isCapture = s.origin == .captureMac || s.origin == .captureIPhone
         let hint = JSON.decode(ClassificationRecord.self, s.classification)?.hint
         let now = self.now()
+        var failure: String?
         if config.split, router.splitter != nil, let input = splitRequest(for: s, hint: hint) {
             do {
                 let result = try await MemorySplitter(store: store, router: router, finder: finder).split(input, now: now)
@@ -86,16 +86,36 @@ public struct NewMemoryProcessor: Sendable {
                 if try await store(result, for: s, typed: s.origin == .seedQuestion, autoApply: config.autoApply, now: now) {
                     return .done(engine: result.engine)
                 }
+                // Every piece failed validation, or the model found none.
+                failure = "no_pieces"
             } catch SplitError.capReached where !isCapture {
                 // Agent input and imports wait for the next day; the user's captures fall back to
                 // classification on this Mac (ADR-0022).
                 return .later(until: router.cap?.nextDay(after: now) ?? now + 3_600, code: "cap_reached")
+            } catch let SplitError.failed(error) {
+                failure = Self.failureCode(error)
             } catch is SplitError {
-                // The original stays as it is (§5.4).
+                // Nothing was sent (a secret or above the cloud limit, a capture at the cap): the
+                // original stays as it is (§5.4).
             }
         }
-        guard isCapture else { return .done(engine: nil) }
-        return try await classify(s, hint: hint, router: router)
+        var outcome = ProcessingQueue.Outcome.done(engine: nil)
+        if isCapture { outcome = try await classify(s, hint: hint, router: router) }
+        return failure.map { .failed(code: $0) } ?? outcome
+    }
+
+    /// Why a split failed, for the job's `error` ("Couldn't split" on the card).
+    static func failureCode(_ error: ProviderError) -> String {
+        switch error {
+        case .timeout: "timeout"
+        case .rateLimited: "rate_limited"
+        case .unauthorized: "unauthorized"
+        // A CLI run that tried to use a tool is blocked, and reads as unavailable.
+        case .unavailable: "unavailable"
+        case .invalidOutput: "invalid_output"
+        case .refused: "refused"
+        default: "provider_failed"
+        }
     }
 
     /// Today's classification of a capture.
@@ -137,13 +157,14 @@ public struct NewMemoryProcessor: Sendable {
     }
 
     /// Stores a split (memory processing §5.2, step 5), in one transaction: the suggestion is
-    /// replaced by its group only while it's still pending and nobody has it open; otherwise the
-    /// pieces are attached as an offer. One new piece updates the suggestion's fields instead.
-    /// Returns false when there was nothing to store (no valid piece).
+    /// replaced by its group, or one new piece updates its fields. Nobody could apply or edit it
+    /// meanwhile ("Processing…"), but it's checked again here: one rejected (or decided some other
+    /// way) while the model worked gets nothing. Returns false when there was nothing to store
+    /// (no valid piece).
     func store(_ result: SplitResult, for s: Suggestion, typed: Bool, autoApply: NewMemoryAutoApply, now: Date) async throws -> Bool {
         guard !result.pieces.isEmpty else { return false }
         let level = autoApply.effective(engine: result.engine)
-        enum Stored { case decided, single, group(offer: Bool, pieces: [UUID], applied: [UUID]) }
+        enum Stored { case decided, single, group(pieces: [UUID], applied: [UUID]) }
         let stored = try await store.writer.write { db -> Stored in
             guard let current = try SuggestionService.fetch(db, id: s.id), current.status == .pending, current.groupID == nil else {
                 return .decided  // applied, rejected or expired while the model worked
@@ -158,7 +179,6 @@ public struct NewMemoryProcessor: Sendable {
                     return .single
                 }
             }
-            let offer = holds.isHeld(current.id)
             try Self.insertGroup(db, id: current.id, origin: current.origin, agentID: current.agentID, sourceText: current.body,
                                  engine: result.engine, now: now)
             var ids: [UUID] = []
@@ -166,10 +186,9 @@ public struct NewMemoryProcessor: Sendable {
                 ids.append(try Self.insertPiece(db, piece, of: current, groupID: current.id, agent: agent, engine: result.engine, now: now))
             }
             try Self.markTruncated(db, current, result)
-            guard !offer else { return .group(offer: true, pieces: ids, applied: []) }
             try db.execute(sql: "UPDATE suggestion SET status = 'split', decided_at = ? WHERE id = ?", arguments: [now, current.id.db])
             // Agents follow their own access, never this setting (§5.7).
-            guard level > .off, current.origin != .agent else { return .group(offer: false, pieces: ids, applied: []) }
+            guard level > .off, current.origin != .agent else { return .group(pieces: ids, applied: []) }
             let baseline = JSON.decode(ClassificationRecord.self, current.classification)?.hint ?? .public
             var applied: [UUID] = []
             for (id, piece) in zip(ids, result.pieces) {
@@ -179,14 +198,14 @@ public struct NewMemoryProcessor: Sendable {
                 try Self.autoApply(db, s, engine: result.engine, now: now)
                 applied.append(id)
             }
-            return .group(offer: false, pieces: ids, applied: applied)
+            return .group(pieces: ids, applied: applied)
         }
         switch stored {
         case .decided, .single:
             break
-        case let .group(offer, pieces, applied):
+        case let .group(pieces, applied):
             activity.record(ActivityEvent(time: now, phase: .event, actor: .system, via: .app, event: "split",
-                                          outcome: offer ? "offered" : "split", ids: [s.id],
+                                          outcome: "split", ids: [s.id],
                                           counts: ["pieces": pieces.count, "truncated": result.truncated]))
             for id in applied {
                 activity.record(ActivityEvent(time: now, phase: .event, actor: .system, via: .app, event: "auto_applied",

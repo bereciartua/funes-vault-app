@@ -16,8 +16,11 @@ final class InboxModel {
     var result: String?
     private(set) var importSources: [UUID: ImportSource] = [:]
     private(set) var restorable: [Suggestion] = []
-    /// Split inputs, offers and Split this memory suggestions with an undecided piece, by id.
+    /// Split inputs and Split this memory suggestions with an undecided piece, by id.
     private(set) var groups: [UUID: SuggestionGroup] = [:]
+    /// New inputs New memories processing holds ("Processing…") or failed on ("Couldn't split"),
+    /// by suggestion id (memory processing §5.2).
+    private(set) var processing: [UUID: InputProcessing] = [:]
     /// The Applied automatically list (memory processing §5.7, §9.5): changes Funes made, newest first.
     private(set) var applied: [UndoEntry] = []
     /// Titles of the memories the Applied automatically rows name.
@@ -34,6 +37,7 @@ final class InboxModel {
         importSources = (try? await services.suggestions.importSources()) ?? [:]
         restorable = (try? await services.suggestions.restorable(now: Date())) ?? []
         groups = Dictionary(uniqueKeysWithValues: ((try? await services.suggestions.openGroups()) ?? []).map { ($0.id, $0) })
+        processing = (try? await services.suggestions.processing(now: Date())) ?? [:]
         applied = (try? await UndoLog(store: services.store, activity: services.activity).entries(now: Date())) ?? []
         let ids = Array(Set(applied.flatMap(\.memoryIDs)))
         appliedTitles = Dictionary(uniqueKeysWithValues: ((try? services.store.memories(ids: ids)) ?? []).map { ($0.id, $0.title) })
@@ -55,6 +59,23 @@ final class InboxModel {
             switch self {
             case let .single(s): s
             case let .group(_, pieces): pieces[0]
+            }
+        }
+
+        /// The row's identity in the list. A split input's group card and the card it replaces
+        /// share an id, so they need different keys, or the list keeps the old card on screen.
+        var key: String {
+            switch self {
+            case let .single(s): "single-\(s.id)"
+            case let .group(id, _): "group-\(id)"
+            }
+        }
+
+        /// The card shows this suggestion: itself, or one of its pieces.
+        func shows(_ id: UUID) -> Bool {
+            switch self {
+            case let .single(s): s.id == id
+            case let .group(group, pieces): group == id || pieces.contains { $0.id == id }
             }
         }
     }
@@ -107,7 +128,7 @@ final class InboxModel {
         }
     }
 
-    /// The user changed a card: a split arriving now is offered instead (memory processing §5.2).
+    /// The user changed a card: the tidy-up leaves it alone (memory processing §9.5).
     func edited(_ id: UUID) { services.holds.hold(id, .editing) }
 
     private func done(_ id: UUID) {
@@ -147,7 +168,6 @@ final class InboxModel {
     /// Apply All: each piece with its own action and the card's edits, skipping pieces outside the
     /// agent's scope; per-row results.
     func applyAll(_ group: SuggestionGroup) async {
-        if group.isOffer { try? await services.suggestions.acceptSplit(groupID: group.id, now: Date()) }
         await bulk(apply: true, group.pending)
         await load()
     }
@@ -162,13 +182,17 @@ final class InboxModel {
         await load()
     }
 
-    func acceptSplit(_ group: SuggestionGroup) async {
-        do {
-            try await services.suggestions.acceptSplit(groupID: group.id, now: Date())
-            done(group.id)
-        } catch {
-            result = ErrorText.message(error)
-        }
+    // MARK: Processing (memory processing §5.2)
+
+    /// Try again on a card whose split failed: its job goes back to the queue.
+    func retry(_ suggestion: Suggestion) async throws {
+        try await services.suggestions.retryProcessing(suggestionID: suggestion.id, now: Date())
+        await load()
+    }
+
+    /// Keep as one on a card whose split failed: an ordinary suggestion from now on.
+    func keepAsOne(_ suggestion: Suggestion) async throws {
+        try await services.suggestions.keepAsOne(suggestionID: suggestion.id, now: Date())
         await load()
     }
 
@@ -189,14 +213,19 @@ final class InboxModel {
     }
 
     /// Apply N / Reject N with per-item results (FR-I-03): "12 applied, 1 blocked by the secret
-    /// scanner". Each row applies as its own action; conflicts (which need an answer) and rows
-    /// outside an agent's scope are left for the user.
+    /// scanner". Each row applies as its own action; conflicts (which need an answer), rows
+    /// outside an agent's scope and failed splits are left for the user, and cards still
+    /// processing are skipped.
     func bulk(apply: Bool, _ items: [Suggestion]) async {
-        var done = 0, secrets = 0, changed = 0, left = 0, failed = 0
+        var done = 0, secrets = 0, changed = 0, left = 0, failed = 0, waiting = 0
         for item in items {
             do {
                 if apply {
-                    guard item.action != .conflict, !item.outsideScope else {
+                    if processing[item.id]?.isProcessing == true {
+                        waiting += 1
+                        continue
+                    }
+                    guard item.action != .conflict, !item.outsideScope, processing[item.id] == nil else {
                         left += 1
                         continue
                     }
@@ -209,6 +238,8 @@ final class InboxModel {
                 secrets += 1
             } catch VaultError.targetChanged {
                 changed += 1
+            } catch VaultError.processing {
+                waiting += 1
             } catch {
                 failed += 1
             }
@@ -217,6 +248,7 @@ final class InboxModel {
         if secrets > 0 { parts.append(String(localized: "\(secrets) blocked by the secret scanner")) }
         if changed > 0 { parts.append(String(localized: "\(changed) changed since suggested")) }
         if left > 0 { parts.append(String(localized: "\(left) need your answer")) }
+        if waiting > 0 { parts.append(String(localized: "\(waiting) still processing")) }
         if failed > 0 { parts.append(String(localized: "\(failed) couldn't be changed")) }
         result = parts.joined(separator: ", ")
         selection = []

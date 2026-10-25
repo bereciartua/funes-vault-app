@@ -4,7 +4,8 @@ import Observation
 
 /// The Inbox tab (UX: iPhone, Inbox tab; FR-iOS-09): the Mac's waiting suggestions, answered with
 /// Save, Edit & Save or Reject. A swiped row leaves at once; if the Mac doesn't take the answer,
-/// it comes back where it was and the failure is shown.
+/// it comes back where it was and the failure is shown. A row the Mac is still processing can only
+/// be rejected; one whose split failed offers Try again and Keep as one (memory processing §5.2).
 @MainActor @Observable
 public final class InboxModel {
     public enum Phase: Sendable, Equatable {
@@ -14,6 +15,8 @@ public final class InboxModel {
 
     public enum Answer: Sendable, Equatable {
         case save, reject
+        /// A failed split: Try again, Keep as one.
+        case retry, keep
     }
 
     /// An answer the Mac didn't take.
@@ -71,9 +74,11 @@ public final class InboxModel {
         }
     }
 
-    /// Save (swipe right), or Edit & Save with `edits`. True once the Mac has it.
+    /// Save (swipe right), or Edit & Save with `edits`. True once the Mac has it. Never while
+    /// the Mac is processing it.
     @discardableResult
     public func save(_ id: UUID, edits: MemoryChanges? = nil) async -> Bool {
+        guard items.first(where: { $0.id == id })?.processing != .processing else { return false }
         let params = InboxApplyParams(suggestionId: id, edits: edits.flatMap { $0.isEmpty ? nil : $0 })
         return await answer(id, .save) { [caller] () async throws(CompanionClientError) in _ = try await caller.call(InboxApply.self, params) }
     }
@@ -82,6 +87,47 @@ public final class InboxModel {
     @discardableResult
     public func reject(_ id: UUID) async -> Bool {
         await answer(id, .reject) { [caller] () async throws(CompanionClientError) in _ = try await caller.call(InboxReject.self, SuggestionID(suggestionId: id)) }
+    }
+
+    /// Try again on a failed split: the row stays, processing again. True once the Mac has it.
+    @discardableResult
+    public func retry(_ id: UUID) async -> Bool {
+        await mark(id, .retry, as: .processing) { [caller] () async throws(CompanionClientError) in
+            _ = try await caller.call(InboxRetry.self, SuggestionID(suggestionId: id))
+        }
+    }
+
+    /// Keep as one on a failed split: the row stays, an ordinary suggestion to save or reject.
+    @discardableResult
+    public func keepAsOne(_ id: UUID) async -> Bool {
+        await mark(id, .keep, as: nil) { [caller] () async throws(CompanionClientError) in
+            _ = try await caller.call(InboxKeep.self, SuggestionID(suggestionId: id))
+        }
+    }
+
+    /// Changes a row's processing state once the Mac has the answer. One answered on the Mac
+    /// meanwhile leaves; one whose state changed there is read again.
+    private func mark(_ id: UUID, _ answer: Answer, as processing: InboxProcessing?,
+                      _ send: () async throws(CompanionClientError) -> Void) async -> Bool {
+        guard let item = items.first(where: { $0.id == id }), item.processing == .failed, !answering.contains(id) else { return false }
+        answering.insert(id)
+        defer { answering.remove(id) }
+        do {
+            try await send()
+            if let index = items.firstIndex(where: { $0.id == id }) { items[index].processing = processing }
+            return true
+        } catch .method(let error) where error.code == .notFound {
+            items.removeAll { $0.id == id }
+            answeredElsewhere += 1
+            return false
+        } catch .method(let error) where error.code == .conflict {
+            await load()
+            return false
+        } catch {
+            failure = Failure(item: item, answer: answer, error: error)
+            onFailure(error)
+            return false
+        }
     }
 
     private func answer(_ id: UUID, _ answer: Answer,

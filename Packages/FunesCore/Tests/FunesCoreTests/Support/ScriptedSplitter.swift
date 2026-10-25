@@ -82,9 +82,9 @@ final class ScriptedSplitter: GenerationProvider {
 /// A processor over `v` with `provider` as the New memories engine, splitting on.
 func splittingProcessor(_ v: TestVault, _ provider: any GenerationProvider, log: InMemoryActivityLog = InMemoryActivityLog(),
                         cloudLimit: CloudLimit = .upTo(.internal), cap: CloudRequestCap? = nil, onDevice: (any GenerationProvider)? = nil,
-                        holds: SuggestionHolds = SuggestionHolds(), autoApply: NewMemoryAutoApply = NewMemoryAutoApply(),
+                        autoApply: NewMemoryAutoApply = NewMemoryAutoApply(),
                         split: Bool = true, now: Date = t0) -> NewMemoryProcessor {
     let router = ModelRouter(classifier: provider, onDevice: onDevice, cloudLimit: cloudLimit, cap: cap)
-    return NewMemoryProcessor(store: v.store, captures: CaptureService(store: v.store, activity: log), holds: holds, now: { now },
+    return NewMemoryProcessor(store: v.store, captures: CaptureService(store: v.store, activity: log), now: { now },
                               configuration: { .init(router: router, split: split, autoApply: autoApply) })
 }
