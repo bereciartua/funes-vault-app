@@ -3,7 +3,7 @@
 
   python3 run.py <provider> <experiment> [--only in01,in02] [--jobs N] [--chunk 2000] [--tag name]
 
-Providers: apple, apple-permissive, ollama, codex (GPT-6-Luna), codex-terra (GPT-5.6-Terra), claude-haiku, claude-opus (Claude CLI). Experiments:
+Providers: apple, apple-permissive, ollama, codex (GPT-6-Luna), codex-terra (GPT-5.6-Terra), codex-sol (GPT-6-Sol), claude-haiku, claude-opus (Claude CLI). Experiments:
   extract          extraction with the input's prompt variant (two-call path, step 1)
   extract-v2       extraction with the user's compound-claim rule (prompts.EXTRACT_RULES_V2)
   decide-v2        decisions on extract-v2's pieces
@@ -12,6 +12,9 @@ Providers: apple, apple-permissive, ollama, codex (GPT-6-Luna), codex-terra (GPT
   onecall          extraction and linking in one call per chunk
   tidy             one call per tidy-up cluster
   tidy-v2          the same with the second tidy-up prompt (archive superseded copies instead of rewriting them)
+  extract-fB, extract-fC, decide-fB, decide-fC (and the second round's fB2, fC2)
+                   Spike F's variants B (pieces name their subject and time) and C (B plus a durability filter), with
+                   the fixture's date as the note's written date (spike_f.py runs the episodes)
 Results: results/<provider>/<experiment>[-<tag>].jsonl, one line per input or cluster; reruns skip done ids.
 """
 import argparse
@@ -86,6 +89,17 @@ def hint_of(inp):
     return {"question": SEED_QUESTIONS[h["seedId"]], "kind": h["kind"], "category": h["category"]}
 
 
+def header_text(header):
+    if not header:
+        return ""
+    return (f"{header['title']}\n" if header.get("title") else "") + f"{header['written']}\n"
+
+
+def written(iso):
+    from datetime import date
+    return date.fromisoformat(iso).strftime("%A %-d %B %Y")
+
+
 def rebuild(rec, inp, with_link=False):
     """Validates an extraction record's raw model output (§5.4) into rec["pieces"] and rec["dropped"]. Also used by
     score.py, so a validation change applies to stored results without new calls."""
@@ -98,8 +112,10 @@ def rebuild(rec, inp, with_link=False):
                 raw.append(p)
     hint = (inp.get("hint") or {}).get("sensitivity")
     declared = inp.get("declaredSensitivity")
-    kept, dropped = validate_pieces(raw, inp["text"], hint, declared)
-    _, dropped_lenient = validate_pieces(raw, inp["text"], hint, declared, evidence_mode="lenient")
+    # Spike F: the note's title and written date are part of the input the support check compares against.
+    source = header_text(rec.get("header")) + inp["text"]
+    kept, dropped = validate_pieces(raw, source, hint, declared)
+    _, dropped_lenient = validate_pieces(raw, source, hint, declared, evidence_mode="lenient")
     rec["evidenceLenientKept"] = len(raw) - len(dropped_lenient)
     rec.pop("truncatedPieces", None)
     if len(kept) > MAX_PIECES_PER_INPUT:
@@ -122,6 +138,7 @@ class Runner:
         base = provider_name.split("-")[0]
         self.base = base
         kw = {"apple-permissive": {"guardrails": "permissive"}, "codex-terra": {"model": "gpt-5.6-terra"},
+              "codex-sol": {"model": "gpt-6-sol"},
               "claude-haiku": {"model": "haiku"}, "claude-opus": {"model": "opus"}}.get(provider_name, {})
         self.p = make(base, **kw)
         self.experiment = experiment
@@ -130,7 +147,9 @@ class Runner:
         self.out_dir = HERE / "results" / provider_name
         self.out_dir.mkdir(parents=True, exist_ok=True)
         self.out = self.out_dir / f"{experiment}{SUFFIX}{'-' + tag if tag else ''}.jsonl"
-        self.done = {json.loads(l)["id"] for l in self.out.read_text().splitlines()} if self.out.exists() else set()
+        # Ids whose calls all succeeded; a failed one runs again (score.py keeps the last record per id).
+        self.done = {r["id"] for r in map(json.loads, self.out.read_text().splitlines())
+                     if all(c.get("ok") for c in r.get("calls") or [])} if self.out.exists() else set()
         self.lock = threading.Lock()
         self.inputs, self.vault, self.clusters = load()
         self._finder = None
@@ -151,8 +170,10 @@ class Runner:
         return hint, inp.get("declaredSensitivity")
 
     # --- extraction ---------------------------------------------------------------------------------
-    def extract(self, inp, variant, with_link=False, version=1):
+    def extract(self, inp, variant, with_link=False, version=1, header=None):
         rec = {"id": inp["id"], "variant": variant, "calls": []}
+        if header:
+            rec["header"] = header
         secrets = scan_secrets(inp["text"])
         if secrets:
             rec["rejected"] = secrets
@@ -167,7 +188,7 @@ class Runner:
             else:
                 cand = None
                 ins = prompts.extraction_instructions(variant, version)
-                pr = prompts.extraction_prompt(c, ctx, hint_of(inp))
+                pr = prompts.extraction_prompt(c, ctx, hint_of(inp), header, context_names=version in ("fB2", "fC2", "fC3"))
             r = self.p.generate(ins, pr, prompts.extraction_schema(with_link))
             call = {k: r.get(k) for k in ("ok", "errorKind", "error", "promptTokens", "outputTokens", "reasoningTokens",
                                           "schemaTokens", "ms", "truncated", "costUSD", "modelId") if r.get(k) is not None}
@@ -249,12 +270,16 @@ class Runner:
                 work = lambda i: self.extract(i, i["variant"])
             elif self.experiment == "extract-v2":
                 work = lambda i: self.extract(i, i["variant"], version=2)
+            elif self.experiment in ("extract-fB", "extract-fC", "extract-fB2", "extract-fC2", "extract-fC3"):
+                now = json.loads((FIX / f"inputs{SUFFIX}.json").read_text()).get("now", "2026-10-23")
+                version = self.experiment.split("-")[1]
+                work = lambda i: self.extract(i, i["variant"], version=version, header={"written": written(now)})
             elif self.experiment == "extract-swapped":
                 other = {"first_person": "about_user", "about_user": "first_person"}
                 work = lambda i: self.extract(i, other[i["variant"]])
             elif self.experiment == "onecall":
                 work = lambda i: self.extract(i, i["variant"], with_link=True)
-            elif self.experiment in ("decide", "decide-v2"):
+            elif self.experiment in ("decide", "decide-v2", "decide-fB", "decide-fC", "decide-fB2", "decide-fC2", "decide-fC3"):
                 ext_path = self.out_dir / f"{self.experiment.replace('decide', 'extract')}{SUFFIX}.jsonl"
                 ext = {json.loads(l)["id"]: json.loads(l) for l in ext_path.read_text().splitlines()}
                 items = [i for i in items if i["id"] in ext]
@@ -262,7 +287,7 @@ class Runner:
             else:
                 sys.exit(f"unknown experiment {self.experiment}")
         print(f"{self.provider_name} {self.experiment}: {len(items)} to run", flush=True)
-        if self.experiment in ("decide", "decide-v2", "onecall"):
+        if self.experiment.startswith("decide") or self.experiment == "onecall":
             self.finder  # build once before threads
 
         def one(item):

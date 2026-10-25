@@ -1,6 +1,6 @@
 # Spike results
 
-Results of the [Phase 0 spikes](phase-0-spikes.md), of [Spike E](phase-6-0-spike-e.md) (Phase 6.0) and of the [Phase 6c benchmark](phase-6c-provider-embeddings.md). Each section gives the question, what was run, the numbers, and the decision it feeds.
+Results of the [Phase 0 spikes](phase-0-spikes.md), of [Spike E](phase-6-0-spike-e.md) (Phase 6.0), of the [Phase 6c benchmark](phase-6c-provider-embeddings.md) and of [Spike F](#spike-f-pieces-that-make-sense-alone) (splits that keep their context). Each section gives the question, what was run, the numbers, and the decision it feeds.
 
 ---
 
@@ -896,3 +896,142 @@ They're measured on the same fixture they're used on, so they're slightly optimi
 - LM Studio's build of Qwen3, and Ollama's `nomic-embed-text`.
 - Larger multilingual models (bge-m3, 2.2 GB; EmbeddingGemma-300m, gated on Hugging Face, about 620 MB in Ollama).
 - The 10,000-memory corpus.
+
+---
+
+## Spike F: Pieces that make sense alone
+
+**Question:** how should memories be split into atomic pieces without losing their context? On the author's real vault, tidy-up `split` proposals and new-memory splits (the same extractor, [memory processing §5.3](../domain/memory-processing.md#53-extraction)) cut facts away from what they're about. One long agent-written summary of a hiring process became about ten pieces like "<person> praised my enthusiasm" or "the role was fully remote": no company, no role, no date. Agents only see a memory's `title: body`, never its split-from link, so pieces like that mislead. Others had no lasting value (asking what "FTE" means), and time anchors were lost. Spike E's rule was "split into the smallest pieces that each still make sense alone", but its lexical scoring only measured the "smallest" half.
+
+**Run:** 24 Oct 2026, same M1 (8 GB). **Code:** [`spikes/memory-processing/spike_f.py`](../../spikes/memory-processing/spike_f.py) (extraction, judge, scoring), `run_f.sh` (every run), `regress_f.py` (Spike E's fixtures). Raw results in `results/spike-f/`, the full report in [`results/spike-f/report.md`](../../spikes/memory-processing/results/spike-f/report.md), the regression in [`regression.md`](../../spikes/memory-processing/results/spike-f/regression.md).
+
+**Fixtures (synthetic):** [`fixtures/episodes.json`](../../spikes/memory-processing/fixtures/episodes.json), built by `build_episodes.py`. These are 12 long memories written the way agents write them: third person, one episode or entity, many details, with the title and date a saved memory has. They cover two hiring processes, an interview rejection, a confidential recruiter pitch with pay, a second pitch, a trip, a knee injury, a side project, a freelance contract, a lease, a conference talk, and a wedding written in Spanish. Two are built like the real failures. e11 names its company only in the title. e12 names it once at the start of a 2,400-character body, and its second chunk never does. That matters because the first ten turned out easier than real summaries: they repeat the name in most sentences. In all, 208 labelled facts: 139 *keep*, 43 *either*, 26 *drop* (logistics and trivia that a durability filter must leave out). Each fact is also marked *timed* (needs a time anchor) or *about something else* (a lasting fact about the user that variant D splits out). None of it comes from the author's vault.
+
+**Variants** (same inputs, same engines):
+| | Prompt | Input |
+|---|---|---|
+| A | Today's, as shipped (`EXTRACT_RULES_V2`) | The memory's body only, as Funes sends it today |
+| A+ | Today's | Title and written date added to the note tag: `<note title="…" written="Friday 18 September 2026">` |
+| B | Each body names its subject and, for an episode, its time and status | Title and date |
+| C | B plus a durability filter | Title and date |
+| D | Topic-level: one piece per episode, splitting out only facts about something else | Title and date |
+| B2, C2 | Round 2 of B and C: no date stamped on lasting facts, and the context block may name subjects | Title and date |
+| **C3** | Round 3 of C: the filter keeps every fact about the subject itself | Title and date |
+
+**Engines:** Claude Haiku 5.5 and Opus 5.5 (Claude Code, low effort), GPT-5.6-Terra (Codex, low reasoning; it produced the bad splits on the real vault), and GPT-6-Sol (Codex, low reasoning), added at the author's request. Luna is the judge, not an extractor.
+
+**"Makes sense alone":** a judge model that isn't any of the extractors, GPT-6-Luna, works in two steps:
+1. **A blind reader** (low reasoning) gets 10 pieces at a time, from 10 different episodes so that none lends context to another, exactly as an agent sees them (`title: body`). For each it says who or what the piece is about, what it says, when it applies (a date, "lasting", "now" or "unclear"), whether it's the user's current situation, and what it would need to ask.
+2. **A grader** (medium reasoning) gets the original memory and each piece with its reading, all variants shuffled and unlabelled. It gives a verdict: *pass*, *missing_context* (couldn't tell which company or role, or when), *misread* (concluded something false, such as a pitched role's terms read as the user's job), or *unsupported*. It also says what's missing (subject, time, status) and whether the piece would still help weeks later (*lasting*).
+
+Claude Opus 5.5, as a second judge running both steps, graded Terra's A and B pieces. Pass/not-pass agreement is 76% on 505 pieces. Opus is stricter (54% pass against Luna's 61%) but moves the same way: A 40% → B 66% (Luna: 48% → 72%). [`spot-check.md`](../../spikes/memory-processing/results/spike-f/spot-check.md) holds 30 random pieces (6 each of A, A+, B, C3, D) with both readings, for the author to mark.
+
+**Calls:** about 3,500 on the two subscriptions: 480 episode extractions, about 1,210 judge calls, and about 1,840 on Spike E's fixtures. That's more than the 1,600 first estimated. The extra calls came from GPT-6-Sol, two more prompt rounds, and the reader's batches: no two pieces of one episode may share a call.
+
+### Verdict
+| # | Question | Answer |
+|---|---|---|
+| 1 | Does today's prompt make pieces that make sense alone? | **No: 43% pass** (four engines pooled), 5% misread. The subject is the first loss (127 of 1,038 pieces) and time the largest (most failing pieces) |
+| 2 | Is sending the title and date enough? | **No, it helps a little: 51%.** The prompt has to ask for the context |
+| 3 | Atomic plus context (B) | **77% pass, 2% misread**, the subject missing on 5 pieces of 1,063; recall unchanged (99% of keep facts) |
+| 4 | Durability filter (C) | **C3: 81% pass, 2% misread, 99% of keep facts, 18% of trivia kept** (57–61% without a filter). The first filter (C, C2) also dropped an offer's own terms once, so C3 says what to keep |
+| 5 | Topic-level (D) | 94% pass, but 3–5 pieces per episode that hold everything: 93% of keep facts, 42% of trivia kept, and nothing atomic left to link, update or retract. A comparison, not a candidate |
+| 6 | No backsliding on Spike E's fixtures | **No loss of claims, no wrong claims from injections; links 2 points lower.** C3 keeps 99–100% claim recall on both sets, follows no injection, and over-splits no more. Its two wrong claims are a scorer false positive and an added "according to my assistant". Links: 94% → 92% (three engines pooled), almost all from GPT-5.6-Terra (94% → 90%) |
+| 7 | **Winner** | **C3**, with the memory's title and written date in the note tag, and names allowed from the context block |
+| 8 | Validation rule | **"Each piece names its subject and, for an episode, its time" is a prompt rule, not code.** A code check (does the piece name one of the original's entities?) can't enforce it: under C3, 86% of the pieces it would flag pass, being lasting facts about the user. The support check compares against the title and date as well as the body |
+
+### Numbers (four engines pooled, 12 episodes)
+| | A | A+ | B | C | D | B2 | C2 | **C3** |
+|---|---|---|---|---|---|---|---|---|
+| Pieces | 1,038 | 1,027 | 1,063 | 847 | 181 | 1,045 | 820 | 945 |
+| **Makes sense alone (judge pass)** | 43% | 51% | 77% | 76% | 94% | 79% | 75% | **81%** |
+| Misread | 5% | 4% | 2% | 3% | 1% | 2% | 3% | 2% |
+| Not lasting (judge) | 26% | 26% | 24% | 17% | 9% | 24% | 14% | 19% |
+| Keep facts found | 97% | 97% | 99% | 98% | 93% | 97% | 96% | 99% |
+| Drop facts kept | 60% | 58% | 57% | 12% | 42% | 61% | 10% | 18% |
+| Names its subject (lexical) | 69% | 73% | 93% | 95% | 88% | 96% | 97% | 96% |
+| Time anchor when timed (lexical) | 47% | 55% | 81% | 79% | 96% | 83% | 81% | 83% |
+| Support check flags | 23% | 21% | 33% | 34% | 54% | 31% | 36% | 35% |
+
+| Judge pass per engine | A | A+ | B | C3 |
+|---|---|---|---|---|
+| Claude Haiku 5.5 | 40% | 48% | 70% | 73% |
+| Claude Opus 5.5 | 44% | 54% | 89% | 84% |
+| GPT-5.6-Terra | 48% | 50% | 72% | 80% |
+| GPT-6-Sol | 42% | 52% | 81% | 86% |
+
+| Judge pass per episode (all engines) | A | A+ | B | C3 |
+|---|---|---|---|---|
+| e11, company only in the title | 10% | 35% | 76% | 79% |
+| e12, company named once (2 chunks) | 42% | 48% | 67% | 79% |
+| e02, confidential pitch | 31% | 37% | 60% | 80% |
+| e07, contract terms | 39% | 41% | 38% | 54% |
+| The other eight | 31–74% | 37–70% | 75–99% | 74–98% |
+
+### Findings
+1. **The subject goes first, and today's prompt can't recover it.** With the body alone, a piece can't name what only the title names: in e11, 10% of A's pieces pass ("I would negotiate for 100,000 DKK a month", about an unnamed role). Under B and C3 a missing subject almost disappears (5 and 3 pieces).
+2. **Time is the largest gap and the hardest to close.** The grader wants every fact of an episode placed in time or marked past or offered ("The Head of Platform role was fully remote within Portugal", with no date or status). B's rule raises lexical time anchors from 47% to 81–83%, but most remaining failures are time, above all in contract and offer terms (e07 54% under C3). The grader is strict here. It sometimes calls a present-tense wish "current", and the spot-check will show how often the author agrees.
+3. **Misreadings fall from 5% to 2%.** In A, a sister's wedding dinner was read as the user's, and a declined role's terms as the user's job. No piece stated a misreading in its own words (the lexical checks found 1 in 7,000); they come from what's missing, not from what's said.
+4. **A later chunk loses the name unless the context may supply it.** e12's second chunk never names the company. The shipped context note ("for reference only: extract nothing from it") kept models from using the name it holds: 10 of 28 pieces named it under A, 8 of 29 under B. Round 2's note ("extract nothing from it, but use its names to say who or what a piece is about") gives 28 of 28 (B2) and 27 of 27 (C3).
+5. **B stamped the capture date on lasting facts.** On Spike E's short captures, B and C put the written date on 20–30% of the Claude models' pieces ("As of 23 October 2026, I order a cortado"); Terra did it on 0–9%. Round 2 limits dates to episodes and moments and says never to date a lasting or changed preference. C3 cuts the stamps to 3–23 per engine (Haiku 7%, Opus 4%, Terra and Sol 1%, from 14–61 under B); the dates it still adds are mostly the right kind ("this morning" resolved).
+6. **A filter must say what to keep, not only what to drop.** C and C2 left out 88–90% of the trivia, but in one Terra run C2 also dropped a pitched role's remote policy, team size, reporting line and start date (8 pieces where C made 17). C3's filter lists what to keep ("every fact about the note's subject itself, even a small one: an offer's or a contract's terms, a diagnosis and its advice…") before what to leave out. Recall comes back to 99%, with 18% of trivia kept. Dropped facts never reach the user's review, so recall matters more here than trivia.
+7. **Topic-level splitting reads best but is the wrong shape.** D's 3–5 pieces per episode pass 94% because each holds its own context, but they're the dumps the tidy-up exists to split. They keep 42% of the trivia, and a later correction would rewrite a whole episode.
+8. **The support check flags more** (23% → 35%). Few of the extra flags are dates (1–5 per run, even after adding the title and date to what it compares against). Most are the longer, paraphrased bodies ("no longer", "since…"). Flags keep a piece out of auto-apply. New-memory auto-apply is off anyway (§5.7); for tidy-up splits, fewer will qualify.
+9. **GPT-5.6-Terra twice returned a single empty piece** (2 of about 100 episode calls). Funes's validation turns that into "the original stays", so no harm, but it's counted as a failed call and retried here.
+10. **Engines:** with C3, Sol (86%) and Opus (84%) lead, then Terra (80%) and Haiku (73%). Haiku misses the most time anchors (72% lexically, against 81–95%). Sol makes the most pieces (24 per episode). The gaps are within what 12 episodes can show.
+
+### No backsliding: Spike E's fixtures (both sets pooled, 122 inputs)
+A is Spike E's `extract-v2`/`decide-v2` (the prompt Funes ships), run with the fixture's date as the written date for B, C and C3 (Spike E's inputs have no titles). GPT-6-Sol has no Spike E baseline for links (only its extraction was run with A). Full table: [`regression.md`](../../spikes/memory-processing/results/spike-f/regression.md).
+
+| Pooled over both sets | Prompt | Claude Haiku 5.5 | Claude Opus 5.5 | GPT-5.6-Terra | GPT-6-Sol |
+|---|---|---|---|---|---|
+| Claim recall | A | 276/279 = 99% | 279/279 = 100% | 278/279 = 100% | 278/279 = 100% |
+| | B / C | 278 / 278 | 279 / 279 | 277 / 276 | – |
+| | **C3** | 278/279 = 100% | 279/279 = 100% | 276/279 = 99% | 279/279 = 100% |
+| Wrong claims (injections) | A | 0 (0) | 0 (0) | 0 (0) | 0 (0) |
+| | **C3** | 1 (0) | 0 (0) | 0 (0) | 1 (0) |
+| Single claims over-split | A | 21% | 21% | 15% | 35% |
+| | **C3** | 21% | 21% | 13% | 29% |
+| Link accuracy | A | 322/344 = 94% | 313/328 = 95% | 316/335 = 94% | – |
+| | **C3** | 314/341 = 92% | 303/319 = 95% | 292/324 = 90% | 331/356 = 93% |
+| Support check flags | A | 21% | 23% | 22% | 18% |
+| | B | 34% | 42% | 30% | – |
+| | **C3** | 36% | 38% | 30% | 34% |
+
+- **Wrong claims:** Sol's "I run after work, around 19:00, rather than in the mornings" is right (the check doesn't know "rather than"). Haiku's "I often work late on Thursdays, according to an observation my assistant noted on 23 October 2026" is a real flaw: the status rule led it to cite the assistant. No engine stored an injected claim.
+- **Links:** pieces worded the same in both runs almost never change verdict (3 or fewer per run), so the drop comes from the rewording. Terra's reworded pieces link right 89% of the time on the first set and 79% on Astra's. The misses are mixed: a duplicate taken for new ("I prefer concise answers without flattery"), new taken for an update ("I booked flights to Porto for a conference on 18 May 2027"). The decision prompt could say that a piece may carry context (a subject, a date) its memory lacks; that's untested, so the fix PR re-measures links.
+- **Date stamps** on captures that give no date ("As of 23 October 2026, …", "…, as noted on 23 October 2026"): B 14–61 pieces per engine, C3 3–23 (Haiku 7%, Opus 4%, Codex 1%). Most other dates C3 adds are right: "ran 21 km this morning" → "On 23 October 2026 I ran 21 km".
+
+### The winning prompt (C3)
+`prompts.extraction_instructions(variant, "fC3")`. It's Spike E's v2 rules with these changes; the rest is unchanged (evidence first, negation and qualifiers, corrections, hypotheticals, intent, atomic, the two variants).
+- **The note tag** carries the title and written date: `<note title="Interview loop at Verdant Grid (Staff Data Engineer)" written="Wednesday 14 October 2026">`. A capture has no title; it gets only the date.
+- **The context note:** "(The context is the text just before the note: extract nothing from it, but use its names to say who or what a piece is about.)"
+- **After the split rule:** "Keep only what could help an assistant later. Keep every fact about the note's subject itself, even a small one: an offer's or a contract's terms, a diagnosis and its advice, a plan, a decision, an outcome, feedback, the people involved, upcoming dates and to-dos, and lasting facts and preferences. Leave out only what won't matter again: logistics already done (booking a slot, rescheduling, a delayed bag, a fee someone else paid), how a document could be sent, questions the user asked to understand a word or a process, small talk and incidental details (parking, someone joining late). When unsure, keep it."
+- **The body rule** becomes: "body: the claim rewritten to stand alone, in the note's language. An assistant will later see only this piece's title and body: never the note, its title, its date or the other pieces. So each body must make sense to someone who knows nothing else:
+  - Name its subject: who or what it is about, by name (the company, the role, the person, the trip, the project, the illness, the place). Never "the role", "the company", "the trip", "the interview", "he", "she" or "it" for something the note names elsewhere: repeat the name, from the note's title or other sentences.
+  - Anchor in time what belongs to an episode or a moment (an interview, an offer, a trip, an appointment, an illness, a deadline): the date, month or year the note gives for it ("on 2 May 2026", "in May 2026"), or else the month the note was written. Resolve "yesterday", "last week" or "next Monday" against the written date. Never put a date on a lasting fact or preference, even a new or changed one: "I no longer drink coffee after lunch", not "As of 3 May 2026, I no longer drink coffee after lunch".
+  - Keep its status: an interview, an offer under discussion, a plan, a past trip or a former job is not the user's current situation. "The salary was €90,000" becomes "The Data Lead role Ferncliff Labs offered me in May 2026 paid €90,000", not "I earn €90,000".
+  The subject, time and status are context for the claim, not extra claims. Use only what the note says: the evidence, plus names and dates from elsewhere in the note (its title and written date included). Never add other details, never generalize."
+- **Title:** "at most 80 characters, naming the subject too."
+
+The examples are invented, not taken from the fixtures.
+
+### Plan for the fix PR (not started; waiting for the author's go-ahead)
+1. **Spec, [memory processing](../domain/memory-processing.md):**
+   - **§5.3:** the extraction input is the note with its title and written date: an agent suggestion's title (its title becomes the note's, its `evidence` still isn't sent), an import item's title and original date, a saved memory's title and `created_at`, a capture's date only. The prompt rules gain "each piece names its subject, and an episode's time and status, from anywhere in the note", the durability filter (C3's wording), and the context note allows names. The compound-claim rule stays.
+   - **§5.4:** the support check compares against the title, the written date and the body. A new paragraph says why "names its subject" isn't a code check (finding 8 and the code-check numbers above).
+   - **§5.2 (one piece with nothing changed):** the 80% coverage test still works on the body.
+   - **§9.2:** a non-atomic memory goes through the extractor with its title and created date.
+   - **§9.5:** the re-proposal rule (step 5).
+2. **Prompt** (`Extraction.swift`): `ExtractionPrompt.rules` becomes C3's. `prompt(chunk:context:hint:)` gains the title and written date (rendered as "Wednesday 14 October 2026", in English, as here). `SplitRequest` gains `title` and `written`, filled by `NewMemoryProcessor` (suggestions, imports, captures), `TidyUpService.split` (the memory's title and `created_at`) and the agent direct-write path. A record of the prompt version (`extractionPrompt: 2`) goes in the group's classification and in `TidyUpRecord`.
+3. **Validation:** the support check's source becomes `title + written + body`. Nothing else changes in code. Dropped facts are invisible, so the Inbox card could later show what was left out; that needs the model to list it, and isn't in this PR.
+4. **Tests:**
+   - `ExtractionTests`: the new rules and note tag; the context note; a capture without a title.
+   - `SplitterTests`: the title and date reach the request; the support check accepts a name from the title.
+   - A fixture test that replays C3 recordings of the 12 episodes (exported like Spike E's `export_recordings.py`) through Funes's validation: every recorded piece is kept, none is a drop fact.
+   - Re-run `spike_f.py` for the engine Funes defaults to before merging.
+5. **Re-proposing tidy-up splits made with the old prompt:**
+   - A one-time migration finds pending `consolidation` `split` suggestions whose record has no `extractionPrompt` (or an older one). It removes them with their pieces (the original memory was never changed) and resets their memories' `reconciled_version`, so the next run proposes them again with the new prompt. The author's split proposals are pending: the Inbox's Later is only in memory, not a status, so none of them is a dismissal.
+   - **Dismissals** of old-prompt splits (`TidyUpDismissals` keyed on the memory and its content hash) are cleared once in the same migration: a split rejected because its pieces lost context should be offered again. Other dismissals stay.
+   - The same goes for pending new-memory groups made with the old prompt whose pieces are untouched and whose original is still `split`. They're re-queued, or left as they are if the author prefers (to decide in the PR).
+   - The first run after the migration may re-propose many splits at once: they count toward the 40 clusters a run (§9.6), so a large backlog spreads over a few days.
