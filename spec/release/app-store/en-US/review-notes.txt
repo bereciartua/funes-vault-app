@@ -3,14 +3,14 @@ Funes Vault for iPhone is the companion of Funes Vault for Mac, a free, open-sou
 DEMO MODE (no Mac needed)
 1. Launch the app. It opens on the Capture tab.
 2. Under "Pair with your Mac to start", tap "Try Demo". (Also in Settings: "Try the Demo"; and on the Search and Inbox tabs.)
-3. An orange "DEMO" banner, "Demo vault: not your data", stays at the top. The demo uses a sample vault built into the app; nothing in it is sent anywhere.
+3. An orange "DEMO" label, "Demo vault: not your data", stays in a bar just above the tabs. The demo uses a sample vault built into the app; nothing in it is sent anywhere.
 
 Things to try in the demo:
 - Capture: "Waiting for you" lists three agent requests. Open "Claude Code wants 4 memories" to see the Share panel: untick a memory and tap Share. The other two are a Save request (Save / Discard / Later) and an access request (Allow Once / Not Now).
 - Capture: type something and tap Remember. It's sent to the demo Inbox.
 - Search: search "garden", open a memory, tap Edit, change the text and Save. Archive, Restore and Delete are on the same screen; Archived and Recently Deleted are scopes above the results.
 - Inbox: swipe right to Save a suggestion, left to Reject, or tap one for Save, Edit & Save… and Reject.
-- Settings: the Demo section; "Leave Demo" in the banner or the Demo Vault switch returns to the unpaired app and discards the demo's changes.
+- Settings: the Demo section; "Leave Demo" in that bar or the Demo Vault switch returns to the unpaired app and discards the demo's changes.
 
 WHAT NEEDS A REAL MAC
 - Pairing (Settings ▸ Pair with Mac, which opens the camera to scan the Mac's code).

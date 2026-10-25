@@ -23,7 +23,11 @@ struct CaptureView: View {
     var body: some View {
         NavigationStack {
             List {
-                BannerSection(model: model, offersDemo: true)
+                // With the bar's "Pair with your Mac to start": after its 2 s, so a paired iPhone,
+                // whose pairing is read at launch, never flashes it.
+                if case .state(.notPaired)? = model.statusBar.item {
+                    PairingCard(model: model)
+                }
                 ApprovalsSection(model: model)
                 Section {
                     editor

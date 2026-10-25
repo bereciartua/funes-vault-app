@@ -127,6 +127,9 @@
     "%lld above its sensitivity limit" : {
 
     },
+    "%lld captures waiting" : {
+
+    },
     "%lld expired" : {
 
     },
@@ -260,6 +263,12 @@
     "Asking your Mac…" : {
 
     },
+    "Back online" : {
+
+    },
+    "Back online · %lld captures sent" : {
+
+    },
     "Beyond the session" : {
 
     },
@@ -267,9 +276,6 @@
 
     },
     "Can't connect to your Mac" : {
-
-    },
-    "Can't connect to your Mac · %lld captures waiting" : {
 
     },
     "Cancel" : {
@@ -339,26 +345,6 @@
     "Connect to your Mac to change this." : {
 
     },
-    "Connected to %@ · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Connected to %1$@ · %2$@"
-          }
-        }
-      }
-    },
-    "Connected to %@ · %@ · %lld captures waiting" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Connected to %1$@ · %2$@ · %3$lld captures waiting"
-          }
-        }
-      }
-    },
     "Connected · Tailscale" : {
 
     },
@@ -375,6 +361,9 @@
 
     },
     "Connecting to your Mac…" : {
+
+    },
+    "Connection" : {
 
     },
     "Constraint" : {
@@ -534,6 +523,9 @@
     "Five iPhones are already paired with this Mac. Remove one in Funes Settings ▸ iPhone." : {
 
     },
+    "Fix" : {
+
+    },
     "For the session" : {
 
     },
@@ -609,6 +601,9 @@
     "Last check" : {
 
     },
+    "Last reached" : {
+
+    },
     "Later" : {
 
     },
@@ -618,10 +613,10 @@
     "Leaves your Mac" : {
 
     },
-    "Local Network access is off for Funes" : {
+    "Local Network access is off" : {
 
     },
-    "Local Network access is off for Funes · %lld captures waiting" : {
+    "Local Network access is off for Funes" : {
 
     },
     "Looking for" : {
@@ -639,7 +634,7 @@
     "Mac not reachable" : {
 
     },
-    "Mac not reachable · %lld captures waiting" : {
+    "Mac not reachable · %lld waiting" : {
 
     },
     "Mac not reachable. Answer on your Mac, or open Funes when your Mac is reachable." : {
@@ -681,6 +676,9 @@
     "No Mac yet? See every screen with sample data. Nothing leaves this iPhone." : {
 
     },
+    "No captures waiting" : {
+
+    },
     "No memories yet" : {
 
     },
@@ -705,13 +703,13 @@
     "Not paired" : {
 
     },
-    "Not paired · %lld captures waiting" : {
-
-    },
     "Not said" : {
 
     },
     "Not saved: it looks like a password, key or card number. Funes never stores secrets." : {
+
+    },
+    "Not since Funes opened" : {
 
     },
     "Not ticked" : {
@@ -733,6 +731,9 @@
 
     },
     "Open Notification Settings" : {
+
+    },
+    "Open Settings" : {
 
     },
     "Open to answer. The agent is waiting." : {
@@ -868,6 +869,12 @@
 
     },
     "Remember in Funes" : {
+
+    },
+    "Removed from Funes" : {
+
+    },
+    "Removed from Funes on your Mac" : {
 
     },
     "Requests wait 15 minutes. The agent can ask again." : {
@@ -1338,6 +1345,9 @@
     "Your Mac may be asleep, or Funes Vault may be closed. Wake the Mac and open Funes Vault." : {
 
     },
+    "Your Mac no longer knows this iPhone. Captures waiting here are kept: pair again to send them, or delete them in Settings." : {
+
+    },
     "Your Mac refused the request (%@)." : {
 
     },
@@ -1360,6 +1370,9 @@
 
     },
     "Your vault lives on your Mac. On the Mac, open Funes Settings ▸ iPhone ▸ Pair iPhone…, then scan the code it shows." : {
+
+    },
+    "Your vault lives on your Mac. On the Mac, open Funes Settings ▸ iPhone ▸ Pair iPhone…, then scan the code it shows. Captures wait here until then." : {
 
     },
     "Your vault lives on your Mac. Search and review need the Mac to be awake and reachable on the same Wi-Fi, or through Tailscale." : {
