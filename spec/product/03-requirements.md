@@ -394,8 +394,9 @@
   - on background app refresh;
   - after each new capture.
 
-**FR-iOS-06 Reachability state** · M · v0.2
+**FR-iOS-06 Reachability state** · M · v0.2 (v0.4: the status bar)
 - The app shows "Connected to <Mac>", "Mac not reachable · N captures waiting", or "Not paired". Search and the Inbox are disabled while unreachable, with a plain explanation.
+- **v0.4:** shown in a status bar above the tab bar, only when something needs you, with the state's action (Why?, Fix, Pair, Pair Again, Leave Demo); nothing while connected; Demo always labelled ([UX: iPhone ▸ Status bar](05-ux-iphone.md#status-bar)).
 
 **FR-iOS-07 Search and view** · M · v0.2
 - Search the vault through the Mac. Results show titles and snippets; a memory opens with full text and provenance.
@@ -419,6 +420,28 @@
   - The first answer wins, on the Mac or the phone; the other then shows it as answered. The same single-use, 15-minute and invalidation rules apply.
   - Answering needs the phone unlocked. Each answer is a signed companion request, logged in Activity under the device.
   - With the Mac unreachable, the notification says so, and the request waits on the Mac as usual.
+
+### Home and overview (FR-H)
+*v0.4, [Phase 7](../plans/phase-7-home.md), [ADR-0025](../architecture/decisions/0025-vault-overview-and-iphone-cache.md).*
+
+**FR-H-01 Vault overview** · M · v0.4
+- One read of the vault's counts for a range (30 days, 12 weeks, 12 months): new memories per day by source, memories shared per day per agent, refused requests, totals by sensitivity, category and kind, what was shared by sensitivity, agents with their counts and last request, Inbox pending, the last tidy-up.
+- Acceptance: never contains memory text or titles (tested); under 50 ms on a 10,000-memory vault.
+
+**FR-H-02 Mac Home** · M · v0.4
+- The main window opens on Home: a greeting, a composer (⏎ saves a capture as the capture box does, ⌘⏎ searches the vault, a mic dictates), the pulse chart (in by source, out by agent, refused), and the Memories, Sensitivity, Rhythm and Who reads cards, each opening its filtered place ([UX: Mac ▸ Home](04-ux-mac.md#home)).
+
+**FR-H-03 Dictation on the Mac** · S · v0.4
+- A mic in Home's composer and in the capture box dictates into the field (SpeechAnalyzer), asking for microphone and speech recognition access the first time.
+
+**FR-H-04 iPhone Home** · M · v0.4
+- Home replaces Capture as the first tab: the composer, Waiting for you, the pulse chart with finger scrubbing, the tiles, Who reads, Recent captures ([UX: iPhone ▸ Home](05-ux-iphone.md#home-tab)).
+
+**FR-H-05 Overview on the iPhone, cached** · M · v0.4
+- `overview.get` returns FR-H-01's counts to a paired iPhone, which keeps the last answer in its App Group (counts, dates and agent names only) and shows it dimmed with "As of <time>" while the Mac is away. Deleted on unpair, revocation and leaving the demo.
+
+**FR-H-06 iPhone widgets** · S · v0.4
+- Pulse (medium), Remember (small, with Remember and dictate buttons) and Rhythm (small, medium) widgets read the cache, show "as of" once it's over an hour old, and redact agent names while the phone is locked ([UX: iPhone ▸ Widgets](05-ux-iphone.md#widgets)).
 
 ### Import and export (FR-X)
 

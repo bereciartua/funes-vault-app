@@ -1,17 +1,21 @@
 # UX: Funes Vault for iPhone (v0.2)
 
-The iPhone app is a **thin client of the Mac's vault**. It captures anywhere, always. It searches, edits and reviews only while the Mac is reachable. It never stores the vault.
+The iPhone app is a **thin client of the Mac's vault**. It captures anywhere, always. It searches, edits and reviews only while the Mac is reachable. It never stores the vault; from v0.4 it keeps only the vault's **counts** (and agent names), for Home and the widgets ([ADR-0025](../architecture/decisions/0025-vault-overview-and-iphone-cache.md)).
 
 ## Information architecture
 
 ```
-Tab bar:  Capture · Search · Inbox · Settings
-Extensions: Share extension · App Intent "Remember in Funes" · Control (Control Center / Lock Screen / Action button) · Notification service extension (approvals)
+Tab bar:  Capture · Search · Inbox · Settings          (v0.2–0.3)
+          Home · Search · Inbox · Settings             (v0.4: Home replaces Capture)
+Status bar (v0.4): above the tab bar, only when something needs you
+Extensions: Share extension · App Intent "Remember in Funes" · Control (Control Center / Lock Screen / Action button) · Widgets (v0.4) · Notification service extension (approvals)
 ```
 
-The app opens on **Capture**: the fastest path to the main job.
+The app opens on **Capture** (from v0.4, **Home**): the fastest path to the main job.
 
 ## States
+
+In v0.2–0.3 each state shows as a banner at the top of Capture, Search and the Inbox. From v0.4 (Phase 7 task 7.1) the banner is replaced by the [status bar](#status-bar), which shows nothing while connected.
 
 | State | Banner (top of every tab) | Capture | Search / Inbox |
 |---|---|---|---|
@@ -21,7 +25,29 @@ The app opens on **Capture**: the fastest path to the main job.
 | Revoked by the Mac | "This iPhone was removed from Funes on your Mac" [Pair again] | Queued captures kept until the user decides | Disabled |
 | Demo | "Demo vault: not your data" | Demo only | Demo data |
 
-**"Why?" sheet:** "Your vault lives on your Mac. Search and review need the Mac to be awake and reachable on the same Wi-Fi, or through Tailscale. Captures are safe on this iPhone and will be sent automatically."
+### Status bar
+*v0.4, [Phase 7](../plans/phase-7-home.md) task 7.1.* One bar for the whole app, **above the tab bar**, shown only when something needs you, so no tab spends header space on the connection.
+- **Where:** iOS 26's tab view bottom accessory (the glass bar Music uses for its mini player), if it can be hidden when there's nothing to say; otherwise, and on iOS 18–25, a bar of the app's own drawn just above the tab bar.
+- **States** (FunesPhone's `BannerState`):
+
+  | State | Bar | Button | Tapping the bar |
+  |---|---|---|---|
+  | Connected | none | — | — |
+  | Connecting | none for 2 s; then "Connecting to Maya's MacBook Pro…" with a spinner | — | — |
+  | Mac not reachable | "Mac not reachable · 3 waiting" (the count only while captures wait) | **Why?** | the status sheet |
+  | Local Network off | "Local Network access is off" | **Fix** (the app's page in Settings) | the status sheet |
+  | Can't connect | "Can't connect to your Mac" | **Why?** | the status sheet |
+  | Not paired | "Pair with your Mac to start" | **Pair** | pairing |
+  | Revoked by the Mac | "Removed from Funes on your Mac" | **Pair Again** | the status sheet |
+  | Back online | "Back online · 3 captures sent", for 3 s, then the bar goes | — | — |
+  | Demo | "DEMO · Demo vault: not your data", always | **Leave Demo** | — |
+
+- **The status sheet** (medium detent): which Mac, when and how it was last reached, the queue ("3 captures waiting · Send Now"), the hints of the Why sheet below, and **Try Again**.
+- An orange or red icon and words, never colour alone. A state shows only after it has lasted 2 s, so a quick reconnect never flashes the bar. It slides in and out (fades with Reduce Motion).
+- **VoiceOver:** one element read as its text, the button as a custom action; each change is announced once ("Mac not reachable").
+- Search and the Inbox keep their full-page explanations while the Mac can't be asked; the bar shows there too, with the queued count. Which Mac the phone is paired with is in Settings.
+
+**"Why?" sheet** (from v0.4, the status sheet): "Your vault lives on your Mac. Search and review need the Mac to be awake and reachable on the same Wi-Fi, or through Tailscale. Captures are safe on this iPhone and will be sent automatically."
 
 ## Capture tab
 - A large text field with the placeholder "What should Funes remember?" and a mic button for dictation (SpeechAnalyzer on iOS 26+, otherwise system dictation).
@@ -29,13 +55,37 @@ The app opens on **Capture**: the fastest path to the main job.
 - **Recent captures** list, showing each item's status: "Sent to Mac ✓", "Waiting", or "Blocked: looks like a secret". The phone runs the same secret scanner, so a secret is blocked before it's even queued.
 - Optional before sending: category and sensitivity hint chips.
 
+## Home tab
+*v0.4, [Phase 7](../plans/phase-7-home.md) task 7.4.* **Home replaces Capture** as the first tab, where the app opens (the Control and "Remember in Funes" open it too). Everything Capture has stays; the vault's pulse joins it, with no memory text or titles.
+
+Top to bottom:
+1. **Title:** "Good morning / afternoon / evening" (large title). Nothing else in the header (the [status bar](#status-bar) is at the bottom).
+2. **Composer:** the Capture tab's field ("What should Funes remember?"), mic and **Remember**, unchanged: queued instantly, delivered when it can.
+3. **Waiting for you:** agents' requests, when there are any, above the charts because they have a deadline.
+4. **Pulse card:** "This week: 7 saved, 7 shared with 2 agents."; a 7 / 30-day switch; the in/out chart as on the Mac's Home (in by source above the line, out by agent below, refused dots). Dragging a finger across it shows each day's numbers above the chart, with a light haptic per day.
+5. **Tiles:** Memories (total, growth line, "+7 this week"), Sensitivity (the vault's mix and what was shared), Rhythm (the last 8 weeks, the streak).
+6. **Who reads your vault:** the top three agents, the memories shared in 30 days, and when each last read.
+7. **Recent captures:** the last five with their status; **Show All** for the rest.
+
+- **Taps:** Memories → Search, newest first; Sensitivity → Search filtered by level; Rhythm and the Pulse card → a sheet with the chart full width and the longer ranges (12 weeks, 12 months).
+- **Data:** `overview.get`, on foreground, pull to refresh and after captures are delivered; the answer is cached (ADR-0025).
+- **States:**
+
+  | State | Composer | Charts |
+  |---|---|---|
+  | Connected | as Capture | live |
+  | Mac not reachable | as Capture (queued) | the cached snapshot, dimmed, with "As of 10:42" |
+  | Not paired | as Capture (queued until pairing) | a **Pair with your Mac** card, with **Try Demo** |
+  | Demo | demo | the demo vault's sample counts |
+  | New vault | as Capture | "Your pulse starts with your first memories"; Who reads: "No agent has read your vault yet" |
+
 ## Search tab
 - A search field. Results come from the Mac, showing the title, a two-line snippet, category chips and a sensitivity badge.
 - **Memory detail:**
   - full text, kind, categories, sensitivity, expiry and provenance;
   - **Edit**, **Archive** and **Delete**.
   - Edits are sent to the Mac and confirmed. A failed save shows an error, and the text is kept until it saves.
-- Nothing is cached after leaving the screen, beyond in-memory state.
+- Nothing is cached after leaving the screen, beyond in-memory state. (The one exception, from v0.4, is the overview's counts for Home and the widgets: no memory text or titles; [ADR-0025](../architecture/decisions/0025-vault-overview-and-iphone-cache.md).)
 
 ## Inbox tab
 - Same cards as on the Mac: source, proposed fields, Save, Edit & Save, Reject (the [glossary](06-glossary.md)'s words).
@@ -86,13 +136,29 @@ If the phone can't reach the Mac during pairing: "Make sure both are on the same
 - **App Intent "Remember in Funes"** with a `text` parameter:
   - available in Shortcuts, Siri ("Remember in Funes that…") and the Action button;
   - returns "Saved".
-- **Control** (iOS 18+): a Control Center, Lock Screen or Action button control that opens the Capture tab with the keyboard or dictation ready.
+- **Control** (iOS 18+): a Control Center, Lock Screen or Action button control that opens the Capture tab (from v0.4, Home's composer) with the keyboard or dictation ready.
+
+## Widgets
+*v0.4, [Phase 7](../plans/phase-7-home.md) task 7.5.* Home's cards as Home Screen widgets (and StandBy), in the Intents extension next to the Control. They read the cached overview (ADR-0025) and never call the Mac.
+
+| Widget | Sizes | Shows | Tap |
+|---|---|---|---|
+| **Pulse** | medium | "7 saved · 7 shared · 1 refused" this week, and the 14-day in/out chart | Home |
+| **Remember** | small | "What should Funes remember?", **Remember** and **🎙** | the buttons open Home's composer, typing or dictating |
+| **Rhythm** | small (6 weeks), medium (12 weeks and the streak) | the grid of days | Home |
+
+- **Later** (not in v0.4's first set): Memories (small), a large "Funes" widget (Home in miniature), Pulse in large, and Lock Screen widgets (counts only).
+- **Freshness:** the app rewrites the cache and reloads the widgets on foreground, pull to refresh, after captures are delivered and in its background refresh when the Mac answers. A midnight timeline entry moves the days along. "as of 10:42" once the snapshot is over an hour old; dimmed after a day.
+- **States:** Not paired: "Pair with your Mac" in place of the numbers (Remember still works, captures queue); Demo: demo numbers with a **DEMO** label.
+- **Privacy:** no memory text or titles; agent names are `.privacySensitive()`, so iOS redacts them while the phone is locked.
 
 ## Demo mode (required for App Review)
 - About 20 sample memories in a local, read-only store bundled with the app. Edits apply to the session only.
 - Captures in demo mode are labelled "Demo" and discarded on exit.
 - The App Review notes explain that the app pairs with Funes Vault for Mac, and that the demo shows the full interface.
 - *Built (task 5.7):* **Try Demo** sits under the banner on Capture ("No Mac yet? See every screen with sample data. Nothing leaves this iPhone."), and in Search, the Inbox and Settings while the iPhone isn't paired. The demo has 20 active memories (plus one archived and one recently deleted), three Inbox suggestions, and a Share, a Save and an access request under **Waiting for you**, whose panels answer as with a Mac. Every tab's banner is an orange DEMO label with "Demo vault: not your data" and **Leave Demo**; Settings has a Demo section with the Demo Vault switch. A capture goes to the demo's Inbox as a "Demo capture", and its Recent captures row says "Sent to the demo Inbox". Demo mode isn't remembered: the app always launches on the real pairing, and leaving the demo discards its edits and captures. Nothing in it touches the network, the pairing, iCloud or the real capture queue.
+
+- *From v0.4:* the DEMO label is the [status bar](#status-bar) (with Leave Demo), and Try Demo is on Home's pairing card and in Search, the Inbox and Settings while the iPhone isn't paired.
 
 ## Accessibility
 - Dynamic Type everywhere, VoiceOver labels on badges ("Sensitivity: Internal"), and Reduce Motion respected.
