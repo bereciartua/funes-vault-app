@@ -28,3 +28,4 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 | 0022 | [The user sets the cloud limit, up to everything; one limit for every task; a daily request cap](0022-cloud-limit-and-daily-cap.md) | Accepted |
 | 0023 | [Provider embeddings are a second index next to the bundled one](0023-provider-embeddings-second-index.md) | Accepted |
 | 0024 | [Claude and ChatGPT subscriptions as model providers, through the user's own Claude Code and Codex](0024-subscription-providers.md) | Accepted |
+| 0025 | [A vault overview of counts only, served to the iPhone, which caches it for Home and widgets](0025-vault-overview-and-iphone-cache.md) | Accepted |

@@ -99,7 +99,7 @@ When a device's 10,000 slots are full, the oldest nonce is dropped and its `ts` 
 **Response JSON:** `{"id":"<call id>","result":{…}}` or `{"id":"…","error":{"code":"…","message":"…"}}`.
 
 ## 4. Methods
-All methods act as the **owner** ([access policy §6](../domain/access-policy.md#6-owner-devices-paired-iphone)). Each is logged in Activity as `device:<id>` (via `companion`), except `status.get`, the reachability probe the phone sends on every foreground, and `approvals.settings.get`, which it sends as often. Reads log one row without text (`memories_searched` with a result count, `memory_viewed`, `inbox_listed`, `categories_listed`, `approvals_listed`, `approval_viewed`). Writes log what FunesCore logs for them (`capture`, `memory_created`, `memory_edited`, `memory_archived`, `memory_restored`, `memory_deleted`, `suggestion_applied`, `suggestion_rejected`, `device_revoked`, `approval`, `access_answered`, `device_approvals`).
+All methods act as the **owner** ([access policy §6](../domain/access-policy.md#6-owner-devices-paired-iphone)). Each is logged in Activity as `device:<id>` (via `companion`), except `status.get`, the reachability probe the phone sends on every foreground, and `approvals.settings.get`, which it sends as often. Reads log one row without text (`memories_searched` with a result count, `memory_viewed`, `inbox_listed`, `categories_listed`, `approvals_listed`, `approval_viewed`, and from v0.4 `overview_viewed`). Writes log what FunesCore logs for them (`capture`, `memory_created`, `memory_edited`, `memory_archived`, `memory_restored`, `memory_deleted`, `suggestion_applied`, `suggestion_rejected`, `device_revoked`, `approval`, `access_answered`, `device_approvals`).
 
 **Implementation (task 5.2):** the Mac's side is the local package `Packages/FunesCompanion`: `CompanionListener`, `CompanionRouter`, `PairingService`, `CompanionHandlers` and `CompanionServer`, on FunesCore and BridgeKitCore's HTTP parser. The app adds only Settings ▸ iPhone and the Allow prompt. The Mac's id and keys are a Keychain item, service `com.funesvault.companion` (`.dev` for a development vault).
 
@@ -107,6 +107,7 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 |---|---|---|
 | `status.get` | — | `{macName, appVersion, serverTime, inboxPending, vaultActive}` |
 | `captures.submit` | `{captures: [{captureId, text, createdAt, source: typed·dictation·share·intent, note?}]}` (≤ 50 per call) | `{accepted: [captureId], rejected: [{captureId, reason}]}`. A duplicate `captureId` counts as **accepted** (idempotent) |
+| `overview.get` (v0.4) | `{range: 30d·12w·12m}` | the vault's counts for the range, never memory text or titles ([ADR-0025](decisions/0025-vault-overview-and-iphone-cache.md)): `{generatedAt, timeZone, total, thisWeek: {saved, shared, agents, refused}, days: [{date, in: {mac, iphone, agent, import, tidy}, out: {<agentId>: n}, refused}], bySensitivity, sharedBySensitivity, byCategory, agents: [{id, name, kind, shared, requests, lastRequestAt}], inboxPending, oldestPendingAt?, lastTidyUpAt?}`. Weeks or months instead of days for 12w and 12m. The phone caches the last answer (§6.1) |
 | `categories.list` | — | `[{key, name, description, builtin, defaultSensitivity}]` |
 | `memories.search` | `{query, filters?: {categories, kinds, sensitivities, status}, limit ≤ 50, cursor?}` | `{results: [{id, title, snippet, kind, categories, sensitivity, updatedAt, expiresAt}], nextCursor?}` |
 | `memories.get` | `{id}` | the full memory plus `provenance` (labels) and `sharedCount`/`lastSharedAt` |
@@ -241,6 +242,9 @@ The Mac words nothing for the phone: the panels are data, worded and localized o
   - The phone deletes a capture **only after** receiving `accepted`.
   - A lost response leads to a resend, which is accepted as a duplicate. No loss and no duplicates.
 - **Backoff:** exponential from 5 s to 30 min while unreachable (or while every capture in a call comes back `rate_limited`), each wait drawn from the upper half of its step. It resets on a path change, the app coming to the foreground, **Send now**, and any call that delivers. A new capture and a background refresh wait it out.
+
+### 6.1 Overview cache (phone, v0.4)
+The last `overview.get` answer is kept as `overview.json` in the App Group container (`OverviewCache` in FunesPhone): written atomically after each successful call, file protection `completeUntilFirstUserAuthentication`, read by Home and the widgets, and deleted on unpair, on revocation and when leaving the demo ([ADR-0025](decisions/0025-vault-overview-and-iphone-cache.md)). It holds counts, dates and agent names only.
 
 ## 7. Limits (per device)
 - 300 calls per minute (then `rate_limited` with `retry_after_s`, inside the encrypted reply);

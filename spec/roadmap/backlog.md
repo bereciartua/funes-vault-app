@@ -159,6 +159,15 @@ Epics map requirements to phases.
 | Daily tidy-up: scheduling, clusters, model call, validation, auto-apply, Inbox section, notifications | FR-AI-03, FR-AI-14 | 6b | L | M |
 | Provider embeddings: benchmark, adapter, second index, re-embedding, calibration | FR-AI-09, FR-AI-11 | 6c | M | S |
 
+## E14: Home and widgets (Phase 7, v0.4)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| iPhone status bar above the tab bar, only when something needs you; banner removed | FR-iOS-06 | 7.1 | S | S |
+| `VaultOverview` (counts only), benchmark, `overview.get`, the iPhone's overview cache, demo counts | FR-H-01, FR-H-05, ADR-0025 | 7.2 | M | S |
+| Mac Home: composer, pulse card, cards, empty states; dictation in Home and the capture box | FR-H-02, FR-H-03 | 7.3 | L | S |
+| iPhone Home: replaces Capture; pulse with scrubbing, tiles, Who reads, cached states | FR-H-04 | 7.4 | M | S |
+| iPhone widgets: Pulse, Remember, Rhythm | FR-H-06 | 7.5 | M | C |
+
 ## E12: Later
 | Item | Covers | Size |
 |---|---|---|

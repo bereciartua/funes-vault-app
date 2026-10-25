@@ -6,6 +6,8 @@ Planned as a **side project**: about one weekend (around 8–10 h) per week. Dat
 
 **Status (2026-10-19):** Phases 0–3 and Phase 4's preparation are done. [Phase 4b](../plans/phase-4b-remote-access.md) (Remote Access, [ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)) comes before the launch. The chart starts from today's state.
 
+**Update (2026-10-25):** **Phase 7** (Home and widgets, v0.4) is planned: see [v0.4](#v04-home-and-widgets-phase-7).
+
 **Update (2026-10-23):** the Mac's v0.2.0 is out and Phase 5 is finishing. **Phase 6** (memory processing, v0.3) is planned next: see [v0.3](#v03-memory-processing-phase-6) below. Its own chart is in that section.
 
 ```mermaid
@@ -108,7 +110,24 @@ gantt
 - **Cloud limit up to everything,** one limit for every task, and a daily cap on cloud requests.
 - **Provider embeddings** as a second index, if the benchmark shows a gain.
 
-### v0.4+: Later (unordered; pick by real usage)
+### v0.4: Home and widgets (Phase 7)
+Brings back the web version's Home ([ADR-0025](../architecture/decisions/0025-vault-overview-and-iphone-cache.md)), with what only Funes knows: what went out to your agents. Mac and iPhone, updated together. About 5–6 weekends.
+
+| Step | Plan | Exit criteria |
+|---|---|---|
+| **7.1 Status bar** | [plan](../plans/phase-7-home.md#71-the-iphones-status-bar--½-weekend) | No header space on the connection while connected; every state has its bar and action; Demo always labelled |
+| **7.2 Overview** | [plan](../plans/phase-7-home.md#72-the-overview--115-weekends) | `VaultOverview` under 50 ms on 10,000 memories; `overview.get` and the cache never carry memory text |
+| **7.3 Mac Home** | [plan](../plans/phase-7-home.md#73-mac-home--15-weekends) | The window opens on Home; captures from it behave as the capture box's; a week of daily use |
+| **7.4 iPhone Home** | [plan](../plans/phase-7-home.md#74-iphone-home--1-weekend) | Home replaces Capture; charts from the cache with "As of" while the Mac is away |
+| **7.5 Widgets** | [plan](../plans/phase-7-home.md#75-iphone-widgets--1-weekend) | Pulse, Remember and Rhythm on the author's Home Screen for a week, refreshed daily |
+
+**In:**
+- **iPhone status bar:** the connection banner goes; a bar above the tabs appears only when something needs you.
+- **Home on the Mac:** a composer (type or dictate), the pulse chart (in by source, out by agent, refused), Memories, Sensitivity, Rhythm and Who reads; the window opens on it.
+- **Home on the iPhone:** replaces Capture, with the same charts, kept from a cache of counts while the Mac is away.
+- **iPhone widgets:** Pulse, Remember and Rhythm.
+
+### v0.5+: Later (unordered; pick by real usage)
 - **Allow window** for low-sensitivity sharing (if panels cause fatigue).
 - **BridgeKitUI extraction** (approvals, activity, agent setup UI, app shell, and the Remote Access views) after v0.1. BridgeKitRemote is extracted in Phase 4b.
 - **`funes` CLI** for scripts.

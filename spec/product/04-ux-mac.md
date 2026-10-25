@@ -8,7 +8,8 @@ Funes is a menu bar app (`LSUIElement`) with one main window and floating panels
 Menu bar icon ─┬─ Menu ─────────────── Remember… · Inbox (3) · Pending requests · Pause Funes Vault · Open Funes Vault · Updates · Quit
                ├─ Capture box ───────── (⌥⌘M) quick capture
                └─ Panels (top right) ── <agent> wants N memories · Save this memory? · <agent> wants to read <category> · <app> wants to connect
-Main window ───┬─ Vault        (memories: list + detail)
+Main window ───┬─ Home         (v0.4: compose, the vault's pulse and shape; where the window opens)
+               ├─ Vault        (memories: list + detail)
                ├─ Inbox        (suggestions to review)
                ├─ Agents       (connections: access, connect, cloud, activity)
                ├─ Remote Access (cloud agents through your tunnel; experimental, off by default)
@@ -54,7 +55,7 @@ Quit Funes Vault                          ⌘Q
 
 ## Capture box
 - **Window:** a small borderless window centred near the top of the screen, like Spotlight. It has:
-  - a multi-line text field with the placeholder "What should Funes remember?";
+  - a multi-line text field with the placeholder "What should Funes remember?", and from v0.4 a mic that dictates into it (SpeechAnalyzer, as in Home's composer);
   - a footer with "⏎ Save · ⇧⏎ New line · Esc Cancel" and where the text goes: "Goes to your Inbox", or, while a cloud model proposes the fields, "Goes to your Inbox · fields suggested by Anthropic" with a **Cloud** chip (principle 7).
 - **On save:**
   - The box closes and a brief HUD says "Saved to Inbox".
@@ -71,28 +72,79 @@ Warnings are an orange icon with primary text, never orange text, which is under
 Modelled on EK Bridge's sidebar, top to bottom:
 
 ```
-Vault                 ⌘1
-Inbox             3   ⌘2
-Activity              ⌘3
+Home                  ⌘1   (v0.4)
+Vault                 ⌘2
+Inbox             3   ⌘3
+Activity              ⌘4
 AGENTS             +
   Claude Code     1   ● 2 min. ago
   Cursor              ● Paused
   claude.ai           ● Cloud · No requests yet
 ──────────────────────
-Remote Access    On   ⌘5
+Remote Access    On   ⌘6
 Settings…             ⌘,
 ● Agents paused until 14:00  [Resume]
 ```
 
-- **Vault, Inbox, Activity** at the top. Inbox's badge counts the suggestions waiting.
-- **Agents:** a section listing each agent (⌘4 shows the last one shown, or the first). Each row shows the agent's icon, name, a colored dot and a short status: "2 min. ago", "No requests yet", "Paused", "Access expired", with "Cloud · " in front for a cloud agent. Its badge counts that agent's pending requests. The header's **+** opens Add Agent; with no agents the section shows **Add Agent…** instead. A row's context menu has Pause or Resume and Show Activity. Removing an agent shows the first one left.
+- **Home, Vault, Inbox, Activity** at the top. Inbox's badge counts the suggestions waiting. (Before v0.4 there's no Home, and the shortcuts start at Vault ⌘1.)
+- **Agents:** a section listing each agent (⌘5 shows the last one shown, or the first). Each row shows the agent's icon, name, a colored dot and a short status: "2 min. ago", "No requests yet", "Paused", "Access expired", with "Cloud · " in front for a cloud agent. Its badge counts that agent's pending requests. The header's **+** opens Add Agent; with no agents the section shows **Add Agent…** instead. A row's context menu has Pause or Resume and Show Activity. Removing an agent shows the first one left.
 - **Remote Access** and **Settings…** stay pinned at the bottom; agents scroll under them, which get a bar background once the list is long. Settings… opens the Settings window, as ⌘, does. It is a button, not a page.
 - **The status line** shows under them only while something's off: agents paused (with **Resume**), the agent server turned off, or the server stopped ("Port 47627 is in use by another app"). While agents can connect there is none; the menu bar icon says so.
 - **VoiceOver:** the Agents header is a heading and its + reads "Add Agent…". An agent reads as one element with its full status and waiting requests ("Claude Code, Connected · 2 min. ago, 1 request waiting"). Remote Access reads "Remote Access, On", and the status line reads as one element.
-- An Overview page, like EK Bridge's, waits until there's something for it to show that Vault and Activity don't.
+- There's no separate Overview page: from v0.4, Home holds the overview, and Activity the detail.
+
+### Home
+*v0.4, [Phase 7](../plans/phase-7-home.md) task 7.3; the counts come from `VaultOverview` ([ADR-0025](../architecture/decisions/0025-vault-overview-and-iphone-cache.md)).* The main window opens on it, and so does **Open Funes Vault**. A place to add a memory right there, then the vault's pulse: what came in, what went out to your agents, and its shape. No memory text or titles anywhere on it.
+
+```
+         Good afternoon, Martin.
+         What should Funes remember?
+  ┌───────────────────────────────────────────────────────┐
+  │ Tell me something, or search what I know…             │
+  │                                        (🎙) [Remember] │
+  └───────────────────────────────────────────────────────┘
+      ⏎ Remember · ⌘⏎ Search vault · Goes to your Inbox
+  ┌ This week: 9 saved, 23 shared with 3 agents, 2 refused ┐
+  │                            [7 days|30 days|12 weeks|12 months]
+  │ IN   ▂ ▅ ▁   ▃ ▇ ▂ ▁ ▄   ▂ ▆ ▃       ▁ ▅ ▂ ▃ ▇          │
+  │ ──────────────────────────────────────────────────     │
+  │ OUT  ▆ ▃ █   ▂ ▅ ▇ ▃ ▂   ▄ █ ▅ ▂     ▃ ▆ ▂ █ ▄          │
+  │        •          •                  •   refused       │
+  └────────────────────────────────────────────────────────┘
+  ┌Memories ┐ ┌Sensitivity┐ ┌Rhythm   ┐ ┌Who reads      ┐
+  │64  ╱‾‾‾ │ │Vault ▇▇▇▇ │ │12 weeks │ │Claude Code 41 │
+  │+9 week  │ │Shared ▇▇▇ │ │Most Sun │ │Cursor 12      │
+  └─────────┘ └───────────┘ └─────────┘ └───────────────┘
+      3 waiting in Inbox · Last tidy-up today 03:04
+```
+
+- **Greeting:** "Good morning / afternoon / evening, <first name>." (the macOS account's name), then "What should Funes remember?".
+- **Composer:** focused when Home appears, so ⌘1 then typing is a capture.
+  - **⏎ Remember** saves it as a capture, exactly as the capture box does (the same view, words, HUD and secret-scanner error). **⇧⏎** is a new line. **⌘⏎ Search vault** opens the Vault searching for the text.
+  - **Mic:** dictates into the field with SpeechAnalyzer; the text stays editable. Asks for microphone and speech recognition access the first time.
+  - Footer: "⏎ Remember · ⌘⏎ Search vault · Goes to your Inbox", with the capture box's Cloud chip when a cloud model proposes the fields.
+- **Pulse card:**
+  - **The sentence first,** numbers over adjectives: "This week: 9 saved, 23 shared with 3 agents, 2 refused." Parts with nothing to say drop out ("This week: 9 saved.").
+  - **In** (above the line): new memories per day, stacked by source: You (Mac), iPhone, Agents, Imports, Tidy-up. **Out** (below): memories shared per day, stacked by agent (the top four, then Other). **Refused:** a red dot under the day, sized by count.
+  - **Range:** 7 days · **30 days** (default) · 12 weeks · 12 months, remembered; the longer ranges group by week and month.
+  - **Hover** a day: "Tue 21 Oct · 4 in (2 iPhone, 2 Claude Code) · 11 shared (Claude Code 8, Cursor 3) · 1 refused". **Click** opens Activity filtered to that day; a refused dot opens Activity ▸ Problems for that day.
+  - Counts memories shared: a request that shares 3 counts 3.
+- **Cards** (each opens its place):
+
+  | Card | Shows | Opens |
+  |---|---|---|
+  | **Memories** | Total; the vault's growth over 12 weeks as a line; "+9 this week" | Vault, newest first |
+  | **Sensitivity** | Two bars: the vault's mix, and what was shared in the range ("Shared: 78% Low · Vault: 48% Low") | Vault, Sensitivity filter |
+  | **Rhythm** | A 12-week grid of days (like GitHub's); "Most on Sundays · 3-week streak" | Activity, Changes |
+  | **Who reads your vault** | The top three agents by memories shared in the range, with the count | The agent's Activity tab |
+
+- **Status line:** "3 waiting in Inbox · Last tidy-up today 03:04", each part a link, each hidden when there's nothing to say.
+- **Empty states:** a new vault ("Your pulse starts with your first memories"; the cards say "Too few memories for a rhythm yet"); no agents ("No agent has read your vault yet. **Add Agent…**" in place of Out and Who reads); nothing this week ("Nothing new this week").
+- **Size:** fits without scrolling at the default window size; at the minimum (860×560) the page scrolls and the four cards wrap to two rows. The composer isn't sticky.
+- **Accessibility:** the pulse chart has a chart descriptor (VoiceOver's audio graph) and reads as "Last 30 days: 41 memories in, 96 shared, 3 requests refused"; each day reads its breakdown. Reduce Motion turns off the count-up and the chart's drawing in. Colors are never the only cue: the legend names every series, and the hover text says it in words.
 
 ### Setup checklist (until dismissed)
-A card at the top of the Vault, connecting first:
+A card at the top of the Vault (from v0.4, at the top of Home, above the greeting), connecting first:
 1. **Connect an agent**: "Found on this Mac: Claude Code, Cursor". [Add…]
 2. **Approve its first request**: [Add to Claude Code…] / [Show Setup]. "Ask it something. Funes shows you exactly what it would share." The step completes when the first request arrives ("Claude Code connected 10:42").
 3. **Seed your vault**: "Answer a few questions or import from ChatGPT or Claude." [Start]
