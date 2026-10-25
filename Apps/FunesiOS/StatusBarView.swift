@@ -8,8 +8,8 @@ extension View {
     /// bottom accessory, which can be turned off while there's nothing to say. iOS 26.0's can't
     /// (it has no `isEnabled`), so there and on iOS 18–25 each tab draws its own (`ownStatusBar`).
     @ViewBuilder func statusBarAccessory(_ model: PhoneModel) -> some View {
-        if #available(iOS 26.1, *) {
-            tabViewBottomAccessory(isEnabled: !StatusBarPlacement.ownBar && model.statusBar.item != nil) {
+        if #available(iOS 26.1, *), !StatusBarPlacement.ownBar {
+            tabViewBottomAccessory(isEnabled: model.statusBar.item != nil) {
                 // Its own view, which reads the item itself: the accessory's content is kept apart
                 // from the tab view's body.
                 StatusBarSlot(model: model)
@@ -90,6 +90,30 @@ struct StatusBarContent: View {
         let action = Self.action(item)
         let tap = Self.tap(item)
         HStack(spacing: 10) {
+            // Tapping the icon and words is a button of its own, beside the action's.
+            if let tap {
+                Button { perform(tap) } label: { label }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.primary)
+            } else {
+                label
+            }
+            if let action {
+                Button(action.title) { perform(action) }
+                    .font(.subheadline.bold())
+                    .buttonStyle(.borderless)
+            }
+        }
+        .padding(.horizontal, inAccessory ? 16 : 0)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Self.text(item))
+        .accessibilityAddTraits(tap == nil ? [] : .isButton)
+        .modifier(StatusBarActions(action: action, tap: tap, perform: perform))
+    }
+
+    /// The icon and the words.
+    private var label: some View {
+        HStack(spacing: 10) {
             icon
             Text(Self.text(item))
                 .font(.subheadline)
@@ -97,20 +121,10 @@ struct StatusBarContent: View {
                 // "Demo vault: not your data" next to Leave Demo fits the accessory's one line.
                 .minimumScaleFactor(inAccessory ? 0.8 : 1)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            if let action {
-                Button(action.title) { perform(action) }
-                    .font(.subheadline.bold())
-                    .buttonStyle(.borderless)
-                    .accessibilityHidden(true)
-            }
+                // The shape below takes the tap: in the iOS 27 simulator the words didn't pass it on.
+                .allowsHitTesting(false)
         }
-        .padding(.horizontal, inAccessory ? 16 : 0)
         .contentShape(Rectangle())
-        .onTapGesture { if let tap { perform(tap) } }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Self.text(item))
-        .accessibilityAddTraits(tap == nil ? [] : .isButton)
-        .modifier(StatusBarActions(action: action, tap: tap, perform: perform))
     }
 
     @ViewBuilder private var icon: some View {
