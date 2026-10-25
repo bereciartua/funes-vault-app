@@ -1,0 +1,2584 @@
+{
+ "format": "funes.fixture.episodes.v1",
+ "note": "Synthetic Spike F fixtures: long agent-written memories about one episode or entity each. Every person, company, place and number is invented. See build_episodes.py for the labels and matching rules.",
+ "episodes": [
+  {
+   "id": "e01",
+   "title": "Halvorsen Robotics hiring process (Senior Firmware Engineer)",
+   "written": "2026-09-18",
+   "source": "agent_write",
+   "sensitivity": "internal",
+   "categories": [
+    "project_context"
+   ],
+   "variant": "about_user",
+   "lang": "en",
+   "subject": [
+    "halvorsen"
+   ],
+   "when": [
+    "2026",
+    "september|sept\\b|sep\\b",
+    "october|november"
+   ],
+   "text": "The user is going through the hiring process for the Senior Firmware Engineer position at Halvorsen Robotics, a warehouse-automation company based in Trondheim. The user found the opening through a referral from their former colleague Ingrid Sæther, who now leads the motion-control team there. The first step was a 30-minute screening call on 2 September 2026 with the recruiter, Tomas Berg. Tomas explained that the position is fully remote within European time zones, with one on-site week in Trondheim per quarter. He shared that the salary band is NOK 950,000–1,150,000 a year plus an annual bonus of up to 10%. The user asked what \"FTE\" meant in the job posting, and Tomas explained it stands for full-time equivalent. Tomas said the user could attach their resume as a PDF in the application portal or email it to him directly.\n\nThe second step, on 9 September 2026, was a technical interview with Ingrid and a senior engineer, Aksel Moe. They covered embedded Rust, real-time scheduling on ARM Cortex-M parts and a debugging exercise on a CAN bus trace. Aksel praised the user's enthusiasm and the way they talked through trade-offs out loud. The user felt weakest on the question about safety certification (IEC 61508), which they have no hands-on experience with, and noted it as something to read up on. The interview ran 15 minutes over because the video link dropped twice.\n\nOn 16 September 2026, the user had the final round, a video call with the VP of Engineering, Lene Haugland, who apologised for joining five minutes late. Lene described the firmware group as 14 engineers across three teams and said they expect to make a decision by the end of September. The user told Lene that their notice period with their current client is six weeks and that the earliest start date would be 2 November 2026. The user said that, compared with their freelance work, the main draw is working on physical robots, and the main concern is the quarterly travel to Trondheim, since they don't enjoy long flights. The user has not yet decided whether they would accept an offer.",
+   "facts": [
+    {
+     "id": "e01.f01",
+     "claim": "In September 2026 I was in the hiring process for the Senior Firmware Engineer position at Halvorsen Robotics.",
+     "keys": [
+      "halvorsen",
+      "hiring process|in the (hiring )?process|going through|applying|applied"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e01.f02",
+     "claim": "Halvorsen Robotics is a warehouse-automation company based in Trondheim.",
+     "keys": [
+      "warehouse"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f03",
+     "claim": "My former colleague Ingrid Sæther, who leads Halvorsen Robotics' motion-control team, referred me for the Senior Firmware Engineer opening.",
+     "keys": [
+      "ingrid|s[æa]ther",
+      "refer|motion"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f04",
+     "claim": "I had a screening call with Halvorsen Robotics' recruiter Tomas Berg on 2 September 2026.",
+     "keys": [
+      "screening|tomas|berg"
+     ],
+     "keep": "either",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e01.f05",
+     "claim": "The Senior Firmware Engineer position at Halvorsen Robotics is fully remote within European time zones, with one on-site week in Trondheim per quarter.",
+     "keys": [
+      "remote|on-site|onsite"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f06",
+     "claim": "The salary band for Halvorsen Robotics' Senior Firmware Engineer position is NOK 950,000–1,150,000 a year plus a bonus of up to 10%.",
+     "keys": [
+      "950"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f07",
+     "claim": "I asked what FTE means (full-time equivalent).",
+     "keys": [
+      "\\bFTE\\b|full-time equivalent"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f08",
+     "claim": "I could attach my resume as a PDF or email it to the recruiter.",
+     "keys": [
+      "resume|résumé|\\bCV\\b"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f09",
+     "claim": "On 9 September 2026 I had Halvorsen Robotics' technical interview with Ingrid Sæther and Aksel Moe, on embedded Rust, real-time scheduling on Cortex-M and a CAN bus trace.",
+     "keys": [
+      "technical interview|embedded rust|cortex|\\bCAN\\b"
+     ],
+     "keep": "either",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e01.f10",
+     "claim": "In Halvorsen Robotics' technical interview in September 2026, Aksel Moe praised my enthusiasm and how I talked through trade-offs.",
+     "keys": [
+      "enthusias"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e01.f11",
+     "claim": "I have no hands-on experience with safety certification (IEC 61508), my weakest topic in the Halvorsen Robotics interview, and want to read up on it.",
+     "keys": [
+      "61508|safety certification"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f12",
+     "claim": "The interview ran 15 minutes over because the video link dropped.",
+     "keys": [
+      "video link|dropped twice|15 minutes over|ran (15 minutes )?over"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f13",
+     "claim": "On 16 September 2026 I had the final round for Halvorsen Robotics with VP of Engineering Lene Haugland.",
+     "keys": [
+      "lene|haugland|final round"
+     ],
+     "keep": "either",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e01.f14",
+     "claim": "Lene apologised for joining five minutes late.",
+     "keys": [
+      "late|apologi"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f15",
+     "claim": "Halvorsen Robotics' firmware group has 14 engineers across three teams.",
+     "keys": [
+      "\\b14\\b|fourteen"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f16",
+     "claim": "Halvorsen Robotics expected to decide on the Senior Firmware Engineer position by the end of September 2026.",
+     "keys": [
+      "decision|decide",
+      "end of september|30 september|september 30|end of sept"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e01.f17",
+     "claim": "My notice period with my current client is six weeks (as of September 2026).",
+     "keys": [
+      "notice"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e01.f18",
+     "claim": "My earliest start date for Halvorsen Robotics would be 2 November 2026.",
+     "keys": [
+      "2 november|november 2|nov(ember)? 2\\b|start date"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f19",
+     "claim": "The main draw of the Halvorsen Robotics job for me is working on physical robots.",
+     "keys": [
+      "physical robot|working on robots|real robots"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f20",
+     "claim": "My main concern about the Halvorsen Robotics job is the quarterly travel to Trondheim.",
+     "keys": [
+      "concern|worr|downside|drawback"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e01.f21",
+     "claim": "I don't enjoy long flights.",
+     "keys": [
+      "long flights|flying long"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e01.f22",
+     "claim": "As of September 2026 I hadn't decided whether to accept an offer from Halvorsen Robotics.",
+     "keys": [
+      "not (yet )?decided|undecided|hadn't decided|had not (yet )?decided|hasn't decided|haven't decided|have not (yet )?decided|not sure whether|unsure whether"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    }
+   ],
+   "mustNot": [
+    {
+     "label": "the offered job read as the user's current job",
+     "all": [
+      "\\bI (work|am working) (at|for) halvorsen|\\bI(?:'m| am) (a|the) senior firmware engineer at"
+     ],
+     "none": []
+    },
+    {
+     "label": "the salary band read as the user's salary",
+     "all": [
+      "\\bmy (salary|pay)\\b"
+     ],
+     "none": [
+      "band|offer|role|position|would|halvorsen"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "e02",
+   "title": "Confidential recruiter pitch: Head of Platform role (via Brightline Talent)",
+   "written": "2026-10-02",
+   "source": "agent_write",
+   "sensitivity": "sensitive",
+   "categories": [
+    "project_context",
+    "finance"
+   ],
+   "variant": "about_user",
+   "lang": "en",
+   "subject": [
+    "head of platform",
+    "brightline",
+    "whitlock"
+   ],
+   "when": [
+    "2026",
+    "october|oct\\b",
+    "january|2027"
+   ],
+   "text": "On 1 October 2026 the user took a call from Dana Whitlock, a recruiter at Brightline Talent, about a Head of Platform role at a client she could not name yet. Dana described the client only as a Series C payments company headquartered in Lisbon with about 400 employees, and asked the user to keep the details confidential until the client agrees to disclose its name. The role would lead three platform teams (about 22 engineers) covering infrastructure, developer tooling and internal APIs, reporting to the CTO. The opportunity offered a base salary of €145,000–€165,000, a 15% annual bonus target and equity that Dana called \"meaningful\" without giving a number. The role was fully remote within Portugal, with an office in Lisbon available but optional. The client wants someone to start in January 2027.\n\nDana said the hiring process would have four stages: a call with the CTO, a system design session, a leadership panel and a reference check. The user told Dana they are interested, but that they have not managed more than one team before, and that they would want the equity terms in writing before going further. Dana offered to send a one-page summary of the role by email and asked whether the user preferred calls in the morning or the afternoon; the user said afternoons. The user asked what \"Series C\" means for stability, and Dana explained it is the company's third institutional funding round. The user agreed to a follow-up call on 8 October 2026, after Dana confirms whether the client will reveal its name.",
+   "facts": [
+    {
+     "id": "e02.f01",
+     "claim": "On 1 October 2026 Brightline Talent recruiter Dana Whitlock pitched me a Head of Platform role at a client she couldn't name.",
+     "keys": [
+      "dana|whitlock",
+      "pitch|took a call|called me|contacted|approached|reached out"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e02.f02",
+     "claim": "The confidential client for the Head of Platform role Brightline Talent pitched is a Series C payments company in Lisbon with about 400 employees.",
+     "keys": [
+      "series c|payments",
+      "lisbon|400"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e02.f03",
+     "claim": "The details of the Head of Platform role Brightline Talent pitched are confidential until the client agrees to disclose its name.",
+     "keys": [
+      "confidential|disclos|reveal",
+      "until|keep|agree|name"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e02.f04",
+     "claim": "The Head of Platform role Brightline Talent pitched would lead three platform teams (about 22 engineers): infrastructure, developer tooling and internal APIs.",
+     "keys": [
+      "three|\\b3\\b|22",
+      "teams?|engineers"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e02.f05",
+     "claim": "The Head of Platform role Brightline Talent pitched would report to the CTO.",
+     "keys": [
+      "report",
+      "\\bCTO\\b"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e02.f06",
+     "claim": "The Head of Platform role Brightline Talent pitched offers a base salary of €145,000–€165,000.",
+     "keys": [
+      "145"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e02.f07",
+     "claim": "The Head of Platform role Brightline Talent pitched has a 15% annual bonus target.",
+     "keys": [
+      "15 ?%|15 percent",
+      "bonus"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e02.f08",
+     "claim": "The Head of Platform role Brightline Talent pitched includes equity the recruiter called meaningful, with no number given.",
+     "keys": [
+      "equity",
+      "meaningful|no (number|figure)|unspecified|not specified|undisclosed"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e02.f09",
+     "claim": "The Head of Platform role Brightline Talent pitched would be fully remote within Portugal, with an optional Lisbon office.",
+     "keys": [
+      "remote"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e02.f10",
+     "claim": "The client behind the Head of Platform role Brightline Talent pitched wants someone to start in January 2027.",
+     "keys": [
+      "january 2027|jan(uary)? 2027|start in january"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e02.f11",
+     "claim": "The Head of Platform hiring process would have four stages: a CTO call, system design, a leadership panel and a reference check.",
+     "keys": [
+      "system design|leadership panel|reference check|four stages|four-stage|4 stages"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e02.f12",
+     "claim": "In October 2026 I told Brightline Talent I'm interested in the Head of Platform role.",
+     "keys": [
+      "interest"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e02.f13",
+     "claim": "I haven't managed more than one team.",
+     "keys": [
+      "more than one team|multiple teams|several teams|one team"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e02.f14",
+     "claim": "I want the equity terms of the Head of Platform role in writing before going further.",
+     "keys": [
+      "writing|written"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e02.f15",
+     "claim": "Dana offered to email a one-page summary of the role.",
+     "keys": [
+      "one-page|one page"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e02.f16",
+     "claim": "I prefer calls in the afternoon.",
+     "keys": [
+      "afternoon"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e02.f17",
+     "claim": "I asked what Series C means; it's the third institutional funding round.",
+     "keys": [
+      "third|funding round|institutional"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e02.f18",
+     "claim": "I have a follow-up call with Brightline Talent about the Head of Platform role on 8 October 2026.",
+     "keys": [
+      "follow[- ]up|8 october|october 8|oct(ober)? 8\\b"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    }
+   ],
+   "mustNot": [
+    {
+     "label": "the pitched role's remote policy read as the user's job",
+     "all": [
+      "\\bI (work|am working)\\b.*remote|\\bmy (job|role|work) is (fully )?remote"
+     ],
+     "none": []
+    },
+    {
+     "label": "the pitched salary read as the user's salary",
+     "all": [
+      "\\bmy (base )?salary\\b|\\bI (earn|make)\\b"
+     ],
+     "none": [
+      "would|offer|role|pitch|head of platform"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "e03",
+   "title": "Quillstone interview outcome",
+   "written": "2026-08-05",
+   "source": "agent_suggestion",
+   "sensitivity": "internal",
+   "categories": [
+    "project_context"
+   ],
+   "variant": "about_user",
+   "lang": "en",
+   "subject": [
+    "quillstone"
+   ],
+   "when": [
+    "2026",
+    "july|jul\\b",
+    "august|aug\\b"
+   ],
+   "text": "The user heard back from Quillstone yesterday: they were not selected for the Engineering Manager position on the Payments Reliability team, after reaching the final round. Quillstone is a London-based e-commerce infrastructure company; the user had applied in early July after seeing the role on LinkedIn. The final round was last Thursday, a two-hour panel with the Director of Engineering, Priyanka Raman, and two engineering managers. In the rejection email, Priyanka wrote that the panel was impressed by the user's incident-response examples but chose a candidate with more experience running performance reviews and hiring loops. She offered a 20-minute feedback call, which the user accepted for next Monday.\n\nThe user said they were disappointed but also relieved, because the role would have required three days a week in the London office, and the user does not want to relocate from Lisbon. The user wants to build experience with performance reviews before applying for another manager role, and is considering asking their current client to let them mentor two junior developers. The recruiter at Quillstone, Owen Pike, had been slow to reply throughout the process, often taking a week. The user wondered whether to send a thank-you note and decided to send a short one.",
+   "facts": [
+    {
+     "id": "e03.f01",
+     "claim": "On 4 August 2026 Quillstone told me I wasn't selected for the Engineering Manager position on its Payments Reliability team, after the final round.",
+     "keys": [
+      "not (been )?selected|wasn't selected|was not selected|reject|didn't get|did not get|unsuccessful|turned down|not chosen|not get the"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e03.f02",
+     "claim": "Quillstone is a London-based e-commerce infrastructure company.",
+     "keys": [
+      "e-?commerce"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e03.f03",
+     "claim": "I applied to Quillstone's Engineering Manager role in early July 2026 after seeing it on LinkedIn.",
+     "keys": [
+      "linkedin"
+     ],
+     "keep": "either",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e03.f04",
+     "claim": "Quillstone's final round, on 30 July 2026, was a two-hour panel with Director of Engineering Priyanka Raman and two engineering managers.",
+     "keys": [
+      "panel"
+     ],
+     "keep": "either",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e03.f05",
+     "claim": "Quillstone's panel was impressed by my incident-response examples (August 2026).",
+     "keys": [
+      "incident"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e03.f06",
+     "claim": "Quillstone chose a candidate with more experience running performance reviews and hiring loops.",
+     "keys": [
+      "candidate|chose|went with|picked|selected (someone|another)"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e03.f07",
+     "claim": "I have a 20-minute feedback call with Quillstone's Priyanka Raman on 10 August 2026.",
+     "keys": [
+      "feedback (call|session|meeting)|20-minute|20 minute"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e03.f08",
+     "claim": "I was disappointed but relieved not to get the Quillstone role.",
+     "keys": [
+      "relieved|disappoint"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e03.f09",
+     "claim": "Quillstone's Engineering Manager role would have required three days a week in the London office.",
+     "keys": [
+      "three days|3 days"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e03.f10",
+     "claim": "I don't want to relocate from Lisbon.",
+     "keys": [
+      "relocat"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e03.f11",
+     "claim": "I want to build experience with performance reviews before applying for another manager role.",
+     "keys": [
+      "before (applying|I apply|I look)|another (engineering )?manager|next (engineering )?manager"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e03.f12",
+     "claim": "I'm considering asking my current client to let me mentor two junior developers.",
+     "keys": [
+      "mentor"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e03.f13",
+     "claim": "Quillstone's recruiter Owen Pike was slow to reply, often taking a week.",
+     "keys": [
+      "owen|pike|slow"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e03.f14",
+     "claim": "I decided to send Quillstone a short thank-you note.",
+     "keys": [
+      "thank"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    }
+   ],
+   "mustNot": [
+    {
+     "label": "the rejection read as an offer",
+     "all": [
+      "\\b(offered me|got) the (role|job|position)|\\bI(?:'m| am) (an|the) engineering manager\\b"
+     ],
+     "none": [
+      "not|didn't|never|n't"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "e04",
+   "title": "Japan trip, April 2026",
+   "written": "2026-05-03",
+   "source": "agent_write",
+   "sensitivity": "low",
+   "categories": [
+    "personal_preferences"
+   ],
+   "variant": "about_user",
+   "lang": "en",
+   "subject": [
+    "japan|tokyo|kyoto|osaka"
+   ],
+   "when": [
+    "2026",
+    "april|apr\\b"
+   ],
+   "text": "The user and their partner, Rui, spent two weeks in Japan from 11 to 25 April 2026: five nights in Tokyo, six in Kyoto and three in Osaka. It was their first trip to Asia. They flew TAP from Lisbon to Tokyo via Frankfurt; the connection in Frankfurt was tight and their luggage arrived a day late. In Kyoto they stayed at a small ryokan called Hanaori near Gion, which the user said was the highlight of the trip and where they would like to return. The user found Tokyo overwhelming because of the crowds, and said they prefer quieter cities when they travel. Rui is vegetarian, and finding vegetarian food in Osaka was harder than expected; shojin ryori temple restaurants in Kyoto were the easiest option. The user's favourite meal was at a tempura counter in Osaka called Tenkuu. The user got a Suica card at the airport and topped it up twice. They want to go back to Japan in autumn 2027 to see Hokkaido. The user said they would book the JR Pass earlier next time, since the price went up the week before they bought it. Rui twisted an ankle on the Fushimi Inari trail on 19 April, which was fine after a few days. Total spending was about €6,200 for both, slightly over their €5,500 budget.",
+   "facts": [
+    {
+     "id": "e04.f01",
+     "claim": "My partner Rui and I spent two weeks in Japan from 11 to 25 April 2026.",
+     "keys": [
+      "japan",
+      "rui|partner|two weeks"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e04.f02",
+     "claim": "On our April 2026 Japan trip we spent five nights in Tokyo, six in Kyoto and three in Osaka.",
+     "keys": [
+      "five nights|5 nights|six nights|6 nights|three nights|3 nights"
+     ],
+     "keep": "either",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e04.f03",
+     "claim": "The April 2026 Japan trip was my first trip to Asia.",
+     "keys": [
+      "first",
+      "asia"
+     ],
+     "keep": "either",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e04.f04",
+     "claim": "We flew TAP via Frankfurt; the connection was tight and our luggage arrived a day late.",
+     "keys": [
+      "frankfurt|luggage|\\bTAP\\b"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e04.f05",
+     "claim": "Ryokan Hanaori near Gion in Kyoto was the highlight of my April 2026 Japan trip; I'd like to return.",
+     "keys": [
+      "hanaori|ryokan"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e04.f06",
+     "claim": "I found Tokyo overwhelming because of the crowds (April 2026).",
+     "keys": [
+      "tokyo",
+      "overwhelm|crowd"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e04.f07",
+     "claim": "I prefer quieter cities when I travel.",
+     "keys": [
+      "quiet"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e04.f08",
+     "claim": "My partner Rui is vegetarian.",
+     "keys": [
+      "vegetarian",
+      "rui|partner"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true,
+     "subject": [
+      "rui"
+     ]
+    },
+    {
+     "id": "e04.f09",
+     "claim": "Vegetarian food was harder to find in Osaka than expected; shojin ryori in Kyoto was easiest.",
+     "keys": [
+      "shojin|harder|hard to find|difficult"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e04.f10",
+     "claim": "My favourite meal in Japan was at Tenkuu, a tempura counter in Osaka.",
+     "keys": [
+      "tenkuu|tempura"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e04.f11",
+     "claim": "I got a Suica card at the airport and topped it up twice.",
+     "keys": [
+      "suica"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e04.f12",
+     "claim": "I want to go back to Japan in autumn 2027 to see Hokkaido.",
+     "keys": [
+      "hokkaido"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e04.f13",
+     "claim": "Next time in Japan I'd book the JR Pass earlier; the price went up just before I bought it.",
+     "keys": [
+      "\\bJR\\b|rail pass"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e04.f14",
+     "claim": "Rui twisted an ankle on the Fushimi Inari trail on 19 April; it was fine after a few days.",
+     "keys": [
+      "ankle"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e04.f15",
+     "claim": "Our April 2026 Japan trip cost about €6,200 for both, over our €5,500 budget.",
+     "keys": [
+      "6[,. ]?200|5[,. ]?500|budget"
+     ],
+     "keep": "either",
+     "timed": true,
+     "other": false
+    }
+   ],
+   "mustNot": [
+    {
+     "label": "the past trip read as upcoming",
+     "all": [
+      "\\b(will|am going to|'m going to|plan(ning)? to) (go|travel|fly|spend|stay)\\b"
+     ],
+     "none": [
+      "hokkaido|2027|back|return|again|next time"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "e05",
+   "title": "Knee injury and physiotherapy (2026)",
+   "written": "2026-07-21",
+   "source": "agent_write",
+   "sensitivity": "sensitive",
+   "categories": [
+    "health"
+   ],
+   "variant": "about_user",
+   "lang": "en",
+   "subject": [
+    "knee|menisc"
+   ],
+   "when": [
+    "2026",
+    "march|april|june|july|august|september|october|november"
+   ],
+   "text": "The user injured their right knee on 14 March 2026 while playing five-a-side football: they twisted it on landing and felt a pop, followed by swelling that evening. They saw their GP, Dr. Helena Costa at the USF Alvalade health centre, two days later; she suspected a meniscus injury and referred them for an MRI. The MRI on 2 April 2026 at the Clínica Lumiar showed a grade 2 tear of the medial meniscus, with no ligament damage. The orthopaedic surgeon, Dr. Paulo Mendes, advised against surgery for now and prescribed eight weeks of physiotherapy, with a review in July. He told the user not to play football or run on hard surfaces until he clears them, and said cycling and swimming are fine. The user took ibuprofen for the first ten days but stopped because it upset their stomach; they now use only ice and paracetamol when it flares up. The user's health insurance (Médis) covered the MRI after a pre-authorisation that took four working days; the claim reference was sent by SMS.\n\nPhysiotherapy started on 8 April with Joana Reis at Fisio Campo de Ourique, twice a week. The programme focuses on quadriceps and hip strengthening, balance work and gradually adding load. The user finds the single-leg balance exercises the hardest and tends to skip them at home, which Joana flagged. By mid-June the user could walk for an hour without pain and climb stairs normally, but still felt discomfort when kneeling. The physio sessions are on Tuesdays and Fridays at 8:00, and the user once had to reschedule because of a client meeting. At the review on 20 July 2026, Dr. Mendes said the knee is healing well, cleared the user to start gentle jogging on grass or a treadmill from August, and said football should wait until at least October 2026. He recommended continuing the home exercises three times a week for another three months. The user wants to get back to football, but is considering switching to padel, which their friend Nuno plays, because it is easier on the knees. The user paid €4.50 for parking at the hospital.",
+   "facts": [
+    {
+     "id": "e05.f01",
+     "claim": "I injured my right knee on 14 March 2026 playing five-a-side football.",
+     "keys": [
+      "14 march|march 14|five-a-side|playing football|while playing"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e05.f02",
+     "claim": "My GP is Dr. Helena Costa at the USF Alvalade health centre.",
+     "keys": [
+      "costa"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e05.f03",
+     "claim": "An MRI on 2 April 2026 showed a grade 2 tear of my right knee's medial meniscus, with no ligament damage.",
+     "keys": [
+      "menisc",
+      "tear|grade"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e05.f04",
+     "claim": "In April 2026 orthopaedic surgeon Dr. Paulo Mendes advised against surgery for my knee for now.",
+     "keys": [
+      "surgery"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e05.f05",
+     "claim": "Dr. Mendes prescribed eight weeks of physiotherapy for my knee.",
+     "keys": [
+      "eight weeks|8 weeks|8-week|eight-week"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e05.f06",
+     "claim": "Since April 2026, until Dr. Mendes clears me, no football or running on hard surfaces for my knee.",
+     "keys": [
+      "hard surface"
+     ],
+     "keep": "either",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e05.f07",
+     "claim": "Cycling and swimming are fine for my knee injury.",
+     "keys": [
+      "cycl|swim"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e05.f08",
+     "claim": "Ibuprofen upsets my stomach, so I stopped taking it.",
+     "keys": [
+      "ibuprofen"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e05.f09",
+     "claim": "I use ice and paracetamol when my knee flares up.",
+     "keys": [
+      "paracetamol"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e05.f10",
+     "claim": "My health insurer is Médis; it covered the knee MRI after a four-day pre-authorisation.",
+     "keys": [
+      "m[ée]dis|insur"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e05.f11",
+     "claim": "The claim reference was sent by SMS.",
+     "keys": [
+      "\\bSMS\\b|claim reference"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e05.f12",
+     "claim": "Since 8 April 2026 I've had knee physiotherapy twice a week with Joana Reis at Fisio Campo de Ourique.",
+     "keys": [
+      "joana|reis|campo de ourique"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e05.f13",
+     "claim": "My knee physio programme focuses on quadriceps and hip strengthening, balance and adding load.",
+     "keys": [
+      "quadriceps|quads|\\bhip\\b"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e05.f14",
+     "claim": "In my knee physio I find the single-leg balance exercises hardest and tend to skip them at home.",
+     "keys": [
+      "single-leg|skip|hardest"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e05.f15",
+     "claim": "By mid-June 2026 I could walk an hour without knee pain but kneeling was still uncomfortable.",
+     "keys": [
+      "kneel"
+     ],
+     "keep": "either",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e05.f16",
+     "claim": "Physio is Tuesdays and Fridays at 8:00; I once rescheduled for a client meeting.",
+     "keys": [
+      "tuesday|friday|8:00|resched"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e05.f17",
+     "claim": "On 20 July 2026 Dr. Mendes cleared my knee for gentle jogging on grass or a treadmill from August 2026.",
+     "keys": [
+      "jog"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e05.f18",
+     "claim": "After my knee injury, football should wait until at least October 2026.",
+     "keys": [
+      "football",
+      "october"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e05.f19",
+     "claim": "I should keep doing my knee home exercises three times a week until about October 2026.",
+     "keys": [
+      "three times|3 times|3x|three months|3 months"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e05.f20",
+     "claim": "I want to get back to football after my knee injury but I'm considering padel, which my friend Nuno plays.",
+     "keys": [
+      "padel"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e05.f21",
+     "claim": "I paid €4.50 for hospital parking.",
+     "keys": [
+      "parking|4[.,]50"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    }
+   ],
+   "mustNot": [
+    {
+     "label": "ibuprofen as a recommendation",
+     "all": [
+      "ibuprofen"
+     ],
+     "none": [
+      "stop|upset|no longer|not|avoid|stomach|n't"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "e06",
+   "title": "Tern side project status",
+   "written": "2026-06-12",
+   "source": "agent_write",
+   "sensitivity": "internal",
+   "categories": [
+    "project_context",
+    "software_development"
+   ],
+   "variant": "about_user",
+   "lang": "en",
+   "subject": [
+    "\\btern\\b"
+   ],
+   "when": [
+    "2026",
+    "january|march|june|september"
+   ],
+   "text": "The user is building Tern, a personal budgeting app for iPhone and Mac, as a side project with their friend Sofia Antunes, who handles the design. They started it in January 2026 and want a public TestFlight beta by the end of September 2026. Tern imports bank exports as CSV and OFX files rather than connecting to banks directly, because the user does not want to store bank credentials or pay for an aggregator such as Plaid. The app is written in Swift with SwiftUI and SwiftData; the user tried Core Data first but switched in March because the migration code was getting too complex. Sync between devices uses CloudKit's private database. Sofia wants a dark, high-contrast look; the user prefers following the system appearance, and they agreed to support both. The user spends Sunday mornings on Tern, about four hours a week. The biggest open problem is categorising transactions automatically: the user tried simple keyword rules and found them too brittle, and is now testing an on-device classifier. Tern will be free with a one-time €9.99 unlock for multiple accounts; there will be no subscription, because the user dislikes subscription pricing for small apps. The repository is private on GitHub under Sofia's account for now. The user asked how to rename a SwiftData model property without losing data and was pointed to the migration plan documentation.",
+   "facts": [
+    {
+     "id": "e06.f01",
+     "claim": "I'm building Tern, a personal budgeting app for iPhone and Mac, as a side project.",
+     "keys": [
+      "tern",
+      "budget"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e06.f02",
+     "claim": "My friend Sofia Antunes handles the design of Tern.",
+     "keys": [
+      "sofia|antunes",
+      "design"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e06.f03",
+     "claim": "I started Tern in January 2026.",
+     "keys": [
+      "january|started"
+     ],
+     "keep": "either",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e06.f04",
+     "claim": "I want a public TestFlight beta of Tern by the end of September 2026.",
+     "keys": [
+      "testflight|beta"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e06.f05",
+     "claim": "Tern imports bank exports as CSV and OFX files instead of connecting to banks.",
+     "keys": [
+      "\\bCSV\\b|\\bOFX\\b"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e06.f06",
+     "claim": "For Tern I don't want to store bank credentials or pay for an aggregator such as Plaid.",
+     "keys": [
+      "credential|plaid|aggregator"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e06.f07",
+     "claim": "Tern is written in Swift with SwiftUI and SwiftData.",
+     "keys": [
+      "swiftui|written in|built with"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e06.f08",
+     "claim": "In March 2026 I switched Tern from Core Data to SwiftData because the migration code got too complex.",
+     "keys": [
+      "core data"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e06.f09",
+     "claim": "Tern syncs between devices with CloudKit's private database.",
+     "keys": [
+      "cloudkit"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e06.f10",
+     "claim": "Sofia wants a dark high-contrast look for Tern, I prefer the system appearance; Tern will support both.",
+     "keys": [
+      "dark|contrast|system appearance"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e06.f11",
+     "claim": "I work on Tern on Sunday mornings, about four hours a week.",
+     "keys": [
+      "sunday|four hours|4 hours"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e06.f12",
+     "claim": "Tern's biggest open problem is categorising transactions; keyword rules were too brittle, so I'm testing an on-device classifier.",
+     "keys": [
+      "categori|classif"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e06.f13",
+     "claim": "Tern will be free with a one-time €9.99 unlock for multiple accounts.",
+     "keys": [
+      "9[.,]99|one-time|unlock"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e06.f14",
+     "claim": "I dislike subscription pricing for small apps.",
+     "keys": [
+      "subscription"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e06.f15",
+     "claim": "Tern's repository is private on GitHub under Sofia's account.",
+     "keys": [
+      "github|repositor"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e06.f16",
+     "claim": "I asked how to rename a SwiftData property without losing data.",
+     "keys": [
+      "rename|migration plan"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    }
+   ],
+   "mustNot": [
+    {
+     "label": "Sofia's preference read as the user's",
+     "all": [
+      "\\bI (prefer|want|like) (a )?dark"
+     ],
+     "none": []
+    }
+   ]
+  },
+  {
+   "id": "e07",
+   "title": "Oakhurst Media contract terms",
+   "written": "2026-03-27",
+   "source": "agent_suggestion",
+   "sensitivity": "sensitive",
+   "categories": [
+    "finance",
+    "legal",
+    "project_context"
+   ],
+   "variant": "about_user",
+   "lang": "en",
+   "subject": [
+    "oakhurst"
+   ],
+   "when": [
+    "2026",
+    "march|april|september"
+   ],
+   "text": "The user negotiated a freelance contract with Oakhurst Media, a podcast network based in Dublin, to rebuild the iOS client of its listener app. The contract was signed on 26 March 2026 and runs from 6 April to 30 September 2026. The agreed day rate is €720, up from the €650 Oakhurst first offered; the user's own minimum for new clients is €700. The scope is four days a week, with Fridays kept free for the user's other clients. Payment terms are 30 days from invoice, invoiced monthly; the user had asked for 15 days and accepted 30 in exchange for the higher rate. The user's contact is Siobhán Kelly, the head of product; the engineering lead is Marek Novak. The contract includes an NDA that forbids naming Oakhurst's unreleased features publicly, and the user keeps the right to mention Oakhurst as a client in their portfolio. Intellectual property transfers to Oakhurst on payment. Either side can end the contract with 14 days' notice. Siobhán asked the user to send invoices to the accounts address as PDFs with the purchase order number, and the user set up a template for it. The user checked whether the contract had to be signed in blue ink and was told an electronic signature is fine. The user wants to turn this into a longer engagement if the first release goes well.",
+   "facts": [
+    {
+     "id": "e07.f01",
+     "claim": "In March 2026 I signed a freelance contract with Oakhurst Media, a Dublin podcast network, to rebuild its listener app's iOS client.",
+     "keys": [
+      "oakhurst",
+      "ios|listener|podcast|rebuild"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e07.f02",
+     "claim": "My Oakhurst Media contract runs from 6 April to 30 September 2026.",
+     "keys": [
+      "30 september|september 30|6 april|april 6|sept(ember)? 30"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e07.f03",
+     "claim": "My day rate with Oakhurst Media is €720.",
+     "keys": [
+      "720"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e07.f04",
+     "claim": "Oakhurst Media first offered €650 a day.",
+     "keys": [
+      "650"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e07.f05",
+     "claim": "My minimum day rate for new clients is €700.",
+     "keys": [
+      "\\b700\\b"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e07.f06",
+     "claim": "My Oakhurst Media contract is four days a week, with Fridays free for other clients.",
+     "keys": [
+      "\\bfour days|\\b4 days|friday"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e07.f07",
+     "claim": "Oakhurst Media pays 30 days from invoice, invoiced monthly.",
+     "keys": [
+      "30 days|30-day|net ?30|thirty days"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e07.f08",
+     "claim": "My contact at Oakhurst Media is Siobhán Kelly, head of product.",
+     "keys": [
+      "siobh|kelly"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e07.f09",
+     "claim": "Oakhurst Media's engineering lead is Marek Novak.",
+     "keys": [
+      "marek|novak"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e07.f10",
+     "claim": "My Oakhurst Media contract has an NDA: I can't name Oakhurst's unreleased features publicly.",
+     "keys": [
+      "\\bNDA\\b|non-disclosure|unreleased"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e07.f11",
+     "claim": "I can mention Oakhurst Media as a client in my portfolio.",
+     "keys": [
+      "portfolio"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e07.f12",
+     "claim": "Under my Oakhurst Media contract, intellectual property transfers to Oakhurst on payment.",
+     "keys": [
+      "intellectual property|\\bIP\\b"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e07.f13",
+     "claim": "Either side can end my Oakhurst Media contract with 14 days' notice.",
+     "keys": [
+      "14 days|14-day|fourteen"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e07.f14",
+     "claim": "Oakhurst Media invoices go to the accounts address as PDFs with the purchase order number.",
+     "keys": [
+      "purchase order|\\bPO\\b|\\bPDF"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e07.f15",
+     "claim": "An electronic signature was fine; no blue ink needed.",
+     "keys": [
+      "\\bink\\b|electronic signature|e-signature"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e07.f16",
+     "claim": "I want to turn the Oakhurst Media contract into a longer engagement if the first release goes well.",
+     "keys": [
+      "longer|extend|long-term"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    }
+   ],
+   "mustNot": [
+    {
+     "label": "the first offer read as the rate",
+     "all": [
+      "\\b650\\b"
+     ],
+     "none": [
+      "first|offer|initial|up from|instead|originally|rather than|from"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "e08",
+   "title": "New flat in Arroios",
+   "written": "2026-10-10",
+   "source": "agent_write",
+   "sensitivity": "sensitive",
+   "categories": [
+    "personal_preferences",
+    "legal",
+    "finance"
+   ],
+   "variant": "about_user",
+   "lang": "en",
+   "subject": [
+    "arroios|morais soares"
+   ],
+   "when": [
+    "2026",
+    "october|november|oct\\b|nov\\b"
+   ],
+   "text": "The user signed a lease on a two-bedroom flat on Rua Morais Soares in Arroios, Lisbon, on 8 October 2026, and moves in on 1 November 2026. The rent is €1,450 a month, with a two-month deposit; the lease runs for three years, and the rent can rise at most by the yearly inflation index. The landlord is Carlos Vieira, who lives in the building and prefers to be contacted on WhatsApp. The flat is on the fourth floor with a lift, and the second bedroom will be the user's office, which is why they chose it over a cheaper one-bedroom in Penha de França. The user's current flat in Graça has to be handed back by 15 November 2026; the user gave notice on 30 September. The kitchen has a gas hob, which the user dislikes because they prefer cooking on induction, and the landlord agreed they can replace it at their own cost. Internet will be MEO fibre; the technician visit is booked for 3 November between 9:00 and 13:00. The user asked whether the building allows cats, because of their cat Miso, and the lease allows one pet. The user needs to update their address with the tax authority (Finanças) and their bank after the move. The estate agent's fee was paid by the landlord. The user measured the living room as 4.2 by 5.1 metres to plan where the sofa goes.",
+   "facts": [
+    {
+     "id": "e08.f01",
+     "claim": "On 8 October 2026 I signed a lease on a two-bedroom flat on Rua Morais Soares in Arroios, Lisbon.",
+     "keys": [
+      "\\bsign"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e08.f02",
+     "claim": "I move into the Arroios flat on 1 November 2026.",
+     "keys": [
+      "1 november|november 1\\b|1st of november|nov(ember)? 1\\b|1 nov\\b"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e08.f03",
+     "claim": "The rent for my Arroios flat is €1,450 a month.",
+     "keys": [
+      "1[,. ]?450"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e08.f04",
+     "claim": "The Arroios flat has a two-month deposit.",
+     "keys": [
+      "deposit"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e08.f05",
+     "claim": "My Arroios lease runs three years; the rent can rise at most by the yearly inflation index.",
+     "keys": [
+      "three years|3 years|three-year|3-year|inflation"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e08.f06",
+     "claim": "My Arroios landlord, Carlos Vieira, lives in the building and prefers WhatsApp.",
+     "keys": [
+      "vieira|carlos"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e08.f07",
+     "claim": "The Arroios flat is on the fourth floor, with a lift.",
+     "keys": [
+      "fourth floor|4th floor|\\blift\\b|elevator"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e08.f08",
+     "claim": "The second bedroom of my Arroios flat will be my office; I chose it over a cheaper one-bedroom in Penha de França.",
+     "keys": [
+      "office"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e08.f09",
+     "claim": "I hand back my current flat in Graça by 15 November 2026 (notice given 30 September).",
+     "keys": [
+      "gra[çc]a"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false,
+     "subject": [
+      "gra[çc]a"
+     ]
+    },
+    {
+     "id": "e08.f10",
+     "claim": "I prefer cooking on induction.",
+     "keys": [
+      "induction"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e08.f11",
+     "claim": "My Arroios landlord agreed I can replace the gas hob at my own cost.",
+     "keys": [
+      "replac"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e08.f12",
+     "claim": "Internet at the Arroios flat will be MEO fibre.",
+     "keys": [
+      "\\bMEO\\b|fibre|fiber"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e08.f13",
+     "claim": "The internet technician visit is 3 November, 9:00–13:00.",
+     "keys": [
+      "technician|9:00|13:00"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e08.f14",
+     "claim": "My Arroios lease allows one pet, so my cat Miso can come.",
+     "keys": [
+      "\\bpets?\\b|\\bcats?\\b|miso"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e08.f15",
+     "claim": "After moving to Arroios in November 2026 I need to update my address with Finanças and my bank.",
+     "keys": [
+      "finan[çc]as|tax|address"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e08.f16",
+     "claim": "The estate agent's fee was paid by the landlord.",
+     "keys": [
+      "agent|\\bfee\\b"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e08.f17",
+     "claim": "The Arroios living room measures 4.2 by 5.1 metres.",
+     "keys": [
+      "4[.,]2|5[.,]1"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    }
+   ],
+   "mustNot": []
+  },
+  {
+   "id": "e09",
+   "title": "NordicSwift 2026 talk",
+   "written": "2026-09-28",
+   "source": "agent_write",
+   "sensitivity": "internal",
+   "categories": [
+    "project_context",
+    "software_development"
+   ],
+   "variant": "about_user",
+   "lang": "en",
+   "subject": [
+    "nordic ?swift|oslo|without tears"
+   ],
+   "when": [
+    "2026",
+    "september|sept\\b",
+    "october"
+   ],
+   "text": "The user gave a talk titled \"Offline-first sync without tears\" at NordicSwift 2026 in Oslo on 24 September 2026. It was their first conference talk in English; before, they had only spoken at local meetups in Lisbon. The talk was 30 minutes plus Q&A, about conflict resolution with CRDTs in a SwiftData app, using Tern as the example. About 250 people attended. The user was nervous beforehand and rehearsed five times with their partner, which they said helped a lot. The organisers covered the flight and two hotel nights; the user paid for an extra night to see the city. The slides are on Speaker Deck, and the recording should be on YouTube in October. The feedback forms gave the talk 4.6 out of 5; several people said the live demo was the best part, and two said the CRDT section was too fast. The user met Karin Lund from the Swift Server Workgroup, who invited them to write a guest post for the Swift.org blog. The user wants to submit the same talk, with a slower CRDT section, to two more conferences in 2027, and would rather not do live demos again because the venue Wi-Fi nearly failed. The user had to ask the organisers for a USB-C to HDMI adapter.",
+   "facts": [
+    {
+     "id": "e09.f01",
+     "claim": "On 24 September 2026 I gave the talk \"Offline-first sync without tears\" at NordicSwift 2026 in Oslo.",
+     "keys": [
+      "\\bgave|presented|spoke|delivered",
+      "talk"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e09.f02",
+     "claim": "My NordicSwift 2026 talk was my first conference talk in English; before, only Lisbon meetups.",
+     "keys": [
+      "first (conference )?talk|first time|meetup"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e09.f03",
+     "claim": "My NordicSwift 2026 talk covered CRDT conflict resolution in a SwiftData app, with Tern as the example.",
+     "keys": [
+      "tern|conflict resolution"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e09.f04",
+     "claim": "About 250 people attended my NordicSwift 2026 talk.",
+     "keys": [
+      "250"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e09.f05",
+     "claim": "Rehearsing my NordicSwift talk five times with my partner helped a lot with nerves.",
+     "keys": [
+      "rehears"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e09.f06",
+     "claim": "NordicSwift covered my flight and two hotel nights; I paid for an extra night.",
+     "keys": [
+      "hotel|flight|extra night"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e09.f07",
+     "claim": "My NordicSwift 2026 slides are on Speaker Deck; the recording should be on YouTube in October 2026.",
+     "keys": [
+      "speaker ?deck|youtube|recording"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e09.f08",
+     "claim": "My NordicSwift 2026 talk was rated 4.6 out of 5.",
+     "keys": [
+      "4[.,]6"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e09.f09",
+     "claim": "At NordicSwift 2026 people said my live demo was the best part.",
+     "keys": [
+      "demo",
+      "best|liked|highlight|favou?rite"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e09.f10",
+     "claim": "At NordicSwift 2026 two people said my CRDT section was too fast.",
+     "keys": [
+      "too fast"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e09.f11",
+     "claim": "At NordicSwift 2026 I met Karin Lund (Swift Server Workgroup), who invited me to write a Swift.org guest post.",
+     "keys": [
+      "karin|lund|guest post|swift\\.org"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e09.f12",
+     "claim": "I want to submit my NordicSwift talk, with a slower CRDT section, to two more conferences in 2027.",
+     "keys": [
+      "submit|two more|2027"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e09.f13",
+     "claim": "I'd rather not do live demos in talks again: the Wi-Fi at NordicSwift nearly failed.",
+     "keys": [
+      "wi-?fi|(no|not|avoid)\\b.*live demos?"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e09.f14",
+     "claim": "I had to ask for a USB-C to HDMI adapter.",
+     "keys": [
+      "\\bUSB|HDMI|adapter"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    }
+   ],
+   "mustNot": [
+    {
+     "label": "the past talk read as upcoming",
+     "all": [
+      "\\b(will give|am giving|'m giving|will present|will speak)\\b"
+     ],
+     "none": [
+      "2027|submit|again|more"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "e10",
+   "title": "Boda de Lucía (junio de 2027)",
+   "written": "2026-07-30",
+   "source": "agent_write",
+   "sensitivity": "low",
+   "categories": [
+    "personal_preferences"
+   ],
+   "variant": "about_user",
+   "lang": "es",
+   "subject": [
+    "luc[ií]a",
+    "boda|casamiento"
+   ],
+   "when": [
+    "2027",
+    "2026",
+    "junio|marzo|fin de a[ñn]o"
+   ],
+   "text": "La hermana del usuario, Lucía, se casa con Tomás Ferreyra el 12 de junio de 2027 en una estancia cerca de San Antonio de Areco, en la provincia de Buenos Aires. Lucía le pidió al usuario que sea el padrino de la boda y que diga unas palabras durante la cena; el usuario aceptó, aunque le pone nervioso hablar en público. La ceremonia será civil, a las 17:00, seguida de una cena para unas 120 personas. El usuario piensa viajar desde Lisboa con su pareja, Rui, y quedarse tres semanas en Argentina para visitar también a sus padres, que viven en Rosario. Lucía pidió que los invitados no lleven regalos y que, si quieren, aporten a un fondo para la luna de miel en Japón. El usuario quiere que su regalo sea pagar una noche del viaje de luna de miel. Tomás es veterinario y conoció a Lucía en la facultad. El código de vestimenta es formal de verano. El usuario preguntó qué significa \"estancia\" para explicárselo a Rui, y le dijeron que es una finca de campo. La organizadora de la boda es Marina Ocampo, que pidió confirmar asistencia antes del 1 de marzo de 2027 en un formulario en línea. El usuario todavía no compró los pasajes; quiere comprarlos antes de fin de año para que salgan más baratos.",
+   "facts": [
+    {
+     "id": "e10.f01",
+     "claim": "Mi hermana Lucía se casa con Tomás Ferreyra el 12 de junio de 2027.",
+     "keys": [
+      "cas[ao]|boda|matrimonio",
+      "tom[aá]s|ferreyra|12 de junio"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e10.f02",
+     "claim": "La boda de Lucía es en una estancia cerca de San Antonio de Areco.",
+     "keys": [
+      "areco"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e10.f03",
+     "claim": "Soy el padrino de la boda de mi hermana Lucía y diré unas palabras en la cena.",
+     "keys": [
+      "padrino"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e10.f04",
+     "claim": "Me pone nervioso hablar en público.",
+     "keys": [
+      "hablar en p[uú]blico"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e10.f05",
+     "claim": "La boda de Lucía será civil, a las 17:00, con una cena para unas 120 personas.",
+     "keys": [
+      "civil|17:00|120"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e10.f06",
+     "claim": "Para la boda de Lucía pienso viajar desde Lisboa con Rui y quedarme tres semanas en Argentina.",
+     "keys": [
+      "tres semanas|3 semanas"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e10.f07",
+     "claim": "Mis padres viven en Rosario.",
+     "keys": [
+      "padres",
+      "rosario"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e10.f08",
+     "claim": "Lucía pidió no llevar regalos a su boda y, si se quiere, aportar a un fondo para su luna de miel en Japón.",
+     "keys": [
+      "fondo|sin regalos|no (lleven|llevar) regalos"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e10.f09",
+     "claim": "Mi regalo para la boda de Lucía será pagar una noche de su luna de miel.",
+     "keys": [
+      "\\bnoche\\b"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e10.f10",
+     "claim": "Tomás Ferreyra, el novio de Lucía, es veterinario; se conocieron en la facultad.",
+     "keys": [
+      "veterinari"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e10.f11",
+     "claim": "El código de vestimenta de la boda de Lucía es formal de verano.",
+     "keys": [
+      "vestimenta|formal"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e10.f12",
+     "claim": "Pregunté qué significa \"estancia\": es una finca de campo.",
+     "keys": [
+      "finca|significa"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e10.f13",
+     "claim": "Tengo que confirmar asistencia a la boda de Lucía antes del 1 de marzo de 2027 (organizadora: Marina Ocampo).",
+     "keys": [
+      "marzo|confirm|ocampo"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e10.f14",
+     "claim": "Todavía no compré los pasajes para la boda de Lucía; quiero comprarlos antes de fin de 2026.",
+     "keys": [
+      "pasajes|vuelos|billetes"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    }
+   ],
+   "mustNot": [
+    {
+     "label": "the sister's wedding read as the user's",
+     "all": [
+      "\\bme caso\\b|\\bmi boda\\b|\\bmy wedding\\b"
+     ],
+     "none": []
+    }
+   ]
+  },
+  {
+   "id": "e11",
+   "title": "Interview loop at Verdant Grid (Staff Data Engineer)",
+   "written": "2026-10-14",
+   "source": "agent_write",
+   "sensitivity": "internal",
+   "categories": [
+    "project_context"
+   ],
+   "variant": "about_user",
+   "lang": "en",
+   "subject": [
+    "verdant"
+   ],
+   "when": [
+    "2026",
+    "october|oct\\b"
+   ],
+   "text": "The user completed the interview loop for the Staff Data Engineer role last week. The company builds forecasting software for electricity grids and has about 120 employees, most of them in Copenhagen. The loop had four interviews, on Tuesday and Thursday. In the system design interview, the interviewer, Mette, asked the user to design a pipeline for smart-meter readings, and praised the user's enthusiasm and their questions about data quality. The hiring manager, Jonas, said the role is fully remote with a yearly team week in Copenhagen, and that the team works in Python and dbt on Snowflake. The user was weaker in the live SQL exercise and ran out of time on the last window-function question. The salary range they gave was DKK 85,000–95,000 a month. The recruiter asked whether the user needed visa sponsorship (they don't, as an EU citizen) and whether they could share their resume as a PDF, which they did the same day. The user asked what \"FTE\" meant on the contract summary; it means full-time equivalent. They expect to hear back by Friday next week. The user likes that the product is about the energy transition, but is unsure about the pay, which is below their current freelance income. They would negotiate for 100,000 a month if an offer comes.",
+   "facts": [
+    {
+     "id": "e11.f01",
+     "claim": "In the week of 5 October 2026 I completed the interview loop for the Staff Data Engineer role at Verdant Grid.",
+     "keys": [
+      "completed|finished|went through"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e11.f02",
+     "claim": "Verdant Grid builds forecasting software for electricity grids.",
+     "keys": [
+      "forecast"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e11.f03",
+     "claim": "Verdant Grid has about 120 employees, most of them in Copenhagen.",
+     "keys": [
+      "\\b120\\b"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e11.f04",
+     "claim": "Verdant Grid's interview loop had four interviews, on 6 and 8 October 2026.",
+     "keys": [
+      "four interviews|4 interviews|tuesday|thursday"
+     ],
+     "keep": "either",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e11.f05",
+     "claim": "In Verdant Grid's system design interview I designed a pipeline for smart-meter readings.",
+     "keys": [
+      "smart[- ]meter"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e11.f06",
+     "claim": "In Verdant Grid's interviews in October 2026, Mette praised my enthusiasm and my questions about data quality.",
+     "keys": [
+      "enthusias|data quality"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e11.f07",
+     "claim": "Verdant Grid's Staff Data Engineer role is fully remote, with a yearly team week in Copenhagen.",
+     "keys": [
+      "remote"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e11.f08",
+     "claim": "Verdant Grid's data team works in Python and dbt on Snowflake.",
+     "keys": [
+      "\\bdbt\\b|snowflake"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e11.f09",
+     "claim": "I was weaker in Verdant Grid's live SQL exercise and ran out of time on a window-function question.",
+     "keys": [
+      "\\bSQL\\b|window[- ]function"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e11.f10",
+     "claim": "Verdant Grid's salary range for the Staff Data Engineer role is DKK 85,000–95,000 a month.",
+     "keys": [
+      "85[,. ]?000"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e11.f11",
+     "claim": "I don't need visa sponsorship: I'm an EU citizen.",
+     "keys": [
+      "visa|sponsor|EU citizen"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": true
+    },
+    {
+     "id": "e11.f12",
+     "claim": "I shared my resume as a PDF.",
+     "keys": [
+      "resume|résumé|\\bCV\\b"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e11.f13",
+     "claim": "I asked what FTE means (full-time equivalent).",
+     "keys": [
+      "\\bFTE\\b|full-time equivalent"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e11.f14",
+     "claim": "I expect to hear back from Verdant Grid by 23 October 2026.",
+     "keys": [
+      "hear back|hear from|23 october|october 23|decision"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e11.f15",
+     "claim": "I like that Verdant Grid's product is about the energy transition.",
+     "keys": [
+      "energy transition"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e11.f16",
+     "claim": "Verdant Grid's pay is below my current freelance income, so I'm unsure about it.",
+     "keys": [
+      "below|less than|lower than|unsure"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e11.f17",
+     "claim": "If Verdant Grid makes an offer, I'd negotiate for DKK 100,000 a month.",
+     "keys": [
+      "100[,. ]?000"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    }
+   ],
+   "mustNot": [
+    {
+     "label": "the offered role read as the user's job",
+     "all": [
+      "\\bmy (job|role|work) is (fully )?remote|\\bI work (fully )?remote"
+     ],
+     "none": []
+    },
+    {
+     "label": "the salary range read as the user's salary",
+     "all": [
+      "\\bmy (salary|pay)\\b"
+     ],
+     "none": [
+      "range|offer|role|would|verdant|below"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "e12",
+   "title": "Recruiter call about a CTO role",
+   "written": "2026-09-02",
+   "source": "agent_write",
+   "sensitivity": "sensitive",
+   "categories": [
+    "project_context",
+    "finance"
+   ],
+   "variant": "about_user",
+   "lang": "en",
+   "subject": [
+    "lumen"
+   ],
+   "when": [
+    "2026",
+    "september|sept?\\b",
+    "march"
+   ],
+   "text": "Yesterday the user had a call with Marta Sousa, an independent recruiter, about a CTO position at Lumen Health, a 35-person Porto startup that makes appointment software for dental clinics. Marta asked the user to keep the conversation private, because the current CTO hasn't announced that he is leaving. The founders want someone who can still write code for the first year and grow the team from 6 to 15 engineers. The role pays €110,000 a year plus 1.5% equity vesting over four years, with a one-year cliff. It's hybrid, two days a week in the Porto office, which would mean commuting by train from Lisbon or moving. The company raised a €6M seed round in March and has about 20 months of runway. The stack is Kotlin on the backend and React on the web. There is no iOS app yet, and the founders would like the new CTO to start one.\n\nMarta explained that the process would be a conversation with the two founders, a half-day with the team and a reference call. The user said the equity sounded low for a CTO and asked whether there was room to negotiate; Marta thought 2% might be possible. The user is interested in the iOS work and in being a CTO, but is worried about the commute and about the runway. Marta asked if the user had a portfolio site, and the user sent her the link. She mentioned that she mostly places fintech roles and that this one was an exception. The user wants to talk it over with their partner before deciding whether to continue, and told Marta they would reply by the end of next week. The call was meant to take 30 minutes and ran to an hour. Afterwards the user asked what a one-year cliff means, and it was explained that no equity vests until the first anniversary. They also noted that the founders had previously worked together at a hospital software company, which the user saw as a good sign for the product, and that the job ad they had seen earlier listed the role as fully remote, which Marta said was out of date. The user plans to look up the founders on LinkedIn before replying. Marta said the founders would like an answer before the end of September, because they want the new CTO to start in January 2027. The role comes with a €3,000 yearly training budget, which the user would spend on conferences. The office is near São Bento station, about ten minutes' walk from the platform, so the train commute from Lisbon would be about three hours each way door to door.",
+   "facts": [
+    {
+     "id": "e12.f01",
+     "claim": "On 1 September 2026 recruiter Marta Sousa pitched me a CTO position at Lumen Health.",
+     "keys": [
+      "marta|sousa",
+      "call|spoke|talked|pitch|contact"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e12.f02",
+     "claim": "Lumen Health is a 35-person Porto startup making appointment software for dental clinics.",
+     "keys": [
+      "dental|appointment software"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f03",
+     "claim": "The Lumen Health CTO opening is private: the current CTO hasn't announced he is leaving (September 2026).",
+     "keys": [
+      "private|confidential|announc"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e12.f04",
+     "claim": "Lumen Health's founders want a CTO who still writes code for the first year and grows the team from 6 to 15 engineers.",
+     "keys": [
+      "\\b15\\b|write code|still code|coding"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f05",
+     "claim": "The Lumen Health CTO role pays €110,000 a year.",
+     "keys": [
+      "110"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f06",
+     "claim": "The Lumen Health CTO role includes 1.5% equity vesting over four years with a one-year cliff.",
+     "keys": [
+      "1[.,]5 ?%"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f07",
+     "claim": "The Lumen Health CTO role is hybrid, two days a week in the Porto office.",
+     "keys": [
+      "hybrid|two days|2 days"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f08",
+     "claim": "Lumen Health's hybrid role would mean commuting by train from Lisbon or moving to Porto.",
+     "keys": [
+      "\\btrain\\b"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f09",
+     "claim": "Lumen Health raised a €6M seed round in March 2026.",
+     "keys": [
+      "\\bseed\\b|€ ?6 ?m"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e12.f10",
+     "claim": "As of September 2026 Lumen Health had about 20 months of runway.",
+     "keys": [
+      "20 months|twenty months"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e12.f11",
+     "claim": "Lumen Health's stack is Kotlin on the backend and React on the web.",
+     "keys": [
+      "kotlin|react"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f12",
+     "claim": "Lumen Health has no iOS app yet; the founders want the new CTO to start one.",
+     "keys": [
+      "no ios|ios app yet|start (one|an ios|the ios)|build (an|the) ios"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f13",
+     "claim": "Lumen Health's process: a conversation with the founders, a half-day with the team and a reference call.",
+     "keys": [
+      "half-day|half day|reference call"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f14",
+     "claim": "I told Marta the Lumen Health equity was low for a CTO; she thought 2% might be possible.",
+     "keys": [
+      "\\b2 ?%|negotiat"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f15",
+     "claim": "I'm interested in the iOS work and in being CTO at Lumen Health.",
+     "keys": [
+      "interest"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f16",
+     "claim": "I'm worried about the Lumen Health commute and runway.",
+     "keys": [
+      "worr|concern"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f17",
+     "claim": "I sent Marta my portfolio link.",
+     "keys": [
+      "portfolio"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f18",
+     "claim": "Marta mostly places fintech roles.",
+     "keys": [
+      "fintech"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f19",
+     "claim": "I want to talk to my partner before deciding whether to continue with Lumen Health.",
+     "keys": [
+      "partner"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f20",
+     "claim": "I told Marta I'd reply about Lumen Health by about 11 September 2026.",
+     "keys": [
+      "reply|respond|get back to"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e12.f21",
+     "claim": "The call ran to an hour instead of 30 minutes.",
+     "keys": [
+      "an hour|30 minutes|30-minute|ran (long|over)"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f22",
+     "claim": "I asked what a one-year cliff means: no equity vests until the first anniversary.",
+     "keys": [
+      "first anniversary|no equity vests|cliff means"
+     ],
+     "keep": "drop",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f23",
+     "claim": "Lumen Health's founders previously worked together at a hospital software company, a good sign to me.",
+     "keys": [
+      "hospital"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f25",
+     "claim": "Lumen Health's founders want the new CTO to start in January 2027.",
+     "keys": [
+      "january 2027|jan(uary)? 2027"
+     ],
+     "keep": "keep",
+     "timed": true,
+     "other": false
+    },
+    {
+     "id": "e12.f26",
+     "claim": "The Lumen Health CTO role comes with a €3,000 yearly training budget.",
+     "keys": [
+      "3[,. ]?000|training budget"
+     ],
+     "keep": "keep",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f27",
+     "claim": "Lumen Health's office is near São Bento station; the train commute from Lisbon would be about three hours each way.",
+     "keys": [
+      "s[ãa]o bento|three hours"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    },
+    {
+     "id": "e12.f24",
+     "claim": "The Lumen Health job ad listing the role as fully remote was out of date.",
+     "keys": [
+      "out of date|outdated|\\bad\\b|job ad"
+     ],
+     "keep": "either",
+     "timed": false,
+     "other": false
+    }
+   ],
+   "mustNot": [
+    {
+     "label": "the pitched salary read as the user's",
+     "all": [
+      "\\bmy (salary|pay)\\b|\\bI (earn|make)\\b"
+     ],
+     "none": [
+      "would|offer|role|cto|lumen"
+     ]
+    },
+    {
+     "label": "the user read as a CTO now",
+     "all": [
+      "\\bI(?:'m| am) (the |a )?CTO\\b"
+     ],
+     "none": [
+      "would|role|position|offer|becom|being"
+     ]
+    },
+    {
+     "label": "the outdated remote listing read as true",
+     "all": [
+      "fully remote"
+     ],
+     "none": [
+      "out of date|outdated|\\bad\\b|listed|listing|not"
+     ]
+    }
+   ]
+  }
+ ]
+}

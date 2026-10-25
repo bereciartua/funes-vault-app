@@ -144,13 +144,55 @@ private extension String {
     }
 }
 
-/// The extraction request every splitting provider gets (memory processing §5.3), from Spike E's
-/// `prompts.py` with the user's compound-claim rule (`EXTRACT_RULES_V2`, Spike E §10).
+/// What the note tag carries besides the text (memory processing §5.3, Spike F): the title of the
+/// memory or suggestion it comes from, and when it was written. Pieces name their subject from the
+/// title and resolve "last week" against the date.
+public struct ExtractionNote: Sendable, Hashable {
+    /// Nil for a capture or a seed answer, whose title isn't the user's.
+    public var title: String?
+    public var written: Date
+
+    public init(title: String?, written: Date) {
+        self.title = title
+        self.written = written
+    }
+
+    /// "Wednesday 14 October 2026", in English like the rest of the prompt.
+    public func writtenText(timeZone: TimeZone = .current) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        f.timeZone = timeZone
+        f.dateFormat = "EEEE d MMMM yyyy"
+        return f.string(from: written)
+    }
+
+    /// The title as an attribute: one line, no double quotes.
+    var titleText: String? {
+        guard let title else { return nil }
+        let t = title.split(whereSeparator: \.isNewline).joined(separator: " ").replacingOccurrences(of: "\"", with: "'")
+            .trimmingCharacters(in: .whitespaces)
+        return t.isEmpty ? nil : t
+    }
+
+    /// What validation compares quotes and words against, besides the text.
+    func header(timeZone: TimeZone = .current) -> String {
+        (titleText.map { "\($0)\n" } ?? "") + writtenText(timeZone: timeZone) + "\n"
+    }
+}
+
+/// The extraction request every splitting provider gets (memory processing §5.3): Spike E's
+/// `prompts.py` with the user's compound-claim rule (Spike E §10), and Spike F's C3 rules (each
+/// piece names its subject and an episode's time and status; a durability filter). Spike F: 43%
+/// of pieces made sense alone with Spike E's prompt and the body alone, 81% with these.
 enum ExtractionPrompt {
     /// The most pieces one chunk may return (Spike E: up to 34 from one dense paragraph).
     static let maxPiecesPerChunk = 30
     /// The most pieces one input keeps ("Long input: 40 shown").
     static let maxPiecesPerInput = 40
+    /// Recorded with each tidy-up split: proposals made with an older prompt are made again (§9.5).
+    /// 1: Spike E's v2 rules, the body alone. 2: Spike F's C3 rules, with the note's title and date.
+    static let version = 2
 
     static let rules = """
         You split a note into atomic memories for a personal memory vault. The user reviews the results.
@@ -158,8 +200,13 @@ enum ExtractionPrompt {
 
         Rules:
         - Split into the smallest pieces that each still make sense on their own: separate facts joined by "and" or commas, each item of a list, a rule and its exception, a fact and its consequence ("My brother is diabetic, so no dessert at his birthday dinner" gives two). Keep together only what loses its meaning apart: a fallback or condition that only applies to the main statement ("loose-leaf green tea; if they only have bags, black tea instead"), measurements of one thing used together (a bike's frame size and saddle height), a current value with the target it's measured against ("14 of the 30 books I want to read this year"), a plan with its hedges ("thinking about a sabbatical, nothing decided, no date"). A note with one claim gives exactly one piece.
+        - Keep only what could help an assistant later. Keep every fact about the note's subject itself, even a small one: an offer's or a contract's terms, a diagnosis and its advice, a plan, a decision, an outcome, feedback, the people involved, upcoming dates and to-dos, and lasting facts and preferences. Leave out only what won't matter again: logistics already done (booking a slot, rescheduling, a delayed bag, a fee someone else paid), how a document could be sent, questions the user asked to understand a word or a process, small talk and incidental details (parking, someone joining late). When unsure, keep it.
         - evidence: 1 to 3 exact quotes copied character for character from the note.
-        - body: the claim rewritten to stand alone ("I'm allergic to peanuts", not "also peanuts"), in the note's language. Use only what the evidence says: never add details, never generalize ("peanuts" stays "peanuts").
+        - body: the claim rewritten to stand alone, in the note's language. An assistant will later see only this piece's title and body: never the note, its title, its date or the other pieces. So each body must make sense to someone who knows nothing else:
+          - Name its subject: who or what it is about, by name (the company, the role, the person, the trip, the project, the illness, the place). Never "the role", "the company", "the trip", "the interview", "he", "she" or "it" for something the note names elsewhere: repeat the name, from the note's title or other sentences.
+          - Anchor in time what belongs to an episode or a moment (an interview, an offer, a trip, an appointment, an illness, a deadline): the date, month or year the note gives for it ("on 2 May 2026", "in May 2026"), or else the month the note was written. Resolve "yesterday", "last week" or "next Monday" against the written date. Never put a date on a lasting fact or preference, even a new or changed one: "I no longer drink coffee after lunch", not "As of 3 May 2026, I no longer drink coffee after lunch".
+          - Keep its status: an interview, an offer under discussion, a plan, a past trip or a former job is not the user's current situation. "The salary was €90,000" becomes "The Data Lead role Ferncliff Labs offered me in May 2026 paid €90,000", not "I earn €90,000".
+          The subject, time and status are context for the claim, not extra claims. Use only what the note says: the evidence, plus names and dates from elsewhere in the note (its title and written date included). Never add other details, never generalize ("peanuts" stays "peanuts").
         - Keep negation, scope and qualifiers ("not", "only on Tuesdays", "until January", "I think").
         - "I used to X, now Y" and corrections: the piece states the current fact (Y), with intent correction.
         - "Forget X", "X is cancelled", "no longer X": intent retraction (or correction if a new fact replaces it).
@@ -167,7 +214,7 @@ enum ExtractionPrompt {
         - intent: assertion (a fact or preference), remember (something to keep: a recipe, an appointment, a to-do), correction (changes an earlier fact), retraction (an earlier fact is no longer true).
         - atomic: false if the piece still holds more than one claim.
         - confidence: 0 to 1, how sure you are that the piece is correct, atomic and fully supported by its quotes.
-        - title: at most 80 characters. timeLimited: true if only true for a while (a trip, an appointment, this week).
+        - title: at most 80 characters, naming the subject too. timeLimited: true if only true for a while (a trip, an appointment, this week).
         - If nothing is worth remembering, return no pieces.
         """
 
@@ -195,15 +242,25 @@ enum ExtractionPrompt {
             + "Kinds: \(MemoryKind.allCases.map(\.rawValue).joined(separator: ", ")).\n\(sensitivityGuide)"
     }
 
-    static func prompt(chunk: String, context: String?, hint: ExtractionHint?) -> String {
+    /// The context may name a piece's subject (Spike F: without that, a later chunk's pieces lost the
+    /// name only the first chunk held: 10 of 28 named it, against 27 of 27).
+    static let contextNote = "(The context is the text just before the note: extract nothing from it, but use its names to say who or what a piece is about.)"
+
+    static func prompt(chunk: String, context: String?, hint: ExtractionHint?, note: ExtractionNote? = nil,
+                       timeZone: TimeZone = .current) -> String {
         var parts: [String] = []
         if let hint {
             parts.append("The note answers the question: \"\(hint.question)\" (likely kind \(hint.kind.rawValue), category \(hint.categoryKey)).")
         }
         if let context {
-            parts.append("<context>\n\(context)\n</context>\n(The context is the text just before the note, for reference only: extract nothing from it.)")
+            parts.append("<context>\n\(context)\n</context>\n\(contextNote)")
         }
-        parts.append("<note>\n\(chunk)\n</note>")
+        var attributes = ""
+        if let note {
+            if let title = note.titleText { attributes += " title=\"\(title)\"" }
+            attributes += " written=\"\(note.writtenText(timeZone: timeZone))\""
+        }
+        parts.append("<note\(attributes)>\n\(chunk)\n</note>")
         return parts.joined(separator: "\n")
     }
 
@@ -225,10 +282,10 @@ enum ExtractionPrompt {
         ])
     }
 
-    static func request(chunk: String, context: String?, hint: ExtractionHint?, variant: ExtractionVariant,
+    static func request(chunk: String, context: String?, hint: ExtractionHint?, note: ExtractionNote? = nil, variant: ExtractionVariant,
                         categories: [MemoryCategory]) -> StructuredRequest<Output> {
         StructuredRequest(instructions: instructions(variant, categories: categories),
-                          prompt: prompt(chunk: chunk, context: context, hint: hint),
+                          prompt: prompt(chunk: chunk, context: context, hint: hint, note: note),
                           schema: schema(categories: categories), maxOutputTokens: 4_096)
     }
 
@@ -381,7 +438,7 @@ enum ExtractionValidator {
     }
 
     static func stripTags(_ quote: String) -> String {
-        quote.replacing(/<\/?(note|context)>/, with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+        quote.replacing(/<\/?(note|context)(\s[^>]*)?>/, with: "").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Lowercased, NFKC, curly quotes and dashes made plain, whitespace collapsed.

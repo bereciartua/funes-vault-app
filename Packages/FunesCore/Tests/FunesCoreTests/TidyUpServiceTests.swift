@@ -60,6 +60,11 @@ final class ScriptedTidy: GenerationProvider {
     }
 }
 
+/// The extraction prompts a scripted provider saw.
+final class PromptLog: Sendable {
+    let lines = Mutex<[String]>([])
+}
+
 /// Phase 6b.1–6b.4 and 6b.6: runs, clusters, the code-only rules, the model call, storing,
 /// auto-apply with undo, dismissals and the no-loop rules (memory processing §9, ADR-0021).
 @Suite struct TidyUpServiceTests {
@@ -473,6 +478,106 @@ final class ScriptedTidy: GenerationProvider {
         #expect(try env.inspected(dump.id))
         try await env.suggestions.apply(suggestionID: s.id, now: t0)
         #expect(try env.memory(dump.id).status == .archived)
+    }
+
+    /// Spike F: the memory's title and date go in the note tag, so a piece may name what only the
+    /// title names.
+    @Test func aSplitSendsTheMemorysTitleAndDate() async throws {
+        let env = try Env()
+        let long = "The user completed the interview loop for the Staff Data Engineer role last week. "
+            + String(repeating: "The hiring manager said the role is fully remote with a yearly team week. ", count: 9)
+        let dump = try env.v.memory("Interview loop at Verdant Grid", long, now: SpikeE.day("2026-10-14"))
+        let prompts = PromptLog()
+        let provider = ScriptedTidy(extract: { prompt in
+            prompts.lines.withLock { $0.append(prompt) }
+            return [ScriptedSplitter.piece("I completed Verdant Grid's interview loop in October 2026.", quote: "Interview loop at Verdant Grid"),
+                    ScriptedSplitter.piece("Verdant Grid's Staff Data Engineer role is fully remote.", quote: "the role is fully remote")]
+        })
+        _ = try await env.run(provider)
+        let prompt = try #require(prompts.lines.withLock { $0.first })
+        #expect(prompt.contains("<note title=\"Interview loop at Verdant Grid\" written=\""))
+        let s = try #require(try await env.pending().first)
+        #expect(s.targetMemoryID == dump.id && TidyUpRecord.decode(s)?.extractionPrompt == ExtractionPrompt.version)
+        // The first piece quotes the title: it's kept.
+        let group = try await env.suggestions.group(id: s.id)
+        #expect(group?.pieces.count == 2)
+    }
+
+    static func cello(_ env: Env) throws -> Memory {
+        try env.v.memory("About me", "I'm vegetarian. " + String(repeating: "I play the cello in a quartet that rehearses weekly. ", count: 12),
+                         now: t0.plus(days: -1))
+    }
+
+    static var celloPieces: ScriptedTidy {
+        ScriptedTidy(extract: { _ in
+            [ScriptedSplitter.piece("I'm vegetarian.", quote: "I'm vegetarian"),
+             ScriptedSplitter.piece("I play the cello in a quartet.", quote: "I play the cello in a quartet")]
+        })
+    }
+
+    /// As if made before Spike F's prompt: no version on its record.
+    static func makeOld(_ env: Env, _ id: UUID) throws {
+        try env.v.store.writer.write { db in
+            try db.execute(sql: "UPDATE suggestion SET classification = json_remove(classification, '$.extractionPrompt') WHERE id = ?",
+                           arguments: [id.db])
+        }
+    }
+
+    /// §9.5: a pending split made with an older extraction prompt is made again, in the next run.
+    @Test func aSplitMadeWithAnOlderPromptIsMadeAgain() async throws {
+        let env = try Env()
+        let dump = try Self.cello(env)
+        _ = try await env.run(Self.celloPieces)
+        let old = try #require(try await env.pending().first)
+        try Self.makeOld(env, old.id)
+        let second = try await env.run(Self.celloPieces, now: t0.plus(days: 1))
+        #expect(second.suggestions == 1)
+        let new = try #require(try await env.pending().first)
+        #expect(new.id != old.id && new.targetMemoryID == dump.id && TidyUpRecord.decode(new)?.extractionPrompt == 2)
+        #expect(try env.v.count("SELECT COUNT(*) FROM suggestion WHERE id = ? OR group_id = ?", [old.id.db, old.id.db]) == 0)
+        // A current one stays as it is.
+        let third = try await env.run(Self.celloPieces, now: t0.plus(days: 2))
+        let still = try await env.pending()
+        #expect(third.suggestions == 0 && still.map(\.id) == [new.id])
+    }
+
+    /// A card the user has open isn't replaced under them.
+    @Test func anOldSplitThatIsOpenStays() async throws {
+        let env = try Env()
+        _ = try Self.cello(env)
+        _ = try await env.run(Self.celloPieces)
+        let old = try #require(try await env.pending().first)
+        try Self.makeOld(env, old.id)
+        let holds = SuggestionHolds()
+        holds.hold(old.id, .editing)
+        _ = try await TidyUpService(store: env.v.store, activity: env.log, holds: holds).run(
+            .init(router: ModelRouter(classifier: Self.celloPieces, onDevice: nil, cloudLimit: .upTo(.internal))), now: t0.plus(days: 1))
+        let pending = try await env.pending()
+        #expect(pending.map(\.id) == [old.id])
+    }
+
+    /// §9.5: once, rejections of splits made with an older prompt stop counting as dismissals; a
+    /// rejection after that is remembered.
+    @Test func rejectedOldSplitsAreOfferedAgainOnce() async throws {
+        let env = try Env()
+        let dump = try Self.cello(env)
+        _ = try await env.run(Self.celloPieces)
+        let first = try #require(try await env.pending().first)
+        try await env.suggestions.reject(suggestionID: first.id, now: t0)
+        #expect(try env.v.count("SELECT COUNT(*) FROM tidy_up_dismissal") == 1)
+        // A vault from before the new prompt.
+        try Self.makeOld(env, first.id)
+        try await env.v.store.writer.write { db in try db.execute(sql: "DELETE FROM meta WHERE key = ?", arguments: [TidyUpService.splitPromptKey]) }
+        let second = try await env.run(Self.celloPieces, now: t0.plus(days: 1))
+        let dismissals = try env.v.count("SELECT COUNT(*) FROM tidy_up_dismissal")
+        #expect(second.suggestions == 1 && dismissals == 0)
+        let again = try #require(try await env.pending().first)
+        try await env.suggestions.reject(suggestionID: again.id, now: t0.plus(days: 1))
+        try env.forget(dump.id)
+        let third = try await env.run(Self.celloPieces, now: t0.plus(days: 2))
+        let none = try await env.pending()
+        #expect(third.suggestions == 0 && none.isEmpty)
+        #expect(try env.v.count("SELECT COUNT(*) FROM meta WHERE key = ? AND value = '2'", [TidyUpService.splitPromptKey]) == 1)
     }
 
     // MARK: - Validation (§9.4)

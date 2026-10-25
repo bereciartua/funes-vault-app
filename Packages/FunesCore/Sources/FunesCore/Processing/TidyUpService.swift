@@ -211,6 +211,7 @@ public struct TidyUpService: Sendable {
             try db.execute(sql: "UPDATE tidy_up_run SET finished_at = ?, partial = 1, error = COALESCE(error, 'interrupted') WHERE finished_at IS NULL",
                            arguments: [now])
             try db.execute(sql: "INSERT INTO tidy_up_run (id, started_at, engine) VALUES (?, ?, ?)", arguments: [run.id.db, now, engine])
+            try Self.dropOldSplits(db, holds: holds)
             try Self.dropStale(db, holds: holds)
             return try State.load(db)
         }
@@ -265,6 +266,40 @@ public struct TidyUpService: Sendable {
             default: Stop(code: "provider_failed")
             }
         }
+    }
+
+    /// The extraction prompt the last run's split dismissals were made with (`meta`).
+    static let splitPromptKey = "tidy_up_split_prompt"
+
+    /// Splits made with an older extraction prompt are made again (§9.5, Spike F): a pending one
+    /// nobody has open is dropped and its memory looked at again, this run. Once per prompt
+    /// version, rejections of older splits stop counting as dismissals, so they're offered again;
+    /// a rejection after that is remembered as usual.
+    static func dropOldSplits(_ db: Database, holds: SuggestionHolds) throws {
+        let pending = try Row.fetchAll(db, sql: """
+            SELECT * FROM suggestion WHERE origin = 'consolidation' AND action = 'split' AND status = 'pending' AND group_id IS NULL
+            """).map(Suggestion.from(row:))
+        for s in pending where !holds.isHeld(s.id) && (TidyUpRecord.decode(s)?.extractionPrompt ?? 1) < ExtractionPrompt.version {
+            try db.execute(sql: "DELETE FROM suggestion WHERE group_id = ?", arguments: [s.id.db])
+            try db.execute(sql: "DELETE FROM suggestion WHERE id = ?", arguments: [s.id.db])
+            try db.execute(sql: "DELETE FROM suggestion_group WHERE id = ?", arguments: [s.id.db])
+            if let id = s.targetMemoryID {
+                try db.execute(sql: "UPDATE memory SET reconciled_version = NULL WHERE id = ?", arguments: [id.db])
+            }
+        }
+        let done = try Int.fetchOne(db, sql: "SELECT CAST(value AS INTEGER) FROM meta WHERE key = ?", arguments: [splitPromptKey]) ?? 1
+        guard done < ExtractionPrompt.version else { return }
+        let rejected = try Row.fetchAll(db, sql: """
+            SELECT * FROM suggestion WHERE origin = 'consolidation' AND action = 'split' AND status = 'rejected' AND group_id IS NULL
+            """).map(Suggestion.from(row:))
+        for s in rejected where (TidyUpRecord.decode(s)?.extractionPrompt ?? 1) < ExtractionPrompt.version {
+            guard let id = s.targetMemoryID else { continue }
+            // A split names one memory: its dismissal is keyed on that memory alone.
+            try db.execute(sql: "DELETE FROM tidy_up_dismissal WHERE memory_ids = ?", arguments: [id.db])
+            try db.execute(sql: "UPDATE memory SET reconciled_version = NULL WHERE id = ?", arguments: [id.db])
+        }
+        try db.execute(sql: "INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                       arguments: [splitPromptKey, String(ExtractionPrompt.version)])
     }
 
     /// Pending proposals whose memories changed are dropped, so the next run looks again (§9.4).
@@ -587,7 +622,8 @@ public struct TidyUpService: Sendable {
         let result: SplitResult
         do {
             result = try await MemorySplitter(store: store, router: router, finder: finder).split(
-                SplitRequest(text: m.body, variant: variant, original: m.sensitivity, excluding: [m.id], requester: .user), now: now)
+                SplitRequest(text: m.body, note: ExtractionNote(title: m.title, written: m.createdAt), variant: variant,
+                             original: m.sensitivity, excluding: [m.id], requester: .user), now: now)
         } catch SplitError.capReached {
             throw Stop(code: "cap_reached")
         } catch let SplitError.failed(error) {
@@ -640,7 +676,7 @@ public struct TidyUpService: Sendable {
     /// "Split this memory" from the tidy-up: a `split` suggestion for the memory, its pieces in
     /// its group, never below its sensitivity (§9.4).
     static func storeSplit(_ db: Database, _ m: Memory, _ result: SplitResult, runID: UUID, reason: String?, now: Date) throws -> UUID {
-        let record = TidyUpRecord(engine: result.engine, runID: runID, reason: reason)
+        let record = TidyUpRecord(engine: result.engine, runID: runID, reason: reason, extractionPrompt: ExtractionPrompt.version)
         let id = try SuggestionService.insertSuggestion(
             db, origin: .consolidation, action: .split,
             input: SuggestInput(title: m.title, body: m.body, kind: m.kind, categories: m.categoryKeys, sensitivity: m.sensitivity,

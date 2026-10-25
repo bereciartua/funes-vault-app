@@ -1016,7 +1016,13 @@ A is Spike E's `extract-v2`/`decide-v2` (the prompt Funes ships), run with the f
 
 The examples are invented, not taken from the fixtures.
 
-### Plan for the fix PR (not started; waiting for the author's go-ahead)
+### Plan for the fix PR
+Done in the fix PR, with three changes from this plan:
+- The re-proposal runs at the start of a tidy-up run rather than as a migration, so a split the user has open stays.
+- Pending new-memory groups made with the old prompt stay as they are.
+- Spike E's replay test now uses Opus's C3 recordings: recall 208/210 and 69/69, links 229/240 and 62/65 (with v2: 207/210, 230/240, 69/69, 63/65).
+
+The plan as written:
 1. **Spec, [memory processing](../domain/memory-processing.md):**
    - **§5.3:** the extraction input is the note with its title and written date: an agent suggestion's title (its title becomes the note's, its `evidence` still isn't sent), an import item's title and original date, a saved memory's title and `created_at`, a capture's date only. The prompt rules gain "each piece names its subject, and an episode's time and status, from anywhere in the note", the durability filter (C3's wording), and the context note allows names. The compound-claim rule stays.
    - **§5.4:** the support check compares against the title, the written date and the body. A new paragraph says why "names its subject" isn't a code check (finding 8 and the code-check numbers above).

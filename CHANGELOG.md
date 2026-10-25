@@ -6,6 +6,9 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Fixed
 
+- **Split memories keep their context.** When Funes splits a long memory (in the daily tidy-up) or a new suggestion into separate memories, each piece now says who or what it's about and, for something that happened, when: "The Staff Data Engineer role at Verdant Grid I interviewed for in October 2026 is fully remote", not "The role is fully remote". Pieces with no lasting value (asking what a word means, how to send a file) are left out. The model now gets the memory's title and date as well as its text. On Funes's test set, 81% of pieces made sense on their own to an agent that saw only them, up from 43%.
+  - Tidy-up splits proposed before this update are proposed again at the next run, and ones you rejected are offered once more. A split you have open isn't replaced under you.
+
 - **Inbox: every suggestion applies as what it says.** Applying a suggestion to archive a memory used to save a new memory instead; it now archives that memory. A correction replaces the memory when you click Replace or Save on the iPhone (Keep Both is only offered on the Mac, for corrections). Selecting several suggestions and clicking Apply applies each as its own kind.
 - **No more silent overwrites.** A correction whose memory was edited, archived or deleted after it was suggested says "Changed since this was suggested" instead of overwriting the newer text; **Review Again** shows the memory as it is now. The Mac's memory editor also refuses to save over a change made meanwhile (from the iPhone, for example) and offers to reload.
 
