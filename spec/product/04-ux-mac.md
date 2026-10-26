@@ -55,7 +55,7 @@ Quit Funes Vault                          ⌘Q
 
 ## Capture box
 - **Window:** a small borderless window centred near the top of the screen, like Spotlight. It has:
-  - a multi-line text field with the placeholder "What should Funes remember?", and from v0.4 a mic that dictates into it (SpeechAnalyzer, as in Home's composer);
+  - a multi-line text field with the placeholder "What should Funes remember?", and from v0.4 a mic that dictates into it (SpeechAnalyzer, as in Home's composer; macOS 26 and later, and on macOS 15 there's no mic, while the system's own dictation still works in the field);
   - a footer with "⏎ Save · ⇧⏎ New line · Esc Cancel" and where the text goes: "Goes to your Inbox", or, while a cloud model proposes the fields, "Goes to your Inbox · fields suggested by Anthropic" with a **Cloud** chip (principle 7).
 - **On save:**
   - The box closes and a brief HUD says "Saved to Inbox".
@@ -121,35 +121,37 @@ Settings…             ⌘,
 - **Greeting:** "Good morning / afternoon / evening, <first name>." (the macOS account's name), then "What should Funes remember?".
 - **Composer:** focused when Home appears, so ⌘1 then typing is a capture.
   - **⏎ Remember** saves it as a capture, exactly as the capture box does (the same view, words, HUD and secret-scanner error). **⇧⏎** is a new line. **⌘⏎ Search vault** opens the Vault searching for the text.
-  - **Mic:** dictates into the field with SpeechAnalyzer; the text stays editable. Asks for microphone and speech recognition access the first time.
+  - **Mic:** dictates into the field with SpeechAnalyzer, after what's already there; the text stays editable, and ⏎ stops it and saves. Asks for microphone and speech recognition access the first time; if either is refused, the field's error says where to allow it. macOS 26 and later: on macOS 15 there's no mic (the system's own dictation still works in the field).
   - Footer: "⏎ Remember · ⌘⏎ Search vault · Goes to your Inbox", with the capture box's Cloud chip when a cloud model proposes the fields.
 - **Pulse card:**
   - **The sentence first,** numbers over adjectives: "This week: 9 saved, 23 shared with 3 agents, 2 refused." Parts with nothing to say drop out ("This week: 9 saved.").
   - **In** (above the line): new memories per day, stacked by source: You (Mac), iPhone, Agents, Imports, Tidy-up. **Out** (below): memories shared per day, stacked by agent (the top four, then Other). **Refused:** a red dot under the day, sized by count.
   - **Range:** 7 days · **30 days** (default) · 12 weeks · 12 months, remembered; the longer ranges group by week and month.
-  - **Hover** a day: "Tue 21 Oct · 4 in (2 iPhone, 2 Claude Code) · 11 shared (Claude Code 8, Cursor 3) · 1 refused". **Click** opens Activity filtered to that day; a refused dot opens Activity ▸ Problems for that day.
+  - **Hover** a day: "Tue 21 Oct · 4 in (2 iPhone, 2 Agents) · 11 shared (Claude Code 8, Cursor 3) · 1 refused" (in counts by source; the overview doesn't say which agent's suggestions they were). **Click** opens Activity filtered to that day ("Showing Tue 21 Oct only · Show everything"), or that week or month in the longer ranges; a refused dot opens Activity ▸ Problems for that day.
+  - The y axis labels the tallest In and the deepest Out ("3 in", "13 out"); the x axis about five dates, the newest under today.
   - Counts memories shared: a request that shares 3 counts 3.
 - **Cards** (each opens its place):
 
   | Card | Shows | Opens |
   |---|---|---|
-  | **Memories** | Total; the vault's growth over 12 weeks as a line; "+9 this week" | Vault, newest first |
-  | **Sensitivity** | Two bars: the vault's mix, and what was shared in the range ("Shared: 78% Low · Vault: 48% Low") | Vault, Sensitivity filter |
-  | **Rhythm** | A 12-week grid of days (like GitHub's); "Most on Sundays · 3-week streak" | Activity, Changes |
-  | **Who reads your vault** | The top three agents by memories shared in the range, with the count | The agent's Activity tab |
+  | **Memories** | Total (counted up); the vault's growth over 12 weeks as a line; "+9 this week" | Vault, newest first |
+  | **Sensitivity** | Two bars: the vault's mix, and what was shared in the range (7 days shows the last 30), with "Shared: 78% Low" over "Vault: 48% Low" | Vault, filtered to the level the caption names first |
+  | **Rhythm** | A 12-week grid of days (like GitHub's); "Most on Sundays" over "3-week streak" (a weekday only when one leads, a streak from 2 weeks) | Activity, Suggestions (what came in) |
+  | **Who reads your vault** | The top three agents by memories shared in the range, with the count | Each row: the agent's Activity tab (a removed agent: Activity narrowed to it) |
 
-- **Status line:** "3 waiting in Inbox · Last tidy-up today 03:04", each part a link, each hidden when there's nothing to say.
-- **Empty states:** a new vault ("Your pulse starts with your first memories"; the cards say "Too few memories for a rhythm yet"); no agents ("No agent has read your vault yet. **Add Agent…**" in place of Out and Who reads); nothing this week ("Nothing new this week").
+- **Status line:** "3 waiting in Inbox · Last tidy-up today 03:04", each part a link to the Inbox (the tidy-up's suggestions are there), each hidden when there's nothing to say.
+- **Empty states:** a new vault ("Your pulse starts with your first memories"; the cards say "Too few memories for a rhythm yet", under 5 new memories in 12 weeks); no agents ("No agent has read your vault yet. **Add Agent…**" in place of Out and Who reads); nothing this week ("Nothing new this week"). With agents but nothing shared in the range, Who reads says "Nothing shared in the last 30 days".
+- **Refreshes** when Home appears and whenever the vault changes while it shows; the read runs off the main thread.
 - **Size:** fits without scrolling at the default window size; at the minimum (860×560) the page scrolls and the four cards wrap to two rows. The composer isn't sticky.
 - **Accessibility:** the pulse chart has a chart descriptor (VoiceOver's audio graph) and reads as "Last 30 days: 41 memories in, 96 shared, 3 requests refused"; each day reads its breakdown. Reduce Motion turns off the count-up and the chart's drawing in. Colors are never the only cue: the legend names every series, and the hover text says it in words.
 
 ### Setup checklist (until dismissed)
-A card at the top of the Vault (from v0.4, at the top of Home, above the greeting), connecting first:
+A card at the top of Home, above the greeting (before v0.4, at the top of the Vault), connecting first:
 1. **Connect an agent**: "Found on this Mac: Claude Code, Cursor". [Add…]
 2. **Approve its first request**: [Add to Claude Code…] / [Show Setup]. "Ask it something. Funes shows you exactly what it would share." The step completes when the first request arrives ("Claude Code connected 10:42").
 3. **Seed your vault**: "Answer a few questions or import from ChatGPT or Claude." [Start]
 4. **Review your Inbox**: "Apply what's right." [Open Inbox]
-- The first unfinished step's button has the initial keyboard focus (never Hide). Hide leaves "Setup checklist hidden. Settings ▸ Advanced brings it back. [Undo]" for 10 seconds.
+- Home's composer has the initial keyboard focus, and the first unfinished step's button is the checklist's default focus; Hide never is. Hide leaves "Setup checklist hidden. Settings ▸ Advanced brings it back. [Undo]" for 10 seconds.
 
 ### Vault
 - **Toolbar:**
@@ -171,7 +173,7 @@ A card at the top of the Vault (from v0.4, at the top of Home, above the greetin
   - **Provenance timeline:** created, edited, archived, shared, suggested by. Rows hold labels only.
   - **Actions:** Archive / Restore, Delete, "Still true" (confirm). In Recently Deleted: Restore and **Delete Now…**, which asks first ("Delete this memory now?"), from the detail, the list's context menu and the bulk bar alike.
 - **Empty state:** "Your vault is empty. Answer a few questions to get started, or press ⌥⌘M anytime to remember something."
-- **First run** (no memories yet, nothing filtered): the checklist, then a welcome instead of the toolbar, list and detail: "Your memory, shared only as you allow", three lines on the promise (the vault stays on this Mac; each agent gets only the access you give it and you see the exact text first; Activity records every request, without the text), [Answer a Few Questions…] [New Memory…] "or press ⌥⌘M in any app".
+- **First run** (no memories yet, nothing filtered): a welcome instead of the toolbar, list and detail: "Your memory, shared only as you allow", three lines on the promise (the vault stays on this Mac; each agent gets only the access you give it and you see the exact text first; Activity records every request, without the text), [Answer a Few Questions…] [New Memory…] "or press ⌥⌘M in any app".
 
 **Sensitivity explanations (UI copy):**
 

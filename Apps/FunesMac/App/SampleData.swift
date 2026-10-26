@@ -87,7 +87,117 @@ enum SampleData {
         _ = try await environment.imports.commit(preview, now: now.addingTimeInterval(-2 * 86_400))
         try await split(environment, claude: claude, now: now)
         try await tidyUp(environment, now: now)
+        try await history(environment, claude: claude, cursor: cursor, codex: codex, now: now)
         return Agents(claudeCode: claude, cursor: cursor, codex: codex)
+    }
+
+    /// Twelve weeks of comings and goings for Home's pulse (task 7.3): memories from the Mac, the
+    /// iPhone, agents, an import and tidy-ups, busiest on Sundays; and the agents' requests through
+    /// the real policy, Claude Code's approved and delivered, Cursor's shared without asking, some
+    /// refused. Seeded, so every run draws the same chart.
+    private static func history(_ environment: VaultEnvironment, claude: Agent, cursor: Agent, codex: Agent,
+                                now: Date) async throws {
+        let store = environment.store
+        let notes: [(String, String, String, Sensitivity)] = [
+            ("Standing desk", "Works standing in the mornings, sitting after lunch.", "personal_preferences", .low),
+            ("Tabs over spaces", "Indents with tabs in Go, spaces everywhere else.", "software_development", .low),
+            ("Reads on the train", "Reads on the commute; prefers paper books.", "personal_preferences", .public),
+            ("Quarterly planning", "Plans the quarter in the first week of January, April, July and October.", "project_context", .internal),
+            ("Swift Testing", "Prefers Swift Testing's #expect over XCTest assertions.", "software_development", .low),
+            ("No meetings on Fridays", "Keeps Friday afternoons free of meetings.", "communication_style", .low),
+            ("Espresso machine", "Has a lever espresso machine at home.", "personal_preferences", .public),
+            ("Harbor design review", "Harbor's design review is with the club's board.", "project_context", .internal),
+            ("Prefers SQLite", "Picks SQLite for local data before anything heavier.", "software_development", .low),
+            ("Bikes to work", "Cycles to the office when it's dry.", "personal_preferences", .public),
+            ("Weekly review", "Does a weekly review on Sunday evenings.", "personal_preferences", .low),
+            ("Git rebase", "Rebases feature branches; never rewrites main.", "software_development", .low),
+            ("Spanish at home", "Speaks Spanish at home and English at work.", "communication_style", .low),
+            ("Sourdough", "Bakes sourdough at the weekend.", "personal_preferences", .public),
+            ("Release notes", "Writes release notes for users, not for developers.", "communication_style", .low),
+            ("Dentist", "Sees the dentist every six months.", "health", .sensitive),
+            ("Mechanical keyboard", "Types on a mechanical keyboard with brown switches.", "personal_preferences", .public),
+            ("Harbor budget", "Harbor's budget is reviewed monthly.", "project_context", .internal),
+            ("Prefers Markdown", "Writes notes and docs in Markdown.", "software_development", .low),
+            ("Early riser", "Starts the day at 6:30.", "personal_preferences", .low),
+            ("Code review", "Reviews pull requests in the morning, before writing code.", "software_development", .low),
+            ("Podcast", "Listens to history podcasts while cooking.", "personal_preferences", .public),
+            ("Swimming", "Swims on Wednesdays.", "personal_preferences", .low),
+            ("Accessible UI", "Checks every screen with VoiceOver and Increase Contrast.", "software_development", .low),
+            ("Board games", "Plays board games with friends on the first Saturday of the month.", "personal_preferences", .public),
+            ("Short emails", "Keeps emails to five sentences.", "communication_style", .low),
+            ("Learning Rust", "Working through the Rust book in the evenings.", "software_development", .low),
+            ("Harbor launch", "Harbor launches to club members in the spring.", "project_context", .internal),
+            ("Running shoes", "Replaces running shoes every 800 km.", "personal_preferences", .low),
+            ("Tea in the afternoon", "Switches to green tea after 3 pm.", "personal_preferences", .public),
+            ("Typed errors", "Uses typed error enums in Swift.", "software_development", .low),
+            ("Physio", "Sees a physio for the knee every other week.", "health", .sensitive),
+            ("Photography", "Shoots film on holidays.", "personal_preferences", .public),
+            ("Feature flags", "Ships behind feature flags and removes them within a month.", "software_development", .low),
+            ("Garden", "Grows tomatoes and basil on the balcony.", "personal_preferences", .public),
+            ("Calm notifications", "Turns off badges for everything except messages.", "personal_preferences", .low),
+        ]
+        var rng = SampleRandom(seed: 7)
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: now)
+        // Which days get a memory: more lately, more on Sundays, a quiet stretch six weeks back.
+        var days: [Int] = []
+        for back in stride(from: 83, through: 1, by: -1) {
+            guard let day = calendar.date(byAdding: .day, value: -back, to: today) else { continue }
+            let sunday = calendar.component(.weekday, from: day) == 1
+            let chance = (back > 38 && back < 46) ? 0.05 : (sunday ? 0.85 : (back < 30 ? 0.4 : 0.25))
+            if rng.chance(chance) { days.append(back) }
+        }
+        let sources: [MemorySource] = [.captureMac, .captureMac, .manual, .captureIPhone, .captureIPhone, .agentSuggestion, .tidyUp]
+        for (index, note) in notes.enumerated() {
+            let back = days.isEmpty ? 1 : days[index * days.count / notes.count]
+            var draft = MemoryDraft(title: note.0, body: note.1, categoryKeys: [note.2], sensitivity: note.3)
+            draft.source = index % 9 == 4 ? .importClaude : sources[rng.next(sources.count)]
+            if draft.source == .agentSuggestion { draft.sourceAgentID = claude.id }
+            let at = calendar.date(byAdding: .day, value: -back, to: today)!.addingTimeInterval(Double(9 + rng.next(11)) * 3_600)
+            _ = try store.createMemory(draft, now: at)
+        }
+
+        // Requests: Claude Code most days and Cursor on weekdays, approved and delivered; paused
+        // Codex refused now and then.
+        let disclosures = environment.disclosures
+        let tasks: [(String, [String])] = [
+            ("Set up the test target for the new package", ["test framework", "swift"]),
+            ("Write the commit message for this change", ["commit messages"]),
+            ("Draft a reply to the design review thread", ["communication", "short emails"]),
+            ("Plan the Harbor release checklist", ["harbor", "release"]),
+            ("Add a SQLite cache to the sync service", ["sqlite", "storage"]),
+        ]
+        func share(_ agent: Agent, _ task: (String, [String]), at: Date) async throws {
+            guard at < now else { return }
+            let outcome = try await disclosures.request(agentID: agent.id, MemoryRequest(task: task.0, keywords: task.1), now: at)
+            guard outcome.status == .needsApproval, let id = outcome.requestID else { return }
+            let panel = try await disclosures.panel(requestID: id, now: at + 30)
+            let chosen = panel.map { $0.strong.isEmpty ? Array($0.memories.prefix(2).map(\.id)) : Array($0.strong) } ?? []
+            guard let panel, !chosen.isEmpty else {
+                try await disclosures.deny(requestID: id, now: at + 30)
+                return
+            }
+            try await disclosures.approve(requestID: id, snapshotRevision: panel.snapshotRevision, memoryIDs: chosen, now: at + 40)
+            _ = try await disclosures.deliver(requestID: id, agentID: agent.id, now: at + 45)
+        }
+        for back in stride(from: 83, through: 0, by: -1) {
+            guard let day = calendar.date(byAdding: .day, value: -back, to: today) else { continue }
+            let weekday = calendar.component(.weekday, from: day)
+            let workday = weekday != 1 && weekday != 7
+            for _ in 0..<(rng.chance(back < 35 ? 0.8 : 0.45) ? 1 + rng.next(2) : 0) {
+                let at = day.addingTimeInterval(Double(9 + rng.next(9)) * 3_600 + Double(rng.next(3_000)))
+                try await share(claude, tasks[rng.next(tasks.count)], at: at)
+            }
+            if workday && rng.chance(back < 40 ? 0.6 : 0.3) {
+                try await share(cursor, tasks[rng.next(2)], at: day.addingTimeInterval(Double(10 + rng.next(8)) * 3_600))
+            }
+            if rng.chance(0.1) {
+                let at = day.addingTimeInterval(Double(14 + rng.next(5)) * 3_600)
+                if at < now {
+                    _ = try await disclosures.request(agentID: codex.id, MemoryRequest(task: tasks[0].0, keywords: tasks[0].1), now: at)
+                }
+            }
+        }
     }
 
     /// Phase 6b's Tidy-up section, through the real run with a canned model: a duplicate archived
@@ -138,6 +248,20 @@ enum SampleData {
                                                    now: now.addingTimeInterval(-60))
         _ = try await queue.claim(now: now)
     }
+}
+
+/// A small seeded generator, so the sample history is the same on every run.
+private struct SampleRandom {
+    private var state: UInt64
+
+    init(seed: UInt64) { state = seed &* 0x9E37_79B9_7F4A_7C15 | 1 }
+
+    mutating func next(_ upperBound: Int) -> Int {
+        state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+        return Int((state >> 33) % UInt64(max(upperBound, 1)))
+    }
+
+    mutating func chance(_ p: Double) -> Bool { Double(next(10_000)) / 10_000 < p }
 }
 
 /// The canned model behind SampleData's splits: fixed pieces for the sample inputs, and decisions

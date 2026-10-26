@@ -19,6 +19,7 @@ struct MainView: View {
         } detail: {
             Group {
                 switch model.section {
+                case .home: HomeView(model: model)
                 case .vault: VaultView(model: model)
                 case .inbox: InboxView(model: model)
                 case .activity: ActivityScreen(model: model)
@@ -51,7 +52,7 @@ struct MainView: View {
     }
 }
 
-/// Vault, Inbox and Activity; the Agents list with its +; then Remote Access and Settings… pinned
+/// Home, Vault, Inbox and Activity; the Agents list with its +; then Remote Access and Settings… pinned
 /// at the bottom, and a status line while agents can't connect or are paused.
 struct Sidebar: View {
     let model: AppModel
@@ -73,6 +74,7 @@ struct Sidebar: View {
 
     var body: some View {
         List(selection: selection) {
+            sectionRow(.home)
             sectionRow(.vault)
             sectionRow(.inbox)
             sectionRow(.activity)

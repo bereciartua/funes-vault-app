@@ -354,6 +354,19 @@
         }
       }
     },
+    "%@, %lld memories shared" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld memories shared"
+          }
+        }
+      }
+    },
+    "%@, 1 memory shared" : {
+
+    },
     "%@, a cloud agent, through Remote Access" : {
 
     },
@@ -419,6 +432,16 @@
         }
       }
     },
+    "%@: %@, %lld shared, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@, %3$lld shared, %4$@"
+          }
+        }
+      }
+    },
     "%lld" : {
 
     },
@@ -471,6 +494,19 @@
     "%lld expired" : {
 
     },
+    "%lld in" : {
+
+    },
+    "%lld in (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld in (%2$@)"
+          }
+        }
+      }
+    },
     "%lld in categories it can't read" : {
 
     },
@@ -478,6 +514,9 @@
 
     },
     "%lld memories checked" : {
+
+    },
+    "%lld memories in" : {
 
     },
     "%lld memories restored." : {
@@ -533,7 +572,16 @@
     "%lld of 4" : {
 
     },
+    "%lld out" : {
+
+    },
+    "%lld refused" : {
+
+    },
     "%lld rejected" : {
+
+    },
+    "%lld requests refused" : {
 
     },
     "%lld requests waiting in Funes" : {
@@ -555,6 +603,9 @@
     "%lld s" : {
 
     },
+    "%lld saved" : {
+
+    },
     "%lld seconds left" : {
 
     },
@@ -562,6 +613,29 @@
 
     },
     "%lld selected" : {
+
+    },
+    "%lld shared (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld shared (%2$@)"
+          }
+        }
+      }
+    },
+    "%lld shared with %lld agents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld shared with %2$lld agents"
+          }
+        }
+      }
+    },
+    "%lld shared with 1 agent" : {
 
     },
     "%lld still processing" : {
@@ -576,10 +650,26 @@
     "%lld suggestions waiting for you" : {
 
     },
+    "%lld waiting in Inbox" : {
+
+    },
     "%lld withheld" : {
 
     },
+    "%lld%% %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld%% %2$@"
+          }
+        }
+      }
+    },
     "%lld, never imported" : {
+
+    },
+    "%lld-week streak" : {
 
     },
     "%lld. %@" : {
@@ -601,14 +691,42 @@
     "+%lld more" : {
 
     },
+    "+%lld this week" : {
+
+    },
     "1 ahead of it" : {
 
     },
     "1 memory" : {
 
     },
+    "1 memory in" : {
+
+    },
+    "1 request refused" : {
+
+    },
     "1 suggestion waiting for you" : {
 
+    },
+    "1-week streak" : {
+
+    },
+    "12 months" : {
+
+    },
+    "12 weeks" : {
+
+    },
+    "12 weeks: %lld new memories on %lld days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "12 weeks: %1$lld new memories on %2$lld days"
+          }
+        }
+      }
     },
     "30 days" : {
 
@@ -1235,6 +1353,9 @@
     "Both tunnels can run at the same time." : {
 
     },
+    "Bottom" : {
+
+    },
     "Brings a waiting approval panel forward from any app, so Return and Esc answer it." : {
 
     },
@@ -1769,6 +1890,9 @@
     "Date Created" : {
 
     },
+    "Day" : {
+
+    },
     "Delete" : {
 
     },
@@ -1834,6 +1958,15 @@
 
     },
     "Devin Desktop" : {
+
+    },
+    "Dictate" : {
+
+    },
+    "Dictation didn't start. Try again." : {
+
+    },
+    "Dictation doesn't support your language yet." : {
 
     },
     "Direct HTTP" : {
@@ -2195,6 +2328,12 @@
     "Funes backs up the file next to it first." : {
 
     },
+    "Funes can't use speech recognition. Allow it in System Settings ▸ Privacy & Security ▸ Speech Recognition." : {
+
+    },
+    "Funes can't use the microphone. Allow it in System Settings ▸ Privacy & Security ▸ Microphone." : {
+
+    },
     "Funes didn't send it: it looked like a secret, or was above the cloud limit." : {
 
     },
@@ -2314,6 +2453,34 @@
     "Goes to your Inbox · fields suggested by %@" : {
 
     },
+    "Good afternoon, %@." : {
+
+    },
+    "Good afternoon." : {
+
+    },
+    "Good evening, %@." : {
+
+    },
+    "Good evening." : {
+
+    },
+    "Good morning, %@." : {
+
+    },
+    "Good morning." : {
+
+    },
+    "Growth over 12 weeks: from %lld to %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Growth over 12 weeks: from %1$lld to %2$lld"
+          }
+        }
+      }
+    },
     "HTTP %@" : {
 
     },
@@ -2342,6 +2509,9 @@
 
     },
     "History" : {
+
+    },
+    "Home" : {
 
     },
     "Hostname" : {
@@ -2423,6 +2593,9 @@
 
     },
     "Import…" : {
+
+    },
+    "In" : {
 
     },
     "In ChatGPT, open Plugins, click +, then Create custom MCP server." : {
@@ -2588,6 +2761,9 @@
     "Its remote token and every connected cloud app stop working now. Its access on this Mac isn't affected." : {
 
     },
+    "Its suggestions are in the Inbox" : {
+
+    },
     "Its vectors are deleted and search uses bge-small alone." : {
 
     },
@@ -2657,6 +2833,18 @@
     "Kind" : {
 
     },
+    "Last 12 months" : {
+
+    },
+    "Last 12 weeks" : {
+
+    },
+    "Last 30 days" : {
+
+    },
+    "Last 7 days" : {
+
+    },
     "Last Updated" : {
 
     },
@@ -2676,6 +2864,9 @@
 
     },
     "Last seen %@ through the tunnel" : {
+
+    },
+    "Last tidy-up %@" : {
 
     },
     "Last tidy-up: %@" : {
@@ -2841,6 +3032,9 @@
     "More than 5 requests were refused in 10 minutes. See why in Activity." : {
 
     },
+    "Most on %@s" : {
+
+    },
     "Move its memories to" : {
 
     },
@@ -2984,6 +3178,9 @@
     "No agent can be used from the cloud yet. Turn on Allow cloud access in an agent's Cloud tab, or add a cloud agent with Add Agent…." : {
 
     },
+    "No agent has read your vault yet." : {
+
+    },
     "No agents yet" : {
 
     },
@@ -3020,6 +3217,9 @@
     "No memories match these filters" : {
 
     },
+    "No memories yet" : {
+
+    },
     "No memory selected" : {
 
     },
@@ -3036,6 +3236,9 @@
 
     },
     "None" : {
+
+    },
+    "None new this week" : {
 
     },
     "None yet" : {
@@ -3103,6 +3306,9 @@
     "Nothing archived" : {
 
     },
+    "Nothing came in or went out" : {
+
+    },
     "Nothing changes: it's already in your vault." : {
 
     },
@@ -3112,13 +3318,22 @@
     "Nothing here" : {
 
     },
+    "Nothing in %@" : {
+
+    },
     "Nothing is saved yet" : {
 
     },
     "Nothing matches these filters." : {
 
     },
+    "Nothing new this week" : {
+
+    },
     "Nothing relevant" : {
+
+    },
+    "Nothing shared in the %@" : {
 
     },
     "Nothing to change: it's already set up." : {
@@ -3272,6 +3487,9 @@
 
     },
     "Other tunnel" : {
+
+    },
+    "Out" : {
 
     },
     "Out of date" : {
@@ -3482,6 +3700,9 @@
     "Raised a memory's sensitivity" : {
 
     },
+    "Range" : {
+
+    },
     "Reach this Mac over" : {
 
     },
@@ -3561,6 +3782,9 @@
 
     },
     "Refuse this agent's requests until you resume it" : {
+
+    },
+    "Refused" : {
 
     },
     "Refused a request" : {
@@ -3803,6 +4027,9 @@
     "Retry" : {
 
     },
+    "Return remembers it. Command-Return searches your vault." : {
+
+    },
     "Returns to %@" : {
 
     },
@@ -3860,6 +4087,9 @@
 
     },
     "Revoke “%@”?" : {
+
+    },
+    "Rhythm" : {
 
     },
     "Rotate %@'s key?" : {
@@ -4042,6 +4272,9 @@
     "Sensitivity: %@" : {
 
     },
+    "Series" : {
+
+    },
     "Server URL" : {
 
     },
@@ -4129,6 +4362,16 @@
     "Shared without asking" : {
 
     },
+    "Shared: %lld%% %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shared: %1$lld%% %2$@"
+          }
+        }
+      }
+    },
     "Shift" : {
 
     },
@@ -4139,6 +4382,12 @@
 
     },
     "Show" : {
+
+    },
+    "Show %@ memories in the Vault" : {
+
+    },
+    "Show %@'s Activity" : {
 
     },
     "Show Activity" : {
@@ -4184,6 +4433,12 @@
 
     },
     "Show the Setup Checklist Again" : {
+
+    },
+    "Show the newest in the Vault" : {
+
+    },
+    "Show what came in, in Activity" : {
 
     },
     "Showing %@ only" : {
@@ -4376,6 +4631,9 @@
     "Still processing. It can be saved once it's done." : {
 
     },
+    "Stop Dictating" : {
+
+    },
     "Stop Using %@…" : {
 
     },
@@ -4502,6 +4760,9 @@
 
     },
     "Tasks" : {
+
+    },
+    "Tell me something, or search what I know…" : {
 
     },
     "Test" : {
@@ -4783,6 +5044,9 @@
     "There's no link to remove." : {
 
     },
+    "There's no microphone to listen with." : {
+
+    },
     "There's no one-click setup for %@." : {
 
     },
@@ -4854,6 +5118,9 @@
 
     },
     "This version of Funes Vault can't apply this suggestion. Update the app, or reject it." : {
+
+    },
+    "This week: %@." : {
 
     },
     "Throw the pieces away and keep what arrived as one suggestion." : {
@@ -4958,10 +5225,16 @@
     "Token URL" : {
 
     },
+    "Too few memories for a rhythm yet" : {
+
+    },
     "Too many requests" : {
 
     },
     "Too many tries with this code." : {
+
+    },
+    "Top" : {
 
     },
     "Traffic since launch" : {
@@ -5170,6 +5443,16 @@
     "Vault" : {
 
     },
+    "Vault: %lld%% %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Vault: %1$lld%% %2$@"
+          }
+        }
+      }
+    },
     "Version" : {
 
     },
@@ -5252,6 +5535,9 @@
     "While Remote Access is on, cloud agents reach Funes Vault through a public address. What you share with them goes to their servers." : {
 
     },
+    "Who reads your vault" : {
+
+    },
     "Why" : {
 
     },
@@ -5305,6 +5591,9 @@
 
     },
     "You" : {
+
+    },
+    "You (Mac)" : {
 
     },
     "You applied a suggestion" : {
@@ -5367,6 +5656,9 @@
     "Your previous setup was put back." : {
 
     },
+    "Your pulse starts with your first memories" : {
+
+    },
     "Your tailnet policy doesn't allow Funnel for this Mac. Add the funnel node attribute in the Tailscale admin console." : {
 
     },
@@ -5377,6 +5669,9 @@
 
     },
     "Zed starts a sign-in when a remote server has no Authorization header, so only the launcher is offered." : {
+
+    },
+    "Zero" : {
 
     },
     "Zoom" : {
@@ -5564,6 +5859,9 @@
     "not done" : {
 
     },
+    "nothing" : {
+
+    },
     "on iPhone" : {
 
     },
@@ -5681,6 +5979,9 @@
 
     },
     "“%@” wants to pair" : {
+
+    },
+    "⏎ Remember · ⌘⏎ Search vault" : {
 
     },
     "⏎ Save · ⇧⏎ New line · Esc Cancel" : {

@@ -432,7 +432,7 @@
 - The main window opens on Home: a greeting, a composer (⏎ saves a capture as the capture box does, ⌘⏎ searches the vault, a mic dictates), the pulse chart (in by source, out by agent, refused), and the Memories, Sensitivity, Rhythm and Who reads cards, each opening its filtered place ([UX: Mac ▸ Home](04-ux-mac.md#home)).
 
 **FR-H-03 Dictation on the Mac** · S · v0.4
-- A mic in Home's composer and in the capture box dictates into the field (SpeechAnalyzer), asking for microphone and speech recognition access the first time.
+- A mic in Home's composer and in the capture box dictates into the field (SpeechAnalyzer, on the Mac), asking for microphone and speech recognition access the first time. macOS 26 and later; on macOS 15 the mic is hidden and the system's own dictation still works in the field.
 
 **FR-H-04 iPhone Home** · M · v0.4
 - Home replaces Capture as the first tab: the composer, Waiting for you, the pulse chart with finger scrubbing, the tiles, Who reads, Recent captures ([UX: iPhone ▸ Home](05-ux-iphone.md#home-tab)).
@@ -473,7 +473,7 @@
   3. Seed your vault.
   4. Review the Inbox.
 
-  Shown at the top of the Vault until dismissed. The first unfinished step's button has the initial keyboard focus; Hide offers Undo, and Settings ▸ Advanced brings it back. An empty vault shows a welcome (what Funes does and its promise) instead of an empty list and filters.
+  Shown at the top of Home (before v0.4, the Vault) until dismissed. The first unfinished step's button is its default focus (on Home the composer takes the initial focus), never Hide; Hide offers Undo, and Settings ▸ Advanced brings it back. An empty vault shows a welcome (what Funes does and its promise) instead of an empty list and filters.
 
 **FR-O-02 Seed questions** · M · v0.1
 - Six optional prompts (from the web guided interview):

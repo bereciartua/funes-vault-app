@@ -79,6 +79,9 @@ final class ActivityModel {
                 if !entry.event.ids.contains(id) { return false }
             case .request(let id):
                 if entry.event.requestID != id { return false }
+            case .period(let interval):
+                if let agentFilter, entry.agentID != agentFilter { return false }
+                if entry.time < interval.start || entry.time >= interval.end { return false }
             }
             if let since, entry.time < since { return false }
             guard entry.matches(kind) else { return false }
@@ -88,10 +91,12 @@ final class ActivityModel {
     }
 }
 
-/// Which rows a list shows: everything, one agent's (its Activity tab), one memory's or one request's.
+/// Which rows a list shows: everything, one agent's (its Activity tab), one memory's, one request's,
+/// or a span of time (a day of Home's chart).
 enum ActivityScope: Equatable {
     case all
     case agent(UUID)
     case memory(UUID)
     case request(UUID)
+    case period(DateInterval)
 }
