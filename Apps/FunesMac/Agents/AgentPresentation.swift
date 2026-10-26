@@ -125,6 +125,19 @@ enum AgentText {
     }
 
     /// "Reads Low and below in 3 categories · asks first".
+    /// "knows your name", "knows your name and 2 more" or "knows 2 things about you" (ADR-0026);
+    /// nil when it gets no profile field.
+    static func aboutYou(_ fields: Set<ProfileField>) -> String? {
+        let others = fields.subtracting([.name]).count
+        switch (fields.contains(.name), others) {
+        case (true, 0): return String(localized: "knows your name")
+        case (true, _): return String(localized: "knows your name and \(others) more")
+        case (false, 0): return nil
+        case (false, 1): return String(localized: "knows 1 thing about you")
+        case (false, _): return String(localized: "knows \(others) things about you")
+        }
+    }
+
     static func accessSummary(_ access: Access, categories: [MemoryCategory]) -> String {
         let ops = access.operations
         guard !ops.isEmpty else { return String(localized: "No access yet") }
@@ -151,6 +164,7 @@ enum AgentText {
         }
         if ops.contains(.read) {
             parts.append(access.askBeforeSharing ? String(localized: "asks first") : String(localized: "shares without asking"))
+            if let about = aboutYou(access.profileFields) { parts.append(about) }
         }
         var text = parts.joined(separator: " · ")
         if let first = text.first { text = first.uppercased() + text.dropFirst() }

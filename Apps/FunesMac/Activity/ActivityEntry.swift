@@ -119,6 +119,7 @@ struct ActivityEntry: Identifiable, Equatable {
         case "agent_paused": return String(localized: "Agent paused")
         case "agent_resumed": return String(localized: "Agent resumed")
         case "access_changed": return String(localized: "Access changed")
+        case "profile_edited": return String(localized: "Edited About you")
         case "key_rotated": return String(localized: "Key rotated")
         case "cloud_access_on": return String(localized: "Cloud access turned on")
         case "cloud_access_off": return String(localized: "Cloud access turned off")

@@ -42,9 +42,16 @@ enum SampleData {
         let readAndSuggest = Access(operations: [.read, .suggest], maxSensitivity: .internal,
                                     deniedCategoryKeys: ["health", "finance", "legal"], askBeforeSharing: true,
                                     askBeforeSaving: true)
-        let (claude, _) = try await environment.agents.create(name: "Claude Code", kind: .claudeCode, access: readAndSuggest,
+        var claudeAccess = readAndSuggest
+        claudeAccess.profileFields = [.name, .pronouns]
+        let (claude, _) = try await environment.agents.create(name: "Claude Code", kind: .claudeCode, access: claudeAccess,
                                                               declaredRetention: .session, now: now.addingTimeInterval(-9 * 86_400))
         guard rich else { return Agents(claudeCode: claude) }
+
+        // About you (ADR-0026): a made-up person, so Home greets them and agents get their name.
+        try await environment.profiles.save(Profile(givenName: "Alex", familyName: "Rivera", pronouns: "they/them",
+                                                    languages: ["en", "es"], location: "Buenos Aires, Argentina",
+                                                    occupation: "Product designer"), now: now.addingTimeInterval(-9 * 86_400))
 
         if let trip = try? store.createMemory(MemoryDraft(title: "Lisbon trip", body: "In Lisbon for a conference in the first week of June.",
                                                           kind: .event, categoryKeys: ["personal_preferences"],

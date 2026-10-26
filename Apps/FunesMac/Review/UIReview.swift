@@ -106,7 +106,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
         let panel = try await environment.disclosures.panel(requestID: waiting.requestID!, now: Date())!
         let disclosure = try await environment.disclosures.disclosure(requestID: waiting.requestID!)
         var share = FunesApprovals.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: Date(),
-                                             agent: agents.claudeCode)
+                                             agent: agents.claudeCode, profileFields: disclosure?.profileFieldsSent ?? [])
         share.expiresAt = Date().addingTimeInterval(41.5)
         // The same request from a cloud agent through the tunnel (Goes to names the vendor).
         var cloudPanel = panel
@@ -313,7 +313,13 @@ final class UIReview: NSObject, NSApplicationDelegate {
                         ProviderSheet(model: model, provider: ProviderConfig(endpoint: .ollama(), name: "Ollama",
                                                                              model: "qwen3-embedding:0.6b"), isNew: false))
             await sheet("add-agent-cloud-\(suffix)", AddAgentSheet(model: model, place: .cloud) { _ in })
-            await sheet("seed-questions-\(suffix)", SeedQuestionsSheet(model: model))
+            await sheet("seed-questions-name-\(suffix)", SeedQuestionsSheet(model: model))
+            await sheet("seed-questions-\(suffix)", SeedQuestionsSheet(model: model, startsWithName: false))
+            // The Access tab's About you card, below the fold in agents-access (ADR-0026).
+            await sheet("access-about-you-\(suffix)", ProfileFieldsCard(model: model, agentName: fixture.agents.claudeCode.name,
+                                                                         fields: .constant(fixture.agents.claudeCode.access.profileFields),
+                                                                         reads: true)
+                .frame(width: 640).padding(20))
             await sheet("import-claude-\(suffix)", ImportSheet(model: model, kind: .claude))
             if let preview = try? await withCheckedThrowingContinuation({ (done: CheckedContinuation<OneClickPreview, Error>) in
                 model.setupControls.preview(.claudeDesktop, model.setupContext(for: fixture.agents.claudeCode)) { result in

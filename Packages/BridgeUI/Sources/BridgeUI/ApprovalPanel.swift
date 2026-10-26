@@ -263,10 +263,27 @@ public struct ApprovalPanelView: View {
                 Text(note).font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            if let aside = item.aside { asideLine(aside, item) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
+    }
+
+    /// "Claude Code also has your name, as set in [its Access]." The link opens it elsewhere.
+    private func asideLine(_ aside: PanelItem.Aside, _ item: PanelItem) -> some View {
+        var text = AttributedString(aside.text)
+        var link = AttributedString(aside.link)
+        link.link = URL(string: "bridgeui-aside:link")
+        text += link
+        text += AttributedString(aside.after)
+        return Text(text)
+            .font(.callout)
+            .fixedSize(horizontal: false, vertical: true)
+            .environment(\.openURL, OpenURLAction { _ in
+                queue.asideLinkClicked(item)
+                return .handled
+            })
     }
 
     private func header(_ item: PanelItem) -> some View {

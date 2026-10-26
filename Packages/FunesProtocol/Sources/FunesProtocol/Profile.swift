@@ -180,6 +180,19 @@ public struct Profile: Sendable, Hashable, Codable {
         }
     }
 
+    /// The name a suggestion from the macOS account's full name would fill in, when it looks like
+    /// a person's: two or more words, or one capitalized word. Never for a username like "mib",
+    /// and only ever offered, never saved by itself (ADR-0026).
+    public static func suggested(fromAccountName fullName: String) -> Profile? {
+        let words = fullName.split(whereSeparator: \.isWhitespace).map(String.init)
+        guard let first = words.first, first.first?.isLetter == true else { return nil }
+        if words.count == 1 {
+            guard first.first?.isUppercase == true else { return nil }
+            return Profile(givenName: first)
+        }
+        return Profile(givenName: first, familyName: words.dropFirst().joined(separator: " "))
+    }
+
     /// The time zone an agent is told: the IANA id, or the Mac's for `automatic`.
     public func resolvedTimeZone(current: TimeZone = .current) -> String {
         timeZone == Self.automaticTimeZone ? current.identifier : timeZone

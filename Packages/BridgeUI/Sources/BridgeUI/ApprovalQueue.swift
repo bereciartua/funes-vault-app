@@ -71,6 +71,21 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
         }
     }
 
+    /// A line above the buttons about something that already went with the request, with a link
+    /// that doesn't answer the panel: "Claude Code also has your name, as set in its Access."
+    public struct Aside: Sendable, Equatable {
+        /// The words before the link.
+        public let text: String
+        /// The link's title, and the words after it.
+        public let link: String
+        public let after: String
+        public init(text: String, link: String, after: String) {
+            self.text = text
+            self.link = link
+            self.after = after
+        }
+    }
+
     /// A label and value: "Kind", "Your note"; or, in `agentSays`, "Task", "Purpose"…
     public struct Fact: Sendable, Equatable {
         public let label: String
@@ -107,6 +122,8 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
     public var facts: [Fact]
     /// A line in secondary text under the facts ("2 more weren't offered: …").
     public var note: String?
+    /// Share: what the agent already has besides the memories (its profile fields).
+    public var aside: Aside?
     /// "Share" (the count of ticked rows is added) or "Save".
     public var primary: String
     /// "Deny" or "Later".
@@ -230,6 +247,8 @@ public final class ApprovalQueue {
     @ObservationIgnored private var timer: Timer?
     /// Called whenever the queue changes, so the app can show or hide the panel.
     @ObservationIgnored public var queueChanged: () -> Void = {}
+    /// An item's aside link was clicked; the panel stays as it is.
+    @ObservationIgnored public var asideLinkClicked: (PanelItem) -> Void = { _ in }
 
     public init(clock: @escaping () -> Date = Date.init) {
         self.clock = clock
@@ -398,7 +417,8 @@ extension PanelItem {
     /// Agent-provided text is labelled as such; nothing here decides anything.
     public static func share(id: UUID, agentID: String, agentName: String, destination: Destination?, task: String?,
                              keywords: [String], purpose: String?, keepsIt: String?, sharedWith: [String],
-                             facts: [Fact] = [], rows: [Row], note: String?, expiresAt: Date?) -> PanelItem {
+                             facts: [Fact] = [], rows: [Row], note: String?, aside: Aside? = nil,
+                             expiresAt: Date?) -> PanelItem {
         var says = [Fact]()
         if let task, !task.isEmpty {
             says.append(Fact(label: String(localized: "Task"), value: "“\(task)”", collapsible: true))
@@ -416,7 +436,7 @@ extension PanelItem {
             says.append(Fact(label: String(localized: "Shared with"), value: sharedWith.joined(separator: ", ")))
         }
         let count = rows.filter(\.selected).count
-        return PanelItem(
+        var item = PanelItem(
             id: id, kind: .share, agentID: agentID,
             title: rows.count == 1 ? String(localized: "\(agentName) wants 1 memory")
                                    : String(localized: "\(agentName) wants \(rows.count) memories"),
@@ -426,5 +446,7 @@ extension PanelItem {
             announcement: count == rows.count
                 ? String(localized: "\(agentName) asks to use \(rows.count) memories in Funes")
                 : String(localized: "\(agentName) asks to use your memories in Funes: \(count) of \(rows.count) ticked"))
+        item.aside = aside
+        return item
     }
 }

@@ -276,6 +276,8 @@ enum ActivityText {
         case "request_memory" where e.outcome != "fulfilled":
             let withheld = e.counts.values.reduce(0, +)
             return withheld > 0 ? String(localized: "\(withheld) withheld") : ""
+        case "profile_edited":
+            return (e.profileFields ?? []).sorted().map(ProfileText.title).joined(separator: ", ")
         case "import", "export", "funes_paused", "funes_resumed", "approval", "list_memory_categories", "open_in_funes",
              "memories_searched", "inbox_listed", "categories_listed", "overview_viewed", "device_paired", "device_revoked", "cap_reached",
              "tidy_up_run", "undone":
@@ -408,6 +410,13 @@ struct ActivityInspector: View {
                         GridRow {
                             Text(String(localized: "Withheld")).foregroundStyle(.secondary)
                             Text(withheld).fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    // The profile fields the answer carried (ADR-0026): names only, never values.
+                    if entry.event.event == "request_memory", let fields = entry.event.profileFields, !fields.isEmpty {
+                        GridRow {
+                            Text(String(localized: "Also sent")).foregroundStyle(.secondary)
+                            Text(ProfileText.list(fields)).fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }

@@ -47,6 +47,15 @@ import Testing
         #expect(Profile().resolvedTimeZone(current: TimeZone(identifier: "Asia/Tokyo")!) == "Asia/Tokyo")
     }
 
+    @Test func theAccountNameIsSuggestedOnlyWhenItLooksLikeAPersons() {
+        #expect(Profile.suggested(fromAccountName: "mib") == nil)
+        #expect(Profile.suggested(fromAccountName: "") == nil)
+        #expect(Profile.suggested(fromAccountName: "_admin") == nil)
+        #expect(Profile.suggested(fromAccountName: "Martin") == Profile(givenName: "Martin"))
+        #expect(Profile.suggested(fromAccountName: "Martin Bereciartua") == Profile(givenName: "Martin", familyName: "Bereciartua"))
+        #expect(Profile.suggested(fromAccountName: "  ana  de la torre ") == Profile(givenName: "ana", familyName: "de la torre"))
+    }
+
     @Test func fieldsHaveTheirWireSpellingsAndOrder() throws {
         #expect(ProfileField.allCases.map(\.rawValue) == ["name", "pronouns", "languages", "location", "time_zone", "occupation"])
         #expect([ProfileField.occupation, .name, .timeZone].sorted() == [.name, .timeZone, .occupation])

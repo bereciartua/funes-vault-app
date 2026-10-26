@@ -285,6 +285,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         approvals.remoteTunnel = { agentID in
             model.remoteServer?.note(agentID: agentID, near: Date())?.tunnel?.name ?? model.remoteAccess.inUseTunnelProvider?.name
         }
+        approvals.queue.asideLinkClicked = { item in
+            guard let id = UUID(uuidString: item.agentID) else { return }
+            model.agentTab = .access
+            model.showAgent(id)
+        }
         approvals.editSuggestion = { id in
             model.inboxState.focused = id
             model.show(.inbox)

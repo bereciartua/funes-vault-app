@@ -13,7 +13,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 14) {
                 checklist
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(HomeText.greeting(now: model.now)).font(.title2.weight(.semibold))
+                    Text(HomeText.greeting(now: model.now, calledName: model.profile.calledName)).font(.title2.weight(.semibold))
                     Text(String(localized: "What should Funes remember?")).foregroundStyle(.secondary)
                 }
                 .accessibilityElement(children: .combine)

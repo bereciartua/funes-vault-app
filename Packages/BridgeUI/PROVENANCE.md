@@ -7,8 +7,8 @@ Tier-2 code copied from EK Bridge (`bereciartua/ek-bridge`) under [ADR-0013](../
 
 | EK Bridge file | Source commit | BridgeUI |
 |---|---|---|
-| `Sources/ApprovalCenter.swift` | `9c726f2` (v0.11.1) | Sources/BridgeUI/ApprovalQueue.swift (adapted: generic PanelItem, "1 of 3", countdown, exactly-once) |
-| `Sources/ApprovalPanel.swift` | `9c726f2` (v0.11.1) | Sources/BridgeUI/ApprovalPanel.swift (adapted: checkbox rows with badges, facts, countdown, Share N) |
+| `Sources/ApprovalCenter.swift` | `9c726f2` (v0.11.1) | Sources/BridgeUI/ApprovalQueue.swift (adapted: generic PanelItem, "1 of 3", countdown, exactly-once, asides) |
+| `Sources/ApprovalPanel.swift` | `9c726f2` (v0.11.1) | Sources/BridgeUI/ApprovalPanel.swift (adapted: checkbox rows with badges, facts, countdown, Share N, an aside line with a link) |
 | `Sources/ActivityStore.swift` | `9c726f2` (v0.11.1) | Sources/BridgeUI/ActivityStore.swift (adapted: generic row type, retention as a parameter) |
 | `Sources/AccessRequests.swift` | `9c726f2` (v0.11.1) | — (Phase 3: Funes's access requests) |
 | `Sources/ActivityView.swift` | `9c726f2` (v0.11.1) | — (Funes's Activity screen follows its layout in Apps/FunesMac/Activity) |
