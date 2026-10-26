@@ -62,6 +62,9 @@ final class AppState {
     func setDemo(_ on: Bool) {
         guard on != model.isDemo else { return }
         if !on { PhoneServices.discardDemo(in: Self.demoDirectory) }
+        // The cached counts are the demo's or the Mac's, never both (ADR-0025): leaving the demo
+        // deletes its own, and the paired Mac's come back on the next refresh.
+        OverviewCache.appGroup()?.delete()
         model = PhoneModel(services: Self.services(demo: on))
         model.switchDemo = { [weak self] on in self?.setDemo(on) }
     }

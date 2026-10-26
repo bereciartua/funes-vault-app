@@ -43,6 +43,8 @@ final class PhoneModel {
     let approvals: ApprovalsModel
     /// This iPhone's approvals switch and its doorbell subscription.
     let approvalSettings: ApprovalSettingsModel
+    /// The vault's counts for Home and the widgets, cached in the App Group (ADR-0025).
+    let overview: OverviewModel
     /// The request whose panel is open, from a notification or the list.
     var openApproval: OpenApproval?
     /// Whether Funes may show notifications; nil until iOS has asked.
@@ -64,11 +66,13 @@ final class PhoneModel {
         categories = CategoryList(caller: services.caller)
         approvals = ApprovalsModel(caller: services.caller)
         approvalSettings = ApprovalSettingsModel(caller: services.caller, subscriptions: services.subscriptions)
+        overview = OverviewModel(caller: services.caller, cache: OverviewCache.appGroup())
         capture.onOutcome = { [weak self] outcome in self?.delivered(outcome) }
         search.onFailure = { [weak self] error in self?.callFailed(error) }
         inbox.onFailure = { [weak self] error in self?.callFailed(error) }
         approvals.onFailure = { [weak self] error in self?.callFailed(error) }
         approvalSettings.onFailure = { [weak self] error in self?.callFailed(error) }
+        overview.onFailure = { [weak self] error in self?.callFailed(error) }
         // There's something to notify about now: iOS asks once.
         approvalSettings.onSubscribed = { [weak self] in self?.notificationsAllowed = await NotificationPermission.ask() }
     }
@@ -223,13 +227,15 @@ final class PhoneModel {
         leaveVaultIfGone()
     }
 
-    /// Unpaired or removed: what Search and the Inbox read from the Mac leaves the phone.
+    /// Unpaired or removed: what Search and the Inbox read from the Mac leaves the phone, and so
+    /// does the cached overview.
     private func leaveVaultIfGone() {
         switch reachability {
         case .notPaired, .revoked:
             search.clear()
             inbox.clear()
             approvals.clear()
+            overview.clear()
             openApproval = nil
         default: break
         }
@@ -259,6 +265,8 @@ final class PhoneModel {
             tracker.handle(.checked(.success(demo.connection), at: Date()))
             await categories.load()
             await approvals.load()
+            // The demo's counts, for its Home and widgets; deleted when the demo is left.
+            await overview.load()
             return
         }
         #if DEBUG
@@ -286,6 +294,8 @@ final class PhoneModel {
         // for a notification that never came or was dismissed.
         await approvalSettings.load()
         await approvals.load()
+        // The counts for Home and the widgets, kept in the App Group's cache.
+        await overview.load()
     }
 
     /// Pairs with the scanned Mac. Returns how long it took, Allow click included (Spike 1a).

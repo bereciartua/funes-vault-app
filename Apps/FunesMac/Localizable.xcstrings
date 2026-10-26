@@ -3503,6 +3503,9 @@
     "Read low-sensitivity memories, ask first" : {
 
     },
+    "Read the vault's counts" : {
+
+    },
     "Read, up to Low, in all categories. Funes asks before sharing." : {
 
     },

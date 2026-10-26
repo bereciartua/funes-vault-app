@@ -19,12 +19,12 @@ Replaces the banner at the top of Capture, Search and the Inbox ([UX: iPhone ▸
 
 ## 7.2 The overview · 1–1.5 weekends
 [ADR-0025](../architecture/decisions/0025-vault-overview-and-iphone-cache.md).
-- [ ] **`VaultOverview`** in FunesCore: one read for a range (30 days, 12 weeks, 12 months) with the aggregates of ADR-0025 §1. Counts only; a test asserts no memory text or title can appear in it.
-- [ ] Days in the user's time zone; 12 weeks and 12 months grouped by week and month; "this week" and the sentence's numbers.
-- [ ] **Benchmark** on a 10,000-memory fixture vault: under 50 ms, or add the two indexes in a migration (with its fixture test).
-- [ ] **`overview.get`** in FunesCompanion, logged as `overview_viewed`; `CompanionClient` method and a router test.
-- [ ] **`OverviewCache`** in FunesPhone: `overview.json` in the App Group, atomic writes, `completeUntilFirstUserAuthentication`; deleted on unpair, revocation and leaving the demo. Tests.
-- [ ] **Demo:** 12 weeks of sample daily counts and agent deliveries in `demo-vault.json`, so the demo's Home and widgets have something to show.
+- [x] **`VaultOverview`** in FunesCore: one read for a range (30 days, 12 weeks, 12 months) with the aggregates of ADR-0025 §1. Counts only; a test asserts no memory text or title can appear in it. *(`VaultStore.overview(_:now:calendar:)`, the type in FunesProtocol so the phone shares it; `OverviewTests`.)*
+- [x] Days in the user's time zone; 12 weeks and 12 months grouped by week and month; "this week" and the sentence's numbers. *(Plus `rhythm`, 84 days whatever the range, for the Rhythm card and widget.)*
+- [x] **Benchmark** on a 10,000-memory fixture vault: under 50 ms, or add the two indexes in a migration (with its fixture test). *(`OverviewBenchmarkTests`: 10,000 memories, 8,000 delivered requests with about 24,000 items, 2,500 others, each with a 20-memory candidate snapshot. Without indexes 86 ms (30 days), 90 ms (12 weeks), 105 ms (12 months); with `v5_overview_indexes`, five covering indexes (storage §3), 11.5, 13.7 and 36.0 ms (40–45 ms for 12 months while the Mac was busy). CPU time at user-interactive QoS, best of 7, M1, 2026-10-25. It runs alone in test.sh, not on CI. `migratesAVersion4Vault` is the fixture test.)*
+- [x] **`overview.get`** in FunesCompanion, logged as `overview_viewed`; `CompanionClient` method and a router test. *(`overviewIsCountsOnly`; the client's `overview(_:)` on `CompanionCalling`, safe to resend.)*
+- [x] **`OverviewCache`** in FunesPhone: `overview.json` in the App Group, atomic writes, `completeUntilFirstUserAuthentication`; deleted on unpair, revocation and leaving the demo. Tests. *(One answer per range; `OverviewModel` keeps it current, wired into `PhoneModel`'s refresh. `OverviewCacheTests`, and `overviewIsCachedWithoutText` through the real Mac.)*
+- [x] **Demo:** 12 weeks of sample daily counts and agent deliveries in `demo-vault.json`, so the demo's Home and widgets have something to show. *(With sample vault totals, since the 20 browsable memories would make an empty chart.)*
 
 ## 7.3 Mac Home · 1.5 weekends
 [UX: Mac ▸ Home](../product/04-ux-mac.md#home).

@@ -4,6 +4,8 @@ import Foundation
 public enum CompanionMethod: String, Codable, Sendable, CaseIterable {
     case statusGet = "status.get"
     case capturesSubmit = "captures.submit"
+    /// The vault's counts for Home and the widgets (v0.4, ADR-0025).
+    case overviewGet = "overview.get"
     case categoriesList = "categories.list"
     case memoriesSearch = "memories.search"
     case memoriesGet = "memories.get"
