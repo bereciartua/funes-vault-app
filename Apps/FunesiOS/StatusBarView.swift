@@ -243,7 +243,7 @@ private struct StatusBarActions: ViewModifier {
 }
 
 /// For someone without the Mac app yet, or App Review: pairing, or every screen with sample data.
-/// Capture's first card while the iPhone isn't paired (later Home's).
+/// Home's card in place of the charts while the iPhone isn't paired.
 struct PairingCard: View {
     let model: PhoneModel
 

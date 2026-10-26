@@ -2,15 +2,13 @@ import FunesPhone
 import FunesProtocol
 import SwiftUI
 
-/// The Capture tab (UX: iPhone, Capture tab): type or dictate, **Remember** saves to the queue on
-/// this iPhone at once, and delivery follows. Recent captures show where each one is.
-struct CaptureView: View {
+/// The Home tab (UX: iPhone ▸ Home tab, FR-H-04), where the app opens: the composer (type or
+/// dictate; **Remember** saves to the queue on this iPhone at once, and delivery follows), the
+/// requests waiting for an answer, the vault's pulse and shape (counts only, never memory text),
+/// who reads it, and Recent captures.
+struct HomeView: View {
     let model: PhoneModel
-    #if DEBUG
-    @State private var text = ScreenshotScene.current?.captureText ?? ""
-    #else
     @State private var text = ""
-    #endif
     @State private var source = CaptureSource.typed
     @State private var dictation = Dictation()
     @State private var problem: String?
@@ -23,43 +21,22 @@ struct CaptureView: View {
     var body: some View {
         NavigationStack {
             List {
-                // With the bar's "Pair with your Mac to start": after its 2 s, so a paired iPhone,
-                // whose pairing is read at launch, never flashes it.
-                if case .state(.notPaired)? = model.statusBar.item {
-                    PairingCard(model: model)
-                }
+                composer
                 ApprovalsSection(model: model)
-                Section {
-                    editor
-                    if let problem {
-                        Label(problem, systemImage: "exclamationmark.octagon.fill")
-                            .font(.footnote)
-                            .foregroundStyle(.red)
-                    }
-                    if case let .failed(message) = dictation.state {
-                        Text(message).font(.footnote).foregroundStyle(.secondary)
-                    }
-                    Button(action: remember) {
-                        Text("Remember").bold().frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || dictation.isActive)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                }
+                HomeOverview(model: model)
                 if !capture.recent.isEmpty {
                     Section("Recent captures") {
-                        ForEach(capture.recent) { item in
-                            RecentRow(item: item, isDemo: model.isDemo)
-                                .swipeActions {
-                                    if item.status != .sent {
-                                        Button("Delete", role: .destructive) { capture.delete(item.id) }
-                                    }
-                                }
+                        ForEach(capture.recent.prefix(HomeView.recentShown)) { item in
+                            recentRow(item)
+                        }
+                        if capture.recent.count > HomeView.recentShown {
+                            NavigationLink("Show All") { AllCapturesView(model: model) }
                         }
                     }
                 }
             }
-            .navigationTitle("Capture")
+            .navigationTitle(Self.greeting(Date()))
+            .refreshable { await model.refresh(fresh: true) }
             .overlay(alignment: .bottom) {
                 if toast {
                     Label("Saved", systemImage: "checkmark.circle.fill")
@@ -71,11 +48,54 @@ struct CaptureView: View {
                 }
             }
             .sensoryFeedback(.success, trigger: saved)
+            .sheet(item: Bindable(model).pulseSheet) { range in PulseSheet(model: model, range: range) }
             .onChange(of: text) { problem = nil }
             .onChange(of: model.captureRequests, initial: true) { _, requests in
                 if requests > 0 { focused = true }
             }
         }
+    }
+
+    /// Recent captures shows this many; Show All has the rest.
+    static let recentShown = 5
+
+    /// "Good morning", "Good afternoon" or "Good evening".
+    static func greeting(_ now: Date, calendar: Calendar = .autoupdatingCurrent) -> String {
+        switch calendar.component(.hour, from: now) {
+        case 5..<12: String(localized: "Good morning")
+        case 12..<18: String(localized: "Good afternoon")
+        default: String(localized: "Good evening")
+        }
+    }
+
+    /// The composer: the old Capture tab's field, mic and **Remember**, unchanged.
+    @ViewBuilder private var composer: some View {
+        Section {
+            editor
+            if let problem {
+                Label(problem, systemImage: "exclamationmark.octagon.fill")
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+            if case let .failed(message) = dictation.state {
+                Text(message).font(.footnote).foregroundStyle(.secondary)
+            }
+            Button(action: remember) {
+                Text("Remember").bold().frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || dictation.isActive)
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        }
+    }
+
+    private func recentRow(_ item: CaptureModel.Recent) -> some View {
+        RecentRow(item: item, isDemo: model.isDemo)
+            .swipeActions {
+                if item.status != .sent {
+                    Button("Delete", role: .destructive) { capture.delete(item.id) }
+                }
+            }
     }
 
     private var editor: some View {
@@ -90,7 +110,7 @@ struct CaptureView: View {
                 }
                 TextEditor(text: dictation.isActive ? .constant(text + spoken) : $text)
                     .focused($focused)
-                    .frame(minHeight: 140)
+                    .frame(minHeight: 96)
                     .scrollContentBackground(.hidden)
                     .accessibilityLabel("What should Funes remember?")
             }
@@ -161,6 +181,26 @@ struct CaptureView: View {
         } catch {
             problem = CaptureModel.message(for: error)
         }
+    }
+}
+
+/// Show All: every recent capture, with where it is.
+struct AllCapturesView: View {
+    let model: PhoneModel
+
+    var body: some View {
+        List {
+            ForEach(model.capture.recent) { item in
+                RecentRow(item: item, isDemo: model.isDemo)
+                    .swipeActions {
+                        if item.status != .sent {
+                            Button("Delete", role: .destructive) { model.capture.delete(item.id) }
+                        }
+                    }
+            }
+        }
+        .navigationTitle("Recent Captures")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

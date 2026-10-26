@@ -101,6 +101,12 @@ public final class OverviewModel {
         }
     }
 
+    /// Shows `overview` without asking or caching it: the debug builds' made-up connection
+    /// scenes, which have no Mac to ask.
+    public func show(_ overview: VaultOverview) {
+        overviews[overview.range] = overview
+    }
+
     /// Unpaired, removed or leaving the demo: the counts leave the phone.
     public func clear() {
         overviews = [:]

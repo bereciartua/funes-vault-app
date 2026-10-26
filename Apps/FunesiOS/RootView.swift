@@ -2,28 +2,23 @@ import FunesPhone
 import FunesProtocol
 import SwiftUI
 
-/// The tabs (UX: iPhone): Capture, where the app opens, Search, Inbox and Settings, and the status
+/// The tabs (UX: iPhone): Home, where the app opens, Search, Inbox and Settings, and the status
 /// bar above them, only when something needs you.
 struct RootView: View {
     enum Tab: Hashable {
-        case capture, search, inbox, settings
+        case home, search, inbox, settings
     }
 
     let model: PhoneModel
-    #if DEBUG
-    @State private var tab = ScreenshotScene.current?.tab ?? Tab.capture
-    #else
-    @State private var tab = Tab.capture
-    #endif
 
     var body: some View {
-        TabView(selection: $tab) {
-            CaptureView(model: model)
+        TabView(selection: Bindable(model).tab) {
+            HomeView(model: model)
                 .ownStatusBar(model)
-                .tabItem { Label("Capture", systemImage: "square.and.pencil") }
-                // Requests waiting for an answer are listed at the top of Capture.
+                .tabItem { Label("Home", systemImage: "house") }
+                // Requests waiting for an answer are listed near the top of Home.
                 .badge(model.approvals.waiting.count)
-                .tag(Tab.capture)
+                .tag(Tab.home)
             SearchView(model: model)
                 .ownStatusBar(model)
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
@@ -45,8 +40,8 @@ struct RootView: View {
             guard let new, !new.isSameState(as: old) else { return }
             AccessibilityNotification.Announcement(StatusBarContent.text(new)).post()
         }
-        // The Control opens Capture.
-        .onChange(of: model.captureRequests) { tab = .capture }
+        // The Control opens Home's composer.
+        .onChange(of: model.captureRequests) { model.tab = .home }
         .sheet(isPresented: Bindable(model).presentingPairing) { PairingSheet(model: model) }
         .sheet(isPresented: Bindable(model).presentingStatus) { StatusSheet(model: model) }
         // A tapped approval notification, or a row of the list.

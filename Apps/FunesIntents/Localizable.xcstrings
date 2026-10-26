@@ -1,6 +1,82 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@: %lld in · %lld shared · %lld refused" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$lld in · %3$lld shared · %4$lld refused"
+          }
+        }
+      }
+    },
+    "%lld in (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld in (%2$@)"
+          }
+        }
+      }
+    },
+    "%lld memories" : {
+
+    },
+    "%lld refused" : {
+
+    },
+    "%lld saved" : {
+
+    },
+    "%lld shared (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld shared (%2$@)"
+          }
+        }
+      }
+    },
+    "%lld shared with %lld agents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld shared with %2$lld agents"
+          }
+        }
+      }
+    },
+    "%lld shared with 1 agent" : {
+
+    },
+    "%lld-week streak" : {
+
+    },
+    "0 in" : {
+
+    },
+    "1-week streak" : {
+
+    },
+    "12 months" : {
+
+    },
+    "12 weeks" : {
+
+    },
+    "30 days" : {
+
+    },
+    "7 days" : {
+
+    },
+    "Agents" : {
+
+    },
     "Capture" : {
 
     },
@@ -10,22 +86,88 @@
     "Couldn't save on this iPhone." : {
 
     },
+    "Date" : {
+
+    },
+    "Imports" : {
+
+    },
+    "In" : {
+
+    },
+    "Internal" : {
+
+    },
+    "Last 12 months" : {
+
+    },
+    "Last 12 weeks" : {
+
+    },
+    "Last 30 days" : {
+
+    },
+    "Last 7 days" : {
+
+    },
+    "Low" : {
+
+    },
+    "Mac" : {
+
+    },
+    "Memories" : {
+
+    },
+    "Most on %@s" : {
+
+    },
     "Not saved: it looks like a password, key or card number. Funes never stores secrets." : {
 
     },
-    "Opens Funes Vault on Capture, ready to type or dictate." : {
+    "Nothing new this week." : {
+
+    },
+    "Opens Funes Vault on Home, ready to type or dictate." : {
+
+    },
+    "Other" : {
+
+    },
+    "Out" : {
+
+    },
+    "Public" : {
 
     },
     "Queue full: connect to your Mac." : {
 
     },
+    "Refused" : {
+
+    },
     "Remember in Funes" : {
+
+    },
+    "Restricted" : {
 
     },
     "Saved" : {
 
     },
     "Saves text to your Funes vault. It waits here until your vault has it." : {
+
+    },
+    "Secret" : {
+
+    },
+    "Sensitive" : {
+
+    },
+    "Shared" : {
+
+    },
+    "Shared: %@" : {
 
     },
     "Text" : {
@@ -35,6 +177,24 @@
 
     },
     "There's nothing to remember." : {
+
+    },
+    "This week: %@." : {
+
+    },
+    "Tidy-up" : {
+
+    },
+    "Vault" : {
+
+    },
+    "Vault: %@" : {
+
+    },
+    "Week of %@" : {
+
+    },
+    "iPhone" : {
 
     }
   },

@@ -85,6 +85,16 @@
         }
       }
     },
+    "%@ · %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$lld"
+          }
+        }
+      }
+    },
     "%@'s Reason" : {
 
     },
@@ -124,6 +134,16 @@
         }
       }
     },
+    "%@: %lld in · %lld shared · %lld refused" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$lld in · %3$lld shared · %4$lld refused"
+          }
+        }
+      }
+    },
     "%lld above its sensitivity limit" : {
 
     },
@@ -133,7 +153,23 @@
     "%lld expired" : {
 
     },
+    "%lld in (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld in (%2$@)"
+          }
+        }
+      }
+    },
     "%lld in categories it can't read" : {
+
+    },
+    "%lld memories" : {
+
+    },
+    "%lld memories shared" : {
 
     },
     "%lld more matched but can't go to this agent (%@)." : {
@@ -147,6 +183,62 @@
       }
     },
     "%lld not shareable" : {
+
+    },
+    "%lld refused" : {
+
+    },
+    "%lld saved" : {
+
+    },
+    "%lld shared (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld shared (%2$@)"
+          }
+        }
+      }
+    },
+    "%lld shared with %lld agents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld shared with %2$lld agents"
+          }
+        }
+      }
+    },
+    "%lld shared with 1 agent" : {
+
+    },
+    "%lld-week streak" : {
+
+    },
+    "+%lld this week" : {
+
+    },
+    "0 in" : {
+
+    },
+    "1 memory shared" : {
+
+    },
+    "1-week streak" : {
+
+    },
+    "12 months" : {
+
+    },
+    "12 weeks" : {
+
+    },
+    "30 days" : {
+
+    },
+    "7 days" : {
 
     },
     "Accepted %@ in %lld ms" : {
@@ -166,6 +258,9 @@
 
     },
     "Add the text to remember." : {
+
+    },
+    "Agents" : {
 
     },
     "Allow Once" : {
@@ -242,6 +337,9 @@
     "Answered on your Mac" : {
 
     },
+    "Any Sensitivity" : {
+
+    },
     "Approvals" : {
 
     },
@@ -258,6 +356,9 @@
 
     },
     "Archived. Archived memories are kept, but never shared with agents." : {
+
+    },
+    "As of %@" : {
 
     },
     "Asking your Mac…" : {
@@ -279,9 +380,6 @@
 
     },
     "Cancel" : {
-
-    },
-    "Capture" : {
 
     },
     "Capture in Funes" : {
@@ -430,6 +528,9 @@
     "DEMO" : {
 
     },
+    "Date" : {
+
+    },
     "Delete" : {
 
     },
@@ -553,10 +654,31 @@
     "Goes to" : {
 
     },
+    "Good afternoon" : {
+
+    },
+    "Good evening" : {
+
+    },
+    "Good morning" : {
+
+    },
     "History" : {
 
     },
+    "Home" : {
+
+    },
     "Imported · %@" : {
+
+    },
+    "Imports" : {
+
+    },
+    "In" : {
+
+    },
+    "In the last 30 days." : {
 
     },
     "Inbox" : {
@@ -593,6 +715,18 @@
 
     },
     "Kind" : {
+
+    },
+    "Last 12 months" : {
+
+    },
+    "Last 12 weeks" : {
+
+    },
+    "Last 30 days" : {
+
+    },
+    "Last 7 days" : {
 
     },
     "Last Check" : {
@@ -646,8 +780,21 @@
     "Make sure this iPhone is on the same Wi-Fi as your Mac." : {
 
     },
+    "Memories" : {
+
+    },
     "Memories that disagree" : {
 
+    },
+    "Memories: %lld, plus %lld this week" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Memories: %1$lld, plus %2$lld this week"
+          }
+        }
+      }
     },
     "Merge memories" : {
 
@@ -656,6 +803,9 @@
 
     },
     "Merged into a new memory" : {
+
+    },
+    "Most on %@s" : {
 
     },
     "Name" : {
@@ -676,10 +826,16 @@
     "No Mac yet? See every screen with sample data. Nothing leaves this iPhone." : {
 
     },
+    "No agent has read your vault yet" : {
+
+    },
     "No captures waiting" : {
 
     },
     "No memories yet" : {
+
+    },
+    "No streak yet" : {
 
     },
     "Not Now" : {
@@ -721,6 +877,9 @@
     "Nothing more to do here." : {
 
     },
+    "Nothing new this week." : {
+
+    },
     "Notifications are off for Funes Vault on this iPhone." : {
 
     },
@@ -745,10 +904,19 @@
     "Open to see exactly what would be shared." : {
 
     },
-    "Opens Funes Vault on Capture, ready to type or dictate." : {
+    "Opens Funes Vault on Home, ready to type or dictate." : {
+
+    },
+    "Opens Search, newest first" : {
 
     },
     "Opens the keyboard. Tap its microphone to dictate." : {
+
+    },
+    "Other" : {
+
+    },
+    "Out" : {
 
     },
     "Pair" : {
@@ -796,6 +964,9 @@
     "Public" : {
 
     },
+    "Pulse" : {
+
+    },
     "Purpose" : {
 
     },
@@ -841,6 +1012,12 @@
     "Queuing %lld…" : {
 
     },
+    "Range" : {
+
+    },
+    "Recent Captures" : {
+
+    },
     "Recent captures" : {
 
     },
@@ -851,6 +1028,9 @@
 
     },
     "Recently Deleted. Restore it within 30 days, or it's removed for good." : {
+
+    },
+    "Refused" : {
 
     },
     "Reject" : {
@@ -901,6 +1081,32 @@
     "Review this on your Mac." : {
 
     },
+    "Rhythm" : {
+
+    },
+    "Rhythm · 12 weeks" : {
+
+    },
+    "Rhythm, last %lld weeks: %lld new memories. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rhythm, last %1$lld weeks: %2$lld new memories. %3$@"
+          }
+        }
+      }
+    },
+    "Rhythm, last %lld weeks: 1 new memory. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rhythm, last %1$lld weeks: 1 new memory. %2$@"
+          }
+        }
+      }
+    },
     "Round trip" : {
 
     },
@@ -940,6 +1146,9 @@
     "Search" : {
 
     },
+    "Search by sensitivity" : {
+
+    },
     "Search needs your Mac to be awake and reachable. Captures still work, and go to the Mac later." : {
 
     },
@@ -947,6 +1156,9 @@
 
     },
     "Search your vault" : {
+
+    },
+    "Searches your vault by sensitivity" : {
 
     },
     "Secret" : {
@@ -968,6 +1180,9 @@
 
     },
     "Sensitivity" : {
+
+    },
+    "Sensitivity. %@" : {
 
     },
     "Sensitivity: %@" : {
@@ -1026,6 +1241,9 @@
     "Shared with" : {
 
     },
+    "Shared: %@" : {
+
+    },
     "Show All" : {
 
     },
@@ -1036,6 +1254,9 @@
 
     },
     "Show less of %@" : {
+
+    },
+    "Shows the longer ranges" : {
 
     },
     "Sign in to iCloud on this iPhone, with the same Apple Account as your Mac, to get notifications." : {
@@ -1189,6 +1410,9 @@
     "This memory is no longer on your Mac" : {
 
     },
+    "This range shows once your Mac can be reached." : {
+
+    },
     "This request changed on your Mac. Review it again." : {
 
     },
@@ -1204,7 +1428,13 @@
     "This was already answered." : {
 
     },
+    "This week: %@." : {
+
+    },
     "Ticked" : {
+
+    },
+    "Tidy-up" : {
 
     },
     "Time's up on your Mac" : {
@@ -1214,6 +1444,9 @@
 
     },
     "To use your own vault, install Funes Vault on your Mac, leave the demo, and pair." : {
+
+    },
+    "Too few memories for a rhythm yet" : {
 
     },
     "Too many tries with this code. Show a new one on your Mac." : {
@@ -1267,6 +1500,12 @@
     "VPN" : {
 
     },
+    "Vault" : {
+
+    },
+    "Vault: %@" : {
+
+    },
     "Very personal. Only for agents you fully trust, and always ask." : {
 
     },
@@ -1279,6 +1518,9 @@
     "Waiting in Inbox" : {
 
     },
+    "Week of %@" : {
+
+    },
     "What should Funes remember?" : {
 
     },
@@ -1286,6 +1528,9 @@
 
     },
     "When an agent asks to share or save memories, this iPhone gets a notification and can answer, as your Mac can. The notification names the agent, never your memories." : {
+
+    },
+    "Who reads your vault" : {
 
     },
     "Why" : {
@@ -1339,6 +1584,9 @@
     "Your Mac is still splitting this into separate memories. It can be saved once that's done." : {
 
     },
+    "Your Mac isn't reachable" : {
+
+    },
     "Your Mac isn't signed in to iCloud, so it can't notify this iPhone. Requests still show here when you open Funes." : {
 
     },
@@ -1364,6 +1612,9 @@
 
     },
     "Your note" : {
+
+    },
+    "Your pulse starts with your first memories" : {
 
     },
     "Your vault isn't available on your Mac right now. Try again in a moment." : {
@@ -1409,6 +1660,9 @@
 
     },
     "iCloud is restricted on your Mac, so it can't notify this iPhone. Requests still show here when you open Funes." : {
+
+    },
+    "iPhone" : {
 
     }
   },
