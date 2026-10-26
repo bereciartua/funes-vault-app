@@ -20,7 +20,6 @@ struct InboxView: View {
         @Bindable var inbox = model.inbox
         NavigationStack {
             List {
-                BannerSection(model: model)
                 if model.reachability.isConnected, !inbox.items.isEmpty {
                     if inbox.answeredElsewhere > 0 {
                         Label("Already answered on your Mac", systemImage: "checkmark.circle")

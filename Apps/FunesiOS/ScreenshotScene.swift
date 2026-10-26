@@ -37,3 +37,41 @@ enum ScreenshotScene: String {
     var searchQuery: String? { self == .search ? "swift" : nil }
 }
 #endif
+
+#if DEBUG
+import CryptoKit
+import FunesPhone
+
+/// `-FunesConnection <state>` shows the status bar's states (UX: iPhone, Status bar) in the
+/// simulator without a Mac: a made-up pairing with "Maya's MacBook Pro", in that state, with two
+/// captures waiting. Nothing is checked; a new capture's delivery ends it. Debug builds only.
+enum ConnectionScene: String {
+    case connected, unreachable, localNetworkOff, failed, revoked
+
+    static var current: ConnectionScene? {
+        UserDefaults.standard.string(forKey: "FunesConnection").flatMap(ConnectionScene.init(rawValue:))
+    }
+
+    var record: PairingRecord {
+        let payload = PairingQRPayload(pairingID: "scene", macID: UUID(), macName: "Maya's MacBook Pro",
+                                       macSigningKey: P256.Signing.PrivateKey().publicKey,
+                                       macHPKEKey: P256.KeyAgreement.PrivateKey().publicKey, secret: Data(count: 32),
+                                       expiresAt: Date(), addresses: [PairingAddress(kind: .lan, host: "192.168.1.20", port: 47626)])
+        return PairingRecord(payload: payload, confirmation: PairConfirmation(deviceID: UUID(), macID: payload.macID, confirm: Data()),
+                             deviceName: "iPhone", pairedAt: Date())
+    }
+
+    var check: Result<MacConnection, CompanionClientError> {
+        switch self {
+        case .connected: .success(DemoVault().connection)
+        case .unreachable: .failure(.unreachable(localNetworkDenied: false))
+        case .localNetworkOff: .failure(.unreachable(localNetworkDenied: true))
+        case .failed: .failure(.badResponse(status: 404))
+        case .revoked: .failure(.refused(.revoked))
+        }
+    }
+
+    /// Captures waiting on this iPhone.
+    static let waiting = 2
+}
+#endif

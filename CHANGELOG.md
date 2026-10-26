@@ -43,6 +43,12 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Changed
 
+- **iPhone: a status bar instead of the connection banner.** Capture, Search and the Inbox no longer start with a banner. While your Mac is connected, nothing shows; when something needs you, one bar appears just above the tabs: "Mac not reachable · 3 waiting" (**Why?**), "Local Network access is off" (**Fix** opens the app's page in Settings), "Can't connect to your Mac", "Pair with your Mac to start" (**Pair**), "Removed from Funes on your Mac" (**Pair Again**), and "Back online · 3 captures sent" for a few seconds once the Mac is back.
+  - A state shows only after it has lasted 2 seconds, so a quick reconnect never flashes the bar.
+  - Tapping the bar opens a status sheet: which Mac, when and how it was last reached, the captures waiting with **Send Now**, what to try, and **Try Again**.
+  - On iOS 26.1 and later it's the glass bar above the tab bar (where Music shows what's playing); earlier versions get a bar of the app's own in the same place.
+  - In the demo, the orange DEMO label and **Leave Demo** are in the bar. **Try Demo** is on Capture's new pairing card while the iPhone isn't paired.
+  - VoiceOver reads the bar as one element, with its button as an action, and announces each new state once.
 - **Settings ▸ AI Models ▸ New memories** replaces Classification. The switch for proposing a title, kind and categories moved here from Settings ▸ Capture, next to two settings for later versions: splitting what arrives into separate memories, and applying changes automatically (Off for now).
 - **Exports keep more.** Restoring a Funes export as memories keeps archived memories archived and keeps the links between memories that were split or merged.
 - **iPhone captures get proposed fields too.** They're classified by the model chosen in Settings ▸ AI Models, like captures on the Mac, instead of only by Funes's built-in rules. Captures still being classified when Funes quits are finished at the next launch.

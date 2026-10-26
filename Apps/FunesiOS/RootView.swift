@@ -2,7 +2,8 @@ import FunesPhone
 import FunesProtocol
 import SwiftUI
 
-/// The tabs (UX: iPhone): Capture, where the app opens, Search, Inbox and Settings.
+/// The tabs (UX: iPhone): Capture, where the app opens, Search, Inbox and Settings, and the status
+/// bar above them, only when something needs you.
 struct RootView: View {
     enum Tab: Hashable {
         case capture, search, inbox, settings
@@ -18,25 +19,36 @@ struct RootView: View {
     var body: some View {
         TabView(selection: $tab) {
             CaptureView(model: model)
+                .ownStatusBar(model)
                 .tabItem { Label("Capture", systemImage: "square.and.pencil") }
                 // Requests waiting for an answer are listed at the top of Capture.
                 .badge(model.approvals.waiting.count)
                 .tag(Tab.capture)
             SearchView(model: model)
+                .ownStatusBar(model)
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
                 .tag(Tab.search)
             InboxView(model: model)
+                .ownStatusBar(model)
                 .tabItem { Label("Inbox", systemImage: "tray") }
                 .badge(model.inboxBadge)
                 .tag(Tab.inbox)
             SettingsView(model: model)
+                .ownStatusBar(model)
                 .tabItem { Label("Settings", systemImage: "gear") }
                 .tag(Tab.settings)
+        }
+        .statusBarAccessory(model)
+        .onChange(of: model.banner, initial: true) { _, banner in model.statusBar.update(banner, isDemo: model.isDemo) }
+        // VoiceOver hears each new state once, not every new count.
+        .onChange(of: model.statusBar.item) { old, new in
+            guard let new, !new.isSameState(as: old) else { return }
+            AccessibilityNotification.Announcement(StatusBarContent.text(new)).post()
         }
         // The Control opens Capture.
         .onChange(of: model.captureRequests) { tab = .capture }
         .sheet(isPresented: Bindable(model).presentingPairing) { PairingSheet(model: model) }
-        .sheet(isPresented: Bindable(model).presentingWhy) { WhySheet(model: model) }
+        .sheet(isPresented: Bindable(model).presentingStatus) { StatusSheet(model: model) }
         // A tapped approval notification, or a row of the list.
         .sheet(item: Bindable(model).openApproval) { open in ApprovalPanelView(model: model, panel: open.panel) }
     }
