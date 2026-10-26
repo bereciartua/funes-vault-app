@@ -17,7 +17,7 @@ project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 out=${1:-$project_dir/build/app-store-screenshots}
 derived="$project_dir/build/sim"
 device_name=${FUNES_SIM_DEVICE:-Funes Screenshots}
-all_scenes="capture share access search inbox save"
+all_scenes="home share access search inbox save"
 scenes=${FUNES_SCENES:-$all_scenes}
 wait=${FUNES_SHOT_WAIT:-8}
 

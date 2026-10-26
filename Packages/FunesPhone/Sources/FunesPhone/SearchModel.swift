@@ -16,6 +16,8 @@ public final class SearchModel {
     public var query = ""
     /// Active, Archived or Recently Deleted.
     public var scope = MemoryStatus.active
+    /// Only memories at this level: Home's Sensitivity tile. Nil for every level.
+    public var sensitivity: Sensitivity?
     public private(set) var results: [MemorySummary] = []
     public private(set) var phase = Phase.idle
     public private(set) var nextCursor: String?
@@ -96,8 +98,9 @@ public final class SearchModel {
 
     private func params(cursor: String?) -> MemorySearchParams {
         let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        return MemorySearchParams(query: query, filters: scope == .active ? nil : MemorySearchFilters(status: scope),
-                                  limit: Self.pageSize, cursor: cursor)
+        let filters = scope == .active && sensitivity == nil
+            ? nil : MemorySearchFilters(sensitivities: sensitivity.map { [$0] }, status: scope == .active ? nil : scope)
+        return MemorySearchParams(query: query, filters: filters, limit: Self.pageSize, cursor: cursor)
     }
 
     /// The Mac's snippet rule (`CompanionHandlers.snippet`), for a row changed on the phone.

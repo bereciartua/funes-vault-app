@@ -6,7 +6,7 @@ import Foundation
 /// launches straight into demo mode on one screen, so `scripts/app_store_screenshots.sh` captures
 /// each one without tapping through the simulator. Debug builds only.
 enum ScreenshotScene: String {
-    case capture, share, save, access, search, inbox
+    case home, share, save, access, search, inbox
 
     static var current: ScreenshotScene? {
         UserDefaults.standard.string(forKey: "FunesScreenshot").flatMap(ScreenshotScene.init(rawValue:))
@@ -16,7 +16,7 @@ enum ScreenshotScene: String {
         switch self {
         case .search: .search
         case .inbox: .inbox
-        case .capture, .share, .save, .access: .capture
+        case .home, .share, .save, .access: .home
         }
     }
 
@@ -26,12 +26,9 @@ enum ScreenshotScene: String {
         case .share: .share
         case .save: .save
         case .access: .access
-        case .capture, .search, .inbox: nil
+        case .home, .search, .inbox: nil
         }
     }
-
-    /// Capture's text field, as if just typed.
-    var captureText: String { self == .capture ? "Ask the team about Friday's demo" : "" }
 
     /// Search's query.
     var searchQuery: String? { self == .search ? "swift" : nil }
@@ -73,5 +70,12 @@ enum ConnectionScene: String {
 
     /// Captures waiting on this iPhone.
     static let waiting = 2
+
+    /// When Home's made-up snapshot was taken: "As of 10:42" today, or two hours ago before then.
+    var snapshotTime: Date {
+        let now = Date()
+        let at = Calendar.current.date(bySettingHour: 10, minute: 42, second: 0, of: now) ?? now
+        return at < now ? at : now.addingTimeInterval(-2 * 3_600)
+    }
 }
 #endif

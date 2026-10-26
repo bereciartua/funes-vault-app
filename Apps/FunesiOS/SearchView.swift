@@ -11,6 +11,7 @@ struct SearchView: View {
     private struct Key: Equatable {
         var query: String
         var scope: MemoryStatus
+        var sensitivity: Sensitivity?
         var connected: Bool
     }
 
@@ -42,7 +43,7 @@ struct SearchView: View {
             .searchScopes($search.scope) {
                 ForEach(MemoryStatus.allCases, id: \.self) { Text($0.scopeTitle).tag($0) }
             }
-            .task(id: Key(query: search.query, scope: search.scope, connected: model.reachability.isConnected)) {
+            .task(id: Key(query: search.query, scope: search.scope, sensitivity: search.sensitivity, connected: model.reachability.isConnected)) {
                 guard model.reachability.isConnected else { return }
                 // Typing: wait for a pause before asking the Mac.
                 if !search.query.isEmpty {
@@ -50,6 +51,19 @@ struct SearchView: View {
                     guard !Task.isCancelled else { return }
                 }
                 await search.search()
+            }
+            .toolbar {
+                // Home's Sensitivity tile sets it; here it can be changed or cleared.
+                Menu {
+                    Picker("Sensitivity", selection: $search.sensitivity) {
+                        Text("Any Sensitivity").tag(Sensitivity?.none)
+                        ForEach(Sensitivity.allCases, id: \.self) { Text($0.title).tag(Sensitivity?.some($0)) }
+                    }
+                } label: {
+                    Label("Sensitivity", systemImage: search.sensitivity == nil ? "line.3.horizontal.decrease.circle"
+                                                                               : "line.3.horizontal.decrease.circle.fill")
+                }
+                .accessibilityValue(search.sensitivity?.title ?? String(localized: "Any Sensitivity"))
             }
             .navigationDestination(for: UUID.self) { id in
                 MemoryDetailView(model: model, id: id)
