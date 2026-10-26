@@ -18,7 +18,6 @@ struct SearchView: View {
         @Bindable var search = model.search
         NavigationStack {
             List {
-                BannerSection(model: model)
                 if model.reachability.isConnected, !search.results.isEmpty {
                     Section {
                         ForEach(search.results) { summary in

@@ -15,7 +15,7 @@ The app opens on **Capture** (from v0.4, **Home**): the fastest path to the main
 
 ## States
 
-In v0.2–0.3 each state shows as a banner at the top of Capture, Search and the Inbox. From v0.4 (Phase 7 task 7.1) the banner is replaced by the [status bar](#status-bar), which shows nothing while connected.
+In v0.2–0.3 each state shows as a banner at the top of Capture, Search and the Inbox. From v0.4 (Phase 7 task 7.1, built) the banner is replaced by the [status bar](#status-bar), which shows nothing while connected; the table's banner column is v0.2–0.3's wording.
 
 | State | Banner (top of every tab) | Capture | Search / Inbox |
 |---|---|---|---|
@@ -28,6 +28,7 @@ In v0.2–0.3 each state shows as a banner at the top of Capture, Search and the
 ### Status bar
 *v0.4, [Phase 7](../plans/phase-7-home.md) task 7.1.* One bar for the whole app, **above the tab bar**, shown only when something needs you, so no tab spends header space on the connection.
 - **Where:** iOS 26's tab view bottom accessory (the glass bar Music uses for its mini player), if it can be hidden when there's nothing to say; otherwise, and on iOS 18–25, a bar of the app's own drawn just above the tab bar.
+  - *Built:* the accessory from iOS 26.1, whose `tabViewBottomAccessory(isEnabled:)` turns it off while connected; 26.0's accessory can't be turned off once set, so on iOS 18–26.0 each tab draws the bar itself, a rounded material bar just above the tab bar (a bottom inset, which leaves the large title and the search field alone). The accessory is one line high, so its text is one line; the app's own bar wraps with Dynamic Type. The sheet has the details either way.
 - **States** (FunesPhone's `BannerState`):
 
   | State | Bar | Button | Tapping the bar |
@@ -42,10 +43,11 @@ In v0.2–0.3 each state shows as a banner at the top of Capture, Search and the
   | Back online | "Back online · 3 captures sent", for 3 s, then the bar goes | — | — |
   | Demo | "DEMO · Demo vault: not your data", always | **Leave Demo** | — |
 
-- **The status sheet** (medium detent): which Mac, when and how it was last reached, the queue ("3 captures waiting · Send Now"), the hints of the Why sheet below, and **Try Again**.
-- An orange or red icon and words, never colour alone. A state shows only after it has lasted 2 s, so a quick reconnect never flashes the bar. It slides in and out (fades with Reduce Motion).
-- **VoiceOver:** one element read as its text, the button as a custom action; each change is announced once ("Mac not reachable").
-- Search and the Inbox keep their full-page explanations while the Mac can't be asked; the bar shows there too, with the queued count. Which Mac the phone is paired with is in Settings.
+- **The status sheet** (medium detent): which Mac, when and how it was last reached ("5 minutes ago · Wi-Fi", or "Not since Funes opened"), the queue ("3 captures waiting · Send Now"), the hints of the Why sheet below (with **Open Settings** when Local Network is off; **Pair Again** when removed), and **Try Again**.
+- An orange or red icon and words, never colour alone. A state shows only after it has lasted 2 s, so a quick reconnect never flashes the bar; a new count in the same state ("3 waiting" to "4 waiting") shows at once. Connected after Connecting, pairing or Pair Again hides the bar at once; only "Back online" (after the Mac couldn't be reached) waits its 2 s, and counts the captures sent since. It slides in and out (fades with Reduce Motion). The timing is FunesPhone's `StatusBarTimeline`.
+- **VoiceOver:** one element read as its text, the button as a custom action, and activating it does what a tap does (on the demo's bar, nothing: Leave Demo is the custom action); each new state is announced once ("Mac not reachable"), not each new count.
+- Search and the Inbox keep their full-page explanations while the Mac can't be asked; the bar shows there too, with the queued count. Which Mac the phone is paired with is in Settings and the status sheet.
+- While not paired, Capture's first card is **Pair with your Mac to start**, with **Pair with Mac** and **Try Demo** ("No Mac yet? See every screen with sample data. Nothing leaves this iPhone.").
 
 **"Why?" sheet** (from v0.4, the status sheet): "Your vault lives on your Mac. Search and review need the Mac to be awake and reachable on the same Wi-Fi, or through Tailscale. Captures are safe on this iPhone and will be sent automatically."
 
@@ -127,7 +129,7 @@ When an agent's Share, Save or access request waits on the Mac, the Mac rings a 
 
 If the phone can't reach the Mac during pairing: "Make sure both are on the same Wi-Fi, or set up Tailscale on both." Pairing needs the devices to reach each other once. If Local Network access is off for Funes, it says so and points to Settings ▸ Privacy & Security ▸ Local Network instead.
 
-*Built so far (tasks 5.3 to 5.5):* the four tabs. Capture is as above, without the category and sensitivity chips; on iOS 18–25 the mic button opens the keyboard for its own dictation. Search and the Inbox are as above; Search also has scopes for Archived and Recently Deleted (where a memory can be restored), and a suggestion opens on its own screen with Save, Edit & Save… and Reject. The banner is on Capture, Search and Inbox, as in the States table, plus "Connecting to Maya's MacBook Pro…" while it checks, "Local Network access is off for Funes", and a connected route of Wi-Fi, VPN (the Mac's local address through a VPN such as a Tailscale subnet router), Tailscale or Tunnel. While the Mac can't be reached, Search and the Inbox show why, with **Try Again** and **Why?**; the "Why?" sheet adds what to try, from this iPhone's network and the last check. Settings has pairing, the Mac's name, the connection ("Connected · Wi-Fi", "Mac not reachable", revoked), the last check and its round trip, the signing key's home, the Queue section, and **Unpair This iPhone…**, which asks whether to keep or delete captures that haven't reached the Mac. Debug builds add Spike 1's test capture and protocol checks. Approvals (task 5.6) and demo mode (task 5.7) are as described here.
+*Built so far (tasks 5.3 to 5.5):* the four tabs. Capture is as above, without the category and sensitivity chips; on iOS 18–25 the mic button opens the keyboard for its own dictation. Search and the Inbox are as above; Search also has scopes for Archived and Recently Deleted (where a memory can be restored), and a suggestion opens on its own screen with Save, Edit & Save… and Reject. Until task 7.1 the banner was on Capture, Search and Inbox, as in the States table, plus "Connecting to Maya's MacBook Pro…" while it checks, "Local Network access is off for Funes", and a connected route of Wi-Fi, VPN (the Mac's local address through a VPN such as a Tailscale subnet router), Tailscale or Tunnel. While the Mac can't be reached, Search and the Inbox show why, with **Try Again** and **Why?**; the "Why?" sheet (from 7.1, the status sheet) adds what to try, from this iPhone's network and the last check. Settings has pairing, the Mac's name, the connection ("Connected · Wi-Fi", "Mac not reachable", revoked), the last check and its round trip, the signing key's home, the Queue section, and **Unpair This iPhone…**, which asks whether to keep or delete captures that haven't reached the Mac. Debug builds add Spike 1's test capture and protocol checks. Approvals (task 5.6) and demo mode (task 5.7) are as described here.
 
 ## Capture surfaces outside the app
 - **Share extension:**
@@ -158,7 +160,7 @@ If the phone can't reach the Mac during pairing: "Make sure both are on the same
 - The App Review notes explain that the app pairs with Funes Vault for Mac, and that the demo shows the full interface.
 - *Built (task 5.7):* **Try Demo** sits under the banner on Capture ("No Mac yet? See every screen with sample data. Nothing leaves this iPhone."), and in Search, the Inbox and Settings while the iPhone isn't paired. The demo has 20 active memories (plus one archived and one recently deleted), three Inbox suggestions, and a Share, a Save and an access request under **Waiting for you**, whose panels answer as with a Mac. Every tab's banner is an orange DEMO label with "Demo vault: not your data" and **Leave Demo**; Settings has a Demo section with the Demo Vault switch. A capture goes to the demo's Inbox as a "Demo capture", and its Recent captures row says "Sent to the demo Inbox". Demo mode isn't remembered: the app always launches on the real pairing, and leaving the demo discards its edits and captures. Nothing in it touches the network, the pairing, iCloud or the real capture queue.
 
-- *From v0.4:* the DEMO label is the [status bar](#status-bar) (with Leave Demo), and Try Demo is on Home's pairing card and in Search, the Inbox and Settings while the iPhone isn't paired.
+- *From v0.4 (task 7.1, built):* the DEMO label is the [status bar](#status-bar) (with Leave Demo), from the first frame and on every tab, and Try Demo is on Capture's pairing card (later Home's) and in Search, the Inbox and Settings while the iPhone isn't paired.
 
 ## Accessibility
 - Dynamic Type everywhere, VoiceOver labels on badges ("Sensitivity: Internal"), and Reduce Motion respected.

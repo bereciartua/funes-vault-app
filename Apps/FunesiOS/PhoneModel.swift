@@ -14,11 +14,14 @@ private let logger = Logger(subsystem: Identifiers.iOSLoggerSubsystem, category:
 @MainActor @Observable
 final class PhoneModel {
     private(set) var record: PairingRecord?
-    /// The banner's state machine (FunesPhone's `ReachabilityTracker`).
+    /// The connection's state machine (FunesPhone's `ReachabilityTracker`).
     private(set) var tracker = ReachabilityTracker()
     var reachability: Reachability { tracker.state }
     var lastChecked: Date? { tracker.lastChecked }
-    /// The phone's network, for the banner: a LAN address reached off Wi-Fi goes through a VPN.
+    var lastReached: ReachabilityTracker.LastReached? { tracker.lastReached }
+    /// What the status bar above the tab bar shows, and when (UX: iPhone, Status bar).
+    let statusBar = StatusBar()
+    /// The phone's network: a LAN address reached off Wi-Fi goes through a VPN.
     private(set) var path: NetworkPath?
     private(set) var usesSecureEnclave: Bool?
     private(set) var protocolChecks: [ProtocolCheck] = []
@@ -46,10 +49,10 @@ final class PhoneModel {
     var openApproval: OpenApproval?
     /// Whether Funes may show notifications; nil until iOS has asked.
     private(set) var notificationsAllowed: Bool?
-    /// The pairing sheet, opened from the banner or a disabled tab.
+    /// The pairing sheet, opened from the status bar, Capture's pairing card or a disabled tab.
     var presentingPairing = false
-    /// The "Why?" sheet.
-    var presentingWhy = false
+    /// The status sheet: tapping the status bar, or Why?.
+    var presentingStatus = false
     /// The Control asked for Capture, ready to type or dictate.
     private(set) var captureRequests = 0
     private var started = false
@@ -95,12 +98,12 @@ final class PhoneModel {
         Task { if reachability.isConnected { await approvals.load(force: true) } }
     }
 
-    /// What the banner at the top of each tab says.
+    /// The connection's state, for the status bar and the disabled tabs.
     var banner: BannerState {
         BannerState(reachability, macName: record?.macName, waiting: capture.queuedCount, path: path)
     }
 
-    /// The "Why?" sheet's suggestions.
+    /// The status sheet's suggestions.
     var diagnosis: UnreachableDiagnosis {
         UnreachableDiagnosis(reachability, path: path, addresses: record?.addresses ?? [], probes: probes)
     }
@@ -112,7 +115,7 @@ final class PhoneModel {
         return inbox.items.count
     }
 
-    /// One memory's detail, wired to the banner and to Search's list.
+    /// One memory's detail, wired to the connection's state and to Search's list.
     func detailModel(_ id: UUID) -> MemoryDetailModel {
         let detail = MemoryDetailModel(id: id, caller: services.caller)
         detail.onFailure = { [weak self] error in self?.callFailed(error) }
@@ -128,6 +131,16 @@ final class PhoneModel {
     func start() async {
         guard !started else { return }
         started = true
+        #if DEBUG
+        if let scene = ConnectionScene.current, !isDemo {
+            record = scene.record
+            tracker.handle(.pairing(paired: true))
+            tracker.handle(.checked(scene.check, at: Date()))
+            capture.reload()
+            if capture.queuedCount < ConnectionScene.waiting { _ = await capture.queueTestCaptures(ConnectionScene.waiting - capture.queuedCount) }
+            return
+        }
+        #endif
         await reload()
         // The demo has no network to watch and no extensions' queue to read.
         if isDemo {
@@ -179,6 +192,9 @@ final class PhoneModel {
         takeCaptureRequest()
         capture.reload()
         guard started else { return }
+        #if DEBUG
+        if ConnectionScene.current != nil, !isDemo { return }
+        #endif
         await refresh()
         await capture.deliver(.foreground)
         // Suggestions may have been answered or added on the Mac meanwhile.
@@ -201,10 +217,11 @@ final class PhoneModel {
 
     private func delivered(_ outcome: DeliveryOutcome) {
         tracker.handle(.delivered(outcome))
+        statusBar.delivered(outcome)
         leaveVaultIfGone()
     }
 
-    /// A Search, memory or Inbox call failed: the banner hears about it.
+    /// A Search, memory or Inbox call failed: the connection's state hears about it.
     private func callFailed(_ error: CompanionClientError) {
         tracker.handle(.callFailed(error))
         leaveVaultIfGone()
@@ -252,6 +269,9 @@ final class PhoneModel {
             await overview.load()
             return
         }
+        #if DEBUG
+        if ConnectionScene.current != nil { return }
+        #endif
         guard let client = services.client, record != nil else {
             tracker.handle(.pairing(paired: false))
             return
