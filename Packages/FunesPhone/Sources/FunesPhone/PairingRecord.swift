@@ -15,6 +15,9 @@ public struct PairingRecord: Codable, Sendable, Equatable {
     public var deviceName: String
     public var addresses: [PairingAddress]
     public var pairedAt: Date
+    /// The last name `status.get` said to call the user by (ADR-0026), for Home's title while the
+    /// Mac is away. Goes with the record on unpair and revocation.
+    public var calledName: String?
 
     public init(payload: PairingQRPayload, confirmation: PairConfirmation, deviceName: String, pairedAt: Date) {
         macID = payload.macID

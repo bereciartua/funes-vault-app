@@ -1,5 +1,6 @@
 {
   "macName": "Demo Mac",
+  "calledName": "Alex",
   "categories": [
     { "key": "communication_style", "name": "Communication style", "description": "How you like answers written", "defaultSensitivity": "low" },
     { "key": "personal_preferences", "name": "Personal preferences", "description": "Likes, dislikes and habits", "defaultSensitivity": "low" },

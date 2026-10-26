@@ -101,7 +101,9 @@ public final class CompanionHandlers: Sendable {
 
     func status(now: Date) async throws -> CompanionStatus {
         let pending = try await services.suggestions.pending().count
-        return CompanionStatus(macName: macName(), appVersion: appVersion, serverTime: now, inboxPending: pending, vaultActive: true)
+        let calledName = try services.store.profile().normalized().calledName
+        return CompanionStatus(macName: macName(), appVersion: appVersion, serverTime: now, inboxPending: pending, vaultActive: true,
+                               calledName: calledName)
     }
 
     /// Each capture on its own, so one bad capture doesn't refuse the rest. A duplicate

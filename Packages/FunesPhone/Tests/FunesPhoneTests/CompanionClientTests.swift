@@ -105,6 +105,55 @@ struct Rig {
     }
 }
 
+/// FR-U-05, ADR-0026: the name `status.get` says to call the user by is kept with the pairing.
+@Suite struct CalledNameTests {
+    @Test func keptWithThePairingAcrossLaunches() async throws {
+        let rig = Rig()
+        try await rig.pair()
+        #expect(try await rig.client.record()?.calledName == nil)
+        rig.mac.calledName = "Maya"
+        #expect(try await rig.client.status(fresh: true).status.calledName == "Maya")
+        #expect(try await rig.client.record()?.calledName == "Maya")
+        let clock = rig.clock
+        let again = CompanionClient(store: rig.store, transport: rig.transport, discovery: FakeDiscovery(result: DiscoveryResult()),
+                                    secureEnclave: false, clock: { clock.now })
+        #expect(try await again.record()?.calledName == "Maya")
+    }
+
+    @Test func followsTheMacAndGoesWithThePairing() async throws {
+        let rig = Rig()
+        try await rig.pair()
+        rig.mac.calledName = "Maya"
+        _ = try await rig.client.status(fresh: true)
+        rig.mac.calledName = nil
+        _ = try await rig.client.status(fresh: true)
+        #expect(try await rig.client.record()?.calledName == nil)
+        rig.mac.calledName = "Maya"
+        _ = try await rig.client.status(fresh: true)
+        try await rig.client.unpair()
+        #expect(rig.store.accounts.isEmpty)
+        #expect(try await rig.client.record() == nil)
+    }
+
+    @Test func droppedWhenThisIPhoneIsRemoved() async throws {
+        let rig = Rig()
+        let record = try await rig.pair()
+        rig.mac.calledName = "Maya"
+        _ = try await rig.client.status(fresh: true)
+        rig.mac.revoke(record.deviceID)
+        await #expect(throws: CompanionClientError.refused(.revoked)) { try await rig.client.status(fresh: true) }
+        let kept = try #require(try await rig.client.record())
+        #expect(kept.calledName == nil && kept.deviceID == record.deviceID)
+    }
+
+    @Test func olderRecordsWithoutOneStillLoad() throws {
+        let json = #"{"macID":"6F9619FF-8B86-D011-B42D-00C04FC964FF","macName":"Mac","macSigningKey":"","macHPKEKey":"","#
+            + #""deviceID":"6F9619FF-8B86-D011-B42D-00C04FC964FF","deviceName":"iPhone","addresses":[],"pairedAt":820540800}"#
+        let record = try CompanionJSON.decoder().decode(PairingRecord.self, from: Data(json.utf8))
+        #expect(record.calledName == nil && record.macName == "Mac")
+    }
+}
+
 @Suite struct AddressSelectionTests {
     @Test func sameWiFiWinsOverTailscaleAndTunnel() async throws {
         let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .mac($0), "maya.example.ts.net": .mac($0)] })

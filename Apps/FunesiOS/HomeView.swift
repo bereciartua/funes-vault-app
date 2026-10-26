@@ -49,7 +49,7 @@ struct HomeView: View {
                     Button("Done") { focused = false }.bold()
                 }
             }
-            .navigationTitle(Self.greeting(Date()))
+            .navigationTitle(Self.greeting(Date(), name: model.calledName))
             .refreshable { await model.refresh(fresh: true) }
             .overlay(alignment: .bottom) {
                 if toast {
@@ -80,11 +80,21 @@ struct HomeView: View {
     static let recentShown = 5
 
     /// "Good morning", "Good afternoon" or "Good evening".
-    static func greeting(_ now: Date, calendar: Calendar = .autoupdatingCurrent) -> String {
-        switch calendar.component(.hour, from: now) {
-        case 5..<12: String(localized: "Good morning")
-        case 12..<18: String(localized: "Good afternoon")
-        default: String(localized: "Good evening")
+    /// "Good afternoon, Alex", or "Good afternoon" without a name (ADR-0026). A long name is cut
+    /// by the navigation bar.
+    static func greeting(_ now: Date, name: String? = nil, calendar: Calendar = .autoupdatingCurrent) -> String {
+        let hour = calendar.component(.hour, from: now)
+        guard let name, !name.isEmpty else {
+            switch hour {
+            case 5..<12: return String(localized: "Good morning")
+            case 12..<18: return String(localized: "Good afternoon")
+            default: return String(localized: "Good evening")
+            }
+        }
+        switch hour {
+        case 5..<12: return String(localized: "Good morning, \(name)")
+        case 12..<18: return String(localized: "Good afternoon, \(name)")
+        default: return String(localized: "Good evening, \(name)")
         }
     }
 

@@ -28,6 +28,8 @@ final class FakeMac: @unchecked Sendable {
     /// Captures stored, in order: a duplicate `captureId` isn't stored again.
     private(set) var stored: [UUID] = []
     var allow = true
+    /// What `status.get` says to call the user by (ADR-0026).
+    var calledName: String?
     private(set) var statusCalls = 0
     private(set) var captureCalls = 0
     private(set) var unpaired: [UUID] = []
@@ -100,7 +102,7 @@ final class FakeMac: @unchecked Sendable {
         case .statusGet:
             lock.withLock { statusCalls += 1 }
             let status = CompanionStatus(macName: "Maya's MacBook Pro", appVersion: "0.2.0", serverTime: now, inboxPending: 2,
-                                         vaultActive: true)
+                                         vaultActive: true, calledName: lock.withLock { calledName })
             reply = try! CompanionResponse(id: head.id, result: status).encoded()
         case .capturesSubmit:
             let params = try! head.params(CapturesSubmit.self)

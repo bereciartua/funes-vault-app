@@ -125,6 +125,21 @@ import Testing
         let device = try #require(try await h.services.devices.device(id: phone.deviceID!))
         #expect(device.lastTransport == .lan)
         #expect(device.lastSeenAt == t0)
+        #expect(status.calledName == nil)
+    }
+
+    /// FR-U-05, ADR-0026: the name the profile says to call the user by, preferred else given.
+    @Test func statusCarriesTheCalledName() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let profiles = ProfileService(store: h.store, activity: h.activity)
+        try await profiles.save(Profile(givenName: "Martin", familyName: "Bereciartua"), now: t0)
+        #expect(try await h.result(StatusGet.self, EmptyParams(), phone: phone).calledName == "Martin")
+        try await profiles.save(Profile(givenName: "Martin", preferredName: "Tincho"), now: t0)
+        #expect(try await h.result(StatusGet.self, EmptyParams(), phone: phone).calledName == "Tincho")
+        // Only the name: nothing else about the user goes to the phone.
+        try await profiles.save(Profile(pronouns: "he/him", location: "Lisbon"), now: t0)
+        #expect(try await h.result(StatusGet.self, EmptyParams(), phone: phone).calledName == nil)
     }
 
     @Test func unknownAndRevokedDevicesGet401() async throws {
