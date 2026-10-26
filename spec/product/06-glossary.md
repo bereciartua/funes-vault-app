@@ -52,6 +52,8 @@ The [content style](04-ux-mac.md#content-style-applies-to-both-apps) still appli
 | **connect** (a cloud app) | "Cloud sign-in" (the panel's title) | The sign-in where you check the code and allow the app on this Mac. The panel's title is "<app> wants to connect", as [04](04-ux-mac.md#app-wants-to-connect-cloud-sign-in) says. The button is "Connect a Cloud App…". | Sign-in panel (1), Cloud tab |
 | **cloud access** | n/a | One agent's switch, "Allow cloud access". It never changes what the agent can read. | Cloud tab, Remote Access (8) |
 | **Remote Access** | n/a | The feature: a second port that a tunnel you run makes reachable. Always capitalised. | Sidebar, Settings |
+| **About You** (v0.5) | "profile", "user info", "personal details", "identity" | What you tell Funes about yourself: your name, what to call you, pronouns, languages, location, time zone and occupation. Not a memory. The Settings pane and each agent's Access section use this name; agents see the fields you tick. "Profile" is kept for the API's `profile` key. | Settings, Access tab, Share panel, Activity |
+| **call you** (v0.5) | "nickname", "display name", "preferred name" | The name Funes greets you with and agents use: "Call me" in About You, "What should Funes call you?" in the setup questions. | About You, setup questions |
 
 ## The app, its server and Pause
 | Use | Stop using | Means | Where |

@@ -6,7 +6,7 @@ Funes Vault is a native Mac menu bar app that keeps a personal memory vault on t
 Everything is defined in [`spec/`](spec/README.md). Read the relevant part before building a feature:
 - **What to build next:** the phase plans in `spec/plans/` (tick their checklists as tasks land) and the [roadmap](spec/roadmap/roadmap.md).
 - **Requirements:** `spec/product/03-requirements.md` (ids like `FR-D-12`; cite them in commits and tests).
-- **The core rules:** `spec/domain/access-policy.md` (with test vectors T1–T35) and `spec/domain/domain-model.md`.
+- **The core rules:** `spec/domain/access-policy.md` (with test vectors T1–T46) and `spec/domain/domain-model.md`.
 - **Architecture:** `spec/architecture/`; decisions in `spec/architecture/decisions/` (ADRs).
 
 When a design changes, update the spec in the same change and add an ADR for architectural decisions. Record spike results in `spec/plans/spike-results.md`.

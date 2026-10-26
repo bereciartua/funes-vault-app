@@ -168,6 +168,15 @@ Epics map requirements to phases.
 | iPhone Home: replaces Capture; pulse with scrubbing, tiles, Who reads, cached states | FR-H-04 | 7.4 | M | S |
 | iPhone widgets: Pulse, Remember, Rhythm | FR-H-06 | 7.5 | M | C |
 
+## E15: About you (Phase 8, v0.5)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| Profile, `v6_profile`, profile fields per agent, §3.10 in the request path, T36–T46, export and import | FR-U-01, FR-U-03, FR-X-05, FR-X-06, ADR-0026 | 8.1 | M | S |
+| `profile` in `request_memory`'s contract and server instructions; harness | FR-U-03 | 8.2 | S | S |
+| Settings ▸ About You, greeting, Access checkboxes, Share panel line, Activity, seed page | FR-U-01..04 | 8.3 | M | S |
+| iPhone greeting by name (`status.get`) | FR-U-05 | 8.4 | S | C |
+| Edit About You on the iPhone | FR-U-01 | later | S | C |
+
 ## E12: Later
 | Item | Covers | Size |
 |---|---|---|

@@ -10,6 +10,7 @@
 | **Sensitivity** | An ordered level from Public to Secret. Each agent has a maximum. |
 | **Agent** | An MCP client the user added (Claude Code, Cursor…). It has its own key and its own access. "Client" in protocol terms; "connection" in EK Bridge. |
 | **Access** | One agent's rules: operations, maximum sensitivity, allowed and denied categories, ask before sharing or saving, and expiry. |
+| **Profile** | The user's own details, shown as **About you**: given and family name, the called name (preferred, else given), pronouns, languages, location, time zone, occupation. One per vault, not a memory. Each agent receives the **profile fields** the user ticks for it, with its `request_memory` answers ([ADR-0026](../architecture/decisions/0026-about-you-profile.md)). |
 | **Operation** | Read (receive memories), Suggest (propose memories for review), Write (save directly, if ask before saving is off). |
 | **Ask before sharing** | Every release of memories to this agent needs the user's approval in a panel. On by default. |
 | **Request** / **Disclosure** | An agent asking for memories for a task (`request_memory`), and the record of what was decided and released. |

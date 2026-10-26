@@ -6,6 +6,8 @@ Planned as a **side project**: about one weekend (around 8–10 h) per week. Dat
 
 **Status (2026-10-19):** Phases 0–3 and Phase 4's preparation are done. [Phase 4b](../plans/phase-4b-remote-access.md) (Remote Access, [ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)) comes before the launch. The chart starts from today's state.
 
+**Update (2026-10-26):** **Phase 8** (About you, v0.5) is planned: see [v0.5](#v05-about-you-phase-8).
+
 **Update (2026-10-25):** **Phase 7** (Home and widgets, v0.4) is planned: see [v0.4](#v04-home-and-widgets-phase-7).
 
 **Update (2026-10-23):** the Mac's v0.2.0 is out and Phase 5 is finishing. **Phase 6** (memory processing, v0.3) is planned next: see [v0.3](#v03-memory-processing-phase-6) below. Its own chart is in that section.
@@ -127,7 +129,22 @@ Brings back the web version's Home ([ADR-0025](../architecture/decisions/0025-va
 - **Home on the iPhone:** replaces Capture, with the same charts, kept from a cache of counts while the Mac is away.
 - **iPhone widgets:** Pulse, Remember and Rhythm.
 
-### v0.5+: Later (unordered; pick by real usage)
+### v0.5: About you (Phase 8)
+Funes learns your name and a few details, greets you by name, and gives each agent the ones you tick ([ADR-0026](../architecture/decisions/0026-about-you-profile.md)). About 1.5–2 weekends.
+
+| Step | Plan | Exit criteria |
+|---|---|---|
+| **8.1 Core** | [plan](../plans/phase-8-about-you.md#81-core--½-weekend) | `v6_profile` migrates a version 5 vault; T36–T46 green |
+| **8.2 MCP** | [plan](../plans/phase-8-about-you.md#82-mcp--¼-weekend) | Claude Code and a cloud agent answer "What's my name?" from Funes |
+| **8.3 Mac** | [plan](../plans/phase-8-about-you.md#83-mac--¾-weekend) | About You, the Access checkboxes, the Share panel line; Home says the author's name |
+| **8.4 iPhone** | [plan](../plans/phase-8-about-you.md#84-iphone--¼-weekend) | Home's title has the name, also while the Mac is away |
+
+**In:**
+- **About You** in Settings: name, what to call you, pronouns, languages, location, time zone, occupation; all optional.
+- **Greeting by name** on the Mac's and the iPhone's Home.
+- **Profile fields per agent:** ticked in Access (Name by default), sent with `request_memory` answers, named in the Share panel and Activity.
+
+### v0.6+: Later (unordered; pick by real usage)
 - **Allow window** for low-sensitivity sharing (if panels cause fatigue).
 - **BridgeKitUI extraction** (approvals, activity, agent setup UI, app shell, and the Remote Access views) after v0.1. BridgeKitRemote is extracted in Phase 4b.
 - **`funes` CLI** for scripts.

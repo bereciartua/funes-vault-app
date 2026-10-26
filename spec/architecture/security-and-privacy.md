@@ -64,7 +64,7 @@
 | T30 | Spoofed tunnel status on the Mac, or a new tunnel tested while switching | Tunnel checks are read-only and display only: they never change what the server accepts. A tunnel being tested passes `Host` for the health route only. The health route answers only a nonce Funes issued in the last 30 s, once |
 
 ## 4. Privacy guarantees (each one is tested)
-1. **No text before consent.** A request that needs approval returns no memory text, ids or titles.
+1. **No text before consent.** A request that needs approval returns no memory text, ids or titles. Only the profile fields the user shares with that agent go before approval, by the user's choice in its access (v0.5, [ADR-0026](decisions/0026-about-you-profile.md)).
 2. **Exact and partial approval.** Only the memories the user ticks are released, with the exact text shown.
 3. **Single use, short-lived, invalidated by change** (15 minutes; agent revision; memory version).
 4. **Purpose can't change decisions.**
@@ -73,7 +73,7 @@
 7. **Secrets are never stored.**
 8. **Exports never contain keys, devices or access settings. Imports never grant access.**
 9. **Revocation is immediate,** for future access. Text already released is beyond the vault's control, and the UI says so.
-10. **The vault exists only on the Mac.** The iPhone holds only queued captures.
+10. **The vault exists only on the Mac.** The iPhone holds only queued captures, plus the counts of [ADR-0025](decisions/0025-vault-overview-and-iphone-cache.md) and the name Funes calls the user ([ADR-0026](decisions/0026-about-you-profile.md)).
 11. **AI processing is local by default.** Text reaches a non-local model provider only if the user chose one, never above the cloud sensitivity limit, and never when it matches the secret scanner.
 12. **The same policy on every channel.** For the same agent and request, a call through Remote Access gets the same decision, panels and waits as a local call ([ADR-0018](decisions/0018-remote-access-in-v0.1.md)). Remote Access is off by default.
 
@@ -81,6 +81,7 @@
 | Data | Destination | When |
 |---|---|---|
 | Memory text released to an agent | The agent, then its AI provider | Only on ALLOW or the user's approval |
+| The profile fields shared with an agent (v0.5: name, pronouns, languages, location, time zone, occupation; each off unless the user turns it on for that agent, except the name) | The agent, then its AI provider (through the tunnel, for a cloud agent) | With every `request_memory` answer that passes the agent gate ([ADR-0026](decisions/0026-about-you-profile.md)) |
 | Memory text released to a cloud agent, and its other tool results | The user's tunnel (its provider can read it if TLS ends at its edge: Cloudflare, ngrok; not Tailscale Funnel), then the cloud agent's vendor | Same, while Remote Access is on and the agent has cloud access |
 | One HTTPS GET of a cloud app's client metadata document | The URL the app gives (public addresses only), with no credential | Only while a pairing window is open |
 | One HTTPS request to Funes's own health URL | Through the user's tunnel, back to this Mac | When the guided setup or **Test** checks the tunnel |

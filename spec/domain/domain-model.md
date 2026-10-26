@@ -13,6 +13,7 @@ erDiagram
     SUGGESTION }o--o| MEMORY : "corrects / becomes"
     AGENT ||--|| ACCESS : "has"
     ACCESS ||--o{ ACCESS_CATEGORY : "allow/deny"
+    ACCESS ||--o{ ACCESS_PROFILE_FIELD : "shares"
     CATEGORY ||--o{ ACCESS_CATEGORY : ""
     AGENT ||--o{ DISCLOSURE : "requests"
     DISCLOSURE ||--o{ DISCLOSURE_ITEM : "releases"
@@ -135,7 +136,27 @@ An MCP client the user has added. It is EK Bridge's "connection".
 | `askBeforeSaving` | bool | true (relevant only with `write`) |
 | `expiresAt` | timestamp? | none |
 
+| `profileFields` | set of ProfileField | `{name}` ([ADR-0026](../architecture/decisions/0026-about-you-profile.md)). Which parts of the profile go with this agent's `request_memory` answers ([access policy §3.10](access-policy.md#310-the-profile)) |
+
 **Allow window** (optional, FR-D-12): `{agentId, revision, until, maxSensitivity ≤ LOW}`, held in memory only.
+
+### Profile
+What the user tells Funes about themself, shown in the app as **About you** ([ADR-0026](../architecture/decisions/0026-about-you-profile.md)). One per vault; every field is optional and starts empty. It isn't a memory: no categories, sensitivity, kind or provenance, never in a disclosure's snapshot, and memory processing (splitting, classification, the tidy-up) never reads or changes it.
+
+| Field | Type | Notes |
+|---|---|---|
+| `givenName`, `familyName` | string? ≤ 80 each | Kept as `PersonNameComponents`, so the app shows them in the locale's order |
+| `preferredName` | string? ≤ 80 | "What should Funes call you?". Empty means the given name. The greeting and agents use the **called name**: `preferredName`, else `givenName`, else none |
+| `pronouns` | string? ≤ 40 | Free text, e.g. "she/her" |
+| `languages` | [BCP 47 tag] ≤ 8 | Ordered: the first is the one the user writes in most |
+| `location` | string? ≤ 120 | Free text, e.g. "Lisbon, Portugal" |
+| `timeZone` | IANA id or `automatic` | Default `automatic`: the Mac's current time zone, read when it's needed |
+| `occupation` | string? ≤ 120 | Free text, e.g. "Staff engineer at a climate startup" |
+| `updatedAt` | timestamp? | |
+
+**Invariants:**
+- Text passes the secret scanner on save; a match refuses the whole save.
+- Lengths count Unicode scalars, like every other limit. Leading and trailing whitespace is trimmed, and an empty string is stored as none.
 
 ### Disclosure (a request from an agent to read memories)
 | Field | Type | Notes |
@@ -155,6 +176,7 @@ An MCP client the user has added. It is EK Bridge's "connection".
 | `approvedMemoryIds` | [UUID]? | The chosen subset |
 | `approvalExpiresAt` | timestamp? | Approval time + 15 min |
 | `withheld` | JSON | `{reasonCode: count}` |
+| `profileFieldsSent` | [ProfileField] | The profile fields that went with the response (§3.10), names only, never the values. Empty for gate denials |
 | `createdAt`, `decidedAt`, `deliveredAt` | | |
 
 **DisclosureItem** (written at delivery): `disclosureId`, `memoryId`, `memoryVersion`, `sensitivity`, `categoryKey`, `estimatedTokens`, `clipped`. The text is **not** stored; it is regenerated from the memory version at delivery, and delivery requires that version to still be current.
@@ -181,6 +203,7 @@ Stored in an append-only JSONL file (the EK Bridge `ActivityStore` pattern):
 - `time`, `requestId`, `phase` (`start` · `result` · `event`);
 - `actor` (agent, device, user or system), `via` (`mcp` · `remote` · `companion` · `app`), `event`, `outcome`;
 - ids, `reason`, `counts`, `approval` (`approved` · `denied` · `timeout` · `not_required`);
+- `profileFields` (the profile fields a `request_memory` answer carried, names only), and the `profile_edited` event (the fields changed, names only);
 - `agentReportedName` (sanitized, ≤ 64 bytes).
 
 No text, task, keys or bodies.
@@ -197,6 +220,7 @@ No text, task, keys or bodies.
 | SuggestionStatus | `pending`, `applied`, `rejected`, `expired`, `split` (Phase 6) |
 | SuggestionAction | `create`, `update`, `archive`; Phase 6: `duplicate`, `split`, `merge`, `conflict` |
 | MemoryTrust | `trusted`, `untrusted` (Phase 6) |
+| ProfileField | `name` (given, family and called name together), `pronouns`, `languages`, `location`, `time_zone`, `occupation` |
 
 Reason codes are listed in [access policy](access-policy.md#8-reason-codes).
 

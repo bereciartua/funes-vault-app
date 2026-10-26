@@ -11,12 +11,13 @@ This is the core of Funes. It defines exactly how agent requests to **read** (`r
 ## 1. Principles
 1. **Fail closed.** Missing, paused, expired or unknown access always means no.
 2. **Purpose never decides.** The agent's `purpose` text is recorded and displayed, never evaluated. The `task` text only drives *retrieval* (which memories are relevant), never *eligibility*. For a fixed candidate set, the decision is the same for any task or purpose. This is the prompt-injection defence.
-3. **No text before consent.** A request that needs approval returns no memory text, ids or titles until the user approves.
+3. **No text before consent.** A request that needs approval returns no memory text, ids or titles until the user approves. The one exception is the profile fields the user chose in advance to share with that agent (§3.10): their consent is given in the access editor, field by field.
 4. **Exact, single-use, short-lived.** The user approves the exact text they see. It is released once, within 15 minutes, and only if nothing relevant changed in between.
 5. **Denials reveal counts, not content.** The agent learns how many matching memories were withheld and why, never which ones.
 
 ## 2. Inputs
-- **Agent state:** `paused`, `removedAt`, `revision`, `Access` (operations, maxSensitivity, allowed and denied categories, askBeforeSharing, askBeforeSaving, expiresAt).
+- **Agent state:** `paused`, `removedAt`, `revision`, `Access` (operations, maxSensitivity, allowed and denied categories, askBeforeSharing, askBeforeSaving, expiresAt, profileFields).
+- **The profile** ([domain model](domain-model.md#profile)): read only to fill §3.10's `profile`, never to decide anything.
 - **Global state:** Funes paused (`pausedUntil`).
 - **Request** (see the [MCP server spec](../architecture/mcp-server.md)):
   - `task` (1–1,000 characters);
@@ -118,6 +119,24 @@ In a single database transaction:
 
 ### 3.9 After 15 minutes
 A request still in `needs_approval` 15 minutes after creation becomes `denied` with reason `approval_expired`. It disappears from Pending requests, and the Activity row is kept.
+
+### 3.10 The profile
+*v0.5, [ADR-0026](../architecture/decisions/0026-about-you-profile.md).* The user's profile ("About you") goes to an agent with its `request_memory` answers, limited to the fields the user shares with that agent.
+1. **After the gate only.** A response carries `profile` only if the call passed the agent gate (§3.1, G1–G4). A gate denial carries none, so a paused agent, an expired one or one without Read learns nothing from it.
+2. **Whatever the outcome after the gate:** `fulfilled`, `delivered`, `needs_approval`, and `denied` with `no_matching_memories` or `no_allowed_memories`. Asking for context and finding no memory is still asking for context; "What's my name?" has no memory to retrieve.
+3. **Only the agent's fields, only those with a value.** `profile` holds each field in `access.profileFields` that is set:
+   - `name`: `{given?, family?, called?}`; `called` is the called name (`preferredName`, else `givenName`). Present when any of the three is set.
+   - `pronouns`, `location`, `occupation`: strings.
+   - `languages`: the ordered tags.
+   - `time_zone`: an IANA id; for `automatic`, the Mac's time zone when the response is built.
+   With no field to send, the response has no `profile` key at all, rather than an empty object.
+4. **Never decides anything.** The profile isn't matched against the task, doesn't change retrieval, eligibility, `withheld` or the decision, and isn't part of the snapshot or `snapshotRevision`. Editing the profile doesn't invalidate a pending or approved request; each response carries the profile as it is when it's built.
+5. **Changing an agent's fields is an access change.** It increments the agent's revision, like any edit in the access editor, so a pending approval is rebuilt and an approved request fails delivery with `policy_changed` (§3.6–3.7).
+6. **Not on `get_memory_request`.** The `request_memory` call that created the request already carried it; a delivery through `get_memory_request` doesn't repeat it. Not on `list_memory_categories` or `suggest_memory` either.
+7. **Not offered by Let it ask for more access** (§7). Profile fields change only in the access editor.
+8. **Recorded by name.** The Disclosure's `profileFieldsSent` and the Activity row list the fields that went, never their values.
+9. **Size.** The profile isn't counted against `max_tokens` (at most about 700 characters). Its encoded size, counted as an item's is (§4), is kept back from the result-size limit before items are added, so it never pushes a bundle over 200,000 bytes.
+10. **The same on every channel**, local or Remote Access (§2).
 
 ## 4. Bundle compilation
 - **Item text:** `"<title>: <body>"`. **Estimated tokens:** `ceil(characters / 4)`, counting Unicode scalars as every input limit does (SQLite's `length()`).
@@ -267,3 +286,19 @@ The default fixture:
 | T33 | allow window from rev 7, agent now rev 8 | the window is ignored |
 | T34 | iPhone device creates a memory in `health` (SECRET) | allowed (owner); logged as `device:<id>` |
 | T35 | revoked device sends a capture | 401; nothing stored |
+
+**Profile vectors** (§3.10). The default fixture, plus a profile with given name "Martin", family name "Bereciartua", no preferred name, pronouns "he/him", languages `["en", "es"]` and no location; agent A shares `{name}`.
+
+| # | Setup change | Expected |
+|---|---|---|
+| T36 | — | as T1, plus `profile` = `{name: {given: "Martin", family: "Bereciartua", called: "Martin"}}`; no pronouns or languages |
+| T37 | Funes paused | DENY `funes_paused`; no `profile` |
+| T38 | operations = {suggest} | DENY `operation_not_allowed`; no `profile` |
+| T39 | retrieval returns nothing | DENY `no_matching_memories`, withheld {}, with T36's `profile` |
+| T40 | A shares ∅ | as T1, with no `profile` key |
+| T41 | A shares {name, pronouns, location} | `profile` has `name` and `pronouns` only (location is empty) |
+| T42 | T36 pending; A's profile fields changed to {name, languages} | revision +1; approving the old panel is refused and it rebuilds (as T22); an approved request would fail delivery with `policy_changed` (as T15) |
+| T43 | T13, then the profile's pronouns edited before delivery | delivered as T13; the profile doesn't invalidate it |
+| T44 | T36 times out (T18), then the user approves {m2} and the agent calls `get_memory_request` | delivered bundle = m2; no `profile` in that response |
+| T45 | T36 | the Activity row and `profileFieldsSent` are `["name"]`, with no name text anywhere in Activity |
+| T46 | the user saves an occupation containing `sk-abc…` (20+ characters) | refused (`secret_like_content`); the profile is unchanged |
