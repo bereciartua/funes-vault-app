@@ -176,7 +176,8 @@ struct PulseCard: View {
 }
 
 /// In above the line, stacked by source; Out below, stacked by agent; a red dot under each day
-/// with refusals, sized by count. Hover shows the day's breakdown; a click opens it.
+/// with refusals, sized by count. Each half has its own scale (`PulseScale`), the line in the
+/// middle, and the y axis labels each half's peak. Hover shows the day's breakdown; a click opens it.
 struct PulseChart: View {
     static let height: CGFloat = 132
 
@@ -194,7 +195,8 @@ struct PulseChart: View {
         let id: String
         let date: Date
         let series: String
-        let value: Int
+        /// The plot value: In and Out each on their own scale.
+        let value: Double
     }
 
     private var unit: Calendar.Component {
@@ -208,23 +210,24 @@ struct PulseChart: View {
     private var buckets: [VaultOverview.Bucket] { insights.buckets }
     private var maxIn: Int { buckets.map(\.inbound.total).max() ?? 0 }
     private var maxOut: Int { showsOut ? buckets.map(\.shared).max() ?? 0 : 0 }
-    private var span: Double { Double(max(maxIn + maxOut, 4)) }
-    /// Where the refused dots sit, under the deepest Out bar.
-    private var dotY: Double { -(Double(maxOut) + span * 0.16) }
-    private var yDomain: ClosedRange<Double> {
-        let top = Double(max(maxIn, 1)) + span * 0.04
-        return showsOut ? (dotY - span * 0.1)...top : 0...top
+    private var yScale: PulseScale {
+        PulseScale(peakIn: maxIn, peakOut: maxOut, refused: showsOut && buckets.contains { $0.refused > 0 })
     }
+    /// Where the refused dots sit, under the deepest Out bar.
+    private var dotY: Double { PulseScale.refusedY }
+    /// The line in the middle; In only (the line at the bottom) without agents.
+    private var yDomain: ClosedRange<Double> { showsOut ? PulseScale.domain : 0...PulseScale.top }
 
     private var segments: [Segment] {
-        buckets.flatMap { bucket -> [Segment] in
+        let yScale = self.yScale
+        return buckets.flatMap { bucket -> [Segment] in
             let key = bucket.date.timeIntervalSinceReferenceDate
             let inbound = HomeText.Source.allCases.compactMap { source -> Segment? in
                 let n = source.count(bucket.inbound)
-                return n > 0 ? Segment(id: "\(key)-in-\(source)", date: bucket.date, series: "in.\(source)", value: n) : nil
+                return n > 0 ? Segment(id: "\(key)-in-\(source)", date: bucket.date, series: "in.\(source)", value: yScale.plot(in: n)) : nil
             }
             let out = showsOut ? insights.out(bucket).map { entry in
-                Segment(id: "\(key)-\(seriesKey(entry.series))", date: bucket.date, series: seriesKey(entry.series), value: -entry.count)
+                Segment(id: "\(key)-\(seriesKey(entry.series))", date: bucket.date, series: seriesKey(entry.series), value: yScale.plot(out: entry.count))
             } : []
             return inbound + out
         }
@@ -282,11 +285,12 @@ struct PulseChart: View {
             }
         }
         .chartYAxis {
-            AxisMarks(position: .leading, values: yTicks) { value in
+            AxisMarks(position: .leading, values: yScale.ticks) { value in
                 AxisGridLine().foregroundStyle(Color.secondary.opacity(0.15))
                 AxisValueLabel {
                     if let y = value.as(Double.self) {
-                        Text(y > 0 ? String(localized: "\(Int(y)) in") : String(localized: "\(Int(-y)) out"))
+                        let n = yScale.count(at: y)
+                        Text(y > 0 ? String(localized: "\(n) in") : String(localized: "\(n) out"))
                     }
                 }
             }
@@ -314,14 +318,6 @@ struct PulseChart: View {
                 withAnimation(.easeOut(duration: 0.5)) { drawn = true }
             }
         }
-    }
-
-    /// The top In and deepest Out, labelled "12 in" and "30 out".
-    private var yTicks: [Double] {
-        var ticks: [Double] = []
-        if maxIn > 0 { ticks.append(Double(maxIn)) }
-        if maxOut > 0 { ticks.append(-Double(maxOut)) }
-        return ticks
     }
 
     /// About five labels, under the middle of their bars: each day for 7 days, weekly for 30,

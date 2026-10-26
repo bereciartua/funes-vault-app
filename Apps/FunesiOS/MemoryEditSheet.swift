@@ -14,6 +14,9 @@ struct MemoryEditSheet: View {
     let error: String?
     let save: () async -> Void
     let cancel: () -> Void
+    @FocusState private var field: Field?
+
+    private enum Field { case title, body }
 
     var body: some View {
         NavigationStack {
@@ -21,8 +24,10 @@ struct MemoryEditSheet: View {
                 Section {
                     TextField("Title", text: $draft.title)
                         .font(.headline)
+                        .focused($field, equals: .title)
                     TextField("Text", text: $draft.body, axis: .vertical)
                         .lineLimit(4...14)
+                        .focused($field, equals: .body)
                 } footer: {
                     if let error {
                         Label(error, systemImage: "exclamationmark.triangle.fill")
@@ -72,7 +77,13 @@ struct MemoryEditSheet: View {
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled(draft != original)
+            .scrollDismissesKeyboard(.interactively)
             .toolbar {
+                // Return adds a line in Text, so the keyboard has its own way out.
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { field = nil }.bold()
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: cancel)
                 }

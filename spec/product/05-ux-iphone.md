@@ -88,6 +88,8 @@ Top to bottom:
   - **Who reads:** agents shared something or asking in 30 days: the name (redacted while locked), "128 memories shared" and how long ago it last asked.
   - **Mac not reachable:** whenever the Mac isn't connected, the charts are faded and greyed, with "As of 10:42" ("As of Oct 21, 10:42 PM" once it isn't today's). A range the cache doesn't have says so in the sheet.
   - The composer's field is a little shorter (96 pt, growing as you type) so the charts start on the first screen.
+  - **Closing the keyboard:** Return adds a line, so the keyboard has a **Done** button above it, scrolling Home pulls it down (interactively), and tapping anywhere outside the field closes it (taps on tiles, cards and Waiting for you still work). Each keeps the text; none stops dictation. The memory edit sheet (Edit, and the Inbox's Edit & Save) and the share extension's note have the same **Done**.
+  - **The pulse's scales:** as on the Mac, each half has its own: the line in the middle, the busiest In bucket reaching the top and the busiest Out bucket the bottom (above the refused dots). A faint number at each edge with a faint gridline gives that half's peak; a half with nothing stays empty and unlabelled. The words above the chart, scrubbing and VoiceOver give the real counts. The Pulse widget has the same scales without the edge numbers (its line gives the week's totals).
 
 ## Search tab
 - A search field. Results come from the Mac, showing the title, a two-line snippet, category chips and a sensitivity badge.
