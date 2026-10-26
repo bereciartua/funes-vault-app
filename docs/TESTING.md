@@ -105,7 +105,7 @@ Before the first public release, and after any change to the bundle layout, sign
 
 - [ ] Download `FunesVault.dmg` from the draft release in Safari, so it carries the quarantine flag.
 - [ ] Open it: no Gatekeeper warning. `spctl --assess --type open --context context:primary-signature -v FunesVault.dmg` says `source=Notarized Developer ID`.
-- [ ] Drag the app to Applications and open it: no warning; the menu bar icon appears and the Vault opens on the setup checklist.
+- [ ] Drag the app to Applications and open it: no warning; the menu bar icon appears and the window opens on Home with the setup checklist.
 - [ ] `sh scripts/check_bundle.sh /Applications/FunesVault.app arm64 x86_64` passes: both architectures, `funes-mcp` signed as `com.funesvault.mac.mcp` by the same team, the hardened runtime, Sparkle's feed and key, the bundled model's checksums, and the licence files.
 - [ ] Vault search finds a memory by meaning, not just by its words (the model loaded).
 - [ ] Add one agent, connect it with one click, and run `funes-mcp check` against it.
@@ -129,6 +129,7 @@ On a new macOS user account (or a macOS VM), with no agents' configs and no Fune
 - [ ] Apply some suggestions; Vault search finds them.
 - [ ] Ask the agent something that needs a Low memory: the Share panel says where the text goes and ticks only strong matches; **Share** delivers it, and Activity records it by id. Ask again from another app and press ⌃⌥⌘R: the panel comes forward and Return answers it; **More Time** moves it to Pending requests.
 - [ ] Capture with ⌥⌘M; the card gets a proposed title and categories.
+- [ ] **Home:** type a memory and press Return: "Saved to Inbox", and it's in the Inbox; a pasted API key shows the secret-scanner error and isn't saved; ⌘Return opens the Vault searching for the text. On macOS 26 or later, the mic asks for microphone and speech recognition access the first time and dictates into the field (in Home and the ⌥⌘M box); on macOS 15 there's no mic. The pulse shows the day's numbers on hover, a click opens that day in Activity and a refused dot its Problems; the cards open the Vault (newest first, a sensitivity), Activity and an agent's Activity tab.
 - [ ] `~/Library/Application Support/FunesVault/` is mode 0700, its files 0600, and `agent-keys/` holds one key file.
 - [ ] Quit: `mcp-endpoint.json` is gone.
 

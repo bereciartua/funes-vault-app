@@ -144,6 +144,8 @@ final class UIReview: NSObject, NSApplicationDelegate {
         let model = fixture.model
         let main = MainWindowController(model: model)
         keep.append(main)
+        // Made now, so the first pass's resize below applies to it too.
+        main.show()
         for (appearance, suffix) in [(NSAppearance.Name.aqua, "light"), (.darkAqua, "dark")] {
             NSApp.appearance = NSAppearance(named: appearance)
             // Both passes start alike: the default window size, not the frame the real app autosaved,
@@ -157,14 +159,15 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 main.show()
                 await snapshot("\(name)-\(suffix)", main.window)
             }
-            await mainScene("vault-checklist") {
+            // Home (task 7.3): with the setup checklist on top, then as the user lives with it.
+            await mainScene("home-checklist") {
                 model.checklist.reset(model: model)
+                model.section = .home
+            }
+            await mainScene("home") { model.checklist.dismiss() }
+            await mainScene("vault-memory") {
                 model.section = .vault
                 model.vault.status = .active
-                model.vault.selection = []
-            }
-            await mainScene("vault-memory") {
-                model.checklist.dismiss()
                 model.vault.selection = model.vault.memories.first(where: { $0.title == "Commit messages" }).map { [$0.id] } ?? []
             }
             model.vault.status = .recentlyDeleted
@@ -251,7 +254,12 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 main.window?.setContentSize(MainWindowController.minimumSize)
                 await snapshot("\(name)-min-\(suffix)", main.window)
             }
-            await minScene("agents-cloud") {}
+            await minScene("home") { model.section = .home }
+            await minScene("agents-cloud") {
+                model.selectedAgentID = fixture.cloudAgent.id
+                model.agentTab = .cloud
+                model.section = .agents
+            }
             await minScene("agents-access") {
                 model.selectedAgentID = fixture.agents.claudeCode.id
                 model.agentTab = .access
@@ -285,8 +293,12 @@ final class UIReview: NSObject, NSApplicationDelegate {
 
             let empty = MainWindowController(model: fixture.empty)
             keep.append(empty)
-            fixture.empty.section = .vault
+            // A new vault's Home: its empty states, without the checklist above them.
+            fixture.empty.checklist.dismiss()
+            fixture.empty.section = .home
             empty.show()
+            await snapshot("home-empty-\(suffix)", empty.window)
+            fixture.empty.section = .vault
             await snapshot("vault-empty-\(suffix)", empty.window)
             fixture.empty.section = .agents
             await snapshot("agents-empty-\(suffix)", empty.window)

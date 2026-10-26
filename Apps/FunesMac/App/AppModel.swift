@@ -30,15 +30,15 @@ struct PendingRequest: Identifiable, Equatable {
     }
 }
 
-/// The main window's sections (04-ux-mac.md).
-/// The main window's sections, in the View menu's order (⌘1–⌘5). Agents shows the agent selected
-/// in the sidebar's Agents list.
+/// The main window's sections (04-ux-mac.md), in the View menu's order (⌘1–⌘6). Agents shows
+/// the agent selected in the sidebar's Agents list.
 enum AppSection: String, CaseIterable, Identifiable, Hashable {
-    case vault, inbox, activity, agents, remoteAccess
+    case home, vault, inbox, activity, agents, remoteAccess
     var id: String { rawValue }
 
     var title: String {
         switch self {
+        case .home: String(localized: "Home")
         case .vault: String(localized: "Vault")
         case .inbox: String(localized: "Inbox")
         case .agents: String(localized: "Agents")
@@ -49,6 +49,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
 
     var symbol: String {
         switch self {
+        case .home: "house"
         case .vault: "archivebox"
         case .inbox: "tray"
         case .agents: "person.2"
@@ -88,6 +89,10 @@ final class AppModel {
     var dataGeneration = 0
 
     let vault: VaultModel
+    /// Home's pulse and cards (FR-H-02).
+    let home: HomeModel
+    /// Home's composer: the capture box's model, saved the same way.
+    let composer = CaptureBoxModel()
     let inboxState: InboxModel
     let activity: ActivityModel
     let checklist: ChecklistModel
@@ -120,7 +125,8 @@ final class AppModel {
 
     // MARK: Navigation
 
-    var section: AppSection = .vault
+    /// The main window opens on Home (FR-H-02).
+    var section: AppSection = .home
     var settingsTab: SettingsTab = .general
     var agentTab: AgentTab = .access
     /// Open the Add Agent sheet: the sidebar's +, the checklist's Add… and the empty Agents page set it.
@@ -138,6 +144,8 @@ final class AppModel {
     @ObservationIgnored var openMainWindow: () -> Void = {}
     @ObservationIgnored var openSettings: (SettingsTab?) -> Void = { _ in }
     @ObservationIgnored var openCapture: () -> Void = {}
+    /// Saves a box's text as a capture (CaptureSaver); true when it was taken.
+    @ObservationIgnored var saveCapture: (CaptureBoxModel) -> Bool = { _ in false }
     @ObservationIgnored var openPendingRequest: (UUID) -> Void = { _ in }
     @ObservationIgnored var changed: () -> Void = {}
     /// Each Activity row as it's written (for the "refused repeatedly" notification).
@@ -177,6 +185,7 @@ final class AppModel {
         self.services = services
         self.preferences = preferences
         vault = VaultModel(services: services)
+        home = HomeModel(services: services, defaults: preferences.defaults)
         inboxState = InboxModel(services: services)
         activity = ActivityModel(services: services)
         checklist = ChecklistModel(preferences: preferences)
@@ -192,6 +201,8 @@ final class AppModel {
         pausedUntil = services.pause.pausedUntil(at: Date())
         inboxState.categories = { [weak self] in self?.categories ?? [] }
         self.modelSettings.embeddingInputsChanged = { [weak self] in self?.embeddings.apply() }
+        composer.save = { [weak self, composer] _ in self?.saveCapture(composer) ?? false }
+        composer.search = { [weak self] text in self?.showVault(query: text.trimmingCharacters(in: .whitespacesAndNewlines)) }
         observation = services.store.observeChanges { [weak self] in
             Task { @MainActor in
                 self?.scheduleRefresh()
@@ -293,6 +304,16 @@ final class AppModel {
         pausedUntil = nil
         services.activity.record(ActivityEvent(time: Date(), phase: .event, actor: .user, via: .app, event: "funes_resumed"))
         changed()
+    }
+
+    /// The Cloud chip under a capture field: who proposes the fields of what's typed there.
+    func updateCloudChip(_ box: CaptureBoxModel) {
+        guard preferences.classifyCaptures else {
+            box.cloudProvider = nil
+            return
+        }
+        let settings = modelSettings
+        Task { box.cloudProvider = await settings.cloudClassifierName() }
     }
 
     func setNotification(_ key: String, _ on: Bool) {
@@ -399,9 +420,26 @@ final class AppModel {
         show(.agents)
     }
 
-    func showActivity(_ focus: ActivityFocus?) {
+    /// Activity narrowed to `focus`, showing `kind` (Home's chart opens Problems for a refused dot).
+    func showActivity(_ focus: ActivityFocus?, kind: ActivityEntry.Kind? = nil) {
         activityFocus = focus
+        if let kind { activity.kind = kind }
+        if case .period = focus { activity.period = .all }
         show(.activity)
+    }
+
+    /// The main window on Home: Open Funes Vault, and reopening the app with the window closed.
+    func showHome() { show(.home) }
+
+    /// The Vault with these filters and nothing else, newest first or as it was (Home's cards).
+    func showVault(query: String = "", sensitivities: Set<Sensitivity> = [], newestFirst: Bool = false) {
+        vault.clearFilters()
+        vault.status = .active
+        vault.sensitivities = sensitivities
+        vault.query = query
+        if newestFirst { vault.sort = .created }
+        selectedMemoryID = nil
+        show(.vault)
     }
 }
 
@@ -410,4 +448,6 @@ enum ActivityFocus: Equatable {
     case memory(UUID)
     case agent(UUID)
     case request(UUID)
+    /// A day, week or month of Home's chart.
+    case period(DateInterval)
 }

@@ -2,8 +2,8 @@ import FunesCore
 import FunesProtocol
 import SwiftUI
 
-/// The Vault (04-ux-mac.md): the setup checklist until it's done, a toolbar with search, filters,
-/// sort and New Memory, the list, and the selected memory's editor.
+/// The Vault (04-ux-mac.md): a toolbar with search, filters, sort and New Memory, the list, and
+/// the selected memory's editor.
 struct VaultView: View {
     @Bindable var model: AppModel
     @FocusState private var searchFocused: Bool
@@ -21,20 +21,6 @@ struct VaultView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if model.checklist.isVisible {
-                SetupChecklistCard(model: model)
-                    .padding([.horizontal, .top], 16)
-            } else if model.checklist.justHidden {
-                HStack(spacing: 8) {
-                    Text(String(localized: "Setup checklist hidden. Settings ▸ Advanced brings it back."))
-                        .foregroundStyle(.secondary)
-                    Button(String(localized: "Undo")) { model.checklist.undoHide() }
-                        .keyboardShortcut("z", modifiers: .command)
-                    Spacer()
-                }
-                .font(.callout)
-                .padding([.horizontal, .top], 16)
-            }
             if isFirstRun {
                 WelcomeView(model: model, creating: $creating)
             } else {

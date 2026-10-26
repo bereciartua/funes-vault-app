@@ -48,6 +48,7 @@ struct ActivityScreen: View {
         case .memory(let id): .memory(id)
         case .agent(let id): .agent(id)
         case .request(let id): .request(id)
+        case .period(let interval): .period(interval)
         case nil: .all
         }
     }
@@ -57,7 +58,18 @@ struct ActivityScreen: View {
         case .memory(let id): String(localized: "Showing “\(activity.title(id))” only")
         case .agent(let id): String(localized: "Showing \(model.agentName(id)) only")
         case .request: String(localized: "Showing one request")
+        case .period(let interval): String(localized: "Showing \(Self.periodText(interval)) only")
         }
+    }
+
+    /// "Tue 21 Oct", "13–19 Oct" or "October 2026".
+    static func periodText(_ interval: DateInterval) -> String {
+        let days = Calendar.current.dateComponents([.day], from: interval.start, to: interval.end).day ?? 1
+        if days <= 1 { return interval.start.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)) }
+        if days <= 7 {
+            return (interval.start..<interval.end.addingTimeInterval(-1)).formatted(.interval.day().month(.abbreviated))
+        }
+        return interval.start.formatted(.dateTime.month(.wide).year())
     }
 
     /// One row when the pane is wide enough; otherwise the Show segments on their own line and

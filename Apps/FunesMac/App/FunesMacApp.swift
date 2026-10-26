@@ -91,7 +91,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.dockPreferenceChanged = { [weak self] in self?.updateActivationPolicy() }
 
         wirePanels(environment, model: model)
-        let capture = CaptureController(model: model, hud: hud)
+        let saver = CaptureSaver(model: model, hud: hud)
+        model.saveCapture = { saver.save($0) }
+        let capture = CaptureController(model: model, saver: saver)
         self.capture = capture
         model.openCapture = { capture.show() }
         let hotKey = HotKey { capture.show() }
@@ -208,7 +210,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         offerMoveToApplications()
         #if DEBUG
-        // FUNES_DEBUG_OPEN=vault|inbox|agents|activity|settings[:tab] opens a window at launch.
+        // FUNES_DEBUG_OPEN=home|vault|inbox|agents|activity|capture|settings[:tab] opens a window at launch.
         if let open = ProcessInfo.processInfo.environment["FUNES_DEBUG_OPEN"], !open.isEmpty {
             let parts = open.split(separator: ":").map(String.init)
             if parts[0] == "capture" {
@@ -268,8 +270,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         keepAwake.set(false)
     }
 
+    /// The Dock icon: the window as it was while it's open, else on Home.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        mainWindow?.show()
+        if mainWindow?.isVisible == true { mainWindow?.show() } else { model?.showHome() }
         return false
     }
 

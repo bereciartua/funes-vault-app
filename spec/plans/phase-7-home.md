@@ -28,15 +28,15 @@ Replaces the banner at the top of Capture, Search and the Inbox ([UX: iPhone ▸
 
 ## 7.3 Mac Home · 1.5 weekends
 [UX: Mac ▸ Home](../product/04-ux-mac.md#home).
-- [ ] **Home** at the top of the sidebar (⌘1; the other shortcuts move down one); the main window and Open Funes Vault open on it.
-- [ ] **Composer:** focused on appearing; ⏎ saves a capture (the capture box's behaviour and secret-scanner error, one shared view), ⌘⏎ opens Vault searching for the text.
-- [ ] **Dictation:** a mic in the composer and in the capture box (⌥⌘M), with SpeechAnalyzer; `NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription` and the `com.apple.security.device.audio-input` entitlement.
-- [ ] **Pulse card** with Swift Charts: the sentence; in (by source) above the line, out (by agent, top four and Other) below, refused dots; 7 days · 30 days · 12 weeks · 12 months, remembered; hover for a day's breakdown, click for Activity filtered to that day (a refused dot: Problems).
-- [ ] **Cards:** Memories (total and growth), Sensitivity (vault and shared), Rhythm (12 weeks), Who reads your vault (top three); each opens its filtered place. The status line (Inbox waiting, last tidy-up).
-- [ ] **Empty states:** a new vault, no agents yet, nothing this week.
-- [ ] Fits the default window size without scrolling; scrolls at the minimum, with the cards in two rows.
-- [ ] VoiceOver chart descriptor (audio graph) and per-day labels; Reduce Motion; string catalog; UI snapshots (`home`, `home-min`, `home-empty`, light and dark).
-- [ ] When the code lands: README (new screenshot), docs, CHANGELOG.
+- [x] **Home** at the top of the sidebar (⌘1; the other shortcuts move down one); the main window and Open Funes Vault open on it. *(Reopening from the Dock with the window closed too. The setup checklist moved from the Vault to the top of Home.)*
+- [x] **Composer:** focused on appearing; ⏎ saves a capture (the capture box's behaviour and secret-scanner error, one shared view), ⌘⏎ opens Vault searching for the text. *(`CaptureField` and `CaptureSaver`: one field, footer and save path for the box and Home; a save that fails after the text was let go puts it back with the reason, in the box or on Home.)*
+- [x] **Dictation:** a mic in the composer and in the capture box (⌥⌘M), with SpeechAnalyzer; `NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription` and the `com.apple.security.device.audio-input` entitlement. *(`DictationTranscriber`, progressive short dictation, in the user's language when it's supported, the model fetched on first use; macOS 26 and later, with no mic on macOS 15. Not yet tried by voice: the development runs were unsigned, and the first use asks for access.)*
+- [x] **Pulse card** with Swift Charts: the sentence; in (by source) above the line, out (by agent, top four and Other) below, refused dots; 7 days · 30 days · 12 weeks · 12 months, remembered; hover for a day's breakdown, click for Activity filtered to that day (a refused dot: Problems). *(7 days is the last week of the 30-day read, so `VaultOverview` is unchanged. In counts by source only, so the hover says "2 Agents", not which agent. Activity gained a period focus, "Showing Tue 21 Oct only".)*
+- [x] **Cards:** Memories (total and growth), Sensitivity (vault and shared), Rhythm (12 weeks), Who reads your vault (top three); each opens its filtered place. The status line (Inbox waiting, last tidy-up). *(`OverviewInsights` in FunesCore works out the range's buckets, the top agents, the growth line, the grid, the busiest weekday and the streak, with tests. Rhythm opens Activity ▸ Suggestions, since Activity has no Changes filter; Sensitivity opens the Vault on the level its caption names first; with 7 days, its Shared bar is the last 30 days, which the overview has.)*
+- [x] **Empty states:** a new vault, no agents yet, nothing this week.
+- [x] Fits the default window size without scrolling; scrolls at the minimum, with the cards in two rows.
+- [x] VoiceOver chart descriptor (audio graph) and per-day labels; Reduce Motion; string catalog; UI snapshots (`home`, `home-min`, `home-empty`, light and dark). *(Plus `home-checklist`, where `vault-checklist` was. The sample data gained 12 weeks of history, so the chart has something to draw. Checked on a development vault, 2026-10-25: a capture from the composer by button and by ⏎ reached the Inbox with "Saved to Inbox", an API key showed the scanner's error, ⌘⏎ searched the Vault, hover showed a day's breakdown, a click opened that day in Activity and a refused dot its Problems, and the range was remembered.)*
+- [x] When the code lands: README (new screenshot), docs, CHANGELOG.
 
 ## 7.4 iPhone Home · 1 weekend
 [UX: iPhone ▸ Home](../product/05-ux-iphone.md#home-tab).

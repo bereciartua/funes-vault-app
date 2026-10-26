@@ -203,7 +203,7 @@ final class StatusMenuController: NSObject, NSMenuDelegate {
     @objc private func remember() { model.openCapture() }
     @objc private func openInbox() { model.show(.inbox) }
     @objc private func openActivity() { model.showActivity(nil) }
-    @objc private func openWindow() { model.openMainWindow() }
+    @objc private func openWindow() { model.showHome() }
     @objc private func openSettings() { model.openSettings(nil) }
     @objc private func resume() { model.resume() }
     @objc private func checkUpdates() { checkForUpdates?() }

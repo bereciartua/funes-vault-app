@@ -21,8 +21,8 @@ Badges, once the listings exist:
 
 <p align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/vault-memory-dark.png">
-  <img alt="The Funes Vault window: the Vault list with search and filters, and one memory open with its text, categories, sensitivity level and how often it was shared." src="docs/images/vault-memory-light.png" width="720">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/home-dark.png">
+  <img alt="Funes Vault's Home: a greeting, a box to type a memory with a microphone and a Remember button, and the vault's pulse for the last 30 days: this week's numbers in a sentence, bars of new memories by source above a line and memories shared with each agent below it, with red dots for refused requests. Under it, cards for the number of memories and their growth, the sensitivity of the vault next to what was shared, a 12-week grid of activity, and the agents that read the vault most." src="docs/images/home-light.png" width="720">
 </picture>
 </p>
 
@@ -43,13 +43,15 @@ Badges, once the listings exist:
 
    Funes Vault needs **macOS 15 or later**, on Apple silicon or Intel.
 
-2. **Open the app.** It lives in the menu bar. The Vault opens with a short setup checklist:
+2. **Open the app.** It lives in the menu bar. Its window opens on **Home**, with a short setup checklist:
    1. **Connect an agent.** **Add…** opens Add Agent, with the agents found on your Mac first. Pick one and a starting access: the default, **Read low-sensitivity memories, ask first**, lets it read memories up to Low and asks you before each share. For Claude Code, Claude Desktop, Cursor and Codex, **Add and Connect…** shows exactly what it will change or run first, backs up a settings file before changing it, and never writes the key into the agent's settings. For other agents, copy the setup from the agent's **Connect** tab.
    2. **Approve its first request.** Ask your agent something, for example *"Plan a week of dinners for me"* or *"Set up this TypeScript project the way I like it."* The agent asks Funes for context, you see the panel, and you choose what to share. The step is done when the agent's first request arrives.
    3. **Seed your vault.** Answer a few optional questions, import your ChatGPT memories or paste Claude's, or import a Markdown file. What you add goes to the Inbox first, and anything that looks like a secret is never imported. The questions end with the categories agents should never see: those get Deny for every agent, including ones you add later.
    4. **Review your Inbox.** Apply what's right; edit or reject the rest.
 
-You can also capture a thought at any time with **⌥⌘M**, **Remember…** in the menu, or **Services ▸ Remember in Funes** in any app.
+You can also capture a thought at any time with **⌥⌘M**, **Remember…** in the menu, or **Services ▸ Remember in Funes** in any app, or type it on **Home** and press Return: it goes to the Inbox either way. **⌘Return** on Home searches your vault for what you typed, and the microphone dictates, on your Mac (macOS 26 and later).
+
+Home also shows your vault's pulse: what came in each day, from you, your iPhone, agents, imports or the tidy-up, and what went out to each agent, with refused requests marked. Hover a day for its numbers and click it to see that day in Activity. Below it: your memories and their growth, their sensitivity next to what was shared, your 12-week rhythm, and who reads your vault. It shows counts only, never a memory's text.
 
 Setups for every agent, the tool reference and troubleshooting are in the [MCP guide](docs/MCP.md).
 
