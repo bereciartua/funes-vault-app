@@ -109,6 +109,7 @@ struct ActivityEntry: Identifiable, Equatable {
         case "memory_viewed": return String(localized: "Opened a memory")
         case "inbox_listed": return String(localized: "Opened the Inbox")
         case "categories_listed": return String(localized: "Listed categories")
+        case "overview_viewed": return String(localized: "Read the vault's counts")
         case "device_paired": return String(localized: "iPhone paired")
         case "device_revoked": return String(localized: "iPhone removed")
         case "memory_created": return String(localized: "Created a memory")

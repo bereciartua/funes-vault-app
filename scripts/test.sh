@@ -25,6 +25,11 @@ if grep -rn --include='*.swift' '\.embed(' Apps Packages | grep -v '/Tests/' | g
 fi
 swift test --package-path Packages/FunesProtocol
 swift test --package-path Packages/FunesCore
+# The overview's 50 ms budget on a 10,000-memory vault (FR-H-01), alone so no other test shares
+# the CPU. Not on CI, whose shared runners' timings say little.
+if [ -z "${CI:-}" ]; then
+    FUNES_OVERVIEW_BENCHMARK=1 swift test --package-path Packages/FunesCore --filter OverviewBenchmarkTests
+fi
 swift test --package-path Packages/FunesMCP
 swift test --package-path Packages/BridgeUI
 swift test --package-path Packages/FunesCompanion

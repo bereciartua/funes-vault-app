@@ -107,13 +107,19 @@ final class CompanionHarness: @unchecked Sendable {
     /// A sealed call; returns the HTTP response and, on 200, the decoded reply.
     func call<Call: CompanionCall>(_ call: Call.Type, _ params: Call.Params, phone: Phone, at: Date? = nil,
                                    transport: DeviceTransport = .lan) async throws -> (HTTPResponse, CompanionResponse<Call.Result>?) {
+        let (response, json) = try await reply(call, params, phone: phone, at: at, transport: transport)
+        return (response, try json.map(CompanionResponse<Call.Result>.decode))
+    }
+
+    /// A sealed call; returns the HTTP response and, on 200, the reply's JSON as the Mac wrote it.
+    func reply<Call: CompanionCall>(_ call: Call.Type, _ params: Call.Params, phone: Phone, at: Date? = nil,
+                                    transport: DeviceTransport = .lan) async throws -> (HTTPResponse, Data?) {
         let request = try CompanionRequest(call, params: params).encoded()
         let sealed = try CompanionRequestEnvelope.seal(request, deviceID: phone.deviceID!, macHPKEKey: identity.hpkeKey.publicKey,
                                                        signer: phone.signer, now: at ?? clock.now)
         let response = await router.handle(Self.request(CompanionProtocol.rpcPath, body: sealed.envelope.body), transport: transport)
         guard response.status == 200 else { return (response, nil) }
-        let json = try sealed.responseKey.open(response.body)
-        return (response, try CompanionResponse<Call.Result>.decode(json))
+        return (response, try sealed.responseKey.open(response.body))
     }
 
     /// The result, or the call's error thrown.

@@ -45,12 +45,56 @@ import Testing
 
     @Test func everyMethodHasACall() {
         let calls: [any CompanionCall.Type] = [
-            StatusGet.self, CapturesSubmit.self, CategoriesList.self, MemoriesSearch.self, MemoriesGet.self, MemoriesCreate.self,
+            StatusGet.self, CapturesSubmit.self, OverviewGet.self, CategoriesList.self, MemoriesSearch.self, MemoriesGet.self, MemoriesCreate.self,
             MemoriesUpdate.self, MemoriesArchive.self, MemoriesRestore.self, MemoriesDelete.self, InboxList.self, InboxApply.self,
             InboxReject.self, InboxRetry.self, InboxKeep.self, DeviceUnpair.self, ApprovalsList.self, ApprovalsGet.self, ApprovalsAnswer.self,
             ApprovalsSettingsGet.self, ApprovalsSettingsSet.self,
         ]
         #expect(Set(calls.map { $0.method }) == Set(CompanionMethod.allCases))
+    }
+
+    /// `overview.get` (§4): `in` on the wire, dates in milliseconds, counts as JSON objects.
+    @Test func overviewShape() throws {
+        let day = Date(timeIntervalSince1970: 1_800_000_000)
+        let overview = VaultOverview(
+            range: .days30, generatedAt: day, timeZone: "Europe/Madrid", total: 3, thisWeek: VaultOverview.Week(saved: 2, shared: 4),
+            days: [VaultOverview.Bucket(date: day, inbound: VaultOverview.Sources(iphone: 2), out: ["a1": 4], refused: 1)],
+            rhythm: VaultOverview.Rhythm(start: day, counts: [0, 2]), bySensitivity: ["low": 3],
+            agents: [VaultOverview.AgentCount(id: "a1", name: "Claude Code", kind: .claudeCode, shared: 4, requests: 2)])
+        let object = try json(try CompanionResponse(id: "1", result: overview).encoded())
+        let result = try #require(object["result"] as? [String: Any])
+        #expect(result["range"] as? String == "30d")
+        #expect(result["generatedAt"] as? Int64 == 1_800_000_000_000)
+        let bucket = try #require((result["days"] as? [[String: Any]])?.first)
+        #expect((bucket["in"] as? [String: Int])?["iphone"] == 2)
+        #expect(bucket["out"] as? [String: Int] == ["a1": 4])
+        #expect(result["bySensitivity"] as? [String: Int] == ["low": 3])
+        #expect(result["oldestPendingAt"] == nil)
+        #expect(try CompanionResponse<VaultOverview>.decode(try CompanionResponse(id: "1", result: overview).encoded()).get() == overview)
+        #expect(overview.count(.low) == 3 && overview.days[0].shared == 4 && overview.days[0].inbound.total == 2)
+    }
+
+    /// Buckets begin at midnight in the calendar's time zone, weeks on its first weekday.
+    @Test func overviewCalendar() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/New_York")!
+        calendar.firstWeekday = 1
+        let buckets = OverviewCalendar(calendar: calendar)
+        // Wednesday 10 November 2027, 01:30 in New York, three days after summer time ended.
+        let now = calendar.date(from: DateComponents(year: 2027, month: 11, day: 10, hour: 1, minute: 30))!
+        let days = buckets.boundaries(.days30, now: now)
+        #expect(days.count == 31)
+        #expect(days[29] == calendar.date(from: DateComponents(year: 2027, month: 11, day: 10)))
+        #expect(days[30] == calendar.date(from: DateComponents(year: 2027, month: 11, day: 11)))
+        #expect(zip(days, days.dropFirst()).allSatisfy { calendar.dateComponents([.day], from: $0, to: $1).day == 1 })
+        let weeks = buckets.boundaries(.weeks12, now: now)
+        #expect(weeks[11] == calendar.date(from: DateComponents(year: 2027, month: 11, day: 7)))
+        #expect(calendar.component(.weekday, from: weeks[0]) == 1)
+        let months = buckets.boundaries(.months12, now: now)
+        #expect(months.first == calendar.date(from: DateComponents(year: 2026, month: 12, day: 1)))
+        #expect(months.last == calendar.date(from: DateComponents(year: 2027, month: 12, day: 1)))
+        let rhythm = buckets.dayBoundaries(84, now: now)
+        #expect(rhythm.count == 85 && rhythm[83] == days[29])
     }
 
     @Test func responseResultAndError() throws {

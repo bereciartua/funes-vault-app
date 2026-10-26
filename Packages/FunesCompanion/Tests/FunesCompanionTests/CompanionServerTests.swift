@@ -426,6 +426,50 @@ import Testing
         #expect(rows.allSatisfy { $0.actor == actor && $0.via == .companion })
     }
 
+    /// `overview.get` (ADR-0025): the vault's counts as the owner, logged as `overview_viewed`
+    /// without counts, and never a memory's text or title, nor a suggestion's.
+    @Test func overviewIsCountsOnly() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let marker = "QXZ-COMPANION-MARKER"
+        let created = try await h.result(MemoriesCreate.self, MemoryCreateParams(
+            title: "Coffee \(marker)", body: "Oat flat white \(marker)", kind: .preference, categories: ["personal_preferences"],
+            sensitivity: .low), phone: phone)
+        _ = try await h.result(CapturesSubmit.self, CapturesSubmitParams(captures: [capture("Remember \(marker)")]), phone: phone)
+        let agent = UUID(), request = UUID()
+        try await h.store.writer.write { db in
+            try db.execute(sql: "INSERT INTO agent (id, name, agent_kind, created_at, last_request_at) VALUES (?, 'Claude Code', 'claude_code', ?, ?)",
+                           arguments: [agent.db, t0, t0])
+            try db.execute(sql: """
+                INSERT INTO disclosure (id, agent_id, agent_revision, task_hash, task_length, retention, max_tokens, status, created_at,
+                  delivered_at) VALUES (?, ?, 1, 'h', 5, 'session', 2000, 'delivered', ?, ?)
+                """, arguments: [request.db, agent.db, t0, t0])
+            try db.execute(sql: """
+                INSERT INTO disclosure_item (disclosure_id, memory_id, memory_version, category_key, sensitivity, estimated_tokens)
+                VALUES (?, ?, 1, 'personal_preferences', 1, 20)
+                """, arguments: [request.db, created.id.db])
+        }
+        let before = h.activity.events.count
+        let (response, json) = try await h.reply(OverviewGet.self, OverviewParams(range: .days30), phone: phone)
+        #expect(response.status == 200)
+        let text = String(decoding: try #require(json), as: UTF8.self)
+        #expect(!text.contains(marker) && !text.contains("Coffee") && !text.contains(created.id.db))
+
+        let overview = try CompanionResponse<VaultOverview>.decode(try #require(json)).get()
+        #expect(overview.total == 1 && overview.inboxPending == 1)
+        #expect(overview.days.count == 30 && overview.days.last?.inbound.iphone == 1)
+        #expect(overview.days.last?.out == [agent.db: 1])
+        #expect(overview.thisWeek == VaultOverview.Week(saved: 1, shared: 1, agents: 1, refused: 0))
+        #expect(overview.agents.map(\.name) == ["Claude Code"])
+
+        let rows = h.activity.events.dropFirst(before)
+        #expect(rows.map(\.event) == ["overview_viewed"])
+        #expect(rows.allSatisfy { $0.counts.isEmpty && $0.ids.isEmpty && $0.actor == "device:\(phone.deviceID!.db)" })
+
+        let months = try await h.result(OverviewGet.self, OverviewParams(range: .months12), phone: phone)
+        #expect(months.range == .months12 && months.days.count == 12)
+    }
+
     @Test func unpairRevokesTheDevice() async throws {
         let h = try CompanionHarness()
         let phone = try await h.pairedPhone()

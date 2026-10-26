@@ -130,6 +130,42 @@ import Testing
         await #expect(throws: CompanionClientError.refused(.revoked)) { try await phone.status() }
     }
 
+    /// The overview through the real client into the phone's cache (ADR-0025): counts and agent
+    /// names reach `overview.json`, memory text never does; a revocation clears it.
+    @MainActor @Test func overviewIsCachedWithoutText() async throws {
+        let h = try CompanionHarness()
+        let phone = client(h)
+        let payload = await h.qr()
+        async let paired = phone.pair(payload, deviceName: "Sam's iPhone", model: "iPhone14,4")
+        try await h.answerWhenAsked(true)
+        let record = try await paired
+        let marker = "QXZ-CACHE-MARKER"
+        _ = try await phone.call(MemoriesCreate.self, MemoryCreateParams(
+            title: "Seat \(marker)", body: "Prefers aisle seats \(marker)", kind: .preference, categories: ["personal_preferences"],
+            sensitivity: .low))
+        let capture = CompanionCapture(captureId: UUID(), text: "Remember \(marker)", createdAt: h.clock.now, source: .typed)
+        _ = try await phone.call(CapturesSubmit.self, CapturesSubmitParams(captures: [capture]))
+
+        let directory = FileManager.default.temporaryDirectory.appending(path: "overview-cache-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let cache = OverviewCache(url: directory.appending(path: OverviewCache.fileName))
+        let model = OverviewModel(caller: phone, cache: cache)
+        for range in OverviewRange.allCases { await model.load(range) }
+        #expect(model.overview(.days30)?.total == 1 && model.overview(.days30)?.inboxPending == 1)
+        let file = String(decoding: try Data(contentsOf: cache.url), as: UTF8.self)
+        #expect(!file.contains(marker) && !file.contains("aisle") && !file.contains("Seat"))
+        #expect(cache.read().count == 3)
+
+        try await h.services.devices.revoke(deviceID: record.deviceID, now: h.clock.now)
+        var failure: CompanionClientError?
+        model.onFailure = { failure = $0 }
+        await model.load()
+        #expect(failure == .refused(.revoked))
+        // PhoneModel clears it once the banner says removed.
+        model.clear()
+        #expect(!FileManager.default.fileExists(atPath: cache.url.path))
+    }
+
     /// Task 5.5's view models through the real client and handlers: an edit on the phone that
     /// the Mac overtook answers `conflict`, Reload shows the Mac's text, and the next save goes
     /// through; a suggestion saved on the Mac first leaves the phone's Inbox without an error.

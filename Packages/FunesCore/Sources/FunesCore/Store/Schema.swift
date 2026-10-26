@@ -35,8 +35,25 @@ enum Schema {
         migrator.registerMigration("v4_memory_processing") { db in
             try db.execute(sql: v4)
         }
+        // The vault overview (v0.4, Phase 7.2; ADR-0025, storage §3): its time ranges, which took
+        // more than 50 ms on a 10,000-memory vault without them.
+        migrator.registerMigration("v5_overview_indexes") { db in
+            try db.execute(sql: v5)
+        }
         return migrator
     }
+
+    /// The overview's reads (ADR-0025): new memories by `created_at`, deliveries by
+    /// `delivered_at` (only delivered requests have one), requests by `created_at`, and the
+    /// active memories' shape. Each carries the columns its query groups by, so the scans don't
+    /// visit the rows, which hold memory text and candidate snapshots.
+    static let v5 = """
+        CREATE INDEX memory_created ON memory(created_at, source, source_device_id);
+        CREATE INDEX memory_status_shape ON memory(status, sensitivity, kind, id);
+        CREATE INDEX disclosure_delivered ON disclosure(delivered_at, agent_id) WHERE delivered_at IS NOT NULL;
+        CREATE INDEX disclosure_created ON disclosure(created_at, agent_id, status, reason);
+        CREATE INDEX disclosure_item_shape ON disclosure_item(disclosure_id, sensitivity, category_key);
+        """
 
     /// `suggestion.group_id` and `suggestion_target.memory_id` carry no foreign key: a piece
     /// outlives its group's source text, and a target that was purged must read as changed, not

@@ -40,13 +40,16 @@ public final class CompanionHandlers: Sendable {
     let appVersion: String
     /// The `approvals.*` methods (task 5.6); without it they're `unavailable`.
     let approvals: CompanionApprovals?
+    /// The overview's days begin in the Mac's time zone (ADR-0025).
+    let calendar: Calendar
 
     public init(services: CompanionServices, macName: @escaping @Sendable () -> String, appVersion: String,
-                approvals: CompanionApprovals? = nil) {
+                approvals: CompanionApprovals? = nil, calendar: Calendar = .autoupdatingCurrent) {
         self.services = services
         self.macName = macName
         self.appVersion = appVersion
         self.approvals = approvals
+        self.calendar = calendar
     }
 
     /// The reply JSON for a request's plaintext. Never throws: every failure is an error reply.
@@ -62,6 +65,7 @@ public final class CompanionHandlers: Sendable {
             case .statusGet: return await run(StatusGet.self, head) { _ in try await status(now: now) }
             case .capturesSubmit:
                 return await run(CapturesSubmit.self, head) { try await submit($0, device: device, limits: limits, now: now) }
+            case .overviewGet: return await run(OverviewGet.self, head) { try overview($0, device: device, now: now) }
             case .categoriesList: return await run(CategoriesList.self, head) { _ in try await categories(device: device, now: now) }
             case .memoriesSearch: return await run(MemoriesSearch.self, head) { try await search($0, device: device, now: now) }
             case .memoriesGet: return await run(MemoriesGet.self, head) { try await memory($0.id, device: device, now: now) }
@@ -123,6 +127,13 @@ public final class CompanionHandlers: Sendable {
             }
         }
         return CapturesSubmitResult(accepted: accepted, rejected: rejected)
+    }
+
+    /// Counts only (ADR-0025), so the Activity row carries none either.
+    func overview(_ params: OverviewParams, device: UUID, now: Date) throws -> VaultOverview {
+        let overview = try services.store.overview(params.range, now: now, calendar: calendar)
+        logRead("overview_viewed", device: device, now: now)
+        return overview
     }
 
     func categories(device: UUID, now: Date) async throws -> [CompanionCategory] {

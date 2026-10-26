@@ -1,6 +1,6 @@
 # Privacy
 
-**Funes Vault v0.1 (public preview), and Funes Vault for iPhone (v0.2, in testing) · Last updated 24 October 2026**
+**Funes Vault v0.1 (public preview), and Funes Vault for iPhone (v0.2, in testing) · Last updated 25 October 2026**
 
 Funes Vault keeps your memories on your Mac. It has no accounts, no servers of its own, no analytics and no telemetry. This page lists everything that can leave your Mac, and when, and what the iPhone companion keeps and sends ([below](#funes-vault-for-iphone)). Questions: [open an issue](https://github.com/bereciartua/funes-vault-app/issues).
 
@@ -56,8 +56,9 @@ Remote Access is **off by default**. While you have it on, a second listener on 
 The iPhone app (v0.2) is a remote for your Mac: it captures, searches, edits, reviews the Inbox and answers agents' requests, all on the vault on your Mac. Its App Store privacy label is **Data Not Collected**: nothing it handles reaches us, or anyone but you and your Mac.
 
 **What stays on the iPhone**
-- **No copy of your vault.** Search results, memories, the Inbox and approval panels are fetched from your Mac when you open them and kept in memory only while they're on screen.
+- **No copy of your vault.** Search results, memories, the Inbox and approval panels are fetched from your Mac when you open them and kept in memory only while they're on screen. The one exception is the vault's counts, below.
 - **Captures waiting for your Mac,** in the app's own storage on the iPhone (shared with its share sheet, Shortcuts action and Control, protected until you first unlock the iPhone after a restart). Each one is deleted as soon as your Mac has it. A capture that looks like a password, key or card number is refused before it's saved.
+- **The vault's counts,** for the iPhone's Home and widgets: how many memories came in and went out to each agent per day, week or month, the totals by sensitivity, category and kind, and your agents' names and when each last asked, as your Mac last sent them (one file, protected until you first unlock the iPhone after a restart, so widgets can show it). Never a memory's text or title. Deleted when you unpair, when your Mac removes the iPhone, and when you enter or leave the demo.
 - **The pairing:** your Mac's name and addresses, and this iPhone's keys, in the iPhone's Keychain, usable only on this device. The signing key is in the Secure Enclave where the iPhone has one. **Unpair This iPhone…** deletes them, and asks whether to keep or delete captures still waiting. Removing the iPhone on your Mac (**Settings ▸ iPhone**) makes its keys useless at once.
 
 **What it sends, and where**

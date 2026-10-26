@@ -8,8 +8,9 @@ private let logger = Logger(subsystem: Identifiers.iOSLoggerSubsystem, category:
 /// The demo vault (FR-iOS-10, task 5.7): a sample vault on this iPhone only, for App Review, who
 /// have no Mac to pair with, and for trying the app first. It answers the companion methods as
 /// the Mac does, behind the same `CompanionCalling` and `CaptureSender` that `CompanionClient`
-/// serves, from the bundled `demo-vault.json`: about 20 memories, three Inbox suggestions and one
-/// Share, Save and access request each.
+/// serves, from the bundled `demo-vault.json`: about 20 memories, three Inbox suggestions, one
+/// Share, Save and access request each, and 12 weeks of sample counts for the overview (Home and
+/// the widgets).
 ///
 /// Nothing here reaches the network, the Keychain, CloudKit or the real capture queue. Changes
 /// live in memory only, so each demo starts from the bundled data again.
@@ -35,16 +36,22 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         var approvalsEnabled = true
         /// Capture ids already taken, so a resend counts as accepted without a second row (§6).
         var captured: Set<UUID> = []
+        var overview: DemoContent.Overview?
+        /// The sample agents' ids, made up when the demo opens.
+        var overviewAgentIDs: [UUID] = []
+        var calendar: Calendar = .autoupdatingCurrent
     }
 
     private let state: Mutex<State>
     private let clock: @Sendable () -> Date
 
-    /// The bundled demo vault. `content` replaces it in tests.
-    public init(content: DemoContent? = nil, clock: @escaping @Sendable () -> Date = Date.init) {
+    /// The bundled demo vault. `content` replaces it in tests, and `calendar` the phone's days.
+    public init(content: DemoContent? = nil, calendar: Calendar = .autoupdatingCurrent, clock: @escaping @Sendable () -> Date = Date.init) {
         self.clock = clock
         let content = content ?? Self.bundled()
-        state = Mutex(Self.state(from: content, now: clock()))
+        var state = Self.state(from: content, now: clock())
+        state.calendar = calendar
+        self.state = Mutex(state)
     }
 
     static func bundled() -> DemoContent {
@@ -102,6 +109,8 @@ public final class DemoVault: CompanionCalling, CaptureSender {
                                              createdAt: capture.createdAt), at: 0)
             }
             return CapturesSubmitResult(accepted: params.captures.map(\.captureId), rejected: [])
+        case .overviewGet:
+            return overview((params as! OverviewParams).range, in: state, now: now)
         case .categoriesList:
             return state.categories
         case .memoriesSearch:
@@ -321,6 +330,75 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         return detail
     }
 
+    // MARK: Overview
+
+    /// `overview.get` from the sample days, the last of which is today: in, out and refused by
+    /// day, grouped into the range's buckets as the Mac groups them. The vault's totals and the
+    /// shared mix are the sample's own, scaled to what the range shared.
+    static func overview(_ range: OverviewRange, in state: State, now: Date) -> VaultOverview {
+        let buckets = OverviewCalendar(calendar: state.calendar)
+        let bounds = buckets.boundaries(range, now: now)
+        let dayStarts = buckets.dayBoundaries(VaultOverview.Rhythm.days, now: now)
+        let sample = state.overview ?? DemoContent.Overview()
+        let days = Array(sample.days.suffix(VaultOverview.Rhythm.days))
+        let first = VaultOverview.Rhythm.days - days.count
+        let ids = state.overviewAgentIDs.map { $0.uuidString.lowercased() }
+
+        var series = bounds.dropLast().map { VaultOverview.Bucket(date: $0) }
+        var shared: [String: Int] = [:], requests: [String: Int] = [:], lastRequest: [String: Date] = [:]
+        var refused = 0
+        for (offset, day) in days.enumerated() {
+            let start = dayStarts[first + offset]
+            for (agent, n) in zip(ids, day.out) where n > 0 {
+                lastRequest[agent] = min(start.addingTimeInterval(14 * 3_600), now.addingTimeInterval(-10 * 60))
+            }
+            guard let b = series.indices.last(where: { series[$0].date <= start }), start < bounds.last! else { continue }
+            series[b].inbound.add(day.inbound)
+            for (agent, n) in zip(ids, day.out) where n > 0 {
+                series[b].out[agent, default: 0] += n
+                shared[agent, default: 0] += n
+                // About three memories a request.
+                requests[agent, default: 0] += (n + 2) / 3
+            }
+            series[b].refused += day.refused
+            refused += day.refused
+        }
+
+        let week = days.suffix(7)
+        let sharedInRange = series.map(\.shared).reduce(0, +)
+        let agents = zip(ids, sample.agents).map { id, agent in
+            VaultOverview.AgentCount(id: id, name: agent.name, kind: agent.kind, shared: shared[id] ?? 0, requests: requests[id] ?? 0,
+                                     lastRequestAt: lastRequest[id])
+        }.sorted { ($0.shared, $1.name) > ($1.shared, $0.name) }
+        var tidyUp = state.calendar.date(bySettingHour: 3, minute: 4, second: 0, of: now) ?? now
+        if tidyUp > now { tidyUp = state.calendar.date(byAdding: .day, value: -1, to: tidyUp) ?? tidyUp }
+        return VaultOverview(
+            range: range, generatedAt: now, timeZone: state.calendar.timeZone.identifier, total: sample.total,
+            thisWeek: VaultOverview.Week(saved: week.map(\.inbound.total).reduce(0, +), shared: week.map { $0.out.reduce(0, +) }.reduce(0, +),
+                                         agents: Set(week.flatMap { zip(ids, $0.out).filter { $0.1 > 0 }.map(\.0) }).count,
+                                         refused: week.map(\.refused).reduce(0, +)),
+            days: series,
+            rhythm: VaultOverview.Rhythm(start: dayStarts[0], counts: Array(repeating: 0, count: first) + days.map(\.inbound.total)),
+            bySensitivity: sample.bySensitivity, byCategory: sample.byCategory, byKind: sample.byKind,
+            sharedBySensitivity: scaled(sample.sharedSensitivity, to: sharedInRange),
+            sharedByCategory: scaled(sample.sharedCategory, to: sharedInRange),
+            refusedByReason: refused > 0 ? [ReasonCode.deniedByUser.rawValue: refused] : [:],
+            withheld: refused > 0 ? [ReasonCode.aboveSensitivityCeiling.rawValue: refused] : [:],
+            agents: agents, inboxPending: state.inbox.count, oldestPendingAt: state.inbox.map(\.createdAt).min(), lastTidyUpAt: tidyUp)
+    }
+
+    /// `weights` as whole counts that add up to `total`: each its share rounded down, and what's
+    /// left to the largest remainders.
+    static func scaled(_ weights: [String: Int], to total: Int) -> [String: Int] {
+        let sum = weights.values.reduce(0, +)
+        guard sum > 0, total > 0 else { return [:] }
+        let keys = weights.keys.sorted()
+        var counts = Dictionary(uniqueKeysWithValues: keys.map { ($0, weights[$0]! * total / sum) })
+        let left = total - counts.values.reduce(0, +)
+        for key in keys.sorted(by: { weights[$0]! * total % sum > weights[$1]! * total % sum }).prefix(left) { counts[key, default: 0] += 1 }
+        return counts.filter { $0.value > 0 }
+    }
+
     // MARK: Loading
 
     private static func state(from content: DemoContent, now: Date) -> State {
@@ -328,7 +406,8 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         var state = State(macName: content.macName, categories: content.categories.map {
             CompanionCategory(MemoryCategory(key: $0.key, name: $0.name, description: $0.description, builtin: true,
                                              defaultSensitivity: $0.defaultSensitivity))
-        }, memories: [:], provenance: [:], shared: [:], inbox: [], approvals: content.approvals, approvalIDs: content.approvals.map { _ in UUID() })
+        }, memories: [:], provenance: [:], shared: [:], inbox: [], approvals: content.approvals, approvalIDs: content.approvals.map { _ in UUID() },
+           overview: content.overview, overviewAgentIDs: (content.overview?.agents ?? []).map { _ in UUID() })
         for sample in content.memories {
             let at = now.addingTimeInterval(-sample.daysAgo * day)
             let memory = Memory(title: sample.title, body: sample.body, kind: sample.kind, categoryKeys: sample.categories,
@@ -432,11 +511,45 @@ public struct DemoContent: Codable, Sendable {
         var access: Access?
     }
 
+    /// 12 weeks of sample counts for `overview.get`, and the vault's sample totals (the 20
+    /// memories above would make an empty chart). No real names.
+    public struct Overview: Codable, Sendable {
+        public struct Agent: Codable, Sendable {
+            var name: String
+            var kind: AgentKind
+        }
+
+        public struct Day: Codable, Sendable {
+            /// New memories: Mac, iPhone, agent, import, tidy-up.
+            var `in`: [Int]
+            /// Memories shared with each agent, in `agents`' order.
+            var out: [Int]
+            var refused: Int
+
+            var inbound: VaultOverview.Sources {
+                let n = `in` + Array(repeating: 0, count: max(0, 5 - `in`.count))
+                return VaultOverview.Sources(mac: n[0], iphone: n[1], agent: n[2], import: n[3], tidy: n[4])
+            }
+        }
+
+        var total = 0
+        var bySensitivity: [String: Int] = [:]
+        var byCategory: [String: Int] = [:]
+        var byKind: [String: Int] = [:]
+        /// The mix of what was shared, as weights.
+        var sharedSensitivity: [String: Int] = [:]
+        var sharedCategory: [String: Int] = [:]
+        var agents: [Agent] = []
+        /// Oldest first; the last is the day the demo opens.
+        var days: [Day] = []
+    }
+
     var macName: String
     var categories: [Category]
     var memories: [Sample]
     var inbox: [Suggestion]
     var approvals: [Approval]
+    var overview: Overview?
 }
 
 extension InboxItem {

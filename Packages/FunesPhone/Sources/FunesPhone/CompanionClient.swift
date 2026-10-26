@@ -70,8 +70,8 @@ public actor CompanionClient {
 
     /// Methods that can be sent twice without harm: reads, and captures (a duplicate `captureId`
     /// is accepted without creating anything, §6).
-    static let repeatable: Set<CompanionMethod> = [.statusGet, .capturesSubmit, .categoriesList, .memoriesSearch, .memoriesGet, .inboxList,
-                                                   .approvalsList, .approvalsGet, .approvalsSettingsGet]
+    static let repeatable: Set<CompanionMethod> = [.statusGet, .capturesSubmit, .overviewGet, .categoriesList, .memoriesSearch, .memoriesGet,
+                                                   .inboxList, .approvalsList, .approvalsGet, .approvalsSettingsGet]
 
     struct Paired {
         var record: PairingRecord
