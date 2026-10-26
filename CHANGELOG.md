@@ -61,6 +61,8 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Changed
 
+- **The pulse chart gives each half its own scale,** on the Mac's Home, the iPhone's Home and its Pulse widget. The line now sits in the middle, new memories fill the top half and memories shared fill the bottom, so a quiet week of saving is no longer squashed flat by a busy week of sharing. A small number at the top and bottom edge says what each half's tallest bar stands for ("3 in", "22 out" on the Mac); hovering, scrubbing and VoiceOver still give the real counts.
+- **iPhone: the keyboard closes without saving.** On Home, tap **Done** above the keyboard, scroll, or tap anywhere outside the box; what you typed stays. The memory edit sheet and the share extension's note have **Done** too.
 - **iPhone: a status bar instead of the connection banner.** Capture, Search and the Inbox no longer start with a banner. While your Mac is connected, nothing shows; when something needs you, one bar appears just above the tabs: "Mac not reachable · 3 waiting" (**Why?**), "Local Network access is off" (**Fix** opens the app's page in Settings), "Can't connect to your Mac", "Pair with your Mac to start" (**Pair**), "Removed from Funes on your Mac" (**Pair Again**), and "Back online · 3 captures sent" for a few seconds once the Mac is back.
   - A state shows only after it has lasted 2 seconds, so a quick reconnect never flashes the bar.
   - Tapping the bar opens a status sheet: which Mac, when and how it was last reached, the captures waiting with **Send Now**, what to try, and **Try Again**.

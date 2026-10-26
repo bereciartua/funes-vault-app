@@ -233,21 +233,33 @@ extension View {
 // MARK: Pulse
 
 /// The in/out chart: new memories by source above the line, memories shared by agent below it,
-/// and a red dot under each bucket with refused requests. With `selection`, a finger (or
-/// VoiceOver's swipe up and down) picks a bucket; the widgets pass none.
+/// and a red dot under each bucket with refused requests. Each half has its own scale
+/// (`PulseScale`), the line in the middle, with that half's peak at its edge. With `selection`, a
+/// finger (or VoiceOver's swipe up and down) picks a bucket; the widgets pass none.
 struct PulseChart: View {
     let pulse: Pulse
     let range: PulseRange
     var calendar: Calendar = .autoupdatingCurrent
     var selection: Binding<Date?>?
-    /// The x axis's dates; the widgets leave them out.
+    /// The x axis's dates and the halves' peaks; the widgets leave them out.
     var showsAxis = true
 
     var body: some View {
         chart
             .chartLegend(.hidden)
-            .chartYAxis(.hidden)
-            .chartYScale(domain: yDomain)
+            .chartYAxis(showsAxis ? .automatic : .hidden)
+            .chartYAxis {
+                // Each half's peak, faint, at its edge: a short bar may stand for more than a tall one.
+                AxisMarks(position: .trailing, values: scale.ticks) { value in
+                    AxisGridLine().foregroundStyle(Color.secondary.opacity(0.2))
+                    AxisValueLabel {
+                        if let y = value.as(Double.self) { Text(scale.count(at: y), format: .number) }
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                }
+            }
+            .chartYScale(domain: PulseScale.domain)
             .chartXAxis {
                 if showsAxis {
                     AxisMarks(values: axisDates) { value in
@@ -276,20 +288,20 @@ struct PulseChart: View {
                 ForEach(PulseSource.allCases, id: \.self) { source in
                     let n = source.count(bucket.inbound)
                     if n > 0 {
-                        BarMark(x: .value("Date", bucket.date, unit: pulse.unit.component), y: .value("Memories", n))
+                        BarMark(x: .value("Date", bucket.date, unit: pulse.unit.component), y: .value("Memories", scale.plot(in: n)))
                             .foregroundStyle(OverviewPalette.source(source))
                             .opacity(opacity(bucket))
                     }
                 }
                 ForEach(Array(zip(pulse.agents, bucket.out)), id: \.0.id) { agent, n in
                     if n > 0 {
-                        BarMark(x: .value("Date", bucket.date, unit: pulse.unit.component), y: .value("Memories", -n))
+                        BarMark(x: .value("Date", bucket.date, unit: pulse.unit.component), y: .value("Memories", scale.plot(out: n)))
                             .foregroundStyle(OverviewPalette.agent(agent.slot))
                             .opacity(opacity(bucket))
                     }
                 }
                 if bucket.refused > 0 {
-                    PointMark(x: .value("Date", bucket.date, unit: pulse.unit.component), y: .value("Memories", refusedY))
+                    PointMark(x: .value("Date", bucket.date, unit: pulse.unit.component), y: .value("Memories", PulseScale.refusedY))
                         .symbolSize(bucket.refused > 2 ? 60 : bucket.refused > 1 ? 40 : 24)
                         .foregroundStyle(OverviewPalette.refused)
                         .opacity(opacity(bucket))
@@ -314,15 +326,8 @@ struct PulseChart: View {
         return selected.date == bucket.date ? 1 : 0.35
     }
 
-    /// Room under the Out bars for the refused dots.
-    private var gap: Double { max(1, Double(pulse.peakIn + pulse.peakOut) * 0.14) }
-    private var refusedY: Double { -Double(pulse.peakOut) - gap * 0.6 }
-
-    private var yDomain: ClosedRange<Double> {
-        guard !pulse.isEmpty else { return -1...1 }
-        let bottom = pulse.refused > 0 ? -Double(pulse.peakOut) - gap : -Double(max(pulse.peakOut, 0))
-        return min(bottom, -0.5)...max(Double(pulse.peakIn), 0.5)
-    }
+    /// In and Out on scales of their own; the marks are plot values, the words real counts.
+    private var scale: PulseScale { PulseScale(peakIn: pulse.peakIn, peakOut: pulse.peakOut, refused: pulse.refused > 0) }
 
     /// The first bucket, the last, and one or two between.
     private var axisDates: [Date] {

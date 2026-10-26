@@ -128,7 +128,7 @@ Settings…             ⌘,
   - **In** (above the line): new memories per day, stacked by source: You (Mac), iPhone, Agents, Imports, Tidy-up. **Out** (below): memories shared per day, stacked by agent (the top four, then Other). **Refused:** a red dot under the day, sized by count.
   - **Range:** 7 days · **30 days** (default) · 12 weeks · 12 months, remembered; the longer ranges group by week and month.
   - **Hover** a day: "Tue 21 Oct · 4 in (2 iPhone, 2 Agents) · 11 shared (Claude Code 8, Cursor 3) · 1 refused" (in counts by source; the overview doesn't say which agent's suggestions they were). **Click** opens Activity filtered to that day ("Showing Tue 21 Oct only · Show everything"), or that week or month in the longer ranges; a refused dot opens Activity ▸ Problems for that day.
-  - The y axis labels the tallest In and the deepest Out ("3 in", "13 out"); the x axis about five dates, the newest under today.
+  - **Each half has its own scale,** so a quiet side isn't flattened by a busy one: the line is always in the middle, the busiest In day reaches the top and the busiest Out day the bottom (a little above it when there are refused dots, which sit beneath). Since a bar of 3 can then stand as tall as one of 22, the y axis labels each half with its own peak, the tallest In and the deepest Out ("3 in", "13 out"), each with a faint gridline. A half with nothing in the range stays empty, with no label. The x axis shows about five dates, the newest under today. The hover text and VoiceOver give the real counts.
   - Counts memories shared: a request that shares 3 counts 3.
 - **Cards** (each opens its place):
 

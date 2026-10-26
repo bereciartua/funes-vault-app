@@ -15,6 +15,8 @@ struct HomeView: View {
     @State private var saved = 0
     @State private var toast = false
     @FocusState private var focused: Bool
+    /// The field and its mic, where a tap mustn't close the keyboard.
+    @State private var editorFrame = CGRect.zero
 
     private var capture: CaptureModel { model.capture }
 
@@ -33,6 +35,18 @@ struct HomeView: View {
                             NavigationLink("Show All") { AllCapturesView(model: model) }
                         }
                     }
+                }
+            }
+            // Return adds a line, so the keyboard closes three other ways, keeping the text and any
+            // dictation: Done above it, scrolling, and a tap anywhere outside the field.
+            .scrollDismissesKeyboard(.interactively)
+            .gesture(TapThrough(isEnabled: focused) { location in
+                if !editorFrame.contains(location) { focused = false }
+            })
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { focused = false }.bold()
                 }
             }
             .navigationTitle(Self.greeting(Date()))
@@ -122,6 +136,7 @@ struct HomeView: View {
             }
             micButton
         }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { editorFrame = $0 }
     }
 
     /// The dictation so far, after what was typed.
@@ -187,6 +202,37 @@ struct HomeView: View {
         } catch {
             problem = CaptureModel.message(for: error)
         }
+    }
+}
+
+/// A tap anywhere that still reaches what's under it (UIKit's `cancelsTouchesInView = false`), so
+/// rows and buttons work as usual; a SwiftUI tap gesture on the list would swallow its rows' taps.
+/// Home's tap outside the composer, while it's focused.
+private struct TapThrough: UIGestureRecognizerRepresentable {
+    let isEnabled: Bool
+    /// Where the tap was, in the global coordinate space.
+    let action: (CGPoint) -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UITapGestureRecognizer {
+        let tap = UITapGestureRecognizer()
+        tap.cancelsTouchesInView = false
+        tap.delegate = context.coordinator
+        return tap
+    }
+
+    func updateUIGestureRecognizer(_ recognizer: UITapGestureRecognizer, context: Context) {
+        recognizer.isEnabled = isEnabled
+    }
+
+    func handleUIGestureRecognizerAction(_ recognizer: UITapGestureRecognizer, context: Context) {
+        if recognizer.state == .ended { action(context.converter.location(in: .global)) }
+    }
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
     }
 }
 
