@@ -121,6 +121,20 @@ enum OverviewWords {
         return String(localized: "This week: \(parts.joined(separator: ", ")).")
     }
 
+    /// "7 saved · 7 shared · 1 refused": the Pulse widget's line, refused only when there were
+    /// any.
+    static func numbers(_ week: VaultOverview.Week) -> String {
+        var parts = [String(localized: "\(week.saved) saved"), String(localized: "\(week.shared) shared")]
+        if week.refused > 0 { parts.append(String(localized: "\(week.refused) refused")) }
+        return parts.joined(separator: " · ")
+    }
+
+    /// "Last 14 days: 20 in · 41 shared · 1 refused": the Pulse widget's chart, as VoiceOver
+    /// reads it.
+    static func lastDays(_ pulse: Pulse) -> String {
+        String(localized: "Last \(pulse.buckets.count) days: \(pulse.inbound) in · \(pulse.shared) shared · \(pulse.refused) refused")
+    }
+
     /// "Last 30 days: 41 in · 96 shared · 3 refused": the chart's totals, above it and as
     /// VoiceOver reads it.
     static func summary(_ pulse: Pulse, range: PulseRange) -> String {
@@ -187,6 +201,32 @@ enum OverviewWords {
     /// "3-week streak".
     static func streak(_ weeks: Int) -> String {
         weeks == 1 ? String(localized: "1-week streak") : String(localized: "\(weeks)-week streak")
+    }
+}
+
+/// The Rhythm grid's words, on Home and in the Rhythm widget.
+enum RhythmWords {
+    /// "Most on Sundays · 3-week streak", or "Too few memories for a rhythm yet".
+    static func line(_ grid: RhythmGrid, calendar: Calendar) -> String {
+        guard !grid.isTooSparse else { return String(localized: "Too few memories for a rhythm yet") }
+        let parts = [grid.busiestWeekday.map { OverviewWords.busiest($0, calendar: calendar) },
+                     grid.streak > 0 ? OverviewWords.streak(grid.streak) : nil]
+        return parts.compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// "Rhythm, last 8 weeks: 23 new memories. Most on Sundays · 3-week streak".
+    static func accessibility(_ grid: RhythmGrid, calendar: Calendar) -> String {
+        let count = grid.cells.compactMap(\.count).reduce(0, +)
+        return count == 1 ? String(localized: "Rhythm, last \(grid.weeks) weeks: 1 new memory. \(line(grid, calendar: calendar))")
+                          : String(localized: "Rhythm, last \(grid.weeks) weeks: \(count) new memories. \(line(grid, calendar: calendar))")
+    }
+}
+
+extension View {
+    /// The cached snapshot while the Mac is away (Home), or over a day old (the widgets): faded
+    /// and greyed, never colour alone ("As of 10:42" goes beside it).
+    func dimmed(_ stale: Bool) -> some View {
+        opacity(stale ? 0.55 : 1).saturation(stale ? 0.2 : 1)
     }
 }
 

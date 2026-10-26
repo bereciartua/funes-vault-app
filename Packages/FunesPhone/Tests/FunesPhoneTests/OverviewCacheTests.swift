@@ -147,3 +147,53 @@ import Testing
         #expect(file.contains("Claude Code"))
     }
 }
+
+/// The widgets tell the demo's counts from the Mac's (FR-H-06): the cache says whose they are,
+/// never mixes the two, and a demo's left behind goes when the app starts on the real pairing.
+@MainActor @Suite struct OverviewCacheDemoTests {
+    let directory = FileManager.default.temporaryDirectory.appending(path: "overview-demo-tests-\(UUID().uuidString)")
+    var cache: OverviewCache { OverviewCache(url: directory.appending(path: OverviewCache.fileName)) }
+
+    func overview(_ range: OverviewRange, total: Int) -> VaultOverview {
+        VaultOverview(range: range, generatedAt: t0, timeZone: "UTC", total: total, thisWeek: .init(), days: [],
+                      rhythm: .init(start: t0, counts: []))
+    }
+
+    @Test func theDemosCountsAreMarkedAndNeverMixed() throws {
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try cache.write(overview(.days30, total: 1))
+        try cache.write(overview(.weeks12, total: 1))
+        #expect(cache.contents() == OverviewCache.Contents(overviews: [.days30: overview(.days30, total: 1),
+                                                                       .weeks12: overview(.weeks12, total: 1)]))
+        try cache.write(overview(.days30, total: 2), demo: true)
+        #expect(cache.contents() == OverviewCache.Contents(overviews: [.days30: overview(.days30, total: 2)], isDemo: true))
+        try cache.write(overview(.days30, total: 3))
+        #expect(cache.contents() == OverviewCache.Contents(overviews: [.days30: overview(.days30, total: 3)]))
+    }
+
+    @Test func theModelSaysWhenTheCacheChanges() async throws {
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let vault = DemoVault(calendar: OverviewCacheTests.calendar, clock: { t0 })
+        let demo = OverviewModel(caller: vault, cache: cache, demo: true)
+        var changes = 0
+        demo.onCacheChange = { changes += 1 }
+        await demo.load()
+        #expect(changes == 1 && cache.contents().isDemo)
+
+        // The app was closed in the demo: the real model starts without its counts.
+        let real = OverviewModel(caller: OverviewCacheTests.Unreachable(), cache: cache)
+        #expect(real.overviews.isEmpty)
+        #expect(!FileManager.default.fileExists(atPath: cache.url.path))
+
+        demo.clear()
+        #expect(changes == 2)
+    }
+}
+
+extension OverviewCacheDemoTests {
+    /// The widgets' gallery and placeholder: the demo's answer, at once.
+    @Test func theSampleIsTheDemosAnswer() async throws {
+        let vault = DemoVault(calendar: OverviewCacheTests.calendar, clock: { t0 })
+        #expect(vault.sampleOverview() == (try await vault.overview(.days30)))
+    }
+}

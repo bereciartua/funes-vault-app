@@ -23,9 +23,23 @@ extension CompanionCalling {
 public struct OverviewCache: Sendable {
     public static let fileName = "overview.json"
 
-    /// The file's contents: one overview per range.
+    /// The file's contents: one overview per range, and whether they're the demo's.
     struct File: Codable {
         var overviews: [String: VaultOverview]
+        /// Nil in files written before the widgets (task 7.5), which were never the demo's.
+        var demo: Bool?
+    }
+
+    /// What's cached: the answers by range, and whether they're the demo vault's (the widgets
+    /// label them **DEMO**).
+    public struct Contents: Sendable, Equatable {
+        public var overviews: [OverviewRange: VaultOverview]
+        public var isDemo: Bool
+
+        public init(overviews: [OverviewRange: VaultOverview] = [:], isDemo: Bool = false) {
+            self.overviews = overviews
+            self.isDemo = isDemo
+        }
     }
 
     public let url: URL
@@ -42,22 +56,28 @@ public struct OverviewCache: Sendable {
     }
 
     /// What's cached, by range; empty when there's nothing, or nothing readable.
-    public func read() -> [OverviewRange: VaultOverview] {
-        guard let data = try? Data(contentsOf: url) else { return [:] }
+    public func read() -> [OverviewRange: VaultOverview] { contents().overviews }
+
+    /// What's cached, and whose it is; empty when there's nothing, or nothing readable.
+    public func contents() -> Contents {
+        guard let data = try? Data(contentsOf: url) else { return Contents() }
         guard let file = try? CompanionJSON.decoder().decode(File.self, from: data) else {
             logger.error("The cached overview couldn't be read")
-            return [:]
+            return Contents()
         }
-        return Dictionary(uniqueKeysWithValues: file.overviews.compactMap { key, overview in
+        let overviews = Dictionary(uniqueKeysWithValues: file.overviews.compactMap { key, overview in
             OverviewRange(rawValue: key).map { ($0, overview) }
         })
+        return Contents(overviews: overviews, isDemo: file.demo ?? false)
     }
 
-    /// Keeps `overview` as its range's, beside the other ranges' answers.
-    public func write(_ overview: VaultOverview) throws {
-        var all = read()
+    /// Keeps `overview` as its range's, beside the other ranges' answers. The demo's and the
+    /// Mac's are never mixed: writing one drops the other's.
+    public func write(_ overview: VaultOverview, demo: Bool = false) throws {
+        let current = contents()
+        var all = current.isDemo == demo ? current.overviews : [:]
         all[overview.range] = overview
-        let file = File(overviews: Dictionary(uniqueKeysWithValues: all.map { ($0.key.rawValue, $0.value) }))
+        let file = File(overviews: Dictionary(uniqueKeysWithValues: all.map { ($0.key.rawValue, $0.value) }), demo: demo ? true : nil)
         let data = try CompanionJSON.encoder().encode(file)
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         #if os(iOS)
@@ -79,13 +99,25 @@ public struct OverviewCache: Sendable {
 public final class OverviewModel {
     public private(set) var overviews: [OverviewRange: VaultOverview]
     public var onFailure: ((CompanionClientError) -> Void)?
+    /// The cache was written or deleted: the app reloads the widgets' timelines.
+    public var onCacheChange: (() -> Void)?
     private let caller: any CompanionCalling
     private let cache: OverviewCache?
+    private let demo: Bool
 
-    public init(caller: any CompanionCalling, cache: OverviewCache?) {
+    /// With `demo`, `caller` is the demo vault and the cache is marked as the demo's. Without, a
+    /// demo's cache left behind (the app was closed in the demo) is deleted.
+    public init(caller: any CompanionCalling, cache: OverviewCache?, demo: Bool = false) {
         self.caller = caller
         self.cache = cache
-        overviews = cache?.read() ?? [:]
+        self.demo = demo
+        let contents = cache?.contents() ?? OverviewCache.Contents()
+        if contents.isDemo != demo, !contents.overviews.isEmpty {
+            cache?.delete()
+            overviews = [:]
+        } else {
+            overviews = contents.overviews
+        }
     }
 
     public func overview(_ range: OverviewRange) -> VaultOverview? { overviews[range] }
@@ -95,7 +127,12 @@ public final class OverviewModel {
         do {
             let overview = try await caller.overview(range)
             overviews[range] = overview
-            do { try cache?.write(overview) } catch { logger.error("The overview couldn't be cached") }
+            do {
+                try cache?.write(overview, demo: demo)
+                onCacheChange?()
+            } catch {
+                logger.error("The overview couldn't be cached")
+            }
         } catch {
             onFailure?(error)
         }
@@ -111,5 +148,6 @@ public final class OverviewModel {
     public func clear() {
         overviews = [:]
         cache?.delete()
+        onCacheChange?()
     }
 }

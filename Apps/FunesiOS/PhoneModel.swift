@@ -61,8 +61,10 @@ final class PhoneModel {
     #endif
     /// Home's Pulse sheet, open on this range.
     var pulseSheet: PulseRange?
-    /// The Control asked for Home's composer, ready to type or dictate.
+    /// The Control or the Remember widget asked for Home's composer, ready to type or dictate.
     private(set) var captureRequests = 0
+    /// How the last request wants it: the widget's 🎙 starts dictation.
+    private(set) var captureMode = CaptureLaunch.Mode.type
     private var started = false
     private var refreshing = false
 
@@ -74,7 +76,9 @@ final class PhoneModel {
         categories = CategoryList(caller: services.caller)
         approvals = ApprovalsModel(caller: services.caller)
         approvalSettings = ApprovalSettingsModel(caller: services.caller, subscriptions: services.subscriptions)
-        overview = OverviewModel(caller: services.caller, cache: OverviewCache.appGroup())
+        overview = OverviewModel(caller: services.caller, cache: OverviewCache.appGroup(), demo: services.isDemo)
+        // The widgets read the cache (FR-H-06): they redraw after every write.
+        overview.onCacheChange = { FunesWidgets.reload() }
         capture.onOutcome = { [weak self] outcome in self?.delivered(outcome) }
         search.onFailure = { [weak self] error in self?.callFailed(error) }
         inbox.onFailure = { [weak self] error in self?.callFailed(error) }
@@ -152,10 +156,13 @@ final class PhoneModel {
             record = scene.record
             tracker.handle(.pairing(paired: true))
             tracker.handle(.checked(scene.check, at: Date()))
-            // Home's charts: the demo's counts, as if cached at 10:42 when the Mac is away.
+            // Home's charts: the demo's counts, as if cached at 10:42 when the Mac is away; and
+            // the widgets', with their "as of" (never over a real pairing's, which is read first).
             if overview.overview(.days30) == nil, var sample = try? await DemoVault().overview(.days30) {
                 sample.generatedAt = scene.snapshotTime
                 overview.show(sample)
+                try? OverviewCache.appGroup()?.write(sample)
+                FunesWidgets.reload()
             }
             capture.reload()
             if capture.queuedCount < ConnectionScene.waiting { _ = await capture.queueTestCaptures(ConnectionScene.waiting - capture.queuedCount) }
@@ -223,17 +230,21 @@ final class PhoneModel {
         if !isDemo { notificationsAllowed = await NotificationPermission.current() }
     }
 
-    /// `BGAppRefreshTask`: send what's waiting, then ask for the next refresh, since the share
+    /// `BGAppRefreshTask`: send what's waiting, then the counts for the widgets when the Mac
+    /// answers (a failure keeps the cache), then ask for the next refresh, since the share
     /// extension and the Control can queue more while the app stays closed.
     func backgroundDelivery() async {
         guard !isDemo else { return }
         capture.reload()
         if capture.queuedCount > 0 { await capture.deliver(.background) }
+        await overview.load()
         await capture.scheduleBackgroundDelivery()
     }
 
     private func takeCaptureRequest() {
-        if CaptureLaunch().take() { captureRequests += 1 }
+        guard let mode = CaptureLaunch().take() else { return }
+        captureMode = mode
+        captureRequests += 1
     }
 
     private func delivered(_ outcome: DeliveryOutcome) {

@@ -182,7 +182,7 @@ No. Search uses a small model built into the app (bge-small, on your Mac); you c
 <details>
 <summary><b>Is there an iPhone app?</b></summary>
 
-Yes: Funes Vault for iPhone, which pairs with this Mac over an end-to-end encrypted channel and keeps no copy of your vault. It opens on **Home**: a box to remember something (typed or dictated, queued on the iPhone until your Mac has it), the agents' requests waiting for you, and your vault's pulse: what came in and what went out to each agent over 7 or 30 days, how big and how sensitive the vault is, your rhythm of adding to it, and who reads it. It also searches and edits the vault, reviews the Inbox and answers agents' requests while your Mac is reachable. **Try Demo** shows every screen with sample data, no Mac needed.
+Yes: Funes Vault for iPhone, which pairs with this Mac over an end-to-end encrypted channel and keeps no copy of your vault. It opens on **Home**: a box to remember something (typed or dictated, queued on the iPhone until your Mac has it), the agents' requests waiting for you, and your vault's pulse: what came in and what went out to each agent over 7 or 30 days, how big and how sensitive the vault is, your rhythm of adding to it, and who reads it. Home Screen widgets show your pulse and rhythm from the last counts your Mac sent, and open Home ready to type or dictate. It also searches and edits the vault, reviews the Inbox and answers agents' requests while your Mac is reachable. **Try Demo** shows every screen with sample data, no Mac needed.
 
 <img src="docs/images/iphone-home.png" alt="Funes Vault for iPhone: Home, with the composer, the requests waiting for an answer and the Pulse chart" width="280">
 </details>

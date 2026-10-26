@@ -2,12 +2,16 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// The App Intents and Control extension (`com.funesvault.ios.intents`): the Control, and
-/// "Remember in Funes" (in `Apps/FunesShared`, with the Control's intent).
+/// The App Intents, Control and widgets extension (`com.funesvault.ios.intents`): the Control,
+/// the Pulse, Remember and Rhythm widgets (`OverviewWidgets.swift`), and "Remember in Funes" (in
+/// `Apps/FunesShared`, with the Control's and the widgets' intents).
 @main
 struct FunesIntentsBundle: WidgetBundle {
     var body: some Widget {
         CaptureControl()
+        PulseWidget()
+        RememberWidget()
+        RhythmWidget()
     }
 }
 

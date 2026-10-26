@@ -38,14 +38,6 @@ extension PhoneModel {
     var isStale: Bool { !isDemo && !reachability.isConnected }
 }
 
-extension View {
-    /// The cached snapshot while the Mac is away: faded and greyed, never colour alone (Home says
-    /// "As of 10:42" beside it).
-    func dimmed(_ stale: Bool) -> some View {
-        opacity(stale ? 0.55 : 1).saturation(stale ? 0.2 : 1)
-    }
-}
-
 /// "As of 10:42" (or "As of 21 Oct, 10:42"): when the cached snapshot was made.
 struct AsOfLabel: View {
     let date: Date
@@ -235,23 +227,6 @@ struct RhythmSection: View {
         } header: {
             Text("Rhythm · 12 weeks")
         }
-    }
-}
-
-enum RhythmWords {
-    /// "Most on Sundays · 3-week streak", or "Too few memories for a rhythm yet".
-    static func line(_ grid: RhythmGrid, calendar: Calendar) -> String {
-        guard !grid.isTooSparse else { return String(localized: "Too few memories for a rhythm yet") }
-        let parts = [grid.busiestWeekday.map { OverviewWords.busiest($0, calendar: calendar) },
-                     grid.streak > 0 ? OverviewWords.streak(grid.streak) : nil]
-        return parts.compactMap { $0 }.joined(separator: " · ")
-    }
-
-    /// "Rhythm, last 8 weeks: 23 new memories. Most on Sundays · 3-week streak".
-    static func accessibility(_ grid: RhythmGrid, calendar: Calendar) -> String {
-        let count = grid.cells.compactMap(\.count).reduce(0, +)
-        return count == 1 ? String(localized: "Rhythm, last \(grid.weeks) weeks: 1 new memory. \(line(grid, calendar: calendar))")
-                          : String(localized: "Rhythm, last \(grid.weeks) weeks: \(count) new memories. \(line(grid, calendar: calendar))")
     }
 }
 

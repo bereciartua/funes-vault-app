@@ -15,6 +15,11 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Added
 
+- **iPhone: Home Screen widgets.** Three of Home's cards, from the counts your Mac last sent (the widgets never contact the Mac themselves):
+  - **Pulse** (medium): "7 saved · 7 shared · 1 refused" this week, and the last 14 days in and out, with the refused dots.
+  - **Remember** (small): "What should Funes remember?", with **Remember**, which opens Home ready to type, and 🎙, ready to dictate. It works before pairing too: captures wait on the iPhone.
+  - **Rhythm** (small, the last 6 weeks; medium, 12 weeks with your streak and busiest day).
+  - Tapping Pulse or Rhythm opens Home. The days move along at midnight; once the counts are over an hour old the widget says "as of 10:42", and after a day it fades them. The iPhone refreshes them whenever it hears from your Mac, including in its background refresh. Agent names are hidden while the iPhone is locked; the demo's counts are labelled **DEMO**; an iPhone that isn't paired says "Pair with your Mac".
 - **iPhone: Home.** The app now opens on Home, which takes Capture's place as the first tab and keeps everything Capture had: the box to remember something (typed or dictated), **Waiting for you**, and Recent captures (the last five, then **Show All**). Below them, your vault at a glance, counts only, never a memory's text:
   - **Pulse:** "This week: 23 saved, 44 shared with 3 agents." and a chart of the last 7 or 30 days, new memories by where they came from above the line, memories shared with each agent below it, and a red dot for refused requests. Hold a finger on the chart and slide it to read each day's numbers. Tap the sentence for 12 weeks and 12 months.
   - **Memories** (the total, its growth over 12 weeks and what's new this week) opens Search, newest first; **Sensitivity** (how sensitive the vault is, and what was shared) searches by level; **Rhythm** (the last 8 weeks, day by day, and your streak) opens the longer view.

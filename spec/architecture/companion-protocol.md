@@ -233,7 +233,7 @@ The Mac words nothing for the phone: the panels are data, worded and localized o
   - right after each new capture while the app is open (the share extension and the App Intents post a Darwin notification the open app listens for);
   - while the app is open, when the backoff's wait is over.
 
-  Extensions never send. The app schedules the background refresh each time it goes to the background and after each refresh.
+  Extensions never send. The app schedules the background refresh each time it goes to the background and after each refresh. From v0.4 (task 7.5) the background refresh also asks for the 30-day overview after delivering, so the widgets stay current while the app is closed; a failure keeps the cache.
 - **Implementation (task 5.4):** `Packages/FunesPhone`: `CaptureQueue` (the store and its checks: trimmed, at most 10,000 characters with the note, the secret scanner), `CaptureDelivery` (an actor: triggers, batches, the backoff) and `AppSignal`.
 - **Batching:** up to 50 captures per call, oldest first, and at most 150,000 bytes of capture JSON, so the sealed request stays under the Mac's 256 KiB (one capture always goes, however long).
 - **Exactly once:**
