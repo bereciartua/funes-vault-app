@@ -24,10 +24,16 @@
     "%lld memories" : {
 
     },
+    "%lld new in 12 weeks" : {
+
+    },
     "%lld refused" : {
 
     },
     "%lld saved" : {
+
+    },
+    "%lld shared" : {
 
     },
     "%lld shared (%@)" : {
@@ -59,6 +65,9 @@
     "0 in" : {
 
     },
+    "1 new in 12 weeks" : {
+
+    },
     "1-week streak" : {
 
     },
@@ -86,7 +95,25 @@
     "Couldn't save on this iPhone." : {
 
     },
+    "DEMO" : {
+
+    },
     "Date" : {
+
+    },
+    "Demo vault: not your data" : {
+
+    },
+    "Dictate" : {
+
+    },
+    "Dictate in Funes" : {
+
+    },
+    "Funes" : {
+
+    },
+    "Funes · this week" : {
 
     },
     "Imports" : {
@@ -97,6 +124,16 @@
     },
     "Internal" : {
 
+    },
+    "Last %lld days: %lld in · %lld shared · %lld refused" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Last %1$lld days: %2$lld in · %3$lld shared · %4$lld refused"
+          }
+        }
+      }
     },
     "Last 12 months" : {
 
@@ -122,13 +159,28 @@
     "Most on %@s" : {
 
     },
+    "No streak yet" : {
+
+    },
     "Not saved: it looks like a password, key or card number. Funes never stores secrets." : {
 
     },
     "Nothing new this week." : {
 
     },
+    "Open Funes once your Mac is near." : {
+
+    },
+    "Open Funes to pair." : {
+
+    },
+    "Opens Funes Vault on Home, ready to dictate." : {
+
+    },
     "Opens Funes Vault on Home, ready to type or dictate." : {
+
+    },
+    "Opens Funes ready to type or dictate something to remember." : {
 
     },
     "Other" : {
@@ -137,7 +189,13 @@
     "Out" : {
 
     },
+    "Pair with your Mac" : {
+
+    },
     "Public" : {
+
+    },
+    "Pulse" : {
 
     },
     "Queue full: connect to your Mac." : {
@@ -146,11 +204,37 @@
     "Refused" : {
 
     },
+    "Remember" : {
+
+    },
     "Remember in Funes" : {
 
     },
     "Restricted" : {
 
+    },
+    "Rhythm" : {
+
+    },
+    "Rhythm, last %lld weeks: %lld new memories. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rhythm, last %1$lld weeks: %2$lld new memories. %3$@"
+          }
+        }
+      }
+    },
+    "Rhythm, last %lld weeks: 1 new memory. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rhythm, last %1$lld weeks: 1 new memory. %2$@"
+          }
+        }
+      }
     },
     "Saved" : {
 
@@ -167,6 +251,9 @@
     "Shared" : {
 
     },
+    "Shared with %@" : {
+
+    },
     "Shared: %@" : {
 
     },
@@ -176,13 +263,25 @@
     "That's over 10,000 characters." : {
 
     },
+    "The days you added memories, week by week." : {
+
+    },
     "There's nothing to remember." : {
+
+    },
+    "This week's numbers, and what came in and went out to agents over 14 days." : {
 
     },
     "This week: %@." : {
 
     },
     "Tidy-up" : {
+
+    },
+    "Too few memories for a rhythm yet" : {
+
+    },
+    "Too few memories yet" : {
 
     },
     "Vault" : {
@@ -192,6 +291,21 @@
 
     },
     "Week of %@" : {
+
+    },
+    "What should Funes remember?" : {
+
+    },
+    "Your pulse shows here" : {
+
+    },
+    "Your pulse starts with your first memories" : {
+
+    },
+    "Your rhythm shows here" : {
+
+    },
+    "as of %@" : {
 
     },
     "iPhone" : {

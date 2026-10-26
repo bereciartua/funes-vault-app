@@ -51,7 +51,13 @@ struct HomeView: View {
             .sheet(item: Bindable(model).pulseSheet) { range in PulseSheet(model: model, range: range) }
             .onChange(of: text) { problem = nil }
             .onChange(of: model.captureRequests, initial: true) { _, requests in
-                if requests > 0 { focused = true }
+                guard requests > 0 else { return }
+                // The Remember widget's 🎙: dictation where the app has its own, else the keyboard.
+                if model.captureMode == .dictate, Dictation.isAvailable {
+                    if !dictation.isActive { Task { await toggleDictation() } }
+                } else {
+                    focused = true
+                }
             }
         }
     }

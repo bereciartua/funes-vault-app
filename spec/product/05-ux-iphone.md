@@ -161,6 +161,7 @@ If the phone can't reach the Mac during pairing: "Make sure both are on the same
 - **Freshness:** the app rewrites the cache and reloads the widgets on foreground, pull to refresh, after captures are delivered and in its background refresh when the Mac answers. A midnight timeline entry moves the days along. "as of 10:42" once the snapshot is over an hour old; dimmed after a day.
 - **States:** Not paired: "Pair with your Mac" in place of the numbers (Remember still works, captures queue); Demo: demo numbers with a **DEMO** label.
 - **Privacy:** no memory text or titles; agent names are `.privacySensitive()`, so iOS redacts them while the phone is locked.
+- *Built (task 7.5):* Pulse is headed "Funes · this week", with "Shared with Claude Code, Cursor, Codex" under its chart. Rhythm medium says the streak, the busiest weekday and "41 new in 12 weeks", in Home's words ("13-week streak", "Most on Sundays"). Without counts yet, Pulse and Rhythm say "Your pulse shows here · Open Funes once your Mac is near"; the gallery shows the demo's counts. The demo is labelled **DEMO** and never says "as of". 🎙 opens the composer dictating where the app has its own dictation (iOS 26), else with the field focused, as Home's mic does.
 
 ## Demo mode (required for App Review)
 - About 20 sample memories in a local, read-only store bundled with the app. Edits apply to the session only.

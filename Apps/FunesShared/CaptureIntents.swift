@@ -44,8 +44,9 @@ struct RememberError: Error, CustomLocalizedStringResourceConvertible {
     }
 }
 
-/// The Control's action: opens Funes on Home's composer, ready to type or dictate. It may run here or in
-/// the app, so it leaves the request where the app finds it (`CaptureLaunch`).
+/// The Control's action, and the Remember widget's **Remember**: opens Funes on Home's composer,
+/// ready to type or dictate. It may run here or in the app, so it leaves the request where the app
+/// finds it (`CaptureLaunch`).
 struct OpenCaptureIntent: AppIntent {
     static let title: LocalizedStringResource = "Capture in Funes"
     static let description = IntentDescription("Opens Funes Vault on Home, ready to type or dictate.")
@@ -53,6 +54,20 @@ struct OpenCaptureIntent: AppIntent {
 
     func perform() async throws -> some IntentResult {
         CaptureLaunch().request()
+        return .result()
+    }
+}
+
+/// The Remember widget's 🎙: opens Funes on Home's composer, dictating (the keyboard before iOS 26,
+/// whose microphone dictates). Only the widget offers it.
+struct OpenDictationIntent: AppIntent {
+    static let title: LocalizedStringResource = "Dictate in Funes"
+    static let description = IntentDescription("Opens Funes Vault on Home, ready to dictate.")
+    static let openAppWhenRun = true
+    static let isDiscoverable = false
+
+    func perform() async throws -> some IntentResult {
+        CaptureLaunch().request(.dictate)
         return .result()
     }
 }

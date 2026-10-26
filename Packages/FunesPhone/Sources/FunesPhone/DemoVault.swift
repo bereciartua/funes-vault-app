@@ -64,6 +64,12 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         }
     }
 
+    /// `overview.get`'s answer, at once: the widgets' gallery and placeholder entries.
+    public func sampleOverview(_ range: OverviewRange = .days30) -> VaultOverview {
+        let now = clock()
+        return state.withLock { Self.overview(range, in: $0, now: now) }
+    }
+
     /// `status.get`'s answer, for the reachability state: always connected.
     public var connection: MacConnection {
         let status = try? handle(.statusGet, EmptyParams()) as? CompanionStatus

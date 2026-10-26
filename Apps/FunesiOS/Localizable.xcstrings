@@ -191,6 +191,9 @@
     "%lld saved" : {
 
     },
+    "%lld shared" : {
+
+    },
     "%lld shared (%@)" : {
       "localizations" : {
         "en" : {
@@ -573,6 +576,9 @@
     "Dictate" : {
 
     },
+    "Dictate in Funes" : {
+
+    },
     "Dictate with the Keyboard" : {
 
     },
@@ -716,6 +722,16 @@
     },
     "Kind" : {
 
+    },
+    "Last %lld days: %lld in · %lld shared · %lld refused" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Last %1$lld days: %2$lld in · %3$lld shared · %4$lld refused"
+          }
+        }
+      }
     },
     "Last 12 months" : {
 
@@ -902,6 +918,9 @@
 
     },
     "Open to see exactly what would be shared." : {
+
+    },
+    "Opens Funes Vault on Home, ready to dictate." : {
 
     },
     "Opens Funes Vault on Home, ready to type or dictate." : {
