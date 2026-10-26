@@ -31,6 +31,7 @@ This folder (`spec/` in the `funes-vault-app` repo) holds the requirements, desi
   - **AI is local by default:** search uses a small embedding model built into the app (bge-small, Core ML), and classification uses Apple's on-device models, with no API keys.
   - **Any model you prefer, per task:** a local server (Ollama, LM Studio) or a cloud model (Claude, GPT, Gemini…). Funes shows what it sends, never sends secrets, and never sends memories above your cloud sensitivity limit.
 - **Memory processing (v0.3, Phase 6):** everything that arrives (captures, agent suggestions and writes, imports) is split into atomic memories and linked to the vault; a daily tidy-up proposes updates, merges, splits and archives; auto-apply with Undo is the user's choice, and never acts on untrusted text ([ADR-0020](architecture/decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](architecture/decisions/0021-daily-tidy-up.md)).
+- **About you (v0.5, Phase 8):** your name and a few details in Settings; Home greets you by name, and each agent gets only the fields you tick for it, with its answers ([ADR-0026](architecture/decisions/0026-about-you-profile.md)).
 - **iPhone (v0.2):**
   - a **thin client** paired by QR code;
   - signed and end-to-end encrypted messages over the same Wi-Fi, Tailscale or an optional tunnel;
@@ -53,7 +54,7 @@ This folder (`spec/` in the `funes-vault-app` repo) holds the requirements, desi
    - [Words in the app](product/06-glossary.md): the one word for each thing the user sees, and the words it replaces.
 2. **Domain**
    - [Domain model](domain/domain-model.md): entities, enums, state machines.
-   - [Access policy](domain/access-policy.md): **the core spec**, with 35 test vectors.
+   - [Access policy](domain/access-policy.md): **the core spec**, with 46 test vectors.
    - [Memory processing](domain/memory-processing.md): secret scanner, embeddings, ranking, New memories (split, classify, link), imports, the daily tidy-up.
    - [Glossary](domain/glossary.md): the domain terms. The words the UI uses are in [Words in the app](product/06-glossary.md).
 3. **Architecture**

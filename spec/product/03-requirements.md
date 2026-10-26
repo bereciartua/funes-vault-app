@@ -6,7 +6,7 @@
 - **C** = Could.
 - **L** = Later (v0.3+).
 
-**Releases:** v0.1 = Mac public preview, v0.2 = iPhone companion. See the [roadmap](../roadmap/roadmap.md).
+**Releases:** v0.1 = Mac public preview, v0.2 = iPhone companion, v0.3 = memory processing, v0.4 = Home and widgets, v0.5 = About you. See the [roadmap](../roadmap/roadmap.md).
 
 **Ids:** `FR-<area>-<nn>` for functional, `NFR-<area>-<nn>` for non-functional. Domain terms are defined in the [glossary](../domain/glossary.md). The exact rules referenced here are specified in [access policy](../domain/access-policy.md) and [domain model](../domain/domain-model.md).
 
@@ -172,7 +172,8 @@
   - allowed categories (empty means all) and denied categories (deny always wins);
   - ask before sharing (default on);
   - ask before saving (default on; applies when Write is granted);
-  - expiry date of the access.
+  - expiry date of the access;
+  - from v0.5, the profile fields that go with its answers (FR-U-03).
 - Acceptance: every change increments the agent's `revision` and invalidates that agent's pending approvals.
 
 **FR-A-04 Pause and resume** · M · v0.1
@@ -429,7 +430,7 @@
 - Acceptance: never contains memory text or titles (tested); under 50 ms on a 10,000-memory vault.
 
 **FR-H-02 Mac Home** · M · v0.4
-- The main window opens on Home: a greeting, a composer (⏎ saves a capture as the capture box does, ⌘⏎ searches the vault, a mic dictates), the pulse chart (in by source, out by agent, refused), and the Memories, Sensitivity, Rhythm and Who reads cards, each opening its filtered place ([UX: Mac ▸ Home](04-ux-mac.md#home)).
+- The main window opens on Home: a greeting (by the name in About You from v0.5, FR-U-02), a composer (⏎ saves a capture as the capture box does, ⌘⏎ searches the vault, a mic dictates), the pulse chart (in by source, out by agent, refused), and the Memories, Sensitivity, Rhythm and Who reads cards, each opening its filtered place ([UX: Mac ▸ Home](04-ux-mac.md#home)).
 
 **FR-H-03 Dictation on the Mac** · S · v0.4
 - A mic in Home's composer and in the capture box dictates into the field (SpeechAnalyzer, on the Mac), asking for microphone and speech recognition access the first time. macOS 26 and later; on macOS 15 the mic is hidden and the system's own dictation still works in the field.
@@ -459,10 +460,10 @@
 - From v0.3, with splitting on: the estimated model requests next to what's left of today's cap (FR-AI-15), and **Import without splitting**. A Funes export restore is never split.
 
 **FR-X-05 Export** · M · v0.1
-- `funesvault.export.v1` JSON with categories and memories (optionally archived ones). It never includes keys, devices, agents' access or Activity.
+- `funesvault.export.v1` JSON with categories and memories (optionally archived ones), and from v0.5 the profile (an optional `profile` object, FR-U-01). It never includes keys, devices, agents' access (so not which agents see which profile fields) or Activity.
 
 **FR-X-06 Import a Funes export** · S · v0.1
-- Restores a `funesvault.export.v1` file, as suggestions (default) or as active memories after confirmation.
+- Restores a `funesvault.export.v1` file, as suggestions (default) or as active memories after confirmation. From v0.5, an export's `profile` fills About You only if the vault's profile is empty; otherwise the preview says "About you in this file isn't restored: yours is already set."
 
 ### Onboarding (FR-O)
 
@@ -476,6 +477,7 @@
   Shown at the top of Home (before v0.4, the Vault) until dismissed. The first unfinished step's button is its default focus (on Home the composer takes the initial focus), never Hide; Hide offers Undo, and Settings ▸ Advanced brings it back. An empty vault shows a welcome (what Funes does and its promise) instead of an empty list and filters.
 
 **FR-O-02 Seed questions** · M · v0.1
+- From v0.5 they open with the user's name (FR-U-04), which goes to About You, not to a memory.
 - Six optional prompts (from the web guided interview):
   - collaboration style
   - communication preferences
@@ -489,6 +491,38 @@
 
 **FR-O-03 Move to Applications** · M · v0.1
 - Offer to move the app to /Applications when it's run from elsewhere (EK Bridge `AppMover`).
+
+### About you (FR-U)
+*v0.5, [ADR-0026](../architecture/decisions/0026-about-you-profile.md).*
+
+**FR-U-01 About You** · M · v0.5
+- Settings ▸ About You holds the profile: given name, family name, what Funes should call you, pronouns, languages (ordered), location, time zone (Automatic by default) and occupation. Every field is optional ([domain model ▸ Profile](../domain/domain-model.md#profile), [UX: Mac ▸ Settings](04-ux-mac.md#settings)).
+- Acceptance:
+  - The macOS account's name is offered as a suggestion, never saved without the user's action.
+  - The secret scanner checks every field on save; a match keeps the previous value and names the pattern type.
+  - The profile isn't a memory: it never appears in the Vault, the Inbox, search, a Share panel's list or memory processing.
+  - Each field shows how many agents receive it.
+  - Edits are logged in Activity with field names only.
+
+**FR-U-02 Greeting by name** · M · v0.5
+- Home greets the user by the called name (preferred, else given): "Good afternoon, Martin." With no name: "Good afternoon."
+- Acceptance: the macOS account's name is never used by itself (an account named "mib" greets "Good afternoon." until a name is set).
+
+**FR-U-03 Share profile fields with agents** · M · v0.5
+- Each agent's Access tab has a checkbox per profile field (name, pronouns, languages, location, time zone, occupation). New agents start with Name ticked; existing agents get Name when the migration runs.
+- The fields ticked and set go with each of the agent's `request_memory` answers that pass the agent gate, whatever the outcome ([access policy §3.10](../domain/access-policy.md#310-the-profile)).
+- Acceptance:
+  - Test vectors T36–T46 pass.
+  - Gate denials (paused, expired, no Read) carry no profile.
+  - Changing the ticks increments the agent's revision.
+  - Activity and the disclosure record the field names that went, never the values.
+  - The Share panel says which fields the agent also has.
+
+**FR-U-04 Name in the setup questions** · S · v0.5
+- The seed questions (FR-O-02) open with "First, what should Funes call you?" (given name, family name, call me), with Skip.
+
+**FR-U-05 iPhone greeting by name** · S · v0.5
+- The iPhone's Home title adds the called name from `status.get`, kept from the last contact for when the Mac is away and deleted with the pairing ([UX: iPhone ▸ Home](05-ux-iphone.md#home-tab)).
 
 ### App, settings and updates (FR-G)
 

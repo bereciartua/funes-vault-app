@@ -17,6 +17,7 @@
 | [Phase 6b: Daily tidy-up](phase-6b-daily-tidy-up.md) | Daily update, merge, split, archive and conflict proposals, with optional auto-apply ([ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)) |
 | [Phase 6c: Provider embeddings](phase-6c-provider-embeddings.md) | A provider embedding model as a second index next to bge-small, gated on a benchmark gain ([ADR-0023](../architecture/decisions/0023-provider-embeddings-second-index.md)) |
 | [Phase 7: Home and widgets](phase-7-home.md) | The iPhone's status bar, a vault overview of counts only, Home on the Mac and the iPhone, and iPhone widgets ([ADR-0025](../architecture/decisions/0025-vault-overview-and-iphone-cache.md)) |
+| [Phase 8: About you](phase-8-about-you.md) | A small profile in Settings: Home greets you by name on both apps, and each agent gets the profile fields you tick for it with its answers ([ADR-0026](../architecture/decisions/0026-about-you-profile.md)) |
 | [Project setup](project-setup.md) | Repo, targets, bundle IDs, platforms, dependencies, signing, conventions |
 | [Testing strategy](testing-strategy.md) | Test layers, privacy assertions, fixtures, definition of done |
 | [Release and distribution](release-and-distribution.md) | Versioning, channels, release checklist, support |

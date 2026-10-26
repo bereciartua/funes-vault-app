@@ -61,7 +61,7 @@ In v0.2–0.3 each state shows as a banner at the top of Capture, Search and the
 *v0.4, [Phase 7](../plans/phase-7-home.md) task 7.4.* **Home replaces Capture** as the first tab, where the app opens (the Control and "Remember in Funes" open it too). Everything Capture has stays; the vault's pulse joins it, with no memory text or titles.
 
 Top to bottom:
-1. **Title:** "Good morning / afternoon / evening" (large title). Nothing else in the header (the [status bar](#status-bar) is at the bottom).
+1. **Title:** "Good morning / afternoon / evening" (large title), with ", <name>" from v0.5 when the Mac's About You has one: the name Funes calls you, from `status.get`, kept from the last contact so it shows while the Mac is away ([ADR-0026](../architecture/decisions/0026-about-you-profile.md)). The demo vault gets a sample name, so the demo says "Good morning, Alex". A name too long for the large title truncates; it's never moved to a second line. Nothing else in the header (the [status bar](#status-bar) is at the bottom).
 2. **Composer:** the Capture tab's field ("What should Funes remember?"), mic and **Remember**, unchanged: queued instantly, delivered when it can.
 3. **Waiting for you:** agents' requests, when there are any, above the charts because they have a deadline.
 4. **Pulse card:** "This week: 7 saved, 7 shared with 2 agents."; a 7 / 30-day switch; the in/out chart as on the Mac's Home (in by source above the line, out by agent below, refused dots). Dragging a finger across it shows each day's numbers above the chart, with a light haptic per day.

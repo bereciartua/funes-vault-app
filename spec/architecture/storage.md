@@ -5,7 +5,7 @@ Everything lives under `~/Library/Application Support/FunesVault/`, in a 0700 fo
 
 | Path | Contents | Notes |
 |---|---|---|
-| `vault.sqlite` (+ `-wal`, `-shm`) | Memories, categories, suggestions, agents, access, disclosures, devices, receipts, provenance, embeddings, FTS | GRDB `DatabasePool`, WAL mode |
+| `vault.sqlite` (+ `-wal`, `-shm`) | Memories, categories, suggestions, agents, access, disclosures, devices, receipts, provenance, embeddings, FTS, the profile (v0.5) | GRDB `DatabasePool`, WAL mode |
 | `agent-keys/<agentId>.key` | The agent's MCP key, bare with no newline | Written once, never read back except by **Copy key**. Deleted on removal |
 | `agent-keys/<agentId>.remote.key` | The agent's Remote Access token (`fns_mcpr_v1_`), bare | Only with Allow cloud access. Read back only by **Copy Remote Token…**. Replaced by **Reset Remote Token…**; deleted when cloud access is turned off or the agent is removed ([ADR-0018](decisions/0018-remote-access-in-v0.1.md)) |
 | `remote-connections.json` | Remote Access OAuth state: connected cloud apps (agent id, app name, OAuth client id, MCP URL, SHA-256 digests of the access, refresh and recently rotated refresh tokens, expiry and use times) and registered OAuth clients (`dcr_`, and `cfg_` with the digest of its `fns_ocs_v1_` secret) | BridgeKitRemote's `OAuthStore`: written atomically with fsync, fails closed (a wrong owner, mode, size or content makes OAuth unavailable and the file is never overwritten). No token in the clear. Never exported |
@@ -134,6 +134,13 @@ CREATE TABLE access_category (
   PRIMARY KEY (agent_id, category_key, mode)   -- a key may be on both lists; deny wins (T8)
 );
 
+-- v6_profile (v0.5, ADR-0026): the profile fields each agent's request_memory answers carry.
+CREATE TABLE access_profile_field (
+  agent_id TEXT NOT NULL REFERENCES agent(id) ON DELETE CASCADE,
+  field    TEXT NOT NULL CHECK (field IN ('name','pronouns','languages','location','time_zone','occupation')),
+  PRIMARY KEY (agent_id, field)
+);
+
 CREATE TABLE disclosure (
   id                       TEXT PRIMARY KEY,
   agent_id                 TEXT NOT NULL REFERENCES agent(id),
@@ -154,7 +161,9 @@ CREATE TABLE disclosure (
   withheld                 TEXT NOT NULL DEFAULT '{}',   -- JSON {reason:count}
   created_at               TEXT NOT NULL,
   decided_at               TEXT,
-  delivered_at             TEXT
+  delivered_at             TEXT,
+  -- v6_profile (ADR-0026):
+  profile_fields_sent      TEXT NOT NULL DEFAULT '[]'    -- JSON [field]; names only, never values
 );
 CREATE INDEX disclosure_agent_status ON disclosure(agent_id, status);
 CREATE INDEX disclosure_pending ON disclosure(status, created_at) WHERE status IN ('needs_approval','approved');
@@ -229,6 +238,20 @@ CREATE TABLE import_run (
   blocked     INTEGER NOT NULL DEFAULT 0
 );
 
+-- v6_profile (v0.5, ADR-0026): "About you". One row, every field optional; not a memory.
+CREATE TABLE profile (
+  id              INTEGER PRIMARY KEY CHECK (id = 1),
+  given_name      TEXT,
+  family_name     TEXT,
+  preferred_name  TEXT,
+  pronouns        TEXT,
+  languages       TEXT NOT NULL DEFAULT '[]',          -- JSON [BCP 47 tag], ordered
+  location        TEXT,
+  time_zone       TEXT NOT NULL DEFAULT 'automatic',   -- an IANA id, or 'automatic' (the Mac's)
+  occupation      TEXT,
+  updated_at      TEXT
+);
+
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema version, vault id, etc.
 -- v0.3: meta('tidy_up_split_prompt') = the extraction prompt version whose one-time clearing of older split
 -- dismissals has run (memory processing §9.5).
@@ -240,6 +263,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - `v3_device_approvals` (v0.2, task 5.6): adds `device.approvals_enabled` (1 for every existing device) and `doorbell_tag` (empty until the phone asks for it).
 - `v4_memory_processing` (v0.3, Phase 6.1; [ADR-0020](decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](decisions/0021-daily-tidy-up.md)): `memory.trust` (`trusted` for every existing memory except `agent_write` ones, which are `untrusted`) and `memory.reconciled_version` (null); `suggestion.target_memory_version`, `group_id`, `intent`, `outside_scope`, and the `split` status; tables `suggestion_target`, `suggestion_group`, `processing_job`, `undo_entry`, `tidy_up_run` and `tidy_up_dismissal`; `provenance.related_memory_id` and `engine`. Fields as in the [domain model](../domain/domain-model.md#suggestion). The physical DDL is `Schema.v4` in FunesCore. Suggestions pending before it have no target version, so apply only checks that their target is still active.
 - `v5_overview_indexes` (v0.4, Phase 7 task 7.2; [ADR-0025](decisions/0025-vault-overview-and-iphone-cache.md)): `VaultOverview` took 86–105 ms on the 10,000-memory benchmark vault without indexes, so five indexes, each carrying the columns its query groups by so the scans don't visit rows that hold memory text and candidate snapshots: `memory_created` on `memory(created_at, source, source_device_id)`, `memory_status_shape` on `memory(status, sensitivity, kind, id)`, `disclosure_delivered` on `disclosure(delivered_at, agent_id)` where `delivered_at` is set, `disclosure_created` on `disclosure(created_at, agent_id, status, reason)`, and `disclosure_item_shape` on `disclosure_item(disclosure_id, sensitivity, category_key)`. No data changes. With them it takes about 12 ms for 30 days, 14 ms for 12 weeks and 36 ms for 12 months (up to about 45 ms while the Mac is busy).
+- `v6_profile` (v0.5, [ADR-0026](decisions/0026-about-you-profile.md)): the `profile` table (no row until the user first saves About You), `access_profile_field` with `name` for every agent not removed, and `disclosure.profile_fields_sent` (`[]` for every existing request).
 - Before running pending migrations: make an online backup to `Backups/pre-<migration>-<date>.sqlite`.
 - Each migration has a test: open a fixture database created by the previous version, migrate it, and check the data and invariants.
 - Downgrades aren't supported. An older app version that finds a newer schema refuses to open the vault, shows "Update Funes", and never writes to it.
@@ -272,5 +296,6 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - **App Group container:** `capture-queue.sqlite` (the capture queue), with file protection `completeUntilFirstUserAuthentication`.
 - **Keychain:** device signing and HPKE keys, and the pairing record (Mac public keys, ids, addresses).
 - **App Group container (v0.4):** `overview.json`, the last `overview.get` answer for each range (counts, dates and agent names; no memory text or titles), with the same file protection, for Home and the widgets ([ADR-0025](decisions/0025-vault-overview-and-iphone-cache.md); [companion protocol §6.1](companion-protocol.md#61-overview-cache-phone-v04)).
+- **Keychain (v0.5):** the called name from the last `status.get`, in the pairing record, for Home's title while the Mac is away ([ADR-0026](decisions/0026-about-you-profile.md)). Deleted with the pairing.
 - **No** other vault data. Search results and memory details live only in memory while on screen.
 - **Demo vault:** a read-only JSON resource in the app bundle.

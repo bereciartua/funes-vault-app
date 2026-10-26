@@ -15,7 +15,7 @@ Main window ───┬─ Home         (v0.4: compose, the vault's pulse and s
                ├─ Remote Access (cloud agents through your tunnel; experimental, off by default)
                ├─ Activity     (log)
                ├─ iPhone       (v0.2: pairing, devices, reachability)
-               └─ Settings     (general, capture, MCP, data, updates, advanced)
+               └─ Settings     (about you, general, capture, MCP, data, updates, advanced)
 ```
 
 ## Menu bar
@@ -118,7 +118,7 @@ Settings…             ⌘,
       3 waiting in Inbox · Last tidy-up today 03:04
 ```
 
-- **Greeting:** "Good morning / afternoon / evening, <first name>." (the macOS account's name), then "What should Funes remember?".
+- **Greeting:** "Good morning / afternoon / evening, <name>." with the name Funes calls you from **About You** (the preferred name, else the given name; v0.5, [ADR-0026](../architecture/decisions/0026-about-you-profile.md)), then "What should Funes remember?". With no name set it's "Good afternoon." alone: the macOS account's name is only a suggestion in About You, never used by itself, since it's often a username ("mib"). Before v0.5 it was the first word of the account's full name.
 - **Composer:** focused when Home appears, so ⌘1 then typing is a capture.
   - **⏎ Remember** saves it as a capture, exactly as the capture box does (the same view, words, HUD and secret-scanner error). **⇧⏎** is a new line. **⌘⏎ Search vault** opens the Vault searching for the text.
   - **Mic:** dictates into the field with SpeechAnalyzer, after what's already there; the text stays editable, and ⏎ stops it and saves. Asks for microphone and speech recognition access the first time; if either is refused, the field's error says where to allow it. macOS 26 and later: on macOS 15 there's no mic (the system's own dictation still works in the field).
@@ -149,7 +149,7 @@ Settings…             ⌘,
 A card at the top of Home, above the greeting (before v0.4, at the top of the Vault), connecting first:
 1. **Connect an agent**: "Found on this Mac: Claude Code, Cursor". [Add…]
 2. **Approve its first request**: [Add to Claude Code…] / [Show Setup]. "Ask it something. Funes shows you exactly what it would share." The step completes when the first request arrives ("Claude Code connected 10:42").
-3. **Seed your vault**: "Answer a few questions or import from ChatGPT or Claude." [Start]
+3. **Seed your vault**: "Answer a few questions or import from ChatGPT or Claude." [Start]. From v0.5 the questions open on **About you** ([Settings ▸ About You](#settings)): "First, what should Funes call you?", with given name, family name and "Call me" prefilled from the macOS account's name when it looks like a person's name (two or more words, or capitalized), and empty otherwise; **Continue** saves it, **Skip** leaves the profile as it is. Pronouns, languages and the rest stay in Settings, so seeding stays short.
 4. **Review your Inbox**: "Apply what's right." [Open Inbox]
 - Home's composer has the initial keyboard focus, and the first unfinished step's button is the checklist's default focus; Hide never is. Hide leaves "Setup checklist hidden. Settings ▸ Advanced brings it back. [Undo]" for 10 seconds.
 
@@ -210,7 +210,7 @@ A card at the top of Home, above the greeting (before v0.4, at the top of the Va
 
 ### Agents
 - **Layout:** the sidebar lists the agents (see Sidebar); the page shows the selected one.
-- **Header:** its icon (detected type), name (with a pencil to rename), status ("Connected · 2 min ago", "Waiting for first request", "Paused", "Access expired"), kind, and access summary ("Reads Low and below in 3 categories · asks first"), with Pause or Resume and Remove….
+- **Header:** its icon (detected type), name (with a pencil to rename), status ("Connected · 2 min ago", "Waiting for first request", "Paused", "Access expired"), kind, and access summary ("Reads Low and below in 3 categories · asks first · knows your name"; with more profile fields, "· knows your name and 2 more"), with Pause or Resume and Remove….
 - **Pending requests** from this agent sit under the header while any wait ("Claude Code · 3 memories · 13 min left", the task's first line while this session holds it, [Review…], Details); the agent's badge in the sidebar counts them. Activity shows every agent's, at the top.
 - **Add Agent:** two tabs, **On This Mac** (agents found on this Mac first, "Show All 11 Agents") and **Cloud · Experimental** (Remote Access's state first, with Set Up Remote Access… while it's off). Names wrap instead of truncating, and the sheet scrolls rather than outgrow the screen. For an agent with one-click setup the button is **Add and Connect…**: the agent is added and its Connect tab shows the change to its settings at once; after Add, it suggests a first question to ask the agent. New agents start with Deny for the never-share categories.
 - **Agent detail tabs:**
@@ -222,6 +222,7 @@ A card at the top of Home, above the greeting (before v0.4, at the top of the Va
     - **Ask before saving:** shown only with Write.
     - **Access expires:** never, or a date.
     - **Let it ask for more access:** on or off.
+    - **About you** (v0.5, [ADR-0026](../architecture/decisions/0026-about-you-profile.md)): a checkbox per profile field, each showing its current value dimmed ("Name · Martin Bereciartua", "Pronouns · he/him", "Location · not set"): Name (on for a new agent), Pronouns, Languages, Location, Time zone, Occupation. Caption: "Sent with every answer to <agent>'s requests, without asking. Edit them in Settings ▸ About You." A field that isn't set can still be ticked; it goes once it has a value. Disabled without Read ("Needs Read"). Saved with the rest of the tab, so it bumps the agent's revision like any access change.
     - If the agent changes elsewhere while the tab is open (Always Allow from a panel), an untouched editor shows the new access; an edited one says so and must be reviewed again before saving, so it can't undo the other change.
   - **Connect:**
     - one-click buttons (a changed file is backed up first; when the agent's own command replaces an existing entry, its settings file is backed up, removal must succeed, and a failed add puts the backup back);
@@ -262,6 +263,7 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
   - the request id;
   - the task, for requests whose Share panel this session showed (the vault stores only a hash, so otherwise, and after relaunch, it shows "Task text not stored");
   - withheld counts by reason;
+  - the profile fields that went ("Also sent: name, pronouns"; v0.5), names only;
   - fix links ("Allow Project Context for Cursor…").
 
 ### iPhone (v0.2)
@@ -279,6 +281,24 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
 - **Devices:** name, model, paired date, last seen, connection used, and **Remove…** (it revokes the device). At most five.
 
 ### Settings
+- **About You** (v0.5, the first pane; [ADR-0026](../architecture/decisions/0026-about-you-profile.md)): what Funes and your agents call you. Every field is optional.
+  ```
+  Name            [Martin      ] [Bereciartua   ]     (given · family, in the locale's order)
+  Call me         [Martin      ]  (placeholder: the given name)
+  Pronouns        [he/him      ]
+  Languages       English · Spanish        [+] [−]   (drag to reorder; the first is the one you write in most)
+  Location        [Lisbon, Portugal                ]
+  Time zone       Automatic (Europe/Lisbon) ▾
+  Occupation      [                                ]
+
+  Shared with: Name 3 agents · Pronouns 1 agent · the others with none.
+  Agents get only the fields you tick in each one's Access tab. New agents get your name.
+  ```
+  - **Saves** when a field loses focus or Return is pressed, like the other panes. The secret scanner checks each field; a match keeps the old value, with the scanner's usual message under the field.
+  - **Prefill:** an empty profile shows the macOS account's name as the fields' placeholders, never as their values, so nothing is saved until the user types or clicks **Use "Martin Bereciartua"** (shown only when the account's name looks like a person's).
+  - **Shared with** names the agents on hover and each count opens a list with links to the agents' Access tabs. A removed agent isn't counted.
+  - **Languages:** a picker of the system's languages; **Time zone:** Automatic (following the Mac, shown in parentheses) or a searchable list of time zones.
+  - Logged in Activity as "Edited About you · Pronouns" (field names, no values).
 - **General:**
   - **Appearance:** Automatic, Light or Dark (FR-G-06), a pop-up with "Automatic follows macOS." under it. Automatic is the default. The choice applies at once to every window, panel, sheet and alert, and to the menu bar menu, and is kept across relaunches. The app menus (File, Edit…) follow the menu bar, as in every app. EK Bridge has the same setting with the same words.
   - Launch at login, show in Dock, the Review Request shortcut (⌃⌥⌘R), notifications.
@@ -337,6 +357,7 @@ All panels are non-activating floating `NSPanel`s at the top right. When several
 - **Goes to** is built only from what Funes knows. Local agent: "<agent> on this Mac. It may send what it reads to its AI service." Cloud agent: "claude.ai, through your Tailscale Funnel, to Anthropic's servers", with a **Cloud** chip; the vendor comes from a fixed table of cloud agents, the tunnel from Remote Access ("a cloud agent, through Remote Access" when either is unknown).
 - **The agent says** holds everything the agent supplied: the task, its `keywords` ("Looking for"), purpose, how long it says it keeps what it gets, and who it says it shares with (`processors`). Long values are cut to about two lines with "Show all". None of it decides anything.
 - **Your note** is the user's own "Keeps what it gets" from the agent's Access tab, when set.
+- **About you** (v0.5): a line above the buttons when the agent's answer carries profile fields: "Claude Code also has your name and pronouns, as set in its Access." It isn't tickable, and **Deny** doesn't take it back: the answer that started the request already carried it ([access policy §3.10](../domain/access-policy.md#310-the-profile)). "its Access" is a link to the agent's Access tab.
 - **Strong matches are ticked; weaker ones are offered unticked** under "Also matched, less closely" (access policy §3.2).
 - The body text is clipped to 3 lines (at most 160 characters), with "Show all" to expand. The text is the exact text that will be sent, and every row whose text is cut offers "Show all", so everything Share would release can be read first.
 - The panel is never taller than the screen's visible area: the title and the buttons stay in place and the rows between them scroll.
