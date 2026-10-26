@@ -21,18 +21,18 @@
 - [ ] Check with Claude Code and one cloud agent that they use the name ("What's my name?" and a cover-letter task); record it with the live matrix.
 
 ## 8.3 Mac · ¾ weekend
-- [ ] **Settings ▸ About You**, the first pane: the fields, the account name as placeholders and **Use "<name>"**, the scanner's error per field, the language picker and the time zone list, "Shared with" counts and their agent lists.
-- [ ] **Home's greeting** by the called name, plain without one; `HomeText.greeting` takes the profile instead of `NSFullUserName()`.
-- [ ] **Agents ▸ Access:** the About you checkboxes with each value dimmed, disabled without Read; the header summary ("· knows your name").
-- [ ] **Share panel:** the "also has your name and pronouns" line, linking to the agent's Access tab.
-- [ ] **Activity:** "Also sent: name, pronouns" in the detail pane; "Edited About you · Pronouns" rows.
-- [ ] **Seed questions:** the first page, "First, what should Funes call you?", prefilled only when the account's name looks like a person's; Skip.
-- [ ] VoiceOver labels, string catalog, UI snapshots (`settings-about-you`, the Access tab, Home with a name; light and dark).
+- [x] **Settings ▸ About You**, the first pane: the fields, the account name as placeholders and **Use "<name>"**, the scanner's error per field, the language picker and the time zone list, "Shared with" counts and their agent lists.
+- [x] **Home's greeting** by the called name, plain without one; `HomeText.greeting` takes the profile instead of `NSFullUserName()`.
+- [x] **Agents ▸ Access:** the About you checkboxes with each value dimmed, disabled without Read; the header summary ("· knows your name").
+- [x] **Share panel:** the "also has your name and pronouns" line, linking to the agent's Access tab.
+- [x] **Activity:** "Also sent: name, pronouns" in the detail pane; "Edited About you · Pronouns" rows.
+- [x] **Seed questions:** the first page, "First, what should Funes call you?", prefilled only when the account's name looks like a person's; Skip.
+- [x] VoiceOver labels, string catalog, UI snapshots (`settings-about-you`, the Access tab, Home with a name; light and dark).
 
 ## 8.4 iPhone · ¼ weekend
-- [ ] `calledName` in `status.get` (FunesCompanion) and `CompanionClient`; the phone keeps the last one in the pairing record and drops it with the pairing.
-- [ ] Home's title: "Good afternoon, Martin", truncating; the demo vault's sample name.
-- [ ] Tests in FunesPhone (kept across launches, removed on unpair and revocation, never in the demo after leaving it); string catalog; screenshot scenes.
+- [x] `calledName` in `status.get` (FunesCompanion) and `CompanionClient`; the phone keeps the last one in the pairing record and drops it with the pairing.
+- [x] Home's title: "Good afternoon, Martin", truncating; the demo vault's sample name.
+- [x] Tests in FunesPhone (kept across launches, removed on unpair and revocation, never in the demo after leaving it); string catalog; screenshot scenes.
 
 ## When the code lands
-- [ ] README (what agents receive), PRIVACY.md (the profile fields as something that can go to agents), docs, CHANGELOG.
+- [x] README (what agents receive), PRIVACY.md (the profile fields as something that can go to agents), docs, CHANGELOG.

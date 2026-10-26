@@ -131,7 +131,7 @@ Agents see four main tools, and only the ones their access allows:
 | Tool | What it does | Needs |
 | --- | --- | --- |
 | `list_memory_categories` | Lists your categories and what this agent may do in each. No memories, no counts. | Always available |
-| `request_memory` | Asks for memories relevant to a task, with keywords for the kinds of context that would help. Returns them, asks you first, or refuses with a reason. | Read |
+| `request_memory` | Asks for memories relevant to a task, with keywords for the kinds of context that would help. Returns them, asks you first, or refuses with a reason. Each answer also carries the parts of **About You** you share with that agent (your name, by default). | Read |
 | `get_memory_request` | Picks up a request you answered after the agent stopped waiting. Delivered once. | Read |
 | `suggest_memory` | Proposes a memory or a correction. It goes to your Inbox, or straight into the vault if you let that agent save without asking. | Suggest or Write |
 

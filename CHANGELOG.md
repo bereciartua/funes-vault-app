@@ -15,6 +15,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Added
 
+- **About You.** A new first pane in Settings for what Funes and your agents call you: your name, what to call you, pronouns, languages, location, time zone and occupation, all optional. The setup questions now start with "What should Funes call you?".
+  - **Home greets you by name** on the Mac and the iPhone: "Good afternoon, Martin." With no name set it's "Good afternoon.", never your macOS account name (which may be a username like "mib"); About You offers that name as a suggestion only when it looks like a person's.
+  - **Agents can know your name.** Each agent's Access tab has an About you section with a checkbox per field; a new agent, and every agent you already have, shares your name and nothing else. The fields you tick go with every answer to that agent's memory requests, without asking: also while a request waits for you, and when no memory matched, so "What's my name?" just works. Paused or expired agents, and agents that can't read, get none. Changing an agent's fields is an access change: its waiting requests ask again.
+  - The Share panel says what the agent already has ("Claude Code also has your name and pronouns, as set in its Access."), Activity shows "Also sent: name, pronouns" (names, never values) and "Edited About you", and About You shows how many agents get each field. The secret check runs on every field. Exports include the profile; restoring one fills an empty profile only. The vault gets two small tables when it updates.
 - **iPhone: Home Screen widgets.** Three of Home's cards, from the counts your Mac last sent (the widgets never contact the Mac themselves):
   - **Pulse** (medium): "7 saved · 7 shared · 1 refused" this week, and the last 14 days in and out, with the refused dots.
   - **Remember** (small): "What should Funes remember?", with **Remember**, which opens Home ready to type, and 🎙, ready to dictate. It works before pairing too: captures wait on the iPhone.
