@@ -206,6 +206,22 @@ final class Harness {
         return result
     }
 
+    /// About you (access policy §3.10): every agent shares its name by default. With
+    /// FUNES_MCP_TEST_LARGE, every field is as long as it may be and mostly quote marks, the
+    /// costliest to escape, for the response-size checks.
+    func seedProfile() async throws {
+        let profiles = ProfileService(store: store, activity: activity)
+        if ProcessInfo.processInfo.environment["FUNES_MCP_TEST_LARGE"] == "1" {
+            let q = { (n: Int) in String(repeating: "\"", count: n) }
+            try await profiles.save(Profile(givenName: q(80), familyName: q(80), preferredName: q(80), pronouns: q(40),
+                                            languages: ["en", "es", "pt", "fr", "de", "it", "nl", "sv"], location: q(120),
+                                            timeZone: "America/Argentina/Buenos_Aires", occupation: q(120)), now: Date())
+        } else {
+            try await profiles.save(Profile(givenName: "Martin", familyName: "Bereciartua", pronouns: "he/him",
+                                            languages: ["en", "es"]), now: Date())
+        }
+    }
+
     func control(_ command: [String: Any]) async -> [String: Any] {
         let agent = (command["agent"] as? String).flatMap { agentIDs[$0] }
         let now = Date()
@@ -256,6 +272,15 @@ final class Harness {
         case "memory_count":
             let count = (try? store.memories(MemoryFilter(), now: now).count) ?? -1
             return ["count": count]
+        case "profile_fields":
+            // An agent's profile fields, changed in its access editor (§3.10 rule 5).
+            guard let agent, let found = try? await agents.agent(id: agent) else { return ["ok": false] }
+            var access = found.access
+            access.profileFields = Set((command["fields"] as? [String] ?? []).compactMap(ProfileField.init(rawValue:)))
+            do {
+                let saved = try await agents.updateAccess(agentID: agent, access, now: now)
+                return ["ok": true, "revision": saved.revision]
+            } catch { return ["ok": false] }
         case "edit_memory":
             // A memory changed after approval: delivery must refuse it (policy_changed).
             guard let name = command["memory"] as? String, let id = memoryIDs[name],
@@ -270,6 +295,7 @@ final class Harness {
                 if let reason = event.reason { row["reason"] = reason.rawValue }
                 if !event.ids.isEmpty { row["ids"] = event.ids.map { $0.uuidString.lowercased() } }
                 if !event.counts.isEmpty { row["counts"] = event.counts }
+                if let fields = event.profileFields { row["profile_fields"] = fields.map(\.rawValue) }
                 return row
             }]
         case "connection":
@@ -413,6 +439,7 @@ Task { @MainActor in
         let harness = try Harness(directory: URL(fileURLWithPath: path, isDirectory: true))
         harness.responder.mode = environment["FUNES_MCP_TEST_APPROVAL"] ?? "none"
         let agents = try await harness.makeAgents()
+        try await harness.seedProfile()
         let wait = Double(environment["FUNES_MCP_TEST_WAIT"] ?? "") ?? 45
         let services = FunesServices(store: harness.store, agents: harness.agents, disclosures: harness.disclosures,
                                      suggestions: harness.suggestions, pause: harness.pause, activity: harness.activity)

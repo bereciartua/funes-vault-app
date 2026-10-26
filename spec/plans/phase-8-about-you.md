@@ -16,8 +16,8 @@
 - [x] **Export and import:** `profile` in `funesvault.export.v1`; restored only into an empty profile; Erase All Data clears it.
 
 ## 8.2 MCP · ¼ weekend
-- [ ] `profile` in `request_memory`'s output schema (every key optional) and the new server instructions, in `mcp-tools.json`; goldens regenerated (`UPDATE_GOLDENS=1`).
-- [ ] The Python harness: a seeded profile; `profile` present after the gate (T36, T39), absent for gate denials (T37, T38) and on `get_memory_request` (T44); the same over Remote Access (`remote_test.py`).
+- [x] `profile` in `request_memory`'s output schema (every key optional) and the new server instructions, in `mcp-tools.json`; goldens regenerated (`UPDATE_GOLDENS=1`).
+- [x] The Python harness: a seeded profile; `profile` present after the gate (T36, T39), absent for gate denials (T37, T38) and on `get_memory_request` (T44); the same over Remote Access (`remote_test.py`).
 - [ ] Check with Claude Code and one cloud agent that they use the name ("What's my name?" and a cover-letter task); record it with the live matrix.
 
 ## 8.3 Mac · ¾ weekend

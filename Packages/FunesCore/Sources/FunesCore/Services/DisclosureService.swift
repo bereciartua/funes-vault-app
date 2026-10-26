@@ -338,13 +338,7 @@ public final class DisclosureService: Sendable {
         onNeedsApproval(outcome)
         switch await waitForDecision(requestID: id, timeout: wait) {
         case .approved?:
-            // Still this `request_memory` call's answer, so it keeps the profile it was evaluated
-            // with, unless delivery stopped at the gate (§3.10 rules 1 and 6).
-            var delivered = try await deliver(requestID: id, agentID: agentID, now: now(), via: via, credential: credential,
-                                              reservingBytes: outcome.profile?.wireBytes ?? 0)
-            if let reason = delivered.reason, PolicyEngine.gateReasons.contains(reason) { return delivered }
-            delivered.profile = outcome.profile
-            return delivered
+            return try await deliver(answering: outcome, agentID: agentID, now: now(), via: via, credential: credential)
         case .denied?:
             var denied = outcome
             denied.status = .denied
@@ -489,8 +483,20 @@ public final class DisclosureService: Sendable {
         try await deliver(requestID: requestID, agentID: agentID, now: now, via: via, credential: credential, reservingBytes: 0)
     }
 
-    /// Delivery with `reservingBytes` kept back from the bundle: the profile an in-call answer
-    /// carries (§3.10 rule 9).
+    /// Delivery of a request approved while its `request_memory` call waited. It's still that
+    /// call's answer, so it keeps the profile `outcome` carried, its size kept back from the bundle,
+    /// unless delivery stopped at the gate (§3.10 rules 1, 6 and 9).
+    public func deliver(answering outcome: RequestOutcome, agentID: UUID, now: Date, via: ActivityEvent.Via = .mcp,
+                        credential: CredentialCheck? = nil) async throws -> RequestOutcome {
+        guard let requestID = outcome.requestID else { throw VaultError.notFound }
+        var delivered = try await deliver(requestID: requestID, agentID: agentID, now: now, via: via, credential: credential,
+                                          reservingBytes: outcome.profile?.wireBytes ?? 0)
+        if let reason = delivered.reason, PolicyEngine.gateReasons.contains(reason) { return delivered }
+        delivered.profile = outcome.profile
+        return delivered
+    }
+
+    /// Delivery with `reservingBytes` kept back from the bundle.
     func deliver(requestID: UUID, agentID: UUID, now: Date, via: ActivityEvent.Via, credential: CredentialCheck?,
                  reservingBytes: Int) async throws -> RequestOutcome {
         let paused = pause.isPaused(at: now)

@@ -150,6 +150,7 @@ def main():
         run_protocol(h, catalog, contract)
         run_categories(h)
         run_requests(h)
+        run_profile(h)
         run_approvals(h)
         run_suggestions(h)
         run_open(h)
@@ -194,7 +195,8 @@ def main():
             print("  " + failure)
         sys.exit(1)
     print(f"Funes MCP: {checks} checks over loopback (contract, visibility, categories, request, approve, deny, "
-          "timeout then get, single use, invalidation, suggestions, open, access requests, agent state, privacy, limits, "
+          "timeout then get, single use, invalidation, profile, suggestions, open, access requests, agent state, privacy, "
+          "limits, "
           "quit, response size) "
           "passed")
 
@@ -317,6 +319,58 @@ def run_requests(h):
     c.close()
 
 
+MARTIN = {"name": {"given": "Martin", "family": "Bereciartua", "called": "Martin"}}
+
+
+def run_profile(h):
+    # About you (access policy §3.10, T36–T44): the agent's profile fields go with request_memory
+    # answers past the gate, whatever the status; never on gate denials or get_memory_request.
+    c = Client(h, h.key("reader"))
+    result = c.call("request_memory", {"task": "Write a cover letter"})
+    check("profile: the name by default (T36)", result.get("status") == "fulfilled" and
+          result.get("profile") == MARTIN, result.get("profile"))
+    result = c.call("request_memory", {"task": "What's my name?", "categories": ["finance"]})
+    check("profile: nothing matched still carries it (T39)", result.get("reason") == "no_matching_memories" and
+          result.get("profile") == MARTIN, result)
+    check("profile: not on list_memory_categories", "profile" not in c.call("list_memory_categories"))
+    h.control(cmd="profile_fields", agent="reader", fields=["name", "pronouns", "location"])
+    result = c.call("request_memory", {"task": "Write a cover letter"})
+    check("profile: only shared fields with a value (T41)",
+          result.get("profile") == dict(MARTIN, pronouns="he/him"), result.get("profile"))
+    h.control(cmd="profile_fields", agent="reader", fields=["languages", "time_zone"])
+    result = c.call("request_memory", {"task": "Write a cover letter"})
+    profile = result.get("profile", {})
+    check("profile: languages and the Mac's time zone", profile.get("languages") == ["en", "es"] and
+          "/" in profile.get("time_zone", "") and "name" not in profile, profile)
+    h.control(cmd="profile_fields", agent="reader", fields=[])
+    result = c.call("request_memory", {"task": "Write a cover letter"})
+    check("profile: none shared, no key (T40)", result.get("status") == "fulfilled" and "profile" not in result, result)
+    h.control(cmd="profile_fields", agent="reader", fields=["name"])
+    h.control(cmd="pause", on=True)
+    result = c.call("request_memory", {"task": "Write a cover letter"})
+    check("profile: not while Funes is paused (T37)", result.get("reason") == "funes_paused" and
+          "profile" not in result and "Martin" not in result["_text"], result)
+    h.control(cmd="pause", on=False)
+    c.close()
+    for name, reason in [("suggester", "operation_not_allowed"), ("expired", "access_expired")]:
+        other = Client(h, h.key(name))
+        result = other.call("request_memory", {"task": "Write a cover letter"})
+        check(f"profile: not for {reason} (T38)", result.get("reason") == reason and "profile" not in result and
+              "Martin" not in result["_text"], result)
+        other.close()
+    # Waiting for approval: the name goes, the memories don't; get_memory_request doesn't repeat it (T44).
+    a = Client(h, h.key("asker"))
+    result = a.call("request_memory", {"task": "Set up a TypeScript project", "keywords": ["package manager"]})
+    request_id = result.get("request_id", "")
+    check("profile: with needs_approval", result.get("status") == "needs_approval" and result.get("profile") == MARTIN and
+          "pnpm" not in result["_text"], result)
+    h.control(cmd="answer", decision="allow")
+    result = a.call("get_memory_request", {"request_id": request_id})
+    check("profile: not on get_memory_request (T44)", result.get("status") == "delivered" and "profile" not in result and
+          "Martin" not in result["_text"], result)
+    a.close()
+
+
 def run_approvals(h):
     c = Client(h, h.key("asker"))
     task = {"task": "Set up a TypeScript project", "keywords": ["package manager"]}
@@ -329,6 +383,7 @@ def run_approvals(h):
     result = box.get("result", {})
     check("approved in call → delivered", result.get("status") == "delivered" and len(result.get("items", [])) == 4,
           result)
+    check("approved in call keeps the profile", result.get("profile") == MARTIN, result.get("profile"))
     # Deny in the panel.
     c2 = Client(h, h.key("asker"))
     thread, box = in_background(lambda: c2.call("request_memory", task))
@@ -580,8 +635,11 @@ def run_privacy(h):
     check("activity has the MCP events", any(r["event"] == "request_memory" for r in rows) and
           any(r["event"] == "suggest_memory" for r in rows) and any(r["event"] == "list_memory_categories"
                                                                      for r in rows), [r["event"] for r in rows])
-    for secret in ["TypeScript", "Plan dinner", "Vitest", "dark mode", "sk-proj", "pick the tooling", "oat milk"]:
+    for secret in ["TypeScript", "Plan dinner", "Vitest", "dark mode", "sk-proj", "pick the tooling", "oat milk",
+                   "Martin", "Bereciartua", "he/him"]:
         check(f"activity never holds text: {secret}", secret not in text)
+    check("activity names the profile fields sent (T45)",
+          any(r.get("profile_fields") == ["name"] for r in rows if r["event"] == "request_memory"), rows[:5])
     check("withheld memory ids never in activity", h.memories["allergy"] not in text)
 
 
@@ -616,6 +674,9 @@ def run_response_size(h):
     # BridgeKit 0.1.1 refuses ids over 1,024 encoded bytes (-32600, id null) and bundles keep room
     # for one at the cap. Three large memories and max_tokens 8000, so the bundle is as big as it gets.
     c = Client(h, h.key("reader"))
+    # Every profile field, at its longest (§3.10 rule 9): kept back from the bundle.
+    h.control(cmd="profile_fields", agent="reader",
+              fields=["name", "pronouns", "languages", "location", "time_zone", "occupation"])
     # Personal Preferences only (the large memories and Coffee).
     arguments = {"task": "Plan the week", "max_tokens": 8000, "categories": ["personal_preferences"]}
     for label, request_id in [("id at the cap", "r" * 1022), ("escaped id at the cap", '"' * 511),
@@ -635,6 +696,8 @@ def run_response_size(h):
                   content.get("status") == "fulfilled" and len(content.get("items", [])) >= 1,
                   (response.status, content.get("status")))
             check(f"response size: {label} within 200,000 bytes", len(payload) <= 200000, len(payload))
+            check(f"response size: {label} carries the whole profile", len(content.get("profile", {})) == 6,
+                  list(content.get("profile", {})))
         else:
             check(f"response size: {label} refused", response.status == 400 and "id" in body and
                   body["id"] is None and (body.get("error") or {}).get("code") == -32600, (response.status, body))

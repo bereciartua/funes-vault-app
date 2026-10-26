@@ -131,7 +131,7 @@ extension RequestPipeline {
         let remaining = max(0, deadline.timeIntervalSince(now()))
         switch await disclosures.waitForDecision(requestID: id, timeout: .milliseconds(Int(remaining * 1_000))) {
         case .approved?:
-            return try await disclosures.deliver(requestID: id, agentID: agent.id, now: now(), via: via,
+            return try await disclosures.deliver(answering: outcome, agentID: agent.id, now: now(), via: via,
                                                  credential: credential)
         case .denied?:
             outcome.status = .denied
@@ -207,7 +207,26 @@ extension RequestPipeline {
         if let withheld = outcome.withheld {
             object["withheld"] = Dictionary(uniqueKeysWithValues: withheld.map { ($0.key.rawValue, $0.value) })
         }
+        // The user's profile fields this agent is given (access policy §3.10); no key without any.
+        if let profile = outcome.profile { object["profile"] = profileObject(profile) }
         return ToolOutput.make(object)
+    }
+
+    static func profileObject(_ p: SharedProfile) -> [String: Any] {
+        var o: [String: Any] = [:]
+        if let name = p.name {
+            var n: [String: Any] = [:]
+            if let given = name.given { n["given"] = given }
+            if let family = name.family { n["family"] = family }
+            if let called = name.called { n["called"] = called }
+            o["name"] = n
+        }
+        if let pronouns = p.pronouns { o["pronouns"] = pronouns }
+        if let languages = p.languages { o["languages"] = languages }
+        if let location = p.location { o["location"] = location }
+        if let timeZone = p.timeZone { o["time_zone"] = timeZone }
+        if let occupation = p.occupation { o["occupation"] = occupation }
+        return o
     }
 
     // MARK: suggest_memory
