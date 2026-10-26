@@ -11,7 +11,7 @@ Status bar (v0.4): above the tab bar, only when something needs you
 Extensions: Share extension · App Intent "Remember in Funes" · Control (Control Center / Lock Screen / Action button) · Widgets (v0.4) · Notification service extension (approvals)
 ```
 
-The app opens on **Capture** (from v0.4, **Home**): the fastest path to the main job.
+The app opens on **Capture** (from v0.4, **Home**, task 7.4, built): the fastest path to the main job.
 
 ## States
 
@@ -47,7 +47,7 @@ In v0.2–0.3 each state shows as a banner at the top of Capture, Search and the
 - An orange or red icon and words, never colour alone. A state shows only after it has lasted 2 s, so a quick reconnect never flashes the bar; a new count in the same state ("3 waiting" to "4 waiting") shows at once. Connected after Connecting, pairing or Pair Again hides the bar at once; only "Back online" (after the Mac couldn't be reached) waits its 2 s, and counts the captures sent since. It slides in and out (fades with Reduce Motion). The timing is FunesPhone's `StatusBarTimeline`.
 - **VoiceOver:** one element read as its text, the button as a custom action, and activating it does what a tap does (on the demo's bar, nothing: Leave Demo is the custom action); each new state is announced once ("Mac not reachable"), not each new count.
 - Search and the Inbox keep their full-page explanations while the Mac can't be asked; the bar shows there too, with the queued count. Which Mac the phone is paired with is in Settings and the status sheet.
-- While not paired, Capture's first card is **Pair with your Mac to start**, with **Pair with Mac** and **Try Demo** ("No Mac yet? See every screen with sample data. Nothing leaves this iPhone.").
+- While not paired, Capture's first card (from v0.4, Home's card in place of the charts) is **Pair with your Mac to start**, with **Pair with Mac** and **Try Demo** ("No Mac yet? See every screen with sample data. Nothing leaves this iPhone.").
 
 **"Why?" sheet** (from v0.4, the status sheet): "Your vault lives on your Mac. Search and review need the Mac to be awake and reachable on the same Wi-Fi, or through Tailscale. Captures are safe on this iPhone and will be sent automatically."
 
@@ -80,6 +80,14 @@ Top to bottom:
   | Not paired | as Capture (queued until pairing) | a **Pair with your Mac** card, with **Try Demo** |
   | Demo | demo | the demo vault's sample counts |
   | New vault | as Capture | "Your pulse starts with your first memories"; Who reads: "No agent has read your vault yet" |
+
+- *Built (task 7.4):*
+  - **Pulse card:** the sentence row opens the sheet (with a chevron); the switch shows 7 or 30 days, both from the 30-day overview, and starts on 30 days. The Out stack names the top three agents by memories shared, then Other. Above the chart: the range's totals ("Last 30 days: 83 in · 194 shared · 2 refused"), or the day under the finger ("Thu, Oct 22 · 2 in (2 iPhone) · 2 shared (Claude Code 2)"). Under it, a legend that names every series. **Scrubbing is press and hold, then drag**, so a swipe on the chart still scrolls Home.
+  - **Tiles:** Memories (total, the 12-week growth line, "+23 this week"); Sensitivity (a Vault bar and a Shared bar, coloured by level), which opens a menu of the vault's levels with their counts, each opening Search filtered to that level (Search's filter button changes or clears it); Rhythm (8 weeks, a column per calendar week, and "13-week streak", "No streak yet" or "Too few memories for a rhythm yet").
+  - **The sheet:** "Pulse", with 7 days · 30 days · 12 weeks · 12 months (12 weeks and 12 months asked for when shown, then cached), and the 12-week Rhythm grid with "Most on Sundays · 13-week streak". The Rhythm tile opens it on 12 weeks.
+  - **Who reads:** agents shared something or asking in 30 days: the name (redacted while locked), "128 memories shared" and how long ago it last asked.
+  - **Mac not reachable:** whenever the Mac isn't connected, the charts are faded and greyed, with "As of 10:42" ("As of Oct 21, 10:42 PM" once it isn't today's). A range the cache doesn't have says so in the sheet.
+  - The composer's field is a little shorter (96 pt, growing as you type) so the charts start on the first screen.
 
 ## Search tab
 - A search field. Results come from the Mac, showing the title, a two-line snippet, category chips and a sensitivity badge.
@@ -160,7 +168,7 @@ If the phone can't reach the Mac during pairing: "Make sure both are on the same
 - The App Review notes explain that the app pairs with Funes Vault for Mac, and that the demo shows the full interface.
 - *Built (task 5.7):* **Try Demo** sits under the banner on Capture ("No Mac yet? See every screen with sample data. Nothing leaves this iPhone."), and in Search, the Inbox and Settings while the iPhone isn't paired. The demo has 20 active memories (plus one archived and one recently deleted), three Inbox suggestions, and a Share, a Save and an access request under **Waiting for you**, whose panels answer as with a Mac. Every tab's banner is an orange DEMO label with "Demo vault: not your data" and **Leave Demo**; Settings has a Demo section with the Demo Vault switch. A capture goes to the demo's Inbox as a "Demo capture", and its Recent captures row says "Sent to the demo Inbox". Demo mode isn't remembered: the app always launches on the real pairing, and leaving the demo discards its edits and captures. Nothing in it touches the network, the pairing, iCloud or the real capture queue.
 
-- *From v0.4 (task 7.1, built):* the DEMO label is the [status bar](#status-bar) (with Leave Demo), from the first frame and on every tab, and Try Demo is on Capture's pairing card (later Home's) and in Search, the Inbox and Settings while the iPhone isn't paired.
+- *From v0.4 (task 7.1, built):* the DEMO label is the [status bar](#status-bar) (with Leave Demo), from the first frame and on every tab, and Try Demo is on Capture's pairing card (from task 7.4, Home's, in place of the charts) and in Search, the Inbox and Settings while the iPhone isn't paired. Home's charts show the demo's 12 weeks of sample counts.
 
 ## Accessibility
 - Dynamic Type everywhere, VoiceOver labels on badges ("Sensitivity: Internal"), and Reduce Motion respected.

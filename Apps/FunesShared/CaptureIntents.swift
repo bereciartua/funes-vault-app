@@ -44,11 +44,11 @@ struct RememberError: Error, CustomLocalizedStringResourceConvertible {
     }
 }
 
-/// The Control's action: opens Funes on Capture, ready to type or dictate. It may run here or in
+/// The Control's action: opens Funes on Home's composer, ready to type or dictate. It may run here or in
 /// the app, so it leaves the request where the app finds it (`CaptureLaunch`).
 struct OpenCaptureIntent: AppIntent {
     static let title: LocalizedStringResource = "Capture in Funes"
-    static let description = IntentDescription("Opens Funes Vault on Capture, ready to type or dictate.")
+    static let description = IntentDescription("Opens Funes Vault on Home, ready to type or dictate.")
     static let openAppWhenRun = true
 
     func perform() async throws -> some IntentResult {

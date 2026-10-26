@@ -4,7 +4,7 @@ import Observation
 import SwiftUI
 
 /// Funes Vault for iPhone: a thin client of the vault on the Mac (spec/product/05-ux-iphone.md).
-/// It opens on Capture; captures wait in the queue on this iPhone until the Mac has them.
+/// It opens on Home; captures wait in the queue on this iPhone until the Mac has them.
 @main
 struct FunesApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate

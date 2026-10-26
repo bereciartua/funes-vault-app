@@ -11,8 +11,8 @@ struct FunesIntentsBundle: WidgetBundle {
     }
 }
 
-/// A Control Center, Lock Screen and Action button control (iOS 18) that opens Capture, ready to
-/// type or dictate.
+/// A Control Center, Lock Screen and Action button control (iOS 18) that opens Home's composer,
+/// ready to type or dictate.
 struct CaptureControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.funesvault.ios.capture") {
@@ -21,6 +21,6 @@ struct CaptureControl: ControlWidget {
             }
         }
         .displayName("Capture in Funes")
-        .description("Opens Funes Vault on Capture, ready to type or dictate.")
+        .description("Opens Funes Vault on Home, ready to type or dictate.")
     }
 }

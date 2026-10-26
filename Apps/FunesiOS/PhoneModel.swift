@@ -49,11 +49,19 @@ final class PhoneModel {
     var openApproval: OpenApproval?
     /// Whether Funes may show notifications; nil until iOS has asked.
     private(set) var notificationsAllowed: Bool?
-    /// The pairing sheet, opened from the status bar, Capture's pairing card or a disabled tab.
+    /// The pairing sheet, opened from the status bar, Home's pairing card or a disabled tab.
     var presentingPairing = false
     /// The status sheet: tapping the status bar, or Why?.
     var presentingStatus = false
-    /// The Control asked for Capture, ready to type or dictate.
+    /// The tab showing: Home, where the app opens, unless a screenshot scene says otherwise.
+    #if DEBUG
+    var tab = ScreenshotScene.current?.tab ?? RootView.Tab.home
+    #else
+    var tab = RootView.Tab.home
+    #endif
+    /// Home's Pulse sheet, open on this range.
+    var pulseSheet: PulseRange?
+    /// The Control asked for Home's composer, ready to type or dictate.
     private(set) var captureRequests = 0
     private var started = false
     private var refreshing = false
@@ -128,6 +136,14 @@ final class PhoneModel {
         return detail
     }
 
+    /// Home's tiles: Search, newest first, or only the memories at `sensitivity`.
+    func openSearch(sensitivity: Sensitivity?) {
+        search.query = ""
+        search.scope = .active
+        search.sensitivity = sensitivity
+        tab = .search
+    }
+
     func start() async {
         guard !started else { return }
         started = true
@@ -136,6 +152,11 @@ final class PhoneModel {
             record = scene.record
             tracker.handle(.pairing(paired: true))
             tracker.handle(.checked(scene.check, at: Date()))
+            // Home's charts: the demo's counts, as if cached at 10:42 when the Mac is away.
+            if overview.overview(.days30) == nil, var sample = try? await DemoVault().overview(.days30) {
+                sample.generatedAt = scene.snapshotTime
+                overview.show(sample)
+            }
             capture.reload()
             if capture.queuedCount < ConnectionScene.waiting { _ = await capture.queueTestCaptures(ConnectionScene.waiting - capture.queuedCount) }
             return
@@ -171,7 +192,7 @@ final class PhoneModel {
             }
         }
         // The share extension and the App Intents queued something, or the Control asked for
-        // Capture.
+        // Home's composer.
         Task { [weak self] in
             for await _ in AppSignal.queueChanged.updates() {
                 guard let self else { return }
@@ -219,6 +240,10 @@ final class PhoneModel {
         tracker.handle(.delivered(outcome))
         statusBar.delivered(outcome)
         leaveVaultIfGone()
+        // Home's counts after captures are delivered (UX: iPhone ▸ Home tab, Data).
+        if case let .drained(sent, _) = outcome, sent > 0, reachability.isConnected {
+            Task { await overview.load() }
+        }
     }
 
     /// A Search, memory or Inbox call failed: the connection's state hears about it.

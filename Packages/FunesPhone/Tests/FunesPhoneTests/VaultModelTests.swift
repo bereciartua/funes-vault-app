@@ -185,6 +185,13 @@ import Testing
         await search.search()
         #expect(vault.searches.last?.filters == nil)
         #expect(search.results.map(\.title) == ["Seat"])
+        // Home's Sensitivity tile: one level, in any scope.
+        search.sensitivity = .internal
+        await search.search()
+        #expect(vault.searches.last?.filters == MemorySearchFilters(sensitivities: [.internal]))
+        search.scope = .archived
+        await search.search()
+        #expect(vault.searches.last?.filters == MemorySearchFilters(sensitivities: [.internal], status: .archived))
     }
 
     /// Typing fast: the answer to an older query that arrives last is dropped.

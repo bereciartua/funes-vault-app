@@ -15,6 +15,12 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Added
 
+- **iPhone: Home.** The app now opens on Home, which takes Capture's place as the first tab and keeps everything Capture had: the box to remember something (typed or dictated), **Waiting for you**, and Recent captures (the last five, then **Show All**). Below them, your vault at a glance, counts only, never a memory's text:
+  - **Pulse:** "This week: 23 saved, 44 shared with 3 agents." and a chart of the last 7 or 30 days, new memories by where they came from above the line, memories shared with each agent below it, and a red dot for refused requests. Hold a finger on the chart and slide it to read each day's numbers. Tap the sentence for 12 weeks and 12 months.
+  - **Memories** (the total, its growth over 12 weeks and what's new this week) opens Search, newest first; **Sensitivity** (how sensitive the vault is, and what was shared) searches by level; **Rhythm** (the last 8 weeks, day by day, and your streak) opens the longer view.
+  - **Who reads your vault:** your top three agents, how many memories each was shared in 30 days, and when each last asked.
+  - While your Mac is away, Home shows the last counts it sent, faded, with "As of 10:42". While the iPhone isn't paired, the pairing card with **Try Demo** takes the charts' place; the demo has sample counts.
+  - Search has a sensitivity filter. The Control opens Home, ready to type or dictate.
 - **Home on the Mac.** The window now opens on Home, at the top of the sidebar (⌘1; Vault, Inbox, Activity, Agents and Remote Access move to ⌘2–⌘6), and so does **Open Funes Vault**. The setup checklist moved there from the Vault.
   - Type a memory and press Return: it goes to the Inbox exactly as from the ⌥⌘M box, with the same "Saved to Inbox", Cloud label and secret check. Shift-Return adds a line; **⌘Return** opens the Vault searching for what you typed.
   - A microphone in Home and in the ⌥⌘M box dictates into the field, on your Mac (macOS 26 and later). It asks for microphone and speech recognition access the first time. On macOS 15 there's no microphone button; the system's own dictation still works there.
