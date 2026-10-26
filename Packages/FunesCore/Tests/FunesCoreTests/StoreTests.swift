@@ -11,10 +11,10 @@ import Testing
         let tables = try v.store.writer.read { db in
             try String.fetchAll(db, sql: "SELECT name FROM sqlite_master WHERE type IN ('table') AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'memory_fts_%' AND name != 'grdb_migrations' ORDER BY name")
         }
-        #expect(tables == ["access", "access_category", "agent", "capture_receipt", "category", "device", "disclosure",
-                           "disclosure_item", "embedding", "import_run", "memory", "memory_category", "memory_fts",
-                           "meta", "processing_job", "provenance", "suggestion", "suggestion_group", "suggestion_target",
-                           "tidy_up_dismissal", "tidy_up_run", "undo_entry"])
+        #expect(tables == ["access", "access_category", "access_profile_field", "agent", "capture_receipt", "category",
+                           "device", "disclosure", "disclosure_item", "embedding", "import_run", "memory", "memory_category",
+                           "memory_fts", "meta", "processing_job", "profile", "provenance", "suggestion", "suggestion_group",
+                           "suggestion_target", "tidy_up_dismissal", "tidy_up_run", "undo_entry"])
         #expect(try v.store.categories().map(\.key) == MemoryCategory.builtins.map(\.key))
         #expect(try v.store.categories().first { $0.key == "health" }?.defaultSensitivity == .sensitive)
         #expect(try v.store.meta("active_embedding_model") == "bge-small-en-v1.5/coreml-int8")

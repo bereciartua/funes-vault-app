@@ -7,13 +7,13 @@
 **Order:** 8.1 → 8.2 → 8.3 and 8.4 (either order). Each step ships on its own; the Mac and iPhone apps are updated together.
 
 ## 8.1 Core · ½ weekend
-- [ ] **`Profile`** in FunesProtocol (shared with the phone for the called name), with its limits and the called-name rule; `ProfileField`.
-- [ ] **`v6_profile`**: the `profile` table, `access_profile_field` (with `name` for every agent not removed), `disclosure.profile_fields_sent`; the fixture test from a version 5 vault.
-- [ ] **`VaultStore`:** read and save the profile (trimmed, empty as none, the secret scanner over every field, in one transaction); `profile_edited` in Activity with field names only.
-- [ ] **Access:** `profileFields` in `Access`, saved with the rest of the editor's changes, bumping the revision; new agents get `{name}`.
-- [ ] **Policy:** §3.10 in the request path: after the gate, whatever the outcome; only the agent's set fields; the Mac's time zone for `automatic`; `profileFieldsSent` on the disclosure and the Activity row. Test vectors T36–T46.
-- [ ] **Bundle:** the profile's encoded size kept back from the result-size limit before items are added; a test at the limit.
-- [ ] **Export and import:** `profile` in `funesvault.export.v1`; restored only into an empty profile; Erase All Data clears it.
+- [x] **`Profile`** in FunesProtocol (shared with the phone for the called name), with its limits and the called-name rule; `ProfileField`.
+- [x] **`v6_profile`**: the `profile` table, `access_profile_field` (with `name` for every agent not removed), `disclosure.profile_fields_sent`; the fixture test from a version 5 vault.
+- [x] **`VaultStore`:** read and save the profile (trimmed, empty as none, the secret scanner over every field, in one transaction); `profile_edited` in Activity with field names only.
+- [x] **Access:** `profileFields` in `Access`, saved with the rest of the editor's changes, bumping the revision; new agents get `{name}`.
+- [x] **Policy:** §3.10 in the request path: after the gate, whatever the outcome; only the agent's set fields; the Mac's time zone for `automatic`; `profileFieldsSent` on the disclosure and the Activity row. Test vectors T36–T46.
+- [x] **Bundle:** the profile's encoded size kept back from the result-size limit before items are added; a test at the limit.
+- [x] **Export and import:** `profile` in `funesvault.export.v1`; restored only into an empty profile; Erase All Data clears it.
 
 ## 8.2 MCP · ¼ weekend
 - [ ] `profile` in `request_memory`'s output schema (every key optional) and the new server instructions, in `mcp-tools.json`; goldens regenerated (`UPDATE_GOLDENS=1`).

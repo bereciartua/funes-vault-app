@@ -61,10 +61,14 @@ public struct Access: Sendable, Hashable, Codable {
     public var askBeforeSharing: Bool
     public var askBeforeSaving: Bool
     public var expiresAt: Date?
+    /// The parts of the profile its `request_memory` answers carry (access policy §3.10). A new
+    /// agent shares its name (ADR-0026).
+    public var profileFields: Set<ProfileField>
 
     public init(operations: Set<AccessOperation> = [], maxSensitivity: Sensitivity = .low,
                 allowedCategoryKeys: Set<String> = [], deniedCategoryKeys: Set<String> = [],
-                askBeforeSharing: Bool = true, askBeforeSaving: Bool = true, expiresAt: Date? = nil) {
+                askBeforeSharing: Bool = true, askBeforeSaving: Bool = true, expiresAt: Date? = nil,
+                profileFields: Set<ProfileField> = [.name]) {
         self.operations = operations
         self.maxSensitivity = maxSensitivity
         self.allowedCategoryKeys = allowedCategoryKeys
@@ -72,6 +76,7 @@ public struct Access: Sendable, Hashable, Codable {
         self.askBeforeSharing = askBeforeSharing
         self.askBeforeSaving = askBeforeSaving
         self.expiresAt = expiresAt
+        self.profileFields = profileFields
     }
 
     /// Starting access presets (FR-A-02).
@@ -248,6 +253,8 @@ public struct Disclosure: Sendable, Hashable, Identifiable {
     public var createdAt: Date
     public var decidedAt: Date?
     public var deliveredAt: Date?
+    /// The profile fields the `request_memory` answer carried (§3.10); names only, never values.
+    public var profileFieldsSent: [ProfileField] = []
 }
 
 /// Written when a disclosure is delivered. The text isn't stored.

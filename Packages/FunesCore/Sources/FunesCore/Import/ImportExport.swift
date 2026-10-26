@@ -164,8 +164,8 @@ extension String {
     var isBlank: Bool { trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 }
 
-/// `funesvault.export.v1` (FR-X-05): categories and memories, never keys, devices, agents, access
-/// or Activity.
+/// `funesvault.export.v1` (FR-X-05): categories, memories and the profile, never keys, devices,
+/// agents, access or Activity.
 public struct FunesExport: Codable, Sendable, Hashable {
     public static let formatID = "funesvault.export.v1"
 
@@ -208,6 +208,8 @@ public struct FunesExport: Codable, Sendable, Hashable {
     public var exportedAt: Date
     public var categories: [Category]
     public var memories: [Memory]
+    /// About you (v0.5); absent when it's empty, and in older exports.
+    public var profile: Profile?
 }
 
 /// What an import would do, shown before anything is stored (FR-X-04).
@@ -230,6 +232,8 @@ public struct ImportPreview: Sendable, Hashable {
     public var entries: [Entry]
     /// Categories a Funes export brings that the vault doesn't have yet (created on commit).
     public var newCategories: [FunesExport.Category]
+    /// A Funes export's profile, restored only into an empty one (FR-X-06).
+    public var profile: Profile?
 
     public var total: Int { entries.count }
     public var duplicates: Int { entries.filter { if case .duplicate = $0.status { true } else { false } }.count }
@@ -279,6 +283,8 @@ public struct ImportResult: Sendable, Hashable {
     public var suggestionIDs: [UUID]
     public var memoryIDs: [UUID]
     public var skipped: Int
+    /// The export's profile went into the vault's empty one.
+    public var restoredProfile = false
 }
 
 /// Import preview and commit, and export (FR-X-01..06). Imports create suggestions (or, for a
@@ -325,7 +331,9 @@ public final class ImportService: Sendable {
             ImportItem(title: $0.title, body: $0.body, categoryKeys: $0.categories, kind: $0.kind, sensitivity: $0.sensitivity,
                        expiresAt: $0.expiresAt, createdAt: $0.createdAt, exportID: $0.id, status: $0.status, links: $0.links ?? [])
         }
-        return try await preview(items, source: .funes, newCategories: export.categories)
+        var preview = try await preview(items, source: .funes, newCategories: export.categories)
+        preview.profile = export.profile
+        return preview
     }
 
     /// Stores the ready items (and duplicates when asked) in one transaction, with an import run.
@@ -410,11 +418,20 @@ public final class ImportService: Sendable {
                 }
             }
             try db.execute(sql: "UPDATE import_run SET blocked = ? WHERE id = ?", arguments: [blocked, runID.db])
+            // The export's profile, only into an empty one, and only if it would save (FR-X-06).
+            if let profile = preview.profile?.normalized(), !profile.isEmpty, try ProfileStore.fetch(db).isEmpty,
+               (try? ProfileStore.validate(profile)) != nil {
+                var restored = profile
+                restored.updatedAt = now
+                try ProfileStore.write(db, restored)
+                out.restoredProfile = true
+            }
             return out
         }
         activity.record(ActivityEvent(time: now, phase: .event, actor: .importRun(runID), via: .app, event: "import",
                                       outcome: "committed", counts: ["suggestions": result.suggestionIDs.count,
-                                                                     "memories": result.memoryIDs.count, "skipped": result.skipped]))
+                                                                     "memories": result.memoryIDs.count, "skipped": result.skipped,
+                                                                     "profile": result.restoredProfile ? 1 : 0]))
         return result
     }
 
@@ -427,6 +444,7 @@ public final class ImportService: Sendable {
             var memories = try MemoryStore.list(db, filter: MemoryFilter(status: .activeIncludingExpired, sort: .created), now: now)
             if includeArchived { memories += try MemoryStore.list(db, filter: MemoryFilter(status: .archived, sort: .created), now: now) }
             let exported = Set(memories.map(\.id))
+            let profile = try ProfileStore.fetch(db)
             return FunesExport(format: FunesExport.formatID, exportedAt: now, categories: categories, memories: try memories.map { m in
                 // Split and merge links to other memories in the export; never the undo log.
                 let links = try MemoryStore.provenance(db, memoryID: m.id).compactMap { entry -> FunesExport.Link? in
@@ -437,7 +455,7 @@ public final class ImportService: Sendable {
                 return FunesExport.Memory(id: m.id, title: m.title, body: m.body, kind: m.kind, categories: m.categoryKeys,
                                           sensitivity: m.sensitivity, status: m.status, expiresAt: m.expiresAt,
                                           createdAt: m.createdAt, updatedAt: m.updatedAt, links: links.isEmpty ? nil : links)
-            })
+            }, profile: profile.isEmpty ? nil : profile)
         }
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601

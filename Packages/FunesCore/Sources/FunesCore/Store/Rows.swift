@@ -113,7 +113,8 @@ extension Disclosure {
             snapshotRevision: row["snapshot_revision"],
             approvedMemoryIDs: JSON.decode([UUID].self, row["approved_memory_ids"]),
             approvalExpiresAt: row["approval_expires_at"], withheld: withheld, createdAt: row["created_at"],
-            decidedAt: row["decided_at"], deliveredAt: row["delivered_at"])
+            decidedAt: row["decided_at"], deliveredAt: row["delivered_at"],
+            profileFieldsSent: (JSON.decode([String].self, row["profile_fields_sent"]) ?? []).compactMap(ProfileField.init(rawValue:)))
     }
 }
 

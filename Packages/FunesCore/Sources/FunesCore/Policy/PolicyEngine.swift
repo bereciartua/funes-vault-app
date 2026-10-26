@@ -50,6 +50,10 @@ public enum PolicyEngine {
         return nil
     }
 
+    /// The reasons only the gate gives. An answer refused for one of them carries no profile
+    /// (§3.10 rule 1).
+    public static let gateReasons: Set<ReasonCode> = [.funesPaused, .agentPaused, .accessExpired, .operationNotAllowed]
+
     /// Per-memory eligibility, in order; the first failure decides (§3.3 M1–M5). `nil` = eligible.
     public static func eligibility(_ memory: Memory, access: Access, now: Date) -> ReasonCode? {
         if memory.status != .active { return .inactiveMemory }

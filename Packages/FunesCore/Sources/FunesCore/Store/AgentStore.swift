@@ -38,6 +38,8 @@ enum AgentStore {
         for r in try Row.fetchAll(db, sql: "SELECT category_key, mode FROM access_category WHERE agent_id = ?", arguments: [id.db]) {
             if (r["mode"] as String) == "allow" { allowed.insert(r["category_key"]) } else { denied.insert(r["category_key"]) }
         }
+        let profileFields = Set(try String.fetchAll(db, sql: "SELECT field FROM access_profile_field WHERE agent_id = ?",
+                                                    arguments: [id.db]).compactMap(ProfileField.init(rawValue:)))
         var ops = Set<AccessOperation>()
         if row["op_read"] as Bool? == true { ops.insert(.read) }
         if row["op_suggest"] as Bool? == true { ops.insert(.suggest) }
@@ -47,7 +49,7 @@ enum AgentStore {
                             allowedCategoryKeys: allowed, deniedCategoryKeys: denied,
                             askBeforeSharing: row["ask_before_sharing"] as Bool? ?? true,
                             askBeforeSaving: row["ask_before_saving"] as Bool? ?? true,
-                            expiresAt: row["access_expires_at"])
+                            expiresAt: row["access_expires_at"], profileFields: profileFields)
         // A digest without cloud access can't be used; it isn't shown as a token either.
         let cloud: Bool = row["cloud_access"] ?? false
         let remoteDigest: Data? = row["remote_key_digest"]
@@ -92,6 +94,11 @@ enum AgentStore {
         for key in access.allowedCategoryKeys.sorted() {
             try db.execute(sql: "INSERT INTO access_category (agent_id, category_key, mode) VALUES (?, ?, 'allow')",
                            arguments: [agentID.db, key])
+        }
+        try db.execute(sql: "DELETE FROM access_profile_field WHERE agent_id = ?", arguments: [agentID.db])
+        for field in access.profileFields.sorted() {
+            try db.execute(sql: "INSERT INTO access_profile_field (agent_id, field) VALUES (?, ?)",
+                           arguments: [agentID.db, field.rawValue])
         }
     }
 
