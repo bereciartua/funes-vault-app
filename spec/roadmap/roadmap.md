@@ -6,6 +6,8 @@ Planned as a **side project**: about one weekend (around 8–10 h) per week. Dat
 
 **Status (2026-10-19):** Phases 0–3 and Phase 4's preparation are done. [Phase 4b](../plans/phase-4b-remote-access.md) (Remote Access, [ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)) comes before the launch. The chart starts from today's state.
 
+**Update (2026-10-27):** v0.3, v0.4 and v0.5 ship together as version **0.5.0** (build 11), on the Mac and as the iPhone's next App Store version; the iPhone's first App Store version stays 0.2.0.
+
 **Update (2026-10-26):** **Phase 8** (About you, v0.5) is planned: see [v0.5](#v05-about-you-phase-8).
 
 **Update (2026-10-25):** **Phase 7** (Home and widgets, v0.4) is planned: see [v0.4](#v04-home-and-widgets-phase-7).

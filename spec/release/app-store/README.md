@@ -23,8 +23,8 @@ Task 5.7 of [Phase 5](../../plans/phase-5-iphone-companion.md). What goes into A
 | Age rating | 4+ (every questionnaire answer "None" or "No"; no web browsing, no user-to-user content) |
 | Price · availability | Free · all countries and regions; not on Apple silicon Macs or Apple Vision Pro (the Mac has its own app; neither is tested) |
 | Content rights | Contains no third-party content |
-| Version | The project's `MARKETING_VERSION` (0.2.0 for v0.2), or `FUNES_IOS_VERSION` for iPhone builds ahead of the Mac's release; the build number is `CURRENT_PROJECT_VERSION`, or `FUNES_IOS_BUILD` for another upload of the same version |
-| Release | Manually, after the Mac's v0.2 (with Settings ▸ iPhone shown in Release) is out through Sparkle: without it nobody can pair |
+| Version | The project's `MARKETING_VERSION` (0.2.0 for v0.2; 0.5.0, from build 11, for v0.3 to v0.5), or `FUNES_IOS_VERSION` for iPhone builds ahead of the Mac's release; the build number is `CURRENT_PROJECT_VERSION`, or `FUNES_IOS_BUILD` for another upload of the same version |
+| Release | Manually, after the Mac's v0.2 (with Settings ▸ iPhone shown in Release) is out through Sparkle: without it nobody can pair. 0.2.0's builds 8 to 10 already have Home and About you, which need the Mac's 0.5.0 (`overview.get`, `calledName`), so the Mac's 0.5.0 goes out with or before the iPhone's 0.2.0, and the iPhone's 0.5.0 is submitted after that |
 | Sign-in for App Review | Not required: demo mode ([review notes](en-US/review-notes.txt)) |
 
 ## Building

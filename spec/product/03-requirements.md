@@ -6,7 +6,7 @@
 - **C** = Could.
 - **L** = Later (v0.3+).
 
-**Releases:** v0.1 = Mac public preview, v0.2 = iPhone companion, v0.3 = memory processing, v0.4 = Home and widgets, v0.5 = About you. See the [roadmap](../roadmap/roadmap.md).
+**Releases:** v0.1 = Mac public preview, v0.2 = iPhone companion, v0.3 = memory processing, v0.4 = Home and widgets, v0.5 = About you; v0.3 to v0.5 ship together as version 0.5.0. See the [roadmap](../roadmap/roadmap.md).
 
 **Ids:** `FR-<area>-<nn>` for functional, `NFR-<area>-<nn>` for non-functional. Domain terms are defined in the [glossary](../domain/glossary.md). The exact rules referenced here are specified in [access policy](../domain/access-policy.md) and [domain model](../domain/domain-model.md).
 
