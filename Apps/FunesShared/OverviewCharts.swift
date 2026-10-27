@@ -2,6 +2,7 @@ import Charts
 import FunesPhone
 import FunesProtocol
 import SwiftUI
+import UIKit
 
 // Home's charts (UX: iPhone ▸ Home tab), in the app and the Intents extension both, so the widgets
 // (task 7.5) draw the same thing. SwiftUI and Swift Charts only: nothing app-only. The numbers
@@ -346,7 +347,8 @@ struct PulseChart: View {
     }
 
     /// A finger held on the chart, then moved, picks the bucket under it; lifted, nothing is
-    /// picked. Holding first leaves a quick swipe to the list, which scrolls as usual.
+    /// picked. Holding first leaves a swipe to the list, which scrolls as usual, even one that
+    /// starts on the chart.
     private struct Scrubbing: View {
         let proxy: ChartProxy
         let selection: Binding<Date?>
@@ -356,16 +358,34 @@ struct PulseChart: View {
                 Rectangle()
                     .fill(.clear)
                     .contentShape(Rectangle())
-                    .gesture(
-                        LongPressGesture(minimumDuration: 0.15)
-                            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .local))
-                            .onChanged { value in
-                                guard case let .second(true, drag?) = value, let plot = proxy.plotFrame else { return }
-                                let x = drag.location.x - geometry[plot].origin.x
-                                selection.wrappedValue = proxy.value(atX: x, as: Date.self)
-                            }
-                            .onEnded { _ in selection.wrappedValue = nil }
-                    )
+                    .gesture(HoldThenDrag { location in
+                        guard let location, let plot = proxy.plotFrame else {
+                            selection.wrappedValue = nil
+                            return
+                        }
+                        selection.wrappedValue = proxy.value(atX: location.x - geometry[plot].origin.x, as: Date.self)
+                    })
+            }
+        }
+    }
+
+    /// UIKit's long press, which (unlike SwiftUI's, even sequenced before a drag) leaves the touch
+    /// to the list until it fires: a finger that moves first fails it, and the list scrolls. Once
+    /// it fires the list can't scroll, and it reports every move until the finger lifts.
+    private struct HoldThenDrag: UIGestureRecognizerRepresentable {
+        /// Where the finger is, in the view's own space; nil once it lifts.
+        let action: (CGPoint?) -> Void
+
+        func makeUIGestureRecognizer(context: Context) -> UILongPressGestureRecognizer {
+            let press = UILongPressGestureRecognizer()
+            press.minimumPressDuration = 0.3
+            return press
+        }
+
+        func handleUIGestureRecognizerAction(_ recognizer: UILongPressGestureRecognizer, context: Context) {
+            switch recognizer.state {
+            case .began, .changed: action(context.converter.location(in: .local))
+            default: action(nil)
             }
         }
     }

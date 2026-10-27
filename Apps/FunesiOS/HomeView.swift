@@ -3,7 +3,8 @@ import FunesProtocol
 import SwiftUI
 
 /// The Home tab (UX: iPhone ▸ Home tab, FR-H-04), where the app opens: the composer (type or
-/// dictate; **Remember** saves to the queue on this iPhone at once, and delivery follows), the
+/// dictate; one line until it's used, so the charts start high on the screen; **Remember** saves
+/// to the queue on this iPhone at once, and delivery follows), the
 /// requests waiting for an answer, the vault's pulse and shape (counts only, never memory text),
 /// who reads it, and Recent captures.
 struct HomeView: View {
@@ -40,6 +41,7 @@ struct HomeView: View {
             // Return adds a line, so the keyboard closes three other ways, keeping the text and any
             // dictation: Done above it, scrolling, and a tap anywhere outside the field.
             .scrollDismissesKeyboard(.interactively)
+            .animation(.snappy, value: expanded)
             .gesture(TapThrough(isEnabled: focused) { location in
                 if !editorFrame.contains(location) { focused = false }
             })
@@ -98,7 +100,11 @@ struct HomeView: View {
         }
     }
 
-    /// The composer: the old Capture tab's field, mic and **Remember**, unchanged.
+    /// The composer opens up while it's in use: focused, holding text, or dictating.
+    private var expanded: Bool { focused || dictation.isActive || !text.isEmpty }
+
+    /// The composer: the old Capture tab's field and mic, one line until it's used; then the field
+    /// grows and **Remember** appears under it.
     @ViewBuilder private var composer: some View {
         Section {
             editor
@@ -110,12 +116,14 @@ struct HomeView: View {
             if case let .failed(message) = dictation.state {
                 Text(message).font(.footnote).foregroundStyle(.secondary)
             }
-            Button(action: remember) {
-                Text("Remember").bold().frame(maxWidth: .infinity)
+            if expanded {
+                Button(action: remember) {
+                    Text("Remember").bold().frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || dictation.isActive)
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || dictation.isActive)
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
         }
     }
 
@@ -129,7 +137,7 @@ struct HomeView: View {
     }
 
     private var editor: some View {
-        HStack(alignment: .top) {
+        HStack(alignment: expanded ? .top : .center) {
             ZStack(alignment: .topLeading) {
                 if text.isEmpty && !dictation.isActive {
                     Text("What should Funes remember?")
@@ -140,7 +148,7 @@ struct HomeView: View {
                 }
                 TextEditor(text: dictation.isActive ? .constant(text + spoken) : $text)
                     .focused($focused)
-                    .frame(minHeight: 96)
+                    .frame(minHeight: expanded ? 96 : Self.lineHeight, maxHeight: expanded ? nil : Self.lineHeight)
                     .scrollContentBackground(.hidden)
                     .accessibilityLabel("What should Funes remember?")
             }
@@ -148,6 +156,9 @@ struct HomeView: View {
         }
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { editorFrame = $0 }
     }
+
+    /// The field at rest: one line of body text, with the editor's insets.
+    private static let lineHeight: CGFloat = 36
 
     /// The dictation so far, after what was typed.
     private var spoken: String { Self.appending(dictation.transcript, to: text) }
