@@ -26,20 +26,29 @@ struct MemoryDetailView: View {
     var body: some View {
         Group {
             if let memory {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        status(memory)
-                        MemoryEditor(form: $form, categories: model.categories, editable: memory.status != .deleted)
-                        if memory.status != .deleted { saveRow }
-                        if !similar.isEmpty { similarHint }
-                        Divider()
-                        shared(memory)
-                        HistoryList(entries: history, model: model)
-                        actions(memory)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            status(memory)
+                            MemoryEditor(form: $form, categories: model.categories, editable: memory.status != .deleted)
+                            if memory.status != .deleted { saveRow }
+                            if !similar.isEmpty { similarHint }
+                            Divider()
+                            shared(memory)
+                            HistoryList(entries: history, model: model).id("history")
+                            actions(memory)
+                        }
+                        .padding(20)
+                        .frame(maxWidth: 720, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(20)
-                    .frame(maxWidth: 720, alignment: .leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    #if FUNES_UI_REVIEW
+                    .task(id: memoryID) {
+                        guard HistoryList.reviewExpandsChanges else { return }
+                        try? await Task.sleep(for: .milliseconds(400))
+                        proxy.scrollTo("history", anchor: .top)
+                    }
+                    #endif
                 }
             } else if missing {
                 ContentUnavailableView(String(localized: "This memory is gone"), systemImage: "questionmark.folder",
@@ -261,28 +270,160 @@ enum DuplicateHint {
     }
 }
 
-/// A memory's history: created, edited, archived, shared… Rows hold labels only (FR-V-12).
+/// A memory's history: created, edited, archived, shared… Rows hold labels only (FR-V-12). A
+/// change's row opens to what it did: an automatic change's from the undo log (30 days), any
+/// other's from the memory's earlier versions (90 days, ADR-0027). A merge's or split's row links
+/// to the other memory; each row can show its Activity row. Forget Earlier Versions deletes them.
 struct HistoryList: View {
     let entries: [ProvenanceEntry]
     let model: AppModel
+    @State private var changes: [UndoChange] = []
+    @State private var revisions: [RevisionChange] = []
+    @State private var confirmForget = false
+    @State private var relatedTitles: [UUID: String] = [:]
+    @State private var expanded: Set<ProvenanceEntry> = []
+
+    #if FUNES_UI_REVIEW
+    /// The UI-review build opens every change's details.
+    @MainActor static var reviewExpandsChanges = false
+    #endif
 
     var body: some View {
+        let rows = Array(entries.reversed().prefix(30))
+        let details = Self.details(for: rows, changes: changes, revisions: revisions)
         VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "History")).font(.headline)
-            ForEach(Array(entries.reversed().prefix(30).enumerated()), id: \.offset) { _, entry in
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Circle().fill(Color.secondary.opacity(0.5)).frame(width: 6, height: 6).accessibilityHidden(true)
-                    Text(Self.label(entry, model: model))
-                    Spacer(minLength: 8)
-                    Text(RelativeTime.full(entry.at)).font(.caption).foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline) {
+                Text(String(localized: "History")).font(.headline)
+                Spacer()
+                if !revisions.isEmpty {
+                    Button(String(localized: "Forget Earlier Versions…")) { confirmForget = true }
+                        .buttonStyle(.link).font(.callout)
+                        .help(String(localized: "Delete the earlier text of this memory. Its history keeps the labels."))
                 }
-                .font(.callout)
-                .accessibilityElement(children: .combine)
+                if let id = entries.first?.memoryID {
+                    Button(String(localized: "Show All in Activity")) { model.showActivity(.memory(id)) }
+                        .buttonStyle(.link).font(.callout)
+                }
+            }
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, entry in
+                row(index, entry, detail: details[index])
             }
             if entries.count > 30 {
                 Text(String(localized: "\(entries.count - 30) earlier entries")).font(.caption).foregroundStyle(.secondary)
             }
         }
+        .task(id: entries) { await load() }
+        .confirmationDialog(String(localized: "Forget this memory's earlier versions?"), isPresented: $confirmForget) {
+            Button(String(localized: "Forget Earlier Versions"), role: .destructive) {
+                guard let id = entries.first?.memoryID else { return }
+                _ = try? model.services.store.forgetEarlierVersions(memoryID: id)
+                Task { await load() }
+            }
+        } message: {
+            Text(String(localized: "Their text is deleted from this Mac. The history keeps its labels, and automatic changes keep theirs until Undo expires."))
+        }
+    }
+
+    private func row(_ index: Int, _ entry: ProvenanceEntry, detail: Detail?) -> some View {
+        let open = expanded.contains(entry)
+        let related = entry.relatedMemoryID.flatMap { id in relatedTitles[id].map { (id, $0) } }
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                if detail != nil {
+                    Button {
+                        if open { expanded.remove(entry) } else { expanded.insert(entry) }
+                    } label: {
+                        Image(systemName: "chevron.right").font(.caption.weight(.semibold)).rotationEffect(.degrees(open ? 90 : 0))
+                            .frame(width: 10)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(open ? String(localized: "Hide what changed") : String(localized: "Show what changed"))
+                } else {
+                    Circle().fill(Color.secondary.opacity(0.5)).frame(width: 6, height: 6).frame(width: 10).accessibilityHidden(true)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(Self.label(entry, model: model))
+                    if let (id, title) = related {
+                        Button(title) { model.showMemory(id) }.buttonStyle(.link).lineLimit(1)
+                            .help(String(localized: "Show this memory"))
+                    }
+                }
+                Spacer(minLength: 8)
+                Text(RelativeTime.full(entry.at)).font(.caption).foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: detail == nil && related == nil ? .combine : .contain)
+            if open, let detail {
+                VStack(alignment: .leading, spacing: 6) {
+                    switch detail {
+                    case .automatic(let change, let reversed): ChangeDetailView(model: model, change: change, reversed: reversed)
+                    case .version(let revision): ChangeDetailView(model: model, revision: revision)
+                    }
+                    Button(String(localized: "Show in Activity")) { model.showActivity(memoryID: entry.memoryID, near: entry.at) }
+                        .buttonStyle(.link)
+                }
+                .padding(.leading, 18)
+            }
+        }
+        .font(.callout)
+        .contextMenu {
+            Button(String(localized: "Show in Activity")) { model.showActivity(memoryID: entry.memoryID, near: entry.at) }
+        }
+    }
+
+    private func load() async {
+        guard let id = entries.first?.memoryID else { return }
+        changes = (try? await UndoLog(store: model.services.store, activity: model.services.activity).changes(memoryID: id, now: Date()))
+            ?? []
+        revisions = (try? model.services.store.revisionChanges(memoryID: id)) ?? []
+        #if FUNES_UI_REVIEW
+        if Self.reviewExpandsChanges {
+            let rows = Array(entries.reversed().prefix(30))
+            expanded = Set(Self.details(for: rows, changes: changes, revisions: revisions).keys.map { rows[$0] })
+        }
+        #endif
+        let related = Array(Set(entries.compactMap(\.relatedMemoryID)))
+        relatedTitles = Dictionary(((try? model.services.store.memories(ids: related)) ?? []).filter { $0.status != .deleted }
+            .map { ($0.id, $0.title) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    enum Detail {
+        /// From the undo log; `reversed` on the change's undo row.
+        case automatic(UndoChange, reversed: Bool)
+        /// From the memory's earlier versions.
+        case version(RevisionChange)
+    }
+
+    /// Which row shows each change. An automatic change goes on the row that names it best
+    /// (changed automatically, merged, split), else the first at the moment it was made, and its
+    /// undo on the undone row at that moment. Any other change goes on the edited, archived,
+    /// restored or deleted row by the same actor at its moment, unless an automatic change already
+    /// covers that moment.
+    static func details(for rows: [ProvenanceEntry], changes: [UndoChange], revisions: [RevisionChange]) -> [Int: Detail] {
+        let preferred: [ProvenanceEvent] = [.autoApplied, .mergedInto, .mergedFrom, .splitInto, .splitFrom]
+        let versioned: [ProvenanceEvent] = [.edited, .archived, .restored, .deleted]
+        let near = { (a: Date, b: Date) in abs(a.timeIntervalSince(b)) < 2 }
+        var out: [Int: Detail] = [:]
+        for change in changes {
+            let made = rows.indices.filter { rows[$0].event != .undone && near(rows[$0].at, change.entry.createdAt) && out[$0] == nil }
+            if let i = made.first(where: { preferred.contains(rows[$0].event) }) ?? made.first {
+                out[i] = .automatic(change, reversed: false)
+            }
+            if let undoneAt = change.entry.undoneAt,
+               let i = rows.indices.first(where: { rows[$0].event == .undone && near(rows[$0].at, undoneAt) && out[$0] == nil }) {
+                out[i] = .automatic(change, reversed: true)
+            }
+        }
+        let automatic = changes.flatMap { [$0.entry.createdAt] + [$0.entry.undoneAt].compactMap { $0 } }
+        for revision in revisions where !automatic.contains(where: { near($0, revision.at) }) {
+            if let i = rows.indices.first(where: {
+                versioned.contains(rows[$0].event) && rows[$0].actor == revision.actor && near(rows[$0].at, revision.at) && out[$0] == nil
+            }) {
+                out[i] = .version(revision)
+            }
+        }
+        return out
     }
 
     @MainActor static func label(_ entry: ProvenanceEntry, model: AppModel) -> String {

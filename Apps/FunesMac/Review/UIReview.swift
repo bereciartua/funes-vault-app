@@ -170,6 +170,20 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 model.vault.status = .active
                 model.vault.selection = model.vault.memories.first(where: { $0.title == "Commit messages" }).map { [$0.id] } ?? []
             }
+            // A tidy-up's automatic change in a memory's History, opened (FR-V-12).
+            HistoryList.reviewExpandsChanges = true
+            model.vault.status = .archived
+            await model.vault.load()
+            await mainScene("vault-memory-history") {
+                model.vault.selection = model.vault.memories.first(where: { $0.title == "Dark mode" }).map { [$0.id] } ?? []
+            }
+            // An edit's earlier version in History (FR-V-16).
+            model.vault.status = .active
+            await model.vault.load()
+            await mainScene("vault-memory-version") {
+                model.vault.selection = model.vault.memories.first(where: { $0.title == "Coffee order" }).map { [$0.id] } ?? []
+            }
+            HistoryList.reviewExpandsChanges = false
             model.vault.status = .recentlyDeleted
             await model.vault.load()
             await mainScene("vault-recently-deleted") {
@@ -221,6 +235,13 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await mainScene("activity") {
                 model.section = .activity
                 model.activity.selection = model.activity.entries.first(where: { $0.event.event == "request_memory" })?.id
+            }
+            // What a change did (FR-L-02): an automatic change, and a tidy-up run's list.
+            await mainScene("activity-change") {
+                model.activity.selection = model.activity.entries.first(where: { $0.event.event == "auto_applied" })?.id
+            }
+            await mainScene("activity-tidy-up") {
+                model.activity.selection = model.activity.entries.first(where: { $0.event.event == "tidy_up_run" })?.id
             }
 
             // Remote Access: before setup, the guide, set up, and an agent's Cloud tab.

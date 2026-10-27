@@ -423,6 +423,14 @@ final class AppModel {
         show(.agents)
     }
 
+    /// A History row's Show in Activity: this memory's Activity, with the row for that moment selected.
+    func showActivity(memoryID: UUID, near time: Date) {
+        activity.kind = .all
+        activity.period = .all
+        activity.select(memoryID: memoryID, near: time)
+        showActivity(.memory(memoryID))
+    }
+
     /// Activity narrowed to `focus`, showing `kind` (Home's chart opens Problems for a refused dot).
     func showActivity(_ focus: ActivityFocus?, kind: ActivityEntry.Kind? = nil) {
         activityFocus = focus

@@ -24,6 +24,7 @@ Epics map requirements to phases.
 | Provider embedding model as a second index, re-embedding, calibration (ADR-0023) | FR-AI-09, FR-AI-11 | 6c | M | M |
 | Model providers for classification: protocols, ModelRouter, Apple / OpenAI-compatible / Anthropic adapters, guardrails, Keychain keys | FR-AI-05..08, 10 | 1 | M | M |
 | Provenance | FR-V-12 | 1 | S | M |
+| What a change did in Activity and History; earlier versions of memories (ADR-0027) | FR-L-02, FR-V-12, FR-V-16 | 8 | M | S |
 
 ## E2: Policy and disclosure (Phase 1)
 | Item | Covers | Phase | Size | Pri |

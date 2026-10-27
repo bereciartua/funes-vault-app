@@ -315,6 +315,16 @@
     "%@ · share" : {
 
     },
+    "%@ → %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ → %2$@"
+          }
+        }
+      }
+    },
     "%@'s access changed while you were editing (for example, Always Allow from a panel). Review it again before saving." : {
 
     },
@@ -438,6 +448,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "%@: %@ before, %@ after" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@ before, %3$@ after"
           }
         }
       }
@@ -1501,6 +1521,9 @@
     "Change tunnel" : {
 
     },
+    "Changed" : {
+
+    },
     "Changed automatically" : {
 
     },
@@ -1556,6 +1579,9 @@
 
     },
     "Check the provider's API key." : {
+
+    },
+    "Checked" : {
 
     },
     "Checked a request" : {
@@ -1673,7 +1699,13 @@
     "Close" : {
 
     },
+    "Close Details" : {
+
+    },
     "Close Window" : {
+
+    },
+    "Close details" : {
 
     },
     "Closes every Save panel. The suggestions stay in the Inbox." : {
@@ -1948,16 +1980,25 @@
     "Delete %lld memories now?" : {
 
     },
+    "Delete Earlier Versions" : {
+
+    },
     "Delete Now" : {
 
     },
     "Delete Now…" : {
 
     },
+    "Delete the earlier text of this memory. Its history keeps the labels." : {
+
+    },
     "Delete this memory now?" : {
 
     },
     "Delete “%@”?" : {
+
+    },
+    "Deleted" : {
 
     },
     "Deleted %@" : {
@@ -1998,6 +2039,9 @@
 
     },
     "Details" : {
+
+    },
+    "Details of automatic changes are kept for 30 days." : {
 
     },
     "Devin" : {
@@ -2052,6 +2096,9 @@
 
     },
     "Each agent gets only the access you give it, and Funes shows you the exact text before anything is shared." : {
+
+    },
+    "Earlier versions" : {
 
     },
     "Edit" : {
@@ -2142,6 +2189,9 @@
 
     },
     "Every cloud agent setup uses the current URL and stops working until you give it the new one." : {
+
+    },
+    "Every earlier version is deleted now, and changes won't keep one. History keeps its labels; automatic changes keep theirs until Undo expires." : {
 
     },
     "Everyday preferences. Fine for most of your agents." : {
@@ -2251,6 +2301,15 @@
 
     },
     "For the session" : {
+
+    },
+    "Forget Earlier Versions" : {
+
+    },
+    "Forget Earlier Versions…" : {
+
+    },
+    "Forget this memory's earlier versions?" : {
 
     },
     "Forward this URL to http://127.0.0.1:%@:" : {
@@ -2569,6 +2628,9 @@
     "Hide Funes Vault" : {
 
     },
+    "Hide what changed" : {
+
+    },
     "History" : {
 
     },
@@ -2846,6 +2908,9 @@
     "Keep as One" : {
 
     },
+    "Keep earlier versions for 90 days" : {
+
+    },
     "Keep everything else" : {
 
     },
@@ -2871,6 +2936,9 @@
 
     },
     "Keeps: %@" : {
+
+    },
+    "Kept" : {
 
     },
     "Kept as one" : {
@@ -3977,6 +4045,9 @@
     "Remove “%@”?" : {
 
     },
+    "Removed" : {
+
+    },
     "Removed agent" : {
 
     },
@@ -4091,6 +4162,9 @@
     "Restore this backup?" : {
 
     },
+    "Restored" : {
+
+    },
     "Restored %@" : {
 
     },
@@ -4160,6 +4234,9 @@
 
     },
     "Review Request shortcut" : {
+
+    },
+    "Review Suggestions in the Inbox" : {
 
     },
     "Review it as it is, as one memory." : {
@@ -4503,6 +4580,9 @@
     "Show All %lld Agents" : {
 
     },
+    "Show All in Activity" : {
+
+    },
     "Show Less" : {
 
     },
@@ -4542,7 +4622,13 @@
     "Show the newest in the Vault" : {
 
     },
+    "Show this memory" : {
+
+    },
     "Show what came in, in Activity" : {
+
+    },
+    "Show what changed" : {
 
     },
     "Showing %@ only" : {
@@ -4745,6 +4831,9 @@
 
     },
     "Stop Using It" : {
+
+    },
+    "Stop keeping earlier versions?" : {
 
     },
     "Stop using %@?" : {
@@ -5131,6 +5220,9 @@
 
     },
     "The weekly check found a problem with the vault file. Restore the latest backup." : {
+
+    },
+    "Their text is deleted from this Mac. The history keeps its labels, and automatic changes keep theirs until Undo expires." : {
 
     },
     "Then ask %@: “What do you know about how I like to work?”" : {
@@ -5614,6 +5706,9 @@
     "What should coding assistants know about how you build software?" : {
 
     },
+    "What this change saved isn't kept." : {
+
+    },
     "What tone, level of detail, or format do you usually prefer?" : {
 
     },
@@ -5626,6 +5721,9 @@
           }
         }
       }
+    },
+    "When a memory changes, Funes keeps the text it replaced, so History and Activity can show what changed. Up to 50 versions a memory, on this Mac only: never shared with agents, exported or sent to your iPhone." : {
+
     },
     "When a request is refused only because a category isn't allowed, Funes asks you: Not Now, Allow Once or Always Allow. At most once an hour." : {
 

@@ -170,7 +170,7 @@ A card at the top of Home, above the greeting (before v0.4, at the top of the Va
 - **Detail** (right pane or sheet):
   - **Fields:** title, body (plain text, up to 10,000 characters, with a counter), kind, categories (token field), sensitivity (segmented control with a one-line explanation), expiry (date picker, with "never").
   - **Shared with:** "Shared 4 times · last with Claude Code yesterday", with a link to filtered Activity.
-  - **Provenance timeline:** created, edited, archived, shared, suggested by. Rows hold labels only.
+  - **Provenance timeline:** created, edited, archived, shared, suggested by. Rows hold labels only. **Show All in Activity** opens the memory's Activity. A change's row has a disclosure (v0.5) with what it did, before and after, as in Activity's detail pane: an automatic change's from its undo entry, any other's from the memory's earlier versions (FR-V-16). The disclosure has **Show in Activity**, which selects its Activity row (also in every row's context menu). A merge's or split's row links to the other memory. While a memory has earlier versions, the header offers **Forget Earlier Versions…**, which asks first ("Forget this memory's earlier versions?").
   - **Actions:** Archive / Restore, Delete, "Still true" (confirm). In Recently Deleted: Restore and **Delete Now…**, which asks first ("Delete this memory now?"), from the detail, the list's context menu and the bulk bar alike.
 - **Empty state:** "Your vault is empty. Answer a few questions to get started, or press ⌥⌘M anytime to remember something."
 - **First run** (no memories yet, nothing filtered): a welcome instead of the toolbar, list and detail: "Your memory, shared only as you allow", three lines on the promise (the vault stays on this Mac; each agent gets only the access you give it and you see the exact text first; Activity records every request, without the text), [Answer a Few Questions…] [New Memory…] "or press ⌥⌘M in any app".
@@ -205,7 +205,7 @@ A card at the top of Home, above the greeting (before v0.4, at the top of the Va
 - **Couldn't split:** a split that failed (the provider, a timeout, an unusable answer, a blocked CLI run) says why ("The model took too long.") and offers **Try Again** (prominent) and **Keep as One** (review it as it is, as one memory), with Reject. Bulk Apply leaves it for the user.
 - **Split this memory:** for an agent's directly saved memory, the memory and its proposed pieces.
 - **Tidy-up section:** update (diff, Replace / Keep) · merge (sources, and the proposed memory, editable) · split (the group card) · archive ("Keeps *<survivor>*") · conflict (both memories and the question: **Keep A**, **Keep B**, **Both are true**, **Edit…**). Header: "Last tidy-up: today 03:04 · 37 memories checked · 4 suggestions" and **Tidy up now**.
-- **Applied automatically:** one row per automatic change (what changed, when, the engine), with **Undo** for 30 days; after later changes, "Undo this and N later changes", listing them.
+- **Applied automatically:** one row per automatic change (what changed, when, the engine), with **Undo** for 30 days, and a disclosure with its before and after (v0.5); after later changes, "Undo this and N later changes", listing them.
 - **Notification** after a tidy-up with results: "Funes applied 3 changes and has 2 for you to review." No memory text.
 
 ### Agents
@@ -264,7 +264,10 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
   - the task, for requests whose Share panel this session showed (the vault stores only a hash, so otherwise, and after relaunch, it shows "Task text not stored");
   - withheld counts by reason;
   - the profile fields that went ("Also sent: name, pronouns"; v0.5), names only;
-  - fix links ("Allow Project Context for Cursor…").
+  - fix links ("Allow Project Context for Cursor…");
+  - what a change did (v0.5): for an automatic change and its undo, each memory it touched with a **New**, **Changed**, **Archived**, **Restored**, **Removed** or **Kept** (a duplicate's survivor) badge and a link to it, the old text struck through above the new, and kind, categories, sensitivity and expiry as "Low → Internal"; for a tidy-up run, its changes, each in a disclosure, and **Review Suggestions in the Inbox**; for an edit, an Inbox apply, an archive or a restore, its before and after from the memory's earlier versions, or "Changed: text, title" when none is kept. Automatic changes come from the undo log, so for 30 days; earlier versions for 90.
+  - **×** at the top right closes the pane (clears the selection).
+  - The pane is as tall as its content, up to 45% of the list, then scrolls.
 
 ### iPhone (v0.2)
 *Built in task 5.2; in Release builds from v0.2 (task 5.9).*
@@ -315,7 +318,7 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
   - **Disclosure:** a sentence under every non-local choice saying exactly what is sent where.
   - **Calibrate…** (v0.3) for embedding models Funes doesn't know.
 - **MCP:** server on/off, port (47625 by default; changing it says which agents need their setup again), launcher location, protocol log counts (no bodies).
-- **Data:** backups, export, import, Show in Finder, Erase All Data. Restore from Backup relaunches; before the chosen backup replaces the vault, the current vault is saved as a self-contained `pre-restore-…` backup (an SQLite online backup, so nothing still in the WAL is lost).
+- **Data:** backups, **Keep earlier versions for 90 days** (v0.5, on by default; turning it off asks first, "Stop keeping earlier versions?", and deletes them), export, import, Show in Finder, Erase All Data. Restore from Backup relaunches; before the chosen backup replaces the vault, the current vault is saved as a self-contained `pre-restore-…` backup (an SQLite online backup, so nothing still in the WAL is lost).
 - **Updates:** automatic checks, Check Now.
 - **Advanced:** activity retention, reset the setup checklist.
 

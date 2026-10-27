@@ -95,4 +95,45 @@ import Testing
         #expect(try await undo.cleanup(now: t0.plus(days: 30)) == 1)
         #expect(try v.count("SELECT COUNT(*) FROM undo_entry") == 0)
     }
+
+    /// Activity's and History's details (FR-L-02, FR-V-12): before and after, also once the memory
+    /// changed again or the change was undone, until the entry expires.
+    @Test func changesShowBeforeAndAfter() async throws {
+        let (v, undo, _) = try Self.make()
+        let m = try v.memory("Coffee", "Black")
+        let edit = try Self.autoEdit(v, m.id, body: "Black, no sugar")
+        try v.store.updateMemory(id: m.id, MemoryEdit(body: "Flat white"), now: t0.plus(minutes: 1))
+
+        let change = try #require(try await undo.changes(memoryID: m.id, now: t0).first)
+        #expect(change.id == edit)
+        #expect(change.items.count == 1)
+        #expect(change.items[0].before?.body == "Black")
+        #expect(change.items[0].after?.body == "Black, no sugar")
+        #expect(try await undo.changes(ids: [edit], now: t0) == [change])
+        #expect(try await undo.changes(memoryID: UUID(), now: t0).isEmpty)
+        #expect(try await undo.changes(memoryID: m.id, now: t0.plus(days: 30)).isEmpty)
+    }
+
+    @Test func aMergesChangeListsItsSourcesThenTheNewMemory() async throws {
+        let (v, undo, _) = try Self.make()
+        let a = try v.memory("A", "Alpha"), b = try v.memory("B", "Beta")
+        let merged = UUID(), run = UUID(), suggestion = UUID()
+        let entry = try await v.store.writer.write { db in
+            try UndoLog.record(db, action: "merge", memoryIDs: [a.id, b.id], suggestionID: suggestion, runID: run, now: t0) {
+                try MemoryStore.insert(db, MemoryDraft(title: "AB", body: "Alpha and Beta", categoryKeys: ["personal_preferences"]),
+                                       actor: .system, now: t0, id: merged)
+                for id in [a.id, b.id] { try MemoryStore.setStatus(db, id: id, to: .archived, actor: .system, now: t0) }
+                return [merged]
+            }
+        }
+        try await undo.undo(entryID: entry, now: t0.plus(minutes: 1))
+
+        let change = try #require(try await undo.changes(runID: run, now: t0).first)
+        #expect(change.entry.undoneAt != nil)
+        #expect(change.items.map(\.memoryID) == [a.id, b.id, merged])
+        #expect(change.items.map(\.before?.status) == [.active, .active, nil])
+        #expect(change.items.map(\.after?.status) == [.archived, .archived, .active])
+        #expect(change.items[2].after?.body == "Alpha and Beta")
+        #expect(try await undo.changes(suggestionIDs: [suggestion], now: t0) == [change])
+    }
 }

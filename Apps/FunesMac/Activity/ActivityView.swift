@@ -212,7 +212,7 @@ struct ActivityList: View {
             if let selected {
                 Divider()
                 ActivityInspector(model: model, entry: selected)
-                    .frame(height: min(230, height * 0.45))
+                    .frame(maxHeight: min(340, height * 0.45))
             }
         }
     }
@@ -359,84 +359,141 @@ enum ActivityDays {
 }
 
 /// A row's details: the request id, the task (only while this session saw it), withheld counts by
-/// reason, the memories involved (live titles) and links to fix a refusal.
+/// reason, the memories involved (live titles), what a change did, and links to fix a refusal.
+/// As tall as its content, scrolling past the list's limit.
 struct ActivityInspector: View {
     let model: AppModel
     let entry: ActivityEntry
+    @State private var details = ActivityChangeDetails()
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text(entry.label).font(.headline)
-                    Pill(label: entry.result.text, tone: entry.result.tone)
-                    Spacer()
-                    Text(RelativeTime.full(entry.time)).font(.callout).foregroundStyle(.secondary)
+        ViewThatFits(in: .vertical) {
+            content
+            ScrollView { content }
+        }
+        .task(id: entry.id) {
+            details = ActivityChangeDetails()
+            details = await ActivityChangeDetails.load(entry, model: model)
+        }
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(entry.label).font(.headline)
+                Pill(label: entry.result.text, tone: entry.result.tone)
+                Spacer()
+                Text(RelativeTime.full(entry.time)).font(.callout).foregroundStyle(.secondary)
+                Button { model.activity.selection = nil } label: { Image(systemName: "xmark") }
+                    .buttonStyle(.borderless)
+                    .help(String(localized: "Close details"))
+                    .accessibilityLabel(String(localized: "Close Details"))
+            }
+            Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 6) {
+                GridRow {
+                    Text(String(localized: "From")).foregroundStyle(.secondary)
+                    Text(entry.isRemote ? String(localized: "\(ActivityText.who(entry, model: model)) via Remote Access")
+                                        : ActivityText.who(entry, model: model))
                 }
-                Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 6) {
+                if entry.isRemote, let agentID = entry.agentID,
+                   let note = model.remoteServer?.note(agentID: agentID, near: entry.time) {
+                    // In memory only, for the last 50 remote requests (mcp-server.md §12).
                     GridRow {
-                        Text(String(localized: "From")).foregroundStyle(.secondary)
-                        Text(entry.isRemote ? String(localized: "\(ActivityText.who(entry, model: model)) via Remote Access")
-                                            : ActivityText.who(entry, model: model))
+                        Text(String(localized: "Tunnel")).foregroundStyle(.secondary)
+                        Text(note.tunnel?.name ?? String(localized: "Unknown"))
                     }
-                    if entry.isRemote, let agentID = entry.agentID,
-                       let note = model.remoteServer?.note(agentID: agentID, near: entry.time) {
-                        // In memory only, for the last 50 remote requests (mcp-server.md §12).
-                        GridRow {
-                            Text(String(localized: "Tunnel")).foregroundStyle(.secondary)
-                            Text(note.tunnel?.name ?? String(localized: "Unknown"))
-                        }
-                        GridRow {
-                            Text(String(localized: "Address")).foregroundStyle(.secondary)
-                            Text(String(localized: "\(note.address) (as the tunnel reported)"))
-                                .font(.callout.monospaced()).textSelection(.enabled)
-                        }
+                    GridRow {
+                        Text(String(localized: "Address")).foregroundStyle(.secondary)
+                        Text(String(localized: "\(note.address) (as the tunnel reported)"))
+                            .font(.callout.monospaced()).textSelection(.enabled)
                     }
-                    if let request = entry.event.requestID {
-                        GridRow {
-                            Text(String(localized: "Request")).foregroundStyle(.secondary)
-                            Text(request.uuidString.lowercased()).font(.callout.monospaced()).textSelection(.enabled)
-                        }
-                        GridRow {
-                            Text(String(localized: "Task")).foregroundStyle(.secondary)
-                            if let task = model.services.approvals.sessionTask(request) {
-                                Text("“\(task)” (as reported)").textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
-                            } else {
-                                Text(String(localized: "Task text not stored")).foregroundStyle(.secondary)
-                            }
+                }
+                if let request = entry.event.requestID {
+                    GridRow {
+                        Text(String(localized: "Request")).foregroundStyle(.secondary)
+                        Text(request.uuidString.lowercased()).font(.callout.monospaced()).textSelection(.enabled)
+                    }
+                    GridRow {
+                        Text(String(localized: "Task")).foregroundStyle(.secondary)
+                        if let task = model.services.approvals.sessionTask(request) {
+                            Text("“\(task)” (as reported)").textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                        } else {
+                            Text(String(localized: "Task text not stored")).foregroundStyle(.secondary)
                         }
                     }
-                    if !withheld.isEmpty {
-                        GridRow {
-                            Text(String(localized: "Withheld")).foregroundStyle(.secondary)
-                            Text(withheld).fixedSize(horizontal: false, vertical: true)
+                }
+                if !withheld.isEmpty {
+                    GridRow {
+                        Text(String(localized: "Withheld")).foregroundStyle(.secondary)
+                        Text(withheld).fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                // The profile fields the answer carried (ADR-0026): names only, never values.
+                if entry.event.event == "request_memory", let fields = entry.event.profileFields, !fields.isEmpty {
+                    GridRow {
+                        Text(String(localized: "Also sent")).foregroundStyle(.secondary)
+                        Text(ProfileText.list(fields)).fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                ForEach(details.fields, id: \.memoryID) { edit in
+                    GridRow {
+                        Text(String(localized: "Changed")).foregroundStyle(.secondary)
+                        Text(details.fields.count > 1 ? "\(model.activity.title(edit.memoryID)): \(Self.fieldList(edit.fields))"
+                                                      : Self.fieldList(edit.fields))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                if entry.event.event == "tidy_up_run" {
+                    GridRow {
+                        Text(String(localized: "Checked")).foregroundStyle(.secondary)
+                        Text(String(localized: "\(entry.event.counts["inspected"] ?? 0) memories"))
+                    }
+                }
+            }
+            .font(.callout)
+            if details.changes.count == 1, let change = details.changes.first {
+                ChangeDetailView(model: model, change: change, reversed: details.reversed)
+            } else if !details.changes.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(details.changes) { change in
+                        DisclosureGroup {
+                            ChangeDetailView(model: model, change: change, reversed: details.reversed, showsHeadline: false)
+                                .padding(.top, 4)
+                        } label: {
+                            Text(GroupText.change(change.entry, titles: details.titles)).font(.callout)
                         }
                     }
-                    // The profile fields the answer carried (ADR-0026): names only, never values.
-                    if entry.event.event == "request_memory", let fields = entry.event.profileFields, !fields.isEmpty {
-                        GridRow {
-                            Text(String(localized: "Also sent")).foregroundStyle(.secondary)
-                            Text(ProfileText.list(fields)).fixedSize(horizontal: false, vertical: true)
+                }
+            } else if !details.revisions.isEmpty {
+                ForEach(details.revisions, id: \.self) { revision in
+                    ChangeDetailView(model: model, revision: revision)
+                }
+            } else if !memoryIDs.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(memoryIDs, id: \.self) { id in
+                        if model.activity.titles[id] != nil {
+                            Button(model.activity.title(id)) { model.showMemory(id) }.buttonStyle(.link)
+                        } else {
+                            Text(model.activity.title(id)).foregroundStyle(.secondary)
                         }
                     }
                 }
                 .font(.callout)
-                if !memoryIDs.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(memoryIDs, id: \.self) { id in
-                            if model.activity.titles[id] != nil {
-                                Button(model.activity.title(id)) { model.showMemory(id) }.buttonStyle(.link)
-                            } else {
-                                Text(model.activity.title(id)).foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    .font(.callout)
-                }
-                fixes
             }
-            .padding(14)
+            if details.expired { ChangeDetailExpired() }
+            if entry.event.event == "tidy_up_run", (entry.event.counts["suggestions"] ?? 0) > 0 {
+                Button(String(localized: "Review Suggestions in the Inbox")) { model.show(.inbox) }
+                    .buttonStyle(.link).font(.callout)
+            }
+            fixes
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// "text, title": the fields an edit changed, in History's words.
+    static func fieldList(_ fields: [String]) -> String {
+        fields.map(HistoryList.fieldName).joined(separator: ", ")
     }
 
     /// Memories this row is about (not agents).
@@ -444,7 +501,7 @@ struct ActivityInspector: View {
         switch entry.event.event {
         case "request_memory", "get_memory_request", "suggest_memory", "capture", "suggestion_applied", "suggestion_rejected",
              "seed_question", "memory_created", "memory_edited", "memory_archived", "memory_restored", "memory_deleted",
-             "memory_viewed":
+             "memory_viewed", "sensitivity_raised":
             entry.event.ids
         default: []
         }

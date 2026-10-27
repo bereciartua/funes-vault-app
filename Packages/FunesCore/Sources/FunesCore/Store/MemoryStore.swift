@@ -272,6 +272,7 @@ enum MemoryStore {
     static func update(_ db: Database, id: UUID, _ edit: MemoryEdit, actor: Actor, now: Date,
                        event: ProvenanceEvent = .edited) throws -> Memory {
         guard var m = try fetch(db, id: id), m.status != .deleted else { throw VaultError.notFound }
+        let old = m
         var changed: [String] = []
         if let title = edit.title, title != m.title { m.title = title; changed.append("title") }
         if let body = edit.body, body != m.body { m.body = body; changed.append("body") }
@@ -291,6 +292,7 @@ enum MemoryStore {
         guard !changed.isEmpty || confidenceChanged else { return m }
         _ = try validate(db, title: m.title, body: m.body, categoryKeys: m.categoryKeys)
         if !changed.isEmpty {
+            try RevisionStore.record(db, old, actor: actor, at: now)
             m.version += 1
             m.updatedAt = now
         }
@@ -319,6 +321,7 @@ enum MemoryStore {
         case (.active, .deleted), (.archived, .deleted): event = .deleted
         default: throw VaultError.invalidState
         }
+        try RevisionStore.record(db, m, actor: actor, at: now)
         m.status = status
         m.version += 1
         m.updatedAt = now

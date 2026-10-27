@@ -214,31 +214,43 @@ struct AppliedAutomaticallyList: View {
                     Text(String(localized: "Changes Funes made without asking. You can undo each for 30 days."))
                         .font(.callout).foregroundStyle(.secondary)
                     ForEach(inbox.applied) { entry in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(GroupText.change(entry, titles: inbox.appliedTitles)).lineLimit(1)
-                                Text(RelativeTime.short(entry.createdAt, now: model.now)).font(.caption).foregroundStyle(.secondary)
+                        if let change = inbox.appliedChanges[entry.id] {
+                            DisclosureGroup {
+                                ChangeDetailView(model: model, change: change, showsHeadline: false).padding(.top, 4)
+                            } label: {
+                                appliedRow(entry)
                             }
-                            Spacer()
-                            if let later = needsLater[entry.id] {
-                                Button(String(localized: "Undo This and \(later) Later Changes")) {
-                                    Task {
-                                        _ = await inbox.undo(entry, includingLater: true)
-                                        needsLater[entry.id] = nil
-                                    }
-                                }
-                            } else {
-                                Button(String(localized: "Undo")) {
-                                    Task { needsLater[entry.id] = await inbox.undo(entry) }
-                                }
-                                .accessibilityLabel(String(localized: "Undo: \(GroupText.change(entry, titles: inbox.appliedTitles))"))
-                            }
+                        } else {
+                            appliedRow(entry)
                         }
                     }
                 }
                 .padding(.top, 6)
             }
             .padding(.top, 10)
+        }
+    }
+
+    private func appliedRow(_ entry: UndoEntry) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(GroupText.change(entry, titles: inbox.appliedTitles)).lineLimit(1)
+                Text(RelativeTime.short(entry.createdAt, now: model.now)).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if let later = needsLater[entry.id] {
+                Button(String(localized: "Undo This and \(later) Later Changes")) {
+                    Task {
+                        _ = await inbox.undo(entry, includingLater: true)
+                        needsLater[entry.id] = nil
+                    }
+                }
+            } else {
+                Button(String(localized: "Undo")) {
+                    Task { needsLater[entry.id] = await inbox.undo(entry) }
+                }
+                .accessibilityLabel(String(localized: "Undo: \(GroupText.change(entry, titles: inbox.appliedTitles))"))
+            }
         }
     }
 }

@@ -40,6 +40,11 @@ final class ActivityModel {
     /// Live titles of the memories and suggestions rows name; an id missing here is gone.
     private(set) var titles: [UUID: String] = [:]
     private(set) var titlesLoaded = false
+    /// The memories of rows whose ids aren't memories: an automatic change's (by its suggestion)
+    /// and an undo's (by its undo entries), while the undo log keeps them.
+    private(set) var relatedMemories: [String: [UUID]] = [:]
+    /// A History row's Show in Activity, until the rows are loaded.
+    private var pendingSelection: (memoryID: UUID, time: Date)?
 
     init(services: VaultEnvironment) {
         self.services = services
@@ -57,7 +62,45 @@ final class ActivityModel {
         let unknown = ids.filter { titles[$0] == nil }
         for suggestion in (try? await services.suggestions.suggestions(ids: unknown)) ?? [] { titles[suggestion.id] = suggestion.title }
         self.titles = titles
+        relatedMemories = await Self.relatedMemories(entries, undo: UndoLog(store: services.store, activity: services.activity))
         titlesLoaded = true
+        resolvePendingSelection()
+    }
+
+    static func relatedMemories(_ entries: [ActivityEntry], undo: UndoLog) async -> [String: [UUID]] {
+        let applied = entries.filter { $0.event.event == "auto_applied" }
+        let undone = entries.filter { $0.event.event == "undone" }
+        let now = Date()
+        let bySuggestion = (try? await undo.changes(suggestionIDs: Array(Set(applied.flatMap(\.event.ids))), now: now)) ?? []
+        let byEntry = (try? await undo.changes(ids: Array(Set(undone.flatMap(\.event.ids))), now: now)) ?? []
+        var related: [String: [UUID]] = [:]
+        for entry in applied {
+            related[entry.id] = bySuggestion.filter { $0.entry.suggestionID.map(entry.event.ids.contains) ?? false }
+                .flatMap { $0.items.map(\.memoryID) }
+        }
+        for entry in undone {
+            related[entry.id] = byEntry.filter { entry.event.ids.contains($0.id) }.flatMap { $0.items.map(\.memoryID) }
+        }
+        return related.filter { !$0.value.isEmpty }
+    }
+
+    /// Whether a row is about this memory: it names it, or its automatic change touched it.
+    func isAbout(_ entry: ActivityEntry, memoryID: UUID) -> Bool {
+        entry.event.ids.contains(memoryID) || relatedMemories[entry.id]?.contains(memoryID) == true
+    }
+
+    /// Selects the row about this memory nearest `time` (within 2 seconds), now or once loaded.
+    func select(memoryID: UUID, near time: Date) {
+        pendingSelection = (memoryID, time)
+        if titlesLoaded { resolvePendingSelection() }
+    }
+
+    private func resolvePendingSelection() {
+        guard let pending = pendingSelection else { return }
+        pendingSelection = nil
+        let distance = { (entry: ActivityEntry) in abs(entry.time.timeIntervalSince(pending.time)) }
+        selection = entries.filter { isAbout($0, memoryID: pending.memoryID) && distance($0) < 2 }
+            .min { distance($0) < distance($1) }?.id ?? selection
     }
 
     /// "Prefers Vitest", or "(deleted memory)" once it's gone (FR-V-04).
@@ -76,7 +119,7 @@ final class ActivityModel {
             case .agent(let id):
                 if entry.agentID != id && !(entry.event.actor == "user" && entry.event.ids.contains(id)) { return false }
             case .memory(let id):
-                if !entry.event.ids.contains(id) { return false }
+                if !isAbout(entry, memoryID: id) { return false }
             case .request(let id):
                 if entry.event.requestID != id { return false }
             case .period(let interval):
