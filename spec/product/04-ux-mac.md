@@ -367,6 +367,8 @@ All panels are non-activating floating `NSPanel`s at the top right. When several
 ### Save this memory?
 - Shows: from <agent>; the memory (title and body) first; then kind, category and sensitivity; then the agent's "Why" in the agent-says block.
 - Buttons: Edit… (a link) · Discard · Later · **Save**. No countdown: it's in the Inbox either way.
+- **Later for all N suggestions** (a link on its own line) when more than one Save panel waits, shown or behind "+N more": answers each Later, so all of them stay in the Inbox. Share and access panels stay, since an agent waits on them.
+- **Answered elsewhere, gone here** (FR-S-02): a panel whose suggestion was saved, rejected or split in an Inbox (the iPhone's or the Mac's), expired or deleted is withdrawn at the next vault change, quietly (no HUD), and its iPhone doorbell is taken back.
 - **Waits for New memories processing** (v0.3, memory processing §5.6): with splitting on, no panel shows while the suggestion is processing. When it's done, one panel per resulting piece, queued with the chips ("+4 more"), or one for the suggestion when nothing changed or the split failed. The arrival notification comes once. Opening a processing suggestion (`open_in_funes`) shows its Processing… card in the Inbox. With splitting off, the panel shows at once.
 
 ### <app> wants to connect (cloud sign-in)

@@ -6,6 +6,7 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Fixed
 
+- **Suggestions answered on the iPhone no longer wait on the Mac.** Saving or rejecting a suggestion in the iPhone's Inbox (or the Mac's) now closes its **Save this memory?** panel on the Mac at once. Before, every one stayed queued behind "+N more" until answered again.
 - **Acting on a new card while Funes was splitting it no longer fails.** Saving, editing or approving a capture, an agent's suggestion or an imported item mid-split could end in an error when the split replaced the card. Such a card now shows **Processing…** until the split is done (see **Split into separate memories** below).
 - **Split memories keep their context.** When Funes splits a long memory (in the daily tidy-up) or a new suggestion into separate memories, each piece now says who or what it's about and, for something that happened, when: "The Staff Data Engineer role at Verdant Grid I interviewed for in October 2026 is fully remote", not "The role is fully remote". Pieces with no lasting value (asking what a word means, how to send a file) are left out. The model now gets the memory's title and date as well as its text. On Funes's test set, 81% of pieces made sense on their own to an agent that saw only them, up from 43%.
   - Tidy-up splits proposed before this update are proposed again at the next run, and ones you rejected are offered once more. A split you have open isn't replaced under you.
@@ -15,6 +16,7 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Added
 
+- **Later for all.** When several **Save this memory?** panels are waiting, **Later for all N suggestions** closes them in one click. They stay in the Inbox; requests an agent is waiting on keep their panels.
 - **About You.** A new first pane in Settings for what Funes and your agents call you: your name, what to call you, pronouns, languages, location, time zone and occupation, all optional. The setup questions now start with "What should Funes call you?".
   - **Home greets you by name** on the Mac and the iPhone: "Good afternoon, Martin." With no name set it's "Good afternoon.", never your macOS account name (which may be a username like "mib"); About You offers that name as a suggestion only when it looks like a person's.
   - **Agents can know your name.** Each agent's Access tab has an About you section with a checkbox per field; a new agent, and every agent you already have, shares your name and nothing else. The fields you tick go with every answer to that agent's memory requests, without asking: also while a request waits for you, and when no memory matched, so "What's my name?" just works. Paused or expired agents, and agents that can't read, get none. Changing an agent's fields is an access change: its waiting requests ask again.
