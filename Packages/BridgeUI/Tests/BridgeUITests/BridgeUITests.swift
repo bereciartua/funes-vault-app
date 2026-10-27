@@ -189,6 +189,27 @@ struct ApprovalQueueTests {
         #expect(queue.items.isEmpty && queue.current == nil)
     }
 
+    /// Later for all: every Save panel is answered Later; a Share panel an agent waits on stays.
+    @Test func laterForAllSaves() {
+        let queue = ApprovalQueue()
+        func save() -> PanelItem {
+            PanelItem(id: UUID(), kind: .save, agentID: "a", title: "Save this memory?",
+                      rows: [PanelItem.Row(id: "s", title: "One", selectable: false)],
+                      primary: "Save", secondary: "Later", announcement: "Save?")
+        }
+        var answers = [PanelAnswer]()
+        queue.enqueue(save()) { answers.append($0) }
+        let share = item(expires: Date() + 45)
+        queue.enqueue(share) { answers.append($0) }
+        for _ in 0..<4 { queue.enqueue(save()) { answers.append($0) } }
+        #expect(queue.saveCount == 5)
+        #expect(queue.hiddenCount == 3)
+        queue.laterForAllSaves()
+        #expect(answers == Array(repeating: .secondary, count: 5))
+        #expect(queue.items.map(\.id) == [share.id])
+        #expect(queue.saveCount == 0)
+    }
+
     /// Pausing Funes withdraws the panels but doesn't close the queue: later requests still show.
     @Test func withdrawAllLeavesTheQueueOpen() {
         let queue = ApprovalQueue()

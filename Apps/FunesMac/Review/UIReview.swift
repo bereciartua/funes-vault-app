@@ -339,6 +339,9 @@ final class UIReview: NSObject, NSApplicationDelegate {
             }
             await panel("share-panel-weak-\(suffix)", weak)
             await panel("save-panel-\(suffix)", saveItem(fixture))
+            // A burst of suggestions: chips, "+3 more" and Later for all 6 suggestions.
+            await panel("save-panel-burst-\(suffix)", saveItem(fixture), saveItem(fixture), saveItem(fixture),
+                        saveItem(fixture), saveItem(fixture), saveItem(fixture))
             await panel("share-panel-remote-\(suffix)", fixture.remoteShareItem)
             await sheet("sign-in-panel-\(suffix)", SignInPanelView(model: model, request: PairingRequest(
                 id: UUID(), clientID: fixture.cloudAgent.id.db, appName: "Claude", appURL: "https://claude.ai/oauth/claude-code-client-metadata",

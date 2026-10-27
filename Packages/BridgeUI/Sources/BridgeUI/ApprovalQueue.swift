@@ -332,6 +332,15 @@ public final class ApprovalQueue {
         for item in items { answer(item.id, .withdrawn) }
     }
 
+    /// The Save panels waiting, shown or not.
+    public var saveCount: Int { items.count(where: { $0.kind == .save }) }
+
+    /// **Later for all**: answers every Save panel `.secondary`, in arrival order, so each
+    /// suggestion stays in the Inbox. Share and access panels stay: an agent is waiting on those.
+    public func laterForAllSaves() {
+        for item in items where item.kind == .save { answer(item.id, .secondary) }
+    }
+
     /// The app is quitting: withdraws everything, and answers anything enqueued later `.withdrawn`
     /// at once, so a panel built after the quit began never shows and its caller never waits.
     /// On the main actor, like `enqueue`, so nothing slips in between.

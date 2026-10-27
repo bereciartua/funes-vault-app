@@ -39,6 +39,8 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// result, one per piece (memory processing §5.2). In memory only: after a relaunch they're
     /// in the Inbox.
     @MainActor private var awaitingProcessing = Set<UUID>()
+    /// Vault changes, so a Save panel goes once its suggestion is answered elsewhere.
+    private var observation: AnyObject?
 
     @MainActor
     init(environment: VaultEnvironment) {
@@ -55,6 +57,9 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
                     self.notice(String(localized: "Answered on \(deviceName)."))
                 }
             }
+        }
+        observation = environment.store.observeChanges { [weak self] in
+            Task { await self?.withdrawResolvedSaves() }
         }
     }
 
@@ -305,6 +310,33 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
                 logger.error("Answering a suggestion failed")
             }
         }
+    }
+
+    /// Withdraws the Save panels whose suggestion isn't pending any more: saved or rejected in an
+    /// Inbox (the iPhone's or this Mac's), split, expired or gone. The queue is read before the
+    /// vault, so a panel shown meanwhile was pending when it was enqueued and is never taken back
+    /// by a stale read. Quietly: sixty "already answered" notices would be the noise this removes,
+    /// and a phone's answer to the panel itself says so already.
+    func withdrawResolvedSaves() async {
+        let ids = await MainActor.run { queue.items.filter { $0.kind == .save }.map(\.id) }
+        guard !ids.isEmpty else { return }
+        var resolved = [(UUID, answered: Bool)]()
+        for id in ids {
+            // A read that fails leaves the panel up; a suggestion that's gone takes it down.
+            do {
+                if let suggestion = try await environment.suggestions.suggestion(id: id) {
+                    if suggestion.status != .pending { resolved.append((id, suggestion.status != .expired)) }
+                } else {
+                    resolved.append((id, false))
+                }
+            } catch {
+                continue
+            }
+        }
+        guard !resolved.isEmpty else { return }
+        await MainActor.run { for (id, _) in resolved { queue.withdraw(id) } }
+        // Takes back the iPhone's doorbell now rather than at the next minute's sweep.
+        for (id, answered) in resolved { await desk.ended(.save(id), answered: answered) }
     }
 
     // MARK: <Agent> wants more access

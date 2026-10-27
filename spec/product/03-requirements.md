@@ -282,6 +282,7 @@
 - When a suggestion arrives and the Mac is attended, a **Save this memory?** panel offers Save, Edit…, Later or Discard, with a 45 s countdown.
 - Acceptance: on timeout the suggestion stays in the Inbox. The tool result says `queued`.
 - From v0.3, with splitting on (FR-AI-13), the panel waits for the suggestion's processing: none shows while it's processing, then one per resulting piece, queued with the panel's chips, or one for the suggestion when nothing changed or the split failed. The tool result is unchanged and never waits. The iPhone's Save approval follows the same rule. With splitting off or no model, the panel shows at once.
+- A panel goes as soon as its suggestion is no longer pending, wherever it was answered (the iPhone's Inbox or approval, the Mac's Inbox), or when it expired or is gone. With more than one Save panel waiting, **Later for all N suggestions** closes them all; they stay in the Inbox. Share and access panels are untouched.
 
 **FR-S-03 Direct write** · M · v0.1
 - An agent with Write and ask before saving **off** saves directly, within its ceiling and categories, with result `saved`. Otherwise it falls back to Suggest rules.

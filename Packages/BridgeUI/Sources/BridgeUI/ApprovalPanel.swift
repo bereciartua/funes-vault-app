@@ -477,6 +477,13 @@ public struct ApprovalPanelView: View {
                     .buttonStyle(.link)
                     .disabled(!armed)
             }
+            // A burst of suggestions: put them all off at once; they wait in the Inbox.
+            if item.kind == .save, queue.saveCount > 1 {
+                Button(String(localized: "Later for all \(queue.saveCount) suggestions")) { queue.laterForAllSaves() }
+                    .buttonStyle(.link)
+                    .disabled(!armed)
+                    .help(String(localized: "Closes every Save panel. The suggestions stay in the Inbox."))
+            }
         }
     }
 }
