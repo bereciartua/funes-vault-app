@@ -537,23 +537,12 @@ struct CorrectionDiff: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(String(localized: "Changes “\(old.title)”")).font(.callout.weight(.medium))
-            if old.title != new.title { row(String(localized: "Title"), old.title, new.title) }
-            if old.body != new.body { row(String(localized: "Text"), old.body, new.body) }
+            if old.title != new.title { DiffRow(label: String(localized: "Title"), before: old.title, after: new.title) }
+            if old.body != new.body { DiffRow(label: String(localized: "Text"), before: old.body, after: new.body) }
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 8).fill(Color.orange.opacity(0.08)))
-    }
-
-    private func row(_ label: String, _ before: String, _ after: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label).font(.caption).foregroundStyle(.secondary)
-            Text(before).strikethrough().foregroundStyle(.secondary).font(.callout)
-                .accessibilityLabel(String(localized: "Before: \(before)"))
-            Text(after).font(.callout)
-                .accessibilityLabel(String(localized: "After: \(after)"))
-        }
-        .textSelection(.enabled)
     }
 }
 

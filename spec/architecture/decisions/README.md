@@ -30,3 +30,4 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 | 0024 | [Claude and ChatGPT subscriptions as model providers, through the user's own Claude Code and Codex](0024-subscription-providers.md) | Accepted |
 | 0025 | [A vault overview of counts only, served to the iPhone, which caches it for Home and widgets](0025-vault-overview-and-iphone-cache.md) | Accepted |
 | 0026 | [A small "About you" profile beside the vault, shared per agent and per field with memory requests](0026-about-you-profile.md) | Accepted |
+| 0027 | [Keep each memory's earlier versions for 90 days, so every change can show what it replaced](0027-memory-revisions.md) | Proposed |

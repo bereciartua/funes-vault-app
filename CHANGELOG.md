@@ -15,6 +15,11 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Added
 
+- **See what a change did.** Selecting an automatic change in Activity (applied automatically, a tidy-up merge, update, split or archive, or an undo of one) now shows each memory it touched: **New**, **Changed**, **Archived** or **Restored**, the old text struck through above the new, and kind, categories, sensitivity and expiry as "Low → Internal". A tidy-up run lists its changes and links to the Inbox for the suggestions it left. An edit says which fields changed. Funes keeps these details for 30 days, the same as Undo.
+  - **A memory's History** opens the same details in place: click the chevron on an automatic change's row. A merge's or split's row links to the other memory, **Show in Activity** selects that row in Activity, and **Show All in Activity** opens everything about the memory. Activity's memory view now includes the changes Funes made to it.
+  - **Inbox ▸ Applied automatically:** each change opens to its before and after too.
+  - The detail pane is now as tall as its content, so short rows leave more room for the list.
+
 - **About You.** A new first pane in Settings for what Funes and your agents call you: your name, what to call you, pronouns, languages, location, time zone and occupation, all optional. The setup questions now start with "What should Funes call you?".
   - **Home greets you by name** on the Mac and the iPhone: "Good afternoon, Martin." With no name set it's "Good afternoon.", never your macOS account name (which may be a username like "mib"); About You offers that name as a suggestion only when it looks like a person's.
   - **Agents can know your name.** Each agent's Access tab has an About you section with a checkbox per field; a new agent, and every agent you already have, shares your name and nothing else. The fields you tick go with every answer to that agent's memory requests, without asking: also while a request waits for you, and when no memory matched, so "What's my name?" just works. Paused or expired agents, and agents that can't read, get none. Changing an agent's fields is an access change: its waiting requests ask again.

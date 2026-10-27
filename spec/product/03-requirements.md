@@ -87,6 +87,7 @@
   - shared (count and last time);
   - suggested by;
   - applied from the Inbox.
+- An automatic change's row opens to the same before and after as Activity, while its undo entry lasts (v0.5). A merge's or split's row links to the other memory. Each row can open its Activity row.
 - Acceptance: provenance rows hold ids and labels only. Old body text is never stored in provenance.
 
 **FR-V-13 Duplicate hint** · S · v0.1
@@ -318,6 +319,7 @@
 **FR-L-02 Activity view** · M · v0.1
 - Filters: All, Shared, Suggestions, Problems, by agent, by device. Search over labels.
 - The detail pane looks memory titles up live. Deep links: "Edit access", "Open memory".
+- What a change did (v0.5), looked up when the row is selected, never stored in Activity: an automatic change (auto-applied, a tidy-up merge, update, split or archive, and an undo of one) shows each memory before and after from its undo entry, for its 30 days; then "Details of automatic changes are kept for 30 days." An edit shows which fields changed, from provenance. A tidy-up run lists its changes.
 
 **FR-L-03 Retention** · M · v0.1
 - Disclosures, changes and problems are kept 400 days (up to 20,000 rows); other rows 30 days. Compaction runs at launch and every 6 hours.

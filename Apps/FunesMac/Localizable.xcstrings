@@ -315,6 +315,16 @@
     "%@ · share" : {
 
     },
+    "%@ → %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ → %2$@"
+          }
+        }
+      }
+    },
     "%@'s access changed while you were editing (for example, Always Allow from a panel). Review it again before saving." : {
 
     },
@@ -438,6 +448,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "%@: %@ before, %@ after" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@ before, %3$@ after"
           }
         }
       }
@@ -1501,6 +1521,12 @@
     "Change tunnel" : {
 
     },
+    "Changed" : {
+
+    },
+    "Changed again since, so what this change saved isn't known." : {
+
+    },
     "Changed automatically" : {
 
     },
@@ -1556,6 +1582,9 @@
 
     },
     "Check the provider's API key." : {
+
+    },
+    "Checked" : {
 
     },
     "Checked a request" : {
@@ -1957,6 +1986,9 @@
     "Delete “%@”?" : {
 
     },
+    "Deleted" : {
+
+    },
     "Deleted %@" : {
 
     },
@@ -1995,6 +2027,9 @@
 
     },
     "Details" : {
+
+    },
+    "Details of automatic changes are kept for 30 days." : {
 
     },
     "Devin" : {
@@ -2566,6 +2601,9 @@
     "Hide Funes Vault" : {
 
     },
+    "Hide what changed" : {
+
+    },
     "History" : {
 
     },
@@ -2868,6 +2906,9 @@
 
     },
     "Keeps: %@" : {
+
+    },
+    "Kept" : {
 
     },
     "Kept as one" : {
@@ -3971,6 +4012,9 @@
     "Remove “%@”?" : {
 
     },
+    "Removed" : {
+
+    },
     "Removed agent" : {
 
     },
@@ -4085,6 +4129,9 @@
     "Restore this backup?" : {
 
     },
+    "Restored" : {
+
+    },
     "Restored %@" : {
 
     },
@@ -4154,6 +4201,9 @@
 
     },
     "Review Request shortcut" : {
+
+    },
+    "Review Suggestions in the Inbox" : {
 
     },
     "Review it as it is, as one memory." : {
@@ -4497,6 +4547,9 @@
     "Show All %lld Agents" : {
 
     },
+    "Show All in Activity" : {
+
+    },
     "Show Less" : {
 
     },
@@ -4536,7 +4589,13 @@
     "Show the newest in the Vault" : {
 
     },
+    "Show this memory" : {
+
+    },
     "Show what came in, in Activity" : {
+
+    },
+    "Show what changed" : {
 
     },
     "Showing %@ only" : {

@@ -17,6 +17,61 @@ public struct UndoEntry: Sendable, Hashable, Identifiable {
     public var expiresAt: Date
 }
 
+/// A memory's fields at one moment, as a change's details show them.
+public struct MemoryState: Sendable, Hashable, Codable {
+    public var title: String
+    public var body: String
+    public var kind: MemoryKind
+    public var categoryKeys: [String]
+    public var sensitivity: Sensitivity
+    public var status: MemoryStatus
+    public var expiresAt: Date?
+
+    public init(title: String, body: String, kind: MemoryKind, categoryKeys: [String], sensitivity: Sensitivity,
+                status: MemoryStatus, expiresAt: Date? = nil) {
+        self.title = title
+        self.body = body
+        self.kind = kind
+        self.categoryKeys = categoryKeys
+        self.sensitivity = sensitivity
+        self.status = status
+        self.expiresAt = expiresAt
+    }
+
+    public init(_ m: Memory) {
+        self.init(title: m.title, body: m.body, kind: m.kind, categoryKeys: m.categoryKeys, sensitivity: m.sensitivity,
+                  status: m.status, expiresAt: m.expiresAt)
+    }
+}
+
+/// An automatic change with each memory's state before and after it, for Activity's and a
+/// memory's History details (FR-L-02, FR-V-12). Read from the undo log, so only for its 30 days.
+public struct UndoChange: Sendable, Hashable, Identifiable {
+    public struct Item: Sendable, Hashable {
+        public var memoryID: UUID
+        /// Nil: the change created it.
+        public var before: MemoryState?
+        /// Nil: not known (an entry recorded before after-states were kept, and changed since).
+        public var after: MemoryState?
+
+        public init(memoryID: UUID, before: MemoryState?, after: MemoryState?) {
+            self.memoryID = memoryID
+            self.before = before
+            self.after = after
+        }
+    }
+
+    public var entry: UndoEntry
+    /// The memories the change named first, then the ones it created.
+    public var items: [Item]
+    public var id: UUID { entry.id }
+
+    public init(entry: UndoEntry, items: [Item]) {
+        self.entry = entry
+        self.items = items
+    }
+}
+
 /// The undo log (memory processing §5.7, §9.5; task 6.1.6). `record` runs an automatic change and
 /// keeps each memory's before-state in the same transaction. `undo` puts them back: a memory the
 /// change created goes to Recently Deleted, a changed one gets its old text, fields and status. A
@@ -25,7 +80,7 @@ public struct UndoEntry: Sendable, Hashable, Identifiable {
 public final class UndoLog: Sendable {
     public static let lifetime: TimeInterval = 30 * 86_400
 
-    /// A memory as the change found it, and its version right after.
+    /// A memory as the change found it, and its version and fields right after.
     struct Snapshot: Codable, Hashable {
         var memoryID: UUID
         /// False: the change created it.
@@ -39,6 +94,14 @@ public final class UndoLog: Sendable {
         var expiresAt: Date?
         var trust: MemoryTrust?
         var versionAfter: Int?
+        /// Nil on entries recorded before v0.5.
+        var after: MemoryState?
+
+        var before: MemoryState? {
+            guard existed, let title, let body, let kind, let categoryKeys, let sensitivity, let status else { return nil }
+            return MemoryState(title: title, body: body, kind: kind, categoryKeys: categoryKeys, sensitivity: sensitivity,
+                               status: status, expiresAt: expiresAt)
+        }
     }
 
     public let store: VaultStore
@@ -65,8 +128,9 @@ public final class UndoLog: Sendable {
             snapshots.append(Snapshot(memoryID: id, existed: false))
         }
         for i in snapshots.indices {
-            snapshots[i].versionAfter = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?",
-                                                         arguments: [snapshots[i].memoryID.db])
+            let m = try MemoryStore.fetch(db, id: snapshots[i].memoryID)
+            snapshots[i].versionAfter = m?.version
+            snapshots[i].after = m.map(MemoryState.init)
         }
         let id = UUID()
         try db.execute(sql: """
@@ -82,6 +146,50 @@ public final class UndoLog: Sendable {
         try await store.writer.read { db in
             try Row.fetchAll(db, sql: "SELECT * FROM undo_entry WHERE undone_at IS NULL AND expires_at > ? ORDER BY created_at DESC, rowid DESC",
                              arguments: [now]).map(Self.entry(from:))
+        }
+    }
+
+    // MARK: - Details (FR-L-02, FR-V-12)
+
+    /// These entries' changes, undone ones too, oldest first. Expired entries are left out.
+    public func changes(ids: [UUID], now: Date) async throws -> [UndoChange] {
+        guard !ids.isEmpty else { return [] }
+        return try await changes(where: "id IN (\(databaseQuestionMarks(count: ids.count)))", ids.map(\.db), now: now)
+    }
+
+    /// The changes auto-apply made from these suggestions (an `auto_applied` Activity row's ids).
+    public func changes(suggestionIDs: [UUID], now: Date) async throws -> [UndoChange] {
+        guard !suggestionIDs.isEmpty else { return [] }
+        return try await changes(where: "suggestion_id IN (\(databaseQuestionMarks(count: suggestionIDs.count)))",
+                                 suggestionIDs.map(\.db), now: now)
+    }
+
+    /// One tidy-up run's changes.
+    public func changes(runID: UUID, now: Date) async throws -> [UndoChange] {
+        try await changes(where: "run_id = ?", [runID.db], now: now)
+    }
+
+    /// Every change that named or created this memory.
+    public func changes(memoryID: UUID, now: Date) async throws -> [UndoChange] {
+        try await changes(where: "EXISTS (SELECT 1 FROM json_each(undo_entry.memory_ids) j WHERE j.value = ?)", [memoryID.db],
+                          now: now)
+    }
+
+    private func changes(where condition: String, _ arguments: [String], now: Date) async throws -> [UndoChange] {
+        try await store.writer.read { db in
+            let rows = try Row.fetchAll(db, sql: """
+                SELECT * FROM undo_entry WHERE (\(condition)) AND expires_at > ? ORDER BY created_at, rowid
+                """, arguments: StatementArguments(arguments) + [now])
+            return try rows.map(Self.parsed(from:)).map { entry, snapshots in
+                UndoChange(entry: entry, items: try snapshots.map { s in
+                    // Older entries kept no after-state: the memory as it is, if nothing changed it since.
+                    var after = s.after
+                    if after == nil, let m = try MemoryStore.fetch(db, id: s.memoryID), m.version == s.versionAfter {
+                        after = MemoryState(m)
+                    }
+                    return UndoChange.Item(memoryID: s.memoryID, before: s.before, after: after)
+                })
+            }
         }
     }
 

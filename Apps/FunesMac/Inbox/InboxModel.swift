@@ -25,6 +25,8 @@ final class InboxModel {
     private(set) var applied: [UndoEntry] = []
     /// Titles of the memories the Applied automatically rows name.
     private(set) var appliedTitles: [UUID: String] = [:]
+    /// Each Applied automatically row's before and after, by undo entry id.
+    private(set) var appliedChanges: [UUID: UndoChange] = [:]
     /// What each card shows, kept while the Inbox reloads (edited ones keep the user's values).
     var drafts: [UUID: SuggestionDraft] = [:]
     @ObservationIgnored var categories: () -> [MemoryCategory] = { [] }
@@ -38,7 +40,10 @@ final class InboxModel {
         restorable = (try? await services.suggestions.restorable(now: Date())) ?? []
         groups = Dictionary(uniqueKeysWithValues: ((try? await services.suggestions.openGroups()) ?? []).map { ($0.id, $0) })
         processing = (try? await services.suggestions.processing(now: Date())) ?? [:]
-        applied = (try? await UndoLog(store: services.store, activity: services.activity).entries(now: Date())) ?? []
+        let undo = UndoLog(store: services.store, activity: services.activity)
+        applied = (try? await undo.entries(now: Date())) ?? []
+        appliedChanges = Dictionary(((try? await undo.changes(ids: applied.map(\.id), now: Date())) ?? []).map { ($0.id, $0) },
+                                    uniquingKeysWith: { first, _ in first })
         let ids = Array(Set(applied.flatMap(\.memoryIDs)))
         appliedTitles = Dictionary(uniqueKeysWithValues: ((try? services.store.memories(ids: ids)) ?? []).map { ($0.id, $0.title) })
     }
