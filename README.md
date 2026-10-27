@@ -29,9 +29,9 @@ Badges, once the listings exist:
 - **Each agent gets only what you choose.** Its own key, and the access you set: read, suggest or save; up to a sensitivity level; in the categories you pick. A new agent can start with nothing.
 - **You approve the exact text.** Before a memory goes to an agent, a small panel shows it, and you can untick what shouldn't go. An approval is used once, within 15 minutes, and is cancelled if anything changes.
 - **Agents suggest; you decide.** What an agent wants to remember waits in your Inbox, where you edit it, apply it or reject it.
-- **Everything stays on your Mac.** No account, no server of ours, no cloud copy. Search runs on a small model built into the app. Cloud agents such as claude.ai and ChatGPT can reach it only through a tunnel you run, with Remote Access (experimental, off by default).
+- **Everything stays on your Mac.** No account, no server of ours, no cloud copy. Search runs on a small model built into the app. The iPhone app keeps no copy either: it talks to your Mac, end to end encrypted. Cloud agents such as claude.ai and ChatGPT can reach it only through a tunnel you run, with Remote Access (experimental, off by default).
 
-**Status:** public preview (v0.1), with best-effort support. **Works with** Claude Code, Claude Desktop, Cursor and Codex, with ready-made setups for VS Code (Copilot), Gemini CLI, Zed, Cline, JetBrains AI Assistant, Devin Desktop and any other MCP client. **From the cloud (experimental):** claude.ai, ChatGPT, Gemini Enterprise, the Anthropic and OpenAI APIs, and cloud coding agents, through Remote Access.
+**Status:** public preview (v0.2), with best-effort support. Funes Vault for iPhone (iOS 18 or later) pairs with it. **Works with** Claude Code, Claude Desktop, Cursor and Codex, with ready-made setups for VS Code (Copilot), Gemini CLI, Zed, Cline, JetBrains AI Assistant, Devin Desktop and any other MCP client. **From the cloud (experimental):** claude.ai, ChatGPT, Gemini Enterprise, the Anthropic and OpenAI APIs, and cloud coding agents, through Remote Access.
 
 ## Get started
 
@@ -114,11 +114,11 @@ Agents propose memories, and by default each one waits in the **Inbox** as a car
 
 ### Under the hood
 
-- **Local by default.** The MCP server listens on `127.0.0.1:47625`, never on a network interface. No account, no analytics, no server of ours. Remote Access, off by default, opens a second loopback port only a tunnel you run can expose.
+- **Local by default.** The MCP server listens on `127.0.0.1:47625`, never on a network interface. No account, no analytics, no server of ours. Remote Access, off by default, opens a second loopback port only a tunnel you run can expose. iPhone access, off by default, opens port 47626 to the iPhones you paired, and every message on it is signed and end-to-end encrypted.
 - **A key per agent.** Each agent has its own 256-bit key in a private file; the vault stores only its hash. One-click setups and the launcher read the file instead of putting the key in the agent's config.
 - **Fail closed.** Any doubt about an agent or a request is a refusal. Refusals tell the agent *how many* memories were withheld and why, never which ones.
 - **Single use.** An approved share is delivered once, within 15 minutes, and only if the memories and the agent's access are unchanged.
-- **Secrets stay out.** A secret scanner checks captures, suggestions and imports, and everything sent to a model you chose.
+- **Secrets stay out.** A secret scanner checks captures (on the iPhone too), suggestions and imports, and everything sent to a model you chose.
 - **Signed updates.** Updates come from GitHub, signed for Funes Vault and checked before they install. Installing always takes a click.
 - **Open source.** Read the code, the [architecture](docs/ARCHITECTURE.md) and the [test record](docs/TESTING.md).
 
@@ -204,6 +204,7 @@ Something else? Open an [issue](https://github.com/bereciartua/funes-vault-app/i
 - **Access decisions.** Made inside Funes from the agent's access, each memory's sensitivity and categories, and your answer, never from what the agent writes. An approval is bound to the exact memories and versions you saw.
 - **Data at rest.** The vault is an SQLite file in your Application Support folder, protected by FileVault, not by its own encryption. Backups stay in the same folder.
 - **Models.** Text goes to a model provider only if you added one and chose it, never above your cloud limit for a cloud provider, and never when it looks like a secret.
+- **iPhone access (off by default).** While it's on, a third listener, on port 47626, answers only the iPhones you paired by scanning a QR code and clicking **Allow** on the Mac: from your local network (Same Wi-Fi), your tailnet (Tailscale), or `127.0.0.1` behind a tunnel you run. Every call is signed by a key in the iPhone's Secure Enclave and sealed to the Mac's key, so the network, Tailscale or a tunnel can't read or forge it; replays and stale messages are refused. A paired iPhone acts as you. **Remove…** cuts one off at once. To wake the iPhone for an approval, the Mac saves a record holding only a random name and a tag in your private iCloud database; the iPhone then fetches the request from the Mac.
 - **Remote Access (experimental, off by default).** While it's on, a second listener on `127.0.0.1` (port 47627 unless you change it on the Remote Access page) answers what a tunnel you run forwards from the internet. Every route sits under a 128-bit secret path (anything else is 404), `Host` must be your tunnel's address (or the loopback address, for tunnels that rewrite it), and every call needs a credential of an agent you allowed cloud access: its remote token, or an OAuth token from a cloud app you approved with a six-digit code while pairing was open for that agent. Local keys don't work remotely and remote credentials don't work locally. Repeated failed sign-ins from one address are locked out for 5 minutes, and remote calls have a stricter rate limit. The same access, panels and pending list apply as for agents on your Mac. Text you share with a cloud agent goes to its vendor; some tunnels (Cloudflare, ngrok) can read the traffic, while Tailscale Funnel ends TLS on your Mac.
 
 **These controls do not isolate another process running as the same macOS user.** Such a process can read the vault, the backups and the key files. Funes also can't recall or control text after you've shared it with an agent. An access setting is a boundary between the agents you connect, not a defense against a compromised user account. See the [threat model](docs/ARCHITECTURE.md#threat-model).
@@ -223,7 +224,11 @@ The app has **no analytics, telemetry or crash reporting**, and no account. Your
 | Remote Access listener, on `127.0.0.1` (port 47627 by default) | Only while **Remote Access** is on (off by default). Loopback only; a tunnel you run, such as Tailscale Funnel, makes it reachable from the internet at an address you choose. Funes never starts a tunnel. |
 | One HTTPS request to your tunnel's address | When you click **Test** on the Remote Access page (and during its setup): Funes fetches its own health URL through the tunnel. |
 | One HTTPS request to a cloud app's metadata document | Only while you have pairing open, when that app starts signing in (claude.ai and ChatGPT publish one). No credential is sent. |
-| The model provider you added | Only if you add one in **Settings ▸ AI Models** and choose it: to propose a title, categories and sensitivity for each capture, and for **Load Models** and **Test Connection** (which send none of your data). A local server (Ollama, LM Studio) stays on your Mac or local network; a cloud provider gets only captures at or below your cloud limit that passed the secret scanner, plus your category names and descriptions. With **Split into separate memories** on, it also gets agents' suggestions, your answers and imported items, and each piece with up to 5 related memories, and with the **Daily tidy-up** on, groups of up to 6 related memories, under the same limit and scanner ([PRIVACY.md](PRIVACY.md#ai-models)). |
+| iPhone listener, on port 47626 by default | Only while **Settings ▸ iPhone** is on (off by default). With Same Wi-Fi or Tailscale it listens on every interface and accepts only local or tailnet addresses, and advertises itself on your network with Bonjour; macOS asks for Local Network access. It answers only iPhones you paired, end to end encrypted. |
+| A "doorbell" record in your private iCloud database | When an agent's request waits for you and a paired iPhone has approvals on. It holds only a random name and a tag, and is deleted once the request is answered or over. |
+| The model provider you added | Only if you add one in **Settings ▸ AI Models** and choose it: to propose a title, categories and sensitivity for each capture, and for **Load Models** and **Test Connection** (which send none of your data). A local server (Ollama, LM Studio) stays on your Mac or local network; a cloud provider gets only captures at or below your cloud limit that passed the secret scanner, plus your category names and descriptions. With **Split into separate memories** on, it also gets agents' suggestions, your answers and imported items, and each piece with up to 5 related memories, and with the **Daily tidy-up** on, groups of up to 6 related memories, under the same limit and scanner ([PRIVACY.md](PRIVACY.md#ai-models)). At most the number of cloud requests a day you set (300 by default). |
+| Your Claude Code or Codex | Only if you choose your Claude or ChatGPT plan in **Settings ▸ AI Models ▸ Use your subscription**: Funes runs the `claude` or `codex` command you installed, which sends the same text as a cloud provider above to Anthropic or OpenAI, under your plan's terms. |
+| A provider embedding model | Only if you choose one in **Settings ▸ AI Models ▸ Embeddings** (none by default): the text of memories up to your cloud limit, your vault searches, and agents' requests unless you turn that off. A local server embeds every memory. |
 
 Notifications, shown by macOS, never include memory text. What an agent receives through Funes goes to that agent and its AI provider, under their privacy terms, so give each agent only what it needs. With Remote Access, that includes the cloud agents you allow, and the tunnel provider if its TLS ends at its edge. The full statement is in [PRIVACY.md](PRIVACY.md) and at [funesvault.com/privacy](https://funesvault.com/privacy).
 
@@ -232,7 +237,7 @@ Notifications, shown by macOS, never include memory text. What an agent receives
 | Goal | Guide |
 | --- | --- |
 | Connect an agent; the tools, limits and troubleshooting | [MCP guide](docs/MCP.md) |
-| How it's built, where data lives, the threat model | [Architecture](docs/ARCHITECTURE.md) |
+| How it's built: the request pipeline, new memories and the tidy-up, the iPhone channel, where data lives, the threat model | [Architecture](docs/ARCHITECTURE.md) |
 | What was tested, and how | [Testing](docs/TESTING.md) |
 | Everything that leaves the Mac | [Privacy](PRIVACY.md) |
 | Report a vulnerability | [Security](SECURITY.md) |
@@ -241,23 +246,23 @@ Notifications, shown by macOS, never include memory text. What an agent receives
 
 ## Building from source
 
-You need Xcode 27 (which runs on macOS 26.6 or later) and Python 3.11 (to convert the embedding model once). The app you build runs on macOS 15 or later.
+You need Xcode 27 (which runs on macOS 26.6 or later) with the iOS platform installed, and Python 3.11 (to convert the embedding model once). The app you build runs on macOS 15 or later.
 
 ```sh
 sh scripts/fetch_embedding_model.sh
 sh scripts/test.sh
 ```
 
-The first command downloads the bundled embedding model ([bge-small-en-v1.5](https://huggingface.co/BAAI/bge-small-en-v1.5)) at a pinned revision, checks its checksums and converts it to Core ML in `~/Library/Caches/com.funesvault.dev/`; it isn't in git. The second runs the package tests, the MCP harness and the other checks, and builds the app unsigned. To work on the app, open `FunesVault.xcodeproj` in Xcode and run the **FunesMac** scheme. Debug builds honour `FUNES_DATA_DIR`, so a development vault never touches your real one. See [Contributing](CONTRIBUTING.md).
+The first command downloads the bundled embedding model ([bge-small-en-v1.5](https://huggingface.co/BAAI/bge-small-en-v1.5)) at a pinned revision, checks its checksums and converts it to Core ML in `~/Library/Caches/com.funesvault.dev/`; it isn't in git. The second runs the package tests, the MCP harness and the other checks, and builds the Mac and iPhone apps unsigned. To work on the app, open `FunesVault.xcodeproj` in Xcode and run the **FunesMac** scheme. Debug builds honour `FUNES_DATA_DIR`, so a development vault never touches your real one. See [Contributing](CONTRIBUTING.md).
 
 ## Uninstall
 
 1. If you used Remote Access, turn your tunnel off: the Remote Access page shows how.
 2. Quit Funes Vault from its menu.
 3. Remove Funes from your agents' configs (for example `claude mcp remove --scope user funes`).
-4. Delete the app from Applications, and its data: `~/Library/Application Support/FunesVault` (the vault, backups, agent keys and Activity). Its settings are in `~/Library/Preferences/com.funesvault.mac.plist`. If you linked the launcher, delete `~/.local/bin/funes-mcp`. API keys for model providers you added are in the Keychain under `com.funesvault.provider`.
+4. Delete the app from Applications, and its data: `~/Library/Application Support/FunesVault` (the vault, backups, agent keys and Activity). Its settings are in `~/Library/Preferences/com.funesvault.mac.plist`. If you linked the launcher, delete `~/.local/bin/funes-mcp`. API keys for model providers you added are in the Keychain under `com.funesvault.provider`, and the Mac's iPhone pairing keys under `com.funesvault.companion`. If you paired an iPhone, delete Funes Vault there too, or tap **Unpair This iPhone…** first.
 
-To start over without uninstalling, **Settings ▸ Data ▸ Erase All Data…** deletes every memory, suggestion, agent and key, Activity, backups, provider keys and settings, then relaunches empty.
+To start over without uninstalling, **Settings ▸ Data ▸ Erase All Data…** deletes every memory, suggestion, agent and key, paired iPhone, Activity, backups, provider keys and settings, then relaunches empty. The Mac's iPhone pairing keys stay in the Keychain, so pair your iPhone again afterwards.
 
 Installed with Homebrew, `brew uninstall --cask funes-vault` removes the app; `brew uninstall --zap --cask funes-vault` also moves the data folder, caches and preferences to the Trash (provider API keys stay in the Keychain).
 

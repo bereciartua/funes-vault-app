@@ -9,16 +9,19 @@ This guide is for maintainers: how a change is made, checked and released, and w
 | `spec/` | The source of truth: requirements, access policy and its test vectors, architecture and ADRs, phase plans |
 | `Apps/FunesMac/` | The Mac app (AppKit + SwiftUI): menu bar, windows, panels, settings, Sparkle; `Assets.xcassets` holds the app icon |
 | `Apps/FunesMCPLauncher/` | `funes-mcp`, the stdio launcher agents run, embedded in `Contents/MacOS` and signed as `com.funesvault.mac.mcp` |
-| `Apps/FunesMac-Info.plist` | Info.plist keys Xcode can't generate: Sparkle's feed, public key and check settings, the Services menu item |
-| `Packages/FunesProtocol`, `FunesCore`, `FunesMCP`, `BridgeUI` | Shared types; the vault logic; the MCP adapter; UI pieces from EK Bridge ([Architecture](ARCHITECTURE.md)) |
-| `FunesVault.xcodeproj` | Two targets, FunesMac and FunesMCPLauncher. The version lives here, once, at project level: `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` |
+| `Apps/FunesMac-Info.plist` | Info.plist keys Xcode can't generate: Sparkle's feed, public key and check settings, the Services menu item, Local Network and Bonjour for iPhone access |
+| `Apps/FunesiOS/`, `Apps/FunesShareExtension/`, `Apps/FunesIntents/`, `Apps/FunesNotifications/`, `Apps/FunesShared/` | The iPhone app and its Share, App Intents (Control and widgets) and notification service extensions, and the code the app and the Intents extension share; each target's Info.plist and entitlements are `Apps/<target>-Info.plist` and `Apps/<target>.entitlements` |
+| `Packages/FunesProtocol`, `FunesCore`, `FunesMCP`, `FunesCompanion`, `FunesPhone`, `BridgeUI` | Shared types; the vault logic; the MCP adapter; the Mac's side of the iPhone companion; the iPhone's side; UI pieces from EK Bridge ([Architecture](ARCHITECTURE.md#packages-and-targets)) |
+| `FunesVault.xcodeproj` | Six targets: FunesMac, FunesMCPLauncher, FunesiOS, FunesShareExtension, FunesIntents and FunesNotifications. The version lives here, once, at project level: `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION`, shared by the Mac and the iPhone |
 | `Licenses/` | Third-party license texts (GRDB, Sparkle, the bge-small model) that ship in the app with `LICENSE` and `NOTICE` |
-| `scripts/test.sh` | Everything offline: package tests, the MCP and Remote Access harnesses, the log-privacy and model-call checks, both Debug builds, the String Catalog check |
+| `scripts/test.sh` | Everything offline: the six packages' tests, the MCP and Remote Access harnesses, the log-privacy, model-call and App Store text checks, the Mac Debug and UI-review builds, the iPhone Debug build, the String Catalog check |
+| `scripts/sync_strings.sh` | Adds new UI strings to the five String Catalogs after a build; `CHECK=1` only checks |
 | `scripts/fetch_embedding_model.sh`, `scripts/embedding_model/` | The bundled model: fetched at a pinned revision, checksummed, converted to Core ML, cached in `~/Library/Caches/com.funesvault.dev/` ([ADR-0016](../spec/architecture/decisions/0016-bundled-bge-small-embeddings.md)) |
 | `scripts/embed_resources.sh` | The FunesMac build phase **Embed Resources**: copies the model (checked against the pinned checksums) and the license files into the app. A Release build fails without the model; a Debug build warns and falls back to the cache folder |
 | `scripts/app_icon.swift` | Draws the app icon in code and writes `AppIcon.appiconset` and the website's icons |
 | `scripts/release.sh` and its helpers | The release ([Releasing](#releasing)): `check_version.sh`, `check_bundle.sh`, `check_notarized.sh`, `make_dmg.sh` + `dmg_window.swift`, `release_assets.sh`, `release_notes.py`, `appcast.py`, `verify_update_signature.swift` |
 | `scripts/ui_snapshots.sh` | PNGs of every screen, light and dark, from the UI-review build (needs Screen Recording permission for the terminal) |
+| `scripts/ios_release.sh`, `scripts/app_store_screenshots.sh`, `scripts/check_app_store_metadata.sh`, `spec/release/app-store/` | The iPhone app's App Store build, its screenshots, and its listing and the check on it ([The iPhone app](#the-iphone-app)) |
 | `server.json`, `.github/workflows/mcp-registry.yml` | The MCP Registry entry `com.funesvault/funes` and the workflow that publishes it |
 | `packaging/homebrew/` | The cask and the patch that added it to [`bereciartua/homebrew-tap`](https://github.com/bereciartua/homebrew-tap), kept for reference |
 | `site/` | The website, funesvault.com, deployed to GitHub Pages |
@@ -43,6 +46,7 @@ CI is kept cheap while macOS minutes are scarce: it runs the tests on pull reque
 - [ ] No personal data in the tree or the new commits: `gitleaks git` over the new commits is clean.
 - [ ] UI snapshots reviewed, light and dark.
 - [ ] The [live matrix](TESTING.md#live-agent-matrix) ran for the four agents, and the results are recorded.
+- [ ] If the iPhone app changed with the Mac's companion protocol or methods: pairing, capture and an approval checked on a real iPhone against the release build, and a new build sent to TestFlight with `sh scripts/ios_release.sh --upload` ([The iPhone app](#the-iphone-app)).
 - [ ] A rehearsal, `sh scripts/release.sh --untagged --no-release`, produced a notarized DMG and zip from the release commit, so the workflow run is a formality.
 - [ ] Before the first release and after changes to the bundle layout or the updater: the [release install test](TESTING.md#release-install-test) and the [fresh-account test](TESTING.md#fresh-account-test) in Testing.
 
@@ -103,7 +107,7 @@ Since v0.2 the app uses CloudKit, only to ring the iPhone's doorbell for approva
 
 ### The iPhone app
 
-The iPhone app ships through App Store Connect, not GitHub. `sh scripts/ios_release.sh` archives it (Release, automatic signing for team JVNJ326L7B) and checks the archive; `--export` signs an `.ipa` for App Store Connect into `dist/ios/`, and `--upload` sends it to TestFlight. `FUNES_IOS_BUILD` sets a higher build number for another upload of the same version. The texts, privacy answers, screenshots plan, App Review notes and the steps in App Store Connect are in [spec/release/app-store](../spec/release/app-store/README.md).
+The iPhone app ships through App Store Connect, not GitHub. `sh scripts/ios_release.sh` archives it (Release, automatic signing for team JVNJ326L7B) and checks the archive; `--export` signs an `.ipa` for App Store Connect into `dist/ios/`, and `--upload` sends it to TestFlight. `FUNES_IOS_VERSION` sets the version when it must differ from the project's `MARKETING_VERSION` (to match the version being prepared in App Store Connect), and `FUNES_IOS_BUILD` a higher build number for another upload of the same version. The texts, privacy answers, screenshots plan, App Review notes and the steps in App Store Connect are in [spec/release/app-store](../spec/release/app-store/README.md).
 
 ## Updates
 

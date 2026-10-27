@@ -14,26 +14,26 @@ The product is defined in [`spec/`](spec/README.md), and it's the source of trut
 
 ## Build and test
 
-You need Xcode 27 (which runs on macOS 26.6 or later) and Python 3.11 for fetching the embedding model. The app itself runs on macOS 15 or later.
+You need Xcode 27 (which runs on macOS 26.6 or later) with the iOS platform installed, and Python 3.11 for fetching the embedding model. The Mac app runs on macOS 15 or later, the iPhone app on iOS 18 or later.
 
 ```sh
 sh scripts/fetch_embedding_model.sh   # once: the bundled embedding model, cached in ~/Library/Caches/com.funesvault.dev
 sh scripts/test.sh                    # everything: package tests, the MCP harness, goldens, checks and builds
 ```
 
-`test.sh` runs the log-privacy check, a check that models are called only through `ModelRouter.send`, the tests of the four packages, the Python MCP and Remote Access harnesses against `funes-mcp-test-server`, an unsigned Debug build, the UI-review build and the string catalog check. Without the model, the model-dependent tests skip; CI requires it. [Testing](docs/TESTING.md) lists what each part covers. To run one package:
+`test.sh` runs the log-privacy check, the App Store text check, a check that models are called only through `ModelRouter.send` and `ModelRouter.embed`, the tests of the six packages, the Python MCP and Remote Access harnesses against `funes-mcp-test-server`, unsigned Debug builds of the Mac app and the iPhone app, the UI-review build and the string catalog check. Without the model, the model-dependent tests skip; CI requires it. [Testing](docs/TESTING.md) lists what each part covers. To run one package:
 
 ```sh
 swift test --package-path Packages/FunesCore
 ```
 
-To work on the app, open `FunesVault.xcodeproj` and run the **FunesMac** scheme. Debug builds of the app and `funes-mcp` honour `FUNES_DATA_DIR`, so a development vault never touches your real one, and `--dev-seed` fills an empty one with sample memories and a Claude Code agent. One-click setup from a development vault writes into a scratch home next to it, never your real agents' configs.
+To work on the app, open `FunesVault.xcodeproj` and run the **FunesMac** scheme (or **FunesiOS** for the iPhone app; its **Try Demo** needs no Mac). Debug builds of the app and `funes-mcp` honour `FUNES_DATA_DIR`, so a development vault never touches your real one, and `--dev-seed` fills an empty one with sample memories and a Claude Code agent. One-click setup from a development vault writes into a scratch home next to it, never your real agents' configs.
 
 ## Working on a change
 
 1. Make the smallest change that works, and test the policy and data shape offline. Add or update a test: Swift Testing (`@Test`, `#expect`) in the packages, Python for protocol harnesses.
 2. **Swift 6 language mode, strict concurrency.** Keep FunesCore free of AppKit, SwiftUI, MCP and networking UI, and FunesProtocol free of dependencies.
-3. **Never log memory text, task text or keys.** Use `Logger(subsystem: "com.funesvault.mac", category: …)` and interpolate user content only with `privacy: .private`. No `print(` in app or package sources. A line that genuinely needs `.public` carries a `// log-safe: <reason>` comment. `scripts/check_log_privacy.sh` enforces this.
+3. **Never log memory text, task text or keys.** Use `Logger(subsystem: "com.funesvault.mac", category: …)` (`com.funesvault.ios` on the iPhone) and interpolate user content only with `privacy: .private`. No `print(` in app or package sources. A line that genuinely needs `.public` carries a `// log-safe: <reason>` comment. `scripts/check_log_privacy.sh` enforces this.
 4. **Fail closed.** Any doubt in an access decision is a refusal. Refusals report withheld counts, never ids.
 5. **Errors** are typed enums, with user-facing text in the String Catalog and reason codes for agents.
 6. A change to a tool's arguments, description or output starts in `Packages/FunesMCP/Sources/FunesMCP/Resources/mcp-tools.json`, which agents see, and needs the matching change in [MCP](docs/MCP.md) and the spec's [MCP server](spec/architecture/mcp-server.md).
@@ -44,11 +44,11 @@ To work on the app, open `FunesVault.xcodeproj` and run the **FunesMac** scheme.
    git diff Tests/mcp/fixtures Packages/BridgeUI/Tests/BridgeUITests/fixtures
    ```
 
-8. **UI text** lives in `Apps/FunesMac/Localizable.xcstrings`. After changing it, build the app (`test.sh` does) and update the catalog with `sh scripts/sync_strings.sh`; `test.sh` fails while it's out of date. UI changes come with light and dark screenshots from `sh scripts/ui_snapshots.sh` in the pull request.
+8. **UI text** lives in each target's String Catalog: `Apps/FunesMac/Localizable.xcstrings`, and the same file in `Apps/FunesiOS`, `Apps/FunesShareExtension`, `Apps/FunesIntents` and `Apps/FunesNotifications`. After changing it, build the apps (`test.sh` does) and update the catalog with `sh scripts/sync_strings.sh`; `test.sh` fails while it's out of date. UI changes come with light and dark screenshots from `sh scripts/ui_snapshots.sh` in the pull request.
 9. Add a line under **Unreleased** in [CHANGELOG.md](CHANGELOG.md) for every user-visible change, written for users. Release notes are made from it.
 10. **Ask before adding a dependency.** The app uses only BridgeKit, GRDB and Sparkle, each pinned to an exact version, plus the bundled bge-small model, fetched at a pinned revision and checksum and never committed.
 
-Identifiers are final from the first public release: the bundle IDs `com.funesvault.*`, the support folder `~/Library/Application Support/FunesVault/` and the Keychain service `com.funesvault.provider`. Don't change them.
+Identifiers are final from the first public release: the bundle IDs `com.funesvault.*`, the support folder `~/Library/Application Support/FunesVault/`, the Keychain services `com.funesvault.provider`, `com.funesvault.companion` and `com.funesvault.ios.companion`, the App Group `group.com.funesvault` and the iCloud container `iCloud.com.funesvault`. Don't change them.
 
 ## Pull requests
 

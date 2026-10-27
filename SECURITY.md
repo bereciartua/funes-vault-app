@@ -1,12 +1,12 @@
 # Security policy
 
-Funes Vault keeps personal memories on your Mac and gives AI agents scoped access to them through a local MCP server. Please report security problems privately.
+Funes Vault keeps personal memories on your Mac and gives AI agents scoped access to them through a local MCP server. Funes Vault for iPhone pairs with the Mac as a thin client. Please report security problems privately.
 
 ## Supported versions
 
 | Version | Supported |
 | --- | --- |
-| 0.1.x (public preview) | Yes: the latest 0.1 release |
+| 0.2.x (public preview), Mac and iPhone | Yes: the latest release |
 | Older builds, and builds from source | No |
 
 Fixes ship as a new release, are listed in the [changelog](CHANGELOG.md), and reach installed copies through the in-app updater.
@@ -17,12 +17,12 @@ Use **GitHub private vulnerability reporting:** **Security ▸ Report a vulnerab
 
 Please don't open a public issue, discussion or pull request for a vulnerability.
 
-Include the app version (Settings ▸ Updates), your macOS version, whether the Mac has Apple silicon or Intel, the agent and how it connects (launcher or direct HTTP), and the steps to reproduce.
+Include the app version (Settings ▸ Updates), your macOS version (and iOS version, for anything involving the iPhone), whether the Mac has Apple silicon or Intel, the agent and how it connects (launcher or direct HTTP), and the steps to reproduce.
 
 **Never include real secrets or personal data**, even in a private report:
 
 - agent keys and tokens (anything starting with `fns_`, such as `fns_mcp_v1_` or `fns_mcpr_v1_`), the contents of `agent-keys/`, or `remote-connections.json`
-- your Remote Access address with its secret path (`/r/…`)
+- your Remote Access address with its secret path (`/r/…`), or the iPhone pairing QR code
 - API keys for model providers
 - `vault.sqlite`, its backups, or a `funesvault.export.v1` file from your own vault
 - memory text, task text, or screenshots of the Vault, the Inbox or a panel that show your memories
@@ -42,7 +42,8 @@ In scope:
 - Remote Access (experimental, off by default): the remote listener's secret path, `Host` check and per-address lockout; remote tokens and their separation from local keys; the OAuth server (pairing, the six-digit code panel, PKCE, refresh rotation and reuse detection, revocation); the client-metadata fetch (SSRF); and any way a cloud agent gets a different decision than the same agent locally.
 - Suggestions: validation, the secret scanner, and an agent planting memories outside its scope.
 - File permissions of the vault, backups, key files and Activity in `~/Library/Application Support/FunesVault/`.
-- What reaches a model provider: the secret scanner and the cloud limit in front of every model call.
+- What reaches a model provider: the secret scanner, the cloud limit and the daily cap in front of every model call, including the `claude` and `codex` commands run for a subscription.
+- The iPhone companion (off by default): pairing (the QR code's secret and the Allow prompt on the Mac), the envelope's signatures, encryption, replay and clock checks, the companion listener's address checks per mode, what a paired iPhone can do as the owner, the CloudKit doorbell carrying anything beyond a random name and tag, and the iPhone app's capture queue and extensions.
 - Logs and Activity leaking memory text, task text or keys.
 - One-click agent setup writing anything other than the shown change, or writing a key.
 - The build, signing and release pipeline, and in-app updates.
