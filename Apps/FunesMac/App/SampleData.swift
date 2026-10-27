@@ -25,7 +25,7 @@ enum SampleData {
              "software_development", .low, .instruction, 12),
             ("Commit messages", "Short imperative subject, details in the body, task ids in the subject.",
              "software_development", .low, .instruction, 30),
-            ("Coffee order", "Flat white with oat milk, no sugar.", "personal_preferences", .public, .preference, 90),
+            ("Coffee order", "Flat white, no sugar.", "personal_preferences", .public, .preference, 90),
             ("Vegetarian", "Doesn't eat meat or fish; eggs and dairy are fine.", "personal_preferences", .low, .fact, 120),
             ("Funes launch", "Funes Vault v0.1 ships as a Mac preview first.", "project_context", .internal, .projectContext, 3),
             ("Penicillin allergy", "Allergic to penicillin since childhood.", "health", .sensitive, .fact, 200),
@@ -38,6 +38,11 @@ enum SampleData {
                                                             sensitivity: sensitivity),
                                                 now: now.addingTimeInterval(-Double(days) * 86_400 - Double(index) * 60))
             made.append(memory)
+        }
+        // An edit, so History has an earlier version to show (ADR-0027).
+        if let coffee = made.first(where: { $0.title == "Coffee order" }) {
+            _ = try? store.updateMemory(id: coffee.id, MemoryEdit(body: "Flat white with oat milk, no sugar."),
+                                        now: now.addingTimeInterval(-2 * 86_400))
         }
         let readAndSuggest = Access(operations: [.read, .suggest], maxSensitivity: .internal,
                                     deniedCategoryKeys: ["health", "finance", "legal"], askBeforeSharing: true,

@@ -13,7 +13,7 @@ import Testing
         }
         #expect(tables == ["access", "access_category", "access_profile_field", "agent", "capture_receipt", "category",
                            "device", "disclosure", "disclosure_item", "embedding", "import_run", "memory", "memory_category",
-                           "memory_fts", "meta", "processing_job", "profile", "provenance", "suggestion", "suggestion_group",
+                           "memory_fts", "memory_revision", "meta", "processing_job", "profile", "provenance", "suggestion", "suggestion_group",
                            "suggestion_target", "tidy_up_dismissal", "tidy_up_run", "undo_entry"])
         #expect(try v.store.categories().map(\.key) == MemoryCategory.builtins.map(\.key))
         #expect(try v.store.categories().first { $0.key == "health" }?.defaultSensitivity == .sensitive)

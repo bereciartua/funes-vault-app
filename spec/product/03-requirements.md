@@ -87,8 +87,8 @@
   - shared (count and last time);
   - suggested by;
   - applied from the Inbox.
-- An automatic change's row opens to the same before and after as Activity, while its undo entry lasts (v0.5). A merge's or split's row links to the other memory. Each row can open its Activity row.
-- Acceptance: provenance rows hold ids and labels only. Old body text is never stored in provenance.
+- A change's row opens to the same before and after as Activity (v0.5): an automatic change's while its undo entry lasts (30 days), any other's while its earlier version is kept (FR-V-16). A merge's or split's row links to the other memory. Each row can open its Activity row.
+- Acceptance: provenance rows hold ids and labels only. Old body text is never stored in provenance; a memory's earlier versions are kept apart from it, in `memory_revision` ([ADR-0027](../architecture/decisions/0027-memory-revisions.md)).
 
 **FR-V-13 Duplicate hint** · S · v0.1
 - When creating or applying a memory whose normalized title and body match, or are very similar to, an existing active memory, show "Similar memory exists" with a link.
@@ -99,6 +99,12 @@
 
 **FR-V-15 Confirm a memory** · C · v0.1
 - "Still true" marks `lastConfirmedAt`, shown as "confirmed 3 months ago".
+
+**FR-V-16 Earlier versions** · S · v0.5 ([ADR-0027](../architecture/decisions/0027-memory-revisions.md))
+- Every change to a memory's title, text, kind, categories, sensitivity, status or expiry keeps the version it replaced, whoever made it: you, an agent, the iPhone, the Inbox, an import or Funes. History and Activity show it as before → after.
+- Kept 90 days and at most 50 per memory, then deleted by the daily cleanup; purged with the memory and by Delete Now.
+- **Forget Earlier Versions…** in a memory's History deletes its earlier versions. Settings ▸ Data ▸ **Keep earlier versions for 90 days** (on by default) turns them off, deleting every one after a confirmation.
+- Acceptance: earlier versions never reach agents, exports, the iPhone, logs or AI model providers; the policy engine, retrieval and memory processing never read them.
 
 ### Capture (FR-C)
 
@@ -319,7 +325,7 @@
 **FR-L-02 Activity view** · M · v0.1
 - Filters: All, Shared, Suggestions, Problems, by agent, by device. Search over labels.
 - The detail pane looks memory titles up live. Deep links: "Edit access", "Open memory".
-- What a change did (v0.5), looked up when the row is selected, never stored in Activity: an automatic change (auto-applied, a tidy-up merge, update, split or archive, and an undo of one) shows each memory before and after from its undo entry, for its 30 days; then "Details of automatic changes are kept for 30 days." An edit shows which fields changed, from provenance. A tidy-up run lists its changes.
+- What a change did (v0.5), looked up when the row is selected, never stored in Activity: an automatic change (auto-applied, a tidy-up merge, update, split or archive, and an undo of one) shows each memory before and after from its undo entry, for its 30 days; then "Details of automatic changes are kept for 30 days." An edit, an Inbox apply, an archive or a restore shows before and after from the memory's earlier versions (FR-V-16), or else which fields changed, from provenance. A tidy-up run lists its changes.
 
 **FR-L-03 Retention** · M · v0.1
 - Disclosures, changes and problems are kept 400 days (up to 20,000 rows); other rows 30 days. Compaction runs at launch and every 6 hours.

@@ -464,6 +464,10 @@ struct ActivityInspector: View {
                         }
                     }
                 }
+            } else if !details.revisions.isEmpty {
+                ForEach(details.revisions, id: \.self) { revision in
+                    ChangeDetailView(model: model, revision: revision)
+                }
             } else if !memoryIDs.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(memoryIDs, id: \.self) { id in

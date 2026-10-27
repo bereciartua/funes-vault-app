@@ -111,6 +111,8 @@ struct DataSettings: View {
     @State private var restoring: URL?
     @State private var erasing = false
     @State private var importing: ImportKind?
+    @State private var keepVersions = true
+    @State private var confirmStopVersions = false
 
     var body: some View {
         Form {
@@ -143,6 +145,19 @@ struct DataSettings: View {
                 Text(String(localized: "Funes keeps the last 7 backups in its data folder."))
                     .font(.callout).foregroundStyle(.secondary)
             }
+            // ADR-0027: what each change replaced, for History and Activity.
+            Section(String(localized: "Earlier versions")) {
+                Toggle(String(localized: "Keep earlier versions for 90 days"), isOn: Binding(get: { keepVersions }, set: { on in
+                    if on {
+                        try? model.services.store.setKeepsEarlierVersions(true)
+                        keepVersions = true
+                    } else {
+                        confirmStopVersions = true
+                    }
+                }))
+                Text(String(localized: "When a memory changes, Funes keeps the text it replaced, so History and Activity can show what changed. Up to 50 versions a memory, on this Mac only: never shared with agents, exported or sent to your iPhone."))
+                    .font(.callout).foregroundStyle(.secondary)
+            }
             Section(String(localized: "Export and import")) {
                 Toggle(String(localized: "Include archived memories"), isOn: $includeArchived)
                 Button(String(localized: "Export…")) { export() }
@@ -167,6 +182,15 @@ struct DataSettings: View {
         .onAppear {
             backups = model.data.backups()
             automatic = model.preferences.defaults.bool(forKey: Preferences.Key.automaticBackups)
+            keepVersions = (try? model.services.store.keepsEarlierVersions()) ?? true
+        }
+        .confirmationDialog(String(localized: "Stop keeping earlier versions?"), isPresented: $confirmStopVersions) {
+            Button(String(localized: "Delete Earlier Versions"), role: .destructive) {
+                try? model.services.store.setKeepsEarlierVersions(false)
+                keepVersions = false
+            }
+        } message: {
+            Text(String(localized: "Every earlier version is deleted now, and changes won't keep one. History keeps its labels; automatic changes keep theirs until Undo expires."))
         }
         .confirmationDialog(String(localized: "Restore this backup?"), isPresented: Binding(get: { restoring != nil }, set: { if !$0 { restoring = nil } })) {
             Button(String(localized: "Restore and Relaunch")) {

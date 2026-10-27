@@ -2,35 +2,47 @@ import FunesCore
 import FunesProtocol
 import SwiftUI
 
-/// An automatic change's details (FR-L-02, FR-V-12): each memory it touched, before and after,
-/// from the undo log, so for its 30 days. Shown by Activity's inspector, a memory's History and the
-/// Inbox's Applied automatically list.
+/// What a change did (FR-L-02, FR-V-12): each memory it touched, before and after. An automatic
+/// change's comes from the undo log (30 days); any other change's from the memory's earlier
+/// versions (90 days, ADR-0027). Shown by Activity's inspector, a memory's History and the Inbox's
+/// Applied automatically list.
 struct ChangeDetailView: View {
     let model: AppModel
-    let change: UndoChange
+    let items: [UndoChange.Item]
+    /// "Tidy-up: merged 2 memories into “Harbor dates”"; nil where the row around it says what happened.
+    var headline: String?
+    var undone = false
     /// For an `undone` row: what the change made is what went away, and what it replaced came back.
     var reversed = false
-    /// Off where the row around it already says what happened.
-    var showsHeadline = true
+
+    init(model: AppModel, change: UndoChange, reversed: Bool = false, showsHeadline: Bool = true) {
+        self.model = model
+        items = change.items
+        let titles = Dictionary(change.items.compactMap { item in (item.after ?? item.before).map { (item.memoryID, $0.title) } },
+                                uniquingKeysWith: { first, _ in first })
+        headline = showsHeadline ? GroupText.change(change.entry, titles: titles) : nil
+        undone = change.entry.undoneAt != nil
+        self.reversed = reversed
+    }
+
+    init(model: AppModel, revision: RevisionChange) {
+        self.model = model
+        items = [UndoChange.Item(memoryID: revision.memoryID, before: revision.before, after: revision.after)]
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if showsHeadline {
+            if let headline {
                 HStack(spacing: 6) {
-                    Text(GroupText.change(change.entry, titles: titles)).font(.callout.weight(.medium))
-                    if change.entry.undoneAt != nil, !reversed { Pill(label: String(localized: "Undone"), tone: .neutral) }
+                    Text(headline).font(.callout.weight(.medium))
+                    if undone, !reversed { Pill(label: String(localized: "Undone"), tone: .neutral) }
                 }
             }
-            ForEach(change.items, id: \.memoryID) { item in
+            ForEach(items, id: \.memoryID) { item in
                 ChangeItemView(model: model, item: reversed ? .init(memoryID: item.memoryID, before: item.after, after: item.before) : item,
                                reversed: reversed)
             }
         }
-    }
-
-    private var titles: [UUID: String] {
-        Dictionary(change.items.compactMap { item in (item.after ?? item.before).map { (item.memoryID, $0.title) } },
-                   uniquingKeysWith: { first, _ in first })
     }
 }
 
@@ -65,7 +77,7 @@ private struct ChangeItemView: View {
         case (let before?, nil):
             BodyText(text: before.body, faded: true)
             if !reversed {
-                Text(String(localized: "Changed again since, so what this change saved isn't known."))
+                Text(String(localized: "What this change saved isn't kept."))
                     .font(.caption).foregroundStyle(.secondary)
             }
         case (let before?, let after?) where before == after:
@@ -163,10 +175,13 @@ struct DiffRow: View {
 }
 
 /// What an Activity row changed (FR-L-02), looked up when it's selected: an automatic change's
-/// before and after from the undo log, or the fields an edit changed from its memories'
-/// provenance. Nothing here is stored in the Activity log, which holds ids and counts only.
+/// before and after from the undo log, any other change's from its memories' earlier versions
+/// (ADR-0027), or else the fields it changed from provenance. Nothing here is stored in the
+/// Activity log, which holds ids and counts only.
 struct ActivityChangeDetails: Equatable {
     var changes: [UndoChange] = []
+    /// Edits, Inbox applies, archives and restores, from earlier versions.
+    var revisions: [RevisionChange] = []
     /// An undo: its changes are shown taken back.
     var reversed = false
     /// The fields each memory's edit changed, for edits the undo log doesn't hold.
@@ -181,7 +196,7 @@ struct ActivityChangeDetails: Equatable {
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.changes == rhs.changes && lhs.reversed == rhs.reversed && lhs.expired == rhs.expired
+        lhs.changes == rhs.changes && lhs.revisions == rhs.revisions && lhs.reversed == rhs.reversed && lhs.expired == rhs.expired
             && lhs.fields.map(\.memoryID) == rhs.fields.map(\.memoryID) && lhs.fields.map(\.fields) == rhs.fields.map(\.fields)
     }
 
@@ -208,8 +223,14 @@ struct ActivityChangeDetails: Equatable {
             guard let run = e.ids.first else { break }
             details.changes = (try? await undo.changes(runID: run, now: now)) ?? []
             details.expired = details.changes.isEmpty && (e.counts["applied"] ?? 0) > 0
-        case "memory_edited", "sensitivity_raised", "suggestion_applied":
+        case "memory_edited", "sensitivity_raised", "suggestion_applied", "memory_archived", "memory_restored":
             for id in e.ids {
+                let versions = ((try? model.services.store.revisionChanges(memoryID: id)) ?? [])
+                    .filter { abs($0.at.timeIntervalSince(e.time)) < 2 }
+                guard versions.isEmpty else {
+                    details.revisions += versions
+                    continue
+                }
                 let edits = ((try? model.services.store.provenance(memoryID: id)) ?? [])
                     .filter { $0.event == .edited && abs($0.at.timeIntervalSince(e.time)) < 2 }
                 let fields = edits.flatMap(\.fieldsChanged).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }

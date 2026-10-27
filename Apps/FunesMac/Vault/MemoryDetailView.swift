@@ -270,13 +270,16 @@ enum DuplicateHint {
     }
 }
 
-/// A memory's history: created, edited, archived, shared… Rows hold labels only (FR-V-12). An
-/// automatic change's row opens to what it did, from the undo log while it keeps it (30 days); a
-/// merge's or split's row links to the other memory; each row can show its Activity row.
+/// A memory's history: created, edited, archived, shared… Rows hold labels only (FR-V-12). A
+/// change's row opens to what it did: an automatic change's from the undo log (30 days), any
+/// other's from the memory's earlier versions (90 days, ADR-0027). A merge's or split's row links
+/// to the other memory; each row can show its Activity row. Forget Earlier Versions deletes them.
 struct HistoryList: View {
     let entries: [ProvenanceEntry]
     let model: AppModel
     @State private var changes: [UndoChange] = []
+    @State private var revisions: [RevisionChange] = []
+    @State private var confirmForget = false
     @State private var relatedTitles: [UUID: String] = [:]
     @State private var expanded: Set<ProvenanceEntry> = []
 
@@ -287,11 +290,16 @@ struct HistoryList: View {
 
     var body: some View {
         let rows = Array(entries.reversed().prefix(30))
-        let details = Self.details(for: rows, changes: changes)
+        let details = Self.details(for: rows, changes: changes, revisions: revisions)
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 Text(String(localized: "History")).font(.headline)
                 Spacer()
+                if !revisions.isEmpty {
+                    Button(String(localized: "Forget Earlier Versions…")) { confirmForget = true }
+                        .buttonStyle(.link).font(.callout)
+                        .help(String(localized: "Delete the earlier text of this memory. Its history keeps the labels."))
+                }
                 if let id = entries.first?.memoryID {
                     Button(String(localized: "Show All in Activity")) { model.showActivity(.memory(id)) }
                         .buttonStyle(.link).font(.callout)
@@ -305,6 +313,15 @@ struct HistoryList: View {
             }
         }
         .task(id: entries) { await load() }
+        .confirmationDialog(String(localized: "Forget this memory's earlier versions?"), isPresented: $confirmForget) {
+            Button(String(localized: "Forget Earlier Versions"), role: .destructive) {
+                guard let id = entries.first?.memoryID else { return }
+                _ = try? model.services.store.forgetEarlierVersions(memoryID: id)
+                Task { await load() }
+            }
+        } message: {
+            Text(String(localized: "Their text is deleted from this Mac. The history keeps its labels, and automatic changes keep theirs until Undo expires."))
+        }
     }
 
     private func row(_ index: Int, _ entry: ProvenanceEntry, detail: Detail?) -> some View {
@@ -339,7 +356,10 @@ struct HistoryList: View {
             .accessibilityElement(children: detail == nil && related == nil ? .combine : .contain)
             if open, let detail {
                 VStack(alignment: .leading, spacing: 6) {
-                    ChangeDetailView(model: model, change: detail.change, reversed: detail.reversed)
+                    switch detail {
+                    case .automatic(let change, let reversed): ChangeDetailView(model: model, change: change, reversed: reversed)
+                    case .version(let revision): ChangeDetailView(model: model, revision: revision)
+                    }
                     Button(String(localized: "Show in Activity")) { model.showActivity(memoryID: entry.memoryID, near: entry.at) }
                         .buttonStyle(.link)
                 }
@@ -356,10 +376,11 @@ struct HistoryList: View {
         guard let id = entries.first?.memoryID else { return }
         changes = (try? await UndoLog(store: model.services.store, activity: model.services.activity).changes(memoryID: id, now: Date()))
             ?? []
+        revisions = (try? model.services.store.revisionChanges(memoryID: id)) ?? []
         #if FUNES_UI_REVIEW
         if Self.reviewExpandsChanges {
             let rows = Array(entries.reversed().prefix(30))
-            expanded = Set(Self.details(for: rows, changes: changes).keys.map { rows[$0] })
+            expanded = Set(Self.details(for: rows, changes: changes, revisions: revisions).keys.map { rows[$0] })
         }
         #endif
         let related = Array(Set(entries.compactMap(\.relatedMemoryID)))
@@ -367,26 +388,39 @@ struct HistoryList: View {
             .map { ($0.id, $0.title) }, uniquingKeysWith: { first, _ in first })
     }
 
-    struct Detail {
-        let change: UndoChange
-        /// The row is the change's undo.
-        let reversed: Bool
+    enum Detail {
+        /// From the undo log; `reversed` on the change's undo row.
+        case automatic(UndoChange, reversed: Bool)
+        /// From the memory's earlier versions.
+        case version(RevisionChange)
     }
 
-    /// Which row shows each change: the one that names it best (changed automatically, merged,
-    /// split), else the first at the moment it was made; its undo's row at the moment it was undone.
-    static func details(for rows: [ProvenanceEntry], changes: [UndoChange]) -> [Int: Detail] {
+    /// Which row shows each change. An automatic change goes on the row that names it best
+    /// (changed automatically, merged, split), else the first at the moment it was made, and its
+    /// undo on the undone row at that moment. Any other change goes on the edited, archived,
+    /// restored or deleted row by the same actor at its moment, unless an automatic change already
+    /// covers that moment.
+    static func details(for rows: [ProvenanceEntry], changes: [UndoChange], revisions: [RevisionChange]) -> [Int: Detail] {
         let preferred: [ProvenanceEvent] = [.autoApplied, .mergedInto, .mergedFrom, .splitInto, .splitFrom]
+        let versioned: [ProvenanceEvent] = [.edited, .archived, .restored, .deleted]
         let near = { (a: Date, b: Date) in abs(a.timeIntervalSince(b)) < 2 }
         var out: [Int: Detail] = [:]
         for change in changes {
             let made = rows.indices.filter { rows[$0].event != .undone && near(rows[$0].at, change.entry.createdAt) && out[$0] == nil }
             if let i = made.first(where: { preferred.contains(rows[$0].event) }) ?? made.first {
-                out[i] = Detail(change: change, reversed: false)
+                out[i] = .automatic(change, reversed: false)
             }
             if let undoneAt = change.entry.undoneAt,
                let i = rows.indices.first(where: { rows[$0].event == .undone && near(rows[$0].at, undoneAt) && out[$0] == nil }) {
-                out[i] = Detail(change: change, reversed: true)
+                out[i] = .automatic(change, reversed: true)
+            }
+        }
+        let automatic = changes.flatMap { [$0.entry.createdAt] + [$0.entry.undoneAt].compactMap { $0 } }
+        for revision in revisions where !automatic.contains(where: { near($0, revision.at) }) {
+            if let i = rows.indices.first(where: {
+                versioned.contains(rows[$0].event) && rows[$0].actor == revision.actor && near(rows[$0].at, revision.at) && out[$0] == nil
+            }) {
+                out[i] = .version(revision)
             }
         }
         return out

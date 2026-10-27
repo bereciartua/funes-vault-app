@@ -252,7 +252,25 @@ CREATE TABLE profile (
   updated_at      TEXT
 );
 
+-- v7_memory_revisions (v0.5, ADR-0027): the version each change replaced. Never exported.
+CREATE TABLE memory_revision (
+  memory_id      TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
+  version        INTEGER NOT NULL,                     -- the version this state was
+  title          TEXT NOT NULL,
+  body           TEXT NOT NULL,
+  kind           TEXT NOT NULL,
+  category_keys  TEXT NOT NULL DEFAULT '[]',           -- JSON [category key]
+  sensitivity    INTEGER NOT NULL,
+  status         TEXT NOT NULL,
+  expires_at     TEXT,
+  replaced_at    TEXT NOT NULL,
+  replaced_by    TEXT NOT NULL,                        -- the change's actor, as in provenance
+  PRIMARY KEY (memory_id, version)
+);
+CREATE INDEX memory_revision_replaced ON memory_revision(replaced_at);
+
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema version, vault id, etc.
+-- v0.5: meta('keep_revisions') = '0' once the user turned earlier versions off; absent means on.
 -- v0.3: meta('tidy_up_split_prompt') = the extraction prompt version whose one-time clearing of older split
 -- dismissals has run (memory processing §9.5).
 ```
@@ -264,17 +282,19 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - `v4_memory_processing` (v0.3, Phase 6.1; [ADR-0020](decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](decisions/0021-daily-tidy-up.md)): `memory.trust` (`trusted` for every existing memory except `agent_write` ones, which are `untrusted`) and `memory.reconciled_version` (null); `suggestion.target_memory_version`, `group_id`, `intent`, `outside_scope`, and the `split` status; tables `suggestion_target`, `suggestion_group`, `processing_job`, `undo_entry`, `tidy_up_run` and `tidy_up_dismissal`; `provenance.related_memory_id` and `engine`. Fields as in the [domain model](../domain/domain-model.md#suggestion). The physical DDL is `Schema.v4` in FunesCore. Suggestions pending before it have no target version, so apply only checks that their target is still active.
 - `v5_overview_indexes` (v0.4, Phase 7 task 7.2; [ADR-0025](decisions/0025-vault-overview-and-iphone-cache.md)): `VaultOverview` took 86–105 ms on the 10,000-memory benchmark vault without indexes, so five indexes, each carrying the columns its query groups by so the scans don't visit rows that hold memory text and candidate snapshots: `memory_created` on `memory(created_at, source, source_device_id)`, `memory_status_shape` on `memory(status, sensitivity, kind, id)`, `disclosure_delivered` on `disclosure(delivered_at, agent_id)` where `delivered_at` is set, `disclosure_created` on `disclosure(created_at, agent_id, status, reason)`, and `disclosure_item_shape` on `disclosure_item(disclosure_id, sensitivity, category_key)`. No data changes. With them it takes about 12 ms for 30 days, 14 ms for 12 weeks and 36 ms for 12 months (up to about 45 ms while the Mac is busy).
 - `v6_profile` (v0.5, [ADR-0026](decisions/0026-about-you-profile.md)): the `profile` table (no row until the user first saves About You), `access_profile_field` with `name` for every agent not removed, and `disclosure.profile_fields_sent` (`[]` for every existing request).
+- `v7_memory_revisions` (v0.5, [ADR-0027](decisions/0027-memory-revisions.md)): the `memory_revision` table and its index. Nothing to backfill.
 - Before running pending migrations: make an online backup to `Backups/pre-<migration>-<date>.sqlite`.
 - Each migration has a test: open a fixture database created by the previous version, migrate it, and check the data and invariants.
 - Downgrades aren't supported. An older app version that finds a newer schema refuses to open the vault, shows "Update Funes", and never writes to it.
 
 ## 4. Invariants enforced in code (and tested)
 - **Categories:** a memory always has at least one `memory_category` row, enforced in the store API, since SQLite can't express it. A memory's categories are read in category order (`sort_order`, then key); the first is its primary category (the `category` of a bundle item).
-- **Versioning:** `version` increments in the same transaction as any field change. `updated_at` is set at the same time.
+- **Versioning:** `version` increments in the same transaction as any field change. `updated_at` is set at the same time. From v0.5 the state it replaces is written to `memory_revision` in that transaction too, unless earlier versions are off (`MemoryStore.update` and `setStatus` are the only places a version changes).
 - **Disclosure items:** written only in delivery transactions.
 - **Captures:** `capture_receipt` is inserted in the same transaction as its suggestion.
 - **Purging** a deleted memory removes its FTS rows, embedding and provenance (cascade). `disclosure_item` rows keep the memory id for Activity labelling, shown as "(deleted memory)".
 - **Purging (v0.3)** also removes the memory's `undo_entry` rows, the text of the piece it was saved from, and the source text of the `suggestion_group` that piece belongs to (with the original row's title and body), so no copy of its text outlives it (FR-V-04). Delete Now does the same at once.
+- **Purging (v0.5)** also removes the memory's earlier versions (cascade).
 - **Auto-apply (v0.3):** each automatic change, its `undo_entry`, its provenance and the watermark update are written in one transaction, after re-checking every involved memory's version.
 
 ## 5. Maintenance jobs
@@ -286,7 +306,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 | Re-embed | on change; when the bundled model version changes; v0.3, when the user adds a provider embedding model (batched, resumable, with progress; see [model providers §7](model-providers.md#7-choosing-a-provider-embedding-model)) | Bundled: write vectors for the new `model_id`, switch when complete, delete old vectors. Provider (second index): write vectors for memories within the cloud limit; delete them when the limit drops, a memory's sensitivity rises above it, or the provider model is removed |
 | Processing jobs (v0.3) | after every vault change and every minute, one at a time; `running` ones requeued at launch | New memories processing of queued inputs ([memory processing §5.2](../domain/memory-processing.md#52-which-inputs-phase-6)): until 6a, classification of Mac and iPhone captures. Retries after 30 s, 2, 8 and 32 min, then `failed`. Finished jobs deleted after 30 days (daily) |
 | Daily tidy-up (v0.3) | daily at the user's time (`NSBackgroundActivityScheduler`), on demand, or on the next launch or wake after a missed run; only while on | [Memory processing §9](../domain/memory-processing.md#9-daily-tidy-up) |
-| Undo log cleanup (v0.3) | daily | Delete `undo_entry` rows past 30 days; drop source text of fully decided suggestion groups |
+| Undo log cleanup (v0.3) | daily | Delete `undo_entry` rows past 30 days; drop source text of fully decided suggestion groups; v0.5: delete earlier versions past 90 days, and each memory's oldest beyond 50 |
 | Backup | daily, and before migrations | Keep the last 7 |
 | Activity compaction | launch, every 6 h, above 8 MB | Retention per FR-L-03 |
 | Receipt cleanup | daily | Delete capture receipts older than 90 days |

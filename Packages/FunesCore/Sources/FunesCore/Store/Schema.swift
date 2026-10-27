@@ -45,8 +45,32 @@ enum Schema {
         migrator.registerMigration("v6_profile") { db in
             try db.execute(sql: v6)
         }
+        // Earlier versions (v0.5; ADR-0027, storage §3): the state each change replaced, for
+        // History and Activity. Nothing to backfill.
+        migrator.registerMigration("v7_memory_revisions") { db in
+            try db.execute(sql: v7)
+        }
         return migrator
     }
+
+    /// One row per version a change replaced; purged with its memory.
+    static let v7 = """
+        CREATE TABLE memory_revision (
+          memory_id      TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
+          version        INTEGER NOT NULL,
+          title          TEXT NOT NULL,
+          body           TEXT NOT NULL,
+          kind           TEXT NOT NULL,
+          category_keys  TEXT NOT NULL DEFAULT '[]',
+          sensitivity    INTEGER NOT NULL,
+          status         TEXT NOT NULL,
+          expires_at     TEXT,
+          replaced_at    TEXT NOT NULL,
+          replaced_by    TEXT NOT NULL,
+          PRIMARY KEY (memory_id, version)
+        );
+        CREATE INDEX memory_revision_replaced ON memory_revision(replaced_at);
+        """
 
     /// No profile row until the user first saves About You.
     static let v6 = """

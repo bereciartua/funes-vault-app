@@ -177,6 +177,12 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await mainScene("vault-memory-history") {
                 model.vault.selection = model.vault.memories.first(where: { $0.title == "Dark mode" }).map { [$0.id] } ?? []
             }
+            // An edit's earlier version in History (FR-V-16).
+            model.vault.status = .active
+            await model.vault.load()
+            await mainScene("vault-memory-version") {
+                model.vault.selection = model.vault.memories.first(where: { $0.title == "Coffee order" }).map { [$0.id] } ?? []
+            }
             HistoryList.reviewExpandsChanges = false
             model.vault.status = .recentlyDeleted
             await model.vault.load()

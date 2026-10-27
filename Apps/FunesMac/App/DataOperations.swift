@@ -68,6 +68,8 @@ final class DataOperations {
             _ = try? await captures.cleanupReceipts(now: now)
             _ = try? await processing.cleanup(now: now)
             _ = try? await undo.cleanup(now: now)
+            // Earlier versions past 90 days, or beyond 50 for a memory (ADR-0027).
+            _ = try? await store.cleanUpEarlierVersions(now: now)
             // Split inputs whose every piece is decided keep no copy of their text (storage §5).
             _ = try? await suggestions.dropDecidedGroupText()
         }
