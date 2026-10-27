@@ -40,8 +40,36 @@ enum Schema {
         migrator.registerMigration("v5_overview_indexes") { db in
             try db.execute(sql: v5)
         }
+        // About you (v0.5, Phase 8; ADR-0026, storage §3): the profile, the fields each agent's
+        // answers carry (its name, for every agent not removed), and the fields each request sent.
+        migrator.registerMigration("v6_profile") { db in
+            try db.execute(sql: v6)
+        }
         return migrator
     }
+
+    /// No profile row until the user first saves About You.
+    static let v6 = """
+        CREATE TABLE profile (
+          id              INTEGER PRIMARY KEY CHECK (id = 1),
+          given_name      TEXT,
+          family_name     TEXT,
+          preferred_name  TEXT,
+          pronouns        TEXT,
+          languages       TEXT NOT NULL DEFAULT '[]',
+          location        TEXT,
+          time_zone       TEXT NOT NULL DEFAULT 'automatic',
+          occupation      TEXT,
+          updated_at      TEXT
+        );
+        CREATE TABLE access_profile_field (
+          agent_id TEXT NOT NULL REFERENCES agent(id) ON DELETE CASCADE,
+          field    TEXT NOT NULL CHECK (field IN ('name','pronouns','languages','location','time_zone','occupation')),
+          PRIMARY KEY (agent_id, field)
+        );
+        INSERT INTO access_profile_field (agent_id, field) SELECT id, 'name' FROM agent WHERE removed_at IS NULL;
+        ALTER TABLE disclosure ADD COLUMN profile_fields_sent TEXT NOT NULL DEFAULT '[]';
+        """
 
     /// The overview's reads (ADR-0025): new memories by `created_at`, deliveries by
     /// `delivered_at` (only delivered requests have one), requests by `created_at`, and the

@@ -95,7 +95,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             (remoteRequests.contains(requestID), remoteRequests.contains(requestID) ? remoteTunnel(panel.agentID) : nil)
         }
         var item = Self.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: now, agent: agent, remote: remote,
-                                  tunnel: tunnel)
+                                  tunnel: tunnel, profileFields: disclosure?.profileFieldsSent ?? [])
         if focus {
             item.expiresAt = panel.expiresAt
             item.moreTime = nil
@@ -119,7 +119,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// said (labelled as such), the user's own note on the agent, and the memories, strong matches
     /// ticked and weaker ones offered unticked (access policy §3.2).
     static func shareItem(_ panel: ApprovalPanel, withheld: [ReasonCode: Int], now: Date, agent: Agent?,
-                          remote: Bool = false, tunnel: String? = nil) -> PanelItem {
+                          remote: Bool = false, tunnel: String? = nil, profileFields: [ProfileField] = []) -> PanelItem {
         let rows = panel.memories.map { memory in
             let weak = !panel.strong.contains(memory.id)
             return PanelItem.Row(id: memory.id.uuidString, title: memory.title, detail: memory.body,
@@ -140,7 +140,16 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             destination: destination(agentName: panel.agentName, kind: agent?.agentKind, remote: remote, tunnel: tunnel),
             task: panel.task, keywords: panel.keywords, purpose: panel.purpose, keepsIt: AgentText.retention(panel.retention),
             sharedWith: panel.processors, facts: facts, rows: ordered, note: note,
-            expiresAt: max(now, panel.createdAt) + panelSeconds)
+            aside: aboutYou(agentName: panel.agentName, profileFields), expiresAt: max(now, panel.createdAt) + panelSeconds)
+    }
+
+    /// "Claude Code also has your name and pronouns, as set in its Access." (ADR-0026): the
+    /// answer that started the request already carried them, so they aren't tickable and Deny
+    /// doesn't take them back.
+    static func aboutYou(agentName: String, _ fields: [ProfileField]) -> PanelItem.Aside? {
+        guard !fields.isEmpty else { return nil }
+        return PanelItem.Aside(text: String(localized: "\(agentName) also has \(ProfileText.sentence(fields)), as set in "),
+                               link: String(localized: "its Access"), after: ".")
     }
 
     /// Goes to: built only from facts Funes holds. A local agent may pass what it reads on to its AI

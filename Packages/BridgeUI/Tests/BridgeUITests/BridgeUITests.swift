@@ -461,3 +461,27 @@ struct UpdateRelaunchGateTests {
         #expect(store.records().map(\.rowID) == ["new"])
     }
 }
+
+/// The Share panel's aside (Funes ADR-0026): what the agent already has, with a link that doesn't
+/// answer the panel.
+@Suite("Panel aside")
+@MainActor
+struct PanelAsideTests {
+    @Test func shareCarriesItsAsideAndTheLinkLeavesThePanelOpen() {
+        let aside = PanelItem.Aside(text: "Claude Code also has your name, as set in ", link: "its Access", after: ".")
+        let item = PanelItem.share(id: UUID(), agentID: "a", agentName: "Claude Code", destination: nil, task: nil, keywords: [],
+                                   purpose: nil, keepsIt: nil, sharedWith: [],
+                                   rows: [PanelItem.Row(id: "m", title: "Coffee", detail: "Flat white.", version: "1")],
+                                   note: nil, aside: aside, expiresAt: nil)
+        #expect(item.aside == aside)
+        let queue = ApprovalQueue()
+        var answers: [PanelAnswer] = []
+        var clicked: [UUID] = []
+        queue.asideLinkClicked = { clicked.append($0.id) }
+        queue.enqueue(item) { answers.append($0) }
+        queue.asideLinkClicked(item)
+        #expect(clicked == [item.id] && answers.isEmpty && queue.items.count == 1)
+        #expect(PanelItem.share(id: UUID(), agentID: "a", agentName: "A", destination: nil, task: nil, keywords: [], purpose: nil,
+                                keepsIt: nil, sharedWith: [], rows: [], note: nil, expiresAt: nil).aside == nil)
+    }
+}

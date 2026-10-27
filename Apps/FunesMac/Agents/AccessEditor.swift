@@ -34,6 +34,7 @@ struct AccessEditor: View {
                 ceiling
                 categories
                 asking
+                aboutYou
                 expiry
                 more
                 footer
@@ -128,6 +129,13 @@ struct AccessEditor: View {
                           isOn: $draft.access.askBeforeSaving)
             }
         }
+    }
+
+    /// The profile fields its answers carry (ADR-0026, access policy §3.10). Saved with the rest
+    /// of the tab, so changing them bumps the revision like any access change.
+    private var aboutYou: some View {
+        ProfileFieldsCard(model: model, agentName: agent.name, fields: $draft.access.profileFields,
+                          reads: access.operations.contains(.read))
     }
 
     private var expiry: some View {
@@ -238,6 +246,43 @@ struct AccessEditor: View {
             } catch {
                 self.error = ErrorText.message(error)
             }
+        }
+    }
+}
+
+/// The Access tab's About you card: a checkbox per profile field, each with its value dimmed.
+/// Disabled without Read, which gets nothing (access policy §3.10 rule 1).
+struct ProfileFieldsCard: View {
+    let model: AppModel
+    let agentName: String
+    @Binding var fields: Set<ProfileField>
+    let reads: Bool
+
+    var body: some View {
+        Card {
+            Text(String(localized: "About you")).font(.headline)
+            Text(String(localized: "Sent with every answer to \(agentName)'s requests, without asking. Edit them in Settings ▸ About You."))
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            ForEach(ProfileField.allCases, id: \.self) { field in
+                let title = ProfileText.title(field)
+                let value = ProfileText.value(field, in: model.profile)
+                Toggle(isOn: Binding(get: { fields.contains(field) }, set: { on in
+                    if on { fields.insert(field) } else { fields.remove(field) }
+                })) {
+                    HStack(spacing: 6) {
+                        Text(title)
+                        Text("· \(value)").foregroundStyle(.secondary).lineLimit(1).truncationMode(.tail)
+                    }
+                }
+                .toggleStyle(.checkbox)
+                .disabled(!reads)
+                .accessibilityLabel(String(localized: "Send \(title): \(value)"))
+            }
+            if !reads {
+                Text(String(localized: "Needs Read.")).font(.callout).foregroundStyle(.secondary)
+            }
+            Button(String(localized: "About You…")) { model.openSettings(.aboutYou) }
+                .buttonStyle(.link)
         }
     }
 }

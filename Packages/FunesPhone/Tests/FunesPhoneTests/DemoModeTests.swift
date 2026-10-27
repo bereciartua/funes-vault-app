@@ -103,6 +103,8 @@ import Testing
     /// UX: iPhone, Demo mode: about 20 sample memories, and every screen has something to show.
     @Test func bundledDemoVaultFillsEveryScreen() async throws {
         let vault = DemoVault()
+        // Home's title greets the demo person (ADR-0026); the pairing is never touched.
+        #expect(try await vault.call(StatusGet.self, EmptyParams()).calledName == "Alex")
         let categories = Set(try await vault.call(CategoriesList.self, EmptyParams()).map(\.key))
         var all: [MemorySummary] = []
         for status in MemoryStatus.allCases {

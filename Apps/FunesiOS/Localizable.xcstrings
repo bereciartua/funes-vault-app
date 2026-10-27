@@ -663,10 +663,19 @@
     "Good afternoon" : {
 
     },
+    "Good afternoon, %@" : {
+
+    },
     "Good evening" : {
 
     },
+    "Good evening, %@" : {
+
+    },
     "Good morning" : {
+
+    },
+    "Good morning, %@" : {
 
     },
     "History" : {

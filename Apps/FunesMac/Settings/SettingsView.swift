@@ -4,11 +4,13 @@ import ServiceManagement
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
+    case aboutYou = "about-you"
     case general, capture, models, mcp, iphone, data, updates, advanced
     var id: String { rawValue }
 
     var title: String {
         switch self {
+        case .aboutYou: String(localized: "About You")
         case .general: String(localized: "General")
         case .capture: String(localized: "Capture")
         case .models: String(localized: "AI Models")
@@ -22,6 +24,7 @@ enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
 
     var symbol: String {
         switch self {
+        case .aboutYou: "person.crop.circle"
         case .general: "gearshape"
         case .capture: "square.and.pencil"
         case .models: "cpu"
@@ -53,6 +56,7 @@ struct SettingsView: View {
     @ViewBuilder
     private func pane(_ tab: SettingsTab) -> some View {
         switch tab {
+        case .aboutYou: AboutYouSettings(model: model)
         case .general: GeneralSettings(model: model)
         case .capture: CaptureSettings(model: model)
         case .models: ModelSettingsPane(model: model)

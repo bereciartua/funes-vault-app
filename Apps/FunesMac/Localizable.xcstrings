@@ -58,6 +58,16 @@
         }
       }
     },
+    "%@ also has %@, as set in " : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ also has %2$@, as set in "
+          }
+        }
+      }
+    },
     "%@ asks to use %lld memories in Funes" : {
       "localizations" : {
         "en" : {
@@ -448,6 +458,9 @@
     "%lld above its sensitivity limit" : {
 
     },
+    "%lld agents" : {
+
+    },
     "%lld ahead of it" : {
 
     },
@@ -694,6 +707,9 @@
     "+%lld this week" : {
 
     },
+    "1 agent" : {
+
+    },
     "1 ahead of it" : {
 
     },
@@ -829,6 +845,15 @@
     "About Funes Vault" : {
 
     },
+    "About You" : {
+
+    },
+    "About You…" : {
+
+    },
+    "About you" : {
+
+    },
     "Above its sensitivity limit" : {
 
     },
@@ -875,6 +900,9 @@
 
     },
     "Add Funes Vault to %@?" : {
+
+    },
+    "Add Language" : {
 
     },
     "Add Provider" : {
@@ -995,6 +1023,9 @@
     "Agents can't connect: the server is off" : {
 
     },
+    "Agents get only the fields you tick in each one's Access tab, with their answers, without asking. New agents get your name." : {
+
+    },
     "Agents get the answer when they check again." : {
 
     },
@@ -1068,6 +1099,9 @@
 
     },
     "Also matched, less closely" : {
+
+    },
+    "Also sent" : {
 
     },
     "Always Allow %@ to Add to %@" : {
@@ -1299,6 +1333,9 @@
     "At most" : {
 
     },
+    "At most %lld characters." : {
+
+    },
     "At most 20,000 important rows are kept. Older rows go at the next cleanup (at launch and every 6 hours)." : {
 
     },
@@ -1309,6 +1346,9 @@
 
     },
     "Automatic" : {
+
+    },
+    "Automatic (%@)" : {
 
     },
     "Automatic follows macOS." : {
@@ -1378,6 +1418,9 @@
 
     },
     "Calibrating…" : {
+
+    },
+    "Call me" : {
 
     },
     "Can't check on this Mac" : {
@@ -2030,6 +2073,9 @@
         }
       }
     },
+    "Edited About you" : {
+
+    },
     "Edited a memory" : {
 
     },
@@ -2101,6 +2147,9 @@
     "Everything except conflicts" : {
 
     },
+    "Everything here is optional. Home greets you by the name in Call me, or your given name." : {
+
+    },
     "Everything, including Secret" : {
 
     },
@@ -2143,6 +2192,9 @@
     "Failed: proposed by rules" : {
 
     },
+    "Family name" : {
+
+    },
     "Fetch Funes Vault's health URL through the tunnel" : {
 
     },
@@ -2168,6 +2220,9 @@
 
     },
     "First, turn on Remote Access. Port %@ opens on this Mac for the tunnel; nothing is reachable until the tunnel runs." : {
+
+    },
+    "First, what should Funes call you?" : {
 
     },
     "Five iPhones are already paired. Remove one first." : {
@@ -2438,6 +2493,9 @@
     "Give it a name, paste this URL under Connection, and choose OAuth." : {
 
     },
+    "Given name" : {
+
+    },
     "Goal" : {
 
     },
@@ -2512,6 +2570,9 @@
 
     },
     "Home" : {
+
+    },
+    "Home greets you by this name, and agents get it with their answers unless you turn it off in their Access tab. Pronouns, languages and more are in Settings ▸ About You." : {
 
     },
     "Hostname" : {
@@ -2833,6 +2894,9 @@
     "Kind" : {
 
     },
+    "Languages" : {
+
+    },
     "Last 12 months" : {
 
     },
@@ -3035,6 +3099,12 @@
     "Most on %@s" : {
 
     },
+    "Move %@ down" : {
+
+    },
+    "Move %@ up" : {
+
+    },
     "Move its memories to" : {
 
     },
@@ -3054,6 +3124,9 @@
 
     },
     "Name" : {
+
+    },
+    "Needs Read." : {
 
     },
     "Never" : {
@@ -3176,6 +3249,9 @@
 
     },
     "No agent can be used from the cloud yet. Turn on Allow cloud access in an agent's Cloud tab, or add a cloud agent with Add Agent…." : {
+
+    },
+    "No agent gets any of it yet." : {
 
     },
     "No agent has read your vault yet." : {
@@ -3361,6 +3437,9 @@
 
     },
     "OAuth settings" : {
+
+    },
+    "Occupation" : {
 
     },
     "Off" : {
@@ -3637,6 +3716,9 @@
 
     },
     "Project Context" : {
+
+    },
+    "Pronouns" : {
 
     },
     "Propose a title, kind and categories" : {
@@ -4186,6 +4268,9 @@
     "Scopes" : {
 
     },
+    "Search" : {
+
+    },
     "Search activity" : {
 
     },
@@ -4251,6 +4336,16 @@
     "Select text in any app, then choose Services ▸ Remember in Funes. It goes to your Inbox." : {
 
     },
+    "Send %@: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Send %1$@: %2$@"
+          }
+        }
+      }
+    },
     "Send %lld to Inbox" : {
 
     },
@@ -4270,6 +4365,9 @@
 
     },
     "Sensitivity: %@" : {
+
+    },
+    "Sent with every answer to %@'s requests, without asking. Edit them in Settings ▸ About You." : {
 
     },
     "Series" : {
@@ -4470,6 +4568,9 @@
       }
     },
     "Similar memory exists:" : {
+
+    },
+    "Skip" : {
 
     },
     "Skipped: already saved “%@”" : {
@@ -5185,6 +5286,12 @@
     "Time" : {
 
     },
+    "Time zone" : {
+
+    },
+    "Time zone: %@" : {
+
+    },
     "Title" : {
 
     },
@@ -5413,6 +5520,9 @@
 
     },
     "Use your subscription" : {
+
+    },
+    "Use “%@”" : {
 
     },
     "Use ⌘, ⌥ or ⌃ with a key." : {
@@ -5769,6 +5879,15 @@
     "done" : {
 
     },
+    "e.g. Lisbon, Portugal" : {
+
+    },
+    "e.g. Staff engineer at a climate startup" : {
+
+    },
+    "e.g. she/her" : {
+
+    },
     "expires %@" : {
 
     },
@@ -5817,6 +5936,9 @@
     "in all categories" : {
 
     },
+    "its Access" : {
+
+    },
     "its HTTPS address" : {
 
     },
@@ -5829,7 +5951,25 @@
     "kind" : {
 
     },
+    "knows %lld things about you" : {
+
+    },
+    "knows 1 thing about you" : {
+
+    },
+    "knows your name" : {
+
+    },
+    "knows your name and %lld more" : {
+
+    },
+    "languages" : {
+
+    },
     "last used %@" : {
+
+    },
+    "location" : {
 
     },
     "macOS didn't add Funes Vault to Login Items." : {
@@ -5847,6 +5987,12 @@
     "more next time" : {
 
     },
+    "most used" : {
+
+    },
+    "name" : {
+
+    },
     "ngrok" : {
 
     },
@@ -5859,7 +6005,13 @@
     "not done" : {
 
     },
+    "not set" : {
+
+    },
     "nothing" : {
+
+    },
+    "occupation" : {
 
     },
     "on iPhone" : {
@@ -5896,6 +6048,9 @@
           }
         }
       }
+    },
+    "pronouns" : {
+
     },
     "saves without asking" : {
 
@@ -5948,6 +6103,9 @@
     "through %@" : {
 
     },
+    "time zone" : {
+
+    },
     "title" : {
 
     },
@@ -5966,7 +6124,19 @@
     "your Mac's Funnel address, such as https://my-mac.tail1234.ts.net" : {
 
     },
+    "your name" : {
+
+    },
+    "·" : {
+
+    },
+    "· %@" : {
+
+    },
     "· confirmed %@" : {
+
+    },
+    "· the others with none." : {
 
     },
     "—" : {

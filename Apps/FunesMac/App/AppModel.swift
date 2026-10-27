@@ -76,6 +76,8 @@ final class AppModel {
     var inbox: [Suggestion] = []
     var pending: [PendingRequest] = []
     var categories: [MemoryCategory] = []
+    /// About you (ADR-0026): Home's greeting, the access editor's values, About You's pane.
+    var profile = Profile()
     /// Whether the vault has any active memory (the checklist and empty states).
     var hasMemories = false
     /// The Inbox is waiting on a decision; drives the menu bar's "needs you" state with `pending`.
@@ -127,7 +129,7 @@ final class AppModel {
 
     /// The main window opens on Home (FR-H-02).
     var section: AppSection = .home
-    var settingsTab: SettingsTab = .general
+    var settingsTab: SettingsTab = .aboutYou
     var agentTab: AgentTab = .access
     /// Open the Add Agent sheet: the sidebar's +, the checklist's Add… and the empty Agents page set it.
     var wantsAddAgent = false
@@ -269,6 +271,7 @@ final class AppModel {
                            task: services.approvals.sessionTask($0.id))
         }
         categories = (try? services.store.categories()) ?? []
+        profile = (try? services.store.profile()) ?? Profile()
         hasMemories = !((try? services.store.memories(MemoryFilter(status: .activeIncludingExpired), now: now, limit: 1)) ?? []).isEmpty
         dataGeneration += 1
         checklist.update(model: self)

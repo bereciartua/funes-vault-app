@@ -4,10 +4,11 @@ import FunesProtocol
 
 /// Home's words (04-ux-mac.md ▸ Home): numbers over adjectives, parts with nothing to say left out.
 enum HomeText {
-    /// "Good afternoon, Martin." from the macOS account's first name.
-    static func greeting(now: Date, fullName: String = NSFullUserName()) -> String {
+    /// "Good afternoon, Martin." with the name Funes calls you from About You; "Good afternoon."
+    /// without one. Never the macOS account's name, which is often a username (ADR-0026).
+    static func greeting(now: Date, calledName: String?) -> String {
         let hour = Calendar.current.component(.hour, from: now)
-        let first = fullName.split(separator: " ").first.map(String.init) ?? ""
+        let first = calledName ?? ""
         switch (hour, first.isEmpty) {
         case (5..<12, false): return String(localized: "Good morning, \(first).")
         case (12..<18, false): return String(localized: "Good afternoon, \(first).")

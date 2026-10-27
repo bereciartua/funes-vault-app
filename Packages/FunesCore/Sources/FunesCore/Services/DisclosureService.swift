@@ -121,6 +121,9 @@ public struct RequestOutcome: Sendable, Hashable {
     public var maxTokens: Int
     /// For the Mac's UI only; not part of the agent's response.
     public var accessOffer: AccessRequestOffer?
+    /// The profile fields this answer carries (access policy §3.10): only on `request_memory`
+    /// answers past the gate, nil when none of the agent's fields has a value.
+    public var profile: SharedProfile?
 }
 
 /// What the approval panel or the pending list shows (access policy §3.6, FR-D-03). The memory
@@ -198,6 +201,8 @@ public final class DisclosureService: Sendable {
 
     /// Evaluates a request: gate, retrieval, eligibility, decision (FR-D-01). ALLOW delivers in the
     /// same call (`fulfilled`); NEEDS_APPROVAL persists the snapshot and returns no text.
+    /// Past the gate, the answer carries the agent's profile fields, whatever the decision (§3.10);
+    /// their size is kept back from the bundle's.
     /// `maxPendingApprovals` caps this agent's requests waiting for the user (mcp-server.md §9). It's
     /// counted in the same write transaction that would add one, so concurrent calls can't all pass;
     /// over the cap the request is denied with `rate_limited`. `via` is for Activity only: the
@@ -246,6 +251,9 @@ public final class DisclosureService: Sendable {
                 return Result(outcome: RequestOutcome(status: .denied, requestID: requestID, reason: reason,
                                                       maxTokens: input.maxTokens), delivered: [], withheldCategories: [])
             }
+            // The profile as it is now, never part of the decision or the snapshot (§3.10 rule 4).
+            let profile = try ProfileStore.fetch(db).shared(access.profileFields)
+            row.profileFieldsSent = profile?.fields ?? []
             // Memories deleted since retrieval are gone; anything else not active counts as inactive.
             let candidates = try MemoryStore.fetch(db, ids: candidateIDs).filter { $0.status != .deleted }
             let e = PolicyEngine.evaluate(candidates: candidates, agent: agent, access: access, window: window, now: now)
@@ -256,7 +264,7 @@ public final class DisclosureService: Sendable {
                 .filter { PolicyEngine.eligibility($0, access: access, now: now) == .categoryNotAllowed }
                 .compactMap(\.categoryKeys.first)
             var outcome = RequestOutcome(status: .denied, requestID: requestID, reason: e.decision.reason,
-                                         withheld: e.withheld, maxTokens: input.maxTokens)
+                                         withheld: e.withheld, maxTokens: input.maxTokens, profile: profile)
             var delivered: [UUID] = []
             switch e.decision {
             case .deny:
@@ -267,7 +275,8 @@ public final class DisclosureService: Sendable {
                 row.deliveredAt = now
                 row.decidedAt = now
                 try Self.insert(db, row)
-                let bundle = BundleCompiler.compile(e.eligible, maxTokens: input.maxTokens)
+                let bundle = BundleCompiler.compile(e.eligible, maxTokens: input.maxTokens,
+                                                    maxBytes: BundleCompiler.maxItemBytes - (profile?.wireBytes ?? 0))
                 try Self.writeItems(db, disclosureID: requestID, bundle: bundle, agentID: agentID, now: now)
                 outcome.status = .fulfilled
                 outcome.bundle = bundle
@@ -280,8 +289,10 @@ public final class DisclosureService: Sendable {
                     if waiting >= limit {
                         row.status = .denied
                         row.reason = .rateLimited
+                        row.profileFieldsSent = []
                         try Self.insert(db, row)
                         outcome.reason = .rateLimited
+                        outcome.profile = nil
                         return Result(outcome: outcome, delivered: [], withheldCategories: [])
                     }
                 }
@@ -308,7 +319,8 @@ public final class DisclosureService: Sendable {
             time: now, requestID: requestID, actor: .agent(agentID), via: via, event: "request_memory",
             outcome: outcome.status.rawValue, ids: result.delivered, reason: outcome.reason,
             counts: outcome.withheld?.counts ?? [:],
-            approval: outcome.status == .fulfilled ? .notRequired : nil))
+            approval: outcome.status == .fulfilled ? .notRequired : nil,
+            profileFields: outcome.profile.map(\.fields)))
         return outcome
     }
 
@@ -326,7 +338,7 @@ public final class DisclosureService: Sendable {
         onNeedsApproval(outcome)
         switch await waitForDecision(requestID: id, timeout: wait) {
         case .approved?:
-            return try await deliver(requestID: id, agentID: agentID, now: now(), via: via, credential: credential)
+            return try await deliver(answering: outcome, agentID: agentID, now: now(), via: via, credential: credential)
         case .denied?:
             var denied = outcome
             denied.status = .denied
@@ -468,6 +480,25 @@ public final class DisclosureService: Sendable {
     /// `get_memory_request` (§3.8), running delivery (§3.7) when approved, in one transaction.
     public func deliver(requestID: UUID, agentID: UUID, now: Date, via: ActivityEvent.Via = .mcp,
                         credential: CredentialCheck? = nil) async throws -> RequestOutcome {
+        try await deliver(requestID: requestID, agentID: agentID, now: now, via: via, credential: credential, reservingBytes: 0)
+    }
+
+    /// Delivery of a request approved while its `request_memory` call waited. It's still that
+    /// call's answer, so it keeps the profile `outcome` carried, its size kept back from the bundle,
+    /// unless delivery stopped at the gate (§3.10 rules 1, 6 and 9).
+    public func deliver(answering outcome: RequestOutcome, agentID: UUID, now: Date, via: ActivityEvent.Via = .mcp,
+                        credential: CredentialCheck? = nil) async throws -> RequestOutcome {
+        guard let requestID = outcome.requestID else { throw VaultError.notFound }
+        var delivered = try await deliver(requestID: requestID, agentID: agentID, now: now, via: via, credential: credential,
+                                          reservingBytes: outcome.profile?.wireBytes ?? 0)
+        if let reason = delivered.reason, PolicyEngine.gateReasons.contains(reason) { return delivered }
+        delivered.profile = outcome.profile
+        return delivered
+    }
+
+    /// Delivery with `reservingBytes` kept back from the bundle.
+    func deliver(requestID: UUID, agentID: UUID, now: Date, via: ActivityEvent.Via, credential: CredentialCheck?,
+                 reservingBytes: Int) async throws -> RequestOutcome {
         let paused = pause.isPaused(at: now)
         let outcome = try await store.writer.write { db -> RequestOutcome in
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.unauthenticated }
@@ -520,7 +551,8 @@ public final class DisclosureService: Sendable {
             }
             // The whole request is invalidated, never partly delivered.
             guard !approved.isEmpty, unchanged else { return try back(to: .policyChanged) }
-            let bundle = BundleCompiler.compile(memories, maxTokens: d.maxTokens)
+            let bundle = BundleCompiler.compile(memories, maxTokens: d.maxTokens,
+                                                maxBytes: BundleCompiler.maxItemBytes - reservingBytes)
             try Self.writeItems(db, disclosureID: requestID, bundle: bundle, agentID: agentID, now: now)
             try db.execute(sql: "UPDATE disclosure SET status = 'delivered', delivered_at = ? WHERE id = ?",
                            arguments: [now, requestID.db])
@@ -714,12 +746,13 @@ public final class DisclosureService: Sendable {
         try db.execute(sql: """
             INSERT INTO disclosure (id, agent_id, agent_revision, task_hash, task_length, purpose, retention, processors,
               max_tokens, requested_categories, status, reason, candidate_snapshot, snapshot_revision, withheld,
-              created_at, decided_at, delivered_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              created_at, decided_at, delivered_at, profile_fields_sent)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, arguments: [d.id.db, d.agentID.db, d.agentRevisionAtRequest, d.taskHash, d.taskLength, d.purpose,
                              d.retention.rawValue, JSON.encode(d.processors), d.maxTokens, JSON.encode(d.requestedCategoryKeys),
                              d.status.rawValue, d.reason?.rawValue, JSON.encode(d.candidateSnapshot), d.snapshotRevision,
-                             d.withheld.json, d.createdAt, d.decidedAt, d.deliveredAt])
+                             d.withheld.json, d.createdAt, d.decidedAt, d.deliveredAt,
+                             JSON.encode(d.profileFieldsSent.map(\.rawValue))])
     }
 
     static func fetch(_ db: Database, id: UUID) throws -> Disclosure? {

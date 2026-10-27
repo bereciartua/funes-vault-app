@@ -144,13 +144,18 @@ public struct CompanionStatus: Codable, Sendable, Equatable {
     public var serverTime: Date
     public var inboxPending: Int
     public var vaultActive: Bool
+    /// The name the profile says to call the user (preferred, else given), for Home's title
+    /// (v0.5, ADR-0026). Absent without one, and from older Macs.
+    public var calledName: String?
 
-    public init(macName: String, appVersion: String, serverTime: Date, inboxPending: Int, vaultActive: Bool) {
+    public init(macName: String, appVersion: String, serverTime: Date, inboxPending: Int, vaultActive: Bool,
+                calledName: String? = nil) {
         self.macName = macName
         self.appVersion = appVersion
         self.serverTime = serverTime
         self.inboxPending = inboxPending
         self.vaultActive = vaultActive
+        self.calledName = calledName
     }
 }
 

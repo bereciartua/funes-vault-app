@@ -317,7 +317,7 @@ def run_off(h, port, token):
 # MARK: - The same decision, local vs remote
 
 COMPARED = ["status", "reason", "withheld", "estimated_tokens", "max_tokens", "_isError", "asks_before_sharing",
-            "max_sensitivity"]
+            "max_sensitivity", "profile"]
 
 
 def shape(result):
@@ -364,6 +364,16 @@ def run_same_decision(h):
         same(f"{name} {tool} {json.dumps(arguments)[:40]}", local.call(tool, arguments), rem.call(tool, arguments))
         local.close()
         rem.close()
+    # About you over Remote Access (access policy §3.10 rule 10): the same fields, after the gate only.
+    local, rem = pair("reader")
+    answer = rem.call("request_memory", {"task": "What's my name?", "categories": ["finance"]})
+    check("remote: the profile with no matching memories", answer.get("profile") ==
+          {"name": {"given": "Martin", "family": "Bereciartua", "called": "Martin"}}, answer)
+    local.close()
+    rem.close()
+    rem = Remote(h, port, remote["suggester"])
+    check("remote: no profile at the gate", "profile" not in rem.call("request_memory", {"task": "x"}))
+    rem.close()
     # get_memory_request is once per 5 s per agent and request id, whichever the channel, so the
     # two unknown ids differ.
     local, rem = pair("reader")

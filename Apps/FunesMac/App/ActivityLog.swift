@@ -16,7 +16,7 @@ struct ActivityLine: ActivityRow {
     var isImportant: Bool {
         event.approval != nil || event.reason != nil || event.outcome == "denied"
             || ["suggest_memory", "agent_added", "agent_removed", "key_rotated", "access_changed", "agent_paused",
-                "agent_resumed", "funes_paused", "funes_resumed", "import", "export"].contains(event.event)
+                "agent_resumed", "funes_paused", "funes_resumed", "import", "export", "profile_edited"].contains(event.event)
     }
 }
 

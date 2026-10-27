@@ -23,6 +23,8 @@ final class VaultEnvironment {
     let captures: CaptureService
     let devices: DeviceService
     let imports: ImportService
+    /// About you (ADR-0026).
+    let profiles: ProfileService
     /// Inbox cards being edited and Save panels on screen: the tidy-up never withdraws one of
     /// them (memory processing §9.5).
     let holds = SuggestionHolds()
@@ -66,6 +68,7 @@ final class VaultEnvironment {
         captures = CaptureService(store: store, activity: activity)
         devices = DeviceService(store: store, activity: activity)
         imports = ImportService(store: store, activity: activity)
+        profiles = ProfileService(store: store, activity: activity)
         if let indexer {
             try? indexer.loadIndex()
             observation = indexer.startObserving()

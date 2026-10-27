@@ -156,6 +156,14 @@ public actor CompanionClient {
     /// `status.get` on the cached address, or address selection when there is none (or `fresh`).
     /// The reachability probe the app sends on every foreground.
     public func status(fresh: Bool = false) async throws(CompanionClientError) -> MacConnection {
+        do { return try await checkStatus(fresh: fresh) } catch {
+            // Removed on the Mac: the name it said to call the user by goes now (ADR-0026).
+            if error == .refused(.revoked) || error == .refused(.unknownDevice) { remember(calledName: nil) }
+            throw error
+        }
+    }
+
+    private func checkStatus(fresh: Bool) async throws(CompanionClientError) -> MacConnection {
         let paired = try loadPaired()
         if !fresh, let address = currentAddress {
             do { return try await probe(address, paired: paired, timeout: Self.probeTimeout) } catch {
@@ -190,7 +198,20 @@ public actor CompanionClient {
     private func probe(_ address: MacAddress, paired: Paired, timeout: TimeInterval) async throws(SendFailure) -> MacConnection {
         let start = ContinuousClock.now
         let status = try await send(StatusGet.self, EmptyParams(), to: address, paired: paired, timeout: timeout)
+        remember(calledName: status.calledName)
         return MacConnection(address: address, status: status, roundTrip: ContinuousClock.now - start)
+    }
+
+    /// Keeps the Mac's latest called name in the pairing record, unless it was forgotten meanwhile.
+    private func remember(calledName: String?) {
+        guard var current = paired, current.record.calledName != calledName else { return }
+        current.record.calledName = calledName
+        do {
+            try recordStore.save(current.record)
+            paired = current
+        } catch {
+            logger.error("Couldn't save the called name with the pairing")
+        }
     }
 
     /// Seals, posts and opens one call. A `clock_skew` refusal is retried once with the Mac's time.

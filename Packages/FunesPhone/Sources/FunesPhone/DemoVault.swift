@@ -39,6 +39,8 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         var overview: DemoContent.Overview?
         /// The sample agents' ids, made up when the demo opens.
         var overviewAgentIDs: [UUID] = []
+        /// The demo person's name, for Home's title (ADR-0026).
+        var calledName: String?
         var calendar: Calendar = .autoupdatingCurrent
     }
 
@@ -104,7 +106,7 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         switch method {
         case .statusGet:
             return CompanionStatus(macName: state.macName, appVersion: "Demo", serverTime: now, inboxPending: state.inbox.count,
-                                   vaultActive: true)
+                                   vaultActive: true, calledName: state.calledName)
         case .capturesSubmit:
             let params = params as! CapturesSubmitParams
             try params.validate()
@@ -414,6 +416,7 @@ public final class DemoVault: CompanionCalling, CaptureSender {
                                              defaultSensitivity: $0.defaultSensitivity))
         }, memories: [:], provenance: [:], shared: [:], inbox: [], approvals: content.approvals, approvalIDs: content.approvals.map { _ in UUID() },
            overview: content.overview, overviewAgentIDs: (content.overview?.agents ?? []).map { _ in UUID() })
+        state.calledName = content.calledName
         for sample in content.memories {
             let at = now.addingTimeInterval(-sample.daysAgo * day)
             let memory = Memory(title: sample.title, body: sample.body, kind: sample.kind, categoryKeys: sample.categories,
@@ -556,6 +559,8 @@ public struct DemoContent: Codable, Sendable {
     var inbox: [Suggestion]
     var approvals: [Approval]
     var overview: Overview?
+    /// The demo person's name; absent in older files.
+    var calledName: String?
 }
 
 extension InboxItem {

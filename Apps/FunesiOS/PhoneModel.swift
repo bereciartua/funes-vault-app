@@ -14,6 +14,15 @@ private let logger = Logger(subsystem: Identifiers.iOSLoggerSubsystem, category:
 @MainActor @Observable
 final class PhoneModel {
     private(set) var record: PairingRecord?
+    /// The name Home's title greets the user by (ADR-0026): the Mac's latest, kept with the
+    /// pairing while the Mac is away; none once this iPhone is removed or unpaired.
+    var calledName: String? {
+        switch reachability {
+        case let .connected(connection): connection.status.calledName
+        case .revoked, .notPaired: nil
+        default: record?.calledName
+        }
+    }
     /// The connection's state machine (FunesPhone's `ReachabilityTracker`).
     private(set) var tracker = ReachabilityTracker()
     var reachability: Reachability { tracker.state }
@@ -322,6 +331,8 @@ final class PhoneModel {
         } catch {
             tracker.handle(.checked(.failure(error), at: Date()))
         }
+        // The called name the check kept with the pairing, for while the Mac is away.
+        record = (try? await client.record()) ?? record
         probes = await client.lastProbes
         leaveVaultIfGone()
         guard reachability.isConnected else { return }
