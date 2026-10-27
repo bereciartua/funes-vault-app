@@ -1708,6 +1708,9 @@
     "Close details" : {
 
     },
+    "Closes every Save panel. The suggestions stay in the Inbox." : {
+
+    },
     "Cloud" : {
 
     },
@@ -3014,6 +3017,9 @@
 
     },
     "Later changes depend on this one. Undo it together with the %lld later changes." : {
+
+    },
+    "Later for all %lld suggestions" : {
 
     },
     "Launcher" : {
