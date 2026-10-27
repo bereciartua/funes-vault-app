@@ -340,8 +340,9 @@ def run_profile(h):
     h.control(cmd="profile_fields", agent="reader", fields=["languages", "time_zone"])
     result = c.call("request_memory", {"task": "Write a cover letter"})
     profile = result.get("profile", {})
+    # The Mac's own zone: "Europe/Lisbon" on most Macs, "GMT" on CI runners.
     check("profile: languages and the Mac's time zone", profile.get("languages") == ["en", "es"] and
-          "/" in profile.get("time_zone", "") and "name" not in profile, profile)
+          len(profile.get("time_zone", "")) >= 3 and "name" not in profile, profile)
     h.control(cmd="profile_fields", agent="reader", fields=[])
     result = c.call("request_memory", {"task": "Write a cover letter"})
     check("profile: none shared, no key (T40)", result.get("status") == "fulfilled" and "profile" not in result, result)
