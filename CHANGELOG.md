@@ -4,6 +4,8 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-27
+
 ### Fixed
 
 - **Suggestions answered on the iPhone no longer wait on the Mac.** Saving or rejecting a suggestion in the iPhone's Inbox (or the Mac's) now closes its **Save this memory?** panel on the Mac at once. Before, every one stayed queued behind "+N more" until answered again.
@@ -279,7 +281,8 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
 - **Licences in the app**: the bundled embedding model ships inside the app with its MIT licence, and the app includes the licence texts of GRDB.swift, Sparkle and the model alongside its own `LICENSE` and `NOTICE`.
 - **Open source**: the code, the product definition in `spec/`, and the tests are public under the Apache License 2.0. See [Testing](docs/TESTING.md) for what has been checked.
 
-[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/bereciartua/funes-vault-app/compare/v0.2.0...v0.5.0
 [0.2.0]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.2...v0.1.3
