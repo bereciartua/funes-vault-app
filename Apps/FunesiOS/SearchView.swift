@@ -53,17 +53,25 @@ struct SearchView: View {
                 await search.search()
             }
             .toolbar {
-                // Home's Sensitivity tile sets it; here it can be changed or cleared.
-                Menu {
-                    Picker("Sensitivity", selection: $search.sensitivity) {
-                        Text("Any Sensitivity").tag(Sensitivity?.none)
-                        ForEach(Sensitivity.allCases, id: \.self) { Text($0.title).tag(Sensitivity?.some($0)) }
+                // The previous query's results stay listed until the Mac answers: say it's asking.
+                if model.reachability.isConnected, search.phase == .searching, !search.results.isEmpty {
+                    ToolbarItem(placement: .topBarLeading) {
+                        ProgressView().accessibilityLabel("Searching")
                     }
-                } label: {
-                    Label("Sensitivity", systemImage: search.sensitivity == nil ? "line.3.horizontal.decrease.circle"
-                                                                               : "line.3.horizontal.decrease.circle.fill")
                 }
-                .accessibilityValue(search.sensitivity?.title ?? String(localized: "Any Sensitivity"))
+                // Home's Sensitivity tile sets it; here it can be changed or cleared.
+                ToolbarItem {
+                    Menu {
+                        Picker("Sensitivity", selection: $search.sensitivity) {
+                            Text("Any Sensitivity").tag(Sensitivity?.none)
+                            ForEach(Sensitivity.allCases, id: \.self) { Text($0.title).tag(Sensitivity?.some($0)) }
+                        }
+                    } label: {
+                        Label("Sensitivity", systemImage: search.sensitivity == nil ? "line.3.horizontal.decrease.circle"
+                                                                                   : "line.3.horizontal.decrease.circle.fill")
+                    }
+                    .accessibilityValue(search.sensitivity?.title ?? String(localized: "Any Sensitivity"))
+                }
             }
             .navigationDestination(for: UUID.self) { id in
                 MemoryDetailView(model: model, id: id)

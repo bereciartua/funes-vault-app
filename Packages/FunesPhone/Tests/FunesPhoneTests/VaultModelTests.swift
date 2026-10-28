@@ -210,6 +210,23 @@ import Testing
         #expect(search.results.map(\.title) == ["Window"])
     }
 
+    /// Typing on cancels the search in flight: that's not the Mac failing, so neither the
+    /// screen nor the reachability banner hears of it.
+    @Test func cancelledSearchIsNotAFailure() async throws {
+        let vault = FakeVault()
+        vault.add("Aisle")
+        vault.delay("a", .seconds(5))
+        let log = FailureLog()
+        let search = SearchModel(caller: vault, onFailure: log.record)
+        search.query = "a"
+        let typing = Task { await search.search() }
+        try await Task.sleep(for: .milliseconds(50))
+        typing.cancel()
+        await typing.value
+        #expect(search.phase == .searching)
+        #expect(log.errors.isEmpty)
+    }
+
     @Test func failureIsShownAndReported() async throws {
         let vault = FakeVault()
         let log = FailureLog()

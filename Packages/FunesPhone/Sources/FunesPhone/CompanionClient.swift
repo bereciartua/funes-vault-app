@@ -180,12 +180,14 @@ public actor CompanionClient {
         let address = try await reachableAddress(paired)
         do { return try await send(call, params, to: address, paired: paired, timeout: Self.callTimeout) } catch {
             guard case .transport = error else { throw Self.clientError(error) }
+            // Cancelled by the caller, not unanswered: the address is still good.
+            guard !Task.isCancelled else { throw Self.clientError(error) }
             cached = nil
             guard Self.repeatable.contains(Call.method) else { throw .unreachable(localNetworkDenied: false) }
         }
         let retry = try await select(paired).address
         do { return try await send(call, params, to: retry, paired: paired, timeout: Self.callTimeout) } catch {
-            if case .transport = error { cached = nil }
+            if case .transport = error, !Task.isCancelled { cached = nil }
             throw Self.clientError(error)
         }
     }
