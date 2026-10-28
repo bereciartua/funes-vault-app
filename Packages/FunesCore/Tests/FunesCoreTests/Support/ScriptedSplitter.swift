@@ -70,9 +70,10 @@ final class ScriptedSplitter: GenerationProvider {
             if let m = SpikeE.regex(#"^<piece index="(\d+)""#).firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
                let r = Range(m.range(at: 1), in: line), let i = Int(line[r]) {
                 out.append((i, []))
-            } else if let m = SpikeE.regex(#"^- (m\d+) \(created [^)]*\): (.*)$"#).firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
-                      let a = Range(m.range(at: 1), in: line), let t = Range(m.range(at: 2), in: line), !out.isEmpty {
-                out[out.count - 1].1.append((String(line[a]), String(line[t])))
+            } else if let m = SpikeE.regex(#"^- (m\d+) \(created [^)]*\) title: (.*?) \| body: (.*)$"#).firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
+                      let a = Range(m.range(at: 1), in: line), let t = Range(m.range(at: 2), in: line),
+                      let b = Range(m.range(at: 3), in: line), !out.isEmpty {
+                out[out.count - 1].1.append((String(line[a]), "\(line[t]). \(line[b])"))
             }
         }
         return out

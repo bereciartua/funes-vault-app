@@ -580,6 +580,8 @@
   - Suggestions are pinned to versions and become stale when a memory changes; dismissals aren't asked again.
   - The tidy-up never re-inspects its own changes, and memories it can't send are marked inspected.
   - Memories above the cloud limit are tidied only by a local provider or by the code-only rules (exact duplicates, expiry).
+- **Tidy Up on one memory** (v0.5.1): a memory's detail and the Vault's context menu check that memory now, against itself and up to 5 related memories, and leave what they find in the Inbox. Its run doesn't count as the day's. See [memory processing §9.7](../domain/memory-processing.md#97-tidy-up-on-one-memory).
+  - Acceptance: a memory with nothing related is still sent; a title that no longer matches its text gets an update proposal; nothing is applied automatically; proposals the user dismissed are made again.
 
 **FR-AI-04 Remote Access for cloud agents** · M · v0.1 (experimental; [ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md))
 - claude.ai, ChatGPT and Gemini Enterprise sign in with OAuth; header-based cloud agents (the Anthropic and OpenAI APIs, Claude Code on the web, Cursor and Copilot cloud agents, Devin) use a remote token. They reach a separate loopback listener (47627) through a tunnel the user runs, via EK Bridge's Remote Access (`BridgeKitRemote`). See [MCP server §12](../architecture/mcp-server.md#12-remote-transport).

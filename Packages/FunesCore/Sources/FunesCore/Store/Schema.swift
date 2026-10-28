@@ -50,8 +50,18 @@ enum Schema {
         migrator.registerMigration("v7_memory_revisions") { db in
             try db.execute(sql: v7)
         }
+        // Tidy Up on one memory (v0.5, memory processing §9.7): which runs were the whole vault's,
+        // so one memory's run doesn't stand in for the day's.
+        migrator.registerMigration("v8_tidy_up_scope") { db in
+            try db.execute(sql: v8)
+        }
         return migrator
     }
+
+    /// `all` for the daily run and Tidy Up Now, `memory` for Tidy Up on one memory.
+    static let v8 = """
+        ALTER TABLE tidy_up_run ADD COLUMN scope TEXT NOT NULL DEFAULT 'all' CHECK (scope IN ('all', 'memory'));
+        """
 
     /// One row per version a change replaced; purged with its memory.
     static let v7 = """

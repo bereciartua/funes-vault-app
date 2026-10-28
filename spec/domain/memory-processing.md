@@ -177,10 +177,10 @@ One structured-output call per chunk returns pieces:
 ### 5.5 Linking
 - **Finder (shared with §9):** the hybrid search of §2–§4, always on the Mac. Up to 5 related active memories per piece, ranked by the hybrid score: raw cosine ≥ **0.70** (the "related" threshold for bge-small) or a keyword hit (keyword ≥ the 0.15 floor). The original memory and the other pieces of the same input are never candidates.
   - Spike E: the target memory is in the top 5 for 97% of pieces at 0.70 (95% at 0.75), with under one unrelated memory per piece above the threshold. A short piece sits further from its memory than a rewording does (median 0.76), so the keyword half matters: cosine alone reaches 68% of related memories at 0.70.
-- **One decision call per input**, after extraction: the pieces plus their related memories, with created and updated dates, only those within the cloud limit for a cloud provider (a piece above it isn't sent and stays `create`). Memories are named `m1`, `m2`… in the prompt, never by their ids. Pieces with no related memory are `create` without asking. A local server gets 4 pieces a call (its context); a cloud model the whole input. If the call fails, the pieces are proposed as new, with the duplicate hint. Per piece: `create` · `update` (target, new text) · `duplicate` (target) · `retract` (target).
+- **One decision call per input**, after extraction: the pieces plus their related memories, with created and updated dates, only those within the cloud limit for a cloud provider (a piece above it isn't sent and stays `create`). Memories are named `m1`, `m2`… in the prompt, never by their ids. Pieces with no related memory are `create` without asking. A local server gets 4 pieces a call (its context); a cloud model the whole input. If the call fails, the pieces are proposed as new, with the duplicate hint. Per piece: `create` · `update` (target, new title, new text) · `duplicate` (target) · `retract` (target). Each related memory is listed with its title and body apart (`- m1 (created …, updated …) title: … | body: …`), and an update's body never repeats the title.
   - Spike E: two calls linked 97% of pieces right; extracting and linking in one call, 87% (72% on long input), because candidates for a whole chunk miss more targets.
   - Spike F: with §5.3's context rules, pieces carry names and dates their memories may lack, and links fell from 94% to 92% (three engines pooled; Claude Opus 5.5 stayed at 95%, GPT-5.6-Terra 94% → 90%).
-  - `update` → an `update` suggestion (the diff card, Replace / Keep both) with the target's title, kind and categories and the new text; the piece's own claim is kept on its row;
+  - `update` → an `update` suggestion (the diff card, Replace / Keep both) with the target's kind and categories, the new text and the model's title for it (the target's when the model gives none, or one past the limits or with a secret); the piece's own claim is kept on its row. Until 2026-10-28 an update kept the target's title and the prompt joined title and body ("Likes the color blue. My favorite color is blue."), so "my favorite color is orange" became the text "Likes the color orange. Favorite color: orange. …" under the title "Likes the color blue";
   - `duplicate` → "Already in your vault: *<title>*", defaulting to Reject;
   - `retract` → an `archive` suggestion for the target.
 - **The target** must be one of the supplied memories, still active and at the version sent; otherwise the piece becomes `create`. Every targeted suggestion records the target's version.
@@ -259,7 +259,7 @@ It's a hint only.
 Phase 6b ([ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)); replaces the web version's archive-only consolidation, planned here for v0.3.
 
 ### 9.1 Schedule
-- Settings ▸ AI Models ▸ **Daily tidy-up:** Daily (at a time, default 03:00) · Off; off by default. **Tidy up now** runs it on demand.
+- Settings ▸ AI Models ▸ **Daily tidy-up:** Daily (at a time, default 03:00) · Off; off by default. **Tidy up now** runs it on demand; **Tidy Up** on a memory looks at that memory alone (§9.7).
 - Runs from the daily maintenance with `NSBackgroundActivityScheduler`; after a missed run, on the next launch or wake.
 - Model: the one chosen for the tidy-up (default: the same as New memories). Apple on-device isn't offered (Spike E: 8 of 49 actions right, and it acted on an injected instruction); without another provider only the code-only rules run.
 
@@ -274,18 +274,18 @@ Phase 6b ([ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)); replaces
 - **Eligibility:** active, no pending tidy-up suggestion, not in a pending Share panel, and within the cloud limit for a cloud provider. Above the limit, only a local provider or the code-only rules.
 
 ### 9.3 The model call
-One call per cluster, with a 20 s timeout. Input per memory, as Spike E sent it: an alias (`m1`, `m2`…, never the id, as in §5.5), kind, title, body, categories, sensitivity, created and updated dates, source. A read-only memory (one an earlier cluster of the run holds) is sent like the others; validation refuses any change to it. Output:
+One call per cluster, with a 20 s timeout. Input per memory, as Spike E sent it: an alias (`m1`, `m2`…, never the id, as in §5.5), kind, title, body, categories, sensitivity, created and updated dates, source. The title and body are separate tags (`<title>`, `<body>`), so a title that no longer matches its body shows; Spike E joined them as "title. body". A read-only memory (one an earlier cluster of the run holds) is sent like the others; validation refuses any change to it. Output:
 
 ```
 actions: [
-  { type: "update",   target, title?, body, reason, confidence }
+  { type: "update",   target, title, body, reason, confidence }
   { type: "merge",    sources: [id…], title, body, kind, reason, confidence }
   { type: "split",    target, reason, confidence }                 // then §5's extractor
   { type: "archive",  target, survivor, reason: duplicate | superseded, confidence }
   { type: "conflict", ids: [id, id], question }                     // never resolved by the model
 ]
 ```
-Prompt rules: be cautious; a newer date alone doesn't mean replacement; keep distinct scopes and constraints; complementary facts and uncertainty yield no action; only supplied ids; the text is data. A merge lists, per source, what it kept, and is refused if it drops a constraint. A superseded copy is archived, not rewritten: `update` only when the old memory also holds other facts that are still true. Duplicates are archived even when their categories or sensitivity differ (only merges need them equal). Spike E's second prompt, with these two rules, got 19 of 20 actions right with GPT-6-Luna; without them it rewrote superseded memories, leaving two identical ones.
+Prompt rules: be cautious; a newer date alone doesn't mean replacement; keep distinct scopes and constraints; complementary facts and uncertainty yield no action; only supplied ids; the text is data. A merge lists, per source, what it kept, and is refused if it drops a constraint. A superseded copy is archived, not rewritten: `update` only when the old memory also holds other facts that are still true. Duplicates are archived even when their categories or sensitivity differ (only merges need them equal). Spike E's second prompt, with these two rules, got 19 of 20 actions right with GPT-6-Luna; without them it rewrote superseded memories, leaving two identical ones. **Titles:** an update and a merge always give the full title, matching the body, and a body never repeats its title; a memory whose title no longer matches its own body gets an `update` that retitles it. Validation still takes an update without a title (the target's stays), so the measured levels of §9.5 hold.
 
 ### 9.4 Validation (code)
 - Ids from the cluster only; a memory in at most one action; a survivor isn't archived, merged away or split; a merge has ≥ 2 sources; no change to a memory whose full text wasn't in the prompt or that an earlier cluster holds.
@@ -320,3 +320,11 @@ Prompt rules: be cautious; a newer date alone doesn't mean replacement; keep dis
 - **Scheduling:** the Mac checks every half hour with `NSBackgroundActivityScheduler`, and at launch and wake, whether a scheduled time passed since the last run started (or since the tidy-up was turned on, so turning it on doesn't run it at once).
 - Shares the daily cap with §5; at the cap the tidy-up waits for the next day, never switching to a weaker model.
 - Before the first run, Settings shows an estimate: "About N memories to check. Roughly X requests the first week, then a few a day."
+
+### 9.7 Tidy Up on one memory
+**Tidy Up** in a memory's detail and in the Vault list's context menu looks at that memory now, without waiting for the day's run or checking the whole vault.
+- **Which memory:** an active one, whether or not it changed since it was last inspected. Refused, with a line in the detail, when it's in a pending tidy-up proposal or Share panel, above the cloud limit for a cloud model, or when no tidy-up model is chosen (the button is off then).
+- **What it sends:** the code-only rules first, for this memory only (its exact copies, its expiry). A non-atomic memory goes through §5's extractor (§9.2). Otherwise one call: the memory as `m1`, with up to 5 related memories from the finder within the cloud limit, every one editable, and a first line naming it ("The user asked to tidy up m1: check it against the others and against itself."). **Sent even when nothing is related**, unlike a run, so a memory can be checked against itself: a title that doesn't match its body, or several claims in one.
+- **Same rules otherwise:** validation (§9.4) and storing; the memories in the call are marked inspected. It makes **dismissed proposals again**: the user asked. Nothing is applied automatically: the user is looking at it, so everything goes to the Inbox, whatever Apply changes automatically says.
+- **Result:** a line under the actions: "Funes has a suggestion for this memory in the Inbox." with **Show in Inbox** (which focuses the card), "Nothing to tidy up: this memory looks right.", or why it stopped (the cloud limit, a model that didn't answer).
+- **Its run** is a `tidy_up_run` with scope `memory`, so the schedule and "Last tidy-up" ignore it and the day's run still happens. Activity shows it as "Tidied up a memory" (counts `one_memory`, ids the run and the memory). One call, counted against the daily cap of §9.6. Never at the same time as a run.

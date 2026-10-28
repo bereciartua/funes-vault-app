@@ -104,7 +104,7 @@ A proposed memory waiting for review. It is separate from Memory, so memories ne
 - **A pending suggestion's processing** (memory processing §5.2), derived from its `new_memory` job, never stored on the suggestion: **processing** (the job is queued or running, splitting is on, and it's a new input: no group, no target, not the tidy-up's) can't be applied or edited, only rejected, which cancels the job; **failed** (the job failed) offers Try again and Keep as one; otherwise it's an ordinary pending suggestion.
 - **UndoEntry:** `id`, `createdAt`, `runId?`, `suggestionId?`, `action`, memory ids, each memory's state before and (from v0.5) after the change (JSON, including the text), `expiresAt` (30 days). Activity's detail pane, a memory's History and the Applied automatically list show both. Purged after 30 days and with its memories when they're purged or deleted now. Never exported.
 - **MemoryRevision** (v0.5, [ADR-0027](../architecture/decisions/0027-memory-revisions.md)): `memoryId`, `version` (the version it was), the state a change replaced (title, body, kind, categories, sensitivity, status, expiry), `replacedAt`, `replacedBy` (the change's actor). Kept 90 days and at most 50 per memory, purged with the memory. Never exported, shared or sent to the iPhone.
-- **TidyUpRun:** `id`, `startedAt`, `finishedAt`, `engine`, counts (memories inspected, clusters, suggestions, applied), `partial`, error code.
+- **TidyUpRun:** `id`, `startedAt`, `finishedAt`, `engine`, counts (memories inspected, clusters, suggestions, applied), `partial`, error code, `scope` (`all`, or `memory` for Tidy Up on one memory).
 - **TidyUpDismissal:** sorted memory ids plus a content hash, `dismissedAt`.
 
 ### Agent

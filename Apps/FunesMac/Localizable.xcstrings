@@ -1581,6 +1581,9 @@
     "Check the provider's API key." : {
 
     },
+    "Check this memory against itself and related memories now." : {
+
+    },
     "Checked" : {
 
     },
@@ -1620,6 +1623,12 @@
           }
         }
       }
+    },
+    "Choose a tidy-up model in Settings ▸ AI Models first." : {
+
+    },
+    "Choose a tidy-up model in Settings ▸ AI Models to tidy up a memory." : {
+
     },
     "Choose a tunnel" : {
 
@@ -2454,7 +2463,13 @@
     "Funes didn't send it: it looked like a secret, or was above the cloud limit." : {
 
     },
+    "Funes has %lld suggestions for this memory in the Inbox." : {
+
+    },
     "Funes has %lld tidy-up suggestions for you to review." : {
+
+    },
+    "Funes has a suggestion for this memory in the Inbox." : {
 
     },
     "Funes hasn't measured this model, so search keeps its 10 closest matches until you calibrate it." : {
@@ -3492,6 +3507,9 @@
     "Nothing to import was found." : {
 
     },
+    "Nothing to tidy up: this memory looks right." : {
+
+    },
     "Nothing usable came back." : {
 
     },
@@ -3562,6 +3580,9 @@
 
     },
     "One-click setup isn't available." : {
+
+    },
+    "Only active memories can be tidied up." : {
 
     },
     "Only agents you give cloud access can be used from the internet, each with its own remote token or signed-in app, and only with the access you set for that agent. Panels still ask on this Mac." : {
@@ -4610,6 +4631,9 @@
     "Show in Finder" : {
 
     },
+    "Show in Inbox" : {
+
+    },
     "Show less of %@" : {
 
     },
@@ -4840,6 +4864,9 @@
 
     },
     "Stopped after an error" : {
+
+    },
+    "Stopped at today's cloud limit. Try again tomorrow." : {
 
     },
     "Stored in the Keychain" : {
@@ -5123,6 +5150,9 @@
     "The model declined." : {
 
     },
+    "The model didn't answer. Try again later." : {
+
+    },
     "The model failed." : {
 
     },
@@ -5304,6 +5334,12 @@
     "This memory changed since you started editing. Reload it to see the change; your edits will be lost." : {
 
     },
+    "This memory is above what you let cloud models see." : {
+
+    },
+    "This memory is already in a suggestion or a share waiting for you." : {
+
+    },
     "This memory is gone" : {
 
     },
@@ -5325,7 +5361,13 @@
     "Throw the pieces away and keep what arrived as one suggestion." : {
 
     },
+    "Tidied up a memory" : {
+
+    },
     "Tidied up the vault" : {
+
+    },
+    "Tidy Up" : {
 
     },
     "Tidy Up Now" : {

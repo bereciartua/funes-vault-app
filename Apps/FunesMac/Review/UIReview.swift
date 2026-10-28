@@ -184,6 +184,14 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 model.vault.selection = model.vault.memories.first(where: { $0.title == "Coffee order" }).map { [$0.id] } ?? []
             }
             HistoryList.reviewExpandsChanges = false
+            // Tidy Up on one memory (memory processing §9.7): its result under the actions.
+            MemoryDetailView.reviewScrollsToActions = true
+            await mainScene("vault-memory-tidy") {
+                guard let memory = model.vault.memories.first(where: { $0.title == "Commit messages" }) else { return }
+                model.tidyUp.reviewResult(.suggestions([UUID()]), for: memory)
+                model.vault.selection = [memory.id]
+            }
+            MemoryDetailView.reviewScrollsToActions = false
             model.vault.status = .recentlyDeleted
             await model.vault.load()
             await mainScene("vault-recently-deleted") {

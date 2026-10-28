@@ -192,9 +192,10 @@ final class RecordedProvider: GenerationProvider {
             .compactMap { Range($0.range(at: 1), in: prompt).flatMap { Int(prompt[$0]) } })
         var aliases: [String: String] = [:]
         for line in prompt.split(separator: "\n") {
-            guard let m = SpikeE.regex(#"^- (m\d+) \(created [^)]*\): (.*)$"#).firstMatch(in: String(line), range: NSRange(line.startIndex..., in: line)),
-                  let a = Range(m.range(at: 1), in: line), let t = Range(m.range(at: 2), in: line) else { continue }
-            aliases[String(line[t])] = String(line[a])
+            guard let m = SpikeE.regex(#"^- (m\d+) \(created [^)]*\) title: (.*?) \| body: (.*)$"#).firstMatch(in: String(line), range: NSRange(line.startIndex..., in: line)),
+                  let a = Range(m.range(at: 1), in: line), let t = Range(m.range(at: 2), in: line),
+                  let b = Range(m.range(at: 3), in: line) else { continue }
+            aliases["\(line[t]). \(line[b])"] = String(line[a])
         }
         return recording.decisions.compactMap { d in
             guard let piece = d["piece"] as? Int, indices.contains(piece) else { return nil }

@@ -139,7 +139,8 @@ struct ActivityEntry: Identifiable, Equatable {
         case "undone":
             let count = e.counts["changes"] ?? 1
             return count == 1 ? String(localized: "Undid a change") : String(localized: "Undid \(count) changes")
-        case "tidy_up_run": return String(localized: "Tidied up the vault")
+        case "tidy_up_run":
+            return e.counts["one_memory"] != nil ? String(localized: "Tidied up a memory") : String(localized: "Tidied up the vault")
         case "cap_reached": return String(localized: "Reached today's cloud requests")
         case "processing_job": return String(localized: "Processed a new memory")
         default: return e.event.replacingOccurrences(of: "_", with: " ").capitalized

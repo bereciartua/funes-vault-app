@@ -47,10 +47,11 @@ final class ScriptedTidy: GenerationProvider {
 
     /// The prompt's memories as (alias, "title. body").
     static func memories(in prompt: String) -> [(String, String)] {
-        let rx = SpikeE.regex(#"<memory id="(m\d+)"[^>]*>\n(.*)\n</memory>"#)
+        let rx = SpikeE.regex(#"<memory id="(m\d+)"[^>]*>\n<title>(.*)</title>\n<body>(.*)</body>\n</memory>"#)
         return rx.matches(in: prompt, range: NSRange(prompt.startIndex..., in: prompt)).compactMap { m in
-            guard let a = Range(m.range(at: 1), in: prompt), let t = Range(m.range(at: 2), in: prompt) else { return nil }
-            return (String(prompt[a]), String(prompt[t]))
+            guard let a = Range(m.range(at: 1), in: prompt), let t = Range(m.range(at: 2), in: prompt),
+                  let b = Range(m.range(at: 3), in: prompt) else { return nil }
+            return (String(prompt[a]), "\(prompt[t]). \(prompt[b])")
         }
     }
 
@@ -83,6 +84,14 @@ final class PromptLog: Sendable {
             return try await tidy.run(.init(router: router, autoApply: TidyUpAutoApply(level: level), maxClusters: maxClusters), now: now)
         }
 
+        /// Tidy Up on one memory (§9.7), as the Mac asks it: dismissed proposals made again.
+        func tidyOne(_ id: UUID, _ provider: (any GenerationProvider)?, level: AutoApplyLevel = .off,
+                     cloudLimit: CloudLimit = .upTo(.internal), now: Date = t0) async throws -> TidyUpMemoryResult {
+            let router = provider.map { ModelRouter(classifier: $0, onDevice: nil, cloudLimit: cloudLimit) }
+            return try await tidy.tidy(memoryID: id, .init(router: router, autoApply: TidyUpAutoApply(level: level), honorDismissals: false),
+                                       now: now)
+        }
+
         func pending() async throws -> [Suggestion] { try await suggestions.pending().filter { $0.origin == .consolidation } }
 
         func memory(_ id: UUID) throws -> Memory { try #require(try v.store.memory(id: id)) }
@@ -109,6 +118,113 @@ final class PromptLog: Sendable {
         guard let old = ScriptedTidy.alias(m, "Rent amount"), let new = ScriptedTidy.alias(m, "Rent increase") else { return [] }
         return [["type": "archive", "target": old, "survivor": new, "archiveReason": "superseded", "reason": "\(new) replaced \(old).",
                  "confidence": 0.9]]
+    }
+
+    // MARK: - One memory (§9.7)
+
+    /// The memory from the bug report: its title says blue, its text orange.
+    static func mismatched(_ env: Env) throws -> Memory {
+        try env.v.memory("Likes the color blue", "Likes the color orange. Favorite color: orange. My favorite color is orange.",
+                         now: t0.plus(days: -1))
+    }
+
+    static func retitle(_ m: [(String, String)]) -> [[String: Any]] {
+        guard let a = ScriptedTidy.alias(m, "Likes the color blue") else { return [] }
+        return [["type": "update", "target": a, "title": "Favorite color: orange", "body": "My favorite color is orange.",
+                 "reason": "The title says blue; the text says orange.", "confidence": 0.95]]
+    }
+
+    @Test func tidyUpOnOneMemorySendsItEvenWithNothingRelated() async throws {
+        let env = try Env()
+        let m = try Self.mismatched(env)
+        try await env.v.store.writer.write { db in try TidyUpService.markInspected(db, [m.id]) }  // unchanged: asked anyway
+        let provider = ScriptedTidy(Self.retitle)
+        let result = try await env.tidyOne(m.id, provider)
+        #expect(provider.calls == 1)
+        let prompt = try #require(provider.prompts.withLock { $0.first })
+        #expect(prompt.hasPrefix("The user asked to tidy up m1: check it against itself.\n<memory id=\"m1\""))
+        #expect(prompt.contains("<title>Likes the color blue</title>\n<body>Likes the color orange."))
+        let s = try #require(try await env.pending().first)
+        #expect(result.suggestions == [s.id])
+        #expect(s.action == .update && s.targetMemoryID == m.id && s.title == "Favorite color: orange" && s.body == "My favorite color is orange.")
+        // Left for review: the Mac passes Off, whatever Apply changes automatically says.
+        #expect(try env.memory(m.id).title == "Likes the color blue")
+        // Its run doesn't stand in for the day's.
+        #expect(result.run.memoryID == m.id && result.run.clusters == 1 && result.run.suggestions == 1)
+        #expect(try await env.tidy.lastRun() == nil)
+        #expect(try env.v.count("SELECT COUNT(*) FROM tidy_up_run WHERE scope = 'memory' AND finished_at IS NOT NULL") == 1)
+        let event = try #require(env.log.events.last { $0.event == "tidy_up_run" })
+        #expect(event.counts["one_memory"] == 1 && event.ids == [result.run.id, m.id])
+    }
+
+    @Test func tidyUpOnOneMemoryLooksAtItsNeighboursAndAsksAgainAfterADismissal() async throws {
+        let env = try Env()
+        let (old, new) = try Self.rent(env)
+        // BM25 ignores a word in more than half the vault: a few more memories, as in any real one.
+        for (title, body) in [("Coffee", "Oat flat white."), ("Editor", "Vim keybindings."), ("Train", "Prefer trains.")] {
+            try env.v.memory(title, body, now: t0.plus(days: -60))
+        }
+        let provider = ScriptedTidy(Self.archiveOld)
+        let daily = try await env.run(provider)
+        let first = try #require(try await env.pending().first)
+        try await env.suggestions.reject(suggestionID: first.id, now: t0)
+
+        let result = try await env.tidyOne(new.id, provider, now: t0.addingTimeInterval(3600))
+        let prompt = try #require(provider.prompts.withLock { $0.last })
+        #expect(ScriptedTidy.memories(in: prompt).map(\.0) == ["m1", "m2"])
+        #expect(ScriptedTidy.alias(ScriptedTidy.memories(in: prompt), "Rent increase") == "m1")  // the memory asked about first
+        #expect(prompt.hasPrefix("The user asked to tidy up m1: check it against the others and against itself."))
+        let again = try #require(try await env.pending().first)
+        #expect(result.suggestions == [again.id] && again.targetMemoryID == old.id)
+        #expect(try await env.tidy.lastRun()?.id == daily.id)
+    }
+
+    @Test func tidyUpOnOneMemoryRefusesWhatItCantLookAt() async throws {
+        let env = try Env()
+        let (old, new) = try Self.rent(env)
+        let provider = ScriptedTidy(Self.archiveOld)
+        await #expect(throws: TidyUpMemoryRefusal.noModel) { try await env.tidyOne(new.id, nil) }
+        await #expect(throws: TidyUpMemoryRefusal.aboveCloudLimit) { try await env.tidyOne(new.id, provider, cloudLimit: .upTo(.low)) }
+        _ = try await env.run(provider)
+        await #expect(throws: TidyUpMemoryRefusal.busy) { try await env.tidyOne(old.id, provider) }  // in a pending proposal
+        _ = try env.v.store.archiveMemory(id: new.id, expectedVersion: try env.memory(new.id).version, now: t0)
+        await #expect(throws: TidyUpMemoryRefusal.notActive) { try await env.tidyOne(new.id, provider) }
+        #expect(provider.calls == 1)
+        #expect(try env.v.count("SELECT COUNT(*) FROM tidy_up_run WHERE scope = 'memory'") == 0)
+    }
+
+    /// Storage §3: a v7 vault's runs become the whole vault's, after a backup.
+    @Test func migratesAVersion7VaultsRuns() async throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "funes-v7-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appending(path: "vault.sqlite")
+        let run = UUID()
+        do {
+            let queue = try DatabaseQueue(path: file.path)
+            try Schema.migrator.migrate(queue, upTo: "v7_memory_revisions")
+            try await queue.write { db in
+                try db.execute(sql: "INSERT INTO tidy_up_run (id, started_at, finished_at, engine) VALUES (?, ?, ?, 'anthropic/x')",
+                               arguments: [run.db, t0, t0])
+            }
+        }
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+        let store = try VaultStore.open(directory: directory)
+        let backups = try FileManager.default.contentsOfDirectory(atPath: directory.appending(path: "Backups").path)
+        #expect(backups.contains { $0.hasPrefix("pre-v8_tidy_up_scope") })
+        #expect(try await TidyUpService(store: store, activity: InMemoryActivityLog()).lastRun()?.id == run)
+        await #expect(throws: (any Error).self) {
+            try await store.writer.write { db in
+                try db.execute(sql: "INSERT INTO tidy_up_run (id, started_at, scope) VALUES (?, ?, 'other')", arguments: [UUID().db, t0])
+            }
+        }
+    }
+
+    @Test func anUpdateWithoutATitleKeepsItsTargets() {
+        let cluster = Self.cluster([("Likes the color blue", ["personal_preferences"], .low, .trusted, true)])
+        let outcome = Self.validate(cluster, [.init(type: "update", target: "m1", title: "", body: "My favorite color is orange.")])
+        #expect(outcome.actions.count == 1 && outcome.actions[0].title == nil)
+        #expect(TidyUpPrompt.rules.contains("update and merge always give the full title"))
     }
 
     // MARK: - Off and code only

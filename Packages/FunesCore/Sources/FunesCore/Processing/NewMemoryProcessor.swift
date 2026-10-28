@@ -273,7 +273,7 @@ public struct NewMemoryProcessor: Sendable {
     }
 
     /// One piece as a suggestion of its group (memory processing §5.5): `create`; `update` (the
-    /// target's title, kind and categories with the new text, never below the target's
+    /// target's kind and categories with the new text and title, never below the target's
     /// sensitivity); `duplicate`; or `archive` for a retraction. A target that changed since the
     /// decision call makes it `create`. A piece of an agent's input outside that agent's scope is
     /// flagged (access policy §5.3).
@@ -292,7 +292,7 @@ public struct NewMemoryProcessor: Sendable {
             switch decision.action {
             case .update:
                 action = .update
-                title = m.title
+                title = decision.updatedTitle ?? m.title
                 body = decision.updatedBody ?? piece.body
                 kind = m.kind
                 categories = m.categoryKeys

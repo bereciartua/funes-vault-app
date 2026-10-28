@@ -6,7 +6,13 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Added
 
+- **Tidy Up on one memory.** A memory's detail (and the Vault list's right-click menu) now has **Tidy Up**, which checks just that memory against itself and up to 5 related memories with your tidy-up model, instead of the whole vault. What it finds waits in the Inbox (**Show in Inbox** takes you to it); nothing is applied automatically, and suggestions you dismissed before can come back. It doesn't count as the day's tidy-up.
+
 - **iPhone: the app's own version in Settings.** A new **Funes for iPhone** section at the bottom of Settings shows the iPhone app's version and build ("0.5.0 (11)"), paired or not. The Mac section's version row is now called **Funes on the Mac**, since it's the Mac's version.
+
+### Fixed
+
+- **A correction now updates the memory's title too.** When a new capture changed a saved memory, Funes kept the old title and could fold it into the new text, leaving "Likes the color blue" over a text about orange. Corrections now come with a title that matches the new text, and the tidy-up retitles a memory whose title no longer matches its own text.
 
 ## [0.5.0] - 2026-10-27
 

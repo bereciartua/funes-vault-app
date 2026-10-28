@@ -178,6 +178,15 @@ struct VaultView: View {
             Button(String(localized: "Restore")) { Task { await vault.perform(.restore, on: [memory.id]) } }
             Button(String(localized: "Delete"), role: .destructive) { Task { await vault.perform(.delete, on: [memory.id]) } }
         case .active:
+            Button(String(localized: "Tidy Up")) {
+                model.selectedMemoryID = memory.id
+                Task {
+                    await model.tidyUp.tidy(memoryID: memory.id, version: memory.version)
+                    await model.refresh()
+                }
+            }
+            .disabled(!model.tidyUp.canTidyMemory || model.tidyUp.running || model.tidyUp.tidying != nil)
+            Divider()
             Button(String(localized: "Archive")) { Task { await vault.perform(.archive, on: [memory.id]) } }
             Button(String(localized: "Delete"), role: .destructive) { Task { await vault.perform(.delete, on: [memory.id]) } }
         }

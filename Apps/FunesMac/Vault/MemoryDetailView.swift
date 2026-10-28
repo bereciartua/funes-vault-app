@@ -23,6 +23,11 @@ struct MemoryDetailView: View {
 
     private var dirty: Bool { memory.map { MemoryForm($0) != form } ?? false }
 
+    #if FUNES_UI_REVIEW
+    /// The UI review's Tidy Up scene: the actions and their result line in view.
+    @MainActor static var reviewScrollsToActions = false
+    #endif
+
     var body: some View {
         Group {
             if let memory {
@@ -36,7 +41,11 @@ struct MemoryDetailView: View {
                             Divider()
                             shared(memory)
                             HistoryList(entries: history, model: model).id("history")
-                            actions(memory)
+                            VStack(alignment: .leading, spacing: 10) {
+                                actions(memory)
+                                if memory.status == .active, let result = model.tidyUp.memoryResult(memory) { tidyResult(result) }
+                            }
+                            .id("actions")
                         }
                         .padding(20)
                         .frame(maxWidth: 720, alignment: .leading)
@@ -44,9 +53,10 @@ struct MemoryDetailView: View {
                     }
                     #if FUNES_UI_REVIEW
                     .task(id: memoryID) {
-                        guard HistoryList.reviewExpandsChanges else { return }
+                        guard HistoryList.reviewExpandsChanges || Self.reviewScrollsToActions else { return }
                         try? await Task.sleep(for: .milliseconds(400))
-                        proxy.scrollTo("history", anchor: .top)
+                        if Self.reviewScrollsToActions { proxy.scrollTo("actions", anchor: .bottom) }
+                        else { proxy.scrollTo("history", anchor: .top) }
                     }
                     #endif
                 }
@@ -167,6 +177,16 @@ struct MemoryDetailView: View {
             case .active:
                 Button(String(localized: "Still True…")) { confirmStillTrue = true }
                     .help(String(localized: "Mark that you checked this memory today"))
+                Button(model.tidyUp.tidying == memoryID ? String(localized: "Tidying Up…") : String(localized: "Tidy Up")) {
+                    Task {
+                        await model.tidyUp.tidy(memoryID: memoryID, version: memory.version)
+                        await model.refresh()
+                    }
+                }
+                .disabled(!model.tidyUp.canTidyMemory || model.tidyUp.running || model.tidyUp.tidying != nil || dirty)
+                .help(model.tidyUp.canTidyMemory
+                      ? String(localized: "Check this memory against itself and related memories now.")
+                      : String(localized: "Choose a tidy-up model in Settings ▸ AI Models to tidy up a memory."))
                 Button(String(localized: "Archive")) {
                     act { try model.services.store.archiveMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
                 }
@@ -188,6 +208,23 @@ struct MemoryDetailView: View {
             }
             Spacer()
         }
+    }
+
+    /// What Tidy Up found, with a way to the Inbox when it left suggestions there.
+    private func tidyResult(_ result: TidyUpController.MemoryResult) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "wand.and.sparkles").foregroundStyle(.secondary)
+            Text(TidyUpController.memoryNotice(result))
+            if case .suggestions(let ids) = result {
+                Button(String(localized: "Show in Inbox")) {
+                    model.inboxState.focused = ids.first
+                    model.show(.inbox)
+                }
+                .buttonStyle(.link)
+            }
+        }
+        .font(.callout)
+        .foregroundStyle(.secondary)
     }
 
     // MARK: Actions
