@@ -642,16 +642,19 @@
     "From %@. It's in your Inbox either way." : {
 
     },
-    "Funes" : {
+    "Funes can't use the microphone. Turn it on in Settings ▸ Funes Vault." : {
 
     },
-    "Funes can't use the microphone. Turn it on in Settings ▸ Funes Vault." : {
+    "Funes for iPhone" : {
 
     },
     "Funes isn't allowed on your local network. Turn it on in Settings ▸ Privacy & Security ▸ Local Network, then try again." : {
 
     },
     "Funes isn't allowed on your local network. Turn it on in Settings ▸ Privacy & Security ▸ Local Network." : {
+
+    },
+    "Funes on the Mac" : {
 
     },
     "Goal" : {
@@ -1532,6 +1535,9 @@
 
     },
     "Vault: %@" : {
+
+    },
+    "Version" : {
 
     },
     "Very personal. Only for agents you fully trust, and always ask." : {

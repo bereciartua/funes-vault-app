@@ -124,10 +124,11 @@ When an agent's Share, Save or access request waits on the Mac, the Mac rings a 
 - **The first answer counts,** on the Mac or a phone: "Answered on your Mac". A panel shown before its memories or the agent's access changed comes back with "This request changed on your Mac. Review it again." An answer that can't reach the Mac says "Mac not reachable" and stays on screen to try again; it's never resent by itself. After a reply that never came, the next look says "Already answered".
 
 ## Settings tab
-- **Mac:** name, connection type, last contact; "Re-pair", "Unpair this iPhone…".
+- **Mac:** name, connection type, the version of Funes on the Mac ("Funes on the Mac"), last contact; "Re-pair", "Unpair this iPhone…".
 - **Approvals:** "Approve requests on this iPhone" (the same switch as the Mac's Settings ▸ iPhone, on by default once paired), and why notifications might not come: notifications off for Funes (with **Open Notification Settings**), this iPhone not signed in to iCloud, or the Mac not signed in to iCloud or running a build that can't notify. Requests still show under Waiting for you then.
 - **Queue:** N waiting, "Send now", and "Delete queued captures…" (with confirmation).
 - **Demo vault:** on or off (only when not paired).
+- **Funes for iPhone:** this app's version and build ("0.5.0 (11)"), paired or not, so it isn't mistaken for the Mac's.
 - About and privacy.
 
 ## Pairing flow
