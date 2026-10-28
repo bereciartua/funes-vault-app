@@ -21,12 +21,33 @@ public struct TidyUpRun: Sendable, Hashable, Identifiable {
     public var partial: Bool
     /// `cap_reached`, a provider error code, or `interrupted`.
     public var error: String?
+    /// Tidy Up on one memory (§9.7): that memory. Nil for the whole vault's runs.
+    public var memoryID: UUID? = nil
 
     static func from(row: Row) throws -> TidyUpRun {
         TidyUpRun(id: try row.requiredUUID("id"), startedAt: row["started_at"], finishedAt: row["finished_at"], engine: row["engine"],
                   inspected: row["inspected"], clusters: row["clusters"], suggestions: row["suggestions"], applied: row["applied"],
                   partial: row["partial"], error: row["error"])
     }
+}
+
+/// What Tidy Up on one memory found (§9.7): the proposals it left in the Inbox, or why it stopped.
+public struct TidyUpMemoryResult: Sendable, Hashable {
+    public var run: TidyUpRun
+    /// The proposals left for review, newest last.
+    public var suggestions: [UUID]
+}
+
+/// Why Tidy Up on one memory can't look at it (§9.7).
+public enum TidyUpMemoryRefusal: Error, Sendable, Hashable {
+    /// Archived, deleted, or never there.
+    case notActive
+    /// In a pending tidy-up proposal or a pending Share panel.
+    case busy
+    /// No tidy-up model is chosen (or only Apple on-device).
+    case noModel
+    /// Above the cloud limit, with a cloud model.
+    case aboveCloudLimit
 }
 
 /// "About N memories to check. Roughly X requests the first week, then a few a day." (§9.6)
@@ -78,11 +99,16 @@ public struct TidyUpService: Sendable {
         public var autoApply: TidyUpAutoApply
         /// Clusters and splits a run sends at most; the rest roll over (§9.6).
         public var maxClusters: Int
+        /// A dismissed proposal isn't made again while its memories hold the same text (§9.5).
+        /// Tidy Up on one memory asks anyway (§9.7).
+        public var honorDismissals: Bool
 
-        public init(router: ModelRouter?, autoApply: TidyUpAutoApply = TidyUpAutoApply(), maxClusters: Int = TidyUpService.maxClusters) {
+        public init(router: ModelRouter?, autoApply: TidyUpAutoApply = TidyUpAutoApply(), maxClusters: Int = TidyUpService.maxClusters,
+                    honorDismissals: Bool = true) {
             self.router = router
             self.autoApply = autoApply
             self.maxClusters = maxClusters
+            self.honorDismissals = honorDismissals
         }
     }
 
@@ -110,10 +136,12 @@ public struct TidyUpService: Sendable {
 
     // MARK: - Runs
 
-    /// The newest run, for "Last tidy-up: today 03:04 · 37 memories checked · 4 suggestions".
+    /// The newest run of the whole vault, for "Last tidy-up: today 03:04 · 37 memories checked · 4
+    /// suggestions" and the schedule. One memory's runs don't count (§9.7).
     public func lastRun() async throws -> TidyUpRun? {
         try await store.writer.read { db in
-            try Row.fetchOne(db, sql: "SELECT * FROM tidy_up_run ORDER BY started_at DESC, rowid DESC LIMIT 1").map(TidyUpRun.from(row:))
+            try Row.fetchOne(db, sql: "SELECT * FROM tidy_up_run WHERE scope = 'all' ORDER BY started_at DESC, rowid DESC LIMIT 1")
+                .map(TidyUpRun.from(row:))
         }
     }
 
@@ -195,6 +223,8 @@ public struct TidyUpService: Sendable {
         var suggestions = 0
         var applied = 0
         var appliedSuggestions: [UUID] = []
+        /// The proposals left for review.
+        var proposals: [UUID] = []
     }
 
     /// One run: the code-only rules, then up to 40 clusters or splits through the model, newest
@@ -228,6 +258,12 @@ public struct TidyUpService: Sendable {
             }
         }
 
+        return try await finish(run, totals: totals, now: now)
+    }
+
+    /// Records a run's counts and its Activity entries.
+    func finish(_ run: TidyUpRun, totals: Totals, now: Date) async throws -> TidyUpRun {
+        var run = run
         run.finishedAt = now
         run.inspected = totals.inspected
         run.clusters = totals.clusters
@@ -244,11 +280,103 @@ public struct TidyUpService: Sendable {
             activity.record(ActivityEvent(time: now, phase: .event, actor: .system, via: .app, event: "auto_applied",
                                           outcome: "applied", ids: [id]))
         }
+        var counts = ["inspected": run.inspected, "clusters": run.clusters, "suggestions": run.suggestions, "applied": run.applied]
+        if run.memoryID != nil { counts["one_memory"] = 1 }
         activity.record(ActivityEvent(time: now, phase: .event, actor: .system, via: .app, event: "tidy_up_run",
-                                      outcome: run.partial ? "partial" : "done", ids: [run.id],
-                                      counts: ["inspected": run.inspected, "clusters": run.clusters, "suggestions": run.suggestions,
-                                               "applied": run.applied]))
+                                      outcome: run.partial ? "partial" : "done",
+                                      ids: [run.id] + [run.memoryID].compactMap { $0 }, counts: counts))
         return run
+    }
+
+    // MARK: - One memory (§9.7)
+
+    /// Tidy Up on one memory: the memory with up to 5 related memories in one call, sent even
+    /// when nothing is related (it's checked against itself), through the same validation, split
+    /// and code-only rules as a run. Asked by the user, so it looks whether or not the memory
+    /// changed and makes dismissed proposals again; it applies what the configuration allows.
+    /// The proposals stay in the Inbox. Its run is recorded with scope `memory`, so it doesn't
+    /// stand in for the day's run.
+    public func tidy(memoryID: UUID, _ configuration: Configuration, now: Date = Date()) async throws -> TidyUpMemoryResult {
+        let router = configuration.router
+        guard let router, let provider = router.splitter else { throw TidyUpMemoryRefusal.noModel }
+        let engine = ModelRouter.engine(provider)
+        var run = TidyUpRun(id: UUID(), startedAt: now, engine: engine, inspected: 0, clusters: 0, suggestions: 0, applied: 0,
+                            partial: false, memoryID: memoryID)
+        let state = try await store.writer.write { [holds] db -> State in
+            try Self.dropStale(db, holds: holds)
+            return try State.load(db)
+        }
+        guard let memory = state.active[memoryID] else { throw TidyUpMemoryRefusal.notActive }
+        guard !state.busy.contains(memoryID) else { throw TidyUpMemoryRefusal.busy }
+        let local = provider.locality.isLocal
+        func allowed(_ m: Memory) -> Bool { local || router.cloudLimit.allows(m.sensitivity) }
+        guard allowed(memory) else { throw TidyUpMemoryRefusal.aboveCloudLimit }
+        try await store.writer.write { [run] db in
+            try db.execute(sql: "INSERT INTO tidy_up_run (id, started_at, engine, scope) VALUES (?, ?, ?, 'memory')",
+                           arguments: [run.id.db, now, engine])
+        }
+
+        var totals = Totals()
+        do {
+            var handled = try await codeOnly(state, configuration: configuration, runID: run.id, totals: &totals, now: now, focus: memoryID)
+            if !handled.contains(memoryID), memory.body.count > Self.longBody || state.nonAtomic.contains(memoryID) {
+                totals.clusters += 1
+                if try await split(memory, state: state, router: router, configuration: configuration, runID: run.id, reason: nil,
+                                   totals: &totals, now: now) {
+                    handled.insert(memoryID)
+                }
+            }
+            if !handled.contains(memoryID) {
+                try await tidyCluster(memory, state: state, handled: handled, router: router, provider: provider, allowed: allowed,
+                                      configuration: configuration, runID: run.id, totals: &totals, now: now)
+            }
+        } catch let stop as Stop {
+            run.partial = true
+            run.error = stop.code
+        }
+        run = try await finish(run, totals: totals, now: now)
+        return TidyUpMemoryResult(run: run, suggestions: totals.proposals)
+    }
+
+    /// The memory and its nearest related memories, at most 6 in all, every one editable.
+    func tidyCluster(_ memory: Memory, state: State, handled: Set<UUID>, router: ModelRouter, provider: any GenerationProvider,
+                     allowed: (Memory) -> Bool, configuration: Configuration, runID: UUID, totals: inout Totals, now: Date) async throws {
+        let pool = Set(state.active.values.filter {
+            $0.id != memory.id && !state.busy.contains($0.id) && !handled.contains($0.id) && !$0.isExpired(at: now) && allowed($0)
+        }.map(\.id))
+        let related = try await finder.related([
+            RelatedMemoryFinder.Query(title: memory.title, body: memory.body, kind: memory.kind, categoryKeys: memory.categoryKeys)
+        ], pool: pool, limit: Self.clusterSize - 1).first ?? []
+        let members = [memory] + related.prefix(Self.clusterSize - 1).compactMap { state.active[$0] }
+        let cluster = TidyUpCluster(members: members.enumerated().map { i, m in
+            TidyUpCluster.Member(alias: "m\(i + 1)", memory: m, trust: state.trust[m.id] ?? .untrusted, editable: true)
+        }, focus: memory.id)
+        totals.clusters += 1
+        let output: TidyUpPrompt.Output
+        do {
+            output = try await router.call(TidyUpPrompt.request(cluster), items: TidyUpPrompt.items(cluster), with: provider,
+                                           requester: .user, timeout: Self.callTimeout, now: now)
+        } catch ProviderError.blocked {
+            throw Stop(code: "blocked")
+        } catch let error as ProviderError {
+            throw Stop.from(error)
+        } catch {
+            throw Stop(code: "provider_failed")
+        }
+        let outcome = TidyUpValidator.validate(output, cluster: cluster)
+        let engine = ModelRouter.engine(provider)
+        let (stored, splits) = try await store.writer.write { [totals] db -> (Totals, [(Memory, String?)]) in
+            var totals = totals
+            var splits: [(Memory, String?)] = []
+            try Self.store(db, outcome.actions, cluster: cluster, engine: engine, state: state, configuration: configuration,
+                           runID: runID, totals: &totals, splits: &splits, now: now)
+            return (totals, splits)
+        }
+        totals = stored
+        for (m, reason) in splits {
+            _ = try await split(m, state: state, router: router, configuration: configuration, runID: runID, reason: reason,
+                                totals: &totals, now: now)
+        }
     }
 
     /// Why a run stopped early.
@@ -321,16 +449,21 @@ public struct TidyUpService: Sendable {
     // MARK: - Code only (§9.2)
 
     /// Exact duplicates (the trusted, more used, older copy survives) and expired memories. Returns
-    /// the memories they settled, which the model rules leave alone this run.
-    func codeOnly(_ state: State, configuration: Configuration, runID: UUID, totals: inout Totals, now: Date) async throws -> Set<UUID> {
+    /// the memories they settled, which the model rules leave alone this run. With a `focus`, only
+    /// that memory's copies and expiry.
+    func codeOnly(_ state: State, configuration: Configuration, runID: UUID, totals: inout Totals, now: Date,
+                  focus: UUID? = nil) async throws -> Set<UUID> {
         var actions: [(TidyUpAction, [UUID])] = []
         var handled = Set<UUID>()
         let free = state.active.values.filter { !state.busy.contains($0.id) }
+        func looked(_ copies: [Memory]) -> Bool {
+            focus.map { id in copies.contains { $0.id == id } } ?? copies.contains { state.changed.contains($0.id) }
+        }
         var groups: [String: [Memory]] = [:]
         for m in free where !m.isExpired(at: now) {
             groups["\(MemoryStore.normalized(m.title))\n\(MemoryStore.normalized(m.body))", default: []].append(m)
         }
-        for copies in groups.values where copies.count > 1 && copies.contains(where: { state.changed.contains($0.id) }) {
+        for copies in groups.values where copies.count > 1 && looked(copies) {
             let survivor = TidyUpRules.survivor(copies, trust: state.trust, uses: state.uses)
             for copy in copies.sorted(by: { $0.id.db < $1.id.db }) where copy.id != survivor.id {
                 var a = TidyUpAction(type: .archive, target: copy.id, survivor: survivor.id, archiveReason: .duplicate)
@@ -339,7 +472,7 @@ public struct TidyUpService: Sendable {
                 handled.formUnion([copy.id, survivor.id])
             }
         }
-        for m in free where m.isExpired(at: now) {
+        for m in free where m.isExpired(at: now) && focus.map({ $0 == m.id }) ?? true {
             actions.append((TidyUpAction(type: .archive, target: m.id, archiveReason: .expired), [m.id]))
             handled.insert(m.id)
         }
@@ -347,7 +480,7 @@ public struct TidyUpService: Sendable {
         let level = configuration.autoApply.effective(engine: TidyUpRecord.rulesEngine)
         totals = try await store.writer.write { [totals, actions] db -> Totals in
             var totals = totals
-            let dismissals = try TidyUpDismissals.all(db)
+            let dismissals = configuration.honorDismissals ? try TidyUpDismissals.all(db) : []
             for (action, ids) in actions {
                 let current = try MemoryStore.fetch(db, ids: ids)
                 guard current.count == ids.count, current.allSatisfy({ m in m.status == .active && m.version == state.active[m.id]?.version }),
@@ -372,6 +505,7 @@ public struct TidyUpService: Sendable {
                     totals.appliedSuggestions.append(id)
                 } else {
                     totals.suggestions += 1
+                    totals.proposals.append(id)
                 }
             }
             return totals
@@ -498,7 +632,7 @@ public struct TidyUpService: Sendable {
         guard cluster.members.allSatisfy({ current[$0.memory.id]?.version == $0.memory.version && current[$0.memory.id]?.status == .active })
         else { return false }
         let busy = try State.sharePanels(db)
-        let dismissals = try TidyUpDismissals.all(db)
+        let dismissals = configuration.honorDismissals ? try TidyUpDismissals.all(db) : []
         let level = configuration.autoApply.effective(engine: engine)
         let floor = cluster.highestSensitivity
         func memory(_ id: UUID?) -> Memory? { id.flatMap { current[$0] } }
@@ -562,6 +696,7 @@ public struct TidyUpService: Sendable {
                 totals.appliedSuggestions.append(id)
             } else {
                 totals.suggestions += 1
+                totals.proposals.append(id)
             }
         }
         let editable = cluster.members.filter(\.editable).map(\.memory.id)
@@ -642,7 +777,7 @@ public struct TidyUpService: Sendable {
                 return (totals, true)
             }
             guard isSplit else { return (totals, false) }
-            if try TidyUpDismissals.all(db).contains(TidyUpDismissals.key([current])) {
+            if configuration.honorDismissals, try TidyUpDismissals.all(db).contains(TidyUpDismissals.key([current])) {
                 try Self.markInspected(db, [m.id])
                 totals.inspected += 1
                 return (totals, true)
@@ -664,6 +799,7 @@ public struct TidyUpService: Sendable {
                 totals.appliedSuggestions.append(id)
             } else {
                 totals.suggestions += 1
+                totals.proposals.append(id)
             }
             try Self.markInspected(db, [m.id])
             totals.inspected += 1

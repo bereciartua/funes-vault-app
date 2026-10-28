@@ -238,8 +238,25 @@ import Testing
         #expect(d[3]?.action == .retract && d[3]?.target == m.id)
         let prompt = DecisionPrompt.prompt(DecisionPrompt.Batch(pieces: [(0, piece)], related: [0: [("m1", m)]]))
         #expect(prompt.contains("<piece index=\"0\" intent=\"assertion\">"))
-        #expect(prompt.contains("- m1 (created \(DecisionPrompt.day(t0)), updated \(DecisionPrompt.day(t0))): Coffee. Flat white"))
+        #expect(prompt.contains("- m1 (created \(DecisionPrompt.day(t0)), updated \(DecisionPrompt.day(t0))) title: Coffee | body: Flat white"))
         #expect(!prompt.contains(m.id.db))  // memories are named by alias only
+    }
+
+    @Test func anUpdateMayRetitleItsTarget() throws {
+        let m = Memory(title: "Likes the color blue", body: "My favorite color is blue.", kind: .preference,
+                       categoryKeys: ["personal_preferences"], sensitivity: .low, source: .manual, createdAt: t0, updatedAt: t0)
+        let piece = ExtractionTests.validate([[Self.raw("My favorite color is orange.", quote: "orange")]], source: "orange").pieces[0]
+        let batch = DecisionPrompt.Batch(pieces: (0..<3).map { ($0, piece) }, related: [0: [("m1", m)], 1: [("m1", m)], 2: [("m1", m)]])
+        let output = DecisionPrompt.Output(decisions: [
+            .init(piece: 0, action: "update", target: "m1", title: " Favorite color: orange ", body: "My favorite color is orange."),
+            .init(piece: 1, action: "update", target: "m1", title: "", body: "My favorite color is orange."),
+            .init(piece: 2, action: "update", target: "m1", title: String(repeating: "x", count: 181), body: "Orange."),
+        ])
+        let d = DecisionPrompt.validate(output, batch: batch)
+        #expect(d[0]?.updatedTitle == "Favorite color: orange")
+        #expect(d[1]?.action == .update && d[1]?.updatedTitle == nil)  // keeps the target's
+        #expect(d[2]?.action == .update && d[2]?.updatedTitle == nil)  // past the limit
+        #expect(DecisionPrompt.rules.contains("title = its title"))
     }
 }
 
@@ -250,6 +267,7 @@ extension DecisionPrompt.Output {
             if let p = d.piece { o["piece"] = p }
             if let a = d.action { o["action"] = a }
             if let t = d.target { o["target"] = t }
+            if let t = d.title { o["title"] = t }
             if let b = d.body { o["body"] = b }
             return o
         }])

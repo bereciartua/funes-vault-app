@@ -85,6 +85,36 @@ import Testing
 
     // MARK: A capture becomes a group
 
+    /// An update that changes what the title says takes the model's new title (memory processing
+    /// §5.5): "Likes the color blue" over orange text was the bug. With no title, or one past the
+    /// limits, the target's stays.
+    @Test func anUpdateRetitlesItsTarget() async throws {
+        let env = try Env()
+        _ = try env.v.memory("Favorite color", "My favorite color is blue.", now: t0.plus(days: -3))
+        _ = try env.v.memory("Coffee order", "Oat milk flat white", now: t0.plus(days: -30))
+        let provider = P(extract: { _, _ in
+            [P.piece("My favorite color is orange.", quote: "my favorite color is orange", intent: "correction"),
+             P.piece("My coffee order is a cortado.", quote: "My coffee order is now a cortado", intent: "correction")]
+        }) { _, memories, _ in
+            if let alias = memories.first(where: { $0.1.hasPrefix("Favorite color") })?.0 {
+                return ["action": "update", "target": alias, "title": "Favorite color: orange", "body": "My favorite color is orange."]
+            }
+            guard let alias = memories.first(where: { $0.1.hasPrefix("Coffee order") })?.0 else { return nil }
+            return ["action": "update", "target": alias, "title": String(repeating: "x", count: 181), "body": "Cortado"]
+        }
+        let capture = try await env.captures.capture("Actually my favorite color is orange. My coffee order is now a cortado.", now: t0)
+        _ = try await env.run(splittingProcessor(env.v, provider, log: env.log))
+
+        let group = try #require(try await env.suggestions.group(id: capture.suggestionID))
+        let updates = group.pieces.filter { $0.action == .update }
+        #expect(updates.map(\.title) == ["Favorite color: orange", "Coffee order"])
+        #expect(updates.map(\.body) == ["My favorite color is orange.", "Cortado"])
+        let record = try #require(JSON.decode(ClassificationRecord.self, updates[0].classification))
+        #expect(record.proposal.title == "Favorite color: orange")
+        // The model sees each memory's title and body apart.
+        #expect(provider.decisions.last?.prompt.contains("title: Favorite color | body: My favorite color is blue.") == true)
+    }
+
     @Test func aCaptureBecomesAGroupThatKeepsItsReceipt() async throws {
         let env = try Env()
         let coffee = try env.v.memory("Coffee order", "Oat milk flat white", now: t0.plus(days: -30))
