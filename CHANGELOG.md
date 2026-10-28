@@ -4,6 +4,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+### Added
+
+- **iPhone: the app's own version in Settings.** A new **Funes for iPhone** section at the bottom of Settings shows the iPhone app's version and build ("0.5.0 (11)"), paired or not. The Mac section's version row is now called **Funes on the Mac**, since it's the Mac's version.
+
 ## [0.5.0] - 2026-10-27
 
 ### Fixed

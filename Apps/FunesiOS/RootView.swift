@@ -49,7 +49,7 @@ struct RootView: View {
     }
 }
 
-/// Settings: pair, the Mac's connection and status, this iPhone, and the queue.
+/// Settings: pair, the Mac's connection and status, this iPhone, the queue, and this app's version.
 struct SettingsView: View {
     let model: PhoneModel
     @State private var confirmingUnpair = false
@@ -76,6 +76,9 @@ struct SettingsView: View {
                         Button("Unpair This iPhone…", role: .destructive) { confirmingUnpair = true }
                     }
                 }
+                Section("Funes for iPhone") {
+                    LabeledContent("Version", value: Self.versionText)
+                }
             }
             .navigationTitle("Settings")
             .refreshable { await model.refresh(fresh: true) }
@@ -101,6 +104,12 @@ struct SettingsView: View {
                 Text("They haven't reached your Mac and can't be recovered.")
             }
         }
+    }
+
+    /// This app's "0.5.0 (11)": the Mac section's version is the Mac's.
+    static var versionText: String {
+        let info = Bundle.main.infoDictionary ?? [:]
+        return "\(info["CFBundleShortVersionString"] as? String ?? "?") (\(info["CFBundleVersion"] as? String ?? "?"))"
     }
 
     /// Queue: N waiting, "Send now", "Delete queued captures…" (UX: iPhone, Settings tab).
@@ -175,7 +184,7 @@ struct SettingsView: View {
             LabeledContent("Mac", value: record.macName)
             ReachabilityRow(reachability: model.reachability, path: model.path)
             if case let .connected(connection) = model.reachability {
-                LabeledContent("Funes", value: connection.status.appVersion)
+                LabeledContent("Funes on the Mac", value: connection.status.appVersion)
                 LabeledContent("Waiting in Inbox", value: connection.status.inboxPending.formatted())
                 LabeledContent("Round trip", value: "\(connection.roundTrip.milliseconds) ms")
             }
