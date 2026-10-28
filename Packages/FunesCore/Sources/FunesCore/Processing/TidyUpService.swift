@@ -102,13 +102,19 @@ public struct TidyUpService: Sendable {
         /// A dismissed proposal isn't made again while its memories hold the same text (§9.5).
         /// Tidy Up on one memory asks anyway (§9.7).
         public var honorDismissals: Bool
+        /// Per call; nil: the provider's (`callTimeout(for:)`).
+        public var callTimeout: Duration?
+        /// Before a failed call is tried again (§9.6).
+        public var retryDelay: Duration
 
         public init(router: ModelRouter?, autoApply: TidyUpAutoApply = TidyUpAutoApply(), maxClusters: Int = TidyUpService.maxClusters,
-                    honorDismissals: Bool = true) {
+                    honorDismissals: Bool = true, callTimeout: Duration? = nil, retryDelay: Duration = TidyUpService.retryDelay) {
             self.router = router
             self.autoApply = autoApply
             self.maxClusters = maxClusters
             self.honorDismissals = honorDismissals
+            self.callTimeout = callTimeout
+            self.retryDelay = retryDelay
         }
     }
 
@@ -116,7 +122,18 @@ public struct TidyUpService: Sendable {
     public static let neighbours = 8
     public static let clusterSize = 6
     /// Per call, not per run (§9.6). Spike E's slowest tidy-up call took 18.6 s.
-    public static let callTimeout: Duration = .seconds(20)
+    public static let apiCallTimeout: Duration = .seconds(20)
+    /// A subscription CLI starts a new process for every call, and a full cluster of 6 takes it
+    /// longer than Spike E's clusters of 2–3: the author's runs on Codex stopped at 20 s.
+    public static let cliCallTimeout: Duration = .seconds(60)
+    public static let retryDelay: Duration = .seconds(5)
+    /// Clusters or splits that fail one after another before the run stops (§9.6).
+    public static let failuresInARow = 3
+
+    /// The time a tidy-up call gets with `provider`.
+    public static func callTimeout(for provider: any GenerationProvider) -> Duration {
+        provider is any SubscriptionClient ? cliCallTimeout : apiCallTimeout
+    }
     /// A body this long likely holds more than one claim: it goes to §5's extractor (§9.2).
     public static let longBody = 600
 
@@ -225,12 +242,16 @@ public struct TidyUpService: Sendable {
         var appliedSuggestions: [UUID] = []
         /// The proposals left for review.
         var proposals: [UUID] = []
+        /// The error code of the last cluster or split the run skipped.
+        var skipped: String?
     }
 
     /// One run: the code-only rules, then up to 40 clusters or splits through the model, newest
-    /// changes first. At the daily cap or a provider failure it stops; what's left rolls over.
+    /// changes first. A cluster that fails twice is skipped; at the daily cap, a failure that
+    /// won't pass, or 3 failed clusters in a row it stops. What's left rolls over.
     @discardableResult
     public func run(_ configuration: Configuration, now: Date = Date()) async throws -> TidyUpRun {
+        let clock = ContinuousClock(), started = clock.now
         let router = configuration.router
         let provider = router?.splitter
         let engine = provider.map(ModelRouter.engine)
@@ -256,15 +277,16 @@ public struct TidyUpService: Sendable {
                 run.partial = true
                 run.error = stop.code
             }
+            run.error = run.error ?? totals.skipped
         }
 
-        return try await finish(run, totals: totals, now: now)
+        return try await finish(run, totals: totals, now: now, took: clock.now - started)
     }
 
     /// Records a run's counts and its Activity entries.
-    func finish(_ run: TidyUpRun, totals: Totals, now: Date) async throws -> TidyUpRun {
+    func finish(_ run: TidyUpRun, totals: Totals, now: Date, took: Duration) async throws -> TidyUpRun {
         var run = run
-        run.finishedAt = now
+        run.finishedAt = now + Double(took.components.seconds) + Double(took.components.attoseconds) / 1e18
         run.inspected = totals.inspected
         run.clusters = totals.clusters
         run.suggestions = totals.suggestions
@@ -299,6 +321,7 @@ public struct TidyUpService: Sendable {
     public func tidy(memoryID: UUID, _ configuration: Configuration, now: Date = Date()) async throws -> TidyUpMemoryResult {
         let router = configuration.router
         guard let router, let provider = router.splitter else { throw TidyUpMemoryRefusal.noModel }
+        let clock = ContinuousClock(), started = clock.now
         let engine = ModelRouter.engine(provider)
         var run = TidyUpRun(id: UUID(), startedAt: now, engine: engine, inspected: 0, clusters: 0, suggestions: 0, applied: 0,
                             partial: false, memoryID: memoryID)
@@ -334,7 +357,7 @@ public struct TidyUpService: Sendable {
             run.partial = true
             run.error = stop.code
         }
-        run = try await finish(run, totals: totals, now: now)
+        run = try await finish(run, totals: totals, now: now, took: clock.now - started)
         return TidyUpMemoryResult(run: run, suggestions: totals.proposals)
     }
 
@@ -354,14 +377,9 @@ public struct TidyUpService: Sendable {
         totals.clusters += 1
         let output: TidyUpPrompt.Output
         do {
-            output = try await router.call(TidyUpPrompt.request(cluster), items: TidyUpPrompt.items(cluster), with: provider,
-                                           requester: .user, timeout: Self.callTimeout, now: now)
+            output = try await ask(cluster, router: router, provider: provider, configuration: configuration, now: now)
         } catch ProviderError.blocked {
             throw Stop(code: "blocked")
-        } catch let error as ProviderError {
-            throw Stop.from(error)
-        } catch {
-            throw Stop(code: "provider_failed")
         }
         let outcome = TidyUpValidator.validate(output, cluster: cluster)
         let engine = ModelRouter.engine(provider)
@@ -379,20 +397,49 @@ public struct TidyUpService: Sendable {
         }
     }
 
-    /// Why a run stopped early.
+    /// Why a run stopped early, or skipped a cluster.
     struct Stop: Error {
         var code: String
+        /// The next call may not fail the same way (a timeout, a server or network error, an
+        /// answer that isn't the schema, a refusal of this cluster): it's tried once more, then
+        /// the run skips it and goes on (§9.6).
+        var transient = false
 
         static func from(_ error: ProviderError) -> Stop {
             switch error {
             case .capReached: Stop(code: "cap_reached")
-            case .timeout: Stop(code: "timeout")
+            case .timeout: Stop(code: "timeout", transient: true)
             case .rateLimited: Stop(code: "rate_limited")
             case .unauthorized: Stop(code: "unauthorized")
             case .unavailable: Stop(code: "unavailable")
             case .blocked: Stop(code: "blocked")
-            default: Stop(code: "provider_failed")
+            case .server, .transport, .invalidOutput, .refused: Stop(code: "provider_failed", transient: true)
+            case .insecureEndpoint: Stop(code: "provider_failed")
             }
+        }
+    }
+
+    /// One cluster through the model, within the provider's timeout; a transient failure is tried
+    /// once more after `retryDelay` (§9.6). Throws `ProviderError.blocked` (nothing was sent) or a
+    /// `Stop`.
+    func ask(_ cluster: TidyUpCluster, router: ModelRouter, provider: any GenerationProvider, configuration: Configuration,
+             now: Date) async throws -> TidyUpPrompt.Output {
+        let timeout = configuration.callTimeout ?? Self.callTimeout(for: provider)
+        var attempt = 1
+        while true {
+            do {
+                return try await router.call(TidyUpPrompt.request(cluster), items: TidyUpPrompt.items(cluster), with: provider,
+                                             requester: .user, timeout: timeout, now: now)
+            } catch ProviderError.blocked {
+                throw ProviderError.blocked
+            } catch let error as ProviderError {
+                let stop = Stop.from(error)
+                guard stop.transient, attempt == 1 else { throw stop }
+            } catch {
+                throw Stop(code: "provider_failed")
+            }
+            attempt += 1
+            try await Task.sleep(for: configuration.retryDelay)
         }
     }
 
@@ -531,14 +578,30 @@ public struct TidyUpService: Sendable {
         }
         var eligible = candidates.filter(allowed)
         var budget = configuration.maxClusters
+        // A cluster or split that keeps failing waits for the next run, and the run goes on,
+        // unless the provider fails 3 times in a row (§9.6).
+        var failures = 0
+        func skip(_ stop: Stop) throws {
+            guard stop.transient else { throw stop }
+            failures += 1
+            partial = true
+            totals.skipped = stop.code
+            if failures >= Self.failuresInARow { throw stop }
+        }
 
         // Non-atomic memories go through §5's extractor as split proposals (§9.2).
         for m in eligible where m.body.count > Self.longBody || state.nonAtomic.contains(m.id) {
             guard budget > 0 else { partial = true; return }
             budget -= 1
             totals.clusters += 1
-            if try await split(m, state: state, router: router, configuration: configuration, runID: runID, reason: nil,
-                               totals: &totals, now: now) {
+            do {
+                if try await split(m, state: state, router: router, configuration: configuration, runID: runID, reason: nil,
+                                   totals: &totals, now: now) {
+                    handled.insert(m.id)
+                }
+                failures = 0
+            } catch let stop as Stop {
+                try skip(stop)
                 handled.insert(m.id)
             }
         }
@@ -589,19 +652,18 @@ public struct TidyUpService: Sendable {
             })
             let output: TidyUpPrompt.Output
             do {
-                output = try await router.call(TidyUpPrompt.request(cluster), items: TidyUpPrompt.items(cluster), with: provider,
-                                               requester: .user, timeout: Self.callTimeout, now: now)
+                output = try await ask(cluster, router: router, provider: provider, configuration: configuration, now: now)
+                failures = 0
             } catch ProviderError.blocked {
                 // Something in it can't leave the Mac: inspected, never sent.
                 let ids = cluster.members.filter(\.editable).map(\.memory.id)
                 try await store.writer.write { db in try Self.markInspected(db, ids) }
                 totals.inspected += ids.count
                 continue
-            } catch let error as ProviderError {
-                // At the cap the tidy-up waits for the next day; a provider that fails stops the run.
-                throw Stop.from(error)
-            } catch {
-                throw Stop(code: "provider_failed")
+            } catch let stop as Stop {
+                // At the cap the tidy-up waits for the next day; a failure that won't pass stops the run.
+                try skip(stop)
+                continue
             }
             let outcome = TidyUpValidator.validate(output, cluster: cluster)
             let engine = ModelRouter.engine(provider)
@@ -615,8 +677,17 @@ public struct TidyUpService: Sendable {
             totals = stored
             // The model's splits go through §5's extractor (§9.3).
             for (m, reason) in splits {
-                _ = try await split(m, state: state, router: router, configuration: configuration, runID: runID, reason: reason,
-                                    totals: &totals, now: now)
+                do {
+                    _ = try await split(m, state: state, router: router, configuration: configuration, runID: runID, reason: reason,
+                                        totals: &totals, now: now)
+                } catch let stop as Stop {
+                    // Its cluster marked it inspected: looked at again next run.
+                    try await store.writer.write { db in
+                        try db.execute(sql: "UPDATE memory SET reconciled_version = NULL WHERE id = ? AND version = ?",
+                                       arguments: [m.id.db, m.version])
+                    }
+                    try skip(stop)
+                }
             }
         }
     }

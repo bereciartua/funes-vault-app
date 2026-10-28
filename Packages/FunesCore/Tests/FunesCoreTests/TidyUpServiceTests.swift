@@ -15,6 +15,14 @@ final class ScriptedTidy: GenerationProvider {
     private let extract: @Sendable (String) -> [[String: Any]]
     let prompts = Mutex<[String]>([])
     let failure = Mutex<ProviderError?>(nil)
+    /// Thrown by the next calls, one each, before `failure`.
+    let failNext = Mutex<[ProviderError]>([])
+    /// The next call waits this long first.
+    let stallNext = Mutex<Duration?>(nil)
+    /// Every call, failed or not.
+    let attempts = Mutex(0)
+    /// Thrown by extraction calls (a split).
+    let extractFailure = Mutex<ProviderError?>(nil)
 
     init(id: ProviderID = "anthropic", locality: Locality = .cloud, modelID: String = "claude-opus-5-5",
          _ answer: @escaping @Sendable ([(String, String)]) -> [[String: Any]] = { _ in [] },
@@ -30,6 +38,9 @@ final class ScriptedTidy: GenerationProvider {
     var calls: Int { prompts.withLock { $0.count } }
 
     func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage) {
+        attempts.withLock { $0 += 1 }
+        if let stall = stallNext.withLock({ s -> Duration? in defer { s = nil }; return s }) { try await Task.sleep(for: stall) }
+        if let next = failNext.withLock({ $0.isEmpty ? nil : $0.removeFirst() }) { throw next }
         if let failure = failure.withLock({ $0 }) { throw failure }
         let object: [String: Any]
         switch request.schemaName {
@@ -37,6 +48,7 @@ final class ScriptedTidy: GenerationProvider {
             prompts.withLock { $0.append(request.prompt) }
             object = ["actions": answer(Self.memories(in: request.prompt))]
         case "Extraction":
+            if let failure = extractFailure.withLock({ $0 }) { throw failure }
             object = ["pieces": extract(request.prompt)]
         default:
             object = ["decisions": []]
@@ -79,17 +91,19 @@ final class PromptLog: Sendable {
         init(_ v: TestVault? = nil) throws { self.v = try v ?? TestVault() }
 
         func run(_ provider: (any GenerationProvider)?, level: AutoApplyLevel = .off, cloudLimit: CloudLimit = .upTo(.internal),
-                 cap: CloudRequestCap? = nil, maxClusters: Int = TidyUpService.maxClusters, now: Date = t0) async throws -> TidyUpRun {
+                 cap: CloudRequestCap? = nil, maxClusters: Int = TidyUpService.maxClusters, callTimeout: Duration? = nil,
+                 now: Date = t0) async throws -> TidyUpRun {
             let router = provider.map { ModelRouter(classifier: $0, onDevice: nil, cloudLimit: cloudLimit, cap: cap) }
-            return try await tidy.run(.init(router: router, autoApply: TidyUpAutoApply(level: level), maxClusters: maxClusters), now: now)
+            return try await tidy.run(.init(router: router, autoApply: TidyUpAutoApply(level: level), maxClusters: maxClusters,
+                                            callTimeout: callTimeout, retryDelay: .zero), now: now)
         }
 
         /// Tidy Up on one memory (§9.7), as the Mac asks it: dismissed proposals made again.
         func tidyOne(_ id: UUID, _ provider: (any GenerationProvider)?, level: AutoApplyLevel = .off,
                      cloudLimit: CloudLimit = .upTo(.internal), now: Date = t0) async throws -> TidyUpMemoryResult {
             let router = provider.map { ModelRouter(classifier: $0, onDevice: nil, cloudLimit: cloudLimit) }
-            return try await tidy.tidy(memoryID: id, .init(router: router, autoApply: TidyUpAutoApply(level: level), honorDismissals: false),
-                                       now: now)
+            return try await tidy.tidy(memoryID: id, .init(router: router, autoApply: TidyUpAutoApply(level: level), honorDismissals: false,
+                                                           retryDelay: .zero), now: now)
         }
 
         func pending() async throws -> [Suggestion] { try await suggestions.pending().filter { $0.origin == .consolidation } }
@@ -396,6 +410,94 @@ final class PromptLog: Sendable {
         let run = try await env.run(provider)
         #expect(run.partial && run.error == "provider_failed" && run.suggestions == 0)
         #expect(try !env.inspected(old.id))
+    }
+
+    /// Three pairs that share a word only within each pair: three clusters, newest (tuba) first.
+    static func threePairs(_ env: Env) throws {
+        for (i, (word, other)) in [("zither", "zest"), ("oboe", "quill"), ("tuba", "brass")].enumerated() {
+            try env.v.memory(word, word, now: t0.plus(days: Double(-10 + i)))
+            try env.v.memory("\(word) \(other)", "\(word) \(other)", now: t0.plus(days: Double(-10 + i)))
+        }
+    }
+
+    @Test func aCallThatTimesOutIsTriedOnceMore() async throws {
+        let env = try Env()
+        let (old, _) = try Self.rent(env)
+        let provider = ScriptedTidy(Self.archiveOld)
+        provider.stallNext.withLock { $0 = .seconds(5) }
+        let run = try await env.run(provider, callTimeout: .milliseconds(100))
+        #expect(!run.partial && run.error == nil && run.suggestions == 1)
+        #expect(provider.attempts.withLock { $0 } == 2)
+        #expect(try env.inspected(old.id))
+    }
+
+    @Test func aClusterThatFailsTwiceIsSkippedAndTheRunGoesOn() async throws {
+        let env = try Env()
+        try Self.threePairs(env)
+        let provider = ScriptedTidy()
+        provider.failNext.withLock { $0 = [.timeout, .timeout] }
+        let run = try await env.run(provider)
+        #expect(run.partial && run.error == "timeout" && run.clusters == 3 && provider.calls == 2)
+        #expect(provider.attempts.withLock { $0 } == 4)
+        // The skipped pair, the newest, rolls over to the next run.
+        let tuba = try env.v.count("SELECT COUNT(*) FROM memory WHERE title LIKE 'tuba%' AND reconciled_version IS NULL")
+        #expect(tuba == 2)
+        let next = try await env.run(provider, now: t0.plus(days: 1))
+        #expect(!next.partial && next.error == nil && next.clusters == 1 && provider.prompts.withLock { $0 }.last?.contains("tuba") == true)
+    }
+
+    @Test func aSplitTheModelAskedForThatFailsIsLookedAtAgainNextRun() async throws {
+        let env = try Env()
+        let (old, new) = try Self.rent(env)
+        let provider = ScriptedTidy { m in
+            ScriptedTidy.alias(m, "Rent increase").map { [["type": "split", "target": $0, "reason": "Two facts."]] } ?? []
+        }
+        provider.extractFailure.withLock { $0 = .timeout }
+        // Finance text is estimated above Internal: sent only with the limit raised.
+        let run = try await env.run(provider, cloudLimit: .upTo(.sensitive))
+        #expect(run.partial && run.error == "timeout" && run.suggestions == 0)
+        #expect(try env.inspected(old.id) && !env.inspected(new.id))
+    }
+
+    @Test func threeFailedClustersInARowStopTheRun() async throws {
+        let env = try Env()
+        try Self.threePairs(env)
+        try env.v.memory("kazoo", "kazoo", now: t0.plus(days: -20))
+        try env.v.memory("kazoo hum", "kazoo hum", now: t0.plus(days: -20))
+        let provider = ScriptedTidy()
+        provider.failure.withLock { $0 = .server(status: 503) }
+        let run = try await env.run(provider)
+        #expect(run.partial && run.error == "provider_failed" && run.clusters == 3)
+        #expect(provider.attempts.withLock { $0 } == 6)
+    }
+
+    @Test func aFailureARetryCantFixStopsTheRunAtOnce() async throws {
+        let env = try Env()
+        try Self.threePairs(env)
+        let provider = ScriptedTidy()
+        provider.failNext.withLock { $0 = [.unauthorized] }
+        let run = try await env.run(provider)
+        #expect(run.partial && run.error == "unauthorized" && run.clusters == 1)
+        #expect(provider.attempts.withLock { $0 } == 1)
+    }
+
+    @Test func aSubscriptionCLIGetsLongerPerCall() {
+        #expect(TidyUpService.callTimeout(for: CodexClient(executable: "/usr/bin/false", model: "gpt-5.6-terra")) == .seconds(60))
+        #expect(TidyUpService.callTimeout(for: ScriptedTidy()) == .seconds(20))
+    }
+
+    @Test func tidyUpOnOneMemoryTriesATimeoutOnceMore() async throws {
+        let env = try Env()
+        let memory = try Self.mismatched(env)
+        let provider = ScriptedTidy(Self.retitle)
+        provider.failNext.withLock { $0 = [.timeout] }
+        let result = try await env.tidyOne(memory.id, provider)
+        #expect(result.run.error == nil && result.suggestions.count == 1)
+        let other = try Env()
+        let failing = ScriptedTidy(Self.retitle)
+        failing.failNext.withLock { $0 = [.timeout, .timeout] }
+        let second = try await other.tidyOne(try Self.mismatched(other).id, failing)
+        #expect(second.run.partial && second.run.error == "timeout" && second.suggestions.isEmpty)
     }
 
     @Test func aboveTheCloudLimitIsMarkedInspectedAndNeverSent() async throws {
@@ -778,7 +880,8 @@ final class PromptLog: Sendable {
         #expect(estimate.memories == 9 && estimate.requests == 3)
         #expect(try await env.tidy.lastRun() == nil)
         _ = try await env.run(nil)
-        #expect(try await env.tidy.lastRun()?.finishedAt == t0)
+        let finished = try #require(try await env.tidy.lastRun()?.finishedAt)
+        #expect(finished >= t0 && finished < t0.plus(minutes: 1))
     }
 
     @Test func aRunAQuitInterruptedIsClosed() async throws {

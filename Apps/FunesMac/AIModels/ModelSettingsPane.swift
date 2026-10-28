@@ -258,7 +258,7 @@ struct ModelSettingsPane: View {
             ? String(localized: "Finds exact duplicates and expired memories on this Mac. Choose a local server or a cloud model to also find updates, merges, splits and conflicts; Apple's on-device model isn't used for this.")
             : String(localized: "Compares memories that changed with related ones and proposes updates, merges, splits and archives, and asks you about conflicts. Proposals wait in the Inbox's Tidy-up section.")]
         if let run = model.tidyUp.lastRun {
-            lines.append(TidyUpController.summary(run))
+            lines.append(TidyUpController.summary(run, left: model.tidyUp.left))
         } else if let estimate = model.tidyUp.estimate, settings.tidyUpName != nil {
             lines.append(String(localized: "About \(estimate.memories) memories to check. Roughly \(estimate.requests) requests the first week, then a few a day."))
         }

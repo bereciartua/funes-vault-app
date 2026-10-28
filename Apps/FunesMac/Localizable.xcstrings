@@ -543,6 +543,19 @@
     "%lld in categories it can't read" : {
 
     },
+    "%lld left for next time" : {
+
+    },
+    "%lld left: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld left: %2$@"
+          }
+        }
+      }
+    },
     "%lld memories" : {
 
     },
@@ -1578,6 +1591,9 @@
     "Check the address and the key." : {
 
     },
+    "Check the memories the last tidy-up didn't get to." : {
+
+    },
     "Check the provider's API key." : {
 
     },
@@ -2485,6 +2501,9 @@
 
     },
     "Funes proposes a title, kind and categories with the New memories model in AI Models; you review every proposal in the Inbox." : {
+
+    },
+    "Funes quit during the run" : {
 
     },
     "Funes relaunches with the vault as it was then. The current vault is kept in Backups first." : {
@@ -5150,13 +5169,16 @@
     "The model declined." : {
 
     },
-    "The model didn't answer. Try again later." : {
-
-    },
     "The model failed." : {
 
     },
     "The model isn't available." : {
+
+    },
+    "The model returned an error. Try again later." : {
+
+    },
+    "The model took too long to answer. Try again." : {
 
     },
     "The model took too long." : {
@@ -5166,6 +5188,9 @@
 
     },
     "The model's answer wasn't usable. Try another model." : {
+
+    },
+    "The model's provider asked Funes to slow down. Try again in a few minutes." : {
 
     },
     "The name needs 1 to 60 characters." : {
@@ -5208,6 +5233,9 @@
 
     },
     "The text needs 1 to 10,000 characters." : {
+
+    },
+    "The tidy-up model isn't working. Check it in Settings ▸ AI Models." : {
 
     },
     "The tidy-up's model hasn't been accurate enough to change memories by itself, so its proposals all wait for you." : {
@@ -6219,7 +6247,7 @@
     "stopped at today's cloud limit" : {
 
     },
-    "stopped early: the model didn't answer" : {
+    "stopped early: %@" : {
 
     },
     "suggests" : {
@@ -6241,6 +6269,21 @@
 
     },
     "the disk image" : {
+
+    },
+    "the model isn't available" : {
+
+    },
+    "the model returned an error" : {
+
+    },
+    "the model took too long to answer" : {
+
+    },
+    "the model's provider asked Funes to slow down" : {
+
+    },
+    "the model's sign-in or API key didn't work" : {
 
     },
     "the “%@” folder" : {
