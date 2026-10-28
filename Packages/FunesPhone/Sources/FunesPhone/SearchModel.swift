@@ -47,7 +47,9 @@ public final class SearchModel {
             nextCursor = page.nextCursor
             phase = .loaded
         } catch {
-            guard mine == generation else { return }
+            // Cancelled (the query changed while typing, the tab closed): another search follows,
+            // and a cancelled call says nothing about the Mac.
+            guard mine == generation, !Task.isCancelled else { return }
             phase = .failed(error)
             onFailure(error)
         }
@@ -66,7 +68,7 @@ public final class SearchModel {
             results += page.results.filter { !known.contains($0.id) }
             nextCursor = page.nextCursor
         } catch {
-            guard mine == generation else { return }
+            guard mine == generation, !Task.isCancelled else { return }
             onFailure(error)
         }
     }

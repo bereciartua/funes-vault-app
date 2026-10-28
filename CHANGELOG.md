@@ -12,6 +12,8 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Fixed
 
+- **iPhone: searching no longer says your Mac isn't reachable.** Typing in Search often showed **Mac not reachable** until you tapped Try Again. Each new letter cancels the search still on its way to the Mac, and the app took that cancelled search for the Mac not answering. It also forgot the Mac's address, so the next search had to find the Mac again. A cancelled search is now just dropped, and while new results are on their way a spinner shows at the top left over the previous results. Leaving the Inbox or a memory before it loads no longer reports the Mac unreachable either.
+
 - **The tidy-up no longer gives up on one slow answer.** A tidy-up through Codex or Claude on your plan could stop partway with "stopped early: the model didn't answer", because each call had only 20 seconds. Calls through those apps now get 60 seconds, a call that fails is tried once more, and if it fails again the tidy-up skips those few memories and goes on, stopping only after three failures in a row. When it does stop early, the Inbox says how many memories are left and why ("2 left: the model took too long to answer") and offers **Try Again**, or **AI Models…** when the model's sign-in or setup is the problem.
 
 - **A correction now updates the memory's title too.** When a new capture changed a saved memory, Funes kept the old title and could fold it into the new text, leaving "Likes the color blue" over a text about orange. Corrections now come with a title that matches the new text, and the tidy-up retitles a memory whose title no longer matches its own text.

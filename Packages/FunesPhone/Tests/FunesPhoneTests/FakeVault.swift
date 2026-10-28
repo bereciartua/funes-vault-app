@@ -57,12 +57,13 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
     /// The next call of `method` fails with `error`.
     func fail(_ method: CompanionMethod, with error: CompanionClientError) { lock.withLock { failures[method, default: []].append(error) } }
 
-    /// A search for `query` answers only after `delay`.
+    /// A search for `query` answers only after `delay`; cancelled meanwhile, it gets no answer.
     func delay(_ query: String, _ delay: Duration) { lock.withLock { delays[query] = delay } }
 
     func perform<Call: CompanionCall>(_ request: PendingCall<Call>) async throws(CompanionClientError) -> Call.Result {
         if let search = request.params as? MemorySearchParams, let delay = lock.withLock({ delays[search.query] }) {
             try? await Task.sleep(for: delay)
+            if Task.isCancelled { throw .unreachable(localNetworkDenied: false) }
         }
         return try locked(Call.method, request.params) as! Call.Result
     }

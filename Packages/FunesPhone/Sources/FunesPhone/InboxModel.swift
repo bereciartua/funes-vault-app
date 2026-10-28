@@ -55,6 +55,8 @@ public final class InboxModel {
             nextCursor = page.nextCursor
             phase = .loaded
         } catch {
+            // Cancelled (the tab closed): not the Mac's failure.
+            guard !Task.isCancelled else { return }
             if items.isEmpty { phase = .failed(error) }
             onFailure(error)
         }
@@ -70,6 +72,7 @@ public final class InboxModel {
             nextCursor = page.nextCursor
         } catch {
             nextCursor = cursor
+            guard !Task.isCancelled else { return }
             onFailure(error)
         }
     }

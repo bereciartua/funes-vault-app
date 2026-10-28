@@ -265,6 +265,22 @@ struct Rig {
         #expect(await rig.client.currentAddress?.kind == .tailscale)
     }
 
+    /// A call cancelled before the Mac answers (Search's query changed) keeps the address and
+    /// doesn't look for another.
+    @Test func aCancelledCallKeepsTheAddress() async throws {
+        let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .mac($0)] })
+        try await rig.pair([Addresses.lan, Addresses.tailscale])
+        _ = try await rig.client.status()
+        rig.transport.set("192.168.1.20", .silent)
+        let before = rig.transport.count("100.101.102.103")
+        let call = Task { try await rig.client.call(MemoriesSearch.self, MemorySearchParams(query: "seat")) }
+        try await Task.sleep(for: .milliseconds(50))
+        call.cancel()
+        _ = await call.result
+        #expect(await rig.client.currentAddress?.kind == .lan)
+        #expect(rig.transport.count("100.101.102.103") == before)
+    }
+
     @Test func anUnsafeCallIsNotResent() async throws {
         let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .mac($0)] })
         try await rig.pair([Addresses.lan, Addresses.tailscale])
