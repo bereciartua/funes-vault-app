@@ -17,6 +17,9 @@ final class TidyUpController {
     private(set) var lastRun: TidyUpRun?
     /// Before the first run: the memories to check and roughly how many requests (§9.6).
     private(set) var estimate: TidyUpEstimate?
+    /// Memories still to check (never inspected, or changed since): after a run that stopped
+    /// early, how many wait for the next one.
+    private(set) var left: Int?
     /// Tidy Up on one memory (§9.7): the memory it's looking at.
     private(set) var tidying: UUID?
     /// What Tidy Up found for each memory this session, with the version it looked at, for its
@@ -79,10 +82,12 @@ final class TidyUpController {
         Task { await runIfDue() }
     }
 
-    /// Reads the last run and, before the first, the estimate.
+    /// Reads the last run, the memories left and, before the first run, the estimate.
     func load() async {
         lastRun = try? await service.lastRun()
-        estimate = lastRun == nil ? try? await service.estimate() : nil
+        let estimate = try? await service.estimate()
+        left = estimate?.memories
+        self.estimate = lastRun == nil ? estimate : nil
     }
 
     /// The day's run, or the catch-up after one was missed, when the tidy-up is on.
@@ -106,6 +111,7 @@ final class TidyUpController {
             settings.collectUsage(from: router)
             lastRun = run
             estimate = nil
+            left = try? await service.estimate().memories
             if run.applied + run.suggestions > 0 { finished(run) }
         } catch {
             logger.error("The tidy-up failed")
@@ -159,7 +165,41 @@ final class TidyUpController {
         case .refused(.notActive): String(localized: "Only active memories can be tidied up.")
         case .stopped("cap_reached"): String(localized: "Stopped at today's cloud limit. Try again tomorrow.")
         case .stopped("blocked"): String(localized: "Funes didn't send it: it looked like a secret, or was above the cloud limit.")
-        case .stopped: String(localized: "The model didn't answer. Try again later.")
+        case .stopped("timeout"): String(localized: "The model took too long to answer. Try again.")
+        case .stopped("rate_limited"): String(localized: "The model's provider asked Funes to slow down. Try again in a few minutes.")
+        case .stopped("unauthorized"), .stopped("unavailable"):
+            String(localized: "The tidy-up model isn't working. Check it in Settings ▸ AI Models.")
+        case .stopped: String(localized: "The model returned an error. Try again later.")
+        }
+    }
+
+    /// What the Tidy-up header offers after the last run.
+    enum Followup: Equatable {
+        case tidyUpNow
+        /// It stopped or skipped clusters on a failure that may pass: Tidy Up Now, as Try Again.
+        case tryAgain
+        /// The model's sign-in, key or setup failed: AI Models, next to Tidy Up Now.
+        case openSettings
+    }
+
+    static func followup(_ run: TidyUpRun?, left: Int?) -> Followup {
+        guard let error = run?.error, left != 0 else { return .tidyUpNow }
+        switch error {
+        case "unauthorized", "unavailable": return .openSettings
+        case "cap_reached": return .tidyUpNow
+        default: return .tryAgain
+        }
+    }
+
+    /// Why a run stopped early or skipped clusters (§9.6). No memory text.
+    static func reason(_ code: String) -> String {
+        switch code {
+        case "timeout": String(localized: "the model took too long to answer")
+        case "rate_limited": String(localized: "the model's provider asked Funes to slow down")
+        case "unauthorized": String(localized: "the model's sign-in or API key didn't work")
+        case "unavailable": String(localized: "the model isn't available")
+        case "interrupted": String(localized: "Funes quit during the run")
+        default: String(localized: "the model returned an error")
         }
     }
 
@@ -172,8 +212,10 @@ final class TidyUpController {
         }
     }
 
-    /// "Last tidy-up: today 03:04 · 37 memories checked · 4 suggestions".
-    static func summary(_ run: TidyUpRun) -> String {
+    /// "Last tidy-up: today 03:04 · 37 memories checked · 4 suggestions", and after a run that
+    /// stopped early, "· 2 left: the model took too long to answer". `left`: memories still to
+    /// check; once none are, how the run ended no longer matters.
+    static func summary(_ run: TidyUpRun, left: Int? = nil) -> String {
         let time = run.startedAt.formatted(date: .omitted, time: .shortened)
         let when = Calendar.current.isDateInToday(run.startedAt) ? String(localized: "today \(time)")
             : Calendar.current.isDateInYesterday(run.startedAt) ? String(localized: "yesterday \(time)") : RelativeTime.full(run.startedAt)
@@ -181,12 +223,14 @@ final class TidyUpController {
                      String(localized: "\(run.inspected) memories checked"),
                      String(localized: "\(run.suggestions) suggestions")]
         if run.applied > 0 { parts.append(String(localized: "\(run.applied) applied")) }
+        guard left != 0 else { return parts.joined(separator: " · ") }
         if run.error == "cap_reached" {
             parts.append(String(localized: "stopped at today's cloud limit"))
-        } else if run.error != nil {
-            parts.append(String(localized: "stopped early: the model didn't answer"))
+        } else if let error = run.error {
+            parts.append(left.map { String(localized: "\($0) left: \(reason(error))") }
+                         ?? String(localized: "stopped early: \(reason(error))"))
         } else if run.partial {
-            parts.append(String(localized: "more next time"))
+            parts.append(left.map { String(localized: "\($0) left for next time") } ?? String(localized: "more next time"))
         }
         return parts.joined(separator: " · ")
     }

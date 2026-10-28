@@ -547,23 +547,31 @@ struct CorrectionDiff: View {
 }
 
 /// The Tidy-up section's header (04-ux-mac.md): "Last tidy-up: today 03:04 · 37 memories checked
-/// · 4 suggestions" and Tidy Up Now.
+/// · 4 suggestions" and Tidy Up Now. After a run that stopped early, Try Again, or AI Models when
+/// the model's setup failed.
 struct TidyUpHeader: View {
     let model: AppModel
 
     var body: some View {
+        let tidyUp = model.tidyUp
+        let followup = TidyUpController.followup(tidyUp.lastRun, left: tidyUp.left)
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(InboxModel.Group.tidyUp.title).font(.headline).foregroundStyle(.secondary).accessibilityAddTraits(.isHeader)
-                Text(model.tidyUp.lastRun.map(TidyUpController.summary) ?? String(localized: "No tidy-up yet"))
+                Text(tidyUp.lastRun.map { TidyUpController.summary($0, left: tidyUp.left) } ?? String(localized: "No tidy-up yet"))
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            Button(model.tidyUp.running ? String(localized: "Tidying Up…") : String(localized: "Tidy Up Now")) {
-                Task { await model.tidyUp.runNow() }
+            if followup == .openSettings {
+                Button(String(localized: "AI Models…")) { model.openSettings(.models) }
             }
-            .disabled(model.tidyUp.running)
-            .help(String(localized: "Look for duplicates, outdated memories and conflicts now."))
+            Button(tidyUp.running ? String(localized: "Tidying Up…")
+                   : followup == .tryAgain ? String(localized: "Try Again") : String(localized: "Tidy Up Now")) {
+                Task { await tidyUp.runNow() }
+            }
+            .disabled(tidyUp.running)
+            .help(followup == .tryAgain ? String(localized: "Check the memories the last tidy-up didn't get to.")
+                  : String(localized: "Look for duplicates, outdated memories and conflicts now."))
         }
     }
 }

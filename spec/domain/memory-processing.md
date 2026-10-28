@@ -274,7 +274,7 @@ Phase 6b ([ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)); replaces
 - **Eligibility:** active, no pending tidy-up suggestion, not in a pending Share panel, and within the cloud limit for a cloud provider. Above the limit, only a local provider or the code-only rules.
 
 ### 9.3 The model call
-One call per cluster, with a 20 s timeout. Input per memory, as Spike E sent it: an alias (`m1`, `m2`…, never the id, as in §5.5), kind, title, body, categories, sensitivity, created and updated dates, source. The title and body are separate tags (`<title>`, `<body>`), so a title that no longer matches its body shows; Spike E joined them as "title. body". A read-only memory (one an earlier cluster of the run holds) is sent like the others; validation refuses any change to it. Output:
+One call per cluster, with a timeout (§9.6). Input per memory, as Spike E sent it: an alias (`m1`, `m2`…, never the id, as in §5.5), kind, title, body, categories, sensitivity, created and updated dates, source. The title and body are separate tags (`<title>`, `<body>`), so a title that no longer matches its body shows; Spike E joined them as "title. body". A read-only memory (one an earlier cluster of the run holds) is sent like the others; validation refuses any change to it. Output:
 
 ```
 actions: [
@@ -316,7 +316,9 @@ Prompt rules: be cautious; a newer date alone doesn't mean replacement; keep dis
 - **A notification** after a run with results: "Funes applied 3 changes and has 2 for you to review." No memory text.
 
 ### 9.6 Limits
-- At most 40 clusters a run, splits included; the rest roll over (`partial`). A 20 s timeout per call, not per run (Spike E's slowest tidy-up call took 18.6 s). A provider that fails stops the run, which resumes at the next one. A run a quit interrupted is closed as `partial` with error `interrupted`.
+- At most 40 clusters a run, splits included; the rest roll over (`partial`). A timeout per call, not per run: 20 s through an API (Spike E's slowest tidy-up call took 18.6 s), 60 s through a subscription CLI, which starts a new process for every call and took longer than 20 s on full clusters of 6 in the author's runs. A run a quit interrupted is closed as `partial` with error `interrupted`.
+- **Failures:** a timeout, a server or network error, an answer that isn't the schema or a refusal is tried once more after 5 s. If it fails again, that cluster or split is skipped (its memories stay unreconciled and roll over) and the run goes on; the run records the error code and `partial`. Three failed clusters or splits in a row stop the run, and so does any failure a retry can't fix (the daily cap, a rate limit, a sign-in or key that doesn't work, an unavailable provider). The run resumes at the next one.
+- **What the user sees:** after a run that stopped early or skipped clusters, the summary says how many memories are left and why: "Last tidy-up: today 10:45 · 50 memories checked · 4 suggestions · 2 left: the model took too long to answer". **Tidy Up Now** reads **Try Again** (it checks only what's left); when the model's sign-in, key or setup failed, **AI Models…** sits next to it. Once nothing is left, the reason goes.
 - **Scheduling:** the Mac checks every half hour with `NSBackgroundActivityScheduler`, and at launch and wake, whether a scheduled time passed since the last run started (or since the tidy-up was turned on, so turning it on doesn't run it at once).
 - Shares the daily cap with §5; at the cap the tidy-up waits for the next day, never switching to a weaker model.
 - Before the first run, Settings shows an estimate: "About N memories to check. Roughly X requests the first week, then a few a day."
