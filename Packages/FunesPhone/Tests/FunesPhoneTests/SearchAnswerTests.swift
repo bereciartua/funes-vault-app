@@ -114,10 +114,21 @@ import Testing
         #expect(search.answer == .failed(.answersOff))
         search.clearAnswer()
         #expect(!search.canAsk)
-        search.macAnswers = nil
-        search.macAnswers = Self.claude
-        await search.search()
+        // A fresh status.get that says the same as before lifts it.
+        search.statusChecked(Self.claude)
         #expect(search.canAsk)
+    }
+
+    @Test func onDeviceReadsAtMostFive() async throws {
+        let vault = FakeVault()
+        for i in 0..<10 { vault.add("Coffee \(i)", updated: TimeInterval(-i)) }
+        vault.answerDelay = .milliseconds(200)
+        let search = await Self.loaded(vault)
+        search.macAnswers = SearchAnswersStatus(engine: "Apple on-device", locality: .onDevice)
+        let asking = Task { await search.ask() }
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(search.answer == .reading(count: 5))
+        await asking.value
     }
 
     /// Typing clears the card at once, and Ask waits for the new search's results.

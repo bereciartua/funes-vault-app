@@ -31,10 +31,14 @@ public enum AnswerWording {
     /// "1 memory wasn't read: it's above your Mac's cloud limit", "1 claim left out: it didn't quote a memory".
     public static func notes(_ result: MemoryAnswerResult) -> [String] {
         var lines: [String] = []
-        switch result.withheld {
-        case 0: break
-        case 1: lines.append(String(localized: "1 memory wasn't read: it's above your Mac's cloud limit"))
-        default: lines.append(String(localized: "\(result.withheld) memories weren't read: they're above your Mac's cloud limit"))
+        // A local model withholds only memories that look like they hold secrets.
+        let local = result.locality == .onDevice || result.locality == .localServer
+        switch (result.withheld, local) {
+        case (0, _): break
+        case (1, false): lines.append(String(localized: "1 memory wasn't read: it's above your Mac's cloud limit"))
+        case (_, false): lines.append(String(localized: "\(result.withheld) memories weren't read: they're above your Mac's cloud limit"))
+        case (1, true): lines.append(String(localized: "1 memory wasn't read: it looks like it holds a secret"))
+        case (_, true): lines.append(String(localized: "\(result.withheld) memories weren't read: they look like they hold secrets"))
         }
         switch result.dropped {
         case 0: break

@@ -394,6 +394,32 @@ final class AnswerProvider: GenerationProvider {
         #expect(!FileManager.default.fileExists(atPath: marker.path))
     }
 
+    /// A process that ignores SIGTERM still ends when it's cancelled: SIGKILL after the grace.
+    @Test func aProcessThatIgnoresSIGTERMIsKilled() async throws {
+        let dir = FileManager.default.temporaryDirectory.appending(path: "funes-stub-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let pidFile = dir.appending(path: "pid")
+        let invocation = CLIInvocation(executable: "/bin/sh",
+                                       arguments: ["-c", "trap '' TERM; echo $$ > \"\(pidFile.path)\"; while :; do sleep 1; done"],
+                                       environment: [:], directory: dir, input: "", timeout: .seconds(60))
+        let task = Task { try await SystemCLIProcess().run(invocation) { _ in true } }
+        var pid: pid_t?
+        for _ in 0..<100 where pid == nil {
+            try await Task.sleep(for: .milliseconds(50))
+            pid = (try? String(contentsOf: pidFile, encoding: .utf8)).flatMap { pid_t($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+        }
+        let running = try #require(pid)
+        task.cancel()
+        _ = await task.result
+        var gone = false
+        for _ in 0..<80 where !gone {
+            try await Task.sleep(for: .milliseconds(100))
+            gone = kill(running, 0) != 0
+        }
+        #expect(gone)
+    }
+
     /// Cancelling the task ends a subscription CLI's process (§10.3: a new Ask, or Cancel).
     @Test func cancellingEndsTheCLIProcess() async throws {
         let env = try Env()

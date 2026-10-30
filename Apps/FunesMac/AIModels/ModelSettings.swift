@@ -299,8 +299,14 @@ final class ModelSettings {
         save()
     }
 
+    /// Search answers' own choice of Apple's on-device model, apart from New memories'.
+    static let onDeviceChoice = "apple.foundation"
+
     /// The provider that answers: its own choice, or New memories'. Nil is Apple on-device.
-    private var searchAnswersChoice: String? { stored.searchAnswersModel ?? stored.classifier }
+    private var searchAnswersChoice: String? {
+        let id = stored.searchAnswersModel ?? stored.classifier
+        return id == Self.onDeviceChoice ? nil : id
+    }
 
     /// Whether Apple's on-device model answers (the effective choice is it).
     var searchAnswersOnDevice: Bool { searchAnswersChoice == nil }

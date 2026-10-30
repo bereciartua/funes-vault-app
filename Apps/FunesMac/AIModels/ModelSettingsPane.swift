@@ -270,6 +270,7 @@ struct ModelSettingsPane: View {
                     Picker(String(localized: "Search answers model"),
                            selection: Binding(get: { settings.searchAnswersID }, set: { settings.setSearchAnswersModel($0) })) {
                         Text(String(localized: "Same as New memories")).tag(String?.none)
+                        Text(String(localized: "Apple on-device")).tag(Optional(ModelSettings.onDeviceChoice))
                         ForEach(settings.providers) { provider in
                             Text("\(provider.name) · \(provider.model.isEmpty ? String(localized: "no model") : provider.model)")
                                 .tag(Optional(provider.id))

@@ -56,6 +56,13 @@ public final class SearchModel {
     }
     /// `answers_off` came back: no Ask until `status.get` says otherwise.
     private var macSaidOff = false
+
+    /// Every successful `status.get`: what the Mac says now replaces an earlier `answers_off`,
+    /// even when it says the same as before.
+    public func statusChecked(_ answers: SearchAnswersStatus?) {
+        macAnswers = answers
+        if answers != nil { macSaidOff = false }
+    }
     /// Settings ▸ Search answers ▸ Show Ask in Search (this iPhone only, on by default).
     public var showAsk = true
     @ObservationIgnored private var answerTask: Task<Void, Never>?
@@ -160,7 +167,8 @@ public final class SearchModel {
         let mine = answerGeneration
         let ids = askIDs
         let total = results.count
-        answer = .reading(count: ids.count)
+        // Apple's on-device model reads at most 5 (memory processing §10.3).
+        answer = .reading(count: macAnswers?.locality == .onDevice ? min(ids.count, 5) : ids.count)
         let caller = self.caller
         let task = Task { [weak self] in
             do {

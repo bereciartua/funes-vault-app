@@ -368,7 +368,7 @@ Both steps ask FTS5 where the search's terms are, so they agree with keyword sea
 - **Never stored.** The claims go to the screen that asked, nowhere else: no cache, no Inbox, no history.
 
 ### 10.5 Results and Activity
-- **The card:** each claim with its numbers, its first citation's quote under it, the engine and its locality badge, and a footer: "Read 8 of 30 results · 6 s", "1 memory above Internal wasn't read", "1 claim left out: it didn't quote a memory". A number links to the memory.
+- **The card:** each claim with its numbers, its first citation's quote under it, the engine and its locality badge, and a footer: "Read 8 of 30 results · 6 s", "1 memory above Internal wasn't read" (for a local server, which withholds only memories the secret scanner matches: "1 memory wasn't read: it looks like it holds a secret"), "1 claim left out: it didn't quote a memory". A number links to the memory.
 - **Highlighting the quote:** the app that opens the memory finds the quote in the body it shows with `QuoteLocator` and highlights that range. No offsets travel: if the memory was edited and the quote is no longer there, it opens without a highlight.
 - **No answer:** "No answer in the 8 results read." (with the withheld line when it applies).
 - **Failures:** the secret scanner on the search ("Your search looks like it contains a secret, so it wasn't sent."), the daily cap, a timeout ("Took too long. Try again."), the provider's own state ("Claude Code isn't signed in on your Mac.", "Codex needs an update."), invalid output ("The model's answer couldn't be read. Try again."), the on-device window. Each offers **Try Again** where it can help.

@@ -149,10 +149,15 @@ struct AnswerCard: View {
     /// "1 memory above Internal wasn't read", "1 claim left out: it didn't quote a memory".
     static func notes(_ answer: SearchAnswer, limit: String) -> [String] {
         var lines: [String] = []
-        switch answer.withheld {
-        case 0: break
-        case 1: lines.append(String(localized: "1 memory above \(limit) wasn't read"))
-        default: lines.append(String(localized: "\(answer.withheld) memories above \(limit) weren't read"))
+        // A cloud model is sent nothing above the limit; any model off this Mac nothing that looks
+        // like a secret (a local server withholds only those).
+        let local = answer.locality?.isLocal ?? false
+        switch (answer.withheld, local) {
+        case (0, _): break
+        case (1, false): lines.append(String(localized: "1 memory above \(limit) wasn't read"))
+        case (_, false): lines.append(String(localized: "\(answer.withheld) memories above \(limit) weren't read"))
+        case (1, true): lines.append(String(localized: "1 memory wasn't read: it looks like it holds a secret"))
+        case (_, true): lines.append(String(localized: "\(answer.withheld) memories weren't read: they look like they hold secrets"))
         }
         switch answer.dropped {
         case 0: break

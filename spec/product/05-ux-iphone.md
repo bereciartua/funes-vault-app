@@ -97,7 +97,7 @@ Top to bottom:
   - Tapping it shows the card as the list's first section: "Reading 8 results…" with **Cancel**, then the answer as on the Mac (claims with numbers and quotes, the locality badge as "Claude · Cloud" or "On your Mac", the footer, **Clear**). The pill hides while the card shows.
   - A number opens the memory detail scrolled to the quoted sentence, highlighted (the phone finds it with `QuoteLocator`; an edited memory opens without the highlight).
   - Messages: the Mac's no-answer and failure texts; "Search answers are off on your Mac." (`answers_off`, the pill then hides); a call that can't reach the Mac is the usual unreachable state, and a slow model is never shown as one.
-  - The footer's withheld line says "1 memory wasn't read: it's above your Mac's cloud limit" (the phone isn't told the limit's name).
+  - The footer's withheld line says "1 memory wasn't read: it's above your Mac's cloud limit" (the phone isn't told the limit's name), or for a model on the Mac or a local server "1 memory wasn't read: it looks like it holds a secret".
   - **Cancel**, changing the search or scope, or leaving Search clears the card and stops waiting; the Mac's work ends at its result, its deadline or the phone's next Ask. The answer is never kept.
 - **Memory detail:**
   - full text, kind, categories, sensitivity, expiry and provenance;

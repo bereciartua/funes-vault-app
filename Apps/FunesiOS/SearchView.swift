@@ -92,6 +92,8 @@ struct SearchView: View {
                 MemoryDetailView(model: model, id: source.id, quote: source.quote)
             }
             .onChange(of: model.macAnswers, initial: true) { _, answers in search.macAnswers = answers }
+            // Each fresh status.get, even an unchanged one, lifts an earlier answers_off.
+            .onChange(of: model.lastChecked) { _, _ in search.statusChecked(model.macAnswers) }
             .onChange(of: showAsk, initial: true) { _, on in search.showAsk = on }
             // Leaving Search clears the card and stops waiting.
             .onDisappear { search.clearAnswer() }

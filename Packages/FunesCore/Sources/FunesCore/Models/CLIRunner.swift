@@ -52,6 +52,20 @@ public protocol CLIProcessRunning: Sendable {
 public struct SystemCLIProcess: CLIProcessRunning {
     public init() {}
 
+    /// How long a stopped process gets to exit on SIGTERM before SIGKILL.
+    static let killGrace: TimeInterval = 2
+
+    /// Ends a process: SIGTERM, then SIGKILL if it's still running after `killGrace` (a CLI that
+    /// ignores SIGTERM can't outlive a search answer's deadline).
+    static func stop(_ process: Process) {
+        guard process.isRunning else { return }
+        let pid = process.processIdentifier
+        process.terminate()
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + killGrace) {
+            if process.isRunning { kill(pid, SIGKILL) }
+        }
+    }
+
     /// The run's mutable state, behind its lock.
     private final class State: @unchecked Sendable {
         let lock = NSLock()
@@ -83,7 +97,7 @@ public struct SystemCLIProcess: CLIProcessRunning {
                 lines.append(text)
                 if !line(text) {
                     stopped = true
-                    process.terminate()
+                    SystemCLIProcess.stop(process)
                     return
                 }
             }
@@ -165,7 +179,7 @@ public struct SystemCLIProcess: CLIProcessRunning {
                     defer { state.lock.unlock() }
                     guard state.process.isRunning else { return }
                     state.timedOut = true
-                    state.process.terminate()
+                    SystemCLIProcess.stop(state.process)
                 }
             }
         } onCancel: {
@@ -173,7 +187,7 @@ public struct SystemCLIProcess: CLIProcessRunning {
             state.cancelled = true
             let running = state.process.isRunning
             state.lock.unlock()
-            if running { state.process.terminate() }
+            if running { SystemCLIProcess.stop(state.process) }
         }
     }
 }

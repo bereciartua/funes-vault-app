@@ -121,6 +121,9 @@
     "%lld in categories it can't read" : {
 
     },
+    "%lld memories weren't read: they look like they hold secrets" : {
+
+    },
     "%lld memories weren't read: they're above your Mac's cloud limit" : {
 
     },
@@ -138,6 +141,9 @@
 
     },
     "1 claim left out: it didn't quote a memory" : {
+
+    },
+    "1 memory wasn't read: it looks like it holds a secret" : {
 
     },
     "1 memory wasn't read: it's above your Mac's cloud limit" : {

@@ -199,6 +199,9 @@
     "%lld memories shared" : {
 
     },
+    "%lld memories weren't read: they look like they hold secrets" : {
+
+    },
     "%lld memories weren't read: they're above your Mac's cloud limit" : {
 
     },
@@ -260,6 +263,9 @@
 
     },
     "1 memory shared" : {
+
+    },
+    "1 memory wasn't read: it looks like it holds a secret" : {
 
     },
     "1 memory wasn't read: it's above your Mac's cloud limit" : {
