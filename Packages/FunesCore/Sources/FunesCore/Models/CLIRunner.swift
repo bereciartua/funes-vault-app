@@ -63,6 +63,8 @@ public struct SystemCLIProcess: CLIProcessRunning {
         var stopped = false
         var timedOut = false
         var resumed = false
+        /// The task was cancelled: a process not started yet never starts.
+        var cancelled = false
 
         init(process: Process, line: @escaping @Sendable (String) -> Bool) {
             self.process = process
@@ -131,16 +133,28 @@ public struct SystemCLIProcess: CLIProcessRunning {
                     state.lock.unlock()
                     continuation.resume(returning: result)
                 }
+                // Starting and cancelling are serialized, so a cancel that comes before the start
+                // (a new Ask right after the last) never leaves a process running.
+                state.lock.lock()
+                if state.cancelled {
+                    state.resumed = true
+                    state.lock.unlock()
+                    continuation.resume(throwing: CancellationError())
+                    return
+                }
                 do {
                     try process.run()
+                    state.lock.unlock()
                 } catch {
-                    state.lock.lock()
                     state.resumed = true
                     state.lock.unlock()
                     continuation.resume(throwing: ProviderError.unavailable)
                     return
                 }
                 let data = Data(invocation.input.utf8)
+                // A process killed before it read its input (a cancelled search answer) makes the
+                // write fail instead of raising SIGPIPE, which would end Funes.
+                _ = fcntl(input.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
                 DispatchQueue.global(qos: .utility).async {
                     try? input.fileHandleForWriting.write(contentsOf: data)
                     try? input.fileHandleForWriting.close()
@@ -155,7 +169,11 @@ public struct SystemCLIProcess: CLIProcessRunning {
                 }
             }
         } onCancel: {
-            if state.process.isRunning { state.process.terminate() }
+            state.lock.lock()
+            state.cancelled = true
+            let running = state.process.isRunning
+            state.lock.unlock()
+            if running { state.process.terminate() }
         }
     }
 }

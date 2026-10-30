@@ -144,29 +144,39 @@ public struct BodyMatches: Sendable, Hashable {
         Self.answerText(body: body, spans: spans, limit: limit)
     }
 
+    public func answerPassages(limit: Int) -> [String] {
+        Self.answerPassages(body: body, spans: spans, limit: limit)
+    }
+
     /// The separator between passages; a quote that spans it fails validation (§10.4).
     public static let passageJoin = " … "
 
     public static func answerText(body: String, spans: [Range<Int>], limit: Int) -> String {
-        guard longer(body[...], than: limit) else { return body }
+        answerPassages(body: body, spans: spans, limit: limit).joined(separator: passageJoin)
+    }
+
+    /// `answerText`'s passages before they're joined, so validation knows where the joins are
+    /// (a body's own " … " isn't one).
+    public static func answerPassages(body: String, spans: [Range<Int>], limit: Int) -> [String] {
+        guard longer(body[...], than: limit) else { return [body] }
         let all = sentences(in: body, lines: body.split(whereSeparator: \.isNewline).map { $0.startIndex..<$0.endIndex },
                             spans: indices(spans, in: body))
         let ranked = all.indices.filter { all[$0].score > 0 }.sorted { (all[$0].score, $1) > (all[$1].score, $0) }
-        guard let first = ranked.first else { return cut(body[...], to: limit) }
+        guard let first = ranked.first else { return [cut(body[...], to: limit)] }
         var chosen = Set<Int>()
-        var text = ""
+        var runs: [String] = []
         for i in ranked.prefix(3) {
             let window = chosen.union(max(i - 1, 0)...min(i + 1, all.count - 1))
             let joined = join(window, all, in: body)
-            guard joined.count <= limit else { continue }
+            guard joined.joined(separator: passageJoin).count <= limit else { continue }
             chosen = window
-            text = joined
+            runs = joined
         }
-        return text.isEmpty ? cut(body[all[first].range], to: limit) : text
+        return runs.isEmpty ? [cut(body[all[first].range], to: limit)] : runs
     }
 
     /// The chosen sentences in body order; runs of neighbours keep the body's text between them.
-    static func join(_ chosen: Set<Int>, _ all: [Sentence], in body: String) -> String {
+    static func join(_ chosen: Set<Int>, _ all: [Sentence], in body: String) -> [String] {
         var runs: [Range<String.Index>] = []
         for i in chosen.sorted() {
             if let last = runs.last, chosen.contains(i - 1) {
@@ -175,7 +185,7 @@ public struct BodyMatches: Sendable, Hashable {
                 runs.append(all[i].range)
             }
         }
-        return runs.map { String(body[$0]) }.joined(separator: passageJoin)
+        return runs.map { String(body[$0]) }
     }
 
     /// The text's start, at most `limit` characters, cut after a word.

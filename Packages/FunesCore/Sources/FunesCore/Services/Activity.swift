@@ -32,10 +32,16 @@ public struct ActivityEvent: Sendable, Hashable, Codable {
     /// The profile fields a `request_memory` answer carried, or a `profile_edited` event changed
     /// (access policy §3.10). Names only, never values; nil for anything else.
     public var profileFields: [ProfileField]?
+    /// The model that did the work (`<provider>/<model>`, `apple.foundation`), for `search_answered`
+    /// (v0.6); nil for anything else.
+    public var engine: String?
+    /// A failure's code that isn't an agent-facing `ReasonCode` (`search_answered`: `model_timeout`,
+    /// `cap_reached`…); nil for anything else.
+    public var code: String?
 
     public init(time: Date, requestID: UUID? = nil, phase: Phase = .result, actor: Actor, via: Via, event: String,
                 outcome: String? = nil, ids: [UUID] = [], reason: ReasonCode? = nil, counts: [String: Int] = [:],
-                approval: Approval? = nil, profileFields: [ProfileField]? = nil) {
+                approval: Approval? = nil, profileFields: [ProfileField]? = nil, engine: String? = nil, code: String? = nil) {
         self.time = time
         self.requestID = requestID
         self.phase = phase
@@ -48,6 +54,8 @@ public struct ActivityEvent: Sendable, Hashable, Codable {
         self.counts = counts
         self.approval = approval
         self.profileFields = profileFields
+        self.engine = engine
+        self.code = code
     }
 }
 

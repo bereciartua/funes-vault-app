@@ -205,6 +205,7 @@ Stored in an append-only JSONL file (the EK Bridge `ActivityStore` pattern):
 - `actor` (agent, device, user or system), `via` (`mcp` · `remote` · `companion` · `app`), `event`, `outcome`;
 - ids, `reason`, `counts`, `approval` (`approved` · `denied` · `timeout` · `not_required`);
 - `profileFields` (the profile fields a `request_memory` answer carried, names only), and the `profile_edited` event (the fields changed, names only);
+- v0.6, for `search_answered`: `engine` (the model, `<provider>/<model>` or `apple.foundation`) and `code` (a failure's reason, such as `model_timeout`, which isn't an agent-facing ReasonCode) ([memory processing §10.5](memory-processing.md#105-results-and-activity));
 - `agentReportedName` (sanitized, ≤ 64 bytes).
 
 No text, task, keys or bodies.
