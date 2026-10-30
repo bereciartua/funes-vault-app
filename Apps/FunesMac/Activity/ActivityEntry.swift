@@ -106,6 +106,7 @@ struct ActivityEntry: Identifiable, Equatable {
         case "memory_restored": return String(localized: "Restored a memory")
         case "memory_deleted": return String(localized: "Deleted a memory")
         case "memories_searched": return String(localized: "Searched memories")
+        case "search_answered": return String(localized: "Answered a search")
         case "memory_viewed": return String(localized: "Opened a memory")
         case "inbox_listed": return String(localized: "Opened the Inbox")
         case "categories_listed": return String(localized: "Listed categories")
@@ -181,6 +182,13 @@ struct ActivityEntry: Identifiable, Equatable {
         case ("tidy_up_run", _):
             return (String(localized: "\(e.counts["applied"] ?? 0) applied, \(e.counts["suggestions"] ?? 0) to review"), .neutral)
         case ("cap_reached", _): return (String(localized: "On this Mac until tomorrow"), .warning)
+        // Search answers (v0.6): counts only, never the search or a claim.
+        case ("search_answered", "answered"):
+            let claims = e.counts["claims"] ?? 0
+            return (claims == 1 ? String(localized: "1 claim") : String(localized: "\(claims) claims"), .good)
+        case ("search_answered", "no_answer"): return (String(localized: "No answer"), .neutral)
+        case ("search_answered", "cancelled"): return (String(localized: "Cancelled"), .neutral)
+        case ("search_answered", _): return (String(localized: "Failed"), .warning)
         case ("processing_job", "failed"): return (String(localized: "Failed: proposed by rules"), .warning)
         default: return (e.outcome.map { $0.replacingOccurrences(of: "_", with: " ").capitalized } ?? String(localized: "Done"), .neutral)
         }

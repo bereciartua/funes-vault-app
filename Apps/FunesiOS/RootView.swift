@@ -62,6 +62,7 @@ struct SettingsView: View {
                     demoSection
                 } else if let record = model.record {
                     macSection(record)
+                    SearchAnswersSection(model: model)
                     ApprovalSettingsSection(model: model)
                     deviceSection(record)
                 } else {
@@ -288,3 +289,39 @@ struct SpikeSection: View {
     }
 }
 #endif
+
+/// Settings ▸ Search answers (UX: iPhone ▸ Settings, FR-iOS-13): Show Ask in Search (this iPhone
+/// only) and the engine the Mac answers with. The model is chosen on the Mac.
+struct SearchAnswersSection: View {
+    let model: PhoneModel
+    @AppStorage(SearchAnswersSettings.showAskKey) private var showAsk = true
+
+    var body: some View {
+        Section {
+            if let answers = model.macAnswers {
+                Toggle("Show Ask in Search", isOn: $showAsk)
+                LabeledContent("Answered by", value: answers.engine)
+                LabeledContent("Answers", value: Self.trigger(answers.trigger))
+            } else if model.reachability.isConnected {
+                Text("Search answers are off on your Mac.").foregroundStyle(.secondary)
+            } else {
+                Toggle("Show Ask in Search", isOn: $showAsk)
+            }
+        } header: {
+            Text("Search answers")
+        } footer: {
+            if let answers = model.macAnswers {
+                Text("Your Mac reads the top results and asks \(answers.engine). Change the model, and when searches are answered, on your Mac in Settings ▸ AI Models. With Show Ask off, nothing is asked from this iPhone.")
+            }
+        }
+    }
+
+    /// When the Mac answers a search (memory processing §10.6).
+    static func trigger(_ trigger: AnswerTrigger) -> String {
+        switch trigger {
+        case .ask: String(localized: "When you ask")
+        case .questions: String(localized: "Automatically for questions")
+        case .everySearch: String(localized: "Automatically for every search")
+        }
+    }
+}

@@ -21,7 +21,19 @@
         }
       }
     },
+    "%@ is paused on your Mac: test its connection in Settings ▸ AI Models." : {
+
+    },
+    "%@ isn't signed in on your Mac." : {
+
+    },
+    "%@ needs an update on your Mac." : {
+
+    },
     "%@ on your Mac. It may send what it reads to its AI service." : {
+
+    },
+    "%@ says to slow down. Try again later." : {
 
     },
     "%@ suggests a correction" : {
@@ -95,6 +107,15 @@
         }
       }
     },
+    "%@ · Apple cloud" : {
+
+    },
+    "%@ · Cloud" : {
+
+    },
+    "%@ · Local server" : {
+
+    },
     "%@'s Reason" : {
 
     },
@@ -144,10 +165,16 @@
         }
       }
     },
+    "%lld" : {
+
+    },
     "%lld above its sensitivity limit" : {
 
     },
     "%lld captures waiting" : {
+
+    },
+    "%lld claims left out: they didn't quote a memory" : {
 
     },
     "%lld expired" : {
@@ -170,6 +197,12 @@
 
     },
     "%lld memories shared" : {
+
+    },
+    "%lld memories weren't read: they look like they hold secrets" : {
+
+    },
+    "%lld memories weren't read: they're above your Mac's cloud limit" : {
 
     },
     "%lld more matched but can't go to this agent (%@)." : {
@@ -226,7 +259,16 @@
     "0 in" : {
 
     },
+    "1 claim left out: it didn't quote a memory" : {
+
+    },
     "1 memory shared" : {
+
+    },
+    "1 memory wasn't read: it looks like it holds a secret" : {
+
+    },
+    "1 memory wasn't read: it's above your Mac's cloud limit" : {
 
     },
     "1-week streak" : {
@@ -325,6 +367,9 @@
     "An expired memory is never shared with agents." : {
 
     },
+    "Answer" : {
+
+    },
     "Answer by %@" : {
 
     },
@@ -337,7 +382,16 @@
     "Answered" : {
 
     },
+    "Answered by" : {
+
+    },
     "Answered on your Mac" : {
+
+    },
+    "Answers" : {
+
+    },
+    "Answers this search from its top results, quoting your memories." : {
 
     },
     "Any Sensitivity" : {
@@ -364,7 +418,16 @@
     "As of %@" : {
 
     },
+    "Ask Funes" : {
+
+    },
     "Asking your Mac…" : {
+
+    },
+    "Automatically for every search" : {
+
+    },
+    "Automatically for questions" : {
 
     },
     "Back online" : {
@@ -432,6 +495,9 @@
 
     },
     "Cleanup suggestion · %@" : {
+
+    },
+    "Clear" : {
 
     },
     "Click Allow on “%@”" : {
@@ -696,6 +762,9 @@
     "In" : {
 
     },
+    "In the demo, try: When does my lease renew?" : {
+
+    },
     "In the last 30 days." : {
 
     },
@@ -854,7 +923,13 @@
     "No Mac yet? See every screen with sample data. Nothing leaves this iPhone." : {
 
     },
+    "No Results" : {
+
+    },
     "No agent has read your vault yet" : {
+
+    },
+    "No answer in the %lld results read." : {
 
     },
     "No captures waiting" : {
@@ -912,6 +987,9 @@
 
     },
     "OK" : {
+
+    },
+    "On your Mac" : {
 
     },
     "Open Funes to see what's waiting." : {
@@ -1043,7 +1121,23 @@
     "Queuing %lld…" : {
 
     },
+    "Quoted in the answer" : {
+
+    },
     "Range" : {
+
+    },
+    "Read %lld of %lld results · %lld s" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read %1$lld of %2$lld results · %3$lld s"
+          }
+        }
+      }
+    },
+    "Reading %lld results…" : {
 
     },
     "Recent Captures" : {
@@ -1177,6 +1271,12 @@
     "Search" : {
 
     },
+    "Search answers" : {
+
+    },
+    "Search answers are off on your Mac." : {
+
+    },
     "Search by sensitivity" : {
 
     },
@@ -1281,6 +1381,9 @@
     "Show All" : {
 
     },
+    "Show Ask in Search" : {
+
+    },
     "Show Less" : {
 
     },
@@ -1310,6 +1413,19 @@
     },
     "Something went wrong on your Mac. Try again." : {
 
+    },
+    "Source %lld" : {
+
+    },
+    "Source %lld: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Source %1$lld: %2$@"
+          }
+        }
+      }
     },
     "Spike 1" : {
 
@@ -1373,6 +1489,9 @@
 
     },
     "The memory it changes was edited on your Mac since this was suggested. Review it on your Mac." : {
+
+    },
+    "The model's answer couldn't be read. Try again." : {
 
     },
     "The request waits on your Mac. Answer it there, or try again when your Mac is reachable." : {
@@ -1480,6 +1599,9 @@
     "To use your own vault, install Funes Vault on your Mac, leave the demo, and pair." : {
 
     },
+    "Today's cloud requests are used up on your Mac. Search still works; answers are back tomorrow." : {
+
+    },
     "Too few memories for a rhythm yet" : {
 
     },
@@ -1487,6 +1609,9 @@
 
     },
     "Took %@ s" : {
+
+    },
+    "Took too long. Try again." : {
 
     },
     "Try Again" : {
@@ -1567,6 +1692,9 @@
     "When an agent asks to share or save memories, this iPhone gets a notification and can answer, as your Mac can. The notification names the agent, never your memories." : {
 
     },
+    "When you ask" : {
+
+    },
     "Who reads your vault" : {
 
     },
@@ -1633,6 +1761,9 @@
     "Your Mac no longer knows this iPhone. Captures waiting here are kept: pair again to send them, or delete them in Settings." : {
 
     },
+    "Your Mac reads the top results and asks %@. Change the model, and when searches are answered, on your Mac in Settings ▸ AI Models. With Show Ask off, nothing is asked from this iPhone." : {
+
+    },
     "Your Mac refused the request (%@)." : {
 
     },
@@ -1640,6 +1771,9 @@
 
     },
     "Your Mac's Funes Vault is too old for this. Update it on the Mac." : {
+
+    },
+    "Your Mac's model couldn't answer. Try again." : {
 
     },
     "Your answer may have reached your Mac before the connection dropped. Activity on your Mac shows what happened." : {
@@ -1652,6 +1786,9 @@
 
     },
     "Your pulse starts with your first memories" : {
+
+    },
+    "Your search looks like it contains a secret, so it wasn't sent." : {
 
     },
     "Your vault isn't available on your Mac right now. Try again in a moment." : {
@@ -1700,6 +1837,9 @@
 
     },
     "iPhone" : {
+
+    },
+    "“%@”" : {
 
     }
   },

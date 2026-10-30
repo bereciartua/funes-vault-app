@@ -118,12 +118,18 @@ public final class SearchService: Sendable {
     /// on the last word. An empty query lists the filtered memories in the filter's order.
     public func vaultSearch(_ query: String, filter: MemoryFilter = MemoryFilter(), now: Date) async throws -> [SearchHit] {
         let pool = try await store.writer.read { db in
-            try MemoryStore.list(db, filter: filter, now: now).map { (id: $0.id, updatedAt: $0.updatedAt) }
+            try MemoryStore.listed(db, filter: filter, now: now)
         }
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return pool.map { SearchHit(memoryID: $0.id, score: 0, keyword: 0, semantic: 0, cosine: nil) }
         }
         return try await rank(text: query, pool: pool, prefix: true, threshold: \.vaultThreshold, agentTask: false, limit: nil)
+    }
+
+    /// Where each of `ids` matches `query` in its body, for snippets and answers (memory processing
+    /// §10.1): one `highlight()` query with the MATCH query vault search used (`prefix`, as typed).
+    public func bodyMatches(_ query: String, ids: [UUID], prefix: Bool = true) async throws -> [UUID: BodyMatches] {
+        try await store.writer.read { db in try BodyMatches.find(db, ids: ids, query: query, prefix: prefix) }
     }
 
     /// Agent retrieval (access policy §3.2): active memories including expired ones (so expiry shows

@@ -52,6 +52,20 @@ public protocol CLIProcessRunning: Sendable {
 public struct SystemCLIProcess: CLIProcessRunning {
     public init() {}
 
+    /// How long a stopped process gets to exit on SIGTERM before SIGKILL.
+    static let killGrace: TimeInterval = 2
+
+    /// Ends a process: SIGTERM, then SIGKILL if it's still running after `killGrace` (a CLI that
+    /// ignores SIGTERM can't outlive a search answer's deadline).
+    static func stop(_ process: Process) {
+        guard process.isRunning else { return }
+        let pid = process.processIdentifier
+        process.terminate()
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + killGrace) {
+            if process.isRunning { kill(pid, SIGKILL) }
+        }
+    }
+
     /// The run's mutable state, behind its lock.
     private final class State: @unchecked Sendable {
         let lock = NSLock()
@@ -63,6 +77,8 @@ public struct SystemCLIProcess: CLIProcessRunning {
         var stopped = false
         var timedOut = false
         var resumed = false
+        /// The task was cancelled: a process not started yet never starts.
+        var cancelled = false
 
         init(process: Process, line: @escaping @Sendable (String) -> Bool) {
             self.process = process
@@ -81,7 +97,7 @@ public struct SystemCLIProcess: CLIProcessRunning {
                 lines.append(text)
                 if !line(text) {
                     stopped = true
-                    process.terminate()
+                    SystemCLIProcess.stop(process)
                     return
                 }
             }
@@ -131,16 +147,28 @@ public struct SystemCLIProcess: CLIProcessRunning {
                     state.lock.unlock()
                     continuation.resume(returning: result)
                 }
+                // Starting and cancelling are serialized, so a cancel that comes before the start
+                // (a new Ask right after the last) never leaves a process running.
+                state.lock.lock()
+                if state.cancelled {
+                    state.resumed = true
+                    state.lock.unlock()
+                    continuation.resume(throwing: CancellationError())
+                    return
+                }
                 do {
                     try process.run()
+                    state.lock.unlock()
                 } catch {
-                    state.lock.lock()
                     state.resumed = true
                     state.lock.unlock()
                     continuation.resume(throwing: ProviderError.unavailable)
                     return
                 }
                 let data = Data(invocation.input.utf8)
+                // A process killed before it read its input (a cancelled search answer) makes the
+                // write fail instead of raising SIGPIPE, which would end Funes.
+                _ = fcntl(input.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
                 DispatchQueue.global(qos: .utility).async {
                     try? input.fileHandleForWriting.write(contentsOf: data)
                     try? input.fileHandleForWriting.close()
@@ -151,11 +179,15 @@ public struct SystemCLIProcess: CLIProcessRunning {
                     defer { state.lock.unlock() }
                     guard state.process.isRunning else { return }
                     state.timedOut = true
-                    state.process.terminate()
+                    SystemCLIProcess.stop(state.process)
                 }
             }
         } onCancel: {
-            if state.process.isRunning { state.process.terminate() }
+            state.lock.lock()
+            state.cancelled = true
+            let running = state.process.isRunning
+            state.lock.unlock()
+            if running { SystemCLIProcess.stop(state.process) }
         }
     }
 }

@@ -145,6 +145,12 @@ enum MemoryStore {
     }
 
     static func list(_ db: Database, filter: MemoryFilter, now: Date, limit: Int? = nil) throws -> [Memory] {
+        try fetch(db, ids: listed(db, filter: filter, now: now, limit: limit).map(\.id))
+    }
+
+    /// The ids and update times of `list`, in its order, without reading the memories (search's
+    /// pool: reading 10,000 bodies took most of FR-V-10's 150 ms).
+    static func listed(_ db: Database, filter: MemoryFilter, now: Date, limit: Int? = nil) throws -> [(id: UUID, updatedAt: Date)] {
         var clauses: [String] = []
         var args: [any DatabaseValueConvertible] = []
         switch filter.status {
@@ -179,10 +185,11 @@ enum MemoryStore {
         case .created: "created_at DESC, seq DESC"
         case .title: "title COLLATE NOCASE, seq"
         }
-        let ids = try String.fetchAll(db, sql: """
-            SELECT id FROM memory WHERE \(clauses.joined(separator: " AND ")) ORDER BY \(order)\(limit.map { " LIMIT \($0)" } ?? "")
-            """, arguments: StatementArguments(args)).compactMap(UUID.init(uuidString:))
-        return try fetch(db, ids: ids)
+        return try Row.fetchAll(db, sql: """
+            SELECT id, updated_at FROM memory WHERE \(clauses.joined(separator: " AND ")) ORDER BY \(order)\(limit.map { " LIMIT \($0)" } ?? "")
+            """, arguments: StatementArguments(args)).compactMap { row in
+            row.uuid("id").map { (id: $0, updatedAt: row["updated_at"] as Date) }
+        }
     }
 
     static func provenance(_ db: Database, memoryID: UUID) throws -> [ProvenanceEntry] {

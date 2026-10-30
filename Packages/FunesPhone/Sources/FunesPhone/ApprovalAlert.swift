@@ -137,7 +137,7 @@ public struct ApprovalAlert: Sendable, Equatable {
             }
         case .unreachable, .badResponse: .unreachable
         case .notPaired, .refused(.revoked), .refused(.unknownDevice): .removed
-        case .refused, .pairing, .qrExpired, .local: .unknown
+        case .refused, .pairing, .qrExpired, .local, .answerTimedOut: .unknown
         }
     }
 }

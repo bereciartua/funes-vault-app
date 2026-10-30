@@ -7,6 +7,8 @@ import Foundation
 /// each one without tapping through the simulator. Debug builds only.
 enum ScreenshotScene: String {
     case home, share, save, access, search, inbox
+    /// Search answers (FR-iOS-13): the demo's sample question, asked.
+    case searchAnswer = "search-answer"
 
     static var current: ScreenshotScene? {
         UserDefaults.standard.string(forKey: "FunesScreenshot").flatMap(ScreenshotScene.init(rawValue:))
@@ -14,7 +16,7 @@ enum ScreenshotScene: String {
 
     var tab: RootView.Tab {
         switch self {
-        case .search: .search
+        case .search, .searchAnswer: .search
         case .inbox: .inbox
         case .home, .share, .save, .access: .home
         }
@@ -26,12 +28,21 @@ enum ScreenshotScene: String {
         case .share: .share
         case .save: .save
         case .access: .access
-        case .home, .search, .inbox: nil
+        case .home, .search, .searchAnswer, .inbox: nil
         }
     }
 
     /// Search's query.
-    var searchQuery: String? { self == .search ? "swift" : nil }
+    var searchQuery: String? {
+        switch self {
+        case .search: "swift"
+        case .searchAnswer: "When does my lease renew?"
+        default: nil
+        }
+    }
+
+    /// Whether the scene asks for the search's answer once the results load.
+    var asks: Bool { self == .searchAnswer }
 }
 #endif
 

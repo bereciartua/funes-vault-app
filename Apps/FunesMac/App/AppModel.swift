@@ -91,6 +91,8 @@ final class AppModel {
     var dataGeneration = 0
 
     let vault: VaultModel
+    /// Search answers with the user's settings (FR-AI-17): the Vault's Ask, and the iPhone's.
+    let searchAnswers: SearchAnswersController
     /// Home's pulse and cards (FR-H-02).
     let home: HomeModel
     /// Home's composer: the capture box's model, saved the same way.
@@ -195,13 +197,17 @@ final class AppModel {
         data = DataOperations(environment: services, preferences: preferences)
         processing = ProcessingRunner(environment: services, preferences: preferences, settings: self.modelSettings)
         tidyUp = TidyUpController(environment: services, preferences: preferences, settings: self.modelSettings)
+        searchAnswers = SearchAnswersController(environment: services, settings: self.modelSettings)
         embeddings = EmbeddingController(environment: services, settings: self.modelSettings)
         remoteAccess = RemoteAccessController(defaults: preferences.defaults, appName: "Funes Vault", names: .funes,
                                               defaultPort: FunesRemoteConfiguration.defaultPort, host: .inert)
-        companion = CompanionController(defaults: preferences.defaults, services: services.companionServices,
+        var companionServices = services.companionServices
+        companionServices.answers = searchAnswers
+        companion = CompanionController(defaults: preferences.defaults, services: companionServices,
                                         approvals: services.phoneApprovals, appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
         pausedUntil = services.pause.pausedUntil(at: Date())
         inboxState.categories = { [weak self] in self?.categories ?? [] }
+        vault.answers = searchAnswers
         self.modelSettings.embeddingInputsChanged = { [weak self] in self?.embeddings.apply() }
         composer.save = { [weak self, composer] _ in self?.saveCapture(composer) ?? false }
         composer.search = { [weak self] text in self?.showVault(query: text.trimmingCharacters(in: .whitespacesAndNewlines)) }

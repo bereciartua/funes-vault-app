@@ -31,3 +31,4 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 | 0025 | [A vault overview of counts only, served to the iPhone, which caches it for Home and widgets](0025-vault-overview-and-iphone-cache.md) | Accepted |
 | 0026 | [A small "About you" profile beside the vault, shared per agent and per field with memory requests](0026-about-you-profile.md) | Accepted |
 | 0027 | [Keep each memory's earlier versions for 90 days, so every change can show what it replaced](0027-memory-revisions.md) | Accepted |
+| 0028 | [Search answers: snippets that show the matching sentence, and an Ask that quotes your memories, on the Mac and the iPhone](0028-search-answers.md) | Accepted |

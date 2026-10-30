@@ -1,0 +1,274 @@
+import Foundation
+import FunesCore
+import FunesProtocol
+import Synchronization
+import Testing
+@testable import FunesCompanion
+
+/// A model that answers search-answer requests by quoting the first memory it was given.
+final class QuotingModel: GenerationProvider {
+    let id: ProviderID = "anthropic"
+    let locality = Locality.cloud
+    let modelID = "claude-test"
+    let prompts = Mutex<[String]>([])
+
+    func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage) {
+        prompts.withLock { $0.append(request.prompt) }
+        // The first memory's text, between its <text> tags.
+        let text = request.prompt.components(separatedBy: "<text>").dropFirst().first?.components(separatedBy: "</text>").first ?? ""
+        let quote = String(text.prefix(30))
+        let json = #"{"found":"yes","claims":[{"text":"From your note.","citations":[{"ref":"m1","quote":"\#(quote)"}]}]}"#
+        return (try JSONDecoder().decode(T.self, from: Data(json.utf8)), ProviderUsage(requests: 1))
+    }
+}
+
+/// Search answers as the Mac's settings would give them: the real `SearchAnswerer` with a model.
+struct RealAnswers: SearchAnswering {
+    let answerer: SearchAnswerer
+    let model: QuotingModel
+
+    func engine() async -> SearchAnswerEngine? { SearchAnswerEngine(name: "Claude (Claude Code)", locality: .cloud) }
+
+    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via, automatic: Bool) async throws -> SearchAnswer {
+        try await answerer.answer(query, ids: ids, router: ModelRouter(classifier: model, onDevice: nil), actor: actor, via: via, now: t0)
+    }
+}
+
+/// Search answers that wait, fail as told, and record what they were asked and whether they were
+/// cancelled.
+final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
+    let available: Bool
+    let delay: Duration
+    let failure: SearchAnswerError?
+    let trigger: AnswerTrigger
+    let started = Mutex(0)
+    let cancelled = Mutex(0)
+    /// Whether each call came marked as asked on its own.
+    let automatic = Mutex<[Bool]>([])
+
+    init(available: Bool = true, delay: Duration = .zero, failure: SearchAnswerError? = nil, trigger: AnswerTrigger = .ask) {
+        self.available = available
+        self.delay = delay
+        self.failure = failure
+        self.trigger = trigger
+    }
+
+    func engine() async -> SearchAnswerEngine? {
+        available ? SearchAnswerEngine(name: "Ollama", locality: .localServer, trigger: trigger) : nil
+    }
+
+    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via, automatic: Bool) async throws -> SearchAnswer {
+        started.withLock { $0 += 1 }
+        self.automatic.withLock { $0.append(automatic) }
+        do {
+            try await Task.sleep(for: delay)
+        } catch {
+            cancelled.withLock { $0 += 1 }
+            throw CancellationError()
+        }
+        if let failure { throw failure }
+        return SearchAnswer(outcome: .noAnswer, claims: [], read: ids.count, withheld: 0, dropped: 0, engine: "ollama/llama",
+                            locality: .localServer, duration: .milliseconds(5))
+    }
+}
+
+/// `memories.answer` and `status.get`'s `searchAnswers` (companion protocol §4, §7; v0.6).
+@Suite struct AnswerMethodTests {
+    static func harness(_ answers: (any SearchAnswering)?, callTimeout: Duration = CompanionHandlers.callTimeout,
+                        answerTimeout: Duration = CompanionHandlers.answerTimeout) throws -> CompanionHarness {
+        try CompanionHarness(answers: answers, callTimeout: callTimeout, answerTimeout: answerTimeout)
+    }
+
+    static func memory(_ h: CompanionHarness, _ title: String, _ body: String) throws -> Memory {
+        try h.store.createMemory(MemoryDraft(title: title, body: body, categoryKeys: ["personal_preferences"], sensitivity: .low), now: t0)
+    }
+
+    @Test func statusSaysWhetherTheMacAnswers() async throws {
+        let on = try Self.harness(ScriptedAnswers())
+        let phone = try await on.pairedPhone()
+        #expect(try await on.result(StatusGet.self, EmptyParams(), phone: phone).searchAnswers
+                    == SearchAnswersStatus(engine: "Ollama", locality: .localServer))
+        // Automatic answers: the phone asks on its own when the Mac says so (memory processing §10.6).
+        let auto = try Self.harness(ScriptedAnswers(trigger: .questions))
+        let fourth = try await auto.pairedPhone()
+        #expect(try await auto.result(StatusGet.self, EmptyParams(), phone: fourth).searchAnswers?.trigger == .questions)
+        let off = try Self.harness(ScriptedAnswers(available: false))
+        let other = try await off.pairedPhone()
+        #expect(try await off.result(StatusGet.self, EmptyParams(), phone: other).searchAnswers == nil)
+        let none = try Self.harness(nil)
+        let third = try await none.pairedPhone()
+        #expect(try await none.result(StatusGet.self, EmptyParams(), phone: third).searchAnswers == nil)
+    }
+
+    @Test func answersFromTheShownResultsAsTheOwner() async throws {
+        let model = QuotingModel()
+        let log = InMemoryActivityLog()
+        let h = try CompanionHarness()
+        let answerer = SearchAnswerer(store: h.store, search: SearchService(store: h.store, indexer: nil), activity: log)
+        let harness = try Self.harness(RealAnswers(answerer: answerer, model: model))
+        let phone = try await harness.pairedPhone()
+        let coffee = try Self.memory(h, "Coffee", "Oat milk flat white, no sugar, every morning.")
+        let archived = try Self.memory(h, "Old coffee", "Black coffee only.")
+        try h.store.archiveMemory(id: archived.id, now: t0)
+        let result = try await harness.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee order", ids: [archived.id, UUID(), coffee.id]),
+                                              phone: phone)
+        // Archived and unknown ids are skipped; the claim cites the memory by id, with its quote.
+        #expect(result.outcome == .answered && result.read == 1 && result.engine == "Claude (Claude Code)" && result.locality == .cloud)
+        #expect(result.claims.first?.citations == [MemoryAnswerResult.Citation(id: coffee.id, quote: "Oat milk flat white, no sugar,")])
+        #expect(result.sources == [coffee.id])
+        let row = try #require(log.events.last)
+        #expect(row.event == "search_answered" && row.actor == "device:\(phone.deviceID!.uuidString.lowercased())" && row.via == .companion)
+        // The request carries the ids and the search, never memory text.
+        let request = String(decoding: try CompanionRequest(MemoriesAnswer.self, params: MemoryAnswerParams(query: "coffee order",
+                                                                                                         ids: [coffee.id])).encoded(), as: UTF8.self)
+        #expect(!request.contains("Oat milk") && request.contains(coffee.id.uuidString))
+    }
+
+    @Test func badParamsAndAnswersOff() async throws {
+        let h = try Self.harness(ScriptedAnswers())
+        let phone = try await h.pairedPhone()
+        for params in [MemoryAnswerParams(query: "coffee", ids: []), MemoryAnswerParams(query: "coffee", ids: (0..<11).map { _ in UUID() }),
+                       MemoryAnswerParams(query: "  ", ids: [UUID()])] {
+            await #expect(throws: CompanionError(.invalidInput, message: params.ids.isEmpty || params.ids.count > 10 ? "ids is 1 to 10" : "Bad query")) {
+                try await h.result(MemoriesAnswer.self, params, phone: phone)
+            }
+        }
+        let off = try Self.harness(ScriptedAnswers(available: false))
+        let other = try await off.pairedPhone()
+        await #expect(throws: CompanionError(.answersOff)) {
+            try await off.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()]), phone: other)
+        }
+    }
+
+    /// A phone asking on its own with an older status: the Mac checks its own setting again and
+    /// sends nothing when this search is only answered when asked (memory processing §10.6).
+    @Test func anAutomaticAskIsCheckedAgainstTheMacsSetting() async throws {
+        let manual = ScriptedAnswers(trigger: .ask)
+        let h = try Self.harness(manual)
+        let phone = try await h.pairedPhone()
+        await #expect(throws: CompanionError(.askRequired)) {
+            try await h.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()], automatic: true), phone: phone)
+        }
+        #expect(manual.started.withLock { $0 } == 0)
+        // Asked by the user, it answers.
+        _ = try await h.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()]), phone: phone)
+        #expect(manual.started.withLock { $0 } == 1)
+
+        let questions = ScriptedAnswers(trigger: .questions)
+        let q = try Self.harness(questions)
+        let other = try await q.pairedPhone()
+        _ = try await q.result(MemoriesAnswer.self, MemoryAnswerParams(query: "what coffee?", ids: [UUID()], automatic: true), phone: other)
+        await #expect(throws: CompanionError(.askRequired)) {
+            try await q.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()], automatic: true), phone: other)
+        }
+        #expect(questions.started.withLock { $0 } == 1 && questions.automatic.withLock { $0 } == [true])
+        #expect(manual.automatic.withLock { $0 } == [false])
+    }
+
+    @Test func errorsHaveTheirCodes() async throws {
+        let cases: [(SearchAnswerError, CompanionError)] = [
+            (.capReached, CompanionError(.capReached)), (.timeout, CompanionError(.modelTimeout)),
+            (.secretInSearch, CompanionError(.modelUnavailable, reason: "secret_in_search")),
+            (.invalidOutput, CompanionError(.modelUnavailable, reason: "invalid_output")),
+            (.provider(.unauthorized), CompanionError(.modelUnavailable, reason: "not_signed_in")),
+            (.provider(.rateLimited(retryAfter: nil)), CompanionError(.modelUnavailable, reason: "plan_limit")),
+            (.provider(.server(status: 500)), CompanionError(.modelUnavailable, reason: "provider_error")),
+        ]
+        for (failure, expected) in cases {
+            let h = try Self.harness(ScriptedAnswers(failure: failure))
+            let phone = try await h.pairedPhone()
+            await #expect(throws: expected) {
+                try await h.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()]), phone: phone)
+            }
+        }
+    }
+
+    /// Its own deadline: not cut at the usual call limit; at its own, the work is cancelled.
+    @Test func itsOwnDeadline() async throws {
+        let slow = ScriptedAnswers(delay: .milliseconds(400))
+        let h = try Self.harness(slow, callTimeout: .milliseconds(100), answerTimeout: .milliseconds(1_500))
+        let phone = try await h.pairedPhone()
+        let result = try await h.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()]), phone: phone)
+        #expect(result.outcome == .noAnswer)
+
+        let stuck = ScriptedAnswers(delay: .seconds(30))
+        let late = try Self.harness(stuck, callTimeout: .milliseconds(100), answerTimeout: .milliseconds(300))
+        let other = try await late.pairedPhone()
+        await #expect(throws: CompanionError(.modelTimeout, message: "Deadline")) {
+            try await late.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()]), phone: other)
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(stuck.cancelled.withLock { $0 } == 1)
+    }
+
+    /// One in flight per device: the same device's next Ask cancels the previous one's work.
+    @Test func aNewAskFromTheSameDeviceCancelsThePrevious() async throws {
+        let answers = ScriptedAnswers(delay: .seconds(2))
+        let h = try Self.harness(answers)
+        let phone = try await h.pairedPhone()
+        async let first = h.call(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()]), phone: phone)
+        for _ in 0..<100 where answers.started.withLock({ $0 }) == 0 { try await Task.sleep(for: .milliseconds(10)) }
+        let second = Task { try await h.call(MemoriesAnswer.self, MemoryAnswerParams(query: "tea", ids: [UUID()]), phone: phone) }
+        let (_, reply) = try await first
+        #expect(throws: CompanionError(.unavailable, message: "Cancelled")) { _ = try reply?.get() }
+        #expect(answers.cancelled.withLock { $0 } == 1)
+        second.cancel()
+        _ = try? await second.value
+    }
+}
+
+/// Search answers through a stub `claude` that records its process id and sleeps.
+struct CLIAnswers: SearchAnswering {
+    let answerer: SearchAnswerer
+    let client: ClaudeCodeClient
+
+    func engine() async -> SearchAnswerEngine? { SearchAnswerEngine(name: "Claude (Claude Code)", locality: .cloud) }
+
+    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via, automatic: Bool) async throws -> SearchAnswer {
+        try await answerer.answer(query, ids: ids, router: ModelRouter(classifier: client, onDevice: nil), actor: actor, via: via, now: t0)
+    }
+}
+
+@Suite struct AnswerProcessTests {
+    static func alive(_ pid: pid_t) -> Bool { kill(pid, 0) == 0 }
+
+    /// The same device's next Ask ends the previous one's CLI process; another device's keeps running.
+    @Test func aNewAskEndsThePreviousCLIProcessOfThatDeviceOnly() async throws {
+        let dir = FileManager.default.temporaryDirectory.appending(path: "funes-stub-\(UUID().uuidString)")
+        let pids = dir.appending(path: "pids")
+        try FileManager.default.createDirectory(at: pids, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let script = dir.appending(path: "claude")
+        try "#!/bin/sh\ntouch \"\(pids.path)/$$\"\nexec sleep 30\n".write(to: script, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+
+        let h = try CompanionHarness()
+        let answerer = SearchAnswerer(store: h.store, search: SearchService(store: h.store, indexer: nil), activity: InMemoryActivityLog())
+        let harness = try CompanionHarness(answers: CLIAnswers(answerer: answerer, client: ClaudeCodeClient(executable: script.path, model: "haiku")))
+        let memory = try AnswerMethodTests.memory(h, "Coffee", "Oat milk flat white, no sugar.")
+        let phoneA = try await harness.pairedPhone(), phoneB = try await harness.pairedPhone()
+        func started() -> [pid_t] {
+            ((try? FileManager.default.contentsOfDirectory(atPath: pids.path)) ?? []).compactMap { pid_t($0) }
+        }
+        func wait(for count: Int) async throws {
+            for _ in 0..<200 where started().count < count { try await Task.sleep(for: .milliseconds(25)) }
+        }
+        let params = MemoryAnswerParams(query: "coffee", ids: [memory.id])
+        let b = Task { try await harness.call(MemoriesAnswer.self, params, phone: phoneB) }
+        try await wait(for: 1)
+        let bPID = try #require(started().first)
+        let a1 = Task { try await harness.call(MemoriesAnswer.self, params, phone: phoneA) }
+        try await wait(for: 2)
+        let a1PID = try #require(started().first { $0 != bPID })
+        let a2 = Task { try await harness.call(MemoriesAnswer.self, params, phone: phoneA) }
+        let (_, reply) = try await a1.value
+        #expect(throws: CompanionError(.unavailable, message: "Cancelled")) { _ = try reply?.get() }
+        for _ in 0..<40 where Self.alive(a1PID) { try await Task.sleep(for: .milliseconds(25)) }
+        #expect(!Self.alive(a1PID))
+        #expect(Self.alive(bPID))
+        b.cancel()
+        a2.cancel()
+        for pid in started() { kill(pid, SIGKILL) }
+        _ = await (b.result, a2.result)
+    }
+}

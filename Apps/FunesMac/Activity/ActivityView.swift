@@ -282,6 +282,9 @@ enum ActivityText {
              "memories_searched", "inbox_listed", "categories_listed", "overview_viewed", "device_paired", "device_revoked", "cap_reached",
              "tidy_up_run", "undone":
             return ""
+        case "search_answered":
+            // "Read 8 · Claude Code / haiku"
+            return [String(localized: "Read \(e.counts["read"] ?? 0)"), e.engine].compactMap { $0 }.joined(separator: " · ")
         default:
             let titles = e.ids.prefix(3).map(model.activity.title)
             let more = e.ids.count > 3 ? String(localized: " and \(e.ids.count - 3) more") : ""

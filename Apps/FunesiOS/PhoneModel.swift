@@ -23,6 +23,12 @@ final class PhoneModel {
         default: record?.calledName
         }
     }
+    /// The Mac's Search answers while it's connected (`status.get`); nil while they're off or the
+    /// Mac is away (FR-iOS-13).
+    var macAnswers: SearchAnswersStatus? {
+        if case let .connected(connection) = reachability { return connection.status.searchAnswers }
+        return nil
+    }
     /// The connection's state machine (FunesPhone's `ReachabilityTracker`).
     private(set) var tracker = ReachabilityTracker()
     var reachability: Reachability { tracker.state }
@@ -189,6 +195,11 @@ final class PhoneModel {
             #if DEBUG
             if let kind = ScreenshotScene.current?.approval, let item = approvals.items.first(where: { $0.kind == kind }) {
                 open(ApprovalRef(id: item.id))
+            }
+            if ScreenshotScene.current?.asks == true {
+                search.macAnswers = macAnswers
+                await search.search()
+                await search.ask()
             }
             #endif
             return
@@ -459,6 +470,8 @@ final class PhoneModel {
             String(localized: "Something else answered at your Mac's address (HTTP \(status)).")
         case .local:
             String(localized: "Something went wrong on this iPhone. Try again.")
+        case .answerTimedOut:
+            String(localized: "Took too long. Try again.")
         }
     }
 }
@@ -500,6 +513,11 @@ extension PhoneModel {
             return String(localized: "Review this on your Mac.")
         case .processing:
             return String(localized: "Still processing on your Mac. It can be saved once it's done.")
+        // Only `memories.answer` sends these; Search's answer card words them (`AnswerWording`).
+        case .answersOff:
+            return String(localized: "Search answers are off on your Mac.")
+        case .capReached, .modelUnavailable, .modelTimeout, .askRequired:
+            return String(localized: "Your Mac's model couldn't answer. Try again.")
         }
     }
 }

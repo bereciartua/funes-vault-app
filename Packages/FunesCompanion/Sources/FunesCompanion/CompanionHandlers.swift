@@ -2,6 +2,7 @@ import Foundation
 import FunesCore
 import FunesProtocol
 import os
+import Synchronization
 
 private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category: "companion")
 
@@ -14,9 +15,11 @@ public struct CompanionServices: Sendable {
     public let search: SearchService
     public let agents: AgentService
     public let activity: any ActivityRecorder
+    /// Search answers with the Mac's settings (v0.6); without it `memories.answer` is `answers_off`.
+    public var answers: (any SearchAnswering)?
 
     public init(store: VaultStore, devices: DeviceService, captures: CaptureService, suggestions: SuggestionService,
-                search: SearchService, agents: AgentService, activity: any ActivityRecorder) {
+                search: SearchService, agents: AgentService, activity: any ActivityRecorder, answers: (any SearchAnswering)? = nil) {
         self.store = store
         self.devices = devices
         self.captures = captures
@@ -24,6 +27,7 @@ public struct CompanionServices: Sendable {
         self.search = search
         self.agents = agents
         self.activity = activity
+        self.answers = answers
     }
 }
 
@@ -33,7 +37,12 @@ public struct CompanionServices: Sendable {
 /// reachability probe, isn't logged.
 public final class CompanionHandlers: Sendable {
     public static let callTimeout: Duration = .seconds(10)
+    /// `memories.answer`'s own deadline (§7): the model's 45 s and the preparation.
+    public static let answerTimeout: Duration = .seconds(50)
     static let snippetLength = 160
+
+    /// One `memories.answer` in flight per device: a new one cancels the previous (§7).
+    private let answering = Mutex<[UUID: (token: UUID, task: Task<(SearchAnswerEngine, SearchAnswer), any Error>)]>([:])
 
     let services: CompanionServices
     let macName: @Sendable () -> String
@@ -42,14 +51,20 @@ public final class CompanionHandlers: Sendable {
     let approvals: CompanionApprovals?
     /// The overview's days begin in the Mac's time zone (ADR-0025).
     let calendar: Calendar
+    /// The deadlines of §7 (shorter in tests).
+    let callLimit: Duration
+    let answerLimit: Duration
 
     public init(services: CompanionServices, macName: @escaping @Sendable () -> String, appVersion: String,
-                approvals: CompanionApprovals? = nil, calendar: Calendar = .autoupdatingCurrent) {
+                approvals: CompanionApprovals? = nil, calendar: Calendar = .autoupdatingCurrent,
+                callTimeout: Duration = CompanionHandlers.callTimeout, answerTimeout: Duration = CompanionHandlers.answerTimeout) {
         self.services = services
         self.macName = macName
         self.appVersion = appVersion
         self.approvals = approvals
         self.calendar = calendar
+        callLimit = callTimeout
+        answerLimit = answerTimeout
     }
 
     /// The reply JSON for a request's plaintext. Never throws: every failure is an error reply.
@@ -60,7 +75,12 @@ public final class CompanionHandlers: Sendable {
             return Self.errorReply(id: head.id, CompanionError(.unknownMethod))
         }
         let device = deviceID
-        return await withTimeout(id: head.id) { [self] in
+        if method == .memoriesAnswer {
+            return await withTimeout(id: head.id, limit: answerLimit, error: CompanionError(.modelTimeout, message: "Deadline")) { [self] in
+                await run(MemoriesAnswer.self, head) { try await answer($0, device: device, now: now) }
+            }
+        }
+        return await withTimeout(id: head.id, limit: callLimit) { [self] in
             switch method {
             case .statusGet: return await run(StatusGet.self, head) { _ in try await status(now: now) }
             case .capturesSubmit:
@@ -68,6 +88,7 @@ public final class CompanionHandlers: Sendable {
             case .overviewGet: return await run(OverviewGet.self, head) { try overview($0, device: device, now: now) }
             case .categoriesList: return await run(CategoriesList.self, head) { _ in try await categories(device: device, now: now) }
             case .memoriesSearch: return await run(MemoriesSearch.self, head) { try await search($0, device: device, now: now) }
+            case .memoriesAnswer: return Self.errorReply(id: head.id, CompanionError(.internalError))
             case .memoriesGet: return await run(MemoriesGet.self, head) { try await memory($0.id, device: device, now: now) }
             case .memoriesCreate: return await run(MemoriesCreate.self, head) { try await create($0, device: device, now: now) }
             case .memoriesUpdate: return await run(MemoriesUpdate.self, head) { try await update($0, device: device, now: now) }
@@ -102,8 +123,69 @@ public final class CompanionHandlers: Sendable {
     func status(now: Date) async throws -> CompanionStatus {
         let pending = try await services.suggestions.pending().count
         let calledName = try services.store.profile().normalized().calledName
+        let engine = await services.answers?.engine()
         return CompanionStatus(macName: macName(), appVersion: appVersion, serverTime: now, inboxPending: pending, vaultActive: true,
-                               calledName: calledName)
+                               calledName: calledName,
+                               searchAnswers: engine.map { SearchAnswersStatus(engine: $0.name, locality: AnswerLocality($0.locality), trigger: $0.trigger) })
+    }
+
+    /// `memories.answer` (v0.6): the Mac re-reads the ids as the owner and answers from them
+    /// (memory processing §10.3–10.4). A new call from the same device cancels this one, which
+    /// ends its model call; the result never carries offsets or more than the claims.
+    func answer(_ params: MemoryAnswerParams, device: UUID, now: Date) async throws -> MemoryAnswerResult {
+        try params.validate()
+        guard let answers = services.answers else { throw CompanionError(.answersOff) }
+        // Registered before anything waits, so the same device's next Ask always cancels this one,
+        // and this one can't cancel a newer one.
+        let token = UUID()
+        let task = Task { () throws -> (SearchAnswerEngine, SearchAnswer) in
+            guard let engine = await answers.engine() else { throw CompanionError(.answersOff) }
+            // Asked on its own by a phone whose status is older than the Mac's setting. `answer`
+            // checks again as it chooses the model, in case the setting changes in between.
+            let automatic = params.automatic == true
+            if automatic, !engine.trigger.fires(for: params.query) { throw CompanionError(.askRequired) }
+            try Task.checkCancellation()
+            return (engine, try await answers.answer(params.query, ids: params.ids, actor: .device(device), via: .companion,
+                                                     automatic: automatic))
+        }
+        let previous = answering.withLock { inFlight -> Task<(SearchAnswerEngine, SearchAnswer), any Error>? in
+            let old = inFlight[device]?.task
+            inFlight[device] = (token, task)
+            return old
+        }
+        previous?.cancel()
+        defer { answering.withLock { if $0[device]?.token == token { $0[device] = nil } } }
+        do {
+            let (engine, answer) = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+            return MemoryAnswerResult(
+                outcome: answer.outcome == .answered ? .answered : .noAnswer,
+                claims: answer.claims.map { claim in
+                    MemoryAnswerResult.Claim(text: claim.text, citations: claim.citations.map { .init(id: $0.memoryID, quote: $0.quote) })
+                },
+                read: answer.read, withheld: answer.withheld, dropped: answer.dropped, engine: engine.name,
+                locality: AnswerLocality(answer.locality ?? engine.locality), durationMs: Int(answer.duration / .milliseconds(1)))
+        } catch let error as SearchAnswerError {
+            throw Self.code(for: error)
+        } catch is CancellationError {
+            throw CompanionError(.unavailable, message: "Cancelled")
+        }
+    }
+
+    /// `memories.answer`'s errors (§4): `model_unavailable` carries the reason.
+    static func code(for error: SearchAnswerError) -> CompanionError {
+        switch error {
+        case .capReached: CompanionError(.capReached)
+        case .timeout: CompanionError(.modelTimeout)
+        case .vault: CompanionError(.internalError)
+        case .secretInSearch: CompanionError(.modelUnavailable, reason: "secret_in_search")
+        case .invalidOutput: CompanionError(.modelUnavailable, reason: "invalid_output")
+        case .provider(.unauthorized): CompanionError(.modelUnavailable, reason: "not_signed_in")
+        case .provider(.rateLimited): CompanionError(.modelUnavailable, reason: "plan_limit")
+        case .needsUpdate: CompanionError(.modelUnavailable, reason: "needs_update")
+        case .toolBlocked: CompanionError(.modelUnavailable, reason: "tool_blocked")
+        case .askRequired: CompanionError(.askRequired)
+        case .tooLongForOnDevice, .provider: CompanionError(.modelUnavailable, reason: "provider_error")
+        }
     }
 
     /// Each capture on its own, so one bad capture doesn't refuse the rest. A duplicate
@@ -155,9 +237,13 @@ public final class CompanionHandlers: Sendable {
         let page = Array(hits.dropFirst(offset).prefix(limit))
         let memories = try services.store.memories(ids: page.map(\.memoryID))
         let byID = Dictionary(uniqueKeysWithValues: memories.map { ($0.id, $0) })
+        // The passage that matches the search and its matches (FR-V-17), for the page returned only.
+        let matches = try await services.search.bodyMatches(params.query, ids: page.map(\.memoryID))
         let results = page.compactMap { byID[$0.memoryID] }.map { m in
-            MemorySummary(id: m.id, title: m.title, snippet: Self.snippet(m.body), kind: m.kind, categories: m.categoryKeys,
-                          sensitivity: m.sensitivity, updatedAt: m.updatedAt, expiresAt: m.expiresAt)
+            let snippet = matches[m.id]?.snippet(length: Self.snippetLength) ?? BodyMatches.plainSnippet(m.body, length: Self.snippetLength)
+            return MemorySummary(id: m.id, title: m.title, snippet: snippet.text, snippetMatches: snippet.matches.isEmpty ? nil : snippet.matches,
+                                 kind: m.kind, categories: m.categoryKeys, sensitivity: m.sensitivity, updatedAt: m.updatedAt,
+                                 expiresAt: m.expiresAt)
         }
         let next = offset + page.count < hits.count ? Self.cursor(offset + page.count) : nil
         logRead("memories_searched", device: device, now: now, counts: ["results": results.count])
@@ -278,16 +364,18 @@ public final class CompanionHandlers: Sendable {
     }
 
     /// 10 s per call (§7); a slower one answers `unavailable` and keeps running to its end.
-    private func withTimeout(id: String, _ work: @escaping @Sendable () async -> Data) async -> Data {
+    /// (`memories.answer` has its own deadline, past which its work is cancelled.)
+    private func withTimeout(id: String, limit: Duration, error: CompanionError = CompanionError(.unavailable, message: "Timed out"),
+                             _ work: @escaping @Sendable () async -> Data) async -> Data {
         await withTaskGroup(of: Data?.self) { group in
             group.addTask { await work() }
             group.addTask {
-                try? await Task.sleep(for: Self.callTimeout)
+                try? await Task.sleep(for: limit)
                 return nil
             }
             let first = await group.next() ?? nil
             group.cancelAll()
-            return first ?? Self.errorReply(id: id, CompanionError(.unavailable, message: "Timed out"))
+            return first ?? Self.errorReply(id: id, error)
         }
     }
 
@@ -334,11 +422,6 @@ public final class CompanionHandlers: Sendable {
         }
     }
 
-    static func snippet(_ body: String) -> String {
-        let flat = body.split(whereSeparator: \.isNewline).joined(separator: " ")
-        return flat.count <= snippetLength ? flat : String(flat.prefix(snippetLength - 1)) + "…"
-    }
-
     static func cursor(_ offset: Int) -> String { Base64URL.encode(Data("o:\(offset)".utf8)) }
 
     static func offset(from cursor: String) -> Int? {
@@ -376,6 +459,17 @@ public final class CompanionHandlers: Sendable {
         case .import: "Import"
         case .seedQuestion: "A Few Questions"
         case .consolidation: "Funes"
+        }
+    }
+}
+
+extension AnswerLocality {
+    init(_ locality: Locality) {
+        switch locality {
+        case .onDevice: self = .onDevice
+        case .localServer: self = .localServer
+        case .appleCloud: self = .appleCloud
+        case .cloud: self = .cloud
         }
     }
 }

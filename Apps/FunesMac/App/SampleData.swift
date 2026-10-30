@@ -31,6 +31,12 @@ enum SampleData {
             ("Penicillin allergy", "Allergic to penicillin since childhood.", "health", .sensitive, .fact, 200),
             ("Plain answers", "Prefers short, direct answers with the reasoning after the result.", "communication_style",
              .low, .preference, 7),
+            // A fact deep in a long body, and an older value: search's snippets and answers (ADR-0028).
+            ("Role at Chatham", "Joined Chatham Analytics in 2023 on the data platform team, after four years at Verdant Grid. "
+             + "Started as a data analyst on the forecasting pipeline and the weekly reporting jobs. Promoted in March 2026: "
+             + "my title at Chatham is now Senior Analyst, reporting to Priya Raman. Still owns the forecasting pipeline, "
+             + "and is on call one week in six.", "project_context", .internal, .fact, 20),
+            ("Chatham job", "Data analyst at Chatham Analytics, on the forecasting pipeline.", "project_context", .internal, .fact, 400),
         ]
         var made: [Memory] = []
         for (index, (title, body, category, sensitivity, kind, days)) in memories.enumerated() {

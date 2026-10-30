@@ -157,16 +157,41 @@ public enum EmbeddingItem: Sendable, Hashable {
     }
 }
 
-/// One piece of user text a model call carries, with its sensitivity, or nil when it isn't known
-/// (model providers §5.6). The guard uses the highest item; an unknown one never goes to a cloud
-/// provider.
+/// One piece of user text a model call carries (model providers §5.6): a memory (or text that
+/// becomes one) with its sensitivity, nil when it isn't known, which never goes to a cloud
+/// provider; or, from v0.6, a search's text, which the secret scanner checks but the cloud limit
+/// doesn't apply to, as for embeddings.
 public struct ModelItem: Sendable, Hashable {
-    public var text: String
-    public var sensitivity: Sensitivity?
+    public enum Kind: Sendable, Hashable {
+        case memory(sensitivity: Sensitivity?)
+        case query
+    }
 
+    public var text: String
+    public var kind: Kind
+
+    /// A memory, or text that becomes one.
     public init(_ text: String, sensitivity: Sensitivity?) {
         self.text = text
-        self.sensitivity = sensitivity
+        kind = .memory(sensitivity: sensitivity)
+    }
+
+    /// A search's text.
+    public static func query(_ text: String) -> ModelItem {
+        var item = ModelItem(text, sensitivity: nil)
+        item.kind = .query
+        return item
+    }
+
+    /// A memory's sensitivity; nil for a query or an unknown level.
+    public var sensitivity: Sensitivity? {
+        if case let .memory(sensitivity) = kind { return sensitivity }
+        return nil
+    }
+
+    var isMemory: Bool {
+        if case .memory = kind { return true }
+        return false
     }
 }
 
@@ -266,6 +291,20 @@ public final class ModelRouter: Sendable {
     public var splitter: (any GenerationProvider)? {
         guard let classifier, classifier.locality != .onDevice else { return nil }
         return classifier
+    }
+
+    /// A search answer's call, from when it's sent (memory processing §10.3).
+    public static let searchAnswerTimeout: Duration = .seconds(45)
+
+    /// The model that answers searches with a router built for Search answers: the chosen
+    /// provider, or Apple on-device; nil when neither can (only the rules), so there's no answer.
+    public var answerer: (any GenerationProvider)? { classifier ?? onDevice }
+
+    /// One search answer (§10.3): through the guardrails (`send`), within 45 s, counted against the
+    /// daily cap as the user's for a cloud provider. No fallback to another provider (§6).
+    func answer<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem], now: Date) async throws -> T {
+        guard let provider = answerer else { throw ProviderError.unavailable }
+        return try await call(request, items: items, with: provider, requester: .user, timeout: Self.searchAnswerTimeout, now: now)
     }
 
     /// How a proposal names its engine: `apple.foundation`, or `<provider>/<model>`.
@@ -378,9 +417,10 @@ extension ModelRouter {
     /// call of a provider's generate). `items` are the user texts the request carries, each with
     /// its sensitivity. A secret-scanner match in any item or anywhere in the request never goes
     /// to a provider that isn't on this Mac. A cloud provider also gets nothing when any item is
-    /// above the cloud limit or of unknown sensitivity, or when there are no items. Either refusal
-    /// is `ProviderError.blocked`, before any request. A cloud request then counts against the
-    /// daily cap, or is refused with `ProviderError.capReached` (ADR-0022).
+    /// above the cloud limit or of unknown sensitivity, or when it carries no memory (a search's
+    /// text alone isn't sent). Either refusal is `ProviderError.blocked`, before any request. A
+    /// cloud request then counts against the daily cap, or is refused with
+    /// `ProviderError.capReached` (ADR-0022).
     public static func send<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem],
                                                      to provider: any GenerationProvider, cloudLimit: CloudLimit,
                                                      cap: CloudRequestCap? = nil, requester: CloudRequestCap.Requester = .user,
@@ -389,7 +429,8 @@ extension ModelRouter {
             throw ProviderError.blocked
         }
         if !provider.locality.isLocal {
-            guard !items.isEmpty, items.allSatisfy({ $0.sensitivity.map(cloudLimit.allows) ?? false }) else {
+            let memories = items.filter(\.isMemory)
+            guard !memories.isEmpty, memories.allSatisfy({ $0.sensitivity.map(cloudLimit.allows) ?? false }) else {
                 throw ProviderError.blocked
             }
             try await cap?.consume(requester, now: now)

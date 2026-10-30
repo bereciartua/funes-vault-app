@@ -132,12 +132,16 @@ final class RoutedTransport: CompanionTransport, @unchecked Sendable {
         case mac(FakeMac)
         case refused
         case silent
+        /// Times out at once, as if the caller's whole timeout had passed.
+        case timesOut
         case status(Int)
     }
 
     private let lock = NSLock()
     private var routes: [String: Route]
     private(set) var hosts: [String] = []
+    /// Each request's timeout, in order.
+    private(set) var timeouts: [TimeInterval] = []
     /// Drops the Mac's answer after it has handled the request, like a lost response.
     var dropResponses = false
 
@@ -149,6 +153,7 @@ final class RoutedTransport: CompanionTransport, @unchecked Sendable {
         let host = url.host() ?? ""
         let (route, drop) = lock.withLock {
             hosts.append(host)
+            timeouts.append(timeout)
             return (routes[host] ?? .refused, dropResponses)
         }
         switch route {
@@ -160,6 +165,8 @@ final class RoutedTransport: CompanionTransport, @unchecked Sendable {
             throw TransportError("refused")
         case .silent:
             try? await Task.sleep(for: .seconds(timeout))
+            throw .timedOut
+        case .timesOut:
             throw .timedOut
         case let .status(code):
             return TransportResponse(status: code, body: Data())

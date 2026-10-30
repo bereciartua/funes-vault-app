@@ -137,6 +137,12 @@
         }
       }
     },
+    "%@ didn't accept the API key. Check it in Settings ▸ AI Models." : {
+
+    },
+    "%@ didn't answer. Try again." : {
+
+    },
     "%@ didn't finish within 20 seconds." : {
 
     },
@@ -172,6 +178,15 @@
     "%@ is an embedding model: it can't propose fields or split memories. Choose it in AI Models ▸ Embeddings instead, and put a chat model here, or leave this empty." : {
 
     },
+    "%@ is paused: test its connection in Settings ▸ AI Models." : {
+
+    },
+    "%@ isn't available right now." : {
+
+    },
+    "%@ isn't available: check it in Settings ▸ AI Models." : {
+
+    },
     "%@ isn't installed on this Mac" : {
 
     },
@@ -185,6 +200,12 @@
 
     },
     "%@ isn't running, so cloud agents can't reach Funes Vault." : {
+
+    },
+    "%@ isn't signed in on your Mac." : {
+
+    },
+    "%@ needs an update on your Mac." : {
 
     },
     "%@ on this Mac. It may send what it reads to its AI service." : {
@@ -204,6 +225,9 @@
 
     },
     "%@ runs, but isn't connected yet." : {
+
+    },
+    "%@ says to slow down. Try again later." : {
 
     },
     "%@ suggested a memory. Review it in the Inbox." : {
@@ -512,6 +536,12 @@
     "%lld changes undone" : {
 
     },
+    "%lld claims" : {
+
+    },
+    "%lld claims left out: they didn't quote a memory" : {
+
+    },
     "%lld couldn't be changed" : {
 
     },
@@ -559,6 +589,16 @@
     "%lld memories" : {
 
     },
+    "%lld memories above %@ weren't read" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld memories above %2$@ weren't read"
+          }
+        }
+      }
+    },
     "%lld memories checked" : {
 
     },
@@ -569,6 +609,9 @@
 
     },
     "%lld memories selected" : {
+
+    },
+    "%lld memories weren't read: they look like they hold secrets" : {
 
     },
     "%lld minutes %lld seconds left" : {
@@ -746,10 +789,22 @@
     "1 ahead of it" : {
 
     },
+    "1 claim" : {
+
+    },
+    "1 claim left out: it didn't quote a memory" : {
+
+    },
     "1 memory" : {
 
     },
+    "1 memory above %@ wasn't read" : {
+
+    },
     "1 memory in" : {
+
+    },
+    "1 memory wasn't read: it looks like it holds a secret" : {
 
     },
     "1 request refused" : {
@@ -915,6 +970,9 @@
 
     },
     "Add %@" : {
+
+    },
+    "Add %@'s API key in its settings." : {
 
     },
     "Add Agent" : {
@@ -1181,6 +1239,9 @@
     "Another app is using port %@. Quit it, then turn this off and on again." : {
 
     },
+    "Answer" : {
+
+    },
     "Answer a Few Questions" : {
 
     },
@@ -1196,10 +1257,19 @@
     "Answer any you like. Each answer goes to your Inbox, where you can edit it before it becomes a memory." : {
 
     },
+    "Answer this search from its top results" : {
+
+    },
     "Answered a question" : {
 
     },
+    "Answered a search" : {
+
+    },
     "Answered on %@." : {
+
+    },
+    "Answers this search from its top results, quoting your memories." : {
 
     },
     "Anthropic API (MCP connector)" : {
@@ -1234,6 +1304,12 @@
 
     },
     "Apple on-device" : {
+
+    },
+    "Apple's on-device model is slow on this Mac: answers may take 30 s or more." : {
+
+    },
+    "Apple's on-device model is too slow to answer on its own: it answers only when you ask, and may take 30 s or more." : {
 
     },
     "Applications" : {
@@ -1326,6 +1402,9 @@
     "Are there practical constraints that often shape your work or availability?" : {
 
     },
+    "Ask Funes" : {
+
+    },
     "Ask before saving" : {
 
     },
@@ -1385,6 +1464,12 @@
 
     },
     "Automatic follows macOS." : {
+
+    },
+    "Automatically for every search" : {
+
+    },
+    "Automatically for questions" : {
 
     },
     "Back" : {
@@ -1460,6 +1545,9 @@
 
     },
     "Cancel" : {
+
+    },
+    "Cancelled" : {
 
     },
     "Capture" : {
@@ -1627,7 +1715,16 @@
     "Choose a funesvault.export.v1 file. Its memories come in as suggestions, or as memories if you choose so below. It never brings agents or access." : {
 
     },
+    "Choose a model in %@'s settings." : {
+
+    },
     "Choose a model in %@'s settings. Until then: on-device, then rules." : {
+
+    },
+    "Choose a model to answer searches in Settings ▸ AI Models." : {
+
+    },
+    "Choose a model to answer searches." : {
 
     },
     "Choose a port from %@ to %@." : {
@@ -2123,6 +2220,9 @@
     "Each agent gets only the access you give it, and Funes shows you the exact text before anything is shared." : {
 
     },
+    "Each claim quotes the memory it came from, and claims it can't quote aren't shown." : {
+
+    },
     "Earlier versions" : {
 
     },
@@ -2265,6 +2365,9 @@
 
     },
     "Fact" : {
+
+    },
+    "Failed" : {
 
     },
     "Failed: proposed by rules" : {
@@ -2474,6 +2577,9 @@
 
     },
     "Funes can't use the microphone. Allow it in System Settings ▸ Privacy & Security ▸ Microphone." : {
+
+    },
+    "Funes couldn't read your vault. Try again." : {
 
     },
     "Funes didn't send it: it looked like a secret, or was above the cloud limit." : {
@@ -3368,7 +3474,13 @@
     "No agents yet" : {
 
     },
+    "No answer" : {
+
+    },
     "No answer in 15 minutes" : {
+
+    },
+    "No answer in the %lld results read." : {
 
     },
     "No answer within 10 seconds. Is the tunnel running?" : {
@@ -3610,6 +3722,9 @@
     "Only allowed categories can be shared. Deny always wins." : {
 
     },
+    "Only when I ask" : {
+
+    },
     "Open %@." : {
 
     },
@@ -3814,6 +3929,9 @@
     "Press the new shortcut…" : {
 
     },
+    "Press ⌘⏎ to ask about this search." : {
+
+    },
     "Preview" : {
 
     },
@@ -3890,6 +4008,9 @@
     "Quit the other copy first." : {
 
     },
+    "Quoted in the answer" : {
+
+    },
     "Raise %@'s limit…" : {
 
     },
@@ -3911,6 +4032,19 @@
     "Read" : {
 
     },
+    "Read %lld" : {
+
+    },
+    "Read %lld of %lld results · %lld s" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read %1$lld of %2$lld results · %3$lld s"
+          }
+        }
+      }
+    },
     "Read and suggest, ask first" : {
 
     },
@@ -3924,6 +4058,9 @@
 
     },
     "Read, up to Low, in all categories. Funes asks before sharing." : {
+
+    },
+    "Reading %lld results…" : {
 
     },
     "Reads %@ and below %@" : {
@@ -3942,7 +4079,16 @@
     "Ready" : {
 
     },
+    "Ready. A search that's a question is answered after a short pause, on this Mac and your iPhone; press ⌘⏎ to ask about any other." : {
+
+    },
+    "Ready. Every search is answered after a short pause, on this Mac and your iPhone." : {
+
+    },
     "Ready. If it fails, Funes uses the on-device model, then rules." : {
+
+    },
+    "Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone." : {
 
     },
     "Ready: %lld memories use %@." : {
@@ -4397,6 +4543,75 @@
     "Search activity" : {
 
     },
+    "Search answers" : {
+
+    },
+    "Search answers model" : {
+
+    },
+    "Search answers send nothing to %@: the cloud limit is Nothing, so there's no answer." : {
+
+    },
+    "Search answers send your search and its top results (up to %@) to %@ %@, each time you pause on a search. Each answer counts toward your plan's limits and today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, each time you pause on a search. Each answer counts toward your plan's limits and today's %4$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@ %@, when you ask or pause on a question. Each answer counts toward your plan's limits and today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, when you ask or pause on a question. Each answer counts toward your plan's limits and today's %4$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@ %@, when you ask. It counts toward your plan's limits." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, when you ask. It counts toward your plan's limits."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@, each time you pause on a search. Each answer counts toward today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, each time you pause on a search. Each answer counts toward today's %3$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@, when you ask or pause on a question. Each answer counts toward today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, when you ask or pause on a question. Each answer counts toward today's %3$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@, when you ask." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, when you ask."
+          }
+        }
+      }
+    },
     "Search embeddings send memory text (up to %@) and your searches to %@. Agents' requests are matched on this Mac." : {
       "localizations" : {
         "en" : {
@@ -4748,6 +4963,19 @@
     },
     "Source" : {
 
+    },
+    "Source %lld" : {
+
+    },
+    "Source %lld: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Source %1$lld: %2$@"
+          }
+        }
+      }
     },
     "Space" : {
 
@@ -5166,6 +5394,9 @@
     "The link couldn't be made." : {
 
     },
+    "The model declined to answer." : {
+
+    },
     "The model declined." : {
 
     },
@@ -5182,6 +5413,9 @@
 
     },
     "The model took too long." : {
+
+    },
+    "The model's answer couldn't be read. Try again." : {
 
     },
     "The model's answer wasn't usable." : {
@@ -5374,6 +5608,9 @@
     "This request changed; review again." : {
 
     },
+    "This search is too long for the on-device model." : {
+
+    },
     "This switch is no longer open." : {
 
     },
@@ -5478,6 +5715,9 @@
     "Today" : {
 
     },
+    "Today's %lld cloud requests are used up. Search still works; answers are back tomorrow." : {
+
+    },
     "Today's cloud requests are used up. New captures are classified on this Mac until tomorrow." : {
 
     },
@@ -5507,6 +5747,9 @@
 
     },
     "Too many tries with this code." : {
+
+    },
+    "Took too long. Try again." : {
 
     },
     "Top" : {
@@ -5943,6 +6186,9 @@
     "Your pulse starts with your first memories" : {
 
     },
+    "Your search looks like it contains a secret, so it wasn't sent." : {
+
+    },
     "Your tailnet policy doesn't allow Funnel for this Mac. Add the funnel node attribute in the Tailscale admin console." : {
 
     },
@@ -6265,6 +6511,9 @@
     "the agent" : {
 
     },
+    "the cloud limit" : {
+
+    },
     "the cloud providers you choose" : {
 
     },
@@ -6290,6 +6539,12 @@
 
     },
     "through %@" : {
+
+    },
+    "through your Claude Code sign-in" : {
+
+    },
+    "through your Codex sign-in" : {
 
     },
     "time zone" : {
@@ -6338,6 +6593,9 @@
 
     },
     "“%@” wants to pair" : {
+
+    },
+    "⌘⏎" : {
 
     },
     "⏎ Remember · ⌘⏎ Search vault" : {

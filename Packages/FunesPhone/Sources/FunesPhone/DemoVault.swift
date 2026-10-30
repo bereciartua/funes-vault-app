@@ -106,7 +106,8 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         switch method {
         case .statusGet:
             return CompanionStatus(macName: state.macName, appVersion: "Demo", serverTime: now, inboxPending: state.inbox.count,
-                                   vaultActive: true, calledName: state.calledName)
+                                   vaultActive: true, calledName: state.calledName,
+                                   searchAnswers: SearchAnswersStatus(engine: "Demo", locality: .onDevice))
         case .capturesSubmit:
             let params = params as! CapturesSubmitParams
             try params.validate()
@@ -125,6 +126,10 @@ public final class DemoVault: CompanionCalling, CaptureSender {
             let params = params as! MemorySearchParams
             try params.validate()
             return search(params, in: state)
+        case .memoriesAnswer:
+            let params = params as! MemoryAnswerParams
+            try params.validate()
+            return try answer(params, in: state)
         case .memoriesGet:
             let id = (params as! MemoryID).id
             guard let memory = state.memories[id] else { throw CompanionError(.notFound) }
@@ -222,10 +227,63 @@ public final class DemoVault: CompanionCalling, CaptureSender {
 
     // MARK: Memories
 
+    // MARK: Search answers (v0.6)
+
+    /// The demo's sample questions: the memories each finds (its search matches whole phrases,
+    /// so a question would find nothing on its own) and a canned answer quoting them.
+    struct SampleQuestion {
+        let question: String
+        let titles: [String]
+        let claims: [(text: String, title: String, quote: String)]
+    }
+
+    static let sampleQuestions = [
+        SampleQuestion(question: "When does my lease renew?", titles: ["Flat lease renews in March"], claims: [
+            ("Your flat's lease renews on 1 March, and notice is due two months before.", "Flat lease renews in March",
+             "The flat's lease renews on 1 March; notice is due two months before."),
+        ]),
+        SampleQuestion(question: "What's my next garden milestone?", titles: ["Garden planner: next milestone", "Garden planner app"], claims: [
+            ("Your next milestone for the garden planner is the sowing calendar view.", "Garden planner: next milestone",
+             "Next milestone is the sowing calendar view."),
+            ("You plan a beta for friends by the end of the month.", "Garden planner: next milestone", "Beta to friends by the end of the month."),
+        ]),
+        SampleQuestion(question: "How often do I run?", titles: ["Running three times a week"], claims: [
+            ("You run three times a week, on Tuesday, Thursday and Saturday mornings.", "Running three times a week",
+             "runs on Tuesday, Thursday and Saturday mornings"),
+        ]),
+    ]
+
+    /// The sample question a search is, ignoring case, punctuation and spacing.
+    static func sample(_ query: String) -> SampleQuestion? {
+        func key(_ s: String) -> String { s.lowercased().filter { $0.isLetter || $0.isNumber } }
+        return sampleQuestions.first { key($0.question) == key(query) }
+    }
+
+    /// A canned answer for a sample question, citing the demo's memories; any other search gets
+    /// the hint (`AnswerWording`).
+    private static func answer(_ params: MemoryAnswerParams, in state: State) throws(CompanionError) -> MemoryAnswerResult {
+        guard let sample = sample(params.query) else { throw CompanionError(.modelUnavailable, reason: AnswerWording.demoHintReason) }
+        let byTitle = Dictionary(state.memories.values.map { ($0.title, $0) }, uniquingKeysWith: { a, _ in a })
+        let claims = sample.claims.compactMap { claim -> MemoryAnswerResult.Claim? in
+            guard let memory = byTitle[claim.title], params.ids.contains(memory.id), memory.status == .active else { return nil }
+            return MemoryAnswerResult.Claim(text: claim.text, citations: [.init(id: memory.id, quote: claim.quote)])
+        }
+        let read = params.ids.filter { state.memories[$0]?.status == .active }.count
+        return MemoryAnswerResult(outcome: claims.isEmpty ? .noAnswer : .answered, claims: claims, read: read, withheld: 0, dropped: 0,
+                                  engine: "Demo", locality: .onDevice, durationMs: 1_200)
+    }
+
     private static func search(_ params: MemorySearchParams, in state: State) -> MemorySearchResult {
         let filters = params.filters
         let status = filters?.status ?? .active
         let query = params.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if status == .active, let sample = sample(query) {
+            let found = sample.titles.compactMap { title in state.memories.values.first { $0.title == title && $0.status == .active } }
+            return MemorySearchResult(results: found.map {
+                MemorySummary(id: $0.id, title: $0.title, snippet: $0.body, kind: $0.kind, categories: $0.categoryKeys,
+                              sensitivity: $0.sensitivity, updatedAt: $0.updatedAt, expiresAt: $0.expiresAt)
+            })
+        }
         let hits = state.memories.values
             .filter { $0.status == status }
             .filter { memory in filters?.categories.map { !Set($0).isDisjoint(with: memory.categoryKeys) } ?? true }

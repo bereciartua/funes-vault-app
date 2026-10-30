@@ -136,6 +136,12 @@ final class ModelSettings {
         var embedding: EmbeddingChoice?
         /// Calibrate's thresholds, by stored model id (`<provider>/<model>`).
         var calibrations: [String: CalibratedThresholds]?
+        /// Search answers (v0.6, FR-AI-17): on or off, the default; nil before v0.6.
+        var searchAnswers: Bool?
+        /// When they're on, when a search is answered: an `AnswerTrigger`; nil is only when asked.
+        var searchAnswersTrigger: String?
+        /// Search answers' provider: a provider id or a plan; nil is the same as New memories.
+        var searchAnswersModel: String?
     }
 
     static let defaultsKey = "AIModels"
@@ -279,6 +285,88 @@ final class ModelSettings {
         ModelRouter(classifier: generator(tidyUpChoice), onDevice: nil, cloudLimit: cloudLimit, cap: cap)
     }
 
+    // MARK: Search answers (memory processing §10, FR-AI-17)
+
+    /// Whether Search answers are on (Off is the default).
+    var searchAnswersOn: Bool {
+        get { stored.searchAnswers ?? false }
+        set { stored.searchAnswers = newValue; save() }
+    }
+
+    /// Answer: Off (nil, the default) · Only when I ask · Automatically for questions ·
+    /// Automatically for every search.
+    var searchAnswersMode: AnswerTrigger? {
+        get { searchAnswersOn ? searchAnswersTrigger : nil }
+        set {
+            stored.searchAnswers = newValue != nil
+            if let newValue { stored.searchAnswersTrigger = newValue == .ask ? nil : newValue.rawValue }
+            save()
+        }
+    }
+
+    /// When a search is answered while answers are on, as chosen (Apple on-device's answers are
+    /// only asked for: see `SearchAnswersController.trigger`).
+    var searchAnswersTrigger: AnswerTrigger { stored.searchAnswersTrigger.flatMap(AnswerTrigger.init(rawValue:)) ?? .ask }
+
+    /// Search answers' own choice; nil follows New memories.
+    var searchAnswersID: String? { stored.searchAnswersModel }
+
+    func setSearchAnswersModel(_ id: String?) {
+        stored.searchAnswersModel = id
+        save()
+    }
+
+    /// Search answers' own choice of Apple's on-device model, apart from New memories'.
+    static let onDeviceChoice = "apple.foundation"
+
+    /// The provider that answers: its own choice, or New memories'. Nil is Apple on-device.
+    private var searchAnswersChoice: String? {
+        let id = stored.searchAnswersModel ?? stored.classifier
+        return id == Self.onDeviceChoice ? nil : id
+    }
+
+    /// Whether Apple's on-device model answers (the effective choice is it).
+    var searchAnswersOnDevice: Bool { searchAnswersChoice == nil }
+
+    /// "Claude (Claude Code)", "Anthropic", "Apple on-device".
+    var searchAnswersName: String {
+        guard let id = searchAnswersChoice else { return String(localized: "Apple on-device") }
+        if let kind = SubscriptionConfig.Kind(rawValue: id) { return kind.name }
+        return providers.first { $0.id == id }?.name ?? id
+    }
+
+    /// Whether the effective choice is a plan (its own sign-in and limits).
+    var searchAnswersPlan: SubscriptionConfig.Kind? { searchAnswersChoice.flatMap(SubscriptionConfig.Kind.init(rawValue:)) }
+
+    /// The chosen API provider, when the choice is one.
+    var searchAnswersProvider: ProviderConfig? { searchAnswersChoice.flatMap { id in providers.first { $0.id == id } } }
+
+    /// Search answers' router, built by the returned closure off the main actor (an HTTP client
+    /// resolves its host to learn its locality): the chosen provider, or Apple on-device; no
+    /// fallback to another (model providers §6). It throws the client's own error, such as
+    /// `unauthorized` for a provider without its key.
+    func searchAnswerRouterBuilder(cap: CloudRequestCap?) -> @Sendable () throws -> ModelRouter {
+        let limit = cloudLimit
+        guard let id = searchAnswersChoice else {
+            return { ModelRouter(classifier: nil, onDevice: AppleFoundationGenerator.isAvailable ? AppleFoundationGenerator() : nil,
+                                 cloudLimit: limit, cap: cap) }
+        }
+        if let kind = SubscriptionConfig.Kind(rawValue: id) {
+            let client = subscriptionClient(kind)
+            return { ModelRouter(classifier: client, onDevice: nil, cloudLimit: limit, cap: cap) }
+        }
+        guard let provider = providers.first(where: { $0.id == id }) else {
+            return { ModelRouter(classifier: nil, onDevice: nil, cloudLimit: limit, cap: cap) }
+        }
+        let key = try? keys.key(for: provider.endpoint.id)
+        return { ModelRouter(classifier: try Self.client(for: provider, key: key), onDevice: nil, cloudLimit: limit, cap: cap) }
+    }
+
+    /// Whether a provider is missing the API key it needs: Anthropic always, OpenAI's own endpoint.
+    func needsKey(_ provider: ProviderConfig) -> Bool {
+        (provider.endpoint.kind == .anthropic || provider.endpoint.id == ProviderEndpoint.openAI().id) && !hasKey(provider.id)
+    }
+
     func upsert(_ provider: ProviderConfig, key: String?) throws {
         if let key {
             if key.isEmpty { try keys.deleteKey(for: provider.endpoint.id) } else { try keys.setKey(key, for: provider.endpoint.id) }
@@ -298,6 +386,7 @@ final class ModelSettings {
         stored.providers.removeAll { $0.id == id }
         if stored.classifier == id { stored.classifier = nil }
         if stored.tidyUp == id { stored.tidyUp = nil }
+        if stored.searchAnswersModel == id { stored.searchAnswersModel = nil }
         stored.usage[id] = nil
         let embedded = stored.embedding?.provider == id
         if embedded { stored.embedding = nil }
@@ -309,7 +398,12 @@ final class ModelSettings {
 
     /// A client for a provider, with its key from the Keychain.
     func client(for provider: ProviderConfig) throws -> any GenerationProvider {
-        let key = try keys.key(for: provider.endpoint.id)
+        try Self.client(for: provider, key: try keys.key(for: provider.endpoint.id))
+    }
+
+    /// A client for a provider with this key. Resolves the provider's host, so off the main actor
+    /// where it can wait.
+    nonisolated static func client(for provider: ProviderConfig, key: String?) throws -> any GenerationProvider {
         switch provider.endpoint.kind {
         case .anthropic:
             guard let key, !key.isEmpty else { throw ProviderError.unauthorized }

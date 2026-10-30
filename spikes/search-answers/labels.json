@@ -1,0 +1,74 @@
+{
+ "claude-haiku/main/q01/2": {
+  "correct": true,
+  "note": "True (m025, coffee at home); an extra, not the order."
+ },
+ "claude-haiku/main/q04/1": {
+  "correct": true,
+  "note": "True: a04 gives the older title."
+ },
+ "claude-haiku/main/q22/1": {
+  "correct": true,
+  "note": "True (m070) but off the question: CI before merging."
+ },
+ "claude-haiku/main/q25/1": {
+  "correct": true,
+  "note": "True (m109): slides due in April."
+ },
+ "claude-haiku/main/q28/1": {
+  "correct": true,
+  "note": "True: the roadmap note's date; a hedge, not a fact."
+ },
+ "claude-haiku/main/q38/1": {
+  "correct": true,
+  "note": "True (m107) but not a priority: off the question."
+ },
+ "claude-haiku/main/q42/1": {
+  "correct": true,
+  "note": "True (a02): the dry run."
+ },
+ "claude-haiku/main/q37/0": {
+  "correct": true,
+  "note": "True (m091: the club pays) and says the amount isn't recorded; still a miss for the right 'no answer', since the card shows it as an answer."
+ },
+ "codex-luna/main/q21/1": {
+  "correct": true,
+  "note": "True (m059): the rest of the commit rule."
+ },
+ "codex-luna/main/q22/1": {
+  "correct": true,
+  "note": "True (m060): rebase to update."
+ },
+ "claude-haiku/astra/h03/0": {
+  "correct": true,
+  "facts": [
+   0
+  ],
+  "note": "True (m056): Swift Testing for new tests; doesn't say 'unit', which the keys wanted."
+ },
+ "claude-haiku/astra/h03/1": {
+  "correct": false,
+  "note": "Misreads m056: 'not XCTest, except for UI tests' names XCTest for UI tests; the claim says the memories don't name one."
+ },
+ "claude-haiku/astra/h03/2": {
+  "correct": true,
+  "note": "True (m061) but off the question."
+ },
+ "codex-terra/astra/h16/0": {
+  "correct": true,
+  "note": "True (m158) and says the brand isn't recorded; still a miss for the right 'no answer'."
+ },
+ "_note": "Every surviving cloud claim (175) was read against its quotes on 29 Oct 2026; only the ones that need a label are listed. Apple's claims are scored lexically only.",
+ "claude-haiku/main/q29/1": {
+  "correct": false,
+  "note": "Misreads m043: the calls are at Lisbon time; the parents are in Buenos Aires, not on Lisbon time."
+ },
+ "claude-haiku/main/q35/0": {
+  "correct": false,
+  "note": "'You don't drive a car' contradicts m052's occasional car share."
+ },
+ "codex-luna/main/q35/0": {
+  "correct": false,
+  "note": "'so you don't drive one' contradicts m052's occasional car share."
+ }
+}

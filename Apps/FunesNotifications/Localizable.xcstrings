@@ -1,7 +1,19 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ is paused on your Mac: test its connection in Settings ▸ AI Models." : {
+
+    },
+    "%@ isn't signed in on your Mac." : {
+
+    },
+    "%@ needs an update on your Mac." : {
+
+    },
     "%@ on your Mac. It may send what it reads to its AI service." : {
+
+    },
+    "%@ says to slow down. Try again later." : {
 
     },
     "%@ suggests a correction" : {
@@ -55,6 +67,15 @@
     "%@ wants to suggest memories" : {
 
     },
+    "%@ · Apple cloud" : {
+
+    },
+    "%@ · Cloud" : {
+
+    },
+    "%@ · Local server" : {
+
+    },
     "%@, a cloud agent, through Remote Access" : {
 
     },
@@ -91,10 +112,19 @@
     "%lld above its sensitivity limit" : {
 
     },
+    "%lld claims left out: they didn't quote a memory" : {
+
+    },
     "%lld expired" : {
 
     },
     "%lld in categories it can't read" : {
+
+    },
+    "%lld memories weren't read: they look like they hold secrets" : {
+
+    },
+    "%lld memories weren't read: they're above your Mac's cloud limit" : {
 
     },
     "%lld more matched but can't go to this agent (%@)." : {
@@ -108,6 +138,15 @@
       }
     },
     "%lld not shareable" : {
+
+    },
+    "1 claim left out: it didn't quote a memory" : {
+
+    },
+    "1 memory wasn't read: it looks like it holds a secret" : {
+
+    },
+    "1 memory wasn't read: it's above your Mac's cloud limit" : {
 
     },
     "Allow Once is for this request only. It shares without asking, so the matching memories go to it at once." : {
@@ -172,10 +211,16 @@
     "From %@. It's in your Inbox either way." : {
 
     },
+    "In the demo, try: When does my lease renew?" : {
+
+    },
     "It already got what it may read. Always Allow is for next time." : {
 
     },
     "Mac not reachable. Answer on your Mac, or open Funes when your Mac is reachable." : {
+
+    },
+    "No answer in the %lld results read." : {
 
     },
     "Not at all" : {
@@ -185,6 +230,9 @@
 
     },
     "Not said" : {
+
+    },
+    "On your Mac" : {
 
     },
     "Open Funes to see what's waiting." : {
@@ -199,6 +247,19 @@
     "Open to see exactly what would be shared." : {
 
     },
+    "Read %lld of %lld results · %lld s" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read %1$lld of %2$lld results · %3$lld s"
+          }
+        }
+      }
+    },
+    "Reading %lld results…" : {
+
+    },
     "Save this correction?" : {
 
     },
@@ -208,10 +269,16 @@
     "Saved." : {
 
     },
+    "Search answers are off on your Mac." : {
+
+    },
     "Shared %lld memories." : {
 
     },
     "Shared 1 memory." : {
+
+    },
+    "The model's answer couldn't be read. Try again." : {
 
     },
     "There's nothing to answer any more." : {
@@ -229,7 +296,19 @@
     "This request is no longer waiting" : {
 
     },
+    "Today's cloud requests are used up on your Mac. Search still works; answers are back tomorrow." : {
+
+    },
+    "Took too long. Try again." : {
+
+    },
     "You have a request" : {
+
+    },
+    "Your Mac's model couldn't answer. Try again." : {
+
+    },
+    "Your search looks like it contains a secret, so it wasn't sent." : {
 
     }
   },
