@@ -203,6 +203,32 @@ import Testing
         #expect(BodyMatches(body: "", spans: []).sentences().isEmpty)
     }
 
+    /// The text an answer sends (memory processing §10.3).
+    @Test func answerTextIsTheBodyOrItsBestPassages() throws {
+        let short = "My title at Chatham is Senior Analyst."
+        #expect(try #require(try Self.matches(short, "title")).answerText(limit: 1_500) == short)
+
+        let filler = (0..<40).map { "Filler sentence number \($0) about nothing much." }
+        var sentences = filler
+        sentences[10] = "Joined Chatham in 2023 as a data analyst."
+        sentences[30] = "Promoted in March: my title at Chatham is Senior Analyst."
+        let body = sentences.joined(separator: " ")
+        let m = try #require(try Self.matches(body, "title at Chatham"))
+        let text = m.answerText(limit: 1_500)
+        // The best sentences with one either side, in body order, joined.
+        #expect(text == [sentences[9...11], sentences[29...31]].map { $0.joined(separator: " ") }.joined(separator: " … "))
+        // Neighbouring passages merge into one run.
+        sentences[12] = "Still at Chatham today."
+        let merged = try #require(try Self.matches(sentences.joined(separator: " "), "Chatham", prefix: false)).answerText(limit: 1_500)
+        #expect(merged.hasPrefix(sentences[9...13].joined(separator: " ")) && merged.components(separatedBy: " … ").count == 2)
+        // Within the limit: a passage that doesn't fit is left out, and the best is cut if it must be.
+        #expect(m.answerText(limit: 200).count <= 200 && m.answerText(limit: 200).contains("Senior Analyst"))
+        #expect(m.answerText(limit: 30).count <= 30)
+        // No spans: the start, cut at a word.
+        let start = BodyMatches.answerText(body: body, spans: [], limit: 100)
+        #expect(start.count <= 100 && body.hasPrefix(start) && body[body.index(body.startIndex, offsetBy: start.count)] == " ")
+    }
+
     /// Every fixture memory, lengthened, against every benchmark query: well formed at three lengths.
     @Test func snippetsAreAlwaysVerbatimAndShortEnough() async throws {
         let v = try TestVault()

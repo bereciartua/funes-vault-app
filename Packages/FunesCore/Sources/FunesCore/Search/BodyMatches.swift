@@ -134,6 +134,59 @@ public struct BodyMatches: Sendable, Hashable {
         start(of: flatten(body).0, length: length)
     }
 
+    // MARK: Answer passages
+
+    /// The text an answer sends for a memory (§10.3): the whole body when it's at most `limit`
+    /// characters; otherwise the 3 best sentences, each with a sentence either side, merged where
+    /// they touch, in body order, joined with " … ", within `limit`. A body without spans gives its
+    /// start, cut at a word.
+    public func answerText(limit: Int) -> String {
+        Self.answerText(body: body, spans: spans, limit: limit)
+    }
+
+    /// The separator between passages; a quote that spans it fails validation (§10.4).
+    public static let passageJoin = " … "
+
+    public static func answerText(body: String, spans: [Range<Int>], limit: Int) -> String {
+        guard longer(body[...], than: limit) else { return body }
+        let all = sentences(in: body, lines: body.split(whereSeparator: \.isNewline).map { $0.startIndex..<$0.endIndex },
+                            spans: indices(spans, in: body))
+        let ranked = all.indices.filter { all[$0].score > 0 }.sorted { (all[$0].score, $1) > (all[$1].score, $0) }
+        guard let first = ranked.first else { return cut(body[...], to: limit) }
+        var chosen = Set<Int>()
+        var text = ""
+        for i in ranked.prefix(3) {
+            let window = chosen.union(max(i - 1, 0)...min(i + 1, all.count - 1))
+            let joined = join(window, all, in: body)
+            guard joined.count <= limit else { continue }
+            chosen = window
+            text = joined
+        }
+        return text.isEmpty ? cut(body[all[first].range], to: limit) : text
+    }
+
+    /// The chosen sentences in body order; runs of neighbours keep the body's text between them.
+    static func join(_ chosen: Set<Int>, _ all: [Sentence], in body: String) -> String {
+        var runs: [Range<String.Index>] = []
+        for i in chosen.sorted() {
+            if let last = runs.last, chosen.contains(i - 1) {
+                runs[runs.count - 1] = last.lowerBound..<all[i].range.upperBound
+            } else {
+                runs.append(all[i].range)
+            }
+        }
+        return runs.map { String(body[$0]) }.joined(separator: passageJoin)
+    }
+
+    /// The text's start, at most `limit` characters, cut after a word.
+    static func cut(_ text: Substring, to limit: Int) -> String {
+        guard longer(text, than: limit) else { return String(text) }
+        var end = text.index(text.startIndex, offsetBy: limit)
+        while end > text.startIndex, !text[end].isWhitespace { end = text.index(before: end) }
+        if end == text.startIndex { end = text.index(text.startIndex, offsetBy: limit) }
+        return String(text[text.startIndex..<end]).trimmingCharacters(in: .whitespaces)
+    }
+
     // MARK: Internals
 
     static func start(of flat: String, length: Int) -> Snippet {
