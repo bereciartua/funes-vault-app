@@ -178,6 +178,9 @@
     "%@ is an embedding model: it can't propose fields or split memories. Choose it in AI Models ▸ Embeddings instead, and put a chat model here, or leave this empty." : {
 
     },
+    "%@ is paused: test its connection in Settings ▸ AI Models." : {
+
+    },
     "%@ isn't available right now." : {
 
     },
@@ -200,6 +203,9 @@
 
     },
     "%@ isn't signed in on your Mac." : {
+
+    },
+    "%@ needs an update on your Mac." : {
 
     },
     "%@ on this Mac. It may send what it reads to its AI service." : {

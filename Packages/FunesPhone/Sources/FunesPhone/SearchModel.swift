@@ -13,11 +13,12 @@ public final class SearchModel {
 
     public static let pageSize = 30
 
-    public var query = ""
+    // Changing the search clears the answer at once, before the search's pause ends.
+    public var query = "" { didSet { if query != oldValue { clearAnswer() } } }
     /// Active, Archived or Recently Deleted.
-    public var scope = MemoryStatus.active
+    public var scope = MemoryStatus.active { didSet { if scope != oldValue { clearAnswer() } } }
     /// Only memories at this level: Home's Sensitivity tile. Nil for every level.
-    public var sensitivity: Sensitivity?
+    public var sensitivity: Sensitivity? { didSet { if sensitivity != oldValue { clearAnswer() } } }
     public private(set) var results: [MemorySummary] = []
     public private(set) var phase = Phase.idle
     public private(set) var nextCursor: String?
@@ -46,8 +47,15 @@ public final class SearchModel {
     public private(set) var answer = AnswerState.idle
     /// The Mac's Search answers (`status.get`); nil while they're off. The app keeps it current.
     public var macAnswers: SearchAnswersStatus? {
-        didSet { if macAnswers == nil, oldValue != nil { clearAnswer() } }
+        didSet {
+            guard macAnswers != oldValue else { return }
+            // Fresh word from the Mac replaces an earlier answers_off.
+            macSaidOff = false
+            if macAnswers == nil { clearAnswer() }
+        }
     }
+    /// `answers_off` came back: no Ask until `status.get` says otherwise.
+    private var macSaidOff = false
     /// Settings ▸ Search answers ▸ Show Ask in Search (this iPhone only, on by default).
     public var showAsk = true
     @ObservationIgnored private var answerTask: Task<Void, Never>?
@@ -127,9 +135,11 @@ public final class SearchModel {
     /// The Ask pill: the Mac answers, Show Ask is on, the Active scope, a non-empty search whose
     /// results have loaded, and no card showing.
     public var canAsk: Bool {
-        guard macAnswers != nil, showAsk, scope == .active, phase == .loaded, !results.isEmpty, case .idle = answer,
+        guard macAnswers != nil, !macSaidOff, showAsk, scope == .active, phase == .loaded, !results.isEmpty, case .idle = answer,
               let params = resultsParams, params.filters?.status == nil, !params.query.isEmpty else { return false }
-        return true
+        // The results listed are the current search's, not the last one's while typing.
+        let current = self.params(cursor: nil)
+        return current.query == params.query && current.filters == params.filters
     }
 
     /// A row's number on the card, when the answer cites it.
@@ -172,6 +182,7 @@ public final class SearchModel {
             switch error.code {
             case .answersOff:
                 answer = .failed(.answersOff)
+                macSaidOff = true
             case .capReached: answer = .failed(.capReached)
             case .modelTimeout: answer = .failed(.timeout)
             case .modelUnavailable: answer = .failed(.modelUnavailable(reason: error.reason))

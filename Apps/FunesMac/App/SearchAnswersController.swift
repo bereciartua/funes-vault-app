@@ -45,10 +45,20 @@ final class SearchAnswersController: SearchAnswering {
             return settings.executables[plan] == nil ? nil : SearchAnswerEngine(name: engineName, locality: .cloud)
         }
         guard let provider = settings.searchAnswersProvider, !provider.model.isEmpty, !settings.needsKey(provider) else { return nil }
+        // Never waits on DNS (status.get is the phone's 3 s probe): the last resolved locality, and
+        // cloud until the lookup in the background says otherwise (fail closed).
         let endpoint = provider.endpoint
-        let locality = await Task.detached(priority: .utility) { endpoint.locality() }.value
-        return SearchAnswerEngine(name: engineName, locality: locality)
+        if resolved[endpoint] == nil {
+            Task.detached(priority: .utility) { [weak self] in
+                let locality = endpoint.locality()
+                await MainActor.run { self?.resolved[endpoint] = locality }
+            }
+        }
+        return SearchAnswerEngine(name: engineName, locality: resolved[endpoint] ?? .cloud)
     }
+
+    /// Providers' resolved localities, for `engine()`.
+    private var resolved: [ProviderEndpoint: Locality] = [:]
 
     /// Whether the effective model is Apple on-device, which reads at most 5 results.
     var readsAtMost: Int { settings.searchAnswersOnDevice ? SearchAnswerer.onDeviceMemoryCount : SearchAnswerer.memoryCount }
@@ -65,7 +75,16 @@ final class SearchAnswersController: SearchAnswering {
             throw failure
         }
         defer { settings.collectUsage(from: router) }
-        return try await answerer.answer(query, ids: ids, router: router, actor: actor, via: via)
+        do {
+            return try await answerer.answer(query, ids: ids, router: router, actor: actor, via: via)
+        } catch SearchAnswerError.provider(.unavailable) {
+            // A plan's CLI says why it's unavailable: paused after a tool event, or too old.
+            if let plan = settings.searchAnswersPlan, let client = settings.subscriptionClient(plan) {
+                if CLIRunner.isBlocked(client.id) { throw SearchAnswerError.toolBlocked }
+                if case .needsUpdate? = settings.subscriptionStatus[plan] { throw SearchAnswerError.needsUpdate }
+            }
+            throw SearchAnswerError.provider(.unavailable)
+        }
     }
 
     /// The card's line for a failure (§10.5), and whether Try Again can help.
@@ -83,6 +102,10 @@ final class SearchAnswersController: SearchAnswering {
             return (String(localized: "This search is too long for the on-device model."), false)
         case .vault:
             return (String(localized: "Funes couldn't read your vault. Try again."), true)
+        case .needsUpdate:
+            return (String(localized: "\(engineName) needs an update on your Mac."), false)
+        case .toolBlocked:
+            return (String(localized: "\(engineName) is paused: test its connection in Settings ▸ AI Models."), false)
         case let .provider(providerError):
             let tool = settings.searchAnswersPlan.map { $0 == .claudeCode ? "Claude Code" : "Codex" }
             switch providerError {

@@ -180,3 +180,59 @@ final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
         _ = try? await second.value
     }
 }
+
+/// Search answers through a stub `claude` that records its process id and sleeps.
+struct CLIAnswers: SearchAnswering {
+    let answerer: SearchAnswerer
+    let client: ClaudeCodeClient
+
+    func engine() async -> SearchAnswerEngine? { SearchAnswerEngine(name: "Claude (Claude Code)", locality: .cloud) }
+
+    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via) async throws -> SearchAnswer {
+        try await answerer.answer(query, ids: ids, router: ModelRouter(classifier: client, onDevice: nil), actor: actor, via: via, now: t0)
+    }
+}
+
+@Suite struct AnswerProcessTests {
+    static func alive(_ pid: pid_t) -> Bool { kill(pid, 0) == 0 }
+
+    /// The same device's next Ask ends the previous one's CLI process; another device's keeps running.
+    @Test func aNewAskEndsThePreviousCLIProcessOfThatDeviceOnly() async throws {
+        let dir = FileManager.default.temporaryDirectory.appending(path: "funes-stub-\(UUID().uuidString)")
+        let pids = dir.appending(path: "pids")
+        try FileManager.default.createDirectory(at: pids, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let script = dir.appending(path: "claude")
+        try "#!/bin/sh\ntouch \"\(pids.path)/$$\"\nexec sleep 30\n".write(to: script, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+
+        let h = try CompanionHarness()
+        let answerer = SearchAnswerer(store: h.store, search: SearchService(store: h.store, indexer: nil), activity: InMemoryActivityLog())
+        let harness = try CompanionHarness(answers: CLIAnswers(answerer: answerer, client: ClaudeCodeClient(executable: script.path, model: "haiku")))
+        let memory = try AnswerMethodTests.memory(h, "Coffee", "Oat milk flat white, no sugar.")
+        let phoneA = try await harness.pairedPhone(), phoneB = try await harness.pairedPhone()
+        func started() -> [pid_t] {
+            ((try? FileManager.default.contentsOfDirectory(atPath: pids.path)) ?? []).compactMap { pid_t($0) }
+        }
+        func wait(for count: Int) async throws {
+            for _ in 0..<200 where started().count < count { try await Task.sleep(for: .milliseconds(25)) }
+        }
+        let params = MemoryAnswerParams(query: "coffee", ids: [memory.id])
+        let b = Task { try await harness.call(MemoriesAnswer.self, params, phone: phoneB) }
+        try await wait(for: 1)
+        let bPID = try #require(started().first)
+        let a1 = Task { try await harness.call(MemoriesAnswer.self, params, phone: phoneA) }
+        try await wait(for: 2)
+        let a1PID = try #require(started().first { $0 != bPID })
+        let a2 = Task { try await harness.call(MemoriesAnswer.self, params, phone: phoneA) }
+        let (_, reply) = try await a1.value
+        #expect(throws: CompanionError(.unavailable, message: "Cancelled")) { _ = try reply?.get() }
+        for _ in 0..<40 where Self.alive(a1PID) { try await Task.sleep(for: .milliseconds(25)) }
+        #expect(!Self.alive(a1PID))
+        #expect(Self.alive(bPID))
+        b.cancel()
+        a2.cancel()
+        for pid in started() { kill(pid, SIGKILL) }
+        _ = await (b.result, a2.result)
+    }
+}

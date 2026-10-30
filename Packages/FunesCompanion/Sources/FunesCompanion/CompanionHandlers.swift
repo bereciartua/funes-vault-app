@@ -42,7 +42,7 @@ public final class CompanionHandlers: Sendable {
     static let snippetLength = 160
 
     /// One `memories.answer` in flight per device: a new one cancels the previous (§7).
-    private let answering = Mutex<[UUID: (token: UUID, task: Task<SearchAnswer, any Error>)]>([:])
+    private let answering = Mutex<[UUID: (token: UUID, task: Task<(SearchAnswerEngine, SearchAnswer), any Error>)]>([:])
 
     let services: CompanionServices
     let macName: @Sendable () -> String
@@ -134,10 +134,16 @@ public final class CompanionHandlers: Sendable {
     /// ends its model call; the result never carries offsets or more than the claims.
     func answer(_ params: MemoryAnswerParams, device: UUID, now: Date) async throws -> MemoryAnswerResult {
         try params.validate()
-        guard let answers = services.answers, let engine = await answers.engine() else { throw CompanionError(.answersOff) }
+        guard let answers = services.answers else { throw CompanionError(.answersOff) }
+        // Registered before anything waits, so the same device's next Ask always cancels this one,
+        // and this one can't cancel a newer one.
         let token = UUID()
-        let task = Task { try await answers.answer(params.query, ids: params.ids, actor: .device(device), via: .companion) }
-        let previous = answering.withLock { inFlight -> Task<SearchAnswer, any Error>? in
+        let task = Task { () throws -> (SearchAnswerEngine, SearchAnswer) in
+            guard let engine = await answers.engine() else { throw CompanionError(.answersOff) }
+            try Task.checkCancellation()
+            return (engine, try await answers.answer(params.query, ids: params.ids, actor: .device(device), via: .companion))
+        }
+        let previous = answering.withLock { inFlight -> Task<(SearchAnswerEngine, SearchAnswer), any Error>? in
             let old = inFlight[device]?.task
             inFlight[device] = (token, task)
             return old
@@ -145,7 +151,7 @@ public final class CompanionHandlers: Sendable {
         previous?.cancel()
         defer { answering.withLock { if $0[device]?.token == token { $0[device] = nil } } }
         do {
-            let answer = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+            let (engine, answer) = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
             return MemoryAnswerResult(
                 outcome: answer.outcome == .answered ? .answered : .noAnswer,
                 claims: answer.claims.map { claim in
@@ -170,6 +176,8 @@ public final class CompanionHandlers: Sendable {
         case .invalidOutput: CompanionError(.modelUnavailable, reason: "invalid_output")
         case .provider(.unauthorized): CompanionError(.modelUnavailable, reason: "not_signed_in")
         case .provider(.rateLimited): CompanionError(.modelUnavailable, reason: "plan_limit")
+        case .needsUpdate: CompanionError(.modelUnavailable, reason: "needs_update")
+        case .toolBlocked: CompanionError(.modelUnavailable, reason: "tool_blocked")
         case .tooLongForOnDevice, .provider: CompanionError(.modelUnavailable, reason: "provider_error")
         }
     }

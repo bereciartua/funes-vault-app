@@ -9,6 +9,8 @@ struct SearchView: View {
     let model: PhoneModel
     /// Settings ▸ Search answers ▸ Show Ask in Search (this iPhone only).
     @AppStorage(SearchAnswersSettings.showAskKey) private var showAsk = true
+    /// The cited memory a number opened.
+    @State private var openSource: AnswerSource?
 
     private struct Key: Equatable {
         var query: String
@@ -26,7 +28,7 @@ struct SearchView: View {
                     if search.canAsk {
                         Section { AskPill { Task { await search.ask() } } }
                     } else if search.answer != .idle {
-                        Section { AnswerCardView(search: search, model: model) }
+                        Section { AnswerCardView(search: search, model: model) { openSource = $0 } }
                     }
                 }
                 if model.reachability.isConnected, !search.results.isEmpty {
@@ -86,7 +88,7 @@ struct SearchView: View {
             .navigationDestination(for: UUID.self) { id in
                 MemoryDetailView(model: model, id: id)
             }
-            .navigationDestination(for: AnswerSource.self) { source in
+            .navigationDestination(item: $openSource) { source in
                 MemoryDetailView(model: model, id: source.id, quote: source.quote)
             }
             .onChange(of: model.macAnswers, initial: true) { _, answers in search.macAnswers = answers }
@@ -116,6 +118,13 @@ struct SearchView: View {
             case .loaded:
                 if search.query.trimmingCharacters(in: .whitespaces).isEmpty {
                     ContentUnavailableView(Self.emptyTitle(search.scope), systemImage: "tray")
+                } else if model.isDemo {
+                    // The demo's search matches whole phrases: say which question to try.
+                    ContentUnavailableView {
+                        Label("No Results", systemImage: "magnifyingglass")
+                    } description: {
+                        Text(AnswerWording.failure(.modelUnavailable(reason: AnswerWording.demoHintReason), engine: "") { _ in "" }.text)
+                    }
                 } else {
                     ContentUnavailableView.search(text: search.query)
                 }

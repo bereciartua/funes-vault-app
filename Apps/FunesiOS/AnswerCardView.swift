@@ -49,6 +49,8 @@ struct SourceNumber: View {
 struct AnswerCardView: View {
     let search: SearchModel
     let model: PhoneModel
+    /// A number was tapped: open that memory with its quote.
+    let open: (AnswerSource) -> Void
 
     var body: some View {
         switch search.answer {
@@ -111,10 +113,11 @@ struct AnswerCardView: View {
                     HStack(spacing: 6) {
                         ForEach(claim.citations, id: \.self) { citation in
                             if let number = sources.firstIndex(of: citation.id).map({ $0 + 1 }) {
-                                NavigationLink(value: AnswerSource(id: citation.id, quote: citation.quote)) {
+                                // A button, not a link: a link would make the whole row one tap.
+                                Button { open(AnswerSource(id: citation.id, quote: citation.quote)) } label: {
                                     SourceNumber(number: number)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.borderless)
                                 .accessibilityLabel(Text("Source \(number): \(title(citation.id))"))
                             }
                         }

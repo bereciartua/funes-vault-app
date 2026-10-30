@@ -93,6 +93,10 @@ public enum SearchAnswerError: Error, Sendable, Equatable {
     case provider(ProviderError)
     /// The vault couldn't be read.
     case vault
+    /// A subscription CLI that's too old for Funes (the app finds this out from its status).
+    case needsUpdate
+    /// A subscription CLI that tried to use a tool and is paused until Test Connection.
+    case toolBlocked
 
     /// The Activity reason code, and `memories.answer`'s `model_unavailable` reason.
     public var code: String {
@@ -103,6 +107,8 @@ public enum SearchAnswerError: Error, Sendable, Equatable {
         case .invalidOutput: "invalid_output"
         case .tooLongForOnDevice: "too_long_for_on_device"
         case .vault: "vault_error"
+        case .needsUpdate: "needs_update"
+        case .toolBlocked: "tool_blocked"
         case let .provider(error):
             switch error {
             case .unauthorized: "not_signed_in"

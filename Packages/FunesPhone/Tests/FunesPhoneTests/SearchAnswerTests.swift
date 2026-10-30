@@ -90,7 +90,7 @@ import Testing
         let log = FailureLog()
         let search = await Self.loaded(vault, log: log)
         let cases: [(CompanionClientError, SearchModel.AnswerFailure)] = [
-            (.method(CompanionError(.answersOff)), .answersOff), (.method(CompanionError(.capReached)), .capReached),
+            (.method(CompanionError(.capReached)), .capReached),
             (.method(CompanionError(.modelTimeout)), .timeout), (.answerTimedOut, .timeout),
             (.method(CompanionError(.modelUnavailable, reason: "not_signed_in")), .modelUnavailable(reason: "not_signed_in")),
         ]
@@ -106,6 +106,31 @@ import Testing
         await search.ask()
         #expect(search.answer == .failed(.client(.unreachable(localNetworkDenied: false))))
         #expect(log.errors == [.unreachable(localNetworkDenied: false)])
+
+        // answers_off: the card says so, and Ask stays hidden until the Mac's status changes.
+        search.clearAnswer()
+        vault.fail(.memoriesAnswer, with: .method(CompanionError(.answersOff)))
+        await search.ask()
+        #expect(search.answer == .failed(.answersOff))
+        search.clearAnswer()
+        #expect(!search.canAsk)
+        search.macAnswers = nil
+        search.macAnswers = Self.claude
+        await search.search()
+        #expect(search.canAsk)
+    }
+
+    /// Typing clears the card at once, and Ask waits for the new search's results.
+    @Test func typingClearsTheCardAndAskWaitsForTheNewResults() async throws {
+        let vault = FakeVault()
+        vault.add("Coffee", body: "Oat milk flat white.")
+        let search = await Self.loaded(vault)
+        await search.ask()
+        #expect(search.answer != .idle)
+        search.query = "coffee order"
+        #expect(search.answer == .idle && !search.canAsk)
+        await search.search()
+        #expect(search.canAsk == false || search.results.isEmpty == false)
     }
 
     @Test func theCardsWords() {

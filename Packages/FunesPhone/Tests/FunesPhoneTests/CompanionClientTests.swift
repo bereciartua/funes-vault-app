@@ -294,6 +294,26 @@ struct Rig {
         #expect(await rig.client.currentAddress == nil)
     }
 
+    /// `memories.answer` waits 55 s, is never resent, and a slow answer isn't "unreachable":
+    /// the address stays.
+    @Test func aSlowAnswerTimesOutOnceAndKeepsTheAddress() async throws {
+        let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .mac($0)] })
+        try await rig.pair([Addresses.lan, Addresses.tailscale])
+        _ = try await rig.client.status()
+        rig.transport.set("192.168.1.20", .timesOut)
+        let lan = rig.transport.count("192.168.1.20"), tailscale = rig.transport.count("100.101.102.103")
+        await #expect(throws: CompanionClientError.answerTimedOut) {
+            try await rig.client.call(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()]))
+        }
+        #expect(rig.transport.count("192.168.1.20") == lan + 1 && rig.transport.count("100.101.102.103") == tailscale)
+        #expect(rig.transport.timeouts.last == 55)
+        #expect(await rig.client.currentAddress?.kind == .lan)
+        // Other calls keep their 15 s.
+        rig.transport.set("192.168.1.20", .mac(rig.mac))
+        _ = try? await rig.client.call(CategoriesList.self, EmptyParams())
+        #expect(rig.transport.timeouts.last == 15)
+    }
+
     @Test func methodErrorsComeThrough() async throws {
         let rig = Rig()
         try await rig.pair()
