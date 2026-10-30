@@ -146,6 +146,23 @@ Funes learns your name and a few details, greets you by name, and gives each age
 - **Greeting by name** on the Mac's and the iPhone's Home.
 - **Profile fields per agent:** ticked in Access (Name by default), sent with `request_memory` answers, named in the Share panel and Activity.
 
+### v0.6: Search answers (Phase 9)
+Search shows the sentence that matches, and when you ask, the model you chose answers from the top results, quoting the memory behind every claim, on the Mac and the iPhone ([ADR-0028](../architecture/decisions/0028-search-answers.md)). About 2.5–3 weekends.
+
+| Step | Plan | Exit criteria |
+|---|---|---|
+| **9.1 Snippets** | [plan](../plans/phase-9-search-answers.md#91-snippets--½-weekend) | Matching-sentence snippets on both apps within 150 ms; used for a few days |
+| **9.2 Spike F** | [plan](../plans/phase-9-search-answers.md#92-spike-f-answer-quality--½-weekend) | A provider passes: correct claims ≥ 95%, right "no answer" ≥ 90%, answered ≥ 80%, p95 ≤ 15 s |
+| **9.3 Core** | [plan](../plans/phase-9-search-answers.md#93-core--¾-weekend) | `SearchAnswerer` with validation, guardrail and cancellation tests green |
+| **9.4 Mac** | [plan](../plans/phase-9-search-answers.md#94-mac--½-weekend) | ⌘⏎ answers "What's my title at Chatham?" in the author's vault, with quotes |
+| **9.5 iPhone** | [plan](../plans/phase-9-search-answers.md#95-iphone--½¾-weekend) | The same on the iPhone, over Wi-Fi and Tailscale; demo answers offline |
+| **9.6 Ship** | [plan](../plans/phase-9-search-answers.md#96-ship--¼-weekend) | Docs, privacy and CHANGELOG; a week of the author's use |
+
+**In:**
+- **Matching snippets** in the Vault and the iPhone's Search.
+- **Search answers**, off by default: Ask (⌘⏎ or the Ask row and pill), an answer card in place with a quote per claim, no automatic mode yet.
+- **`memories.answer`** on the companion channel, with its own deadline.
+
 ### v0.6+: Later (unordered; pick by real usage)
 - **Allow window** for low-sensitivity sharing (if panels cause fatigue).
 - **BridgeKitUI extraction** (approvals, activity, agent setup UI, app shell, and the Remote Access views) after v0.1. BridgeKitRemote is extracted in Phase 4b.

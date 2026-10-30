@@ -92,7 +92,12 @@ Top to bottom:
   - **The pulse's scales:** as on the Mac, each half has its own: the line in the middle, the busiest In bucket reaching the top and the busiest Out bucket the bottom (above the refused dots). A faint number at each edge with a faint gridline gives that half's peak; a half with nothing stays empty and unlabelled. The words above the chart, scrubbing and VoiceOver give the real counts. The Pulse widget has the same scales without the edge numbers (its line gives the week's totals).
 
 ## Search tab
-- A search field. Results come from the Mac, showing the title, a two-line snippet, category chips and a sensitivity badge.
+- A search field. Results come from the Mac, showing the title, a two-line snippet, category chips and a sensitivity badge. From v0.6 the snippet is the passage that matches the search, with the search's words highlighted on the phone (FR-V-17).
+- **Search answers** (v0.6, FR-iOS-13, [ADR-0028](../architecture/decisions/0028-search-answers.md)): while the Mac reports them on (`searchAnswers` in `status.get`) and **Show Ask in Search** is on, an **✦ Ask Funes** pill sits under the search field once results load (Active scope, a non-empty search).
+  - Tapping it shows the card as the list's first section: "Reading 8 results…" with **Cancel**, then the answer as on the Mac (claims with numbers and quotes, the locality badge as "Claude · Cloud" or "On your Mac", the footer, **Clear**). The pill hides while the card shows.
+  - A number opens the memory detail scrolled to the quoted sentence, highlighted.
+  - Messages: the Mac's no-answer and failure texts; "Search answers are off on your Mac." (`answers_off`, the pill then hides); a call that can't reach the Mac is the usual unreachable state, and a slow model is never shown as one.
+  - Changing the search or scope, or leaving Search, clears the card and cancels the call. The answer is never kept.
 - **Memory detail:**
   - full text, kind, categories, sensitivity, expiry and provenance;
   - **Edit**, **Archive** and **Delete**.
@@ -127,6 +132,7 @@ When an agent's Share, Save or access request waits on the Mac, the Mac rings a 
 - **Mac:** name, connection type, the version of Funes on the Mac ("Funes on the Mac"), last contact; "Re-pair", "Unpair this iPhone…".
 - **Approvals:** "Approve requests on this iPhone" (the same switch as the Mac's Settings ▸ iPhone, on by default once paired), and why notifications might not come: notifications off for Funes (with **Open Notification Settings**), this iPhone not signed in to iCloud, or the Mac not signed in to iCloud or running a build that can't notify. Requests still show under Waiting for you then.
 - **Queue:** N waiting, "Send now", and "Delete queued captures…" (with confirmation).
+- **Search answers** (v0.6, while paired): **Show Ask in Search** (on by default, this iPhone only) and "Answered by <engine>" from the Mac, with the footer "Your Mac reads the top results and asks <engine>. Change the model on your Mac in Settings ▸ AI Models." When the Mac has them off: "Search answers are off on your Mac." and no switch.
 - **Demo vault:** on or off (only when not paired).
 - **Funes for iPhone:** this app's version and build ("0.5.0 (11)"), paired or not, so it isn't mistaken for the Mac's.
 - About and privacy.
@@ -173,6 +179,8 @@ If the phone can't reach the Mac during pairing: "Make sure both are on the same
 - *Built (task 5.7):* **Try Demo** sits under the banner on Capture ("No Mac yet? See every screen with sample data. Nothing leaves this iPhone."), and in Search, the Inbox and Settings while the iPhone isn't paired. The demo has 20 active memories (plus one archived and one recently deleted), three Inbox suggestions, and a Share, a Save and an access request under **Waiting for you**, whose panels answer as with a Mac. Every tab's banner is an orange DEMO label with "Demo vault: not your data" and **Leave Demo**; Settings has a Demo section with the Demo Vault switch. A capture goes to the demo's Inbox as a "Demo capture", and its Recent captures row says "Sent to the demo Inbox". Demo mode isn't remembered: the app always launches on the real pairing, and leaving the demo discards its edits and captures. Nothing in it touches the network, the pairing, iCloud or the real capture queue.
 
 - *From v0.4 (task 7.1, built):* the DEMO label is the [status bar](#status-bar) (with Leave Demo), from the first frame and on every tab, and Try Demo is on Capture's pairing card (from task 7.4, Home's, in place of the charts) and in Search, the Inbox and Settings while the iPhone isn't paired. Home's charts show the demo's 12 weeks of sample counts.
+
+- *From v0.6:* the demo's Search has the Ask pill. A few sample questions get canned answers from `DemoVault`, citing its memories ("When does my lease renew?", "What's my next garden milestone?", "How often do I run?"); any other search gets "In the demo, try: When does my lease renew?". No network.
 
 ## Accessibility
 - Dynamic Type everywhere, VoiceOver labels on badges ("Sensitivity: Internal"), and Reduce Motion respected.

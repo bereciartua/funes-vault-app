@@ -75,6 +75,7 @@
 - Acceptance:
   - Results within 150 ms for a 10,000-memory vault on an M1.
   - Queries that look like secrets skip semantic embedding, as in the web version.
+- **v0.6:** each result's snippet is the passage that matches the search (FR-V-17), and Search answers can answer from the top results when asked (FR-AI-17).
 
 **FR-V-11 Filters and sort** · M · v0.1
 - Filter by category, kind, sensitivity, status (active, archived, expired, recently deleted) and source. Sort by updated, created or title.
@@ -105,6 +106,10 @@
 - Kept 90 days and at most 50 per memory, then deleted by the daily cleanup; purged with the memory and by Delete Now.
 - **Forget Earlier Versions…** in a memory's History deletes its earlier versions. Settings ▸ Data ▸ **Keep earlier versions for 90 days** (on by default) turns them off, deleting every one after a confirmation.
 - Acceptance: earlier versions never reach agents, exports, the iPhone, logs or AI model providers; the policy engine, retrieval and memory processing never read them.
+
+**FR-V-17 Matching snippets** · S · v0.6 ([ADR-0028](../architecture/decisions/0028-search-answers.md))
+- A search result's snippet, in the Vault and in `memories.search` for the iPhone, is the passage of its body that best matches the search's terms, trimmed around the match to the snippet's length, instead of the body's first characters. Without a search, or when no term matches, it's the body's start, as before. Both apps highlight the search's words in it. See [memory processing §10.2](../domain/memory-processing.md#102-snippets).
+- Acceptance: FR-V-10's 150 ms holds with snippets on a 10,000-memory vault; no model is used; the snippet is a verbatim slice of the body (with "…" where trimmed), never longer than before.
 
 ### Capture (FR-C)
 
@@ -380,6 +385,7 @@
 
 **FR-P-05 Companion endpoints** · M · v0.2
 - Captures (batch), search, get memory, create, update, archive, delete, Inbox list, apply and reject, categories, and status. See the [companion protocol](../architecture/companion-protocol.md).
+- **v0.6:** answer a search (`memories.answer`, FR-iOS-13), with its own deadline.
 
 **FR-P-06 Discovery** · M · v0.2
 - The Mac advertises `_funes._tcp` over Bonjour while iPhone access is on.
@@ -410,6 +416,7 @@
 
 **FR-iOS-07 Search and view** · M · v0.2
 - Search the vault through the Mac. Results show titles and snippets; a memory opens with full text and provenance.
+- **v0.6:** snippets show the passage that matches the search (FR-V-17), and Search answers are available on the iPhone (FR-iOS-13).
 
 **FR-iOS-08 Edit** · M · v0.2
 - Edit, archive and delete memories, with the same validation as the Mac (the Mac does the validation).
@@ -430,6 +437,13 @@
   - The first answer wins, on the Mac or the phone; the other then shows it as answered. The same single-use, 15-minute and invalidation rules apply.
   - Answering needs the phone unlocked. Each answer is a signed companion request, logged in Activity under the device.
   - With the Mac unreachable, the notification says so, and the request waits on the Mac as usual.
+
+**FR-iOS-13 Search answers on the iPhone** · S · v0.6 ([ADR-0028](../architecture/decisions/0028-search-answers.md))
+- When the Mac has Search answers on, the iPhone's Search shows an **Ask Funes** pill under the field (Active scope, a non-empty search with results). Tapping it asks the Mac (`memories.answer`, with the ids of the results shown) and shows the same card as the Mac at the top of the list, with **Cancel**; a claim's number opens the memory with the quoted sentence highlighted. Settings ▸ Search answers: **Show Ask in Search** (on by default, this iPhone only) and which engine answers. The model is always chosen on the Mac.
+- Acceptance:
+  - The phone sends ids, never memory text; nothing about the answer is kept after leaving Search or changing the search.
+  - A model failure, timeout, the daily cap or answers turned off on the Mac each show their own message, never "Mac not reachable"; the call is never resent automatically.
+  - In demo mode a few sample questions get canned answers from the demo vault, with no network; others say which to try.
 
 ### Home and overview (FR-H)
 *v0.4, [Phase 7](../plans/phase-7-home.md), [ADR-0025](../architecture/decisions/0025-vault-overview-and-iphone-cache.md).*
@@ -597,7 +611,7 @@
   - Activity marks remote rows ("via Remote Access") and stores no forwarded address.
 
 **FR-AI-05 Choose models per task** · M · v0.1
-- Settings ▸ AI Models has one row per task, each with a provider and a model: Embeddings (built in with no choice until v0.3, then optionally a provider model, FR-AI-11); Classification, renamed **New memories** in v0.3 (FR-AI-13); and from v0.3 **Daily tidy-up** (FR-AI-03).
+- Settings ▸ AI Models has one row per task, each with a provider and a model: Embeddings (built in with no choice until v0.3, then optionally a provider model, FR-AI-11); Classification, renamed **New memories** in v0.3 (FR-AI-13); from v0.3 **Daily tidy-up** (FR-AI-03); and from v0.6 **Search answers** (FR-AI-17), off by default.
 - **Providers:** Apple on-device (default), Apple Private Cloud Compute, Ollama, LM Studio, OpenAI, Anthropic, Google Gemini, OpenRouter, and custom OpenAI-compatible endpoints; from v0.3, the user's Claude or ChatGPT plan through their own Claude Code or Codex (FR-AI-16).
 - Acceptance:
   - The defaults send nothing off the Mac.
@@ -619,7 +633,7 @@
   - With a provider embedding model, memories above the limit keep only their bundled vector (FR-AI-11).
 
 **FR-AI-08 Disclosure of model use** · M · v0.1
-- Under each non-local choice, a plain sentence says what is sent where. For example: "Search embeddings send memory text (up to Internal), your searches and agents' task descriptions to OpenAI." From v0.3: "New memories sends captures, agent suggestions and imports, plus related memories (up to Internal) and your category names, to Anthropic."
+- Under each non-local choice, a plain sentence says what is sent where. For example: "Search embeddings send memory text (up to Internal), your searches and agents' task descriptions to OpenAI." From v0.3: "New memories sends captures, agent suggestions and imports, plus related memories (up to Internal) and your category names, to Anthropic." From v0.6: "Search answers send your search and its top results (up to Internal) to Anthropic, when you ask."
 - Inbox cards show which engine proposed their fields, and Applied automatically rows which engine proposed the change.
 
 **FR-AI-09 Agent task text and cloud embeddings** · M · v0.3 (ADR-0016, ADR-0023)
@@ -662,7 +676,7 @@
   - A level can't be enabled until its thresholds reach the target precision on the fixtures.
 
 **FR-AI-15 Daily request cap** · S · v0.3 ([ADR-0022](../architecture/decisions/0022-cloud-limit-and-daily-cap.md))
-- At most N cloud generation requests per local day (default 300, adjustable), shared by FR-AI-13 and FR-AI-03; embeddings don't count. Agents may use at most 40% of it.
+- At most N cloud generation requests per local day (default 300, adjustable), shared by FR-AI-13, FR-AI-03 and, from v0.6, FR-AI-17 (not in the agents' share); embeddings don't count. Agents may use at most 40% of it.
 - Acceptance: the count survives restarts; at the cap the user's captures fall back to on-device, while agent input, imports and the tidy-up wait for the next day; a notice says so once a day.
 
 **FR-AI-16 Subscription providers** · M · v0.3 ([ADR-0024](../architecture/decisions/0024-subscription-providers.md))
@@ -673,6 +687,17 @@
   - A Codex version with an enabled feature Funes doesn't know is safe, or a CLI below the minimum version, is shown as unavailable and never called. Codex's `unified_exec` (commands that can read files), which can't be switched off, is accepted only with the user's opt-in, off by default and shown with a warning; Claude Code's built-in plugins are accepted only from a known list.
   - The cloud limit, secret scanner and daily cap apply as for any cloud provider; the disclosure line names the plan and says its training setting applies.
   - Signed out, plan limit reached and missing CLI each show a clear status and fall back like a provider that's down.
+
+**FR-AI-17 Search answers** · M · v0.6 ([ADR-0028](../architecture/decisions/0028-search-answers.md))
+- Settings ▸ AI Models ▸ **Search answers**: Answer (**Off**, the default · Only when I ask) and Model (Same as New memories, or any generation provider). When on, **⌘⏎** in the Vault's search field or the **Ask Funes** row on top of the results (in the Active scope, with a non-empty search that has results) asks the chosen model to answer the search from its top 8 results. The answer appears in place as a card at the top of the list: up to 3 claims, each with the quote it came from and numbered links to the memories. See [memory processing §10](../domain/memory-processing.md#10-search-snippets-and-answers).
+- Acceptance:
+  - Search results show as before and never wait for, move for or get selected by the answer; changing the search, scope or filters clears the card; **Cancel** stops the call (a subscription CLI's process ends).
+  - Every claim shown quotes text that was sent for a memory it cites, checked by code; a claim with any quote that fails isn't shown, and the card says how many were left out. With none left: "No answer in the 8 results read."
+  - For a cloud model, nothing above the cloud limit and no secret-scanner match is sent (tested with request capture); the card says how many memories weren't read. The search text passes the secret scanner, as for provider embeddings.
+  - Each attempt counts against the daily cap (FR-AI-15); at the cap, the card says so and search keeps working.
+  - A failed, timed-out (45 s) or unavailable model shows why, with **Try Again**; there's no fallback to another model.
+  - Nothing is stored but a text-free Activity row (`search_answered`: counts, engine, duration, outcome).
+  - Ships only after Spike F's gates: correct claims ≥ 95%, the right "no answer" ≥ 90%, answered ≥ 80% of answerable questions, p95 ≤ 15 s with the chosen default model ([Phase 9.2](../plans/phase-9-search-answers.md#92-spike-f-answer-quality--½-weekend)).
 
 ---
 
