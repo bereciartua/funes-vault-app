@@ -32,3 +32,4 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 | 0026 | [A small "About you" profile beside the vault, shared per agent and per field with memory requests](0026-about-you-profile.md) | Accepted |
 | 0027 | [Keep each memory's earlier versions for 90 days, so every change can show what it replaced](0027-memory-revisions.md) | Accepted |
 | 0028 | [Search answers: snippets that show the matching sentence, and an Ask that quotes your memories, on the Mac and the iPhone](0028-search-answers.md) | Accepted |
+| 0030 | [Settings gets a sidebar; AI splits into features, accounts and limits; an account offers several models](0030-settings-window.md) | Accepted |

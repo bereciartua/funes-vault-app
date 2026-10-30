@@ -200,7 +200,7 @@ One structured-output call per chunk returns pieces:
 - **Caller metadata** and the agent's `evidence` are never sent to a model, and never copied to the pieces.
 
 ### 5.7 Auto-apply for new memories
-The setting is shared with the tidy-up (Settings ▸ AI Models ▸ Apply changes automatically: **Off** · Duplicates only · Everything except conflicts; [model providers §4](../architecture/model-providers.md#4-configuration-settings--ai-models)).
+The setting is shared with the tidy-up (Settings ▸ AI Models ▸ Apply changes automatically: **Off** · Duplicates only · Everything except conflicts; [model providers §4](../architecture/model-providers.md#4-configuration-settings--ai)).
 
 | Level | The user's captures and imports |
 |---|---|
@@ -358,7 +358,7 @@ Both steps ask FTS5 where the search's terms are, so they agree with keyword sea
 ```
 - **Apple on-device's window:** before the call, the prompt's size plus the largest valid output (3 claims × (300 + 2 × 300) characters) is estimated at 3 characters a token; while it's over 4,096 tokens, the lowest-ranked memory is dropped. If none fits, the answer fails with "This search is too long for the on-device model."
 - **Timeout:** 45 s for the model call, from when it's sent. Preparing the prompt (one `highlight()` query and the trimming) takes well under a second; the Mac's deadline for `memories.answer` (50 s) covers both.
-- **The daily cap** ([model providers §4](../architecture/model-providers.md#4-configuration-settings--ai-models)): a call to a cloud provider that passes the guard counts once, even if it then fails, times out or is cancelled; it isn't in the agents' share. Calls to on-device and local-server providers, and calls refused before sending (the secret scanner, nothing left to send), don't count.
+- **The daily cap** ([model providers §4](../architecture/model-providers.md#4-configuration-settings--ai)): a call to a cloud provider that passes the guard counts once, even if it then fails, times out or is cancelled; it isn't in the agents' share. Calls to on-device and local-server providers, and calls refused before sending (the secret scanner, nothing left to send), don't count.
 
 ### 10.4 Validation (code)
 - **Refs:** only aliases from this call; a citation of another is a failed quote.

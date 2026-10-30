@@ -14,8 +14,7 @@ Main window ───┬─ Home         (v0.4: compose, the vault's pulse and s
                ├─ Agents       (connections: access, connect, cloud, activity)
                ├─ Remote Access (cloud agents through your tunnel; experimental, off by default)
                ├─ Activity     (log)
-               ├─ iPhone       (v0.2: pairing, devices, reachability)
-               └─ Settings     (about you, general, capture, MCP, data, updates, advanced)
+               └─ Settings…    (a separate window, v0.8: about you · general · notifications · capture & shortcuts · AI: features, models & accounts, privacy & limits · agent server · iPhone · data & backups · advanced)
 ```
 
 ## Menu bar
@@ -292,44 +291,317 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
 - **Devices:** name, model, paired date, last seen, connection used, and **Remove…** (it revokes the device). At most five.
 
 ### Settings
-- **About You** (v0.5, the first pane; [ADR-0026](../architecture/decisions/0026-about-you-profile.md)): what Funes and your agents call you. Every field is optional.
-  ```
-  Name            [Martin      ] [Bereciartua   ]     (given · family, in the locale's order)
-  Call me         [Martin      ]  (placeholder: the given name)
-  Pronouns        [he/him      ]
-  Languages       English · Spanish        [+] [−]   (drag to reorder; the first is the one you write in most)
-  Location        [Lisbon, Portugal                ]
-  Time zone       Automatic (Europe/Lisbon) ▾
-  Occupation      [                                ]
+*From v0.8 ([ADR-0030](../architecture/decisions/0030-settings-window.md), [Phase 11](../plans/phase-11-settings.md)). Until then Settings is a toolbar of nine tabs: About You, General, Capture, AI Models, MCP, iPhone, Data, Updates and Advanced, with the same controls ([Phase 11's control map](../plans/phase-11-settings.md#control-map) says where each goes).*
 
-  Shared with: Name 3 agents · Pronouns 1 agent · the others with none.
-  Agents get only the fields you tick in each one's Access tab. New agents get your name.
-  ```
-  - **Saves** when a field loses focus or Return is pressed, like the other panes. The secret scanner checks each field; a match keeps the old value, with the scanner's usual message under the field.
-  - **Prefill:** an empty profile shows the macOS account's name as the fields' placeholders, never as their values, so nothing is saved until the user types or clicks **Use "Martin Bereciartua"** (shown only when the account's name looks like a person's).
-  - **Shared with** names the agents on hover and each count opens a list with links to the agents' Access tabs. A removed agent isn't counted.
-  - **Languages:** a picker of the system's languages; **Time zone:** Automatic (following the Mac, shown in parentheses) or a searchable list of time zones.
-  - Logged in Activity as "Edited About you · Pronouns" (field names, no values).
-- **General:**
-  - **Appearance:** Automatic, Light or Dark (FR-G-06), a pop-up with "Automatic follows macOS." under it. Automatic is the default. The choice applies at once to every window, panel, sheet and alert, and to the menu bar menu, and is kept across relaunches. The app menus (File, Edit…) follow the menu bar, as in every app. EK Bridge has the same setting with the same words.
-  - Launch at login, show in Dock, the Review Request shortcut (⌃⌥⌘R), notifications.
-- **Capture:** hotkey, default sensitivity for captures ("At least <level>": a minimum no proposal, rules or model, goes below), and whether proposals are on (a line pointing to AI Models). With a cloud classifier it says "New captures are sent to <provider> to suggest their fields, within the cloud limit in AI Models." From v0.3 (Phase 6.1) the classification switch is in AI Models ▸ New memories, next to the split switch.
-- **AI Models:**
-  - **Tasks:** Embeddings (v0.1: "Built in (bge-small, on this Mac)", no choice; v0.3: optionally a provider model as a second index), Classification (v0.3: **New memories**, with "Split into separate memories"), and from v0.3 **Daily tidy-up** (Daily at <time> · Off, **Tidy up now**, "Last tidy-up: …"). Each has a provider pop-up with a locality badge (On this Mac · Local server · Apple cloud · Cloud), a model pop-up, and a status ("Ready", "Re-embedding 1,240 / 3,000", "Unavailable: using on-device").
-  - **Apply changes automatically** (v0.3): Off (recommended) · Duplicates only · Everything except conflicts, with one line each on what it does and "Agents always follow their own access." A level whose thresholds haven't reached their target precision is disabled.
-  - **Cloud requests per day** (v0.3): 300 by default, with today's count ("112 of 300 today"; agents 40 of 120).
-  - **Providers:** add or edit (base URL, API key stored in the Keychain, local or cloud), **Test connection**, usage counters. v0.3: **Use your subscription** lists **Claude (Claude Code)** and **ChatGPT (Codex)** when installed, with their sign-in state ("Signed in to Claude Code" · "Not signed in: run `claude` in Terminal" · "Update Codex to use it"), **Test connection**, and the line "Uses your plan's limits. Your account's training setting applies." No key field.
-  - **Cloud limit:** "Never send captures above **Internal**" (in v0.1 only captures are classified; the limit covers anything a later version sends). From Phase 6.1: "Send memories to cloud models up to: Public · Low · **Internal (recommended)** · Sensitive · Restricted · Everything, including Secret · Nothing", one limit for every task; moving above Internal asks to confirm, naming the provider.
-  - **Cloud requests per day** (Phase 6.1): a stepper (300 by default) and "Today: 12 of 300, agents 3 of 120". At the limit a HUD says so once a day.
-  - **New memories** (Phase 6.1): the provider and model, "Propose a title, kind and categories" (moved from Capture), "Split into separate memories" (6a: off by default, available with a local server or cloud model; its caption and the disclosure line say what's sent), and **Apply changes automatically** (Off; a level stays disabled until an engine reaches its precision, which none has for New memories).
-  - **Embedding options** (v0.3): under Embeddings, **Provider model** (None, or one of the OpenAI-compatible providers, then a model with suggestions, **Load Models** and **Use…**, which checks it and asks to confirm with the memory and token counts); once chosen, its status ("Embedding 1,240 of 3,000. Search uses bge-small until it's done." with **Cancel**; "Ready: …"; an error with **Retry**), **Stop Using…**, and for a cloud model "Embed agent requests with the cloud model" and the disclosure line. A memory above the cloud limit says "Searched on this Mac only (above cloud limit)." on its page.
-  - **Search answers** (v0.6, FR-AI-17): **Answer** (Off, the default · Only when I ask · Automatically for questions · Automatically for every search), **Model** (Same as New memories, Apple on-device, or a provider and model, with the locality badge), the status ("Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone."; "Apple's on-device model is slow on this Mac: answers may take 30 s or more."; with an automatic choice, "Ready. A search that's a question is answered after a short pause, on this Mac and your iPhone; press ⌘⏎ to ask about any other." or "Ready. Every search is answered after a short pause, on this Mac and your iPhone.", and for Apple on-device "Apple's on-device model is too slow to answer on its own: it answers only when you ask, and may take 30 s or more."; "Choose a model to answer searches."), a caption ("Each claim quotes the memory it came from, and claims it can't quote aren't shown.") and the disclosure line ("Search answers send your search and its top results (up to Internal) to Claude through your Claude Code sign-in, when you ask. It counts toward your plan's limits."; with an automatic choice, "…when you ask or pause on a question." or "…each time you pause on a search.", and "Each answer counts toward your plan's limits and today's 300 cloud requests.").
-  - **Disclosure:** a sentence under every non-local choice saying exactly what is sent where.
-  - **Calibrate…** (v0.3) for embedding models Funes doesn't know.
-- **MCP:** server on/off, port (47625 by default; changing it says which agents need their setup again), launcher location, protocol log counts (no bodies).
-- **Data:** backups, **Keep earlier versions for 90 days** (v0.5, on by default; turning it off asks first, "Stop keeping earlier versions?", and deletes them), export, import, Show in Finder, Erase All Data. Restore from Backup relaunches; before the chosen backup replaces the vault, the current vault is saved as a self-contained `pre-restore-…` backup (an SQLite online backup, so nothing still in the WAL is lost).
-- **Updates:** automatic checks, Check Now.
-- **Advanced:** activity retention, reset the setup checklist.
+#### Window
+```
+┌──────────────────────────┬───────────────────────────────────────────────┐
+│ ● ● ●                    │ ‹ Features   Daily tidy-up                    │  ← toolbar: back (on a page) and title
+│ (MB) Martin Bereciartua  │                                               │
+│      About You           │   grouped Form, as today                      │
+│ ─────────────────────    │                                               │
+│ ⚙ General                │                                               │
+│ 🔔 Notifications          │                                               │
+│ ✎ Capture & Shortcuts    │                                               │
+│ AI                       │                                               │
+│ ✦ Features               │                                               │
+│ 🔑 Models & Accounts      │                                               │
+│ 🛡 Privacy & Limits       │                                               │
+│ CONNECTIONS              │                                               │
+│ ⏚ Agent Server           │                                               │
+│ ▯ iPhone                 │                                               │
+│ VAULT                    │                                               │
+│ ⛁ Data & Backups         │                                               │
+│ ☰ Advanced               │                                               │
+└──────────────────────────┴───────────────────────────────────────────────┘
+```
+- **Sidebar:** fixed width (about 210 pt), not collapsible (no sidebar toggle), no search field. If `NavigationSplitView` can't hold that on every supported macOS ([Phase 11.0](../plans/phase-11-settings.md) checks), a plain `List` beside the detail gives the same look. Each pane has a colored rounded-square icon (SF Symbols, as today's tab symbols). Group headers are plain labels (AI, Connections, Vault), not disclosure groups.
+- **Profile row:** the initials of Call me or the given and family name (a person symbol while empty), the full name, and "About You" under it. While the profile is empty it reads "About You" alone.
+- **Size:** 820×600 by default, at least 760×520; the frame is remembered (not in a development vault, as today).
+- **Opening:** ⌘, the menu bar's Settings… and the main window's Settings… open the last pane shown, General the first time. A deep link opens its destination (below).
+- **Pages:** a row with a chevron opens a page inside the pane. The toolbar shows "‹ <pane>" and the page's title; ⌘[ goes back. Back never leaves the pane. Choosing a pane in the sidebar, or reopening the window, shows that pane's top level.
+- **Keyboard:** ↑↓ move in the sidebar when it has focus; Tab moves between the sidebar and the pane; Esc doesn't close the window (as today).
+- **VoiceOver:** the sidebar is a list with the group names as headings; the profile row reads "About You, Martin Bereciartua". The back button reads "Back to Features".
+
+#### Destinations
+| Destination | Opens | Used by |
+|---|---|---|
+| `about-you` | About You | Agents ▸ Access ▸ About You…, the seed sheet |
+| `general` | General | |
+| `notifications` | Notifications | |
+| `capture` | Capture & Shortcuts | |
+| `ai.features` | AI ▸ Features | |
+| `ai.features/new-memories` | its page | Capture's "New memories…" link, Inbox processing card |
+| `ai.features/tidy-up` | its page | the tidy-up's errors (Inbox header, memory detail) |
+| `ai.features/search-answers` | its page | search answers' errors in the Vault, the iPhone's hint |
+| `ai.features/search-index` | its page | |
+| `ai.accounts` | AI ▸ Models & Accounts | Add a Model… in any job picker |
+| `ai.accounts/<account id>` | an account's page | "check the API key" / "not signed in" errors |
+| `ai.privacy` | AI ▸ Privacy & Limits | the cap's HUD |
+| `agent-server` | Agent Server | the launcher's "port in use" message names it |
+| `iphone` | iPhone | |
+| `data` | Data & Backups | the integrity-check notification |
+| `advanced` | Advanced | the setup checklist's "brings it back" |
+
+**Which link an error uses:** when a job fails because of its account (no key, not signed in, Codex not allowed, a CLI paused after a tool event), the account's page; otherwise the job's page. An account destination that no longer exists opens Models & Accounts.
+
+The written path in strings is "Settings ▸ AI ▸ Features ▸ Daily tidy-up", "Settings ▸ AI ▸ Models & Accounts", "Settings ▸ Agent Server", and so on.
+
+#### About You
+What Funes and your agents call you (v0.5; [ADR-0026](../architecture/decisions/0026-about-you-profile.md)). Every field is optional. Opened from the profile row.
+```
+Name            [Martin      ] [Bereciartua   ]     (given · family, in the locale's order)
+Call me         [Martin      ]  (placeholder: the given name)
+Pronouns        [he/him      ]
+Languages       English · Spanish        [+] [−]   (drag to reorder; the first is the one you write in most)
+Location        [Lisbon, Portugal                ]
+Time zone       Automatic (Europe/Lisbon) ▾
+Occupation      [                                ]
+
+Shared with: Name 3 agents · Pronouns 1 agent · the others with none.
+Agents get only the fields you tick in each one's Access tab. New agents get your name.
+```
+- **Saves** when a field loses focus or Return is pressed, like the other panes. The secret scanner checks each field; a match keeps the old value, with the scanner's usual message under the field.
+- **Prefill:** an empty profile shows the macOS account's name as the fields' placeholders, never as their values, so nothing is saved until the user types or clicks **Use "Martin Bereciartua"** (shown only when the account's name looks like a person's).
+- **Shared with** names the agents on hover and each count opens a list with links to the agents' Access tabs. A removed agent isn't counted.
+- **Languages:** a picker of the system's languages; **Time zone:** Automatic (following the Mac, shown in parentheses) or a searchable list of time zones.
+- Logged in Activity as "Edited About you · Pronouns" (field names, no values).
+
+#### General
+```
+Appearance                    [Automatic ▾]
+  Automatic follows macOS.
+Open Funes Vault at login     [●]
+Show in Dock                  [ ]
+  Funes Vault always stays in the menu bar. …
+
+UPDATES
+Check for updates every day   [●]
+Last checked                  Today 09:12
+                              [Check Now]
+  Updates come from GitHub, signed for Funes Vault. …
+Version                       0.7.0 (21)
+```
+- **Appearance:** Automatic, Light or Dark (FR-G-06). Automatic is the default. The choice applies at once to every window, panel, sheet and alert, and to the menu bar menu, and is kept across relaunches. The app menus (File, Edit…) follow the menu bar, as in every app. EK Bridge has the same setting with the same words.
+- The login-approval line and errors as today. A copy that doesn't update shows today's "This copy of Funes Vault doesn't check for updates…" instead of the three update rows; Version stays.
+
+#### Notifications
+Today's four switches and "Notifications never include memory text.", moved from General unchanged.
+
+#### Capture & Shortcuts
+```
+SHORTCUTS
+Quick capture       [⌥⌘M]  [Turn Off]           [Try It]
+  Opens the capture box from any app. …
+Review Request      [⌃⌥⌘R] [Turn Off]
+  Brings a waiting approval panel forward from any app, …
+
+NEW CAPTURES
+Sensitivity         [Let Funes propose it ▾]
+  Funes proposes a title, kind and categories with the New memories model; you review every proposal in the Inbox.
+  ↗ New captures are sent to Claude to suggest their fields, within the cloud limit.     (only with a cloud model)
+  New memories…     (link to AI ▸ Features ▸ New memories)
+
+FROM OTHER APPS
+  Select text in any app, then choose Services ▸ Remember in Funes. It goes to your Inbox.
+```
+- **Sensitivity** is a minimum: "At least <level>" means no proposal, from rules or a model, goes below it.
+- Both shortcut recorders as today ("Use ⌥⌘M" to restore, conflicts reported). The Review Request shortcut moves here from General.
+
+#### AI ▸ Features
+```
+┌ New memories                     Claude · haiku  [Cloud]   › ┐
+│   Proposes a title, kind and categories · Splits notes       │
+├ Daily tidy-up                    Same model      [Cloud]   › ┤
+│   Daily at 03:00 · Last run today, 4 suggestions             │
+├ Search answers                   Apple on-device [On this Mac] › ┤
+│   Only when you ask (⌘⏎)                                     │
+├ Search index                                    [On this Mac] › ┤
+│   Built in (bge-small) · Ready                               │
+└──────────────────────────────────────────────────────────────┘
+  Each feature uses a model from Models & Accounts.
+
+REVIEW
+Apply changes automatically       [Off ▾]
+  (today's caption: what each level does, "Agents always follow their own access.", Undo for 30 days)
+
+What leaves this Mac ›            (opens Privacy & Limits)
+```
+- **Row summaries** (second line):
+  - New memories: "Proposes a title, kind and categories", then "· Splits notes" when split is on; with proposals off, "Splits notes" when split is on, or "Simple rules on this Mac".
+  - Daily tidy-up: "Off", or "Daily at 03:00", then "· Last run today, 4 suggestions" or "· Not run yet".
+  - Search answers: "Off", "Only when you ask (⌘⏎)", "Automatically for questions", "Automatically for every search".
+  - Search index: "Built in (bge-small) · Ready", plus " · qwen3-embedding:0.6b (Ollama): Embedding 1,240 of 3,000" or "…: Ready".
+- **Row trailing:** the effective model ("Claude · haiku", "Same model" when it follows New memories, "Apple on-device", "Rules only" for a tidy-up with no model) and its locality badge. When the job can't run as chosen, an orange label replaces both, from configuration only ([ADR-0030 §6](../architecture/decisions/0030-settings-window.md)): "Choose a model" (unresolved), "Needs a key", "Not signed in", "Needs your OK" (Codex), "Paused after a tool use", "Not available on this Mac" (Apple Intelligence).
+- Search answers' row shows no model while Answer is Off.
+- **Apply changes automatically:** Off (recommended) · Duplicates only · Everything except conflicts. A level whose engine hasn't reached its target precision is disabled (none has for New memories; the tidy-up's level follows its chosen model).
+
+##### Page: New memories
+```
+Model             [Claude · haiku ▾] [Cloud]
+  Ready. If it fails, Funes uses the on-device model, then rules.
+  ↗ New memories sends new captures (up to Internal) and your category names and descriptions to Claude through your Claude Code sign-in. …
+Propose a title, kind and categories   [●]
+Split into separate memories           [●]
+  (today's split caption)
+```
+- **Model** pop-up: Apple on-device; then, per configured account, a section with its name and its models ("haiku", "opus"), with why it can't run now after the name ("No key", "Not signed in"); then **Add a Model…**. A plan shows when its CLI is found or it's the current choice (today's rule). An account with no models shows "No models" (disabled). An unresolved choice shows "<account> · Choose a model".
+- Status, disclosure, the split switch's availability and captions: today's text and rules, with the account and model the choice names.
+
+##### Page: Daily tidy-up
+```
+Schedule          [Daily ▾] [03:00]        [Tidy Up Now]
+Model             [Same as New memories ▾]
+  (today's caption, with the last run or the estimate)
+  ↗ The daily tidy-up sends related memories (up to Internal), with their dates and sources, to Claude.
+```
+- **Model** pop-up: Same as New memories; then the accounts' models; no Apple on-device (as today); Add a Model….
+- Turning Daily on asks for notification permission, as today.
+
+##### Page: Search answers
+```
+Answer            [Only when I ask ▾]
+Model             [Same as New memories ▾] [Cloud]        (hidden while Off)
+  Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone. Each claim quotes the memory it came from, …
+  ↗ Search answers send your search and its top results (up to Internal) to Claude …
+```
+- **Answer:** Off, the default · Only when I ask · Automatically for questions · Automatically for every search. **Model:** Same as New memories, Apple on-device, or an account's model, with the locality badge.
+- **Status:** "Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone."; with an automatic choice, "Ready. A search that's a question is answered after a short pause, on this Mac and your iPhone; press ⌘⏎ to ask about any other." or "Ready. Every search is answered after a short pause, on this Mac and your iPhone."; for Apple on-device "Apple's on-device model is slow on this Mac: answers may take 30 s or more." (or, with an automatic choice, "…too slow to answer on its own: it answers only when you ask…"); "Choose a model to answer searches."
+- **Disclosure:** "Search answers send your search and its top results (up to Internal) to Claude through your Claude Code sign-in, when you ask. It counts toward your plan's limits."; with an automatic choice, "…when you ask or pause on a question." or "…each time you pause on a search.", and "Each answer counts toward your plan's limits and today's 300 cloud requests."
+
+##### Page: Search index
+Today's Embeddings rows (FR-AI-09, FR-AI-11): the built-in bge-small and its status; **Second index**: account (OpenAI-compatible accounts only) and model, Load Models, Use… with its confirmation; once chosen, its status, Cancel or Retry, Calibrate…, "Embed agent requests with the cloud model" and the disclosure line for a cloud model, and Stop Using…. "Provider model" is renamed **Second index**. **Use…** checks the model and asks to confirm with the memory and token counts; the status reads "Embedding 1,240 of 3,000. Search uses bge-small until it's done.", "Ready: …" or an error with **Retry**. A memory above the cloud limit says "Searched on this Mac only (above cloud limit)." on its page.
+
+#### AI ▸ Models & Accounts
+```
+                                                  [Add Account ▾]
+BUILT IN
+Apple on-device    Used by: Search answers         Ready        [On this Mac]
+bge-small          Used by: Search index           Ready        [On this Mac]  ›
+
+YOUR PLANS
+Claude (Claude Code)  Used by: New memories, Daily tidy-up   Signed in   [Cloud]  ›
+ChatGPT (Codex)       Install Codex and sign in to use your ChatGPT plan.  Not installed  ›
+
+API KEYS
+Anthropic          Used by: none                   Key in Keychain  [Cloud]   ›
+
+LOCAL SERVERS
+Ollama             Used by: Search index           1 model      [Local server] ›
+
+  Keys stay in this Mac's Keychain, never in the vault, exports or Activity.
+```
+- **Groups:** Built in, Your plans, API keys, Local servers. An OpenAI-compatible account goes under Local servers when its endpoint resolves local and isn't marked cloud, under API keys otherwise (cloud until resolved). Empty groups show one line: "None. Add one with Add Account…" (API keys, Local servers).
+- **Row:** name; "Used by: …" (the jobs whose effective choice is this account, or "none"); the state ("Ready", "Key in Keychain", "No key", "Signed in", "Not signed in", "Not installed", "Update Codex to use it", "Off: needs your OK to read files" for Codex; for a local server, its number of models, or "No models"); the locality badge. Funes doesn't probe servers to fill this in: Test Connection is still the check.
+- **Apple on-device** has no page; its state is "Ready" or "Not available on this Mac". **bge-small** opens Features ▸ Search index.
+- **Add Account…** menu: Anthropic, OpenAI, Ollama, LM Studio (a preset already added is disabled, as today), then Other OpenAI-Compatible Server…. It opens today's add sheet (Name, Base URL, API key, It's a cloud service, a first **Model** with Load Models, Test Connection); **Add** saves and opens the new account's page. Plans aren't added: they're found on the Mac.
+
+##### Account page: an API key or a local server
+```
+Anthropic                                         [Cloud]
+  Key in Keychain · Ready
+
+CONNECTION
+Name          [Anthropic                 ]
+Base URL      [https://api.anthropic.com ]
+API key       [Saved; type to replace    ]
+It's a cloud service  [ ]          (OpenAI-compatible only, with today's caption)
+
+MODELS
+claude-haiku-5-5                              [Remove]
+claude-opus-5-5                               [Remove]
+[Model name             ] [Load Models ▾] [Add]
+  Chat models, for New memories, the tidy-up and search answers. Embedding models are chosen in Features ▸ Search index.
+
+USED BY
+New memories · claude-haiku-5-5    ›
+Daily tidy-up · claude-opus-5-5    ›
+
+TEST
+[claude-haiku-5-5 ▾]  [Test Connection]
+  Works: it proposed “Dentist on Tuesday” in 1.8 s.
+  Test Connection classifies one made-up note …; none of your memories or category names are sent.
+
+USAGE
+412 requests · 1,203,550 tokens in · 80,112 out     [Reset Usage]
+
+                                         [Remove Account…]
+```
+- **Connection fields save** when they lose focus or on Return, like About You; a base URL that isn't a URL keeps the saved one with a red line under it.
+- **API key:** saves on Return or **Save Key**, never by leaving the field; leaving the page discards a key that wasn't saved. An empty field does nothing; **Remove Key** (shown while a key is saved) deletes it. If the Keychain refuses, "The key couldn't be saved in the Keychain." under the field, and the typed key stays until the page closes. The key is never shown.
+- **Re-embedding:** among account edits, only a change to the address, key or cloud flag of the account the second index uses re-embeds. The name and the models don't. (The cloud limit, the embedding choice and Calibrate still re-embed, as today.)
+- **Models:** an ordered list, no duplicates, each trimmed. **Add** takes the typed name; **Load Models** lists the server's models to add (`/v1/models`, or Anthropic's list). An embedding model typed here gets today's warning ("…is an embedding model: …choose it in Features ▸ Search index"). **Remove** on a model a job uses asks first: "Daily tidy-up uses claude-opus-5-5. Remove it? The tidy-up will use the same model as New memories."
+- **Used by** rows open the job's page. With none: "No feature uses this account."
+- **Test** uses the chosen model, as today's test.
+- **Usage** counts this account only; Reset Usage resets this account.
+- **Remove Account…** asks first, naming every job that uses it, directly or by following New memories, and the second index ("Its vectors are deleted and search uses bge-small alone."). It deletes the key and the usage, resets the jobs, and stops the second index if it's this account's.
+- **Remove** on a model New memories uses also names the jobs that follow it: "Search answers follows New memories and will use Apple on-device."
+
+##### Account page: a plan
+```
+Claude (Claude Code)                              [Cloud]
+  Signed in to Claude Code 2.1.310
+
+MODELS
+haiku                                          [Remove]
+opus                                           [Remove]
+[Model name             ] [Add]
+  Your plan decides which models you can use.
+
+USED BY
+New memories · haiku   ›
+
+TEST
+[haiku ▾]  [Test Connection]
+
+USAGE
+9 requests · 31,400 tokens in · 2,050 out          [Reset Usage]
+
+  Uses your plan's limits, through the Claude Code you installed and signed in to. Funes never sees your sign-in. Your account's training setting applies.
+  Claude Privacy Settings ↗
+```
+- The state line is today's (`SubscriptionRow.text`): "Not signed in: run `claude` in Terminal and sign in with Claude", "Claude Code isn't installed on this Mac", "Update Claude Code to use it", and so on. While not installed, the page shows the state, how to install, Usage with Reset Usage (counted before, kept), and the privacy link; Models, Used by and Test need the CLI and are hidden.
+- **ChatGPT (Codex)** adds, above Models, today's switch "Use Codex even though it can read files on this Mac" and its warning. Off, its jobs can't use it and its row says so.
+- A new plan's Models start with its suggestions; a plan can't have an empty list (its last model's Remove is disabled).
+
+#### AI ▸ Privacy & Limits
+```
+Send memories to cloud models up to   [Internal (recommended) ▾]
+  Applies to every cloud provider and every task. Text is checked on this Mac first, and anything that looks like a secret is never sent, whatever the limit.
+
+Cloud requests per day                [300 ⌃⌄]
+  Today: 12 of 300, agents 3 of 120. Shared by every task that uses a cloud model; …
+
+WHAT AI FEATURES SEND
+↗ New memories: new captures (up to Internal) and your category names and descriptions, to Claude through your Claude Code sign-in.
+↗ Daily tidy-up: related memories (up to Internal), with their dates and sources, to Claude through your Claude Code sign-in.
+⌂ Search answers: nothing; Apple on-device answers on this Mac.
+⌂ Search index: memory text and your searches to Ollama, on your local network.
+  Agents, Remote Access and your iPhone are in their own panes.
+```
+- **Cloud limit:** Public · Low · Internal (recommended) · Sensitive · Restricted · Everything, including Secret · Nothing; one limit for every task (ADR-0022); moving above Internal asks to confirm, naming the provider.
+- **Cloud requests per day:** 300 by default; at the limit a HUD says so once a day.
+- **What AI features send:** one line per job that can send anything, from the same facts as the job page's disclosure, prefixed with the job's name. A local account's line says where it runs ("on this Mac", "on your local network").
+  - New memories: listed while proposals or splitting is on; with splitting, the split payload (captures, your answers, agents' suggestions and imports, each with up to 5 related memories).
+  - Daily tidy-up: listed whenever it has a model, scheduled or not, ending "every day at 03:00" or "when you tidy up".
+  - Search answers: listed while Answer isn't Off, with the effective trigger (Apple on-device answers only when asked).
+  - Search index: the built-in index sends nothing; a second index's line follows the agent-request switch and the cloud limit, including Nothing ("your searches and agents' task descriptions, but no memory text").
+  - With nothing listed: "AI features send nothing off this Mac."
+
+#### Agent Server
+Today's MCP tab, renamed, under the caption "The MCP server that agents on this Mac connect to.": Let agents connect, Status, **Port** (47625 by default; changing it says which agents need their setup again; Funes never moves on its own), Address, the port-in-use warning; Launcher (path, Link or Remove Link); Traffic since launch (counts only, never bodies).
+
+#### iPhone
+Unchanged from today (FR-P-01):
+- **Allow iPhone access**, its caption and status line (listening, starting, the Keychain and port warnings).
+- **Reach this Mac over:** Same Wi-Fi, Tailscale (with "Tailscale detected · <address>" or how to set it up) and Public tunnel, each a switch. With Public tunnel: **Public host** (saved on Return), the URL to forward to `http://127.0.0.1:<port>`, **Reset Path** and its caption ("A new path stops the old URL. Paired iPhones learn the new one when they pair again.").
+- **Paired iPhones:** each with its detail line, **Remove…** (with its confirmation) and **Approve requests on this iPhone**; the notification note; **Pair iPhone…** (the QR sheet, Allow or Deny); the five-iPhones limit line.
+
+#### Data & Backups
+Today's Data tab, renamed: Backups (daily, keep 7, Back Up Now, Restore from Backup…), **Keep earlier versions for 90 days** (v0.5, on by default; turning it off asks first, "Stop keeping earlier versions?", and deletes them), Export and import, Data folder (Show in Finder), Erase All Data…. Restore from Backup relaunches; before the chosen backup replaces the vault, the current vault is saved as a self-contained `pre-restore-…` backup (an SQLite online backup, so nothing still in the WAL is lost).
+
+#### Advanced
+Unchanged: Activity retention (two steppers, Restore Defaults) and Show the Setup Checklist Again.
 
 ## Panels
 

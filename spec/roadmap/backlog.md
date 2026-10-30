@@ -188,6 +188,17 @@ Epics map requirements to phases.
 | iPhone: `memories.answer` on both sides, per-method timeout, `SearchModel` answer state, pill and card, Settings, demo questions and answers | FR-iOS-13 | 9.5 | M | S |
 | Automatically for questions, behind a latency gate | FR-AI-17 | 9.7 | S | C |
 
+## E17: Settings (Phase 11, v0.8)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| Navigation prototype: sidebar that can't collapse, pages, deep links | ADR-0030 | 11.0 | S | M |
+| `AISettings` in FunesCore: accounts with models, plans with models, per-task choices, conversion, removal, every consumer | FR-AI-05, FR-AI-06, FR-AI-16, ADR-0030 | 11.1 | L | M |
+| Sidebar window, `SettingsDestination`, panes that only move | ADR-0030 | 11.2 | M | M |
+| AI ▸ Features: job rows and pages | FR-AI-05, FR-AI-08 | 11.3 | M | M |
+| AI ▸ Models & Accounts: account and plan pages, usage per account | FR-AI-06, FR-AI-12, FR-AI-16 | 11.4 | M | M |
+| AI ▸ Privacy & Limits and What AI features send | FR-AI-07, FR-AI-08, FR-AI-15 | 11.5 | S | M |
+| Settings paths in both apps and the docs, snapshots | ADR-0030 | 11.6 | S | M |
+
 ## E12: Later
 | Item | Covers | Size |
 |---|---|---|
