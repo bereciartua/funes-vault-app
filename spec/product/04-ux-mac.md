@@ -176,7 +176,7 @@ Two tiles side by side. Each has an icon, a name, a status line and a switch or 
 ### Last 24 hours
 - **Header:** "Last 24 hours", then the counts on the right: "13 in · 27 shared · 1 refused". Parts with nothing to say drop out; with nothing at all, "Quiet: nothing in or out".
 - **Chart:** 24 hourly bars, the current hour last ("now"). **In** sits above the line: new memories (one color, not stacked). **Shared** sits below it: memories delivered to agents. **Refused:** a dot under the hour. Each half has its own scale, as in Home's pulse. The x axis says "12:00 · 18:00 · 00:00 · 06:00 · now", following the clock.
-- **Hover** an hour: "09:00–10:00 · 1 in (iPhone) · 4 shared (Claude Code 3, Codex 1) · 1 refused" (in by source, shared by agent). An hour that happens twice when clocks go back carries its zone ("01:00–02:00 EST").
+- **Hover** an hour: "09:00–10:00 · 1 in (iPhone) · 4 shared (Claude Code 3, Codex 1) · 1 refused" (in by source, shared by agent), on one line under the chart that stays when nothing is marked, so hovering never changes the panel's height; a long one is shortened in the middle, and VoiceOver reads it whole. An hour that happens twice when clocks go back carries its zone ("01:00–02:00 EST").
 - **Click** an hour (or ⏎ on it) to open Activity filtered to that hour ("Showing 09:00–10:00 only · Show Everything"). A refused dot (or **Show Problems**) opens Activity ▸ Problems for that hour. Either closes the panel.
 - **Data:** counts only, from `VaultStore.recentPulse` (FR-H-07). Never text or titles.
 - **Empty:** "Your pulse starts with your first memories" in a new vault.

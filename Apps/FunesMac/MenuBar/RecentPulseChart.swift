@@ -86,7 +86,8 @@ struct RecentPulseSection: View {
             } else if let pulse = model.pulse {
                 RecentPulseChart(pulse: pulse, focus: focus, open: model.openHour)
             } else {
-                Color.clear.frame(height: RecentPulseChart.height + 16)
+                // The chart, its labels and the hour's line, so the read arriving doesn't move the footer.
+                Color.clear.frame(height: RecentPulseChart.height + 34)
             }
         }
         .padding(.vertical, 4)
@@ -122,6 +123,10 @@ struct RecentPulseChart: View {
     private var chartFocused: Bool { focus.wrappedValue == .chart }
     /// The hour hover or the keyboard points at.
     private var marked: Date? { hovered ?? (chartFocused ? hours[safe: focused]?.date : nil) }
+    private var markedLabel: String? {
+        guard let marked, let bucket = hours.first(where: { $0.date == marked }) else { return nil }
+        return PulseText.hourLabel(bucket, in: pulse)
+    }
 
     var body: some View {
         let scale = self.scale
@@ -195,12 +200,12 @@ struct RecentPulseChart: View {
                     }
                 }
             }
-            if let marked, let bucket = hours.first(where: { $0.date == marked }) {
-                Text(PulseText.hourLabel(bucket, in: pulse))
-                    .font(.caption).foregroundStyle(.secondary)
-                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                    .accessibilityHidden(true)
-            }
+            // The hour's breakdown, on one line that stays when nothing is marked, so hovering
+            // never changes the panel's height. VoiceOver reads each hour's full label instead.
+            Text(markedLabel ?? " ")
+                .font(.caption).foregroundStyle(.secondary)
+                .lineLimit(1).truncationMode(.middle)
+                .accessibilityHidden(true)
         }
         .onAppear {
             if reduceMotion { drawn = true } else { withAnimation(.easeOut(duration: 0.4)) { drawn = true } }
