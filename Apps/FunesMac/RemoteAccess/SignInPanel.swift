@@ -40,6 +40,15 @@ final class SignInPanelController {
                                         .priority: NSAccessibilityPriorityLevel.medium.rawValue])
     }
 
+    /// A menu bar card's Review: the waiting sign-in's panel comes forward and becomes key. Allow
+    /// still arms after a second and has no Return key: the codes must be compared.
+    func bringForward() {
+        update()
+        guard let panel, panel.isVisible else { return }
+        NSApp.activate()
+        panel.makeKeyAndOrderFront(nil)
+    }
+
     private func makePanel() -> NSPanel {
         let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: Self.width, height: 300),
                             styleMask: [.nonactivatingPanel, .titled, .utilityWindow, .fullSizeContentView],

@@ -30,5 +30,6 @@ Tier-2 code copied from EK Bridge (`bereciartua/ek-bridge`) under [ADR-0013](../
 | `Sources/TunnelHealth.swift`, `Sources/TunnelSwitch.swift`, `Sources/RemoteAccessSupport.swift` | `e753b22` | Their logic moved to BridgeKitRemote; Sources/BridgeUI/RemoteWords.swift words its typed results (health, switch steps, probe failures) |
 | `Sources/AgentSetup.swift` (the cloud setups and tunnel commands) | `9c726f2` (unchanged at `e753b22`) | Sources/BridgeUI/CloudSetup.swift and RemoteWords.swift (Funes's words, port 47627; goldens `cloud-*.txt`, `tunnel-*.txt`) |
 | — (written for Funes; EK Bridge has the same setting) | — | Sources/BridgeUI/AppAppearance.swift (Settings ▸ General ▸ Appearance: Automatic, Light, Dark) |
+| — (written for Funes, ADR-0029) | — | Sources/BridgeUI/MenuBarPanel.swift (the menu bar panel's Waiting for you cards and its Agents and Remote Access tiles) and PanelField.swift (its field: remember, search, ask, Esc's steps); generic, with no Funes types |
 
 Full source commits: `9c726f2c903a190d5303c28c1c6e7464544905fa` (tier 2) and `e753b221a6646e6420eb2fe382780bea88493841` (the Remote Access views, Phase 4b). The cloud agent setups and tunnel commands are in `Upstream/AgentSetup.swift` (9c726f2; unchanged at e753b22 apart from code that moved to BridgeKit).

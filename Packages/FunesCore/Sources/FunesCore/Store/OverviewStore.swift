@@ -9,6 +9,14 @@ extension VaultStore {
     public func overview(_ range: OverviewRange, now: Date, calendar: Calendar = .current) throws -> VaultOverview {
         try writer.read { db in try OverviewStore.overview(db, range: range, now: now, calendar: calendar) }
     }
+
+    /// The last 24 hours by hour, the current hour last (FR-H-07): new memories by source,
+    /// memories delivered by agent and requests refused, with the agents' names. Counts only.
+    /// The current hour starts in `calendar`'s time zone; the 24 buckets are each an hour long,
+    /// so a daylight-saving change still makes 24, and a repeated hour is two.
+    public func recentPulse(now: Date, calendar: Calendar = .current) throws -> RecentPulse {
+        try writer.read { db in try OverviewStore.recentPulse(db, now: now, calendar: calendar) }
+    }
 }
 
 /// The overview's queries. Times are GRDB's UTC text, which sorts as it reads, so bucket
@@ -157,6 +165,57 @@ enum OverviewStore {
             byCategory: byCategory, byKind: byKind, sharedBySensitivity: sharedBySensitivity, sharedByCategory: sharedByCategory,
             refusedByReason: refusedByReason, withheld: withheld, agents: agents, inboxPending: (inbox?["n"] as Int?) ?? 0,
             oldestPendingAt: inbox?["oldest"] as Date?, lastTidyUpAt: lastTidyUp)
+    }
+
+    /// The 25 boundaries of the last 24 hours: the current hour's start in `calendar`'s zone, and
+    /// whole hours of elapsed time back from it.
+    static func hourBoundaries(now: Date, calendar: Calendar) -> [Date] {
+        let current = calendar.dateInterval(of: .hour, for: now)?.start ?? now
+        let count = RecentPulse.hourCount
+        return (0...count).map { current.addingTimeInterval(Double($0 - count + 1) * 3_600) }
+    }
+
+    static func recentPulse(_ db: Database, now: Date, calendar: Calendar) throws -> RecentPulse {
+        let bounds = hourBoundaries(now: now, calendar: calendar)
+        let span: StatementArguments = [bounds.first!, bounds.last!]
+        var hours = bounds.dropLast().map { VaultOverview.Bucket(date: $0) }
+
+        let inbound = BucketExpression(column: "created_at", boundaries: bounds)
+        for row in try Row.fetchAll(db, sql: """
+            SELECT \(inbound.sql) AS b, source, source = 'manual' AND source_device_id IS NOT NULL AS phone, COUNT(*) AS n FROM memory
+            WHERE created_at >= ? AND created_at < ? GROUP BY b, source, phone
+            """, arguments: inbound.arguments + span) {
+            guard let b: Int = row["b"], hours.indices.contains(b) else { continue }
+            add(row["n"], source: row["phone"] ? MemorySource.captureIPhone.rawValue : row["source"], to: &hours[b].inbound)
+        }
+
+        let out = BucketExpression(column: "d.delivered_at", boundaries: bounds)
+        for row in try Row.fetchAll(db, sql: """
+            SELECT \(out.sql) AS b, d.agent_id AS agent, COUNT(*) AS n FROM disclosure d JOIN disclosure_item i ON i.disclosure_id = d.id
+            WHERE d.delivered_at >= ? AND d.delivered_at < ? GROUP BY b, d.agent_id
+            """, arguments: out.arguments + span) {
+            guard let b: Int = row["b"], hours.indices.contains(b) else { continue }
+            hours[b].out[row["agent"], default: 0] += row["n"] as Int
+        }
+
+        let refused = BucketExpression(column: "created_at", boundaries: bounds)
+        for row in try Row.fetchAll(db, sql: """
+            SELECT \(refused.sql) AS b, COUNT(*) AS n FROM disclosure
+            WHERE status = 'denied' AND created_at >= ? AND created_at < ? GROUP BY b
+            """, arguments: refused.arguments + span) {
+            guard let b: Int = row["b"], hours.indices.contains(b) else { continue }
+            hours[b].refused += row["n"] as Int
+        }
+
+        let ids = Set(hours.flatMap(\.out.keys))
+        var names: [String: String] = [:]
+        if !ids.isEmpty {
+            for row in try Row.fetchAll(db, sql: "SELECT id, name FROM agent WHERE id IN (\(databaseQuestionMarks(count: ids.count)))",
+                                        arguments: StatementArguments(Array(ids))) {
+                names[row["id"]] = row["name"]
+            }
+        }
+        return RecentPulse(generatedAt: now, timeZone: calendar.timeZone.identifier, hours: hours, agentNames: names)
     }
 
     /// The chart's five sources (UX: Mac ▸ Home): the setup's questions count as the Mac, an

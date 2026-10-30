@@ -19,6 +19,7 @@
 | [Phase 7: Home and widgets](phase-7-home.md) | The iPhone's status bar, a vault overview of counts only, Home on the Mac and the iPhone, and iPhone widgets ([ADR-0025](../architecture/decisions/0025-vault-overview-and-iphone-cache.md)) |
 | [Phase 8: About you](phase-8-about-you.md) | A small profile in Settings: Home greets you by name on both apps, and each agent gets the profile fields you tick for it with its answers ([ADR-0026](../architecture/decisions/0026-about-you-profile.md)) |
 | [Phase 9: Search answers](phase-9-search-answers.md) | Snippets that show the sentence matching your search, then an Ask that answers from the top results, quoting a memory for every claim, on the Mac and the iPhone; Spike G measures answer quality first ([ADR-0028](../architecture/decisions/0028-search-answers.md)) |
+| [Phase 10: Menu bar panel](phase-10-menu-bar-panel.md) | A click on the menu bar icon opens a panel: Review cards for what waits, Agents and Remote Access switches, a field that remembers or searches, and the last 24 hours as a chart; a right click keeps a short menu ([ADR-0029](../architecture/decisions/0029-menu-bar-panel.md)) |
 | [Project setup](project-setup.md) | Repo, targets, bundle IDs, platforms, dependencies, signing, conventions |
 | [Testing strategy](testing-strategy.md) | Test layers, privacy assertions, fixtures, definition of done |
 | [Release and distribution](release-and-distribution.md) | Versioning, channels, release checklist, support |

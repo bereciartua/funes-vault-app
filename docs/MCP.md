@@ -13,11 +13,11 @@ The rules behind every decision are in the [access policy](../spec/domain/access
 
 The server starts with the app while **Settings ▸ MCP ▸ Let agents connect** is on (the default). The same pane shows its **Status**, the **Port**, the **Address**, the **Launcher** path agents run, and **Traffic since launch** (counts only: Funes never logs what agents send or receive). **Link to ~/.local/bin/funes-mcp** adds a short path to the launcher, if you want one.
 
-The port is 47625 unless you change it. If another app already uses it, the status says **Port 47625 is in use** and the menu bar shows it; quit the other app, then turn **Let agents connect** off and on again, or choose another port. Funes never moves to another port on its own, because agents' setups name this one.
+The port is 47625 unless you change it. If another app already uses it, the status says **Port 47625 is in use**, the menu bar icon shows a warning badge and the panel's **Agents** tile says so with **Fix…**; quit the other app, then turn **Let agents connect** off and on again, or choose another port. Funes never moves to another port on its own, because agents' setups name this one.
 
 To change the port, type it in **Settings ▸ MCP ▸ Port** (1024–65535) and click **Change Port**; the server moves at once. Agents that start `funes-mcp` find the new port by themselves. Agents whose setup names the address (Claude Code's setup, and the direct HTTP setups below) need their setup copied again from the Connect tab.
 
-**Pause Funes Vault** in the menu bar pauses it for an hour, until tomorrow, or until you resume. It keeps the server listening but refuses every tool call with `funes_paused`, so agents can tell you why. Resuming needs no change in the agent.
+Turning off the **Agents** switch in the menu bar panel pauses all agents for an hour, until tomorrow, or until you resume (it's **Pause All Agents**). It keeps the server listening but refuses every tool call with `funes_paused`, so agents can tell you why. Resuming needs no change in the agent.
 
 ### Add an agent
 
@@ -216,7 +216,7 @@ Cloud agents (claude.ai, ChatGPT, cloud coding agents) run on their vendor's ser
 
 > Tell the user: "Waiting for your approval in Funes." Then call get_memory_request with request_id "…" in about a minute; it expires in 15 minutes.
 
-The request then waits in **Pending requests** (the menu bar menu, the agent's page, where its row in the sidebar has a badge, and the top of Activity) for the rest of its 15 minutes; **More Time** on the panel moves it there at once. While one waits, the menu's first item reviews it, and **Review Request (⌃⌥⌘R)** does the same from any app (change or turn off the shortcut in Settings ▸ General). **Review** opens the panel again with the minutes it has left. When the agent calls `get_memory_request` after you shared it, it gets the memories, once.
+The request then waits in **Pending requests** (a card in the menu bar panel's **Waiting for you**, the agent's page, where its row in the sidebar has a badge, and the top of Activity) for the rest of its 15 minutes; **More Time** on the panel moves it there at once. A card's **Review** opens it, and **Review Request (⌃⌥⌘R)** does the same from any app (change or turn off the shortcut in Settings ▸ General); the card it would review shows the shortcut. Nothing is answered in the menu bar panel itself. **Review** opens the panel again with the minutes it has left. When the agent calls `get_memory_request` after you shared it, it gets the memories, once.
 
 What the agents measured so far did with this, from the [timeout spike and the first agent check](../spec/plans/spike-results.md#spike-3-agent-timeouts-and-the-in-call-approval):
 
@@ -260,7 +260,7 @@ Once it's set up, the page shows the **Remote Access** switch and these rows:
 | **Turn off** | **Never**, **After 1 hour**, **After 8 hours** or **After 1 day**. |
 | **Keep this Mac awake while on power** | Off by default. Prevents idle sleep while Remote Access is on and the Mac runs on power. |
 
-Below them, the page lists the agents with cloud access. While Remote Access is on, the menu bar icon shows a small globe and the menu says **Remote Access on · 2 cloud agents** (or **· tunnel down**), with **Turn Off Remote Access**. **Settings ▸ General ▸ Notifications ▸ Remote Access's tunnel stopped** (off by default) tells you when the tunnel in use stops.
+Below them, the page lists the agents with cloud access. While Remote Access is on, the menu bar icon shows a small globe and the panel's **Remote Access** tile says **On · 2 cloud agents** (or **On · tunnel down**, **On · not listening**, **On · until 18:00**), with its switch: turning it off acts at once, and turning it on asks first. **Settings ▸ General ▸ Notifications ▸ Remote Access's tunnel stopped** (off by default) tells you when the tunnel in use stops.
 
 The tunnel checks are read-only and local: Funes asks the tunnel's own tool (the `tailscale` CLI's status, cloudflared's local metrics server and `~/.cloudflared/config.yml`, ngrok's local agent API, else this user's running processes). They never start, stop or change a tunnel, send nothing off the Mac, and never change what Funes accepts.
 
@@ -346,7 +346,7 @@ Cloud agents often run while you're away. **Ask before sharing** and **Ask befor
 - **One token agent:** **Reset Remote Token…**.
 - **One cloud app:** **Revoke**.
 - **One agent:** turn off **Allow cloud access**.
-- **Everything:** **Turn Off Remote Access** in the menu bar menu, or the switch on the page. The port closes at once and pairing ends; cloud access, remote tokens and connected apps are kept for next time. Stop the tunnel too.
+- **Everything:** the **Remote Access** switch in the menu bar panel, or the one on the page. The port closes at once and pairing ends; cloud access, remote tokens and connected apps are kept for next time. Stop the tunnel too.
 
 ### Troubleshooting
 
@@ -373,14 +373,14 @@ The tools listed depend on the agent's access. The last line is a `list_memory_c
 | "Funes Vault doesn't recognize this agent's key" (HTTP 401) | The key was rotated or the agent removed. Launcher and `headersHelper` setups re-read the file; for a pasted key, **Copy Key…** again. If the Connect tab says the key file couldn't be read, **Rotate Key…**. |
 | "Another program is using Funes Vault's port." | The process named in `mcp-endpoint.json` isn't your Funes Vault listening on its port (a file left after a crash, or a launcher from another copy of the app), so nothing was sent. Quit and reopen Funes Vault, use the launcher path from the Connect tab, and run the check. |
 | "--agent takes the agent's ID (a UUID), not its name." | Copy the setup again from the agent's Connect tab. |
-| `funes_paused` | Resume Funes Vault from the menu bar. The agent doesn't need to reconnect. |
+| `funes_paused` | Turn the **Agents** switch back on in the menu bar panel (or **Resume**). The agent doesn't need to reconnect. |
 | `funes_quit` | Funes Vault was quit during the call. Open it again; a request that was waiting for you is still in **Pending requests** for the rest of its 15 minutes. |
 | `agent_paused` | **Resume** the agent on its page. |
 | `access_expired` | Change or clear the expiry date on the agent's **Access** tab. |
 | `operation_not_allowed`, or the agent sees fewer tools than expected | `request_memory` and `get_memory_request` appear only with **Read**, `suggest_memory` only with **Suggest** or **Write**. Agents cache tool lists, so a change can take a reconnect (or about 30 seconds on the current protocol) to show. |
 | `no_allowed_memories`, or memories withheld | The matches are above the agent's sensitivity limit, expired, or in categories it can't read. Select the row in Activity: it says why and links to the access. Change it only if this agent should have it. |
 | `denied_by_user` | You chose **Deny**. The agent is told not to ask again for this task unless you ask it to. |
-| `needs_approval` and nothing happens | Choose it under **Pending requests** in the menu bar menu (or **Review…** in the window), then ask the agent to check again. After 15 minutes the request expires (`approval_expired`) and the agent has to ask again. |
+| `needs_approval` and nothing happens | Click **Review** on its card in the menu bar panel (or **Review…** in the window), then ask the agent to check again. After 15 minutes the request expires (`approval_expired`) and the agent has to ask again. |
 | `policy_changed` | A memory or the agent's access changed after you approved, so nothing was shared. The request is back in **Pending requests**: review it again within its 15 minutes, or the agent asks again. |
 | `rate_limited` | The agent is looping, or has 3 requests waiting for you. Wait `retry_after_s` seconds; see [Limits](#limits). |
 | `secret_like_content` | The suggestion looked like it contained a key or password, so nothing was stored. |
@@ -497,7 +497,7 @@ The call never waits for you. The proposed memory must fit the agent's own acces
 
 | Code | When |
 | --- | --- |
-| `funes_paused` | Funes Vault is paused from the menu bar. |
+| `funes_paused` | All agents are paused (the menu bar panel's **Agents** switch). |
 | `agent_paused` | You paused this agent. |
 | `access_expired` | The agent's access passed its expiry date. |
 | `operation_not_allowed` | The agent lacks Read (for requests), or both Suggest and Write (for suggestions). |

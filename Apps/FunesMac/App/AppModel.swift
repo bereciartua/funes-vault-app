@@ -234,7 +234,7 @@ final class AppModel {
         if isPaused { return .paused }
         switch mcpStatus {
         case .off, .starting: return .off
-        case .failed: return .paused
+        case .failed: return .cantConnect
         case .listening: return pending.isEmpty && inbox.isEmpty ? .normal : .needsYou
         }
     }
@@ -465,6 +465,6 @@ enum ActivityFocus: Equatable {
     case memory(UUID)
     case agent(UUID)
     case request(UUID)
-    /// A day, week or month of Home's chart.
+    /// A day, week or month of Home's chart, or an hour of the menu bar panel's.
     case period(DateInterval)
 }

@@ -62,8 +62,12 @@ struct ActivityScreen: View {
         }
     }
 
-    /// "Tue 21 Oct", "13–19 Oct" or "October 2026".
+    /// "09:00–10:00" (an hour of the menu bar panel's chart), "Tue 21 Oct", "13–19 Oct" or
+    /// "October 2026".
     static func periodText(_ interval: DateInterval) -> String {
+        if interval.duration <= 3_600 {
+            return (interval.start..<interval.end).formatted(.interval.hour().minute())
+        }
         let days = Calendar.current.dateComponents([.day], from: interval.start, to: interval.end).day ?? 1
         if days <= 1 { return interval.start.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)) }
         if days <= 7 {

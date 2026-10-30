@@ -6,6 +6,8 @@ Planned as a **side project**: about one weekend (around 8–10 h) per week. Dat
 
 **Status (2026-10-19):** Phases 0–3 and Phase 4's preparation are done. [Phase 4b](../plans/phase-4b-remote-access.md) (Remote Access, [ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)) comes before the launch. The chart starts from today's state.
 
+**Update (2026-10-30):** **Phase 10** (the menu bar panel, v0.7) is planned: see [v0.7](#v07-menu-bar-panel-phase-10).
+
 **Update (2026-10-27):** v0.3, v0.4 and v0.5 ship together as version **0.5.0** (build 11), on the Mac and as the iPhone's next App Store version; the iPhone's first App Store version stays 0.2.0.
 
 **Update (2026-10-26):** **Phase 8** (About you, v0.5) is planned: see [v0.5](#v05-about-you-phase-8).
@@ -162,6 +164,24 @@ Search shows the sentence that matches, and when you ask (or on its own, if you 
 - **Matching snippets** in the Vault and the iPhone's Search.
 - **Search answers**, off by default: Ask (⌘⏎ or the Ask row and pill), an answer card in place with a quote per claim, and, if chosen, automatic answers for questions or every search.
 - **`memories.answer`** on the companion channel, with its own deadline.
+
+### v0.7: Menu bar panel (Phase 10)
+A click on the menu bar icon opens a panel instead of a menu: what waits for you, with Review; the Agents and Remote Access switches; a field that remembers or searches; and the last 24 hours as a chart ([ADR-0029](../architecture/decisions/0029-menu-bar-panel.md)). About 2 weekends.
+
+| Step | Plan | Exit criteria |
+|---|---|---|
+| **10.0 Spike** | [plan](../plans/phase-10-menu-bar-panel.md#100-spike-closing-a-non-activating-panel--¼-weekend) | The panel closes on every rule (⌘⇥, Spaces, outside clicks) without activating Funes; its field takes text and dictation |
+| **10.1 Last 24 hours read** | [plan](../plans/phase-10-menu-bar-panel.md#101-last-24-hours-read--¼-weekend) | `recentPulse` under 20 ms on the benchmark vault, no text (tested) |
+| **10.2 Panel shell** | [plan](../plans/phase-10-menu-bar-panel.md#102-the-panel-shell--½-weekend) | Opens and closes as specified without deactivating the frontmost app; right-click menu |
+| **10.3 Waiting and switches** | [plan](../plans/phase-10-menu-bar-panel.md#103-waiting-for-you-and-the-switches--½-weekend) | Review opens the right panel; every tile state; pause lengths; Remote Access on asks, off acts |
+| **10.4 Field** | [plan](../plans/phase-10-menu-bar-panel.md#104-the-field--½-weekend) | ⏎ saves as the capture box does; ⌘⏎ results and answers as in the Vault |
+| **10.5 Chart** | [plan](../plans/phase-10-menu-bar-panel.md#105-the-chart--¼½-weekend) | Hover and click per hour; VoiceOver reads it |
+| **10.6 Ship** | [plan](../plans/phase-10-menu-bar-panel.md#106-ship--¼-weekend) | Snapshots, docs and CHANGELOG; a few days of the author's use |
+
+**In:**
+- **The menu bar panel** and its right-click menu, replacing the menu.
+- **A "can't connect" icon state.**
+- **`recentPulse`,** the last 24 hours by hour, on the Mac only.
 
 ### v0.6+: Later (unordered; pick by real usage)
 - **Allow window** for low-sensitivity sharing (if panels cause fatigue).

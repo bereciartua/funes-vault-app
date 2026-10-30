@@ -9,9 +9,11 @@ enum MenuBarIcon {
         case normal
         /// A panel is open, or requests or suggestions are waiting: filled, with an accent dot.
         case needsYou
-        /// Funes or the MCP server is paused: slashed.
+        /// All agents are paused: slashed.
         case paused
-        /// MCP server off (before setup): dimmed.
+        /// The agent server failed (a port in use, or it stopped): a warning badge.
+        case cantConnect
+        /// The agent server is off (before setup, or turned off in Settings): dimmed.
         case off
 
         var accessibilityLabel: String {
@@ -19,6 +21,7 @@ enum MenuBarIcon {
             case .normal: String(localized: "Funes Vault")
             case .needsYou: String(localized: "Funes Vault, waiting for you")
             case .paused: String(localized: "Funes Vault, paused")
+            case .cantConnect: String(localized: "Funes Vault, can't connect")
             case .off: String(localized: "Funes Vault, off")
             }
         }
@@ -58,6 +61,27 @@ enum MenuBarIcon {
         equator.line(to: NSPoint(x: frame.maxX - 0.5, y: frame.midY))
         equator.lineWidth = 0.8
         equator.stroke()
+    }
+
+    /// A 7-point warning triangle at the top right, knocked out of the glyph, with its "!" cut
+    /// out of it, so it reads on the eye.
+    private static func drawWarning(ink: NSColor) {
+        let triangle = NSBezierPath()
+        triangle.move(to: NSPoint(x: 11, y: 11))
+        triangle.line(to: NSPoint(x: 18, y: 11))
+        triangle.line(to: NSPoint(x: 14.5, y: 17.5))
+        triangle.close()
+        NSGraphicsContext.current?.compositingOperation = .destinationOut
+        let gap = triangle.copy() as! NSBezierPath
+        gap.lineWidth = 2.4
+        gap.stroke()
+        NSGraphicsContext.current?.compositingOperation = .sourceOver
+        ink.setFill()
+        triangle.fill()
+        NSGraphicsContext.current?.compositingOperation = .destinationOut
+        NSBezierPath(rect: NSRect(x: 14.0, y: 13.6, width: 1, height: 2.4)).fill()
+        NSBezierPath(rect: NSRect(x: 14.0, y: 12.0, width: 1, height: 1)).fill()
+        NSGraphicsContext.current?.compositingOperation = .sourceOver
     }
 
     /// The icon's almond: two cubic lids from the left corner to the right one.
@@ -103,6 +127,7 @@ enum MenuBarIcon {
             NSBezierPath(ovalIn: NSRect(x: 9.6, y: 9.6, width: 1.5, height: 1.5)).fill()
             NSGraphicsContext.current?.compositingOperation = .sourceOver
         }
+        if state == .cantConnect { drawWarning(ink: ink) }
         if state == .paused {
             // A gap around the slash keeps it legible across the outline.
             let slash = NSBezierPath()

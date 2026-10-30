@@ -5,7 +5,8 @@ Funes is a menu bar app (`LSUIElement`) with one main window and floating panels
 ## Surfaces at a glance
 
 ```
-Menu bar icon ─┬─ Menu ─────────────── Remember… · Inbox (3) · Pending requests · Pause Funes Vault · Open Funes Vault · Updates · Quit
+Menu bar icon ─┬─ Panel ────────────── (v0.7) Waiting for you · Agents and Remote Access switches · remember or search · last 24 hours · Inbox · Open · Settings
+               ├─ Right-click menu ─── Open Funes Vault · Settings… · Check for Updates… · Quit
                ├─ Capture box ───────── (⌥⌘M) quick capture
                └─ Panels (top right) ── <agent> wants N memories · Save this memory? · <agent> wants to read <category> · <app> wants to connect
 Main window ───┬─ Home         (v0.4: compose, the vault's pulse and shape; where the window opens)
@@ -19,6 +20,7 @@ Main window ───┬─ Home         (v0.4: compose, the vault's pulse and s
 ```
 
 ## Menu bar
+*From v0.7 the icon opens a panel ([ADR-0029](../architecture/decisions/0029-menu-bar-panel.md), [Phase 10](../plans/phase-10-menu-bar-panel.md)). Before v0.7 it opened a menu: Review …'s Request, the status line, Remember…, Inbox, Pending requests ▸, Remote Access and Turn Off Remote Access, Pause Funes Vault ▸, Open Funes Vault, Check for Updates…, Settings… and Quit.*
 
 **Icon states:**
 
@@ -26,32 +28,166 @@ Main window ───┬─ Home         (v0.4: compose, the vault's pulse and s
 |---|---|---|
 | Normal | outline eye (the app icon's almond and iris) | on, nothing waiting |
 | Needs you | filled eye with an accent dot | a panel is open, or requests or suggestions are waiting |
-| Paused | eye with a slash | Funes or the MCP server is paused |
-| Off | dimmed eye | MCP server off (before setup) |
+| Paused | eye with a slash | all agents are paused |
+| Can't connect | eye with a small warning badge | the agent server failed (a port in use, or it stopped) |
+| Off | dimmed eye | the agent server is off (before setup, or turned off in Settings) |
 | Remote Access on | any of the above, plus a small globe | the Remote Access listener is on |
 
-**Menu:**
+The tooltip says the same in words ("Agents paused until 14:00", "Inbox: 3", "Waiting for you: 2"), and so does VoiceOver's label.
+
+**Clicks:**
+- **A click** opens the panel. Another click on the icon closes it, and so do Esc (see [Keys](#keys-in-the-panel)), a click outside, switching to another app (⌘⇥ included), and switching Spaces.
+- **A right click** or Control-click shows a short native menu: **Open Funes Vault** ⌘O, **Settings…** ⌘,, **Check for Updates…** (only in a copy that can update itself) and **Quit Funes Vault** ⌘Q.
+
+### The panel
 ```
-Review Cursor's Request · 0:13…                ⌃⌥⌘R   (only while something waits for you)
-──────────────────────
-Funes Vault is on · 3 agents
-──────────────────────
-Remember…                         ⌥⌘M
-Inbox                               3
-Pending requests                    1   ▸  Claude Code · 2 min left
-──────────────────────
-Remote Access on · 2 cloud agents            (only while on; "· tunnel down" when the tunnel isn't running)
-Turn Off Remote Access
-──────────────────────
-Pause Funes Vault                            ▸  For 1 Hour · Until Tomorrow · Until I Resume
-Open Funes Vault                          ⌘O
-──────────────────────
-Check for Updates…
-Quit Funes Vault                          ⌘Q
+┌────────────────────────────────────────────────┐
+│ Claude Code wants 4 memories          [Review] │  Waiting for you
+│ 0:41 to answer · ⌃⌥⌘R                          │  (only while something waits)
+│ Codex wants 2 memories                [Review] │
+│ Still answerable · 12 min left                 │
+│ ┌ (👥)           (on) ┐ ┌ (🌐)           (on) ┐ │
+│ │ Agents              │ │ Remote Access       │ │  the switches
+│ │ On · 4 agents       │ │ On · 2 cloud agents │ │
+│ └─────────────────────┘ └─────────────────────┘ │
+│ ┌────────────────────────────────────────────┐ │
+│ │ Remember something, or search…         🎙  │ │  the field
+│ └────────────────────────────────────────────┘ │
+│   ⏎ Remember · ⌘⏎ Search · goes to your Inbox  │
+│ Last 24 hours     13 in · 27 shared · 1 refused │
+│  ▂ ▅ ▁     ▁ ▃ ▇ ▂                    ▁   ▂ ▁ ▂ │  in
+│ ─────────────────────────────────────────────── │
+│  ▃ ▅ ▂   ▂ ▆ ▃ ▂                    ▂ ▅ ▆ ▃ ▅ │  shared
+│                                       •        │  refused
+│  12:00    18:00     00:00     06:00       now  │
+│ ────────────────────────────────────────────── │
+│ [Inbox 3] [Open Funes Vault]          [⚙] [⋯] │  footer
+└────────────────────────────────────────────────┘
 ```
-- While a panel or a pending request waits, the first item reviews it: it brings the panel forward and makes it key, so Return and Esc answer it. Its shortcut, **Review Request** (⌃⌥⌘R by default, changeable in Settings ▸ General), works from any app.
-- The status line opens the main window on the Agents section.
-- A pending request item opens its panel again.
+- **Look:** 350 pt wide, a rounded borderless panel under the icon, with the menu bar's material. It follows Settings ▸ General ▸ Appearance (FR-G-06).
+- **Height:** fits what it shows, and never exceeds the screen's visible area. The cards, the switches and the footer keep their size. The field grows to 4 lines, then scrolls inside itself. The area under it (the chart, or the results and the answer) takes what's left and scrolls. Checked with the most it can hold (3 cards and the overflow line, a 4-line field, an answer with 3 claims, 5 results) at 350 pt, on macOS 15 and 26.
+- **Freshness:** read when the panel opens. While it's open, the countdowns tick each second; the counts follow vault, queue and Remote Access changes; and the chart moves on at each hour, after the Mac wakes and when the time zone changes.
+- **Not activating:** the panel takes key focus for its own controls without bringing Funes's windows forward or deactivating the frontmost app.
+- **Closing** keeps only a draft ([The field](#the-field)): results, an answer and anything in progress are cleared, and the panel opens again on the chart.
+
+### Waiting for you
+- **One card per item the user must answer,** each request once, matched by its request id. The order:
+  1. the approval panel's items, in its order ([Panels](#panels)): items on a clock first, soonest first, then a Save;
+  2. a cloud sign-in, while one waits (one at a time, as [its panel](#app-wants-to-connect-cloud-sign-in) says);
+  3. Pending requests that can still be shared and aren't already one of the cards above, soonest expiry first.
+  A request that's approved and waiting for its agent has no card: there's nothing to do. It stays on the agent's page and in Activity.
+- **A card's text:** the item's panel title ("Claude Code wants 4 memories", "Cursor wants to read Project context", "claude.ai wants to connect", "Codex wants to save a memory"). Under it, its time:
+  - a live panel: "0:41 to answer";
+  - a sign-in: "Until 10:52";
+  - a Pending request: "Still answerable · 12 min left";
+  - a Save: nothing.
+- **The Review Request shortcut** shows on the card it would review: the approval panel's current item, else the soonest Pending request. Review Request and that card always do the same thing.
+- **At most 3 cards.** Beyond 3, a line says how many more wait ("2 more waiting"). The approval panel's own chips show its other items once one is reviewed. While some of the rest are Pending requests, the line has **Show All Pending Requests**, which opens Activity with them at the top.
+- **The first card is drawn in the accent color.** The others are plain.
+- **Review** is the card's only button. It closes the panel, then:
+  - **a live approval-panel item:** that item is selected in the approval panel, which comes forward and becomes key, as Review Request does. Its content is already current, and its arming delay restarts whenever its content changes.
+  - **a Pending request:** reopened as [Share](#agent-wants-n-memories-share) describes, refreshed and armed again if anything changed. Its 15 minutes don't restart.
+  - **a sign-in:** its panel comes forward. It has no Return key; the codes must be compared.
+  Each panel keeps its own keys and arming, so the key press that chose Review can't also answer the panel it opens.
+- **The panel never shares, denies, saves a suggestion, connects an app or allows access.**
+- **Arrivals never move keyboard focus.** A new card appears in place, and VoiceOver announces it ("Cursor wants to read Project context"), but focus stays where it was. A card whose item is answered elsewhere (in its panel, or on the iPhone) or expires goes away.
+- **VoiceOver:** each card reads as one element ("Claude Code wants 4 memories, 41 seconds to answer"), followed by its Review button.
+
+### The switches
+Two tiles side by side. Each has an icon, a name, a status line and a switch or a button. The tile itself is also a button: it opens its section, Agents or Remote Access.
+
+**Agents**
+
+| State | Tile | Switch or button |
+|---|---|---|
+| On | "On · 4 agents" ("1 agent") | switch on |
+| No agents yet | "No agents yet" | **Add Agent…** (opens Add Agent) |
+| Paused | orange; "Paused until 14:00", "Paused until tomorrow at 09:00", "Paused until you resume" | switch off |
+| Starting | "Starting…" with a small spinner | switch disabled |
+| Can't connect | warning tint; "Port 47625 is in use", "The agent server stopped" | **Fix…** (Settings ▸ Connections) |
+| Off in Settings | "Off · agents can't connect" | **Turn On…** (Settings ▸ Connections) |
+
+- The states are checked in this order: off in Settings, can't connect, starting, paused, no agents yet, on.
+- **Settings ▸ Connections** is the coming settings redesign's group; until it lands, **Fix…** and **Turn On…** open Settings ▸ MCP, which holds the same switch and port.
+- **Turning the switch off** opens a small menu from it: **For 1 Hour**, **Until Tomorrow**, **Until I Resume**. Choosing one pauses all agents (FR-A-11); Esc or a click elsewhere closes the menu and leaves them on. **Turning it on** resumes at once.
+- **While paused,** a line sits under the tiles: "Agents' requests are refused. Capture and the Inbox keep working.", with **Resume**.
+- "4 agents" counts the agents set up and not removed, as the old status line did. It says nothing about which are connected now, paused on their own, or expired; the Agents section says that.
+- **The paired iPhone isn't an agent.** Pausing all agents doesn't touch it, and neither does Remote Access.
+
+**Remote Access**
+
+| State | Tile | Switch or button |
+|---|---|---|
+| Not set up | "Not set up" | **Set Up…** (the Remote Access section) |
+| Off | "Off" | switch off |
+| On | "On · 2 cloud agents" (the agents with cloud access); "On · told it's paused" while agents are paused | switch on |
+| On, turning off later | "On · until 18:00" (its automatic turn-off) | switch on |
+| Tunnel down | warning tint; "On · tunnel down" | switch on |
+| Not listening | warning tint; "On · not listening" (the agent server is off or failed, or the listener failed) | switch on, and **Fix…** on the status line |
+
+- **"Not set up"** follows the Remote Access section's own rule for showing its introduction. Once set up, the tile has a switch.
+- The states are checked in this order: not set up, off, not listening, tunnel down, then on, with "until" or "told it's paused" added.
+- **While Remote Access is on, the switch is always there,** whatever else is wrong, so it can always be turned off.
+- **Turning it on asks first,** with the Remote Access section's own question (FR-AI-04). Cancelling leaves it off.
+- **Turning it off acts at once,** with no question: the public address stops answering (FR-AI-04). It's the quick way to close it: pausing refuses requests but leaves the address up.
+- **When it turns off by itself** at its set time, the tile updates at once.
+- **VoiceOver:** each tile reads its name and status, then its switch or button ("Agents, on, 4 agents, switch", "Remote Access: Not set up. Set Up…").
+
+### The field
+- **Placeholder** "Remember something, or search…", with the mic as in the capture box (macOS 26 and later). It has the panel's initial focus. It grows to 4 lines; ⇧⏎ is a new line.
+- **Hint** under it: "⏎ Remember · ⌘⏎ Search · goes to your Inbox", with the capture box's Cloud chip when a cloud model proposes the fields.
+- **⏎ Remember** saves a capture as the [capture box](#capture-box) does: the same secret scanner and errors, classification and Activity.
+  - **The panel stays open.** The field clears, and the hint says "Saving…" until the capture is stored, then "Saved to Inbox" for 2 s.
+  - **If the scanner matches,** the error shows under the field, the text stays, and nothing is saved.
+  - **If storing fails:** the error shows under the field. The text comes back only if the field is still empty. Otherwise the line says "Your last note wasn't saved" with **Restore**, which swaps it in and keeps what was typed since as the next draft.
+- **⌘⏎ Search** runs the Vault's search (Active scope, no filters) and shows the results in place of the chart:
+  - up to 5 rows, each with the title, the first category and the sensitivity badge; no body text;
+  - **Show All 23 in Vault** under them, which opens the Vault searching for the text;
+  - "Nothing matches." with no results.
+- **Search answers,** only while Settings ▸ AI Models ▸ Search answers is on, work as in the [Vault](#vault):
+  - the **✦ Ask Funes** row above the results;
+  - **⌘⏎** again to ask, or automatically when the setting says so;
+  - the reading card with **Cancel**;
+  - the answer card: up to 3 claims with numbered chips, a one-line quote each, the engine badge, the footer, and every message and failure of §10.5.
+  - **A claim's number** opens that memory in the Vault with the quoted sentence highlighted, as the Vault's numbers do, and closes the panel. The answer reads the same 10 results as the Vault's (5 for Apple on-device), so a cited memory may not be one of the 5 rows shown.
+  - **Logging:** Activity records it as `search_answered`, actor the user, as in the Vault.
+- **Editing the text** after a search clears the results and the answer, cancels a call in progress and an automatic answer's wait, and the chart comes back. ⌘⏎ searches again.
+- **Dictation stops** when the capture is saved, on ⌘⏎, on Esc and when the panel closes. Words that arrive after it stopped are dropped.
+- **A draft** left in the field when the panel closes is still there when it opens again, until it's saved or cleared, or Funes quits. It's kept in memory only. Results and answers aren't drafts: closing clears them and cancels their calls, and a late response is dropped. Reopening shows the chart under the draft, and ⌘⏎ searches again.
+- **Retrieved vault content** (titles, quotes, answers) appears only after the user searches. The draft is the user's own typing, not vault content.
+
+### Keys in the panel
+| Focus | ⏎ | ⌘⏎ | ↑ ↓ | Esc |
+|---|---|---|---|---|
+| Field, no results | Remember | Search | — | clears the text; with no text, closes the panel |
+| Field, results showing | opens the selected result in the Vault | asks (with Search answers on) | move the selection | back to the chart (the text stays) |
+| A result row | opens it in the Vault | — | move the selection | back to the field |
+| The chart | opens Activity for the focused hour | — | — | back to the field |
+| The pause menu, or ⋯'s menu | chooses the item | — | move | closes that menu only |
+| Anything else | activates it | — | — | closes the panel |
+
+- **While results show, ⏎ opens a result and never saves the text.** To remember the text instead, Esc back to the chart, then ⏎.
+- **Tab** goes top to bottom: each card's Review; the Agents tile, then its switch or button; the same for Remote Access; the field; the results or the chart; the footer's buttons. Shift-Tab goes back.
+- **In the chart,** ← → move between hours. VoiceOver offers **Show Problems** as an action on an hour with a refused dot.
+- **⌘O, ⌘, and ⌘Q** work while the panel is key.
+- **Global shortcuts stay:** Review Request (⌃⌥⌘R, changeable in Settings ▸ General) works from any app, panel open or not, and so does the capture box (⌥⌘M).
+- **Announcement:** opening the panel announces "Funes Vault" and what waits ("2 requests waiting for you").
+
+### Last 24 hours
+- **Header:** "Last 24 hours", then the counts on the right: "13 in · 27 shared · 1 refused". Parts with nothing to say drop out; with nothing at all, "Quiet: nothing in or out".
+- **Chart:** 24 hourly bars, the current hour last ("now"). **In** sits above the line: new memories (one color, not stacked). **Shared** sits below it: memories delivered to agents. **Refused:** a dot under the hour. Each half has its own scale, as in Home's pulse. The x axis says "12:00 · 18:00 · 00:00 · 06:00 · now", following the clock.
+- **Hover** an hour: "09:00–10:00 · 1 in (iPhone) · 4 shared (Claude Code 3, Codex 1) · 1 refused" (in by source, shared by agent), on one line under the chart that stays when nothing is marked, so hovering never changes the panel's height; a long one is shortened in the middle, and VoiceOver reads it whole. An hour that happens twice when clocks go back carries its zone ("01:00–02:00 EST").
+- **Click** an hour (or ⏎ on it) to open Activity filtered to that hour ("Showing 09:00–10:00 only · Show Everything"). A refused dot (or **Show Problems**) opens Activity ▸ Problems for that hour. Either closes the panel.
+- **Data:** counts only, from `VaultStore.recentPulse` (FR-H-07). Never text or titles.
+- **Empty:** "Your pulse starts with your first memories" in a new vault.
+- **Accessibility:** a chart descriptor (VoiceOver's audio graph). It reads "Last 24 hours: 13 memories in, 27 shared, 1 request refused", and each hour reads its breakdown. Reduce Motion turns off the bars' drawing in, and Increase Contrast uses the strongest colors for the bars. Color is never the only cue: the hover text and VoiceOver say it in words.
+- **Hidden** while search results or an answer show.
+
+### Footer
+- **Inbox**, with the count of waiting suggestions as a badge, opens the Inbox.
+- **Open Funes Vault** opens the main window on Home.
+- **⚙** opens Settings.
+- **⋯** opens a small menu: **Check for Updates…** (only in a copy that can update itself) and **Quit Funes Vault**.
 
 ## Capture box
 - **Window:** a small borderless window centred near the top of the screen, like Spotlight. It has:
@@ -373,7 +509,7 @@ All panels are non-activating floating `NSPanel`s at the top right. When several
 - **Strong matches are ticked; weaker ones are offered unticked** under "Also matched, less closely" (access policy §3.2).
 - The body text is clipped to 3 lines (at most 160 characters), with "Show all" to expand. The text is the exact text that will be sent, and every row whose text is cut offers "Show all", so everything Share would release can be read first.
 - The panel is never taller than the screen's visible area: the title and the buttons stay in place and the rows between them scroll.
-- Opening a pending request again (from the menu, Pending requests or an agent's `open_in_funes`) refreshes the same panel. Rows whose memory is unchanged keep the user's ticks. If anything that would be shared changed, the buttons arm again. It counts down to the end of its 15 minutes ("9:05").
+- Opening a pending request again (from the menu bar panel's Review, Pending requests or an agent's `open_in_funes`) refreshes the same panel. Rows whose memory is unchanged keep the user's ticks. If anything that would be shared changed, the buttons arm again. It counts down to the end of its 15 minutes ("9:05").
 - **More Time** moves the request to Pending requests at once (a HUD says until when). On timeout the HUD says "No answer: Claude Code was told to wait. It's in Pending requests."
 
 ### Save this memory?
