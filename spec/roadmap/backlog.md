@@ -181,11 +181,11 @@ Epics map requirements to phases.
 ## E16: Search answers (Phase 9, v0.6)
 | Item | Covers | Phase | Size | Pri |
 |---|---|---|---|---|
-| `SearchTerms` in FunesProtocol, `PassagePicker`, matching snippets in the Vault and `memories.search`, highlighting on both apps | FR-V-17 | 9.1 | M | S |
+| `BodyMatches` (FTS5 `highlight()`), matching snippets in the Vault and `memories.search` with `snippetMatches`, highlighting on both apps | FR-V-17 | 9.1 | M | S |
 | Spike F: answer quality per provider, synthetic questions and a held-out set | FR-AI-17 | 9.2 | M | S |
-| `SearchAnswerer`, validation, ModelRouter task, cap, cancellation, Activity, guardrail tests | FR-AI-17, ADR-0028 | 9.3 | L | S |
+| `SearchAnswerer`, `QuoteLocator`, validation, `ModelItem` kinds, ModelRouter task, cap, cancellation, Activity, guardrail tests | FR-AI-17, ADR-0028 | 9.3 | L | S |
 | Mac: Settings row, Ask row and ⌘⏎, answer card, highlight in the detail | FR-AI-17 | 9.4 | M | S |
-| iPhone: `memories.answer` on both sides, per-method timeout, `SearchModel` answer state, pill and card, Settings, demo answers | FR-iOS-13 | 9.5 | M | S |
+| iPhone: `memories.answer` on both sides, per-method timeout, `SearchModel` answer state, pill and card, Settings, demo questions and answers | FR-iOS-13 | 9.5 | M | S |
 | Automatically for questions, behind a latency gate | FR-AI-17 | 9.7 | S | C |
 
 ## E12: Later
