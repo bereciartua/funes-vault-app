@@ -564,6 +564,29 @@
         }
       }
     },
+    "%@: not signed in. Run `%@` in Terminal and sign in with %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: not signed in. Run `%2$@` in Terminal and sign in with %3$@."
+          }
+        }
+      }
+    },
+    "%@: unavailable, see the status above." : {
+
+    },
+    "%@: your %@ plan's limit is reached. Try again later." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: your %2$@ plan's limit is reached. Try again later."
+          }
+        }
+      }
+    },
     "%@…" : {
 
     },
@@ -3835,16 +3858,6 @@
         }
       }
     },
-    "Not signed in: run `%@` in Terminal and sign in with %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Not signed in: run `%1$@` in Terminal and sign in with %2$@."
-          }
-        }
-      }
-    },
     "Not supported yet" : {
 
     },
@@ -6204,9 +6217,6 @@
     "Unavailable: keyword search only" : {
 
     },
-    "Unavailable: see the status above." : {
-
-    },
     "Undid %lld changes" : {
 
     },
@@ -6530,9 +6540,6 @@
 
     },
     "You're all set" : {
-
-    },
-    "Your %@ plan's limit is reached. Try again later." : {
 
     },
     "Your Inbox is empty" : {

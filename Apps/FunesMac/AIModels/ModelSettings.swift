@@ -111,25 +111,26 @@ final class ModelSettings {
     /// An account's or plan's models.
     func models(of id: String) -> [String] { stored.models(of: id) ?? [] }
 
-    /// Each account's resolved locality (a DNS lookup for host names), filled by
-    /// `resolveLocalities()`; an account not yet resolved counts as cloud (fail closed).
-    private(set) var localities: [String: Locality] = [:]
+    /// Resolved localities (a DNS lookup for host names) by endpoint, filled by
+    /// `resolveLocalities()`. Keyed by the endpoint, not the account, so an account whose address
+    /// or cloud flag just changed counts as cloud until its new endpoint is resolved (fail closed),
+    /// and a lookup that finishes late only fills in the endpoint it looked up.
+    private(set) var localities: [ProviderEndpoint: Locality] = [:]
 
     /// Resolves every account's locality off the main thread.
     func resolveLocalities() async {
-        let endpoints = accounts.map { ($0.id, $0.endpoint) }
+        let endpoints = Set(accounts.map(\.endpoint))
         let resolved = await Task.detached(priority: .utility) {
-            Dictionary(endpoints.map { ($0.0, $0.1.locality()) }, uniquingKeysWith: { a, _ in a })
+            endpoints.map { ($0, $0.locality()) }
         }.value
-        localities = resolved
+        for (endpoint, locality) in resolved { localities[endpoint] = locality }
     }
 
     /// Where an account or plan runs: a plan is cloud; an account is cloud until resolved.
     func locality(account id: String) -> Locality {
         if PlanKind(rawValue: id) != nil { return .cloud }
-        guard let account = account(id) else { return .cloud }
-        if account.endpoint.markedCloud { return .cloud }
-        return localities[id] ?? .cloud
+        guard let account = account(id), !account.endpoint.markedCloud else { return .cloud }
+        return localities[account.endpoint] ?? .cloud
     }
 
     /// Where a job's effective model runs.

@@ -386,7 +386,8 @@ struct TestSection: View {
                     ForEach(models, id: \.self) { Text($0).tag($0) }
                 }
                 .labelsHidden().fixedSize()
-                .disabled(models.isEmpty)
+                .disabled(models.isEmpty || testing)
+                .onChange(of: chosen) { _, _ in result = nil }
                 Button(testing ? String(localized: "Testing…") : String(localized: "Test Connection")) { test() }
                     .disabled(testing || !models.contains(chosen))
             }
@@ -412,11 +413,11 @@ struct TestSection: View {
                     result = String(localized: "\(name) works: it proposed “\(proposal.title)”.")
                 } catch {
                     result = switch error as? ProviderError {
-                    case .unauthorized?: String(localized: "Not signed in: run `\(kind.signIn)` in Terminal and sign in with \(kind.plan).")
-                    case .rateLimited?: String(localized: "Your \(kind.plan) plan's limit is reached. Try again later.")
+                    case .unauthorized?: String(localized: "\(name): not signed in. Run `\(kind.signIn)` in Terminal and sign in with \(kind.plan).")
+                    case .rateLimited?: String(localized: "\(name): your \(kind.plan) plan's limit is reached. Try again later.")
                     case .timeout?: String(localized: "No answer from \(name) within 90 seconds.")
-                    case .unavailable?: String(localized: "Unavailable: see the status above.")
-                    default: ProviderText.error(error)
+                    case .unavailable?: String(localized: "\(name): unavailable, see the status above.")
+                    default: "\(name): " + ProviderText.error(error)
                     }
                 }
                 await settings.refreshSubscriptions()
@@ -434,7 +435,7 @@ struct TestSection: View {
                     ? String(localized: "\(name) is an embedding model, so it can't answer chat requests. Choose it in Features ▸ Search index, and test a chat model here.")
                     : String(localized: "The provider refused the request (400). Check that \(name) is a chat model the provider has.")
             } catch {
-                result = ProviderText.error(error)
+                result = "\(name): " + ProviderText.error(error)
             }
         }
     }

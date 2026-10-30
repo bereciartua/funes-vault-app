@@ -383,7 +383,9 @@ public struct AISettings: Codable, Hashable, Sendable {
 
     // MARK: Choices
 
-    /// A job's choice, as stored, with anything the job can't have read as its default.
+    /// A job's choice, as stored, with anything the job can't have read as its default. A choice
+    /// of an account that no longer exists is unresolved, never following New memories, which may
+    /// be a cloud model (fail closed); New memories' default, Apple on-device, is safe to fall back to.
     public func choice(_ job: AIJob) -> JobChoice {
         let stored = switch job {
         case .newMemories: newMemories
@@ -392,7 +394,8 @@ public struct AISettings: Codable, Hashable, Sendable {
         }
         switch stored {
         case .followsNewMemories where !job.canFollow, .onDevice where !job.canUseOnDevice: return job.defaultChoice
-        case let .model(choice) where !exists(choice.account): return job.defaultChoice
+        case let .model(choice) where !exists(choice.account):
+            return job == .newMemories ? .onDevice : .model(ModelChoice(account: choice.account, model: nil))
         default: return stored
         }
     }
@@ -659,7 +662,8 @@ public extension AISettings {
     /// model, gives an empty list); each
     /// plan's list is its stored model, unless blank, then its suggestions; each task's id becomes
     /// that account with the model it had, or an unresolved choice when it had none. A task whose
-    /// id names nothing gets its default, as the v1 code ran it.
+    /// id names nothing ran as if it had no model in v1 (New memories on-device, the tidy-up its
+    /// rules, Search answers unavailable), so it stays unresolved rather than following New memories.
     init(converting old: LegacyAIModels) {
         self.init()
         // An embedding model stored as the chat model never worked as one: it isn't carried into
@@ -687,7 +691,9 @@ public extension AISettings {
                 let model = sub.model.trimmingCharacters(in: .whitespacesAndNewlines)
                 return .model(ModelChoice(account: id, model: model.isEmpty ? nil : model))
             }
-            guard let account = account(id) else { return job.defaultChoice }
+            guard let account = account(id) else {
+                return job == .newMemories ? .onDevice : .model(ModelChoice(account: id, model: nil))
+            }
             return .model(ModelChoice(account: id, model: account.models.first))
         }
         newMemories = choice(old.classifier, job: .newMemories)

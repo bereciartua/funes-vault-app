@@ -79,12 +79,19 @@ import Testing
         #expect(s.usedBy("ollama").contains(.job(.tidyUp, model: nil, follows: true)))
     }
 
-    @Test func aChoiceOfAMissingAccountReadsAsTheDefault() {
+    /// A choice of an account that's gone: New memories goes back to Apple on-device; the others
+    /// stay unresolved rather than following New memories' cloud model (fail closed).
+    @Test func aChoiceOfAMissingAccountNeverStartsFollowing() {
         var s = Self.settings()
-        s.setChoice(Self.model("gone", "x"), for: .newMemories)
-        s.setChoice(Self.model("gone", "x"), for: .tidyUp)
+        s.setChoice(Self.model("anthropic", "claude-haiku-5-5"), for: .newMemories)
+        s.newMemories = Self.model("gone", "x")
         #expect(s.resolve(.newMemories).model == .onDevice)
-        #expect(s.choice(.tidyUp) == .followsNewMemories)
+        s.setChoice(Self.model("anthropic", "claude-haiku-5-5"), for: .newMemories)
+        s.tidyUp = Self.model("gone", "x")
+        s.searchAnswers = Self.model("gone", "x")
+        #expect(s.resolve(.tidyUp) == Resolution(model: .unresolved(account: "gone"), follows: false))
+        #expect(s.resolve(.searchAnswers) == Resolution(model: .unresolved(account: "gone"), follows: false))
+        #expect(s.problem(.tidyUp, hasKey: Self.keyed, planStatus: [:], blocked: Self.noBlocks, onDeviceAvailable: true) == .chooseModel)
     }
 
     // MARK: Problems and pickers
@@ -430,9 +437,17 @@ import Testing
         #expect(!s.searchAnswersOn && s.searchAnswersTrigger == .ask && s.plans.isEmpty)
     }
 
-    @Test func idsThatNameNothingGetTheirDefault() throws {
+    @Test func idsThatNameNothingDontStartFollowing() throws {
         let (s, _) = AISettings.load(try Self.fixture("v1-dangling"))
-        #expect(s.newMemories == .onDevice && s.tidyUp == .followsNewMemories && s.searchAnswers == .followsNewMemories)
+        #expect(s.newMemories == .onDevice)
+        #expect(s.tidyUp == Self.model("gone", nil) && s.searchAnswers == Self.model("gone", nil))
+        // With a cloud New memories, the tidy-up kept its rules and Search answers had nothing in
+        // v0.7; neither starts using the cloud model.
+        let (cloud, _) = AISettings.load(try Self.fixture("v1-dangling-cloud"))
+        #expect(cloud.resolve(.newMemories).model == .model(account: "anthropic", model: "claude-haiku-5-5"))
+        #expect(cloud.resolve(.tidyUp).model == .unresolved(account: "gone"))
+        #expect(cloud.resolve(.searchAnswers).model == .unresolved(account: "gone"))
+        #expect(cloud.sendFacts(proposals: false, split: false, tidyUpScheduled: true, localities: [:]).isEmpty)
     }
 
     @Test func alreadyConvertedLoadsAsIs() throws {

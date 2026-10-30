@@ -1,0 +1,1 @@
+{"providers":[{"endpoint":{"id":"anthropic","kind":"anthropic","baseURL":"https:\/\/api.anthropic.com\/v1","markedCloud":false},"name":"Anthropic","model":"claude-haiku-5-5"}],"classifier":"anthropic","cloudLimit":{"upTo":{"_0":"internal"}},"usage":{},"tidyUp":"gone","searchAnswers":true,"searchAnswersModel":"gone"}
