@@ -66,7 +66,7 @@ struct HomeView: View {
                 .padding(.vertical, 12)
                 .background(Palette.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.separator.opacity(0.6), lineWidth: 0.5))
-            CaptureFooter(box: model.composer, keys: String(localized: "⏎ Remember · ⌘⏎ Search vault"), centered: true)
+            CaptureFooter(cloudProvider: model.composer.cloudProvider, keys: String(localized: "⏎ Remember · ⌘⏎ Search vault"), centered: true)
                 .frame(maxWidth: .infinity)
         }
     }

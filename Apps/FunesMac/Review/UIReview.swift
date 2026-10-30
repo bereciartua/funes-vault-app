@@ -428,6 +428,8 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await sheet("capture-hud-\(suffix)", HUDView(text: String(localized: "Saved to Inbox"), symbol: "checkmark.circle.fill").padding(20),
                         titled: false)
             await sheet("menu-bar-icons-\(suffix)", MenuIconStrip().padding(16), titled: false)
+            // The menu bar panel (Phase 10), state by state.
+            await menuBarPanelScenes(fixture, saveItem: saveItem(fixture), suffix: suffix)
 
             // Settings, pane by pane and page by page (ADR-0030), then the problem scenes.
             let settings = SettingsWindowController(model: model)
@@ -543,6 +545,8 @@ final class UIReview: NSObject, NSApplicationDelegate {
     /// Lets the window settle, then hands it to the script and waits until it's captured.
     private func snapshot(_ name: String, _ window: NSWindow?) async {
         guard let window else { return }
+        // FUNES_UI_ONLY=<part of a name> captures only the matching scenes (ui_snapshots.sh passes it on).
+        if let only = ProcessInfo.processInfo.environment["FUNES_UI_ONLY"], !only.isEmpty, !name.contains(only) { return }
         NSApp.activate(ignoringOtherApps: true)
         window.orderFrontRegardless()
         try? await Task.sleep(for: .milliseconds(900))
@@ -598,6 +602,126 @@ extension UIReview {
         if let scroll = view as? NSScrollView { return scroll }
         for child in view.subviews { if let found = scrollView(in: child) { return found } }
         return nil
+    }
+}
+
+extension UIReview {
+    /// The menu bar panel's states (ADR-0029, 04-ux-mac.md ▸ Menu bar), each from the app's own
+    /// state as the user would reach it: a Pending request waiting (the fixture's), a live access
+    /// panel, a pause, a search with an answer, the port in use, Remote Access's tunnel down and its
+    /// automatic turn-off, a new vault, and the most the panel holds.
+    private func menuBarPanelScenes(_ fixture: Fixture, saveItem: PanelItem, suffix: String) async {
+        let model = fixture.model
+        let panelModel = MenuBarPanelModel(app: model, saver: CaptureSaver(model: model, hud: HUD()))
+        let controller = MenuBarPanelController(model: panelModel)
+        keep.append(controller)
+        let pulse = Self.samplePulse(fixture)
+        let field = panelModel.field
+        let address = "https://my-mac.tail1234.ts.net"
+        // Remote Access set up and off, whatever the window's scenes left.
+        model.remoteAccess.reviewSet(enabled: false, origin: address, tunnel: .tailscaleFunnel)
+        field.autoAskPause = { _ in nil }
+        func scene(_ name: String, _ controller: MenuBarPanelController, pulse: RecentPulse?) async {
+            let window = controller.reviewShow()
+            if let pulse { controller.model.reviewPulse(pulse) }
+            try? await Task.sleep(for: .milliseconds(600))
+            await snapshot("\(name)-\(suffix)", window)
+            controller.reviewHide()
+        }
+        /// A search of the sample vault, answered with the review's answer.
+        func searchAndAnswer(_ text: String) async {
+            field.text = text
+            field.commandReturn()
+            for _ in 0..<100 where field.page == nil { try? await Task.sleep(for: .milliseconds(20)) }
+            let rows = field.page?.rows ?? []
+            if let role = rows.first(where: { $0.title == "Role at Chatham" }), let old = rows.first(where: { $0.title == "Chatham job" }) {
+                field.ask = { _, ids in
+                    PanelSearchAnswer(answer: .review(role: role.id, old: old.id), results: field.page?.total ?? ids.count,
+                                      engine: "Claude (Claude Code)", limit: Sensitivity.internal.title)
+                }
+                field.askNow()
+                for _ in 0..<100 where field.answer.map({ if case .answered = $0 { false } else { true } }) ?? true {
+                    try? await Task.sleep(for: .milliseconds(20))
+                }
+            }
+        }
+        let queue = model.services.approvals.queue
+        func access(_ seconds: TimeInterval) -> PanelItem {
+            FunesApprovals.accessItem(
+                AccessPrompt(agentID: fixture.agents.cursor?.id ?? UUID(), categoryKey: "project_context", operation: .read,
+                             task: "Summarize the user's current projects", expiresAt: Date().addingTimeInterval(seconds)),
+                agentName: "Cursor", categoryName: "Project context")
+        }
+
+        // On, with the fixture's Pending request waiting.
+        await scene("menubar-panel", controller, pulse: pulse)
+
+        // Two cards: a live access panel (on a clock, with the Review Request shortcut) and the Pending request.
+        let live = access(41.5)
+        queue.enqueue(live) { _ in }
+        await scene("menubar-panel-waiting", controller, pulse: pulse)
+        queue.withdraw(live.id)
+
+        model.pause(.oneHour)
+        await scene("menubar-panel-paused", controller, pulse: pulse)
+        model.resume()
+
+        // Results and an answer, in place of the chart.
+        await searchAndAnswer("title at Chatham")
+        await scene("menubar-panel-search", controller, pulse: nil)
+
+        model.mcpStatus = .failed(.portInUse(47_625))
+        await scene("menubar-panel-cant-connect", controller, pulse: pulse)
+        model.mcpStatus = .listening(port: 47_625)
+
+        model.remoteAccess.reviewSet(enabled: true, origin: address, tunnel: .tailscaleFunnel, health: .notRunning(reason: .noTunnel))
+        await scene("menubar-panel-remote-down", controller, pulse: pulse)
+        model.remoteAccess.reviewSet(enabled: true, origin: address, tunnel: .tailscaleFunnel,
+                                     health: .running(address: address, port: 443))
+        model.remoteAccess.setAutoOff(4 * 3_600)
+        await scene("menubar-panel-remote-until", controller, pulse: pulse)
+        model.remoteAccess.setAutoOff(0)
+        model.remoteAccess.reviewSet(enabled: false, origin: address, tunnel: .tailscaleFunnel)
+
+        // A new vault with no agents.
+        let empty = MenuBarPanelController(model: MenuBarPanelModel(app: fixture.empty,
+                                                                    saver: CaptureSaver(model: fixture.empty, hud: HUD())))
+        keep.append(empty)
+        await scene("menubar-panel-empty", empty, pulse: nil)
+
+        // The most it holds: 3 cards and the overflow, a 4-line field, an answer and 5 results.
+        let fullAccess = access(13.5)
+        var second = saveItem, third = saveItem
+        second.cardTitle = "Claude Code wants to save a memory"
+        third = PanelItem(id: UUID(), kind: third.kind, agentID: third.agentID, title: third.title, rows: third.rows,
+                          primary: third.primary, secondary: third.secondary, announcement: "")
+        third.cardTitle = "Codex wants to save a correction"
+        for item in [fullAccess, second, third] { queue.enqueue(item) { _ in } }
+        let search = field.search
+        field.search = { _ in try await search("title at Chatham") }
+        await searchAndAnswer("What's my title at Chatham now?\nAnd since when?\nWho was I before that?\nAnything older?")
+        await scene("menubar-panel-full", controller, pulse: nil)
+        field.search = search
+        for item in [fullAccess, second, third] { queue.withdraw(item.id) }
+    }
+
+    /// A day of the sample vault's traffic: captures through the day, agents reading in the
+    /// morning and afternoon, one refusal.
+    private static func samplePulse(_ fixture: Fixture) -> RecentPulse {
+        let now = Date()
+        let current = Calendar.current.dateInterval(of: .hour, for: now)?.start ?? now
+        let claude = fixture.agents.claudeCode.id.db, cursor = fixture.agents.cursor?.id.db ?? "cursor"
+        let inbound: [Int: VaultOverview.Sources] = [1: .init(mac: 1), 3: .init(iphone: 2), 9: .init(mac: 1, agent: 1),
+                                                    10: .init(mac: 3), 14: .init(iphone: 1), 18: .init(mac: 2),
+                                                    20: .init(agent: 1), 22: .init(mac: 1), 23: .init(iphone: 1)]
+        let out: [Int: [String: Int]] = [2: [claude: 2], 9: [claude: 4, cursor: 1], 10: [claude: 6], 11: [cursor: 2],
+                                        15: [claude: 3], 16: [claude: 5, cursor: 2], 19: [claude: 1], 22: [cursor: 3]]
+        let hours = (0..<24).map { i in
+            VaultOverview.Bucket(date: current.addingTimeInterval(Double(i - 23) * 3_600), inbound: inbound[i] ?? .init(),
+                                 out: out[i] ?? [:], refused: i == 16 ? 1 : 0)
+        }
+        return RecentPulse(generatedAt: now, timeZone: TimeZone.current.identifier, hours: hours,
+                           agentNames: [claude: "Claude Code", cursor: "Cursor"])
     }
 }
 

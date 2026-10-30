@@ -167,10 +167,30 @@ private extension Dictation.State {
     var isFailure: Bool { if case .failed = self { true } else { false } }
 }
 
+/// What a mic dictates into: the capture box, Home's composer, the menu bar panel's field.
+@MainActor
+protocol DictationTarget: AnyObject, Observable {
+    var text: String { get set }
+    var error: String? { get set }
+    /// Bumped when dictation must stop (a save, closing); words after it are dropped.
+    var stopDictation: Int { get }
+    func focusField()
+    /// Dictation is asking for access or getting ready: the menu bar panel stays open meanwhile.
+    func dictationStarting(_ starting: Bool)
+}
+
+extension DictationTarget {
+    func dictationStarting(_ starting: Bool) {}
+}
+
+extension CaptureBoxModel: DictationTarget {
+    func focusField() { focusRequest += 1 }
+}
+
 /// The mic beside the field: dictates into it, keeping what was there; the text stays editable.
 @available(macOS 26, *)
-struct DictationButton: View {
-    @Bindable var box: CaptureBoxModel
+struct DictationButton<Target: DictationTarget>: View {
+    let box: Target
     @State private var dictation = Dictation()
     /// Which listening the words belong to: saving moves it on, so the last words of a dictation
     /// that ⏎ ended never land in the emptied field.
@@ -204,6 +224,7 @@ struct DictationButton: View {
         }
         .onChange(of: dictation.state) { _, state in
             if case .failed(let message) = state { box.error = message }
+            box.dictationStarting(state == .starting)
         }
         .onDisappear { Task { await dictation.stop() } }
     }
@@ -216,7 +237,7 @@ struct DictationButton: View {
         box.error = nil
         let existing = box.text
         let lead = existing.isEmpty || existing.last?.isWhitespace == true ? existing : existing + " "
-        box.focusRequest += 1
+        box.focusField()
         session.current += 1
         let mine = session.current
         Task {

@@ -43,7 +43,7 @@ Badges, once the listings exist:
 
    Funes Vault needs **macOS 15 or later**, on Apple silicon or Intel.
 
-2. **Open the app.** It lives in the menu bar. Its window opens on **Home**, with a short setup checklist:
+2. **Open the app.** It lives in the menu bar: a click on its eye opens a panel with what waits for you, the **Agents** and **Remote Access** switches, a field to remember (⏎) or search (⌘⏎) and the last 24 hours; a right click has Open Funes Vault, Settings and Quit. Its window opens on **Home**, with a short setup checklist:
    1. **Connect an agent.** **Add…** opens Add Agent, with the agents found on your Mac first. Pick one and a starting access: the default, **Read low-sensitivity memories, ask first**, lets it read memories up to Low and asks you before each share. For Claude Code, Claude Desktop, Cursor and Codex, **Add and Connect…** shows exactly what it will change or run first, backs up a settings file before changing it, and never writes the key into the agent's settings. For other agents, copy the setup from the agent's **Connect** tab.
    2. **Approve its first request.** Ask your agent something, for example *"Plan a week of dinners for me"* or *"Set up this TypeScript project the way I like it."* The agent asks Funes for context, you see the panel, and you choose what to share. The step is done when the agent's first request arrives.
    3. **Seed your vault.** Answer a few optional questions, import your ChatGPT memories or paste Claude's, or import a Markdown file. What you add goes to the Inbox first, and anything that looks like a secret is never imported. The questions end with the categories agents should never see: those get Deny for every agent, including ones you add later.
@@ -70,7 +70,7 @@ claude.ai, ChatGPT and cloud coding agents run on their vendor's servers, so the
   <img alt="The Remote Access page, on and marked Experimental: the tunnel is reachable and running (Tailscale Funnel, forwarding to 47627), the public address and the MCP URL with its secret path, the port, when to turn off, and the agents with cloud access." src="docs/images/remote-access-light.png" width="720">
 </picture>
 
-A cloud agent gets exactly the access you set for it, and the same panels on your Mac: if you're away, its requests wait and expire as for any agent. While Remote Access is on, the vault is reachable through a public address, and what you share with a cloud agent goes to its vendor's servers. It's off by default, and **Turn Off Remote Access** in the menu bar cuts every cloud agent off at once. The [MCP guide](docs/MCP.md#use-from-cloud-agents) has the details.
+A cloud agent gets exactly the access you set for it, and the same panels on your Mac: if you're away, its requests wait and expire as for any agent. While Remote Access is on, the vault is reachable through a public address, and what you share with a cloud agent goes to its vendor's servers. It's off by default, and the **Remote Access** switch in the menu bar panel turns it off at once, cutting every cloud agent off. The [MCP guide](docs/MCP.md#use-from-cloud-agents) has the details.
 
 ## How you stay in control
 
@@ -107,7 +107,7 @@ Agents propose memories, and by default each one waits in the **Inbox** as a car
 
 ### You see everything, and stop anything
 
-**Activity** lists what each agent asked for and what happened, by day, with filters. Funes stores only ids and reason codes, never text: it shows the memories involved by their current title when you open a row, says what was withheld and why, and links to fix a refusal. **Pause** an agent to refuse its requests while keeping its setup, **Remove…** it to cut it off, or **Pause Funes Vault** from the menu bar for an hour, until tomorrow or until you resume.
+**Activity** lists what each agent asked for and what happened, by day, with filters. Funes stores only ids and reason codes, never text: it shows the memories involved by their current title when you open a row, says what was withheld and why, and links to fix a refusal. **Pause** an agent to refuse its requests while keeping its setup, **Remove…** it to cut it off, or turn off the **Agents** switch in the menu bar panel to pause all agents for an hour, until tomorrow or until you resume.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/activity-dark.png">
@@ -162,7 +162,7 @@ By default, yes: every starting access asks before each share. You can turn **As
 <details>
 <summary><b>What if I'm not at my Mac when an agent asks?</b></summary>
 
-The agent waits 45 seconds, then is told the request is waiting for your approval. The request stays in **Pending requests** in the menu bar menu for 15 minutes. If you share it in that time, the agent gets the memories the next time it checks.
+The agent waits 45 seconds, then is told the request is waiting for your approval. The request stays in **Pending requests** for 15 minutes, with a **Review** card at the top of the menu bar panel. If you share it in that time, the agent gets the memories the next time it checks.
 </details>
 
 <details>

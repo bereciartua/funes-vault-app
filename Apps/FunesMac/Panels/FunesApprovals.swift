@@ -267,7 +267,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         if let evidence = suggestion.evidence, !evidence.isEmpty {
             says.append(PanelItem.Fact(label: String(localized: "Why"), value: evidence, collapsible: true))
         }
-        let item = PanelItem(
+        var item = PanelItem(
             id: suggestion.id, kind: .save, agentID: suggestion.agentID?.uuidString ?? "",
             title: suggestion.targetMemoryID == nil ? String(localized: "Save this memory?")
                                                     : String(localized: "Save this correction?"),
@@ -278,6 +278,8 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             facts: facts, primary: String(localized: "Save"), secondary: String(localized: "Later"),
             tertiary: String(localized: "Discard"), edit: String(localized: "Edit…"),
             announcement: String(localized: "\(agentName) suggests a memory for Funes"))
+        item.cardTitle = suggestion.targetMemoryID == nil ? String(localized: "\(agentName) wants to save a memory")
+                                                          : String(localized: "\(agentName) wants to save a correction")
         let shown = await MainActor.run { () -> Bool in
             guard !queue.isClosed else { return false }
             // While the panel (or the iPhone's approval) is up, the tidy-up leaves it alone.
@@ -441,6 +443,16 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     @MainActor
     func review() -> Bool {
         guard !queue.items.isEmpty else { return false }
+        bringForward()
+        return true
+    }
+
+    /// A menu bar card's Review: this item selected in the approval panel, which comes forward
+    /// and becomes key. Its arming delay and keys are the panel's own. False when it's gone.
+    @MainActor
+    func review(_ id: UUID) -> Bool {
+        guard queue.items.contains(where: { $0.id == id }) else { return false }
+        queue.select(id)
         bringForward()
         return true
     }

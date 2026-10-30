@@ -50,7 +50,7 @@
 - **Snapshots are renamed and added:** one per pane and per page, light and dark, plus problem states (a missing key, a blocked plan, an account with no models, an unresolved choice, an embedding error).
 - **No test target for the app.** The data change goes to FunesCore for tests; the window is checked by the UI-review snapshots and by hand.
 - **The iPhone app changes only words**: its three strings that send people to "Settings ▸ AI Models" on the Mac.
-- **The menu bar panel** (ADR-0029 and Phase 10, planned in parallel on their own branch) names Settings ▸ General for the Review Request shortcut, Settings ▸ Connections for the agent server and Settings ▸ AI Models ▸ Search answers. Whichever lands second updates them: to Capture & Shortcuts, `agent-server` and Features ▸ Search answers.
+- **The menu bar panel** (ADR-0029 and Phase 10, planned in parallel on their own branch) names Settings ▸ General for the Review Request shortcut, Settings ▸ Connections for the agent server and Settings ▸ AI Models ▸ Search answers. Whichever lands second updates them: to Capture & Shortcuts, `agent-server` and Features ▸ Search answers. Phase 10 landed first, so this phase updated them when it merged `main`.
 
 ## Spec changes
 Made with this decision:

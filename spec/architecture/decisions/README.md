@@ -4,7 +4,7 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 
 | # | Decision | Status |
 |---|---|---|
-| 0001 | [Native macOS menu bar app](0001-native-menu-bar-app.md) | Accepted |
+| 0001 | [Native macOS menu bar app](0001-native-menu-bar-app.md) | Accepted; amended by 0029 |
 | 0002 | [Local MCP server over loopback HTTP with a stdio launcher](0002-local-mcp-server.md) | Accepted; amended by 0018 |
 | 0003 | [The Mac is the only source of truth; the iPhone is a thin client (no CloudKit)](0003-mac-is-the-only-source-of-truth.md) | Accepted; amended by 0019 |
 | 0004 | [SQLite through GRDB for storage](0004-sqlite-grdb.md) | Accepted |
@@ -28,8 +28,9 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 | 0022 | [The user sets the cloud limit, up to everything; one limit for every task; a daily request cap](0022-cloud-limit-and-daily-cap.md) | Accepted |
 | 0023 | [Provider embeddings are a second index next to the bundled one](0023-provider-embeddings-second-index.md) | Accepted |
 | 0024 | [Claude and ChatGPT subscriptions as model providers, through the user's own Claude Code and Codex](0024-subscription-providers.md) | Accepted |
-| 0025 | [A vault overview of counts only, served to the iPhone, which caches it for Home and widgets](0025-vault-overview-and-iphone-cache.md) | Accepted |
+| 0025 | [A vault overview of counts only, served to the iPhone, which caches it for Home and widgets](0025-vault-overview-and-iphone-cache.md) | Accepted; amended by 0029 |
 | 0026 | [A small "About you" profile beside the vault, shared per agent and per field with memory requests](0026-about-you-profile.md) | Accepted |
 | 0027 | [Keep each memory's earlier versions for 90 days, so every change can show what it replaced](0027-memory-revisions.md) | Accepted |
 | 0028 | [Search answers: snippets that show the matching sentence, and an Ask that quotes your memories, on the Mac and the iPhone](0028-search-answers.md) | Accepted |
+| 0029 | [The menu bar icon opens a panel: Review cards, two switches, a field and the last 24 hours](0029-menu-bar-panel.md) | Accepted |
 | 0030 | [Settings gets a sidebar; AI splits into features, accounts and limits; an account offers several models](0030-settings-window.md) | Accepted |

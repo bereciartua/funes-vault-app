@@ -167,7 +167,7 @@ struct VaultView: View {
                 List(selection: Binding(get: { vault.selection }, set: { vault.selection = $0 })) {
                     // Search answers (FR-AI-17): the Ask row, then the card, as the list's first row.
                     if vault.answersOn, vault.canAsk || vault.answer != nil {
-                        AnswerCard(vault: vault, model: model)
+                        AnswerCard(vault: vault)
                     }
                     ForEach(vault.memories) { memory in
                         MemoryRow(memory: memory, model: model, now: model.now, snippet: vault.snippets[memory.id],

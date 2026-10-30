@@ -93,9 +93,10 @@ final class CaptureController: NSObject {
     }
 }
 
-/// Saving a capture, the same from the capture box and Home's composer (FR-C-01, FR-H-02): the
-/// length limit, the secret scanner, the HUD, and the text back with the reason when storing it
-/// fails.
+/// Saving a capture, the same from the capture box, Home's composer and the menu bar panel's field
+/// (FR-C-01, FR-H-02, FR-G-01): the length limit, the secret scanner, then storing it. The box and
+/// the composer show the HUD and get the text back with the reason when storing fails; the panel
+/// handles the result itself.
 @MainActor
 final class CaptureSaver {
     private let model: AppModel
@@ -106,35 +107,47 @@ final class CaptureSaver {
         self.hud = hud
     }
 
+    /// Why `body` can't be saved as it is (too long, or it looks like it holds a secret); nil
+    /// when it can. Checked before a field lets go of the text.
+    func validate(_ body: String) -> String? {
+        guard InputLimits.length(of: body) <= InputLimits.body.upperBound else {
+            return String(localized: "That's longer than 10,000 characters.")
+        }
+        let findings = SecretScanner.scan(body)
+        return findings.isEmpty ? nil : SecretText.message(findings)
+    }
+
+    /// Stores a capture that passed `validate`: nil once it's in the Inbox, else why it isn't.
+    /// The caller decides what to do with the text (the menu bar panel stays open).
+    func store(_ body: String) async -> String? {
+        do {
+            try await model.services.captures.capture(body, sensitivityHint: model.preferences.captureSensitivity, now: Date())
+            return nil
+        } catch let error as VaultError {
+            return ErrorText.message(error)
+        } catch {
+            logger.error("Capture failed")
+            return String(localized: "It couldn't be saved. Try again.")
+        }
+    }
+
     /// Stores `box.text` and empties the box, or shows why not in it; true when it was taken.
+    /// A store that fails later puts the text back with the reason (`box.restore`).
     func save(_ box: CaptureBoxModel) -> Bool {
         let body = box.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !body.isEmpty else { return false }
-        guard InputLimits.length(of: body) <= InputLimits.body.upperBound else {
-            box.error = String(localized: "That's longer than 10,000 characters.")
+        if let reason = validate(body) {
+            box.error = reason
             return false
         }
-        let findings = SecretScanner.scan(body)
-        guard findings.isEmpty else {
-            box.error = SecretText.message(findings)
-            return false
-        }
-        let hint = model.preferences.captureSensitivity
-        let services = model.services
         let hud = self.hud
         Task {
-            do {
-                try await services.captures.capture(body, sensitivityHint: hint, now: Date())
+            if let failure = await store(body) {
+                box.text = body
+                box.error = failure
+                box.restore()
+            } else {
                 hud.show(String(localized: "Saved to Inbox"))
-            } catch let error as VaultError {
-                box.text = body
-                box.error = ErrorText.message(error)
-                box.restore()
-            } catch {
-                logger.error("Capture failed")
-                box.text = body
-                box.error = String(localized: "It couldn't be saved. Try again.")
-                box.restore()
             }
         }
         box.stopDictation += 1

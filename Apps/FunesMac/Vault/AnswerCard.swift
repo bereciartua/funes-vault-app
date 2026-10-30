@@ -3,11 +3,25 @@ import FunesCore
 import FunesProtocol
 import SwiftUI
 
-/// The Vault's Search answers row (04-ux-mac.md ▸ Vault, FR-AI-17): "Ask Funes" with ⌘⏎, then the
-/// reading card with Cancel, then the answer, no answer or a failure. Rows below never move.
+/// What an answer card shows and does: the Vault's search, or the menu bar panel's field.
+@MainActor
+protocol AnswerCardSource: AnyObject {
+    var answer: VaultModel.Answer? { get }
+    /// The cited memories in the order the answer first cites them: their numbers.
+    var answerSources: [UUID] { get }
+    func ask()
+    /// Cancel and Clear.
+    func clearAnswer()
+    /// A claim's number: the memory, with the quote highlighted.
+    func showSource(_ id: UUID, quote: String)
+    func sourceTitle(_ id: UUID) -> String
+}
+
+/// The Search answers row (04-ux-mac.md ▸ Vault, ▸ Menu bar; FR-AI-17): "Ask Funes" with ⌘⏎,
+/// then the reading card with Cancel, then the answer, no answer or a failure. Rows below never
+/// move. The same card in the Vault and the menu bar panel.
 struct AnswerCard: View {
-    let vault: VaultModel
-    let model: AppModel
+    let vault: any AnswerCardSource
 
     var body: some View {
         Group {
@@ -167,7 +181,7 @@ struct AnswerCard: View {
         return lines
     }
 
-    private func title(_ id: UUID) -> String { vault.memories.first { $0.id == id }?.title ?? "" }
+    private func title(_ id: UUID) -> String { vault.sourceTitle(id) }
 }
 
 /// A numbered source chip, on the card's claims and on the cited rows.
