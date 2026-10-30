@@ -140,6 +140,8 @@ public final class CompanionHandlers: Sendable {
         let token = UUID()
         let task = Task { () throws -> (SearchAnswerEngine, SearchAnswer) in
             guard let engine = await answers.engine() else { throw CompanionError(.answersOff) }
+            // Asked on its own by a phone whose status is older than the Mac's setting.
+            if params.automatic == true, !engine.trigger.fires(for: params.query) { throw CompanionError(.askRequired) }
             try Task.checkCancellation()
             return (engine, try await answers.answer(params.query, ids: params.ids, actor: .device(device), via: .companion))
         }

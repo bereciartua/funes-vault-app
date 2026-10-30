@@ -9,7 +9,8 @@ import Testing
         "What's my title at Chatham?", "what is my title at chatham", "When does the lease end", "who is Lucía",
         "how do I reset the router", "my title at Chatham?", "  title?  ", "¿Dónde vive mi hermana", "donde vive mi hermana",
         "Cuándo vence el contrato", "cuanto pagué de alquiler", "Por qué cambié de banco", "por que cambie de banco",
-        "Quién es Lucía", "Cómo hago el pan", "Which bank", "Why did I leave",
+        "Quién es Lucía", "Cómo hago el pan", "Which bank", "Why did I leave", "en qué banco tengo la cuenta",
+        "a quién llamo si se corta la luz", "para qué sirve el router", "De dónde es Lucía", "desde cuándo pago el gimnasio",
     ])
     func questions(_ query: String) {
         #expect(AnswerTrigger.isQuestion(query))
@@ -18,7 +19,7 @@ import Testing
 
     @Test(arguments: [
         "Chatham title", "lease", "do not disturb", "is it", "whatever", "Howard's birthday", "porque sí", "quemado",
-        "the question of what", "", "   ",
+        "the question of what", "", "   ", "en casa", "a la playa", "para Lucía", "de",
     ])
     func notQuestions(_ query: String) {
         #expect(!AnswerTrigger.isQuestion(query))

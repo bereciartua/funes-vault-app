@@ -304,11 +304,15 @@ public struct MemoryAnswerParams: Codable, Sendable, Equatable {
     public var filters: MemorySearchFilters?
     /// The results the phone shows, in order: 1 to 10. Never memory text.
     public var ids: [UUID]
+    /// True when the phone asked on its own (memory processing §10.6): the Mac checks its own
+    /// setting again. Missing: the user asked.
+    public var automatic: Bool?
 
-    public init(query: String, filters: MemorySearchFilters? = nil, ids: [UUID]) {
+    public init(query: String, filters: MemorySearchFilters? = nil, ids: [UUID], automatic: Bool? = nil) {
         self.query = query
         self.filters = filters
         self.ids = ids
+        self.automatic = automatic
     }
 
     public static let maxIDs = 10

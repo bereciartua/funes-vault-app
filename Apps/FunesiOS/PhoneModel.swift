@@ -516,7 +516,7 @@ extension PhoneModel {
         // Only `memories.answer` sends these; Search's answer card words them (`AnswerWording`).
         case .answersOff:
             return String(localized: "Search answers are off on your Mac.")
-        case .capReached, .modelUnavailable, .modelTimeout:
+        case .capReached, .modelUnavailable, .modelTimeout, .askRequired:
             return String(localized: "Your Mac's model couldn't answer. Try again.")
         }
     }

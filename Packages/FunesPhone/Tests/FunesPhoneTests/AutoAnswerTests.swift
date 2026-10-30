@@ -26,7 +26,11 @@ import Testing
         let vault = Self.vault()
         let search = await Self.search(vault, trigger: .questions, query: "what coffee")
         await search.autoTask?.value
-        #expect(vault.asks.map(\.query) == ["what coffee"])
+        #expect(vault.asks.map(\.query) == ["what coffee"] && vault.asks.first?.automatic == true)
+        // Asked by the user, the call isn't marked.
+        search.clearAnswer()
+        await search.ask()
+        #expect(vault.asks.last?.automatic == nil)
         guard case .answered = search.answer else { Issue.record("\(search.answer)"); return }
     }
 
@@ -90,6 +94,69 @@ import Testing
         search.query = "coffee b"
         await pending.value
         #expect(vault.asks.isEmpty && search.answer == .idle)
+    }
+
+    /// Refreshing during the pause starts it again: one answer, for the new list.
+    @Test func refreshingDuringThePauseRestartsIt() async throws {
+        let vault = Self.vault()
+        let search = SearchModel(caller: vault)
+        search.macAnswers = SearchAnswersStatus(engine: "Claude", locality: .cloud, trigger: .everySearch)
+        let gate = AsyncStream<Void>.makeStream()
+        search.pause = { _ in for await _ in gate.stream { return } }
+        search.query = "coffee"
+        await search.search()
+        let first = try #require(search.autoTask)
+        await search.search()
+        let second = try #require(search.autoTask)
+        await first.value
+        #expect(vault.asks.isEmpty)
+        gate.continuation.yield()
+        await second.value
+        #expect(vault.asks.count == 1)
+    }
+
+    /// A status saying the Mac answers on its own, arriving after the results, starts the pause.
+    @Test func aLateStatusStartsThePause() async throws {
+        let vault = Self.vault()
+        let search = SearchModel(caller: vault)
+        search.pause = { _ in }
+        search.query = "what coffee"
+        await search.search()
+        #expect(search.autoTask == nil)
+        search.statusChecked(SearchAnswersStatus(engine: "Claude", locality: .cloud, trigger: .questions))
+        await search.autoTask?.value
+        #expect(vault.asks.count == 1)
+        // Further status checks saying the same don't ask again.
+        search.statusChecked(SearchAnswersStatus(engine: "Claude", locality: .cloud, trigger: .questions))
+        #expect(search.autoTask == nil || vault.asks.count == 1)
+        await search.autoTask?.value
+        #expect(vault.asks.count == 1)
+    }
+
+    /// Back to a search after another one that wasn't answered: a new search, answered again.
+    @Test func returningToASearchAnswersItAgain() async throws {
+        let vault = Self.vault()
+        let search = await Self.search(vault, trigger: .everySearch, query: "coffee")
+        await search.autoTask?.value
+        search.query = "coffee x"
+        await search.search()
+        #expect(search.results.isEmpty && search.autoTask == nil)
+        search.query = "coffee"
+        await search.search()
+        await search.autoTask?.value
+        #expect(vault.asks.map(\.query) == ["coffee", "coffee"])
+    }
+
+    /// The Mac answers only when asked now: Ask shows, and the phone stops asking on its own.
+    @Test func askRequiredShowsAskAndStopsAskingOnItsOwn() async throws {
+        let vault = Self.vault()
+        vault.fail(.memoriesAnswer, with: .method(CompanionError(.askRequired)))
+        let search = await Self.search(vault, trigger: .everySearch, query: "coffee")
+        await search.autoTask?.value
+        #expect(search.answer == .idle && search.canAsk && search.macAnswers?.trigger == .ask)
+        search.query = "coffee beans"
+        await search.search()
+        #expect(search.autoTask == nil)
     }
 
     /// A Mac before 10 results takes 8 ids: the phone sends no more.

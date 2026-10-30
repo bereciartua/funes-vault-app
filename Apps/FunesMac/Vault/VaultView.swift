@@ -29,6 +29,10 @@ struct VaultView: View {
         }
         .background(Palette.pane)
         .task { await vault.load() }
+        .onAppear { vault.setShown(true) }
+        .onDisappear { vault.setShown(false) }
+        // Automatic answers turned on, or a model that can answer on its own chosen, over a list.
+        .onChange(of: vault.answersOn ? vault.answers?.trigger : nil) { _, _ in vault.scheduleAutoAsk() }
         .onChange(of: model.searchFocusRequest) { _, _ in searchFocused = true }
         .onChange(of: model.newMemoryRequest) { _, _ in creating = true }
         .onChange(of: model.dataGeneration) { _, _ in Task { await vault.load() } }

@@ -117,12 +117,15 @@ final class VaultModel {
     private struct Quoted: Equatable { let memoryID: UUID; let quote: String }
     private var quotedValue: Quoted?
     @ObservationIgnored private var answerTask: Task<Void, Never>?
-    /// The automatic Ask waiting for its pause (memory processing §10.6), and the search and
-    /// filters it was for: a reload of the same list (a memory saved elsewhere), Clear or Cancel
-    /// never ask again.
+    /// The automatic Ask waiting for its pause (memory processing §10.6) and the search and
+    /// filters it waits for; and those one started for, so a reload of the same list (a memory
+    /// saved elsewhere), Clear or Cancel never ask again until the search or filters change.
     @ObservationIgnored private var autoTask: Task<Void, Never>?
+    @ObservationIgnored private var autoPending: AutoKey?
     @ObservationIgnored private var autoAsked: AutoKey?
     private struct AutoKey: Equatable { let query: String; let filter: MemoryFilter }
+    /// Whether the Vault is on screen: nothing is asked on its own while it isn't.
+    @ObservationIgnored private var shown = false
 
     /// Whether Search answers are on: the Ask row, the card and the chips show only then.
     var answersOn: Bool { answers?.isOn ?? false }
@@ -158,30 +161,46 @@ final class VaultModel {
         }
     }
 
-    /// Asks on its own after the pause, once for each search and filters, when Settings says to
-    /// and the search qualifies (a question, or any search).
-    private func scheduleAutoAsk() {
-        guard let answers, canAsk, answer == nil else { return }
+    /// Asks on its own after the pause, once for each search and filters, while the Vault shows,
+    /// when Settings says to and the search qualifies (a question, or any search). Called when a
+    /// list loads (`restart`: the pause counts from the list the answer will read) and when the
+    /// Vault appears or the setting changes (a pause already running goes on).
+    func scheduleAutoAsk(restart: Bool = false) {
+        guard shown, let answers, canAsk, answer == nil else { return }
         let query = listedQuery, filter = listedFilter
         let key = AutoKey(query: query, filter: filter)
         let trigger = answers.trigger
         guard autoAsked != key, trigger.fires(for: query) else { return }
-        autoAsked = key
+        if !restart, autoTask != nil, autoPending == key { return }
         autoTask?.cancel()
+        autoPending = key
         autoTask = Task { [weak self] in
             try? await Task.sleep(for: trigger.pause)
-            guard !Task.isCancelled, let self, self.answer == nil, self.listedQuery == query, self.listedFilter == filter,
-                  self.answers?.trigger.fires(for: query) == true else { return }
+            guard !Task.isCancelled, let self, self.shown, self.canAsk, self.answer == nil, self.listedQuery == query,
+                  self.listedFilter == filter, self.answers?.trigger.fires(for: query) == true else { return }
+            self.autoAsked = key
             self.ask()
         }
+    }
+
+    private func cancelAutoAsk() {
+        autoTask?.cancel()
+        autoTask = nil
+        autoPending = nil
+    }
+
+    /// The Vault appeared or went (another section, the window closed): a pause doesn't outlive
+    /// it, and an answer already reading goes on.
+    func setShown(_ shown: Bool) {
+        self.shown = shown
+        if shown { scheduleAutoAsk() } else { cancelAutoAsk() }
     }
 
     /// Cancel and Clear; and any change of search, scope or filter (rows never move under a card).
     func clearAnswer() {
         answerTask?.cancel()
         answerTask = nil
-        autoTask?.cancel()
-        autoTask = nil
+        cancelAutoAsk()
         answer = nil
         quoted = nil
     }
@@ -226,6 +245,8 @@ final class VaultModel {
 
     /// Runs the search after the debounce; filters and sort apply at once.
     func scheduleSearch(now: Bool = false) {
+        // A new search or filters: it may be answered on its own again.
+        autoAsked = nil
         clearAnswer()
         searchTask?.cancel()
         searchTask = Task { [weak self] in
@@ -257,7 +278,7 @@ final class VaultModel {
             for id in visibleRows { requestSnippets(for: id) }
             selection = selection.intersection(memories.map(\.id))
             loaded = true
-            scheduleAutoAsk()
+            scheduleAutoAsk(restart: true)
         } catch {
             loaded = true
         }

@@ -137,6 +137,30 @@ final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
         }
     }
 
+    /// A phone asking on its own with an older status: the Mac checks its own setting again and
+    /// sends nothing when this search is only answered when asked (memory processing §10.6).
+    @Test func anAutomaticAskIsCheckedAgainstTheMacsSetting() async throws {
+        let manual = ScriptedAnswers(trigger: .ask)
+        let h = try Self.harness(manual)
+        let phone = try await h.pairedPhone()
+        await #expect(throws: CompanionError(.askRequired)) {
+            try await h.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()], automatic: true), phone: phone)
+        }
+        #expect(manual.started.withLock { $0 } == 0)
+        // Asked by the user, it answers.
+        _ = try await h.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()]), phone: phone)
+        #expect(manual.started.withLock { $0 } == 1)
+
+        let questions = ScriptedAnswers(trigger: .questions)
+        let q = try Self.harness(questions)
+        let other = try await q.pairedPhone()
+        _ = try await q.result(MemoriesAnswer.self, MemoryAnswerParams(query: "what coffee?", ids: [UUID()], automatic: true), phone: other)
+        await #expect(throws: CompanionError(.askRequired)) {
+            try await q.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()], automatic: true), phone: other)
+        }
+        #expect(questions.started.withLock { $0 } == 1)
+    }
+
     @Test func errorsHaveTheirCodes() async throws {
         let cases: [(SearchAnswerError, CompanionError)] = [
             (.capReached, CompanionError(.capReached)), (.timeout, CompanionError(.modelTimeout)),

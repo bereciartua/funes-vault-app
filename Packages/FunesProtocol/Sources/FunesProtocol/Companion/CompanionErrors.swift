@@ -133,6 +133,9 @@ public enum CompanionErrorCode: String, Codable, Sendable, CaseIterable {
     case modelUnavailable = "model_unavailable"
     /// `memories.answer`: the model took longer than 45 s.
     case modelTimeout = "model_timeout"
+    /// `memories.answer` sent on its own (`automatic`), but the Mac now answers this search only
+    /// when asked (its setting changed, or Apple on-device answers). Nothing was sent; show Ask.
+    case askRequired = "ask_required"
 }
 
 /// A method call's error: `{"code":"…","message":"…"}`, plus `findings` for secrets and

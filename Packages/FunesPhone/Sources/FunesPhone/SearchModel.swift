@@ -14,11 +14,11 @@ public final class SearchModel {
     public static let pageSize = 30
 
     // Changing the search clears the answer at once, before the search's pause ends.
-    public var query = "" { didSet { if query != oldValue { clearAnswer() } } }
+    public var query = "" { didSet { if query != oldValue { searchChanged() } } }
     /// Active, Archived or Recently Deleted.
-    public var scope = MemoryStatus.active { didSet { if scope != oldValue { clearAnswer() } } }
+    public var scope = MemoryStatus.active { didSet { if scope != oldValue { searchChanged() } } }
     /// Only memories at this level: Home's Sensitivity tile. Nil for every level.
-    public var sensitivity: Sensitivity? { didSet { if sensitivity != oldValue { clearAnswer() } } }
+    public var sensitivity: Sensitivity? { didSet { if sensitivity != oldValue { searchChanged() } } }
     public private(set) var results: [MemorySummary] = []
     public private(set) var phase = Phase.idle
     public private(set) var nextCursor: String?
@@ -51,7 +51,7 @@ public final class SearchModel {
             guard macAnswers != oldValue else { return }
             // Fresh word from the Mac replaces an earlier answers_off.
             macSaidOff = false
-            if macAnswers == nil { clearAnswer() }
+            if macAnswers == nil { clearAnswer() } else { scheduleAutoAsk() }
         }
     }
     /// `answers_off` came back: no Ask until `status.get` says otherwise.
@@ -61,16 +61,21 @@ public final class SearchModel {
     /// even when it says the same as before.
     public func statusChecked(_ answers: SearchAnswersStatus?) {
         macAnswers = answers
-        if answers != nil { macSaidOff = false }
+        if answers != nil {
+            macSaidOff = false
+            scheduleAutoAsk()
+        }
     }
     /// Settings ▸ Search answers ▸ Show Ask in Search (this iPhone only, on by default).
-    public var showAsk = true
+    public var showAsk = true { didSet { if showAsk != oldValue { showAsk ? scheduleAutoAsk() : cancelAutoAsk() } } }
     @ObservationIgnored private var answerTask: Task<Void, Never>?
     /// Bumped by each Ask, Cancel and new search, so a late answer is dropped.
     private var answerGeneration = 0
-    /// The automatic Ask waiting for its pause (memory processing §10.6), and the search it was
-    /// for: refreshing the same search, Clear or Cancel never ask again.
+    /// The automatic Ask waiting for its pause (memory processing §10.6) and the search it waits
+    /// for; and the search one started for, so refreshing it, Clear or Cancel never ask again
+    /// until the search changes.
     @ObservationIgnored var autoTask: Task<Void, Never>?
+    private var autoPending: MemorySearchParams?
     private var autoAsked: MemorySearchParams?
     /// Waits out the automatic Ask's pause; tests shorten it.
     @ObservationIgnored var pause: @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
@@ -102,7 +107,8 @@ public final class SearchModel {
             resultsParams = params
             nextCursor = page.nextCursor
             phase = .loaded
-            scheduleAutoAsk()
+            // New results restart the pause: it counts from the list the answer will read.
+            scheduleAutoAsk(restart: true)
         } catch {
             // Cancelled (the query changed while typing, the tab closed): another search follows,
             // and a cancelled call says nothing about the Mac.
@@ -171,7 +177,9 @@ public final class SearchModel {
 
     /// Asks the Mac to answer the search from the results shown. Returns when the card shows the
     /// answer, a failure, or was cleared meanwhile.
-    public func ask() async {
+    public func ask() async { await ask(automatic: false) }
+
+    private func ask(automatic: Bool) async {
         guard canAsk, let params = resultsParams else { return }
         answerTask?.cancel()
         answerGeneration += 1
@@ -183,7 +191,8 @@ public final class SearchModel {
         let caller = self.caller
         let task = Task { [weak self] in
             do {
-                let result = try await caller.call(MemoriesAnswer.self, MemoryAnswerParams(query: params.query, filters: params.filters, ids: ids))
+                let result = try await caller.call(MemoriesAnswer.self, MemoryAnswerParams(query: params.query, filters: params.filters, ids: ids,
+                                                                                  automatic: automatic ? true : nil))
                 guard let self, mine == self.answerGeneration else { return }
                 self.answer = .answered(result, results: total)
             } catch {
@@ -196,19 +205,35 @@ public final class SearchModel {
     }
 
     /// Asks on its own after the pause, once for each search, when the Mac says to and the search
-    /// qualifies (a question, or any search). Never while Show Ask is off.
-    private func scheduleAutoAsk() {
+    /// qualifies (a question, or any search); never while Show Ask is off. Called when results
+    /// arrive (`restart`: the pause starts again) and when the Mac's status or Show Ask change
+    /// (a pause already running for this search goes on).
+    private func scheduleAutoAsk(restart: Bool = false) {
         guard let trigger = macAnswers?.trigger, canAsk, let params = resultsParams, autoAsked != params,
               trigger.fires(for: params.query) else { return }
-        autoAsked = params
+        if !restart, autoTask != nil, autoPending == params { return }
         autoTask?.cancel()
+        autoPending = params
         let pause = self.pause
         autoTask = Task { [weak self] in
             try? await pause(trigger.pause)
-            guard !Task.isCancelled, let self, self.resultsParams == params, self.macAnswers?.trigger.fires(for: params.query) == true
-            else { return }
-            await self.ask()
+            guard !Task.isCancelled, let self, self.resultsParams == params, self.canAsk,
+                  self.macAnswers?.trigger.fires(for: params.query) == true else { return }
+            self.autoAsked = params
+            await self.ask(automatic: true)
         }
+    }
+
+    private func cancelAutoAsk() {
+        autoTask?.cancel()
+        autoTask = nil
+        autoPending = nil
+    }
+
+    /// The search, scope or filter changed: a new search, which may be answered on its own again.
+    private func searchChanged() {
+        autoAsked = nil
+        clearAnswer()
     }
 
     private func fail(_ error: CompanionClientError) {
@@ -221,6 +246,11 @@ public final class SearchModel {
             case .capReached: answer = .failed(.capReached)
             case .modelTimeout: answer = .failed(.timeout)
             case .modelUnavailable: answer = .failed(.modelUnavailable(reason: error.reason))
+            case .askRequired:
+                // The Mac answers this search only when asked now: show Ask, and ask on its own
+                // again only when a fresh status says to.
+                answer = .idle
+                macAnswers?.trigger = .ask
             default: answer = .failed(.client(.method(error)))
             }
         case .answerTimedOut:
@@ -237,14 +267,14 @@ public final class SearchModel {
         answerGeneration += 1
         answerTask?.cancel()
         answerTask = nil
-        autoTask?.cancel()
-        autoTask = nil
+        cancelAutoAsk()
         answer = .idle
     }
 
     /// Leaving the Mac (unpaired, removed): nothing stays on the phone.
     public func clear() {
         clearAnswer()
+        autoAsked = nil
         generation += 1
         results = []
         resultsParams = nil
