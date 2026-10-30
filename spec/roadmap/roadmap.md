@@ -152,7 +152,7 @@ Search shows the sentence that matches, and when you ask, the model you chose an
 | Step | Plan | Exit criteria |
 |---|---|---|
 | **9.1 Snippets** | [plan](../plans/phase-9-search-answers.md#91-snippets--½-weekend) | Matching-sentence snippets on both apps within 150 ms; used for a few days |
-| **9.2 Spike F** | [plan](../plans/phase-9-search-answers.md#92-spike-f-answer-quality--½-weekend) | A provider passes: correct claims ≥ 95%, right "no answer" ≥ 90%, answered ≥ 80%, p95 ≤ 15 s |
+| **9.2 Spike G** | [plan](../plans/phase-9-search-answers.md#92-spike-g-answer-quality--½-weekend) | A provider passes: correct claims ≥ 95%, right "no answer" ≥ 90%, answered ≥ 80%, p95 ≤ 15 s |
 | **9.3 Core** | [plan](../plans/phase-9-search-answers.md#93-core--¾-weekend) | `SearchAnswerer` with validation, guardrail and cancellation tests green |
 | **9.4 Mac** | [plan](../plans/phase-9-search-answers.md#94-mac--½-weekend) | ⌘⏎ answers "What's my title at Chatham?" in the author's vault, with quotes |
 | **9.5 iPhone** | [plan](../plans/phase-9-search-answers.md#95-iphone--½¾-weekend) | The same on the iPhone, over Wi-Fi and Tailscale; demo answers offline |

@@ -698,7 +698,7 @@
   - A cloud call that passes the guard counts once against the daily cap (FR-AI-15), even if it fails or is cancelled; refusals before sending and local providers don't count. At the cap, the card says so and search keeps working.
   - A failed, timed-out (45 s) or unavailable model shows why, with **Try Again**; there's no fallback to another model.
   - Nothing is stored but a text-free Activity row (`search_answered`: counts, engine, duration, outcome).
-  - Ships only after Spike F's gates: correct claims ≥ 95%, the right "no answer" ≥ 90%, answered ≥ 80% of answerable questions, p95 ≤ 15 s with the chosen default model ([Phase 9.2](../plans/phase-9-search-answers.md#92-spike-f-answer-quality--½-weekend)).
+  - Ships only after Spike G's gates: correct claims ≥ 95%, the right "no answer" ≥ 90%, answered ≥ 80% of answerable questions, p95 ≤ 15 s with the chosen default model ([Phase 9.2](../plans/phase-9-search-answers.md#92-spike-g-answer-quality--½-weekend)).
 
 ---
 
