@@ -15,11 +15,21 @@ public struct SearchAnswer: Sendable, Hashable {
         public let memoryID: UUID
         /// The model's quote, as given; `QuoteLocator` finds it in the memory to highlight it.
         public let quote: String
+
+        public init(memoryID: UUID, quote: String) {
+            self.memoryID = memoryID
+            self.quote = quote
+        }
     }
 
     public struct Claim: Sendable, Hashable {
         public let text: String
         public let citations: [Citation]
+
+        public init(text: String, citations: [Citation]) {
+            self.text = text
+            self.citations = citations
+        }
     }
 
     public let outcome: Outcome
@@ -35,6 +45,18 @@ public struct SearchAnswer: Sendable, Hashable {
     public let engine: String?
     public let locality: Locality?
     public let duration: Duration
+
+    public init(outcome: Outcome, claims: [Claim], read: Int, withheld: Int, dropped: Int, engine: String?, locality: Locality?,
+                duration: Duration) {
+        self.outcome = outcome
+        self.claims = claims
+        self.read = read
+        self.withheld = withheld
+        self.dropped = dropped
+        self.engine = engine
+        self.locality = locality
+        self.duration = duration
+    }
 }
 
 /// Why an answer failed (§10.5). Each maps to the card's text and a reason code.

@@ -68,7 +68,9 @@ final class VaultModel {
     private(set) var snippets: [UUID: Snippet] = [:]
     /// Whether the last load finished; until then the list doesn't claim to be empty.
     private(set) var loaded = false
-    var selection = Set<UUID>()
+    var selection = Set<UUID>() {
+        didSet { if let quoted, selection != [quoted.memoryID] { self.quoted = nil } }
+    }
     /// A message under the toolbar after a bulk action ("12 archived, 1 couldn't be changed").
     var bulkResult: String?
 
@@ -90,6 +92,86 @@ final class VaultModel {
         self.services = services
     }
 
+    // MARK: Search answers (FR-AI-17, memory processing §10)
+
+    enum Answer: Equatable {
+        case reading(count: Int)
+        case answered(SearchAnswer, results: Int)
+        case failed(SearchAnswerError)
+    }
+
+    /// Answers searches with the user's settings; set by the app.
+    @ObservationIgnored var answers: SearchAnswersController?
+    /// The card at the top of the list; nil shows the Ask row (when it can).
+    private(set) var answer: Answer?
+    /// A claim's number was clicked: the memory selected and the quote to highlight in its detail,
+    /// until the selection changes or the text is edited.
+    var quoted: (memoryID: UUID, quote: String)? {
+        get { quotedValue.map { ($0.memoryID, $0.quote) } }
+        set { quotedValue = newValue.map { Quoted(memoryID: $0.memoryID, quote: $0.quote) } }
+    }
+    private struct Quoted: Equatable { let memoryID: UUID; let quote: String }
+    private var quotedValue: Quoted?
+    @ObservationIgnored private var answerTask: Task<Void, Never>?
+
+    /// The Ask row: answers on, the Active scope, a non-empty search with results, as listed.
+    var canAsk: Bool {
+        (answers?.isOn ?? false) && status == .active && !listedQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && listedQuery == query && !memories.isEmpty
+    }
+
+    /// Asks the chosen model to answer the search from its top results as shown. A new Ask
+    /// cancels the one in progress.
+    func ask() {
+        guard canAsk, let answers else { return }
+        answerTask?.cancel()
+        let query = listedQuery
+        let ids = Array(memories.prefix(SearchAnswerer.memoryCount).map(\.id))
+        let total = memories.count
+        answer = .reading(count: ids.count)
+        answerTask = Task { [weak self] in
+            do {
+                let result = try await answers.answer(query, ids: ids)
+                guard !Task.isCancelled, let self, self.listedQuery == query else { return }
+                self.answer = .answered(result, results: total)
+            } catch is CancellationError {
+            } catch {
+                guard !Task.isCancelled, let self, self.listedQuery == query else { return }
+                self.answer = .failed(error as? SearchAnswerError ?? .vault)
+            }
+        }
+    }
+
+    /// Cancel and Clear; and any change of search, scope or filter (rows never move under a card).
+    func clearAnswer() {
+        answerTask?.cancel()
+        answerTask = nil
+        answer = nil
+        quoted = nil
+    }
+
+    /// The cited memories in the order the answer first cites them: their numbers on the card and
+    /// on the rows.
+    var answerSources: [UUID] {
+        guard case let .answered(result, _) = answer else { return [] }
+        var seen = Set<UUID>()
+        return result.claims.flatMap(\.citations).map(\.memoryID).filter { seen.insert($0).inserted }
+    }
+
+    /// A row's source number, if the answer cites it.
+    func sourceNumber(_ id: UUID) -> Int? { answerSources.firstIndex(of: id).map { $0 + 1 } }
+
+    #if FUNES_UI_REVIEW
+    /// The UI review's answer scenes.
+    func reviewAnswer(_ answer: SearchAnswer, results: Int) { self.answer = .answered(answer, results: results) }
+    #endif
+
+    /// A claim's number: select the memory, and highlight the quote in its detail.
+    func showSource(_ id: UUID, quote: String) {
+        selection = [id]
+        quoted = (id, quote)
+    }
+
     var filter: MemoryFilter {
         MemoryFilter(status: status.filter, categoryKeys: categoryKeys, kinds: kinds, sensitivities: sensitivities,
                      sources: sources, sort: sort.sort)
@@ -106,6 +188,7 @@ final class VaultModel {
 
     /// Runs the search after the debounce; filters and sort apply at once.
     func scheduleSearch(now: Bool = false) {
+        clearAnswer()
         searchTask?.cancel()
         searchTask = Task { [weak self] in
             if !now { try? await Task.sleep(for: Self.debounce) }

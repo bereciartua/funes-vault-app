@@ -98,6 +98,8 @@ final class UIReview: NSObject, NSApplicationDelegate {
         try settings.upsert(ProviderConfig(endpoint: .ollama(), name: "Ollama", model: "llama3.2"), key: nil)
         try settings.upsert(ProviderConfig(endpoint: .anthropic(), name: "Anthropic", model: AnthropicClient.suggestedModel), key: "review")
         settings.setClassifier("anthropic")
+        // Search answers on, so the Vault shows the Ask row and Settings its rows (FR-AI-17).
+        settings.searchAnswersOn = true
         let model = AppModel(services: environment, preferences: preferences, modelSettings: settings)
         configure(model)
         await model.refresh()
@@ -175,6 +177,23 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await model.vault.load()
             await mainScene("vault-search") {
                 model.vault.selection = model.vault.memories.first(where: { $0.title == "Role at Chatham" }).map { [$0.id] } ?? []
+            }
+            // Search answers (FR-AI-17): an answer quoting two memories that disagree, the first
+            // number clicked (its quote highlighted in the detail), and no answer.
+            model.vault.query = "title at Chatham"
+            await model.vault.load()
+            if let role = model.vault.memories.first(where: { $0.title == "Role at Chatham" }),
+               let old = model.vault.memories.first(where: { $0.title == "Chatham job" }) {
+                await mainScene("vault-answer") {
+                    model.vault.reviewAnswer(SearchAnswer.review(role: role.id, old: old.id), results: model.vault.memories.count)
+                    model.vault.showSource(role.id, quote: "my title at Chatham is now Senior Analyst")
+                }
+                await mainScene("vault-answer-none") {
+                    model.vault.selection = []
+                    model.vault.reviewAnswer(SearchAnswer(outcome: .noAnswer, claims: [], read: 3, withheld: 1, dropped: 0,
+                                                          engine: "claude-code/haiku", locality: .cloud, duration: .seconds(4)),
+                                             results: model.vault.memories.count)
+                }
             }
             model.vault.query = ""
             await model.vault.load()
@@ -417,6 +436,16 @@ final class UIReview: NSObject, NSApplicationDelegate {
             try? await Task.sleep(for: .seconds(1))
             await snapshot("settings-models-embedding-\(suffix)", settings.window)
             model.modelSettings.setEmbedding(nil)
+            // Search answers (FR-AI-17): its rows, scrolled into view.
+            model.settingsTab = .models
+            settings.show()
+            try? await Task.sleep(for: .seconds(1))
+            if let scroll = Self.scrollView(in: settings.window?.contentView), let document = scroll.documentView {
+                scroll.contentView.scroll(to: NSPoint(x: 0, y: min(620, max(0, document.frame.height - scroll.contentView.bounds.height))))
+                scroll.reflectScrolledClipView(scroll.contentView)
+            }
+            try? await Task.sleep(for: .milliseconds(300))
+            await snapshot("settings-models-answers-\(suffix)", settings.window)
             settings.close()
         }
         main.close()
@@ -536,3 +565,26 @@ private extension NSAppearance {
     var isDark: Bool { bestMatch(from: [.aqua, .darkAqua]) == .darkAqua }
 }
 #endif
+
+extension UIReview {
+    /// The first scroll view under `view`, depth first.
+    static func scrollView(in view: NSView?) -> NSScrollView? {
+        guard let view else { return nil }
+        if let scroll = view as? NSScrollView { return scroll }
+        for child in view.subviews { if let found = scrollView(in: child) { return found } }
+        return nil
+    }
+}
+
+extension SearchAnswer {
+    /// The review's answer: the newer title and the older one, each quoted (sample data's
+    /// "Role at Chatham" and "Chatham job").
+    static func review(role: UUID, old: UUID) -> SearchAnswer {
+        SearchAnswer(outcome: .answered, claims: [
+            Claim(text: "Your title at Chatham is Senior Analyst, since a promotion in March 2026.",
+                  citations: [Citation(memoryID: role, quote: "my title at Chatham is now Senior Analyst")]),
+            Claim(text: "An older note says you were a data analyst at Chatham Analytics.",
+                  citations: [Citation(memoryID: old, quote: "Data analyst at Chatham Analytics")]),
+        ], read: 3, withheld: 0, dropped: 1, engine: "claude-code/haiku", locality: .cloud, duration: .seconds(5))
+    }
+}

@@ -64,6 +64,7 @@ struct ModelSettingsPane: View {
                     }
                 Text(splitCaption).font(.callout).foregroundStyle(.secondary)
                 tidyUpRows
+                searchAnswerRows
                 Picker(String(localized: "Apply changes automatically"), selection: $autoApply) {
                     Text(String(localized: "Off")).tag(AutoApplyLevel.off)
                     Text(String(localized: "Duplicates only")).tag(AutoApplyLevel.duplicatesOnly)
@@ -249,6 +250,86 @@ struct ModelSettingsPane: View {
         }
         Text(tidyUpCaption).font(.callout).foregroundStyle(.secondary)
         if let disclosure = tidyUpDisclosure { WarningLabel(text: disclosure, symbol: "arrow.up.forward.app") }
+    }
+
+    /// Settings ▸ AI Models ▸ Search answers (04-ux-mac.md, FR-AI-17): Answer, Model, the status, the
+    /// caption and the disclosure line.
+    @ViewBuilder
+    private var searchAnswerRows: some View {
+        LabeledContent(String(localized: "Search answers")) {
+            Picker(String(localized: "Search answers"), selection: Binding(get: { settings.searchAnswersOn },
+                                                                           set: { settings.searchAnswersOn = $0 })) {
+                Text(String(localized: "Off")).tag(false)
+                Text(String(localized: "Only when I ask")).tag(true)
+            }
+            .labelsHidden().fixedSize()
+        }
+        if settings.searchAnswersOn {
+            LabeledContent(String(localized: "Search answers model")) {
+                HStack(spacing: 6) {
+                    Picker(String(localized: "Search answers model"),
+                           selection: Binding(get: { settings.searchAnswersID }, set: { settings.setSearchAnswersModel($0) })) {
+                        Text(String(localized: "Same as New memories")).tag(String?.none)
+                        ForEach(settings.providers) { provider in
+                            Text("\(provider.name) · \(provider.model.isEmpty ? String(localized: "no model") : provider.model)")
+                                .tag(Optional(provider.id))
+                        }
+                        ForEach(SubscriptionConfig.Kind.allCases) { kind in
+                            if settings.executables[kind] != nil || settings.searchAnswersID == kind.rawValue {
+                                Text("\(kind.name) · \(settings.subscription(kind).model)").tag(Optional(kind.rawValue))
+                            }
+                        }
+                    }
+                    .labelsHidden().fixedSize()
+                    Pill(label: searchAnswersLocality.title, tone: searchAnswersLocality.isLocal ? .good : .warning)
+                }
+            }
+            Text(searchAnswersStatus + " " + String(localized: "Each claim quotes the memory it came from, and claims it can't quote aren't shown."))
+                .font(.callout).foregroundStyle(.secondary)
+            if let disclosure = searchAnswersDisclosure { WarningLabel(text: disclosure, symbol: "arrow.up.forward.app") }
+        }
+    }
+
+    private var searchAnswersLocality: Locality {
+        if settings.searchAnswersPlan != nil { return .cloud }
+        guard let provider = settings.searchAnswersProvider else { return .onDevice }
+        return localities[provider.id] ?? (provider.endpoint.markedCloud ? .cloud : .localServer)
+    }
+
+    /// "Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone.", the on-device warning, or what's missing.
+    private var searchAnswersStatus: String {
+        if settings.searchAnswersOnDevice {
+            return AppleFoundationGenerator.isAvailable
+                ? String(localized: "Apple's on-device model is slow on this Mac: answers may take 30 s or more.")
+                : String(localized: "Choose a model to answer searches.")
+        }
+        if let plan = settings.searchAnswersPlan {
+            switch settings.subscriptionStatus[plan] {
+            case .ready?: break
+            case let status?:
+                let text = SubscriptionRow.text(status, plan)
+                return text.hasSuffix(".") ? text : text + "."
+            case nil: return String(localized: "Checking…")
+            }
+        } else if let provider = settings.searchAnswersProvider, provider.model.isEmpty {
+            return String(localized: "Choose a model in \(provider.name)'s settings.")
+        }
+        return String(localized: "Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone.")
+    }
+
+    /// "Search answers send your search and its top results (up to Internal) to Claude through your
+    /// Claude Code sign-in, when you ask." (model providers §4)
+    private var searchAnswersDisclosure: String? {
+        guard !searchAnswersLocality.isLocal else { return nil }
+        guard case let .upTo(level) = settings.cloudLimit else {
+            return String(localized: "Search answers send nothing to \(settings.searchAnswersName): the cloud limit is Nothing, so there's no answer.")
+        }
+        let limit = Self.title(.upTo(level))
+        if let plan = settings.searchAnswersPlan {
+            let via = plan == .claudeCode ? String(localized: "through your Claude Code sign-in") : String(localized: "through your Codex sign-in")
+            return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(plan.plan) \(via), when you ask. It counts toward your plan's limits.")
+        }
+        return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(settings.searchAnswersName), when you ask.")
     }
 
     /// Compares changed memories with related ones and proposes updates, merges, splits, archives

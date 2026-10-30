@@ -35,6 +35,10 @@ struct MemoryDetailView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 18) {
                             status(memory)
+                            if let quoted = model.vault.quoted, quoted.memoryID == memoryID, !dirty,
+                               let range = QuoteLocator.range(of: quoted.quote, in: memory.body) {
+                                QuotedPassage(text: memory.body, range: range)
+                            }
                             MemoryEditor(form: $form, categories: model.categories, editable: memory.status != .deleted)
                             if memory.status != .deleted { saveRow }
                             if !similar.isEmpty { similarHint }
@@ -69,6 +73,10 @@ struct MemoryDetailView: View {
         }
         .background(Palette.pane)
         .task { load(resetForm: true) }
+        // A quoted sentence stays highlighted until the text is edited (04-ux-mac.md ▸ Search answers).
+        .onChange(of: form.body) { _, body in
+            if let memory, body != memory.body, model.vault.quoted?.memoryID == memoryID { model.vault.quoted = nil }
+        }
         .onChange(of: model.dataGeneration) { _, _ in load(resetForm: !dirty) }
         .confirmationDialog(String(localized: "Is this still true?"), isPresented: $confirmStillTrue) {
             Button(String(localized: "Still True")) { stillTrue() }
@@ -517,5 +525,47 @@ enum ActorLabel {
             return String(localized: "an agent")
         }
         return model.agentName(id)
+    }
+}
+
+/// The sentence a search answer quoted, highlighted in its context, above the memory's text
+/// (found with `QuoteLocator`; FR-AI-17).
+struct QuotedPassage: View {
+    let text: String
+    let range: Range<String.Index>
+
+    /// Characters of context kept on each side of the quote.
+    static let context = 160
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Label(String(localized: "Quoted in the answer"), systemImage: "quote.opening")
+                .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            Text(Self.excerpt(text, range: range))
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 6).fill(Color.yellow.opacity(0.12)))
+        .accessibilityElement(children: .combine)
+    }
+
+    /// The quote with up to `context` characters either side, at word boundaries, with "…" where
+    /// cut, and the quote highlighted.
+    static func excerpt(_ text: String, range: Range<String.Index>) -> AttributedString {
+        var start = text.index(range.lowerBound, offsetBy: -context, limitedBy: text.startIndex) ?? text.startIndex
+        var end = text.index(range.upperBound, offsetBy: context, limitedBy: text.endIndex) ?? text.endIndex
+        while start > text.startIndex, start < range.lowerBound, !text[text.index(before: start)].isWhitespace { start = text.index(after: start) }
+        while end < text.endIndex, end > range.upperBound, !text[end].isWhitespace { end = text.index(before: end) }
+        var result = AttributedString(start > text.startIndex ? "…" : "")
+        result += AttributedString(String(text[start..<range.lowerBound]))
+        var quote = AttributedString(String(text[range]))
+        quote.backgroundColor = Color.yellow.opacity(0.45)
+        quote.inlinePresentationIntent = .stronglyEmphasized
+        result += quote
+        result += AttributedString(String(text[range.upperBound..<end]))
+        result += AttributedString(end < text.endIndex ? "…" : "")
+        return result
     }
 }

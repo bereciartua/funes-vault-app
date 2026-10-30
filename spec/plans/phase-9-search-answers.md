@@ -32,9 +32,9 @@ Throwaway code in `spikes/search-answers/`, like Spike E. (Named G: [spike resul
 - [x] **Guardrail tests:** request capture with sentinel strings at each sensitivity and secret samples: nothing above the limit and no secret in a cloud prompt; a local server gets every memory (the scanner still applies).
 
 ## 9.4 Mac · ½ weekend
-- [ ] **Settings ▸ AI Models ▸ Search answers:** Answer (Off · Only when I ask), Model (Same as New memories, or a provider and model), status, caption, disclosure line. Stored with the other task assignments in user defaults.
-- [ ] **Vault:** the Ask row and ⌘⏎ (Active scope, non-empty search, results), the reading card with Cancel, the answer card (claims, chips, quotes, badge, footer, Copy, Clear), the chips on cited rows, the highlight in the detail, every message of §10.5. Clearing on search, scope and filter changes. Rows never move; nothing is selected automatically.
-- [ ] VoiceOver labels (the card reads its claims, then "Source 1: <title>"), the string catalog (`sh scripts/sync_strings.sh`), UI snapshots (`vault-answer`, `vault-answer-none`, `settings-models` with the new row; light and dark).
+- [x] **Settings ▸ AI Models ▸ Search answers:** Answer (Off · Only when I ask), Model (Same as New memories, or a provider and model), status, caption, disclosure line. Stored with the other task assignments in user defaults.
+- [x] **Vault:** the Ask row and ⌘⏎ (Active scope, non-empty search, results), the reading card with Cancel, the answer card (claims, chips, quotes, badge, footer, Copy, Clear), the chips on cited rows, the highlight in the detail, every message of §10.5. Clearing on search, scope and filter changes. Rows never move; nothing is selected automatically.
+- [x] VoiceOver labels (the card reads its claims, then "Source 1: <title>"), the string catalog (`sh scripts/sync_strings.sh`), UI snapshots (`vault-answer`, `vault-answer-none`, `settings-models-answers` for the new rows; light and dark).
 
 ## 9.5 iPhone · ½–¾ weekend
 - [ ] **Companion (Mac):** `searchAnswers` in `status.get`; `memories.answer` in `CompanionRouter` and `CompanionHandlers` with its 50 s deadline, the error codes, one call in flight per device (a new one cancels the previous; the listener isn't changed to watch for closed connections), Activity under `device:<id>`. Tests against the real router, as for the other methods.

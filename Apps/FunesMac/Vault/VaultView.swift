@@ -94,6 +94,13 @@ struct VaultView: View {
                 SearchField(text: Binding(get: { vault.query }, set: { vault.query = $0 }),
                             prompt: String(localized: "Search memories"), focused: $searchFocused)
                     .frame(minWidth: 180, maxWidth: 360)
+                    .background {
+                        // ⌘⏎ asks, as the Ask row does (04-ux-mac.md ▸ Search answers).
+                        Button(String(localized: "Ask Funes")) { vault.ask() }
+                            .keyboardShortcut(.return, modifiers: .command)
+                            .disabled(!vault.canAsk)
+                            .hidden()
+                    }
                 Spacer(minLength: 8)
                 Button { managingCategories = true } label: {
                     Label(String(localized: "Categories…"), systemImage: "tag")
@@ -154,8 +161,13 @@ struct VaultView: View {
                 emptyState
             } else {
                 List(selection: Binding(get: { vault.selection }, set: { vault.selection = $0 })) {
+                    // Search answers (FR-AI-17): the Ask row, then the card, as the list's first row.
+                    if vault.canAsk || vault.answer != nil {
+                        AnswerCard(vault: vault, model: model)
+                    }
                     ForEach(vault.memories) { memory in
-                        MemoryRow(memory: memory, model: model, now: model.now, snippet: vault.snippets[memory.id])
+                        MemoryRow(memory: memory, model: model, now: model.now, snippet: vault.snippets[memory.id],
+                                  source: vault.sourceNumber(memory.id))
                             .tag(memory.id)
                             .onAppear { vault.rowAppeared(memory.id) }
                             .onDisappear { vault.rowDisappeared(memory.id) }
@@ -248,6 +260,8 @@ struct MemoryRow: View {
     let model: AppModel
     let now: Date
     var snippet: Snippet?
+    /// The answer's number for this memory, when the answer cites it.
+    var source: Int?
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -260,6 +274,9 @@ struct MemoryRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(memory.title).fontWeight(.medium).lineLimit(1)
+                    if let source {
+                        SourceChip(number: source).accessibilityLabel(String(localized: "Source \(source)"))
+                    }
                     Spacer(minLength: 6)
                     Text(RelativeTime.short(memory.updatedAt, now: now))
                         .font(.caption).foregroundStyle(.secondary)
