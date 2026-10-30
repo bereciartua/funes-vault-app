@@ -125,7 +125,8 @@ final class VaultModel {
     @ObservationIgnored private var autoPending: Pending?
     @ObservationIgnored private var autoAsked: AutoKey?
     private struct AutoKey: Equatable { let query: String; let filter: MemoryFilter }
-    private struct Pending: Equatable { let key: AutoKey; let ids: [UUID]; let trigger: AnswerTrigger }
+    /// The first results by id and update time, so an edit that keeps the order restarts it too.
+    private struct Pending: Equatable { let key: AutoKey; let ids: [UUID]; let updated: [Date]; let trigger: AnswerTrigger }
     /// Whether the Vault is on screen: nothing is asked on its own while it isn't.
     @ObservationIgnored private var shown = false
 
@@ -169,7 +170,7 @@ final class VaultModel {
     /// Asks on its own after the pause, once for each search and filters, while the Vault shows,
     /// when Settings says to and the search qualifies (a question, or any search). Called when a
     /// list loads and when the Vault appears or the setting changes: a pause already running
-    /// with the same search, first results and trigger goes on (a reload that changed nothing
+    /// with the same search, first results (unedited) and trigger goes on (a reload that changed nothing
     /// doesn't postpone it), any other change starts it again, and a search that no longer
     /// qualifies stops it.
     func scheduleAutoAsk() {
@@ -180,7 +181,8 @@ final class VaultModel {
             return
         }
         let trigger = answers.trigger
-        let pending = Pending(key: key, ids: memories.prefix(SearchAnswerer.memoryCount).map(\.id), trigger: trigger)
+        let first = memories.prefix(SearchAnswerer.memoryCount)
+        let pending = Pending(key: key, ids: first.map(\.id), updated: first.map(\.updatedAt), trigger: trigger)
         if autoTask != nil, autoPending == pending { return }
         autoTask?.cancel()
         autoPending = pending
