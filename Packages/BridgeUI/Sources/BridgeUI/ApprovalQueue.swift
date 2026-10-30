@@ -138,6 +138,9 @@ public struct PanelItem: Identifiable, Sendable, Equatable {
     public var expiresAt: Date?
     /// Read by VoiceOver when the item appears.
     public var announcement: String
+    /// A one-line title for lists outside the panel (the menu bar panel's cards: "Codex wants to
+    /// save a memory"); nil uses `title`.
+    public var cardTitle: String?
 
     public init(id: UUID, kind: Kind, agentID: String, title: String, shortLabel: String? = nil, subtitle: String? = nil,
                 destination: Destination? = nil, agentSays: [Fact] = [], rows: [Row], facts: [Fact] = [],
