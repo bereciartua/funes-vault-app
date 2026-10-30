@@ -494,12 +494,16 @@ Location        [Lisbon, Portugal                ]
 Time zone       Automatic (Europe/Lisbon) ▾
 Occupation      [                                ]
 
-Shared with: Name 3 agents · Pronouns 1 agent · the others with none.
+Shared with agents
+Name            Claude Code, Cursor and 2 more ⌄
+Pronouns        Claude Code ⌄
+Languages       Not shared
+…               (one row per field)
 Agents get only the fields you tick in each one's Access tab. New agents get your name.
 ```
 - **Saves** when a field loses focus or Return is pressed, like the other panes. The secret scanner checks each field; a match keeps the old value, with the scanner's usual message under the field.
 - **Prefill:** an empty profile shows the macOS account's name as the fields' placeholders, never as their values, so nothing is saved until the user types or clicks **Use "Martin Bereciartua"** (shown only when the account's name looks like a person's).
-- **Shared with** names the agents on hover and each count opens a list with links to the agents' Access tabs. A removed agent isn't counted.
+- **Shared with agents** has a row for every field: the agents that get it, by name (two, then "and N more"; all of them on hover), as a menu whose items open each agent's Access tab, or "Not shared". A removed agent isn't listed.
 - **Languages:** a picker of the system's languages; **Time zone:** Automatic (following the Mac, shown in parentheses) or a searchable list of time zones.
 - Logged in Activity as "Edited About you · Pronouns" (field names, no values).
 

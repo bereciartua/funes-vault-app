@@ -438,6 +438,16 @@
     "%@'s request waited 15 minutes without an answer." : {
 
     },
+    "%@, %@ and %lld more" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@ and %3$lld more"
+          }
+        }
+      }
+    },
     "%@, %@, %lld requests waiting" : {
       "localizations" : {
         "en" : {
@@ -606,9 +616,6 @@
 
     },
     "%lld above its sensitivity limit" : {
-
-    },
-    "%lld agents" : {
 
     },
     "%lld ahead of it" : {
@@ -893,9 +900,6 @@
 
     },
     "+%lld this week" : {
-
-    },
-    "1 agent" : {
 
     },
     "1 ahead of it" : {
@@ -3762,9 +3766,6 @@
     "No agent can be used from the cloud yet. Turn on Allow cloud access in an agent's Cloud tab, or add a cloud agent with Add Agent…." : {
 
     },
-    "No agent gets any of it yet." : {
-
-    },
     "No agent has read your vault yet." : {
 
     },
@@ -3886,6 +3887,9 @@
 
     },
     "Not set up" : {
+
+    },
+    "Not shared" : {
 
     },
     "Not signed in" : {
@@ -4073,6 +4077,9 @@
 
     },
     "Open %@." : {
+
+    },
+    "Open Access for" : {
 
     },
     "Open Funes Vault" : {
@@ -5257,6 +5264,9 @@
 
     },
     "Shared with %@" : {
+
+    },
+    "Shared with agents" : {
 
     },
     "Shared without asking" : {
@@ -7097,16 +7107,10 @@
     "your name" : {
 
     },
-    "·" : {
-
-    },
     "· %@" : {
 
     },
     "· confirmed %@" : {
-
-    },
-    "· the others with none." : {
 
     },
     "—" : {

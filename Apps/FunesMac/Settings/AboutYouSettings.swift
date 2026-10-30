@@ -71,11 +71,6 @@ enum ProfileText {
         return text ?? String(localized: "not set")
     }
 
-    /// "1 agent", "3 agents".
-    static func agents(_ count: Int) -> String {
-        count == 1 ? String(localized: "1 agent") : String(localized: "\(count) agents")
-    }
-
     static func problem(_ problem: Profile.Problem) -> String {
         switch problem {
         case let .secret(patterns): SecretText.message(patterns)
@@ -148,8 +143,13 @@ struct AboutYouSettings: View {
                 Text(String(localized: "Everything here is optional. Home greets you by the name in Call me, or your given name."))
                     .font(.callout).foregroundStyle(.secondary)
             }
-            Section(String(localized: "Shared with")) {
-                SharedWithRow(model: model, sharing: sharing)
+            Section {
+                ForEach(ProfileField.allCases, id: \.self) { field in
+                    SharedWithRow(model: model, field: field, agents: sharing[field] ?? [])
+                }
+            } header: {
+                Text(String(localized: "Shared with agents"))
+            } footer: {
                 Text(String(localized: "Agents get only the fields you tick in each one's Access tab, with their answers, without asking. New agents get your name."))
                     .font(.callout).foregroundStyle(.secondary)
             }
@@ -303,44 +303,39 @@ private struct TimeZonePicker: View {
     }
 }
 
-/// "Name 3 agents · Pronouns 1 agent · the others with none." Each count lists its agents, with
-/// a link to their Access tab.
+/// One field's row under Shared with agents: the agents that get it ("Claude Code, Codex and 2
+/// more"), as a menu whose items open each one's Access tab, or "Not shared".
 private struct SharedWithRow: View {
     let model: AppModel
-    let sharing: [ProfileField: [Agent]]
-    @State private var shown: ProfileField?
+    let field: ProfileField
+    let agents: [Agent]
 
     var body: some View {
-        let fields = ProfileField.allCases.filter { !(sharing[$0] ?? []).isEmpty }
-        if fields.isEmpty {
-            Text(String(localized: "No agent gets any of it yet."))
-        } else {
-            HStack(spacing: 4) {
-                ForEach(Array(fields.enumerated()), id: \.element) { index, field in
-                    let agents = sharing[field] ?? []
-                    Text(ProfileText.title(field))
-                    Button(ProfileText.agents(agents.count)) { shown = field }
-                        .buttonStyle(.link)
-                        .help(agents.map(\.name).formatted(.list(type: .and)))
-                        .popover(isPresented: Binding(get: { shown == field }, set: { if !$0 { shown = nil } })) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                ForEach(agents) { agent in
-                                    Button(agent.name) {
-                                        shown = nil
-                                        model.agentTab = .access
-                                        model.showAgent(agent.id)
-                                    }
-                                    .buttonStyle(.link)
-                                }
+        let sorted = agents.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        LabeledContent(ProfileText.title(field)) {
+            if sorted.isEmpty {
+                Text(String(localized: "Not shared")).foregroundStyle(.secondary)
+            } else {
+                Menu(Self.names(sorted.map(\.name))) {
+                    Section(String(localized: "Open Access for")) {
+                        ForEach(sorted) { agent in
+                            Button(agent.name) {
+                                model.agentTab = .access
+                                model.showAgent(agent.id)
                             }
-                            .padding(12)
                         }
-                    if index < fields.count - 1 { Text("·").foregroundStyle(.secondary) }
+                    }
                 }
-                if fields.count < ProfileField.allCases.count {
-                    Text(String(localized: "· the others with none.")).foregroundStyle(.secondary)
-                }
+                .menuStyle(.button)
+                .fixedSize()
+                .help(sorted.map(\.name).formatted(.list(type: .and)))
             }
         }
+    }
+
+    /// "Claude Code", "Claude Code and Codex", "Claude Code, Codex and 2 more".
+    static func names(_ names: [String]) -> String {
+        guard names.count > 2 else { return names.formatted(.list(type: .and)) }
+        return String(localized: "\(names[0]), \(names[1]) and \(names.count - 2) more")
     }
 }
