@@ -76,7 +76,8 @@ final class SettingsWindowController: HostedWindowController<SettingsView> {
 
     init(model: AppModel) {
         super.init(content: { SettingsView(model: model) }, configure: { window in
-            window.title = String(localized: "Funes Vault Settings")
+            // The pane's name, before SwiftUI's navigation title takes over (ADR-0030 §1).
+            window.title = model.settingsPane.title
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
             window.toolbarStyle = .unified
             window.contentMinSize = Self.minimumSize

@@ -1641,9 +1641,6 @@
     "Built in (bge-small) · Unavailable" : {
 
     },
-    "Built in (bge-small, on this Mac)" : {
-
-    },
     "Built-in categories can be renamed but not deleted." : {
 
     },
@@ -2688,9 +2685,6 @@
 
     },
     "Funes Vault Export…" : {
-
-    },
-    "Funes Vault Settings" : {
 
     },
     "Funes Vault always stays in the menu bar. Without the Dock icon, it shows in the Dock only while a window is open." : {
@@ -6645,6 +6639,9 @@
 
     },
     "at %@" : {
+
+    },
+    "bge-small, on this Mac" : {
 
     },
     "by %@" : {

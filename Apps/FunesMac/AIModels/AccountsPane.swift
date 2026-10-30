@@ -198,6 +198,9 @@ struct AccountPage: View {
                 Color.clear.onAppear { model.settingsPath = [] }
             }
         }
+        // Each account's page is its own view: going from one account straight to another (a deep
+        // link, Used by) must not keep the previous page's fields.
+        .id(id)
         .navigationTitle(model.modelSettings.name(id))
     }
 }
@@ -259,8 +262,10 @@ struct ModelListSection: View {
                 }
             }
             HStack {
-                TextField(String(localized: "Model name"), text: $typed)
+                TextField(String(localized: "Model name"), text: $typed, prompt: Text(String(localized: "Model name")))
                     .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .frame(minWidth: 180)
                     .onSubmit(add)
                 Menu(load == nil ? String(localized: "Suggestions") : String(localized: "Load Models")) {
                     if let suggestions = PlanKind(rawValue: id)?.suggestedModels {

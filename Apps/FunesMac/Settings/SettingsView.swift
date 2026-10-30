@@ -57,6 +57,7 @@ struct SettingsPageView: View {
 
     var body: some View {
         content
+            .id(page)
             .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .navigation) {

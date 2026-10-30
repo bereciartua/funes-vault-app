@@ -467,10 +467,10 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await show(SettingsDestination(.accounts), "ai-accounts-local-servers")
             ai.setChoice(answers, for: .searchAnswers)
             ai.removeAccount("lmstudio")
-            // A second index (task 6c.3): with no Ollama running, its status says so.
+            // A second index (task 6c.3), starting its first pass.
             ai.setEmbedding(EmbeddingChoice(provider: "ollama", model: "qwen3-embedding:0.6b"))
             try? await Task.sleep(for: .seconds(1))
-            await show(.searchIndex, "ai-features-search-index-error")
+            await show(.searchIndex, "ai-features-search-index-second-index")
             await show(SettingsDestination(.privacy), "ai-privacy-second-index")
             ai.setEmbedding(nil)
             settings.close()

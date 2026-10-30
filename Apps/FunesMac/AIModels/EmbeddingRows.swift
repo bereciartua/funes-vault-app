@@ -23,7 +23,7 @@ struct EmbeddingRows: View {
     var body: some View {
         LabeledContent(String(localized: "Built in")) {
             HStack(spacing: 6) {
-                Text(String(localized: "Built in (bge-small, on this Mac)")).fixedSize()
+                Text(String(localized: "bge-small, on this Mac")).fixedSize()
                 Pill(label: Locality.onDevice.title, tone: .good)
             }
         }
