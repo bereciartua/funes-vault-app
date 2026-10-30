@@ -149,22 +149,21 @@ import Testing
     }
 
     /// Lines are sentence boundaries in the snippet too (the tokenizer's sentences are cut back to
-    /// their line), and dense lines stay cheap.
+    /// their line), dense lines included.
     @Test func linesBoundSentencesInSnippets() throws {
         let body = "Tea tea\nCoffee coffee coffee\n" + String(repeating: "ordinary filler ", count: 20)
         let snippet = try #require(try Self.matches(body, "tea coffee", prefix: false)).snippet()
         #expect(snippet.text.hasPrefix("…Coffee coffee coffee"))
         #expect(Self.words(snippet) == ["Coffee", "coffee", "coffee"])
+        // Dense lines: each sentence is its own line (a sentence running across lines made this
+        // quadratic: 2,499 lines handed on 25 million characters).
         let dense = String(repeating: "tea\n", count: 2_499)
-        let clock = ContinuousClock()
-        let elapsed = try clock.measure {
-            let m = try #require(try Self.matches(dense, "tea", prefix: false))
-            #expect(m.sentences().count == 2_499)
-            // (The body repeats itself, so expectWellFormed's ends check doesn't apply.)
-            let snippet = m.snippet()
-            #expect(snippet.text.count <= 160 && snippet.text.hasPrefix("tea tea") && snippet.matches.first == [0, 3])
-        }
-        #expect(elapsed < .seconds(2), "\(elapsed)")
+        let m = try #require(try Self.matches(dense, "tea", prefix: false))
+        let sentences = m.sentences()
+        #expect(sentences.count == 2_499 && sentences.allSatisfy { dense[$0.range] == "tea" })
+        // (The body repeats itself, so expectWellFormed's ends check doesn't apply.)
+        let denseSnippet = m.snippet()
+        #expect(denseSnippet.text.count <= 160 && denseSnippet.text.hasPrefix("tea tea") && denseSnippet.matches.first == [0, 3])
     }
 
     @Test func everyNewlineKindIsFlattened() throws {
