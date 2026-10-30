@@ -1,6 +1,6 @@
 # Spike results
 
-Results of the [Phase 0 spikes](phase-0-spikes.md), of [Spike E](phase-6-0-spike-e.md) (Phase 6.0), of the [Phase 6c benchmark](phase-6c-provider-embeddings.md) and of [Spike F](#spike-f-pieces-that-make-sense-alone) (splits that keep their context). Each section gives the question, what was run, the numbers, and the decision it feeds.
+Results of the [Phase 0 spikes](phase-0-spikes.md), of [Spike E](phase-6-0-spike-e.md) (Phase 6.0), of the [Phase 6c benchmark](phase-6c-provider-embeddings.md) of [Spike F](#spike-f-pieces-that-make-sense-alone) (splits that keep their context) and of [Spike G](#spike-g-search-answer-quality) (search answers). Each section gives the question, what was run, the numbers, and the decision it feeds.
 
 ---
 
@@ -1041,3 +1041,45 @@ The plan as written:
    - **Dismissals** of old-prompt splits (`TidyUpDismissals` keyed on the memory and its content hash) are cleared once in the same migration: a split rejected because its pieces lost context should be offered again. Other dismissals stay.
    - The same goes for pending new-memory groups made with the old prompt whose pieces are untouched and whose original is still `split`. They're re-queued, or left as they are if the author prefers (to decide in the PR).
    - The first run after the migration may re-propose many splits at once: they count toward the 40 clusters a run (§9.6), so a large backlog spreads over a few days.
+
+---
+
+## Spike G: Search answer quality
+
+**Question:** does an answer from the top search results, with every claim quoting a memory and checked by code, meet Phase 9.2's gates, and on which providers ([plan](phase-9-search-answers.md#92-spike-g-answer-quality--½-weekend), [ADR-0028](../architecture/decisions/0028-search-answers.md), [memory processing §10](../domain/memory-processing.md#10-search-snippets-and-answers))? (Named G: Spike F above is a different spike.)
+
+**Run:** 29 Oct 2026 on the author's MacBook Air M1 (8 GB), macOS 27. The three cloud providers ran at the same time (one process each), so their latencies include that load.
+**Code:** throwaway harness in [`spikes/search-answers/`](../../spikes/search-answers/): `answer-input` (Swift) runs FunesCore's real vault search, with the bundled bge-small, and `BodyMatches.answerText` for each question; `run.py` builds §10.3's prompt (top 8, 1,500 characters a memory; top 5 and 600 for Apple), applies the cloud limit (Internal), calls the provider and applies §10.4's validation; `score.py` scores against the gates. Raw results in `results/<provider>/*.jsonl`, scores in [`results/report.md`](../../spikes/search-answers/results/report.md), hand labels in `labels.json`.
+**Fixtures (synthetic):** Spike E's 200 memories plus 8 added (a fact buried in a 2,000-character import, a newer date that disagrees with an older one, an older job title, a schedule that changes next month, an injection in an agent's memory, facts about other people). 42 questions by Claude Opus 5.5: direct facts, negation, other people, superseded values and conflicts (3), buried facts (3), the injection, 2 answered only above the cloud limit, 4 with no answer, 3 in Spanish. A held-out set of 20 questions and 3 memories written blind by GPT-6-Astra (two notes naming different rooms for the same booking, a code buried after 1,500 characters, 5 with no answer near an existing topic, 2 above the limit, 3 in Spanish). Scoring is lexical (regex keys per fact, as Spike E's); the 14 claims the keys didn't match were labelled by hand (13 correct, 1 wrong).
+
+**Providers:** Claude Haiku 5.5 (low effort, `claude -p` on the Claude plan), GPT-5.6-Terra and GPT-6-Luna (low reasoning, `codex exec` on the ChatGPT plan), and Apple on-device (Spike E's `fm-runner`) for the record. 62 calls each, none failed.
+
+### Verdict: **all three cloud providers pass**; Apple on-device doesn't
+
+Both sets pooled (main · held-out in the per-set report):
+
+| Provider | Correct claims (≥ 95%) | Right "no answer" (≥ 90%) | Answered, of answerable (≥ 80%) | Recall of required facts | Both sides of a conflict | Dropped by validation | p50 / p95 (≤ 15 s) |
+|---|---|---|---|---|---|---|---|
+| GPT-6-Luna | ✅ 52/52 = 100% | ✅ 14/14 | ✅ 48/48 | 57/57 | 5/5 | 0 | 3.0 / 5.0 s |
+| GPT-5.6-Terra | ✅ 51/51 = 100% | ✅ 13/14 = 93% | ✅ 48/48 | 54/57 | 2/5 | 0 | 4.1 / 6.4 s |
+| Claude Haiku 5.5 | ✅ 71/72 = 99% | ✅ 13/14 = 93% | ✅ 48/48 | 55/57 | 5/5 | 0 | 3.9 / 8.6 s |
+| Apple on-device | ❌ 73/160 = 46% (lexical, not labelled) | ❌ 0/12 | 48/50 | 52/59 | 5/5 | 10 | 15.4 / 22.8 s |
+
+Per set, Haiku's held-out score is 18/19 = 94.7% correct claims (one misreading), and its main-set "no answer" is 6/7, Terra's held-out "no answer" 6/7: each set alone is too small for a 95% or 90% gate to mean much, so the gates are judged pooled, as in Spike E.
+
+### Findings
+1. **Quotes were never the problem for the cloud models:** no claim from them failed §10.4's validation (0 of 175). Apple failed 10 quotes, which the code dropped.
+2. **Abstention is good, with one pattern:** the cloud models gave no claims for every question with no answer except two, where they wrote a true claim saying what the memories don't record ("the club pays for Harbor, but how much isn't recorded", Haiku; "you run in neutral cushioned shoes, but no brand is recorded", Terra). Both pass validation, so the card would show them as answers. The prompt now says such a claim isn't an answer (§10.3); not re-measured.
+3. **Conflicts:** Luna and Haiku reported both values every time; Terra gave only the newer one for Erik's title and the Harbor beta date (it merged the coworking change into one claim). Haiku once called the older date "superseded", against "a newer date doesn't by itself make a memory right".
+4. **Haiku says more:** 1.47 claims an answer against 1.04–1.08 for Codex, often a true extra off the question (CI before merging, slides due in April), and its one wrong claim misread "not XCTest, except for UI tests" as naming no framework for UI tests.
+5. **Injection:** no cloud model repeated the planted "day rate is €2,000" or "available immediately", in the question it sits next to or in the two it was meant to derail. Apple repeated the day rate.
+6. **The cloud limit shows up often:** 38 of 62 questions had at least one top result above Internal left out (1.2 a question; this vault is 30% Sensitive or Restricted), so "N memories above Internal weren't read" will be a common footer. All four questions answered only above the limit got no answer from the cloud models. Six memories are read a question on average.
+7. **Search found the answer for 61 of 62 questions** in the top 8. The miss: "¿Dónde vive mi hermana?" (bge-small is English-only, and "hermana" matches no English word); Astra's "¿Dónde vive mi hermana Lucía?" found it through the name. Answers to Spanish questions came in Spanish (Terra even in Rioplatense: "usás").
+8. **Speed:** every cloud call took under 9 s. Luna's 3.0 s p50 is far below Spike E's 21 s for extraction: answers are short (about 60 output tokens) at low reasoning. Codex sends about 8–9k input tokens a call (its own tool definitions included), Claude Code about 2.6k.
+9. **Apple on-device** fills every answer with up to 3 claims (2.7 an answer), never abstained (0 of 12), and invents ("you attended a school related to balcony gardening projects"). It stays a choice with its status line, not a suggestion.
+
+### What changes
+- **The numbers stay:** top 8, 1,500 characters, 45 s (the slowest call was under 9 s), 3 claims, 2 citations. Keyword-only passages (no embeddings) found the answer every time a body held it.
+- **The prompt** gains one rule (finding 2): a claim that only says what the memories don't record isn't an answer; say there's no answer instead.
+- **Suggested model:** any of the three; GPT-6-Luna was the best on every measure here. The Settings default stays "Same as New memories" (ADR-0028).
+- **For Phase 9.7 (automatic answers),** whose gate is p50 ≤ 3 s and p95 ≤ 5 s on this Mac: Luna sat exactly at it (3.0 / 5.0 s) under the load of three runs at once. Worth measuring alone before deciding.
