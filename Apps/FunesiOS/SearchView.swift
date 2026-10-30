@@ -95,12 +95,10 @@ struct SearchView: View {
             // Each fresh status.get, even an unchanged one, lifts an earlier answers_off.
             .onChange(of: model.lastChecked) { _, _ in search.statusChecked(model.macAnswers) }
             .onChange(of: showAsk, initial: true) { _, on in search.showAsk = on }
-            // Leaving Search clears the card and stops waiting.
+            // Opening a memory or another tab keeps the card (and an answer on its way); nothing is
+            // asked on its own meanwhile.
             .onAppear { search.visible = true }
-            .onDisappear {
-                search.visible = false
-                search.clearAnswer()
-            }
+            .onDisappear { search.visible = false }
         }
     }
 

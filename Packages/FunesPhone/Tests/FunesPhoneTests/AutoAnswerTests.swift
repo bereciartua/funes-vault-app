@@ -137,14 +137,21 @@ import Testing
         #expect(vault.asks.count == 1)
     }
 
-    /// Back to a search after another one that wasn't answered: a new search, answered again.
-    @Test func returningToASearchAnswersItAgain() async throws {
+    /// Back to a search after another one that wasn't answered: its answer comes back, and
+    /// nothing is asked again; once cleared, it's a new search, answered again.
+    @Test func returningToASearchBringsItsAnswerBack() async throws {
         let vault = Self.vault()
         let search = await Self.search(vault, trigger: .everySearch, query: "coffee")
         await search.autoTask?.value
         search.query = "coffee x"
         await search.search()
         #expect(search.results.isEmpty && search.autoTask == nil)
+        search.query = "coffee"
+        await search.search()
+        #expect(search.autoTask == nil && search.answer != .idle && vault.asks.count == 1)
+        search.clearAnswer()
+        search.query = "coffee x"
+        await search.search()
         search.query = "coffee"
         await search.search()
         await search.autoTask?.value

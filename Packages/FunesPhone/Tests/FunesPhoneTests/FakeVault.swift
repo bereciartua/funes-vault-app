@@ -43,11 +43,12 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
         }
     }
 
-    /// An edit made on the Mac: the version moves on.
-    func macEdit(_ id: UUID, body: String) {
+    /// An edit made on the Mac: the version moves on (and the time, when given).
+    func macEdit(_ id: UUID, body: String, updated: TimeInterval? = nil) {
         lock.withLock {
             memories[id]?.body = body
             memories[id]?.version += 1
+            if let updated { memories[id]?.updatedAt = t0.addingTimeInterval(updated) }
         }
     }
 

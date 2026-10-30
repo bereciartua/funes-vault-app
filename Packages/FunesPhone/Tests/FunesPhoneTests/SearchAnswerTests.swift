@@ -55,17 +55,191 @@ import Testing
     @Test func aNewSearchCancelAndAnswersOffClearTheCard() async throws {
         let vault = FakeVault()
         vault.add("Coffee", body: "Oat milk flat white.")
+        vault.add("Tea", body: "Green tea in the afternoon.")
         let search = await Self.loaded(vault)
         await search.ask()
         #expect(search.answer != .idle)
-        await search.search()
+        search.query = "tea"
         #expect(search.answer == .idle)
+        await search.search()
         await search.ask()
         search.clearAnswer()
         #expect(search.answer == .idle)
         await search.ask()
         search.macAnswers = nil
         #expect(search.answer == .idle)
+    }
+
+    /// Opening a memory (or another tab) and coming back: Search reloads, and the card is still
+    /// there, with no second call.
+    @Test func theAnswerStaysAfterOpeningAMemory() async throws {
+        let vault = FakeVault()
+        vault.add("Coffee", body: "Oat milk flat white.")
+        let search = await Self.loaded(vault)
+        search.visible = true
+        await search.ask()
+        let shown = search.answer
+        search.visible = false
+        search.visible = true
+        await search.search()
+        #expect(search.answer == shown && !search.canAsk && vault.asks.count == 1)
+        guard case .answered = search.answer else { Issue.record("\(search.answer)"); return }
+    }
+
+    /// An answer still on its way when a memory opens lands when Search comes back.
+    @Test func anAnswerOnItsWayLandsAfterComingBack() async throws {
+        let vault = FakeVault()
+        vault.add("Coffee", body: "Oat milk flat white.")
+        vault.answerDelay = .milliseconds(300)
+        let search = await Self.loaded(vault)
+        let asking = Task { await search.ask() }
+        try await Task.sleep(for: .milliseconds(50))
+        search.visible = false
+        search.visible = true
+        await search.search()
+        #expect(search.answer == .reading(count: 1))
+        await asking.value
+        guard case .answered = search.answer else { Issue.record("\(search.answer)"); return }
+        #expect(vault.asks.count == 1)
+    }
+
+    /// Another search clears the card; back to the answered one, its answer comes back. Clear
+    /// means it doesn't.
+    @Test func theLastAnswerComesBackWithItsSearch() async throws {
+        let vault = FakeVault()
+        vault.add("Coffee", body: "Oat milk flat white.")
+        vault.add("Tea", body: "Green tea in the afternoon.")
+        let search = await Self.loaded(vault)
+        await search.ask()
+        let shown = search.answer
+        search.query = "tea"
+        await search.search()
+        #expect(search.answer == .idle && search.canAsk && search.sourceNumber(search.results[0].id) == nil)
+        search.query = "coffee"
+        await search.search()
+        #expect(search.answer == shown && vault.asks.count == 1 && search.sourceNumber(search.results[0].id) == 1)
+        search.clearAnswer()
+        search.query = "tea"
+        await search.search()
+        search.query = "coffee"
+        await search.search()
+        #expect(search.answer == .idle && search.canAsk)
+    }
+
+    /// Only the last answer is kept, and only for the same memories, unedited, while the Mac
+    /// answers and Ask shows; nothing stays once the phone leaves the Mac.
+    @Test func theKeptAnswerIsDroppedWhenItNoLongerFits() async throws {
+        let vault = FakeVault()
+        let coffee = vault.add("Coffee", body: "Oat milk flat white.")
+        vault.add("Tea", body: "Green tea in the afternoon.")
+        let search = await Self.loaded(vault)
+        await search.ask()
+        // Edited on the Mac: the answer may be out of date.
+        vault.macEdit(coffee.id, body: "Cortado now.", updated: 60)
+        await search.search()
+        #expect(search.answer == .idle && search.canAsk)
+
+        await search.ask()
+        // A new result among those read.
+        vault.add("Coffee beans", updated: 120)
+        await search.search()
+        #expect(search.answer == .idle)
+
+        // A newer answer replaces the older one.
+        await search.ask()
+        search.query = "tea"
+        await search.search()
+        await search.ask()
+        search.query = "coffee"
+        await search.search()
+        #expect(search.answer == .idle)
+
+        await search.ask()
+        search.query = "tea"
+        search.showAsk = false
+        search.query = "coffee"
+        await search.search()
+        #expect(search.answer == .idle)
+        search.showAsk = true
+
+        search.macAnswers = nil
+        search.macAnswers = Self.claude
+        await search.search()
+        #expect(search.answer == .idle && search.canAsk)
+
+        // The Mac answers with another model now.
+        await search.ask()
+        search.query = "tea"
+        search.macAnswers = SearchAnswersStatus(engine: "GPT-6-Luna (Codex)", locality: .cloud)
+        search.query = "coffee"
+        await search.search()
+        #expect(search.answer == .idle)
+
+        await search.ask()
+        search.clear()
+        search.query = "coffee"
+        await search.search()
+        #expect(search.answer == .idle && vault.asks.count == 7)
+    }
+
+    /// The Mac changes model: the card goes, an answer on its way from the previous model is
+    /// dropped, and nothing comes back with the search.
+    @Test func anotherModelDropsTheCardAndAnAnswerOnItsWay() async throws {
+        let vault = FakeVault()
+        vault.add("Coffee", body: "Oat milk flat white.")
+        let search = await Self.loaded(vault)
+        await search.ask()
+        search.macAnswers = SearchAnswersStatus(engine: "GPT-6-Luna (Codex)", locality: .cloud)
+        #expect(search.answer == .idle && search.canAsk)
+
+        vault.answerDelay = .milliseconds(300)
+        let asking = Task { await search.ask() }
+        try await Task.sleep(for: .milliseconds(50))
+        search.macAnswers = Self.claude
+        await asking.value
+        #expect(search.answer == .idle)
+        await search.search()
+        #expect(search.answer == .idle && search.canAsk)
+    }
+
+    /// A memory the answer read, edited, archived or deleted from its detail: the card goes at
+    /// once and doesn't come back; an unrelated change leaves it.
+    @Test func editingAMemoryItReadDropsTheCard() async throws {
+        let vault = FakeVault()
+        let coffee = vault.add("Coffee", body: "Oat milk flat white.")
+        let tea = vault.add("Tea", body: "Green tea in the afternoon.")
+        let search = await Self.loaded(vault)
+        await search.ask()
+        search.changed(tea)
+        search.changed(coffee)
+        #expect(search.answer != .idle)
+        var edited = coffee
+        edited.body = "Cortado now."
+        edited.updatedAt = coffee.updatedAt.addingTimeInterval(60)
+        search.changed(edited)
+        #expect(search.answer == .idle)
+        await search.search()
+        #expect(search.answer == .idle && search.canAsk)
+
+        await search.ask()
+        search.removed(coffee.id)
+        #expect(search.answer == .idle)
+    }
+
+    /// A refresh of the answered search that comes back after the field changed brings nothing
+    /// back under the new search.
+    @Test func aLateRefreshOfThePreviousSearchRestoresNothing() async throws {
+        let vault = FakeVault()
+        vault.add("Coffee", body: "Oat milk flat white.")
+        vault.add("Tea", body: "Green tea in the afternoon.")
+        let search = await Self.loaded(vault)
+        await search.ask()
+        vault.delay("coffee", .milliseconds(200))
+        let refreshing = Task { await search.search() }
+        try await Task.sleep(for: .milliseconds(50))
+        search.query = "tea"
+        await refreshing.value
+        #expect(search.answer == .idle && search.sourceNumber(search.results[0].id) == nil)
     }
 
     /// A slow answer overtaken by a new search never lands on the new results.
