@@ -45,7 +45,7 @@ Throwaway code in `spikes/search-answers/`, like Spike E. (Named G: [spike resul
 
 ## 9.6 Ship · ¼ weekend
 - [x] README (Search answers in the feature list), PRIVACY.md (the search text and top results go to the chosen Search answers provider, only when asked), docs, CHANGELOG.
-- [ ] `sh scripts/test.sh` green; the iPhone app builds for a generic device; a TestFlight build with the author's go-ahead.
+- [x] `sh scripts/test.sh` green; the iPhone app builds for a generic device; a TestFlight build with the author's go-ahead (0.5.0 (16), 2026-10-30, from 02d4b3a).
 - [ ] The author uses it for a week; note bad answers here.
 
 ## 9.7 Later, optional: automatic for questions
