@@ -94,11 +94,19 @@ final class UIReview: NSObject, NSApplicationDelegate {
                           keywords: ["package manager", "test framework", "conventions"], purpose: "scaffold project",
                           retention: .session),
             now: Date().addingTimeInterval(-120))
+        // Settings ▸ AI's review data (Phase 11.6): an API account with two models, the Claude plan
+        // with two, a different model per job, and a local server.
         let settings = ModelSettings(defaults: defaults, keys: InMemoryProviderKeyStore())
-        try settings.upsert(ProviderConfig(endpoint: .ollama(), name: "Ollama", model: "llama3.2"), key: nil)
-        try settings.upsert(ProviderConfig(endpoint: .anthropic(), name: "Anthropic", model: AnthropicClient.suggestedModel), key: "review")
-        settings.setClassifier("anthropic")
-        // Search answers on, so the Vault shows the Ask row and Settings its rows (FR-AI-17).
+        settings.upsert(AIAccount(endpoint: .ollama(), name: "Ollama", models: ["llama3.2"]))
+        settings.upsert(AIAccount(endpoint: .anthropic(), name: "Anthropic", models: [AnthropicClient.suggestedModel, "claude-opus-5-5"]))
+        try settings.setKey("review", for: "anthropic")
+        settings.setChoice(.model(ModelChoice(account: "anthropic", model: AnthropicClient.suggestedModel)), for: .newMemories)
+        settings.setChoice(.model(ModelChoice(account: "claude-code", model: "opus")), for: .tidyUp)
+        settings.setChoice(.model(ModelChoice(account: "anthropic", model: "claude-opus-5-5")), for: .searchAnswers)
+        settings.addUsage(ProviderUsage(requests: 412, inputTokens: 1_203_550, outputTokens: 80_112), for: "anthropic")
+        settings.addUsage(ProviderUsage(requests: 9, inputTokens: 31_400, outputTokens: 2_050), for: "claude-code")
+        settings.reviewPlans([.claudeCode: "/usr/local/bin/claude"], [.claudeCode: .ready(version: "2.1.310"), .codex: .notInstalled])
+        // Search answers on, so the Vault shows the Ask row and Settings its page (FR-AI-17).
         settings.searchAnswersOn = true
         let model = AppModel(services: environment, preferences: preferences, modelSettings: settings)
         configure(model)
@@ -364,10 +372,10 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await sheet("new-memory-\(suffix)", NewMemorySheet(model: model) { _ in })
             await sheet("categories-\(suffix)", CategoriesSheet(model: model))
             await sheet("add-agent-\(suffix)", AddAgentSheet(model: model) { _ in })
-            // An embedding model typed as a provider's chat model: the sheet explains it.
-            await sheet("provider-embedding-model-\(suffix)",
-                        ProviderSheet(model: model, provider: ProviderConfig(endpoint: .ollama(), name: "Ollama",
-                                                                             model: "qwen3-embedding:0.6b"), isNew: false))
+            // An embedding model typed as an account's first model: the sheet explains it.
+            await sheet("add-account-embedding-model-\(suffix)",
+                        AddAccountSheet(model: model, account: AIAccount(endpoint: .lmStudio(), name: "LM Studio",
+                                                                         models: ["qwen3-embedding:0.6b"])) { _ in })
             await sheet("add-agent-cloud-\(suffix)", AddAgentSheet(model: model, place: .cloud) { _ in })
             await sheet("seed-questions-name-\(suffix)", SeedQuestionsSheet(model: model))
             await sheet("seed-questions-\(suffix)", SeedQuestionsSheet(model: model, startsWithName: false))
@@ -421,31 +429,50 @@ final class UIReview: NSObject, NSApplicationDelegate {
                         titled: false)
             await sheet("menu-bar-icons-\(suffix)", MenuIconStrip().padding(16), titled: false)
 
-            // Settings, tab by tab.
+            // Settings, pane by pane and page by page (ADR-0030), then the problem scenes.
             let settings = SettingsWindowController(model: model)
             keep.append(settings)
-            for tab in SettingsTab.allCases {
-                model.settingsTab = tab
+            let ai = model.modelSettings
+            func show(_ destination: SettingsDestination, _ name: String? = nil) async {
+                model.goToSettings(destination)
                 settings.show()
-                await snapshot("settings-\(tab.rawValue)-\(suffix)", settings.window)
+                try? await Task.sleep(for: .milliseconds(300))
+                await snapshot("settings-\(name ?? destination.safeName)-\(suffix)", settings.window)
             }
-            // A provider embedding model (task 6c.3): with no Ollama running, its status says so.
-            model.modelSettings.setEmbedding(EmbeddingChoice(provider: "ollama", model: "qwen3-embedding:0.6b"))
-            model.settingsTab = .models
-            settings.show()
-            try? await Task.sleep(for: .seconds(1))
-            await snapshot("settings-models-embedding-\(suffix)", settings.window)
-            model.modelSettings.setEmbedding(nil)
-            // Search answers (FR-AI-17): its rows, scrolled into view.
-            model.settingsTab = .models
-            settings.show()
-            try? await Task.sleep(for: .seconds(1))
-            if let scroll = Self.scrollView(in: settings.window?.contentView), let document = scroll.documentView {
-                scroll.contentView.scroll(to: NSPoint(x: 0, y: min(620, max(0, document.frame.height - scroll.contentView.bounds.height))))
-                scroll.reflectScrolledClipView(scroll.contentView)
+            for pane in SettingsPane.allCases { await show(SettingsDestination(pane)) }
+            for page in [SettingsPage.newMemories, .tidyUp, .searchAnswers, .searchIndex, .account("anthropic"),
+                         .account("ollama"), .account("claude-code"), .account("codex")] {
+                await show(SettingsDestination(page))
             }
-            try? await Task.sleep(for: .milliseconds(300))
-            await snapshot("settings-models-answers-\(suffix)", settings.window)
+            // A missing key: the jobs on Anthropic say so, and so does its page.
+            try? ai.setKey(nil, for: "anthropic")
+            await show(SettingsDestination(.features), "ai-features-no-key")
+            await show(.account("anthropic"), "ai-accounts-anthropic-no-key")
+            try? ai.setKey("review", for: "anthropic")
+            // A plan paused after a tool event, and an uninstalled plan with usage from before.
+            ai.reviewPlans([.claudeCode: "/usr/local/bin/claude"], [.claudeCode: .blocked, .codex: .notInstalled])
+            ai.addUsage(ProviderUsage(requests: 3, inputTokens: 9_800, outputTokens: 610), for: "codex")
+            await show(SettingsDestination(.features), "ai-features-blocked-plan")
+            await show(.account("claude-code"), "ai-accounts-claude-code-blocked")
+            await show(.account("codex"), "ai-accounts-codex-usage")
+            ai.resetUsage(for: "codex")
+            ai.reviewPlans([.claudeCode: "/usr/local/bin/claude"], [.claudeCode: .ready(version: "2.1.310"), .codex: .notInstalled])
+            // An account with no models, and a job's choice of it that has no model yet (unresolved).
+            ai.upsert(AIAccount(endpoint: .lmStudio(), name: "LM Studio"))
+            let answers = ai.choice(.searchAnswers)
+            ai.setChoice(.model(ModelChoice(account: "lmstudio", model: nil)), for: .searchAnswers)
+            await show(SettingsDestination(.features), "ai-features-unresolved")
+            await show(.searchAnswers, "ai-features-search-answers-unresolved")
+            await show(.account("lmstudio"), "ai-accounts-no-models")
+            await show(SettingsDestination(.accounts), "ai-accounts-local-servers")
+            ai.setChoice(answers, for: .searchAnswers)
+            ai.removeAccount("lmstudio")
+            // A second index (task 6c.3): with no Ollama running, its status says so.
+            ai.setEmbedding(EmbeddingChoice(provider: "ollama", model: "qwen3-embedding:0.6b"))
+            try? await Task.sleep(for: .seconds(1))
+            await show(.searchIndex, "ai-features-search-index-error")
+            await show(SettingsDestination(.privacy), "ai-privacy-second-index")
+            ai.setEmbedding(nil)
             settings.close()
         }
         main.close()

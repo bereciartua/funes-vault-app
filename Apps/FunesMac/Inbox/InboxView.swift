@@ -547,8 +547,8 @@ struct CorrectionDiff: View {
 }
 
 /// The Tidy-up section's header (04-ux-mac.md): "Last tidy-up: today 03:04 · 37 memories checked
-/// · 4 suggestions" and Tidy Up Now. After a run that stopped early, Try Again, or AI Models when
-/// the model's setup failed.
+/// · 4 suggestions" and Tidy Up Now. After a run that stopped early, Try Again; when the model's
+/// setup failed, its account's page or the tidy-up's (ADR-0030 §9).
 struct TidyUpHeader: View {
     let model: AppModel
 
@@ -563,7 +563,11 @@ struct TidyUpHeader: View {
             }
             Spacer()
             if followup == .openSettings {
-                Button(String(localized: "AI Models…")) { model.openSettings(.models) }
+                let destination = model.modelSettings.destination(for: .tidyUp)
+                Button(destination.page == .tidyUp ? String(localized: "Daily Tidy-up…")
+                       : String(localized: "\(model.modelSettings.name(destination.page?.rawValue ?? ""))…")) {
+                    model.openSettings(destination)
+                }
             }
             Button(tidyUp.running ? String(localized: "Tidying Up…")
                    : followup == .tryAgain ? String(localized: "Try Again") : String(localized: "Tidy Up Now")) {

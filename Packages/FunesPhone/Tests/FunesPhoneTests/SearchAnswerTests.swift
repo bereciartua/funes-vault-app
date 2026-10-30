@@ -202,6 +202,22 @@ import Testing
         #expect(search.answer == .idle && search.canAsk)
     }
 
+    /// Only the model changes on the same account (ADR-0030 §6: the engine's name includes the
+    /// model), directly or through New memories: the card and the kept answer go too.
+    @Test func anotherModelOnTheSameAccountDropsTheCard() async throws {
+        let vault = FakeVault()
+        vault.add("Coffee", body: "Oat milk flat white.")
+        let search = await Self.loaded(vault)
+        search.macAnswers = SearchAnswersStatus(engine: "Claude (Claude Code) · haiku", locality: .cloud)
+        await search.search()
+        await search.ask()
+        #expect(search.answer != .idle)
+        search.macAnswers = SearchAnswersStatus(engine: "Claude (Claude Code) · opus", locality: .cloud)
+        #expect(search.answer == .idle && search.canAsk)
+        await search.search()
+        #expect(search.answer == .idle)
+    }
+
     /// A memory the answer read, edited, archived or deleted from its detail: the card goes at
     /// once and doesn't come back; an unrelated change leaves it.
     @Test func editingAMemoryItReadDropsTheCard() async throws {

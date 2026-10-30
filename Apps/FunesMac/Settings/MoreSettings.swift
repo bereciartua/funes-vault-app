@@ -7,8 +7,8 @@ import FunesProtocol
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Settings ▸ MCP (04-ux-mac.md): server on or off, port, the launcher and its optional symlink,
-/// protocol counts (never bodies).
+/// Settings ▸ Agent Server (04-ux-mac.md; the MCP tab before v0.8): server on or off, port, the
+/// launcher and its optional symlink, protocol counts (never bodies).
 struct MCPSettings: View {
     let model: AppModel
     @State private var on = true
@@ -100,7 +100,7 @@ enum SidebarStatusText {
     }
 }
 
-/// Settings ▸ Data (FR-G-04, FR-G-05, FR-X-05, FR-X-06): backups, export, import, Show in Finder,
+/// Settings ▸ Data & Backups (FR-G-04, FR-G-05, FR-X-05, FR-X-06): backups, export, import, Show in Finder,
 /// Erase All Data.
 struct DataSettings: View {
     let model: AppModel
@@ -228,32 +228,6 @@ struct DataSettings: View {
                 message = String(localized: "The export couldn't be written.")
             }
         }
-    }
-}
-
-/// Settings ▸ Updates (FR-G-03): automatic checks and Check Now, through Sparkle.
-struct UpdateSettings: View {
-    let model: AppModel
-    @State private var automatic = true
-
-    var body: some View {
-        Form {
-            if model.updater.isAvailable() {
-                Toggle(String(localized: "Check for updates every day"), isOn: $automatic)
-                    .onChange(of: automatic) { _, on in model.updater.setAutomaticChecks(on) }
-                LabeledContent(String(localized: "Last checked"),
-                               value: model.updater.lastCheck().map(RelativeTime.full) ?? String(localized: "Never"))
-                Button(String(localized: "Check Now")) { model.updater.checkForUpdates() }
-                Text(String(localized: "Updates come from GitHub, signed for Funes Vault. Installing always takes a click, and waits while a request is waiting for you."))
-                    .font(.callout).foregroundStyle(.secondary)
-            } else {
-                Text(String(localized: "This copy of Funes Vault doesn't check for updates (a build from source, or a development build). Download new versions from GitHub."))
-                    .foregroundStyle(.secondary)
-            }
-            LabeledContent(String(localized: "Version"), value: model.versionText)
-        }
-        .formStyle(.grouped)
-        .onAppear { automatic = model.updater.automaticChecks() }
     }
 }
 

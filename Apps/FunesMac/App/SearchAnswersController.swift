@@ -3,7 +3,7 @@ import FunesCore
 import FunesProtocol
 
 /// Search answers with the user's settings (FR-AI-17, memory processing §10): the Vault's Ask and,
-/// from the companion, the iPhone's. Each answer builds its router from Settings ▸ AI Models at
+/// from the companion, the iPhone's. Each answer builds its router from Settings ▸ AI at
 /// the time it's asked, so a change of model applies to the next Ask.
 @MainActor
 final class SearchAnswersController: SearchAnswering {
@@ -24,8 +24,12 @@ final class SearchAnswersController: SearchAnswering {
     /// are only asked for (memory processing §10.6).
     var trigger: AnswerTrigger { settings.searchAnswersOnDevice ? .ask : settings.searchAnswersTrigger }
 
-    /// "Claude (Claude Code)", "Anthropic", "Apple on-device".
+    /// "Claude (Claude Code) · opus", "Anthropic · claude-haiku-5-5", "Apple on-device": the model
+    /// is part of it, so the iPhone drops its card when only the model changes (ADR-0030 §6).
     var engineName: String { settings.searchAnswersName }
+
+    /// The effective account's name alone, for the error lines that send you to its page.
+    private var accountName: String { settings.searchAnswersAccount.map(settings.name) ?? engineName }
 
     /// Cloud requests per day, for the card at the cap.
     var dailyCap: Int { settings.dailyCap }
@@ -39,19 +43,26 @@ final class SearchAnswersController: SearchAnswering {
     }
 
     /// The model that would answer, for `status.get`: nil while answers are off or nothing can
-    /// answer (no model on device, a plan that isn't installed, a provider without a model).
+    /// answer (no model on device, a plan that isn't installed, an account without its key, a
+    /// choice without a model).
     func engine() async -> SearchAnswerEngine? {
         guard isOn else { return nil }
-        if settings.searchAnswersOnDevice {
+        let id: String
+        switch settings.resolve(.searchAnswers).model {
+        case .onDevice:
             return AppleFoundationGenerator.isAvailable ? SearchAnswerEngine(name: engineName, locality: .onDevice) : nil
+        case .rules, .unresolved:
+            return nil
+        case let .model(account, _):
+            id = account
         }
-        if let plan = settings.searchAnswersPlan {
+        if let plan = PlanKind(rawValue: id) {
             return settings.executables[plan] == nil ? nil : SearchAnswerEngine(name: engineName, locality: .cloud, trigger: trigger)
         }
-        guard let provider = settings.searchAnswersProvider, !provider.model.isEmpty, !settings.needsKey(provider) else { return nil }
+        guard let account = settings.account(id), !settings.needsKey(account) else { return nil }
         // Never waits on DNS (status.get is the phone's 3 s probe): the last resolved locality, and
         // cloud until the lookup in the background says otherwise (fail closed).
-        let endpoint = provider.endpoint
+        let endpoint = account.endpoint
         if resolved[endpoint] == nil {
             Task.detached(priority: .utility) { [weak self] in
                 let locality = endpoint.locality()
@@ -112,20 +123,20 @@ final class SearchAnswersController: SearchAnswering {
         case .needsUpdate:
             return (String(localized: "\(engineName) needs an update on your Mac."), false)
         case .toolBlocked:
-            return (String(localized: "\(engineName) is paused: test its connection in Settings ▸ AI Models."), false)
+            return (String(localized: "\(engineName) is paused: test its connection in Settings ▸ AI ▸ Models & Accounts ▸ \(accountName)."), false)
         case .askRequired:
             return (String(localized: "Press ⌘⏎ to ask about this search."), false)
         case let .provider(providerError):
-            let tool = settings.searchAnswersPlan.map { $0 == .claudeCode ? "Claude Code" : "Codex" }
+            let tool = settings.searchAnswersPlan?.tool
             switch providerError {
             case .unauthorized:
                 if let tool { return (String(localized: "\(tool) isn't signed in on your Mac."), false) }
-                return (String(localized: "\(engineName) didn't accept the API key. Check it in Settings ▸ AI Models."), false)
+                return (String(localized: "\(engineName) didn't accept the API key. Check it in Settings ▸ AI ▸ Models & Accounts ▸ \(accountName)."), false)
             case .unavailable:
                 if settings.searchAnswersOnDevice, !AppleFoundationGenerator.isAvailable {
-                    return (String(localized: "Choose a model to answer searches in Settings ▸ AI Models."), false)
+                    return (String(localized: "Choose a model to answer searches in Settings ▸ AI ▸ Features ▸ Search answers."), false)
                 }
-                if let tool { return (String(localized: "\(tool) isn't available: check it in Settings ▸ AI Models."), true) }
+                if let tool { return (String(localized: "\(tool) isn't available: check it in Settings ▸ AI ▸ Models & Accounts ▸ \(accountName)."), true) }
                 return (String(localized: "\(engineName) isn't available right now."), true)
             case .rateLimited:
                 return (String(localized: "\(engineName) says to slow down. Try again later."), true)

@@ -23,7 +23,7 @@ struct ProcessingBody: View {
                 }
                 Text(state.isProcessing ? String(localized: "Processing…") : String(localized: "Couldn't split"))
                     .font(.callout.weight(.medium))
-                Text(Self.status(state, engine: model.modelSettings.chosenName))
+                Text(Self.status(state, engine: model.modelSettings.newMemoriesName))
                     .font(.callout).foregroundStyle(.secondary)
             }
             .accessibilityElement(children: .combine)

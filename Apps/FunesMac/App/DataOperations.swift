@@ -125,7 +125,7 @@ final class DataOperations {
     /// the app's settings, then relaunches empty. Agents' own config files aren't touched.
     func eraseAll(modelSettings: ModelSettings) {
         let manager = FileManager.default
-        for provider in modelSettings.providers { modelSettings.remove(provider.id) }
+        for account in modelSettings.accounts { modelSettings.removeAccount(account.id) }
         if let items = try? manager.contentsOfDirectory(at: environment.dataFolder, includingPropertiesForKeys: nil) {
             for item in items { try? manager.removeItem(at: item) }
         }

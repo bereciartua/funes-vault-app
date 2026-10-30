@@ -160,7 +160,7 @@ final class TidyUpController {
                 : String(localized: "Funes has \(ids.count) suggestions for this memory in the Inbox.")
         case .nothing: String(localized: "Nothing to tidy up: this memory looks right.")
         case .refused(.busy): String(localized: "This memory is already in a suggestion or a share waiting for you.")
-        case .refused(.noModel): String(localized: "Choose a tidy-up model in Settings ▸ AI Models first.")
+        case .refused(.noModel): String(localized: "Choose a tidy-up model in Settings ▸ AI ▸ Features ▸ Daily tidy-up first.")
         case .refused(.aboveCloudLimit): String(localized: "This memory is above what you let cloud models see.")
         case .refused(.notActive): String(localized: "Only active memories can be tidied up.")
         case .stopped("cap_reached"): String(localized: "Stopped at today's cloud limit. Try again tomorrow.")
@@ -168,7 +168,7 @@ final class TidyUpController {
         case .stopped("timeout"): String(localized: "The model took too long to answer. Try again.")
         case .stopped("rate_limited"): String(localized: "The model's provider asked Funes to slow down. Try again in a few minutes.")
         case .stopped("unauthorized"), .stopped("unavailable"):
-            String(localized: "The tidy-up model isn't working. Check it in Settings ▸ AI Models.")
+            String(localized: "The tidy-up model isn't working. Check it in Settings ▸ AI ▸ Features ▸ Daily tidy-up.")
         case .stopped: String(localized: "The model returned an error. Try again later.")
         }
     }
@@ -178,7 +178,7 @@ final class TidyUpController {
         case tidyUpNow
         /// It stopped or skipped clusters on a failure that may pass: Tidy Up Now, as Try Again.
         case tryAgain
-        /// The model's sign-in, key or setup failed: AI Models, next to Tidy Up Now.
+        /// The model's sign-in, key or setup failed: its account or tidy-up page in Settings, next to Tidy Up Now.
         case openSettings
     }
 

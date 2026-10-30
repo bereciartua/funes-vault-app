@@ -2,8 +2,8 @@ import FunesCore
 import FunesProtocol
 import SwiftUI
 
-/// Settings ▸ AI Models ▸ Embeddings (model providers §4, §7–8; FR-AI-09, FR-AI-11): the bundled
-/// bge-small, always on; optionally a provider model as a second index, with its progress, Cancel,
+/// Settings ▸ AI ▸ Features ▸ Search index (model providers §4, §7–8; FR-AI-09, FR-AI-11): the
+/// bundled bge-small, always on; optionally an account's embedding model as a second index, with its progress, Cancel,
 /// Calibrate… for a model Funes hasn't measured, and for a cloud model the agent-request switch
 /// and the disclosure line.
 struct EmbeddingRows: View {
@@ -21,7 +21,7 @@ struct EmbeddingRows: View {
     private var controller: EmbeddingController { model.embeddings }
 
     var body: some View {
-        LabeledContent(String(localized: "Embeddings")) {
+        LabeledContent(String(localized: "Built in")) {
             HStack(spacing: 6) {
                 Text(String(localized: "Built in (bge-small, on this Mac)")).fixedSize()
                 Pill(label: Locality.onDevice.title, tone: .good)
@@ -41,8 +41,8 @@ struct EmbeddingRows: View {
 
     @ViewBuilder
     private var chooser: some View {
-        LabeledContent(String(localized: "Provider model")) {
-            Picker(String(localized: "Provider model"), selection: $providerID) {
+        LabeledContent(String(localized: "Second index")) {
+            Picker(String(localized: "Second index"), selection: $providerID) {
                 Text(String(localized: "None")).tag(String?.none)
                 ForEach(settings.embeddingProviders) { provider in
                     Text(provider.name).tag(Optional(provider.id))
@@ -81,13 +81,13 @@ struct EmbeddingRows: View {
             }
         }
         Text(settings.embeddingProviders.isEmpty
-            ? String(localized: "Optional: a provider's embedding model as a second index next to bge-small, mainly for tasks without keywords and for other languages. Add Ollama, LM Studio or OpenAI under Providers first.")
+            ? String(localized: "Optional: a provider's embedding model as a second index next to bge-small, mainly for tasks without keywords and for other languages. Add Ollama, LM Studio or OpenAI in Models & Accounts first.")
             : String(localized: "Optional: a provider's embedding model as a second index next to bge-small, mainly for tasks without keywords and for other languages. Funes has measured Qwen3-Embedding-0.6B (Ollama, LM Studio) and OpenAI's text-embedding-3. Memories above the cloud limit keep bge-small only."))
             .font(.callout).foregroundStyle(.secondary)
         if let message { Text(message).font(.callout).foregroundStyle(.red) }
     }
 
-    private var chosenProvider: ProviderConfig? { providerID.flatMap { id in settings.providers.first { $0.id == id } } }
+    private var chosenProvider: AIAccount? { providerID.flatMap(settings.account) }
 
     private var suggestions: [String] {
         guard let provider = chosenProvider else { return [] }
@@ -103,10 +103,10 @@ struct EmbeddingRows: View {
     }
 
     private func planMessage(_ plan: EmbeddingController.Plan) -> String {
-        let name = settings.providers.first { $0.id == plan.choice.provider }?.name ?? plan.choice.provider
+        let name = settings.name(plan.choice.provider)
         var lines = [plan.locality.isLocal
             ? String(localized: "\(name) runs on this Mac or your local network, so every memory is embedded and nothing leaves it.")
-            : String(localized: "About \(plan.tokens) tokens go to \(name). Memories above \(ModelSettingsPane.title(settings.cloudLimit)) stay on this Mac's index only.")]
+            : String(localized: "About \(plan.tokens) tokens go to \(name). Memories above \(CloudLimitText.title(settings.cloudLimit)) stay on this Mac's index only.")]
         lines.append(String(localized: "Search keeps using bge-small until it's done; you can cancel any time."))
         if !plan.calibrated {
             lines.append(String(localized: "Funes hasn't measured this model, so search keeps its 10 closest matches until you calibrate it."))
@@ -119,10 +119,10 @@ struct EmbeddingRows: View {
         message = nil
         Task {
             do {
-                guard let client = try settings.client(for: provider) as? OpenAICompatibleClient else { return }
+                guard let client = try settings.client(for: provider, model: "") as? OpenAICompatibleClient else { return }
                 models = try await client.listModels()
             } catch {
-                message = ProviderSheet.text(error)
+                message = ProviderText.error(error)
             }
         }
     }
@@ -139,7 +139,7 @@ struct EmbeddingRows: View {
             } catch {
                 message = ProviderError.invalidOutput == error as? ProviderError
                     ? String(localized: "That model didn't return usable vectors. Check it's an embedding model.")
-                    : ProviderSheet.text(error)
+                    : ProviderText.error(error)
             }
         }
     }
@@ -149,7 +149,7 @@ struct EmbeddingRows: View {
     @ViewBuilder
     private func active(_ choice: EmbeddingChoice) -> some View {
         let name = settings.embeddingProvider?.name ?? choice.provider
-        LabeledContent(String(localized: "Provider model")) {
+        LabeledContent(String(localized: "Second index")) {
             HStack(spacing: 6) {
                 Text("\(name) · \(choice.model)").fixedSize()
                 if let locality = controller.locality {
@@ -192,7 +192,7 @@ struct EmbeddingRows: View {
         .confirmationDialog(String(localized: "Calibrate \(choice.model)?"), isPresented: $confirmCalibrate) {
             Button(String(localized: "Calibrate")) {
                 Task {
-                    do { try await controller.calibrate() } catch { message = ProviderSheet.text(error) }
+                    do { try await controller.calibrate() } catch { message = ProviderText.error(error) }
                 }
             }
         } message: {
@@ -204,7 +204,7 @@ struct EmbeddingRows: View {
     /// "Embedding 1,240 of 3,000", "Ready", "Unavailable: check the API key"… (model providers §4)
     private func status(_ choice: EmbeddingChoice) -> String {
         if let problem = controller.problem {
-            return ProviderSheet.text(problem) + " " + String(localized: "Search uses bge-small.")
+            return ProviderText.error(problem) + " " + String(localized: "Search uses bge-small.")
         }
         guard let p = controller.progress else { return String(localized: "Starting…") }
         switch p.state {
@@ -217,10 +217,10 @@ struct EmbeddingRows: View {
         case let .waiting(until):
             return String(localized: "The provider asked to slow down; continuing at \(until.formatted(date: .omitted, time: .shortened)).")
         case let .failed(error):
-            return ProviderSheet.text(error) + " " + String(localized: "Search uses bge-small meanwhile.")
+            return ProviderText.error(error) + " " + String(localized: "Search uses bge-small meanwhile.")
         case .complete:
             if controller.locality?.isLocal == false {
-                return String(localized: "Ready: \(p.total) memories use \(choice.model); those above \(ModelSettingsPane.title(settings.cloudLimit)) use bge-small.")
+                return String(localized: "Ready: \(p.total) memories use \(choice.model); those above \(CloudLimitText.title(settings.cloudLimit)) use bge-small.")
             }
             return String(localized: "Ready: \(p.total) memories use \(choice.model).")
         }
@@ -235,7 +235,7 @@ struct EmbeddingRows: View {
                 ? String(localized: "Search embeddings send your searches and agents' task descriptions to \(provider), but no memory text: the cloud limit is Nothing.")
                 : String(localized: "Search embeddings send your searches to \(provider), but no memory text: the cloud limit is Nothing.")
         case let .upTo(level):
-            let limit = ModelSettingsPane.title(.upTo(level))
+            let limit = CloudLimitText.title(.upTo(level))
             return choice.embedsAgentTasks
                 ? String(localized: "Search embeddings send memory text (up to \(limit)), your searches and agents' task descriptions to \(provider).")
                 : String(localized: "Search embeddings send memory text (up to \(limit)) and your searches to \(provider). Agents' requests are matched on this Mac.")

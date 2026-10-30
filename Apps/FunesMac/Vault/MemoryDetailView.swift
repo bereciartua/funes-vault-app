@@ -198,7 +198,7 @@ struct MemoryDetailView: View {
                 .disabled(!model.tidyUp.canTidyMemory || model.tidyUp.running || model.tidyUp.tidying != nil || dirty)
                 .help(model.tidyUp.canTidyMemory
                       ? String(localized: "Check this memory against itself and related memories now.")
-                      : String(localized: "Choose a tidy-up model in Settings ▸ AI Models to tidy up a memory."))
+                      : String(localized: "Choose a tidy-up model in Settings ▸ AI ▸ Features ▸ Daily tidy-up to tidy up a memory."))
                 Button(String(localized: "Archive")) {
                     act { try model.services.store.archiveMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
                 }

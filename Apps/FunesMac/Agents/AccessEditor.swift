@@ -281,7 +281,7 @@ struct ProfileFieldsCard: View {
             if !reads {
                 Text(String(localized: "Needs Read.")).font(.callout).foregroundStyle(.secondary)
             }
-            Button(String(localized: "About You…")) { model.openSettings(.aboutYou) }
+            Button(String(localized: "About You…")) { model.openSettings(SettingsDestination(.aboutYou)) }
                 .buttonStyle(.link)
         }
     }

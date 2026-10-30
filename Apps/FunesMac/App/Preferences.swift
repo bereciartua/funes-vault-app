@@ -112,21 +112,21 @@ final class Preferences {
         set { defaults.set(newValue, forKey: Key.classifyCaptures) }
     }
 
-    /// Settings ▸ AI Models ▸ New memories ▸ Split into separate memories (Phase 6a). Off until
+    /// Settings ▸ AI ▸ Features ▸ New memories ▸ Split into separate memories (Phase 6a). Off until
     /// the user turns it on: it sends agent input and imports to the chosen model too.
     var splitNewMemories: Bool {
         get { defaults.bool(forKey: Key.splitNewMemories) }
         set { defaults.set(newValue, forKey: Key.splitNewMemories) }
     }
 
-    /// Settings ▸ AI Models ▸ Apply changes automatically: Off until the user picks a level that
+    /// Settings ▸ AI ▸ Features ▸ Apply changes automatically: Off until the user picks a level that
     /// an engine reached (memory processing §5.7).
     var applyAutomatically: AutoApplyLevel {
         get { AutoApplyLevel(rawValue: defaults.integer(forKey: Key.applyAutomatically)) ?? .off }
         set { defaults.set(newValue.rawValue, forKey: Key.applyAutomatically) }
     }
 
-    /// Settings ▸ AI Models ▸ Daily tidy-up (memory processing §9.1): off by default. Turning it
+    /// Settings ▸ AI ▸ Features ▸ Daily tidy-up (memory processing §9.1): off by default. Turning it
     /// on records when, so the first run is at the next scheduled time, not at once.
     var tidyUpDaily: Bool {
         get { defaults.bool(forKey: Key.tidyUpDaily) }
@@ -153,7 +153,7 @@ final class Preferences {
         set { defaults.set(newValue, forKey: Key.mcpEnabled) }
     }
 
-    /// The MCP server's port (Settings ▸ MCP); the default unless the user changed it.
+    /// The MCP server's port (Settings ▸ Agent Server); the default unless the user changed it.
     var mcpPort: Int {
         get {
             let port = defaults.integer(forKey: Key.mcpPort)

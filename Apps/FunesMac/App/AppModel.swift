@@ -124,14 +124,35 @@ final class AppModel {
     var cloudMessage: String?
     /// Sparkle, or a stand-in where this build can't update itself.
     @ObservationIgnored var updater = UpdaterControls.unavailable
-    /// MCP traffic counts since launch (Settings ▸ MCP).
+    /// MCP traffic counts since launch (Settings ▸ Agent Server).
     @ObservationIgnored var trafficCounts: () -> MCPTrafficCounters.Snapshot = { MCPTrafficCounters.Snapshot() }
 
     // MARK: Navigation
 
+    /// A pane chosen in the sidebar: its top level.
+    func showSettingsPane(_ pane: SettingsPane) {
+        settingsPath = []
+        settingsPane = pane
+    }
+
+    /// Settings at a destination, or at the last pane's top level (ADR-0030 §1, §9). An account
+    /// that no longer exists opens Models & Accounts.
+    func goToSettings(_ destination: SettingsDestination?) {
+        guard let destination else { settingsPath = []; return }
+        settingsPane = destination.pane
+        switch destination.page {
+        case let .account(id)? where !modelSettings.hasAccount(id): settingsPath = []
+        case let page?: settingsPath = [page]
+        case nil: settingsPath = []
+        }
+    }
+
     /// The main window opens on Home (FR-H-02).
     var section: AppSection = .home
-    var settingsTab: SettingsTab = .aboutYou
+    /// The Settings pane shown: the last one this session, General the first time (ADR-0030 §1).
+    var settingsPane: SettingsPane = .general
+    /// The pages open inside it; empty at its top level.
+    var settingsPath: [SettingsPage] = []
     var agentTab: AgentTab = .access
     /// Open the Add Agent sheet: the sidebar's +, the checklist's Add… and the empty Agents page set it.
     var wantsAddAgent = false
@@ -146,7 +167,7 @@ final class AppModel {
     var windowRequest = 0
 
     @ObservationIgnored var openMainWindow: () -> Void = {}
-    @ObservationIgnored var openSettings: (SettingsTab?) -> Void = { _ in }
+    @ObservationIgnored var openSettings: (SettingsDestination?) -> Void = { _ in }
     @ObservationIgnored var openCapture: () -> Void = {}
     /// Saves a box's text as a capture (CaptureSaver); true when it was taken.
     @ObservationIgnored var saveCapture: (CaptureBoxModel) -> Bool = { _ in false }
@@ -172,9 +193,9 @@ final class AppModel {
     @ObservationIgnored var setReviewShortcut: (Shortcut?) -> Bool = { _ in false }
     /// Brings the waiting panel forward and makes it key, or opens the newest pending request.
     @ObservationIgnored var reviewRequest: () -> Void = {}
-    /// Turns the MCP server on or off (Settings ▸ MCP).
+    /// Turns the MCP server on or off (Settings ▸ Agent Server).
     @ObservationIgnored var setServer: (Bool) -> Void = { _ in }
-    /// Moves the MCP server to another port (Settings ▸ MCP).
+    /// Moves the MCP server to another port (Settings ▸ Agent Server).
     @ObservationIgnored var setPort: (Int) -> Void = { _ in }
     /// Turns a notification kind on, asking macOS for permission the first time.
     @ObservationIgnored var requestNotificationPermission: (@escaping @MainActor (Bool) -> Void) -> Void = { $0(false) }
