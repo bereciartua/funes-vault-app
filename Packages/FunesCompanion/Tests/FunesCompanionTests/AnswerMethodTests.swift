@@ -29,7 +29,7 @@ struct RealAnswers: SearchAnswering {
 
     func engine() async -> SearchAnswerEngine? { SearchAnswerEngine(name: "Claude (Claude Code)", locality: .cloud) }
 
-    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via) async throws -> SearchAnswer {
+    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via, automatic: Bool) async throws -> SearchAnswer {
         try await answerer.answer(query, ids: ids, router: ModelRouter(classifier: model, onDevice: nil), actor: actor, via: via, now: t0)
     }
 }
@@ -43,6 +43,8 @@ final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
     let trigger: AnswerTrigger
     let started = Mutex(0)
     let cancelled = Mutex(0)
+    /// Whether each call came marked as asked on its own.
+    let automatic = Mutex<[Bool]>([])
 
     init(available: Bool = true, delay: Duration = .zero, failure: SearchAnswerError? = nil, trigger: AnswerTrigger = .ask) {
         self.available = available
@@ -55,8 +57,9 @@ final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
         available ? SearchAnswerEngine(name: "Ollama", locality: .localServer, trigger: trigger) : nil
     }
 
-    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via) async throws -> SearchAnswer {
+    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via, automatic: Bool) async throws -> SearchAnswer {
         started.withLock { $0 += 1 }
+        self.automatic.withLock { $0.append(automatic) }
         do {
             try await Task.sleep(for: delay)
         } catch {
@@ -158,7 +161,8 @@ final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
         await #expect(throws: CompanionError(.askRequired)) {
             try await q.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()], automatic: true), phone: other)
         }
-        #expect(questions.started.withLock { $0 } == 1)
+        #expect(questions.started.withLock { $0 } == 1 && questions.automatic.withLock { $0 } == [true])
+        #expect(manual.automatic.withLock { $0 } == [false])
     }
 
     @Test func errorsHaveTheirCodes() async throws {
@@ -220,7 +224,7 @@ struct CLIAnswers: SearchAnswering {
 
     func engine() async -> SearchAnswerEngine? { SearchAnswerEngine(name: "Claude (Claude Code)", locality: .cloud) }
 
-    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via) async throws -> SearchAnswer {
+    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via, automatic: Bool) async throws -> SearchAnswer {
         try await answerer.answer(query, ids: ids, router: ModelRouter(classifier: client, onDevice: nil), actor: actor, via: via, now: t0)
     }
 }

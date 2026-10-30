@@ -67,7 +67,10 @@ final class SearchAnswersController: SearchAnswering {
     /// Whether the effective model is Apple on-device, which reads at most 5 results.
     var readsAtMost: Int { settings.searchAnswersOnDevice ? SearchAnswerer.onDeviceMemoryCount : SearchAnswerer.memoryCount }
 
-    func answer(_ query: String, ids: [UUID], actor: Actor = .user, via: ActivityEvent.Via = .app) async throws -> SearchAnswer {
+    func answer(_ query: String, ids: [UUID], actor: Actor = .user, via: ActivityEvent.Via = .app,
+                automatic: Bool = false) async throws -> SearchAnswer {
+        // Checked with the same settings the router is built from, on the main actor (§10.6).
+        if automatic, !(isOn && trigger.fires(for: query)) { throw SearchAnswerError.askRequired }
         let build = settings.searchAnswerRouterBuilder(cap: settings.cap(store: environment.store, activity: environment.activity))
         let router: ModelRouter
         do {
@@ -110,6 +113,8 @@ final class SearchAnswersController: SearchAnswering {
             return (String(localized: "\(engineName) needs an update on your Mac."), false)
         case .toolBlocked:
             return (String(localized: "\(engineName) is paused: test its connection in Settings ▸ AI Models."), false)
+        case .askRequired:
+            return (String(localized: "Press ⌘⏎ to ask about this search."), false)
         case let .provider(providerError):
             let tool = settings.searchAnswersPlan.map { $0 == .claudeCode ? "Claude Code" : "Codex" }
             switch providerError {

@@ -140,10 +140,13 @@ public final class CompanionHandlers: Sendable {
         let token = UUID()
         let task = Task { () throws -> (SearchAnswerEngine, SearchAnswer) in
             guard let engine = await answers.engine() else { throw CompanionError(.answersOff) }
-            // Asked on its own by a phone whose status is older than the Mac's setting.
-            if params.automatic == true, !engine.trigger.fires(for: params.query) { throw CompanionError(.askRequired) }
+            // Asked on its own by a phone whose status is older than the Mac's setting. `answer`
+            // checks again as it chooses the model, in case the setting changes in between.
+            let automatic = params.automatic == true
+            if automatic, !engine.trigger.fires(for: params.query) { throw CompanionError(.askRequired) }
             try Task.checkCancellation()
-            return (engine, try await answers.answer(params.query, ids: params.ids, actor: .device(device), via: .companion))
+            return (engine, try await answers.answer(params.query, ids: params.ids, actor: .device(device), via: .companion,
+                                                     automatic: automatic))
         }
         let previous = answering.withLock { inFlight -> Task<(SearchAnswerEngine, SearchAnswer), any Error>? in
             let old = inFlight[device]?.task
@@ -180,6 +183,7 @@ public final class CompanionHandlers: Sendable {
         case .provider(.rateLimited): CompanionError(.modelUnavailable, reason: "plan_limit")
         case .needsUpdate: CompanionError(.modelUnavailable, reason: "needs_update")
         case .toolBlocked: CompanionError(.modelUnavailable, reason: "tool_blocked")
+        case .askRequired: CompanionError(.askRequired)
         case .tooLongForOnDevice, .provider: CompanionError(.modelUnavailable, reason: "provider_error")
         }
     }

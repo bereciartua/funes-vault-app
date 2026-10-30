@@ -8,6 +8,7 @@ import Testing
 @MainActor @Suite struct AutoAnswerTests {
     static func search(_ vault: FakeVault, trigger: AnswerTrigger, query: String) async -> SearchModel {
         let search = SearchModel(caller: vault)
+        search.visible = true
         search.pause = { _ in }
         search.macAnswers = SearchAnswersStatus(engine: "GPT-6-Luna (Codex)", locality: .cloud, trigger: trigger)
         search.query = query
@@ -52,6 +53,7 @@ import Testing
     @Test func showAskOffOrAnotherScopeNeverAsks() async throws {
         let vault = Self.vault()
         let search = SearchModel(caller: vault)
+        search.visible = true
         search.pause = { _ in }
         search.macAnswers = SearchAnswersStatus(engine: "Claude", locality: .cloud, trigger: .everySearch)
         search.showAsk = false
@@ -86,6 +88,7 @@ import Testing
     @Test func typingDuringThePauseCancelsIt() async throws {
         let vault = Self.vault()
         let search = SearchModel(caller: vault)
+        search.visible = true
         search.macAnswers = SearchAnswersStatus(engine: "Claude", locality: .cloud, trigger: .everySearch)
         search.pause = { _ in try await Task.sleep(for: .seconds(30)) }
         search.query = "coffee"
@@ -100,17 +103,17 @@ import Testing
     @Test func refreshingDuringThePauseRestartsIt() async throws {
         let vault = Self.vault()
         let search = SearchModel(caller: vault)
+        search.visible = true
         search.macAnswers = SearchAnswersStatus(engine: "Claude", locality: .cloud, trigger: .everySearch)
-        let gate = AsyncStream<Void>.makeStream()
-        search.pause = { _ in for await _ in gate.stream { return } }
+        search.pause = { _ in try await Task.sleep(for: .seconds(30)) }
         search.query = "coffee"
         await search.search()
         let first = try #require(search.autoTask)
+        search.pause = { _ in }
         await search.search()
         let second = try #require(search.autoTask)
-        await first.value
         #expect(vault.asks.isEmpty)
-        gate.continuation.yield()
+        await first.value
         await second.value
         #expect(vault.asks.count == 1)
     }
@@ -119,6 +122,7 @@ import Testing
     @Test func aLateStatusStartsThePause() async throws {
         let vault = Self.vault()
         let search = SearchModel(caller: vault)
+        search.visible = true
         search.pause = { _ in }
         search.query = "what coffee"
         await search.search()
@@ -159,6 +163,63 @@ import Testing
         #expect(search.autoTask == nil)
     }
 
+    /// Search off screen: nothing is asked on its own, and coming back starts the pause.
+    @Test func onlyWhileSearchShows() async throws {
+        let vault = Self.vault()
+        let search = SearchModel(caller: vault)
+        search.pause = { _ in }
+        search.macAnswers = SearchAnswersStatus(engine: "Claude", locality: .cloud, trigger: .everySearch)
+        search.query = "coffee"
+        await search.search()
+        search.statusChecked(search.macAnswers)
+        #expect(search.autoTask == nil)
+        search.visible = true
+        await search.autoTask?.value
+        #expect(vault.asks.count == 1)
+    }
+
+    /// Ask tapped during the pause, then Clear and a refresh: that was this search's answer.
+    @Test func aManualAskCountsAsTheSearchsAnswer() async throws {
+        let vault = Self.vault()
+        let search = SearchModel(caller: vault)
+        search.visible = true
+        search.macAnswers = SearchAnswersStatus(engine: "Claude", locality: .cloud, trigger: .everySearch)
+        search.pause = { _ in try await Task.sleep(for: .seconds(30)) }
+        search.query = "coffee"
+        await search.search()
+        let pending = try #require(search.autoTask)
+        await search.ask()
+        await pending.value
+        search.clearAnswer()
+        await search.search()
+        #expect(search.autoTask == nil && vault.asks.count == 1 && vault.asks.first?.automatic == nil)
+    }
+
+    /// Automatic answers turned off during the pause and back on: the pause starts again, with
+    /// the new trigger's length.
+    @Test func turningAutomaticOffAndOnStartsThePauseAgain() async throws {
+        let vault = Self.vault()
+        let search = SearchModel(caller: vault)
+        search.visible = true
+        let pauses = Pauses()
+        search.pause = { duration in
+            await pauses.record(duration)
+            try await Task.sleep(for: .seconds(30))
+        }
+        search.macAnswers = SearchAnswersStatus(engine: "Claude", locality: .cloud, trigger: .questions)
+        search.query = "what coffee"
+        await search.search()
+        let first = try #require(search.autoTask)
+        search.statusChecked(SearchAnswersStatus(engine: "Claude", locality: .cloud, trigger: .ask))
+        await first.value
+        #expect(search.autoTask == nil)
+        search.pause = { duration in await pauses.record(duration) }
+        search.statusChecked(SearchAnswersStatus(engine: "Claude", locality: .cloud, trigger: .everySearch))
+        await search.autoTask?.value
+        #expect(vault.asks.count == 1)
+        #expect(await pauses.all == [.milliseconds(600), .seconds(1)])
+    }
+
     /// A Mac before 10 results takes 8 ids: the phone sends no more.
     @Test func anOlderMacGetsEightIDs() async throws {
         let vault = FakeVault()
@@ -173,6 +234,7 @@ import Testing
     @Test func theMacChangingItsTriggerDuringThePauseStopsIt() async throws {
         let vault = Self.vault()
         let search = SearchModel(caller: vault)
+        search.visible = true
         search.macAnswers = SearchAnswersStatus(engine: "Claude", locality: .cloud, trigger: .everySearch)
         let gate = AsyncStream<Void>.makeStream()
         search.pause = { _ in for await _ in gate.stream { return } }
@@ -184,4 +246,9 @@ import Testing
         await pending.value
         #expect(vault.asks.isEmpty && search.canAsk)
     }
+}
+
+actor Pauses {
+    private(set) var all: [Duration] = []
+    func record(_ duration: Duration) { all.append(duration) }
 }

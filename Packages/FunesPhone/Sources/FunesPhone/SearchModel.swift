@@ -71,12 +71,15 @@ public final class SearchModel {
     @ObservationIgnored private var answerTask: Task<Void, Never>?
     /// Bumped by each Ask, Cancel and new search, so a late answer is dropped.
     private var answerGeneration = 0
-    /// The automatic Ask waiting for its pause (memory processing §10.6) and the search it waits
-    /// for; and the search one started for, so refreshing it, Clear or Cancel never ask again
-    /// until the search changes.
+    /// The automatic Ask waiting for its pause (memory processing §10.6) and what it waits with:
+    /// the search, its first results and the trigger; and the search an Ask (automatic or not)
+    /// started for, so refreshing it, Clear or Cancel never ask again until the search changes.
     @ObservationIgnored var autoTask: Task<Void, Never>?
-    private var autoPending: MemorySearchParams?
+    private var autoPending: AutoKey?
     private var autoAsked: MemorySearchParams?
+    private struct AutoKey: Equatable { let params: MemorySearchParams; let ids: [UUID]; let trigger: AnswerTrigger }
+    /// Whether Search is on screen (the view sets it): nothing is asked on its own while it isn't.
+    public var visible = false { didSet { if visible != oldValue { visible ? scheduleAutoAsk() : cancelAutoAsk() } } }
     /// Waits out the automatic Ask's pause; tests shorten it.
     @ObservationIgnored var pause: @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
 
@@ -108,7 +111,7 @@ public final class SearchModel {
             nextCursor = page.nextCursor
             phase = .loaded
             // New results restart the pause: it counts from the list the answer will read.
-            scheduleAutoAsk(restart: true)
+            scheduleAutoAsk()
         } catch {
             // Cancelled (the query changed while typing, the tab closed): another search follows,
             // and a cancelled call says nothing about the Mac.
@@ -181,6 +184,9 @@ public final class SearchModel {
 
     private func ask(automatic: Bool) async {
         guard canAsk, let params = resultsParams else { return }
+        // Any Ask, automatic or not, is this search's one: none follows on its own after it.
+        autoAsked = params
+        if !automatic { cancelAutoAsk() }
         answerTask?.cancel()
         answerGeneration += 1
         let mine = answerGeneration
@@ -204,22 +210,30 @@ public final class SearchModel {
         await task.value
     }
 
-    /// Asks on its own after the pause, once for each search, when the Mac says to and the search
-    /// qualifies (a question, or any search); never while Show Ask is off. Called when results
-    /// arrive (`restart`: the pause starts again) and when the Mac's status or Show Ask change
-    /// (a pause already running for this search goes on).
-    private func scheduleAutoAsk(restart: Bool = false) {
-        guard let trigger = macAnswers?.trigger, canAsk, let params = resultsParams, autoAsked != params,
-              trigger.fires(for: params.query) else { return }
-        if !restart, autoTask != nil, autoPending == params { return }
+    /// Asks on its own after the pause, once for each search, while Search shows, when the Mac
+    /// says to and the search qualifies (a question, or any search); never while Show Ask is off.
+    /// Called when results arrive and when the Mac's status, Show Ask or Search's visibility
+    /// change: a pause already running with the same search, results and trigger goes on, any
+    /// other change starts it again, and a search that no longer qualifies stops it.
+    private func scheduleAutoAsk() {
+        guard visible, let trigger = macAnswers?.trigger, canAsk, let params = resultsParams, autoAsked != params,
+              trigger.fires(for: params.query) else {
+            cancelAutoAsk()
+            return
+        }
+        let key = AutoKey(params: params, ids: askIDs, trigger: trigger)
+        if autoTask != nil, autoPending == key { return }
         autoTask?.cancel()
-        autoPending = params
+        autoPending = key
         let pause = self.pause
         autoTask = Task { [weak self] in
             try? await pause(trigger.pause)
-            guard !Task.isCancelled, let self, self.resultsParams == params, self.canAsk,
-                  self.macAnswers?.trigger.fires(for: params.query) == true else { return }
-            self.autoAsked = params
+            guard !Task.isCancelled, let self else { return }
+            // Done waiting: a later change schedules afresh.
+            self.autoTask = nil
+            self.autoPending = nil
+            guard self.visible, self.resultsParams == params, self.canAsk, self.macAnswers?.trigger.fires(for: params.query) == true
+            else { return }
             await self.ask(automatic: true)
         }
     }

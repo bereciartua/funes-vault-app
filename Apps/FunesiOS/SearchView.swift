@@ -96,7 +96,11 @@ struct SearchView: View {
             .onChange(of: model.lastChecked) { _, _ in search.statusChecked(model.macAnswers) }
             .onChange(of: showAsk, initial: true) { _, on in search.showAsk = on }
             // Leaving Search clears the card and stops waiting.
-            .onDisappear { search.clearAnswer() }
+            .onAppear { search.visible = true }
+            .onDisappear {
+                search.visible = false
+                search.clearAnswer()
+            }
         }
     }
 

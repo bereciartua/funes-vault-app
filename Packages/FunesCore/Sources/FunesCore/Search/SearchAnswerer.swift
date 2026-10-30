@@ -78,7 +78,9 @@ public struct SearchAnswerEngine: Sendable, Hashable {
 public protocol SearchAnswering: Sendable {
     /// The model that would answer; nil when Search answers are off or no model can answer.
     func engine() async -> SearchAnswerEngine?
-    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via) async throws -> SearchAnswer
+    /// `automatic`: asked on its own by a phone (§10.6); the settings are checked again as the
+    /// model is chosen, and `askRequired` comes back if this search is now only answered when asked.
+    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via, automatic: Bool) async throws -> SearchAnswer
 }
 
 /// Why an answer failed (§10.5). Each maps to the card's text and a reason code.
@@ -100,6 +102,8 @@ public enum SearchAnswerError: Error, Sendable, Equatable {
     case needsUpdate
     /// A subscription CLI that tried to use a tool and is paused until Test Connection.
     case toolBlocked
+    /// Asked on its own, but the settings now answer this search only when asked; nothing sent.
+    case askRequired
 
     /// The Activity reason code, and `memories.answer`'s `model_unavailable` reason.
     public var code: String {
@@ -112,6 +116,7 @@ public enum SearchAnswerError: Error, Sendable, Equatable {
         case .vault: "vault_error"
         case .needsUpdate: "needs_update"
         case .toolBlocked: "tool_blocked"
+        case .askRequired: "ask_required"
         case let .provider(error):
             switch error {
             case .unauthorized: "not_signed_in"

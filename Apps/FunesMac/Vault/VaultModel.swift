@@ -117,13 +117,15 @@ final class VaultModel {
     private struct Quoted: Equatable { let memoryID: UUID; let quote: String }
     private var quotedValue: Quoted?
     @ObservationIgnored private var answerTask: Task<Void, Never>?
-    /// The automatic Ask waiting for its pause (memory processing §10.6) and the search and
-    /// filters it waits for; and those one started for, so a reload of the same list (a memory
-    /// saved elsewhere), Clear or Cancel never ask again until the search or filters change.
+    /// The automatic Ask waiting for its pause (memory processing §10.6) and what it waits with:
+    /// the search, filters, first results and trigger; and the search and filters an Ask
+    /// (automatic or not) started for, so a reload of the same list (a memory saved elsewhere),
+    /// Clear or Cancel never ask again until the search or filters change.
     @ObservationIgnored private var autoTask: Task<Void, Never>?
-    @ObservationIgnored private var autoPending: AutoKey?
+    @ObservationIgnored private var autoPending: Pending?
     @ObservationIgnored private var autoAsked: AutoKey?
     private struct AutoKey: Equatable { let query: String; let filter: MemoryFilter }
+    private struct Pending: Equatable { let key: AutoKey; let ids: [UUID]; let trigger: AnswerTrigger }
     /// Whether the Vault is on screen: nothing is asked on its own while it isn't.
     @ObservationIgnored private var shown = false
 
@@ -143,6 +145,9 @@ final class VaultModel {
         guard canAsk, let answers else { return }
         answerTask?.cancel()
         let query = listedQuery, filter = listedFilter
+        // Any Ask, automatic or not, is this search's one: none follows on its own after it.
+        autoAsked = AutoKey(query: query, filter: filter)
+        cancelAutoAsk()
         let ids = Array(memories.prefix(SearchAnswerer.memoryCount).map(\.id))
         let total = memories.count
         let engine = answers.engineName, limit = answers.cloudLimitName
@@ -163,22 +168,30 @@ final class VaultModel {
 
     /// Asks on its own after the pause, once for each search and filters, while the Vault shows,
     /// when Settings says to and the search qualifies (a question, or any search). Called when a
-    /// list loads (`restart`: the pause counts from the list the answer will read) and when the
-    /// Vault appears or the setting changes (a pause already running goes on).
-    func scheduleAutoAsk(restart: Bool = false) {
-        guard shown, let answers, canAsk, answer == nil else { return }
+    /// list loads and when the Vault appears or the setting changes: a pause already running
+    /// with the same search, first results and trigger goes on (a reload that changed nothing
+    /// doesn't postpone it), any other change starts it again, and a search that no longer
+    /// qualifies stops it.
+    func scheduleAutoAsk() {
         let query = listedQuery, filter = listedFilter
         let key = AutoKey(query: query, filter: filter)
+        guard shown, let answers, canAsk, answer == nil, autoAsked != key, answers.trigger.fires(for: query) else {
+            cancelAutoAsk()
+            return
+        }
         let trigger = answers.trigger
-        guard autoAsked != key, trigger.fires(for: query) else { return }
-        if !restart, autoTask != nil, autoPending == key { return }
+        let pending = Pending(key: key, ids: memories.prefix(SearchAnswerer.memoryCount).map(\.id), trigger: trigger)
+        if autoTask != nil, autoPending == pending { return }
         autoTask?.cancel()
-        autoPending = key
+        autoPending = pending
         autoTask = Task { [weak self] in
             try? await Task.sleep(for: trigger.pause)
-            guard !Task.isCancelled, let self, self.shown, self.canAsk, self.answer == nil, self.listedQuery == query,
-                  self.listedFilter == filter, self.answers?.trigger.fires(for: query) == true else { return }
-            self.autoAsked = key
+            guard !Task.isCancelled, let self else { return }
+            // Done waiting: a later change schedules afresh.
+            self.autoTask = nil
+            self.autoPending = nil
+            guard self.shown, self.canAsk, self.answer == nil, self.listedQuery == query, self.listedFilter == filter,
+                  self.answers?.trigger.fires(for: query) == true else { return }
             self.ask()
         }
     }
@@ -278,7 +291,7 @@ final class VaultModel {
             for id in visibleRows { requestSnippets(for: id) }
             selection = selection.intersection(memories.map(\.id))
             loaded = true
-            scheduleAutoAsk(restart: true)
+            scheduleAutoAsk()
         } catch {
             loaded = true
         }
