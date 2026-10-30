@@ -165,6 +165,9 @@
         }
       }
     },
+    "%lld" : {
+
+    },
     "%lld above its sensitivity limit" : {
 
     },
@@ -358,6 +361,9 @@
     "An expired memory is never shared with agents." : {
 
     },
+    "Answer" : {
+
+    },
     "Answer by %@" : {
 
     },
@@ -370,7 +376,13 @@
     "Answered" : {
 
     },
+    "Answered by" : {
+
+    },
     "Answered on your Mac" : {
+
+    },
+    "Answers this search from its top results, quoting your memories." : {
 
     },
     "Any Sensitivity" : {
@@ -395,6 +407,9 @@
 
     },
     "As of %@" : {
+
+    },
+    "Ask Funes" : {
 
     },
     "Asking your Mac…" : {
@@ -465,6 +480,9 @@
 
     },
     "Cleanup suggestion · %@" : {
+
+    },
+    "Clear" : {
 
     },
     "Click Allow on “%@”" : {
@@ -1085,6 +1103,9 @@
     "Queuing %lld…" : {
 
     },
+    "Quoted in the answer" : {
+
+    },
     "Range" : {
 
     },
@@ -1232,6 +1253,9 @@
     "Search" : {
 
     },
+    "Search answers" : {
+
+    },
     "Search answers are off on your Mac." : {
 
     },
@@ -1339,6 +1363,9 @@
     "Show All" : {
 
     },
+    "Show Ask in Search" : {
+
+    },
     "Show Less" : {
 
     },
@@ -1368,6 +1395,19 @@
     },
     "Something went wrong on your Mac. Try again." : {
 
+    },
+    "Source %lld" : {
+
+    },
+    "Source %lld: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Source %1$lld: %2$@"
+          }
+        }
+      }
     },
     "Spike 1" : {
 
@@ -1700,6 +1740,9 @@
     "Your Mac no longer knows this iPhone. Captures waiting here are kept: pair again to send them, or delete them in Settings." : {
 
     },
+    "Your Mac reads the top results and asks %@. Change the model on your Mac in Settings ▸ AI Models." : {
+
+    },
     "Your Mac refused the request (%@)." : {
 
     },
@@ -1773,6 +1816,9 @@
 
     },
     "iPhone" : {
+
+    },
+    "“%@”" : {
 
     }
   },

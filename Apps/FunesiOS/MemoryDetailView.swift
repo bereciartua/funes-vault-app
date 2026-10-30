@@ -7,12 +7,16 @@ import SwiftUI
 /// names the version shown here; if the Mac has moved on, "Changed on your Mac, reload?".
 struct MemoryDetailView: View {
     let model: PhoneModel
+    /// A search answer's quote to highlight (FR-iOS-13), found with `QuoteLocator`; an edited
+    /// memory without it opens plain.
+    let quote: String?
     @State private var detail: MemoryDetailModel
     @State private var confirmingDelete = false
     @Environment(\.dismiss) private var dismiss
 
-    init(model: PhoneModel, id: UUID) {
+    init(model: PhoneModel, id: UUID, quote: String? = nil) {
         self.model = model
+        self.quote = quote
         _detail = State(initialValue: model.detailModel(id))
     }
 
@@ -66,10 +70,21 @@ struct MemoryDetailView: View {
     private func loaded(_ shown: CompanionMemory) -> some View {
         let memory = shown.memory
         return List {
+            if let range = quote.flatMap({ QuoteLocator.range(of: $0, in: memory.body) }) {
+                Section {
+                    Text(Self.highlighted(memory.body, range: range, excerpt: true))
+                } header: {
+                    Label("Quoted in the answer", systemImage: "quote.opening")
+                }
+            }
             Section {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(memory.title).font(.title3.bold())
-                    Text(memory.body).textSelection(.enabled)
+                    if let range = quote.flatMap({ QuoteLocator.range(of: $0, in: memory.body) }) {
+                        Text(Self.highlighted(memory.body, range: range, excerpt: false)).textSelection(.enabled)
+                    } else {
+                        Text(memory.body).textSelection(.enabled)
+                    }
                 }
                 .padding(.vertical, 4)
                 if let line = Self.statusLine(memory) {
@@ -205,5 +220,28 @@ struct MemoryDetailView: View {
         case .undone: String(localized: "Undone")
         case nil: raw
         }
+    }
+}
+
+extension MemoryDetailView {
+    /// The body with the quote highlighted; as an excerpt, up to 160 characters either side, cut at
+    /// words, with "…".
+    static func highlighted(_ text: String, range: Range<String.Index>, excerpt: Bool) -> AttributedString {
+        var start = text.startIndex, end = text.endIndex
+        if excerpt {
+            start = text.index(range.lowerBound, offsetBy: -160, limitedBy: text.startIndex) ?? text.startIndex
+            end = text.index(range.upperBound, offsetBy: 160, limitedBy: text.endIndex) ?? text.endIndex
+            while start > text.startIndex, start < range.lowerBound, !text[text.index(before: start)].isWhitespace { start = text.index(after: start) }
+            while end < text.endIndex, end > range.upperBound, !text[end].isWhitespace { end = text.index(before: end) }
+        }
+        var result = AttributedString(start > text.startIndex ? "…" : "")
+        result += AttributedString(String(text[start..<range.lowerBound]))
+        var quote = AttributedString(String(text[range]))
+        quote.backgroundColor = .yellow.opacity(0.4)
+        quote.inlinePresentationIntent = .stronglyEmphasized
+        result += quote
+        result += AttributedString(String(text[range.upperBound..<end]))
+        result += AttributedString(end < text.endIndex ? "…" : "")
+        return result
     }
 }

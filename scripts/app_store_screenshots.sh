@@ -10,7 +10,8 @@ set -eu
 #
 # Environment:
 #   FUNES_SIM_DEVICE   A simulator's UDID or name. Default: "Funes Screenshots", created if missing.
-#   FUNES_SCENES       Only these scenes, by name (default: all six, in order).
+#   FUNES_SCENES       Only these scenes, by name (default: all six, in order). The review-only
+#                      scenes ($review_scenes, not App Store screenshots) run only when named.
 #   FUNES_SHOT_WAIT    Seconds from launch to the shot (default 8; more on a busy Mac).
 
 project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
@@ -18,6 +19,7 @@ out=${1:-$project_dir/build/app-store-screenshots}
 derived="$project_dir/build/sim"
 device_name=${FUNES_SIM_DEVICE:-Funes Screenshots}
 all_scenes="home share access search inbox save"
+review_scenes="search-answer"
 scenes=${FUNES_SCENES:-$all_scenes}
 wait=${FUNES_SHOT_WAIT:-8}
 
@@ -50,7 +52,10 @@ for scene in $scenes; do
     count=$((count + 1))
     # Numbered by the scene's place in the full set, so a retake replaces the same file.
     n=$(printf '%s\n' $all_scenes | grep -nx "$scene" | cut -d: -f1)
-    [ -n "$n" ] || fail "unknown scene $scene (one of: $all_scenes)"
+    if [ -z "$n" ]; then
+        printf '%s\n' $review_scenes | grep -qx "$scene" || fail "unknown scene $scene (one of: $all_scenes $review_scenes)"
+        n=review
+    fi
     xcrun simctl terminate "$udid" com.funesvault.ios 2>/dev/null || true
     xcrun simctl launch "$udid" com.funesvault.ios -FunesScreenshot "$scene" > /dev/null
     # Demo mode, the first loads and a sheet's animation.

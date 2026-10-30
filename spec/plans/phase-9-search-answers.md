@@ -37,14 +37,14 @@ Throwaway code in `spikes/search-answers/`, like Spike E. (Named G: [spike resul
 - [x] VoiceOver labels (the card reads its claims, then "Source 1: <title>"), the string catalog (`sh scripts/sync_strings.sh`), UI snapshots (`vault-answer`, `vault-answer-none`, `settings-models-answers` for the new rows; light and dark).
 
 ## 9.5 iPhone · ½–¾ weekend
-- [ ] **Companion (Mac):** `searchAnswers` in `status.get`; `memories.answer` in `CompanionRouter` and `CompanionHandlers` with its 50 s deadline, the error codes, one call in flight per device (a new one cancels the previous; the listener isn't changed to watch for closed connections), Activity under `device:<id>`. Tests against the real router, as for the other methods.
-- [ ] **Companion (phone):** `CompanionClient`'s timeout per method (55 s for `memories.answer`, 15 s otherwise), never resent; the new errors as typed `CompanionClientError` cases that `ReachabilityTracker` doesn't count as unreachable.
-- [ ] **`SearchModel`:** an answer state (idle, reading, answered, no answer, failed) tied to the query, scope and filters, cancelled when they change or Search disappears; the ids of the first 8 results shown. Tests in FunesPhone, including a slow answer overtaken by a new search.
-- [ ] **UI:** the Ask pill, the card as the list's first section, Cancel (stops waiting) and Clear, numbers opening the memory detail with the quote highlighted by `QuoteLocator`, the messages; Settings ▸ Search answers (Show Ask in Search, "Answered by"). String catalog, screenshot scenes.
-- [ ] **Demo mode:** `DemoVault` maps the three sample questions to their result memories (its search matches whole phrases, so they'd find nothing otherwise) and canned answers citing them; the hint for any other search; no network. A test from search through Ask to opening a cited memory with its highlight.
+- [x] **Companion (Mac):** `searchAnswers` in `status.get`; `memories.answer` in `CompanionRouter` and `CompanionHandlers` with its 50 s deadline, the error codes, one call in flight per device (a new one cancels the previous; the listener isn't changed to watch for closed connections), Activity under `device:<id>`. Tests against the real router, as for the other methods.
+- [x] **Companion (phone):** `CompanionClient`'s timeout per method (55 s for `memories.answer`, 15 s otherwise), never resent; the new errors as typed `CompanionClientError` cases that `ReachabilityTracker` doesn't count as unreachable.
+- [x] **`SearchModel`:** an answer state (idle, reading, answered, no answer, failed) tied to the query, scope and filters, cancelled when they change or Search disappears; the ids of the first 8 results shown. Tests in FunesPhone, including a slow answer overtaken by a new search.
+- [x] **UI:** the Ask pill, the card as the list's first section, Cancel (stops waiting) and Clear, numbers opening the memory detail with the quote highlighted by `QuoteLocator`, the messages; Settings ▸ Search answers (Show Ask in Search, "Answered by"). String catalog, screenshot scenes.
+- [x] **Demo mode:** `DemoVault` maps the three sample questions to their result memories (its search matches whole phrases, so they'd find nothing otherwise) and canned answers citing them; the hint for any other search; no network. A test from search through Ask to opening a cited memory with its highlight.
 
 ## 9.6 Ship · ¼ weekend
-- [ ] README (Search answers in the feature list), PRIVACY.md (the search text and top results go to the chosen Search answers provider, only when asked), docs, CHANGELOG.
+- [x] README (Search answers in the feature list), PRIVACY.md (the search text and top results go to the chosen Search answers provider, only when asked), docs, CHANGELOG.
 - [ ] `sh scripts/test.sh` green; the iPhone app builds for a generic device; a TestFlight build with the author's go-ahead.
 - [ ] The author uses it for a week; note bad answers here.
 

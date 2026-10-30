@@ -62,6 +62,7 @@ struct SettingsView: View {
                     demoSection
                 } else if let record = model.record {
                     macSection(record)
+                    SearchAnswersSection(model: model)
                     ApprovalSettingsSection(model: model)
                     deviceSection(record)
                 } else {
@@ -288,3 +289,29 @@ struct SpikeSection: View {
     }
 }
 #endif
+
+/// Settings ▸ Search answers (UX: iPhone ▸ Settings, FR-iOS-13): Show Ask in Search (this iPhone
+/// only) and the engine the Mac answers with. The model is chosen on the Mac.
+struct SearchAnswersSection: View {
+    let model: PhoneModel
+    @AppStorage(SearchAnswersSettings.showAskKey) private var showAsk = true
+
+    var body: some View {
+        Section {
+            if let answers = model.macAnswers {
+                Toggle("Show Ask in Search", isOn: $showAsk)
+                LabeledContent("Answered by", value: answers.engine)
+            } else if model.reachability.isConnected {
+                Text("Search answers are off on your Mac.").foregroundStyle(.secondary)
+            } else {
+                Toggle("Show Ask in Search", isOn: $showAsk)
+            }
+        } header: {
+            Text("Search answers")
+        } footer: {
+            if let answers = model.macAnswers {
+                Text("Your Mac reads the top results and asks \(answers.engine). Change the model on your Mac in Settings ▸ AI Models.")
+            }
+        }
+    }
+}

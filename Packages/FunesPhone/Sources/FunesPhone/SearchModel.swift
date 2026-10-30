@@ -132,6 +132,12 @@ public final class SearchModel {
         return true
     }
 
+    /// A row's number on the card, when the answer cites it.
+    public func sourceNumber(_ id: UUID) -> Int? {
+        guard case let .answered(result, _) = answer else { return nil }
+        return result.sources.firstIndex(of: id).map { $0 + 1 }
+    }
+
     /// The memories an Ask sends: the first 8 results shown, in order.
     public var askIDs: [UUID] { Array(results.prefix(MemoryAnswerParams.maxIDs).map(\.id)) }
 

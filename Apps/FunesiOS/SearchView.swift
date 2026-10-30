@@ -7,6 +7,8 @@ import SwiftUI
 /// reached.
 struct SearchView: View {
     let model: PhoneModel
+    /// Settings ▸ Search answers ▸ Show Ask in Search (this iPhone only).
+    @AppStorage(SearchAnswersSettings.showAskKey) private var showAsk = true
 
     private struct Key: Equatable {
         var query: String
@@ -19,11 +21,19 @@ struct SearchView: View {
         @Bindable var search = model.search
         NavigationStack {
             List {
+                // Search answers (FR-iOS-13): the Ask pill, then the card, as the list's first section.
+                if model.reachability.isConnected {
+                    if search.canAsk {
+                        Section { AskPill { Task { await search.ask() } } }
+                    } else if search.answer != .idle {
+                        Section { AnswerCardView(search: search, model: model) }
+                    }
+                }
                 if model.reachability.isConnected, !search.results.isEmpty {
                     Section {
                         ForEach(search.results) { summary in
                             NavigationLink(value: summary.id) {
-                                ResultRow(summary: summary, categories: model.categories)
+                                ResultRow(summary: summary, categories: model.categories, source: search.sourceNumber(summary.id))
                             }
                         }
                         if search.nextCursor != nil {
@@ -76,6 +86,13 @@ struct SearchView: View {
             .navigationDestination(for: UUID.self) { id in
                 MemoryDetailView(model: model, id: id)
             }
+            .navigationDestination(for: AnswerSource.self) { source in
+                MemoryDetailView(model: model, id: source.id, quote: source.quote)
+            }
+            .onChange(of: model.macAnswers, initial: true) { _, answers in search.macAnswers = answers }
+            .onChange(of: showAsk, initial: true) { _, on in search.showAsk = on }
+            // Leaving Search clears the card and stops waiting.
+            .onDisappear { search.clearAnswer() }
         }
     }
 
@@ -120,10 +137,15 @@ struct SearchView: View {
 struct ResultRow: View {
     let summary: MemorySummary
     let categories: CategoryList
+    /// The answer's number for this memory, when the answer cites it.
+    var source: Int?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(summary.title).font(.headline).lineLimit(1)
+            HStack(spacing: 6) {
+                Text(summary.title).font(.headline).lineLimit(1)
+                if let source { SourceNumber(number: source).accessibilityLabel(Text("Source \(source)")) }
+            }
             Text(SnippetHighlight.attributed(summary.snippet, matches: summary.snippetMatches)).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
             HStack(spacing: 4) {
                 SensitivityBadge(sensitivity: summary.sensitivity)
