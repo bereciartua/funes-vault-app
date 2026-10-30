@@ -170,6 +170,14 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 model.vault.status = .active
                 model.vault.selection = model.vault.memories.first(where: { $0.title == "Commit messages" }).map { [$0.id] } ?? []
             }
+            // Search: the passage that matches, with the search's words in bold (FR-V-17).
+            model.vault.query = "title at Chatham"
+            await model.vault.load()
+            await mainScene("vault-search") {
+                model.vault.selection = model.vault.memories.first(where: { $0.title == "Role at Chatham" }).map { [$0.id] } ?? []
+            }
+            model.vault.query = ""
+            await model.vault.load()
             // A tidy-up's automatic change in a memory's History, opened (FR-V-12).
             HistoryList.reviewExpandsChanges = true
             model.vault.status = .archived

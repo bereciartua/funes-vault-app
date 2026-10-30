@@ -115,7 +115,8 @@ struct SearchView: View {
     }
 }
 
-/// A result: title, a two-line snippet, category chips and the sensitivity badge.
+/// A result: title, a two-line snippet, category chips and the sensitivity badge. The snippet is
+/// the passage that matches the search, with the matches the Mac marks in bold (FR-V-17).
 struct ResultRow: View {
     let summary: MemorySummary
     let categories: CategoryList
@@ -123,7 +124,7 @@ struct ResultRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(summary.title).font(.headline).lineLimit(1)
-            Text(summary.snippet).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
+            Text(SnippetHighlight.attributed(summary.snippet, matches: summary.snippetMatches)).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
             HStack(spacing: 4) {
                 SensitivityBadge(sensitivity: summary.sensitivity)
                 CategoryChips(keys: summary.categories, categories: categories)

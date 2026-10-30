@@ -155,9 +155,13 @@ public final class CompanionHandlers: Sendable {
         let page = Array(hits.dropFirst(offset).prefix(limit))
         let memories = try services.store.memories(ids: page.map(\.memoryID))
         let byID = Dictionary(uniqueKeysWithValues: memories.map { ($0.id, $0) })
+        // The passage that matches the search and its matches (FR-V-17), for the page returned only.
+        let matches = try await services.search.bodyMatches(params.query, ids: page.map(\.memoryID))
         let results = page.compactMap { byID[$0.memoryID] }.map { m in
-            MemorySummary(id: m.id, title: m.title, snippet: Self.snippet(m.body), kind: m.kind, categories: m.categoryKeys,
-                          sensitivity: m.sensitivity, updatedAt: m.updatedAt, expiresAt: m.expiresAt)
+            let snippet = matches[m.id]?.snippet(length: Self.snippetLength) ?? BodyMatches.plainSnippet(m.body, length: Self.snippetLength)
+            return MemorySummary(id: m.id, title: m.title, snippet: snippet.text, snippetMatches: snippet.matches.isEmpty ? nil : snippet.matches,
+                                 kind: m.kind, categories: m.categoryKeys, sensitivity: m.sensitivity, updatedAt: m.updatedAt,
+                                 expiresAt: m.expiresAt)
         }
         let next = offset + page.count < hits.count ? Self.cursor(offset + page.count) : nil
         logRead("memories_searched", device: device, now: now, counts: ["results": results.count])
@@ -332,11 +336,6 @@ public final class CompanionHandlers: Sendable {
         case .deleted: .recentlyDeleted
         case .active, nil: .active
         }
-    }
-
-    static func snippet(_ body: String) -> String {
-        let flat = body.split(whereSeparator: \.isNewline).joined(separator: " ")
-        return flat.count <= snippetLength ? flat : String(flat.prefix(snippetLength - 1)) + "…"
     }
 
     static func cursor(_ offset: Int) -> String { Base64URL.encode(Data("o:\(offset)".utf8)) }

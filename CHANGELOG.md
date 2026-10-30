@@ -6,6 +6,8 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Added
 
+- **Search shows the sentence that matches.** In the Vault and in the iPhone's Search, a result's preview is now the part of the memory that matches your search, with your search's words in bold, instead of the memory's first line. For "What's my title at Chatham?" you see "…My title at Chatham is Senior Analyst…" even when that sentence is deep in a long memory. Without a search, or when only the meaning matches, the preview is the memory's start as before. Search in a large vault is also faster.
+
 - **Tidy Up on one memory.** A memory's detail (and the Vault list's right-click menu) now has **Tidy Up**, which checks just that memory against itself and up to 5 related memories with your tidy-up model, instead of the whole vault. What it finds waits in the Inbox (**Show in Inbox** takes you to it); nothing is applied automatically, and suggestions you dismissed before can come back. It doesn't count as the day's tidy-up.
 
 - **iPhone: the app's own version in Settings.** A new **Funes for iPhone** section at the bottom of Settings shows the iPhone app's version and build ("0.5.0 (11)"), paired or not. The Mac section's version row is now called **Funes on the Mac**, since it's the Mac's version.

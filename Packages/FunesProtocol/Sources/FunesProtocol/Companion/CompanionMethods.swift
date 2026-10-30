@@ -300,17 +300,21 @@ public struct MemorySummary: Codable, Sendable, Equatable, Identifiable {
     public var id: UUID
     public var title: String
     public var snippet: String
+    /// The search's matches inside `snippet`, as UTF-16 `[start, length]` pairs (v0.6, FR-V-17;
+    /// absent from an older Mac, and without a match).
+    public var snippetMatches: [[Int]]?
     public var kind: MemoryKind
     public var categories: [String]
     public var sensitivity: Sensitivity
     public var updatedAt: Date
     public var expiresAt: Date?
 
-    public init(id: UUID, title: String, snippet: String, kind: MemoryKind, categories: [String], sensitivity: Sensitivity,
-                updatedAt: Date, expiresAt: Date? = nil) {
+    public init(id: UUID, title: String, snippet: String, snippetMatches: [[Int]]? = nil, kind: MemoryKind, categories: [String],
+                sensitivity: Sensitivity, updatedAt: Date, expiresAt: Date? = nil) {
         self.id = id
         self.title = title
         self.snippet = snippet
+        self.snippetMatches = snippetMatches
         self.kind = kind
         self.categories = categories
         self.sensitivity = sensitivity

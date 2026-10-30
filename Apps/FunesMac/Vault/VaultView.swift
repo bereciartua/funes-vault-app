@@ -155,8 +155,10 @@ struct VaultView: View {
             } else {
                 List(selection: Binding(get: { vault.selection }, set: { vault.selection = $0 })) {
                     ForEach(vault.memories) { memory in
-                        MemoryRow(memory: memory, model: model, now: model.now)
+                        MemoryRow(memory: memory, model: model, now: model.now, snippet: vault.snippets[memory.id])
                             .tag(memory.id)
+                            .onAppear { vault.rowAppeared(memory.id) }
+                            .onDisappear { vault.rowDisappeared(memory.id) }
                             .contextMenu { rowMenu(memory) }
                     }
                 }
@@ -240,10 +242,12 @@ struct VaultView: View {
 }
 
 /// One row: title, a one-line preview, category chips, sensitivity, kind, expiry and updated time.
+/// While searching, the preview is the passage that matches, with the matches in bold (FR-V-17).
 struct MemoryRow: View {
     let memory: Memory
     let model: AppModel
     let now: Date
+    var snippet: Snippet?
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -261,7 +265,7 @@ struct MemoryRow: View {
                         .font(.caption).foregroundStyle(.secondary)
                         .help(RelativeTime.full(memory.updatedAt))
                 }
-                Text(memory.body.replacingOccurrences(of: "\n", with: " "))
+                preview
                     .font(.callout).foregroundStyle(.secondary).lineLimit(1)
                 HStack(spacing: 5) {
                     SensitivityBadge(sensitivity: memory.sensitivity)
@@ -280,6 +284,11 @@ struct MemoryRow: View {
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
+    }
+
+    private var preview: Text {
+        guard let snippet else { return Text(memory.body.replacingOccurrences(of: "\n", with: " ")) }
+        return Text(SnippetHighlight.attributed(snippet.text, matches: snippet.matches))
     }
 }
 

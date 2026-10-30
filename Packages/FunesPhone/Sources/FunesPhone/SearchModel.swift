@@ -105,7 +105,8 @@ public final class SearchModel {
         return MemorySearchParams(query: query, filters: filters, limit: Self.pageSize, cursor: cursor)
     }
 
-    /// The Mac's snippet rule (`CompanionHandlers.snippet`), for a row changed on the phone.
+    /// The Mac's snippet without a search (memory processing §10.2), for a row changed on the phone:
+    /// the edit may have moved the match, so the row shows the body's start, unmarked.
     static func snippet(_ body: String) -> String {
         let flat = body.split(whereSeparator: \.isNewline).joined(separator: " ")
         return flat.count <= 160 ? flat : String(flat.prefix(159)) + "…"

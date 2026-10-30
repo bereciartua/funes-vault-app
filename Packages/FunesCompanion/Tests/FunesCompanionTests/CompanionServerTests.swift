@@ -271,6 +271,27 @@ import Testing
         }
     }
 
+    /// FR-V-17: the snippet is the passage that matches the search, at most 160 characters.
+    @Test func searchSnippetsShowTheMatchingPassage() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let body = String(repeating: "Notes 🗓️ from the quarterly offsite, mostly logistics and agenda. ", count: 6)
+            + "My título 🎉 at Chatham is Senior Analyst since March. More notes after that."
+        _ = try await h.result(MemoriesCreate.self, MemoryCreateParams(
+            title: "Work", body: body, kind: .fact, categories: ["personal_preferences"], sensitivity: .low), phone: phone)
+
+        let found = try await h.result(MemoriesSearch.self, MemorySearchParams(query: "my titulo at Chatham?"), phone: phone)
+        let result = try #require(found.results.first)
+        #expect(result.snippet.contains("My título 🎉 at Chatham is Senior Analyst") && result.snippet.hasPrefix("…") && result.snippet.count <= 160)
+        // The matches point inside the snippet, at the search's words.
+        let utf16 = Array(result.snippet.utf16)
+        let marked = (result.snippetMatches ?? []).map { String(decoding: utf16[$0[0]..<($0[0] + $0[1])], as: UTF16.self) }
+        #expect(marked == ["título", "Chatham"])
+        let listed = try await h.result(MemoriesSearch.self, MemorySearchParams(query: ""), phone: phone)
+        #expect(listed.results.first?.snippet == String(body.prefix(159)) + "…")
+        #expect(listed.results.first?.snippetMatches == nil)
+    }
+
     @Test func searchGetEditWithVersions() async throws {
         let h = try CompanionHarness()
         let phone = try await h.pairedPhone()
