@@ -424,7 +424,7 @@ public struct TidyUpRecord: Sendable, Hashable, Codable {
     }
 }
 
-/// Settings ▸ AI Models ▸ Apply changes automatically, for the tidy-up (memory processing §9.5). A
+/// Settings ▸ AI ▸ Features ▸ Apply changes automatically, for the tidy-up (memory processing §9.5). A
 /// level applies only for an engine that reached it on Spike E's tidy-up fixtures: at least 95% of
 /// what it applies right, on at least 20 applied actions, on both fixture sets pooled (140
 /// clusters). `confidence` gates nothing.

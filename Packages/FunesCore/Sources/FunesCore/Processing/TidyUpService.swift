@@ -56,7 +56,7 @@ public struct TidyUpEstimate: Sendable, Hashable {
     public var requests: Int
 }
 
-/// Settings ▸ AI Models ▸ Daily tidy-up: Daily at a time, default 03:00 (memory processing §9.1).
+/// Settings ▸ AI ▸ Features ▸ Daily tidy-up: Daily at a time, default 03:00 (memory processing §9.1).
 public struct TidyUpSchedule: Sendable, Hashable, Codable {
     public var hour: Int
     public var minute: Int

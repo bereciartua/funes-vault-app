@@ -2,7 +2,7 @@ import Darwin
 import Foundation
 import FunesProtocol
 
-/// A local server or cloud endpoint the user added (Settings ▸ AI Models ▸ Providers). Stored in
+/// A local server or cloud endpoint the user added (Settings ▸ AI ▸ Models & Accounts). Stored in
 /// user defaults without its key; the key lives in the Keychain.
 public struct ProviderEndpoint: Sendable, Hashable, Codable {
     public enum Kind: String, Sendable, Codable { case openAICompatible = "openai_compatible", anthropic }

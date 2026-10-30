@@ -311,7 +311,7 @@ struct SearchAnswersSection: View {
             Text("Search answers")
         } footer: {
             if let answers = model.macAnswers {
-                Text("Your Mac reads the top results and asks \(answers.engine). Change the model, and when searches are answered, on your Mac in Settings ▸ AI Models. With Show Ask off, nothing is asked from this iPhone.")
+                Text("Your Mac reads the top results and asks \(answers.engine). Change the model, and when searches are answered, on your Mac in Settings ▸ AI ▸ Features ▸ Search answers. With Show Ask off, nothing is asked from this iPhone.")
             }
         }
     }

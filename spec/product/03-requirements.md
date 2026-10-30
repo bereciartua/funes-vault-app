@@ -104,7 +104,7 @@
 **FR-V-16 Earlier versions** · S · v0.5 ([ADR-0027](../architecture/decisions/0027-memory-revisions.md))
 - Every change to a memory's title, text, kind, categories, sensitivity, status or expiry keeps the version it replaced, whoever made it: you, an agent, the iPhone, the Inbox, an import or Funes. History and Activity show it as before → after.
 - Kept 90 days and at most 50 per memory, then deleted by the daily cleanup; purged with the memory and by Delete Now.
-- **Forget Earlier Versions…** in a memory's History deletes its earlier versions. Settings ▸ Data ▸ **Keep earlier versions for 90 days** (on by default) turns them off, deleting every one after a confirmation.
+- **Forget Earlier Versions…** in a memory's History deletes its earlier versions. Settings ▸ Data & Backups ▸ **Keep earlier versions for 90 days** (on by default) turns them off, deleting every one after a confirmation.
 - Acceptance: earlier versions never reach agents, exports, the iPhone, logs or AI model providers; the policy engine, retrieval and memory processing never read them.
 
 **FR-V-17 Matching snippets** · S · v0.6 ([ADR-0028](../architecture/decisions/0028-search-answers.md))
@@ -345,7 +345,7 @@
 ### MCP server (FR-M)
 
 **FR-M-01 Local listener** · M · v0.1
-- Streamable HTTP (JSON responses) on `127.0.0.1:47625/mcp`, off until setup turns it on. The port can be changed in Settings ▸ MCP.
+- Streamable HTTP (JSON responses) on `127.0.0.1:47625/mcp`, off until setup turns it on. The port can be changed in Settings ▸ Agent Server (Settings ▸ MCP before v0.8).
 
 **FR-M-02 stdio launcher** · M · v0.1
 - `funes-mcp` relays stdio to HTTP. It reads the agent's key file and verifies the listener belongs to the same user and bundle ID (EK Bridge launcher).
@@ -668,7 +668,7 @@
   - With no model, or splitting off, behaviour is v0.2's.
 
 **FR-AI-14 Auto-apply with undo** · M · v0.3 ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](../architecture/decisions/0021-daily-tidy-up.md))
-- Settings ▸ AI Models ▸ Apply changes automatically: **Off** (default) · Duplicates only · Everything except conflicts. Covers new memories (FR-AI-13) and the daily tidy-up (FR-AI-03).
+- Settings ▸ AI ▸ Features ▸ Apply changes automatically (AI Models before v0.8): **Off** (default) · Duplicates only · Everything except conflicts. Covers new memories (FR-AI-13) and the daily tidy-up (FR-AI-03).
 - Acceptance:
   - Never changes or archives a memory on the strength of untrusted text (agent direct writes, imports, shared and Services captures), except archiving the untrusted copy of an exact duplicate.
   - Agents follow their own access, never this setting.

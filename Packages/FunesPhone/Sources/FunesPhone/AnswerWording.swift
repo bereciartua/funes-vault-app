@@ -66,7 +66,7 @@ public enum AnswerWording {
             case "not_signed_in": return (String(localized: "\(engine) isn't signed in on your Mac."), false)
             case "needs_update": return (String(localized: "\(engine) needs an update on your Mac."), false)
             case "plan_limit": return (String(localized: "\(engine) says to slow down. Try again later."), true)
-            case "tool_blocked": return (String(localized: "\(engine) is paused on your Mac: test its connection in Settings ▸ AI Models."), false)
+            case "tool_blocked": return (String(localized: "\(engine) is paused on your Mac: test its connection in Settings ▸ AI ▸ Models & Accounts."), false)
             case demoHintReason?: return (String(localized: "In the demo, try: When does my lease renew?"), false)
             default: return (String(localized: "Your Mac's model couldn't answer. Try again."), true)
             }

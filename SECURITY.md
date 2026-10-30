@@ -17,7 +17,7 @@ Use **GitHub private vulnerability reporting:** **Security ▸ Report a vulnerab
 
 Please don't open a public issue, discussion or pull request for a vulnerability.
 
-Include the app version (Settings ▸ Updates), your macOS version (and iOS version, for anything involving the iPhone), whether the Mac has Apple silicon or Intel, the agent and how it connects (launcher or direct HTTP), and the steps to reproduce.
+Include the app version (Settings ▸ General ▸ Updates), your macOS version (and iOS version, for anything involving the iPhone), whether the Mac has Apple silicon or Intel, the agent and how it connects (launcher or direct HTTP), and the steps to reproduce.
 
 **Never include real secrets or personal data**, even in a private report:
 

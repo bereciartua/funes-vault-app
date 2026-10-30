@@ -4,6 +4,9 @@
     "" : {
 
     },
+    " (up to %@)" : {
+
+    },
     " and %lld more" : {
 
     },
@@ -30,6 +33,9 @@
 
     },
     "%@ (remote token)" : {
+
+    },
+    "%@ (same as New memories)" : {
 
     },
     "%@ / %@" : {
@@ -137,13 +143,23 @@
         }
       }
     },
-    "%@ didn't accept the API key. Check it in Settings ▸ AI Models." : {
-
+    "%@ didn't accept the API key. Check it in Settings ▸ AI ▸ Models & Accounts ▸ %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ didn't accept the API key. Check it in Settings ▸ AI ▸ Models & Accounts ▸ %2$@."
+          }
+        }
+      }
     },
     "%@ didn't answer. Try again." : {
 
     },
     "%@ didn't finish within 20 seconds." : {
+
+    },
+    "%@ follows New memories and will use Apple on-device." : {
 
     },
     "%@ forwards only some of the Remote Access paths." : {
@@ -162,30 +178,40 @@
     "%@ has no access yet. It can connect, but sees nothing until you change its access." : {
 
     },
-    "%@ is an embedding model, so it can't answer chat requests. Choose it in AI Models ▸ Embeddings, and test a chat model here." : {
+    "%@ is an embedding model, so it can't answer chat requests. Choose it in Features ▸ Search index, and test a chat model here." : {
 
     },
-    "%@ is an embedding model: choose a chat model in %@'s settings. Until then: on-device, then rules." : {
+    "%@ is an embedding model: choose a chat model. Until then: on-device, then rules." : {
+
+    },
+    "%@ is an embedding model: it can't propose fields or split memories. Choose it in Features ▸ Search index instead, and put a chat model here, or leave this empty." : {
+
+    },
+    "%@ is an embedding model: it can't propose fields, tidy up or answer. Choose it in Features ▸ Search index instead." : {
+
+    },
+    "%@ is paused: test its connection in Settings ▸ AI ▸ Models & Accounts ▸ %@." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@ is an embedding model: choose a chat model in %2$@'s settings. Until then: on-device, then rules."
+            "value" : "%1$@ is paused: test its connection in Settings ▸ AI ▸ Models & Accounts ▸ %2$@."
           }
         }
       }
     },
-    "%@ is an embedding model: it can't propose fields or split memories. Choose it in AI Models ▸ Embeddings instead, and put a chat model here, or leave this empty." : {
-
-    },
-    "%@ is paused: test its connection in Settings ▸ AI Models." : {
-
-    },
     "%@ isn't available right now." : {
 
     },
-    "%@ isn't available: check it in Settings ▸ AI Models." : {
-
+    "%@ isn't available: check it in Settings ▸ AI ▸ Models & Accounts ▸ %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ isn't available: check it in Settings ▸ AI ▸ Models & Accounts ▸ %2$@."
+          }
+        }
+      }
     },
     "%@ isn't installed on this Mac" : {
 
@@ -236,8 +262,27 @@
     "%@ suggests a memory for Funes" : {
 
     },
+    "%@ through your Claude Code sign-in" : {
+
+    },
+    "%@ through your Codex sign-in" : {
+
+    },
     "%@ to review" : {
 
+    },
+    "%@ use it and go back to their default." : {
+
+    },
+    "%@ uses %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ uses %2$@."
+          }
+        }
+      }
     },
     "%@ via Remote Access" : {
 
@@ -307,6 +352,26 @@
     "%@ will get matching memories it's allowed to read without asking you. You'll see each share in Activity." : {
 
     },
+    "%@ works: it proposed “%@” in %@ s." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ works: it proposed “%2$@” in %3$@ s."
+          }
+        }
+      }
+    },
+    "%@ works: it proposed “%@”." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ works: it proposed “%2$@”."
+          }
+        }
+      }
+    },
     "%@ · %@" : {
       "localizations" : {
         "en" : {
@@ -326,6 +391,9 @@
           }
         }
       }
+    },
+    "%@ · Choose a model" : {
+
     },
     "%@ · access" : {
 
@@ -495,6 +563,9 @@
           }
         }
       }
+    },
+    "%@…" : {
+
     },
     "%lld" : {
 
@@ -807,6 +878,9 @@
     "1 memory wasn't read: it looks like it holds a secret" : {
 
     },
+    "1 model" : {
+
+    },
     "1 request refused" : {
 
     },
@@ -848,6 +922,9 @@
 
     },
     "A category with that name already exists." : {
+
+    },
+    "A chat model for New memories, the tidy-up and search answers; add more on the account's page. Embedding models are chosen in Features ▸ Search index; leave this empty if you only use this account for embeddings." : {
 
     },
     "A copy" : {
@@ -895,16 +972,19 @@
     "A vault file has unsafe permissions." : {
 
     },
+    "AI" : {
+
+    },
     "AI Assistant has known problems with local HTTP servers, so only the launcher is offered." : {
 
     },
-    "AI Models" : {
-
-    },
-    "AI Models…" : {
+    "AI features send nothing off this Mac." : {
 
     },
     "API key" : {
+
+    },
+    "API keys" : {
 
     },
     "About %@" : {
@@ -934,6 +1014,9 @@
 
     },
     "About You" : {
+
+    },
+    "About You, %@" : {
 
     },
     "About You…" : {
@@ -972,7 +1055,10 @@
     "Add %@" : {
 
     },
-    "Add %@'s API key in its settings." : {
+    "Add %@'s API key in Models & Accounts." : {
+
+    },
+    "Add Account" : {
 
     },
     "Add Agent" : {
@@ -996,7 +1082,7 @@
     "Add Language" : {
 
     },
-    "Add Provider" : {
+    "Add a Model…" : {
 
     },
     "Add a category" : {
@@ -1090,6 +1176,9 @@
     "Agent ID" : {
 
     },
+    "Agent Server" : {
+
+    },
     "Agent added" : {
 
     },
@@ -1133,6 +1222,9 @@
 
     },
     "Agents' access is set per category. Built-in categories can be renamed; your own can also be deleted." : {
+
+    },
+    "Agents, Remote Access and your iPhone are in their own panes." : {
 
     },
     "All" : {
@@ -1442,9 +1534,6 @@
     "At least %@" : {
 
     },
-    "At most" : {
-
-    },
     "At most %lld characters." : {
 
     },
@@ -1476,6 +1565,9 @@
 
     },
     "Back Up Now" : {
+
+    },
+    "Back to %@" : {
 
     },
     "Back up the vault every day" : {
@@ -1520,6 +1612,12 @@
     "Built in" : {
 
     },
+    "Built in (bge-small) · Ready" : {
+
+    },
+    "Built in (bge-small) · Unavailable" : {
+
+    },
     "Built in (bge-small, on this Mac)" : {
 
     },
@@ -1550,7 +1648,7 @@
     "Cancelled" : {
 
     },
-    "Capture" : {
+    "Capture & Shortcuts" : {
 
     },
     "Capture shortcut" : {
@@ -1583,7 +1681,7 @@
     "Captures get simple proposals from rules on this Mac." : {
 
     },
-    "Captures get simple proposals from rules on this Mac. Turn on proposals in AI Models ▸ New memories." : {
+    "Captures get simple proposals from rules on this Mac. Turn on proposals in Features ▸ New memories." : {
 
     },
     "Captures, your answers, agents' suggestions and imports become one suggestion per claim, each marked new, an update, already saved or a removal. You review every piece in the Inbox." : {
@@ -1652,7 +1750,7 @@
     "Change…" : {
 
     },
-    "Chat model" : {
+    "Chat models, for New memories, the tidy-up and search answers. Embedding models are chosen in Features ▸ Search index." : {
 
     },
     "ChatGPT" : {
@@ -1715,16 +1813,16 @@
     "Choose a funesvault.export.v1 file. Its memories come in as suggestions, or as memories if you choose so below. It never brings agents or access." : {
 
     },
-    "Choose a model in %@'s settings." : {
+    "Choose a model" : {
 
     },
-    "Choose a model in %@'s settings. Until then: on-device, then rules." : {
-
-    },
-    "Choose a model to answer searches in Settings ▸ AI Models." : {
+    "Choose a model to answer searches in Settings ▸ AI ▸ Features ▸ Search answers." : {
 
     },
     "Choose a model to answer searches." : {
+
+    },
+    "Choose a model to tidy up with." : {
 
     },
     "Choose a port from %@ to %@." : {
@@ -1737,10 +1835,10 @@
         }
       }
     },
-    "Choose a tidy-up model in Settings ▸ AI Models first." : {
+    "Choose a tidy-up model in Settings ▸ AI ▸ Features ▸ Daily tidy-up first." : {
 
     },
-    "Choose a tidy-up model in Settings ▸ AI Models to tidy up a memory." : {
+    "Choose a tidy-up model in Settings ▸ AI ▸ Features ▸ Daily tidy-up to tidy up a memory." : {
 
     },
     "Choose a tunnel" : {
@@ -1753,6 +1851,9 @@
 
     },
     "Choose at least one way to reach this Mac." : {
+
+    },
+    "Choose one of %@'s models. Until then: on-device, then rules." : {
 
     },
     "Choose the memories file from your ChatGPT data export (JSON). Each memory becomes a suggestion." : {
@@ -1869,9 +1970,6 @@
     "Cloud agents you allow will be able to reach %@ through a public address from a tunnel you run. What you share with them goes to their servers. Nothing is reachable until you set up a tunnel and allow an agent cloud access." : {
 
     },
-    "Cloud limit" : {
-
-    },
     "Cloud providers need an https:// address." : {
 
     },
@@ -1968,6 +2066,12 @@
           }
         }
       }
+    },
+    "Connection" : {
+
+    },
+    "Connections" : {
+
     },
     "Constraint" : {
 
@@ -2075,13 +2179,45 @@
     "Daily" : {
 
     },
+    "Daily Tidy-up…" : {
+
+    },
+    "Daily at %@" : {
+
+    },
     "Daily tidy-up" : {
 
+    },
+    "Daily tidy-up follows New memories and will use its rules only." : {
+
+    },
+    "Daily tidy-up: nothing to %@; the cloud limit is Nothing." : {
+
+    },
+    "Daily tidy-up: related memories%@, with their dates and sources, to %@, every day at %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Daily tidy-up: related memories%1$@, with their dates and sources, to %2$@, every day at %3$@."
+          }
+        }
+      }
+    },
+    "Daily tidy-up: related memories%@, with their dates and sources, to %@, when you tidy up." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Daily tidy-up: related memories%1$@, with their dates and sources, to %2$@, when you tidy up."
+          }
+        }
+      }
     },
     "Dark" : {
 
     },
-    "Data" : {
+    "Data & Backups" : {
 
     },
     "Data folder" : {
@@ -2223,13 +2359,13 @@
     "Each claim quotes the memory it came from, and claims it can't quote aren't shown." : {
 
     },
+    "Each feature uses a model from Models & Accounts." : {
+
+    },
     "Earlier versions" : {
 
     },
     "Edit" : {
-
-    },
-    "Edit %@" : {
 
     },
     "Edit %@'s access…" : {
@@ -2273,6 +2409,16 @@
     "Embed agent requests with the cloud model" : {
 
     },
+    "Embedding %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Embedding %1$lld of %2$lld"
+          }
+        }
+      }
+    },
     "Embedding %lld of %lld. Search uses bge-small until it's done." : {
       "localizations" : {
         "en" : {
@@ -2282,9 +2428,6 @@
           }
         }
       }
-    },
-    "Embeddings" : {
-
     },
     "Empty allow list means all categories. Deny always wins." : {
 
@@ -2374,6 +2517,9 @@
 
     },
     "Family name" : {
+
+    },
+    "Features" : {
 
     },
     "Fetch Funes Vault's health URL through the tunnel" : {
@@ -2606,7 +2752,7 @@
     "Funes notes that you checked it today." : {
 
     },
-    "Funes proposes a title, kind and categories with the New memories model in AI Models; you review every proposal in the Inbox." : {
+    "Funes proposes a title, kind and categories with the New memories model; you review every proposal in the Inbox." : {
 
     },
     "Funes quit during the run" : {
@@ -2928,6 +3074,16 @@
     "Incomplete" : {
 
     },
+    "Install %@ and sign in to use your %@ plan." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Install %1$@ and sign in to use your %2$@ plan."
+          }
+        }
+      }
+    },
     "Install Tailscale on this Mac and sign in." : {
 
     },
@@ -3018,6 +3174,9 @@
     "It's the only category some agents may read. Choose a replacement, or change those agents first." : {
 
     },
+    "Its key is deleted from the Keychain and its usage is cleared." : {
+
+    },
     "Its key stops working at once and its access is deleted. Activity keeps its history, labelled “removed agent”. Its entry in the agent's own settings stays until you delete it there." : {
 
     },
@@ -3033,7 +3192,7 @@
     "Its vectors are deleted and search uses bge-small alone." : {
 
     },
-    "Its weekly check found a problem. Restore a backup in Settings ▸ Data." : {
+    "Its weekly check found a problem. Restore a backup in Settings ▸ Data & Backups." : {
 
     },
     "JetBrains AI Assistant" : {
@@ -3129,6 +3288,19 @@
     "Last checked" : {
 
     },
+    "Last run %@, %lld suggestions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Last run %1$@, %2$lld suggestions"
+          }
+        }
+      }
+    },
+    "Last run %@, 1 suggestion" : {
+
+    },
     "Last seen %@" : {
 
     },
@@ -3198,10 +3370,16 @@
     "Listening on port %@" : {
 
     },
+    "Load Again" : {
+
+    },
     "Load Models" : {
 
     },
     "Local server" : {
+
+    },
+    "Local servers" : {
 
     },
     "Location" : {
@@ -3229,9 +3407,6 @@
 
     },
     "Low" : {
-
-    },
-    "MCP" : {
 
     },
     "MCP URL" : {
@@ -3301,6 +3476,18 @@
     "Model" : {
 
     },
+    "Model name" : {
+
+    },
+    "Model: %@" : {
+
+    },
+    "Models" : {
+
+    },
+    "Models & Accounts" : {
+
+    },
     "More Time" : {
 
     },
@@ -3343,6 +3530,21 @@
     "Needs Read." : {
 
     },
+    "Needs a key" : {
+
+    },
+    "Needs an update" : {
+
+    },
+    "Needs attention" : {
+
+    },
+    "Needs your OK" : {
+
+    },
+    "Needs your OK to read files" : {
+
+    },
     "Never" : {
 
     },
@@ -3373,7 +3575,7 @@
     "New captures" : {
 
     },
-    "New captures are sent to %@ to suggest their fields, within the cloud limit in AI Models." : {
+    "New captures are sent to %@ to suggest their fields, within the cloud limit in Privacy & Limits." : {
 
     },
     "New categories" : {
@@ -3434,7 +3636,39 @@
     "New memories start at" : {
 
     },
+    "New memories will use Apple on-device." : {
+
+    },
     "New memories: %@" : {
+
+    },
+    "New memories: captures, your answers, agents' suggestions and imports%@, each with up to 5 related memories, and your category names and descriptions, to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New memories: captures, your answers, agents' suggestions and imports%1$@, each with up to 5 related memories, and your category names and descriptions, to %2$@."
+          }
+        }
+      }
+    },
+    "New memories: new captures%@ and your category names and descriptions, to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New memories: new captures%1$@ and your category names and descriptions, to %2$@."
+          }
+        }
+      }
+    },
+    "New memories: nothing to %@; the cloud limit is Nothing." : {
+
+    },
+    "New memories: nothing; Apple on-device proposes fields on this Mac, then rules." : {
+
+    },
+    "New memories…" : {
 
     },
     "New secret path. Update the URL in each cloud agent." : {
@@ -3477,6 +3711,9 @@
     "No answer" : {
 
     },
+    "No answer from %@ within 90 seconds." : {
+
+    },
     "No answer in 15 minutes" : {
 
     },
@@ -3489,9 +3726,6 @@
     "No answer within 20 seconds." : {
 
     },
-    "No answer within 90 seconds." : {
-
-    },
     "No answer." : {
 
     },
@@ -3502,6 +3736,9 @@
 
     },
     "No credentials yet" : {
+
+    },
+    "No feature uses this account." : {
 
     },
     "No iPhone paired yet." : {
@@ -3517,6 +3754,12 @@
 
     },
     "No memory selected" : {
+
+    },
+    "No models" : {
+
+    },
+    "No models yet. Add the chat models you want to use." : {
 
     },
     "No problems" : {
@@ -3540,7 +3783,7 @@
     "None yet" : {
 
     },
-    "None yet. Funes uses Apple's on-device model, or simple rules when that isn't available." : {
+    "None. Add one with Add Account…" : {
 
     },
     "Not Now" : {
@@ -3555,6 +3798,9 @@
     "Not at all" : {
 
     },
+    "Not available on this Mac" : {
+
+    },
     "Not found" : {
 
     },
@@ -3567,10 +3813,16 @@
     "Not reachable" : {
 
     },
+    "Not run yet" : {
+
+    },
     "Not running" : {
 
     },
     "Not said" : {
+
+    },
+    "Not signed in" : {
 
     },
     "Not signed in: run `%@` in Terminal and sign in with %@" : {
@@ -3592,6 +3844,9 @@
           }
         }
       }
+    },
+    "Not supported yet" : {
+
     },
     "Not tested" : {
 
@@ -3680,6 +3935,9 @@
     "Off: it saves memories directly. On: they wait in your Inbox." : {
 
     },
+    "Off: needs your OK to read files" : {
+
+    },
     "On" : {
 
     },
@@ -3725,6 +3983,9 @@
     "Only when I ask" : {
 
     },
+    "Only when you ask (⌘⏎)" : {
+
+    },
     "Open %@." : {
 
     },
@@ -3764,7 +4025,7 @@
     "Option" : {
 
     },
-    "Optional: a provider's embedding model as a second index next to bge-small, mainly for tasks without keywords and for other languages. Add Ollama, LM Studio or OpenAI under Providers first." : {
+    "Optional: a provider's embedding model as a second index next to bge-small, mainly for tasks without keywords and for other languages. Add Ollama, LM Studio or OpenAI in Models & Accounts first." : {
 
     },
     "Optional: a provider's embedding model as a second index next to bge-small, mainly for tasks without keywords and for other languages. Funes has measured Qwen3-Embedding-0.6B (Ollama, LM Studio) and OpenAI's text-embedding-3. Memories above the cloud limit keep bge-small only." : {
@@ -3875,6 +4136,9 @@
     "Paused" : {
 
     },
+    "Paused after a tool use" : {
+
+    },
     "Paused until %@" : {
 
     },
@@ -3935,6 +4199,9 @@
     "Preview" : {
 
     },
+    "Privacy & Limits" : {
+
+    },
     "Problems" : {
 
     },
@@ -3975,10 +4242,7 @@
     "Proposed on this Mac" : {
 
     },
-    "Provider model" : {
-
-    },
-    "Providers" : {
+    "Proposes a title, kind and categories" : {
 
     },
     "Public" : {
@@ -4225,6 +4489,15 @@
     "Remove %@?" : {
 
     },
+    "Remove Account" : {
+
+    },
+    "Remove Account…" : {
+
+    },
+    "Remove Key" : {
+
+    },
     "Remove Link" : {
 
     },
@@ -4384,6 +4657,9 @@
     "Revert" : {
 
     },
+    "Review" : {
+
+    },
     "Review %@'s Request · %@…" : {
       "localizations" : {
         "en" : {
@@ -4452,6 +4728,9 @@
     "Rotate Key…" : {
 
     },
+    "Rules only" : {
+
+    },
     "Run it in Terminal, or add the lines below to ~/.codex/config.toml." : {
 
     },
@@ -4476,10 +4755,16 @@
     "Same as New memories" : {
 
     },
+    "Same model" : {
+
+    },
     "Save" : {
 
     },
     "Save Address" : {
+
+    },
+    "Save Key" : {
 
     },
     "Save new memories, within the limits below. Corrections still wait in your Inbox." : {
@@ -4534,6 +4819,9 @@
     "Says “%@” is no longer true" : {
 
     },
+    "Schedule" : {
+
+    },
     "Scopes" : {
 
     },
@@ -4544,9 +4832,6 @@
 
     },
     "Search answers" : {
-
-    },
-    "Search answers model" : {
 
     },
     "Search answers send nothing to %@: the cloud limit is Nothing, so there's no answer." : {
@@ -4612,6 +4897,45 @@
         }
       }
     },
+    "Search answers will use the same model as New memories." : {
+
+    },
+    "Search answers: nothing to %@; the cloud limit is Nothing." : {
+
+    },
+    "Search answers: nothing; Apple on-device answers on this Mac." : {
+
+    },
+    "Search answers: your search and its top results%@, to %@, each time you pause on a search." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers: your search and its top results%1$@, to %2$@, each time you pause on a search."
+          }
+        }
+      }
+    },
+    "Search answers: your search and its top results%@, to %@, when you ask or pause on a question." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers: your search and its top results%1$@, to %2$@, when you ask or pause on a question."
+          }
+        }
+      }
+    },
+    "Search answers: your search and its top results%@, to %@, when you ask." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers: your search and its top results%1$@, to %2$@, when you ask."
+          }
+        }
+      }
+    },
     "Search embeddings send memory text (up to %@) and your searches to %@. Agents' requests are matched on this Mac." : {
       "localizations" : {
         "en" : {
@@ -4638,6 +4962,44 @@
     "Search embeddings send your searches to %@, but no memory text: the cloud limit is Nothing." : {
 
     },
+    "Search index" : {
+
+    },
+    "Search index · %@" : {
+
+    },
+    "Search index: memory text (up to %@) and your searches, to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search index: memory text (up to %1$@) and your searches, to %2$@."
+          }
+        }
+      }
+    },
+    "Search index: memory text (up to %@), your searches and agents' task descriptions, to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search index: memory text (up to %1$@), your searches and agents' task descriptions, to %2$@."
+          }
+        }
+      }
+    },
+    "Search index: memory text and your searches, to %@." : {
+
+    },
+    "Search index: memory text, your searches and agents' task descriptions, to %@." : {
+
+    },
+    "Search index: your searches and agents' task descriptions, but no memory text, to %@." : {
+
+    },
+    "Search index: your searches, but no memory text, to %@." : {
+
+    },
     "Search keeps using bge-small until it's done; you can cancel any time." : {
 
     },
@@ -4654,6 +5016,9 @@
 
     },
     "Searched on this Mac only (above cloud limit)." : {
+
+    },
+    "Second index" : {
 
     },
     "Secret" : {
@@ -4811,7 +5176,7 @@
     "Shift" : {
 
     },
-    "Shortcut" : {
+    "Shortcuts" : {
 
     },
     "Shorten Them" : {
@@ -4907,6 +5272,9 @@
     "Sign up at ngrok.com, then put your authtoken and your free dev domain from the dashboard into the commands." : {
 
     },
+    "Signed in" : {
+
+    },
     "Signed in to %@ %@" : {
       "localizations" : {
         "en" : {
@@ -4918,6 +5286,9 @@
       }
     },
     "Similar memory exists:" : {
+
+    },
+    "Simple rules on this Mac" : {
 
     },
     "Skip" : {
@@ -5018,6 +5389,9 @@
 
     },
     "Split “%@”" : {
+
+    },
+    "Splits notes" : {
 
     },
     "Splits “%@” into %lld" : {
@@ -5229,9 +5603,6 @@
     "Task text not stored" : {
 
     },
-    "Tasks" : {
-
-    },
     "Tell me something, or search what I know…" : {
 
     },
@@ -5269,6 +5640,9 @@
 
     },
     "That isn't a Funes Vault export." : {
+
+    },
+    "That isn't a URL; the saved one is kept." : {
 
     },
     "That model didn't return usable vectors. Check it's an embedding model." : {
@@ -5457,6 +5831,9 @@
     "The request failed (%@)." : {
 
     },
+    "The second index uses it: its vectors are deleted and search uses bge-small alone." : {
+
+    },
     "The secret path changed. Move Tailscale Funnel to the new one in Terminal:" : {
 
     },
@@ -5469,7 +5846,10 @@
     "The text needs 1 to 10,000 characters." : {
 
     },
-    "The tidy-up model isn't working. Check it in Settings ▸ AI Models." : {
+    "The tidy-up model isn't working. Check it in Settings ▸ AI ▸ Features ▸ Daily tidy-up." : {
+
+    },
+    "The tidy-up will use the same model as New memories." : {
 
     },
     "The tidy-up's model hasn't been accurate enough to change memories by itself, so its proposals all wait for you." : {
@@ -5644,9 +6024,6 @@
     "Tidy-up finished" : {
 
     },
-    "Tidy-up model" : {
-
-    },
     "Tidy-up · %@" : {
 
     },
@@ -5812,6 +6189,9 @@
     "URL" : {
 
     },
+    "Unavailable" : {
+
+    },
     "Unavailable: check API key. Using on-device instead." : {
 
     },
@@ -5903,6 +6283,9 @@
         }
       }
     },
+    "Usage" : {
+
+    },
     "Use %@" : {
 
     },
@@ -5930,19 +6313,28 @@
     "Use your own ~/.cursor/mcp.json, never a project's .cursor/mcp.json, which often gets committed." : {
 
     },
-    "Use your subscription" : {
-
-    },
     "Use “%@”" : {
 
     },
     "Use ⌘, ⌥ or ⌃ with a key." : {
 
     },
-    "Used for New memories and the tidy-up. Embedding models are chosen in AI Models ▸ Embeddings; leave this empty if you only use this provider for embeddings." : {
+    "Used by" : {
 
     },
-    "Uses your plan's limits, through the Claude Code or Codex you installed and signed in to. Funes never sees your sign-in. Your account's training setting applies." : {
+    "Used by: %@" : {
+
+    },
+    "Used by: Search index" : {
+
+    },
+    "Used by: none" : {
+
+    },
+    "Uses your plan's limits, through the Claude Code you installed and signed in to. Funes never sees your sign-in. Your account's training setting applies." : {
+
+    },
+    "Uses your plan's limits, through the Codex you installed and signed in to. Funes never sees your sign-in. Your account's training setting applies." : {
 
     },
     "Use…" : {
@@ -6004,10 +6396,16 @@
     "Waiting: today's model limit reached" : {
 
     },
+    "What AI features send" : {
+
+    },
     "What belongs here (agents see this)" : {
 
     },
     "What it can do" : {
+
+    },
+    "What leaves this Mac" : {
 
     },
     "What long-term goals should assistants keep in mind when helping you?" : {
@@ -6095,19 +6493,6 @@
     "Work or project context. Share with agents you use for that work." : {
 
     },
-    "Works: it proposed “%@” in %@ s." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Works: it proposed “%1$@” in %2$@ s."
-          }
-        }
-      }
-    },
-    "Works: proposed “%@”." : {
-
-    },
     "Write" : {
 
     },
@@ -6175,6 +6560,12 @@
 
     },
     "Your note on how this agent keeps data. Its Share panels show it next to what the agent says; it doesn't change what's shared." : {
+
+    },
+    "Your plan decides which models you can use." : {
+
+    },
+    "Your plans" : {
 
     },
     "Your previous setup couldn't be put back; it's in %@." : {
@@ -6416,9 +6807,6 @@
     "ngrok" : {
 
     },
-    "no model" : {
-
-    },
     "none" : {
 
     },
@@ -6437,7 +6825,13 @@
     "on iPhone" : {
 
     },
+    "on this Mac" : {
+
+    },
     "on this Mac · forwards to %@" : {
+
+    },
+    "on your local network" : {
 
     },
     "or press %@ in any app" : {
@@ -6553,6 +6947,9 @@
     "title" : {
 
     },
+    "today" : {
+
+    },
     "today %@" : {
 
     },
@@ -6560,6 +6957,9 @@
 
     },
     "via Remote Access" : {
+
+    },
+    "yesterday" : {
 
     },
     "yesterday %@" : {

@@ -13,7 +13,7 @@ public struct NewMemoryProcessor: Sendable {
     public struct Configuration: Sendable {
         /// The New memories router, or nil while classification and splitting are both off.
         public var router: ModelRouter?
-        /// Settings ▸ AI Models ▸ New memories ▸ Split into separate memories.
+        /// Settings ▸ AI ▸ Features ▸ New memories ▸ Split into separate memories.
         public var split: Bool
         public var autoApply: NewMemoryAutoApply
 

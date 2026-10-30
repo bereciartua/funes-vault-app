@@ -81,7 +81,7 @@ CREATE TABLE embedding (           -- ADR-0016: about 15 MB of vectors at 10,000
   PRIMARY KEY (memory_id, model_id)  -- bge-small and, v0.3, one provider model (ADR-0023)
 );
 -- v0.3: meta('provider_embeddings') = {"modelID", "limit"} once the provider set is complete for that model and
--- cloud limit (search uses it only then). The choice and Calibrate's thresholds live in user defaults (AI Models).
+-- cloud limit (search uses it only then). The choice and Calibrate's thresholds live in user defaults (Settings ▸ AI ▸ Features ▸ Search index).
 
 CREATE TABLE provenance (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,

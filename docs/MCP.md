@@ -11,11 +11,11 @@ The rules behind every decision are in the [access policy](../spec/domain/access
 
 ### The MCP server
 
-The server starts with the app while **Settings ▸ MCP ▸ Let agents connect** is on (the default). The same pane shows its **Status**, the **Port**, the **Address**, the **Launcher** path agents run, and **Traffic since launch** (counts only: Funes never logs what agents send or receive). **Link to ~/.local/bin/funes-mcp** adds a short path to the launcher, if you want one.
+The server starts with the app while **Settings ▸ Agent Server ▸ Let agents connect** is on (the default). The same pane shows its **Status**, the **Port**, the **Address**, the **Launcher** path agents run, and **Traffic since launch** (counts only: Funes never logs what agents send or receive). **Link to ~/.local/bin/funes-mcp** adds a short path to the launcher, if you want one.
 
 The port is 47625 unless you change it. If another app already uses it, the status says **Port 47625 is in use** and the menu bar shows it; quit the other app, then turn **Let agents connect** off and on again, or choose another port. Funes never moves to another port on its own, because agents' setups name this one.
 
-To change the port, type it in **Settings ▸ MCP ▸ Port** (1024–65535) and click **Change Port**; the server moves at once. Agents that start `funes-mcp` find the new port by themselves. Agents whose setup names the address (Claude Code's setup, and the direct HTTP setups below) need their setup copied again from the Connect tab.
+To change the port, type it in **Settings ▸ Agent Server ▸ Port** (1024–65535) and click **Change Port**; the server moves at once. Agents that start `funes-mcp` find the new port by themselves. Agents whose setup names the address (Claude Code's setup, and the direct HTTP setups below) need their setup copied again from the Connect tab.
 
 **Pause Funes Vault** in the menu bar pauses it for an hour, until tomorrow, or until you resume. It keeps the server listening but refuses every tool call with `funes_paused`, so agents can tell you why. Resuming needs no change in the agent.
 
@@ -216,7 +216,7 @@ Cloud agents (claude.ai, ChatGPT, cloud coding agents) run on their vendor's ser
 
 > Tell the user: "Waiting for your approval in Funes." Then call get_memory_request with request_id "…" in about a minute; it expires in 15 minutes.
 
-The request then waits in **Pending requests** (the menu bar menu, the agent's page, where its row in the sidebar has a badge, and the top of Activity) for the rest of its 15 minutes; **More Time** on the panel moves it there at once. While one waits, the menu's first item reviews it, and **Review Request (⌃⌥⌘R)** does the same from any app (change or turn off the shortcut in Settings ▸ General). **Review** opens the panel again with the minutes it has left. When the agent calls `get_memory_request` after you shared it, it gets the memories, once.
+The request then waits in **Pending requests** (the menu bar menu, the agent's page, where its row in the sidebar has a badge, and the top of Activity) for the rest of its 15 minutes; **More Time** on the panel moves it there at once. While one waits, the menu's first item reviews it, and **Review Request (⌃⌥⌘R)** does the same from any app (change or turn off the shortcut in Settings ▸ Capture & Shortcuts). **Review** opens the panel again with the minutes it has left. When the agent calls `get_memory_request` after you shared it, it gets the memories, once.
 
 What the agents measured so far did with this, from the [timeout spike and the first agent check](../spec/plans/spike-results.md#spike-3-agent-timeouts-and-the-in-call-approval):
 
@@ -260,7 +260,7 @@ Once it's set up, the page shows the **Remote Access** switch and these rows:
 | **Turn off** | **Never**, **After 1 hour**, **After 8 hours** or **After 1 day**. |
 | **Keep this Mac awake while on power** | Off by default. Prevents idle sleep while Remote Access is on and the Mac runs on power. |
 
-Below them, the page lists the agents with cloud access. While Remote Access is on, the menu bar icon shows a small globe and the menu says **Remote Access on · 2 cloud agents** (or **· tunnel down**), with **Turn Off Remote Access**. **Settings ▸ General ▸ Notifications ▸ Remote Access's tunnel stopped** (off by default) tells you when the tunnel in use stops.
+Below them, the page lists the agents with cloud access. While Remote Access is on, the menu bar icon shows a small globe and the menu says **Remote Access on · 2 cloud agents** (or **· tunnel down**), with **Turn Off Remote Access**. **Settings ▸ Notifications ▸ Remote Access's tunnel stopped** (off by default) tells you when the tunnel in use stops.
 
 The tunnel checks are read-only and local: Funes asks the tunnel's own tool (the `tailscale` CLI's status, cloudflared's local metrics server and `~/.cloudflared/config.yml`, ngrok's local agent API, else this user's running processes). They never start, stop or change a tunnel, send nothing off the Mac, and never change what Funes accepts.
 
@@ -369,7 +369,7 @@ The tools listed depend on the agent's access. The last line is a `list_memory_c
 
 | Symptom or message | What to do |
 | --- | --- |
-| "Funes Vault isn't running, or it's paused (no …/mcp-endpoint.json)" | The file is missing when the app isn't running, **Let agents connect** is off, or the server failed to start (port in use); pausing doesn't remove it. Open the app and check **Settings ▸ MCP ▸ Let agents connect**; if **Status** says the port is in use, quit the app using it. Agents see "Funes Vault isn't running, or it's paused. Open Funes Vault and turn it on." The launcher retries for 5 seconds when it first connects, so an agent started together with the app usually connects. |
+| "Funes Vault isn't running, or it's paused (no …/mcp-endpoint.json)" | The file is missing when the app isn't running, **Let agents connect** is off, or the server failed to start (port in use); pausing doesn't remove it. Open the app and check **Settings ▸ Agent Server ▸ Let agents connect**; if **Status** says the port is in use, quit the app using it. Agents see "Funes Vault isn't running, or it's paused. Open Funes Vault and turn it on." The launcher retries for 5 seconds when it first connects, so an agent started together with the app usually connects. |
 | "Funes Vault doesn't recognize this agent's key" (HTTP 401) | The key was rotated or the agent removed. Launcher and `headersHelper` setups re-read the file; for a pasted key, **Copy Key…** again. If the Connect tab says the key file couldn't be read, **Rotate Key…**. |
 | "Another program is using Funes Vault's port." | The process named in `mcp-endpoint.json` isn't your Funes Vault listening on its port (a file left after a crash, or a launcher from another copy of the app), so nothing was sent. Quit and reopen Funes Vault, use the launcher path from the Connect tab, and run the check. |
 | "--agent takes the agent's ID (a UUID), not its name." | Copy the setup again from the agent's Connect tab. |
@@ -384,7 +384,7 @@ The tools listed depend on the agent's access. The last line is a `list_memory_c
 | `policy_changed` | A memory or the agent's access changed after you approved, so nothing was shared. The request is back in **Pending requests**: review it again within its 15 minutes, or the agent asks again. |
 | `rate_limited` | The agent is looping, or has 3 requests waiting for you. Wait `retry_after_s` seconds; see [Limits](#limits). |
 | `secret_like_content` | The suggestion looked like it contained a key or password, so nothing was stored. |
-| Nothing happens and no Activity row | Run the check. Requests refused before they reach an agent (a refused key, or a wrong `Host`, `Origin` or forwarding header) never reach Activity; **Settings ▸ MCP ▸ Traffic since launch** counts them. A wrong port reaches nothing: run the check. |
+| Nothing happens and no Activity row | Run the check. Requests refused before they reach an agent (a refused key, or a wrong `Host`, `Origin` or forwarding header) never reach Activity; **Settings ▸ Agent Server ▸ Traffic since launch** counts them. A wrong port reaches nothing: run the check. |
 
 ## Reference
 
@@ -420,7 +420,7 @@ The built-in category keys are `communication_style`, `personal_preferences`, `s
 | Argument | Type | Required | Limits and notes |
 | --- | --- | --- | --- |
 | `task` | string | yes | 1–1,000. What the agent is doing, concretely. Drives which memories are relevant. |
-| `keywords` | [string] | no | Up to 20, each 1–60. The kinds of personal context that would help, for example `"dietary restrictions"`. Used for retrieval only. With a provider embedding model and **Embed agent requests with the cloud model** on (Settings ▸ AI Models), the task and keywords are embedded by that provider. |
+| `keywords` | [string] | no | Up to 20, each 1–60. The kinds of personal context that would help, for example `"dietary restrictions"`. Used for retrieval only. With a provider embedding model and **Embed agent requests with the cloud model** on (Settings ▸ AI ▸ Features ▸ Search index), the task and keywords are embedded by that provider. |
 | `purpose` | string | no | Up to 160. Shown to you "as reported". |
 | `categories` | [string] | no | Up to 24 keys from `list_memory_categories`. Narrows the search; never widens access. |
 | `max_tokens` | integer | no | 100–8,000, default 1,200. The most text to return, in estimated tokens (4 characters each). |
