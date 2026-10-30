@@ -147,7 +147,7 @@ Funes learns your name and a few details, greets you by name, and gives each age
 - **Profile fields per agent:** ticked in Access (Name by default), sent with `request_memory` answers, named in the Share panel and Activity.
 
 ### v0.6: Search answers (Phase 9)
-Search shows the sentence that matches, and when you ask, the model you chose answers from the top results, quoting the memory behind every claim, on the Mac and the iPhone ([ADR-0028](../architecture/decisions/0028-search-answers.md)). About 2.5–3 weekends.
+Search shows the sentence that matches, and when you ask (or on its own, if you choose), the model you chose answers from the top results, quoting the memory behind every claim, on the Mac and the iPhone ([ADR-0028](../architecture/decisions/0028-search-answers.md)). About 2.5–3 weekends.
 
 | Step | Plan | Exit criteria |
 |---|---|---|
@@ -160,7 +160,7 @@ Search shows the sentence that matches, and when you ask, the model you chose an
 
 **In:**
 - **Matching snippets** in the Vault and the iPhone's Search.
-- **Search answers**, off by default: Ask (⌘⏎ or the Ask row and pill), an answer card in place with a quote per claim, no automatic mode yet.
+- **Search answers**, off by default: Ask (⌘⏎ or the Ask row and pill), an answer card in place with a quote per claim, and, if chosen, automatic answers for questions or every search.
 - **`memories.answer`** on the companion channel, with its own deadline.
 
 ### v0.6+: Later (unordered; pick by real usage)

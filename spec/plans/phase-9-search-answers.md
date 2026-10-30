@@ -4,7 +4,7 @@
 
 **Duration:** about 2.5–3 weekends (a guess until Spike G). **Depends on:** nothing unfinished. **Decision:** [ADR-0028](../architecture/decisions/0028-search-answers.md). **Specs:** [memory processing §10](../domain/memory-processing.md#10-search-snippets-and-answers), [model providers §1, §3–6, §9](../architecture/model-providers.md), [companion protocol §4, §7](../architecture/companion-protocol.md#4-methods), [security and privacy T37, §5](../architecture/security-and-privacy.md), [UX: Mac ▸ Vault, Settings](../product/04-ux-mac.md#vault), [UX: iPhone ▸ Search, Settings, Demo mode](../product/05-ux-iphone.md#search-tab), requirements FR-V-17, FR-AI-17, FR-iOS-13.
 
-**Order:** 9.1 → 9.2 → 9.3 → 9.4 and 9.5 → 9.6. 9.1 ships on its own and is used for a few days before 9.3 starts. 9.7 is optional and later. All of it lands in one PR, with the spec, so each step is a commit or a few, not a release.
+**Order:** 9.1 → 9.2 → 9.3 → 9.4 and 9.5 → 9.6. 9.1 ships on its own and is used for a few days before 9.3 starts. 9.7 was brought forward on 30 Oct 2026 at the author's request. All of it lands in one PR, with the spec, so each step is a commit or a few, not a release.
 
 ## 9.1 Snippets · ½ weekend
 - [x] **`BodyMatches`** in FunesCore `Search/` (§10.1): one `highlight(memory_fts, 1, char(2), char(3))` query with the search's own MATCH query (`KeywordSearch.ftsQuery`, with its prefix setting) for the rows shown; the marked spans as UTF-16 ranges in the plain body; sentences (`NLTokenizer` `.sentence`, line breaks, 300-character pieces) scored by spans. No new term list or stemmer: keyword search's terms and ranking don't change (its tests stay green). Tests: "titles" finding "title" (porter), accents ("cafe" finding "café"), the last word as a prefix, ties, a title-only or semantic-only hit (no spans), a match in the last sentence of a 10,000-character body.
@@ -48,5 +48,8 @@ Throwaway code in `spikes/search-answers/`, like Spike E. (Named G: [spike resul
 - [x] `sh scripts/test.sh` green; the iPhone app builds for a generic device; a TestFlight build with the author's go-ahead (0.5.0 (16), 2026-10-30, from 02d4b3a).
 - [ ] The author uses it for a week; note bad answers here.
 
-## 9.7 Later, optional: automatic for questions
-- [ ] Only if a provider shows p50 ≤ 3 s and p95 ≤ 5 s on the author's Mac under normal load (measured with Spike G's harness): Answer gains "Automatically for questions" (a search ending in "?" or starting with a question word in English or Spanish, after a 0.6 s pause), falling back to the Ask row when the provider is slower. Needs its own short ADR amendment.
+## 9.7 Automatic answers, and 10 results
+*Brought forward on 30 Oct 2026 at the author's request, after TestFlight 0.5.0 (16): [ADR-0028's amendment](../architecture/decisions/0028-search-answers.md).*
+- [x] ~~Only if a provider shows p50 ≤ 3 s and p95 ≤ 5 s on the author's Mac under normal load~~ (Spike G: GPT-6-Luna 3.0 / 5.0 s; the author chose to ship it as a choice regardless): Answer gains **Automatically for questions** (a search ending in "?" or starting with a question word in English or Spanish, after a 0.6 s pause) and **Automatically for every search** (after 1 s), once for each search; Apple on-device only when asked. `AnswerTrigger` in FunesProtocol (with its tests), the Vault's and `SearchModel`'s automatic Ask, `status.get`'s `searchAnswers.trigger`, the Settings rows on both apps, the spec and docs.
+- [x] The answer reads the top **10** results (5 on device), and `memories.answer` takes 1–10 ids.
+- [ ] Use both for a few days; if answers get worse at 10, re-run Spike G at 10 (cloud runs need the author's go-ahead).

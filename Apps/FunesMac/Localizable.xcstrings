@@ -1309,6 +1309,9 @@
     "Apple's on-device model is slow on this Mac: answers may take 30 s or more." : {
 
     },
+    "Apple's on-device model is too slow to answer on its own: it answers only when you ask, and may take 30 s or more." : {
+
+    },
     "Applications" : {
 
     },
@@ -1461,6 +1464,12 @@
 
     },
     "Automatic follows macOS." : {
+
+    },
+    "Automatically for every search" : {
+
+    },
+    "Automatically for questions" : {
 
     },
     "Back" : {
@@ -4067,6 +4076,12 @@
     "Ready" : {
 
     },
+    "Ready. A search that's a question is answered after a short pause, on this Mac and your iPhone; press ⌘⏎ to ask about any other." : {
+
+    },
+    "Ready. Every search is answered after a short pause, on this Mac and your iPhone." : {
+
+    },
     "Ready. If it fails, Funes uses the on-device model, then rules." : {
 
     },
@@ -4534,12 +4549,52 @@
     "Search answers send nothing to %@: the cloud limit is Nothing, so there's no answer." : {
 
     },
+    "Search answers send your search and its top results (up to %@) to %@ %@, each time you pause on a search. Each answer counts toward your plan's limits and today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, each time you pause on a search. Each answer counts toward your plan's limits and today's %4$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@ %@, when you ask or pause on a question. Each answer counts toward your plan's limits and today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, when you ask or pause on a question. Each answer counts toward your plan's limits and today's %4$lld cloud requests."
+          }
+        }
+      }
+    },
     "Search answers send your search and its top results (up to %@) to %@ %@, when you ask. It counts toward your plan's limits." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, when you ask. It counts toward your plan's limits."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@, each time you pause on a search. Each answer counts toward today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, each time you pause on a search. Each answer counts toward today's %3$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@, when you ask or pause on a question. Each answer counts toward today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, when you ask or pause on a question. Each answer counts toward today's %3$lld cloud requests."
           }
         }
       }

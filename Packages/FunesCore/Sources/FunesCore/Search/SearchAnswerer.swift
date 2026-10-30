@@ -63,10 +63,13 @@ public struct SearchAnswer: Sendable, Hashable {
 public struct SearchAnswerEngine: Sendable, Hashable {
     public let name: String
     public let locality: Locality
+    /// When a search is answered without asking (§10.6).
+    public let trigger: AnswerTrigger
 
-    public init(name: String, locality: Locality) {
+    public init(name: String, locality: Locality, trigger: AnswerTrigger = .ask) {
         self.name = name
         self.locality = locality
+        self.trigger = trigger
     }
 }
 
@@ -125,7 +128,7 @@ public enum SearchAnswerError: Error, Sendable, Equatable {
 /// can't be sent, builds the prompt, makes one call through `ModelRouter.answer`, validates the
 /// claims (§10.4) and logs `search_answered` without text (§10.5).
 public final class SearchAnswerer: Sendable {
-    public static let memoryCount = 8
+    public static let memoryCount = 10
     public static let onDeviceMemoryCount = 5
     public static let textLimit = 1_500
     public static let onDeviceTextLimit = 600
@@ -313,7 +316,7 @@ public final class SearchAnswerer: Sendable {
         ("claims", .array(of: .object(name: "Claim", properties: [
             ("text", .string(description: "One sentence, at most 300 characters")),
             ("citations", .array(of: .object(name: "Citation", properties: [
-                ("ref", .string(description: "The memory's ref, m1 to m8")),
+                ("ref", .string(description: "The memory's ref, m1 to m\(memoryCount)")),
                 ("quote", .string(description: "8 to 300 characters copied exactly from that memory's text")),
             ]), minItems: 1, maxItems: maxCitations)),
         ]), maxItems: maxClaims)),

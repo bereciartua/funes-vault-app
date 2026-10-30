@@ -68,6 +68,12 @@ public final class SearchModel {
     @ObservationIgnored private var answerTask: Task<Void, Never>?
     /// Bumped by each Ask, Cancel and new search, so a late answer is dropped.
     private var answerGeneration = 0
+    /// The automatic Ask waiting for its pause (memory processing §10.6), and the search it was
+    /// for: refreshing the same search, Clear or Cancel never ask again.
+    @ObservationIgnored var autoTask: Task<Void, Never>?
+    private var autoAsked: MemorySearchParams?
+    /// Waits out the automatic Ask's pause; tests shorten it.
+    @ObservationIgnored var pause: @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
 
     private let caller: any CompanionCalling
     /// Hears every failed call, for the reachability banner.
@@ -96,6 +102,7 @@ public final class SearchModel {
             resultsParams = params
             nextCursor = page.nextCursor
             phase = .loaded
+            scheduleAutoAsk()
         } catch {
             // Cancelled (the query changed while typing, the tab closed): another search follows,
             // and a cancelled call says nothing about the Mac.
@@ -155,8 +162,12 @@ public final class SearchModel {
         return result.sources.firstIndex(of: id).map { $0 + 1 }
     }
 
-    /// The memories an Ask sends: the first 8 results shown, in order.
-    public var askIDs: [UUID] { Array(results.prefix(MemoryAnswerParams.maxIDs).map(\.id)) }
+    /// The memories an Ask sends: the first 10 results shown, in order (8 to a Mac that takes no
+    /// more).
+    public var askIDs: [UUID] {
+        let most = min(macAnswers?.maxIDs ?? MemoryAnswerParams.maxIDs, MemoryAnswerParams.maxIDs)
+        return Array(results.prefix(max(most, 1)).map(\.id))
+    }
 
     /// Asks the Mac to answer the search from the results shown. Returns when the card shows the
     /// answer, a failure, or was cleared meanwhile.
@@ -182,6 +193,22 @@ public final class SearchModel {
         }
         answerTask = task
         await task.value
+    }
+
+    /// Asks on its own after the pause, once for each search, when the Mac says to and the search
+    /// qualifies (a question, or any search). Never while Show Ask is off.
+    private func scheduleAutoAsk() {
+        guard let trigger = macAnswers?.trigger, canAsk, let params = resultsParams, autoAsked != params,
+              trigger.fires(for: params.query) else { return }
+        autoAsked = params
+        autoTask?.cancel()
+        let pause = self.pause
+        autoTask = Task { [weak self] in
+            try? await pause(trigger.pause)
+            guard !Task.isCancelled, let self, self.resultsParams == params, self.macAnswers?.trigger.fires(for: params.query) == true
+            else { return }
+            await self.ask()
+        }
     }
 
     private func fail(_ error: CompanionClientError) {
@@ -210,6 +237,8 @@ public final class SearchModel {
         answerGeneration += 1
         answerTask?.cancel()
         answerTask = nil
+        autoTask?.cancel()
+        autoTask = nil
         answer = .idle
     }
 

@@ -388,6 +388,9 @@
     "Answered on your Mac" : {
 
     },
+    "Answers" : {
+
+    },
     "Answers this search from its top results, quoting your memories." : {
 
     },
@@ -419,6 +422,12 @@
 
     },
     "Asking your Mac…" : {
+
+    },
+    "Automatically for every search" : {
+
+    },
+    "Automatically for questions" : {
 
     },
     "Back online" : {
@@ -1683,6 +1692,9 @@
     "When an agent asks to share or save memories, this iPhone gets a notification and can answer, as your Mac can. The notification names the agent, never your memories." : {
 
     },
+    "When you ask" : {
+
+    },
     "Who reads your vault" : {
 
     },
@@ -1749,7 +1761,7 @@
     "Your Mac no longer knows this iPhone. Captures waiting here are kept: pair again to send them, or delete them in Settings." : {
 
     },
-    "Your Mac reads the top results and asks %@. Change the model on your Mac in Settings ▸ AI Models." : {
+    "Your Mac reads the top results and asks %@. Change the model, and when searches are answered, on your Mac in Settings ▸ AI Models. With Show Ask off, nothing is asked from this iPhone." : {
 
     },
     "Your Mac refused the request (%@)." : {

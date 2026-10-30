@@ -204,19 +204,19 @@ final class AnswerProvider: GenerationProvider {
         #expect(prompt.hasPrefix("Today is "))
     }
 
-    @Test func onlyActiveUnexpiredResultsAndAtMostEight() async throws {
+    @Test func onlyActiveUnexpiredResultsAndAtMostTen() async throws {
         let env = try Env()
         var ids: [UUID] = []
-        for i in 0..<10 { ids.append(try env.memory("Note \(i)", "Coffee note number \(i).").id) }
+        for i in 0..<12 { ids.append(try env.memory("Note \(i)", "Coffee note number \(i).").id) }
         let archived = try env.memory("Archived", "Coffee in the archive.")
         try env.vault.store.archiveMemory(id: archived.id, now: t0)
         let expired = try env.memory("Expired", "Coffee that expired.", expiresAt: t0.plus(days: -1))
         let provider = AnswerProvider()
         let answer = try await env.answerer.answer("coffee", ids: [archived.id, expired.id, UUID()] + ids,
                                                    router: ModelRouter(classifier: provider, onDevice: nil), now: t0)
-        #expect(answer.read == 8)
+        #expect(answer.read == 10)
         let prompt = try #require(provider.calls.first)
-        #expect(!prompt.contains("Archived") && !prompt.contains("Expired") && prompt.contains("Note 7") && !prompt.contains("Note 8"))
+        #expect(!prompt.contains("Archived") && !prompt.contains("Expired") && prompt.contains("Note 9") && !prompt.contains("Note 10") && !prompt.contains("Note 11"))
     }
 
     // MARK: Guardrails (model providers §5.6)

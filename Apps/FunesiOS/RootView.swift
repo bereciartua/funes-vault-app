@@ -301,6 +301,7 @@ struct SearchAnswersSection: View {
             if let answers = model.macAnswers {
                 Toggle("Show Ask in Search", isOn: $showAsk)
                 LabeledContent("Answered by", value: answers.engine)
+                LabeledContent("Answers", value: Self.trigger(answers.trigger))
             } else if model.reachability.isConnected {
                 Text("Search answers are off on your Mac.").foregroundStyle(.secondary)
             } else {
@@ -310,8 +311,17 @@ struct SearchAnswersSection: View {
             Text("Search answers")
         } footer: {
             if let answers = model.macAnswers {
-                Text("Your Mac reads the top results and asks \(answers.engine). Change the model on your Mac in Settings ▸ AI Models.")
+                Text("Your Mac reads the top results and asks \(answers.engine). Change the model, and when searches are answered, on your Mac in Settings ▸ AI Models. With Show Ask off, nothing is asked from this iPhone.")
             }
+        }
+    }
+
+    /// When the Mac answers a search (memory processing §10.6).
+    static func trigger(_ trigger: AnswerTrigger) -> String {
+        switch trigger {
+        case .ask: String(localized: "When you ask")
+        case .questions: String(localized: "Automatically for questions")
+        case .everySearch: String(localized: "Automatically for every search")
         }
     }
 }

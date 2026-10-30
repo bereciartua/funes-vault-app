@@ -75,7 +75,7 @@
 - Acceptance:
   - Results within 150 ms for a 10,000-memory vault on an M1.
   - Queries that look like secrets skip semantic embedding, as in the web version.
-- **v0.6:** each result's snippet is the passage that matches the search (FR-V-17), and Search answers can answer from the top results when asked (FR-AI-17).
+- **v0.6:** each result's snippet is the passage that matches the search (FR-V-17), and Search answers can answer from the top results when asked, or on their own (FR-AI-17).
 
 **FR-V-11 Filters and sort** · M · v0.1
 - Filter by category, kind, sensitivity, status (active, archived, expired, recently deleted) and source. Sort by updated, created or title.
@@ -439,7 +439,7 @@
   - With the Mac unreachable, the notification says so, and the request waits on the Mac as usual.
 
 **FR-iOS-13 Search answers on the iPhone** · S · v0.6 ([ADR-0028](../architecture/decisions/0028-search-answers.md))
-- When the Mac has Search answers on, the iPhone's Search shows an **Ask Funes** pill under the field (Active scope, a non-empty search with results). Tapping it asks the Mac (`memories.answer`, with the ids of the results shown) and shows the same card as the Mac at the top of the list, with **Cancel**; a claim's number opens the memory with the quoted sentence highlighted. Settings ▸ Search answers: **Show Ask in Search** (on by default, this iPhone only) and which engine answers. The model is always chosen on the Mac.
+- When the Mac has Search answers on, the iPhone's Search shows an **Ask Funes** pill under the field (Active scope, a non-empty search with results). Tapping it asks the Mac (`memories.answer`, with the ids of the results shown) and shows the same card as the Mac at the top of the list, with **Cancel**; a claim's number opens the memory with the quoted sentence highlighted. When the Mac answers automatically, the phone asks on its own after the same pause, once for each search, unless Show Ask is off. Settings ▸ Search answers: **Show Ask in Search** (on by default, this iPhone only), which engine answers and when. The model and when to answer are always chosen on the Mac.
 - Acceptance:
   - The phone sends ids, never memory text; nothing about the answer is kept after leaving Search or changing the search. Cancel stops waiting; the next Ask from the phone cancels the Mac's previous work.
   - A model failure, timeout, the daily cap or answers turned off on the Mac each show their own message, never "Mac not reachable"; the call is never resent automatically.
@@ -689,11 +689,11 @@
   - Signed out, plan limit reached and missing CLI each show a clear status and fall back like a provider that's down.
 
 **FR-AI-17 Search answers** · M · v0.6 ([ADR-0028](../architecture/decisions/0028-search-answers.md))
-- Settings ▸ AI Models ▸ **Search answers**: Answer (**Off**, the default · Only when I ask) and Model (Same as New memories, or any generation provider). When on, **⌘⏎** in the Vault's search field or the **Ask Funes** row on top of the results (in the Active scope, with a non-empty search that has results) asks the chosen model to answer the search from its top 8 results. The answer appears in place as a card at the top of the list: up to 3 claims, each with the quote it came from and numbered links to the memories. See [memory processing §10](../domain/memory-processing.md#10-search-snippets-and-answers).
+- Settings ▸ AI Models ▸ **Search answers**: Answer (**Off**, the default · Only when I ask · Automatically for questions · Automatically for every search) and Model (Same as New memories, or any generation provider). When on, **⌘⏎** in the Vault's search field or the **Ask Funes** row on top of the results (in the Active scope, with a non-empty search that has results) asks the chosen model to answer the search from its top 10 results; with an automatic choice, a question-shaped search, or any search, is answered on its own once its results have shown for a short pause, once for each search (Apple on-device only when asked). The answer appears in place as a card at the top of the list: up to 3 claims, each with the quote it came from and numbered links to the memories. See [memory processing §10](../domain/memory-processing.md#10-search-snippets-and-answers).
 - Acceptance:
   - Search results show as before and never wait for, move for or get selected by the answer; changing the search, scope or filters clears the card; **Cancel** stops the call (a subscription CLI's process ends).
   - The prompt names each memory's source (you, an agent, an import or shared text) and never says the user wrote them all.
-  - Every claim shown quotes text that was sent for a memory it cites, checked by code; a claim with any quote that fails isn't shown, and the card says how many were left out. With none left: "No answer in the 8 results read."
+  - Every claim shown quotes text that was sent for a memory it cites, checked by code; a claim with any quote that fails isn't shown, and the card says how many were left out. With none left: "No answer in the 10 results read."
   - For a cloud model, nothing above the cloud limit and no secret-scanner match is sent (tested with request capture); the card says how many memories weren't read. The search text passes the secret scanner, as for provider embeddings.
   - A cloud call that passes the guard counts once against the daily cap (FR-AI-15), even if it fails or is cancelled; refusals before sending and local providers don't count. At the cap, the card says so and search keeps working.
   - A failed, timed-out (45 s) or unavailable model shows why, with **Try Again**; there's no fallback to another model.

@@ -17,8 +17,12 @@ final class SearchAnswersController: SearchAnswering {
         answerer = SearchAnswerer(store: environment.store, search: environment.search, activity: environment.activity)
     }
 
-    /// Answer: Only when I ask.
+    /// Search answers are on.
     var isOn: Bool { settings.searchAnswersOn }
+
+    /// When a search is answered without asking. Apple on-device takes 30 s or more, so its answers
+    /// are only asked for (memory processing §10.6).
+    var trigger: AnswerTrigger { settings.searchAnswersOnDevice ? .ask : settings.searchAnswersTrigger }
 
     /// "Claude (Claude Code)", "Anthropic", "Apple on-device".
     var engineName: String { settings.searchAnswersName }
@@ -42,7 +46,7 @@ final class SearchAnswersController: SearchAnswering {
             return AppleFoundationGenerator.isAvailable ? SearchAnswerEngine(name: engineName, locality: .onDevice) : nil
         }
         if let plan = settings.searchAnswersPlan {
-            return settings.executables[plan] == nil ? nil : SearchAnswerEngine(name: engineName, locality: .cloud)
+            return settings.executables[plan] == nil ? nil : SearchAnswerEngine(name: engineName, locality: .cloud, trigger: trigger)
         }
         guard let provider = settings.searchAnswersProvider, !provider.model.isEmpty, !settings.needsKey(provider) else { return nil }
         // Never waits on DNS (status.get is the phone's 3 s probe): the last resolved locality, and
@@ -54,7 +58,7 @@ final class SearchAnswersController: SearchAnswering {
                 await MainActor.run { self?.resolved[endpoint] = locality }
             }
         }
-        return SearchAnswerEngine(name: engineName, locality: resolved[endpoint] ?? .cloud)
+        return SearchAnswerEngine(name: engineName, locality: resolved[endpoint] ?? .cloud, trigger: trigger)
     }
 
     /// Providers' resolved localities, for `engine()`.

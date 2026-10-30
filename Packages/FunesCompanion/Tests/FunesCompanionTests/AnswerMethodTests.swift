@@ -40,16 +40,20 @@ final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
     let available: Bool
     let delay: Duration
     let failure: SearchAnswerError?
+    let trigger: AnswerTrigger
     let started = Mutex(0)
     let cancelled = Mutex(0)
 
-    init(available: Bool = true, delay: Duration = .zero, failure: SearchAnswerError? = nil) {
+    init(available: Bool = true, delay: Duration = .zero, failure: SearchAnswerError? = nil, trigger: AnswerTrigger = .ask) {
         self.available = available
         self.delay = delay
         self.failure = failure
+        self.trigger = trigger
     }
 
-    func engine() async -> SearchAnswerEngine? { available ? SearchAnswerEngine(name: "Ollama", locality: .localServer) : nil }
+    func engine() async -> SearchAnswerEngine? {
+        available ? SearchAnswerEngine(name: "Ollama", locality: .localServer, trigger: trigger) : nil
+    }
 
     func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via) async throws -> SearchAnswer {
         started.withLock { $0 += 1 }
@@ -81,6 +85,10 @@ final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
         let phone = try await on.pairedPhone()
         #expect(try await on.result(StatusGet.self, EmptyParams(), phone: phone).searchAnswers
                     == SearchAnswersStatus(engine: "Ollama", locality: .localServer))
+        // Automatic answers: the phone asks on its own when the Mac says so (memory processing §10.6).
+        let auto = try Self.harness(ScriptedAnswers(trigger: .questions))
+        let fourth = try await auto.pairedPhone()
+        #expect(try await auto.result(StatusGet.self, EmptyParams(), phone: fourth).searchAnswers?.trigger == .questions)
         let off = try Self.harness(ScriptedAnswers(available: false))
         let other = try await off.pairedPhone()
         #expect(try await off.result(StatusGet.self, EmptyParams(), phone: other).searchAnswers == nil)
@@ -116,9 +124,9 @@ final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
     @Test func badParamsAndAnswersOff() async throws {
         let h = try Self.harness(ScriptedAnswers())
         let phone = try await h.pairedPhone()
-        for params in [MemoryAnswerParams(query: "coffee", ids: []), MemoryAnswerParams(query: "coffee", ids: (0..<9).map { _ in UUID() }),
+        for params in [MemoryAnswerParams(query: "coffee", ids: []), MemoryAnswerParams(query: "coffee", ids: (0..<11).map { _ in UUID() }),
                        MemoryAnswerParams(query: "  ", ids: [UUID()])] {
-            await #expect(throws: CompanionError(.invalidInput, message: params.ids.isEmpty || params.ids.count > 8 ? "ids is 1 to 8" : "Bad query")) {
+            await #expect(throws: CompanionError(.invalidInput, message: params.ids.isEmpty || params.ids.count > 10 ? "ids is 1 to 10" : "Bad query")) {
                 try await h.result(MemoriesAnswer.self, params, phone: phone)
             }
         }

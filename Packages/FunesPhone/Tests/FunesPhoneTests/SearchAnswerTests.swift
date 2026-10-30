@@ -16,16 +16,16 @@ import Testing
         return search
     }
 
-    @Test func askSendsTheFirstEightResultsShownAndShowsTheAnswer() async throws {
+    @Test func askSendsTheFirstTenResultsShownAndShowsTheAnswer() async throws {
         let vault = FakeVault()
-        for i in 0..<10 { vault.add("Coffee \(i)", body: "Oat milk flat white number \(i).", updated: TimeInterval(-i)) }
+        for i in 0..<12 { vault.add("Coffee \(i)", body: "Oat milk flat white number \(i).", updated: TimeInterval(-i)) }
         let search = await Self.loaded(vault, query: "  coffee ")
         #expect(search.canAsk)
         await search.ask()
         let ask = try #require(vault.asks.last)
-        #expect(ask.query == "coffee" && ask.ids == Array(search.results.prefix(8).map(\.id)) && ask.filters == nil)
+        #expect(ask.query == "coffee" && ask.ids == Array(search.results.prefix(10).map(\.id)) && ask.filters == nil)
         guard case let .answered(result, total) = search.answer else { Issue.record("\(search.answer)"); return }
-        #expect(total == 10 && result.claims.first?.citations.first?.id == search.results[0].id)
+        #expect(total == 12 && result.claims.first?.citations.first?.id == search.results[0].id)
         // The pill hides while the card shows.
         #expect(!search.canAsk)
     }

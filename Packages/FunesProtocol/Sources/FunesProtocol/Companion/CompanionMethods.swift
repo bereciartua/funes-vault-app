@@ -170,14 +170,34 @@ public enum AnswerLocality: String, Codable, Sendable, CaseIterable {
     case onDevice, localServer, appleCloud, cloud
 }
 
-/// Which model answers the Mac's searches: a display name ("Claude (Claude Code)") and where it runs.
+/// Which model answers the Mac's searches: a display name ("Claude (Claude Code)"), where it runs,
+/// and when the phone asks on its own.
 public struct SearchAnswersStatus: Codable, Sendable, Equatable {
     public var engine: String
     public var locality: AnswerLocality
+    /// Missing (a Mac before automatic answers) or unknown (a newer one): only when asked.
+    public var trigger: AnswerTrigger
+    /// How many ids `memories.answer` takes; missing (a Mac before 10): 8.
+    public var maxIDs: Int
 
-    public init(engine: String, locality: AnswerLocality) {
+    public init(engine: String, locality: AnswerLocality, trigger: AnswerTrigger = .ask, maxIDs: Int = MemoryAnswerParams.maxIDs) {
         self.engine = engine
         self.locality = locality
+        self.trigger = trigger
+        self.maxIDs = maxIDs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case engine, locality, trigger
+        case maxIDs = "maxIds"
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        engine = try container.decode(String.self, forKey: .engine)
+        locality = try container.decode(AnswerLocality.self, forKey: .locality)
+        trigger = (try? container.decodeIfPresent(String.self, forKey: .trigger)).flatMap { $0.flatMap(AnswerTrigger.init(rawValue:)) } ?? .ask
+        maxIDs = (try? container.decodeIfPresent(Int.self, forKey: .maxIDs)).flatMap { $0 } ?? 8
     }
 }
 
@@ -282,7 +302,7 @@ public enum MemoriesAnswer: CompanionCall {
 public struct MemoryAnswerParams: Codable, Sendable, Equatable {
     public var query: String
     public var filters: MemorySearchFilters?
-    /// The results the phone shows, in order: 1 to 8. Never memory text.
+    /// The results the phone shows, in order: 1 to 10. Never memory text.
     public var ids: [UUID]
 
     public init(query: String, filters: MemorySearchFilters? = nil, ids: [UUID]) {
@@ -291,10 +311,10 @@ public struct MemoryAnswerParams: Codable, Sendable, Equatable {
         self.ids = ids
     }
 
-    public static let maxIDs = 8
+    public static let maxIDs = 10
 
     public func validate() throws(CompanionError) {
-        guard (1...Self.maxIDs).contains(ids.count) else { throw CompanionError(.invalidInput, message: "ids is 1 to 8") }
+        guard (1...Self.maxIDs).contains(ids.count) else { throw CompanionError(.invalidInput, message: "ids is 1 to \(Self.maxIDs)") }
         guard Set(ids).count == ids.count else { throw CompanionError(.invalidInput, message: "Repeated ids") }
         let length = InputLimits.length(of: query.trimmingCharacters(in: .whitespacesAndNewlines))
         guard length > 0, length <= InputLimits.task.upperBound else { throw CompanionError(.invalidInput, message: "Bad query") }

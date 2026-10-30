@@ -126,7 +126,7 @@ public final class CompanionHandlers: Sendable {
         let engine = await services.answers?.engine()
         return CompanionStatus(macName: macName(), appVersion: appVersion, serverTime: now, inboxPending: pending, vaultActive: true,
                                calledName: calledName,
-                               searchAnswers: engine.map { SearchAnswersStatus(engine: $0.name, locality: AnswerLocality($0.locality)) })
+                               searchAnswers: engine.map { SearchAnswersStatus(engine: $0.name, locality: AnswerLocality($0.locality), trigger: $0.trigger) })
     }
 
     /// `memories.answer` (v0.6): the Mac re-reads the ids as the owner and answers from them

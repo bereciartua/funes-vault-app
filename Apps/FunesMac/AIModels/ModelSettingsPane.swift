@@ -257,10 +257,12 @@ struct ModelSettingsPane: View {
     @ViewBuilder
     private var searchAnswerRows: some View {
         LabeledContent(String(localized: "Search answers")) {
-            Picker(String(localized: "Search answers"), selection: Binding(get: { settings.searchAnswersOn },
-                                                                           set: { settings.searchAnswersOn = $0 })) {
-                Text(String(localized: "Off")).tag(false)
-                Text(String(localized: "Only when I ask")).tag(true)
+            Picker(String(localized: "Search answers"), selection: Binding(get: { settings.searchAnswersMode },
+                                                                           set: { settings.searchAnswersMode = $0 })) {
+                Text(String(localized: "Off")).tag(AnswerTrigger?.none)
+                Text(String(localized: "Only when I ask")).tag(Optional(AnswerTrigger.ask))
+                Text(String(localized: "Automatically for questions")).tag(Optional(AnswerTrigger.questions))
+                Text(String(localized: "Automatically for every search")).tag(Optional(AnswerTrigger.everySearch))
             }
             .labelsHidden().fixedSize()
         }
@@ -301,9 +303,10 @@ struct ModelSettingsPane: View {
     /// "Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone.", the on-device warning, or what's missing.
     private var searchAnswersStatus: String {
         if settings.searchAnswersOnDevice {
-            return AppleFoundationGenerator.isAvailable
+            guard AppleFoundationGenerator.isAvailable else { return String(localized: "Choose a model to answer searches.") }
+            return settings.searchAnswersTrigger == .ask
                 ? String(localized: "Apple's on-device model is slow on this Mac: answers may take 30 s or more.")
-                : String(localized: "Choose a model to answer searches.")
+                : String(localized: "Apple's on-device model is too slow to answer on its own: it answers only when you ask, and may take 30 s or more.")
         }
         if let plan = settings.searchAnswersPlan {
             switch settings.subscriptionStatus[plan] {
@@ -317,7 +320,13 @@ struct ModelSettingsPane: View {
             if provider.model.isEmpty { return String(localized: "Choose a model in \(provider.name)'s settings.") }
             if settings.needsKey(provider) { return String(localized: "Add \(provider.name)'s API key in its settings.") }
         }
-        return String(localized: "Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone.")
+        switch settings.searchAnswersTrigger {
+        case .ask: return String(localized: "Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone.")
+        case .questions:
+            return String(localized: "Ready. A search that's a question is answered after a short pause, on this Mac and your iPhone; press ⌘⏎ to ask about any other.")
+        case .everySearch:
+            return String(localized: "Ready. Every search is answered after a short pause, on this Mac and your iPhone.")
+        }
     }
 
     /// "Search answers send your search and its top results (up to Internal) to Claude through your
@@ -330,9 +339,23 @@ struct ModelSettingsPane: View {
         let limit = Self.title(.upTo(level))
         if let plan = settings.searchAnswersPlan {
             let via = plan == .claudeCode ? String(localized: "through your Claude Code sign-in") : String(localized: "through your Codex sign-in")
-            return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(plan.plan) \(via), when you ask. It counts toward your plan's limits.")
+            switch settings.searchAnswersTrigger {
+            case .ask:
+                return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(plan.plan) \(via), when you ask. It counts toward your plan's limits.")
+            case .questions:
+                return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(plan.plan) \(via), when you ask or pause on a question. Each answer counts toward your plan's limits and today's \(settings.dailyCap) cloud requests.")
+            case .everySearch:
+                return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(plan.plan) \(via), each time you pause on a search. Each answer counts toward your plan's limits and today's \(settings.dailyCap) cloud requests.")
+            }
         }
-        return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(settings.searchAnswersName), when you ask.")
+        switch settings.searchAnswersTrigger {
+        case .ask:
+            return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(settings.searchAnswersName), when you ask.")
+        case .questions:
+            return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(settings.searchAnswersName), when you ask or pause on a question. Each answer counts toward today's \(settings.dailyCap) cloud requests.")
+        case .everySearch:
+            return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(settings.searchAnswersName), each time you pause on a search. Each answer counts toward today's \(settings.dailyCap) cloud requests.")
+        }
     }
 
     /// Compares changed memories with related ones and proposes updates, merges, splits, archives

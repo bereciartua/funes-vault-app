@@ -117,6 +117,12 @@ final class VaultModel {
     private struct Quoted: Equatable { let memoryID: UUID; let quote: String }
     private var quotedValue: Quoted?
     @ObservationIgnored private var answerTask: Task<Void, Never>?
+    /// The automatic Ask waiting for its pause (memory processing §10.6), and the search and
+    /// filters it was for: a reload of the same list (a memory saved elsewhere), Clear or Cancel
+    /// never ask again.
+    @ObservationIgnored private var autoTask: Task<Void, Never>?
+    @ObservationIgnored private var autoAsked: AutoKey?
+    private struct AutoKey: Equatable { let query: String; let filter: MemoryFilter }
 
     /// Whether Search answers are on: the Ask row, the card and the chips show only then.
     var answersOn: Bool { answers?.isOn ?? false }
@@ -152,10 +158,30 @@ final class VaultModel {
         }
     }
 
+    /// Asks on its own after the pause, once for each search and filters, when Settings says to
+    /// and the search qualifies (a question, or any search).
+    private func scheduleAutoAsk() {
+        guard let answers, canAsk, answer == nil else { return }
+        let query = listedQuery, filter = listedFilter
+        let key = AutoKey(query: query, filter: filter)
+        let trigger = answers.trigger
+        guard autoAsked != key, trigger.fires(for: query) else { return }
+        autoAsked = key
+        autoTask?.cancel()
+        autoTask = Task { [weak self] in
+            try? await Task.sleep(for: trigger.pause)
+            guard !Task.isCancelled, let self, self.answer == nil, self.listedQuery == query, self.listedFilter == filter,
+                  self.answers?.trigger.fires(for: query) == true else { return }
+            self.ask()
+        }
+    }
+
     /// Cancel and Clear; and any change of search, scope or filter (rows never move under a card).
     func clearAnswer() {
         answerTask?.cancel()
         answerTask = nil
+        autoTask?.cancel()
+        autoTask = nil
         answer = nil
         quoted = nil
     }
@@ -231,6 +257,7 @@ final class VaultModel {
             for id in visibleRows { requestSnippets(for: id) }
             selection = selection.intersection(memories.map(\.id))
             loaded = true
+            scheduleAutoAsk()
         } catch {
             loaded = true
         }

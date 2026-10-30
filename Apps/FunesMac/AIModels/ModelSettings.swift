@@ -136,8 +136,10 @@ final class ModelSettings {
         var embedding: EmbeddingChoice?
         /// Calibrate's thresholds, by stored model id (`<provider>/<model>`).
         var calibrations: [String: CalibratedThresholds]?
-        /// Search answers (v0.6, FR-AI-17): on ("Only when I ask") or off, the default; nil before v0.6.
+        /// Search answers (v0.6, FR-AI-17): on or off, the default; nil before v0.6.
         var searchAnswers: Bool?
+        /// When they're on, when a search is answered: an `AnswerTrigger`; nil is only when asked.
+        var searchAnswersTrigger: String?
         /// Search answers' provider: a provider id or a plan; nil is the same as New memories.
         var searchAnswersModel: String?
     }
@@ -285,11 +287,26 @@ final class ModelSettings {
 
     // MARK: Search answers (memory processing §10, FR-AI-17)
 
-    /// Answer: Only when I ask (true) · Off (the default).
+    /// Whether Search answers are on (Off is the default).
     var searchAnswersOn: Bool {
         get { stored.searchAnswers ?? false }
         set { stored.searchAnswers = newValue; save() }
     }
+
+    /// Answer: Off (nil, the default) · Only when I ask · Automatically for questions ·
+    /// Automatically for every search.
+    var searchAnswersMode: AnswerTrigger? {
+        get { searchAnswersOn ? searchAnswersTrigger : nil }
+        set {
+            stored.searchAnswers = newValue != nil
+            if let newValue { stored.searchAnswersTrigger = newValue == .ask ? nil : newValue.rawValue }
+            save()
+        }
+    }
+
+    /// When a search is answered while answers are on, as chosen (Apple on-device's answers are
+    /// only asked for: see `SearchAnswersController.trigger`).
+    var searchAnswersTrigger: AnswerTrigger { stored.searchAnswersTrigger.flatMap(AnswerTrigger.init(rawValue:)) ?? .ask }
 
     /// Search answers' own choice; nil follows New memories.
     var searchAnswersID: String? { stored.searchAnswersModel }
