@@ -1,6 +1,6 @@
 # ADR-0025: A vault overview of counts only, served to the iPhone, which caches it for Home and widgets
 
-**Status:** Accepted · 2026-10-25 · **Amends** [storage §6](../storage.md#6-iphone-storage) and [UX: iPhone](../../product/05-ux-iphone.md) ("nothing is cached beyond the screen"), [companion protocol §4](../companion-protocol.md#4-methods) (a new method)
+**Status:** Accepted · 2026-10-25 · **Amends** [storage §6](../storage.md#6-iphone-storage) and [UX: iPhone](../../product/05-ux-iphone.md) ("nothing is cached beyond the screen"), [companion protocol §4](../companion-protocol.md#4-methods) (a new method) · **Amended by** [ADR-0029](0029-menu-bar-panel.md) (`recentPulse`, the last 24 hours by hour, for the Mac's menu bar panel; not on the companion protocol)
 
 **Context.**
 - **The web version had a Home** (`funes-vault`, its ADR-0029): a composer plus three signal cards safe to show if someone looks over your shoulder (memories over 30 days, the sensitivity mix, a rhythm grid). The author found it fun and useful, and wants it back on the Mac and the iPhone ([Phase 7](../../plans/phase-7-home.md)).

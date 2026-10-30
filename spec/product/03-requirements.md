@@ -216,7 +216,7 @@
   - Off by default.
 
 **FR-A-11 Pause all** · M · v0.1
-- The menu bar has "Pause Funes Vault" (for 1 hour, until tomorrow, or until resumed), which refuses all agent requests with `funes_paused`.
+- **Pause All Agents** (for 1 hour, until tomorrow, or until resumed) refuses every agent request, local and cloud, with `funes_paused`. Before v0.7 it was "Pause Funes Vault" in the menu bar menu. From v0.7 it's the menu bar panel's Agents switch, which asks how long, with **Resume** beside it while paused ([ADR-0029](../architecture/decisions/0029-menu-bar-panel.md)).
 
 **FR-A-12 Declared retention** · C · v0.1
 - The user can note how an agent retains data (no storage, session, persistent, unknown). It's shown on the Share panel as "Your note", apart from what the agent says, as information only.
@@ -255,7 +255,7 @@
 
 **FR-D-05 Timeout fallback** · M · v0.1
 - If unanswered after 45 s, the tool returns `needs_approval` with a `request_id`.
-- The request then appears under **Pending requests** (the menu bar, the agent's page, whose row in the sidebar has a badge counting them, and Activity), with how many memories it would share, and can be approved within 15 minutes. The agent retrieves the result once with `get_memory_request`.
+- The request then appears under **Pending requests** (the menu bar, as a Review card in the panel from v0.7; the agent's page, whose row in the sidebar has a badge counting them; and Activity), with how many memories it would share, and can be approved within 15 minutes. The agent retrieves the result once with `get_memory_request`.
 
 **FR-D-06 Single use** · M · v0.1
 - An approved release can be retrieved once. Later calls return `already_delivered`.
@@ -467,6 +467,10 @@
 **FR-H-06 iPhone widgets** · S · v0.4
 - Pulse (medium), Remember (small, with Remember and dictate buttons) and Rhythm (small, medium) widgets read the cache, show "as of" once it's over an hour old, and redact agent names while the phone is locked ([UX: iPhone ▸ Widgets](05-ux-iphone.md#widgets)).
 
+**FR-H-07 Last 24 hours** · S · v0.7 ([ADR-0029](../architecture/decisions/0029-menu-bar-panel.md))
+- `VaultStore.recentPulse(now:calendar:)`: the last 24 hours by hour, the current hour last: new memories by source, memories delivered by agent, refused requests, and the totals. The same aggregates as FR-H-01's days, from the same tables. Mac only: the menu bar panel's chart.
+- Acceptance: never contains memory text or titles (tested); hour buckets follow the calendar's time zone, including a daylight-saving change, where a repeated hour stays two buckets (tested); under 20 ms on the 10,000-memory benchmark vault.
+
 ### Import and export (FR-X)
 
 **FR-X-01 Import ChatGPT memories** · S · v0.1
@@ -549,16 +553,23 @@
 
 ### App, settings and updates (FR-G)
 
-**FR-G-01 Menu bar presence** · M · v0.1
-- Icon states, drawn as the app icon's eye: normal (outline), request waiting (filled, with an accent dot), paused (slashed), off (dimmed).
-- The menu contains:
-  - Remember…
-  - Inbox (N)
-  - Pending requests
-  - Pause Funes Vault
-  - Open Funes Vault
-  - Check for Updates
-  - Quit
+**FR-G-01 Menu bar presence** · M · v0.1; the panel v0.7 ([ADR-0029](../architecture/decisions/0029-menu-bar-panel.md))
+- **Icon states,** drawn as the app icon's eye: normal (outline), needs you (filled, with an accent dot), paused (slashed), can't connect (a warning badge; v0.7), off (dimmed), plus a globe while Remote Access is on.
+- **v0.1–v0.6, a menu:** Remember…, Inbox (N), Pending requests, Pause Funes Vault, Open Funes Vault, Check for Updates, Quit.
+- **v0.7, a click opens a panel** ([UX: Mac ▸ Menu bar](04-ux-mac.md#menu-bar)), top to bottom:
+  - **Waiting for you:** a Review card for each item to answer, at most 3;
+  - the **Agents** and **Remote Access** switches, or a button when a switch can't apply (Fix…, Turn On…, Add Agent…, Set Up…);
+  - a **field**: ⏎ saves a capture, ⌘⏎ searches, with search answers per the setting;
+  - **Last 24 hours:** a chart (FR-H-07);
+  - Inbox, Open Funes Vault, Settings, and ⋯ (Check for Updates, Quit).
+- **v0.7, a right click** shows a short menu: Open Funes Vault, Settings…, Check for Updates…, Quit Funes Vault.
+- Acceptance (v0.7):
+  - **No approval decision is made in the panel.** Nothing is shared, denied, saved from a suggestion, connected or allowed from it; Review opens the item's own panel (tested). Saving the user's own capture from the field isn't a decision.
+  - **No retrieved vault content** (titles, quotes, answers) is shown before the user searches (tested).
+  - **While Remote Access is on,** its switch is always there.
+  - **Remote Access:** turning it on asks first, and turning it off acts at once.
+  - **Keyboard and VoiceOver:** every control can be used with the keyboard alone, and VoiceOver reads each one (NFR-A11Y-01).
+  - **Focus:** opening the panel doesn't deactivate the frontmost app.
 
 **FR-G-02 Launch at login** · M · v0.1
 - Via `SMAppService`; on by default after setup, with the user's consent.
@@ -574,7 +585,7 @@
 
 **FR-G-06 Appearance** · S · v0.1
 - Settings ▸ General ▸ Appearance: **Automatic** (follow macOS, the default), **Light** or **Dark**, so Funes can stay dark while macOS is light, or the other way round.
-- Applies at once, app-wide (`NSApp.appearance`, set at launch before anything shows): the main window, Settings, the panels, the capture box, the menu bar menu, sheets and alerts. The app menus (File, Edit…) follow the menu bar, which macOS draws. Kept across relaunches. EK Bridge uses the same words.
+- Applies at once, app-wide (`NSApp.appearance`, set at launch before anything shows): the main window, Settings, the panels, the capture box, the menu bar panel and its right-click menu, sheets and alerts. The app menus (File, Edit…) follow the menu bar, which macOS draws. Kept across relaunches. EK Bridge uses the same words.
 
 ### Intelligence (FR-AI)
 
