@@ -210,8 +210,9 @@ struct RecentPulseChart: View {
     /// Every 6 hours by the clock (12:00, 18:00, 00:00, 06:00), plus "now" under the last bar.
     private var axisHours: [Date] {
         let calendar = Calendar.current
-        // Not within 4 hours of "now" or at the left edge, where the labels would collide or clip.
-        let sixes = hours.dropFirst().dropLast(4).filter { calendar.component(.hour, from: $0.date) % 6 == 0 }
+        // Not within 5 hours of "now" or at the left edge, where the labels would collide or clip
+        // ("12:00 PM" 4 hours before "now" touches it).
+        let sixes = hours.dropFirst().dropLast(5).filter { calendar.component(.hour, from: $0.date) % 6 == 0 }
             .map { $0.date.addingTimeInterval(1_800) }
         return sixes + [hours.last!.date.addingTimeInterval(1_800)]
     }

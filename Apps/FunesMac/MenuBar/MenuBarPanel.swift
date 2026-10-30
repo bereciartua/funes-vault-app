@@ -150,19 +150,34 @@ final class MenuBarPanelController {
         let x = min(max(icon.midX - Self.width / 2, visible.minX + 8), visible.maxX - Self.width - 8)
         let top = min(icon.minY, visible.maxY) - 6
         panel.setFrame(NSRect(x: x, y: top - height, width: Self.width, height: height), display: true)
+        fitContentView()
         panel.invalidateShadow()
     }
 
+    /// The content view always fills the panel. A resize that AppKit applies late leaves it at its
+    /// old height, which shows as an empty strip at the top and the footer cut off.
+    private func fitContentView() {
+        guard let content = panel.contentView else { return }
+        let bounds = NSRect(origin: .zero, size: panel.frame.size)
+        if content.frame != bounds { content.frame = bounds }
+    }
+
     /// The content's height changed (a card arrived, the field grew, results showed): the panel
-    /// keeps its top under the icon.
+    /// keeps its top under the icon. SwiftUI reports it during its own layout, and resizing the
+    /// window from there is applied unreliably, so the resize waits a turn.
     private func heightChanged(_ height: CGFloat) {
         lastHeight = ceil(height)
-        guard panel.isVisible, abs(panel.frame.height - lastHeight) > 0.5 else { return }
+        DispatchQueue.main.async { [weak self] in MainActor.assumeIsolated { self?.fitHeight() } }
+    }
+
+    private func fitHeight() {
+        guard panel.isVisible, abs(panel.frame.height - min(lastHeight, model.maxHeight)) > 0.5 else { return }
         #if FUNES_UI_REVIEW
         if reviewAnchored {
             let top = panel.frame.maxY
             panel.setFrame(NSRect(x: panel.frame.minX, y: top - min(lastHeight, model.maxHeight), width: Self.width,
                                   height: min(lastHeight, model.maxHeight)), display: true)
+            fitContentView()
             return
         }
         #endif
