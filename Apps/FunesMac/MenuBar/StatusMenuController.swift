@@ -1,220 +1,99 @@
 import AppKit
 import BridgeUI
-import Carbon.HIToolbox
-import BridgeKitCore
 import FunesCore
 
-/// The menu bar item and its menu (04-ux-mac.md, FR-G-01). The menu is rebuilt each time it
-/// opens, so counts and countdowns are current.
+/// The menu bar item (04-ux-mac.md ▸ Menu bar, FR-G-01, ADR-0029): a click opens the panel, or
+/// closes it; a right click or Control-click shows a short native menu, so the window, Settings
+/// and Quit are always one native menu away.
 @MainActor
-final class StatusMenuController: NSObject, NSMenuDelegate {
+final class StatusMenuController: NSObject {
     private let model: AppModel
     private let item: NSStatusItem
+    let panel: MenuBarPanelController
     /// Check for Updates…; nil hides it (a build that can't update itself).
-    var checkForUpdates: (() -> Void)?
-    var updatesAvailable: () -> Bool = { false }
+    var checkForUpdates: (() -> Void)? {
+        didSet { panel.checkForUpdates = checkForUpdates }
+    }
+    var updatesAvailable: () -> Bool = { false } {
+        didSet { panel.updatesAvailable = updatesAvailable }
+    }
 
-    init(model: AppModel) {
+    init(model: AppModel, panel: MenuBarPanelController) {
         self.model = model
+        self.panel = panel
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
-        let menu = NSMenu()
-        menu.delegate = self
-        menu.autoenablesItems = false
-        item.menu = menu
-        item.button?.setAccessibilityTitle(String(localized: "Funes Vault"))
+        if let button = item.button {
+            button.target = self
+            button.action = #selector(clicked(_:))
+            button.sendAction(on: [.leftMouseDown, .rightMouseDown])
+            button.setAccessibilityTitle(String(localized: "Funes Vault"))
+        }
         update()
     }
 
-    /// Redraws the icon; the menu itself is built when it opens.
+    /// Redraws the icon, its tooltip and VoiceOver's label.
     func update() {
         let state = model.iconState
         let remote = model.remoteAccess.enabled
         item.button?.image = MenuBarIcon.image(state, remote: remote)
-        item.button?.setAccessibilityLabel(remote ? state.accessibilityLabel + ", " + String(localized: "Remote Access on")
-                                                  : state.accessibilityLabel)
-        var tip = statusLine
-        if remote { tip += "\n" + model.remoteAccess.menuLine }
-        if model.inboxCount > 0 { tip += "\n" + String(localized: "Inbox: \(model.inboxCount)") }
-        if !model.pending.isEmpty { tip += "\n" + String(localized: "Pending requests: \(model.pending.count)") }
+        // VoiceOver hears what the tooltip says.
+        let tip = tooltip
+        item.button?.setAccessibilityLabel(([remote ? state.accessibilityLabel + ", " + String(localized: "Remote Access on")
+                                                    : state.accessibilityLabel] + tip.components(separatedBy: "\n"))
+            .joined(separator: ", "))
         item.button?.toolTip = tip
+        if panel.isShown { panel.model.vaultChanged() }
     }
 
-    func menuNeedsUpdate(_ menu: NSMenu) {
-        model.tick()
-        menu.removeAllItems()
-        // A status item's menu takes the menu bar's appearance; this one follows Settings ▸
-        // General ▸ Appearance like the rest of the app (FR-G-06). The icon stays the menu bar's.
+    /// Opens the panel under the icon (FUNES_DEBUG_OPEN=panel in a Debug build).
+    func showPanel() {
+        if let button = item.button { panel.show(from: button) }
+    }
+
+    /// "Agents: Paused until 14:00", then Remote Access, what waits and the Inbox.
+    var tooltip: String {
+        var lines = [String(localized: "Agents: \(model.agentsTile.status(now: model.now))")]
+        if model.remoteAccess.enabled { lines.append(String(localized: "Remote Access: \(model.remoteTile.status)")) }
+        let waiting = model.waiting(now: Date()).cards.count
+        if waiting > 0 { lines.append(String(localized: "Waiting for you: \(waiting)")) }
+        if model.inboxCount > 0 { lines.append(String(localized: "Inbox: \(model.inboxCount)")) }
+        return lines.joined(separator: "\n")
+    }
+
+    @objc private func clicked(_ sender: NSStatusBarButton) {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseDown || event?.modifierFlags.contains(.control) == true {
+            panel.close()
+            showMenu(from: sender)
+        } else {
+            panel.toggle(from: sender)
+        }
+    }
+
+    /// Open Funes Vault ⌘O, Settings… ⌘,, Check for Updates… (a copy that can update itself) and
+    /// Quit Funes Vault ⌘Q.
+    private func showMenu(from button: NSStatusBarButton) {
+        let menu = NSMenu()
         menu.appearance = NSApp.appearance
-
-        // While something waits for the user, the first item answers it (UX review F3).
-        if let review = reviewTitle {
-            let item = NSMenuItem(title: review, action: #selector(reviewRequest), keyEquivalent: "")
-            item.target = self
-            if let shortcut = model.preferences.reviewShortcut { Self.setKeyEquivalent(item, shortcut) }
-            menu.addItem(item)
-            menu.addItem(.separator())
-        }
-
-        let status = NSMenuItem(title: statusLine, action: #selector(openAgents), keyEquivalent: "")
-        status.target = self
-        menu.addItem(status)
-        if model.remoteAccess.enabled {
-            let remote = NSMenuItem(title: model.remoteAccess.menuLine, action: #selector(openRemoteAccess), keyEquivalent: "")
-            remote.target = self
-            remote.image = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)
-            menu.addItem(remote)
-            let off = NSMenuItem(title: String(localized: "Turn Off Remote Access"), action: #selector(turnOffRemote),
-                                 keyEquivalent: "")
-            off.target = self
-            menu.addItem(off)
-        }
-        menu.addItem(.separator())
-
-        let remember = NSMenuItem(title: String(localized: "Remember…"), action: #selector(remember), keyEquivalent: "m")
-        remember.keyEquivalentModifierMask = [.option, .command]
-        remember.target = self
-        menu.addItem(remember)
-
-        let inbox = NSMenuItem(title: String(localized: "Inbox"), action: #selector(openInbox), keyEquivalent: "")
-        inbox.target = self
-        if model.inboxCount > 0 { inbox.badge = NSMenuItemBadge(count: model.inboxCount) }
-        menu.addItem(inbox)
-
-        let pending = NSMenuItem(title: String(localized: "Pending requests"), action: nil, keyEquivalent: "")
-        if model.pending.isEmpty {
-            pending.isEnabled = false
-        } else {
-            pending.badge = NSMenuItemBadge(count: model.pending.count)
-            let submenu = NSMenu()
-            for request in model.pending {
-                let title = "\(request.agentName) · \(request.summary(at: model.now))"
-                let row = NSMenuItem(title: title, action: #selector(openPending(_:)), keyEquivalent: "")
-                row.target = self
-                row.representedObject = request.id
-                row.isEnabled = request.status == .needsApproval
-                submenu.addItem(row)
-            }
-            submenu.addItem(.separator())
-            let all = NSMenuItem(title: String(localized: "Show in Activity"), action: #selector(openActivity), keyEquivalent: "")
-            all.target = self
-            submenu.addItem(all)
-            pending.submenu = submenu
-        }
-        menu.addItem(pending)
-        menu.addItem(.separator())
-
-        if let until = model.pausedUntil {
-            let resume = NSMenuItem(title: String(localized: "Resume Funes Vault"), action: #selector(resume), keyEquivalent: "")
-            resume.target = self
-            menu.addItem(resume)
-            let note = NSMenuItem(title: Self.pausedText(until, now: model.now), action: nil, keyEquivalent: "")
-            note.isEnabled = false
-            menu.addItem(note)
-        } else {
-            let pause = NSMenuItem(title: String(localized: "Pause Funes Vault"), action: nil, keyEquivalent: "")
-            let submenu = NSMenu()
-            for (duration, title) in [(FunesPause.Duration.oneHour, String(localized: "For 1 Hour")),
-                                      (.untilTomorrow, String(localized: "Until Tomorrow")),
-                                      (.untilResumed, String(localized: "Until I Resume"))] {
-                let choice = NSMenuItem(title: title, action: #selector(pause(_:)), keyEquivalent: "")
-                choice.target = self
-                choice.representedObject = duration.rawValue
-                submenu.addItem(choice)
-            }
-            pause.submenu = submenu
-            menu.addItem(pause)
-        }
         let open = NSMenuItem(title: String(localized: "Open Funes Vault"), action: #selector(openWindow), keyEquivalent: "o")
         open.target = self
         menu.addItem(open)
-        menu.addItem(.separator())
-
-        if let checkForUpdates, updatesAvailable() {
-            _ = checkForUpdates
-            let updates = NSMenuItem(title: String(localized: "Check for Updates…"), action: #selector(checkUpdates),
-                                     keyEquivalent: "")
-            updates.target = self
-            menu.addItem(updates)
-        }
         let settings = NSMenuItem(title: String(localized: "Settings…"), action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
+        if checkForUpdates != nil, updatesAvailable() {
+            let updates = NSMenuItem(title: String(localized: "Check for Updates…"), action: #selector(checkUpdates), keyEquivalent: "")
+            updates.target = self
+            menu.addItem(updates)
+        }
+        menu.addItem(.separator())
         menu.addItem(withTitle: String(localized: "Quit Funes Vault"), action: #selector(NSApplication.terminate(_:)),
                      keyEquivalent: "q")
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.maxY + 5), in: button)
     }
 
-    /// "Review Cursor's request · 0:13…" for the panel's current item, or the newest pending request;
-    /// nil when nothing waits.
-    private var reviewTitle: String? {
-        if let current = model.services.approvals.queue.current {
-            let agent = current.shortLabel.components(separatedBy: " · ").first ?? current.shortLabel
-            if let seconds = model.services.approvals.queue.remaining(current) {
-                return String(localized: "Review \(agent)'s Request · \(ApprovalQueue.countdown(seconds))…")
-            }
-            return String(localized: "Review \(agent)'s Request…")
-        }
-        guard let newest = model.pending.first(where: { $0.status == .needsApproval }) else { return nil }
-        return String(localized: "Review \(newest.agentName)'s Request · \(newest.minutesLeft(at: model.now)) min left…")
-    }
-
-    /// Shows the global shortcut next to the item (it works from any app, menu open or not).
-    private static func setKeyEquivalent(_ item: NSMenuItem, _ shortcut: Shortcut) {
-        item.keyEquivalent = Shortcut.keyName(shortcut.keyCode).lowercased()
-        var mask: NSEvent.ModifierFlags = []
-        if shortcut.modifiers & UInt32(cmdKey) != 0 { mask.insert(.command) }
-        if shortcut.modifiers & UInt32(optionKey) != 0 { mask.insert(.option) }
-        if shortcut.modifiers & UInt32(controlKey) != 0 { mask.insert(.control) }
-        if shortcut.modifiers & UInt32(shiftKey) != 0 { mask.insert(.shift) }
-        item.keyEquivalentModifierMask = mask
-    }
-
-    /// "Funes Vault is on · 3 agents" and its variants.
-    var statusLine: String {
-        let count = model.agents.count
-        if !model.preferences.mcpEnabled { return String(localized: "Funes Vault is off") }
-        if model.pausedUntil != nil { return String(localized: "Funes Vault is paused") }
-        switch model.mcpStatus {
-        case .off: return String(localized: "Funes Vault is off")
-        case .starting: return String(localized: "Funes Vault is starting…")
-        case .listening:
-            return count == 1 ? String(localized: "Funes Vault is on · 1 agent")
-                              : String(localized: "Funes Vault is on · \(count) agents")
-        case .failed(.portInUse(let port)): return String(localized: "Port \(String(port)) is in use")
-        case .failed: return String(localized: "The agent server stopped")
-        }
-    }
-
-    static func pausedText(_ until: Date, now: Date) -> String {
-        if until == .distantFuture { return String(localized: "Paused until you resume") }
-        let calendar = Calendar.current
-        let time = until.formatted(date: .omitted, time: .shortened)
-        if calendar.isDate(until, inSameDayAs: now) { return String(localized: "Paused until \(time)") }
-        return String(localized: "Paused until tomorrow at \(time)")
-    }
-
-    // MARK: Actions
-
-    @objc private func openAgents() { model.show(.agents) }
-    @objc private func reviewRequest() { model.reviewRequest() }
-    @objc private func openRemoteAccess() { model.show(.remoteAccess) }
-    /// At once, without asking: the port closes and every cloud agent is cut off.
-    @objc private func turnOffRemote() { model.remoteAccess.apply(false) }
-    @objc private func remember() { model.openCapture() }
-    @objc private func openInbox() { model.show(.inbox) }
-    @objc private func openActivity() { model.showActivity(nil) }
     @objc private func openWindow() { model.showHome() }
     @objc private func openSettings() { model.openSettings(nil) }
-    @objc private func resume() { model.resume() }
     @objc private func checkUpdates() { checkForUpdates?() }
-
-    @objc private func openPending(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? UUID else { return }
-        model.openPendingRequest(id)
-    }
-
-    @objc private func pause(_ sender: NSMenuItem) {
-        guard let raw = sender.representedObject as? String, let duration = FunesPause.Duration(rawValue: raw) else { return }
-        model.pause(duration)
-    }
 }

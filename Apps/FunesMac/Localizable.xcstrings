@@ -236,6 +236,9 @@
     "%@ suggests a memory for Funes" : {
 
     },
+    "%@ to answer" : {
+
+    },
     "%@ to review" : {
 
     },
@@ -264,6 +267,9 @@
           }
         }
       }
+    },
+    "%@ wants to connect" : {
+
     },
     "%@ wants to connect as %@" : {
       "localizations" : {
@@ -296,6 +302,12 @@
       }
     },
     "%@ wants to read your memories" : {
+
+    },
+    "%@ wants to save a correction" : {
+
+    },
+    "%@ wants to save a memory" : {
 
     },
     "%@ wants to suggest memories" : {
@@ -673,6 +685,9 @@
     "%lld requests refused" : {
 
     },
+    "%lld requests waiting for you" : {
+
+    },
     "%lld requests waiting in Funes" : {
 
     },
@@ -702,6 +717,9 @@
 
     },
     "%lld selected" : {
+
+    },
+    "%lld shared" : {
 
     },
     "%lld shared (%@)" : {
@@ -808,6 +826,9 @@
 
     },
     "1 request refused" : {
+
+    },
+    "1 request waiting for you" : {
 
     },
     "1 suggestion waiting for you" : {
@@ -1135,6 +1156,12 @@
     "Agents' access is set per category. Built-in categories can be renamed; your own can also be deleted." : {
 
     },
+    "Agents' requests are refused. Capture and the Inbox keep working." : {
+
+    },
+    "Agents: %@" : {
+
+    },
     "All" : {
 
     },
@@ -1421,6 +1448,9 @@
 
     },
     "Asked for more access" : {
+
+    },
+    "Asks before turning Remote Access on" : {
 
     },
     "At" : {
@@ -2379,6 +2409,9 @@
     "Fetch Funes Vault's health URL through the tunnel" : {
 
     },
+    "Fields suggested by %@" : {
+
+    },
     "File" : {
 
     },
@@ -2410,6 +2443,9 @@
 
     },
     "Five iPhones are paired, the most Funes Vault allows. Remove one to pair another." : {
+
+    },
+    "Fix…" : {
 
     },
     "For 1 Hour" : {
@@ -2527,25 +2563,13 @@
     "Funes Vault always stays in the menu bar. Without the Dock icon, it shows in the Dock only while a window is open." : {
 
     },
-    "Funes Vault is off" : {
-
-    },
-    "Funes Vault is on · %lld agents" : {
-
-    },
-    "Funes Vault is on · 1 agent" : {
-
-    },
-    "Funes Vault is paused" : {
-
-    },
-    "Funes Vault is starting…" : {
-
-    },
     "Funes Vault paused" : {
 
     },
     "Funes Vault resumed" : {
+
+    },
+    "Funes Vault, can't connect" : {
 
     },
     "Funes Vault, off" : {
@@ -2784,6 +2808,9 @@
 
     },
     "Hostname for %@" : {
+
+    },
+    "Hour" : {
 
     },
     "How do you like AI assistants to collaborate with you?" : {
@@ -3114,6 +3141,22 @@
     "Last 12 weeks" : {
 
     },
+    "Last 24 hours" : {
+
+    },
+    "Last 24 hours: %@, %lld shared, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Last 24 hours: %1$@, %2$lld shared, %3$@"
+          }
+        }
+      }
+    },
+    "Last 24 hours: nothing in or out" : {
+
+    },
     "Last 30 days" : {
 
     },
@@ -3299,6 +3342,9 @@
 
     },
     "Model" : {
+
+    },
+    "More" : {
 
     },
     "More Time" : {
@@ -3573,6 +3619,9 @@
     "Not said" : {
 
     },
+    "Not set up" : {
+
+    },
     "Not signed in: run `%@` in Terminal and sign in with %@" : {
       "localizations" : {
         "en" : {
@@ -3623,6 +3672,9 @@
     "Nothing matches these filters." : {
 
     },
+    "Nothing matches." : {
+
+    },
     "Nothing new this week" : {
 
     },
@@ -3668,6 +3720,9 @@
     "Off" : {
 
     },
+    "Off · agents can't connect" : {
+
+    },
     "Off: cloud agents can't use this agent." : {
 
     },
@@ -3699,6 +3754,30 @@
 
     },
     "On your iPhone, open Funes Vault, tap Pair with Mac and scan this code." : {
+
+    },
+    "On · %lld agents" : {
+
+    },
+    "On · %lld cloud agents" : {
+
+    },
+    "On · 1 agent" : {
+
+    },
+    "On · 1 cloud agent" : {
+
+    },
+    "On · not listening" : {
+
+    },
+    "On · told it's paused" : {
+
+    },
+    "On · tunnel down" : {
+
+    },
+    "On · until %@" : {
 
     },
     "On, but Funes is paused" : {
@@ -3756,6 +3835,12 @@
 
     },
     "Opened the Inbox" : {
+
+    },
+    "Opens Agents" : {
+
+    },
+    "Opens Remote Access" : {
 
     },
     "Opens the capture box from any app. Funes doesn't need Accessibility access for it." : {
@@ -3869,9 +3954,6 @@
     "Pause" : {
 
     },
-    "Pause Funes Vault" : {
-
-    },
     "Paused" : {
 
     },
@@ -3884,10 +3966,10 @@
     "Paused until you resume" : {
 
     },
-    "Pending requests" : {
+    "Pauses all agents" : {
 
     },
-    "Pending requests: %lld" : {
+    "Pending requests" : {
 
     },
     "Period" : {
@@ -4000,6 +4082,9 @@
 
     },
     "Quick capture" : {
+
+    },
+    "Quiet: nothing in or out" : {
 
     },
     "Quit Funes Vault" : {
@@ -4162,6 +4247,12 @@
     "Remember" : {
 
     },
+    "Remember something, or search" : {
+
+    },
+    "Remember something, or search…" : {
+
+    },
     "Remember…" : {
 
     },
@@ -4202,6 +4293,9 @@
 
     },
     "Remote Access, %@" : {
+
+    },
+    "Remote Access: %@" : {
 
     },
     "Remote token" : {
@@ -4372,7 +4466,13 @@
     "Resume Funes Vault" : {
 
     },
+    "Resumes all agents" : {
+
+    },
     "Retry" : {
+
+    },
+    "Return remembers it in your Inbox. Command-Return searches your vault." : {
 
     },
     "Return remembers it. Command-Return searches your vault." : {
@@ -4384,27 +4484,7 @@
     "Revert" : {
 
     },
-    "Review %@'s Request · %@…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Review %1$@'s Request · %2$@…"
-          }
-        }
-      }
-    },
-    "Review %@'s Request · %lld min left…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Review %1$@'s Request · %2$lld min left…"
-          }
-        }
-      }
-    },
-    "Review %@'s Request…" : {
+    "Review" : {
 
     },
     "Review %@'s request" : {
@@ -4429,6 +4509,9 @@
 
     },
     "Review your Inbox" : {
+
+    },
+    "Review: %@" : {
 
     },
     "Review…" : {
@@ -4529,6 +4612,9 @@
 
     },
     "Saving cancels %@'s pending requests; it can ask again." : {
+
+    },
+    "Saving…" : {
 
     },
     "Says “%@” is no longer true" : {
@@ -4656,6 +4742,9 @@
     "Searched on this Mac only (above cloud limit)." : {
 
     },
+    "Searching…" : {
+
+    },
     "Secret" : {
 
     },
@@ -4739,10 +4828,16 @@
     "Set Up Remote Access…" : {
 
     },
+    "Set Up…" : {
+
+    },
     "Set up Funes Vault" : {
 
     },
     "Set up for" : {
+
+    },
+    "Settings" : {
 
     },
     "Settings ▸ Advanced brings it back" : {
@@ -4835,6 +4930,12 @@
     "Show All %lld Agents" : {
 
     },
+    "Show All %lld in Vault" : {
+
+    },
+    "Show All Pending Requests" : {
+
+    },
     "Show All in Activity" : {
 
     },
@@ -4842,6 +4943,9 @@
 
     },
     "Show Only Agents Found on This Mac" : {
+
+    },
+    "Show Problems" : {
 
     },
     "Show Setup" : {
@@ -5090,6 +5194,12 @@
 
     },
     "Still True…" : {
+
+    },
+    "Still answerable · %lld min left" : {
+
+    },
+    "Still answerable, %lld minutes left" : {
 
     },
     "Still processing. It can be saved once it's done." : {
@@ -5776,13 +5886,13 @@
     "Turn Off" : {
 
     },
-    "Turn Off Remote Access" : {
-
-    },
     "Turn On" : {
 
     },
     "Turn On Remote Access" : {
+
+    },
+    "Turn On…" : {
 
     },
     "Turn off" : {
@@ -5801,6 +5911,9 @@
 
     },
     "Turn on Remote Access?" : {
+
+    },
+    "Turns Remote Access off now" : {
 
     },
     "Type" : {
@@ -5995,6 +6108,9 @@
     "Waiting for you" : {
 
     },
+    "Waiting for you: %lld" : {
+
+    },
     "Waiting in Inbox" : {
 
     },
@@ -6163,6 +6279,9 @@
 
     },
     "Your answers" : {
+
+    },
+    "Your last note wasn't saved" : {
 
     },
     "Your memory, shared only as you allow" : {
@@ -6431,6 +6550,12 @@
     "nothing" : {
 
     },
+    "nothing in or out" : {
+
+    },
+    "now" : {
+
+    },
     "occupation" : {
 
     },
@@ -6596,6 +6721,15 @@
 
     },
     "⌘⏎" : {
+
+    },
+    "⏎ Open · Esc Back" : {
+
+    },
+    "⏎ Open · ⌘⏎ Ask · Esc Back" : {
+
+    },
+    "⏎ Remember · ⌘⏎ Search" : {
 
     },
     "⏎ Remember · ⌘⏎ Search vault" : {

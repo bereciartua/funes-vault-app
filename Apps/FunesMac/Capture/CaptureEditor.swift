@@ -94,7 +94,7 @@ struct CaptureField: View {
 
     /// "⏎ Save · ⇧⏎ New line · Esc Cancel" and where it goes, with the Cloud chip.
     var footer: some View {
-        CaptureFooter(box: box, keys: style == .box ? String(localized: "⏎ Save · ⇧⏎ New line · Esc Cancel")
+        CaptureFooter(cloudProvider: box.cloudProvider, keys: style == .box ? String(localized: "⏎ Save · ⇧⏎ New line · Esc Cancel")
                                                      : String(localized: "⏎ Remember · ⌘⏎ Search vault"))
     }
 }
@@ -102,9 +102,11 @@ struct CaptureField: View {
 /// The keys, then "Goes to your Inbox", or "… · fields suggested by Anthropic" with a Cloud chip
 /// while a cloud model proposes the fields (principle 7).
 struct CaptureFooter: View {
-    let box: CaptureBoxModel
+    let cloudProvider: String?
     let keys: String
     var centered = false
+    /// The menu bar panel's narrow field: "Goes to your Inbox" and the Cloud chip, the provider in its tooltip.
+    var compact = false
 
     var body: some View {
         HStack(spacing: 6) {
@@ -114,8 +116,10 @@ struct CaptureFooter: View {
             } else {
                 Spacer()
             }
-            if let provider = box.cloudProvider {
-                Text(String(localized: "Goes to your Inbox · fields suggested by \(provider)")).foregroundStyle(.secondary)
+            if let provider = cloudProvider {
+                Text(compact ? String(localized: "Goes to your Inbox") : String(localized: "Goes to your Inbox · fields suggested by \(provider)"))
+                    .foregroundStyle(.secondary)
+                    .help(String(localized: "Fields suggested by \(provider)"))
                 Text(String(localized: "Cloud"))
                     .font(.caption2.weight(.semibold))
                     .padding(.horizontal, 6)

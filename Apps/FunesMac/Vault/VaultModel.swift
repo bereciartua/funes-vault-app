@@ -6,7 +6,7 @@ import Observation
 /// The Vault's list: search, filters, sort and selection (FR-V-10, FR-V-11, FR-V-14). Lives as
 /// long as the app, so switching sections keeps the place.
 @MainActor @Observable
-final class VaultModel {
+final class VaultModel: AnswerCardSource {
     enum StatusChoice: String, CaseIterable, Identifiable {
         case active, archived, expired, recentlyDeleted
         var id: String { rawValue }
@@ -237,6 +237,8 @@ final class VaultModel {
         self.answer = .answered(answer, results: results, engine: answers?.engineName ?? "", limit: answers?.cloudLimitName ?? "")
     }
     #endif
+
+    func sourceTitle(_ id: UUID) -> String { memories.first { $0.id == id }?.title ?? "" }
 
     /// A claim's number: select the memory, and highlight the quote in its detail.
     func showSource(_ id: UUID, quote: String) {

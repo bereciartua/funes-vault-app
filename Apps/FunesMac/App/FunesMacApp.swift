@@ -95,8 +95,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.saveCapture = { saver.save($0) }
         let capture = CaptureController(model: model, saver: saver)
         self.capture = capture
-        model.openCapture = { capture.show() }
-        let hotKey = HotKey { capture.show() }
+        model.openCapture = { [weak self] in
+            self?.menu?.panel.close("capture box")
+            capture.show()
+        }
+        let hotKey = HotKey { model.openCapture() }
         hotKey.register(preferences.captureShortcut)
         self.hotKey = hotKey
         model.setCaptureShortcut = { [preferences] shortcut in
@@ -107,11 +110,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences.captureShortcut = shortcut
             return true
         }
-        // Review Request (⌃⌥⌘R): the keyboard path to a waiting panel, which never takes focus by itself.
+        // Review Request (⌃⌥⌘R): the keyboard path to a waiting panel, which never takes focus by
+        // itself. The menu bar panel's card that shows the shortcut does the same (WaitingItems).
         let approvals = environment.approvals
-        model.reviewRequest = {
-            guard !approvals.review() else { return }
-            if let newest = model.pending.first(where: { $0.status == .needsApproval }) { model.openPendingRequest(newest.id) }
+        model.reviewRequest = { [weak self] in
+            guard let target = model.waiting(now: Date()).reviewTarget else { return }
+            // The menu bar panel sits above every panel: it closes first, as a card's Review does.
+            self?.menu?.panel.close("review request")
+            model.review(target, signIn: { self?.signInPanel?.bringForward() })
         }
         let reviewHotKey = HotKey(id: 2) { model.reviewRequest() }
         reviewHotKey.register(preferences.reviewShortcut)
@@ -128,7 +134,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         NSApp.servicesProvider = capture
         NSUpdateDynamicServices()
-        let menu = StatusMenuController(model: model)
+        let panelModel = MenuBarPanelModel(app: model, saver: saver)
+        panelModel.reviewSignIn = { [weak self] in self?.signInPanel?.bringForward() }
+        let menu = StatusMenuController(model: model, panel: MenuBarPanelController(model: panelModel))
         self.menu = menu
         // Updates (FR-G-03): the relaunch waits while a panel is waiting for the user.
         let gate = UpdateRelaunchGate(pendingApprovals: { environment.approvals.queue.items.count },
@@ -210,11 +218,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         offerMoveToApplications()
         #if DEBUG
-        // FUNES_DEBUG_OPEN=home|vault|inbox|agents|activity|capture|settings[:tab] opens a window at launch.
+        // FUNES_DEBUG_OPEN=home|vault|inbox|agents|activity|capture|panel|settings[:tab] opens a window at launch.
         if let open = ProcessInfo.processInfo.environment["FUNES_DEBUG_OPEN"], !open.isEmpty {
             let parts = open.split(separator: ":").map(String.init)
             if parts[0] == "capture" {
                 model.openCapture()
+            } else if parts[0] == "panel" {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { menu.showPanel() }
             } else if parts[0] == "settings" {
                 model.openSettings(parts.count > 1 ? SettingsTab(rawValue: parts[1]) : nil)
             } else if let section = AppSection(rawValue: parts[0]) {

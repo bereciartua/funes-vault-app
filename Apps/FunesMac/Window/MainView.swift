@@ -1,3 +1,4 @@
+import BridgeUI
 import FunesCore
 import SwiftUI
 
@@ -260,12 +261,13 @@ struct SidebarStatus: View {
         switch model.iconState {
         case .normal, .needsYou: .green
         case .paused: .orange
+        case .cantConnect: Palette.warning
         case .off: .secondary
         }
     }
 
     private var text: String {
-        if let until = model.pausedUntil { return StatusMenuController.pausedText(until, now: model.now) }
+        if let until = model.pausedUntil { return AgentsTile.pausedText(until, now: model.now) }
         if !model.preferences.mcpEnabled { return String(localized: "Agents can't connect: the server is off") }
         switch model.mcpStatus {
         case .listening: return String(localized: "Agents can connect")

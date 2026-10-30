@@ -23,6 +23,13 @@ if grep -rn --include='*.swift' '\.embed(' Apps Packages | grep -v '/Tests/' | g
     echo "test.sh: call provider embedding models through ModelRouter.embed, not .embed(" >&2
     exit 1
 fi
+# The menu bar panel never answers anything: a card's Review only opens the item's own panel,
+# which keeps its arming delay and keys (FR-G-01, ADR-0029).
+if grep -nE '\.(withdraw|withdrawAll|answerSignIn|answerPairing|approve|deny|laterForAllSaves|apply\(suggestionID)\(|queue\.answer\(' \
+    Apps/FunesMac/MenuBar/*.swift Packages/BridgeUI/Sources/BridgeUI/MenuBarPanel.swift Packages/BridgeUI/Sources/BridgeUI/PanelField.swift; then
+    echo "test.sh: the menu bar panel must not answer requests, suggestions or sign-ins" >&2
+    exit 1
+fi
 swift test --package-path Packages/FunesProtocol
 swift test --package-path Packages/FunesCore
 # The overview's 50 ms budget on a 10,000-memory vault (FR-H-01), alone so no other test shares

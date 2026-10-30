@@ -108,6 +108,7 @@ Two tiles side by side. Each has an icon, a name, a status line and a switch or 
 | Off in Settings | "Off · agents can't connect" | **Turn On…** (Settings ▸ Connections) |
 
 - The states are checked in this order: off in Settings, can't connect, starting, paused, no agents yet, on.
+- **Settings ▸ Connections** is the coming settings redesign's group; until it lands, **Fix…** and **Turn On…** open Settings ▸ MCP, which holds the same switch and port.
 - **Turning the switch off** opens a small menu from it: **For 1 Hour**, **Until Tomorrow**, **Until I Resume**. Choosing one pauses all agents (FR-A-11); Esc or a click elsewhere closes the menu and leaves them on. **Turning it on** resumes at once.
 - **While paused,** a line sits under the tiles: "Agents' requests are refused. Capture and the Inbox keep working.", with **Resume**.
 - "4 agents" counts the agents set up and not removed, as the old status line did. It says nothing about which are connected now, paused on their own, or expired; the Agents section says that.
@@ -179,7 +180,7 @@ Two tiles side by side. Each has an icon, a name, a status line and a switch or 
 - **Click** an hour (or ⏎ on it) to open Activity filtered to that hour ("Showing 09:00–10:00 only · Show Everything"). A refused dot (or **Show Problems**) opens Activity ▸ Problems for that hour. Either closes the panel.
 - **Data:** counts only, from `VaultStore.recentPulse` (FR-H-07). Never text or titles.
 - **Empty:** "Your pulse starts with your first memories" in a new vault.
-- **Accessibility:** a chart descriptor (VoiceOver's audio graph). It reads "Last 24 hours: 13 memories in, 27 shared, 1 request refused", and each hour reads its breakdown. Reduce Motion turns off the bars' drawing in, and Increase Contrast outlines the bars. Color is never the only cue: the hover text and VoiceOver say it in words.
+- **Accessibility:** a chart descriptor (VoiceOver's audio graph). It reads "Last 24 hours: 13 memories in, 27 shared, 1 request refused", and each hour reads its breakdown. Reduce Motion turns off the bars' drawing in, and Increase Contrast uses the strongest colors for the bars. Color is never the only cue: the hover text and VoiceOver say it in words.
 - **Hidden** while search results or an answer show.
 
 ### Footer
