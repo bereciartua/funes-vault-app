@@ -1,7 +1,7 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ is paused on your Mac: test its connection in Settings ▸ AI Models." : {
+    "%@ is paused on your Mac: test its connection in Settings ▸ AI ▸ Models & Accounts." : {
 
     },
     "%@ isn't signed in on your Mac." : {

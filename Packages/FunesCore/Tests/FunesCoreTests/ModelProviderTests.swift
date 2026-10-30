@@ -307,7 +307,7 @@ import Testing
     }
 }
 
-/// Task 3.8b: Settings ▸ AI Models ▸ Test connection sends only the made-up note.
+/// Task 3.8b: Settings ▸ AI ▸ Models & Accounts ▸ Test Connection sends only the made-up note.
 @Suite struct TestConnectionTests {
     @Test func classifiesTheMadeUpNote() async throws {
         let stub = StubURLProtocol.Session { _ in .json(ModelRouterTests.proposal(["personal_preferences"])) }

@@ -173,9 +173,9 @@ final class MenuBarPanelModel {
         app.show(section)
     }
 
-    func openSettings(_ tab: SettingsTab?) {
+    func openSettings(_ destination: SettingsDestination?) {
         closePanel()
-        app.openSettings(tab)
+        app.openSettings(destination)
     }
 
     func addAgent() {

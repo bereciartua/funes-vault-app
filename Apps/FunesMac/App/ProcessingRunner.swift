@@ -59,7 +59,7 @@ final class ProcessingRunner {
     /// Splitting is on with a local server or cloud model chosen (Apple on-device only
     /// classifies): new cards wait for their split. Read again on every kick and settings change.
     func updateSplitting() {
-        splitting.set(preferences.splitNewMemories && settings.chosenName != nil)
+        splitting.set(preferences.splitNewMemories && settings.newMemoriesModel != nil)
     }
 
     func kick() {

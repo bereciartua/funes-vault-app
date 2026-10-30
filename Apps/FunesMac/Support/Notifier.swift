@@ -2,7 +2,7 @@ import AppKit
 import UserNotifications
 
 /// The optional notifications (FR-L-04): a request expired unanswered, a suggestion is waiting, an
-/// agent was refused repeatedly, Remote Access's tunnel stopped. Each is off until turned on in Settings ▸ General; permission is
+/// agent was refused repeatedly, Remote Access's tunnel stopped. Each is off until turned on in Settings ▸ Notifications; permission is
 /// asked then, never at launch. A daily tidy-up with results says so (memory processing §9.5);
 /// permission is asked when it's turned on. Notifications name agents and counts, never memory or task text.
 @MainActor

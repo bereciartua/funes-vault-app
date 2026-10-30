@@ -102,7 +102,7 @@ Everything lives in `~/Library/Application Support/FunesVault/`, a folder only y
 | `remote-connections.json` | Remote Access's OAuth state: connected cloud apps (agent, app name, OAuth client, MCP URL, SHA-256 digests of their access and refresh tokens, expiry and use times) and registered OAuth clients. Fails closed: a wrong owner, mode or content makes OAuth unavailable, and the file is never overwritten. |
 | `activity/activity.jsonl` | Activity, append-only JSON Lines: times, actors (an agent, you, a device, the system), channels, events, outcomes, memory ids, reason codes, counts and the names of profile fields sent. Never memory text, task text, profile values or keys. Important rows (shares, refusals, changes) are kept 400 days and the rest 30 days by default (Settings ▸ Advanced). |
 | `mcp-endpoint.json` | `{"version":1,"url","port","pid","startedAt"}`, written while the MCP server listens and removed when it stops. The launcher reads it to find the server. |
-| `Backups/vault-YYYYMMDD-HHMM.sqlite` | Online backups: daily while **Settings ▸ Data ▸ Back up the vault every day** is on, keeping the last 7. Also `pre-<migration>-<time>.sqlite` before a schema migration and `pre-restore-<time>.sqlite` before a restore. |
+| `Backups/vault-YYYYMMDD-HHMM.sqlite` | Online backups: daily while **Settings ▸ Data & Backups ▸ Back up the vault every day** is on, keeping the last 7. Also `pre-<migration>-<time>.sqlite` before a schema migration and `pre-restore-<time>.sqlite` before a restore. |
 
 Elsewhere on the Mac:
 
@@ -300,11 +300,11 @@ flowchart TD
 - **Agent keywords:** `request_memory` takes up to 20 `keywords`, appended to the task for retrieval only. On the benchmark fixtures they raise recall@5 from 0.69 to 0.94 ([spike results](../spec/plans/spike-results.md#spike-2b-local-open-source-embeddings)).
 - **Fallback:** if the model can't load, or a memory has no vector yet, search is keyword-only. A release build fails rather than ship without the model.
 
-**A provider model as a second index** (Settings ▸ AI Models ▸ Embeddings, none by default). `OpenAICompatibleEmbedder` calls `/v1/embeddings` (OpenAI, Gemini's compatible endpoint, OpenRouter, Ollama, LM Studio), with query and document prefixes from `EmbeddingCatalog`. `ProviderEmbeddingIndexer` keeps a second vector for every memory within the cloud limit (every memory for a local server) in the same `embedding` table under `<provider>/<model>`, and deletes vectors that leave the limit; memories above it keep bge and say "Searched on this Mac only". Search uses the provider only once every memory is done, and is bge-only for that search when the provider fails.
+**A provider model as a second index** (Settings ▸ AI ▸ Features ▸ Search index, none by default). `OpenAICompatibleEmbedder` calls `/v1/embeddings` (OpenAI, Gemini's compatible endpoint, OpenRouter, Ollama, LM Studio), with query and document prefixes from `EmbeddingCatalog`. `ProviderEmbeddingIndexer` keeps a second vector for every memory within the cloud limit (every memory for a local server) in the same `embedding` table under `<provider>/<model>`, and deletes vectors that leave the limit; memories above it keep bge and say "Searched on this Mac only". Search uses the provider only once every memory is done, and is bge-only for that search when the provider fails.
 
 | Setting | Default | Effect |
 | --- | --- | --- |
-| Provider model | None | Qwen3-Embedding (Ollama, LM Studio), OpenAI text-embedding-3-small or -large, or another model. Funes says how many memories and roughly how many tokens it will send before it starts. |
+| Second index | None | Qwen3-Embedding (Ollama, LM Studio), OpenAI text-embedding-3-small or -large, or another model. Funes says how many memories and roughly how many tokens it will send before it starts. |
 | Embed agent requests with the cloud model | On | Off: agents' tasks and keywords are embedded with bge only. Always on for a local server. |
 | Calibrate… | Uncalibrated | A model Funes has no thresholds for keeps its 10 closest matches (plus keyword hits) until you run its made-up benchmark. |
 | Stop Using, or cancel | | Deletes the provider's vectors. |
@@ -441,11 +441,11 @@ Applying a correction checks its target's version first: a memory edited, archiv
 
 ### New memories settings
 
-All in **Settings ▸ AI Models ▸ New memories**.
+All in **Settings ▸ AI ▸ Features ▸ New memories**, except **Apply changes automatically**, which is on Features itself, under Review.
 
 | Setting | Default | Effect |
 | --- | --- | --- |
-| Model | Apple on-device | The provider or plan for classification and splitting. Apple on-device only classifies. |
+| Model | Apple on-device | The account or plan, and one of its models, for classification and splitting. Apple on-device only classifies. |
 | Propose a title, kind and categories | On | Off: captures get the built-in rules' proposal only. |
 | Split into separate memories | Off | Needs a local server, cloud model or plan. Splits captures, seed answers, agents' suggestions and direct writes, and imports, as above. Imports show how many requests it takes and offer **Import Without Splitting**. |
 | Apply changes automatically | Off | **Duplicates only** or **Everything except conflicts**, each capped per model at what it was measured accurate enough at (95% right on at least 20 items, on Spike E's fixtures). No model has reached either for New memories yet, so every piece waits for you; the levels apply to the tidy-up. Updates and retractions apply only from text you typed, never from an agent's or an import. |
@@ -478,7 +478,7 @@ flowchart TD
 - **Dismissals:** rejections and **Both Are True** are kept in `tidy_up_dismissal` by memory ids and a content hash, so they aren't asked again while those memories stay the same. A proposal whose memories change before you decide is dropped and looked at again, unless you have its card open.
 - **Auto-apply** follows `TidyUpAutoApply`: **Everything except conflicts** with Claude Opus 5.5 and Claude Haiku 5.5, **Duplicates only** with GPT-5.6-Terra, nothing with other models. The code-only rules aren't capped. Nothing is changed on the strength of what an agent wrote, except archiving an exact copy of it. A notification says how many changes were applied and how many wait, with no memory text.
 
-| Setting (Settings ▸ AI Models) | Default | Effect |
+| Setting (Settings ▸ AI ▸ Features) | Default | Effect |
 | --- | --- | --- |
 | Daily tidy-up | Off | **Daily**, at a time you pick (03:00 by default). Settings estimates the requests before the first run. |
 | Tidy-up model | Same as New memories | Any provider or plan except Apple on-device (which got 8 of 49 actions right in Spike E). With none, only the code-only rules run. |
@@ -519,10 +519,10 @@ flowchart TD
 - **Fallbacks.** Classification never fails: the chosen provider, then Apple on-device, then the rules. A provider that rate-limited is skipped until its backoff ends.
 - **Test Connection** classifies a made-up note among the built-in categories, never your own data.
 
-| Setting (Settings ▸ AI Models) | Default | Effect |
+| Setting (Settings ▸ AI ▸ Models & Accounts, and Privacy & Limits) | Default | Effect |
 | --- | --- | --- |
-| Providers | None | API keys go to the Keychain, this device only. **Load Models** and **Test Connection** send none of your data. |
-| Use your subscription | Not used | Shows whether Claude Code and Codex are installed and signed in, and the command to sign in. |
+| Accounts | None | API keys and local servers, each with its list of models. API keys go to the Keychain, this device only. **Load Models** and **Test Connection** send none of your data. |
+| Your plans | Not used | Claude (Claude Code) and ChatGPT (Codex), each with its list of models. Shows whether Claude Code and Codex are installed and signed in, and the command to sign in. |
 | Cloud limit | Internal | Public, Low, Internal, Sensitive, Restricted, Everything including Secret, or Nothing. One limit for every cloud task. Above Internal asks once to confirm. |
 | Cloud requests per day | 300 | 10 to 10,000, counted per local day in the vault and shared by New memories and the tidy-up; agents' input gets at most 40%. Embeddings and on-device models don't count. The first refusal of a day posts one notice. |
 
@@ -632,7 +632,7 @@ Other cloud agents (the Anthropic and OpenAI APIs, cloud coding agents) use the 
 
 ## Updates
 
-Funes Vault updates itself with [Sparkle](https://sparkle-project.org) 2.10.0, linked into the app target only. The feed is `https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml`. Each update is signed with Funes Vault's own EdDSA key (not EK Bridge's), and the app is signed with a Developer ID and notarized. The app checks once a day while **Settings ▸ Updates ▸ Check for updates every day** is on, never installs without a click, and waits to relaunch while a request is waiting for you. Only a copy signed with Funes Vault's Developer ID checks: a build from source never does, although the committed `Info.plist` has the feed and the public key (`SparkleUpdater.isConfigured` also checks the app's signature). The iPhone app comes from the App Store. Release steps are in [Maintaining](MAINTAINING.md).
+Funes Vault updates itself with [Sparkle](https://sparkle-project.org) 2.10.0, linked into the app target only. The feed is `https://github.com/bereciartua/funes-vault-app/releases/latest/download/appcast.xml`. Each update is signed with Funes Vault's own EdDSA key (not EK Bridge's), and the app is signed with a Developer ID and notarized. The app checks once a day while **Settings ▸ General ▸ Updates ▸ Check for updates every day** is on, never installs without a click, and waits to relaunch while a request is waiting for you. Only a copy signed with Funes Vault's Developer ID checks: a build from source never does, although the committed `Info.plist` has the feed and the public key (`SparkleUpdater.isConfigured` also checks the app's signature). The iPhone app comes from the App Store. Release steps are in [Maintaining](MAINTAINING.md).
 
 ## Threat model
 

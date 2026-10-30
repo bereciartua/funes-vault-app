@@ -474,7 +474,7 @@ extension ModelRouter {
     public static var testCategories: [MemoryCategory] { MemoryCategory.builtins }
 
     /// One tiny classification with `provider`, through the same guardrails as every call, within
-    /// the generation timeout (Settings ▸ AI Models ▸ Test connection). Throws the provider's error.
+    /// the generation timeout (Settings ▸ AI ▸ Models & Accounts ▸ Test Connection). Throws the provider's error.
     public static func testConnection(_ provider: any GenerationProvider,
                                       timeout: Duration = .seconds(20)) async throws -> CaptureProposal {
         let request = ClassificationPrompt.request(testNote, categories: testCategories)

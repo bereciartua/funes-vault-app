@@ -2,7 +2,7 @@ import Foundation
 import FunesProtocol
 import Synchronization
 
-/// Settings ▸ AI Models ▸ Apply changes automatically (memory processing §5.7, §9.5), shared by
+/// Settings ▸ AI ▸ Features ▸ Apply changes automatically (memory processing §5.7, §9.5), shared by
 /// New memories and the tidy-up.
 public enum AutoApplyLevel: Int, Sendable, Hashable, Comparable, Codable, CaseIterable {
     case off = 0

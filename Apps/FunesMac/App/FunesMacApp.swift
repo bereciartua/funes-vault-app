@@ -83,8 +83,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         mainWindow.visibilityChanged = { [weak self] in self?.updateActivationPolicy() }
         settingsWindow.visibilityChanged = { [weak self] in self?.updateActivationPolicy() }
         model.openMainWindow = { mainWindow.show() }
-        model.openSettings = { tab in
-            if let tab { model.settingsTab = tab }
+        model.openSettings = { destination in
+            model.goToSettings(destination)
             settingsWindow.show()
         }
         model.openPendingRequest = { id in Task { await environment.approvals.open(requestID: id) } }
@@ -149,7 +149,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.updatesAvailable = { model.updater.isAvailable() }
         model.data.integrityFailed = { [notifier] in
             notifier.post(.refused, title: String(localized: "The vault needs attention"),
-                          body: String(localized: "Its weekly check found a problem. Restore a backup in Settings ▸ Data."))
+                          body: String(localized: "Its weekly check found a problem. Restore a backup in Settings ▸ Data & Backups."))
         }
         model.data.startJobs()
         // Find the subscription CLIs first, so the processing queue and the tidy-up can use a
@@ -218,7 +218,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         offerMoveToApplications()
         #if DEBUG
-        // FUNES_DEBUG_OPEN=home|vault|inbox|agents|activity|capture|panel|settings[:tab] opens a window at launch.
+        // FUNES_DEBUG_OPEN=home|vault|inbox|agents|activity|capture|panel|settings[:destination] opens a window at launch.
         if let open = ProcessInfo.processInfo.environment["FUNES_DEBUG_OPEN"], !open.isEmpty {
             let parts = open.split(separator: ":").map(String.init)
             if parts[0] == "capture" {
@@ -226,7 +226,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             } else if parts[0] == "panel" {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { menu.showPanel() }
             } else if parts[0] == "settings" {
-                model.openSettings(parts.count > 1 ? SettingsTab(rawValue: parts[1]) : nil)
+                model.openSettings(parts.count > 1 ? SettingsDestination(rawValue: parts[1]) : nil)
             } else if let section = AppSection(rawValue: parts[0]) {
                 model.show(section)
                 if parts.count > 2, let tab = AgentTab(rawValue: parts[2]) { model.agentTab = tab }
@@ -333,7 +333,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// The MCP server switch (Settings ▸ MCP). Remote Access runs only while it's on: the remote
+    /// The MCP server switch (Settings ▸ Agent Server). Remote Access runs only while it's on: the remote
     /// listener is a second door to the same server.
     private func setServer(_ on: Bool) {
         preferences.mcpEnabled = on
@@ -400,7 +400,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Another port (Settings ▸ MCP): the listener moves now. Setups that start `funes-mcp` find it
+    /// Another port (Settings ▸ Agent Server): the listener moves now. Setups that start `funes-mcp` find it
     /// through the endpoint file; setups that name the address need copying again.
     private func setPort(_ port: Int) {
         guard let mcp, FunesMCPConfiguration.portRange.contains(port), port != mcp.port else { return }

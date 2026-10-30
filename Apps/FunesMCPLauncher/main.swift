@@ -73,7 +73,7 @@ BridgeLauncher.run(LauncherConfiguration(
             """,
         agentIDNotUUID: "--agent takes the agent's ID (a UUID), not its name. "
             + "Copy the setup from the agent's page in \(app).",
-        squatter: "Another program is using \(app)'s port. Open \(app) and check Settings ▸ MCP.",
+        squatter: "Another program is using \(app)'s port. Open \(app) and check Settings ▸ Agent Server.",
         rejected: "\(app) doesn't recognize this agent's key. Open the agent in \(app) and check its key.",
         rejectedLog: "the key was rejected. Open the agent in \(app) and check its key.",
         urlMismatch: { target, served in

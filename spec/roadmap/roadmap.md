@@ -183,6 +183,24 @@ A click on the menu bar icon opens a panel instead of a menu: what waits for you
 - **A "can't connect" icon state.**
 - **`recentPulse`,** the last 24 hours by hour, on the Mac only.
 
+### v0.8: Settings (Phase 11)
+A Settings window a first-time user can find their way around: a sidebar, AI split into what it does, where models come from and what may leave the Mac, and a different model per task on one account ([ADR-0030](../architecture/decisions/0030-settings-window.md)). About 3 weekends. (v0.7, the menu bar panel of Phase 10, landed first.)
+
+| Step | Plan | Exit criteria |
+|---|---|---|
+| **11.0 Prototype** | [plan](../plans/phase-11-settings.md#110-navigation-prototype--⅛-weekend) | The sidebar holds its width and can't collapse on every supported macOS, or the fallback is chosen |
+| **11.1 Accounts and models** | [plan](../plans/phase-11-settings.md#111-accounts-and-models--¾-weekend) | The author's settings convert; three models on one account, one per task; tests green |
+| **11.2 The window** | [plan](../plans/phase-11-settings.md#112-the-window--½-weekend) | Eleven panes, destinations and deep links; every moved control works as before |
+| **11.3 Features** | [plan](../plans/phase-11-settings.md#113-ai--features--½-weekend) | Four job rows and pages, with their disclosure lines |
+| **11.4 Models & Accounts** | [plan](../plans/phase-11-settings.md#114-ai--models--accounts--½-weekend) | Account and plan pages, Add Account…, removal that asks |
+| **11.5 Privacy & Limits** | [plan](../plans/phase-11-settings.md#115-ai--privacy--limits--¼-weekend) | The cloud limit, the cap and What AI features send |
+| **11.6 Ship** | [plan](../plans/phase-11-settings.md#116-words-snapshots-ship--¼-weekend) | Every Settings path updated, snapshots looked at, a few days of the author's use |
+
+**In:**
+- **A sidebar Settings window** with eleven panes in four groups, and pages inside panes.
+- **AI ▸ Features, Models & Accounts, Privacy & Limits** instead of one AI Models tab.
+- **Several models per account and per plan**, chosen per task.
+
 ### v0.6+: Later (unordered; pick by real usage)
 - **Allow window** for low-sensitivity sharing (if panels cause fatigue).
 - **BridgeKitUI extraction** (approvals, activity, agent setup UI, app shell, and the Remote Access views) after v0.1. BridgeKitRemote is extracted in Phase 4b.

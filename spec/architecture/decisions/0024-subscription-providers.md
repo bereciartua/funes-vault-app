@@ -1,6 +1,6 @@
 # ADR-0024: Claude and ChatGPT subscriptions as model providers, through the user's own Claude Code and Codex
 
-**Status:** Accepted · 2026-10-23 · **Amends** [ADR-0014](0014-user-selectable-models.md) (the provider list)
+**Status:** Accepted · 2026-10-23 · **Amends** [ADR-0014](0014-user-selectable-models.md) (the provider list) · **Amended by** [ADR-0030](0030-settings-window.md) (a plan offers several models, not one)
 
 **Context.**
 - **Many users already pay for Claude or ChatGPT** and use them through Claude Code or Codex. Asking them for an API key as well means a second bill and a second setup. The author is one of them.

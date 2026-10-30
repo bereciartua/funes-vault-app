@@ -68,22 +68,28 @@ final class MainWindowController: HostedWindowController<MainView> {
     }
 }
 
-/// Settings: General, Capture, AI Models, MCP, Data, Updates, Advanced.
+/// Settings (ADR-0030 §1): a sidebar window, 820×600 by default and at least 760×520.
 @MainActor
 final class SettingsWindowController: HostedWindowController<SettingsView> {
+    static let minimumSize = NSSize(width: 760, height: 520)
+    static let defaultSize = NSSize(width: 820, height: 600)
+
     init(model: AppModel) {
         super.init(content: { SettingsView(model: model) }, configure: { window in
-            window.title = String(localized: "Funes Vault Settings")
+            // The pane's name, before SwiftUI's navigation title takes over (ADR-0030 §1).
+            window.title = model.settingsPane.title
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-            window.contentMinSize = NSSize(width: 620, height: 460)
-            window.setContentSize(NSSize(width: 700, height: 580))
+            window.toolbarStyle = .unified
+            window.contentMinSize = Self.minimumSize
+            window.setContentSize(Self.defaultSize)
             window.center()
             if !Preferences.isDevelopmentVault { window.setFrameAutosaveName("FunesSettingsWindow") }
-            if window.frame.width < 620 || window.frame.height < 460 {
-                window.setContentSize(NSSize(width: 700, height: 580))
+            if window.frame.width < Self.minimumSize.width || window.frame.height < Self.minimumSize.height {
+                window.setContentSize(Self.defaultSize)
                 window.center()
             }
             window.tabbingMode = .disallowed
         })
     }
+
 }

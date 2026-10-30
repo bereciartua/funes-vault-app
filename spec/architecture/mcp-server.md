@@ -4,7 +4,7 @@ The Funes MCP server is the shared **BridgeKitCore** server (extracted from EK B
 
 ## 1. Transport
 - **Endpoint:** Streamable HTTP, `POST http://127.0.0.1:47625/mcp`, JSON responses only (no SSE, no sessions).
-  - The port can be changed in Settings ▸ MCP (1024–65535). The listener moves at once. Setups that start `funes-mcp` find the new port through the endpoint file; setups that name the URL (Claude Code's, and the copyable HTTP ones) must be copied again, and the panel says so.
+  - The port can be changed in Settings ▸ Agent Server (1024–65535). The listener moves at once. Setups that start `funes-mcp` find the new port through the endpoint file; setups that name the URL (Claude Code's, and the copyable HTTP ones) must be copied again, and the panel says so.
   - A port in use is reported ("Port 47625 is in use"), never changed automatically, because agents' setups name it.
   - The default 47625 avoids EK Bridge's 47615 and 47616.
   - **Progress notifications** during the 45 s approval wait (Spike 3's suggestion) come later: they need an SSE response, and none of the agents measured extends its timeout for them ([spike results](../plans/spike-results.md#spike-3-agent-timeouts-and-the-in-call-approval)).

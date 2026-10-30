@@ -1,85 +1,199 @@
 import BridgeUI
 import FunesCore
+import FunesProtocol
 import ServiceManagement
 import SwiftUI
 
-enum SettingsTab: String, CaseIterable, Identifiable, Hashable {
-    case aboutYou = "about-you"
-    case general, capture, models, mcp, iphone, data, updates, advanced
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .aboutYou: String(localized: "About You")
-        case .general: String(localized: "General")
-        case .capture: String(localized: "Capture")
-        case .models: String(localized: "AI Models")
-        case .mcp: String(localized: "MCP")
-        case .iphone: String(localized: "iPhone")
-        case .data: String(localized: "Data")
-        case .updates: String(localized: "Updates")
-        case .advanced: String(localized: "Advanced")
-        }
-    }
-
-    var symbol: String {
-        switch self {
-        case .aboutYou: "person.crop.circle"
-        case .general: "gearshape"
-        case .capture: "square.and.pencil"
-        case .models: "cpu"
-        case .mcp: "point.3.connected.trianglepath.dotted"
-        case .iphone: "iphone"
-        case .data: "externaldrive"
-        case .updates: "arrow.down.circle"
-        case .advanced: "slider.horizontal.3"
-        }
-    }
-}
-
-/// Settings (04-ux-mac.md): one pane per tab.
+/// Settings (04-ux-mac.md ▸ Settings, ADR-0030): a fixed sidebar with the profile row and eleven
+/// panes in four groups, and the chosen pane in a stack whose pages open inside it. Back stays
+/// within the pane; choosing a pane shows its top level. The sidebar is a `List` beside the pane,
+/// not a `NavigationSplitView`, whose sidebar could be dragged and collapsed (Phase 11.0, ADR-0030
+/// §1).
 struct SettingsView: View {
     @Bindable var model: AppModel
+    static let sidebarWidth: CGFloat = 210
 
     var body: some View {
-        TabView(selection: $model.settingsTab) {
-            ForEach(SettingsTab.allCases) { tab in
-                pane(tab)
-                    .tabItem { Label(tab.title, systemImage: tab.symbol) }
-                    .tag(tab)
+        HStack(spacing: 0) {
+            SettingsSidebar(model: model)
+                .frame(width: Self.sidebarWidth)
+            Divider()
+            NavigationStack(path: $model.settingsPath) {
+                pane(model.settingsPane)
+                    .navigationTitle(model.settingsPane.title)
+                    .navigationDestination(for: SettingsPage.self) { page in
+                        SettingsPageView(model: model, page: page)
+                    }
             }
+            .id(model.settingsPane)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(20)
-        .frame(minWidth: 620, minHeight: 460)
+        .frame(minWidth: 760, minHeight: 520)
     }
 
     @ViewBuilder
-    private func pane(_ tab: SettingsTab) -> some View {
-        switch tab {
+    private func pane(_ pane: SettingsPane) -> some View {
+        switch pane {
         case .aboutYou: AboutYouSettings(model: model)
         case .general: GeneralSettings(model: model)
+        case .notifications: NotificationSettings(model: model)
         case .capture: CaptureSettings(model: model)
-        case .models: ModelSettingsPane(model: model)
-        case .mcp: MCPSettings(model: model)
+        case .features: FeaturesPane(model: model)
+        case .accounts: AccountsPane(model: model)
+        case .privacy: PrivacyPane(model: model)
+        case .agentServer: MCPSettings(model: model)
         case .iphone: IPhoneSettings(model: model)
         case .data: DataSettings(model: model)
-        case .updates: UpdateSettings(model: model)
         case .advanced: AdvancedSettings(model: model)
         }
     }
 }
 
-/// Appearance (FR-G-06), launch at login (FR-G-02), the Dock icon and notifications (FR-L-04).
+/// A page inside a pane, with the toolbar's "‹ <pane>" (⌘[) in place of the stack's own chevron,
+/// so it names where it goes back to (ADR-0030 §1).
+struct SettingsPageView: View {
+    let model: AppModel
+    let page: SettingsPage
+
+    var body: some View {
+        content
+            .id(page)
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .navigation) {
+                    Button {
+                        if !model.settingsPath.isEmpty { model.settingsPath.removeLast() }
+                    } label: {
+                        Label(page.pane.title, systemImage: "chevron.left").labelStyle(.titleAndIcon)
+                    }
+                    .keyboardShortcut("[", modifiers: .command)
+                    .accessibilityLabel(String(localized: "Back to \(page.pane.title)"))
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch page {
+        case .newMemories: NewMemoriesPage(model: model).navigationTitle(String(localized: "New memories"))
+        case .tidyUp: TidyUpPage(model: model).navigationTitle(String(localized: "Daily tidy-up"))
+        case .searchAnswers: SearchAnswersPage(model: model).navigationTitle(String(localized: "Search answers"))
+        case .searchIndex: SearchIndexPage(model: model).navigationTitle(String(localized: "Search index"))
+        case let .account(id): AccountPage(model: model, id: id)
+        }
+    }
+}
+
+/// The sidebar: the profile row, then the groups with plain headers. Not collapsible, fixed width.
+struct SettingsSidebar: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        List(selection: Binding(get: { model.settingsPane }, set: { if let pane = $0 { model.showSettingsPane(pane) } })) {
+            ProfileRow(profile: model.profile)
+                .tag(SettingsPane.aboutYou)
+            ForEach(SettingsPane.Group.allCases, id: \.self) { group in
+                Section {
+                    ForEach(group.panes) { pane in
+                        Label {
+                            Text(pane.title)
+                        } icon: {
+                            SettingsIcon(pane: pane)
+                        }
+                        .tag(pane)
+                    }
+                } header: {
+                    if let title = group.title {
+                        Text(title).accessibilityAddTraits(.isHeader)
+                    }
+                }
+            }
+        }
+        .listStyle(.sidebar)
+    }
+}
+
+/// The profile row (04-ux-mac.md ▸ Settings ▸ Window): initials and the full name over "About
+/// You", or "About You" alone while the profile is empty.
+struct ProfileRow: View {
+    let profile: Profile
+
+    private var name: String? { ProfileText.fullName(profile) }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle().fill(Color.gray.gradient)
+                if let initials {
+                    Text(initials).font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
+                } else {
+                    Image(systemName: "person.fill").font(.system(size: 14)).foregroundStyle(.white)
+                }
+            }
+            .frame(width: 32, height: 32)
+            VStack(alignment: .leading, spacing: 1) {
+                if let name {
+                    Text(name).font(.headline).lineLimit(1)
+                    Text(String(localized: "About You")).font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text(String(localized: "About You")).font(.headline)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(name.map { String(localized: "About You, \($0)") } ?? String(localized: "About You"))
+    }
+
+    /// From Call me, or the given and family name: "MB".
+    private var initials: String? {
+        let words: [String]
+        if let preferred = profile.preferredName, profile.givenName == nil, profile.familyName == nil {
+            words = preferred.split(separator: " ").map(String.init)
+        } else {
+            words = [profile.givenName, profile.familyName].compactMap { $0 }
+        }
+        let letters = words.prefix(2).compactMap(\.first).map { String($0).uppercased() }.joined()
+        return letters.isEmpty ? nil : letters
+    }
+}
+
+/// A pane's symbol on a colored rounded square, like System Settings'.
+struct SettingsIcon: View {
+    let pane: SettingsPane
+
+    var body: some View {
+        Image(systemName: pane.symbol)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: 20, height: 20)
+            .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(tint.gradient))
+    }
+
+    private var tint: Color {
+        switch pane {
+        case .aboutYou, .general, .advanced: .gray
+        case .notifications: .red
+        case .capture: .orange
+        case .features: .purple
+        case .accounts: .yellow
+        case .privacy: .blue
+        case .agentServer: .teal
+        case .iphone: .cyan
+        case .data: .indigo
+        }
+    }
+}
+
+/// Appearance (FR-G-06), launch at login (FR-G-02), the Dock icon, and Updates (FR-G-03), folded
+/// in from their own tab (ADR-0030 §2).
 struct GeneralSettings: View {
     let model: AppModel
     @State private var appearance = AppAppearance.automatic
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var loginError: String?
     @State private var showInDock = false
-    @State private var notifyExpired = false
-    @State private var notifySuggestion = false
-    @State private var notifyRefused = false
-    @State private var notifyTunnelDown = false
+    @State private var automaticUpdates = true
 
     var body: some View {
         Form {
@@ -113,14 +227,46 @@ struct GeneralSettings: View {
                 Text(String(localized: "Funes Vault always stays in the menu bar. Without the Dock icon, it shows in the Dock only while a window is open."))
                     .font(.callout).foregroundStyle(.secondary)
             }
-            Section(String(localized: "Requests")) {
-                ShortcutRecorder(title: String(localized: "Review Request"), accessibilityName: String(localized: "Review Request shortcut"),
-                                 current: model.preferences.reviewShortcut, defaultShortcut: .defaultReview,
-                                 apply: model.setReviewShortcut)
-                Text(String(localized: "Brings a waiting approval panel forward from any app, so Return and Esc answer it."))
-                    .font(.callout).foregroundStyle(.secondary)
+            Section(String(localized: "Updates")) {
+                if model.updater.isAvailable() {
+                    Toggle(String(localized: "Check for updates every day"), isOn: $automaticUpdates)
+                        .onChange(of: automaticUpdates) { _, on in model.updater.setAutomaticChecks(on) }
+                    LabeledContent(String(localized: "Last checked")) {
+                        VStack(alignment: .trailing, spacing: 6) {
+                            Text(model.updater.lastCheck().map(RelativeTime.full) ?? String(localized: "Never"))
+                            Button(String(localized: "Check Now")) { model.updater.checkForUpdates() }
+                        }
+                    }
+                    Text(String(localized: "Updates come from GitHub, signed for Funes Vault. Installing always takes a click, and waits while a request is waiting for you."))
+                        .font(.callout).foregroundStyle(.secondary)
+                } else {
+                    Text(String(localized: "This copy of Funes Vault doesn't check for updates (a build from source, or a development build). Download new versions from GitHub."))
+                        .foregroundStyle(.secondary)
+                }
+                LabeledContent(String(localized: "Version"), value: model.versionText)
             }
-            Section(String(localized: "Notifications")) {
+        }
+        .formStyle(.grouped)
+        .onAppear {
+            appearance = model.preferences.appearance
+            showInDock = model.preferences.showInDock
+            launchAtLogin = LoginItem.isEnabled
+            automaticUpdates = model.updater.automaticChecks()
+        }
+    }
+}
+
+/// Settings ▸ Notifications (FR-L-04): the four switches, moved out of General unchanged.
+struct NotificationSettings: View {
+    let model: AppModel
+    @State private var notifyExpired = false
+    @State private var notifySuggestion = false
+    @State private var notifyRefused = false
+    @State private var notifyTunnelDown = false
+
+    var body: some View {
+        Form {
+            Section {
                 Toggle(String(localized: "A request expired before you answered"), isOn: $notifyExpired)
                     .onChange(of: notifyExpired) { _, on in model.setNotification(Preferences.Key.notifyExpired, on) }
                 Toggle(String(localized: "A suggestion is waiting in the Inbox"), isOn: $notifySuggestion)
@@ -135,13 +281,10 @@ struct GeneralSettings: View {
         }
         .formStyle(.grouped)
         .onAppear {
-            appearance = model.preferences.appearance
-            showInDock = model.preferences.showInDock
             notifyExpired = model.preferences.notifyExpired
             notifySuggestion = model.preferences.notifySuggestion
             notifyRefused = model.preferences.notifyRefused
             notifyTunnelDown = model.preferences.flag(RemoteAccessController.Key.notifyTunnelDown)
-            launchAtLogin = LoginItem.isEnabled
         }
     }
 }

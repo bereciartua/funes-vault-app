@@ -2,7 +2,7 @@ import Foundation
 import FunesProtocol
 import Synchronization
 
-/// Where a subscription CLI stands, for Settings ▸ AI Models ▸ Use your subscription (ADR-0024).
+/// Where a subscription CLI stands, for Settings ▸ AI ▸ Models & Accounts (ADR-0024).
 public enum SubscriptionStatus: Sendable, Hashable {
     /// Found, new enough and signed in to the plan.
     case ready(version: String)

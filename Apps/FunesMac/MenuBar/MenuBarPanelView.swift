@@ -249,9 +249,9 @@ private struct AgentsTileView: View {
             case .noAgents:
                 Button(String(localized: "Add Agent…")) { model.addAgent() }.controlSize(.small)
             case .cantConnect:
-                Button(String(localized: "Fix…")) { model.openSettings(.mcp) }.controlSize(.small)
+                Button(String(localized: "Fix…")) { model.openSettings(SettingsDestination(.agentServer)) }.controlSize(.small)
             case .offInSettings:
-                Button(String(localized: "Turn On…")) { model.openSettings(.mcp) }.controlSize(.small)
+                Button(String(localized: "Turn On…")) { model.openSettings(SettingsDestination(.agentServer)) }.controlSize(.small)
             default:
                 EmptyView()
             }
@@ -299,12 +299,12 @@ private struct RemoteTileView: View {
         }
     }
 
-    /// Not listening: the agent server is off or failed (Settings ▸ MCP), or the listener is (Remote Access).
+    /// Not listening: the agent server is off or failed (Settings ▸ Agent Server), or the listener is (Remote Access).
     private func fix() {
         if case .on = model.agentsTile { model.show(.remoteAccess) } else if case .paused = model.agentsTile {
             model.show(.remoteAccess)
         } else {
-            model.openSettings(.mcp)
+            model.openSettings(SettingsDestination(.agentServer))
         }
     }
 }

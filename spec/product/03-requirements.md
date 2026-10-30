@@ -104,7 +104,7 @@
 **FR-V-16 Earlier versions** · S · v0.5 ([ADR-0027](../architecture/decisions/0027-memory-revisions.md))
 - Every change to a memory's title, text, kind, categories, sensitivity, status or expiry keeps the version it replaced, whoever made it: you, an agent, the iPhone, the Inbox, an import or Funes. History and Activity show it as before → after.
 - Kept 90 days and at most 50 per memory, then deleted by the daily cleanup; purged with the memory and by Delete Now.
-- **Forget Earlier Versions…** in a memory's History deletes its earlier versions. Settings ▸ Data ▸ **Keep earlier versions for 90 days** (on by default) turns them off, deleting every one after a confirmation.
+- **Forget Earlier Versions…** in a memory's History deletes its earlier versions. Settings ▸ Data & Backups ▸ **Keep earlier versions for 90 days** (on by default) turns them off, deleting every one after a confirmation.
 - Acceptance: earlier versions never reach agents, exports, the iPhone, logs or AI model providers; the policy engine, retrieval and memory processing never read them.
 
 **FR-V-17 Matching snippets** · S · v0.6 ([ADR-0028](../architecture/decisions/0028-search-answers.md))
@@ -345,7 +345,7 @@
 ### MCP server (FR-M)
 
 **FR-M-01 Local listener** · M · v0.1
-- Streamable HTTP (JSON responses) on `127.0.0.1:47625/mcp`, off until setup turns it on. The port can be changed in Settings ▸ MCP.
+- Streamable HTTP (JSON responses) on `127.0.0.1:47625/mcp`, off until setup turns it on. The port can be changed in Settings ▸ Agent Server (Settings ▸ MCP before v0.8).
 
 **FR-M-02 stdio launcher** · M · v0.1
 - `funes-mcp` relays stdio to HTTP. It reads the agent's key file and verifies the listener belongs to the same user and bundle ID (EK Bridge launcher).
@@ -622,17 +622,18 @@
   - Activity marks remote rows ("via Remote Access") and stores no forwarded address.
 
 **FR-AI-05 Choose models per task** · M · v0.1
-- Settings ▸ AI Models has one row per task, each with a provider and a model: Embeddings (built in with no choice until v0.3, then optionally a provider model, FR-AI-11); Classification, renamed **New memories** in v0.3 (FR-AI-13); from v0.3 **Daily tidy-up** (FR-AI-03); and from v0.6 **Search answers** (FR-AI-17), off by default.
+- Settings ▸ AI ▸ Features (Settings ▸ AI Models before v0.8, [ADR-0030](../architecture/decisions/0030-settings-window.md)) has one row per task, each with a provider and a model: Embeddings (built in with no choice until v0.3, then optionally a provider model, FR-AI-11); Classification, renamed **New memories** in v0.3 (FR-AI-13); from v0.3 **Daily tidy-up** (FR-AI-03); and from v0.6 **Search answers** (FR-AI-17), off by default.
 - **Providers:** Apple on-device (default), Apple Private Cloud Compute, Ollama, LM Studio, OpenAI, Anthropic, Google Gemini, OpenRouter, and custom OpenAI-compatible endpoints; from v0.3, the user's Claude or ChatGPT plan through their own Claude Code or Codex (FR-AI-16).
 - Acceptance:
   - The defaults send nothing off the Mac.
   - Every choice shows a locality badge: On this Mac · Local server · Apple cloud · Cloud.
   - Model lists come from the provider.
   - **Test connection** verifies the setup.
+  - From v0.8 each account offers the models the user added, and each task picks an account and one of its models, so one key or plan can serve different tasks with different models. A task's choice never silently changes to another account or model.
 
 **FR-AI-06 Provider credentials** · M · v0.1
-- The user adds API keys and base URLs per provider.
-- Acceptance: keys are stored only in the Keychain (this device only). They never appear in the database, logs, exports or Activity. Removing a provider deletes its key.
+- The user adds API keys and base URLs per provider (from v0.8, an **account** in Settings ▸ AI ▸ Models & Accounts, with its list of models).
+- Acceptance: keys are stored only in the Keychain (this device only). They never appear in the database, logs, exports or Activity. Removing a provider deletes its key; from v0.8 it asks first, naming the tasks that use it.
 
 **FR-AI-07 Cloud sensitivity limit** · M · v0.1
 - "Never send captures above <level>": Public, Low, Internal (default), Sensitive, or never send captures. (Only captures are sent in v0.1; the limit applies to anything a later version sends.)
@@ -663,7 +664,7 @@
 - Acceptance: it ships only with a benchmark gain over bge-small (raw tasks or a Spanish set); a provider vector is deleted when the limit drops or a memory's sensitivity rises above it.
 
 **FR-AI-12 Usage counters** · S · v0.1
-- Per-provider request and token counts (from provider responses), with reset. No prices.
+- Per-provider request and token counts (from provider responses), with reset. No prices. From v0.8 they're on each account's and plan's page, reset per account.
 
 **FR-AI-13 New memories: split, classify, link** · L · v0.3 ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md))
 - Every new input (captures, seed answers, agent suggestions and direct writes, ChatGPT, Claude and Markdown imports) is split by the chosen model into atomic pieces, each classified and linked to related memories as new, update, already saved or retract. Not split: agent corrections and Funes export restores. See [memory processing §5](../domain/memory-processing.md#5-new-memories-split-classify-link).
@@ -678,7 +679,7 @@
   - With no model, or splitting off, behaviour is v0.2's.
 
 **FR-AI-14 Auto-apply with undo** · M · v0.3 ([ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](../architecture/decisions/0021-daily-tidy-up.md))
-- Settings ▸ AI Models ▸ Apply changes automatically: **Off** (default) · Duplicates only · Everything except conflicts. Covers new memories (FR-AI-13) and the daily tidy-up (FR-AI-03).
+- Settings ▸ AI ▸ Features ▸ Apply changes automatically (AI Models before v0.8): **Off** (default) · Duplicates only · Everything except conflicts. Covers new memories (FR-AI-13) and the daily tidy-up (FR-AI-03).
 - Acceptance:
   - Never changes or archives a memory on the strength of untrusted text (agent direct writes, imports, shared and Services captures), except archiving the untrusted copy of an exact duplicate.
   - Agents follow their own access, never this setting.
@@ -691,7 +692,7 @@
 - Acceptance: the count survives restarts; at the cap the user's captures fall back to on-device, while agent input, imports and the tidy-up wait for the next day; a notice says so once a day.
 
 **FR-AI-16 Subscription providers** · M · v0.3 ([ADR-0024](../architecture/decisions/0024-subscription-providers.md))
-- Settings ▸ AI Models offers **Claude (Claude Code)** and **ChatGPT (Codex)** when the CLI is installed: generation runs through the user's own signed-in CLI, on their plan, with no API key in Funes.
+- Settings ▸ AI ▸ Models & Accounts (AI Models before v0.8) offers **Claude (Claude Code)** and **ChatGPT (Codex)** when the CLI is installed, each with its list of models (from v0.8): generation runs through the user's own signed-in CLI, on their plan, with no API key in Funes.
 - Acceptance:
   - Funes never asks for, reads, stores or passes on the plan's credentials, and never bundles, installs or modifies the CLI.
   - Every call runs in an empty temporary directory with API keys removed from the environment, without the user's CLI configuration, MCP servers, hooks or plugins, and with every tool off; any tool or command event stops the run and discards its output (tested with recorded streams, including an injected tool call).
@@ -700,7 +701,7 @@
   - Signed out, plan limit reached and missing CLI each show a clear status and fall back like a provider that's down.
 
 **FR-AI-17 Search answers** · M · v0.6 ([ADR-0028](../architecture/decisions/0028-search-answers.md))
-- Settings ▸ AI Models ▸ **Search answers**: Answer (**Off**, the default · Only when I ask · Automatically for questions · Automatically for every search) and Model (Same as New memories, or any generation provider). When on, **⌘⏎** in the Vault's search field or the **Ask Funes** row on top of the results (in the Active scope, with a non-empty search that has results) asks the chosen model to answer the search from its top 10 results; with an automatic choice, a question-shaped search, or any search, is answered on its own once its results have shown for a short pause, once for each search (Apple on-device only when asked). The answer appears in place as a card at the top of the list: up to 3 claims, each with the quote it came from and numbered links to the memories. See [memory processing §10](../domain/memory-processing.md#10-search-snippets-and-answers).
+- Settings ▸ AI ▸ Features ▸ **Search answers** (AI Models before v0.8): Answer (**Off**, the default · Only when I ask · Automatically for questions · Automatically for every search) and Model (Same as New memories, or any generation provider). When on, **⌘⏎** in the Vault's search field or the **Ask Funes** row on top of the results (in the Active scope, with a non-empty search that has results) asks the chosen model to answer the search from its top 10 results; with an automatic choice, a question-shaped search, or any search, is answered on its own once its results have shown for a short pause, once for each search (Apple on-device only when asked). The answer appears in place as a card at the top of the list: up to 3 claims, each with the quote it came from and numbered links to the memories. See [memory processing §10](../domain/memory-processing.md#10-search-snippets-and-answers).
 - Acceptance:
   - Search results show as before and never wait for, move for or get selected by the answer; changing the search, scope or filters clears the card; **Cancel** stops the call (a subscription CLI's process ends).
   - The prompt names each memory's source (you, an agent, an import or shared text) and never says the user wrote them all.
