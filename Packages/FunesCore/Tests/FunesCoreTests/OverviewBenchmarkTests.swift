@@ -5,7 +5,8 @@ import Testing
 @testable import FunesCore
 
 /// FR-H-01's budget: the overview under 50 ms on a 10,000-memory vault with a year and a half of
-/// agent traffic (ADR-0025), with the `v5_overview_indexes`. Measured at user-interactive QoS as
+/// agent traffic (ADR-0025), with the `v5_overview_indexes`; and FR-H-07's, the last 24 hours
+/// under 20 ms. Measured at user-interactive QoS as
 /// the CPU time of the read on its database thread, the best of 7 after one to warm the cache:
 /// the work itself, which a busy Mac or the suites running alongside inflate less than they do
 /// wall-clock time (printed too). Measured times are in spec/plans/phase-7-home.md (7.2).
@@ -14,6 +15,8 @@ import Testing
 /// suites, which share the CPU, or on CI's shared runners, a timing says little.
 @Suite struct OverviewBenchmarkTests {
     static let budget: Duration = .milliseconds(50)
+    /// The menu bar panel's last 24 hours (FR-H-07).
+    static let pulseBudget: Duration = .milliseconds(20)
 
     /// SplitMix64, so the fixture is the same on every run.
     struct Seeded: RandomNumberGenerator {
@@ -110,6 +113,28 @@ import Testing
             print("overview \(range.rawValue): CPU best \(cpu[0].formatted(ms)), median \(cpu[3].formatted(ms)); "
                   + "wall-clock best \(wall[0].formatted(ms)), median \(wall[3].formatted(ms))")
             #expect(cpu[0] < Self.budget, "overview \(range.rawValue) took \(cpu[0]) of CPU")
+        }
+        // The last 24 hours, read when the menu bar panel opens: a day of traffic, hour by hour.
+        _ = try Self.measurePulse(vault.store)
+        let runs = try (0..<7).map { _ in try Self.measurePulse(vault.store) }
+        let cpu = runs.map(\.cpu).sorted(), wall = runs.map(\.wall).sorted()
+        print("recent pulse: CPU best \(cpu[0].formatted(ms)), median \(cpu[3].formatted(ms)); "
+              + "wall-clock best \(wall[0].formatted(ms)), median \(wall[3].formatted(ms))")
+        #expect(cpu[0] < Self.pulseBudget, "the recent pulse took \(cpu[0]) of CPU")
+    }
+
+    static func measurePulse(_ store: VaultStore) throws -> (cpu: Duration, wall: Duration) {
+        try DispatchQueue.global(qos: .userInteractive).sync {
+            let clock = ContinuousClock()
+            var cpu = Duration.zero
+            let wall = try clock.measure {
+                cpu = try store.writer.read { db in
+                    let start = threadCPUTime()
+                    _ = try OverviewStore.recentPulse(db, now: t0, calendar: .current)
+                    return threadCPUTime() - start
+                }
+            }
+            return (cpu, wall)
         }
     }
 }
