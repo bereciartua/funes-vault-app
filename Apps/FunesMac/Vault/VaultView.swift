@@ -162,7 +162,7 @@ struct VaultView: View {
             } else {
                 List(selection: Binding(get: { vault.selection }, set: { vault.selection = $0 })) {
                     // Search answers (FR-AI-17): the Ask row, then the card, as the list's first row.
-                    if vault.canAsk || vault.answer != nil {
+                    if vault.answersOn, vault.canAsk || vault.answer != nil {
                         AnswerCard(vault: vault, model: model)
                     }
                     ForEach(vault.memories) { memory in
@@ -175,6 +175,8 @@ struct VaultView: View {
                     }
                 }
                 .listStyle(.inset)
+                // Turning Search answers off ends the card and any call in progress.
+                .onChange(of: model.modelSettings.searchAnswersOn) { _, on in if !on { vault.clearAnswer() } }
                 .scrollContentBackground(.hidden)
                 .accessibilityLabel(String(localized: "Memories"))
             }

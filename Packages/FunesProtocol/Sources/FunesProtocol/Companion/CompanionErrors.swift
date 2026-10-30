@@ -123,6 +123,16 @@ public enum CompanionErrorCode: String, Codable, Sendable, CaseIterable {
     /// `inbox.apply`: New memories processing hasn't finished with this suggestion (the item's
     /// `processing` is `processing`). Its result replaces it; list the Inbox again later.
     case processing
+    /// `memories.answer` (v0.6): Search answers are off on the Mac, or no model can answer.
+    case answersOff = "answers_off"
+    /// `memories.answer`: today's cloud requests are used up.
+    case capReached = "cap_reached"
+    /// `memories.answer`: the model couldn't answer; `reason` says why (`not_signed_in`,
+    /// `needs_update`, `plan_limit`, `provider_error`, `invalid_output`, `tool_blocked`,
+    /// `secret_in_search`).
+    case modelUnavailable = "model_unavailable"
+    /// `memories.answer`: the model took longer than 45 s.
+    case modelTimeout = "model_timeout"
 }
 
 /// A method call's error: `{"code":"…","message":"…"}`, plus `findings` for secrets and
@@ -133,17 +143,20 @@ public struct CompanionError: Error, Codable, Sendable, Equatable {
     /// The secret types found (`secret_like_content`), never the text.
     public var findings: [SecretPattern]?
     public var retryAfterSeconds: Int?
+    /// `model_unavailable`'s reason (v0.6).
+    public var reason: String?
 
     public init(_ code: CompanionErrorCode, message: String = "", findings: [SecretPattern]? = nil,
-                retryAfterSeconds: Int? = nil) {
+                retryAfterSeconds: Int? = nil, reason: String? = nil) {
         self.code = code
         self.message = message
         self.findings = findings
         self.retryAfterSeconds = retryAfterSeconds
+        self.reason = reason
     }
 
     enum CodingKeys: String, CodingKey {
-        case code, message, findings
+        case code, message, findings, reason
         case retryAfterSeconds = "retry_after_s"
     }
 }

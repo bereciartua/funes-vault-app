@@ -459,6 +459,8 @@ final class PhoneModel {
             String(localized: "Something else answered at your Mac's address (HTTP \(status)).")
         case .local:
             String(localized: "Something went wrong on this iPhone. Try again.")
+        case .answerTimedOut:
+            String(localized: "Took too long. Try again.")
         }
     }
 }
@@ -500,6 +502,11 @@ extension PhoneModel {
             return String(localized: "Review this on your Mac.")
         case .processing:
             return String(localized: "Still processing on your Mac. It can be saved once it's done.")
+        // Only `memories.answer` sends these; Search's answer card words them (`AnswerWording`).
+        case .answersOff:
+            return String(localized: "Search answers are off on your Mac.")
+        case .capReached, .modelUnavailable, .modelTimeout:
+            return String(localized: "Your Mac's model couldn't answer. Try again.")
         }
     }
 }

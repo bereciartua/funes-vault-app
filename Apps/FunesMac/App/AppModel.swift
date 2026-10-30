@@ -201,7 +201,9 @@ final class AppModel {
         embeddings = EmbeddingController(environment: services, settings: self.modelSettings)
         remoteAccess = RemoteAccessController(defaults: preferences.defaults, appName: "Funes Vault", names: .funes,
                                               defaultPort: FunesRemoteConfiguration.defaultPort, host: .inert)
-        companion = CompanionController(defaults: preferences.defaults, services: services.companionServices,
+        var companionServices = services.companionServices
+        companionServices.answers = searchAnswers
+        companion = CompanionController(defaults: preferences.defaults, services: companionServices,
                                         approvals: services.phoneApprovals, appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
         pausedUntil = services.pause.pausedUntil(at: Date())
         inboxState.categories = { [weak self] in self?.categories ?? [] }

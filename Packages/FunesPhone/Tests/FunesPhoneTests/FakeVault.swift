@@ -16,6 +16,9 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
     private(set) var applied: [InboxApplyParams] = []
     private(set) var rejected: [UUID] = []
     private(set) var searches: [MemorySearchParams] = []
+    private(set) var asks: [MemoryAnswerParams] = []
+    /// How long `memories.answer` takes; cancelled meanwhile, it gets no answer.
+    var answerDelay: Duration = .zero
 
     @discardableResult
     func add(_ title: String, body: String = "Some text", status: MemoryStatus = .active, updated: TimeInterval = 0) -> Memory {
@@ -65,6 +68,10 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
             try? await Task.sleep(for: delay)
             if Task.isCancelled { throw .unreachable(localNetworkDenied: false) }
         }
+        if Call.method == .memoriesAnswer, lock.withLock({ answerDelay }) > .zero {
+            try? await Task.sleep(for: lock.withLock { answerDelay })
+            if Task.isCancelled { throw .unreachable(localNetworkDenied: false) }
+        }
         return try locked(Call.method, request.params) as! Call.Result
     }
 
@@ -99,6 +106,17 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
                               sensitivity: $0.sensitivity, updatedAt: $0.updatedAt)
             }
             return MemorySearchResult(results: summaries, nextCursor: offset + page.count < hits.count ? String(offset + page.count) : nil)
+        case .memoriesAnswer:
+            // Quotes the first memory's first 12 characters.
+            let params = params as! MemoryAnswerParams
+            asks.append(params)
+            guard let first = params.ids.first, let memory = memories[first] else {
+                return MemoryAnswerResult(outcome: .noAnswer, claims: [], read: 0, withheld: 0, dropped: 0, engine: "Claude", locality: .cloud,
+                                          durationMs: 10)
+            }
+            return MemoryAnswerResult(outcome: .answered,
+                                      claims: [.init(text: "About \(memory.title).", citations: [.init(id: first, quote: String(memory.body.prefix(12)))])],
+                                      read: params.ids.count, withheld: 1, dropped: 0, engine: "Claude", locality: .cloud, durationMs: 3_000)
         case .memoriesGet:
             let id = (params as! MemoryID).id
             guard let memory = memories[id] else { throw .method(CompanionError(.notFound)) }

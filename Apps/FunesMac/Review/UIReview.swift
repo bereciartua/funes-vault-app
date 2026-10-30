@@ -564,8 +564,6 @@ private struct MenuIconStrip: View {
 private extension NSAppearance {
     var isDark: Bool { bestMatch(from: [.aqua, .darkAqua]) == .darkAqua }
 }
-#endif
-
 extension UIReview {
     /// The first scroll view under `view`, depth first.
     static func scrollView(in view: NSView?) -> NSScrollView? {
@@ -588,3 +586,4 @@ extension SearchAnswer {
         ], read: 3, withheld: 0, dropped: 1, engine: "claude-code/haiku", locality: .cloud, duration: .seconds(5))
     }
 }
+#endif

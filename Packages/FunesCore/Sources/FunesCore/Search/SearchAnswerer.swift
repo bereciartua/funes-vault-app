@@ -59,6 +59,25 @@ public struct SearchAnswer: Sendable, Hashable {
     }
 }
 
+/// The model that answers searches: its display name ("Claude (Claude Code)") and where it runs.
+public struct SearchAnswerEngine: Sendable, Hashable {
+    public let name: String
+    public let locality: Locality
+
+    public init(name: String, locality: Locality) {
+        self.name = name
+        self.locality = locality
+    }
+}
+
+/// Search answers with the user's current settings, for the iPhone companion: the Mac app
+/// provides it (memory processing §10, companion protocol §4).
+public protocol SearchAnswering: Sendable {
+    /// The model that would answer; nil when Search answers are off or no model can answer.
+    func engine() async -> SearchAnswerEngine?
+    func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via) async throws -> SearchAnswer
+}
+
 /// Why an answer failed (§10.5). Each maps to the card's text and a reason code.
 public enum SearchAnswerError: Error, Sendable, Equatable {
     /// The search matched the secret scanner, so nothing was sent.
@@ -146,6 +165,15 @@ public final class SearchAnswerer: Sendable {
             log(.failure(failure), progress, actor: actor, via: via, now: now, elapsed: clock.now - start)
             throw failure
         }
+    }
+
+    /// The Activity row of an attempt that failed before it could start (the app couldn't make the
+    /// provider's client).
+    public func logFailure(_ error: SearchAnswerError, engine: String?, actor: Actor = .user, via: ActivityEvent.Via = .app,
+                           now: Date = Date()) {
+        let progress = Progress()
+        progress.engine = engine
+        log(.failure(error), progress, actor: actor, via: via, now: now, elapsed: .zero)
     }
 
     /// What an attempt got to, for its Activity row.

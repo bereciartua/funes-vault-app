@@ -530,6 +530,9 @@
     "%lld changes undone" : {
 
     },
+    "%lld claims" : {
+
+    },
     "%lld claims left out: they didn't quote a memory" : {
 
     },
@@ -777,6 +780,9 @@
     "1 ahead of it" : {
 
     },
+    "1 claim" : {
+
+    },
     "1 claim left out: it didn't quote a memory" : {
 
     },
@@ -952,6 +958,9 @@
 
     },
     "Add %@" : {
+
+    },
+    "Add %@'s API key in its settings." : {
 
     },
     "Add Agent" : {
@@ -1242,6 +1251,9 @@
     "Answered a question" : {
 
     },
+    "Answered a search" : {
+
+    },
     "Answered on %@." : {
 
     },
@@ -1512,6 +1524,9 @@
 
     },
     "Cancel" : {
+
+    },
+    "Cancelled" : {
 
     },
     "Capture" : {
@@ -1997,9 +2012,6 @@
     "Correction suggested %@" : {
 
     },
-    "Couldn't answer." : {
-
-    },
     "Couldn't reach the server." : {
 
     },
@@ -2332,6 +2344,9 @@
 
     },
     "Fact" : {
+
+    },
+    "Failed" : {
 
     },
     "Failed: proposed by rules" : {
@@ -3438,6 +3453,9 @@
     "No agents yet" : {
 
     },
+    "No answer" : {
+
+    },
     "No answer in 15 minutes" : {
 
     },
@@ -3988,6 +4006,9 @@
 
     },
     "Read" : {
+
+    },
+    "Read %lld" : {
 
     },
     "Read %lld of %lld results · %lld s" : {

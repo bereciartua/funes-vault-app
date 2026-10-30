@@ -290,10 +290,11 @@ struct ModelSettingsPane: View {
         }
     }
 
+    /// Until a provider's host is resolved it counts as cloud, so the disclosure shows (fail closed).
     private var searchAnswersLocality: Locality {
         if settings.searchAnswersPlan != nil { return .cloud }
         guard let provider = settings.searchAnswersProvider else { return .onDevice }
-        return localities[provider.id] ?? (provider.endpoint.markedCloud ? .cloud : .localServer)
+        return localities[provider.id] ?? .cloud
     }
 
     /// "Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone.", the on-device warning, or what's missing.
@@ -311,8 +312,9 @@ struct ModelSettingsPane: View {
                 return text.hasSuffix(".") ? text : text + "."
             case nil: return String(localized: "Checking…")
             }
-        } else if let provider = settings.searchAnswersProvider, provider.model.isEmpty {
-            return String(localized: "Choose a model in \(provider.name)'s settings.")
+        } else if let provider = settings.searchAnswersProvider {
+            if provider.model.isEmpty { return String(localized: "Choose a model in \(provider.name)'s settings.") }
+            if settings.needsKey(provider) { return String(localized: "Add \(provider.name)'s API key in its settings.") }
         }
         return String(localized: "Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone.")
     }

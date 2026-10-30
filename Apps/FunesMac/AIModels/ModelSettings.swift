@@ -318,14 +318,30 @@ final class ModelSettings {
     /// The chosen API provider, when the choice is one.
     var searchAnswersProvider: ProviderConfig? { searchAnswersChoice.flatMap { id in providers.first { $0.id == id } } }
 
-    /// Search answers' router: the chosen provider, or Apple on-device; no fallback to another
-    /// (model providers §6). With neither available, nothing answers.
-    func makeSearchAnswerRouter(cap: CloudRequestCap?) -> ModelRouter {
+    /// Search answers' router, built by the returned closure off the main actor (an HTTP client
+    /// resolves its host to learn its locality): the chosen provider, or Apple on-device; no
+    /// fallback to another (model providers §6). It throws the client's own error, such as
+    /// `unauthorized` for a provider without its key.
+    func searchAnswerRouterBuilder(cap: CloudRequestCap?) -> @Sendable () throws -> ModelRouter {
+        let limit = cloudLimit
         guard let id = searchAnswersChoice else {
-            return ModelRouter(classifier: nil, onDevice: AppleFoundationGenerator.isAvailable ? AppleFoundationGenerator() : nil,
-                               cloudLimit: cloudLimit, cap: cap)
+            return { ModelRouter(classifier: nil, onDevice: AppleFoundationGenerator.isAvailable ? AppleFoundationGenerator() : nil,
+                                 cloudLimit: limit, cap: cap) }
         }
-        return ModelRouter(classifier: generator(id), onDevice: nil, cloudLimit: cloudLimit, cap: cap)
+        if let kind = SubscriptionConfig.Kind(rawValue: id) {
+            let client = subscriptionClient(kind)
+            return { ModelRouter(classifier: client, onDevice: nil, cloudLimit: limit, cap: cap) }
+        }
+        guard let provider = providers.first(where: { $0.id == id }) else {
+            return { ModelRouter(classifier: nil, onDevice: nil, cloudLimit: limit, cap: cap) }
+        }
+        let key = try? keys.key(for: provider.endpoint.id)
+        return { ModelRouter(classifier: try Self.client(for: provider, key: key), onDevice: nil, cloudLimit: limit, cap: cap) }
+    }
+
+    /// Whether a provider is missing the API key it needs: Anthropic always, OpenAI's own endpoint.
+    func needsKey(_ provider: ProviderConfig) -> Bool {
+        (provider.endpoint.kind == .anthropic || provider.endpoint.id == ProviderEndpoint.openAI().id) && !hasKey(provider.id)
     }
 
     func upsert(_ provider: ProviderConfig, key: String?) throws {
@@ -359,7 +375,12 @@ final class ModelSettings {
 
     /// A client for a provider, with its key from the Keychain.
     func client(for provider: ProviderConfig) throws -> any GenerationProvider {
-        let key = try keys.key(for: provider.endpoint.id)
+        try Self.client(for: provider, key: try keys.key(for: provider.endpoint.id))
+    }
+
+    /// A client for a provider with this key. Resolves the provider's host, so off the main actor
+    /// where it can wait.
+    nonisolated static func client(for provider: ProviderConfig, key: String?) throws -> any GenerationProvider {
         switch provider.endpoint.kind {
         case .anthropic:
             guard let key, !key.isEmpty else { throw ProviderError.unauthorized }

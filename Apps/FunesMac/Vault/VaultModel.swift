@@ -78,6 +78,8 @@ final class VaultModel {
     /// The search the list shows, the row index of each memory, the snippet pages asked for and
     /// the rows in view. `listing` counts loads, so a page asked for by an older one is dropped.
     @ObservationIgnored private var listedQuery = ""
+    /// The filters the list shows, as `listedQuery` is its search.
+    @ObservationIgnored private var listedFilter = MemoryFilter()
     @ObservationIgnored private var listing = 0
     @ObservationIgnored private var rowIndex: [UUID: Int] = [:]
     @ObservationIgnored private var snippetPages = Set<Int>()
@@ -94,10 +96,12 @@ final class VaultModel {
 
     // MARK: Search answers (FR-AI-17, memory processing §10)
 
+    /// The card's state. An answer keeps the engine's name and the cloud limit as they were when
+    /// it was asked, and a failure its words, so a later change in Settings doesn't relabel it.
     enum Answer: Equatable {
         case reading(count: Int)
-        case answered(SearchAnswer, results: Int)
-        case failed(SearchAnswerError)
+        case answered(SearchAnswer, results: Int, engine: String, limit: String)
+        case failed(text: String, retry: Bool)
     }
 
     /// Answers searches with the user's settings; set by the app.
@@ -114,10 +118,14 @@ final class VaultModel {
     private var quotedValue: Quoted?
     @ObservationIgnored private var answerTask: Task<Void, Never>?
 
-    /// The Ask row: answers on, the Active scope, a non-empty search with results, as listed.
+    /// Whether Search answers are on: the Ask row, the card and the chips show only then.
+    var answersOn: Bool { answers?.isOn ?? false }
+
+    /// The Ask row: answers on, the Active scope, a non-empty search with results, listed for the
+    /// current search and filters (not a list still loading for a change).
     var canAsk: Bool {
-        (answers?.isOn ?? false) && status == .active && !listedQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && listedQuery == query && !memories.isEmpty
+        answersOn && status == .active && !listedQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && listedQuery == query && listedFilter == filter && !memories.isEmpty
     }
 
     /// Asks the chosen model to answer the search from its top results as shown. A new Ask
@@ -125,19 +133,21 @@ final class VaultModel {
     func ask() {
         guard canAsk, let answers else { return }
         answerTask?.cancel()
-        let query = listedQuery
+        let query = listedQuery, filter = listedFilter
         let ids = Array(memories.prefix(SearchAnswerer.memoryCount).map(\.id))
         let total = memories.count
-        answer = .reading(count: ids.count)
+        let engine = answers.engineName, limit = answers.cloudLimitName
+        answer = .reading(count: min(ids.count, answers.readsAtMost))
         answerTask = Task { [weak self] in
             do {
                 let result = try await answers.answer(query, ids: ids)
-                guard !Task.isCancelled, let self, self.listedQuery == query else { return }
-                self.answer = .answered(result, results: total)
+                guard !Task.isCancelled, let self, self.listedQuery == query, self.listedFilter == filter else { return }
+                self.answer = .answered(result, results: total, engine: engine, limit: limit)
             } catch is CancellationError {
             } catch {
-                guard !Task.isCancelled, let self, self.listedQuery == query else { return }
-                self.answer = .failed(error as? SearchAnswerError ?? .vault)
+                guard !Task.isCancelled, let self, self.listedQuery == query, self.listedFilter == filter else { return }
+                let message = answers.message(for: error as? SearchAnswerError ?? .vault)
+                self.answer = .failed(text: message.text, retry: message.retry)
             }
         }
     }
@@ -153,7 +163,7 @@ final class VaultModel {
     /// The cited memories in the order the answer first cites them: their numbers on the card and
     /// on the rows.
     var answerSources: [UUID] {
-        guard case let .answered(result, _) = answer else { return [] }
+        guard answersOn, case let .answered(result, _, _, _) = answer else { return [] }
         var seen = Set<UUID>()
         return result.claims.flatMap(\.citations).map(\.memoryID).filter { seen.insert($0).inserted }
     }
@@ -163,7 +173,9 @@ final class VaultModel {
 
     #if FUNES_UI_REVIEW
     /// The UI review's answer scenes.
-    func reviewAnswer(_ answer: SearchAnswer, results: Int) { self.answer = .answered(answer, results: results) }
+    func reviewAnswer(_ answer: SearchAnswer, results: Int) {
+        self.answer = .answered(answer, results: results, engine: answers?.engineName ?? "", limit: answers?.cloudLimitName ?? "")
+    }
     #endif
 
     /// A claim's number: select the memory, and highlight the quote in its detail.
@@ -210,6 +222,7 @@ final class VaultModel {
             guard !Task.isCancelled, query == self.query, filter == self.filter else { return }
             memories = found
             listedQuery = query
+            listedFilter = filter
             listing += 1
             rowIndex = Dictionary(found.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { a, _ in a })
             snippetPages = [0]

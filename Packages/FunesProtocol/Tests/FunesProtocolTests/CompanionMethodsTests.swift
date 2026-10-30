@@ -45,12 +45,32 @@ import Testing
 
     @Test func everyMethodHasACall() {
         let calls: [any CompanionCall.Type] = [
-            StatusGet.self, CapturesSubmit.self, OverviewGet.self, CategoriesList.self, MemoriesSearch.self, MemoriesGet.self, MemoriesCreate.self,
+            StatusGet.self, CapturesSubmit.self, OverviewGet.self, CategoriesList.self, MemoriesSearch.self, MemoriesAnswer.self, MemoriesGet.self, MemoriesCreate.self,
             MemoriesUpdate.self, MemoriesArchive.self, MemoriesRestore.self, MemoriesDelete.self, InboxList.self, InboxApply.self,
             InboxReject.self, InboxRetry.self, InboxKeep.self, DeviceUnpair.self, ApprovalsList.self, ApprovalsGet.self, ApprovalsAnswer.self,
             ApprovalsSettingsGet.self, ApprovalsSettingsSet.self,
         ]
         #expect(Set(calls.map { $0.method }) == Set(CompanionMethod.allCases))
+    }
+
+    /// `memories.answer` and `status.get`'s `searchAnswers` (§4, v0.6): field names, the error's
+    /// `reason`, and an older Mac's status without `searchAnswers`.
+    @Test func answerShape() throws {
+        let id = UUID()
+        let params = MemoryAnswerParams(query: "coffee", ids: [id])
+        let request = String(decoding: try CompanionRequest(MemoriesAnswer.self, params: params).encoded(), as: UTF8.self)
+        #expect(request.contains(#""method":"memories.answer""#) && request.contains(#""ids":[""#))
+        let result = MemoryAnswerResult(outcome: .noAnswer, claims: [.init(text: "T", citations: [.init(id: id, quote: "a quote here")])],
+                                        read: 3, withheld: 1, dropped: 0, engine: "Claude (Claude Code)", locality: .cloud, durationMs: 4_000)
+        let json = String(decoding: try CompanionJSON.encoder().encode(result), as: UTF8.self)
+        for key in [#""outcome":"no_answer""#, #""locality":"cloud""#, #""durationMs":4000"#, #""quote":"a quote here""#] {
+            #expect(json.contains(key), "\(key)")
+        }
+        let error = String(decoding: try CompanionJSON.encoder().encode(CompanionError(.modelUnavailable, reason: "plan_limit")), as: UTF8.self)
+        #expect(error.contains(#""code":"model_unavailable""#) && error.contains(#""reason":"plan_limit""#))
+        let older = #"{"macName":"Mac","appVersion":"0.5","serverTime":0,"inboxPending":0,"vaultActive":true}"#
+        #expect(try CompanionJSON.decoder().decode(CompanionStatus.self, from: Data(older.utf8)).searchAnswers == nil)
+        #expect(throws: CompanionError.self) { try MemoryAnswerParams(query: "coffee", ids: [id, id]).validate() }
     }
 
     /// `overview.get` (§4): `in` on the wire, dates in milliseconds, counts as JSON objects.

@@ -22,6 +22,9 @@ public enum CompanionClientError: Error, Sendable, Equatable {
     case badResponse(status: Int)
     /// Something on this iPhone failed: the Keychain or a key.
     case local
+    /// `memories.answer` reached the Mac but no answer came within 55 s (v0.6). A slow model, not
+    /// an unreachable Mac: the reachability banner doesn't count it.
+    case answerTimedOut
 }
 
 /// The paired Mac, reachable: where, what `status.get` said, and how long the round trip took.
@@ -65,6 +68,13 @@ public actor CompanionClient {
     public static let bonjourTimeout: TimeInterval = 2
     /// The Mac gives a call 10 s (§7); a little more for the network.
     public static let callTimeout: TimeInterval = 15
+    /// `memories.answer`'s own wait (§7): the Mac's 50 s deadline and the trip.
+    public static let answerTimeout: TimeInterval = 55
+
+    /// A method's wait: 55 s for `memories.answer`, 15 s for the rest.
+    public static func timeout(for method: CompanionMethod) -> TimeInterval {
+        method == .memoriesAnswer ? answerTimeout : callTimeout
+    }
     /// The Mac's Allow prompt waits 60 s; the phone waits at least 65 (§2.2, step 3).
     public static let pairTimeout: TimeInterval = 70
 
@@ -178,15 +188,18 @@ public actor CompanionClient {
     public func call<Call: CompanionCall>(_ call: Call.Type, _ params: Call.Params) async throws(CompanionClientError) -> Call.Result {
         let paired = try loadPaired()
         let address = try await reachableAddress(paired)
-        do { return try await send(call, params, to: address, paired: paired, timeout: Self.callTimeout) } catch {
-            guard case .transport = error else { throw Self.clientError(error) }
+        let timeout = Self.timeout(for: Call.method)
+        do { return try await send(call, params, to: address, paired: paired, timeout: timeout) } catch {
+            guard case let .transport(transportError) = error else { throw Self.clientError(error) }
             // Cancelled by the caller, not unanswered: the address is still good.
             guard !Task.isCancelled else { throw Self.clientError(error) }
+            // A search answer that took too long: the Mac is there, its model is slow. Never resent.
+            if Call.method == .memoriesAnswer, transportError == .timedOut { throw .answerTimedOut }
             cached = nil
             guard Self.repeatable.contains(Call.method) else { throw .unreachable(localNetworkDenied: false) }
         }
         let retry = try await select(paired).address
-        do { return try await send(call, params, to: retry, paired: paired, timeout: Self.callTimeout) } catch {
+        do { return try await send(call, params, to: retry, paired: paired, timeout: timeout) } catch {
             if case .transport = error, !Task.isCancelled { cached = nil }
             throw Self.clientError(error)
         }

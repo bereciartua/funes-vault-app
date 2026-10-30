@@ -16,10 +16,14 @@ struct AnswerCard: View {
                 askRow
             case let .reading(count):
                 reading(count)
-            case let .answered(answer, results):
-                if answer.outcome == .answered { answered(answer, results: results) } else { noAnswer(answer) }
-            case let .failed(error):
-                failed(error)
+            case let .answered(answer, results, engine, limit):
+                if answer.outcome == .answered {
+                    answered(answer, results: results, engine: engine, limit: limit)
+                } else {
+                    noAnswer(answer, limit: limit)
+                }
+            case let .failed(text, retry):
+                failed(text, retry: retry)
             }
         }
         .padding(.vertical, 6)
@@ -50,22 +54,22 @@ struct AnswerCard: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func header(_ answer: SearchAnswer?) -> some View {
+    private func header(_ answer: SearchAnswer?, engine: String = "") -> some View {
         HStack(spacing: 6) {
             Image(systemName: "sparkles").foregroundStyle(Color.accentColor)
             Text(String(localized: "Answer")).fontWeight(.semibold)
             if let answer, let locality = answer.locality {
-                Pill(label: locality == .onDevice ? locality.title : "\(vault.answers?.engineName ?? "") · \(locality.title)",
+                Pill(label: locality == .onDevice ? locality.title : "\(engine) · \(locality.title)",
                      tone: locality.isLocal ? .good : .warning)
             }
             Spacer()
         }
     }
 
-    private func answered(_ answer: SearchAnswer, results: Int) -> some View {
+    private func answered(_ answer: SearchAnswer, results: Int, engine: String, limit: String) -> some View {
         let sources = vault.answerSources
         return VStack(alignment: .leading, spacing: 10) {
-            header(answer)
+            header(answer, engine: engine)
             ForEach(Array(answer.claims.enumerated()), id: \.offset) { index, claim in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -91,7 +95,7 @@ struct AnswerCard: View {
                 }
                 .accessibilityElement(children: .combine)
             }
-            footer(answer, results: results)
+            footer(answer, results: results, limit: limit)
             HStack {
                 Button(String(localized: "Copy")) {
                     NSPasteboard.general.clearContents()
@@ -106,11 +110,11 @@ struct AnswerCard: View {
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.accentColor.opacity(0.25)))
     }
 
-    private func noAnswer(_ answer: SearchAnswer) -> some View {
+    private func noAnswer(_ answer: SearchAnswer, limit: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             header(nil)
             Text(String(localized: "No answer in the \(answer.read) results read.")).foregroundStyle(.secondary)
-            ForEach(Self.notes(answer, limit: vault.answers?.cloudLimitName ?? ""), id: \.self) {
+            ForEach(Self.notes(answer, limit: limit), id: \.self) {
                 Text($0).font(.caption).foregroundStyle(.secondary)
             }
             Button(String(localized: "Clear")) { vault.clearAnswer() }.controlSize(.small)
@@ -119,13 +123,12 @@ struct AnswerCard: View {
         .background(RoundedRectangle(cornerRadius: 8).fill(Palette.card))
     }
 
-    private func failed(_ error: SearchAnswerError) -> some View {
-        let message = vault.answers?.message(for: error) ?? (text: String(localized: "Couldn't answer."), retry: true)
-        return VStack(alignment: .leading, spacing: 6) {
+    private func failed(_ text: String, retry: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
             header(nil)
-            Label(message.text, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary)
+            Label(text, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary)
             HStack {
-                if message.retry { Button(String(localized: "Try Again")) { vault.ask() } }
+                if retry { Button(String(localized: "Try Again")) { vault.ask() } }
                 Button(String(localized: "Clear")) { vault.clearAnswer() }
             }
             .controlSize(.small)
@@ -134,11 +137,11 @@ struct AnswerCard: View {
         .background(RoundedRectangle(cornerRadius: 8).fill(Palette.card))
     }
 
-    private func footer(_ answer: SearchAnswer, results: Int) -> some View {
+    private func footer(_ answer: SearchAnswer, results: Int, limit: String) -> some View {
         let seconds = Int((Double(answer.duration.components.seconds) + Double(answer.duration.components.attoseconds) / 1e18).rounded())
         return VStack(alignment: .leading, spacing: 2) {
             Text(String(localized: "Read \(answer.read) of \(results) results · \(seconds) s"))
-            ForEach(Self.notes(answer, limit: vault.answers?.cloudLimitName ?? ""), id: \.self) { Text($0) }
+            ForEach(Self.notes(answer, limit: limit), id: \.self) { Text($0) }
         }
         .font(.caption).foregroundStyle(.secondary)
     }

@@ -77,6 +77,10 @@ struct MemoryDetailView: View {
         .onChange(of: form.body) { _, body in
             if let memory, body != memory.body, model.vault.quoted?.memoryID == memoryID { model.vault.quoted = nil }
         }
+        // An edit from elsewhere (the iPhone, the Inbox) also retires it.
+        .onChange(of: memory?.body) { old, _ in
+            if old != nil, model.vault.quoted?.memoryID == memoryID { model.vault.quoted = nil }
+        }
         .onChange(of: model.dataGeneration) { _, _ in load(resetForm: !dirty) }
         .confirmationDialog(String(localized: "Is this still true?"), isPresented: $confirmStillTrue) {
             Button(String(localized: "Still True")) { stillTrue() }

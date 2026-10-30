@@ -8,6 +8,8 @@ public enum CompanionMethod: String, Codable, Sendable, CaseIterable {
     case overviewGet = "overview.get"
     case categoriesList = "categories.list"
     case memoriesSearch = "memories.search"
+    /// A search answer from the results the phone shows (v0.6, ADR-0028).
+    case memoriesAnswer = "memories.answer"
     case memoriesGet = "memories.get"
     case memoriesCreate = "memories.create"
     case memoriesUpdate = "memories.update"
@@ -147,15 +149,35 @@ public struct CompanionStatus: Codable, Sendable, Equatable {
     /// The name the profile says to call the user (preferred, else given), for Home's title
     /// (v0.5, ADR-0026). Absent without one, and from older Macs.
     public var calledName: String?
+    /// Present only while the Mac's Search answers are on with a model that can answer (v0.6,
+    /// ADR-0028): the phone shows Ask only then.
+    public var searchAnswers: SearchAnswersStatus?
 
     public init(macName: String, appVersion: String, serverTime: Date, inboxPending: Int, vaultActive: Bool,
-                calledName: String? = nil) {
+                calledName: String? = nil, searchAnswers: SearchAnswersStatus? = nil) {
         self.macName = macName
         self.appVersion = appVersion
         self.serverTime = serverTime
         self.inboxPending = inboxPending
         self.vaultActive = vaultActive
         self.calledName = calledName
+        self.searchAnswers = searchAnswers
+    }
+}
+
+/// Where a search answer's model runs, as the card's badge says.
+public enum AnswerLocality: String, Codable, Sendable, CaseIterable {
+    case onDevice, localServer, appleCloud, cloud
+}
+
+/// Which model answers the Mac's searches: a display name ("Claude (Claude Code)") and where it runs.
+public struct SearchAnswersStatus: Codable, Sendable, Equatable {
+    public var engine: String
+    public var locality: AnswerLocality
+
+    public init(engine: String, locality: AnswerLocality) {
+        self.engine = engine
+        self.locality = locality
     }
 }
 
@@ -248,6 +270,92 @@ public struct CompanionCategory: Codable, Sendable, Equatable {
 }
 
 // MARK: - memories.*
+
+/// `memories.answer` (v0.6, ADR-0028): the Mac answers `query` from the memories the phone shows,
+/// re-read as the owner (memory processing §10.3–10.4). Its own deadline (§7); never resent.
+public enum MemoriesAnswer: CompanionCall {
+    public static let method = CompanionMethod.memoriesAnswer
+    public typealias Params = MemoryAnswerParams
+    public typealias Result = MemoryAnswerResult
+}
+
+public struct MemoryAnswerParams: Codable, Sendable, Equatable {
+    public var query: String
+    public var filters: MemorySearchFilters?
+    /// The results the phone shows, in order: 1 to 8. Never memory text.
+    public var ids: [UUID]
+
+    public init(query: String, filters: MemorySearchFilters? = nil, ids: [UUID]) {
+        self.query = query
+        self.filters = filters
+        self.ids = ids
+    }
+
+    public static let maxIDs = 8
+
+    public func validate() throws(CompanionError) {
+        guard (1...Self.maxIDs).contains(ids.count) else { throw CompanionError(.invalidInput, message: "ids is 1 to 8") }
+        guard Set(ids).count == ids.count else { throw CompanionError(.invalidInput, message: "Repeated ids") }
+        let length = InputLimits.length(of: query.trimmingCharacters(in: .whitespacesAndNewlines))
+        guard length > 0, length <= InputLimits.task.upperBound else { throw CompanionError(.invalidInput, message: "Bad query") }
+    }
+}
+
+public struct MemoryAnswerResult: Codable, Sendable, Equatable {
+    public enum Outcome: String, Codable, Sendable {
+        case answered
+        case noAnswer = "no_answer"
+    }
+
+    public struct Citation: Codable, Sendable, Equatable, Hashable {
+        public var id: UUID
+        /// The phone finds it in the memory it opens with `QuoteLocator`; no offsets travel.
+        public var quote: String
+
+        public init(id: UUID, quote: String) {
+            self.id = id
+            self.quote = quote
+        }
+    }
+
+    public struct Claim: Codable, Sendable, Equatable, Hashable {
+        public var text: String
+        public var citations: [Citation]
+
+        public init(text: String, citations: [Citation]) {
+            self.text = text
+            self.citations = citations
+        }
+    }
+
+    public var outcome: Outcome
+    public var claims: [Claim]
+    public var read: Int
+    public var withheld: Int
+    public var dropped: Int
+    /// The display name ("Claude (Claude Code)").
+    public var engine: String
+    public var locality: AnswerLocality
+    public var durationMs: Int
+
+    public init(outcome: Outcome, claims: [Claim], read: Int, withheld: Int, dropped: Int, engine: String,
+                locality: AnswerLocality, durationMs: Int) {
+        self.outcome = outcome
+        self.claims = claims
+        self.read = read
+        self.withheld = withheld
+        self.dropped = dropped
+        self.engine = engine
+        self.locality = locality
+        self.durationMs = durationMs
+    }
+
+    /// The cited memories in the order the answer first cites them: the card's numbers.
+    public var sources: [UUID] {
+        var seen = Set<UUID>()
+        return claims.flatMap(\.citations).map(\.id).filter { seen.insert($0).inserted }
+    }
+}
 
 public enum MemoriesSearch: CompanionCall {
     public static let method = CompanionMethod.memoriesSearch

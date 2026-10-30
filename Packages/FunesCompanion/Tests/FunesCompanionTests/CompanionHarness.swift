@@ -36,7 +36,9 @@ final class CompanionHarness: @unchecked Sendable {
         var deviceID: UUID?
     }
 
-    init(gate: TunnelGate? = nil, promptTimeout: TimeInterval = PairingService.defaultPromptTimeout) throws {
+    init(gate: TunnelGate? = nil, promptTimeout: TimeInterval = PairingService.defaultPromptTimeout,
+         answers: (any SearchAnswering)? = nil, callTimeout: Duration = CompanionHandlers.callTimeout,
+         answerTimeout: Duration = CompanionHandlers.answerTimeout) throws {
         directory = FileManager.default.temporaryDirectory.appending(path: "funes-companion-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         store = try VaultStore.open(directory: directory)
@@ -48,13 +50,13 @@ final class CompanionHarness: @unchecked Sendable {
         services = CompanionServices(store: store, devices: DeviceService(store: store, activity: activity),
                                      captures: CaptureService(store: store, activity: activity),
                                      suggestions: SuggestionService(store: store, activity: activity, pause: pause, disclosures: disclosures),
-                                     search: search, agents: agents, activity: activity)
+                                     search: search, agents: agents, activity: activity, answers: answers)
         pairing = PairingService(identity: identity, devices: services.devices, activity: activity, promptTimeout: promptTimeout)
         let clock = Clock()
         self.clock = clock
         approvals = CompanionApprovals(services: services, disclosures: disclosures, doorbell: doorbell)
         let handlers = CompanionHandlers(services: services, macName: { "Maya's MacBook Pro" }, appVersion: "0.2.0",
-                                         approvals: approvals)
+                                         approvals: approvals, callTimeout: callTimeout, answerTimeout: answerTimeout)
         router = CompanionRouter(identity: identity, devices: services.devices, pairing: pairing, handlers: handlers, gate: gate,
                                  clock: { clock.now })
     }

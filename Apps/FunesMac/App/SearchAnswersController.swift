@@ -6,7 +6,7 @@ import FunesProtocol
 /// from the companion, the iPhone's. Each answer builds its router from Settings ▸ AI Models at
 /// the time it's asked, so a change of model applies to the next Ask.
 @MainActor
-final class SearchAnswersController {
+final class SearchAnswersController: SearchAnswering {
     let environment: VaultEnvironment
     let settings: ModelSettings
     private let answerer: SearchAnswerer
@@ -34,8 +34,37 @@ final class SearchAnswersController {
         }
     }
 
+    /// The model that would answer, for `status.get`: nil while answers are off or nothing can
+    /// answer (no model on device, a plan that isn't installed, a provider without a model).
+    func engine() async -> SearchAnswerEngine? {
+        guard isOn else { return nil }
+        if settings.searchAnswersOnDevice {
+            return AppleFoundationGenerator.isAvailable ? SearchAnswerEngine(name: engineName, locality: .onDevice) : nil
+        }
+        if let plan = settings.searchAnswersPlan {
+            return settings.executables[plan] == nil ? nil : SearchAnswerEngine(name: engineName, locality: .cloud)
+        }
+        guard let provider = settings.searchAnswersProvider, !provider.model.isEmpty, !settings.needsKey(provider) else { return nil }
+        let endpoint = provider.endpoint
+        let locality = await Task.detached(priority: .utility) { endpoint.locality() }.value
+        return SearchAnswerEngine(name: engineName, locality: locality)
+    }
+
+    /// Whether the effective model is Apple on-device, which reads at most 5 results.
+    var readsAtMost: Int { settings.searchAnswersOnDevice ? SearchAnswerer.onDeviceMemoryCount : SearchAnswerer.memoryCount }
+
     func answer(_ query: String, ids: [UUID], actor: Actor = .user, via: ActivityEvent.Via = .app) async throws -> SearchAnswer {
-        let router = settings.makeSearchAnswerRouter(cap: settings.cap(store: environment.store, activity: environment.activity))
+        let build = settings.searchAnswerRouterBuilder(cap: settings.cap(store: environment.store, activity: environment.activity))
+        let router: ModelRouter
+        do {
+            router = try await Task.detached(priority: .userInitiated) { try build() }.value
+        } catch {
+            // The client couldn't be made (a provider without its key): no call, but the attempt is logged.
+            let failure = SearchAnswerError.provider(error as? ProviderError ?? .unavailable)
+            answerer.logFailure(failure, engine: nil, actor: actor, via: via)
+            throw failure
+        }
+        defer { settings.collectUsage(from: router) }
         return try await answerer.answer(query, ids: ids, router: router, actor: actor, via: via)
     }
 
