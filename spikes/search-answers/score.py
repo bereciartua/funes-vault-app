@@ -17,6 +17,12 @@ from collections import Counter
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+# Facts GPT-6-Astra left empty for its two above-limit questions, which only Apple can answer (it
+# gets every memory); a cloud model should give no answer there.
+FACT_OVERLAY = {
+    ("astra", "h13"): [{"keys": [r"Ferreira"], "required": True, "memory": "m143"}],
+    ("astra", "h14"): [{"keys": [r"78[,.]?000"], "required": True, "memory": "m182"}],
+}
 GATES = {"correct": 0.95, "no_answer": 0.90, "answered": 0.80, "p95_ms": 15_000}
 
 
@@ -46,7 +52,14 @@ def pct(a, b):
 
 
 def score(provider, set_name, records, questions, labels):
-    qs = {q["id"]: q for q in questions}
+    qs = {q["id"]: dict(q) for q in questions}
+    for (s, qid), facts in FACT_OVERLAY.items():
+        if s == set_name and qid in qs and not qs[qid]["facts"]:
+            qs[qid]["facts"] = facts
+    if provider == "apple":
+        # Rules that only make sense for a cloud model, which can't see above-limit memories.
+        for q in qs.values():
+            q["must_not"] = [m for m in q["must_not"] if "cloud" not in m["label"]]
     claims = correct = wrong_n = unmatched_n = 0
     unmatched, wrongs = [], []
     ans_n = ans_ok = noans_n = noans_ok = 0
@@ -54,7 +67,8 @@ def score(provider, set_name, records, questions, labels):
     conflict_n = conflict_ok = 0
     dropped = Counter()
     failed = 0
-    latencies = [r["ms"] for r in records if r.get("called") and r.get("ok")]
+    # Every attempted call, failed ones included, so a timeout can't flatter p95.
+    latencies = [r["ms"] for r in records if r.get("called")]
     tokens = [(r.get("promptTokens") or 0, r.get("outputTokens") or 0) for r in records if r.get("called") and r.get("ok")]
     for r in records:
         q = qs[r["id"]]
@@ -70,14 +84,16 @@ def score(provider, set_name, records, questions, labels):
             bad = [m["label"] for m in q["must_not"] if wrong(m, text)]
             key = f"{provider}/{set_name}/{r['id']}/{i}"
             label = labels.get(key)
+            label_facts = []
             if isinstance(label, dict):
+                label_facts = label.get("facts", [])
                 label = label.get("correct")
             if label is False:
                 wrong_n += 1
                 wrongs.append((r["id"], text, ["labelled wrong"]))
             elif label is True:
                 correct += 1
-                matched_facts.update(hits)
+                matched_facts.update(hits + label_facts)
             elif bad:
                 wrong_n += 1
                 wrongs.append((r["id"], text, bad))
@@ -153,7 +169,7 @@ def main():
             continue
         parts = [score(provider, name, recs, qs, labels)[0] for name, recs, qs in sets]
         recs = [x for _, rs, _ in sets for x in rs]
-        lat = sorted(x["ms"] for x in recs if x.get("called") and x.get("ok"))
+        lat = sorted(x["ms"] for x in recs if x.get("called"))
         p50 = statistics.median(lat)
         p95 = lat[min(len(lat) - 1, int(round(0.95 * (len(lat) - 1))))]
         tot = lambda k: sum(p[k] for p in parts)

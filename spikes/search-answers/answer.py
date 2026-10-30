@@ -113,9 +113,11 @@ def normalize(s):
 
 
 def quote_found(quote, text):
-    q = normalize(quote)
-    if not (8 <= len(q) <= 300):
+    """8 to 300 characters as given; found within one passage after normalizing. (The spike splits
+    the sent text at every " … "; FunesCore keeps the real passage boundaries instead.)"""
+    if not (8 <= len(quote) <= 300):
         return False
+    q = normalize(quote)
     return any(q in normalize(part) for part in text.split(PASSAGE_JOIN))
 
 

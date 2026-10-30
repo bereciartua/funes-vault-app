@@ -41,6 +41,9 @@
  },
  "claude-haiku/astra/h03/0": {
   "correct": true,
+  "facts": [
+   0
+  ],
   "note": "True (m056): Swift Testing for new tests; doesn't say 'unit', which the keys wanted."
  },
  "claude-haiku/astra/h03/1": {
@@ -54,5 +57,18 @@
  "codex-terra/astra/h16/0": {
   "correct": true,
   "note": "True (m158) and says the brand isn't recorded; still a miss for the right 'no answer'."
+ },
+ "_note": "Every surviving cloud claim (175) was read against its quotes on 29 Oct 2026; only the ones that need a label are listed. Apple's claims are scored lexically only.",
+ "claude-haiku/main/q29/1": {
+  "correct": false,
+  "note": "Misreads m043: the calls are at Lisbon time; the parents are in Buenos Aires, not on Lisbon time."
+ },
+ "claude-haiku/main/q35/0": {
+  "correct": false,
+  "note": "'You don't drive a car' contradicts m052's occasional car share."
+ },
+ "codex-luna/main/q35/0": {
+  "correct": false,
+  "note": "'so you don't drive one' contradicts m052's occasional car share."
  }
 }
