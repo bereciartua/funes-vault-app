@@ -26,6 +26,8 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ### Fixed
 
+- **iPhone: Home's composer opens only for the widget tap that asked for it.** After opening Funes from the Remember widget (or the Control), going to another tab and back to Home focused the composer again, or started dictating, as if you'd just tapped the widget. Now it's used once.
+
 - **Restoring a backup no longer lets removed agents back in.** **Restore from Backup** put back the whole vault as it was, including agents you'd removed since, keys and remote tokens you'd reset, cloud access you'd turned off, access you'd narrowed and iPhones you'd unpaired, so an agent that kept an old key could connect again. A restore now brings back your memories but keeps your agents, their access and your paired iPhones as they are now, including ones added since the backup. A category you deleted since comes back denied to every agent. Memories come back with their sensitivity and categories as they were then. Requests that were waiting when the backup was taken don't come back. A backup from a newer version of Funes is refused instead of leaving a vault the app can't open.
 
 - **iPhone: searching no longer says your Mac isn't reachable.** Typing in Search often showed **Mac not reachable** until you tapped Try Again. Each new letter cancels the search still on its way to the Mac, and the app took that cancelled search for the Mac not answering. It also forgot the Mac's address, so the next search had to find the Mac again. A cancelled search is now just dropped, and while new results are on their way a spinner shows at the top left over the previous results. Leaving the Inbox or a memory before it loads no longer reports the Mac unreachable either.
