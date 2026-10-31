@@ -180,6 +180,9 @@
     "%lld expired" : {
 
     },
+    "%lld in" : {
+
+    },
     "%lld in (%@)" : {
       "localizations" : {
         "en" : {
@@ -732,19 +735,10 @@
     "Good afternoon" : {
 
     },
-    "Good afternoon, %@" : {
-
-    },
     "Good evening" : {
 
     },
-    "Good evening, %@" : {
-
-    },
     "Good morning" : {
-
-    },
-    "Good morning, %@" : {
 
     },
     "History" : {
@@ -981,6 +975,9 @@
 
     },
     "Nothing new this week." : {
+
+    },
+    "Nothing shared in 30 days" : {
 
     },
     "Notifications are off for Funes Vault on this iPhone." : {
@@ -1396,6 +1393,9 @@
     "Shows the longer ranges" : {
 
     },
+    "Shows who read your vault, and when" : {
+
+    },
     "Sign in to iCloud on this iPhone, with the same Apple Account as your Mac, to get notifications." : {
 
     },
@@ -1581,6 +1581,9 @@
     "This was already answered." : {
 
     },
+    "This week" : {
+
+    },
     "This week: %@." : {
 
     },
@@ -1695,7 +1698,16 @@
     "When you ask" : {
 
     },
+    "Who reads" : {
+
+    },
     "Who reads your vault" : {
+
+    },
+    "Who reads, last 30 days: %@" : {
+
+    },
+    "Who reads: nothing shared in 30 days" : {
 
     },
     "Why" : {

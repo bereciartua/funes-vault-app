@@ -61,15 +61,15 @@ In v0.2–0.3 each state shows as a banner at the top of Capture, Search and the
 *v0.4, [Phase 7](../plans/phase-7-home.md) task 7.4.* **Home replaces Capture** as the first tab, where the app opens (the Control and "Remember in Funes" open it too). Everything Capture has stays; the vault's pulse joins it, with no memory text or titles.
 
 Top to bottom:
-1. **Title:** "Good morning / afternoon / evening" (large title), with ", <name>" from v0.5 when the Mac's About You has one: the name Funes calls you, from `status.get`, kept from the last contact so it shows while the Mac is away ([ADR-0026](../architecture/decisions/0026-about-you-profile.md)). The demo vault gets a sample name, so the demo says "Good morning, Alex". A name too long for the large title truncates; it's never moved to a second line. Nothing else in the header (the [status bar](#status-bar) is at the bottom).
+1. **Title:** "Good morning / afternoon / evening" (large title), without a name. *(v0.5 added ", <name>" from the Mac's About You ([ADR-0026](../architecture/decisions/0026-about-you-profile.md)); the large title cut it at most text sizes ("Good afternoon, Mar…"), so the iPhone dropped it after v0.5. The Mac's Home still greets by name, and the pairing record still keeps the name.)* Nothing else in the header (the [status bar](#status-bar) is at the bottom).
 2. **Composer:** the Capture tab's field ("What should Funes remember?"), mic and **Remember**: queued instantly, delivered when it can. At rest it's one line with the mic, so the Pulse card starts high on the screen; focused, holding text or dictating, the field grows and **Remember** appears under it.
 3. **Waiting for you:** agents' requests, when there are any, above the charts because they have a deadline.
-4. **Pulse card:** "This week: 7 saved, 7 shared with 2 agents."; a 7 / 30-day switch; the in/out chart as on the Mac's Home (in by source above the line, out by agent below, refused dots). Dragging a finger across it shows each day's numbers above the chart, with a light haptic per day.
-5. **Tiles:** Memories (total, growth line, "+7 this week"), Sensitivity (the vault's mix and what was shared), Rhythm (the last 8 weeks, the streak).
-6. **Who reads your vault:** the top three agents, the memories shared in 30 days, and when each last read.
+4. **Week tile** (full width): "This week" with its dates ("Oct 25 – 31"), "7 saved · 7 shared" and the last 7 days' in/out chart as on the Mac's Home (in by source above the line, out by agent below, refused dots), a weekday letter under each day. Holding a finger on it, then dragging, puts each day's numbers in place of the week's, with a light haptic per day.
+5. **Tiles, two by two:** Memories (total, growth line, "+7 this week") and Rhythm (the last 10 weeks, the streak); Sensitivity (the vault's mix and what was shared, "Vault: 48% Low") and Who reads (the agents shared something in 30 days, most first, with their counts).
+6. *(Who reads your vault, the list with when each agent last asked, moved to the Who reads tile's sheet.)*
 7. **Recent captures:** the last five with their status; **Show All** for the rest.
 
-- **Taps:** Memories → Search, newest first; Sensitivity → Search filtered by level; Rhythm and the Pulse card → a sheet with the chart full width and the longer ranges (12 weeks, 12 months).
+- **Taps:** Memories → Search, newest first; Sensitivity → Search filtered by level; Rhythm and the week tile's header → the Pulse sheet, with the chart full width, its legend and the longer ranges (30 days, 12 weeks, 12 months); Who reads → the Who reads sheet.
 - **Data:** `overview.get`, on foreground, pull to refresh and after captures are delivered; the answer is cached (ADR-0025).
 - **States:**
 
@@ -79,13 +79,16 @@ Top to bottom:
   | Mac not reachable | as Capture (queued) | the cached snapshot, dimmed, with "As of 10:42" |
   | Not paired | as Capture (queued until pairing) | a **Pair with your Mac** card, with **Try Demo** |
   | Demo | demo | the demo vault's sample counts |
-  | New vault | as Capture | "Your pulse starts with your first memories"; Who reads: "No agent has read your vault yet" |
+  | New vault | as Capture | "Your pulse starts with your first memories"; Who reads: "Nothing shared in 30 days" (its sheet: "No agent has read your vault yet") |
 
-- *Built (task 7.4):*
+- *Built (task 7.4; the week tile and the tiles two by two replaced the Pulse card, the three tiles in a row and the Who reads list after v0.5, after the author's use at a large text size: the card took 45% of the first screen and the tiles slid under the tab bar):*
+  - **Week tile:** the header row opens the sheet on 7 days (VoiceOver reads it as "This week: 7 saved, 7 shared with 2 agents."); the headline is one line, shrinking rather than wrapping, so scrubbing never moves the chart; a day under the finger reads "Wed, Oct 28 · 53 in · 59 shared · 1 refused" (VoiceOver's step-through and audio graph keep the full breakdown). No switch, no legend, no edge numbers on Home: the sheet has them.
+  - **Tiles, two by two:** 22 pt corners, the widgets' look; each row as tall as its taller tile; one column at the accessibility text sizes. Who reads shows the agents shared something in 30 days (up to three, names redacted while locked), each with a bar against the first in the chart's colour for it, and opens a sheet with the rows below.
+  - *Up to v0.5:*
   - **Pulse card:** the sentence row opens the sheet (with a chevron); the switch shows 7 or 30 days, both from the 30-day overview, and starts on 30 days. The Out stack names the top three agents by memories shared, then Other. Above the chart: the range's totals ("Last 30 days: 83 in · 194 shared · 2 refused"), or the day under the finger ("Thu, Oct 22 · 2 in (2 iPhone) · 2 shared (Claude Code 2)"). Under it, a legend that names every series. **Scrubbing is press and hold (0.3 s), then drag**, so a swipe that starts on the chart still scrolls Home.
   - **Tiles:** Memories (total, the 12-week growth line, "+23 this week"); Sensitivity (a Vault bar and a Shared bar, coloured by level), which opens a menu of the vault's levels with their counts, each opening Search filtered to that level (Search's filter button changes or clears it); Rhythm (8 weeks, a column per calendar week, and "13-week streak", "No streak yet" or "Too few memories for a rhythm yet").
   - **The sheet:** "Pulse", with 7 days · 30 days · 12 weeks · 12 months (12 weeks and 12 months asked for when shown, then cached), and the 12-week Rhythm grid with "Most on Sundays · 13-week streak". The Rhythm tile opens it on 12 weeks.
-  - **Who reads:** agents shared something or asking in 30 days: the name (redacted while locked), "128 memories shared" and how long ago it last asked.
+  - **Who reads** (now the Who reads sheet, from the 30-day overview whatever the Pulse sheet last showed): agents shared something or asking in 30 days: the name (redacted while locked), "128 memories shared" and how long ago it last asked.
   - **Mac not reachable:** whenever the Mac isn't connected, the charts are faded and greyed, with "As of 10:42" ("As of Oct 21, 10:42 PM" once it isn't today's). A range the cache doesn't have says so in the sheet.
   - The composer is one line (36 pt) at rest. Focusing it, typing, dictating, or the Remember widget and the Control opening it, grow the field to 96 pt (and on as you type) and show **Remember**; closing the keyboard with the field empty folds it back. *(Was 96 pt with **Remember** always shown, about half the first screen, until the author's first days of use.)*
   - **Closing the keyboard:** Return adds a line, so the keyboard has a **Done** button above it, scrolling Home pulls it down (interactively), and tapping anywhere outside the field closes it (taps on tiles, cards and Waiting for you still work). Each keeps the text; none stops dictation. The memory edit sheet (Edit, and the Inbox's Edit & Save) and the share extension's note have the same **Done**.

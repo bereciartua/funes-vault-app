@@ -51,7 +51,7 @@ struct HomeView: View {
                     Button("Done") { focused = false }.bold()
                 }
             }
-            .navigationTitle(Self.greeting(Date(), name: model.calledName))
+            .navigationTitle(Self.greeting(Date()))
             .refreshable { await model.refresh(fresh: true) }
             .overlay(alignment: .bottom) {
                 if toast {
@@ -65,6 +65,7 @@ struct HomeView: View {
             }
             .sensoryFeedback(.success, trigger: saved)
             .sheet(item: Bindable(model).pulseSheet) { range in PulseSheet(model: model, range: range) }
+            .sheet(isPresented: Bindable(model).readersSheet) { ReadersSheet(model: model) }
             .onChange(of: text) { problem = nil }
             .onChange(of: model.captureRequests, initial: true) { _, requests in
                 guard requests > 0 else { return }
@@ -81,22 +82,13 @@ struct HomeView: View {
     /// Recent captures shows this many; Show All has the rest.
     static let recentShown = 5
 
-    /// "Good morning", "Good afternoon" or "Good evening".
-    /// "Good afternoon, Alex", or "Good afternoon" without a name (ADR-0026). A long name is cut
-    /// by the navigation bar.
-    static func greeting(_ now: Date, name: String? = nil, calendar: Calendar = .autoupdatingCurrent) -> String {
-        let hour = calendar.component(.hour, from: now)
-        guard let name, !name.isEmpty else {
-            switch hour {
-            case 5..<12: return String(localized: "Good morning")
-            case 12..<18: return String(localized: "Good afternoon")
-            default: return String(localized: "Good evening")
-            }
-        }
-        switch hour {
-        case 5..<12: return String(localized: "Good morning, \(name)")
-        case 12..<18: return String(localized: "Good afternoon, \(name)")
-        default: return String(localized: "Good evening, \(name)")
+    /// "Good morning", "Good afternoon" or "Good evening", without the name: with it, the large
+    /// title was cut at most text sizes.
+    static func greeting(_ now: Date, calendar: Calendar = .autoupdatingCurrent) -> String {
+        switch calendar.component(.hour, from: now) {
+        case 5..<12: String(localized: "Good morning")
+        case 12..<18: String(localized: "Good afternoon")
+        default: String(localized: "Good evening")
         }
     }
 
