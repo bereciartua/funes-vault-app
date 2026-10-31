@@ -190,6 +190,21 @@ enum OverviewWords {
         return parts.joined(separator: " · ")
     }
 
+    /// "Wed 28 Oct · 53 in · 59 shared · 1 refused": Home's week tile, a day under a finger, in
+    /// one line (the breakdown is VoiceOver's and the sheet's).
+    static func day(_ bucket: Pulse.Bucket, calendar: Calendar) -> String {
+        var parts = [self.bucket(bucket.date, unit: .day, calendar: calendar), String(localized: "\(bucket.inbound.total) in"),
+                     String(localized: "\(bucket.shared) shared")]
+        if bucket.refused > 0 { parts.append(String(localized: "\(bucket.refused) refused")) }
+        return parts.joined(separator: " · ")
+    }
+
+    /// "Oct 25 – 31": the days the week tile shows, in the Mac's calendar.
+    static func days(_ pulse: Pulse, calendar: Calendar) -> String? {
+        guard let first = pulse.buckets.first?.date, let last = pulse.buckets.last?.date, first < last else { return nil }
+        return (first..<last).formatted(Date.IntervalFormatStyle(calendar: calendar, timeZone: calendar.timeZone).month(.abbreviated).day())
+    }
+
     static func agentName(_ agent: Pulse.Agent) -> String { agent.name ?? String(localized: "Other") }
 
     /// "Most on Sundays".
@@ -244,6 +259,8 @@ struct PulseChart: View {
     var selection: Binding<Date?>?
     /// The x axis's dates and the halves' peaks; the widgets leave them out.
     var showsAxis = true
+    /// Without the axis, a weekday letter under each day, today's in bold: Home's week tile.
+    var showsWeekdays = false
 
     var body: some View {
         chart
@@ -261,11 +278,23 @@ struct PulseChart: View {
                 }
             }
             .chartYScale(domain: PulseScale.domain)
+            .modifier(EveryDay(domain: showsWeekdays ? dayDomain : nil))
             .chartXAxis {
                 if showsAxis {
                     AxisMarks(values: axisDates) { value in
                         AxisValueLabel {
                             if let date = value.as(Date.self) { Text(Self.axisLabel(date, unit: pulse.unit, calendar: calendar)) }
+                        }
+                    }
+                } else if showsWeekdays {
+                    AxisMarks(values: .stride(by: .day)) { value in
+                        AxisValueLabel(centered: true) {
+                            if let date = value.as(Date.self) {
+                                let today = calendar.isDateInToday(date)
+                                Text(Self.weekdayLetter(date, calendar: calendar))
+                                    .font(.caption2.weight(today ? .bold : .regular))
+                                    .foregroundStyle(today ? .primary : .secondary)
+                            }
                         }
                     }
                 } else {
@@ -336,6 +365,30 @@ struct PulseChart: View {
         guard dates.count > 2 else { return dates }
         let n = dates.count
         return [dates[0], dates[n / 2], dates[n - 1]]
+    }
+
+    /// The first bucket's start to the last one's end, so days with nothing still get their place
+    /// and letter.
+    private var dayDomain: ClosedRange<Date>? {
+        guard let first = pulse.buckets.first?.date, let last = pulse.buckets.last?.date,
+              let end = calendar.date(byAdding: pulse.unit.component, value: 1, to: last) else { return nil }
+        return first...end
+    }
+
+    /// The x scale pinned to `domain` when there is one; the marks' own otherwise.
+    private struct EveryDay: ViewModifier {
+        let domain: ClosedRange<Date>?
+
+        func body(content: Content) -> some View {
+            if let domain { content.chartXScale(domain: domain) } else { content }
+        }
+    }
+
+    /// "W": the day's narrow weekday.
+    static func weekdayLetter(_ date: Date, calendar: Calendar) -> String {
+        let symbols = calendar.veryShortStandaloneWeekdaySymbols
+        let weekday = calendar.component(.weekday, from: date)
+        return symbols.indices.contains(weekday - 1) ? symbols[weekday - 1] : ""
     }
 
     static func axisLabel(_ date: Date, unit: Pulse.Unit, calendar: Calendar) -> String {
@@ -587,12 +640,14 @@ struct SensitivityBars: View {
 
     /// "Vault: 48% Low · Shared: 78% Low", for VoiceOver and the tile's line.
     static func describe(vault: SensitivityMix, shared: SensitivityMix) -> String {
-        func part(_ mix: SensitivityMix) -> String? {
-            guard let largest = mix.largest else { return nil }
-            return "\(mix.fraction(largest.level).formatted(.percent.precision(.fractionLength(0)))) \(largest.level.title)"
-        }
-        let parts = [part(vault).map { String(localized: "Vault: \($0)") }, part(shared).map { String(localized: "Shared: \($0)") }]
+        let parts = [largest(vault).map { String(localized: "Vault: \($0)") }, largest(shared).map { String(localized: "Shared: \($0)") }]
         return parts.compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// "48% Low": the mix's largest level and its share; nil for an empty mix.
+    static func largest(_ mix: SensitivityMix) -> String? {
+        guard let largest = mix.largest else { return nil }
+        return "\(mix.fraction(largest.level).formatted(.percent.precision(.fractionLength(0)))) \(largest.level.title)"
     }
 }
 

@@ -2,13 +2,12 @@ import FunesPhone
 import FunesProtocol
 import SwiftUI
 
-/// Home's charts (UX: iPhone ▸ Home tab): the Pulse card, the Memories, Sensitivity and Rhythm
-/// tiles, and Who reads your vault, from the 30-day overview. Live while the Mac answers; the
-/// cached snapshot, dimmed, with "As of 10:42" while it's away; the pairing card in their place
-/// while the iPhone isn't paired.
+/// Home's charts (UX: iPhone ▸ Home tab), from the 30-day overview, as widget-like tiles: the
+/// week across, then Memories, Rhythm, Sensitivity and Who reads two by two. Live while the Mac
+/// answers; the cached snapshot, dimmed, with "As of 10:42" while it's away; the pairing card in
+/// their place while the iPhone isn't paired.
 struct HomeOverview: View {
     let model: PhoneModel
-    @State private var range = PulseRange.days30
 
     var body: some View {
         // With the bar's "Pair with your Mac to start": after its 2 s, so a paired iPhone, whose
@@ -17,13 +16,15 @@ struct HomeOverview: View {
             PairingCard(model: model)
         } else if let overview = model.overview.overview(.days30) {
             let stale = model.isStale
-            PulseCard(overview: overview, range: $range, stale: stale) { model.pulseSheet = range }
             Section {
-                HomeTiles(overview: overview, stale: stale, openSearch: model.openSearch(sensitivity:)) { model.pulseSheet = .weeks12 }
+                VStack(spacing: 12) {
+                    WeekTile(overview: overview, stale: stale) { model.pulseSheet = .days7 }
+                    HomeTiles(overview: overview, stale: stale, openSearch: model.openSearch(sensitivity:),
+                              openRhythm: { model.pulseSheet = .weeks12 }, openReaders: { model.readersSheet = true })
+                }
             }
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
-            ReadersSection(overview: overview, stale: stale)
         } else if model.reachability.isConnected {
             Section {
                 ProgressView().frame(maxWidth: .infinity, minHeight: 120)
@@ -65,57 +66,63 @@ struct CompactLabelStyle: LabelStyle {
 
 // MARK: Pulse
 
-/// The Pulse card: the week's sentence, the 7 / 30-day switch and the in/out chart. A finger on
-/// the chart shows each day's numbers above it, with a light tap per day; the header opens the
-/// sheet with the longer ranges.
-struct PulseCard: View {
+/// The week tile: "This week" with its dates, "104 saved · 265 shared" and the last 7 days'
+/// in/out chart with a weekday under each day. A finger held on the chart puts that day's numbers
+/// in the numbers' place (one line, so the chart never moves), with a light tap per day; the
+/// header opens the sheet, with the legend and the longer ranges.
+struct WeekTile: View {
     let overview: VaultOverview
-    @Binding var range: PulseRange
     let stale: Bool
     let open: () -> Void
     @State private var selection: Date?
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let shown = range == .days7 ? PulseRange.days7 : .days30
-        let pulse = Pulse(overview, last: shown.last)
-        Section {
-            VStack(alignment: .leading, spacing: 10) {
-                Button(action: open) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(OverviewWords.week(overview.thisWeek))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .multilineTextAlignment(.leading)
-                        Spacer(minLength: 8)
-                        Image(systemName: "chevron.right").font(.footnote.bold()).foregroundStyle(.tertiary)
-                            .accessibilityHidden(true)
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityHint("Shows the longer ranges")
-                Group {
-                    if overview.isNewVault {
-                        Text("Your pulse starts with your first memories")
-                            .font(.subheadline)
+        let pulse = Pulse(overview, last: PulseRange.days7.last)
+        let bucket = selection.flatMap { pulse.bucket(at: $0) }
+        VStack(alignment: .leading, spacing: 6) {
+            Button(action: open) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("This week")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 8)
+                    if let days = OverviewWords.days(pulse, calendar: overview.calendar) {
+                        Text(days)
+                            .font(.caption)
                             .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, minHeight: 80)
-                    } else {
-                        Picker("Range", selection: Binding(get: { shown }, set: { new in
-                            withAnimation(reduceMotion ? nil : .default) { range = new }
-                        })) {
-                            Text(OverviewWords.rangeShort(.days7)).tag(PulseRange.days7)
-                            Text(OverviewWords.rangeShort(.days30)).tag(PulseRange.days30)
-                        }
-                        .pickerStyle(.segmented)
-                        PulseDetail(pulse: pulse, range: shown, calendar: overview.calendar, selection: $selection, height: 150)
+                            .lineLimit(1)
                     }
+                    Image(systemName: "chevron.right").font(.footnote.bold()).foregroundStyle(.tertiary)
                 }
-                .dimmed(stale)
-                if stale { AsOfLabel(date: overview.generatedAt) }
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, 4)
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(OverviewWords.week(overview.thisWeek))
+            .accessibilityHint("Shows the longer ranges")
+            .accessibilityAddTraits(.isButton)
+            Group {
+                if overview.isNewVault {
+                    Text("Your pulse starts with your first memories")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 80)
+                } else {
+                    Text(bucket.map { OverviewWords.day($0, calendar: overview.calendar) } ?? OverviewWords.numbers(overview.thisWeek))
+                        .font(.headline.monospacedDigit())
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .accessibilityHidden(true)
+                    PulseChart(pulse: pulse, range: .days7, calendar: overview.calendar, selection: $selection,
+                               showsAxis: false, showsWeekdays: true)
+                        .frame(height: 96)
+                        .sensoryFeedback(.impact(weight: .light), trigger: bucket?.date) { _, new in new != nil }
+                }
+            }
+            .dimmed(stale)
+            if stale { AsOfLabel(date: overview.generatedAt) }
         }
+        .tile()
     }
 }
 
@@ -232,21 +239,33 @@ struct RhythmSection: View {
 
 // MARK: Tiles
 
-/// Memories, Sensitivity and Rhythm, side by side; one above the other at the largest text sizes.
-/// Each reads as one element.
+/// Memories and Rhythm, then Sensitivity and Who reads, two by two, each row as tall as its
+/// tallest tile; one column at the accessibility text sizes. Each reads as one element.
 struct HomeTiles: View {
     let overview: VaultOverview
     let stale: Bool
     let openSearch: (Sensitivity?) -> Void
     let openRhythm: () -> Void
+    let openReaders: () -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        let layout = typeSize >= .xxLarge ? AnyLayout(VStackLayout(spacing: 10)) : AnyLayout(HStackLayout(alignment: .top, spacing: 10))
-        layout {
-            memories
-            sensitivity
-            rhythm
+        Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+            if typeSize.isAccessibilitySize {
+                GridRow { memories }
+                GridRow { rhythm }
+                GridRow { sensitivity }
+                GridRow { readers }
+            } else {
+                GridRow {
+                    memories
+                    rhythm
+                }
+                GridRow {
+                    sensitivity
+                    readers
+                }
+            }
         }
         .dimmed(stale)
     }
@@ -255,11 +274,12 @@ struct HomeTiles: View {
         Button { openSearch(nil) } label: {
             Tile(title: String(localized: "Memories")) {
                 Text(overview.total.formatted())
-                    .font(.title2.bold().monospacedDigit())
+                    .font(.title.bold().monospacedDigit())
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                 GrowthLine(growth: Growth(overview))
-                    .frame(height: 28)
+                    .frame(height: 40)
+                Spacer(minLength: 0)
                 Text("+\(overview.thisWeek.saved) this week")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -269,6 +289,27 @@ struct HomeTiles: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Memories: \(overview.total), plus \(overview.thisWeek.saved) this week")
         .accessibilityHint("Opens Search, newest first")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var rhythm: some View {
+        let grid = RhythmGrid(overview.rhythm, weeks: 10, calendar: overview.calendar)
+        return Button(action: openRhythm) {
+            Tile(title: String(localized: "Rhythm")) {
+                RhythmGridView(grid: grid, spacing: 3)
+                    .frame(maxWidth: .infinity, maxHeight: 96, alignment: .leading)
+                Spacer(minLength: 0)
+                Text(grid.isTooSparse ? String(localized: "Too few memories for a rhythm yet")
+                                      : grid.streak > 0 ? OverviewWords.streak(grid.streak) : String(localized: "No streak yet"))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(RhythmWords.accessibility(grid, calendar: overview.calendar))
+        .accessibilityHint("Shows the longer ranges")
         .accessibilityAddTraits(.isButton)
     }
 
@@ -286,6 +327,12 @@ struct HomeTiles: View {
                 SensitivityBars(vault: vault, shared: shared)
                     .padding(.top, 2)
                 Spacer(minLength: 0)
+                if let largest = SensitivityBars.largest(vault) {
+                    Text("Vault: \(largest)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
             }
         }
         .buttonStyle(.plain)
@@ -296,23 +343,54 @@ struct HomeTiles: View {
         .accessibilityAddTraits(.isButton)
     }
 
-    private var rhythm: some View {
-        let grid = RhythmGrid(overview.rhythm, weeks: 8, calendar: overview.calendar)
-        return Button(action: openRhythm) {
-            Tile(title: String(localized: "Rhythm")) {
-                RhythmGridView(grid: grid)
-                    .frame(maxWidth: .infinity, maxHeight: typeSize >= .xxLarge ? 80 : nil, alignment: .leading)
-                Text(grid.isTooSparse ? String(localized: "Too few memories for a rhythm yet")
-                                      : grid.streak > 0 ? OverviewWords.streak(grid.streak) : String(localized: "No streak yet"))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(3)
+    /// The agents shared something in 30 days, most first, each with a bar against the first, in
+    /// the chart's colour for it.
+    private var readers: some View {
+        let readers = overview.readers().filter { $0.shared > 0 }
+        let top = Double(max(1, readers.first?.shared ?? 1))
+        return Button(action: openReaders) {
+            Tile(title: String(localized: "Who reads")) {
+                if readers.isEmpty {
+                    Text("Nothing shared in 30 days")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                } else {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(Array(readers.enumerated()), id: \.element.id) { slot, agent in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                    Text(agent.name)
+                                        .lineLimit(1)
+                                        .privacySensitive()
+                                    Spacer(minLength: 4)
+                                    Text(agent.shared, format: .number)
+                                        .monospacedDigit()
+                                        .foregroundStyle(.secondary)
+                                }
+                                .font(.caption)
+                                GeometryReader { proxy in
+                                    ZStack(alignment: .leading) {
+                                        Capsule().fill(.quaternary)
+                                        Capsule()
+                                            .fill(OverviewPalette.agent(slot))
+                                            .frame(width: max(4, proxy.size.width * Double(agent.shared) / top))
+                                    }
+                                }
+                                .frame(height: 5)
+                            }
+                        }
+                    }
+                    .padding(.top, 2)
+                }
+                Spacer(minLength: 0)
             }
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(RhythmWords.accessibility(grid, calendar: overview.calendar))
-        .accessibilityHint("Shows the longer ranges")
+        .accessibilityLabel(readers.isEmpty ? String(localized: "Who reads: nothing shared in 30 days")
+                                            : String(localized: "Who reads, last 30 days: \(readers.map { "\($0.name) \($0.shared)" }.formatted(.list(type: .and)))"))
+        .accessibilityHint("Shows who read your vault, and when")
+        .privacySensitive()
         .accessibilityAddTraits(.isButton)
     }
 }
@@ -329,14 +407,47 @@ struct Tile<Content: View>: View {
                 .foregroundStyle(.secondary)
             content
         }
-        .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
-        .padding(12)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(minHeight: 132)
+        .tile()
+    }
+}
+
+extension View {
+    /// Home's tile look, the widgets': the list's card colour, rounded.
+    func tile() -> some View {
+        padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 }
 
 // MARK: Who reads
+
+/// The Who reads sheet, from its tile: the top three agents, the memories shared in 30 days, and
+/// when each last asked, from the 30-day overview whatever range the Pulse sheet last showed.
+struct ReadersSheet: View {
+    let model: PhoneModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if let overview = model.overview.overview(.days30) {
+                    ReadersSection(overview: overview, stale: model.isStale)
+                }
+            }
+            .navigationTitle("Who reads your vault")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+}
 
 /// The top three agents: the memories shared in 30 days, and when each last asked.
 struct ReadersSection: View {
@@ -367,10 +478,11 @@ struct ReadersSection: View {
                 }
                 .accessibilityElement(children: .combine)
             }
-        } header: {
-            Text("Who reads your vault")
         } footer: {
-            if !readers.isEmpty { Text("In the last 30 days.") }
+            VStack(alignment: .leading, spacing: 4) {
+                if !readers.isEmpty { Text("In the last 30 days.") }
+                if stale { AsOfLabel(date: overview.generatedAt) }
+            }
         }
         .dimmed(stale)
     }

@@ -14,15 +14,6 @@ private let logger = Logger(subsystem: Identifiers.iOSLoggerSubsystem, category:
 @MainActor @Observable
 final class PhoneModel {
     private(set) var record: PairingRecord?
-    /// The name Home's title greets the user by (ADR-0026): the Mac's latest, kept with the
-    /// pairing while the Mac is away; none once this iPhone is removed or unpaired.
-    var calledName: String? {
-        switch reachability {
-        case let .connected(connection): connection.status.calledName
-        case .revoked, .notPaired: nil
-        default: record?.calledName
-        }
-    }
     /// The Mac's Search answers while it's connected (`status.get`); nil while they're off or the
     /// Mac is away (FR-iOS-13).
     var macAnswers: SearchAnswersStatus? {
@@ -76,6 +67,8 @@ final class PhoneModel {
     #endif
     /// Home's Pulse sheet, open on this range.
     var pulseSheet: PulseRange?
+    /// Home's Who reads sheet, from its tile.
+    var readersSheet = false
     /// The Control or the Remember widget asked for Home's composer, ready to type or dictate.
     private(set) var captureRequests = 0
     /// How the last request wants it: the widget's 🎙 starts dictation.
