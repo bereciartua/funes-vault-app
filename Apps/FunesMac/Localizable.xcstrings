@@ -2803,7 +2803,7 @@
     "Funes quit during the run" : {
 
     },
-    "Funes relaunches with the vault as it was then. The current vault is kept in Backups first." : {
+    "Funes relaunches with the vault as it was then, except that agents, their access and paired iPhones stay as they are now. The current vault is kept in Backups first." : {
 
     },
     "Funes runs this command, replacing the existing funes entry:" : {

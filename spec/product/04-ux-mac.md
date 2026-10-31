@@ -738,7 +738,7 @@ Unchanged from today (FR-P-01):
 - **Paired iPhones:** each with its detail line, **Remove…** (with its confirmation) and **Approve requests on this iPhone**; the notification note; **Pair iPhone…** (the QR sheet, Allow or Deny); the five-iPhones limit line.
 
 #### Data & Backups
-Today's Data tab, renamed: Backups (daily, keep 7, Back Up Now, Restore from Backup…), **Keep earlier versions for 90 days** (v0.5, on by default; turning it off asks first, "Stop keeping earlier versions?", and deletes them), Export and import, Data folder (Show in Finder), Erase All Data…. Restore from Backup relaunches; before the chosen backup replaces the vault, the current vault is saved as a self-contained `pre-restore-…` backup (an SQLite online backup, so nothing still in the WAL is lost).
+Today's Data tab, renamed: Backups (daily, keep 7, Back Up Now, Restore from Backup…), **Keep earlier versions for 90 days** (v0.5, on by default; turning it off asks first, "Stop keeping earlier versions?", and deletes them), Export and import, Data folder (Show in Finder), Erase All Data…. Restore from Backup relaunches; before the chosen backup replaces the vault, the current vault is saved as a self-contained `pre-restore-…` backup (an SQLite online backup, so nothing still in the WAL is lost). The confirmation says "Funes relaunches with the vault as it was then, except that agents, their access and paired iPhones stay as they are now. The current vault is kept in Backups first." ([storage §5.1](../architecture/storage.md#51-restore-from-backup)).
 
 #### Advanced
 Unchanged: Activity retention (two steppers, Restore Defaults) and Show the Setup Checklist Again.

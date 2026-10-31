@@ -313,6 +313,29 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 | Receipt cleanup | daily | Delete capture receipts older than 90 days |
 | Integrity check | weekly | `PRAGMA quick_check`. On failure, notify and offer to restore from a backup |
 
+### 5.1 Restore from Backup
+Restoring brings back memories, never credentials or access settings ([security](security-and-privacy.md) T38). A backup holds the agents' key and remote-token digests, their access and the paired devices as they were when it was taken, and authentication trusts the digests in the database. Restoring it as is would let back in a key, token or device removed or reset since, and widen access narrowed since.
+
+So at the next launch, before the vault opens (`VaultStore.restoreBackup`, `RestoreAccess`):
+1. The current vault is saved as a self-contained `Backups/pre-restore-…` backup. It's never written again: a scratch copy of it (`vault.sqlite.restoring-current`) is what gets migrated and read.
+2. The chosen backup is copied in as `vault.sqlite.restoring` (leftovers of an earlier attempt, journals included, are deleted first) and migrated to this version's schema. A backup from a newer version is refused, and the vault is left as it was.
+3. In one transaction on the copy, if both are the same vault (`meta.vault_id`), the current vault's state replaces the backup's:
+   - agents (keys, remote tokens, cloud access, pause, names, removal);
+   - their access, category rules and profile fields;
+   - the never-share categories;
+   - paired devices (revocation, approvals, doorbell tag).
+
+   Agents and devices added since the backup are kept, so their keys and pairings keep working. Categories the backup lacks come along, because dropping an allow rule would widen an allow list (an empty one allows every category). A category deleted since comes back with the backup's memories, but its rules can't be rebuilt (deleting it moved its memories and their denies elsewhere), so every agent is denied it until the user decides.
+4. Without a current vault, or when the backup is another vault's, nothing can be carried forward. Every agent is removed (keys, remote tokens and access cleared) and every device revoked, so they're set up again.
+5. Either way, requests waiting in the backup (`needs_approval`, `approved`) are denied with `approval_expired`, so an approval can't be answered or delivered a second time.
+6. The current vault's WAL and shared-memory files are deleted (what they held is in the pre-restore backup), then one `rename` puts the copy in place of `vault.sqlite`, and the scratch files go.
+
+If steps 1–5 fail, the copy is deleted and the vault is unchanged; the app logs the failure and opens the current vault. A crash during step 6 can leave `vault.sqlite` without its last WAL transactions, which the pre-restore backup still holds.
+
+**What a restore still brings back:** everything about the memories themselves, including their sensitivity and categories. A memory whose sensitivity was raised, or that was moved into a denied category, after the backup comes back with its old labels, and agents' access applies to those. The same goes for earlier versions, the Inbox and settings kept in the database, such as `meta('keep_revisions')`.
+
+Not carried forward: Remote Access's connected cloud apps live in `remote-connections.json`, which a restore doesn't touch. Each call is checked against the agent's cloud access and removal (`FunesRemoteServer`), which come from the current vault.
+
 ## 6. iPhone storage
 - **App Group container:** `capture-queue.sqlite` (the capture queue), with file protection `completeUntilFirstUserAuthentication`.
 - **Keychain:** device signing and HPKE keys, and the pairing record (Mac public keys, ids, addresses).
