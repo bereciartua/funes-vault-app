@@ -197,7 +197,7 @@ struct DataSettings: View {
                 if let restoring { try? model.data.restore(restoring) }
             }
         } message: {
-            Text(String(localized: "Funes relaunches with the vault as it was then. The current vault is kept in Backups first."))
+            Text(String(localized: "Funes relaunches with the vault as it was then, except that agents, their access and paired iPhones stay as they are now. The current vault is kept in Backups first."))
         }
         .confirmationDialog(String(localized: "Erase all of Funes Vault's data?"), isPresented: $erasing) {
             Button(String(localized: "Export First…")) { export() }

@@ -579,6 +579,7 @@
 
 **FR-G-04 Backups** · S · v0.1
 - A daily snapshot of the vault database to `Backups/` (keep 7), plus "Back Up Now" and "Restore from Backup…".
+- Restore brings back memories, never credentials or access settings: agents, their access, remote tokens and paired iPhones stay as they are now, and requests waiting in the backup end. A backup with no current vault to compare against, or another vault's, comes back with every agent removed and every iPhone unpaired ([storage §5.1](../architecture/storage.md#51-restore-from-backup)).
 
 **FR-G-05 Data location** · M · v0.1
 - "Show Data in Finder" and "Erase All Data…", the latter with confirmation and an exported backup offered.
