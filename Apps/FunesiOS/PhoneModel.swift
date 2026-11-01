@@ -71,8 +71,10 @@ final class PhoneModel {
     var readersSheet = false
     /// The Control or the Remember widget asked for Home's composer, ready to type or dictate.
     private(set) var captureRequests = 0
-    /// How the last request wants it: the widget's 🎙 starts dictation.
-    private(set) var captureMode = CaptureLaunch.Mode.type
+    /// The request Home hasn't acted on yet, and how it wants the composer: the widget's 🎙 starts
+    /// dictation. Home takes it once (`takePendingCapture`), so coming back to Home later doesn't
+    /// open the composer again.
+    private var pendingCapture: CaptureLaunch.Mode?
     private var started = false
     private var refreshing = false
 
@@ -256,8 +258,15 @@ final class PhoneModel {
 
     private func takeCaptureRequest() {
         guard let mode = CaptureLaunch().take() else { return }
-        captureMode = mode
+        pendingCapture = mode
         captureRequests += 1
+    }
+
+    /// The widget's or the Control's request for Home's composer, if Home hasn't acted on it yet;
+    /// it's used up either way.
+    func takePendingCapture() -> CaptureLaunch.Mode? {
+        defer { pendingCapture = nil }
+        return pendingCapture
     }
 
     private func delivered(_ outcome: DeliveryOutcome) {
