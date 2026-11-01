@@ -34,3 +34,4 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 | 0028 | [Search answers: snippets that show the matching sentence, and an Ask that quotes your memories, on the Mac and the iPhone](0028-search-answers.md) | Accepted |
 | 0029 | [The menu bar icon opens a panel: Review cards, two switches, a field and the last 24 hours](0029-menu-bar-panel.md) | Accepted |
 | 0030 | [Settings gets a sidebar; AI splits into features, accounts and limits; an account offers several models](0030-settings-window.md) | Accepted |
+| 0031 | [The iPhone answers every Inbox card](0031-iphone-answers-every-inbox-card.md) | Accepted |

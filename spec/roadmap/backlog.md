@@ -199,6 +199,13 @@ Epics map requirements to phases.
 | AI ▸ Privacy & Limits and What AI features send | FR-AI-07, FR-AI-08, FR-AI-15 | 11.5 | S | M |
 | Settings paths in both apps and the docs, snapshots | ADR-0030 | 11.6 | S | M |
 
+## E18: Every Inbox card on the iPhone (Phase 12, v0.9)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| `inbox.get`, `inbox.reviewAgain`, `inbox.apply` modes; the tidy-up's real actions on the phone | FR-iOS-09, ADR-0031 | 12.2 | M | S |
+| `InboxModel` detail, modes and Review Again; demo tidy-up cards | FR-iOS-09 | 12.3 | S | S |
+| The iPhone's card screens per action | FR-iOS-09 | 12.4 | M | S |
+
 ## E12: Later
 | Item | Covers | Size |
 |---|---|---|

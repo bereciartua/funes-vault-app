@@ -201,6 +201,21 @@ A Settings window a first-time user can find their way around: a sidebar, AI spl
 - **AI ▸ Features, Models & Accounts, Privacy & Limits** instead of one AI Models tab.
 - **Several models per account and per plan**, chosen per task.
 
+### v0.9: Every Inbox card on the iPhone (Phase 12)
+The iPhone answers every card the Mac's Inbox does, the daily tidy-up's included, showing the memories each one changes first ([ADR-0031](../architecture/decisions/0031-iphone-answers-every-inbox-card.md)). About 1 weekend.
+
+| Step | Plan | Exit criteria |
+|---|---|---|
+| **12.1 Spec** | [plan](../plans/phase-12-iphone-inbox.md#121-spec--⅛-weekend) | ADR-0031 and protocol §4.2, reviewed |
+| **12.2 Protocol and the Mac** | [plan](../plans/phase-12-iphone-inbox.md#122-protocol-and-the-mac--¼-weekend) | `inbox.get`, modes and Review Again, tested against FunesCore |
+| **12.3 FunesPhone** | [plan](../plans/phase-12-iphone-inbox.md#123-funesphone--¼-weekend) | `InboxModel` and the demo answer every card; tests green |
+| **12.4 Screens** | [plan](../plans/phase-12-iphone-inbox.md#124-the-iphones-screens--⅓-weekend) | Each card's screen matches the Mac's choices and words |
+| **12.5 Ship** | [plan](../plans/phase-12-iphone-inbox.md#125-ship--⅛-weekend) | test.sh green, each card checked in the demo, CHANGELOG |
+
+**In:**
+- **`inbox.get`, `inbox.reviewAgain` and `inbox.apply`'s `mode`** on the companion channel.
+- **A screen per card type** on the iPhone, and swipe to apply for all but conflicts.
+
 ### v0.6+: Later (unordered; pick by real usage)
 - **Allow window** for low-sensitivity sharing (if panels cause fatigue).
 - **BridgeKitUI extraction** (approvals, activity, agent setup UI, app shell, and the Remote Access views) after v0.1. BridgeKitRemote is extracted in Phase 4b.
