@@ -289,6 +289,15 @@
     "7 days" : {
 
     },
+    "A copy" : {
+
+    },
+    "A memory it changes was archived or deleted. Reject it, or restore that memory first." : {
+
+    },
+    "A memory it changes was edited on your Mac since this was suggested. Open it to review it again." : {
+
+    },
     "Accepted %@ in %lld ms" : {
       "localizations" : {
         "en" : {
@@ -326,6 +335,9 @@
     "Allowed once." : {
 
     },
+    "Already Saved" : {
+
+    },
     "Already answered" : {
 
     },
@@ -333,6 +345,15 @@
 
     },
     "Already in your vault" : {
+
+    },
+    "Already in your vault: “%@”" : {
+
+    },
+    "Already saved" : {
+
+    },
+    "Also archives “%@”" : {
 
     },
     "Also matched, less closely" : {
@@ -418,6 +439,9 @@
     "Archived. Archived memories are kept, but never shared with agents." : {
 
     },
+    "Archives “%@”" : {
+
+    },
     "As of %@" : {
 
     },
@@ -443,6 +467,9 @@
 
     },
     "Blocked: looks like a secret (%@). Funes never stores passwords, keys or card numbers." : {
+
+    },
+    "Both Are True" : {
 
     },
     "Can't connect to your Mac" : {
@@ -485,6 +512,12 @@
     "Changed on your Mac, reload?" : {
 
     },
+    "Changed since this was suggested" : {
+
+    },
+    "Changes “%@”" : {
+
+    },
     "Check Connection" : {
 
     },
@@ -497,9 +530,6 @@
     "Choose at least one category." : {
 
     },
-    "Cleanup suggestion · %@" : {
-
-    },
     "Clear" : {
 
     },
@@ -507,6 +537,9 @@
 
     },
     "Cloud" : {
+
+    },
+    "Compare with the memory as it is now, then decide again." : {
 
     },
     "Confirmed still true" : {
@@ -552,7 +585,16 @@
     "Correction suggested" : {
 
     },
+    "Couldn't apply “%@”." : {
+
+    },
+    "Couldn't archive “%@”." : {
+
+    },
     "Couldn't keep “%@” as one." : {
+
+    },
+    "Couldn't merge “%@”." : {
 
     },
     "Couldn't open this memory" : {
@@ -573,6 +615,9 @@
     "Couldn't reject “%@”." : {
 
     },
+    "Couldn't review “%@” again." : {
+
+    },
     "Couldn't save on this iPhone." : {
 
     },
@@ -589,6 +634,9 @@
 
     },
     "Couldn't split" : {
+
+    },
+    "Couldn't split “%@”." : {
 
     },
     "Couldn't try “%@” again." : {
@@ -666,6 +714,18 @@
     "Edit" : {
 
     },
+    "Edit & Merge" : {
+
+    },
+    "Edit & Merge…" : {
+
+    },
+    "Edit & Replace" : {
+
+    },
+    "Edit & Replace…" : {
+
+    },
     "Edit & Save" : {
 
     },
@@ -678,10 +738,16 @@
     "Edited" : {
 
     },
+    "Edit…" : {
+
+    },
     "Event" : {
 
     },
     "Everyday preferences. Fine for most of your agents." : {
+
+    },
+    "Expired" : {
 
     },
     "Expires" : {
@@ -771,7 +837,13 @@
     "Internal" : {
 
     },
+    "Into" : {
+
+    },
     "It already got what it may read. Always Allow is for next time." : {
+
+    },
+    "It expired %@." : {
 
     },
     "It moves to Recently Deleted on your Mac, where you can restore it for 30 days." : {
@@ -783,13 +855,31 @@
     "It's no longer waiting on your Mac." : {
 
     },
+    "Keep Both" : {
+
+    },
+    "Keep Both saves it as a new memory and leaves “%@” as it is." : {
+
+    },
+    "Keep This" : {
+
+    },
     "Keep as One" : {
+
+    },
+    "Keep “%@”" : {
 
     },
     "Keeps what it gets" : {
 
     },
     "Keeps what it gets: %@" : {
+
+    },
+    "Keeps “%@”" : {
+
+    },
+    "Keeps: %@" : {
 
     },
     "Keychain" : {
@@ -887,6 +977,9 @@
         }
       }
     },
+    "Merge" : {
+
+    },
     "Merge memories" : {
 
     },
@@ -894,6 +987,9 @@
 
     },
     "Merged into a new memory" : {
+
+    },
+    "Merges %lld memories into one:" : {
 
     },
     "Most on %@s" : {
@@ -971,6 +1067,9 @@
     "Nothing archived" : {
 
     },
+    "Nothing changes: it's already in your vault." : {
+
+    },
     "Nothing more to do here." : {
 
     },
@@ -1025,6 +1124,12 @@
     "Out" : {
 
     },
+    "Out of date" : {
+
+    },
+    "Outside %@'s scope" : {
+
+    },
     "Pair" : {
 
     },
@@ -1050,6 +1155,9 @@
 
     },
     "Personal: health, money, family. Share rarely, and always ask." : {
+
+    },
+    "Pieces that change other memories stay in your Inbox to review on their own." : {
 
     },
     "Point the camera at the code in Funes Settings ▸ iPhone on your Mac." : {
@@ -1179,6 +1287,12 @@
     "Removed from Funes on your Mac" : {
 
     },
+    "Removes “%@”" : {
+
+    },
+    "Replace" : {
+
+    },
     "Requests wait 15 minutes. The agent can ask again." : {
 
     },
@@ -1191,13 +1305,16 @@
     "Restricted" : {
 
     },
+    "Review Again" : {
+
+    },
     "Review needs your Mac to be awake and reachable. Captures still work, and go to the Mac later." : {
 
     },
     "Review on your Mac" : {
 
     },
-    "Review on your Mac: it shows every memory this changes." : {
+    "Review on your Mac: this version of Funes for iPhone can't apply it." : {
 
     },
     "Review this on your Mac." : {
@@ -1402,6 +1519,9 @@
     "Signing key" : {
 
     },
+    "Similar Memory Exists" : {
+
+    },
     "Something else answered at your Mac's address (HTTP %lld)." : {
 
     },
@@ -1436,8 +1556,21 @@
     "Split from another memory" : {
 
     },
+    "Split into %lld" : {
+
+    },
     "Split into a new memory" : {
 
+    },
+    "Splits “%@” into %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Splits “%1$@” into %2$lld"
+          }
+        }
+      }
     },
     "Still processing on your Mac. It can be saved once it's done." : {
 
@@ -1488,9 +1621,6 @@
     "The demo shows every screen with a sample vault on this iPhone. Nothing is sent anywhere, and it never mixes with your own data." : {
 
     },
-    "The memory it changes was edited on your Mac since this was suggested. Review it on your Mac." : {
-
-    },
     "The model's answer couldn't be read. Try again." : {
 
     },
@@ -1504,6 +1634,9 @@
 
     },
     "There's nothing to remember." : {
+
+    },
+    "These disagree. Which is true?" : {
 
     },
     "They haven't reached your Mac and can't be recovered." : {
@@ -1593,6 +1726,9 @@
     "Tidy-up" : {
 
     },
+    "Tidy-up · %@" : {
+
+    },
     "Time's up on your Mac" : {
 
     },
@@ -1659,6 +1795,9 @@
     "Updated" : {
 
     },
+    "Updates “%@”" : {
+
+    },
     "VPN" : {
 
     },
@@ -1711,6 +1850,9 @@
 
     },
     "Why" : {
+
+    },
+    "Why, as the Model Put It" : {
 
     },
     "Why?" : {
