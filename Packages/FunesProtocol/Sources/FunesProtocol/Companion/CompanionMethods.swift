@@ -17,11 +17,15 @@ public enum CompanionMethod: String, Codable, Sendable, CaseIterable {
     case memoriesRestore = "memories.restore"
     case memoriesDelete = "memories.delete"
     case inboxList = "inbox.list"
+    /// One suggestion in full, for its screen (v0.9, ADR-0031).
+    case inboxGet = "inbox.get"
     case inboxApply = "inbox.apply"
     case inboxReject = "inbox.reject"
     /// Try again / Keep as one on an item whose split failed (memory processing §5.2).
     case inboxRetry = "inbox.retry"
     case inboxKeep = "inbox.keep"
+    /// Review Again on a stale card (v0.9, ADR-0031).
+    case inboxReviewAgain = "inbox.reviewAgain"
     case deviceUnpair = "device.unpair"
     // Approvals from the iPhone (task 5.6, FR-iOS-12).
     case approvalsList = "approvals.list"
@@ -747,12 +751,134 @@ public enum InboxApply: CompanionCall {
 
 public struct InboxApplyParams: Codable, Sendable, Equatable {
     public var suggestionId: UUID
-    /// Edit & Apply.
+    /// Edit & Apply: a create, an update, a merge, or the conflict memory `keep` keeps.
     public var edits: MemoryChanges?
+    /// The card's choice (v0.9); absent is the action's own way (Replace for an update).
+    public var mode: InboxApplyMode?
+    /// The conflict memory `keep` keeps.
+    public var keepMemoryId: UUID?
+    /// `inbox.get`'s, from the card's screen: a card that changed since is `request_changed`.
+    public var revision: String?
 
-    public init(suggestionId: UUID, edits: MemoryChanges? = nil) {
+    public init(suggestionId: UUID, edits: MemoryChanges? = nil, mode: InboxApplyMode? = nil, keepMemoryId: UUID? = nil,
+                revision: String? = nil) {
         self.suggestionId = suggestionId
         self.edits = edits
+        self.mode = mode
+        self.keepMemoryId = keepMemoryId
+        self.revision = revision
+    }
+}
+
+/// How a card is applied (companion protocol §4.2), FunesCore's `ApplyMode` on the wire.
+public enum InboxApplyMode: String, Codable, Sendable, Equatable {
+    /// An update: its target takes the proposal.
+    case replace
+    /// An update: saved as a new memory, its target unchanged. Never a tidy-up proposal's.
+    case keepBoth = "keep_both"
+    /// A conflict: keeps `keepMemoryId` (changed by the edits, if any) and archives the other.
+    case keep
+    /// A conflict: both are true; nothing changes.
+    case bothTrue = "both_true"
+}
+
+public enum InboxGet: CompanionCall {
+    public static let method = CompanionMethod.inboxGet
+    public typealias Params = SuggestionID
+    public typealias Result = InboxDetail
+}
+
+/// One suggestion in full (companion protocol §4.2): what its card shows before it's applied.
+public struct InboxDetail: Codable, Sendable, Equatable {
+    public var item: InboxItem
+    /// The memories it refers to, the single target first: an update's target and any copy it
+    /// also archives, an archive's target and the memory it keeps, a merge's sources, a
+    /// conflict's two memories, a split's original, a duplicate's match.
+    public var memories: [InboxMemory]
+    /// A split's pending pieces, in order.
+    public var pieces: [InboxItem]
+    /// A memory it refers to changed, or isn't active, since it was suggested: Apply would
+    /// answer `target_changed` until Review Again.
+    public var stale: Bool
+    public var tidyUp: InboxTidyUp?
+    /// A create's, an update's or a merge's look-alikes, at most 2, never a memory it refers to.
+    public var similar: [InboxSimilar]
+    /// What an apply from this screen depends on, hashed: sent back with it.
+    public var revision: String
+
+    public init(item: InboxItem, memories: [InboxMemory] = [], pieces: [InboxItem] = [], stale: Bool = false,
+                tidyUp: InboxTidyUp? = nil, similar: [InboxSimilar] = [], revision: String = "") {
+        self.item = item
+        self.memories = memories
+        self.pieces = pieces
+        self.stale = stale
+        self.tidyUp = tidyUp
+        self.similar = similar
+        self.revision = revision
+    }
+
+    /// The memories with a role, in order.
+    public func memories(_ role: InboxMemoryRole) -> [Memory] { memories.filter { $0.role == role }.map(\.memory) }
+}
+
+public struct InboxMemory: Codable, Sendable, Equatable, Identifiable {
+    public var id: UUID { memory.id }
+    public var role: InboxMemoryRole
+    public var memory: Memory
+
+    public init(role: InboxMemoryRole, memory: Memory) {
+        self.role = role
+        self.memory = memory
+    }
+}
+
+public enum InboxMemoryRole: String, Codable, Sendable, Equatable {
+    /// Changed by the suggestion: an update's, an archive's, a split's or a duplicate's memory, or
+    /// either of a conflict's two.
+    case target
+    /// Merged into it: a merge's sources, or the copy a tidy-up update also archives.
+    case source
+    /// Kept by an archive ("Keeps “…”").
+    case survivor
+}
+
+/// The tidy-up's reasons (memory processing §9).
+public struct InboxTidyUp: Codable, Sendable, Equatable {
+    /// The model's reason, as it put it.
+    public var reason: String?
+    public var archiveReason: InboxArchiveReason?
+    /// A merge: what each source keeps.
+    public var kept: [Kept]
+
+    public struct Kept: Codable, Sendable, Equatable {
+        public var memoryId: UUID
+        public var text: String
+
+        public init(memoryId: UUID, text: String) {
+            self.memoryId = memoryId
+            self.text = text
+        }
+    }
+
+    public init(reason: String? = nil, archiveReason: InboxArchiveReason? = nil, kept: [Kept] = []) {
+        self.reason = reason
+        self.archiveReason = archiveReason
+        self.kept = kept
+    }
+}
+
+/// Why the tidy-up archives a memory: "A copy", "Out of date", "Expired".
+public enum InboxArchiveReason: String, Codable, Sendable, Equatable {
+    case duplicate, superseded, expired
+}
+
+public struct InboxSimilar: Codable, Sendable, Equatable, Identifiable {
+    public var id: UUID
+    public var title: String
+
+    public init(id: UUID, title: String) {
+        self.id = id
+        self.title = title
     }
 }
 
@@ -778,6 +904,15 @@ public enum InboxRetry: CompanionCall {
 /// Keep as one: a failed split stays one suggestion, then saved like any other.
 public enum InboxKeep: CompanionCall {
     public static let method = CompanionMethod.inboxKeep
+    public typealias Params = SuggestionID
+    public typealias Result = EmptyResult
+}
+
+/// Review Again: the current versions of the memories a stale card refers to are recorded, so
+/// the next Apply checks against what the card shows now. `target_changed` when one isn't
+/// active; `conflict` when it's no longer waiting.
+public enum InboxReviewAgain: CompanionCall {
+    public static let method = CompanionMethod.inboxReviewAgain
     public typealias Params = SuggestionID
     public typealias Result = EmptyResult
 }

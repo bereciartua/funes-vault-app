@@ -55,7 +55,8 @@ import Testing
     @Test func unknownSuggestionActionsDecode() throws {
         let decoded = try JSONDecoder().decode([SuggestionAction].self, from: Data(#"["merge","reword_later"]"#.utf8))
         #expect(decoded == [.merge, .unknown])
-        #expect(SuggestionAction.allCases.filter(\.appliesOnPhone) == [.create, .update, .archive, .duplicate])
+        #expect(SuggestionAction.allCases.filter { !$0.appliesOnPhone } == [.unknown])
+        #expect(SuggestionAction.allCases.filter(\.needsAnswer) == [.conflict])
     }
 
     @Test func inputLimitsMatchTheSpec() {

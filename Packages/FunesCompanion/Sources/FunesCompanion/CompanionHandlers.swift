@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import FunesCore
 import FunesProtocol
@@ -99,10 +100,12 @@ public final class CompanionHandlers: Sendable {
             case .memoriesDelete:
                 return await run(MemoriesDelete.self, head) { try await setStatus($0, .deleted, device: device, now: now) }
             case .inboxList: return await run(InboxList.self, head) { try await inbox($0, device: device, now: now) }
+            case .inboxGet: return await run(InboxGet.self, head) { try await inboxItem($0, device: device, now: now) }
             case .inboxApply: return await run(InboxApply.self, head) { try await apply($0, device: device, now: now) }
             case .inboxReject: return await run(InboxReject.self, head) { try await reject($0, device: device, now: now) }
             case .inboxRetry: return await run(InboxRetry.self, head) { try await retry($0, device: device, now: now) }
             case .inboxKeep: return await run(InboxKeep.self, head) { try await keep($0, device: device, now: now) }
+            case .inboxReviewAgain: return await run(InboxReviewAgain.self, head) { try await reviewAgain($0, device: device, now: now) }
             case .deviceUnpair: return await run(DeviceUnpair.self, head) { _ in try await unpair(device: device, now: now) }
             case .approvalsList:
                 return await run(ApprovalsList.self, head) { _ in try await desk().list(device: device, now: now) }
@@ -292,30 +295,132 @@ public final class CompanionHandlers: Sendable {
         let agentNames = try await agentNames()
         let processing = try await services.suggestions.processing(now: now)
         let items = page.map { s in
-            // The tidy-up's cards are answered on the Mac until the iPhone gets its own (ADR-0021):
-            // an update there may also archive a copy, and an archive names what it keeps.
-            InboxItem(id: s.id, origin: s.origin, action: s.origin == .consolidation ? .unknown : s.action,
-                      sourceLabel: Self.sourceLabel(s, devices: deviceNames, agents: agentNames), targetMemoryId: s.targetMemoryID,
-                      title: s.title, body: s.body, kind: s.kind ?? .fact, categories: s.categoryKeys,
-                      sensitivity: s.sensitivity ?? .low, expiresAt: s.expiresAt, evidence: s.evidence, purpose: s.purpose,
-                      createdAt: s.createdAt, targetMemoryVersion: s.targetMemoryVersion, groupId: s.groupID,
-                      outsideScope: s.outsideScope, processing: processing[s.id].map { $0.isProcessing ? .processing : .failed })
+            Self.item(s, label: Self.sourceLabel(s, devices: deviceNames, agents: agentNames),
+                      processing: processing[s.id].map { $0.isProcessing ? .processing : .failed })
         }
         let next = offset + page.count < pending.count ? Self.cursor(offset + page.count) : nil
         logRead("inbox_listed", device: device, now: now, counts: ["items": items.count])
         return InboxListResult(items: items, nextCursor: next)
     }
 
-    /// The suggestion's own action (6.1.1): an update replaces its target. Merge, split and
-    /// conflict, and the tidy-up's proposals, are answered on the Mac (companion protocol §4).
-    /// One still processing is refused (`processing`) by FunesCore.
+    static func item(_ s: Suggestion, label: String, processing: InboxProcessing? = nil) -> InboxItem {
+        InboxItem(id: s.id, origin: s.origin, action: s.action, sourceLabel: label, targetMemoryId: s.targetMemoryID,
+                  title: s.title, body: s.body, kind: s.kind ?? .fact, categories: s.categoryKeys,
+                  sensitivity: s.sensitivity ?? .low, expiresAt: s.expiresAt, evidence: s.evidence, purpose: s.purpose,
+                  createdAt: s.createdAt, targetMemoryVersion: s.targetMemoryVersion, groupId: s.groupID,
+                  outsideScope: s.outsideScope, processing: processing)
+    }
+
+    /// One suggestion in full (companion protocol §4.2), as the Mac's card loads it: the memories
+    /// it refers to, a split's pieces, staleness, the tidy-up's reasons and look-alikes.
+    func inboxItem(_ params: SuggestionID, device: UUID, now: Date) async throws -> InboxDetail {
+        let suggestions = services.suggestions
+        guard let s = try await suggestions.suggestion(id: params.suggestionId), s.status == .pending else { throw VaultError.notFound }
+        let deviceNames = try await deviceNames()
+        let agentNames = try await agentNames()
+        let processing = try await suggestions.processing(now: now)[s.id].map { $0.isProcessing ? InboxProcessing.processing : .failed }
+        // The single target first, then the others in order (FunesCore's refs).
+        var refs = s.targetMemoryID.map { [(id: $0, role: InboxMemoryRole.target)] } ?? []
+        for t in try await suggestions.targets(suggestionID: s.id) where t.memoryID != s.targetMemoryID {
+            refs.append((t.memoryID, Self.role(t.role)))
+        }
+        let byID = Dictionary(uniqueKeysWithValues: try services.store.memories(ids: refs.map(\.id)).map { ($0.id, $0) })
+        let memories = refs.compactMap { ref in byID[ref.id].map { InboxMemory(role: ref.role, memory: $0) } }
+        let pieces = s.action == .split ? try await suggestions.pieces(groupID: s.id) : []
+        let record = TidyUpRecord.decode(s)
+        let tidyUp = record.map { r in
+            InboxTidyUp(reason: r.reason, archiveReason: r.archiveReason.flatMap { InboxArchiveReason(rawValue: $0.rawValue) },
+                        kept: refs.compactMap { ref in r.kept?[ref.id].map { InboxTidyUp.Kept(memoryId: ref.id, text: $0) } })
+        }
+        let changed = try await suggestions.isStale(s)
+        let stale = changed || memories.count < refs.count
+        let revision = try await Self.revision(of: s, suggestions: suggestions, store: services.store)
+        let detail = InboxDetail(
+            item: Self.item(s, label: Self.sourceLabel(s, devices: deviceNames, agents: agentNames), processing: processing),
+            memories: memories,
+            pieces: pieces.map { Self.item($0, label: Self.sourceLabel($0, devices: deviceNames, agents: agentNames)) },
+            stale: stale,
+            tidyUp: tidyUp, similar: try await similar(s, excluding: Set(refs.map(\.id))), revision: revision)
+        logRead("inbox_viewed", device: device, now: now, ids: [s.id])
+        return detail
+    }
+
+    /// What the Mac's card points out for a create, an update or a merge: exact copies, then
+    /// near ones, never a memory the card refers to; at most 2.
+    private func similar(_ s: Suggestion, excluding refs: Set<UUID>) async throws -> [InboxSimilar] {
+        guard [.create, .update, .merge].contains(s.action) else { return [] }
+        var ids = try services.store.exactDuplicates(title: s.title, body: s.body)
+        let names = try services.store.categories()
+        let categoryNames = s.categoryKeys.map { key in names.first { $0.key == key }?.name ?? key }
+        let near = (try? await services.search.nearDuplicates(title: s.title, body: s.body, kind: s.kind ?? .fact,
+                                                               categoryNames: categoryNames)) ?? []
+        for id in near where !ids.contains(id) { ids.append(id) }
+        ids.removeAll(where: refs.contains)
+        let byID = Dictionary(uniqueKeysWithValues: try services.store.memories(ids: Array(ids.prefix(2))).map { ($0.id, $0) })
+        return ids.prefix(2).compactMap { byID[$0].map { InboxSimilar(id: $0.id, title: $0.title) } }
+    }
+
+    /// `inbox.get`'s revision: the suggestion's fields and action, its memories' ids, roles, stored
+    /// and current versions (a missing one is -1), and a split's pieces. An edit or a Review Again
+    /// on the Mac changes it.
+    static func revision(of s: Suggestion, suggestions: SuggestionService, store: VaultStore) async throws -> String {
+        struct Ref: Encodable { var id: String, role: String, stored: Int?, current: Int }
+        struct Piece: Encodable { var id: String, action: String, title: String, body: String }
+        struct Canonical: Encodable {
+            var save: String, refs: [Ref], pieces: [Piece], targetVersion: Int?
+        }
+        let targets = try await suggestions.targets(suggestionID: s.id)
+        var refs = s.targetMemoryID.map { [(id: $0, role: "target", stored: s.targetMemoryVersion)] } ?? []
+        refs += targets.filter { $0.memoryID != s.targetMemoryID }.map { ($0.memoryID, $0.role.rawValue, Optional($0.memoryVersion)) }
+        let current = Dictionary(uniqueKeysWithValues: try store.memories(ids: refs.map(\.id)).map { ($0.id, $0.version) })
+        let pieces = s.action == .split ? try await suggestions.pieces(groupID: s.id) : []
+        let canonical = Canonical(
+            save: CompanionApprovals.revision(of: s),
+            refs: refs.map { Ref(id: $0.id.uuidString.lowercased(), role: $0.role, stored: $0.stored, current: current[$0.id] ?? -1) },
+            pieces: pieces.map { Piece(id: $0.id.uuidString.lowercased(), action: $0.action.rawValue, title: $0.title, body: $0.body) },
+            targetVersion: s.targetMemoryVersion)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        return SHA256.hash(data: try encoder.encode(canonical)).map { String(format: "%02x", $0) }.joined()
+    }
+
+    static func role(_ role: SuggestionTarget.Role) -> InboxMemoryRole {
+        switch role {
+        case .target: .target
+        case .source: .source
+        case .survivor: .survivor
+        }
+    }
+
+    /// The suggestion's own action with the card's choice (companion protocol §4.2), through the
+    /// same per-action apply as the Mac. Keep Both is never a tidy-up proposal's, as on the Mac's
+    /// card; a conflict needs its answer. One still processing is refused (`processing`) by FunesCore.
     func apply(_ params: InboxApplyParams, device: UUID, now: Date) async throws -> InboxApplied {
         guard let suggestion = try await services.suggestions.suggestion(id: params.suggestionId) else { throw VaultError.notFound }
-        guard suggestion.action.appliesOnPhone, suggestion.origin != .consolidation else { throw VaultError.unsupportedAction }
+        guard suggestion.action.appliesOnPhone else { throw VaultError.unsupportedAction }
+        if let revision = params.revision, suggestion.status == .pending,
+           try await Self.revision(of: suggestion, suggestions: services.suggestions, store: services.store) != revision {
+            throw CompanionError(.requestChanged)
+        }
+        let mode: ApplyMode? = switch params.mode {
+        case nil: nil
+        case .replace: .replace
+        case .keepBoth:
+            if suggestion.origin == .consolidation { throw VaultError.unsupportedAction } else { .keepBoth }
+        case .keep:
+            if let id = params.keepMemoryId { .keep(id) } else { throw VaultError.unsupportedAction }
+        case .bothTrue: .bothTrue
+        }
         let edits = params.edits.map(Self.suggestionEdit) ?? SuggestionEdit()
-        let result = try await services.suggestions.apply(suggestionID: params.suggestionId, edits: edits, now: now,
+        let result = try await services.suggestions.apply(suggestionID: params.suggestionId, edits: edits, mode: mode, now: now,
                                                           actor: .device(device), via: .companion)
         return InboxApplied(memoryId: result.memoryID)
+    }
+
+    func reviewAgain(_ params: SuggestionID, device: UUID, now: Date) async throws -> EmptyResult {
+        try await services.suggestions.reviewAgain(suggestionID: params.suggestionId)
+        logRead("suggestion_reviewed_again", device: device, now: now, ids: [params.suggestionId])
+        return EmptyResult()
     }
 
     func reject(_ params: SuggestionID, device: UUID, now: Date) async throws -> EmptyResult {
