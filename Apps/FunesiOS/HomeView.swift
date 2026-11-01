@@ -69,10 +69,12 @@ struct HomeView: View {
             .sheet(item: Bindable(model).pulseSheet) { range in PulseSheet(model: model, range: range) }
             .sheet(isPresented: Bindable(model).readersSheet) { ReadersSheet(model: model) }
             .onChange(of: text) { problem = nil }
-            .onChange(of: model.captureRequests, initial: true) { _, requests in
-                guard requests > 0 else { return }
+            // `initial` also runs whenever Home is rebuilt (back from another tab): only a request
+            // not yet acted on opens the composer.
+            .onChange(of: model.captureRequests, initial: true) {
+                guard let mode = model.takePendingCapture() else { return }
                 // The Remember widget's 🎙: dictation where the app has its own, else the keyboard.
-                if model.captureMode == .dictate, Dictation.isAvailable {
+                if mode == .dictate, Dictation.isAvailable {
                     if !dictation.isActive { Task { await toggleDictation() } }
                 } else {
                     focused = true
