@@ -341,4 +341,88 @@ import Testing
         #expect(await inbox.save(a.id, edits: draft.changes(from: MemoryEditDraft(a))))
         #expect(vault.applied.first?.edits == MemoryChanges(title: "A, edited"))
     }
+
+    /// ADR-0031 §5: a swipe saves only a new memory or a duplicate; every other card opens.
+    @Test func swipesOnlyWhereTheRowShowsEverything() {
+        let vault = FakeVault()
+        let create = vault.suggest("New")
+        #expect(InboxModel.swipes(create))
+        #expect(InboxModel.swipes(vault.suggest("Copy", action: .duplicate)))
+        for action in [SuggestionAction.update, .archive, .split, .merge, .conflict, .unknown] {
+            #expect(!InboxModel.swipes(vault.suggest("Card", action: action)), "\(action)")
+        }
+        #expect(!InboxModel.swipes(vault.suggest("Busy", processing: .processing)))
+    }
+
+    /// ADR-0031 §2–§4: the card in full, applied with its choice and revision; a card that changed
+    /// on the Mac meanwhile is refused and stays; Review Again; a conflict needs its answer.
+    @Test func cardsAreAnsweredWithTheirChoice() async throws {
+        let vault = FakeVault()
+        let a = vault.add("Office in Madrid"), b = vault.add("Office in Lisbon")
+        let conflict = vault.suggest("Office", action: .conflict,
+                                     memories: [InboxMemory(role: .target, memory: a), InboxMemory(role: .target, memory: b)])
+        let archive = vault.suggest("Copy", action: .archive, memories: [InboxMemory(role: .target, memory: b)], stale: true)
+        let inbox = InboxModel(caller: vault)
+        await inbox.load()
+
+        let shown = try await inbox.detail(conflict.id)
+        #expect(shown.memories(.target).map(\.id) == [a.id, b.id])
+        vault.macChangeCard(conflict.id)
+        #expect(await inbox.save(conflict.id, mode: .keep, keep: a.id, revision: shown.revision) == false)
+        #expect(inbox.items.map(\.id) == [conflict.id, archive.id])
+        #expect(inbox.failure?.error == .method(CompanionError(.requestChanged)))
+        inbox.failure = nil
+        let fresh = try await inbox.detail(conflict.id)
+        #expect(await inbox.save(conflict.id, mode: .keep, keep: a.id, edits: MemoryChanges(body: "Since May"), revision: fresh.revision))
+        #expect(vault.applied.last == InboxApplyParams(suggestionId: conflict.id, edits: MemoryChanges(body: "Since May"), mode: .keep,
+                                                       keepMemoryId: a.id, revision: fresh.revision))
+
+        // Stale: refused until reviewed again; the row stays.
+        #expect(try await inbox.detail(archive.id).stale)
+        #expect(await inbox.save(archive.id) == false)
+        #expect(inbox.failure?.error == .method(CompanionError(.targetChanged)) && inbox.items.map(\.id) == [archive.id])
+        inbox.failure = nil
+        #expect(await inbox.reviewAgain(archive.id))
+        #expect(vault.reviewedAgain == [archive.id])
+        let reviewed = try await inbox.detail(archive.id)
+        #expect(!reviewed.stale)
+        #expect(await inbox.save(archive.id, revision: reviewed.revision))
+        #expect(inbox.items.isEmpty)
+    }
+
+    /// Answered on the Mac while open: the card's screen finds it gone, and so does Review Again.
+    @Test func aCardAnsweredOnTheMacLeaves() async throws {
+        let vault = FakeVault()
+        let a = vault.suggest("Copy", action: .archive), b = vault.suggest("Other", action: .merge)
+        let inbox = InboxModel(caller: vault)
+        await inbox.load()
+        vault.macAnswer(a.id)
+        await #expect(throws: CompanionClientError.method(CompanionError(.notFound))) { try await inbox.detail(a.id) }
+        vault.macAnswer(b.id)
+        #expect(await inbox.reviewAgain(b.id) == false)
+        #expect(inbox.items.isEmpty && inbox.answeredElsewhere == 2 && inbox.failure == nil)
+    }
+
+    /// `conflict` asks for the card: one still waiting stays, with the failure; one answered on the
+    /// Mac leaves; a split brings in its pieces that change other memories.
+    @Test func conflictRereadsTheListAndASplitRefreshesIt() async throws {
+        let vault = FakeVault()
+        let a = vault.suggest("A")
+        let piece = InboxItem(id: UUID(), origin: .consolidation, action: .update, sourceLabel: "Tidy-up", title: "Piece", body: "Body",
+                              kind: .fact, categories: ["work"], sensitivity: .low, createdAt: t0)
+        let split = vault.suggest("Split", action: .split, pieces: [piece])
+        let inbox = InboxModel(caller: vault)
+        await inbox.load()
+        vault.fail(.inboxApply, with: .method(CompanionError(.conflict)))
+        #expect(await inbox.save(a.id) == false)
+        #expect(inbox.items.map(\.id) == [a.id, split.id] && inbox.answeredElsewhere == 0)
+        #expect(inbox.failure?.error == .method(CompanionError(.conflict)))
+        #expect(await inbox.save(split.id))
+        #expect(inbox.items.map(\.id) == [a.id, piece.id])
+        inbox.failure = nil
+        vault.fail(.inboxApply, with: .method(CompanionError(.conflict)))
+        vault.macAnswer(a.id)
+        #expect(await inbox.save(a.id) == false)
+        #expect(inbox.items.map(\.id) == [piece.id] && inbox.answeredElsewhere == 1 && inbox.failure == nil)
+    }
 }

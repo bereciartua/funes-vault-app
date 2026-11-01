@@ -20,7 +20,7 @@ import Testing
         #expect(services.client == nil)
 
         let status = try await services.caller.call(StatusGet.self, EmptyParams())
-        #expect(status.inboxPending == 3)
+        #expect(status.inboxPending == 7)
 
         let categories = CategoryList(caller: services.caller)
         await categories.load()
@@ -28,14 +28,13 @@ import Testing
 
         let search = SearchModel(caller: services.caller)
         await search.search()
-        #expect(search.results.count == 20)
+        #expect(search.results.count == 24)
         search.query = "swift"
         await search.search()
         #expect(search.results.map(\.title).contains("Swift 6 with strict concurrency"))
         search.query = "trains"
         await search.search()
-        let hit = try #require(search.results.first)
-        #expect(hit.title == "Prefers trains to short flights")
+        let hit = try #require(search.results.first { $0.title == "Prefers trains to short flights" })
 
         let detail = MemoryDetailModel(id: hit.id, caller: services.caller)
         await detail.load()
@@ -51,10 +50,10 @@ import Testing
 
         let inbox = InboxModel(caller: services.caller)
         await inbox.load()
-        #expect(inbox.items.count == 3)
+        #expect(inbox.items.count == 7)
         #expect(await inbox.save(inbox.items[0].id))
         #expect(await inbox.reject(inbox.items[0].id))
-        #expect(inbox.items.count == 1)
+        #expect(inbox.items.count == 5)
 
         let queue = try #require(services.queue)
         #expect(queue.url.deletingLastPathComponent().standardizedFileURL.path == directory.standardizedFileURL.path)
@@ -112,12 +111,13 @@ import Testing
             #expect(!page.results.isEmpty)
             all += page.results
         }
-        #expect((18...25).contains(all.count))
+        #expect((18...30).contains(all.count))
         #expect(all.allSatisfy { Set($0.categories).isSubset(of: categories) })
 
         let inbox = try await vault.call(InboxList.self, InboxListParams()).items
-        #expect(inbox.count == 3)
+        #expect(inbox.count == 7)
         #expect(inbox.filter { $0.action == .update }.allSatisfy { $0.targetMemoryId != nil })
+        #expect(Set(inbox.filter { $0.origin == .consolidation }.map(\.action)) == [.archive, .merge, .conflict, .split])
 
         let list = try await vault.call(ApprovalsList.self, EmptyParams()).items
         #expect(Set(list.map(\.kind)) == Set(ApprovalKind.allCases))
@@ -125,6 +125,62 @@ import Testing
         #expect(share.share?.rows.count == 4)
         #expect(share.share?.rows.filter(\.weak).count == 1)
         #expect(share.share?.withheld == [.aboveSensitivityCeiling: 1])
+    }
+
+    /// The demo's tidy-up cards (ADR-0031): each shows its memories and is answered as on a Mac.
+    @Test func demoTidyUpCardsAnswerAsAMacWould() async throws {
+        let vault = DemoVault()
+        let inbox = try await vault.call(InboxList.self, InboxListParams()).items
+        func card(_ action: SuggestionAction) async throws -> InboxDetail {
+            let item = try #require(inbox.first { $0.origin == .consolidation && $0.action == action })
+            return try await vault.call(InboxGet.self, SuggestionID(suggestionId: item.id))
+        }
+        let archive = try await card(.archive)
+        #expect(archive.memories.map(\.role) == [.target, .survivor] && archive.tidyUp?.archiveReason == .duplicate && !archive.stale)
+        let merge = try await card(.merge)
+        #expect(merge.memories(.source).count == 2 && merge.tidyUp?.kept.count == 2)
+        let conflict = try await card(.conflict)
+        #expect(conflict.memories(.target).count == 2)
+        let split = try await card(.split)
+        #expect(split.memories.count == 1 && split.pieces.map(\.action) == [.create, .create])
+
+        await #expect(throws: CompanionClientError.self) {
+            try await vault.call(InboxApply.self, InboxApplyParams(suggestionId: conflict.item.id))
+        }
+        // A memory edited under a card makes it stale until Review Again; an archived one can't be reviewed.
+        let survivor = archive.memories(.survivor)[0]
+        _ = try await vault.call(MemoriesUpdate.self, MemoryUpdateParams(id: survivor.id, version: survivor.version,
+                                                                         changes: MemoryChanges(body: "No meat; fish is fine.")))
+        #expect(try await vault.call(InboxGet.self, SuggestionID(suggestionId: archive.item.id)).stale)
+        await #expect(throws: CompanionClientError.method(CompanionError(.targetChanged))) {
+            try await vault.call(InboxApply.self, InboxApplyParams(suggestionId: archive.item.id))
+        }
+        _ = try await vault.call(InboxReviewAgain.self, SuggestionID(suggestionId: archive.item.id))
+        let reviewed = try await vault.call(InboxGet.self, SuggestionID(suggestionId: archive.item.id))
+        #expect(!reviewed.stale && reviewed.revision != archive.revision)
+        let mergeSource = merge.memories(.source)[0]
+        _ = try await vault.call(MemoriesArchive.self, MemoryVersionRef(id: mergeSource.id, version: mergeSource.version))
+        await #expect(throws: CompanionClientError.method(CompanionError(.targetChanged))) {
+            try await vault.call(InboxReviewAgain.self, SuggestionID(suggestionId: merge.item.id))
+        }
+        _ = try await vault.call(MemoriesRestore.self, MemoryVersionRef(id: mergeSource.id, version: mergeSource.version + 1))
+        _ = try await vault.call(InboxReviewAgain.self, SuggestionID(suggestionId: merge.item.id))
+        await #expect(throws: CompanionClientError.self) {
+            try await vault.call(InboxApply.self, InboxApplyParams(suggestionId: archive.item.id, revision: "other"))
+        }
+        let kept = conflict.memories(.target)[1]
+        _ = try await vault.call(InboxApply.self, InboxApplyParams(suggestionId: conflict.item.id, mode: .keep, keepMemoryId: kept.id,
+                                                                   revision: conflict.revision))
+        let other = try await vault.call(MemoriesGet.self, MemoryID(id: conflict.memories(.target)[0].id)).memory
+        #expect(other.status == .archived)
+        for card in [archive, merge, split] {
+            let current = try await vault.call(InboxGet.self, SuggestionID(suggestionId: card.item.id))
+            _ = try await vault.call(InboxApply.self, InboxApplyParams(suggestionId: card.item.id, revision: current.revision))
+        }
+        let archived = try await vault.call(MemoriesSearch.self, MemorySearchParams(query: "", filters: MemorySearchFilters(status: .archived), limit: 50))
+        // The copy, a merge's two sources, the split's original and the conflict's other, plus the sample one.
+        #expect(archived.results.count == 6)
+        #expect(try await vault.call(InboxList.self, InboxListParams()).items.allSatisfy { $0.origin != .consolidation })
     }
 
     /// Edits apply to the session only: a new demo starts from the bundled data, and a stale
