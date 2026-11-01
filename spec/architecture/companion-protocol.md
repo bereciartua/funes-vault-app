@@ -99,7 +99,7 @@ When a device's 10,000 slots are full, the oldest nonce is dropped and its `ts` 
 **Response JSON:** `{"id":"<call id>","result":{…}}` or `{"id":"…","error":{"code":"…","message":"…"}}`.
 
 ## 4. Methods
-All methods act as the **owner** ([access policy §6](../domain/access-policy.md#6-owner-devices-paired-iphone)). Each is logged in Activity as `device:<id>` (via `companion`), except `status.get`, the reachability probe the phone sends on every foreground, and `approvals.settings.get`, which it sends as often. Reads log one row without text (`memories_searched` with a result count, `memory_viewed`, `inbox_listed`, `categories_listed`, `approvals_listed`, `approval_viewed`, from v0.4 `overview_viewed`, and from v0.6 `search_answered` with counts only). Writes log what FunesCore logs for them (`capture`, `memory_created`, `memory_edited`, `memory_archived`, `memory_restored`, `memory_deleted`, `suggestion_applied`, `suggestion_rejected`, `device_revoked`, `approval`, `access_answered`, `device_approvals`).
+All methods act as the **owner** ([access policy §6](../domain/access-policy.md#6-owner-devices-paired-iphone)). Each is logged in Activity as `device:<id>` (via `companion`), except `status.get`, the reachability probe the phone sends on every foreground, and `approvals.settings.get`, which it sends as often. Reads log one row without text (`memories_searched` with a result count, `memory_viewed`, `inbox_listed`, from v0.9 `inbox_viewed` with the suggestion's id, `categories_listed`, `approvals_listed`, `approval_viewed`, from v0.4 `overview_viewed`, and from v0.6 `search_answered` with counts only). Writes log what FunesCore logs for them (`capture`, `memory_created`, `memory_edited`, `memory_archived`, `memory_restored`, `memory_deleted`, `suggestion_applied`, `suggestion_rejected`, `device_revoked`, `approval`, `access_answered`, `device_approvals`).
 
 **Implementation (task 5.2):** the Mac's side is the local package `Packages/FunesCompanion`: `CompanionListener`, `CompanionRouter`, `PairingService`, `CompanionHandlers` and `CompanionServer`, on FunesCore and BridgeKitCore's HTTP parser. The app adds only Settings ▸ iPhone and the Allow prompt. The Mac's id and keys are a Keychain item, service `com.funesvault.companion` (`.dev` for a development vault).
 
@@ -116,10 +116,12 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 | `memories.update` | `{id, version, changes}` | `{version}`, or `conflict` if the version is stale |
 | `memories.archive` / `memories.restore` / `memories.delete` | `{id, version}` | `{version}` / `conflict` |
 | `inbox.list` | `{cursor?}` | `{items: [suggestion…], nextCursor?}` |
-| `inbox.apply` | `{suggestionId, edits?}` | `{memoryId}`, or `target_changed` / `unsupported_action` / `processing` (Phase 6) |
+| `inbox.get` (v0.9) | `{suggestionId}` | one suggestion in full for its screen (§4.2): `{item, memories: [{role, memory}], pieces, stale, tidyUp?, similar, revision}` |
+| `inbox.apply` | `{suggestionId, edits?, mode?, keepMemoryId?, revision?}` | `{memoryId}`, or `target_changed` / `unsupported_action` / `processing` (Phase 6), `request_changed` (v0.9). `mode` (v0.9, §4.2) is the card's choice: `replace` (an update's default), `keep_both`, `keep` (with `keepMemoryId`), `both_true`; `revision` is `inbox.get`'s |
 | `inbox.reject` | `{suggestionId}` | `{}`. A suggestion still processing may be rejected; its processing is cancelled |
 | `inbox.retry` | `{suggestionId}` | `{}`: Try again on a failed split (its job is queued again), or `conflict` if it isn't failed |
 | `inbox.keep` | `{suggestionId}` | `{}`: Keep as one on a failed split (an ordinary suggestion from then on), or `conflict` if it isn't failed |
+| `inbox.reviewAgain` (v0.9) | `{suggestionId}` | `{}`: Review Again on a stale card (§4.2), or `target_changed` if a memory it refers to is no longer active, `conflict` if it's no longer waiting |
 | `device.unpair` | — | `{}`. The Mac marks this device revoked (self-removal) |
 | `approvals.list` | — | `{items: [{id, kind, agentName, agentKind?, count, createdAt, expiresAt}]}`: what waits now, soonest deadline first (§4.1) |
 | `approvals.get` | `{id}` or `{ring}` (exactly one) | the panel: `{id, kind, revision, agentName, agentKind?, task?, createdAt, expiresAt, share? \| save? \| access?}` (§4.1) |
@@ -138,14 +140,14 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 - `internal_error`
 - `already_answered` (`approvals.*`: answered first, on the Mac or another iPhone)
 - `request_expired` (`approvals.*`: past its 15 minutes, an access request's in-call wait over, or withdrawn or invalidated)
-- `request_changed` (`approvals.answer`: a stale `revision`; fetch the panel again)
+- `request_changed` (`approvals.answer`: a stale `revision`; fetch the panel again. `inbox.apply`, v0.9: the card changed since `inbox.get`; fetch it again)
 - `answers_off` (`memories.answer`: Search answers are off on the Mac, or no model can answer)
 - `cap_reached` (`memories.answer`: today's cloud requests are used up)
 - `model_unavailable` (`memories.answer`, with `reason`)
 - `model_timeout` (`memories.answer`: the model took longer than 45 s)
 - `ask_required` (`memories.answer` with `automatic`: the Mac now answers this search only when asked; nothing was sent)
-- `target_changed` (`inbox.apply`: a memory the suggestion changes was edited, archived or deleted since it was suggested; the suggestion is still waiting, to be reviewed again on the Mac)
-- `unsupported_action` (`inbox.apply`: merge, split, conflict and unknown actions, and the daily tidy-up's proposals, are answered on the Mac)
+- `target_changed` (`inbox.apply`: a memory the suggestion changes was edited, archived or deleted since it was suggested; the suggestion is still waiting, to be reviewed again (`inbox.reviewAgain`). `inbox.reviewAgain`: a memory it refers to is no longer active)
+- `unsupported_action` (`inbox.apply`: an `unknown` action, a conflict without `keep` or `both_true`, a mode the action doesn't take, or `keep_both` on a tidy-up proposal. Before v0.9 also merge, split, conflict and every tidy-up proposal)
 - `processing` (`inbox.apply`, `approvals.answer`: New memories processing hasn't finished with the suggestion; list the Inbox again later)
 
 **Edits:** in `changes` (and `inbox.apply`'s `edits`), an absent field is unchanged; `"expiresAt": null` removes the expiry.
@@ -154,7 +156,25 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 - `inbox.list` items gain `groupId?`, `groupLabel?` ("ChatGPT · 12 pieces"), `outsideScope` and `targetMemoryVersion?`. `action` gains `duplicate`, `split`, `merge` and `conflict`.
 - `inbox.list` items gain `processing?`: `processing` while New memories processing holds the suggestion (memory processing §5.2: its job is queued or running with splitting on), `failed` when its split failed; absent otherwise. A `processing` item is shown greyed and can't be saved (`inbox.apply` answers `processing`), only rejected, which cancels its job. A `failed` one offers Try again (`inbox.retry`) and Keep as one (`inbox.keep`). Both apps are updated together.
 - The phone decodes an action it doesn't know as `unknown` and shows such items as "Review on your Mac". Both apps are updated together (there are no external users yet), so the Mac doesn't filter by phone version.
-- `inbox.apply` applies the suggestion's own action (the same per-action apply as the Mac): `create` saves, `update` replaces its target, `archive` archives it, `duplicate` changes nothing. A stale target returns `target_changed` (not `conflict`, which the phone's Inbox reads as "answered on your Mac"). Merge, split and conflict suggestions are answered on the Mac until the phone gets their cards; `inbox.apply` refuses them from the phone with `unsupported_action`. So are the daily tidy-up's proposals (origin `consolidation`, whatever their action, ADR-0021): `inbox.list` sends them with action `unknown`, so the phone shows "Review on your Mac", because a tidy-up update may also archive a copy and an archive names the memory it keeps, which the phone's cards don't show. The phone may still reject them.
+- `inbox.apply` applies the suggestion's own action (the same per-action apply as the Mac): `create` saves, `update` replaces its target, `archive` archives it, `duplicate` changes nothing. A stale target returns `target_changed` (not `conflict`, which the phone's Inbox reads as "answered on your Mac"). Merge, split and conflict suggestions are answered on the Mac until the phone gets their cards; `inbox.apply` refuses them from the phone with `unsupported_action`. So are the daily tidy-up's proposals (origin `consolidation`, whatever their action, ADR-0021): `inbox.list` sends them with action `unknown`, so the phone shows "Review on your Mac", because a tidy-up update may also archive a copy and an archive names the memory it keeps, which the phone's cards don't show. The phone may still reject them. *Replaced in v0.9 by §4.2.*
+
+### 4.2 Every Inbox card on the iPhone (v0.9)
+[ADR-0031](decisions/0031-iphone-answers-every-inbox-card.md), FR-iOS-09. Both apps are updated together; the Mac doesn't check the phone's version.
+- **`inbox.list`** sends every suggestion with its own action, the tidy-up's included (no more `unknown` for origin `consolidation`). `unknown` now means only an action this phone doesn't know.
+- **`inbox.get {suggestionId}`** returns `{item, memories, pieces, stale, tidyUp?, similar}`, built fresh:
+  - `item`: the suggestion as `inbox.list` sends it.
+  - `memories`: the memories it refers to, each `{role, memory}` with `role` `target`, `source` or `survivor` and `memory` as `memories.get`'s, in FunesCore's order (the single target first, then the others). An update's target and any copy it also archives (`source`), an archive's target and the memory it keeps (`survivor`), a merge's sources, a conflict's two memories (both `target`), a split's original, a duplicate's match. A memory that was deleted for good is left out (the card is then stale).
+  - `pieces`: a split's pending pieces, as `inbox.list` items, in order; empty otherwise.
+  - `stale`: a memory it refers to changed, or isn't active, since it was suggested (FunesCore's `isStale`): Apply would answer `target_changed`.
+  - `tidyUp`: for a tidy-up proposal, `{reason?, archiveReason?: duplicate·superseded·expired, kept: [{memoryId, text}]}`, the model's reason, why an archive archives, and what each merge source keeps.
+  - `similar`: for a create, an update or a merge, up to 2 `{id, title}` of memories that look the same (exact copies, then near ones, never a memory it refers to), as the Mac's card points out.
+  - `revision`: a hash of what the screen shows that an apply depends on: the suggestion's fields and action, each memory's id, role, stored version and current version, and the pieces' ids, actions and text.
+  - `not_found` once it's no longer waiting.
+- **`inbox.apply`'s `mode`** passes the card's choice to FunesCore's per-action apply: absent is the action's own way (Replace for an update); `keep_both` saves an update as a new memory (refused for a tidy-up proposal); `keep` with `keepMemoryId` keeps that conflict memory, changed by `edits` if any, and archives the other; `both_true` answers a conflict without changing anything (and isn't asked again). A conflict needs `keep` or `both_true`. A mode the action doesn't take is `unsupported_action`. `edits` apply to a create, an update, a merge and a conflict's kept memory. With `revision`, a card whose revision is no longer the same is refused with `request_changed` before anything is applied; the card's screen always sends it, a swipe (a create or a duplicate only, whose row shows everything) doesn't.
+- **`conflict` from `inbox.apply`** means the suggestion wasn't pending (answered elsewhere) or, rarely, that its memories no longer allow the action (a split none of whose pieces is new any more). The phone reads the Inbox again rather than assuming either.
+- **`inbox.reviewAgain {suggestionId}`** records the current versions of the memories a stale card refers to, as the Mac's Review Again does. The phone then calls `inbox.get` again.
+- **After a split,** its pieces that update or archive another memory join the Inbox; the phone reads the list again from the first page.
+- **Activity:** `inbox.get` logs `inbox_viewed` and `inbox.reviewAgain` `suggestion_reviewed_again`, each with the suggestion's id and no text; apply logs what FunesCore logs.
 
 ### 4.1 Approvals from the iPhone (task 5.6)
 [FR-iOS-12](../product/03-requirements.md), [ADR-0019](decisions/0019-cloudkit-doorbell-for-iphone-approvals.md). The Mac's side is `CompanionApprovals` in `FunesCompanion`; the types are `FunesProtocol/Companion/CompanionApprovals.swift`.
