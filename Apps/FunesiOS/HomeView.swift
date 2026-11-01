@@ -38,6 +38,8 @@ struct HomeView: View {
                     }
                 }
             }
+            // The tiles' 12 pt between the composer and the sections too, not the list's wider default.
+            .listSectionSpacing(12)
             // Return adds a line, so the keyboard closes three other ways, keeping the text and any
             // dictation: Done above it, scrolling, and a tap anywhere outside the field.
             .scrollDismissesKeyboard(.interactively)
