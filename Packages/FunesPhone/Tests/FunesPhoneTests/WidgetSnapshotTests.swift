@@ -93,6 +93,11 @@ import Testing
         #expect(moved.rhythm.start == day(-81))
         #expect(moved.rhythm.counts.suffix(2) == [0, 0])
         #expect(moved.rhythm.counts.prefix(82).allSatisfy { $0 == 1 })
+        #expect(moved.rhythm.saved == nil)
+        // What you saved moves along with them.
+        var saving = overview
+        saving.rhythm.saved = Array(repeating: 2, count: saving.rhythm.counts.count)
+        #expect(saving.moved(to: day(2) + 60).rhythm.saved == Array(repeating: 2, count: 82) + [0, 0])
 
         // Days -4…2: five of them had a memory; "a" shared on days -3 and -1, "b" on day 0.
         #expect(moved.thisWeek == VaultOverview.Week(saved: 5, shared: 5, agents: 2, refused: 1))

@@ -230,11 +230,15 @@ enum RhythmWords {
         return parts.compactMap { $0 }.joined(separator: " · ")
     }
 
-    /// "Rhythm, last 8 weeks: 23 new memories. Most on Sundays · 3-week streak".
+    /// "Rhythm, last 12 weeks: 23 memories saved. Most on Sundays · 3-week streak".
     static func accessibility(_ grid: RhythmGrid, calendar: Calendar) -> String {
-        let count = grid.cells.compactMap(\.count).reduce(0, +)
-        return count == 1 ? String(localized: "Rhythm, last \(grid.weeks) weeks: 1 new memory. \(line(grid, calendar: calendar))")
-                          : String(localized: "Rhythm, last \(grid.weeks) weeks: \(count) new memories. \(line(grid, calendar: calendar))")
+        grid.total == 1 ? String(localized: "Rhythm, last 12 weeks: 1 memory saved. \(line(grid, calendar: calendar))")
+                        : String(localized: "Rhythm, last 12 weeks: \(grid.total) memories saved. \(line(grid, calendar: calendar))")
+    }
+
+    /// The grid the words describe: the last 12 weeks, whatever width the view fits.
+    static func grid(_ overview: VaultOverview) -> RhythmGrid {
+        RhythmGrid(overview.rhythm, weeks: 12, calendar: overview.calendar)
     }
 }
 
@@ -651,36 +655,83 @@ struct SensitivityBars: View {
     }
 }
 
-/// The Rhythm grid: a column per week, a row per weekday, darker for more new memories.
+/// The Rhythm grid (`RhythmGrid`): a square per day, a column per week, as many weeks as fit the
+/// width at squares that fit seven rows in the height, so it fills whatever it's given (give it a
+/// height). Darker for more saved, today ringed, this week's days still to come fainter. With
+/// `showsLabels` (the Pulse sheet), weekday letters down the side and months along the top.
 struct RhythmGridView: View {
-    let grid: RhythmGrid
-    var spacing: CGFloat = 2
+    let rhythm: VaultOverview.Rhythm
+    let calendar: Calendar
+    var spacing: CGFloat = 3
+    var maxSide: CGFloat = 16
+    var showsLabels = false
+
+    private static let shades = [0.3, 0.5, 0.75, 1]
+    private var labelRoom: CGFloat { showsLabels ? 16 : 0 }
 
     var body: some View {
-        GeometryReader { proxy in
-            let side = max(2, min((proxy.size.width - spacing * CGFloat(grid.weeks - 1)) / CGFloat(grid.weeks),
-                                  (proxy.size.height - spacing * 6) / 7))
-            HStack(alignment: .top, spacing: spacing) {
-                ForEach(0..<grid.weeks, id: \.self) { week in
-                    VStack(spacing: spacing) {
-                        ForEach(grid.cells.filter { $0.week == week }) { cell in
-                            RoundedRectangle(cornerRadius: side / 4)
-                                .fill(fill(cell.count))
-                                .frame(width: side, height: side)
-                        }
-                    }
+        Canvas { context, size in
+            let fit = RhythmGrid.Fit(width: size.width - labelRoom, height: size.height - labelRoom, spacing: spacing, maxSide: maxSide)
+            let grid = RhythmGrid(rhythm, weeks: fit.weeks, calendar: calendar)
+            let radius = fit.side / 4
+            for cell in grid.cells {
+                let origin = fit.origin(week: cell.week, row: cell.row)
+                let rect = CGRect(x: labelRoom + origin.x, y: labelRoom + origin.y, width: fit.side, height: fit.side)
+                let square = Path(roundedRect: rect, cornerRadius: radius)
+                context.fill(square, with: shading(cell, grid))
+                if cell.isToday {
+                    context.stroke(Path(roundedRect: rect.insetBy(dx: 0.75, dy: 0.75), cornerRadius: max(0, radius - 0.75)),
+                                   with: .color(.primary), lineWidth: 1.5)
                 }
             }
+            guard showsLabels else { return }
+            let symbols = calendar.veryShortStandaloneWeekdaySymbols
+            for row in [1, 3, 5] {
+                let y = labelRoom + fit.origin(week: 0, row: row).y + fit.side / 2
+                context.draw(Text(symbols[(calendar.firstWeekday - 1 + row) % 7]).font(.caption2).foregroundStyle(.secondary),
+                             at: CGPoint(x: 0, y: y), anchor: .leading)
+            }
+            // Months as the Mac's calendar has them, not the phone's time zone.
+            var month = Date.FormatStyle.dateTime.month(.abbreviated)
+            month.calendar = calendar
+            month.timeZone = calendar.timeZone
+            var lastLabel = -3
+            for week in 0..<grid.weeks where week - lastLabel >= 3 {
+                let days = grid.cells.filter { $0.week == week }
+                guard let first = days.first(where: { calendar.component(.day, from: $0.date) == 1 }) ?? (week == 0 ? days.first : nil)
+                else { continue }
+                // The first column names its month only if no other starts within three weeks.
+                if week == 0, (1...3).contains(where: { w in
+                    grid.cells.contains { $0.week == w && calendar.component(.day, from: $0.date) == 1 }
+                }) { continue }
+                context.draw(Text(first.date, format: month).font(.caption2).foregroundStyle(.secondary),
+                             at: CGPoint(x: labelRoom + fit.origin(week: week, row: 0).x, y: 0), anchor: .topLeading)
+                lastLabel = week
+            }
         }
-        .aspectRatio(CGFloat(grid.weeks) / 7, contentMode: .fit)
         .accessibilityHidden(true)
     }
 
-    private func fill(_ count: Int?) -> AnyShapeStyle {
-        guard let count else { return AnyShapeStyle(.clear) }
-        guard count > 0, grid.peak > 0 else { return AnyShapeStyle(.quaternary) }
-        // Four steps of one hue, light to dark.
-        let step = min(4, 1 + (count - 1) * 4 / max(1, grid.peak))
-        return AnyShapeStyle(Color.accentColor.opacity([0.3, 0.5, 0.75, 1][step - 1]))
+    private func shading(_ cell: RhythmGrid.Cell, _ grid: RhythmGrid) -> GraphicsContext.Shading {
+        guard let count = cell.count else { return .style(HierarchicalShapeStyle.quaternary.opacity(0.45)) }
+        guard let level = grid.level(count) else { return .style(HierarchicalShapeStyle.quaternary) }
+        return .color(Color.accentColor.opacity(Self.shades[level]))
+    }
+}
+
+/// "Less ▪▪▪▪▪ More", under the Pulse sheet's grid.
+struct RhythmKey: View {
+    var body: some View {
+        HStack(spacing: 3) {
+            Text("Less").padding(.trailing, 3)
+            RoundedRectangle(cornerRadius: 2.5).fill(.quaternary).frame(width: 10, height: 10)
+            ForEach([0.3, 0.5, 0.75, 1], id: \.self) { shade in
+                RoundedRectangle(cornerRadius: 2.5).fill(Color.accentColor.opacity(shade)).frame(width: 10, height: 10)
+            }
+            Text("More").padding(.leading, 3)
+        }
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .accessibilityHidden(true)
     }
 }

@@ -944,12 +944,12 @@
     "12 weeks" : {
 
     },
-    "12 weeks: %lld new memories on %lld days" : {
+    "12 weeks: %lld memories saved on %lld days" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "12 weeks: %1$lld new memories on %2$lld days"
+            "value" : "12 weeks: %1$lld memories saved on %2$lld days"
           }
         }
       }

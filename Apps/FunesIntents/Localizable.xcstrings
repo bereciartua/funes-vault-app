@@ -27,9 +27,6 @@
     "%lld memories" : {
 
     },
-    "%lld new in 12 weeks" : {
-
-    },
     "%lld refused" : {
 
     },
@@ -66,9 +63,6 @@
 
     },
     "0 in" : {
-
-    },
-    "1 new in 12 weeks" : {
 
     },
     "1-week streak" : {
@@ -150,6 +144,9 @@
     "Last 7 days" : {
 
     },
+    "Less" : {
+
+    },
     "Low" : {
 
     },
@@ -157,6 +154,9 @@
 
     },
     "Memories" : {
+
+    },
+    "More" : {
 
     },
     "Most on %@s" : {
@@ -219,25 +219,18 @@
     "Rhythm" : {
 
     },
-    "Rhythm, last %lld weeks: %lld new memories. %@" : {
+    "Rhythm, last 12 weeks: %lld memories saved. %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Rhythm, last %1$lld weeks: %2$lld new memories. %3$@"
+            "value" : "Rhythm, last 12 weeks: %1$lld memories saved. %2$@"
           }
         }
       }
     },
-    "Rhythm, last %lld weeks: 1 new memory. %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Rhythm, last %1$lld weeks: 1 new memory. %2$@"
-          }
-        }
-      }
+    "Rhythm, last 12 weeks: 1 memory saved. %@" : {
+
     },
     "Saved" : {
 

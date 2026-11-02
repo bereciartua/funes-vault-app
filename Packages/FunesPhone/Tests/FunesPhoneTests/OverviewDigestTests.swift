@@ -3,8 +3,8 @@ import FunesProtocol
 import Testing
 @testable import FunesPhone
 
-/// Home's charts from an overview (FR-H-04): the pulse's stacks, the growth line, the Rhythm grid
-/// and its streak, the sensitivity mixes, who reads, and a new vault.
+/// Home's charts from an overview (FR-H-04): the pulse's stacks, the growth line, the sensitivity
+/// mixes, who reads, and a new vault. The Rhythm grid's are FunesProtocol's (`RhythmGridTests`).
 @Suite struct OverviewDigestTests {
     /// Monday-first weeks in UTC; `t0` is Friday 15 January 2027, 08:00.
     static var calendar: Calendar {
@@ -85,50 +85,13 @@ import Testing
         #expect(growth.points.map(\.total) == stride(from: 16, through: 100, by: 7).map { $0 })
         #expect(growth.points.first?.date == day(-83))
 
+        // A 53-week rhythm still draws the last 12 weeks.
+        let days = VaultOverview.Rhythm.days
+        let long = Growth(total: 500, rhythm: VaultOverview.Rhythm(start: day(1 - days), counts: Array(repeating: 1, count: days)),
+                          calendar: Self.calendar)
+        #expect(long.points.count == 13 && long.points.first?.date == day(-83) && long.points.first?.total == 416)
         // Never below zero, as when memories were deleted.
         #expect(Growth(total: 3, rhythm: rhythm([5]), calendar: Self.calendar).points.first?.total == 0)
-    }
-
-    @Test func rhythmGridEndsWithThisWeek() {
-        // Today is a Friday: the last column is Monday 11 to Sunday 17 January.
-        let grid = RhythmGrid(rhythm([1, 0, 2]), weeks: 8, calendar: Self.calendar)
-        #expect(grid.cells.count == 56)
-        let last = grid.cells.suffix(7)
-        #expect(last.first?.date == day(-4))
-        #expect(last.map(\.count) == [0, 0, 1, 0, 2, nil, nil])
-        #expect(grid.cells.first?.row == 0 && grid.cells.first?.week == 0)
-        #expect(grid.cells.last?.week == 7 && grid.cells.last?.row == 6)
-        #expect(grid.peak == 2 && grid.total == 3)
-        #expect(grid.isTooSparse && grid.busiestWeekday == nil)
-
-        // 12 weeks reach back before the overview's first day.
-        let all = RhythmGrid(rhythm([1]), weeks: 13, calendar: Self.calendar)
-        #expect(all.cells.first?.count == nil)
-    }
-
-    @Test func streakCountsWeeksUpToThisOne() {
-        // This week (Mon–Fri) and the two before it.
-        let three = RhythmGrid(rhythm([1] + Array(repeating: 0, count: 6) + [1] + Array(repeating: 0, count: 6) + [1, 0, 0, 0, 0]),
-                               weeks: 8, calendar: Self.calendar)
-        #expect(three.streak == 3)
-        // Nothing yet this week: the streak still stands on last week's.
-        let waiting = RhythmGrid(rhythm([2] + Array(repeating: 0, count: 6) + [1] + Array(repeating: 0, count: 6) + [0, 0, 0, 0, 0]),
-                                 weeks: 8, calendar: Self.calendar)
-        #expect(waiting.streak == 2)
-        // A week without a memory breaks it.
-        let broken = RhythmGrid(rhythm([1] + Array(repeating: 0, count: 13) + [0, 0, 0, 0, 1]), weeks: 8, calendar: Self.calendar)
-        #expect(broken.streak == 1)
-        #expect(RhythmGrid(rhythm([]), weeks: 8, calendar: Self.calendar).streak == 0)
-    }
-
-    @Test func busiestWeekday() {
-        // Fridays (today, a week ago…) have 3, other days 0 or 1.
-        var counts = Array(repeating: 0, count: 84)
-        for i in stride(from: 83, through: 0, by: -7) { counts[i] = 3 }
-        counts[80] = 1
-        let grid = RhythmGrid(VaultOverview.Rhythm(start: day(-83), counts: counts), weeks: 8, calendar: Self.calendar)
-        #expect(grid.busiestWeekday == 6)
-        #expect(!grid.isTooSparse)
     }
 
     @Test func sensitivityMix() {

@@ -109,17 +109,33 @@ public struct VaultOverview: Codable, Sendable, Equatable {
         }
     }
 
-    /// New memories per day over the last 12 weeks, whatever the range: the Rhythm grid.
+    /// New memories per day over the last 53 weeks, whatever the range: the Memories line (its
+    /// last 12 weeks) and the Rhythm grid (as many weeks as its card fits).
     public struct Rhythm: Codable, Sendable, Equatable {
-        public static let days = 84
+        public static let days = 371
         /// Midnight, in `timeZone`, of the first day.
         public var start: Date
-        /// One count per day, oldest first; the last is today.
+        /// Every new memory, one count per day, oldest first; the last is today.
         public var counts: [Int]
+        /// The memories you saved, the same days: not imports, nor tidy-up's merges and splits.
+        /// The Rhythm grid's. Nil from a Mac before v0.6: `savedCounts` then falls back on `counts`.
+        public var saved: [Int]?
 
-        public init(start: Date, counts: [Int]) {
+        public init(start: Date, counts: [Int], saved: [Int]? = nil) {
             self.start = start
             self.counts = counts
+            self.saved = saved
+        }
+
+        /// What the Rhythm grid counts: `saved`, else every new memory.
+        public var savedCounts: [Int] { saved ?? counts }
+
+        /// The last `days` days, or all of them if there are fewer; `calendar` is the overview's.
+        public func last(_ days: Int, calendar: Calendar) -> Rhythm {
+            let drop = max(0, counts.count - days)
+            guard drop > 0 else { return self }
+            return Rhythm(start: calendar.date(byAdding: .day, value: drop, to: start) ?? start,
+                          counts: Array(counts.suffix(days)), saved: saved.map { Array($0.suffix(days)) })
         }
     }
 

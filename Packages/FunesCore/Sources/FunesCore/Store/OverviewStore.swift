@@ -110,14 +110,19 @@ enum OverviewStore {
             if byCategory[key] == 0 { byCategory[key] = nil }
         }
 
-        // Rhythm: new memories per day over 12 weeks; the last 7 are this week's.
+        // Rhythm: new memories per day over 53 weeks, and those you saved (not imports or
+        // tidy-up); the last 7 are this week's.
         let daily = BucketExpression(column: "created_at", boundaries: days)
+        let notSaved = MemorySource.allCases.filter { !$0.countsAsSaved }.map { "'\($0.rawValue)'" }.joined(separator: ", ")
         var rhythm = Array(repeating: 0, count: VaultOverview.Rhythm.days)
+        var saved = rhythm
         for row in try Row.fetchAll(db, sql: """
-            SELECT \(daily.sql) AS b, COUNT(*) AS n FROM memory WHERE created_at >= ? AND created_at < ? GROUP BY b
+            SELECT \(daily.sql) AS b, COUNT(*) AS n, SUM(source NOT IN (\(notSaved))) AS saved FROM memory
+            WHERE created_at >= ? AND created_at < ? GROUP BY b
             """, arguments: daily.arguments + [days.first!, days.last!]) {
             guard let b: Int = row["b"], rhythm.indices.contains(b) else { continue }
             rhythm[b] = row["n"]
+            saved[b] = row["saved"] ?? 0
         }
 
         // This week.
@@ -161,7 +166,7 @@ enum OverviewStore {
 
         return VaultOverview(
             range: range, generatedAt: now, timeZone: calendar.timeZone.identifier, total: total, thisWeek: thisWeek,
-            days: series, rhythm: VaultOverview.Rhythm(start: days.first!, counts: rhythm), bySensitivity: bySensitivity,
+            days: series, rhythm: VaultOverview.Rhythm(start: days.first!, counts: rhythm, saved: saved), bySensitivity: bySensitivity,
             byCategory: byCategory, byKind: byKind, sharedBySensitivity: sharedBySensitivity, sharedByCategory: sharedByCategory,
             refusedByReason: refusedByReason, withheld: withheld, agents: agents, inboxPending: (inbox?["n"] as Int?) ?? 0,
             oldestPendingAt: inbox?["oldest"] as Date?, lastTidyUpAt: lastTidyUp)
