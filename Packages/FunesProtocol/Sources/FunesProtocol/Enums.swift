@@ -103,13 +103,11 @@ public enum SuggestionAction: String, Codable, Sendable, CaseIterable {
         self = SuggestionAction(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .unknown
     }
 
-    /// The actions the iPhone answers; the rest are answered on the Mac (companion protocol §4).
-    public var appliesOnPhone: Bool {
-        switch self {
-        case .create, .update, .archive, .duplicate: true
-        case .split, .merge, .conflict, .unknown: false
-        }
-    }
+    /// The actions the iPhone answers: all but one it doesn't know (companion protocol §4.2).
+    public var appliesOnPhone: Bool { self != .unknown }
+
+    /// Applied only with the user's answer (Keep This or Both Are True), never by a swipe or in bulk.
+    public var needsAnswer: Bool { self == .conflict }
 }
 
 /// Where a memory came from.

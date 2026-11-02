@@ -15,6 +15,9 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
     private(set) var updates: [MemoryUpdateParams] = []
     private(set) var applied: [InboxApplyParams] = []
     private(set) var rejected: [UUID] = []
+    private(set) var reviewedAgain: [UUID] = []
+    /// What `inbox.get` adds to a suggestion, by id; its revision is the Mac's to change.
+    private var details: [UUID: InboxDetail] = [:]
     private(set) var searches: [MemorySearchParams] = []
     private(set) var asks: [MemoryAnswerParams] = []
     /// How long `memories.answer` takes; cancelled meanwhile, it gets no answer.
@@ -35,6 +38,25 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
         lock.withLock { suggestions.append(item) }
         return item
     }
+
+    /// A card with what its screen shows; `stale` until Review Again.
+    @discardableResult
+    func suggest(_ title: String, action: SuggestionAction, origin: SuggestionOrigin = .consolidation,
+                 memories: [InboxMemory] = [], pieces: [InboxItem] = [], stale: Bool = false) -> InboxItem {
+        let item = InboxItem(id: UUID(), origin: origin, action: action, sourceLabel: "Tidy-up",
+                             targetMemoryId: memories.first { $0.role == .target }?.memory.id, title: title, body: "Body of \(title)",
+                             kind: .preference, categories: ["work"], sensitivity: .low, createdAt: t0)
+        lock.withLock {
+            suggestions.append(item)
+            details[item.id] = InboxDetail(item: item, memories: memories, pieces: pieces, stale: stale, revision: "r1")
+        }
+        return item
+    }
+
+    /// The card changed on the Mac (an edit there, then Review Again there): a new revision.
+    func macChangeCard(_ id: UUID) { lock.withLock { details[id]?.revision += "+" } }
+
+    func detail(_ id: UUID) -> InboxDetail? { lock.withLock { details[id] } }
 
     /// The Mac's processing moved on (finished, failed again).
     func setProcessing(_ id: UUID, _ processing: InboxProcessing?) {
@@ -143,11 +165,32 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
             let offset = (params as! InboxListParams).cursor.flatMap(Int.init) ?? 0
             let page = Array(suggestions.dropFirst(offset).prefix(2))
             return InboxListResult(items: page, nextCursor: offset + page.count < suggestions.count ? String(offset + page.count) : nil)
+        case .inboxGet:
+            let id = (params as! SuggestionID).suggestionId
+            guard let item = suggestions.first(where: { $0.id == id }) else { throw .method(CompanionError(.notFound)) }
+            var detail = details[id] ?? InboxDetail(item: item, revision: "r1")
+            detail.item = item
+            return detail
+        case .inboxReviewAgain:
+            let id = (params as! SuggestionID).suggestionId
+            guard suggestions.contains(where: { $0.id == id }) else { throw .method(CompanionError(.conflict)) }
+            reviewedAgain.append(id)
+            details[id]?.stale = false
+            details[id]?.revision += "+"
+            return EmptyResult()
         case .inboxApply:
             let params = params as! InboxApplyParams
             guard let index = suggestions.firstIndex(where: { $0.id == params.suggestionId }) else { throw .method(CompanionError(.notFound)) }
             guard suggestions[index].processing != .processing else { throw .method(CompanionError(.processing)) }
+            if let revision = params.revision, revision != details[params.suggestionId]?.revision {
+                throw .method(CompanionError(.requestChanged))
+            }
+            if details[params.suggestionId]?.stale == true { throw .method(CompanionError(.targetChanged)) }
+            if suggestions[index].action == .conflict, params.mode == nil { throw .method(CompanionError(.unsupportedAction)) }
+            let split = suggestions[index].action == .split ? details[params.suggestionId]?.pieces ?? [] : []
             suggestions.remove(at: index)
+            // A split's pieces that change other memories join the Inbox.
+            suggestions += split.filter { $0.action != .create }
             applied.append(params)
             return InboxApplied(memoryId: UUID())
         case .inboxReject:

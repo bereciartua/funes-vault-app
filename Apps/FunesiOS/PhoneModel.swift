@@ -510,7 +510,7 @@ extension PhoneModel {
         case .requestChanged:
             return String(localized: "This changed on your Mac.")
         case .targetChanged:
-            return String(localized: "The memory it changes was edited on your Mac since this was suggested. Review it on your Mac.")
+            return String(localized: "A memory it changes was edited on your Mac since this was suggested. Open it to review it again.")
         case .unsupportedAction:
             return String(localized: "Review this on your Mac.")
         case .processing:

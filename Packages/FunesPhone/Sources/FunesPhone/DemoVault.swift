@@ -8,8 +8,9 @@ private let logger = Logger(subsystem: Identifiers.iOSLoggerSubsystem, category:
 /// The demo vault (FR-iOS-10, task 5.7): a sample vault on this iPhone only, for App Review, who
 /// have no Mac to pair with, and for trying the app first. It answers the companion methods as
 /// the Mac does, behind the same `CompanionCalling` and `CaptureSender` that `CompanionClient`
-/// serves, from the bundled `demo-vault.json`: about 20 memories, three Inbox suggestions, one
-/// Share, Save and access request each, and 12 weeks of sample counts for the overview (Home and
+/// serves, from the bundled `demo-vault.json`: about 25 memories, seven Inbox suggestions (four
+/// of them the daily tidy-up's: an archive, a merge, a conflict and a split), one Share, Save
+/// and access request each, and 12 weeks of sample counts for the overview (Home and
 /// the widgets).
 ///
 /// Nothing here reaches the network, the Keychain, CloudKit or the real capture queue. Changes
@@ -31,6 +32,8 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         var provenance: [UUID: [ProvenanceLabel]]
         var shared: [UUID: (count: Int, last: Date?)]
         var inbox: [InboxItem]
+        /// What `inbox.get` adds to a card: its memories, the tidy-up's reasons, a split's pieces.
+        var cards: [UUID: Card] = [:]
         var approvals: [DemoContent.Approval]
         var approvalIDs: [UUID]
         var approvalsEnabled = true
@@ -42,6 +45,13 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         /// The demo person's name, for Home's title (ADR-0026).
         var calledName: String?
         var calendar: Calendar = .autoupdatingCurrent
+    }
+
+    struct Card: Sendable {
+        /// Each memory with the version the card was made on, as the Mac stores it.
+        var refs: [(id: UUID, role: InboxMemoryRole, version: Int)] = []
+        var tidyUp: InboxTidyUp?
+        var pieces: [InboxItem] = []
     }
 
     private let state: Mutex<State>
@@ -162,16 +172,31 @@ public final class DemoVault: CompanionCalling, CaptureSender {
             let offset = (params as! InboxListParams).cursor.flatMap(Int.init) ?? 0
             let page = Array(state.inbox.dropFirst(offset).prefix(20))
             return InboxListResult(items: page, nextCursor: offset + page.count < state.inbox.count ? String(offset + page.count) : nil)
+        case .inboxGet:
+            let id = (params as! SuggestionID).suggestionId
+            guard let item = state.inbox.first(where: { $0.id == id }) else { throw CompanionError(.notFound) }
+            return card(item, in: state)
         case .inboxApply:
             let params = params as! InboxApplyParams
             guard let index = state.inbox.firstIndex(where: { $0.id == params.suggestionId }) else { throw CompanionError(.notFound) }
-            guard state.inbox[index].action.appliesOnPhone else { throw CompanionError(.unsupportedAction) }
-            guard state.inbox[index].processing != .processing else { throw CompanionError(.processing) }
-            let item = state.inbox.remove(at: index)
-            let id = applySuggestion(item.memoryChanges.merged(params.edits), action: item.action, target: item.targetMemoryId,
-                                     source: item.origin == .agent ? .agentSuggestion : .captureIPhone, label: item.sourceLabel,
-                                     now: now, in: &state)
+            let item = state.inbox[index]
+            guard item.action.appliesOnPhone else { throw CompanionError(.unsupportedAction) }
+            guard item.processing != .processing else { throw CompanionError(.processing) }
+            if let revision = params.revision, revision != card(item, in: state).revision { throw CompanionError(.requestChanged) }
+            if params.mode != .keepBoth, let card = state.cards[item.id], stale(card, in: state) { throw CompanionError(.targetChanged) }
+            let id = try applyCard(item, params, now: now, in: &state)
+            state.inbox.remove(at: index)
+            state.cards[item.id] = nil
             return InboxApplied(memoryId: id)
+        case .inboxReviewAgain:
+            let id = (params as! SuggestionID).suggestionId
+            guard state.inbox.contains(where: { $0.id == id }), var card = state.cards[id] else { throw CompanionError(.conflict) }
+            for index in card.refs.indices {
+                guard let memory = state.memories[card.refs[index].id], memory.status == .active else { throw CompanionError(.targetChanged) }
+                card.refs[index].version = memory.version
+            }
+            state.cards[id] = card
+            return EmptyResult()
         case .inboxReject:
             let id = (params as! SuggestionID).suggestionId
             guard let index = state.inbox.firstIndex(where: { $0.id == id }) else { throw CompanionError(.notFound) }
@@ -355,6 +380,70 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         return memory.id
     }
 
+    /// `inbox.get`: the card with its memories as they are now. The revision is their versions.
+    private static func card(_ item: InboxItem, in state: State) -> InboxDetail {
+        let card = state.cards[item.id] ?? Card()
+        let memories = card.refs.compactMap { ref in state.memories[ref.id].map { InboxMemory(role: ref.role, memory: $0) } }
+        let revision = card.refs.map { "\($0.id):\($0.version):\(state.memories[$0.id]?.version ?? -1)" }.joined(separator: ",")
+        return InboxDetail(item: item, memories: memories, pieces: card.pieces, stale: stale(card, in: state), tidyUp: card.tidyUp,
+                           revision: revision)
+    }
+
+    /// A memory it refers to changed, or isn't active, since the card was made (or reviewed again).
+    private static func stale(_ card: Card, in state: State) -> Bool {
+        card.refs.contains { ref in state.memories[ref.id].map { $0.status != .active || $0.version != ref.version } ?? true }
+    }
+
+    /// `inbox.apply` with the card's choice, as the Mac's per-action apply does it.
+    private static func applyCard(_ item: InboxItem, _ params: InboxApplyParams, now: Date, in state: inout State) throws(CompanionError) -> UUID {
+        let card = state.cards[item.id] ?? Card()
+        let fields = item.memoryChanges.merged(params.edits)
+        let source: MemorySource = switch item.origin {
+        case .agent: .agentSuggestion
+        case .consolidation: .tidyUp
+        default: .captureIPhone
+        }
+        func archive(_ id: UUID) {
+            guard var memory = state.memories[id] else { return }
+            memory.status = .archived
+            _ = save(memory, event: .appliedFromSuggestion, now: now, in: &state)
+        }
+        func create(_ fields: MemoryChanges) -> UUID {
+            applySuggestion(fields, action: .create, target: nil, source: source, label: item.sourceLabel, now: now, in: &state)
+        }
+        switch (item.action, params.mode) {
+        case (.update, .keepBoth):
+            guard item.origin != .consolidation else { throw CompanionError(.unsupportedAction) }
+            return create(fields)
+        case (.create, nil), (.update, nil), (.update, .replace), (.archive, nil), (.duplicate, nil):
+            return applySuggestion(fields, action: item.action, target: item.targetMemoryId, source: source,
+                                   label: item.sourceLabel, now: now, in: &state)
+        case (.merge, nil):
+            let id = create(fields)
+            for ref in card.refs where ref.role == .source { archive(ref.id) }
+            return id
+        case (.split, nil):
+            let ids = card.pieces.filter { $0.action == .create }.map { create($0.memoryChanges) }
+            guard let first = ids.first else { throw CompanionError(.conflict) }
+            if let target = item.targetMemoryId { archive(target) }
+            return first
+        case (.conflict, .keep):
+            guard let kept = params.keepMemoryId, card.refs.contains(where: { $0.id == kept }), var memory = state.memories[kept] else {
+                throw CompanionError(.unsupportedAction)
+            }
+            if let edits = params.edits, !edits.isEmpty {
+                apply(edits, to: &memory)
+                _ = save(memory, event: .appliedFromSuggestion, now: now, in: &state)
+            }
+            for ref in card.refs where ref.id != kept { archive(ref.id) }
+            return kept
+        case (.conflict, .bothTrue):
+            return card.refs.first?.id ?? item.id
+        default:
+            throw CompanionError(.unsupportedAction)
+        }
+    }
+
     /// A capture's first line, as its Inbox title.
     static func title(for text: String) -> String {
         let line = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? text
@@ -486,12 +575,28 @@ public final class DemoVault: CompanionCalling, CaptureSender {
                 state.shared[memory.id] = (count, now.addingTimeInterval(-sample.daysAgo * day / 2))
             }
         }
-        state.inbox = content.inbox.map { sample in
+        func memory(_ title: String) -> UUID? { state.memories.values.first { $0.title == title }?.id }
+        func item(_ sample: DemoContent.Suggestion) -> InboxItem {
             InboxItem(id: UUID(), origin: sample.origin, action: sample.action, sourceLabel: sample.sourceLabel,
-                      targetMemoryId: sample.updates.flatMap { title in state.memories.values.first { $0.title == title }?.id },
+                      targetMemoryId: sample.updates.flatMap(memory),
                       title: sample.title, body: sample.body, kind: sample.kind, categories: sample.categories,
                       sensitivity: sample.sensitivity, evidence: sample.evidence, purpose: sample.purpose,
                       createdAt: now.addingTimeInterval(-sample.hoursAgo * 3_600))
+        }
+        for sample in content.inbox {
+            let inboxItem = item(sample)
+            state.inbox.append(inboxItem)
+            var card = Card()
+            if let target = inboxItem.targetMemoryId { card.refs.append((target, .target, 1)) }
+            for ref in sample.targets ?? [] {
+                if let id = memory(ref.memory), id != inboxItem.targetMemoryId { card.refs.append((id, ref.role, 1)) }
+            }
+            if sample.origin == .consolidation {
+                card.tidyUp = InboxTidyUp(reason: sample.reason, archiveReason: sample.archiveReason,
+                                          kept: (sample.kept ?? []).compactMap { k in memory(k.memory).map { .init(memoryId: $0, text: k.text) } })
+            }
+            card.pieces = (sample.pieces ?? []).map(item)
+            state.cards[inboxItem.id] = card
         }
         return state
     }
@@ -532,6 +637,24 @@ public struct DemoContent: Codable, Sendable {
         var evidence: String?
         var purpose: String?
         var hoursAgo: Double
+        /// The other memories it refers to, by title (companion protocol §4.2).
+        var targets: [Target]?
+        /// The tidy-up's reasons.
+        var reason: String?
+        var archiveReason: InboxArchiveReason?
+        var kept: [Kept]?
+        /// A split's pieces.
+        var pieces: [Suggestion]?
+
+        struct Target: Codable, Sendable {
+            var memory: String
+            var role: InboxMemoryRole
+        }
+
+        struct Kept: Codable, Sendable {
+            var memory: String
+            var text: String
+        }
     }
 
     public struct Approval: Codable, Sendable {

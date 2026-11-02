@@ -112,7 +112,7 @@ import Testing
         #expect(o.agents.map(\.name) == ["Claude Code", "Cursor", "Codex"])
         #expect(o.agents.map(\.shared).reduce(0, +) == shared)
         #expect(o.agents.allSatisfy { ($0.lastRequestAt ?? .distantFuture) < t0 })
-        #expect(o.inboxPending == 3 && o.oldestPendingAt != nil)
+        #expect(o.inboxPending == 7 && o.oldestPendingAt != nil)
         #expect(try #require(o.lastTidyUpAt) <= t0)
         // Agent ids are the keys of each day's out.
         #expect(Set(o.days.flatMap(\.out.keys)).isSubset(of: Set(o.agents.map(\.id))))

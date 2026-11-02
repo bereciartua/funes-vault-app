@@ -203,6 +203,24 @@ import Testing
         _ = try await s.apply(suggestionID: archive, now: t0)
     }
 
+    /// A target deleted for good goes null in the suggestion (ON DELETE SET NULL): it's stale, and
+    /// Review Again can't make it appliable (companion protocol §4.2).
+    @Test func aPurgedTargetIsStaleAndCantBeReviewedAgain() async throws {
+        let (v, s, _) = try Self.make()
+        let m = try v.memory("Gone for good")
+        let archive = try Self.suggestion(v, .archive, target: m.id)
+        try v.store.deleteMemory(id: m.id, now: t0)
+        try v.store.purgeMemory(id: m.id)
+        let suggestion = try #require(try await s.suggestion(id: archive))
+        #expect(suggestion.targetMemoryID == nil && suggestion.targetMemoryVersion == 1)
+        #expect(try await s.isStale(suggestion))
+        await #expect(throws: VaultError.targetChanged) { try await s.reviewAgain(suggestionID: archive) }
+        await #expect(throws: VaultError.targetChanged) { try await s.apply(suggestionID: archive, now: t0) }
+        // A new memory never had a target: not stale.
+        let create = try #require(try await s.suggestion(id: try Self.suggestion(v, .create)))
+        #expect(try await s.isStale(create) == false)
+    }
+
     @Test func agentCorrectionsRecordTheTargetsVersion() async throws {
         let fx = try ServiceFixture()
         let s = SuggestionService(store: fx.store, activity: fx.activity, pause: fx.pause)

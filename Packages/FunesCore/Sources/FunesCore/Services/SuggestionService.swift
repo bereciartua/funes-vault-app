@@ -345,7 +345,8 @@ public final class SuggestionService: Sendable {
     /// True when a memory the suggestion refers to changed, or was archived or deleted, since it
     /// was suggested: Apply would refuse it with `targetChanged` (Keep both excepted).
     public func isStale(_ suggestion: Suggestion) async throws -> Bool {
-        try await store.writer.read { db in
+        if Self.targetPurged(suggestion) { return true }
+        return try await store.writer.read { db in
             do {
                 _ = try Self.checked(db, Self.refs(db, suggestion))
                 return false
@@ -363,6 +364,7 @@ public final class SuggestionService: Sendable {
         try await store.writer.write { db in
             guard let s = try Self.fetch(db, id: suggestionID) else { throw VaultError.notFound }
             guard s.status == .pending else { throw VaultError.invalidState }
+            guard !Self.targetPurged(s) else { throw VaultError.targetChanged }
             let current = try Self.checked(db, Self.refs(db, s).map { Ref(memoryID: $0.memoryID, version: nil, role: $0.role) })
             if let target = s.targetMemoryID, let m = current[target] {
                 try db.execute(sql: "UPDATE suggestion SET target_memory_version = ? WHERE id = ?",
@@ -426,6 +428,10 @@ public final class SuggestionService: Sendable {
         try Row.fetchAll(db, sql: "SELECT * FROM suggestion WHERE group_id = ? AND status = 'pending' ORDER BY created_at, rowid",
                          arguments: [groupID.db]).map(Suggestion.from(row:))
     }
+
+    /// Its single target was deleted for good: the column went null (`ON DELETE SET NULL`), its
+    /// version stayed. Nothing can apply against it (companion protocol §4.2).
+    static func targetPurged(_ s: Suggestion) -> Bool { s.targetMemoryID == nil && s.targetMemoryVersion != nil }
 
     /// The single target first, then the others in order.
     static func refs(_ db: Database, _ s: Suggestion) throws -> [Ref] {

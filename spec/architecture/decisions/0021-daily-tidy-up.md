@@ -25,7 +25,7 @@
 **Consequences.**
 - **Moves from v0.3 to Phase 6** ([6b](../../plans/phase-6b-daily-tidy-up.md)), after the foundations and New memories.
 - **New data:** `memory.reconciled_version`, `merge` and `split` suggestions referencing several memories, a tidy-up `MemorySource`, provenance links (merged from/into, split from/into), the undo log, run records and dismissals.
-- **The Inbox** gets a Tidy-up section and an Applied automatically list; the iPhone shows these cards as "Review on your Mac" until it gets its own.
+- **The Inbox** gets a Tidy-up section and an Applied automatically list; the iPhone shows these cards as "Review on your Mac" until it gets its own ([ADR-0031](0031-iphone-answers-every-inbox-card.md) gives it them in v0.9).
 - **The model's role grows** from proposing fields to proposing changes. Every change is validated in code, traceable in provenance and reversible.
 - **A cloud provider receives existing memories,** within the cloud limit. Memories above it are tidied only by a local provider or the code-only rules.
 - **Levels per engine** ([Spike E](../../plans/spike-results.md#spike-e-extraction-linking-and-tidy-up-quality), 100 clusters): on two fixture sets from different authors pooled, model `archive` duplicates reached 95% with GPT-5.6-Terra, Claude Haiku 5.5 and Claude Opus 5.5 (97%); Everything except conflicts only with Haiku and Opus (96%). With other engines, updates, merges and splits stay in the Inbox. Confidence doesn't separate right from wrong, so levels are per engine, not per threshold. Apple on-device isn't offered for the tidy-up (8 of 49 right).

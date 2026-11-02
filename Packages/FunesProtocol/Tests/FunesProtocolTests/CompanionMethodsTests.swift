@@ -46,8 +46,8 @@ import Testing
     @Test func everyMethodHasACall() {
         let calls: [any CompanionCall.Type] = [
             StatusGet.self, CapturesSubmit.self, OverviewGet.self, CategoriesList.self, MemoriesSearch.self, MemoriesAnswer.self, MemoriesGet.self, MemoriesCreate.self,
-            MemoriesUpdate.self, MemoriesArchive.self, MemoriesRestore.self, MemoriesDelete.self, InboxList.self, InboxApply.self,
-            InboxReject.self, InboxRetry.self, InboxKeep.self, DeviceUnpair.self, ApprovalsList.self, ApprovalsGet.self, ApprovalsAnswer.self,
+            MemoriesUpdate.self, MemoriesArchive.self, MemoriesRestore.self, MemoriesDelete.self, InboxList.self, InboxGet.self, InboxApply.self,
+            InboxReject.self, InboxRetry.self, InboxKeep.self, InboxReviewAgain.self, DeviceUnpair.self, ApprovalsList.self, ApprovalsGet.self, ApprovalsAnswer.self,
             ApprovalsSettingsGet.self, ApprovalsSettingsSet.self,
         ]
         #expect(Set(calls.map { $0.method }) == Set(CompanionMethod.allCases))
@@ -71,6 +71,30 @@ import Testing
         let older = #"{"macName":"Mac","appVersion":"0.5","serverTime":0,"inboxPending":0,"vaultActive":true}"#
         #expect(try CompanionJSON.decoder().decode(CompanionStatus.self, from: Data(older.utf8)).searchAnswers == nil)
         #expect(throws: CompanionError.self) { try MemoryAnswerParams(query: "coffee", ids: [id, id]).validate() }
+    }
+
+    /// `inbox.get` and `inbox.apply`'s mode (§4.2): field names and snake-case modes on the wire.
+    @Test func inboxDetailShape() throws {
+        let memory = Memory(title: "Ana", body: "Ana's birthday is 3 May", kind: .fact, categoryKeys: ["people"], sensitivity: .low,
+                            source: .manual, createdAt: Date(timeIntervalSince1970: 0), updatedAt: Date(timeIntervalSince1970: 0))
+        let item = InboxItem(id: UUID(), origin: .consolidation, action: .archive, sourceLabel: "Tidy-up", targetMemoryId: memory.id,
+                             title: "Ana", body: "Ana's birthday is 3 May", kind: .fact, categories: ["people"], sensitivity: .low,
+                             createdAt: Date(timeIntervalSince1970: 0))
+        let detail = InboxDetail(item: item, memories: [InboxMemory(role: .survivor, memory: memory)], stale: true,
+                                 tidyUp: InboxTidyUp(reason: "A copy", archiveReason: .duplicate,
+                                                     kept: [.init(memoryId: memory.id, text: "the date")]),
+                                 similar: [InboxSimilar(id: memory.id, title: "Ana")])
+        let json = String(decoding: try CompanionJSON.encoder().encode(detail), as: UTF8.self)
+        for key in [#""role":"survivor""#, #""archiveReason":"duplicate""#, #""stale":true"#, #""pieces":[]"#, #""text":"the date""#] {
+            #expect(json.contains(key), "\(key)")
+        }
+        #expect(try CompanionJSON.decoder().decode(InboxDetail.self, from: Data(json.utf8)) == detail)
+        #expect(detail.memories(.survivor) == [memory])
+        let apply = String(decoding: try CompanionJSON.encoder().encode(
+            InboxApplyParams(suggestionId: item.id, mode: .keep, keepMemoryId: memory.id)), as: UTF8.self)
+        #expect(apply.contains(#""mode":"keep""#) && apply.contains(#""keepMemoryId""#))
+        let bothTrue = String(decoding: try CompanionJSON.encoder().encode(InboxApplyMode.bothTrue), as: UTF8.self)
+        #expect(bothTrue == #""both_true""#)
     }
 
     /// `overview.get` (§4): `in` on the wire, dates in milliseconds, counts as JSON objects.

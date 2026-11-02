@@ -423,6 +423,7 @@
 
 **FR-iOS-09 Inbox review** · M · v0.2
 - Apply, edit and apply, or reject suggestions.
+- From v0.9 ([ADR-0031](../architecture/decisions/0031-iphone-answers-every-inbox-card.md)): every card the Mac's Inbox answers, the daily tidy-up's included, with the same choices (Replace or Keep Both, Archive, Split, Merge, Keep This or Both Are True, Review Again) and the memories each changes shown first. The Applied automatically list, Later, Apply N and a split input's group actions stay on the Mac.
 
 **FR-iOS-10 Demo mode** · M · v0.2
 - A sample vault on the phone only, for App Review and for trying the app before pairing. It's clearly labelled and never mixes with real data.
