@@ -214,25 +214,33 @@ struct PulseSheet: View {
     }
 }
 
-/// The sheet's Rhythm: all 12 weeks, the busiest weekday and the streak.
+/// The sheet's Rhythm: as many weeks as fit, labelled, with the busiest weekday, the streak and
+/// a key.
 struct RhythmSection: View {
     let overview: VaultOverview
 
     var body: some View {
-        let grid = RhythmGrid(overview.rhythm, weeks: 12, calendar: overview.calendar)
+        let grid = RhythmWords.grid(overview)
         Section {
             VStack(alignment: .leading, spacing: 8) {
-                RhythmGridView(grid: grid, spacing: 3)
-                    .frame(maxWidth: .infinity, maxHeight: 160)
+                RhythmGridView(rhythm: overview.rhythm, calendar: overview.calendar, maxSide: 14, showsLabels: true)
+                    .frame(height: 132)
                 Text(RhythmWords.line(grid, calendar: overview.calendar))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                HStack {
+                    Text("A square per day, a column per week")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 8)
+                    RhythmKey()
+                }
             }
             .padding(.vertical, 4)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(RhythmWords.accessibility(grid, calendar: overview.calendar))
         } header: {
-            Text("Rhythm · 12 weeks")
+            Text("Rhythm")
         }
     }
 }
@@ -293,11 +301,12 @@ struct HomeTiles: View {
     }
 
     private var rhythm: some View {
-        let grid = RhythmGrid(overview.rhythm, weeks: 10, calendar: overview.calendar)
+        let grid = RhythmWords.grid(overview)
         return Button(action: openRhythm) {
             Tile(title: String(localized: "Rhythm")) {
-                RhythmGridView(grid: grid, spacing: 3)
-                    .frame(maxWidth: .infinity, maxHeight: 96, alignment: .leading)
+                RhythmGridView(rhythm: overview.rhythm, calendar: overview.calendar)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 95)
                 Spacer(minLength: 0)
                 Text(grid.isTooSparse ? String(localized: "Too few memories for a rhythm yet")
                                       : grid.streak > 0 ? OverviewWords.streak(grid.streak) : String(localized: "No streak yet"))

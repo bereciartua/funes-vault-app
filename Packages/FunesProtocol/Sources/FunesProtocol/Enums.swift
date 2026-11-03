@@ -124,6 +124,15 @@ public enum MemorySource: String, Codable, Sendable, CaseIterable {
     case seedQuestion = "seed_question"
     /// A merge or split result (Phase 6).
     case tidyUp = "tidy_up"
+
+    /// Whether the Rhythm grid counts it as one you saved: typed, captured, an agent's write or
+    /// approved suggestion, a setup answer. Not imports, nor tidy-up's rewrites of memories you had.
+    public var countsAsSaved: Bool {
+        switch self {
+        case .manual, .captureMac, .captureIPhone, .agentSuggestion, .agentWrite, .seedQuestion: true
+        case .importChatGPT, .importClaude, .importMarkdown, .importFunes, .tidyUp: false
+        }
+    }
 }
 
 /// Where a suggestion came from.

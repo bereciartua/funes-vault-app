@@ -298,6 +298,9 @@
     "A memory it changes was edited on your Mac since this was suggested. Open it to review it again." : {
 
     },
+    "A square per day, a column per week" : {
+
+    },
     "Accepted %@ in %lld ms" : {
       "localizations" : {
         "en" : {
@@ -928,6 +931,9 @@
     "Leaves your Mac" : {
 
     },
+    "Less" : {
+
+    },
     "Local Network access is off" : {
 
     },
@@ -990,6 +996,9 @@
 
     },
     "Merges %lld memories into one:" : {
+
+    },
+    "More" : {
 
     },
     "Most on %@s" : {
@@ -1323,28 +1332,18 @@
     "Rhythm" : {
 
     },
-    "Rhythm · 12 weeks" : {
+    "Rhythm, last 12 weeks: %lld memories saved. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rhythm, last 12 weeks: %1$lld memories saved. %2$@"
+          }
+        }
+      }
+    },
+    "Rhythm, last 12 weeks: 1 memory saved. %@" : {
 
-    },
-    "Rhythm, last %lld weeks: %lld new memories. %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Rhythm, last %1$lld weeks: %2$lld new memories. %3$@"
-          }
-        }
-      }
-    },
-    "Rhythm, last %lld weeks: 1 new memory. %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Rhythm, last %1$lld weeks: 1 new memory. %2$@"
-          }
-        }
-      }
     },
     "Round trip" : {
 

@@ -111,62 +111,20 @@ public struct OverviewInsights: Sendable {
 
     // MARK: The vault's shape
 
-    /// Active memories at the end of each of the rhythm's 84 days, the last being now: the
+    /// Active memories at the end of each of the rhythm's last 84 days, the last being now: the
     /// Memories card's line. Worked back from the total, so memories archived or deleted since
     /// count as if they'd never come in; never below zero.
     public var growth: [Int] {
+        let counts = overview.rhythm.last(84, calendar: calendar).counts
         var size = overview.total
-        var points = Array(repeating: 0, count: overview.rhythm.counts.count)
+        var points = Array(repeating: 0, count: counts.count)
         for i in points.indices.reversed() {
             points[i] = max(0, size)
-            size -= overview.rhythm.counts[i]
+            size -= counts[i]
         }
         return points
     }
 
-    /// Whether the rhythm has enough to say: at least 5 new memories in its 12 weeks.
-    public var hasRhythm: Bool { overview.rhythm.counts.reduce(0, +) >= 5 }
-
-    /// The weekday (1 is Sunday, as `Calendar` numbers them) with the most new memories in the
-    /// rhythm's 12 weeks; nil when there are none, or when two weekdays tie for the most.
-    public var busiestWeekday: Int? {
-        var totals = [Int: Int]()
-        for (i, n) in overview.rhythm.counts.enumerated() { totals[weekday(ofDay: i), default: 0] += n }
-        guard let best = totals.values.max(), best > 0, totals.values.filter({ $0 == best }).count == 1 else { return nil }
-        return totals.first { $0.value == best }?.key
-    }
-
-    /// Weeks in a row, up to this one, with a new memory. A week with nothing yet doesn't break
-    /// the streak until it's over.
-    public var streakWeeks: Int {
-        let columns = grid
-        var weeks = columns.map { $0.contains { ($0 ?? 0) > 0 } }
-        if weeks.last == false { weeks.removeLast() }
-        return weeks.reversed().prefix { $0 }.count
-    }
-
-    /// The Rhythm grid: one column per calendar week (oldest first), seven rows from the
-    /// calendar's first weekday. Days outside the rhythm's 84 (before its start, after today)
-    /// are nil.
-    public var grid: [[Int?]] {
-        let counts = overview.rhythm.counts
-        guard !counts.isEmpty else { return [] }
-        let lead = (weekday(ofDay: 0) - calendar.firstWeekday + 7) % 7
-        let cells: [Int?] = Array(repeating: nil, count: lead) + counts.map(Optional.some)
-        let padded = cells + Array(repeating: nil, count: (7 - cells.count % 7) % 7)
-        return stride(from: 0, to: padded.count, by: 7).map { Array(padded[$0..<$0 + 7]) }
-    }
-
-    /// The date of the grid's cell, or nil outside the rhythm.
-    public func date(column: Int, row: Int) -> Date? {
-        let lead = (weekday(ofDay: 0) - calendar.firstWeekday + 7) % 7
-        let day = column * 7 + row - lead
-        guard overview.rhythm.counts.indices.contains(day) else { return nil }
-        return calendar.date(byAdding: .day, value: day, to: overview.rhythm.start)
-    }
-
-    private func weekday(ofDay index: Int) -> Int {
-        let date = calendar.date(byAdding: .day, value: index, to: overview.rhythm.start) ?? overview.rhythm.start
-        return calendar.component(.weekday, from: date)
-    }
+    /// The Rhythm card's grid, `weeks` wide (`RhythmGrid.Fit` picks them).
+    public func rhythm(weeks: Int) -> RhythmGrid { RhythmGrid(overview.rhythm, weeks: weeks, calendar: calendar) }
 }

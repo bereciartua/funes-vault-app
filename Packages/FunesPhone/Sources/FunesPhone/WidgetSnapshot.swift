@@ -116,9 +116,10 @@ extension VaultOverview {
         let n = rhythm.counts.count
         let start = calendar.date(byAdding: .day, value: 1 - n, to: today) ?? today
         let offset = calendar.dateComponents([.day], from: rhythm.start, to: start).day ?? 0
-        moved.rhythm = Rhythm(start: start, counts: (0..<n).map { i in
-            rhythm.counts.indices.contains(i + offset) ? rhythm.counts[i + offset] : 0
-        })
+        func shifted(_ counts: [Int]) -> [Int] {
+            (0..<n).map { i in counts.indices.contains(i + offset) ? counts[i + offset] : 0 }
+        }
+        moved.rhythm = Rhythm(start: start, counts: shifted(rhythm.counts), saved: rhythm.saved.map(shifted))
 
         let week = moved.days.suffix(7)
         let weekAgents = Set(week.flatMap { $0.out.filter { $0.value > 0 }.keys })

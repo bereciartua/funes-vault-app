@@ -4,7 +4,7 @@ import Testing
 @testable import FunesCore
 
 /// Home's numbers from an overview (FR-H-02): the 7-day slice, the agents the chart names, the
-/// growth line and the Rhythm card.
+/// growth line. The Rhythm card's grid is FunesProtocol's (`RhythmGridTests`).
 @Suite struct OverviewInsightsTests {
     /// Madrid, weeks from Monday (as OverviewTests).
     static var calendar: Calendar { OverviewTests.calendar }
@@ -90,52 +90,12 @@ import Testing
         #expect(OverviewInsights(Self.overview(days: [], rhythm: rhythm, total: 10), range: .days30, calendar: Self.calendar).growth[0] == 5)
     }
 
-    @Test func rhythmGridStartsOnTheFirstWeekday() {
-        // Day 0 is 83 days before Friday 15 January 2027: Saturday 24 October 2026.
-        var rhythm = Array(repeating: 0, count: 84)
-        rhythm[83] = 1
-        rhythm[0] = 4
-        let insights = OverviewInsights(Self.overview(days: [], rhythm: rhythm), range: .days30, calendar: Self.calendar)
-        let grid = insights.grid
-        // Monday-first: Saturday is row 5, so 5 empty cells lead; today is a Friday, so 2 trail.
-        #expect(grid.count == 13)
-        #expect(grid.allSatisfy { $0.count == 7 })
-        #expect(grid[0][0...4].allSatisfy { $0 == nil })
-        #expect(grid[0][5] == 4)
-        #expect(grid[12][4] == 1)
-        #expect(grid[12][5] == nil && grid[12][6] == nil)
-        #expect(insights.date(column: 0, row: 5) == Self.day(-83))
-        #expect(insights.date(column: 12, row: 4) == Self.today)
-        #expect(insights.date(column: 0, row: 0) == nil)
-    }
-
-    @Test func busiestWeekdayAndStreak() {
-        var rhythm = Array(repeating: 0, count: 84)
-        // Fridays (day 83 is a Friday) in the last three weeks, twice on today's.
-        for back in [0, 7, 14] { rhythm[83 - back] = 1 }
-        rhythm[83] = 2
-        // A Tuesday five weeks back, after a gap.
-        rhythm[83 - 38] = 1
-        let insights = OverviewInsights(Self.overview(days: [], rhythm: rhythm), range: .days30, calendar: Self.calendar)
-        #expect(insights.busiestWeekday == 6)
-        #expect(insights.streakWeeks == 3)
-        #expect(insights.hasRhythm)
-
-        // Nothing yet this week: last week's streak still stands.
-        rhythm[83] = 0
-        let quiet = OverviewInsights(Self.overview(days: [], rhythm: rhythm), range: .days30, calendar: Self.calendar)
-        #expect(quiet.streakWeeks == 2)
-        #expect(!quiet.hasRhythm)
-    }
-
-    @Test func noWeekdayStandsOut() {
-        var rhythm = Array(repeating: 0, count: 84)
-        rhythm[83] = 1
-        rhythm[82] = 1
-        let tie = OverviewInsights(Self.overview(days: [], rhythm: rhythm), range: .days30, calendar: Self.calendar)
-        #expect(tie.busiestWeekday == nil)
-        let empty = OverviewInsights(Self.overview(days: []), range: .days30, calendar: Self.calendar)
-        #expect(empty.busiestWeekday == nil)
-        #expect(empty.streakWeeks == 0)
+    @Test func growthLooksAtTwelveWeeksOfALongerRhythm() {
+        // 53 weeks of one a day: the line still has 84 days, from 83 below the total.
+        let days = VaultOverview.Rhythm.days
+        let overview = VaultOverview(range: .days30, generatedAt: t0, timeZone: "Europe/Madrid", total: 500, thisWeek: .init(), days: [],
+                                     rhythm: .init(start: Self.day(1 - days), counts: Array(repeating: 1, count: days)))
+        let growth = OverviewInsights(overview, range: .days30, calendar: Self.calendar).growth
+        #expect(growth.count == 84 && growth.first == 417 && growth.last == 500)
     }
 }

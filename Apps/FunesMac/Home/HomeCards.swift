@@ -262,56 +262,61 @@ private struct RhythmCard: View {
     let insights: OverviewInsights
 
     var body: some View {
-        let has = insights.hasRhythm
-        HomeCard(title: String(localized: "Rhythm"), caption: caption(has),
+        // The words look at the last 12 weeks, whatever width the grid fits.
+        let words = insights.rhythm(weeks: 12)
+        let has = !words.isTooSparse
+        HomeCard(title: String(localized: "Rhythm"), caption: caption(words),
                  help: String(localized: "Show what came in, in Activity"),
                  action: { model.showActivity(nil, kind: .suggestions) }) {
-            RhythmGrid(insights: insights).opacity(has ? 1 : 0.5)
+            RhythmCalendar(insights: insights, words: words).opacity(has ? 1 : 0.5)
         }
     }
 
-    private func caption(_ has: Bool) -> String {
-        guard has else { return String(localized: "Too few memories for a rhythm yet") }
+    private func caption(_ words: RhythmGrid) -> String {
+        guard !words.isTooSparse else { return String(localized: "Too few memories for a rhythm yet") }
         var parts: [String] = []
-        if let weekday = insights.busiestWeekday { parts.append(HomeText.mostOn(weekday)) }
-        let streak = insights.streakWeeks
-        if streak >= 2 { parts.append(HomeText.streak(streak)) }
+        if let weekday = words.busiestWeekday { parts.append(HomeText.mostOn(weekday)) }
+        if words.streak >= 2 { parts.append(HomeText.streak(words.streak)) }
         return parts.isEmpty ? String(localized: "12 weeks") : parts.joined(separator: "\n")
     }
 }
 
-private struct RhythmGrid: View {
+/// The card's grid (`RhythmGrid`): a square per day, a column per week, as many weeks as fit the
+/// card's width; darker for more saved, today ringed, this week's days still to come fainter.
+private struct RhythmCalendar: View {
     let insights: OverviewInsights
+    let words: RhythmGrid
+
+    private static let shades = [0.3, 0.5, 0.75, 1]
 
     var body: some View {
-        let grid = insights.grid
-        let top = max(grid.joined().compactMap { $0 }.max() ?? 0, 1)
-        HStack(alignment: .top, spacing: 2) {
-            ForEach(grid.indices, id: \.self) { column in
-                VStack(spacing: 2) {
-                    ForEach(0..<7, id: \.self) { row in
-                        RoundedRectangle(cornerRadius: 1.5)
-                            .fill(fill(grid[column][row], top: top))
-                            .frame(width: 8, height: 8)
-                    }
+        Canvas { context, size in
+            let fit = RhythmGrid.Fit(width: size.width, height: size.height, spacing: 2, maxSide: 8)
+            let grid = insights.rhythm(weeks: fit.weeks)
+            for cell in grid.cells {
+                let origin = fit.origin(week: cell.week, row: cell.row)
+                let rect = CGRect(x: origin.x, y: origin.y, width: fit.side, height: fit.side)
+                context.fill(Path(roundedRect: rect, cornerRadius: 1.5), with: .color(fill(cell, grid)))
+                if cell.isToday {
+                    context.stroke(Path(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), cornerRadius: 1.5), with: .color(.primary), lineWidth: 1)
                 }
             }
         }
+        .frame(height: 68)
+        .frame(maxWidth: .infinity)
         .accessibilityElement()
         .accessibilityLabel(label)
     }
 
-    private func fill(_ count: Int?, top: Int) -> Color {
-        guard let count else { return .clear }
-        guard count > 0 else { return Color.secondary.opacity(0.14) }
-        let step = Double(count) / Double(top)
-        return Color.accentColor.opacity(step > 0.75 ? 1 : step > 0.5 ? 0.75 : step > 0.25 ? 0.5 : 0.3)
+    private func fill(_ cell: RhythmGrid.Cell, _ grid: RhythmGrid) -> Color {
+        guard let count = cell.count else { return Color.secondary.opacity(0.07) }
+        guard let level = grid.level(count) else { return Color.secondary.opacity(0.14) }
+        return Color.accentColor.opacity(Self.shades[level])
     }
 
     private var label: String {
-        let total = insights.overview.rhythm.counts.reduce(0, +)
-        let days = insights.overview.rhythm.counts.filter { $0 > 0 }.count
-        return String(localized: "12 weeks: \(total) new memories on \(days) days")
+        let days = insights.overview.rhythm.savedCounts.suffix(RhythmGrid.wordsDays).filter { $0 > 0 }.count
+        return String(localized: "12 weeks: \(words.total) memories saved on \(days) days")
     }
 }
 

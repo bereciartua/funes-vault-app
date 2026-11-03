@@ -134,8 +134,8 @@ struct RememberWidgetView: View {
 
 // MARK: Rhythm
 
-/// The grid of days: 6 weeks in small, 12 weeks with the streak and the busiest weekday in
-/// medium. Tapping opens Home.
+/// The grid of days, as many weeks as fit: with the streak in small, and the busiest weekday too
+/// in medium. Tapping opens Home.
 struct RhythmWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: FunesWidgets.rhythm, provider: OverviewProvider()) { entry in
@@ -175,13 +175,13 @@ struct RhythmWidgetView: View {
     }
 
     private func small(_ overview: VaultOverview) -> some View {
-        let grid = RhythmGrid(overview.rhythm, weeks: 6, calendar: overview.calendar)
+        let grid = RhythmWords.grid(overview)
         let stale = snapshot.freshness == .stale
         return VStack(alignment: .leading, spacing: 6) {
             WidgetHeader(title: String(localized: "Rhythm"), snapshot: snapshot)
-            RhythmGridView(grid: grid, spacing: 3)
+            RhythmGridView(rhythm: overview.rhythm, calendar: overview.calendar)
                 .widgetAccentable()
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .dimmed(stale)
             Text(grid.isTooSparse ? String(localized: "Too few memories yet")
                                   : grid.streak > 0 ? OverviewWords.streak(grid.streak) : String(localized: "No streak yet"))
@@ -194,37 +194,21 @@ struct RhythmWidgetView: View {
         .accessibilityLabel(RhythmWords.accessibility(grid, calendar: overview.calendar))
     }
 
+    /// The grid across the widget's width, the busiest weekday and the streak under it.
     private func medium(_ overview: VaultOverview) -> some View {
-        let grid = RhythmGrid(overview.rhythm, weeks: 12, calendar: overview.calendar)
+        let grid = RhythmWords.grid(overview)
         let stale = snapshot.freshness == .stale
-        let count = grid.cells.compactMap(\.count).reduce(0, +)
-        return HStack(alignment: .top, spacing: 14) {
-            RhythmGridView(grid: grid, spacing: 3)
+        return VStack(alignment: .leading, spacing: 6) {
+            WidgetHeader(title: String(localized: "Rhythm"), snapshot: snapshot)
+            RhythmGridView(rhythm: overview.rhythm, calendar: overview.calendar)
                 .widgetAccentable()
-                .frame(maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .dimmed(stale)
-            VStack(alignment: .leading, spacing: 4) {
-                WidgetHeader(title: String(localized: "Rhythm"), snapshot: snapshot)
-                Spacer(minLength: 0)
-                if grid.isTooSparse {
-                    Text("Too few memories for a rhythm yet")
-                        .font(.subheadline.weight(.semibold))
-                } else {
-                    Text(grid.streak > 0 ? OverviewWords.streak(grid.streak) : String(localized: "No streak yet"))
-                        .font(.headline)
-                    if let weekday = grid.busiestWeekday {
-                        Text(OverviewWords.busiest(weekday, calendar: overview.calendar))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Text(count == 1 ? String(localized: "1 new in 12 weeks") : String(localized: "\(count) new in 12 weeks"))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            .lineLimit(2)
-            .minimumScaleFactor(0.8)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text(RhythmWords.line(grid, calendar: overview.calendar))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(RhythmWords.accessibility(grid, calendar: overview.calendar))

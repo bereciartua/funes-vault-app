@@ -127,6 +127,7 @@ public struct Growth: Sendable, Equatable {
     public var points: [Point]
 
     public init(total: Int, rhythm: VaultOverview.Rhythm, calendar: Calendar) {
+        let rhythm = rhythm.last(84, calendar: calendar)
         let counts = rhythm.counts
         let weeks = max(1, counts.count / 7)
         var points: [Point] = []
@@ -142,79 +143,6 @@ public struct Growth: Sendable, Equatable {
 
     public init(_ overview: VaultOverview) {
         self.init(total: overview.total, rhythm: overview.rhythm, calendar: overview.calendar)
-    }
-}
-
-/// The Rhythm grid (like GitHub's): a column per calendar week, a row per weekday, the last
-/// column this week; with the streak and the busiest weekday.
-public struct RhythmGrid: Sendable, Equatable {
-    public struct Cell: Sendable, Equatable, Identifiable {
-        public var date: Date
-        /// Column, oldest week first.
-        public var week: Int
-        /// Row, from the calendar's first weekday.
-        public var row: Int
-        /// New memories that day; nil before the overview's days and after today.
-        public var count: Int?
-        public var id: Date { date }
-    }
-
-    /// Fewer memories than this in 12 weeks is too few for a rhythm.
-    public static let minimum = 5
-
-    public var weeks: Int
-    public var cells: [Cell]
-    /// The busiest cell's count.
-    public var peak: Int
-    /// New memories in the 12 weeks of `rhythm`, whatever `weeks` shows.
-    public var total: Int
-    /// Calendar weeks in a row with a new memory, up to this one (or last week, while this one
-    /// has none yet).
-    public var streak: Int
-    /// The weekday (`Calendar`'s 1 = Sunday … 7) with the most new memories; nil while there are
-    /// too few.
-    public var busiestWeekday: Int?
-
-    public var isTooSparse: Bool { total < Self.minimum }
-
-    public init(_ rhythm: VaultOverview.Rhythm, weeks: Int, calendar: Calendar) {
-        self.weeks = weeks
-        let counts = rhythm.counts
-        total = counts.reduce(0, +)
-        let today = calendar.date(byAdding: .day, value: max(0, counts.count - 1), to: rhythm.start) ?? rhythm.start
-        func row(_ date: Date) -> Int { (calendar.component(.weekday, from: date) - calendar.firstWeekday + 7) % 7 }
-        func index(_ date: Date) -> Int { calendar.dateComponents([.day], from: rhythm.start, to: date).day ?? 0 }
-        // The first cell: this week's first day, `weeks - 1` weeks back.
-        let thisWeek = calendar.date(byAdding: .day, value: -row(today), to: today) ?? today
-        let first = calendar.date(byAdding: .day, value: -7 * (weeks - 1), to: thisWeek) ?? thisWeek
-        cells = (0..<(weeks * 7)).map { n in
-            let date = calendar.date(byAdding: .day, value: n, to: first) ?? first
-            let i = index(date)
-            return Cell(date: date, week: n / 7, row: n % 7, count: counts.indices.contains(i) ? counts[i] : nil)
-        }
-        peak = cells.compactMap(\.count).max() ?? 0
-
-        // Weeks back from this one, over all of `rhythm`.
-        var perWeek: [Int: Int] = [:]
-        for (i, count) in counts.enumerated() {
-            let date = calendar.date(byAdding: .day, value: i, to: rhythm.start) ?? rhythm.start
-            let back = (index(thisWeek) - index(date) + 6) / 7
-            perWeek[back, default: 0] += count
-        }
-        var back = (perWeek[0] ?? 0) > 0 ? 0 : 1
-        var streak = 0
-        while (perWeek[back] ?? 0) > 0 {
-            streak += 1
-            back += 1
-        }
-        self.streak = streak
-
-        var byWeekday: [Int: Int] = [:]
-        for (i, count) in counts.enumerated() {
-            let date = calendar.date(byAdding: .day, value: i, to: rhythm.start) ?? rhythm.start
-            byWeekday[calendar.component(.weekday, from: date), default: 0] += count
-        }
-        busiestWeekday = total < Self.minimum ? nil : byWeekday.max { ($0.value, $1.key) < ($1.value, $0.key) }?.key
     }
 }
 

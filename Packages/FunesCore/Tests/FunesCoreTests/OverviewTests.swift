@@ -182,10 +182,14 @@ struct OverviewSeed {
         #expect(o.agents[2].kind == .zed)
         #expect(!o.agents.contains { $0.id == agents.gone.db })
 
-        #expect(o.rhythm.counts.count == 84)
-        #expect(o.rhythm.start == local(days: -83, hours: 0))
+        #expect(o.rhythm.counts.count == VaultOverview.Rhythm.days)
+        #expect(o.rhythm.start == local(days: 1 - VaultOverview.Rhythm.days, hours: 0))
         #expect(o.rhythm.counts.last == 2)
         #expect(o.rhythm.counts.reduce(0, +) == 7)
+        // What you saved leaves out the import (5 days ago) and the tidy-up result (10 days ago).
+        #expect(o.rhythm.saved?.count == VaultOverview.Rhythm.days)
+        #expect(o.rhythm.saved?.reduce(0, +) == 5)
+        #expect(o.rhythm.saved?.suffix(11).first == 0 && o.rhythm.counts.suffix(11).first == 1)
 
         #expect(o.inboxPending == 2)
         #expect(o.oldestPendingAt == local(days: -2))
@@ -245,7 +249,8 @@ struct OverviewSeed {
             #expect(o.total == 0 && o.agents.isEmpty && o.inboxPending == 0)
             #expect(o.oldestPendingAt == nil && o.lastTidyUpAt == nil)
             #expect(o.thisWeek == VaultOverview.Week())
-            #expect(o.rhythm.counts == Array(repeating: 0, count: 84))
+            #expect(o.rhythm.counts == Array(repeating: 0, count: VaultOverview.Rhythm.days))
+            #expect(o.rhythm.saved == o.rhythm.counts)
         }
     }
 

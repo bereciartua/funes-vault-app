@@ -103,8 +103,13 @@ import Testing
         #expect(o.days.map(\.shared) == last30.map { $0.out.reduce(0, +) })
         #expect(o.days.map(\.refused) == last30.map(\.refused))
         #expect(o.thisWeek.saved == sample.days.suffix(7).map(\.inbound.total).reduce(0, +))
-        #expect(o.rhythm.counts == sample.days.map(\.inbound.total))
-        #expect(o.rhythm.start == Self.calendar.date(byAdding: .day, value: -83, to: Self.calendar.startOfDay(for: t0)))
+        // The sample's 84 days at the end of the rhythm's, after days with none; what you saved
+        // leaves out the imports and tidy-up.
+        let pad = Array(repeating: 0, count: VaultOverview.Rhythm.days - 84)
+        #expect(o.rhythm.counts == pad + sample.days.map(\.inbound.total))
+        #expect(o.rhythm.saved == pad + sample.days.map { $0.inbound.total - $0.inbound.import - $0.inbound.tidy })
+        #expect(o.rhythm.start == Self.calendar.date(byAdding: .day, value: 1 - VaultOverview.Rhythm.days,
+                                                     to: Self.calendar.startOfDay(for: t0)))
         #expect(o.total == sample.total && o.bySensitivity == sample.bySensitivity)
         let shared = o.days.map(\.shared).reduce(0, +)
         #expect(o.sharedBySensitivity.values.reduce(0, +) == shared)
