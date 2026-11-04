@@ -195,6 +195,8 @@ section.tight { padding-top: 0; }
 .ra p { color: var(--muted); margin: 0 0 10px; }
 .ra strong { color: var(--text); }
 .phone-ra { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.phone-ra .actions { justify-content: flex-start; margin: 20px 0 12px; }
+.phone-ra .meta { font-size: .9rem; }
 /* iPhone screenshots side by side, from docs/images (see assets/screenshots/README.md). */
 .phones { display: flex; justify-content: center; align-items: flex-start; gap: 18px; }
 .shot.phone { flex: 1 1 0; min-width: 0; max-width: 260px; height: auto; border-radius: 28px; }
