@@ -1,6 +1,6 @@
 # ADR-0016: Bundled bge-small embeddings (Core ML) and agent keywords in v0.1
 
-**Status:** Accepted · 2026-10-17 · **Supersedes** [ADR-0015](0015-keyword-search-first.md) · **Amends** [ADR-0014](0014-user-selectable-models.md) (the default embedding model)
+**Status:** Accepted · 2026-10-17 · **Supersedes** [ADR-0015](0015-keyword-search-first.md) · **Amends** [ADR-0014](0014-user-selectable-models.md) (the default embedding model) · **Amended by** [ADR-0023](0023-provider-embeddings-second-index.md) (provider embeddings are added as a second index; bge-small stays on every memory)
 
 **Context.**
 - **Spike 2** showed Apple's on-device embeddings are too weak (recall@5 0.58 hybrid, about the same as keyword search). ADR-0015 then made v0.1 keyword-only.

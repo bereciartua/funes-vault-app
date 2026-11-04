@@ -5,7 +5,7 @@ import SwiftUI
 
 /// The setup checklist (FR-O-01): connect an agent, approve its first request, seed the vault,
 /// review the Inbox. Connecting comes first, so a new user reaches an approved request in a few
-/// steps (UX review F9). It shows at the top of the Vault until dismissed; "Approve its first
+/// steps (UX review F9). It shows at the top of Home until dismissed; "Approve its first
 /// request" completes on the agent's first request.
 @MainActor @Observable
 final class ChecklistModel {
@@ -16,7 +16,7 @@ final class ChecklistModel {
     /// "Claude Code connected 10:42".
     private(set) var connectedLine: String?
     private(set) var dismissed = false
-    /// Just hidden: the Vault offers Undo for a few seconds (UX review F7).
+    /// Just hidden: Home offers Undo for a few seconds (UX review F7).
     private(set) var justHidden = false
     var showSeedQuestions = false
     var showImport: ImportKind?
@@ -82,7 +82,7 @@ final class ChecklistModel {
     }
 }
 
-/// The card at the top of the Vault.
+/// The card at the top of Home.
 struct SetupChecklistCard: View {
     let model: AppModel
     @State private var detected: [SetupAgent] = []

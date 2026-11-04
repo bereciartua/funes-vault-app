@@ -2,8 +2,8 @@ import FunesCore
 import FunesProtocol
 import SwiftUI
 
-/// The Vault (04-ux-mac.md): the setup checklist until it's done, a toolbar with search, filters,
-/// sort and New Memory, the list, and the selected memory's editor.
+/// The Vault (04-ux-mac.md): a toolbar with search, filters, sort and New Memory, the list, and
+/// the selected memory's editor.
 struct VaultView: View {
     @Bindable var model: AppModel
     @FocusState private var searchFocused: Bool
@@ -21,20 +21,6 @@ struct VaultView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if model.checklist.isVisible {
-                SetupChecklistCard(model: model)
-                    .padding([.horizontal, .top], 16)
-            } else if model.checklist.justHidden {
-                HStack(spacing: 8) {
-                    Text(String(localized: "Setup checklist hidden. Settings ▸ Advanced brings it back."))
-                        .foregroundStyle(.secondary)
-                    Button(String(localized: "Undo")) { model.checklist.undoHide() }
-                        .keyboardShortcut("z", modifiers: .command)
-                    Spacer()
-                }
-                .font(.callout)
-                .padding([.horizontal, .top], 16)
-            }
             if isFirstRun {
                 WelcomeView(model: model, creating: $creating)
             } else {
@@ -43,6 +29,10 @@ struct VaultView: View {
         }
         .background(Palette.pane)
         .task { await vault.load() }
+        .onAppear { vault.setShown(true) }
+        .onDisappear { vault.setShown(false) }
+        // Automatic answers turned on, or a model that can answer on its own chosen, over a list.
+        .onChange(of: vault.answersOn ? vault.answers?.trigger : nil) { _, _ in vault.scheduleAutoAsk() }
         .onChange(of: model.searchFocusRequest) { _, _ in searchFocused = true }
         .onChange(of: model.newMemoryRequest) { _, _ in creating = true }
         .onChange(of: model.dataGeneration) { _, _ in Task { await vault.load() } }
@@ -108,6 +98,13 @@ struct VaultView: View {
                 SearchField(text: Binding(get: { vault.query }, set: { vault.query = $0 }),
                             prompt: String(localized: "Search memories"), focused: $searchFocused)
                     .frame(minWidth: 180, maxWidth: 360)
+                    .background {
+                        // ⌘⏎ asks, as the Ask row does (04-ux-mac.md ▸ Search answers).
+                        Button(String(localized: "Ask Funes")) { vault.ask() }
+                            .keyboardShortcut(.return, modifiers: .command)
+                            .disabled(!vault.canAsk)
+                            .hidden()
+                    }
                 Spacer(minLength: 8)
                 Button { managingCategories = true } label: {
                     Label(String(localized: "Categories…"), systemImage: "tag")
@@ -168,13 +165,22 @@ struct VaultView: View {
                 emptyState
             } else {
                 List(selection: Binding(get: { vault.selection }, set: { vault.selection = $0 })) {
+                    // Search answers (FR-AI-17): the Ask row, then the card, as the list's first row.
+                    if vault.answersOn, vault.canAsk || vault.answer != nil {
+                        AnswerCard(vault: vault)
+                    }
                     ForEach(vault.memories) { memory in
-                        MemoryRow(memory: memory, model: model, now: model.now)
+                        MemoryRow(memory: memory, model: model, now: model.now, snippet: vault.snippets[memory.id],
+                                  source: vault.sourceNumber(memory.id))
                             .tag(memory.id)
+                            .onAppear { vault.rowAppeared(memory.id) }
+                            .onDisappear { vault.rowDisappeared(memory.id) }
                             .contextMenu { rowMenu(memory) }
                     }
                 }
                 .listStyle(.inset)
+                // Turning Search answers off ends the card and any call in progress.
+                .onChange(of: model.modelSettings.searchAnswersOn) { _, on in if !on { vault.clearAnswer() } }
                 .scrollContentBackground(.hidden)
                 .accessibilityLabel(String(localized: "Memories"))
             }
@@ -192,6 +198,15 @@ struct VaultView: View {
             Button(String(localized: "Restore")) { Task { await vault.perform(.restore, on: [memory.id]) } }
             Button(String(localized: "Delete"), role: .destructive) { Task { await vault.perform(.delete, on: [memory.id]) } }
         case .active:
+            Button(String(localized: "Tidy Up")) {
+                model.selectedMemoryID = memory.id
+                Task {
+                    await model.tidyUp.tidy(memoryID: memory.id, version: memory.version)
+                    await model.refresh()
+                }
+            }
+            .disabled(!model.tidyUp.canTidyMemory || model.tidyUp.running || model.tidyUp.tidying != nil)
+            Divider()
             Button(String(localized: "Archive")) { Task { await vault.perform(.archive, on: [memory.id]) } }
             Button(String(localized: "Delete"), role: .destructive) { Task { await vault.perform(.delete, on: [memory.id]) } }
         }
@@ -245,10 +260,14 @@ struct VaultView: View {
 }
 
 /// One row: title, a one-line preview, category chips, sensitivity, kind, expiry and updated time.
+/// While searching, the preview is the passage that matches, with the matches in bold (FR-V-17).
 struct MemoryRow: View {
     let memory: Memory
     let model: AppModel
     let now: Date
+    var snippet: Snippet?
+    /// The answer's number for this memory, when the answer cites it.
+    var source: Int?
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -261,12 +280,15 @@ struct MemoryRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(memory.title).fontWeight(.medium).lineLimit(1)
+                    if let source {
+                        SourceChip(number: source).accessibilityLabel(String(localized: "Source \(source)"))
+                    }
                     Spacer(minLength: 6)
                     Text(RelativeTime.short(memory.updatedAt, now: now))
                         .font(.caption).foregroundStyle(.secondary)
                         .help(RelativeTime.full(memory.updatedAt))
                 }
-                Text(memory.body.replacingOccurrences(of: "\n", with: " "))
+                preview
                     .font(.callout).foregroundStyle(.secondary).lineLimit(1)
                 HStack(spacing: 5) {
                     SensitivityBadge(sensitivity: memory.sensitivity)
@@ -285,6 +307,11 @@ struct MemoryRow: View {
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
+    }
+
+    private var preview: Text {
+        guard let snippet else { return Text(memory.body.replacingOccurrences(of: "\n", with: " ")) }
+        return Text(SnippetHighlight.attributed(snippet.text, matches: snippet.matches))
     }
 }
 

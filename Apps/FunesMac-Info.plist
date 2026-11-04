@@ -24,6 +24,11 @@
 	     listener advertises _funes._tcp over Bonjour. -->
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Funes Vault listens for your paired iPhone on your local network, so it can send captures and reach your vault.</string>
+	<!-- Dictation in the capture box and Home's composer (FR-H-03): SpeechAnalyzer, on this Mac. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Funes Vault listens while you dictate a memory, only after you click the microphone.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Funes Vault turns what you dictate into text on this Mac, for the memory you're writing.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_funes._tcp</string>

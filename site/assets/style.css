@@ -194,8 +194,10 @@ section.tight { padding-top: 0; }
 .ra { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 32px; align-items: center; }
 .ra p { color: var(--muted); margin: 0 0 10px; }
 .ra strong { color: var(--text); }
-.phone-ra { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
-.shot.phone { justify-self: center; width: 100%; max-width: 300px; height: auto; border-radius: 32px; }
+.phone-ra { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+/* iPhone screenshots side by side, from docs/images (see assets/screenshots/README.md). */
+.phones { display: flex; justify-content: center; align-items: flex-start; gap: 18px; }
+.shot.phone { flex: 1 1 0; min-width: 0; max-width: 260px; height: auto; border-radius: 28px; }
 
 /* Things it doesn't have */
 .nope { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 28px; padding: 0; list-style: none; }

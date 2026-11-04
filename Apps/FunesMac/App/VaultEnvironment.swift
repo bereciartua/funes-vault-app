@@ -23,6 +23,13 @@ final class VaultEnvironment {
     let captures: CaptureService
     let devices: DeviceService
     let imports: ImportService
+    /// About you (ADR-0026).
+    let profiles: ProfileService
+    /// Inbox cards being edited and Save panels on screen: the tidy-up never withdraws one of
+    /// them (memory processing §9.5).
+    let holds = SuggestionHolds()
+    /// Whether new inputs are split now; ProcessingRunner keeps it current (memory processing §5.2).
+    let splitting = SplittingSwitch()
     private(set) var indexer: EmbeddingIndexer?
     private var observation: AnyObject?
     /// The Share, Save and access-request panels.
@@ -57,10 +64,11 @@ final class VaultEnvironment {
         self.indexer = indexer
         search = SearchService(store: store, indexer: indexer)
         disclosures = DisclosureService(store: store, retriever: search, activity: activity, pause: pause)
-        suggestions = SuggestionService(store: store, activity: activity, pause: pause, disclosures: disclosures)
+        suggestions = SuggestionService(store: store, activity: activity, pause: pause, disclosures: disclosures, splitting: splitting)
         captures = CaptureService(store: store, activity: activity)
         devices = DeviceService(store: store, activity: activity)
         imports = ImportService(store: store, activity: activity)
+        profiles = ProfileService(store: store, activity: activity)
         if let indexer {
             try? indexer.loadIndex()
             observation = indexer.startObserving()

@@ -44,7 +44,8 @@ struct ActivityEntry: Identifiable, Equatable {
     }
 
     var isSuggestion: Bool {
-        ["suggest_memory", "capture", "suggestion_applied", "suggestion_rejected", "seed_question", "import"].contains(event.event)
+        ["suggest_memory", "capture", "suggestion_applied", "suggestion_rejected", "seed_question", "import", "auto_applied",
+         "split", "sensitivity_raised", "undone", "tidy_up_run"].contains(event.event)
     }
 
     /// Refusals by policy, rate limits, expired requests; a user's own No isn't a problem.
@@ -105,9 +106,11 @@ struct ActivityEntry: Identifiable, Equatable {
         case "memory_restored": return String(localized: "Restored a memory")
         case "memory_deleted": return String(localized: "Deleted a memory")
         case "memories_searched": return String(localized: "Searched memories")
+        case "search_answered": return String(localized: "Answered a search")
         case "memory_viewed": return String(localized: "Opened a memory")
         case "inbox_listed": return String(localized: "Opened the Inbox")
         case "categories_listed": return String(localized: "Listed categories")
+        case "overview_viewed": return String(localized: "Read the vault's counts")
         case "device_paired": return String(localized: "iPhone paired")
         case "device_revoked": return String(localized: "iPhone removed")
         case "memory_created": return String(localized: "Created a memory")
@@ -117,6 +120,7 @@ struct ActivityEntry: Identifiable, Equatable {
         case "agent_paused": return String(localized: "Agent paused")
         case "agent_resumed": return String(localized: "Agent resumed")
         case "access_changed": return String(localized: "Access changed")
+        case "profile_edited": return String(localized: "Edited About you")
         case "key_rotated": return String(localized: "Key rotated")
         case "cloud_access_on": return String(localized: "Cloud access turned on")
         case "cloud_access_off": return String(localized: "Cloud access turned off")
@@ -127,6 +131,19 @@ struct ActivityEntry: Identifiable, Equatable {
         case "import": return String(localized: "Imported \((e.counts["suggestions"] ?? 0) + (e.counts["memories"] ?? 0)) items")
         case "export": return String(localized: "Exported the vault")
         case "access_request": return String(localized: "Asked for more access")
+        // Memory processing, as Funes Vault (actor `system`; v0.3).
+        case "auto_applied": return String(localized: "Applied a change automatically")
+        case "split":
+            if let pieces = e.counts["pieces"] { return String(localized: "Split into \(pieces) pieces") }
+            return String(localized: "Split a memory")
+        case "sensitivity_raised": return String(localized: "Raised a memory's sensitivity")
+        case "undone":
+            let count = e.counts["changes"] ?? 1
+            return count == 1 ? String(localized: "Undid a change") : String(localized: "Undid \(count) changes")
+        case "tidy_up_run":
+            return e.counts["one_memory"] != nil ? String(localized: "Tidied up a memory") : String(localized: "Tidied up the vault")
+        case "cap_reached": return String(localized: "Reached today's cloud requests")
+        case "processing_job": return String(localized: "Processed a new memory")
         default: return e.event.replacingOccurrences(of: "_", with: " ").capitalized
         }
     }
@@ -156,6 +173,23 @@ struct ActivityEntry: Identifiable, Equatable {
         case ("suggest_memory", "saved"): return (String(localized: "Saved"), .good)
         case ("suggestion_applied", _): return (String(localized: "Applied"), .good)
         case ("suggestion_rejected", _): return (String(localized: "Rejected"), .neutral)
+        case ("split", "offered"): return (String(localized: "Waiting in Inbox"), .accent)
+        case ("split", "kept_as_one"): return (String(localized: "Kept as one"), .neutral)
+        case ("split", "split"): return (String(localized: "Waiting in Inbox"), .accent)
+        case ("sensitivity_raised", _): return (String(localized: "Saved"), .good)
+        case ("auto_applied", _), ("split", _): return (String(localized: "Applied"), .good)
+        case ("undone", _): return (String(localized: "Undone"), .neutral)
+        case ("tidy_up_run", _):
+            return (String(localized: "\(e.counts["applied"] ?? 0) applied, \(e.counts["suggestions"] ?? 0) to review"), .neutral)
+        case ("cap_reached", _): return (String(localized: "On this Mac until tomorrow"), .warning)
+        // Search answers (v0.6): counts only, never the search or a claim.
+        case ("search_answered", "answered"):
+            let claims = e.counts["claims"] ?? 0
+            return (claims == 1 ? String(localized: "1 claim") : String(localized: "\(claims) claims"), .good)
+        case ("search_answered", "no_answer"): return (String(localized: "No answer"), .neutral)
+        case ("search_answered", "cancelled"): return (String(localized: "Cancelled"), .neutral)
+        case ("search_answered", _): return (String(localized: "Failed"), .warning)
+        case ("processing_job", "failed"): return (String(localized: "Failed: proposed by rules"), .warning)
         default: return (e.outcome.map { $0.replacingOccurrences(of: "_", with: " ").capitalized } ?? String(localized: "Done"), .neutral)
         }
     }

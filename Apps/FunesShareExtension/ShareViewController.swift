@@ -34,6 +34,7 @@ private struct ShareView: View {
     @State private var loading = true
     @State private var note = ""
     @State private var problem: String?
+    @FocusState private var editingNote: Bool
 
     var body: some View {
         NavigationStack {
@@ -53,6 +54,7 @@ private struct ShareView: View {
                 Section {
                     TextField("Add a note (optional)", text: $note, axis: .vertical)
                         .lineLimit(1...5)
+                        .focused($editingNote)
                 } footer: {
                     Text("Saved on this iPhone, then sent to Funes on your Mac when it's reachable.")
                 }
@@ -66,6 +68,11 @@ private struct ShareView: View {
             .navigationTitle("Remember in Funes")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // Return adds a line to the note, so the keyboard has its own way out.
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { editingNote = false }.bold()
+                }
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel", action: cancel) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save).disabled(shared == nil)

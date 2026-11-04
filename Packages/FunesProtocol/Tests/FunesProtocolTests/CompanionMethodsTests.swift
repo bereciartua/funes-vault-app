@@ -45,12 +45,100 @@ import Testing
 
     @Test func everyMethodHasACall() {
         let calls: [any CompanionCall.Type] = [
-            StatusGet.self, CapturesSubmit.self, CategoriesList.self, MemoriesSearch.self, MemoriesGet.self, MemoriesCreate.self,
-            MemoriesUpdate.self, MemoriesArchive.self, MemoriesRestore.self, MemoriesDelete.self, InboxList.self, InboxApply.self,
-            InboxReject.self, DeviceUnpair.self, ApprovalsList.self, ApprovalsGet.self, ApprovalsAnswer.self,
+            StatusGet.self, CapturesSubmit.self, OverviewGet.self, CategoriesList.self, MemoriesSearch.self, MemoriesAnswer.self, MemoriesGet.self, MemoriesCreate.self,
+            MemoriesUpdate.self, MemoriesArchive.self, MemoriesRestore.self, MemoriesDelete.self, InboxList.self, InboxGet.self, InboxApply.self,
+            InboxReject.self, InboxRetry.self, InboxKeep.self, InboxReviewAgain.self, DeviceUnpair.self, ApprovalsList.self, ApprovalsGet.self, ApprovalsAnswer.self,
             ApprovalsSettingsGet.self, ApprovalsSettingsSet.self,
         ]
         #expect(Set(calls.map { $0.method }) == Set(CompanionMethod.allCases))
+    }
+
+    /// `memories.answer` and `status.get`'s `searchAnswers` (§4, v0.6): field names, the error's
+    /// `reason`, and an older Mac's status without `searchAnswers`.
+    @Test func answerShape() throws {
+        let id = UUID()
+        let params = MemoryAnswerParams(query: "coffee", ids: [id])
+        let request = String(decoding: try CompanionRequest(MemoriesAnswer.self, params: params).encoded(), as: UTF8.self)
+        #expect(request.contains(#""method":"memories.answer""#) && request.contains(#""ids":[""#))
+        let result = MemoryAnswerResult(outcome: .noAnswer, claims: [.init(text: "T", citations: [.init(id: id, quote: "a quote here")])],
+                                        read: 3, withheld: 1, dropped: 0, engine: "Claude (Claude Code)", locality: .cloud, durationMs: 4_000)
+        let json = String(decoding: try CompanionJSON.encoder().encode(result), as: UTF8.self)
+        for key in [#""outcome":"no_answer""#, #""locality":"cloud""#, #""durationMs":4000"#, #""quote":"a quote here""#] {
+            #expect(json.contains(key), "\(key)")
+        }
+        let error = String(decoding: try CompanionJSON.encoder().encode(CompanionError(.modelUnavailable, reason: "plan_limit")), as: UTF8.self)
+        #expect(error.contains(#""code":"model_unavailable""#) && error.contains(#""reason":"plan_limit""#))
+        let older = #"{"macName":"Mac","appVersion":"0.5","serverTime":0,"inboxPending":0,"vaultActive":true}"#
+        #expect(try CompanionJSON.decoder().decode(CompanionStatus.self, from: Data(older.utf8)).searchAnswers == nil)
+        #expect(throws: CompanionError.self) { try MemoryAnswerParams(query: "coffee", ids: [id, id]).validate() }
+    }
+
+    /// `inbox.get` and `inbox.apply`'s mode (§4.2): field names and snake-case modes on the wire.
+    @Test func inboxDetailShape() throws {
+        let memory = Memory(title: "Ana", body: "Ana's birthday is 3 May", kind: .fact, categoryKeys: ["people"], sensitivity: .low,
+                            source: .manual, createdAt: Date(timeIntervalSince1970: 0), updatedAt: Date(timeIntervalSince1970: 0))
+        let item = InboxItem(id: UUID(), origin: .consolidation, action: .archive, sourceLabel: "Tidy-up", targetMemoryId: memory.id,
+                             title: "Ana", body: "Ana's birthday is 3 May", kind: .fact, categories: ["people"], sensitivity: .low,
+                             createdAt: Date(timeIntervalSince1970: 0))
+        let detail = InboxDetail(item: item, memories: [InboxMemory(role: .survivor, memory: memory)], stale: true,
+                                 tidyUp: InboxTidyUp(reason: "A copy", archiveReason: .duplicate,
+                                                     kept: [.init(memoryId: memory.id, text: "the date")]),
+                                 similar: [InboxSimilar(id: memory.id, title: "Ana")])
+        let json = String(decoding: try CompanionJSON.encoder().encode(detail), as: UTF8.self)
+        for key in [#""role":"survivor""#, #""archiveReason":"duplicate""#, #""stale":true"#, #""pieces":[]"#, #""text":"the date""#] {
+            #expect(json.contains(key), "\(key)")
+        }
+        #expect(try CompanionJSON.decoder().decode(InboxDetail.self, from: Data(json.utf8)) == detail)
+        #expect(detail.memories(.survivor) == [memory])
+        let apply = String(decoding: try CompanionJSON.encoder().encode(
+            InboxApplyParams(suggestionId: item.id, mode: .keep, keepMemoryId: memory.id)), as: UTF8.self)
+        #expect(apply.contains(#""mode":"keep""#) && apply.contains(#""keepMemoryId""#))
+        let bothTrue = String(decoding: try CompanionJSON.encoder().encode(InboxApplyMode.bothTrue), as: UTF8.self)
+        #expect(bothTrue == #""both_true""#)
+    }
+
+    /// `overview.get` (§4): `in` on the wire, dates in milliseconds, counts as JSON objects.
+    @Test func overviewShape() throws {
+        let day = Date(timeIntervalSince1970: 1_800_000_000)
+        let overview = VaultOverview(
+            range: .days30, generatedAt: day, timeZone: "Europe/Madrid", total: 3, thisWeek: VaultOverview.Week(saved: 2, shared: 4),
+            days: [VaultOverview.Bucket(date: day, inbound: VaultOverview.Sources(iphone: 2), out: ["a1": 4], refused: 1)],
+            rhythm: VaultOverview.Rhythm(start: day, counts: [0, 2]), bySensitivity: ["low": 3],
+            agents: [VaultOverview.AgentCount(id: "a1", name: "Claude Code", kind: .claudeCode, shared: 4, requests: 2)])
+        let object = try json(try CompanionResponse(id: "1", result: overview).encoded())
+        let result = try #require(object["result"] as? [String: Any])
+        #expect(result["range"] as? String == "30d")
+        #expect(result["generatedAt"] as? Int64 == 1_800_000_000_000)
+        let bucket = try #require((result["days"] as? [[String: Any]])?.first)
+        #expect((bucket["in"] as? [String: Int])?["iphone"] == 2)
+        #expect(bucket["out"] as? [String: Int] == ["a1": 4])
+        #expect(result["bySensitivity"] as? [String: Int] == ["low": 3])
+        #expect(result["oldestPendingAt"] == nil)
+        #expect(try CompanionResponse<VaultOverview>.decode(try CompanionResponse(id: "1", result: overview).encoded()).get() == overview)
+        #expect(overview.count(.low) == 3 && overview.days[0].shared == 4 && overview.days[0].inbound.total == 2)
+    }
+
+    /// Buckets begin at midnight in the calendar's time zone, weeks on its first weekday.
+    @Test func overviewCalendar() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/New_York")!
+        calendar.firstWeekday = 1
+        let buckets = OverviewCalendar(calendar: calendar)
+        // Wednesday 10 November 2027, 01:30 in New York, three days after summer time ended.
+        let now = calendar.date(from: DateComponents(year: 2027, month: 11, day: 10, hour: 1, minute: 30))!
+        let days = buckets.boundaries(.days30, now: now)
+        #expect(days.count == 31)
+        #expect(days[29] == calendar.date(from: DateComponents(year: 2027, month: 11, day: 10)))
+        #expect(days[30] == calendar.date(from: DateComponents(year: 2027, month: 11, day: 11)))
+        #expect(zip(days, days.dropFirst()).allSatisfy { calendar.dateComponents([.day], from: $0, to: $1).day == 1 })
+        let weeks = buckets.boundaries(.weeks12, now: now)
+        #expect(weeks[11] == calendar.date(from: DateComponents(year: 2027, month: 11, day: 7)))
+        #expect(calendar.component(.weekday, from: weeks[0]) == 1)
+        let months = buckets.boundaries(.months12, now: now)
+        #expect(months.first == calendar.date(from: DateComponents(year: 2026, month: 12, day: 1)))
+        #expect(months.last == calendar.date(from: DateComponents(year: 2027, month: 12, day: 1)))
+        let rhythm = buckets.dayBoundaries(84, now: now)
+        #expect(rhythm.count == 85 && rhythm[83] == days[29])
     }
 
     @Test func responseResultAndError() throws {

@@ -7,34 +7,36 @@ import SwiftUI
 private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category: "capture")
 
 /// Quick capture (FR-C-01..04): the box from the hotkey, the menu's Remember… and Services ▸
-/// Remember in Funes. A capture always goes to the Inbox; classification fills in the proposal
-/// afterwards and never holds up saving.
+/// Remember in Funes. A capture always goes to the Inbox; its processing job, queued with it,
+/// fills in the proposal afterwards (ProcessingRunner) and never holds up saving.
 @MainActor
 final class CaptureController: NSObject {
     private let model: AppModel
-    private let hud: HUD
+    private let saver: CaptureSaver
     private var panel: CapturePanel?
     private let box = CaptureBoxModel()
 
-    init(model: AppModel, hud: HUD) {
+    init(model: AppModel, saver: CaptureSaver) {
         self.model = model
-        self.hud = hud
+        self.saver = saver
         super.init()
-        box.save = { [weak self] text in self?.save(text) ?? false }
+        box.save = { [weak self] _ in self?.save() ?? false }
         box.cancel = { [weak self] in self?.close() }
+        // A save that fails after the box closed brings it back with the text and the reason.
+        box.restore = { [weak self] in self?.reopen() }
     }
 
     func show(text: String = "", error: String? = nil) {
-        let panel = self.panel ?? make()
-        self.panel = panel
         box.text = text
         box.error = error
+        reopen()
+    }
+
+    private func reopen() {
+        let panel = self.panel ?? make()
+        self.panel = panel
         box.focusRequest += 1
-        box.cloudProvider = nil
-        if model.preferences.classifyCaptures {
-            let settings = model.modelSettings
-            Task { [box] in box.cloudProvider = await settings.cloudClassifierName() }
-        }
+        model.updateCloudChip(box)
         if let screen = NSScreen.main {
             let frame = screen.visibleFrame
             panel.setFrameOrigin(NSPoint(x: frame.midX - panel.frame.width / 2, y: frame.maxY - panel.frame.height - frame.height * 0.18))
@@ -43,48 +45,13 @@ final class CaptureController: NSObject {
     }
 
     func close() {
+        box.stopDictation += 1
         panel?.orderOut(nil)
     }
 
-    /// Stores the capture, or shows why not; true when the box may close.
-    private func save(_ text: String) -> Bool {
-        let body = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !body.isEmpty else { return false }
-        guard InputLimits.length(of: body) <= InputLimits.body.upperBound else {
-            box.error = String(localized: "That's longer than 10,000 characters.")
-            return false
-        }
-        let findings = SecretScanner.scan(body)
-        guard findings.isEmpty else {
-            box.error = SecretText.message(findings)
-            return false
-        }
-        let hint = model.preferences.captureSensitivity
-        let services = model.services
-        let classify = model.preferences.classifyCaptures
-        let settings = model.modelSettings
-        Task {
-            do {
-                let result = try await services.captures.capture(body, sensitivityHint: hint, now: Date())
-                hud.show(String(localized: "Saved to Inbox"))
-                guard classify else { return }
-                let router = settings.makeRouter()
-                let categories = (try? services.store.categories()) ?? []
-                let record = await router.classify(body, categories: categories, hint: hint)
-                settings.collectUsage(from: router)
-                if record.engine != RulesClassifier.engine || record.keptOnDevice {
-                    // "At least <level>" holds whatever the model proposed (PR #3 review 4304236141).
-                    try? await services.captures.reclassify(suggestionID: result.suggestionID, record: record, floor: hint)
-                }
-            } catch let error as VaultError {
-                show(text: body, error: ErrorText.message(error))
-            } catch {
-                logger.error("Capture failed")
-                show(text: body, error: String(localized: "It couldn't be saved. Try again."))
-            }
-        }
-        box.text = ""
-        box.error = nil
+    /// Stores the box's text, or shows why not; true when the box may close.
+    private func save() -> Bool {
+        guard saver.save(box) else { return false }
         close()
         return true
     }
@@ -120,7 +87,73 @@ final class CaptureController: NSObject {
             error.pointee = String(localized: "There's no text to remember.") as NSString
             return
         }
-        if !save(text) { show(text: text, error: box.error) }
+        box.text = text
+        box.error = nil
+        if !saver.save(box) { reopen() }
+    }
+}
+
+/// Saving a capture, the same from the capture box, Home's composer and the menu bar panel's field
+/// (FR-C-01, FR-H-02, FR-G-01): the length limit, the secret scanner, then storing it. The box and
+/// the composer show the HUD and get the text back with the reason when storing fails; the panel
+/// handles the result itself.
+@MainActor
+final class CaptureSaver {
+    private let model: AppModel
+    private let hud: HUD
+
+    init(model: AppModel, hud: HUD) {
+        self.model = model
+        self.hud = hud
+    }
+
+    /// Why `body` can't be saved as it is (too long, or it looks like it holds a secret); nil
+    /// when it can. Checked before a field lets go of the text.
+    func validate(_ body: String) -> String? {
+        guard InputLimits.length(of: body) <= InputLimits.body.upperBound else {
+            return String(localized: "That's longer than 10,000 characters.")
+        }
+        let findings = SecretScanner.scan(body)
+        return findings.isEmpty ? nil : SecretText.message(findings)
+    }
+
+    /// Stores a capture that passed `validate`: nil once it's in the Inbox, else why it isn't.
+    /// The caller decides what to do with the text (the menu bar panel stays open).
+    func store(_ body: String) async -> String? {
+        do {
+            try await model.services.captures.capture(body, sensitivityHint: model.preferences.captureSensitivity, now: Date())
+            return nil
+        } catch let error as VaultError {
+            return ErrorText.message(error)
+        } catch {
+            logger.error("Capture failed")
+            return String(localized: "It couldn't be saved. Try again.")
+        }
+    }
+
+    /// Stores `box.text` and empties the box, or shows why not in it; true when it was taken.
+    /// A store that fails later puts the text back with the reason (`box.restore`).
+    func save(_ box: CaptureBoxModel) -> Bool {
+        let body = box.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !body.isEmpty else { return false }
+        if let reason = validate(body) {
+            box.error = reason
+            return false
+        }
+        let hud = self.hud
+        Task {
+            if let failure = await store(body) {
+                box.text = body
+                box.error = failure
+                box.restore()
+            } else {
+                hud.show(String(localized: "Saved to Inbox"))
+            }
+        }
+        box.stopDictation += 1
+        box.text = ""
+        box.error = nil
+        return true
     }
 }
 
@@ -133,83 +166,4 @@ final class CapturePanel: NSPanel {
         onResign()
     }
     override func cancelOperation(_ sender: Any?) { orderOut(nil) }
-}
-
-@MainActor @Observable
-final class CaptureBoxModel {
-    var text = ""
-    var error: String?
-    var focusRequest = 0
-    /// The cloud provider that proposes the fields for new captures ("Anthropic"); nil when that
-    /// happens on this Mac.
-    var cloudProvider: String?
-    @ObservationIgnored var save: (String) -> Bool = { _ in false }
-    @ObservationIgnored var cancel: () -> Void = {}
-}
-
-/// "What should Funes remember?" with ⏎ Save · ⇧⏎ New line · Esc Cancel (04-ux-mac.md).
-struct CaptureBox: View {
-    @Bindable var box: CaptureBoxModel
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ZStack(alignment: .topLeading) {
-                if box.text.isEmpty {
-                    Text(String(localized: "What should Funes remember?"))
-                        .font(.title3).foregroundStyle(.tertiary).padding(.top, 1).accessibilityHidden(true)
-                }
-                TextField("", text: $box.text, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .font(.title3)
-                    .lineLimit(1...8)
-                    .focused($focused)
-                    .accessibilityLabel(String(localized: "What should Funes remember?"))
-                    .onKeyPress(keys: [.return]) { press in
-                        if press.modifiers.contains(.shift) {
-                            box.text += "\n"
-                            return .handled
-                        }
-                        _ = box.save(box.text)
-                        return .handled
-                    }
-                    .onKeyPress(.escape) {
-                        box.cancel()
-                        return .handled
-                    }
-            }
-            if let error = box.error {
-                Label(error, systemImage: "exclamationmark.octagon.fill")
-                    .foregroundStyle(.red).font(.callout)
-                    .accessibilityAddTraits(.updatesFrequently)
-            }
-            HStack {
-                Text(String(localized: "⏎ Save · ⇧⏎ New line · Esc Cancel")).font(.caption).foregroundStyle(.secondary)
-                Spacer()
-                if let provider = box.cloudProvider {
-                    Text(String(localized: "Goes to your Inbox · fields suggested by \(provider)"))
-                        .font(.caption).foregroundStyle(.secondary)
-                    Text(String(localized: "Cloud"))
-                        .font(.caption2.weight(.semibold))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 1)
-                        .background(Capsule().fill(Color.orange.opacity(0.2)))
-                        .accessibilityLabel(String(localized: "Leaves this Mac"))
-                } else {
-                    Text(String(localized: "Goes to your Inbox")).font(.caption).foregroundStyle(.secondary)
-                }
-            }
-        }
-        .padding(18)
-        .frame(width: 560)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.separator.opacity(0.6), lineWidth: 0.5))
-        .onChange(of: box.error) { _, error in
-            if let error {
-                NSAccessibility.post(element: NSApp as Any, notification: .announcementRequested,
-                                     userInfo: [.announcement: error, .priority: NSAccessibilityPriorityLevel.high.rawValue])
-            }
-        }
-        .onChange(of: box.focusRequest, initial: true) { _, _ in focused = true }
-    }
 }

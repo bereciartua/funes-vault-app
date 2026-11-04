@@ -1,12 +1,12 @@
 # Security policy
 
-Funes Vault keeps personal memories on your Mac and gives AI agents scoped access to them through a local MCP server; its iPhone app is a paired client of that vault. Please report security problems privately.
+Funes Vault keeps personal memories on your Mac and gives AI agents scoped access to them through a local MCP server. Funes Vault for iPhone pairs with the Mac as a thin client. Please report security problems privately.
 
 ## Supported versions
 
 | Version | Supported |
 | --- | --- |
-| 0.1.x (public preview) | Yes: the latest 0.1 release |
+| 0.2.x (public preview), Mac and iPhone | Yes: the latest release |
 | Older builds, and builds from source | No |
 
 Fixes ship as a new release, are listed in the [changelog](CHANGELOG.md), and reach installed copies through the in-app updater.
@@ -17,12 +17,12 @@ Use **GitHub private vulnerability reporting:** **Security ▸ Report a vulnerab
 
 Please don't open a public issue, discussion or pull request for a vulnerability.
 
-Include the app version (Settings ▸ Updates), your macOS version, whether the Mac has Apple silicon or Intel, the agent and how it connects (launcher or direct HTTP), and the steps to reproduce.
+Include the app version (Settings ▸ General ▸ Updates), your macOS version (and iOS version, for anything involving the iPhone), whether the Mac has Apple silicon or Intel, the agent and how it connects (launcher or direct HTTP), and the steps to reproduce.
 
 **Never include real secrets or personal data**, even in a private report:
 
 - agent keys and tokens (anything starting with `fns_`, such as `fns_mcp_v1_` or `fns_mcpr_v1_`), the contents of `agent-keys/`, or `remote-connections.json`
-- your Remote Access address with its secret path (`/r/…`)
+- your Remote Access address with its secret path (`/r/…`), or the iPhone pairing QR code
 - API keys for model providers
 - `vault.sqlite`, its backups, or a `funesvault.export.v1` file from your own vault
 - memory text, task text, or screenshots of the Vault, the Inbox or a panel that show your memories
@@ -40,10 +40,10 @@ In scope:
 - The local MCP server on `127.0.0.1:47625`: key authentication, the `Host`, `Origin` and forwarding-header checks, input validation, rate limits and the failed-sign-in lockout.
 - The `funes-mcp` launcher: key-file handling, the check of the listening app, and the `headers` command.
 - Remote Access (experimental, off by default): the remote listener's secret path, `Host` check and per-address lockout; remote tokens and their separation from local keys; the OAuth server (pairing, the six-digit code panel, PKCE, refresh rotation and reuse detection, revocation); the client-metadata fetch (SSRF); and any way a cloud agent gets a different decision than the same agent locally.
-- The iPhone companion: pairing (the QR code, the Allow prompt), the sealed and signed envelopes (HPKE, P-256, replay and clock checks), the companion listener on port 47626 and its address checks, device removal, the capture queue on the iPhone, and approvals answered from the phone, including what the CloudKit doorbell record and the notification reveal.
 - Suggestions: validation, the secret scanner, and an agent planting memories outside its scope.
 - File permissions of the vault, backups, key files and Activity in `~/Library/Application Support/FunesVault/`.
-- What reaches a model provider: the secret scanner and the cloud limit in front of every model call.
+- What reaches a model provider: the secret scanner, the cloud limit and the daily cap in front of every model call, including the `claude` and `codex` commands run for a subscription.
+- The iPhone companion (off by default): pairing (the QR code's secret and the Allow prompt on the Mac), the envelope's signatures, encryption, replay and clock checks, the companion listener's address checks per mode, what a paired iPhone can do as the owner, the CloudKit doorbell carrying anything beyond a random name and tag, and the iPhone app's capture queue and extensions.
 - Logs and Activity leaking memory text, task text or keys.
 - One-click agent setup writing anything other than the shown change, or writing a key.
 - The build, signing and release pipeline, and in-app updates.
@@ -54,6 +54,5 @@ Out of scope, as described in the [threat model](docs/ARCHITECTURE.md#threat-mod
 - What an AI agent, or its provider, does with memories you shared with it, including a cloud agent's vendor and a tunnel provider that ends TLS at its edge.
 - The security of the tunnel software you run (Tailscale, cloudflared, ngrok).
 - What a model provider you chose does with the text Funes sent it within your cloud limit.
-- Apple's own services the iPhone app relies on (iCloud and CloudKit, the push service), and an attacker with an unlocked iPhone that's paired; remove it on the Mac in **Settings ▸ iPhone**.
 - An attacker with physical access to an unlocked Mac, an administrator account, a Mac without FileVault, or System Integrity Protection turned off.
 - Bugs in BridgeKit itself that don't depend on how Funes uses it: report them here too, and they'll be moved to [`bereciartua/bridgekit`](https://github.com/bereciartua/bridgekit).

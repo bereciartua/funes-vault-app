@@ -1,3 +1,4 @@
+import BridgeUI
 import FunesCore
 import SwiftUI
 
@@ -19,6 +20,7 @@ struct MainView: View {
         } detail: {
             Group {
                 switch model.section {
+                case .home: HomeView(model: model)
                 case .vault: VaultView(model: model)
                 case .inbox: InboxView(model: model)
                 case .activity: ActivityScreen(model: model)
@@ -51,7 +53,7 @@ struct MainView: View {
     }
 }
 
-/// Vault, Inbox and Activity; the Agents list with its +; then Remote Access and Settings… pinned
+/// Home, Vault, Inbox and Activity; the Agents list with its +; then Remote Access and Settings… pinned
 /// at the bottom, and a status line while agents can't connect or are paused.
 struct Sidebar: View {
     let model: AppModel
@@ -73,6 +75,7 @@ struct Sidebar: View {
 
     var body: some View {
         List(selection: selection) {
+            sectionRow(.home)
             sectionRow(.vault)
             sectionRow(.inbox)
             sectionRow(.activity)
@@ -258,12 +261,13 @@ struct SidebarStatus: View {
         switch model.iconState {
         case .normal, .needsYou: .green
         case .paused: .orange
+        case .cantConnect: Palette.warning
         case .off: .secondary
         }
     }
 
     private var text: String {
-        if let until = model.pausedUntil { return StatusMenuController.pausedText(until, now: model.now) }
+        if let until = model.pausedUntil { return AgentsTile.pausedText(until, now: model.now) }
         if !model.preferences.mcpEnabled { return String(localized: "Agents can't connect: the server is off") }
         switch model.mcpStatus {
         case .listening: return String(localized: "Agents can connect")

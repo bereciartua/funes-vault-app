@@ -197,6 +197,7 @@ extension MemorySource {
         case .importMarkdown: String(localized: "Imported from Markdown")
         case .importFunes: String(localized: "Imported from a Funes export")
         case .seedQuestion: String(localized: "Answered a question")
+        case .tidyUp: String(localized: "From a merge or split")
         }
     }
 }
@@ -262,6 +263,11 @@ enum ErrorText {
         case .unauthenticated: return String(localized: "Not allowed.")
         case .revisionChanged: return String(localized: "It changed in the meantime. Review it again.")
         case .versionConflict: return String(localized: "It changed in the meantime. Look again and retry.")
+        case .targetChanged: return String(localized: "Changed since this was suggested.")
+        case .unsupportedAction: return String(localized: "Choose an answer first.")
+        case .processing: return String(localized: "Still processing. It can be saved once it's done.")
+        case .undoNeedsLater(let count): return String(localized: "Later changes depend on this one. Undo it together with the \(count) later changes.")
+        case .undoNotPossible: return String(localized: "It was changed since, so it can't be undone.")
         }
     }
 }

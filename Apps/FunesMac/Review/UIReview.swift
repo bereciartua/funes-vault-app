@@ -62,6 +62,8 @@ final class UIReview: NSObject, NSApplicationDelegate {
         try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         let defaults = UserDefaults(suiteName: suiteName)!
         let preferences = Preferences(defaults: defaults)
+        // Splitting on, so the sample capture being split shows "Processing…".
+        preferences.splitNewMemories = true
         let environment = try VaultEnvironment(dataFolder: scratch.appendingPathComponent("vault"))
         let agents = try await SampleData.fill(environment)
         let (claudeDesktop, _) = try await environment.agents.create(name: "Claude Desktop", kind: .claudeDesktop,
@@ -92,10 +94,20 @@ final class UIReview: NSObject, NSApplicationDelegate {
                           keywords: ["package manager", "test framework", "conventions"], purpose: "scaffold project",
                           retention: .session),
             now: Date().addingTimeInterval(-120))
+        // Settings ▸ AI's review data (Phase 11.6): an API account with two models, the Claude plan
+        // with two, a different model per job, and a local server.
         let settings = ModelSettings(defaults: defaults, keys: InMemoryProviderKeyStore())
-        try settings.upsert(ProviderConfig(endpoint: .ollama(), name: "Ollama", model: "llama3.2"), key: nil)
-        try settings.upsert(ProviderConfig(endpoint: .anthropic(), name: "Anthropic", model: AnthropicClient.suggestedModel), key: "review")
-        settings.setClassifier("anthropic")
+        settings.upsert(AIAccount(endpoint: .ollama(), name: "Ollama", models: ["llama3.2"]))
+        settings.upsert(AIAccount(endpoint: .anthropic(), name: "Anthropic", models: [AnthropicClient.suggestedModel, "claude-opus-5-5"]))
+        try settings.setKey("review", for: "anthropic")
+        settings.setChoice(.model(ModelChoice(account: "anthropic", model: AnthropicClient.suggestedModel)), for: .newMemories)
+        settings.setChoice(.model(ModelChoice(account: "claude-code", model: "opus")), for: .tidyUp)
+        settings.setChoice(.model(ModelChoice(account: "anthropic", model: "claude-opus-5-5")), for: .searchAnswers)
+        settings.addUsage(ProviderUsage(requests: 412, inputTokens: 1_203_550, outputTokens: 80_112), for: "anthropic")
+        settings.addUsage(ProviderUsage(requests: 9, inputTokens: 31_400, outputTokens: 2_050), for: "claude-code")
+        settings.reviewPlans([.claudeCode: "/usr/local/bin/claude"], [.claudeCode: .ready(version: "2.1.310"), .codex: .notInstalled])
+        // Search answers on, so the Vault shows the Ask row and Settings its page (FR-AI-17).
+        settings.searchAnswersOn = true
         let model = AppModel(services: environment, preferences: preferences, modelSettings: settings)
         configure(model)
         await model.refresh()
@@ -104,7 +116,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
         let panel = try await environment.disclosures.panel(requestID: waiting.requestID!, now: Date())!
         let disclosure = try await environment.disclosures.disclosure(requestID: waiting.requestID!)
         var share = FunesApprovals.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: Date(),
-                                             agent: agents.claudeCode)
+                                             agent: agents.claudeCode, profileFields: disclosure?.profileFieldsSent ?? [])
         share.expiresAt = Date().addingTimeInterval(41.5)
         // The same request from a cloud agent through the tunnel (Goes to names the vendor).
         var cloudPanel = panel
@@ -142,6 +154,8 @@ final class UIReview: NSObject, NSApplicationDelegate {
         let model = fixture.model
         let main = MainWindowController(model: model)
         keep.append(main)
+        // Made now, so the first pass's resize below applies to it too.
+        main.show()
         for (appearance, suffix) in [(NSAppearance.Name.aqua, "light"), (.darkAqua, "dark")] {
             NSApp.appearance = NSAppearance(named: appearance)
             // Both passes start alike: the default window size, not the frame the real app autosaved,
@@ -155,16 +169,64 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 main.show()
                 await snapshot("\(name)-\(suffix)", main.window)
             }
-            await mainScene("vault-checklist") {
+            // Home (task 7.3): with the setup checklist on top, then as the user lives with it.
+            await mainScene("home-checklist") {
                 model.checklist.reset(model: model)
+                model.section = .home
+            }
+            await mainScene("home") { model.checklist.dismiss() }
+            await mainScene("vault-memory") {
                 model.section = .vault
                 model.vault.status = .active
-                model.vault.selection = []
-            }
-            await mainScene("vault-memory") {
-                model.checklist.dismiss()
                 model.vault.selection = model.vault.memories.first(where: { $0.title == "Commit messages" }).map { [$0.id] } ?? []
             }
+            // Search: the passage that matches, with the search's words in bold (FR-V-17).
+            model.vault.query = "title at Chatham"
+            await model.vault.load()
+            await mainScene("vault-search") {
+                model.vault.selection = model.vault.memories.first(where: { $0.title == "Role at Chatham" }).map { [$0.id] } ?? []
+            }
+            // Search answers (FR-AI-17): an answer quoting two memories that disagree, the first
+            // number clicked (its quote highlighted in the detail), and no answer.
+            model.vault.query = "title at Chatham"
+            await model.vault.load()
+            if let role = model.vault.memories.first(where: { $0.title == "Role at Chatham" }),
+               let old = model.vault.memories.first(where: { $0.title == "Chatham job" }) {
+                await mainScene("vault-answer") {
+                    model.vault.reviewAnswer(SearchAnswer.review(role: role.id, old: old.id), results: model.vault.memories.count)
+                    model.vault.showSource(role.id, quote: "my title at Chatham is now Senior Analyst")
+                }
+                await mainScene("vault-answer-none") {
+                    model.vault.selection = []
+                    model.vault.reviewAnswer(SearchAnswer(outcome: .noAnswer, claims: [], read: 3, withheld: 1, dropped: 0,
+                                                          engine: "claude-code/haiku", locality: .cloud, duration: .seconds(4)),
+                                             results: model.vault.memories.count)
+                }
+            }
+            model.vault.query = ""
+            await model.vault.load()
+            // A tidy-up's automatic change in a memory's History, opened (FR-V-12).
+            HistoryList.reviewExpandsChanges = true
+            model.vault.status = .archived
+            await model.vault.load()
+            await mainScene("vault-memory-history") {
+                model.vault.selection = model.vault.memories.first(where: { $0.title == "Dark mode" }).map { [$0.id] } ?? []
+            }
+            // An edit's earlier version in History (FR-V-16).
+            model.vault.status = .active
+            await model.vault.load()
+            await mainScene("vault-memory-version") {
+                model.vault.selection = model.vault.memories.first(where: { $0.title == "Coffee order" }).map { [$0.id] } ?? []
+            }
+            HistoryList.reviewExpandsChanges = false
+            // Tidy Up on one memory (memory processing §9.7): its result under the actions.
+            MemoryDetailView.reviewScrollsToActions = true
+            await mainScene("vault-memory-tidy") {
+                guard let memory = model.vault.memories.first(where: { $0.title == "Commit messages" }) else { return }
+                model.tidyUp.reviewResult(.suggestions([UUID()]), for: memory)
+                model.vault.selection = [memory.id]
+            }
+            MemoryDetailView.reviewScrollsToActions = false
             model.vault.status = .recentlyDeleted
             await model.vault.load()
             await mainScene("vault-recently-deleted") {
@@ -173,6 +235,21 @@ final class UIReview: NSObject, NSApplicationDelegate {
             model.vault.status = .active
             await model.vault.load()
             await mainScene("inbox") { model.section = .inbox }
+            // Phase 6a: a capture still processing, one whose split failed, and Applied automatically below.
+            model.inboxState.focused = model.inboxState.processing.keys.first
+            try? await Task.sleep(for: .milliseconds(600))
+            await snapshot("inbox-processing-\(suffix)", main.window)
+            // Phase 6b: the Tidy-up section, with a merge, a conflict and its header.
+            // The lazy list lays the far rows out on the way: scroll again once it has.
+            let tidied = model.inbox.first(where: { $0.origin == .consolidation })?.id
+            model.inboxState.focused = tidied
+            try? await Task.sleep(for: .milliseconds(600))
+            model.inboxState.focused = nil
+            try? await Task.sleep(for: .milliseconds(100))
+            model.inboxState.focused = tidied
+            try? await Task.sleep(for: .milliseconds(900))
+            await snapshot("inbox-tidy-up-\(suffix)", main.window)
+            model.inboxState.focused = nil
             await mainScene("agents-access") {
                 model.selectedAgentID = fixture.agents.claudeCode.id
                 model.agentTab = .access
@@ -201,6 +278,13 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await mainScene("activity") {
                 model.section = .activity
                 model.activity.selection = model.activity.entries.first(where: { $0.event.event == "request_memory" })?.id
+            }
+            // What a change did (FR-L-02): an automatic change, and a tidy-up run's list.
+            await mainScene("activity-change") {
+                model.activity.selection = model.activity.entries.first(where: { $0.event.event == "auto_applied" })?.id
+            }
+            await mainScene("activity-tidy-up") {
+                model.activity.selection = model.activity.entries.first(where: { $0.event.event == "tidy_up_run" })?.id
             }
 
             // Remote Access: before setup, the guide, set up, and an agent's Cloud tab.
@@ -234,7 +318,12 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 main.window?.setContentSize(MainWindowController.minimumSize)
                 await snapshot("\(name)-min-\(suffix)", main.window)
             }
-            await minScene("agents-cloud") {}
+            await minScene("home") { model.section = .home }
+            await minScene("agents-cloud") {
+                model.selectedAgentID = fixture.cloudAgent.id
+                model.agentTab = .cloud
+                model.section = .agents
+            }
             await minScene("agents-access") {
                 model.selectedAgentID = fixture.agents.claudeCode.id
                 model.agentTab = .access
@@ -268,8 +357,12 @@ final class UIReview: NSObject, NSApplicationDelegate {
 
             let empty = MainWindowController(model: fixture.empty)
             keep.append(empty)
-            fixture.empty.section = .vault
+            // A new vault's Home: its empty states, without the checklist above them.
+            fixture.empty.checklist.dismiss()
+            fixture.empty.section = .home
             empty.show()
+            await snapshot("home-empty-\(suffix)", empty.window)
+            fixture.empty.section = .vault
             await snapshot("vault-empty-\(suffix)", empty.window)
             fixture.empty.section = .agents
             await snapshot("agents-empty-\(suffix)", empty.window)
@@ -279,8 +372,18 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await sheet("new-memory-\(suffix)", NewMemorySheet(model: model) { _ in })
             await sheet("categories-\(suffix)", CategoriesSheet(model: model))
             await sheet("add-agent-\(suffix)", AddAgentSheet(model: model) { _ in })
+            // An embedding model typed as an account's first model: the sheet explains it.
+            await sheet("add-account-embedding-model-\(suffix)",
+                        AddAccountSheet(model: model, account: AIAccount(endpoint: .lmStudio(), name: "LM Studio",
+                                                                         models: ["qwen3-embedding:0.6b"])) { _ in })
             await sheet("add-agent-cloud-\(suffix)", AddAgentSheet(model: model, place: .cloud) { _ in })
-            await sheet("seed-questions-\(suffix)", SeedQuestionsSheet(model: model))
+            await sheet("seed-questions-name-\(suffix)", SeedQuestionsSheet(model: model))
+            await sheet("seed-questions-\(suffix)", SeedQuestionsSheet(model: model, startsWithName: false))
+            // The Access tab's About you card, below the fold in agents-access (ADR-0026).
+            await sheet("access-about-you-\(suffix)", ProfileFieldsCard(model: model, agentName: fixture.agents.claudeCode.name,
+                                                                         fields: .constant(fixture.agents.claudeCode.access.profileFields),
+                                                                         reads: true)
+                .frame(width: 640).padding(20))
             await sheet("import-claude-\(suffix)", ImportSheet(model: model, kind: .claude))
             if let preview = try? await withCheckedThrowingContinuation({ (done: CheckedContinuation<OneClickPreview, Error>) in
                 model.setupControls.preview(.claudeDesktop, model.setupContext(for: fixture.agents.claudeCode)) { result in
@@ -300,6 +403,9 @@ final class UIReview: NSObject, NSApplicationDelegate {
             }
             await panel("share-panel-weak-\(suffix)", weak)
             await panel("save-panel-\(suffix)", saveItem(fixture))
+            // A burst of suggestions: chips, "+3 more" and Later for all 6 suggestions.
+            await panel("save-panel-burst-\(suffix)", saveItem(fixture), saveItem(fixture), saveItem(fixture),
+                        saveItem(fixture), saveItem(fixture), saveItem(fixture))
             await panel("share-panel-remote-\(suffix)", fixture.remoteShareItem)
             await sheet("sign-in-panel-\(suffix)", SignInPanelView(model: model, request: PairingRequest(
                 id: UUID(), clientID: fixture.cloudAgent.id.db, appName: "Claude", appURL: "https://claude.ai/oauth/claude-code-client-metadata",
@@ -322,15 +428,53 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await sheet("capture-hud-\(suffix)", HUDView(text: String(localized: "Saved to Inbox"), symbol: "checkmark.circle.fill").padding(20),
                         titled: false)
             await sheet("menu-bar-icons-\(suffix)", MenuIconStrip().padding(16), titled: false)
+            // The menu bar panel (Phase 10), state by state.
+            await menuBarPanelScenes(fixture, saveItem: saveItem(fixture), suffix: suffix)
 
-            // Settings, tab by tab.
+            // Settings, pane by pane and page by page (ADR-0030), then the problem scenes.
             let settings = SettingsWindowController(model: model)
             keep.append(settings)
-            for tab in SettingsTab.allCases {
-                model.settingsTab = tab
+            let ai = model.modelSettings
+            func show(_ destination: SettingsDestination, _ name: String? = nil) async {
+                model.goToSettings(destination)
                 settings.show()
-                await snapshot("settings-\(tab.rawValue)-\(suffix)", settings.window)
+                try? await Task.sleep(for: .milliseconds(300))
+                await snapshot("settings-\(name ?? destination.safeName)-\(suffix)", settings.window)
             }
+            for pane in SettingsPane.allCases { await show(SettingsDestination(pane)) }
+            for page in [SettingsPage.newMemories, .tidyUp, .searchAnswers, .searchIndex, .account("anthropic"),
+                         .account("ollama"), .account("claude-code"), .account("codex")] {
+                await show(SettingsDestination(page))
+            }
+            // A missing key: the jobs on Anthropic say so, and so does its page.
+            try? ai.setKey(nil, for: "anthropic")
+            await show(SettingsDestination(.features), "ai-features-no-key")
+            await show(.account("anthropic"), "ai-accounts-anthropic-no-key")
+            try? ai.setKey("review", for: "anthropic")
+            // A plan paused after a tool event, and an uninstalled plan with usage from before.
+            ai.reviewPlans([.claudeCode: "/usr/local/bin/claude"], [.claudeCode: .blocked, .codex: .notInstalled])
+            ai.addUsage(ProviderUsage(requests: 3, inputTokens: 9_800, outputTokens: 610), for: "codex")
+            await show(SettingsDestination(.features), "ai-features-blocked-plan")
+            await show(.account("claude-code"), "ai-accounts-claude-code-blocked")
+            await show(.account("codex"), "ai-accounts-codex-usage")
+            ai.resetUsage(for: "codex")
+            ai.reviewPlans([.claudeCode: "/usr/local/bin/claude"], [.claudeCode: .ready(version: "2.1.310"), .codex: .notInstalled])
+            // An account with no models, and a job's choice of it that has no model yet (unresolved).
+            ai.upsert(AIAccount(endpoint: .lmStudio(), name: "LM Studio"))
+            let answers = ai.choice(.searchAnswers)
+            ai.setChoice(.model(ModelChoice(account: "lmstudio", model: nil)), for: .searchAnswers)
+            await show(SettingsDestination(.features), "ai-features-unresolved")
+            await show(.searchAnswers, "ai-features-search-answers-unresolved")
+            await show(.account("lmstudio"), "ai-accounts-no-models")
+            await show(SettingsDestination(.accounts), "ai-accounts-local-servers")
+            ai.setChoice(answers, for: .searchAnswers)
+            ai.removeAccount("lmstudio")
+            // A second index (task 6c.3), starting its first pass.
+            ai.setEmbedding(EmbeddingChoice(provider: "ollama", model: "qwen3-embedding:0.6b"))
+            try? await Task.sleep(for: .seconds(1))
+            await show(.searchIndex, "ai-features-search-index-second-index")
+            await show(SettingsDestination(.privacy), "ai-privacy-second-index")
+            ai.setEmbedding(nil)
             settings.close()
         }
         main.close()
@@ -401,6 +545,8 @@ final class UIReview: NSObject, NSApplicationDelegate {
     /// Lets the window settle, then hands it to the script and waits until it's captured.
     private func snapshot(_ name: String, _ window: NSWindow?) async {
         guard let window else { return }
+        // FUNES_UI_ONLY=<part of a name> captures only the matching scenes (ui_snapshots.sh passes it on).
+        if let only = ProcessInfo.processInfo.environment["FUNES_UI_ONLY"], !only.isEmpty, !name.contains(only) { return }
         NSApp.activate(ignoringOtherApps: true)
         window.orderFrontRegardless()
         try? await Task.sleep(for: .milliseconds(900))
@@ -448,5 +594,147 @@ private struct MenuIconStrip: View {
 
 private extension NSAppearance {
     var isDark: Bool { bestMatch(from: [.aqua, .darkAqua]) == .darkAqua }
+}
+extension UIReview {
+    /// The first scroll view under `view`, depth first.
+    static func scrollView(in view: NSView?) -> NSScrollView? {
+        guard let view else { return nil }
+        if let scroll = view as? NSScrollView { return scroll }
+        for child in view.subviews { if let found = scrollView(in: child) { return found } }
+        return nil
+    }
+}
+
+extension UIReview {
+    /// The menu bar panel's states (ADR-0029, 04-ux-mac.md ▸ Menu bar), each from the app's own
+    /// state as the user would reach it: a Pending request waiting (the fixture's), a live access
+    /// panel, a pause, a search with an answer, the port in use, Remote Access's tunnel down and its
+    /// automatic turn-off, a new vault, and the most the panel holds.
+    private func menuBarPanelScenes(_ fixture: Fixture, saveItem: PanelItem, suffix: String) async {
+        let model = fixture.model
+        let panelModel = MenuBarPanelModel(app: model, saver: CaptureSaver(model: model, hud: HUD()))
+        let controller = MenuBarPanelController(model: panelModel)
+        keep.append(controller)
+        let pulse = Self.samplePulse(fixture)
+        let field = panelModel.field
+        let address = "https://my-mac.tail1234.ts.net"
+        // Remote Access set up and off, whatever the window's scenes left.
+        model.remoteAccess.reviewSet(enabled: false, origin: address, tunnel: .tailscaleFunnel)
+        field.autoAskPause = { _ in nil }
+        func scene(_ name: String, _ controller: MenuBarPanelController, pulse: RecentPulse?) async {
+            let window = controller.reviewShow()
+            if let pulse { controller.model.reviewPulse(pulse) }
+            try? await Task.sleep(for: .milliseconds(600))
+            await snapshot("\(name)-\(suffix)", window)
+            controller.reviewHide()
+        }
+        /// A search of the sample vault, answered with the review's answer.
+        func searchAndAnswer(_ text: String) async {
+            field.text = text
+            field.commandReturn()
+            for _ in 0..<100 where field.page == nil { try? await Task.sleep(for: .milliseconds(20)) }
+            let rows = field.page?.rows ?? []
+            if let role = rows.first(where: { $0.title == "Role at Chatham" }), let old = rows.first(where: { $0.title == "Chatham job" }) {
+                field.ask = { _, ids in
+                    PanelSearchAnswer(answer: .review(role: role.id, old: old.id), results: field.page?.total ?? ids.count,
+                                      engine: "Claude (Claude Code)", limit: Sensitivity.internal.title)
+                }
+                field.askNow()
+                for _ in 0..<100 where field.answer.map({ if case .answered = $0 { false } else { true } }) ?? true {
+                    try? await Task.sleep(for: .milliseconds(20))
+                }
+            }
+        }
+        let queue = model.services.approvals.queue
+        func access(_ seconds: TimeInterval) -> PanelItem {
+            FunesApprovals.accessItem(
+                AccessPrompt(agentID: fixture.agents.cursor?.id ?? UUID(), categoryKey: "project_context", operation: .read,
+                             task: "Summarize the user's current projects", expiresAt: Date().addingTimeInterval(seconds)),
+                agentName: "Cursor", categoryName: "Project context")
+        }
+
+        // On, with the fixture's Pending request waiting.
+        await scene("menubar-panel", controller, pulse: pulse)
+
+        // Two cards: a live access panel (on a clock, with the Review Request shortcut) and the Pending request.
+        let live = access(41.5)
+        queue.enqueue(live) { _ in }
+        await scene("menubar-panel-waiting", controller, pulse: pulse)
+        queue.withdraw(live.id)
+
+        model.pause(.oneHour)
+        await scene("menubar-panel-paused", controller, pulse: pulse)
+        model.resume()
+
+        // Results and an answer, in place of the chart.
+        await searchAndAnswer("title at Chatham")
+        await scene("menubar-panel-search", controller, pulse: nil)
+
+        model.mcpStatus = .failed(.portInUse(47_625))
+        await scene("menubar-panel-cant-connect", controller, pulse: pulse)
+        model.mcpStatus = .listening(port: 47_625)
+
+        model.remoteAccess.reviewSet(enabled: true, origin: address, tunnel: .tailscaleFunnel, health: .notRunning(reason: .noTunnel))
+        await scene("menubar-panel-remote-down", controller, pulse: pulse)
+        model.remoteAccess.reviewSet(enabled: true, origin: address, tunnel: .tailscaleFunnel,
+                                     health: .running(address: address, port: 443))
+        model.remoteAccess.setAutoOff(4 * 3_600)
+        await scene("menubar-panel-remote-until", controller, pulse: pulse)
+        model.remoteAccess.setAutoOff(0)
+        model.remoteAccess.reviewSet(enabled: false, origin: address, tunnel: .tailscaleFunnel)
+
+        // A new vault with no agents.
+        let empty = MenuBarPanelController(model: MenuBarPanelModel(app: fixture.empty,
+                                                                    saver: CaptureSaver(model: fixture.empty, hud: HUD())))
+        keep.append(empty)
+        await scene("menubar-panel-empty", empty, pulse: nil)
+
+        // The most it holds: 3 cards and the overflow, a 4-line field, an answer and 5 results.
+        let fullAccess = access(13.5)
+        var second = saveItem, third = saveItem
+        second.cardTitle = "Claude Code wants to save a memory"
+        third = PanelItem(id: UUID(), kind: third.kind, agentID: third.agentID, title: third.title, rows: third.rows,
+                          primary: third.primary, secondary: third.secondary, announcement: "")
+        third.cardTitle = "Codex wants to save a correction"
+        for item in [fullAccess, second, third] { queue.enqueue(item) { _ in } }
+        let search = field.search
+        field.search = { _ in try await search("title at Chatham") }
+        await searchAndAnswer("What's my title at Chatham now?\nAnd since when?\nWho was I before that?\nAnything older?")
+        await scene("menubar-panel-full", controller, pulse: nil)
+        field.search = search
+        for item in [fullAccess, second, third] { queue.withdraw(item.id) }
+    }
+
+    /// A day of the sample vault's traffic: captures through the day, agents reading in the
+    /// morning and afternoon, one refusal.
+    private static func samplePulse(_ fixture: Fixture) -> RecentPulse {
+        let now = Date()
+        let current = Calendar.current.dateInterval(of: .hour, for: now)?.start ?? now
+        let claude = fixture.agents.claudeCode.id.db, cursor = fixture.agents.cursor?.id.db ?? "cursor"
+        let inbound: [Int: VaultOverview.Sources] = [1: .init(mac: 1), 3: .init(iphone: 2), 9: .init(mac: 1, agent: 1),
+                                                    10: .init(mac: 3), 14: .init(iphone: 1), 18: .init(mac: 2),
+                                                    20: .init(agent: 1), 22: .init(mac: 1), 23: .init(iphone: 1)]
+        let out: [Int: [String: Int]] = [2: [claude: 2], 9: [claude: 4, cursor: 1], 10: [claude: 6], 11: [cursor: 2],
+                                        15: [claude: 3], 16: [claude: 5, cursor: 2], 19: [claude: 1], 22: [cursor: 3]]
+        let hours = (0..<24).map { i in
+            VaultOverview.Bucket(date: current.addingTimeInterval(Double(i - 23) * 3_600), inbound: inbound[i] ?? .init(),
+                                 out: out[i] ?? [:], refused: i == 16 ? 1 : 0)
+        }
+        return RecentPulse(generatedAt: now, timeZone: TimeZone.current.identifier, hours: hours,
+                           agentNames: [claude: "Claude Code", cursor: "Cursor"])
+    }
+}
+
+extension SearchAnswer {
+    /// The review's answer: the newer title and the older one, each quoted (sample data's
+    /// "Role at Chatham" and "Chatham job").
+    static func review(role: UUID, old: UUID) -> SearchAnswer {
+        SearchAnswer(outcome: .answered, claims: [
+            Claim(text: "Your title at Chatham is Senior Analyst, since a promotion in March 2026.",
+                  citations: [Citation(memoryID: role, quote: "my title at Chatham is now Senior Analyst")]),
+            Claim(text: "An older note says you were a data analyst at Chatham Analytics.",
+                  citations: [Citation(memoryID: old, quote: "Data analyst at Chatham Analytics")]),
+        ], read: 3, withheld: 0, dropped: 1, engine: "claude-code/haiku", locality: .cloud, duration: .seconds(5))
+    }
 }
 #endif

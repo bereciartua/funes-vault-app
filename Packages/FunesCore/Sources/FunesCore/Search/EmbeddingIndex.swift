@@ -43,6 +43,8 @@ public final class EmbeddingIndex: Sendable {
         }
     }
 
+    public func clear() { state.withLock { $0 = State() } }
+
     public func remove(_ id: UUID) {
         state.withLock { s in
             guard let row = s.rows.removeValue(forKey: id) else { return }
@@ -118,7 +120,10 @@ public final class EmbeddingIndexer: Sendable {
     private let run = Mutex(RunState())
     private let logger = Logger(subsystem: "com.funesvault.mac", category: "embeddings")
 
+    /// `provider` is on this Mac (the bundled model; a test's fake): it gets memory text without the
+    /// guardrails. Provider models are `ProviderEmbeddingIndexer`'s.
     public init(store: VaultStore, provider: any EmbeddingProvider) {
+        precondition(provider.locality == .onDevice, "EmbeddingIndexer is for on-device models")
         self.store = store
         self.provider = provider
         index = EmbeddingIndex(modelID: provider.model.id, dimensions: provider.model.dimensions)
@@ -129,7 +134,7 @@ public final class EmbeddingIndexer: Sendable {
         "\(title)\n\(kind.words)\n\(categoryNames.joined(separator: ", "))\n\(body)"
     }
 
-    static func contentHash(_ text: String) -> String {
+    public static func contentHash(_ text: String) -> String {
         SHA256.hash(data: Data(text.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 

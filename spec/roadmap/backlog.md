@@ -21,9 +21,10 @@ Epics map requirements to phases.
 | Secret scanner | NFR-SEC-06 | 1 | S | M |
 | Hybrid search: FTS5 porter + bundled bge-small Core ML (WordPiece, index, min-max fusion) + Spike 2b recall regression | FR-V-10, FR-AI-01 | 1 | M | M |
 | `keywords` on `request_memory` (schema, retrieval, panel) | FR-D-01 | 2 | M | S |
-| Choose another embedding model, re-embedding, calibration | FR-AI-09, FR-AI-11 | later | S | M |
+| Provider embedding model as a second index, re-embedding, calibration (ADR-0023) | FR-AI-09, FR-AI-11 | 6c | M | M |
 | Model providers for classification: protocols, ModelRouter, Apple / OpenAI-compatible / Anthropic adapters, guardrails, Keychain keys | FR-AI-05..08, 10 | 1 | M | M |
 | Provenance | FR-V-12 | 1 | S | M |
+| What a change did in Activity and History; earlier versions of memories (ADR-0027) | FR-L-02, FR-V-12, FR-V-16 | 8 | M | S |
 
 ## E2: Policy and disclosure (Phase 1)
 | Item | Covers | Phase | Size | Pri |
@@ -143,10 +144,71 @@ Epics map requirements to phases.
 | iPhone: notification (worded on the phone), Share and Save panels, unlock to answer | FR-iOS-12 | 5 | M | M |
 | Tests: no text in the push, races, revoked device | FR-iOS-12 | 5 | S | M |
 
+## E13: Memory processing (Phase 6, v0.3)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| Spike E: extraction, linking and tidy-up quality per provider; synthetic fixtures | ADR-0020, ADR-0021 | 6.0 | M | M |
+| Per-action apply (archive, duplicate, split, merge, conflict) everywhere; version-checked targets; Mac editor expected version | FR-I-02, FR-I-03 | 6.1 | M | M |
+| Schema v4: trust, watermark, groups, targets, jobs, undo, runs, dismissals, provenance links | ADR-0020, ADR-0021 | 6.1 | M | M |
+| Durable processing queue for every ingest path (iPhone captures included) | FR-AI-13 | 6.1 | M | M |
+| Multi-item cloud guard, on-device pre-screen for agent and import text, new cloud limit levels, daily cap | FR-AI-07, FR-AI-15 | 6.1 | M | M |
+| Undo log with purge; Activity events; export and restore of status and links | FR-AI-14, FR-V-04 | 6.1 | M | M |
+| iPhone: unknown actions as "Review on your Mac"; per-action `inbox.apply` | FR-iOS-09 | 6.1 | S | M |
+| Subscription providers: Claude Code and Codex CLIs, isolated and fail-closed (ADR-0024) | FR-AI-16 | 6a | M | M |
+| Extraction, validation, linking, groups, agent policy (scope flags, direct writes) | FR-AI-13 | 6a | L | M |
+| Auto-apply for new memories; Inbox group cards; Applied automatically with Undo; Settings | FR-AI-14, FR-I-01 | 6a | M | M |
+| Daily tidy-up: scheduling, clusters, model call, validation, auto-apply, Inbox section, notifications | FR-AI-03, FR-AI-14 | 6b | L | M |
+| Provider embeddings: benchmark, adapter, second index, re-embedding, calibration | FR-AI-09, FR-AI-11 | 6c | M | S |
+
+## E14: Home and widgets (Phase 7, v0.4)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| iPhone status bar above the tab bar, only when something needs you; banner removed | FR-iOS-06 | 7.1 | S | S |
+| `VaultOverview` (counts only), benchmark, `overview.get`, the iPhone's overview cache, demo counts | FR-H-01, FR-H-05, ADR-0025 | 7.2 | M | S |
+| Mac Home: composer, pulse card, cards, empty states; dictation in Home and the capture box | FR-H-02, FR-H-03 | 7.3 | L | S |
+| iPhone Home: replaces Capture; pulse with scrubbing, tiles, Who reads, cached states | FR-H-04 | 7.4 | M | S |
+| iPhone widgets: Pulse, Remember, Rhythm | FR-H-06 | 7.5 | M | C |
+
+## E15: About you (Phase 8, v0.5)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| Profile, `v6_profile`, profile fields per agent, §3.10 in the request path, T36–T46, export and import | FR-U-01, FR-U-03, FR-X-05, FR-X-06, ADR-0026 | 8.1 | M | S |
+| `profile` in `request_memory`'s contract and server instructions; harness | FR-U-03 | 8.2 | S | S |
+| Settings ▸ About You, greeting, Access checkboxes, Share panel line, Activity, seed page | FR-U-01..04 | 8.3 | M | S |
+| iPhone greeting by name (`status.get`) | FR-U-05 | 8.4 | S | C |
+| Edit About You on the iPhone | FR-U-01 | later | S | C |
+
+## E16: Search answers (Phase 9, v0.6)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| `BodyMatches` (FTS5 `highlight()`), matching snippets in the Vault and `memories.search` with `snippetMatches`, highlighting on both apps | FR-V-17 | 9.1 | M | S |
+| Spike G: answer quality per provider, synthetic questions and a held-out set | FR-AI-17 | 9.2 | M | S |
+| `SearchAnswerer`, `QuoteLocator`, validation, `ModelItem` kinds, ModelRouter task, cap, cancellation, Activity, guardrail tests | FR-AI-17, ADR-0028 | 9.3 | L | S |
+| Mac: Settings row, Ask row and ⌘⏎, answer card, highlight in the detail | FR-AI-17 | 9.4 | M | S |
+| iPhone: `memories.answer` on both sides, per-method timeout, `SearchModel` answer state, pill and card, Settings, demo questions and answers | FR-iOS-13 | 9.5 | M | S |
+| Automatically for questions, behind a latency gate | FR-AI-17 | 9.7 | S | C |
+
+## E17: Settings (Phase 11, v0.8)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| Navigation prototype: sidebar that can't collapse, pages, deep links | ADR-0030 | 11.0 | S | M |
+| `AISettings` in FunesCore: accounts with models, plans with models, per-task choices, conversion, removal, every consumer | FR-AI-05, FR-AI-06, FR-AI-16, ADR-0030 | 11.1 | L | M |
+| Sidebar window, `SettingsDestination`, panes that only move | ADR-0030 | 11.2 | M | M |
+| AI ▸ Features: job rows and pages | FR-AI-05, FR-AI-08 | 11.3 | M | M |
+| AI ▸ Models & Accounts: account and plan pages, usage per account | FR-AI-06, FR-AI-12, FR-AI-16 | 11.4 | M | M |
+| AI ▸ Privacy & Limits and What AI features send | FR-AI-07, FR-AI-08, FR-AI-15 | 11.5 | S | M |
+| Settings paths in both apps and the docs, snapshots | ADR-0030 | 11.6 | S | M |
+
+## E18: Every Inbox card on the iPhone (Phase 12, v0.9)
+| Item | Covers | Phase | Size | Pri |
+|---|---|---|---|---|
+| `inbox.get`, `inbox.reviewAgain`, `inbox.apply` modes; the tidy-up's real actions on the phone | FR-iOS-09, ADR-0031 | 12.2 | M | S |
+| `InboxModel` detail, modes and Review Again; demo tidy-up cards | FR-iOS-09 | 12.3 | S | S |
+| The iPhone's card screens per action | FR-iOS-09 | 12.4 | M | S |
+
 ## E12: Later
 | Item | Covers | Size |
 |---|---|---|
-| Consolidation suggestions | FR-AI-03 | L |
 | BridgeKitUI extraction (after v0.1), with the Remote Access views | ADR-0013 | L |
 | `funes` CLI | Q18 | M |
 | Localization (Spanish) | Q19 | M |

@@ -19,6 +19,14 @@ public enum Actor: Sendable, Hashable, CustomStringConvertible {
         case .system: "system"
         }
     }
+
+    /// The user, on the Mac or a paired iPhone (access policy §6).
+    public var isOwner: Bool {
+        switch self {
+        case .user, .device: true
+        case .agent, .importRun, .system: false
+        }
+    }
 }
 
 /// One entry of a memory's history. Field names only, never values (FR-V-12).
@@ -28,6 +36,19 @@ public struct ProvenanceEntry: Sendable, Hashable {
     public var event: ProvenanceEvent
     public var actor: String
     public var fieldsChanged: [String]
+    /// The other side of a split or merge (Phase 6).
+    public var relatedMemoryID: UUID?
+    /// The model that proposed an automatic change (Phase 6).
+    public var engine: String?
+}
+
+/// Where a memory's text came from (spec/domain/domain-model.md#memory). Auto-apply never changes
+/// or archives a memory on the strength of untrusted text (memory processing §5.7).
+public enum MemoryTrust: String, Sendable, Hashable, Codable {
+    /// The user typed, dictated, edited or applied it.
+    case trusted
+    /// An agent saved it directly, or auto-apply saved it from an import or shared text.
+    case untrusted
 }
 
 /// An agent's access (spec/domain/domain-model.md#access-one-per-agent). The defaults are no access.
@@ -40,10 +61,14 @@ public struct Access: Sendable, Hashable, Codable {
     public var askBeforeSharing: Bool
     public var askBeforeSaving: Bool
     public var expiresAt: Date?
+    /// The parts of the profile its `request_memory` answers carry (access policy §3.10). A new
+    /// agent shares its name (ADR-0026).
+    public var profileFields: Set<ProfileField>
 
     public init(operations: Set<AccessOperation> = [], maxSensitivity: Sensitivity = .low,
                 allowedCategoryKeys: Set<String> = [], deniedCategoryKeys: Set<String> = [],
-                askBeforeSharing: Bool = true, askBeforeSaving: Bool = true, expiresAt: Date? = nil) {
+                askBeforeSharing: Bool = true, askBeforeSaving: Bool = true, expiresAt: Date? = nil,
+                profileFields: Set<ProfileField> = [.name]) {
         self.operations = operations
         self.maxSensitivity = maxSensitivity
         self.allowedCategoryKeys = allowedCategoryKeys
@@ -51,6 +76,7 @@ public struct Access: Sendable, Hashable, Codable {
         self.askBeforeSharing = askBeforeSharing
         self.askBeforeSaving = askBeforeSaving
         self.expiresAt = expiresAt
+        self.profileFields = profileFields
     }
 
     /// Starting access presets (FR-A-02).
@@ -128,6 +154,9 @@ public struct Suggestion: Sendable, Hashable, Identifiable {
     public var importRunID: UUID?
     public var captureID: UUID?
     public var targetMemoryID: UUID?
+    /// The target's version when the suggestion was made; apply refuses another. Nil on
+    /// suggestions made before v0.3.
+    public var targetMemoryVersion: Int?
     public var action: SuggestionAction
     public var title: String
     public var body: String
@@ -148,6 +177,40 @@ public struct Suggestion: Sendable, Hashable, Identifiable {
     /// `createdAt` + 30 days.
     public var expiresAfter: Date
     public var resultMemoryID: UUID?
+    /// The original suggestion (or `split` suggestion) this one is a piece of (Phase 6).
+    public var groupID: UUID?
+    public var intent: SuggestionIntent?
+    /// A piece of an agent's input outside that agent's scope: never auto-applied, left out of
+    /// Apply all (memory processing §5.6).
+    public var outsideScope = false
+}
+
+/// What a piece of extracted text does (memory processing §5.3).
+public enum SuggestionIntent: String, Sendable, Hashable, Codable {
+    case assertion, remember, correction, retraction
+}
+
+/// A memory a merge, split, conflict or archive refers to, at the version the suggestion was
+/// computed on (spec/domain/domain-model.md#suggestion).
+public struct SuggestionTarget: Sendable, Hashable {
+    public enum Role: String, Sendable, Hashable, Codable {
+        /// Changed by the suggestion: a conflict's two memories.
+        case target
+        /// Merged into the suggestion's memory.
+        case source
+        /// Kept by an archive ("Keeps <survivor>").
+        case survivor
+    }
+
+    public var memoryID: UUID
+    public var memoryVersion: Int
+    public var role: Role
+
+    public init(memoryID: UUID, memoryVersion: Int, role: Role) {
+        self.memoryID = memoryID
+        self.memoryVersion = memoryVersion
+        self.role = role
+    }
 }
 
 /// One `{memoryId, version}` of a disclosure's candidate snapshot, with its search score. The
@@ -190,6 +253,8 @@ public struct Disclosure: Sendable, Hashable, Identifiable {
     public var createdAt: Date
     public var decidedAt: Date?
     public var deliveredAt: Date?
+    /// The profile fields the `request_memory` answer carried (§3.10); names only, never values.
+    public var profileFieldsSent: [ProfileField] = []
 }
 
 /// Written when a disclosure is delivered. The text isn't stored.

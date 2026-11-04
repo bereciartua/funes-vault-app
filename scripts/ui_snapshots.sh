@@ -5,6 +5,7 @@
 # and this script captures it with screencapture, which needs Screen Recording permission for the
 # terminal that runs it.
 #   sh scripts/ui_snapshots.sh [output folder]     (default build/ui-snapshots)
+#   FUNES_UI_ONLY=menubar-panel sh scripts/ui_snapshots.sh   (only the scenes whose name contains it)
 set -eu
 cd "$(dirname "$0")/.."
 output=${1:-build/ui-snapshots}
@@ -12,7 +13,7 @@ xcodebuild -project FunesVault.xcodeproj -scheme FunesMac -configuration Debug \
     -destination 'generic/platform=macOS' -derivedDataPath build/ui-review \
     CODE_SIGNING_ALLOWED=NO SWIFT_ACTIVE_COMPILATION_CONDITIONS='DEBUG FUNES_UI_REVIEW' build -quiet
 mkdir -p "$output"
-rm -f "$output"/*.png
+if [ -z "${FUNES_UI_ONLY:-}" ]; then rm -f "$output"/*.png; fi
 PYTHONPYCACHEPREFIX="$PWD/build/pycache" python3 - build/ui-review/Build/Products/Debug/FunesVault.app/Contents/MacOS/FunesVault "$output" <<'PY'
 import json, os, subprocess, sys, time
 
@@ -40,7 +41,7 @@ print(f"ui_snapshots: {count} snapshots in {folder}")
 PY
 # A window captured before it was ready comes out tiny.
 small=""
-for file in "$output"/*.png; do
+for file in "$output"/*${FUNES_UI_ONLY:-}*.png; do
     width=$(sips -g pixelWidth "$file" | awk '/pixelWidth/ { print $2 }')
     height=$(sips -g pixelHeight "$file" | awk '/pixelHeight/ { print $2 }')
     [ "$width" -ge 300 ] && [ "$height" -ge 100 ] || small="$small $(basename "$file") (${width}x$height px)"

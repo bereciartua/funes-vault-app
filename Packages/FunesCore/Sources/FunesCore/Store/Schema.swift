@@ -29,8 +29,178 @@ enum Schema {
         migrator.registerMigration("v3_device_approvals") { db in
             try db.execute(sql: v3)
         }
+        // Memory processing (v0.3, Phase 6.1; ADR-0020, ADR-0021, storage §3): trust and the
+        // tidy-up's reconciled version, multi-target and grouped suggestions, the processing
+        // queue, the undo log and the tidy-up's runs and dismissals.
+        migrator.registerMigration("v4_memory_processing") { db in
+            try db.execute(sql: v4)
+        }
+        // The vault overview (v0.4, Phase 7.2; ADR-0025, storage §3): its time ranges, which took
+        // more than 50 ms on a 10,000-memory vault without them.
+        migrator.registerMigration("v5_overview_indexes") { db in
+            try db.execute(sql: v5)
+        }
+        // About you (v0.5, Phase 8; ADR-0026, storage §3): the profile, the fields each agent's
+        // answers carry (its name, for every agent not removed), and the fields each request sent.
+        migrator.registerMigration("v6_profile") { db in
+            try db.execute(sql: v6)
+        }
+        // Earlier versions (v0.5; ADR-0027, storage §3): the state each change replaced, for
+        // History and Activity. Nothing to backfill.
+        migrator.registerMigration("v7_memory_revisions") { db in
+            try db.execute(sql: v7)
+        }
+        // Tidy Up on one memory (v0.5, memory processing §9.7): which runs were the whole vault's,
+        // so one memory's run doesn't stand in for the day's.
+        migrator.registerMigration("v8_tidy_up_scope") { db in
+            try db.execute(sql: v8)
+        }
         return migrator
     }
+
+    /// `all` for the daily run and Tidy Up Now, `memory` for Tidy Up on one memory.
+    static let v8 = """
+        ALTER TABLE tidy_up_run ADD COLUMN scope TEXT NOT NULL DEFAULT 'all' CHECK (scope IN ('all', 'memory'));
+        """
+
+    /// One row per version a change replaced; purged with its memory.
+    static let v7 = """
+        CREATE TABLE memory_revision (
+          memory_id      TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
+          version        INTEGER NOT NULL,
+          title          TEXT NOT NULL,
+          body           TEXT NOT NULL,
+          kind           TEXT NOT NULL,
+          category_keys  TEXT NOT NULL DEFAULT '[]',
+          sensitivity    INTEGER NOT NULL,
+          status         TEXT NOT NULL,
+          expires_at     TEXT,
+          replaced_at    TEXT NOT NULL,
+          replaced_by    TEXT NOT NULL,
+          PRIMARY KEY (memory_id, version)
+        );
+        CREATE INDEX memory_revision_replaced ON memory_revision(replaced_at);
+        """
+
+    /// No profile row until the user first saves About You.
+    static let v6 = """
+        CREATE TABLE profile (
+          id              INTEGER PRIMARY KEY CHECK (id = 1),
+          given_name      TEXT,
+          family_name     TEXT,
+          preferred_name  TEXT,
+          pronouns        TEXT,
+          languages       TEXT NOT NULL DEFAULT '[]',
+          location        TEXT,
+          time_zone       TEXT NOT NULL DEFAULT 'automatic',
+          occupation      TEXT,
+          updated_at      TEXT
+        );
+        CREATE TABLE access_profile_field (
+          agent_id TEXT NOT NULL REFERENCES agent(id) ON DELETE CASCADE,
+          field    TEXT NOT NULL CHECK (field IN ('name','pronouns','languages','location','time_zone','occupation')),
+          PRIMARY KEY (agent_id, field)
+        );
+        INSERT INTO access_profile_field (agent_id, field) SELECT id, 'name' FROM agent WHERE removed_at IS NULL;
+        ALTER TABLE disclosure ADD COLUMN profile_fields_sent TEXT NOT NULL DEFAULT '[]';
+        """
+
+    /// The overview's reads (ADR-0025): new memories by `created_at`, deliveries by
+    /// `delivered_at` (only delivered requests have one), requests by `created_at`, and the
+    /// active memories' shape. Each carries the columns its query groups by, so the scans don't
+    /// visit the rows, which hold memory text and candidate snapshots.
+    static let v5 = """
+        CREATE INDEX memory_created ON memory(created_at, source, source_device_id);
+        CREATE INDEX memory_status_shape ON memory(status, sensitivity, kind, id);
+        CREATE INDEX disclosure_delivered ON disclosure(delivered_at, agent_id) WHERE delivered_at IS NOT NULL;
+        CREATE INDEX disclosure_created ON disclosure(created_at, agent_id, status, reason);
+        CREATE INDEX disclosure_item_shape ON disclosure_item(disclosure_id, sensitivity, category_key);
+        """
+
+    /// `suggestion.group_id` and `suggestion_target.memory_id` carry no foreign key: a piece
+    /// outlives its group's source text, and a target that was purged must read as changed, not
+    /// vanish from a merge.
+    static let v4 = """
+        ALTER TABLE memory ADD COLUMN trust TEXT NOT NULL DEFAULT 'trusted' CHECK (trust IN ('trusted','untrusted'));
+        UPDATE memory SET trust = 'untrusted' WHERE source = 'agent_write';
+        ALTER TABLE memory ADD COLUMN reconciled_version INTEGER;
+
+        ALTER TABLE suggestion ADD COLUMN target_memory_version INTEGER;
+        ALTER TABLE suggestion ADD COLUMN group_id TEXT;
+        ALTER TABLE suggestion ADD COLUMN intent TEXT CHECK (intent IN ('assertion','remember','correction','retraction'));
+        ALTER TABLE suggestion ADD COLUMN outside_scope INTEGER NOT NULL DEFAULT 0;
+        CREATE INDEX suggestion_by_group ON suggestion(group_id) WHERE group_id IS NOT NULL;
+
+        CREATE TABLE suggestion_target (
+          suggestion_id  TEXT NOT NULL REFERENCES suggestion(id) ON DELETE CASCADE,
+          memory_id      TEXT NOT NULL,
+          memory_version INTEGER NOT NULL,
+          role           TEXT NOT NULL CHECK (role IN ('target','source','survivor')),
+          position       INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (suggestion_id, memory_id)
+        );
+        CREATE INDEX suggestion_target_memory ON suggestion_target(memory_id);
+
+        CREATE TABLE suggestion_group (
+          id          TEXT PRIMARY KEY,
+          origin      TEXT NOT NULL,
+          agent_id    TEXT REFERENCES agent(id),
+          source_text TEXT,
+          engine      TEXT,
+          created_at  TEXT NOT NULL
+        );
+
+        CREATE TABLE processing_job (
+          id         TEXT PRIMARY KEY,
+          subject    TEXT NOT NULL,
+          kind       TEXT NOT NULL CHECK (kind IN ('new_memory','tidy_up')),
+          state      TEXT NOT NULL DEFAULT 'queued' CHECK (state IN ('queued','running','done','failed')),
+          attempts   INTEGER NOT NULL DEFAULT 0,
+          engine     TEXT,
+          not_before TEXT,
+          error      TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+        CREATE UNIQUE INDEX processing_job_subject ON processing_job(subject, kind);
+        CREATE INDEX processing_job_queue ON processing_job(state, created_at);
+
+        CREATE TABLE undo_entry (
+          id            TEXT PRIMARY KEY,
+          created_at    TEXT NOT NULL,
+          run_id        TEXT,
+          suggestion_id TEXT,
+          action        TEXT NOT NULL,
+          memory_ids    TEXT NOT NULL DEFAULT '[]',
+          before_state  TEXT NOT NULL,
+          undone_at     TEXT,
+          expires_at    TEXT NOT NULL
+        );
+        CREATE INDEX undo_entry_created ON undo_entry(created_at DESC);
+
+        CREATE TABLE tidy_up_run (
+          id          TEXT PRIMARY KEY,
+          started_at  TEXT NOT NULL,
+          finished_at TEXT,
+          engine      TEXT,
+          inspected   INTEGER NOT NULL DEFAULT 0,
+          clusters    INTEGER NOT NULL DEFAULT 0,
+          suggestions INTEGER NOT NULL DEFAULT 0,
+          applied     INTEGER NOT NULL DEFAULT 0,
+          partial     INTEGER NOT NULL DEFAULT 0,
+          error       TEXT
+        );
+
+        CREATE TABLE tidy_up_dismissal (
+          memory_ids   TEXT NOT NULL,
+          content_hash TEXT NOT NULL,
+          dismissed_at TEXT NOT NULL,
+          PRIMARY KEY (memory_ids, content_hash)
+        );
+
+        ALTER TABLE provenance ADD COLUMN related_memory_id TEXT;
+        ALTER TABLE provenance ADD COLUMN engine TEXT;
+        """
 
     static let v3 = """
         ALTER TABLE device ADD COLUMN approvals_enabled INTEGER NOT NULL DEFAULT 1;

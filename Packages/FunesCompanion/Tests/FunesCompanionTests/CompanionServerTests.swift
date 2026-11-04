@@ -1,7 +1,7 @@
 import BridgeKitCore
 import CryptoKit
 import Foundation
-import FunesCore
+@testable import FunesCore
 import FunesProtocol
 import Testing
 @testable import FunesCompanion
@@ -125,6 +125,21 @@ import Testing
         let device = try #require(try await h.services.devices.device(id: phone.deviceID!))
         #expect(device.lastTransport == .lan)
         #expect(device.lastSeenAt == t0)
+        #expect(status.calledName == nil)
+    }
+
+    /// FR-U-05, ADR-0026: the name the profile says to call the user by, preferred else given.
+    @Test func statusCarriesTheCalledName() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let profiles = ProfileService(store: h.store, activity: h.activity)
+        try await profiles.save(Profile(givenName: "Martin", familyName: "Bereciartua"), now: t0)
+        #expect(try await h.result(StatusGet.self, EmptyParams(), phone: phone).calledName == "Martin")
+        try await profiles.save(Profile(givenName: "Martin", preferredName: "Tincho"), now: t0)
+        #expect(try await h.result(StatusGet.self, EmptyParams(), phone: phone).calledName == "Tincho")
+        // Only the name: nothing else about the user goes to the phone.
+        try await profiles.save(Profile(pronouns: "he/him", location: "Lisbon"), now: t0)
+        #expect(try await h.result(StatusGet.self, EmptyParams(), phone: phone).calledName == nil)
     }
 
     @Test func unknownAndRevokedDevicesGet401() async throws {
@@ -256,6 +271,27 @@ import Testing
         }
     }
 
+    /// FR-V-17: the snippet is the passage that matches the search, at most 160 characters.
+    @Test func searchSnippetsShowTheMatchingPassage() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let body = String(repeating: "Notes 🗓️ from the quarterly offsite, mostly logistics and agenda. ", count: 6)
+            + "My título 🎉 at Chatham is Senior Analyst since March. More notes after that."
+        _ = try await h.result(MemoriesCreate.self, MemoryCreateParams(
+            title: "Work", body: body, kind: .fact, categories: ["personal_preferences"], sensitivity: .low), phone: phone)
+
+        let found = try await h.result(MemoriesSearch.self, MemorySearchParams(query: "my titulo at Chatham?"), phone: phone)
+        let result = try #require(found.results.first)
+        #expect(result.snippet.contains("My título 🎉 at Chatham is Senior Analyst") && result.snippet.hasPrefix("…") && result.snippet.count <= 160)
+        // The matches point inside the snippet, at the search's words.
+        let utf16 = Array(result.snippet.utf16)
+        let marked = (result.snippetMatches ?? []).map { String(decoding: utf16[$0[0]..<($0[0] + $0[1])], as: UTF16.self) }
+        #expect(marked == ["título", "Chatham"])
+        let listed = try await h.result(MemoriesSearch.self, MemorySearchParams(query: ""), phone: phone)
+        #expect(listed.results.first?.snippet == String(body.prefix(159)) + "…")
+        #expect(listed.results.first?.snippetMatches == nil)
+    }
+
     @Test func searchGetEditWithVersions() async throws {
         let h = try CompanionHarness()
         let phone = try await h.pairedPhone()
@@ -321,6 +357,221 @@ import Testing
         #expect(try await h.result(StatusGet.self, EmptyParams(), phone: phone).inboxPending == 0)
     }
 
+    /// A capture New memories processing hasn't finished with is listed as `processing`, can't be
+    /// saved (`processing`), only rejected; a failed split is `failed`, with Try again and Keep as
+    /// one (memory processing §5.2). With splitting off nothing waits.
+    @Test func inboxItemsWaitForProcessing() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let a = capture("Ana's birthday is 3 May"), b = capture("Gym on Tuesdays")
+        _ = try await h.result(CapturesSubmit.self, CapturesSubmitParams(captures: [a, b]), phone: phone)
+        #expect(try await h.result(InboxList.self, InboxListParams(), phone: phone).items.allSatisfy { $0.processing == nil })
+
+        h.services.suggestions.splitting.set(true)
+        var items = try await h.result(InboxList.self, InboxListParams(), phone: phone).items
+        #expect(items.allSatisfy { $0.processing == .processing })
+        let ana = try #require(items.first { $0.body.hasPrefix("Ana") }).id
+        let gym = try #require(items.first { $0.body.hasPrefix("Gym") }).id
+        await #expect(throws: CompanionError(.processing)) {
+            try await h.result(InboxApply.self, InboxApplyParams(suggestionId: ana), phone: phone)
+        }
+        // Reject is allowed, and cancels the job.
+        _ = try await h.result(InboxReject.self, SuggestionID(suggestionId: gym), phone: phone)
+        let queue = ProcessingQueue(store: h.store, activity: h.activity)
+        #expect(try await queue.job(subject: gym)?.state == .done)
+
+        // The split failed: Try again, then Keep as one.
+        func fail() throws {
+            try h.store.writer.write { db in
+                try db.execute(sql: "UPDATE processing_job SET state = 'failed', error = 'timeout' WHERE subject = ?", arguments: [ana.db])
+            }
+        }
+        try fail()
+        items = try await h.result(InboxList.self, InboxListParams(), phone: phone).items
+        #expect(items.map(\.processing) == [.failed])
+        _ = try await h.result(InboxRetry.self, SuggestionID(suggestionId: ana), phone: phone)
+        #expect(try await h.result(InboxList.self, InboxListParams(), phone: phone).items.map(\.processing) == [.processing])
+        await #expect(throws: CompanionError(.conflict)) {
+            try await h.result(InboxKeep.self, SuggestionID(suggestionId: ana), phone: phone)
+        }
+        try fail()
+        _ = try await h.result(InboxKeep.self, SuggestionID(suggestionId: ana), phone: phone)
+        #expect(try await h.result(InboxList.self, InboxListParams(), phone: phone).items.map(\.processing) == [nil])
+        _ = try await h.result(InboxApply.self, InboxApplyParams(suggestionId: ana), phone: phone)
+        #expect(try await h.services.suggestions.pending().isEmpty)
+    }
+
+    /// Task 6.1.1/6.1.7 and ADR-0031: `inbox.apply` applies each suggestion as its own action, the
+    /// tidy-up's too, and refuses a changed target with `target_changed`.
+    @Test func inboxApplyIsPerAction() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let old = try h.store.createMemory(MemoryDraft(title: "Editor", body: "Uses Vim", categoryKeys: ["software_development"]), now: t0)
+        let dup = try h.store.createMemory(MemoryDraft(title: "Copy", body: "Copy body", categoryKeys: ["personal_preferences"]), now: t0)
+        let update = try suggest(h, .update, target: old.id, origin: .agent)
+        let archive = try suggest(h, .archive, target: dup.id, origin: .agent)
+        let tidied = try suggest(h, .archive, target: old.id)
+        let items = try await h.result(InboxList.self, InboxListParams(), phone: phone).items
+        #expect(items.first { $0.id == update }?.targetMemoryVersion == 1)
+        #expect(items.first { $0.id == tidied }?.action == .archive)  // no longer "Review on your Mac"
+        try await h.services.suggestions.reject(suggestionID: tidied, now: t0)
+
+        let archived = try await h.result(InboxApply.self, InboxApplyParams(suggestionId: archive), phone: phone)
+        #expect(try archived.memoryId == dup.id && h.store.memory(id: dup.id)?.status == .archived)
+        #expect(try h.store.memories(now: t0).count == 1)
+
+        try h.store.updateMemory(id: old.id, MemoryEdit(body: "Uses Helix"), now: t0)
+        await #expect(throws: CompanionError(.targetChanged)) {
+            try await h.result(InboxApply.self, InboxApplyParams(suggestionId: update), phone: phone)
+        }
+        try await h.services.suggestions.reviewAgain(suggestionID: update)
+        let replaced = try await h.result(InboxApply.self, InboxApplyParams(suggestionId: update, mode: .replace), phone: phone)
+        #expect(try replaced.memoryId == old.id && h.store.memory(id: old.id)?.body == "Uses Zed")
+
+    }
+
+    /// A pending suggestion as the tidy-up or an agent stores it (memory processing §9.4).
+    @discardableResult
+    func suggest(_ h: CompanionHarness, _ action: SuggestionAction, title: String = "Editor", body: String = "Uses Zed",
+                 target: UUID? = nil, targets: [(UUID, SuggestionTarget.Role)] = [], groupID: UUID? = nil,
+                 origin: SuggestionOrigin = .consolidation, record: TidyUpRecord? = nil) throws -> UUID {
+        try h.store.writer.write { db in
+            try SuggestionService.insertSuggestion(
+                db, origin: origin, action: action,
+                input: SuggestInput(title: title, body: body, categories: ["software_development"], targetMemoryID: target),
+                categories: ["software_development"], sensitivity: .low,
+                classification: record.map(JSON.encode) ?? (origin == .consolidation ? JSON.encode(TidyUpRecord(engine: "rules")) : nil),
+                targets: targets, groupID: groupID, now: t0)
+        }
+    }
+
+    /// ADR-0031 §2: `inbox.get` shows what each card changes (roles, the tidy-up's reasons, a
+    /// split's pieces, look-alikes) and logs `inbox_viewed` with the id only.
+    @Test func inboxGetShowsWhatACardChanges() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let marker = "QXZ-INBOX-MARKER"
+        let copy = try h.store.createMemory(MemoryDraft(title: "Coffee", body: "Oat flat white \(marker)", categoryKeys: ["personal_preferences"]), now: t0)
+        let kept = try h.store.createMemory(MemoryDraft(title: "Coffee order", body: "Oat flat white, no sugar", categoryKeys: ["personal_preferences"]), now: t0)
+        let archive = try suggest(h, .archive, title: copy.title, body: copy.body, target: copy.id, targets: [(kept.id, .survivor)],
+                                  record: TidyUpRecord(engine: "rules", reason: "Same order", archiveReason: .duplicate))
+        let merge = try suggest(h, .merge, title: "Coffee order", body: "Oat flat white, no sugar",
+                                targets: [(copy.id, .source), (kept.id, .source)],
+                                record: TidyUpRecord(engine: "rules", kept: [copy.id: "oat", kept.id: "no sugar"]))
+        let create = try suggest(h, .create, title: "Coffee order", body: "Oat flat white, no sugar", origin: .agent)
+        let original = try h.store.createMemory(MemoryDraft(title: "Mixed", body: "Two facts", categoryKeys: ["software_development"]), now: t0)
+        let split = try suggest(h, .split, title: "Mixed", body: "Two facts", target: original.id)
+        try suggest(h, .create, title: "Fact one", body: "One", groupID: split)
+        let piece = try suggest(h, .update, title: "Coffee order", body: "Oat flat white", target: kept.id, groupID: split)
+
+        let before = h.activity.events.count
+        let a = try await h.result(InboxGet.self, SuggestionID(suggestionId: archive), phone: phone)
+        #expect(a.item.action == .archive && a.memories.map(\.role) == [.target, .survivor])
+        #expect(a.memories.map(\.memory.id) == [copy.id, kept.id] && !a.stale)
+        #expect(a.tidyUp == InboxTidyUp(reason: "Same order", archiveReason: .duplicate))
+        #expect(a.similar.isEmpty && !a.revision.isEmpty)
+        let m = try await h.result(InboxGet.self, SuggestionID(suggestionId: merge), phone: phone)
+        #expect(m.memories(.source).map(\.id) == [copy.id, kept.id])
+        #expect(m.tidyUp?.kept == [.init(memoryId: copy.id, text: "oat"), .init(memoryId: kept.id, text: "no sugar")])
+        #expect(m.similar.isEmpty)  // its own sources aren't look-alikes
+        #expect(try await h.result(InboxGet.self, SuggestionID(suggestionId: create), phone: phone).similar.map(\.id) == [kept.id])
+        let sp = try await h.result(InboxGet.self, SuggestionID(suggestionId: split), phone: phone)
+        #expect(sp.memories.map(\.memory.id) == [original.id] && sp.pieces.map(\.action) == [.create, .update])
+        let rows = h.activity.events.dropFirst(before)
+        #expect(rows.map(\.event) == Array(repeating: "inbox_viewed", count: 4) && rows.first?.ids == [archive])
+        #expect(!rows.contains { String(describing: $0).contains(marker) })
+
+        // Split: its update piece joins the Inbox once the split is applied.
+        #expect(try await h.result(InboxList.self, InboxListParams(), phone: phone).items.contains { $0.id == piece } == false)
+        _ = try await h.result(InboxApply.self, InboxApplyParams(suggestionId: split, revision: sp.revision), phone: phone)
+        #expect(try await h.result(InboxList.self, InboxListParams(), phone: phone).items.contains { $0.id == piece })
+        _ = try await h.result(InboxApply.self, InboxApplyParams(suggestionId: archive, revision: a.revision), phone: phone)
+        #expect(try h.store.memory(id: copy.id)?.status == .archived)
+        await #expect(throws: CompanionError(.notFound)) {
+            try await h.result(InboxGet.self, SuggestionID(suggestionId: archive), phone: phone)
+        }
+    }
+
+    /// ADR-0031 §1, §3: the card's choices: Keep Both (never the tidy-up's), a conflict's Keep This
+    /// with edits and Both Are True, and a merge.
+    @Test func inboxApplyTakesTheCardsChoice() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let a = try h.store.createMemory(MemoryDraft(title: "Office", body: "Office in Madrid", categoryKeys: ["project_context"]), now: t0)
+        let b = try h.store.createMemory(MemoryDraft(title: "Office", body: "Office in Lisbon", categoryKeys: ["project_context"]), now: t0)
+        let tidyUpdate = try suggest(h, .update, target: a.id)
+        await #expect(throws: CompanionError(.unsupportedAction)) {
+            try await h.result(InboxApply.self, InboxApplyParams(suggestionId: tidyUpdate, mode: .keepBoth), phone: phone)
+        }
+        let agentUpdate = try suggest(h, .update, title: "Office", body: "Office in Porto", target: a.id, origin: .agent)
+        let both = try await h.result(InboxApply.self, InboxApplyParams(suggestionId: agentUpdate, mode: .keepBoth), phone: phone)
+        #expect(try both.memoryId != a.id && h.store.memory(id: a.id)?.body == "Office in Madrid")
+
+        let conflict = try suggest(h, .conflict, targets: [(a.id, .target), (b.id, .target)])
+        for mode in [nil, InboxApplyMode.keep, .replace] {
+            await #expect(throws: CompanionError(.unsupportedAction)) {
+                try await h.result(InboxApply.self, InboxApplyParams(suggestionId: conflict, mode: mode), phone: phone)
+            }
+        }
+        let c = try await h.result(InboxGet.self, SuggestionID(suggestionId: conflict), phone: phone)
+        #expect(c.memories(.target).map(\.id) == [a.id, b.id])
+        _ = try await h.result(InboxApply.self, InboxApplyParams(suggestionId: conflict, edits: MemoryChanges(body: "Office in Madrid, since May"),
+                                                                 mode: .keep, keepMemoryId: a.id, revision: c.revision), phone: phone)
+        #expect(try h.store.memory(id: a.id)?.body == "Office in Madrid, since May" && h.store.memory(id: b.id)?.status == .archived)
+
+        let c2 = try h.store.createMemory(MemoryDraft(title: "Team", body: "Team of 4", categoryKeys: ["project_context"]), now: t0)
+        let bothTrue = try suggest(h, .conflict, targets: [(a.id, .target), (c2.id, .target)])
+        _ = try await h.result(InboxApply.self, InboxApplyParams(suggestionId: bothTrue, mode: .bothTrue), phone: phone)
+        #expect(try h.store.memory(id: c2.id)?.status == .active)
+
+        let merge = try suggest(h, .merge, title: "Workplace", body: "Office in Madrid; team of 4", targets: [(a.id, .source), (c2.id, .source)])
+        let merged = try await h.result(InboxApply.self, InboxApplyParams(suggestionId: merge, edits: MemoryChanges(title: "Work")), phone: phone)
+        #expect(try h.store.memory(id: merged.memoryId)?.title == "Work" && h.store.memory(id: c2.id)?.status == .archived)
+        #expect(try await h.services.suggestions.pending().map(\.id) == [tidyUpdate])
+    }
+
+    /// ADR-0031 §3, §4: a card that went stale is reviewed again from the phone; an apply bound to a
+    /// revision from before a change on the Mac is `request_changed`.
+    @Test func inboxReviewAgainAndRevisions() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let m = try h.store.createMemory(MemoryDraft(title: "Editor", body: "Uses Vim", categoryKeys: ["software_development"]), now: t0)
+        let update = try suggest(h, .update, target: m.id, origin: .agent)
+        let shown = try await h.result(InboxGet.self, SuggestionID(suggestionId: update), phone: phone)
+        #expect(!shown.stale)
+
+        // Changed on the Mac and reviewed again there: the phone's screen is out of date.
+        try h.store.updateMemory(id: m.id, MemoryEdit(body: "Uses Helix"), now: t0)
+        #expect(try await h.result(InboxGet.self, SuggestionID(suggestionId: update), phone: phone).stale)
+        try await h.services.suggestions.reviewAgain(suggestionID: update)
+        await #expect(throws: CompanionError(.requestChanged)) {
+            try await h.result(InboxApply.self, InboxApplyParams(suggestionId: update, revision: shown.revision), phone: phone)
+        }
+
+        // Changed again; reviewed again from the phone.
+        try h.store.updateMemory(id: m.id, MemoryEdit(body: "Uses Emacs"), now: t0)
+        let stale = try await h.result(InboxGet.self, SuggestionID(suggestionId: update), phone: phone)
+        #expect(stale.stale && stale.memories.first?.memory.body == "Uses Emacs")
+        let before = h.activity.events.count
+        _ = try await h.result(InboxReviewAgain.self, SuggestionID(suggestionId: update), phone: phone)
+        #expect(h.activity.events.dropFirst(before).map(\.event) == ["suggestion_reviewed_again"])
+        #expect(h.activity.events.last?.ids == [update])
+        let fresh = try await h.result(InboxGet.self, SuggestionID(suggestionId: update), phone: phone)
+        #expect(!fresh.stale && fresh.revision != stale.revision)
+        _ = try await h.result(InboxApply.self, InboxApplyParams(suggestionId: update, revision: fresh.revision), phone: phone)
+        #expect(try h.store.memory(id: m.id)?.body == "Uses Zed")
+        await #expect(throws: CompanionError(.conflict)) {
+            try await h.result(InboxReviewAgain.self, SuggestionID(suggestionId: update), phone: phone)
+        }
+
+        // Archived: can't be reviewed again.
+        let archive = try suggest(h, .archive, target: m.id, origin: .agent)
+        try h.store.archiveMemory(id: m.id, now: t0)
+        await #expect(throws: CompanionError(.targetChanged)) {
+            try await h.result(InboxReviewAgain.self, SuggestionID(suggestionId: archive), phone: phone)
+        }
+    }
+
     /// Every call is under `device:<id>` in Activity (task 5.2), except the status probe.
     @Test func activityRowsAreUnderTheDevice() async throws {
         let h = try CompanionHarness()
@@ -334,6 +585,50 @@ import Testing
         let actor = "device:\(phone.deviceID!.uuidString.lowercased())"
         #expect(rows.map(\.event) == ["capture", "memories_searched", "categories_listed"])
         #expect(rows.allSatisfy { $0.actor == actor && $0.via == .companion })
+    }
+
+    /// `overview.get` (ADR-0025): the vault's counts as the owner, logged as `overview_viewed`
+    /// without counts, and never a memory's text or title, nor a suggestion's.
+    @Test func overviewIsCountsOnly() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let marker = "QXZ-COMPANION-MARKER"
+        let created = try await h.result(MemoriesCreate.self, MemoryCreateParams(
+            title: "Coffee \(marker)", body: "Oat flat white \(marker)", kind: .preference, categories: ["personal_preferences"],
+            sensitivity: .low), phone: phone)
+        _ = try await h.result(CapturesSubmit.self, CapturesSubmitParams(captures: [capture("Remember \(marker)")]), phone: phone)
+        let agent = UUID(), request = UUID()
+        try await h.store.writer.write { db in
+            try db.execute(sql: "INSERT INTO agent (id, name, agent_kind, created_at, last_request_at) VALUES (?, 'Claude Code', 'claude_code', ?, ?)",
+                           arguments: [agent.db, t0, t0])
+            try db.execute(sql: """
+                INSERT INTO disclosure (id, agent_id, agent_revision, task_hash, task_length, retention, max_tokens, status, created_at,
+                  delivered_at) VALUES (?, ?, 1, 'h', 5, 'session', 2000, 'delivered', ?, ?)
+                """, arguments: [request.db, agent.db, t0, t0])
+            try db.execute(sql: """
+                INSERT INTO disclosure_item (disclosure_id, memory_id, memory_version, category_key, sensitivity, estimated_tokens)
+                VALUES (?, ?, 1, 'personal_preferences', 1, 20)
+                """, arguments: [request.db, created.id.db])
+        }
+        let before = h.activity.events.count
+        let (response, json) = try await h.reply(OverviewGet.self, OverviewParams(range: .days30), phone: phone)
+        #expect(response.status == 200)
+        let text = String(decoding: try #require(json), as: UTF8.self)
+        #expect(!text.contains(marker) && !text.contains("Coffee") && !text.contains(created.id.db))
+
+        let overview = try CompanionResponse<VaultOverview>.decode(try #require(json)).get()
+        #expect(overview.total == 1 && overview.inboxPending == 1)
+        #expect(overview.days.count == 30 && overview.days.last?.inbound.iphone == 1)
+        #expect(overview.days.last?.out == [agent.db: 1])
+        #expect(overview.thisWeek == VaultOverview.Week(saved: 1, shared: 1, agents: 1, refused: 0))
+        #expect(overview.agents.map(\.name) == ["Claude Code"])
+
+        let rows = h.activity.events.dropFirst(before)
+        #expect(rows.map(\.event) == ["overview_viewed"])
+        #expect(rows.allSatisfy { $0.counts.isEmpty && $0.ids.isEmpty && $0.actor == "device:\(phone.deviceID!.db)" })
+
+        let months = try await h.result(OverviewGet.self, OverviewParams(range: .months12), phone: phone)
+        #expect(months.range == .months12 && months.days.count == 12)
     }
 
     @Test func unpairRevokesTheDevice() async throws {

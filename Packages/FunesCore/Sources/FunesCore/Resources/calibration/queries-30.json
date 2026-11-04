@@ -1,0 +1,257 @@
+{
+  "format": "funes.fixture.queries.v1",
+  "note": "Agent-style tasks with the ids of the memories that should be retrieved for each (Spike 2).",
+  "queries": [
+    {
+      "id": "q01",
+      "query": "Write a commit message for my latest change",
+      "relevant": [
+        "m059",
+        "m003"
+      ]
+    },
+    {
+      "id": "q02",
+      "query": "Plan a week of dinners for me",
+      "relevant": [
+        "m027",
+        "m136",
+        "m048"
+      ]
+    },
+    {
+      "id": "q03",
+      "query": "Draft an email reminding the sailing club treasurer that last month's invoice is overdue",
+      "relevant": [
+        "m170",
+        "m091",
+        "m005"
+      ]
+    },
+    {
+      "id": "q04",
+      "query": "Book train tickets and somewhere to stay for a weekend in Porto",
+      "relevant": [
+        "m031",
+        "m180"
+      ]
+    },
+    {
+      "id": "q05",
+      "query": "What should I order at a café this afternoon?",
+      "relevant": [
+        "m141",
+        "m024",
+        "m147"
+      ]
+    },
+    {
+      "id": "q06",
+      "query": "Set up a new Python project that parses bank statement exports",
+      "relevant": [
+        "m057",
+        "m097"
+      ]
+    },
+    {
+      "id": "q07",
+      "query": "Review this pull request for the Nordwind dispatch service",
+      "relevant": [
+        "m062",
+        "m100",
+        "m101"
+      ]
+    },
+    {
+      "id": "q08",
+      "query": "Suggest a running plan for the next four weeks",
+      "relevant": [
+        "m146",
+        "m106",
+        "m153"
+      ]
+    },
+    {
+      "id": "q09",
+      "query": "Find a time next week for an intro call with a prospective client",
+      "relevant": [
+        "m035",
+        "m020"
+      ]
+    },
+    {
+      "id": "q10",
+      "query": "The doctor wants to prescribe antibiotics. Is there anything they should know?",
+      "relevant": [
+        "m135"
+      ]
+    },
+    {
+      "id": "q11",
+      "query": "Help me get my paperwork together for this year's income tax filing",
+      "relevant": [
+        "m165",
+        "m166",
+        "m174"
+      ]
+    },
+    {
+      "id": "q12",
+      "query": "Help me write a blog post about building the Harbor app",
+      "relevant": [
+        "m015",
+        "m104",
+        "m090"
+      ]
+    },
+    {
+      "id": "q13",
+      "query": "A client sent a contract with a 12-month non-compete. Should I sign it?",
+      "relevant": [
+        "m190",
+        "m189",
+        "m187"
+      ]
+    },
+    {
+      "id": "q14",
+      "query": "Summarize the terms and conditions of this new service",
+      "relevant": [
+        "m200"
+      ]
+    },
+    {
+      "id": "q15",
+      "query": "Build a settings screen for my SwiftUI app",
+      "relevant": [
+        "m087",
+        "m075",
+        "m054"
+      ]
+    },
+    {
+      "id": "q16",
+      "query": "What should I get Jordan for their birthday?",
+      "relevant": [
+        "m040",
+        "m044"
+      ]
+    },
+    {
+      "id": "q17",
+      "query": "My head hurts after a long day at the computer. Any advice?",
+      "relevant": [
+        "m137",
+        "m145",
+        "m149"
+      ]
+    },
+    {
+      "id": "q18",
+      "query": "How much should I put into savings and investments this month?",
+      "relevant": [
+        "m161",
+        "m162",
+        "m160"
+      ]
+    },
+    {
+      "id": "q19",
+      "query": "Write the privacy policy for my iOS app",
+      "relevant": [
+        "m194",
+        "m127"
+      ]
+    },
+    {
+      "id": "q20",
+      "query": "Help me write a message to my mum about my next visit",
+      "relevant": [
+        "m006",
+        "m043"
+      ]
+    },
+    {
+      "id": "q21",
+      "query": "Set up automated builds and tests for my open-source library",
+      "relevant": [
+        "m070",
+        "m112"
+      ]
+    },
+    {
+      "id": "q22",
+      "query": "Where should I deploy the server for the booking app?",
+      "relevant": [
+        "m071",
+        "m092"
+      ]
+    },
+    {
+      "id": "q23",
+      "query": "Prepare a quote for a three-week freelance engagement",
+      "relevant": [
+        "m108",
+        "m107",
+        "m021"
+      ]
+    },
+    {
+      "id": "q24",
+      "query": "The landlord asked whether we'll stay in the flat after the contract ends",
+      "relevant": [
+        "m185",
+        "m173"
+      ]
+    },
+    {
+      "id": "q25",
+      "query": "Write up the notes from today's standup",
+      "relevant": [
+        "m008",
+        "m102"
+      ]
+    },
+    {
+      "id": "q26",
+      "query": "Can I paste the client's database schema into ChatGPT to debug a query?",
+      "relevant": [
+        "m101",
+        "m126"
+      ]
+    },
+    {
+      "id": "q27",
+      "query": "Make slides for my Porto conference talk",
+      "relevant": [
+        "m016",
+        "m109"
+      ]
+    },
+    {
+      "id": "q28",
+      "query": "Find a recipe I can cook tonight in half an hour",
+      "relevant": [
+        "m048",
+        "m027",
+        "m013"
+      ]
+    },
+    {
+      "id": "q29",
+      "query": "What should I pack for a day out on the water?",
+      "relevant": [
+        "m156",
+        "m032"
+      ]
+    },
+    {
+      "id": "q30",
+      "query": "How much can we spend on remodelling the kitchen, and how will we pay for it?",
+      "relevant": [
+        "m105",
+        "m184"
+      ]
+    }
+  ]
+}

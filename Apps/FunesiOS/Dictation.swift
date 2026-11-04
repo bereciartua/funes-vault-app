@@ -6,7 +6,7 @@ import Speech
 
 private let logger = Logger(subsystem: Identifiers.iOSLoggerSubsystem, category: "dictation")
 
-/// Dictation into the Capture field: SpeechAnalyzer on iOS 26 and later, on this iPhone. Before
+/// Dictation into Home's composer: SpeechAnalyzer on iOS 26 and later, on this iPhone. Before
 /// iOS 26 the mic button points to the keyboard's own dictation instead.
 @MainActor @Observable
 final class Dictation {

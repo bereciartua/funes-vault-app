@@ -214,6 +214,7 @@ extension CompanionClient {
         case let .method(error): error.code.rawValue
         case let .badResponse(status): "http_\(status)"
         case .local: "local"
+        case .answerTimedOut: "answer_timed_out"
         }
     }
 }

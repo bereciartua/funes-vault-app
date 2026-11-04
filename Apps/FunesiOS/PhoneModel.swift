@@ -14,11 +14,20 @@ private let logger = Logger(subsystem: Identifiers.iOSLoggerSubsystem, category:
 @MainActor @Observable
 final class PhoneModel {
     private(set) var record: PairingRecord?
-    /// The banner's state machine (FunesPhone's `ReachabilityTracker`).
+    /// The Mac's Search answers while it's connected (`status.get`); nil while they're off or the
+    /// Mac is away (FR-iOS-13).
+    var macAnswers: SearchAnswersStatus? {
+        if case let .connected(connection) = reachability { return connection.status.searchAnswers }
+        return nil
+    }
+    /// The connection's state machine (FunesPhone's `ReachabilityTracker`).
     private(set) var tracker = ReachabilityTracker()
     var reachability: Reachability { tracker.state }
     var lastChecked: Date? { tracker.lastChecked }
-    /// The phone's network, for the banner: a LAN address reached off Wi-Fi goes through a VPN.
+    var lastReached: ReachabilityTracker.LastReached? { tracker.lastReached }
+    /// What the status bar above the tab bar shows, and when (UX: iPhone, Status bar).
+    let statusBar = StatusBar()
+    /// The phone's network: a LAN address reached off Wi-Fi goes through a VPN.
     private(set) var path: NetworkPath?
     private(set) var usesSecureEnclave: Bool?
     private(set) var protocolChecks: [ProtocolCheck] = []
@@ -40,16 +49,32 @@ final class PhoneModel {
     let approvals: ApprovalsModel
     /// This iPhone's approvals switch and its doorbell subscription.
     let approvalSettings: ApprovalSettingsModel
+    /// The vault's counts for Home and the widgets, cached in the App Group (ADR-0025).
+    let overview: OverviewModel
     /// The request whose panel is open, from a notification or the list.
     var openApproval: OpenApproval?
     /// Whether Funes may show notifications; nil until iOS has asked.
     private(set) var notificationsAllowed: Bool?
-    /// The pairing sheet, opened from the banner or a disabled tab.
+    /// The pairing sheet, opened from the status bar, Home's pairing card or a disabled tab.
     var presentingPairing = false
-    /// The "Why?" sheet.
-    var presentingWhy = false
-    /// The Control asked for Capture, ready to type or dictate.
+    /// The status sheet: tapping the status bar, or Why?.
+    var presentingStatus = false
+    /// The tab showing: Home, where the app opens, unless a screenshot scene says otherwise.
+    #if DEBUG
+    var tab = ScreenshotScene.current?.tab ?? RootView.Tab.home
+    #else
+    var tab = RootView.Tab.home
+    #endif
+    /// Home's Pulse sheet, open on this range.
+    var pulseSheet: PulseRange?
+    /// Home's Who reads sheet, from its tile.
+    var readersSheet = false
+    /// The Control or the Remember widget asked for Home's composer, ready to type or dictate.
     private(set) var captureRequests = 0
+    /// The request Home hasn't acted on yet, and how it wants the composer: the widget's 🎙 starts
+    /// dictation. Home takes it once (`takePendingCapture`), so coming back to Home later doesn't
+    /// open the composer again.
+    private var pendingCapture: CaptureLaunch.Mode?
     private var started = false
     private var refreshing = false
 
@@ -61,11 +86,15 @@ final class PhoneModel {
         categories = CategoryList(caller: services.caller)
         approvals = ApprovalsModel(caller: services.caller)
         approvalSettings = ApprovalSettingsModel(caller: services.caller, subscriptions: services.subscriptions)
+        overview = OverviewModel(caller: services.caller, cache: OverviewCache.appGroup(), demo: services.isDemo)
+        // The widgets read the cache (FR-H-06): they redraw after every write.
+        overview.onCacheChange = { FunesWidgets.reload() }
         capture.onOutcome = { [weak self] outcome in self?.delivered(outcome) }
         search.onFailure = { [weak self] error in self?.callFailed(error) }
         inbox.onFailure = { [weak self] error in self?.callFailed(error) }
         approvals.onFailure = { [weak self] error in self?.callFailed(error) }
         approvalSettings.onFailure = { [weak self] error in self?.callFailed(error) }
+        overview.onFailure = { [weak self] error in self?.callFailed(error) }
         // There's something to notify about now: iOS asks once.
         approvalSettings.onSubscribed = { [weak self] in self?.notificationsAllowed = await NotificationPermission.ask() }
     }
@@ -91,12 +120,12 @@ final class PhoneModel {
         Task { if reachability.isConnected { await approvals.load(force: true) } }
     }
 
-    /// What the banner at the top of each tab says.
+    /// The connection's state, for the status bar and the disabled tabs.
     var banner: BannerState {
         BannerState(reachability, macName: record?.macName, waiting: capture.queuedCount, path: path)
     }
 
-    /// The "Why?" sheet's suggestions.
+    /// The status sheet's suggestions.
     var diagnosis: UnreachableDiagnosis {
         UnreachableDiagnosis(reachability, path: path, addresses: record?.addresses ?? [], probes: probes)
     }
@@ -108,7 +137,7 @@ final class PhoneModel {
         return inbox.items.count
     }
 
-    /// One memory's detail, wired to the banner and to Search's list.
+    /// One memory's detail, wired to the connection's state and to Search's list.
     func detailModel(_ id: UUID) -> MemoryDetailModel {
         let detail = MemoryDetailModel(id: id, caller: services.caller)
         detail.onFailure = { [weak self] error in self?.callFailed(error) }
@@ -121,9 +150,35 @@ final class PhoneModel {
         return detail
     }
 
+    /// Home's tiles: Search, newest first, or only the memories at `sensitivity`.
+    func openSearch(sensitivity: Sensitivity?) {
+        search.query = ""
+        search.scope = .active
+        search.sensitivity = sensitivity
+        tab = .search
+    }
+
     func start() async {
         guard !started else { return }
         started = true
+        #if DEBUG
+        if let scene = ConnectionScene.current, !isDemo {
+            record = scene.record
+            tracker.handle(.pairing(paired: true))
+            tracker.handle(.checked(scene.check, at: Date()))
+            // Home's charts: the demo's counts, as if cached at 10:42 when the Mac is away; and
+            // the widgets', with their "as of" (never over a real pairing's, which is read first).
+            if overview.overview(.days30) == nil, var sample = try? await DemoVault().overview(.days30) {
+                sample.generatedAt = scene.snapshotTime
+                overview.show(sample)
+                try? OverviewCache.appGroup()?.write(sample)
+                FunesWidgets.reload()
+            }
+            capture.reload()
+            if capture.queuedCount < ConnectionScene.waiting { _ = await capture.queueTestCaptures(ConnectionScene.waiting - capture.queuedCount) }
+            return
+        }
+        #endif
         await reload()
         // The demo has no network to watch and no extensions' queue to read.
         if isDemo {
@@ -135,6 +190,11 @@ final class PhoneModel {
             #if DEBUG
             if let kind = ScreenshotScene.current?.approval, let item = approvals.items.first(where: { $0.kind == kind }) {
                 open(ApprovalRef(id: item.id))
+            }
+            if ScreenshotScene.current?.asks == true {
+                search.macAnswers = macAnswers
+                await search.search()
+                await search.ask()
             }
             #endif
             return
@@ -154,7 +214,7 @@ final class PhoneModel {
             }
         }
         // The share extension and the App Intents queued something, or the Control asked for
-        // Capture.
+        // Home's composer.
         Task { [weak self] in
             for await _ in AppSignal.queueChanged.updates() {
                 guard let self else { return }
@@ -175,6 +235,9 @@ final class PhoneModel {
         takeCaptureRequest()
         capture.reload()
         guard started else { return }
+        #if DEBUG
+        if ConnectionScene.current != nil, !isDemo { return }
+        #endif
         await refresh()
         await capture.deliver(.foreground)
         // Suggestions may have been answered or added on the Mac meanwhile.
@@ -182,37 +245,55 @@ final class PhoneModel {
         if !isDemo { notificationsAllowed = await NotificationPermission.current() }
     }
 
-    /// `BGAppRefreshTask`: send what's waiting, then ask for the next refresh, since the share
+    /// `BGAppRefreshTask`: send what's waiting, then the counts for the widgets when the Mac
+    /// answers (a failure keeps the cache), then ask for the next refresh, since the share
     /// extension and the Control can queue more while the app stays closed.
     func backgroundDelivery() async {
         guard !isDemo else { return }
         capture.reload()
         if capture.queuedCount > 0 { await capture.deliver(.background) }
+        await overview.load()
         await capture.scheduleBackgroundDelivery()
     }
 
     private func takeCaptureRequest() {
-        if CaptureLaunch().take() { captureRequests += 1 }
+        guard let mode = CaptureLaunch().take() else { return }
+        pendingCapture = mode
+        captureRequests += 1
+    }
+
+    /// The widget's or the Control's request for Home's composer, if Home hasn't acted on it yet;
+    /// it's used up either way.
+    func takePendingCapture() -> CaptureLaunch.Mode? {
+        defer { pendingCapture = nil }
+        return pendingCapture
     }
 
     private func delivered(_ outcome: DeliveryOutcome) {
         tracker.handle(.delivered(outcome))
+        statusBar.delivered(outcome)
         leaveVaultIfGone()
+        // Home's counts after captures are delivered (UX: iPhone ▸ Home tab, Data).
+        if case let .drained(sent, _) = outcome, sent > 0, reachability.isConnected {
+            Task { await overview.load() }
+        }
     }
 
-    /// A Search, memory or Inbox call failed: the banner hears about it.
+    /// A Search, memory or Inbox call failed: the connection's state hears about it.
     private func callFailed(_ error: CompanionClientError) {
         tracker.handle(.callFailed(error))
         leaveVaultIfGone()
     }
 
-    /// Unpaired or removed: what Search and the Inbox read from the Mac leaves the phone.
+    /// Unpaired or removed: what Search and the Inbox read from the Mac leaves the phone, and so
+    /// does the cached overview.
     private func leaveVaultIfGone() {
         switch reachability {
         case .notPaired, .revoked:
             search.clear()
             inbox.clear()
             approvals.clear()
+            overview.clear()
             openApproval = nil
         default: break
         }
@@ -242,8 +323,13 @@ final class PhoneModel {
             tracker.handle(.checked(.success(demo.connection), at: Date()))
             await categories.load()
             await approvals.load()
+            // The demo's counts, for its Home and widgets; deleted when the demo is left.
+            await overview.load()
             return
         }
+        #if DEBUG
+        if ConnectionScene.current != nil { return }
+        #endif
         guard let client = services.client, record != nil else {
             tracker.handle(.pairing(paired: false))
             return
@@ -258,6 +344,8 @@ final class PhoneModel {
         } catch {
             tracker.handle(.checked(.failure(error), at: Date()))
         }
+        // The called name the check kept with the pairing, for while the Mac is away.
+        record = (try? await client.record()) ?? record
         probes = await client.lastProbes
         leaveVaultIfGone()
         guard reachability.isConnected else { return }
@@ -266,6 +354,8 @@ final class PhoneModel {
         // for a notification that never came or was dismissed.
         await approvalSettings.load()
         await approvals.load()
+        // The counts for Home and the widgets, kept in the App Group's cache.
+        await overview.load()
     }
 
     /// Pairs with the scanned Mac. Returns how long it took, Allow click included (Spike 1a).
@@ -382,6 +472,8 @@ final class PhoneModel {
             String(localized: "Something else answered at your Mac's address (HTTP \(status)).")
         case .local:
             String(localized: "Something went wrong on this iPhone. Try again.")
+        case .answerTimedOut:
+            String(localized: "Took too long. Try again.")
         }
     }
 }
@@ -417,6 +509,17 @@ extension PhoneModel {
             return String(localized: "This request expired.")
         case .requestChanged:
             return String(localized: "This changed on your Mac.")
+        case .targetChanged:
+            return String(localized: "A memory it changes was edited on your Mac since this was suggested. Open it to review it again.")
+        case .unsupportedAction:
+            return String(localized: "Review this on your Mac.")
+        case .processing:
+            return String(localized: "Still processing on your Mac. It can be saved once it's done.")
+        // Only `memories.answer` sends these; Search's answer card words them (`AnswerWording`).
+        case .answersOff:
+            return String(localized: "Search answers are off on your Mac.")
+        case .capReached, .modelUnavailable, .modelTimeout, .askRequired:
+            return String(localized: "Your Mac's model couldn't answer. Try again.")
         }
     }
 }

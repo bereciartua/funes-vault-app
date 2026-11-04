@@ -99,23 +99,29 @@ When a device's 10,000 slots are full, the oldest nonce is dropped and its `ts` 
 **Response JSON:** `{"id":"<call id>","result":{…}}` or `{"id":"…","error":{"code":"…","message":"…"}}`.
 
 ## 4. Methods
-All methods act as the **owner** ([access policy §6](../domain/access-policy.md#6-owner-devices-paired-iphone)). Each is logged in Activity as `device:<id>` (via `companion`), except `status.get`, the reachability probe the phone sends on every foreground, and `approvals.settings.get`, which it sends as often. Reads log one row without text (`memories_searched` with a result count, `memory_viewed`, `inbox_listed`, `categories_listed`, `approvals_listed`, `approval_viewed`). Writes log what FunesCore logs for them (`capture`, `memory_created`, `memory_edited`, `memory_archived`, `memory_restored`, `memory_deleted`, `suggestion_applied`, `suggestion_rejected`, `device_revoked`, `approval`, `access_answered`, `device_approvals`).
+All methods act as the **owner** ([access policy §6](../domain/access-policy.md#6-owner-devices-paired-iphone)). Each is logged in Activity as `device:<id>` (via `companion`), except `status.get`, the reachability probe the phone sends on every foreground, and `approvals.settings.get`, which it sends as often. Reads log one row without text (`memories_searched` with a result count, `memory_viewed`, `inbox_listed`, from v0.9 `inbox_viewed` with the suggestion's id, `categories_listed`, `approvals_listed`, `approval_viewed`, from v0.4 `overview_viewed`, and from v0.6 `search_answered` with counts only). Writes log what FunesCore logs for them (`capture`, `memory_created`, `memory_edited`, `memory_archived`, `memory_restored`, `memory_deleted`, `suggestion_applied`, `suggestion_rejected`, `device_revoked`, `approval`, `access_answered`, `device_approvals`).
 
 **Implementation (task 5.2):** the Mac's side is the local package `Packages/FunesCompanion`: `CompanionListener`, `CompanionRouter`, `PairingService`, `CompanionHandlers` and `CompanionServer`, on FunesCore and BridgeKitCore's HTTP parser. The app adds only Settings ▸ iPhone and the Allow prompt. The Mac's id and keys are a Keychain item, service `com.funesvault.companion` (`.dev` for a development vault).
 
 | Method | Params | Result |
 |---|---|---|
-| `status.get` | — | `{macName, appVersion, serverTime, inboxPending, vaultActive}` |
+| `status.get` | — | `{macName, appVersion, serverTime, inboxPending, vaultActive, calledName?}`. `calledName` (v0.5) is the name the profile says to call the user (preferred, else given), for Home's title; the phone keeps the last one in its pairing record ([ADR-0026](decisions/0026-about-you-profile.md)). `searchAnswers` (v0.6), present only while the Mac's Search answers are on with a model that can answer: `{engine, locality: onDevice·localServer·appleCloud·cloud, trigger: ask·questions·everySearch, maxIds}`, `engine` a display name ("Claude (Claude Code)"), `trigger` when the phone asks on its own (missing or unknown: only when asked), `maxIds` how many ids `memories.answer` takes (missing: 8, a Mac before 10); the phone shows Ask only then ([ADR-0028](decisions/0028-search-answers.md)) |
 | `captures.submit` | `{captures: [{captureId, text, createdAt, source: typed·dictation·share·intent, note?}]}` (≤ 50 per call) | `{accepted: [captureId], rejected: [{captureId, reason}]}`. A duplicate `captureId` counts as **accepted** (idempotent) |
+| `overview.get` (v0.4) | `{range: 30d·12w·12m}` | the vault's counts for the range, never memory text or titles ([ADR-0025](decisions/0025-vault-overview-and-iphone-cache.md)): `{range, generatedAt, timeZone, total, thisWeek: {saved, shared, agents, refused}, days: [{date, in: {mac, iphone, agent, import, tidy}, out: {<agentId>: n}, refused}], rhythm: {start, counts, saved?}, bySensitivity, byCategory, byKind, sharedBySensitivity, sharedByCategory, refusedByReason, withheld, agents: [{id, name, kind, shared, requests, lastRequestAt?}], inboxPending, oldestPendingAt?, lastTidyUpAt?}`. `days` has 30 days, or 12 weeks or 12 months for 12w and 12m, oldest first, each starting at midnight in `timeZone` (the Mac's); the last holds now. `in` counts new memories by source (`iphone` includes memories typed on a paired iPhone; `mac` includes the setup's questions), `out` memories delivered (a request that shares 3 counts 3). `thisWeek` is the last 7 days, today included; `rhythm` has 371 daily counts (53 weeks) ending today, whatever the range: `counts` every new memory (the Memories line uses the last 84), and from v0.6 `saved` the memories you saved, leaving out imports and tidy-up (the Rhythm grid; a Mac before v0.6 sends 84 days and no `saved`, and the iPhone then counts `counts`). The `by…` maps are active memories, keyed by sensitivity name, category key and kind; `shared…` what the range delivered; `refusedByReason` the refused requests by reason code, and `withheld` what they withheld. `agents` lists agents not removed, and removed ones with a request in the range, most shared first. The phone caches the last answer for each range (§6.1) |
 | `categories.list` | — | `[{key, name, description, builtin, defaultSensitivity}]` |
-| `memories.search` | `{query, filters?: {categories, kinds, sensitivities, status}, limit ≤ 50, cursor?}` | `{results: [{id, title, snippet, kind, categories, sensitivity, updatedAt, expiresAt}], nextCursor?}` |
+| `memories.search` | `{query, filters?: {categories, kinds, sensitivities, status}, limit ≤ 50, cursor?}` | `{results: [{id, title, snippet, kind, categories, sensitivity, updatedAt, expiresAt}], nextCursor?}`. From v0.6 `snippet` is the passage that matches the search, at most 160 characters, and each result may carry `snippetMatches: [[start, length]]`, the matches inside it as UTF-16 offsets into `snippet`, for highlighting ([memory processing §10.2](../domain/memory-processing.md#102-snippets)); an older phone ignores it |
+| `memories.answer` (v0.6) | `{query, filters?, ids: [id] (1–10, the results the phone shows, in order), automatic?}` | `{outcome: answered·no_answer, claims: [{text, citations: [{id, quote}]}], read, withheld, dropped, engine, locality, durationMs}`. No offsets: the phone finds a quote in the memory it opens with `QuoteLocator`. The Mac re-reads the ids as the owner, skips any that aren't active and unexpired, and runs [memory processing §10.3–10.4](../domain/memory-processing.md#103-the-answer-call). Its own deadline (§7); never resent automatically; a new call from the same device cancels that device's previous one. The phone's Cancel only stops waiting. Errors: `answers_off`, `cap_reached`, `model_unavailable` (with `reason`: `not_signed_in`, `needs_update`, `plan_limit`, `provider_error`, `invalid_output`, `tool_blocked`, `secret_in_search`), `model_timeout`, `ask_required` (`automatic` was true, but the Mac now answers this search only when asked: nothing was sent) |
 | `memories.get` | `{id}` | the full memory plus `provenance` (labels) and `sharedCount`/`lastSharedAt` |
 | `memories.create` | `{title, body, kind, categories, sensitivity, expiresAt?}` | `{id, version}` |
 | `memories.update` | `{id, version, changes}` | `{version}`, or `conflict` if the version is stale |
 | `memories.archive` / `memories.restore` / `memories.delete` | `{id, version}` | `{version}` / `conflict` |
 | `inbox.list` | `{cursor?}` | `{items: [suggestion…], nextCursor?}` |
-| `inbox.apply` | `{suggestionId, edits?}` | `{memoryId}` |
-| `inbox.reject` | `{suggestionId}` | `{}` |
+| `inbox.get` (v0.9) | `{suggestionId}` | one suggestion in full for its screen (§4.2): `{item, memories: [{role, memory}], pieces, stale, tidyUp?, similar, revision}` |
+| `inbox.apply` | `{suggestionId, edits?, mode?, keepMemoryId?, revision?}` | `{memoryId}`, or `target_changed` / `unsupported_action` / `processing` (Phase 6), `request_changed` (v0.9). `mode` (v0.9, §4.2) is the card's choice: `replace` (an update's default), `keep_both`, `keep` (with `keepMemoryId`), `both_true`; `revision` is `inbox.get`'s |
+| `inbox.reject` | `{suggestionId}` | `{}`. A suggestion still processing may be rejected; its processing is cancelled |
+| `inbox.retry` | `{suggestionId}` | `{}`: Try again on a failed split (its job is queued again), or `conflict` if it isn't failed |
+| `inbox.keep` | `{suggestionId}` | `{}`: Keep as one on a failed split (an ordinary suggestion from then on), or `conflict` if it isn't failed |
+| `inbox.reviewAgain` (v0.9) | `{suggestionId}` | `{}`: Review Again on a stale card (§4.2), or `target_changed` if a memory it refers to is no longer active, `conflict` if it's no longer waiting |
 | `device.unpair` | — | `{}`. The Mac marks this device revoked (self-removal) |
 | `approvals.list` | — | `{items: [{id, kind, agentName, agentKind?, count, createdAt, expiresAt}]}`: what waits now, soonest deadline first (§4.1) |
 | `approvals.get` | `{id}` or `{ring}` (exactly one) | the panel: `{id, kind, revision, agentName, agentKind?, task?, createdAt, expiresAt, share? \| save? \| access?}` (§4.1) |
@@ -134,9 +140,41 @@ All methods act as the **owner** ([access policy §6](../domain/access-policy.md
 - `internal_error`
 - `already_answered` (`approvals.*`: answered first, on the Mac or another iPhone)
 - `request_expired` (`approvals.*`: past its 15 minutes, an access request's in-call wait over, or withdrawn or invalidated)
-- `request_changed` (`approvals.answer`: a stale `revision`; fetch the panel again)
+- `request_changed` (`approvals.answer`: a stale `revision`; fetch the panel again. `inbox.apply`, v0.9: the card changed since `inbox.get`; fetch it again)
+- `answers_off` (`memories.answer`: Search answers are off on the Mac, or no model can answer)
+- `cap_reached` (`memories.answer`: today's cloud requests are used up)
+- `model_unavailable` (`memories.answer`, with `reason`)
+- `model_timeout` (`memories.answer`: the model took longer than 45 s)
+- `ask_required` (`memories.answer` with `automatic`: the Mac now answers this search only when asked; nothing was sent)
+- `target_changed` (`inbox.apply`: a memory the suggestion changes was edited, archived or deleted since it was suggested; the suggestion is still waiting, to be reviewed again (`inbox.reviewAgain`). `inbox.reviewAgain`: a memory it refers to is no longer active)
+- `unsupported_action` (`inbox.apply`: an `unknown` action, a conflict without `keep` or `both_true`, a mode the action doesn't take, or `keep_both` on a tidy-up proposal. Before v0.9 also merge, split, conflict and every tidy-up proposal)
+- `processing` (`inbox.apply`, `approvals.answer`: New memories processing hasn't finished with the suggestion; list the Inbox again later)
 
 **Edits:** in `changes` (and `inbox.apply`'s `edits`), an absent field is unchanged; `"expiresAt": null` removes the expiry.
+
+**Phase 6 (v0.3) Inbox changes** ([ADR-0020](decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](decisions/0021-daily-tidy-up.md)):
+- `inbox.list` items gain `groupId?`, `groupLabel?` ("ChatGPT · 12 pieces"), `outsideScope` and `targetMemoryVersion?`. `action` gains `duplicate`, `split`, `merge` and `conflict`.
+- `inbox.list` items gain `processing?`: `processing` while New memories processing holds the suggestion (memory processing §5.2: its job is queued or running with splitting on), `failed` when its split failed; absent otherwise. A `processing` item is shown greyed and can't be saved (`inbox.apply` answers `processing`), only rejected, which cancels its job. A `failed` one offers Try again (`inbox.retry`) and Keep as one (`inbox.keep`). Both apps are updated together.
+- The phone decodes an action it doesn't know as `unknown` and shows such items as "Review on your Mac". Both apps are updated together (there are no external users yet), so the Mac doesn't filter by phone version.
+- `inbox.apply` applies the suggestion's own action (the same per-action apply as the Mac): `create` saves, `update` replaces its target, `archive` archives it, `duplicate` changes nothing. A stale target returns `target_changed` (not `conflict`, which the phone's Inbox reads as "answered on your Mac"). Merge, split and conflict suggestions are answered on the Mac until the phone gets their cards; `inbox.apply` refuses them from the phone with `unsupported_action`. So are the daily tidy-up's proposals (origin `consolidation`, whatever their action, ADR-0021): `inbox.list` sends them with action `unknown`, so the phone shows "Review on your Mac", because a tidy-up update may also archive a copy and an archive names the memory it keeps, which the phone's cards don't show. The phone may still reject them. *Replaced in v0.9 by §4.2.*
+
+### 4.2 Every Inbox card on the iPhone (v0.9)
+[ADR-0031](decisions/0031-iphone-answers-every-inbox-card.md), FR-iOS-09. Both apps are updated together; the Mac doesn't check the phone's version.
+- **`inbox.list`** sends every suggestion with its own action, the tidy-up's included (no more `unknown` for origin `consolidation`). `unknown` now means only an action this phone doesn't know.
+- **`inbox.get {suggestionId}`** returns `{item, memories, pieces, stale, tidyUp?, similar}`, built fresh:
+  - `item`: the suggestion as `inbox.list` sends it.
+  - `memories`: the memories it refers to, each `{role, memory}` with `role` `target`, `source` or `survivor` and `memory` as `memories.get`'s, in FunesCore's order (the single target first, then the others). An update's target and any copy it also archives (`source`), an archive's target and the memory it keeps (`survivor`), a merge's sources, a conflict's two memories (both `target`), a split's original, a duplicate's match. A memory that was deleted for good is left out (the card is then stale).
+  - `pieces`: a split's pending pieces, as `inbox.list` items, in order; empty otherwise.
+  - `stale`: a memory it refers to changed, or isn't active, since it was suggested (FunesCore's `isStale`): Apply would answer `target_changed`.
+  - `tidyUp`: for a tidy-up proposal, `{reason?, archiveReason?: duplicate·superseded·expired, kept: [{memoryId, text}]}`, the model's reason, why an archive archives, and what each merge source keeps.
+  - `similar`: for a create, an update or a merge, up to 2 `{id, title}` of memories that look the same (exact copies, then near ones, never a memory it refers to), as the Mac's card points out.
+  - `revision`: a hash of what the screen shows that an apply depends on: the suggestion's fields and action, each memory's id, role, stored version and current version, and the pieces' ids, actions and text.
+  - `not_found` once it's no longer waiting.
+- **`inbox.apply`'s `mode`** passes the card's choice to FunesCore's per-action apply: absent is the action's own way (Replace for an update); `keep_both` saves an update as a new memory (refused for a tidy-up proposal); `keep` with `keepMemoryId` keeps that conflict memory, changed by `edits` if any, and archives the other; `both_true` answers a conflict without changing anything (and isn't asked again). A conflict needs `keep` or `both_true`. A mode the action doesn't take is `unsupported_action`. `edits` apply to a create, an update, a merge and a conflict's kept memory. With `revision`, a card whose revision is no longer the same is refused with `request_changed` before anything is applied; the card's screen always sends it, a swipe (a create or a duplicate only, whose row shows everything) doesn't.
+- **`conflict` from `inbox.apply`** means the suggestion wasn't pending (answered elsewhere) or, rarely, that its memories no longer allow the action (a split none of whose pieces is new any more). The phone reads the Inbox again rather than assuming either.
+- **`inbox.reviewAgain {suggestionId}`** records the current versions of the memories a stale card refers to, as the Mac's Review Again does. The phone then calls `inbox.get` again.
+- **After a split,** its pieces that update or archive another memory join the Inbox; the phone reads the list again from the first page.
+- **Activity:** `inbox.get` logs `inbox_viewed` and `inbox.reviewAgain` `suggestion_reviewed_again`, each with the suggestion's id and no text; apply logs what FunesCore logs.
 
 ### 4.1 Approvals from the iPhone (task 5.6)
 [FR-iOS-12](../product/03-requirements.md), [ADR-0019](decisions/0019-cloudkit-doorbell-for-iphone-approvals.md). The Mac's side is `CompanionApprovals` in `FunesCompanion`; the types are `FunesProtocol/Companion/CompanionApprovals.swift`.
@@ -150,7 +188,7 @@ The Mac rings only while iPhone access is on, at most once per request and devic
 
 **What waits** (`approvals.list`, `approvals.get`):
 - **Share:** a request in `needs_approval` for less than 15 minutes (access policy §3.6, §3.9), listed even after a relaunch of the Mac. `id` is the request id.
-- **Save:** an agent's suggestion whose Save panel the Mac showed, while it's pending and for 15 minutes from then. `id` is the suggestion id. After that it's still in the Inbox (`inbox.apply`).
+- **Save:** an agent's suggestion whose Save panel the Mac showed, while it's pending and for 15 minutes from then. `id` is the suggestion id. After that it's still in the Inbox (`inbox.apply`). With splitting on, the Mac shows the panel only once New memories processing is done (memory processing §5.6), so there's no Save approval for a suggestion still processing; a split one rings once per piece, each with the piece's id.
 - **Access:** "<Agent> wants to read <Category>", while the agent's in-call wait lasts. `id` is the Mac's own, in memory only.
 
 `approvals.get` builds the panel fresh, as the Mac's does. A Share request's snapshot is re-checked against the current memories and access first, so its `revision` is the current `snapshotRevision`. It has one of:
@@ -205,7 +243,7 @@ The Mac words nothing for the phone: the panels are data, worded and localized o
 
   Each is probed with `status.get` (3 s timeout), all at once, with the Bonjour browse (2 s) alongside. The best-ranked address that answers wins as soon as no better-ranked probe is still running. The last working address is cached for 10 minutes, and forgotten when `NWPathMonitor` reports a new path. If none answers, a `401 revoked` from any of them is reported as revoked; otherwise the Mac is unreachable, with "Local Network access is off" when iOS refused the browse.
 - **Before pairing,** the phone has no device id to seal a `status.get` with, so it probes the QR code's addresses (and Bonjour) with an empty `POST /c/v1/rpc`: a Funes Mac answers `401 invalid_envelope` without reading further. Only then does it send the pairing request, so an address that doesn't answer never uses up one of the session's 3 attempts. The request goes to the best-ranked address that answered.
-- **Retries (phone):** a `clock_skew` refusal is resent once, sealed with the Mac's `server_time`, and the offset is kept for later calls. A call with no answer at all (no connection, a timeout, a lost response) starts address selection over and is resent once if it's safe to repeat: `status.get`, `captures.submit` (duplicates are accepted, §6) and the reads (with `approvals.list`, `approvals.get` and `approvals.settings.get`). Edits, deletes, Inbox answers, approval answers, `approvals.settings.set` and `device.unpair` aren't resent; the user sees the error and can try again, and a stale `version` comes back as `conflict`.
+- **Retries (phone):** a `clock_skew` refusal is resent once, sealed with the Mac's `server_time`, and the offset is kept for later calls. A call with no answer at all (no connection, a timeout, a lost response) starts address selection over and is resent once if it's safe to repeat: `status.get`, `captures.submit` (duplicates are accepted, §6) and the reads (with `overview.get`, `approvals.list`, `approvals.get` and `approvals.settings.get`). Edits, deletes, Inbox answers, approval answers, `approvals.settings.set` `device.unpair` and `memories.answer` (each attempt costs a model call) aren't resent; the user sees the error and can try again, and a stale `version` comes back as `conflict`.
 - **Implementation (task 5.3):** `Packages/FunesPhone`: `CompanionClient` (an actor), `DeviceKeyStore`, `PairingRecordStore`, `BonjourDiscovery` (an `NWBrowser`; a match is resolved to its IPv4 address by opening a TCP connection, since `URLSession` can't use a service endpoint), `NetworkPathWatcher`, and `CompanionHTTPTransport`: a small HTTP/1.1 client on `NWConnection` for `http://` (one POST per connection, `Connection: close`, the reply read to its `Content-Length`, at most 4 MiB), and an ephemeral `URLSession` for the tunnel's `https://`. Each request has a hard deadline. The device keys and the pairing record are Keychain items, service `com.funesvault.ios.companion`, in the access group the app and its extensions share. The phone waits 70 s for the pairing answer.
 
 ## 6. Offline capture queue (phone)
@@ -221,7 +259,7 @@ The Mac words nothing for the phone: the panels are data, worded and localized o
   - right after each new capture while the app is open (the share extension and the App Intents post a Darwin notification the open app listens for);
   - while the app is open, when the backoff's wait is over.
 
-  Extensions never send. The app schedules the background refresh each time it goes to the background and after each refresh.
+  Extensions never send. The app schedules the background refresh each time it goes to the background and after each refresh. From v0.4 (task 7.5) the background refresh also asks for the 30-day overview after delivering, so the widgets stay current while the app is closed; a failure keeps the cache.
 - **Implementation (task 5.4):** `Packages/FunesPhone`: `CaptureQueue` (the store and its checks: trimmed, at most 10,000 characters with the note, the secret scanner), `CaptureDelivery` (an actor: triggers, batches, the backoff) and `AppSignal`.
 - **Batching:** up to 50 captures per call, oldest first, and at most 150,000 bytes of capture JSON, so the sealed request stays under the Mac's 256 KiB (one capture always goes, however long).
 - **Exactly once:**
@@ -231,11 +269,15 @@ The Mac words nothing for the phone: the panels are data, worded and localized o
   - A lost response leads to a resend, which is accepted as a duplicate. No loss and no duplicates.
 - **Backoff:** exponential from 5 s to 30 min while unreachable (or while every capture in a call comes back `rate_limited`), each wait drawn from the upper half of its step. It resets on a path change, the app coming to the foreground, **Send now**, and any call that delivers. A new capture and a background refresh wait it out.
 
+### 6.1 Overview cache (phone, v0.4)
+The last `overview.get` answer for each range is kept in `overview.json` in the App Group container (`OverviewCache` in FunesPhone; `{overviews: {"30d": {…}, "12w": {…}}}`), so Home's 30 days and the widgets don't lose theirs when the longer ranges are opened: written atomically after each successful call, file protection `completeUntilFirstUserAuthentication`, read by Home and the widgets, and deleted on unpair, on revocation and when leaving the demo ([ADR-0025](decisions/0025-vault-overview-and-iphone-cache.md)). It holds counts, dates and agent names only. The app asks for 30 days on launch, foreground and refresh (task 7.2), the longer ranges when Home's sheet opens them (7.4). Entering or leaving the demo also deletes it, so it's never a mix of the demo's counts and the Mac's.
+
 ## 7. Limits (per device)
 - 300 calls per minute (then `rate_limited` with `retry_after_s`, inside the encrypted reply);
 - 50 captures per call, 2,000 per day (captures over the day's limit come back as `rejected` with `rate_limited`);
 - 256 KiB request body;
-- 10 s per call (then `unavailable`; the work still finishes on the Mac, and a capture's receipt keeps a resend from duplicating it).
+- 10 s per call (then `unavailable`; the work still finishes on the Mac, and a capture's receipt keeps a resend from duplicating it). **Except `memories.answer`** (v0.6): 50 s on the Mac, 55 s on the phone (`CompanionClient`'s timeout is per method). The listener doesn't watch for a closed connection while a handler runs, so its work ends at its result, this deadline, or the same device's next `memories.answer`;
+- one `memories.answer` in flight per device.
 
 ## 8. Revocation and unpairing
 - **Revoke on the Mac:** the device row gets `revokedAt`. Its next request gets `401 revoked`. The phone shows the revoked state and keeps its queued captures until the user re-pairs or deletes them.
@@ -251,4 +293,5 @@ The Mac words nothing for the phone: the panels are data, worded and localized o
   - a secret blocked on the phone.
 - Reachability: same Wi-Fi, Tailscale, tunnel with the wrong path or Host, Mac asleep and then woken.
 - Approvals (§4.1): the doorbell records carry only a tag and a random name (captured); a phone answer and a Mac answer racing; a stale revision; an expired request; a revoked device's answer; Activity rows under the device; records deleted when the request stops waiting.
+- Answers (v0.6): `searchAnswers` in `status.get` follows the Mac's setting; `memories.answer` with ids that are archived, deleted or unknown; each error code; a call that outlives 10 s; a second call from the same device cancels the first (a CLI's process ends); `snippetMatches` ranges point inside `snippet`; never resent after a timeout; no memory text in the request.
 - Fuzzing of the envelope parser and the method params.

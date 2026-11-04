@@ -8,8 +8,10 @@ private let logger = Logger(subsystem: Identifiers.iOSLoggerSubsystem, category:
 /// The demo vault (FR-iOS-10, task 5.7): a sample vault on this iPhone only, for App Review, who
 /// have no Mac to pair with, and for trying the app first. It answers the companion methods as
 /// the Mac does, behind the same `CompanionCalling` and `CaptureSender` that `CompanionClient`
-/// serves, from the bundled `demo-vault.json`: about 20 memories, three Inbox suggestions and one
-/// Share, Save and access request each.
+/// serves, from the bundled `demo-vault.json`: about 25 memories, seven Inbox suggestions (four
+/// of them the daily tidy-up's: an archive, a merge, a conflict and a split), one Share, Save
+/// and access request each, and 12 weeks of sample counts for the overview (Home and
+/// the widgets).
 ///
 /// Nothing here reaches the network, the Keychain, CloudKit or the real capture queue. Changes
 /// live in memory only, so each demo starts from the bundled data again.
@@ -30,21 +32,38 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         var provenance: [UUID: [ProvenanceLabel]]
         var shared: [UUID: (count: Int, last: Date?)]
         var inbox: [InboxItem]
+        /// What `inbox.get` adds to a card: its memories, the tidy-up's reasons, a split's pieces.
+        var cards: [UUID: Card] = [:]
         var approvals: [DemoContent.Approval]
         var approvalIDs: [UUID]
         var approvalsEnabled = true
         /// Capture ids already taken, so a resend counts as accepted without a second row (§6).
         var captured: Set<UUID> = []
+        var overview: DemoContent.Overview?
+        /// The sample agents' ids, made up when the demo opens.
+        var overviewAgentIDs: [UUID] = []
+        /// The demo person's name, for Home's title (ADR-0026).
+        var calledName: String?
+        var calendar: Calendar = .autoupdatingCurrent
+    }
+
+    struct Card: Sendable {
+        /// Each memory with the version the card was made on, as the Mac stores it.
+        var refs: [(id: UUID, role: InboxMemoryRole, version: Int)] = []
+        var tidyUp: InboxTidyUp?
+        var pieces: [InboxItem] = []
     }
 
     private let state: Mutex<State>
     private let clock: @Sendable () -> Date
 
-    /// The bundled demo vault. `content` replaces it in tests.
-    public init(content: DemoContent? = nil, clock: @escaping @Sendable () -> Date = Date.init) {
+    /// The bundled demo vault. `content` replaces it in tests, and `calendar` the phone's days.
+    public init(content: DemoContent? = nil, calendar: Calendar = .autoupdatingCurrent, clock: @escaping @Sendable () -> Date = Date.init) {
         self.clock = clock
         let content = content ?? Self.bundled()
-        state = Mutex(Self.state(from: content, now: clock()))
+        var state = Self.state(from: content, now: clock())
+        state.calendar = calendar
+        self.state = Mutex(state)
     }
 
     static func bundled() -> DemoContent {
@@ -55,6 +74,12 @@ public final class DemoVault: CompanionCalling, CaptureSender {
             logger.fault("The bundled demo vault couldn't be read")
             return DemoContent(macName: "Demo Mac", categories: [], memories: [], inbox: [], approvals: [])
         }
+    }
+
+    /// `overview.get`'s answer, at once: the widgets' gallery and placeholder entries.
+    public func sampleOverview(_ range: OverviewRange = .days30) -> VaultOverview {
+        let now = clock()
+        return state.withLock { Self.overview(range, in: $0, now: now) }
     }
 
     /// `status.get`'s answer, for the reachability state: always connected.
@@ -91,7 +116,8 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         switch method {
         case .statusGet:
             return CompanionStatus(macName: state.macName, appVersion: "Demo", serverTime: now, inboxPending: state.inbox.count,
-                                   vaultActive: true)
+                                   vaultActive: true, calledName: state.calledName,
+                                   searchAnswers: SearchAnswersStatus(engine: "Demo", locality: .onDevice))
         case .capturesSubmit:
             let params = params as! CapturesSubmitParams
             try params.validate()
@@ -102,12 +128,18 @@ public final class DemoVault: CompanionCalling, CaptureSender {
                                              createdAt: capture.createdAt), at: 0)
             }
             return CapturesSubmitResult(accepted: params.captures.map(\.captureId), rejected: [])
+        case .overviewGet:
+            return overview((params as! OverviewParams).range, in: state, now: now)
         case .categoriesList:
             return state.categories
         case .memoriesSearch:
             let params = params as! MemorySearchParams
             try params.validate()
             return search(params, in: state)
+        case .memoriesAnswer:
+            let params = params as! MemoryAnswerParams
+            try params.validate()
+            return try answer(params, in: state)
         case .memoriesGet:
             let id = (params as! MemoryID).id
             guard let memory = state.memories[id] else { throw CompanionError(.notFound) }
@@ -140,18 +172,42 @@ public final class DemoVault: CompanionCalling, CaptureSender {
             let offset = (params as! InboxListParams).cursor.flatMap(Int.init) ?? 0
             let page = Array(state.inbox.dropFirst(offset).prefix(20))
             return InboxListResult(items: page, nextCursor: offset + page.count < state.inbox.count ? String(offset + page.count) : nil)
+        case .inboxGet:
+            let id = (params as! SuggestionID).suggestionId
+            guard let item = state.inbox.first(where: { $0.id == id }) else { throw CompanionError(.notFound) }
+            return card(item, in: state)
         case .inboxApply:
             let params = params as! InboxApplyParams
             guard let index = state.inbox.firstIndex(where: { $0.id == params.suggestionId }) else { throw CompanionError(.notFound) }
-            let item = state.inbox.remove(at: index)
-            let id = applySuggestion(item.memoryChanges.merged(params.edits), action: item.action, target: item.targetMemoryId,
-                                     source: item.origin == .agent ? .agentSuggestion : .captureIPhone, label: item.sourceLabel,
-                                     now: now, in: &state)
+            let item = state.inbox[index]
+            guard item.action.appliesOnPhone else { throw CompanionError(.unsupportedAction) }
+            guard item.processing != .processing else { throw CompanionError(.processing) }
+            if let revision = params.revision, revision != card(item, in: state).revision { throw CompanionError(.requestChanged) }
+            if params.mode != .keepBoth, let card = state.cards[item.id], stale(card, in: state) { throw CompanionError(.targetChanged) }
+            let id = try applyCard(item, params, now: now, in: &state)
+            state.inbox.remove(at: index)
+            state.cards[item.id] = nil
             return InboxApplied(memoryId: id)
+        case .inboxReviewAgain:
+            let id = (params as! SuggestionID).suggestionId
+            guard state.inbox.contains(where: { $0.id == id }), var card = state.cards[id] else { throw CompanionError(.conflict) }
+            for index in card.refs.indices {
+                guard let memory = state.memories[card.refs[index].id], memory.status == .active else { throw CompanionError(.targetChanged) }
+                card.refs[index].version = memory.version
+            }
+            state.cards[id] = card
+            return EmptyResult()
         case .inboxReject:
             let id = (params as! SuggestionID).suggestionId
             guard let index = state.inbox.firstIndex(where: { $0.id == id }) else { throw CompanionError(.notFound) }
             state.inbox.remove(at: index)
+            return EmptyResult()
+        case .inboxRetry, .inboxKeep:
+            let id = (params as! SuggestionID).suggestionId
+            guard let index = state.inbox.firstIndex(where: { $0.id == id }) else { throw CompanionError(.notFound) }
+            guard state.inbox[index].processing == .failed else { throw CompanionError(.conflict) }
+            // The demo never splits: tried again, it comes back as it was.
+            state.inbox[index].processing = nil
             return EmptyResult()
         case .deviceUnpair:
             return EmptyResult()
@@ -196,10 +252,63 @@ public final class DemoVault: CompanionCalling, CaptureSender {
 
     // MARK: Memories
 
+    // MARK: Search answers (v0.6)
+
+    /// The demo's sample questions: the memories each finds (its search matches whole phrases,
+    /// so a question would find nothing on its own) and a canned answer quoting them.
+    struct SampleQuestion {
+        let question: String
+        let titles: [String]
+        let claims: [(text: String, title: String, quote: String)]
+    }
+
+    static let sampleQuestions = [
+        SampleQuestion(question: "When does my lease renew?", titles: ["Flat lease renews in March"], claims: [
+            ("Your flat's lease renews on 1 March, and notice is due two months before.", "Flat lease renews in March",
+             "The flat's lease renews on 1 March; notice is due two months before."),
+        ]),
+        SampleQuestion(question: "What's my next garden milestone?", titles: ["Garden planner: next milestone", "Garden planner app"], claims: [
+            ("Your next milestone for the garden planner is the sowing calendar view.", "Garden planner: next milestone",
+             "Next milestone is the sowing calendar view."),
+            ("You plan a beta for friends by the end of the month.", "Garden planner: next milestone", "Beta to friends by the end of the month."),
+        ]),
+        SampleQuestion(question: "How often do I run?", titles: ["Running three times a week"], claims: [
+            ("You run three times a week, on Tuesday, Thursday and Saturday mornings.", "Running three times a week",
+             "runs on Tuesday, Thursday and Saturday mornings"),
+        ]),
+    ]
+
+    /// The sample question a search is, ignoring case, punctuation and spacing.
+    static func sample(_ query: String) -> SampleQuestion? {
+        func key(_ s: String) -> String { s.lowercased().filter { $0.isLetter || $0.isNumber } }
+        return sampleQuestions.first { key($0.question) == key(query) }
+    }
+
+    /// A canned answer for a sample question, citing the demo's memories; any other search gets
+    /// the hint (`AnswerWording`).
+    private static func answer(_ params: MemoryAnswerParams, in state: State) throws(CompanionError) -> MemoryAnswerResult {
+        guard let sample = sample(params.query) else { throw CompanionError(.modelUnavailable, reason: AnswerWording.demoHintReason) }
+        let byTitle = Dictionary(state.memories.values.map { ($0.title, $0) }, uniquingKeysWith: { a, _ in a })
+        let claims = sample.claims.compactMap { claim -> MemoryAnswerResult.Claim? in
+            guard let memory = byTitle[claim.title], params.ids.contains(memory.id), memory.status == .active else { return nil }
+            return MemoryAnswerResult.Claim(text: claim.text, citations: [.init(id: memory.id, quote: claim.quote)])
+        }
+        let read = params.ids.filter { state.memories[$0]?.status == .active }.count
+        return MemoryAnswerResult(outcome: claims.isEmpty ? .noAnswer : .answered, claims: claims, read: read, withheld: 0, dropped: 0,
+                                  engine: "Demo", locality: .onDevice, durationMs: 1_200)
+    }
+
     private static func search(_ params: MemorySearchParams, in state: State) -> MemorySearchResult {
         let filters = params.filters
         let status = filters?.status ?? .active
         let query = params.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if status == .active, let sample = sample(query) {
+            let found = sample.titles.compactMap { title in state.memories.values.first { $0.title == title && $0.status == .active } }
+            return MemorySearchResult(results: found.map {
+                MemorySummary(id: $0.id, title: $0.title, snippet: $0.body, kind: $0.kind, categories: $0.categoryKeys,
+                              sensitivity: $0.sensitivity, updatedAt: $0.updatedAt, expiresAt: $0.expiresAt)
+            })
+        }
         let hits = state.memories.values
             .filter { $0.status == status }
             .filter { memory in filters?.categories.map { !Set($0).isDisjoint(with: memory.categoryKeys) } ?? true }
@@ -251,12 +360,16 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         state.provenance[memory.id] = [ProvenanceLabel(at: memory.createdAt, event: event.rawValue, label: label)]
     }
 
-    /// An Inbox Save or a Save request's answer: a new memory, or a correction to its target.
+    /// An Inbox Save or a Save request's answer, as its own action: a new memory, a correction or
+    /// an archive of its target, or nothing for a duplicate.
     private static func applySuggestion(_ fields: MemoryChanges, action: SuggestionAction, target: UUID?, source: MemorySource,
                                         label: String, now: Date, in state: inout State) -> UUID {
         if action != .create, let target, var memory = state.memories[target] {
-            apply(fields, to: &memory)
-            if action == .archive { memory.status = .archived }
+            switch action {
+            case .duplicate: return target
+            case .archive: memory.status = .archived
+            default: apply(fields, to: &memory)
+            }
             _ = save(memory, event: .appliedFromSuggestion, now: now, in: &state)
             return target
         }
@@ -265,6 +378,70 @@ public final class DemoVault: CompanionCalling, CaptureSender {
                             expiresAt: fields.expiresAt ?? nil, source: source, createdAt: now, updatedAt: now)
         add(memory, event: .appliedFromSuggestion, label: label, in: &state)
         return memory.id
+    }
+
+    /// `inbox.get`: the card with its memories as they are now. The revision is their versions.
+    private static func card(_ item: InboxItem, in state: State) -> InboxDetail {
+        let card = state.cards[item.id] ?? Card()
+        let memories = card.refs.compactMap { ref in state.memories[ref.id].map { InboxMemory(role: ref.role, memory: $0) } }
+        let revision = card.refs.map { "\($0.id):\($0.version):\(state.memories[$0.id]?.version ?? -1)" }.joined(separator: ",")
+        return InboxDetail(item: item, memories: memories, pieces: card.pieces, stale: stale(card, in: state), tidyUp: card.tidyUp,
+                           revision: revision)
+    }
+
+    /// A memory it refers to changed, or isn't active, since the card was made (or reviewed again).
+    private static func stale(_ card: Card, in state: State) -> Bool {
+        card.refs.contains { ref in state.memories[ref.id].map { $0.status != .active || $0.version != ref.version } ?? true }
+    }
+
+    /// `inbox.apply` with the card's choice, as the Mac's per-action apply does it.
+    private static func applyCard(_ item: InboxItem, _ params: InboxApplyParams, now: Date, in state: inout State) throws(CompanionError) -> UUID {
+        let card = state.cards[item.id] ?? Card()
+        let fields = item.memoryChanges.merged(params.edits)
+        let source: MemorySource = switch item.origin {
+        case .agent: .agentSuggestion
+        case .consolidation: .tidyUp
+        default: .captureIPhone
+        }
+        func archive(_ id: UUID) {
+            guard var memory = state.memories[id] else { return }
+            memory.status = .archived
+            _ = save(memory, event: .appliedFromSuggestion, now: now, in: &state)
+        }
+        func create(_ fields: MemoryChanges) -> UUID {
+            applySuggestion(fields, action: .create, target: nil, source: source, label: item.sourceLabel, now: now, in: &state)
+        }
+        switch (item.action, params.mode) {
+        case (.update, .keepBoth):
+            guard item.origin != .consolidation else { throw CompanionError(.unsupportedAction) }
+            return create(fields)
+        case (.create, nil), (.update, nil), (.update, .replace), (.archive, nil), (.duplicate, nil):
+            return applySuggestion(fields, action: item.action, target: item.targetMemoryId, source: source,
+                                   label: item.sourceLabel, now: now, in: &state)
+        case (.merge, nil):
+            let id = create(fields)
+            for ref in card.refs where ref.role == .source { archive(ref.id) }
+            return id
+        case (.split, nil):
+            let ids = card.pieces.filter { $0.action == .create }.map { create($0.memoryChanges) }
+            guard let first = ids.first else { throw CompanionError(.conflict) }
+            if let target = item.targetMemoryId { archive(target) }
+            return first
+        case (.conflict, .keep):
+            guard let kept = params.keepMemoryId, card.refs.contains(where: { $0.id == kept }), var memory = state.memories[kept] else {
+                throw CompanionError(.unsupportedAction)
+            }
+            if let edits = params.edits, !edits.isEmpty {
+                apply(edits, to: &memory)
+                _ = save(memory, event: .appliedFromSuggestion, now: now, in: &state)
+            }
+            for ref in card.refs where ref.id != kept { archive(ref.id) }
+            return kept
+        case (.conflict, .bothTrue):
+            return card.refs.first?.id ?? item.id
+        default:
+            throw CompanionError(.unsupportedAction)
+        }
     }
 
     /// A capture's first line, as its Inbox title.
@@ -308,6 +485,76 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         return detail
     }
 
+    // MARK: Overview
+
+    /// `overview.get` from the sample days, the last of which is today: in, out and refused by
+    /// day, grouped into the range's buckets as the Mac groups them. The vault's totals and the
+    /// shared mix are the sample's own, scaled to what the range shared.
+    static func overview(_ range: OverviewRange, in state: State, now: Date) -> VaultOverview {
+        let buckets = OverviewCalendar(calendar: state.calendar)
+        let bounds = buckets.boundaries(range, now: now)
+        let dayStarts = buckets.dayBoundaries(VaultOverview.Rhythm.days, now: now)
+        let sample = state.overview ?? DemoContent.Overview()
+        let days = Array(sample.days.suffix(VaultOverview.Rhythm.days))
+        let first = VaultOverview.Rhythm.days - days.count
+        let ids = state.overviewAgentIDs.map { $0.uuidString.lowercased() }
+
+        var series = bounds.dropLast().map { VaultOverview.Bucket(date: $0) }
+        var shared: [String: Int] = [:], requests: [String: Int] = [:], lastRequest: [String: Date] = [:]
+        var refused = 0
+        for (offset, day) in days.enumerated() {
+            let start = dayStarts[first + offset]
+            for (agent, n) in zip(ids, day.out) where n > 0 {
+                lastRequest[agent] = min(start.addingTimeInterval(14 * 3_600), now.addingTimeInterval(-10 * 60))
+            }
+            guard let b = series.indices.last(where: { series[$0].date <= start }), start < bounds.last! else { continue }
+            series[b].inbound.add(day.inbound)
+            for (agent, n) in zip(ids, day.out) where n > 0 {
+                series[b].out[agent, default: 0] += n
+                shared[agent, default: 0] += n
+                // About three memories a request.
+                requests[agent, default: 0] += (n + 2) / 3
+            }
+            series[b].refused += day.refused
+            refused += day.refused
+        }
+
+        let week = days.suffix(7)
+        let sharedInRange = series.map(\.shared).reduce(0, +)
+        let agents = zip(ids, sample.agents).map { id, agent in
+            VaultOverview.AgentCount(id: id, name: agent.name, kind: agent.kind, shared: shared[id] ?? 0, requests: requests[id] ?? 0,
+                                     lastRequestAt: lastRequest[id])
+        }.sorted { ($0.shared, $1.name) > ($1.shared, $0.name) }
+        var tidyUp = state.calendar.date(bySettingHour: 3, minute: 4, second: 0, of: now) ?? now
+        if tidyUp > now { tidyUp = state.calendar.date(byAdding: .day, value: -1, to: tidyUp) ?? tidyUp }
+        return VaultOverview(
+            range: range, generatedAt: now, timeZone: state.calendar.timeZone.identifier, total: sample.total,
+            thisWeek: VaultOverview.Week(saved: week.map(\.inbound.total).reduce(0, +), shared: week.map { $0.out.reduce(0, +) }.reduce(0, +),
+                                         agents: Set(week.flatMap { zip(ids, $0.out).filter { $0.1 > 0 }.map(\.0) }).count,
+                                         refused: week.map(\.refused).reduce(0, +)),
+            days: series,
+            rhythm: VaultOverview.Rhythm(start: dayStarts[0], counts: Array(repeating: 0, count: first) + days.map(\.inbound.total),
+                                         saved: Array(repeating: 0, count: first) + days.map { $0.inbound.mac + $0.inbound.iphone + $0.inbound.agent }),
+            bySensitivity: sample.bySensitivity, byCategory: sample.byCategory, byKind: sample.byKind,
+            sharedBySensitivity: scaled(sample.sharedSensitivity, to: sharedInRange),
+            sharedByCategory: scaled(sample.sharedCategory, to: sharedInRange),
+            refusedByReason: refused > 0 ? [ReasonCode.deniedByUser.rawValue: refused] : [:],
+            withheld: refused > 0 ? [ReasonCode.aboveSensitivityCeiling.rawValue: refused] : [:],
+            agents: agents, inboxPending: state.inbox.count, oldestPendingAt: state.inbox.map(\.createdAt).min(), lastTidyUpAt: tidyUp)
+    }
+
+    /// `weights` as whole counts that add up to `total`: each its share rounded down, and what's
+    /// left to the largest remainders.
+    static func scaled(_ weights: [String: Int], to total: Int) -> [String: Int] {
+        let sum = weights.values.reduce(0, +)
+        guard sum > 0, total > 0 else { return [:] }
+        let keys = weights.keys.sorted()
+        var counts = Dictionary(uniqueKeysWithValues: keys.map { ($0, weights[$0]! * total / sum) })
+        let left = total - counts.values.reduce(0, +)
+        for key in keys.sorted(by: { weights[$0]! * total % sum > weights[$1]! * total % sum }).prefix(left) { counts[key, default: 0] += 1 }
+        return counts.filter { $0.value > 0 }
+    }
+
     // MARK: Loading
 
     private static func state(from content: DemoContent, now: Date) -> State {
@@ -315,7 +562,9 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         var state = State(macName: content.macName, categories: content.categories.map {
             CompanionCategory(MemoryCategory(key: $0.key, name: $0.name, description: $0.description, builtin: true,
                                              defaultSensitivity: $0.defaultSensitivity))
-        }, memories: [:], provenance: [:], shared: [:], inbox: [], approvals: content.approvals, approvalIDs: content.approvals.map { _ in UUID() })
+        }, memories: [:], provenance: [:], shared: [:], inbox: [], approvals: content.approvals, approvalIDs: content.approvals.map { _ in UUID() },
+           overview: content.overview, overviewAgentIDs: (content.overview?.agents ?? []).map { _ in UUID() })
+        state.calledName = content.calledName
         for sample in content.memories {
             let at = now.addingTimeInterval(-sample.daysAgo * day)
             let memory = Memory(title: sample.title, body: sample.body, kind: sample.kind, categoryKeys: sample.categories,
@@ -327,12 +576,28 @@ public final class DemoVault: CompanionCalling, CaptureSender {
                 state.shared[memory.id] = (count, now.addingTimeInterval(-sample.daysAgo * day / 2))
             }
         }
-        state.inbox = content.inbox.map { sample in
+        func memory(_ title: String) -> UUID? { state.memories.values.first { $0.title == title }?.id }
+        func item(_ sample: DemoContent.Suggestion) -> InboxItem {
             InboxItem(id: UUID(), origin: sample.origin, action: sample.action, sourceLabel: sample.sourceLabel,
-                      targetMemoryId: sample.updates.flatMap { title in state.memories.values.first { $0.title == title }?.id },
+                      targetMemoryId: sample.updates.flatMap(memory),
                       title: sample.title, body: sample.body, kind: sample.kind, categories: sample.categories,
                       sensitivity: sample.sensitivity, evidence: sample.evidence, purpose: sample.purpose,
                       createdAt: now.addingTimeInterval(-sample.hoursAgo * 3_600))
+        }
+        for sample in content.inbox {
+            let inboxItem = item(sample)
+            state.inbox.append(inboxItem)
+            var card = Card()
+            if let target = inboxItem.targetMemoryId { card.refs.append((target, .target, 1)) }
+            for ref in sample.targets ?? [] {
+                if let id = memory(ref.memory), id != inboxItem.targetMemoryId { card.refs.append((id, ref.role, 1)) }
+            }
+            if sample.origin == .consolidation {
+                card.tidyUp = InboxTidyUp(reason: sample.reason, archiveReason: sample.archiveReason,
+                                          kept: (sample.kept ?? []).compactMap { k in memory(k.memory).map { .init(memoryId: $0, text: k.text) } })
+            }
+            card.pieces = (sample.pieces ?? []).map(item)
+            state.cards[inboxItem.id] = card
         }
         return state
     }
@@ -373,6 +638,24 @@ public struct DemoContent: Codable, Sendable {
         var evidence: String?
         var purpose: String?
         var hoursAgo: Double
+        /// The other memories it refers to, by title (companion protocol §4.2).
+        var targets: [Target]?
+        /// The tidy-up's reasons.
+        var reason: String?
+        var archiveReason: InboxArchiveReason?
+        var kept: [Kept]?
+        /// A split's pieces.
+        var pieces: [Suggestion]?
+
+        struct Target: Codable, Sendable {
+            var memory: String
+            var role: InboxMemoryRole
+        }
+
+        struct Kept: Codable, Sendable {
+            var memory: String
+            var text: String
+        }
     }
 
     public struct Approval: Codable, Sendable {
@@ -419,11 +702,47 @@ public struct DemoContent: Codable, Sendable {
         var access: Access?
     }
 
+    /// 12 weeks of sample counts for `overview.get`, and the vault's sample totals (the 20
+    /// memories above would make an empty chart). No real names.
+    public struct Overview: Codable, Sendable {
+        public struct Agent: Codable, Sendable {
+            var name: String
+            var kind: AgentKind
+        }
+
+        public struct Day: Codable, Sendable {
+            /// New memories: Mac, iPhone, agent, import, tidy-up.
+            var `in`: [Int]
+            /// Memories shared with each agent, in `agents`' order.
+            var out: [Int]
+            var refused: Int
+
+            var inbound: VaultOverview.Sources {
+                let n = `in` + Array(repeating: 0, count: max(0, 5 - `in`.count))
+                return VaultOverview.Sources(mac: n[0], iphone: n[1], agent: n[2], import: n[3], tidy: n[4])
+            }
+        }
+
+        var total = 0
+        var bySensitivity: [String: Int] = [:]
+        var byCategory: [String: Int] = [:]
+        var byKind: [String: Int] = [:]
+        /// The mix of what was shared, as weights.
+        var sharedSensitivity: [String: Int] = [:]
+        var sharedCategory: [String: Int] = [:]
+        var agents: [Agent] = []
+        /// Oldest first; the last is the day the demo opens.
+        var days: [Day] = []
+    }
+
     var macName: String
     var categories: [Category]
     var memories: [Sample]
     var inbox: [Suggestion]
     var approvals: [Approval]
+    var overview: Overview?
+    /// The demo person's name; absent in older files.
+    var calledName: String?
 }
 
 extension InboxItem {

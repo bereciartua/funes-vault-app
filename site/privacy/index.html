@@ -74,7 +74,7 @@
   <li><strong>The tunnel provider may see the traffic.</strong> With Tailscale Funnel, TLS ends on your Mac, so the relays can't read it. Cloudflare and ngrok end TLS at their edge, so they can read what passes, memory text included.</li>
   <li><strong>Funes Vault makes two kinds of outbound requests for Remote Access:</strong> a test that fetches its own health address through your tunnel (when you save the address, and when you click <strong>Test</strong> or <strong>Try Again</strong>), and, only while you have pairing open, a fetch of the signing-in app's public metadata document (https only, to a public address, no credential, only the app's name and version as User-Agent, at most 16 KB).</li>
   <li><strong>What's kept on your Mac:</strong> the remote token's file (mode 0600, the vault stores only its hash), the list of connected cloud apps with hashes of their tokens (<code>remote-connections.json</code>, mode 0600), and, in memory only, the tunnel and forwarded address of the last 50 remote requests. Nothing about your tunnel or cloud apps is sent anywhere else.</li>
-  <li><strong>Turn Off Remote Access</strong> in the menu bar closes the port at once.</li>
+  <li>The <strong>Remote Access</strong> switch in the menu bar panel closes the port at once.</li>
 </ul>
 <h2 id="funes-vault-for-iphone">Funes Vault for iPhone</h2>
 <p>The iPhone app (v0.2) is a remote for your Mac: it captures, searches, edits, reviews the Inbox and answers agents' requests, all on the vault on your Mac. Its App Store privacy label is <strong>Data Not Collected</strong>: nothing it handles reaches us, or anyone but you and your Mac.</p>

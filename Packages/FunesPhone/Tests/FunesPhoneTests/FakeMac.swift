@@ -28,6 +28,8 @@ final class FakeMac: @unchecked Sendable {
     /// Captures stored, in order: a duplicate `captureId` isn't stored again.
     private(set) var stored: [UUID] = []
     var allow = true
+    /// What `status.get` says to call the user by (ADR-0026).
+    var calledName: String?
     private(set) var statusCalls = 0
     private(set) var captureCalls = 0
     private(set) var unpaired: [UUID] = []
@@ -100,7 +102,7 @@ final class FakeMac: @unchecked Sendable {
         case .statusGet:
             lock.withLock { statusCalls += 1 }
             let status = CompanionStatus(macName: "Maya's MacBook Pro", appVersion: "0.2.0", serverTime: now, inboxPending: 2,
-                                         vaultActive: true)
+                                         vaultActive: true, calledName: lock.withLock { calledName })
             reply = try! CompanionResponse(id: head.id, result: status).encoded()
         case .capturesSubmit:
             let params = try! head.params(CapturesSubmit.self)
@@ -130,12 +132,16 @@ final class RoutedTransport: CompanionTransport, @unchecked Sendable {
         case mac(FakeMac)
         case refused
         case silent
+        /// Times out at once, as if the caller's whole timeout had passed.
+        case timesOut
         case status(Int)
     }
 
     private let lock = NSLock()
     private var routes: [String: Route]
     private(set) var hosts: [String] = []
+    /// Each request's timeout, in order.
+    private(set) var timeouts: [TimeInterval] = []
     /// Drops the Mac's answer after it has handled the request, like a lost response.
     var dropResponses = false
 
@@ -147,6 +153,7 @@ final class RoutedTransport: CompanionTransport, @unchecked Sendable {
         let host = url.host() ?? ""
         let (route, drop) = lock.withLock {
             hosts.append(host)
+            timeouts.append(timeout)
             return (routes[host] ?? .refused, dropResponses)
         }
         switch route {
@@ -158,6 +165,8 @@ final class RoutedTransport: CompanionTransport, @unchecked Sendable {
             throw TransportError("refused")
         case .silent:
             try? await Task.sleep(for: .seconds(timeout))
+            throw .timedOut
+        case .timesOut:
             throw .timedOut
         case let .status(code):
             return TransportResponse(status: code, body: Data())

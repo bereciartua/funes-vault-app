@@ -56,7 +56,9 @@ jobs:
               cp "docs/images/$name-$theme.png" "$RUNNER_TEMP/site/assets/screenshots/"
             done
           done
-          cp docs/images/iphone-approval.png "$RUNNER_TEMP/site/assets/screenshots/"
+          for name in iphone-home iphone-approval; do
+            cp "docs/images/$name.png" "$RUNNER_TEMP/site/assets/screenshots/"
+          done
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: ${{ runner.temp }}/site

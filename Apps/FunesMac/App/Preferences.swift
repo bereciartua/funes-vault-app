@@ -1,5 +1,6 @@
 import BridgeUI
 import Foundation
+import FunesCore
 import FunesMCP
 import FunesProtocol
 
@@ -19,6 +20,11 @@ final class Preferences {
         static let reviewHotKey = "ReviewRequestHotKey"
         static let captureSensitivity = "CaptureDefaultSensitivity"
         static let classifyCaptures = "ClassifyCaptures"
+        static let splitNewMemories = "SplitNewMemories"
+        static let applyAutomatically = "ApplyChangesAutomatically"
+        static let tidyUpDaily = "TidyUpDaily"
+        static let tidyUpMinute = "TidyUpMinuteOfDay"
+        static let tidyUpOnSince = "TidyUpOnSince"
         static let checklistDismissed = "SetupChecklistDismissed"
         static let checklistSeeded = "SetupChecklistSeeded"
         static let checklistReviewed = "SetupChecklistReviewed"
@@ -59,6 +65,7 @@ final class Preferences {
             Key.importantRetentionDays: 400,
             Key.routineRetentionDays: 30,
             Key.automaticBackups: true,
+            Key.tidyUpMinute: 3 * 60,
         ])
     }
 
@@ -105,12 +112,48 @@ final class Preferences {
         set { defaults.set(newValue, forKey: Key.classifyCaptures) }
     }
 
+    /// Settings ▸ AI ▸ Features ▸ New memories ▸ Split into separate memories (Phase 6a). Off until
+    /// the user turns it on: it sends agent input and imports to the chosen model too.
+    var splitNewMemories: Bool {
+        get { defaults.bool(forKey: Key.splitNewMemories) }
+        set { defaults.set(newValue, forKey: Key.splitNewMemories) }
+    }
+
+    /// Settings ▸ AI ▸ Features ▸ Apply changes automatically: Off until the user picks a level that
+    /// an engine reached (memory processing §5.7).
+    var applyAutomatically: AutoApplyLevel {
+        get { AutoApplyLevel(rawValue: defaults.integer(forKey: Key.applyAutomatically)) ?? .off }
+        set { defaults.set(newValue.rawValue, forKey: Key.applyAutomatically) }
+    }
+
+    /// Settings ▸ AI ▸ Features ▸ Daily tidy-up (memory processing §9.1): off by default. Turning it
+    /// on records when, so the first run is at the next scheduled time, not at once.
+    var tidyUpDaily: Bool {
+        get { defaults.bool(forKey: Key.tidyUpDaily) }
+        set {
+            defaults.set(newValue, forKey: Key.tidyUpDaily)
+            defaults.set(newValue ? Date() : nil, forKey: Key.tidyUpOnSince)
+        }
+    }
+
+    /// When the daily tidy-up was turned on; nil while it's off.
+    var tidyUpOnSince: Date? { defaults.object(forKey: Key.tidyUpOnSince) as? Date }
+
+    /// The time of day it runs, 03:00 until changed.
+    var tidyUpSchedule: TidyUpSchedule {
+        get {
+            let minute = min(max(0, defaults.integer(forKey: Key.tidyUpMinute)), 24 * 60 - 1)
+            return TidyUpSchedule(hour: minute / 60, minute: minute % 60)
+        }
+        set { defaults.set(newValue.hour * 60 + newValue.minute, forKey: Key.tidyUpMinute) }
+    }
+
     var mcpEnabled: Bool {
         get { defaults.bool(forKey: Key.mcpEnabled) }
         set { defaults.set(newValue, forKey: Key.mcpEnabled) }
     }
 
-    /// The MCP server's port (Settings ▸ MCP); the default unless the user changed it.
+    /// The MCP server's port (Settings ▸ Agent Server); the default unless the user changed it.
     var mcpPort: Int {
         get {
             let port = defaults.integer(forKey: Key.mcpPort)

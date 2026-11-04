@@ -7,8 +7,8 @@ import FunesProtocol
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Settings ▸ MCP (04-ux-mac.md): server on or off, port, the launcher and its optional symlink,
-/// protocol counts (never bodies).
+/// Settings ▸ Agent Server (04-ux-mac.md; the MCP tab before v0.8): server on or off, port, the
+/// launcher and its optional symlink, protocol counts (never bodies).
 struct MCPSettings: View {
     let model: AppModel
     @State private var on = true
@@ -100,7 +100,7 @@ enum SidebarStatusText {
     }
 }
 
-/// Settings ▸ Data (FR-G-04, FR-G-05, FR-X-05, FR-X-06): backups, export, import, Show in Finder,
+/// Settings ▸ Data & Backups (FR-G-04, FR-G-05, FR-X-05, FR-X-06): backups, export, import, Show in Finder,
 /// Erase All Data.
 struct DataSettings: View {
     let model: AppModel
@@ -111,6 +111,8 @@ struct DataSettings: View {
     @State private var restoring: URL?
     @State private var erasing = false
     @State private var importing: ImportKind?
+    @State private var keepVersions = true
+    @State private var confirmStopVersions = false
 
     var body: some View {
         Form {
@@ -143,6 +145,19 @@ struct DataSettings: View {
                 Text(String(localized: "Funes keeps the last 7 backups in its data folder."))
                     .font(.callout).foregroundStyle(.secondary)
             }
+            // ADR-0027: what each change replaced, for History and Activity.
+            Section(String(localized: "Earlier versions")) {
+                Toggle(String(localized: "Keep earlier versions for 90 days"), isOn: Binding(get: { keepVersions }, set: { on in
+                    if on {
+                        try? model.services.store.setKeepsEarlierVersions(true)
+                        keepVersions = true
+                    } else {
+                        confirmStopVersions = true
+                    }
+                }))
+                Text(String(localized: "When a memory changes, Funes keeps the text it replaced, so History and Activity can show what changed. Up to 50 versions a memory, on this Mac only: never shared with agents, exported or sent to your iPhone."))
+                    .font(.callout).foregroundStyle(.secondary)
+            }
             Section(String(localized: "Export and import")) {
                 Toggle(String(localized: "Include archived memories"), isOn: $includeArchived)
                 Button(String(localized: "Export…")) { export() }
@@ -167,13 +182,22 @@ struct DataSettings: View {
         .onAppear {
             backups = model.data.backups()
             automatic = model.preferences.defaults.bool(forKey: Preferences.Key.automaticBackups)
+            keepVersions = (try? model.services.store.keepsEarlierVersions()) ?? true
+        }
+        .confirmationDialog(String(localized: "Stop keeping earlier versions?"), isPresented: $confirmStopVersions) {
+            Button(String(localized: "Delete Earlier Versions"), role: .destructive) {
+                try? model.services.store.setKeepsEarlierVersions(false)
+                keepVersions = false
+            }
+        } message: {
+            Text(String(localized: "Every earlier version is deleted now, and changes won't keep one. History keeps its labels; automatic changes keep theirs until Undo expires."))
         }
         .confirmationDialog(String(localized: "Restore this backup?"), isPresented: Binding(get: { restoring != nil }, set: { if !$0 { restoring = nil } })) {
             Button(String(localized: "Restore and Relaunch")) {
                 if let restoring { try? model.data.restore(restoring) }
             }
         } message: {
-            Text(String(localized: "Funes relaunches with the vault as it was then. The current vault is kept in Backups first."))
+            Text(String(localized: "Funes relaunches with the vault as it was then, except that agents, their access and paired iPhones stay as they are now. The current vault is kept in Backups first."))
         }
         .confirmationDialog(String(localized: "Erase all of Funes Vault's data?"), isPresented: $erasing) {
             Button(String(localized: "Export First…")) { export() }
@@ -204,32 +228,6 @@ struct DataSettings: View {
                 message = String(localized: "The export couldn't be written.")
             }
         }
-    }
-}
-
-/// Settings ▸ Updates (FR-G-03): automatic checks and Check Now, through Sparkle.
-struct UpdateSettings: View {
-    let model: AppModel
-    @State private var automatic = true
-
-    var body: some View {
-        Form {
-            if model.updater.isAvailable() {
-                Toggle(String(localized: "Check for updates every day"), isOn: $automatic)
-                    .onChange(of: automatic) { _, on in model.updater.setAutomaticChecks(on) }
-                LabeledContent(String(localized: "Last checked"),
-                               value: model.updater.lastCheck().map(RelativeTime.full) ?? String(localized: "Never"))
-                Button(String(localized: "Check Now")) { model.updater.checkForUpdates() }
-                Text(String(localized: "Updates come from GitHub, signed for Funes Vault. Installing always takes a click, and waits while a request is waiting for you."))
-                    .font(.callout).foregroundStyle(.secondary)
-            } else {
-                Text(String(localized: "This copy of Funes Vault doesn't check for updates (a build from source, or a development build). Download new versions from GitHub."))
-                    .foregroundStyle(.secondary)
-            }
-            LabeledContent(String(localized: "Version"), value: model.versionText)
-        }
-        .formStyle(.grouped)
-        .onAppear { automatic = model.updater.automaticChecks() }
     }
 }
 

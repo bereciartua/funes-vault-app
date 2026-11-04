@@ -3,7 +3,7 @@
 ## Repository
 - **New repo** (decided, [Q4](open-questions.md)): **`bereciartua/funes-vault-app`**. `funes-vault` stays untouched as a historical artifact. License Apache-2.0, matching EK Bridge and Funes Vault.
 - **Layout:** see [architecture overview: repository layout](../architecture/overview.md#repository-layout-proposed).
-- **Branching:** `main` is always releasable. Feature branches are merged with squash. Releases are tags `vX.Y.Z`.
+- **Branching:** `main` is always releasable. Feature branches are merged with a merge commit; squash merging is turned off on GitHub. Releases are tags `vX.Y.Z`.
 - **Agent instructions:** `CLAUDE.md` and `AGENTS.md` at the root, with build and test commands, conventions, "never log memory text", and pointers to these docs.
 
 ## Apple Developer account

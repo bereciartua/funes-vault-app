@@ -105,6 +105,55 @@ struct Rig {
     }
 }
 
+/// FR-U-05, ADR-0026: the name `status.get` says to call the user by is kept with the pairing.
+@Suite struct CalledNameTests {
+    @Test func keptWithThePairingAcrossLaunches() async throws {
+        let rig = Rig()
+        try await rig.pair()
+        #expect(try await rig.client.record()?.calledName == nil)
+        rig.mac.calledName = "Maya"
+        #expect(try await rig.client.status(fresh: true).status.calledName == "Maya")
+        #expect(try await rig.client.record()?.calledName == "Maya")
+        let clock = rig.clock
+        let again = CompanionClient(store: rig.store, transport: rig.transport, discovery: FakeDiscovery(result: DiscoveryResult()),
+                                    secureEnclave: false, clock: { clock.now })
+        #expect(try await again.record()?.calledName == "Maya")
+    }
+
+    @Test func followsTheMacAndGoesWithThePairing() async throws {
+        let rig = Rig()
+        try await rig.pair()
+        rig.mac.calledName = "Maya"
+        _ = try await rig.client.status(fresh: true)
+        rig.mac.calledName = nil
+        _ = try await rig.client.status(fresh: true)
+        #expect(try await rig.client.record()?.calledName == nil)
+        rig.mac.calledName = "Maya"
+        _ = try await rig.client.status(fresh: true)
+        try await rig.client.unpair()
+        #expect(rig.store.accounts.isEmpty)
+        #expect(try await rig.client.record() == nil)
+    }
+
+    @Test func droppedWhenThisIPhoneIsRemoved() async throws {
+        let rig = Rig()
+        let record = try await rig.pair()
+        rig.mac.calledName = "Maya"
+        _ = try await rig.client.status(fresh: true)
+        rig.mac.revoke(record.deviceID)
+        await #expect(throws: CompanionClientError.refused(.revoked)) { try await rig.client.status(fresh: true) }
+        let kept = try #require(try await rig.client.record())
+        #expect(kept.calledName == nil && kept.deviceID == record.deviceID)
+    }
+
+    @Test func olderRecordsWithoutOneStillLoad() throws {
+        let json = #"{"macID":"6F9619FF-8B86-D011-B42D-00C04FC964FF","macName":"Mac","macSigningKey":"","macHPKEKey":"","#
+            + #""deviceID":"6F9619FF-8B86-D011-B42D-00C04FC964FF","deviceName":"iPhone","addresses":[],"pairedAt":820540800}"#
+        let record = try CompanionJSON.decoder().decode(PairingRecord.self, from: Data(json.utf8))
+        #expect(record.calledName == nil && record.macName == "Mac")
+    }
+}
+
 @Suite struct AddressSelectionTests {
     @Test func sameWiFiWinsOverTailscaleAndTunnel() async throws {
         let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .mac($0), "maya.example.ts.net": .mac($0)] })
@@ -216,6 +265,22 @@ struct Rig {
         #expect(await rig.client.currentAddress?.kind == .tailscale)
     }
 
+    /// A call cancelled before the Mac answers (Search's query changed) keeps the address and
+    /// doesn't look for another.
+    @Test func aCancelledCallKeepsTheAddress() async throws {
+        let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .mac($0)] })
+        try await rig.pair([Addresses.lan, Addresses.tailscale])
+        _ = try await rig.client.status()
+        rig.transport.set("192.168.1.20", .silent)
+        let before = rig.transport.count("100.101.102.103")
+        let call = Task { try await rig.client.call(MemoriesSearch.self, MemorySearchParams(query: "seat")) }
+        try await Task.sleep(for: .milliseconds(50))
+        call.cancel()
+        _ = await call.result
+        #expect(await rig.client.currentAddress?.kind == .lan)
+        #expect(rig.transport.count("100.101.102.103") == before)
+    }
+
     @Test func anUnsafeCallIsNotResent() async throws {
         let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .mac($0)] })
         try await rig.pair([Addresses.lan, Addresses.tailscale])
@@ -227,6 +292,26 @@ struct Rig {
         }
         #expect(rig.transport.count("100.101.102.103") == before)
         #expect(await rig.client.currentAddress == nil)
+    }
+
+    /// `memories.answer` waits 55 s, is never resent, and a slow answer isn't "unreachable":
+    /// the address stays.
+    @Test func aSlowAnswerTimesOutOnceAndKeepsTheAddress() async throws {
+        let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .mac($0)] })
+        try await rig.pair([Addresses.lan, Addresses.tailscale])
+        _ = try await rig.client.status()
+        rig.transport.set("192.168.1.20", .timesOut)
+        let lan = rig.transport.count("192.168.1.20"), tailscale = rig.transport.count("100.101.102.103")
+        await #expect(throws: CompanionClientError.answerTimedOut) {
+            try await rig.client.call(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()]))
+        }
+        #expect(rig.transport.count("192.168.1.20") == lan + 1 && rig.transport.count("100.101.102.103") == tailscale)
+        #expect(rig.transport.timeouts.last == 55)
+        #expect(await rig.client.currentAddress?.kind == .lan)
+        // Other calls keep their 15 s.
+        rig.transport.set("192.168.1.20", .mac(rig.mac))
+        _ = try? await rig.client.call(CategoriesList.self, EmptyParams())
+        #expect(rig.transport.timeouts.last == 15)
     }
 
     @Test func methodErrorsComeThrough() async throws {

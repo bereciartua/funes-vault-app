@@ -35,4 +35,18 @@ public enum VaultError: Error, Sendable, Equatable {
     /// A memory changed since the caller read it (the iPhone sends the version it saw): "Changed
     /// on your Mac, reload?". Nothing was saved.
     case versionConflict
+    /// A memory the suggestion refers to changed, or was archived or deleted, since it was
+    /// suggested: "Changed since this was suggested". Nothing was saved.
+    case targetChanged
+    /// The suggestion's action can't be applied this way: a conflict without an answer, or an
+    /// answer meant for another action. Nothing was saved.
+    case unsupportedAction
+    /// New memories processing hasn't finished with the suggestion: it shows "Processing…" and
+    /// can't be applied until the result replaces it (memory processing §5.2). Nothing was saved.
+    case processing
+    /// Later automatic changes depend on this one: "Undo this and N later changes".
+    case undoNeedsLater(Int)
+    /// A memory it changed was changed again since by someone other than Funes, or the change is
+    /// gone, expired or already undone. Nothing was undone.
+    case undoNotPossible
 }

@@ -30,15 +30,15 @@ struct PendingRequest: Identifiable, Equatable {
     }
 }
 
-/// The main window's sections (04-ux-mac.md).
-/// The main window's sections, in the View menu's order (⌘1–⌘5). Agents shows the agent selected
-/// in the sidebar's Agents list.
+/// The main window's sections (04-ux-mac.md), in the View menu's order (⌘1–⌘6). Agents shows
+/// the agent selected in the sidebar's Agents list.
 enum AppSection: String, CaseIterable, Identifiable, Hashable {
-    case vault, inbox, activity, agents, remoteAccess
+    case home, vault, inbox, activity, agents, remoteAccess
     var id: String { rawValue }
 
     var title: String {
         switch self {
+        case .home: String(localized: "Home")
         case .vault: String(localized: "Vault")
         case .inbox: String(localized: "Inbox")
         case .agents: String(localized: "Agents")
@@ -49,6 +49,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
 
     var symbol: String {
         switch self {
+        case .home: "house"
         case .vault: "archivebox"
         case .inbox: "tray"
         case .agents: "person.2"
@@ -75,6 +76,8 @@ final class AppModel {
     var inbox: [Suggestion] = []
     var pending: [PendingRequest] = []
     var categories: [MemoryCategory] = []
+    /// About you (ADR-0026): Home's greeting, the access editor's values, About You's pane.
+    var profile = Profile()
     /// Whether the vault has any active memory (the checklist and empty states).
     var hasMemories = false
     /// The Inbox is waiting on a decision; drives the menu bar's "needs you" state with `pending`.
@@ -88,11 +91,23 @@ final class AppModel {
     var dataGeneration = 0
 
     let vault: VaultModel
+    /// Search answers with the user's settings (FR-AI-17): the Vault's Ask, and the iPhone's.
+    let searchAnswers: SearchAnswersController
+    /// Home's pulse and cards (FR-H-02).
+    let home: HomeModel
+    /// Home's composer: the capture box's model, saved the same way.
+    let composer = CaptureBoxModel()
     let inboxState: InboxModel
     let activity: ActivityModel
     let checklist: ChecklistModel
     let modelSettings: ModelSettings
+    /// The provider embedding model's index (ADR-0023, task 6c.3).
+    let embeddings: EmbeddingController
     let data: DataOperations
+    /// Classification (and from 6a, splitting) of everything that arrives, in the background.
+    let processing: ProcessingRunner
+    /// The daily tidy-up: its schedule, Tidy Up Now and the last run (memory processing §9).
+    let tidyUp: TidyUpController
     /// Remote Access (ADR-0018): its settings, guide and tunnel checks. The app delegate gives it
     /// the listener through its host.
     let remoteAccess: RemoteAccessController
@@ -109,13 +124,35 @@ final class AppModel {
     var cloudMessage: String?
     /// Sparkle, or a stand-in where this build can't update itself.
     @ObservationIgnored var updater = UpdaterControls.unavailable
-    /// MCP traffic counts since launch (Settings ▸ MCP).
+    /// MCP traffic counts since launch (Settings ▸ Agent Server).
     @ObservationIgnored var trafficCounts: () -> MCPTrafficCounters.Snapshot = { MCPTrafficCounters.Snapshot() }
 
     // MARK: Navigation
 
-    var section: AppSection = .vault
-    var settingsTab: SettingsTab = .general
+    /// A pane chosen in the sidebar: its top level.
+    func showSettingsPane(_ pane: SettingsPane) {
+        settingsPath = []
+        settingsPane = pane
+    }
+
+    /// Settings at a destination, or at the last pane's top level (ADR-0030 §1, §9). An account
+    /// that no longer exists opens Models & Accounts.
+    func goToSettings(_ destination: SettingsDestination?) {
+        guard let destination else { settingsPath = []; return }
+        settingsPane = destination.pane
+        switch destination.page {
+        case let .account(id)? where !modelSettings.hasAccount(id): settingsPath = []
+        case let page?: settingsPath = [page]
+        case nil: settingsPath = []
+        }
+    }
+
+    /// The main window opens on Home (FR-H-02).
+    var section: AppSection = .home
+    /// The Settings pane shown: the last one this session, General the first time (ADR-0030 §1).
+    var settingsPane: SettingsPane = .general
+    /// The pages open inside it; empty at its top level.
+    var settingsPath: [SettingsPage] = []
     var agentTab: AgentTab = .access
     /// Open the Add Agent sheet: the sidebar's +, the checklist's Add… and the empty Agents page set it.
     var wantsAddAgent = false
@@ -130,8 +167,10 @@ final class AppModel {
     var windowRequest = 0
 
     @ObservationIgnored var openMainWindow: () -> Void = {}
-    @ObservationIgnored var openSettings: (SettingsTab?) -> Void = { _ in }
+    @ObservationIgnored var openSettings: (SettingsDestination?) -> Void = { _ in }
     @ObservationIgnored var openCapture: () -> Void = {}
+    /// Saves a box's text as a capture (CaptureSaver); true when it was taken.
+    @ObservationIgnored var saveCapture: (CaptureBoxModel) -> Bool = { _ in false }
     @ObservationIgnored var openPendingRequest: (UUID) -> Void = { _ in }
     @ObservationIgnored var changed: () -> Void = {}
     /// Each Activity row as it's written (for the "refused repeatedly" notification).
@@ -154,9 +193,9 @@ final class AppModel {
     @ObservationIgnored var setReviewShortcut: (Shortcut?) -> Bool = { _ in false }
     /// Brings the waiting panel forward and makes it key, or opens the newest pending request.
     @ObservationIgnored var reviewRequest: () -> Void = {}
-    /// Turns the MCP server on or off (Settings ▸ MCP).
+    /// Turns the MCP server on or off (Settings ▸ Agent Server).
     @ObservationIgnored var setServer: (Bool) -> Void = { _ in }
-    /// Moves the MCP server to another port (Settings ▸ MCP).
+    /// Moves the MCP server to another port (Settings ▸ Agent Server).
     @ObservationIgnored var setPort: (Int) -> Void = { _ in }
     /// Turns a notification kind on, asking macOS for permission the first time.
     @ObservationIgnored var requestNotificationPermission: (@escaping @MainActor (Bool) -> Void) -> Void = { $0(false) }
@@ -171,19 +210,33 @@ final class AppModel {
         self.services = services
         self.preferences = preferences
         vault = VaultModel(services: services)
+        home = HomeModel(services: services, defaults: preferences.defaults)
         inboxState = InboxModel(services: services)
         activity = ActivityModel(services: services)
         checklist = ChecklistModel(preferences: preferences)
         self.modelSettings = modelSettings ?? ModelSettings(defaults: preferences.defaults, keys: ModelSettings.keychain())
         data = DataOperations(environment: services, preferences: preferences)
+        processing = ProcessingRunner(environment: services, preferences: preferences, settings: self.modelSettings)
+        tidyUp = TidyUpController(environment: services, preferences: preferences, settings: self.modelSettings)
+        searchAnswers = SearchAnswersController(environment: services, settings: self.modelSettings)
+        embeddings = EmbeddingController(environment: services, settings: self.modelSettings)
         remoteAccess = RemoteAccessController(defaults: preferences.defaults, appName: "Funes Vault", names: .funes,
                                               defaultPort: FunesRemoteConfiguration.defaultPort, host: .inert)
-        companion = CompanionController(defaults: preferences.defaults, services: services.companionServices,
+        var companionServices = services.companionServices
+        companionServices.answers = searchAnswers
+        companion = CompanionController(defaults: preferences.defaults, services: companionServices,
                                         approvals: services.phoneApprovals, appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
         pausedUntil = services.pause.pausedUntil(at: Date())
         inboxState.categories = { [weak self] in self?.categories ?? [] }
+        vault.answers = searchAnswers
+        self.modelSettings.embeddingInputsChanged = { [weak self] in self?.embeddings.apply() }
+        composer.save = { [weak self, composer] _ in self?.saveCapture(composer) ?? false }
+        composer.search = { [weak self] text in self?.showVault(query: text.trimmingCharacters(in: .whitespacesAndNewlines)) }
         observation = services.store.observeChanges { [weak self] in
-            Task { @MainActor in self?.scheduleRefresh() }
+            Task { @MainActor in
+                self?.scheduleRefresh()
+                self?.processing.kick()
+            }
         }
         services.activity.onAppend = { [weak self] event in
             Task { @MainActor in
@@ -202,7 +255,7 @@ final class AppModel {
         if isPaused { return .paused }
         switch mcpStatus {
         case .off, .starting: return .off
-        case .failed: return .paused
+        case .failed: return .cantConnect
         case .listening: return pending.isEmpty && inbox.isEmpty ? .normal : .needsYou
         }
     }
@@ -245,6 +298,7 @@ final class AppModel {
                            task: services.approvals.sessionTask($0.id))
         }
         categories = (try? services.store.categories()) ?? []
+        profile = (try? services.store.profile()) ?? Profile()
         hasMemories = !((try? services.store.memories(MemoryFilter(status: .activeIncludingExpired), now: now, limit: 1)) ?? []).isEmpty
         dataGeneration += 1
         checklist.update(model: self)
@@ -280,6 +334,16 @@ final class AppModel {
         pausedUntil = nil
         services.activity.record(ActivityEvent(time: Date(), phase: .event, actor: .user, via: .app, event: "funes_resumed"))
         changed()
+    }
+
+    /// The Cloud chip under a capture field: who proposes the fields of what's typed there.
+    func updateCloudChip(_ box: CaptureBoxModel) {
+        guard preferences.classifyCaptures else {
+            box.cloudProvider = nil
+            return
+        }
+        let settings = modelSettings
+        Task { box.cloudProvider = await settings.cloudClassifierName() }
     }
 
     func setNotification(_ key: String, _ on: Bool) {
@@ -386,9 +450,34 @@ final class AppModel {
         show(.agents)
     }
 
-    func showActivity(_ focus: ActivityFocus?) {
+    /// A History row's Show in Activity: this memory's Activity, with the row for that moment selected.
+    func showActivity(memoryID: UUID, near time: Date) {
+        activity.kind = .all
+        activity.period = .all
+        activity.select(memoryID: memoryID, near: time)
+        showActivity(.memory(memoryID))
+    }
+
+    /// Activity narrowed to `focus`, showing `kind` (Home's chart opens Problems for a refused dot).
+    func showActivity(_ focus: ActivityFocus?, kind: ActivityEntry.Kind? = nil) {
         activityFocus = focus
+        if let kind { activity.kind = kind }
+        if case .period = focus { activity.period = .all }
         show(.activity)
+    }
+
+    /// The main window on Home: Open Funes Vault, and reopening the app with the window closed.
+    func showHome() { show(.home) }
+
+    /// The Vault with these filters and nothing else, newest first or as it was (Home's cards).
+    func showVault(query: String = "", sensitivities: Set<Sensitivity> = [], newestFirst: Bool = false) {
+        vault.clearFilters()
+        vault.status = .active
+        vault.sensitivities = sensitivities
+        vault.query = query
+        if newestFirst { vault.sort = .created }
+        selectedMemoryID = nil
+        show(.vault)
     }
 }
 
@@ -397,4 +486,6 @@ enum ActivityFocus: Equatable {
     case memory(UUID)
     case agent(UUID)
     case request(UUID)
+    /// A day, week or month of Home's chart, or an hour of the menu bar panel's.
+    case period(DateInterval)
 }

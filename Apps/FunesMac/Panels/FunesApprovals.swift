@@ -35,6 +35,12 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     @MainActor var remoteTunnel: (UUID) -> String? = { _ in nil }
     /// A suggestion arrived (for the optional notification).
     @MainActor var suggestionArrived: (String) -> Void = { _ in }
+    /// Agents' suggestions whose Save panels wait for New memories processing: they show with the
+    /// result, one per piece (memory processing §5.2). In memory only: after a relaunch they're
+    /// in the Inbox.
+    @MainActor private var awaitingProcessing = Set<UUID>()
+    /// Vault changes, so a Save panel goes once its suggestion is answered elsewhere.
+    private var observation: AnyObject?
 
     @MainActor
     init(environment: VaultEnvironment) {
@@ -51,6 +57,9 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
                     self.notice(String(localized: "Answered on \(deviceName)."))
                 }
             }
+        }
+        observation = environment.store.observeChanges { [weak self] in
+            Task { await self?.withdrawResolvedSaves() }
         }
     }
 
@@ -91,7 +100,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             (remoteRequests.contains(requestID), remoteRequests.contains(requestID) ? remoteTunnel(panel.agentID) : nil)
         }
         var item = Self.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: now, agent: agent, remote: remote,
-                                  tunnel: tunnel)
+                                  tunnel: tunnel, profileFields: disclosure?.profileFieldsSent ?? [])
         if focus {
             item.expiresAt = panel.expiresAt
             item.moreTime = nil
@@ -115,7 +124,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// said (labelled as such), the user's own note on the agent, and the memories, strong matches
     /// ticked and weaker ones offered unticked (access policy §3.2).
     static func shareItem(_ panel: ApprovalPanel, withheld: [ReasonCode: Int], now: Date, agent: Agent?,
-                          remote: Bool = false, tunnel: String? = nil) -> PanelItem {
+                          remote: Bool = false, tunnel: String? = nil, profileFields: [ProfileField] = []) -> PanelItem {
         let rows = panel.memories.map { memory in
             let weak = !panel.strong.contains(memory.id)
             return PanelItem.Row(id: memory.id.uuidString, title: memory.title, detail: memory.body,
@@ -136,7 +145,16 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             destination: destination(agentName: panel.agentName, kind: agent?.agentKind, remote: remote, tunnel: tunnel),
             task: panel.task, keywords: panel.keywords, purpose: panel.purpose, keepsIt: AgentText.retention(panel.retention),
             sharedWith: panel.processors, facts: facts, rows: ordered, note: note,
-            expiresAt: max(now, panel.createdAt) + panelSeconds)
+            aside: aboutYou(agentName: panel.agentName, profileFields), expiresAt: max(now, panel.createdAt) + panelSeconds)
+    }
+
+    /// "Claude Code also has your name and pronouns, as set in its Access." (ADR-0026): the
+    /// answer that started the request already carried them, so they aren't tickable and Deny
+    /// doesn't take them back.
+    static func aboutYou(agentName: String, _ fields: [ProfileField]) -> PanelItem.Aside? {
+        guard !fields.isEmpty else { return nil }
+        return PanelItem.Aside(text: String(localized: "\(agentName) also has \(ProfileText.sentence(fields)), as set in "),
+                               link: String(localized: "its Access"), after: ".")
     }
 
     /// Goes to: built only from facts Funes holds. A local agent may pass what it reads on to its AI
@@ -200,9 +218,39 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
 
     // MARK: Save this memory?
 
+    /// A processing job's outcome is recorded: the Save panels waiting for it show now.
+    func processingEnded(_ id: UUID) async {
+        guard await MainActor.run(body: { awaitingProcessing.contains(id) }) else { return }
+        await present(suggestionID: id, focus: false)
+    }
+
+    /// The Save panels for an agent's suggestion, once New memories processing is done with it:
+    /// one per piece of a split, or the suggestion itself. While it's processing nothing shows
+    /// (opened from elsewhere, its "Processing…" card in the Inbox) and `processingEnded` comes
+    /// back to it. With splitting off nothing waits.
     private func present(suggestionID: UUID, focus: Bool) async {
-        guard let suggestion = try? await environment.suggestions.suggestion(id: suggestionID),
-              suggestion.status == .pending else { return }
+        await MainActor.run { _ = awaitingProcessing.insert(suggestionID) }
+        let ids: [UUID]?
+        do { ids = try await environment.suggestions.savePanels(for: suggestionID, now: Date()) } catch { ids = [] }
+        guard let ids else {
+            if focus { await MainActor.run { editSuggestion(suggestionID) } }
+            return
+        }
+        // The job's end and the arrival may both get here: the first one shows the panels.
+        guard await MainActor.run(body: { awaitingProcessing.remove(suggestionID) != nil }) else { return }
+        // Opened from elsewhere, a split input is reviewed on its group card in the Inbox.
+        if focus, ids != [suggestionID] {
+            if !ids.isEmpty { await MainActor.run { editSuggestion(suggestionID) } }
+            return
+        }
+        // The pieces queue behind each other ("+N more"); the notification comes once.
+        for (i, id) in ids.enumerated() { await presentPanel(id, focus: focus, announce: i == 0) }
+    }
+
+    private func presentPanel(_ suggestionID: UUID, focus: Bool, announce: Bool) async {
+        guard let suggestion = try? await environment.suggestions.suggestion(id: suggestionID), suggestion.status == .pending else {
+            return
+        }
         let agentName = (try? await suggestion.agentID.asyncMap { try await environment.agents.agent(id: $0) })??.name
             ?? String(localized: "An agent")
         let names = Dictionary(uniqueKeysWithValues: ((try? environment.store.categories()) ?? []).map { ($0.key, $0.name) })
@@ -219,7 +267,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         if let evidence = suggestion.evidence, !evidence.isEmpty {
             says.append(PanelItem.Fact(label: String(localized: "Why"), value: evidence, collapsible: true))
         }
-        let item = PanelItem(
+        var item = PanelItem(
             id: suggestion.id, kind: .save, agentID: suggestion.agentID?.uuidString ?? "",
             title: suggestion.targetMemoryID == nil ? String(localized: "Save this memory?")
                                                     : String(localized: "Save this correction?"),
@@ -230,10 +278,14 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             facts: facts, primary: String(localized: "Save"), secondary: String(localized: "Later"),
             tertiary: String(localized: "Discard"), edit: String(localized: "Edit…"),
             announcement: String(localized: "\(agentName) suggests a memory for Funes"))
+        item.cardTitle = suggestion.targetMemoryID == nil ? String(localized: "\(agentName) wants to save a memory")
+                                                          : String(localized: "\(agentName) wants to save a correction")
         let shown = await MainActor.run { () -> Bool in
             guard !queue.isClosed else { return false }
+            // While the panel (or the iPhone's approval) is up, the tidy-up leaves it alone.
+            environment.holds.hold(suggestion.id, .savePanel)
             queue.enqueue(item) { [weak self] answer in self?.answered(suggestion: suggestion.id, answer) }
-            if focus { bringForward() } else { suggestionArrived(agentName) }
+            if focus { bringForward() } else if announce { suggestionArrived(agentName) }
             return true
         }
         if shown, !focus { await desk.waiting(.save(suggestion.id)) }
@@ -241,6 +293,8 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
 
     private func answered(suggestion id: UUID, _ answer: PanelAnswer) {
         let suggestions = environment.suggestions
+        let holds = environment.holds
+        holds.release(id, .savePanel)
         let desk = self.desk
         Task {
             do {
@@ -258,6 +312,33 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
                 logger.error("Answering a suggestion failed")
             }
         }
+    }
+
+    /// Withdraws the Save panels whose suggestion isn't pending any more: saved or rejected in an
+    /// Inbox (the iPhone's or this Mac's), split, expired or gone. The queue is read before the
+    /// vault, so a panel shown meanwhile was pending when it was enqueued and is never taken back
+    /// by a stale read. Quietly: sixty "already answered" notices would be the noise this removes,
+    /// and a phone's answer to the panel itself says so already.
+    func withdrawResolvedSaves() async {
+        let ids = await MainActor.run { queue.items.filter { $0.kind == .save }.map(\.id) }
+        guard !ids.isEmpty else { return }
+        var resolved = [(UUID, answered: Bool)]()
+        for id in ids {
+            // A read that fails leaves the panel up; a suggestion that's gone takes it down.
+            do {
+                if let suggestion = try await environment.suggestions.suggestion(id: id) {
+                    if suggestion.status != .pending { resolved.append((id, suggestion.status != .expired)) }
+                } else {
+                    resolved.append((id, false))
+                }
+            } catch {
+                continue
+            }
+        }
+        guard !resolved.isEmpty else { return }
+        await MainActor.run { for (id, _) in resolved { queue.withdraw(id) } }
+        // Takes back the iPhone's doorbell now rather than at the next minute's sweep.
+        for (id, answered) in resolved { await desk.ended(.save(id), answered: answered) }
     }
 
     // MARK: <Agent> wants more access
@@ -362,6 +443,16 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     @MainActor
     func review() -> Bool {
         guard !queue.items.isEmpty else { return false }
+        bringForward()
+        return true
+    }
+
+    /// A menu bar card's Review: this item selected in the approval panel, which comes forward
+    /// and becomes key. Its arming delay and keys are the panel's own. False when it's gone.
+    @MainActor
+    func review(_ id: UUID) -> Bool {
+        guard queue.items.contains(where: { $0.id == id }) else { return false }
+        queue.select(id)
         bringForward()
         return true
     }

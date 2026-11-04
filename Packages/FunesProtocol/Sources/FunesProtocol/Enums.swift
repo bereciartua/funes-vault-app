@@ -74,10 +74,40 @@ public enum DisclosureStatus: String, Codable, Sendable, CaseIterable {
 
 public enum SuggestionStatus: String, Codable, Sendable, CaseIterable {
     case pending, applied, rejected, expired
+    /// Replaced by its pieces (Phase 6); the row stays for receipts and idempotency.
+    case split
 }
 
+/// What applying a suggestion does (spec/domain/domain-model.md#suggestion): each action has
+/// its own apply.
 public enum SuggestionAction: String, Codable, Sendable, CaseIterable {
-    case create, update, archive
+    /// A new memory.
+    case create
+    /// A correction of its target: Replace, or Keep both.
+    case update
+    /// Archives its target (a retraction, or a duplicate with a survivor).
+    case archive
+    /// Already in the vault: applying it changes nothing.
+    case duplicate
+    /// Replaces its target with the pieces of its group.
+    case split
+    /// One new memory from its sources, which are archived.
+    case merge
+    /// Two memories that disagree; the user's answer decides.
+    case conflict
+    /// An action this build doesn't know (from a newer Mac): shown as "Review on your Mac", never
+    /// applied here.
+    case unknown
+
+    public init(from decoder: any Decoder) throws {
+        self = SuggestionAction(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .unknown
+    }
+
+    /// The actions the iPhone answers: all but one it doesn't know (companion protocol §4.2).
+    public var appliesOnPhone: Bool { self != .unknown }
+
+    /// Applied only with the user's answer (Keep This or Both Are True), never by a swipe or in bulk.
+    public var needsAnswer: Bool { self == .conflict }
 }
 
 /// Where a memory came from.
@@ -92,6 +122,17 @@ public enum MemorySource: String, Codable, Sendable, CaseIterable {
     case importMarkdown = "import_markdown"
     case importFunes = "import_funes"
     case seedQuestion = "seed_question"
+    /// A merge or split result (Phase 6).
+    case tidyUp = "tidy_up"
+
+    /// Whether the Rhythm grid counts it as one you saved: typed, captured, an agent's write or
+    /// approved suggestion, a setup answer. Not imports, nor tidy-up's rewrites of memories you had.
+    public var countsAsSaved: Bool {
+        switch self {
+        case .manual, .captureMac, .captureIPhone, .agentSuggestion, .agentWrite, .seedQuestion: true
+        case .importChatGPT, .importClaude, .importMarkdown, .importFunes, .tidyUp: false
+        }
+    }
 }
 
 /// Where a suggestion came from.
@@ -177,6 +218,13 @@ public enum ProvenanceEvent: String, Codable, Sendable, CaseIterable {
     case created, edited, archived, restored, deleted, shared, confirmed
     case suggestedCorrection = "suggested_correction"
     case appliedFromSuggestion = "applied_from_suggestion"
+    // Phase 6: the other side is the entry's related memory.
+    case splitInto = "split_into"
+    case splitFrom = "split_from"
+    case mergedInto = "merged_into"
+    case mergedFrom = "merged_from"
+    case autoApplied = "auto_applied"
+    case undone
 }
 
 /// How a paired iPhone last reached the Mac.

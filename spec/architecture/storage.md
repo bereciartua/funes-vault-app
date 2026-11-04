@@ -5,7 +5,7 @@ Everything lives under `~/Library/Application Support/FunesVault/`, in a 0700 fo
 
 | Path | Contents | Notes |
 |---|---|---|
-| `vault.sqlite` (+ `-wal`, `-shm`) | Memories, categories, suggestions, agents, access, disclosures, devices, receipts, provenance, embeddings, FTS | GRDB `DatabasePool`, WAL mode |
+| `vault.sqlite` (+ `-wal`, `-shm`) | Memories, categories, suggestions, agents, access, disclosures, devices, receipts, provenance, embeddings, FTS, the profile (v0.5) | GRDB `DatabasePool`, WAL mode |
 | `agent-keys/<agentId>.key` | The agent's MCP key, bare with no newline | Written once, never read back except by **Copy key**. Deleted on removal |
 | `agent-keys/<agentId>.remote.key` | The agent's Remote Access token (`fns_mcpr_v1_`), bare | Only with Allow cloud access. Read back only by **Copy Remote Token…**. Replaced by **Reset Remote Token…**; deleted when cloud access is turned off or the agent is removed ([ADR-0018](decisions/0018-remote-access-in-v0.1.md)) |
 | `remote-connections.json` | Remote Access OAuth state: connected cloud apps (agent id, app name, OAuth client id, MCP URL, SHA-256 digests of the access, refresh and recently rotated refresh tokens, expiry and use times) and registered OAuth clients (`dcr_`, and `cfg_` with the digest of its `fns_ocs_v1_` secret) | BridgeKitRemote's `OAuthStore`: written atomically with fsync, fails closed (a wrong owner, mode, size or content makes OAuth unavailable and the file is never overwritten). No token in the clear. Never exported |
@@ -74,13 +74,14 @@ CREATE VIRTUAL TABLE memory_fts USING fts5(
 
 CREATE TABLE embedding (           -- ADR-0016: about 15 MB of vectors at 10,000 memories
   memory_id    TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
-  model_id     TEXT NOT NULL,      -- v0.1: "bge-small-en-v1.5/coreml-int8" (384 dims); later e.g. "openai/text-embedding-3-small"
+  model_id     TEXT NOT NULL,      -- "bge-small-en-v1.5/coreml-int8" (384 dims) on every memory; v0.3 a second index, "<provider>/<model>", e.g. "openai/text-embedding-3-small" (1,536)
   dims         INTEGER NOT NULL,
   vector       BLOB NOT NULL,      -- Float32 little-endian, L2-normalized
   content_hash TEXT NOT NULL,      -- SHA-256 of the embedded text
-  PRIMARY KEY (memory_id, model_id)  -- two models coexist only while re-embedding
+  PRIMARY KEY (memory_id, model_id)  -- bge-small and, v0.3, one provider model (ADR-0023)
 );
--- meta('active_embedding_model') names the model search uses; meta('embedding_thresholds') holds per-model thresholds (JSON)
+-- v0.3: meta('provider_embeddings') = {"modelID", "limit"} once the provider set is complete for that model and
+-- cloud limit (search uses it only then). The choice and Calibrate's thresholds live in user defaults (Settings ▸ AI ▸ Features ▸ Search index).
 
 CREATE TABLE provenance (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -133,6 +134,13 @@ CREATE TABLE access_category (
   PRIMARY KEY (agent_id, category_key, mode)   -- a key may be on both lists; deny wins (T8)
 );
 
+-- v6_profile (v0.5, ADR-0026): the profile fields each agent's request_memory answers carry.
+CREATE TABLE access_profile_field (
+  agent_id TEXT NOT NULL REFERENCES agent(id) ON DELETE CASCADE,
+  field    TEXT NOT NULL CHECK (field IN ('name','pronouns','languages','location','time_zone','occupation')),
+  PRIMARY KEY (agent_id, field)
+);
+
 CREATE TABLE disclosure (
   id                       TEXT PRIMARY KEY,
   agent_id                 TEXT NOT NULL REFERENCES agent(id),
@@ -153,7 +161,9 @@ CREATE TABLE disclosure (
   withheld                 TEXT NOT NULL DEFAULT '{}',   -- JSON {reason:count}
   created_at               TEXT NOT NULL,
   decided_at               TEXT,
-  delivered_at             TEXT
+  delivered_at             TEXT,
+  -- v6_profile (ADR-0026):
+  profile_fields_sent      TEXT NOT NULL DEFAULT '[]'    -- JSON [field]; names only, never values
 );
 CREATE INDEX disclosure_agent_status ON disclosure(agent_id, status);
 CREATE INDEX disclosure_pending ON disclosure(status, created_at) WHERE status IN ('needs_approval','approved');
@@ -228,23 +238,65 @@ CREATE TABLE import_run (
   blocked     INTEGER NOT NULL DEFAULT 0
 );
 
+-- v6_profile (v0.5, ADR-0026): "About you". One row, every field optional; not a memory.
+CREATE TABLE profile (
+  id              INTEGER PRIMARY KEY CHECK (id = 1),
+  given_name      TEXT,
+  family_name     TEXT,
+  preferred_name  TEXT,
+  pronouns        TEXT,
+  languages       TEXT NOT NULL DEFAULT '[]',          -- JSON [BCP 47 tag], ordered
+  location        TEXT,
+  time_zone       TEXT NOT NULL DEFAULT 'automatic',   -- an IANA id, or 'automatic' (the Mac's)
+  occupation      TEXT,
+  updated_at      TEXT
+);
+
+-- v7_memory_revisions (v0.5, ADR-0027): the version each change replaced. Never exported.
+CREATE TABLE memory_revision (
+  memory_id      TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
+  version        INTEGER NOT NULL,                     -- the version this state was
+  title          TEXT NOT NULL,
+  body           TEXT NOT NULL,
+  kind           TEXT NOT NULL,
+  category_keys  TEXT NOT NULL DEFAULT '[]',           -- JSON [category key]
+  sensitivity    INTEGER NOT NULL,
+  status         TEXT NOT NULL,
+  expires_at     TEXT,
+  replaced_at    TEXT NOT NULL,
+  replaced_by    TEXT NOT NULL,                        -- the change's actor, as in provenance
+  PRIMARY KEY (memory_id, version)
+);
+CREATE INDEX memory_revision_replaced ON memory_revision(replaced_at);
+
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema version, vault id, etc.
+-- v0.5: meta('keep_revisions') = '0' once the user turned earlier versions off; absent means on.
+-- v0.3: meta('tidy_up_split_prompt') = the extraction prompt version whose one-time clearing of older split
+-- dismissals has run (memory processing §9.5).
 ```
 
 ## 3. Migrations
 - These are GRDB `DatabaseMigrator`, forward-only and named (`v1_initial`, `v2_…`).
 - `v2_remote_access` (v0.1, Phase 4b): adds `agent.cloud_access` (0 for every existing agent), `remote_key_digest` and `remote_key_issued_at`, and the unique index on the digest.
 - `v3_device_approvals` (v0.2, task 5.6): adds `device.approvals_enabled` (1 for every existing device) and `doorbell_tag` (empty until the phone asks for it).
+- `v4_memory_processing` (v0.3, Phase 6.1; [ADR-0020](decisions/0020-atomic-extraction-for-every-source.md), [ADR-0021](decisions/0021-daily-tidy-up.md)): `memory.trust` (`trusted` for every existing memory except `agent_write` ones, which are `untrusted`) and `memory.reconciled_version` (null); `suggestion.target_memory_version`, `group_id`, `intent`, `outside_scope`, and the `split` status; tables `suggestion_target`, `suggestion_group`, `processing_job`, `undo_entry`, `tidy_up_run` and `tidy_up_dismissal`; `provenance.related_memory_id` and `engine`. Fields as in the [domain model](../domain/domain-model.md#suggestion). The physical DDL is `Schema.v4` in FunesCore. Suggestions pending before it have no target version, so apply only checks that their target is still active.
+- `v5_overview_indexes` (v0.4, Phase 7 task 7.2; [ADR-0025](decisions/0025-vault-overview-and-iphone-cache.md)): `VaultOverview` took 86–105 ms on the 10,000-memory benchmark vault without indexes, so five indexes, each carrying the columns its query groups by so the scans don't visit rows that hold memory text and candidate snapshots: `memory_created` on `memory(created_at, source, source_device_id)`, `memory_status_shape` on `memory(status, sensitivity, kind, id)`, `disclosure_delivered` on `disclosure(delivered_at, agent_id)` where `delivered_at` is set, `disclosure_created` on `disclosure(created_at, agent_id, status, reason)`, and `disclosure_item_shape` on `disclosure_item(disclosure_id, sensitivity, category_key)`. No data changes. With them it takes about 12 ms for 30 days, 14 ms for 12 weeks and 36 ms for 12 months (up to about 45 ms while the Mac is busy).
+- `v6_profile` (v0.5, [ADR-0026](decisions/0026-about-you-profile.md)): the `profile` table (no row until the user first saves About You), `access_profile_field` with `name` for every agent not removed, and `disclosure.profile_fields_sent` (`[]` for every existing request).
+- `v7_memory_revisions` (v0.5, [ADR-0027](decisions/0027-memory-revisions.md)): the `memory_revision` table and its index. Nothing to backfill.
+- `v8_tidy_up_scope` (v0.5.1, [memory processing §9.7](../domain/memory-processing.md#97-tidy-up-on-one-memory)): `tidy_up_run.scope`, `all` (every existing run) or `memory` for Tidy Up on one memory.
 - Before running pending migrations: make an online backup to `Backups/pre-<migration>-<date>.sqlite`.
 - Each migration has a test: open a fixture database created by the previous version, migrate it, and check the data and invariants.
 - Downgrades aren't supported. An older app version that finds a newer schema refuses to open the vault, shows "Update Funes", and never writes to it.
 
 ## 4. Invariants enforced in code (and tested)
 - **Categories:** a memory always has at least one `memory_category` row, enforced in the store API, since SQLite can't express it. A memory's categories are read in category order (`sort_order`, then key); the first is its primary category (the `category` of a bundle item).
-- **Versioning:** `version` increments in the same transaction as any field change. `updated_at` is set at the same time.
+- **Versioning:** `version` increments in the same transaction as any field change. `updated_at` is set at the same time. From v0.5 the state it replaces is written to `memory_revision` in that transaction too, unless earlier versions are off (`MemoryStore.update` and `setStatus` are the only places a version changes).
 - **Disclosure items:** written only in delivery transactions.
 - **Captures:** `capture_receipt` is inserted in the same transaction as its suggestion.
 - **Purging** a deleted memory removes its FTS rows, embedding and provenance (cascade). `disclosure_item` rows keep the memory id for Activity labelling, shown as "(deleted memory)".
+- **Purging (v0.3)** also removes the memory's `undo_entry` rows, the text of the piece it was saved from, and the source text of the `suggestion_group` that piece belongs to (with the original row's title and body), so no copy of its text outlives it (FR-V-04). Delete Now does the same at once.
+- **Purging (v0.5)** also removes the memory's earlier versions (cascade).
+- **Auto-apply (v0.3):** each automatic change, its `undo_entry`, its provenance and the watermark update are written in one transaction, after re-checking every involved memory's version.
 
 ## 5. Maintenance jobs
 | Job | When | What |
@@ -252,14 +304,42 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 | Purge deleted | launch, then daily | Hard-delete memories deleted more than 30 days ago |
 | Expire suggestions | launch, then hourly | `pending` → `expired` after 30 days; delete expired ones after 7 more days, except while a capture receipt still points at them (receipts keep captures idempotent for 90 days) |
 | Expire disclosures | every minute while any are pending | needs_approval older than 15 min → denied |
-| Re-embed | on change; when the bundled model version changes; later, when the user switches the embedding model (batched, resumable, with progress; see [model providers §7](model-providers.md#7-switching-the-embedding-model)) | Write vectors for the new `model_id`; switch `active_embedding_model` atomically when complete; delete old vectors |
+| Re-embed | on change; when the bundled model version changes; v0.3, when the user adds a provider embedding model (batched, resumable, with progress; see [model providers §7](model-providers.md#7-choosing-a-provider-embedding-model)) | Bundled: write vectors for the new `model_id`, switch when complete, delete old vectors. Provider (second index): write vectors for memories within the cloud limit; delete them when the limit drops, a memory's sensitivity rises above it, or the provider model is removed |
+| Processing jobs (v0.3) | after every vault change and every minute, one at a time; `running` ones requeued at launch | New memories processing of queued inputs ([memory processing §5.2](../domain/memory-processing.md#52-which-inputs-phase-6)): until 6a, classification of Mac and iPhone captures. Retries after 30 s, 2, 8 and 32 min, then `failed`. Finished jobs deleted after 30 days (daily) |
+| Daily tidy-up (v0.3) | daily at the user's time (`NSBackgroundActivityScheduler`), on demand, or on the next launch or wake after a missed run; only while on | [Memory processing §9](../domain/memory-processing.md#9-daily-tidy-up) |
+| Undo log cleanup (v0.3) | daily | Delete `undo_entry` rows past 30 days; drop source text of fully decided suggestion groups; v0.5: delete earlier versions past 90 days, and each memory's oldest beyond 50 |
 | Backup | daily, and before migrations | Keep the last 7 |
 | Activity compaction | launch, every 6 h, above 8 MB | Retention per FR-L-03 |
 | Receipt cleanup | daily | Delete capture receipts older than 90 days |
 | Integrity check | weekly | `PRAGMA quick_check`. On failure, notify and offer to restore from a backup |
 
+### 5.1 Restore from Backup
+Restoring brings back memories, never credentials or access settings ([security](security-and-privacy.md) T38). A backup holds the agents' key and remote-token digests, their access and the paired devices as they were when it was taken, and authentication trusts the digests in the database. Restoring it as is would let back in a key, token or device removed or reset since, and widen access narrowed since.
+
+So at the next launch, before the vault opens (`VaultStore.restoreBackup`, `RestoreAccess`):
+1. The current vault is saved as a self-contained `Backups/pre-restore-…` backup. It's never written again: a scratch copy of it (`vault.sqlite.restoring-current`) is what gets migrated and read.
+2. The chosen backup is copied in as `vault.sqlite.restoring` (leftovers of an earlier attempt, journals included, are deleted first) and migrated to this version's schema. A backup from a newer version is refused, and the vault is left as it was.
+3. In one transaction on the copy, if both are the same vault (`meta.vault_id`), the current vault's state replaces the backup's:
+   - agents (keys, remote tokens, cloud access, pause, names, removal);
+   - their access, category rules and profile fields;
+   - the never-share categories;
+   - paired devices (revocation, approvals, doorbell tag).
+
+   Agents and devices added since the backup are kept, so their keys and pairings keep working. Categories the backup lacks come along, because dropping an allow rule would widen an allow list (an empty one allows every category). A category deleted since comes back with the backup's memories, but its rules can't be rebuilt (deleting it moved its memories and their denies elsewhere), so every agent is denied it until the user decides.
+4. Without a current vault, or when the backup is another vault's, nothing can be carried forward. Every agent is removed (keys, remote tokens and access cleared) and every device revoked, so they're set up again.
+5. Either way, requests waiting in the backup (`needs_approval`, `approved`) are denied with `approval_expired`, so an approval can't be answered or delivered a second time.
+6. The current vault's WAL and shared-memory files are deleted (what they held is in the pre-restore backup), then one `rename` puts the copy in place of `vault.sqlite`, and the scratch files go.
+
+If steps 1–5 fail, the copy is deleted and the vault is unchanged; the app logs the failure and opens the current vault. A crash during step 6 can leave `vault.sqlite` without its last WAL transactions, which the pre-restore backup still holds.
+
+**What a restore still brings back:** everything about the memories themselves, including their sensitivity and categories. A memory whose sensitivity was raised, or that was moved into a denied category, after the backup comes back with its old labels, and agents' access applies to those. The same goes for earlier versions, the Inbox and settings kept in the database, such as `meta('keep_revisions')`.
+
+Not carried forward: Remote Access's connected cloud apps live in `remote-connections.json`, which a restore doesn't touch. Each call is checked against the agent's cloud access and removal (`FunesRemoteServer`), which come from the current vault.
+
 ## 6. iPhone storage
 - **App Group container:** `capture-queue.sqlite` (the capture queue), with file protection `completeUntilFirstUserAuthentication`.
 - **Keychain:** device signing and HPKE keys, and the pairing record (Mac public keys, ids, addresses).
-- **No** vault data. Search results and memory details live only in memory while on screen.
+- **App Group container (v0.4):** `overview.json`, the last `overview.get` answer for each range (counts, dates and agent names; no memory text or titles), with the same file protection, for Home and the widgets ([ADR-0025](decisions/0025-vault-overview-and-iphone-cache.md); [companion protocol §6.1](companion-protocol.md#61-overview-cache-phone-v04)).
+- **Keychain (v0.5):** the called name from the last `status.get`, in the pairing record, for Home's title while the Mac is away ([ADR-0026](decisions/0026-about-you-profile.md)). Deleted with the pairing.
+- **No** other vault data. Search results and memory details live only in memory while on screen.
 - **Demo vault:** a read-only JSON resource in the app bundle.

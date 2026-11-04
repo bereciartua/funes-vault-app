@@ -2,23 +2,31 @@ import AppKit
 import FunesProtocol
 import SwiftUI
 
-/// Settings ▸ Capture (04-ux-mac.md): the hotkey, the default sensitivity for captures, and
-/// classification on or off.
+/// Settings ▸ Capture & Shortcuts (04-ux-mac.md): both global shortcuts, the default sensitivity
+/// for captures, and Services. Whether captures get proposed fields is in Settings ▸ AI ▸ Features ▸
+/// New memories (task 6.1.8).
 struct CaptureSettings: View {
     let model: AppModel
     @State private var sensitivity: Sensitivity?
-    @State private var classify = true
     @State private var cloudProvider: String?
 
     var body: some View {
         Form {
-            Section(String(localized: "Quick capture")) {
-                ShortcutRecorder(title: String(localized: "Shortcut"), accessibilityName: String(localized: "Capture shortcut"),
+            Section(String(localized: "Shortcuts")) {
+                ShortcutRecorder(title: String(localized: "Quick capture"), accessibilityName: String(localized: "Capture shortcut"),
                                  current: model.preferences.captureShortcut, defaultShortcut: .defaultCapture,
                                  apply: model.setCaptureShortcut)
-                Text(String(localized: "Opens the capture box from any app. Funes doesn't need Accessibility access for it."))
+                HStack(alignment: .firstTextBaseline) {
+                    Text(String(localized: "Opens the capture box from any app. Funes doesn't need Accessibility access for it."))
+                        .font(.callout).foregroundStyle(.secondary)
+                    Spacer()
+                    Button(String(localized: "Try It")) { model.openCapture() }
+                }
+                ShortcutRecorder(title: String(localized: "Review Request"), accessibilityName: String(localized: "Review Request shortcut"),
+                                 current: model.preferences.reviewShortcut, defaultShortcut: .defaultReview,
+                                 apply: model.setReviewShortcut)
+                Text(String(localized: "Brings a waiting approval panel forward from any app, so Return and Esc answer it."))
                     .font(.callout).foregroundStyle(.secondary)
-                Button(String(localized: "Try It")) { model.openCapture() }
             }
             Section(String(localized: "New captures")) {
                 Picker(String(localized: "Sensitivity"), selection: $sensitivity) {
@@ -26,17 +34,16 @@ struct CaptureSettings: View {
                     ForEach(Sensitivity.allCases, id: \.self) { Text(String(localized: "At least \($0.title)")).tag(Optional($0)) }
                 }
                 .onChange(of: sensitivity) { _, value in model.preferences.captureSensitivity = value }
-                Toggle(String(localized: "Propose a title, kind and categories"), isOn: $classify)
-                    .onChange(of: classify) { _, on in model.preferences.classifyCaptures = on }
-                Text(classify ? String(localized: "Uses the Classification model in AI Models; you review every proposal in the Inbox.")
-                              : String(localized: "Captures get simple proposals from rules on this Mac."))
+                Text(model.preferences.classifyCaptures
+                     ? String(localized: "Funes proposes a title, kind and categories with the New memories model; you review every proposal in the Inbox.")
+                     : String(localized: "Captures get simple proposals from rules on this Mac. Turn on proposals in Features ▸ New memories."))
                     .font(.callout).foregroundStyle(.secondary)
-                if classify, let cloudProvider {
-                    Label(String(localized: "New captures are sent to \(cloudProvider) to suggest their fields, within the cloud limit in AI Models."),
+                if model.preferences.classifyCaptures, let cloudProvider {
+                    Label(String(localized: "New captures are sent to \(cloudProvider) to suggest their fields, within the cloud limit in Privacy & Limits."),
                           systemImage: "arrow.up.forward.app")
                         .font(.callout).fixedSize(horizontal: false, vertical: true)
                 }
-                Button(String(localized: "AI Models…")) { model.settingsTab = .models }
+                Button(String(localized: "New memories…")) { model.goToSettings(.newMemories) }
                     .buttonStyle(.link)
             }
             Section(String(localized: "From other apps")) {
@@ -47,7 +54,6 @@ struct CaptureSettings: View {
         .formStyle(.grouped)
         .onAppear {
             sensitivity = model.preferences.captureSensitivity
-            classify = model.preferences.classifyCaptures
         }
         .task { cloudProvider = await model.modelSettings.cloudClassifierName() }
     }

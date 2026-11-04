@@ -58,6 +58,8 @@ public final class MemoryDetailModel {
         } catch .method(let error) where error.code == .notFound {
             gone()
         } catch {
+            // Cancelled (the screen closed): not the Mac's failure.
+            guard !Task.isCancelled else { return }
             if detail == nil { phase = .failed(error) }
             onFailure(error)
         }

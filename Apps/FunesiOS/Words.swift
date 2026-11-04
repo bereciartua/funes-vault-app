@@ -5,17 +5,7 @@ import SwiftUI
 // The vault's words on the iPhone, the same as the Mac's (Apps/FunesMac/Support/UIComponents.swift).
 
 extension Sensitivity {
-    /// "Low", "Internal"… for badges and pickers.
-    var title: String {
-        switch self {
-        case .public: String(localized: "Public")
-        case .low: String(localized: "Low")
-        case .internal: String(localized: "Internal")
-        case .sensitive: String(localized: "Sensitive")
-        case .restricted: String(localized: "Restricted")
-        case .secret: String(localized: "Secret")
-        }
-    }
+    // `title` and `tint` are in Apps/FunesShared/OverviewCharts.swift, for the widgets too.
 
     var explanation: String {
         switch self {
@@ -25,17 +15,6 @@ extension Sensitivity {
         case .sensitive: String(localized: "Personal: health, money, family. Share rarely, and always ask.")
         case .restricted: String(localized: "Very personal. Only for agents you fully trust, and always ask.")
         case .secret: String(localized: "Never shared with agents unless you raise an agent's sensitivity limit to Secret.")
-        }
-    }
-
-    var tint: Color {
-        switch self {
-        case .public: .gray
-        case .low: .green
-        case .internal: .blue
-        case .sensitive: .orange
-        case .restricted: .red
-        case .secret: .purple
         }
     }
 }

@@ -6,7 +6,9 @@ import Foundation
 /// launches straight into demo mode on one screen, so `scripts/app_store_screenshots.sh` captures
 /// each one without tapping through the simulator. Debug builds only.
 enum ScreenshotScene: String {
-    case capture, share, save, access, search, inbox
+    case home, share, save, access, search, inbox
+    /// Search answers (FR-iOS-13): the demo's sample question, asked.
+    case searchAnswer = "search-answer"
 
     static var current: ScreenshotScene? {
         UserDefaults.standard.string(forKey: "FunesScreenshot").flatMap(ScreenshotScene.init(rawValue:))
@@ -14,9 +16,9 @@ enum ScreenshotScene: String {
 
     var tab: RootView.Tab {
         switch self {
-        case .search: .search
+        case .search, .searchAnswer: .search
         case .inbox: .inbox
-        case .capture, .share, .save, .access: .capture
+        case .home, .share, .save, .access: .home
         }
     }
 
@@ -26,14 +28,65 @@ enum ScreenshotScene: String {
         case .share: .share
         case .save: .save
         case .access: .access
-        case .capture, .search, .inbox: nil
+        case .home, .search, .searchAnswer, .inbox: nil
         }
     }
 
-    /// Capture's text field, as if just typed.
-    var captureText: String { self == .capture ? "Ask the team about Friday's demo" : "" }
-
     /// Search's query.
-    var searchQuery: String? { self == .search ? "swift" : nil }
+    var searchQuery: String? {
+        switch self {
+        case .search: "swift"
+        case .searchAnswer: "When does my lease renew?"
+        default: nil
+        }
+    }
+
+    /// Whether the scene asks for the search's answer once the results load.
+    var asks: Bool { self == .searchAnswer }
+}
+#endif
+
+#if DEBUG
+import CryptoKit
+import FunesPhone
+
+/// `-FunesConnection <state>` shows the status bar's states (UX: iPhone, Status bar) in the
+/// simulator without a Mac: a made-up pairing with "Maya's MacBook Pro", in that state, with two
+/// captures waiting. Nothing is checked; a new capture's delivery ends it. Debug builds only.
+enum ConnectionScene: String {
+    case connected, unreachable, localNetworkOff, failed, revoked
+
+    static var current: ConnectionScene? {
+        UserDefaults.standard.string(forKey: "FunesConnection").flatMap(ConnectionScene.init(rawValue:))
+    }
+
+    var record: PairingRecord {
+        let payload = PairingQRPayload(pairingID: "scene", macID: UUID(), macName: "Maya's MacBook Pro",
+                                       macSigningKey: P256.Signing.PrivateKey().publicKey,
+                                       macHPKEKey: P256.KeyAgreement.PrivateKey().publicKey, secret: Data(count: 32),
+                                       expiresAt: Date(), addresses: [PairingAddress(kind: .lan, host: "192.168.1.20", port: 47626)])
+        return PairingRecord(payload: payload, confirmation: PairConfirmation(deviceID: UUID(), macID: payload.macID, confirm: Data()),
+                             deviceName: "iPhone", pairedAt: Date())
+    }
+
+    var check: Result<MacConnection, CompanionClientError> {
+        switch self {
+        case .connected: .success(DemoVault().connection)
+        case .unreachable: .failure(.unreachable(localNetworkDenied: false))
+        case .localNetworkOff: .failure(.unreachable(localNetworkDenied: true))
+        case .failed: .failure(.badResponse(status: 404))
+        case .revoked: .failure(.refused(.revoked))
+        }
+    }
+
+    /// Captures waiting on this iPhone.
+    static let waiting = 2
+
+    /// When Home's made-up snapshot was taken: "As of 10:42" today, or two hours ago before then.
+    var snapshotTime: Date {
+        let now = Date()
+        let at = Calendar.current.date(bySettingHour: 10, minute: 42, second: 0, of: now) ?? now
+        return at < now ? at : now.addingTimeInterval(-2 * 3_600)
+    }
 }
 #endif

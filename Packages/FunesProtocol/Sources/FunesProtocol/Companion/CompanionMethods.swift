@@ -4,8 +4,12 @@ import Foundation
 public enum CompanionMethod: String, Codable, Sendable, CaseIterable {
     case statusGet = "status.get"
     case capturesSubmit = "captures.submit"
+    /// The vault's counts for Home and the widgets (v0.4, ADR-0025).
+    case overviewGet = "overview.get"
     case categoriesList = "categories.list"
     case memoriesSearch = "memories.search"
+    /// A search answer from the results the phone shows (v0.6, ADR-0028).
+    case memoriesAnswer = "memories.answer"
     case memoriesGet = "memories.get"
     case memoriesCreate = "memories.create"
     case memoriesUpdate = "memories.update"
@@ -13,8 +17,15 @@ public enum CompanionMethod: String, Codable, Sendable, CaseIterable {
     case memoriesRestore = "memories.restore"
     case memoriesDelete = "memories.delete"
     case inboxList = "inbox.list"
+    /// One suggestion in full, for its screen (v0.9, ADR-0031).
+    case inboxGet = "inbox.get"
     case inboxApply = "inbox.apply"
     case inboxReject = "inbox.reject"
+    /// Try again / Keep as one on an item whose split failed (memory processing §5.2).
+    case inboxRetry = "inbox.retry"
+    case inboxKeep = "inbox.keep"
+    /// Review Again on a stale card (v0.9, ADR-0031).
+    case inboxReviewAgain = "inbox.reviewAgain"
     case deviceUnpair = "device.unpair"
     // Approvals from the iPhone (task 5.6, FR-iOS-12).
     case approvalsList = "approvals.list"
@@ -139,13 +150,58 @@ public struct CompanionStatus: Codable, Sendable, Equatable {
     public var serverTime: Date
     public var inboxPending: Int
     public var vaultActive: Bool
+    /// The name the profile says to call the user (preferred, else given), for Home's title
+    /// (v0.5, ADR-0026). Absent without one, and from older Macs.
+    public var calledName: String?
+    /// Present only while the Mac's Search answers are on with a model that can answer (v0.6,
+    /// ADR-0028): the phone shows Ask only then.
+    public var searchAnswers: SearchAnswersStatus?
 
-    public init(macName: String, appVersion: String, serverTime: Date, inboxPending: Int, vaultActive: Bool) {
+    public init(macName: String, appVersion: String, serverTime: Date, inboxPending: Int, vaultActive: Bool,
+                calledName: String? = nil, searchAnswers: SearchAnswersStatus? = nil) {
         self.macName = macName
         self.appVersion = appVersion
         self.serverTime = serverTime
         self.inboxPending = inboxPending
         self.vaultActive = vaultActive
+        self.calledName = calledName
+        self.searchAnswers = searchAnswers
+    }
+}
+
+/// Where a search answer's model runs, as the card's badge says.
+public enum AnswerLocality: String, Codable, Sendable, CaseIterable {
+    case onDevice, localServer, appleCloud, cloud
+}
+
+/// Which model answers the Mac's searches: a display name ("Claude (Claude Code)"), where it runs,
+/// and when the phone asks on its own.
+public struct SearchAnswersStatus: Codable, Sendable, Equatable {
+    public var engine: String
+    public var locality: AnswerLocality
+    /// Missing (a Mac before automatic answers) or unknown (a newer one): only when asked.
+    public var trigger: AnswerTrigger
+    /// How many ids `memories.answer` takes; missing (a Mac before 10): 8.
+    public var maxIDs: Int
+
+    public init(engine: String, locality: AnswerLocality, trigger: AnswerTrigger = .ask, maxIDs: Int = MemoryAnswerParams.maxIDs) {
+        self.engine = engine
+        self.locality = locality
+        self.trigger = trigger
+        self.maxIDs = maxIDs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case engine, locality, trigger
+        case maxIDs = "maxIds"
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        engine = try container.decode(String.self, forKey: .engine)
+        locality = try container.decode(AnswerLocality.self, forKey: .locality)
+        trigger = (try? container.decodeIfPresent(String.self, forKey: .trigger)).flatMap { $0.flatMap(AnswerTrigger.init(rawValue:)) } ?? .ask
+        maxIDs = (try? container.decodeIfPresent(Int.self, forKey: .maxIDs)).flatMap { $0 } ?? 8
     }
 }
 
@@ -239,6 +295,96 @@ public struct CompanionCategory: Codable, Sendable, Equatable {
 
 // MARK: - memories.*
 
+/// `memories.answer` (v0.6, ADR-0028): the Mac answers `query` from the memories the phone shows,
+/// re-read as the owner (memory processing §10.3–10.4). Its own deadline (§7); never resent.
+public enum MemoriesAnswer: CompanionCall {
+    public static let method = CompanionMethod.memoriesAnswer
+    public typealias Params = MemoryAnswerParams
+    public typealias Result = MemoryAnswerResult
+}
+
+public struct MemoryAnswerParams: Codable, Sendable, Equatable {
+    public var query: String
+    public var filters: MemorySearchFilters?
+    /// The results the phone shows, in order: 1 to 10. Never memory text.
+    public var ids: [UUID]
+    /// True when the phone asked on its own (memory processing §10.6): the Mac checks its own
+    /// setting again. Missing: the user asked.
+    public var automatic: Bool?
+
+    public init(query: String, filters: MemorySearchFilters? = nil, ids: [UUID], automatic: Bool? = nil) {
+        self.query = query
+        self.filters = filters
+        self.ids = ids
+        self.automatic = automatic
+    }
+
+    public static let maxIDs = 10
+
+    public func validate() throws(CompanionError) {
+        guard (1...Self.maxIDs).contains(ids.count) else { throw CompanionError(.invalidInput, message: "ids is 1 to \(Self.maxIDs)") }
+        guard Set(ids).count == ids.count else { throw CompanionError(.invalidInput, message: "Repeated ids") }
+        let length = InputLimits.length(of: query.trimmingCharacters(in: .whitespacesAndNewlines))
+        guard length > 0, length <= InputLimits.task.upperBound else { throw CompanionError(.invalidInput, message: "Bad query") }
+    }
+}
+
+public struct MemoryAnswerResult: Codable, Sendable, Equatable {
+    public enum Outcome: String, Codable, Sendable {
+        case answered
+        case noAnswer = "no_answer"
+    }
+
+    public struct Citation: Codable, Sendable, Equatable, Hashable {
+        public var id: UUID
+        /// The phone finds it in the memory it opens with `QuoteLocator`; no offsets travel.
+        public var quote: String
+
+        public init(id: UUID, quote: String) {
+            self.id = id
+            self.quote = quote
+        }
+    }
+
+    public struct Claim: Codable, Sendable, Equatable, Hashable {
+        public var text: String
+        public var citations: [Citation]
+
+        public init(text: String, citations: [Citation]) {
+            self.text = text
+            self.citations = citations
+        }
+    }
+
+    public var outcome: Outcome
+    public var claims: [Claim]
+    public var read: Int
+    public var withheld: Int
+    public var dropped: Int
+    /// The display name ("Claude (Claude Code)").
+    public var engine: String
+    public var locality: AnswerLocality
+    public var durationMs: Int
+
+    public init(outcome: Outcome, claims: [Claim], read: Int, withheld: Int, dropped: Int, engine: String,
+                locality: AnswerLocality, durationMs: Int) {
+        self.outcome = outcome
+        self.claims = claims
+        self.read = read
+        self.withheld = withheld
+        self.dropped = dropped
+        self.engine = engine
+        self.locality = locality
+        self.durationMs = durationMs
+    }
+
+    /// The cited memories in the order the answer first cites them: the card's numbers.
+    public var sources: [UUID] {
+        var seen = Set<UUID>()
+        return claims.flatMap(\.citations).map(\.id).filter { seen.insert($0).inserted }
+    }
+}
+
 public enum MemoriesSearch: CompanionCall {
     public static let method = CompanionMethod.memoriesSearch
     public typealias Params = MemorySearchParams
@@ -290,17 +436,21 @@ public struct MemorySummary: Codable, Sendable, Equatable, Identifiable {
     public var id: UUID
     public var title: String
     public var snippet: String
+    /// The search's matches inside `snippet`, as UTF-16 `[start, length]` pairs (v0.6, FR-V-17;
+    /// absent from an older Mac, and without a match).
+    public var snippetMatches: [[Int]]?
     public var kind: MemoryKind
     public var categories: [String]
     public var sensitivity: Sensitivity
     public var updatedAt: Date
     public var expiresAt: Date?
 
-    public init(id: UUID, title: String, snippet: String, kind: MemoryKind, categories: [String], sensitivity: Sensitivity,
-                updatedAt: Date, expiresAt: Date? = nil) {
+    public init(id: UUID, title: String, snippet: String, snippetMatches: [[Int]]? = nil, kind: MemoryKind, categories: [String],
+                sensitivity: Sensitivity, updatedAt: Date, expiresAt: Date? = nil) {
         self.id = id
         self.title = title
         self.snippet = snippet
+        self.snippetMatches = snippetMatches
         self.kind = kind
         self.categories = categories
         self.sensitivity = sensitivity
@@ -537,10 +687,27 @@ public struct InboxItem: Codable, Sendable, Equatable, Identifiable {
     public var evidence: String?
     public var purpose: String?
     public var createdAt: Date
+    /// The target's version when it was suggested; the Mac refuses a changed one (`target_changed`).
+    public var targetMemoryVersion: Int?
+    /// The input this piece was split from (Phase 6), and how the Mac words it ("ChatGPT · 12 pieces").
+    public var groupId: UUID?
+    public var groupLabel: String?
+    /// Outside the agent's scope: never applied in bulk.
+    public var outsideScope: Bool
+    /// New memories processing hasn't finished with it (`processing`: greyed, can't be saved,
+    /// only rejected), or its split failed (`failed`: Try again or Keep as one). Nil otherwise.
+    public var processing: InboxProcessing?
 
     public init(id: UUID, origin: SuggestionOrigin, action: SuggestionAction, sourceLabel: String, targetMemoryId: UUID? = nil,
                 title: String, body: String, kind: MemoryKind, categories: [String], sensitivity: Sensitivity,
-                expiresAt: Date? = nil, evidence: String? = nil, purpose: String? = nil, createdAt: Date) {
+                expiresAt: Date? = nil, evidence: String? = nil, purpose: String? = nil, createdAt: Date,
+                targetMemoryVersion: Int? = nil, groupId: UUID? = nil, groupLabel: String? = nil, outsideScope: Bool = false,
+                processing: InboxProcessing? = nil) {
+        self.processing = processing
+        self.targetMemoryVersion = targetMemoryVersion
+        self.groupId = groupId
+        self.groupLabel = groupLabel
+        self.outsideScope = outsideScope
         self.id = id
         self.origin = origin
         self.action = action
@@ -556,6 +723,14 @@ public struct InboxItem: Codable, Sendable, Equatable, Identifiable {
         self.purpose = purpose
         self.createdAt = createdAt
     }
+}
+
+/// An Inbox item New memories processing holds (memory processing §5.2).
+public enum InboxProcessing: String, Codable, Sendable, Equatable {
+    /// Queued, running or waiting: "Processing…". `inbox.apply` refuses it with `processing`.
+    case processing
+    /// The split failed: "Couldn't split", with Try again (`inbox.retry`) and Keep as one (`inbox.keep`).
+    case failed
 }
 
 public struct InboxListResult: Codable, Sendable, Equatable {
@@ -576,12 +751,134 @@ public enum InboxApply: CompanionCall {
 
 public struct InboxApplyParams: Codable, Sendable, Equatable {
     public var suggestionId: UUID
-    /// Edit & Apply.
+    /// Edit & Apply: a create, an update, a merge, or the conflict memory `keep` keeps.
     public var edits: MemoryChanges?
+    /// The card's choice (v0.9); absent is the action's own way (Replace for an update).
+    public var mode: InboxApplyMode?
+    /// The conflict memory `keep` keeps.
+    public var keepMemoryId: UUID?
+    /// `inbox.get`'s, from the card's screen: a card that changed since is `request_changed`.
+    public var revision: String?
 
-    public init(suggestionId: UUID, edits: MemoryChanges? = nil) {
+    public init(suggestionId: UUID, edits: MemoryChanges? = nil, mode: InboxApplyMode? = nil, keepMemoryId: UUID? = nil,
+                revision: String? = nil) {
         self.suggestionId = suggestionId
         self.edits = edits
+        self.mode = mode
+        self.keepMemoryId = keepMemoryId
+        self.revision = revision
+    }
+}
+
+/// How a card is applied (companion protocol §4.2), FunesCore's `ApplyMode` on the wire.
+public enum InboxApplyMode: String, Codable, Sendable, Equatable {
+    /// An update: its target takes the proposal.
+    case replace
+    /// An update: saved as a new memory, its target unchanged. Never a tidy-up proposal's.
+    case keepBoth = "keep_both"
+    /// A conflict: keeps `keepMemoryId` (changed by the edits, if any) and archives the other.
+    case keep
+    /// A conflict: both are true; nothing changes.
+    case bothTrue = "both_true"
+}
+
+public enum InboxGet: CompanionCall {
+    public static let method = CompanionMethod.inboxGet
+    public typealias Params = SuggestionID
+    public typealias Result = InboxDetail
+}
+
+/// One suggestion in full (companion protocol §4.2): what its card shows before it's applied.
+public struct InboxDetail: Codable, Sendable, Equatable {
+    public var item: InboxItem
+    /// The memories it refers to, the single target first: an update's target and any copy it
+    /// also archives, an archive's target and the memory it keeps, a merge's sources, a
+    /// conflict's two memories, a split's original, a duplicate's match.
+    public var memories: [InboxMemory]
+    /// A split's pending pieces, in order.
+    public var pieces: [InboxItem]
+    /// A memory it refers to changed, or isn't active, since it was suggested: Apply would
+    /// answer `target_changed` until Review Again.
+    public var stale: Bool
+    public var tidyUp: InboxTidyUp?
+    /// A create's, an update's or a merge's look-alikes, at most 2, never a memory it refers to.
+    public var similar: [InboxSimilar]
+    /// What an apply from this screen depends on, hashed: sent back with it.
+    public var revision: String
+
+    public init(item: InboxItem, memories: [InboxMemory] = [], pieces: [InboxItem] = [], stale: Bool = false,
+                tidyUp: InboxTidyUp? = nil, similar: [InboxSimilar] = [], revision: String = "") {
+        self.item = item
+        self.memories = memories
+        self.pieces = pieces
+        self.stale = stale
+        self.tidyUp = tidyUp
+        self.similar = similar
+        self.revision = revision
+    }
+
+    /// The memories with a role, in order.
+    public func memories(_ role: InboxMemoryRole) -> [Memory] { memories.filter { $0.role == role }.map(\.memory) }
+}
+
+public struct InboxMemory: Codable, Sendable, Equatable, Identifiable {
+    public var id: UUID { memory.id }
+    public var role: InboxMemoryRole
+    public var memory: Memory
+
+    public init(role: InboxMemoryRole, memory: Memory) {
+        self.role = role
+        self.memory = memory
+    }
+}
+
+public enum InboxMemoryRole: String, Codable, Sendable, Equatable {
+    /// Changed by the suggestion: an update's, an archive's, a split's or a duplicate's memory, or
+    /// either of a conflict's two.
+    case target
+    /// Merged into it: a merge's sources, or the copy a tidy-up update also archives.
+    case source
+    /// Kept by an archive ("Keeps “…”").
+    case survivor
+}
+
+/// The tidy-up's reasons (memory processing §9).
+public struct InboxTidyUp: Codable, Sendable, Equatable {
+    /// The model's reason, as it put it.
+    public var reason: String?
+    public var archiveReason: InboxArchiveReason?
+    /// A merge: what each source keeps.
+    public var kept: [Kept]
+
+    public struct Kept: Codable, Sendable, Equatable {
+        public var memoryId: UUID
+        public var text: String
+
+        public init(memoryId: UUID, text: String) {
+            self.memoryId = memoryId
+            self.text = text
+        }
+    }
+
+    public init(reason: String? = nil, archiveReason: InboxArchiveReason? = nil, kept: [Kept] = []) {
+        self.reason = reason
+        self.archiveReason = archiveReason
+        self.kept = kept
+    }
+}
+
+/// Why the tidy-up archives a memory: "A copy", "Out of date", "Expired".
+public enum InboxArchiveReason: String, Codable, Sendable, Equatable {
+    case duplicate, superseded, expired
+}
+
+public struct InboxSimilar: Codable, Sendable, Equatable, Identifiable {
+    public var id: UUID
+    public var title: String
+
+    public init(id: UUID, title: String) {
+        self.id = id
+        self.title = title
     }
 }
 
@@ -593,6 +890,29 @@ public struct InboxApplied: Codable, Sendable, Equatable {
 
 public enum InboxReject: CompanionCall {
     public static let method = CompanionMethod.inboxReject
+    public typealias Params = SuggestionID
+    public typealias Result = EmptyResult
+}
+
+/// Try again: a failed split goes back to the queue. `conflict` when it isn't failed any more.
+public enum InboxRetry: CompanionCall {
+    public static let method = CompanionMethod.inboxRetry
+    public typealias Params = SuggestionID
+    public typealias Result = EmptyResult
+}
+
+/// Keep as one: a failed split stays one suggestion, then saved like any other.
+public enum InboxKeep: CompanionCall {
+    public static let method = CompanionMethod.inboxKeep
+    public typealias Params = SuggestionID
+    public typealias Result = EmptyResult
+}
+
+/// Review Again: the current versions of the memories a stale card refers to are recorded, so
+/// the next Apply checks against what the card shows now. `target_changed` when one isn't
+/// active; `conflict` when it's no longer waiting.
+public enum InboxReviewAgain: CompanionCall {
+    public static let method = CompanionMethod.inboxReviewAgain
     public typealias Params = SuggestionID
     public typealias Result = EmptyResult
 }

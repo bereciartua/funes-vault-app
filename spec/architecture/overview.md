@@ -27,7 +27,7 @@ flowchart LR
     iOS --> Q
     iOS -- "Companion API :47626<br/>signed + HPKE-encrypted<br/>LAN · Tailscale · tunnel" --> App
     App -. "Sparkle update check" .-> GitHub[(GitHub Releases)]
-    App -. "optional, user-chosen: classification (other embedding models later)<br/>(guardrails: secret scan, cloud sensitivity limit)" .-> Providers[(AI model providers<br/>local server or cloud)]
+    App -. "optional, user-chosen: classification; v0.3: splitting new memories, daily tidy-up, provider embeddings<br/>(guardrails: secret scan, cloud sensitivity limit, daily cap)" .-> Providers[(AI model providers<br/>local server or cloud)]
 ```
 
 **Trust boundaries:**
@@ -73,7 +73,7 @@ flowchart LR
 - **Main actor:** UI, `ApprovalCenter`, panels and `RequestPipeline` decisions that touch approvals. This mirrors EK Bridge, where requests hop from the listener queue to the main actor.
 - **Network queues:** each listener (`mcp.http`, `companion.http`) parses on its own queue, then hops to the main actor for the pipeline. Bodies are limited to 64 KiB for MCP and 256 KiB for the companion API.
 - **`VaultStore`:** a GRDB `DatabasePool` (WAL), so reads run concurrently and writes are serialized. Disclosure, suggestion-apply and import flows each run in one `write { }` transaction.
-- **Background work** (Swift concurrency `Task` with low priority): embedding updates, classification, activity compaction, purging deleted memories, backups and suggestion expiry. Each is idempotent and cancellable.
+- **Background work** (Swift concurrency `Task` with low priority): embedding updates, classification, activity compaction, purging deleted memories, backups and suggestion expiry. Each is idempotent and cancellable. From v0.3, New memories processing runs from a durable job queue in the database (one job at a time, resumed at launch), and the daily tidy-up from `NSBackgroundActivityScheduler` ([memory processing §5, §9](../domain/memory-processing.md)).
 - **Timeouts:**
   - MCP call: 55 s overall;
   - approval panel: 45 s;

@@ -1,8 +1,10 @@
 import FunesCore
+import FunesProtocol
 import SwiftUI
 
-/// Six optional questions (FR-O-02, memory processing §6), then the categories agents should never
-/// see. Each answer becomes a suggestion with a preset kind, category and sensitivity, reviewed in
+/// First what Funes should call you (FR-U-04), then six optional questions (FR-O-02, memory
+/// processing §6), then the categories agents should never see. The name goes to the profile
+/// (About You), not the Inbox. Each answer becomes a suggestion with a preset kind, category and sensitivity, reviewed in
 /// the Inbox like any other. The never-see step sets rules, not a memory: every agent gets Deny for
 /// those categories, and new agents start with it (UX review F4).
 struct SeedQuestionsSheet: View {
@@ -13,10 +15,107 @@ struct SeedQuestionsSheet: View {
     @State private var saving = false
     @State private var neverShare: Set<String> = []
     @State private var loadedNeverShare: Set<String>?
+    /// The name page comes first; Continue saves it, Skip leaves the profile as it is.
+    @State private var askingName: Bool
+    @State private var name = Profile()
+
+    init(model: AppModel, startsWithName: Bool = true) {
+        self.model = model
+        _askingName = State(initialValue: startsWithName)
+    }
 
     private var answered: Int { answers.values.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.count }
 
     var body: some View {
+        Group {
+            if askingName { namePage } else { questionsPage }
+        }
+        .padding(24)
+        // Fits the main window at its minimum size; the questions scroll.
+        .frame(width: 600, height: 540)
+        .task {
+            let current = (try? await model.services.agents.neverShareCategories()) ?? []
+            loadedNeverShare = current
+            // Health, Finance and Legal start ticked until the user has chosen.
+            neverShare = current.isEmpty ? Set(["health", "finance", "legal"]).intersection(model.categories.map(\.key)) : current
+            // The saved name, else the macOS account's when it looks like a person's (never "mib").
+            let profile = model.profile
+            if profile.hasValue(.name) {
+                name = profile
+            } else if let suggested = Profile.suggested(fromAccountName: NSFullUserName()) {
+                name = profile
+                name.givenName = suggested.givenName
+                name.familyName = suggested.familyName
+                name.preferredName = suggested.givenName
+            }
+        }
+    }
+
+    /// "First, what should Funes call you?" (FR-U-04): the name only; the rest of About You stays
+    /// in Settings, so seeding stays short.
+    private var namePage: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(String(localized: "A Few Questions")).font(.title2.weight(.semibold))
+            Text(String(localized: "First, what should Funes call you?")).fontWeight(.medium)
+            Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 10) {
+                GridRow {
+                    Text(String(localized: "Name")).foregroundStyle(.secondary)
+                    HStack {
+                        nameField(.givenName, String(localized: "Given name"))
+                        nameField(.familyName, String(localized: "Family name"))
+                    }
+                }
+                GridRow {
+                    Text(String(localized: "Call me")).foregroundStyle(.secondary)
+                    nameField(.preferredName, String(localized: "Call me"), prompt: name.givenName)
+                }
+            }
+            Text(String(localized: "Home greets you by this name, and agents get it with their answers unless you turn it off in their Access tab. Pronouns, languages and more are in Settings ▸ About You."))
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            if let error { Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.callout) }
+            Spacer()
+            HStack {
+                Spacer()
+                Button(String(localized: "Cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
+                Button(String(localized: "Skip")) {
+                    error = nil
+                    askingName = false
+                }
+                Button(String(localized: "Continue")) { saveName() }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(saving)
+            }
+        }
+    }
+
+    private func nameField(_ key: Profile.TextField, _ label: String, prompt: String? = nil) -> some View {
+        TextField(label, text: Binding(get: { name[text: key] ?? "" }, set: { name[text: key] = $0 }),
+                  prompt: Text(prompt ?? label))
+            .textFieldStyle(.roundedBorder)
+            .accessibilityLabel(label)
+    }
+
+    private func saveName() {
+        var profile = model.profile
+        profile.givenName = name.givenName
+        profile.familyName = name.familyName
+        // "Call me" the same as the given name is the default, not a choice to keep.
+        let preferred = name.normalized().preferredName
+        profile.preferredName = preferred == name.normalized().givenName ? nil : preferred
+        saving = true
+        Task {
+            do {
+                model.profile = try await model.services.profiles.save(profile, now: Date())
+                error = nil
+                askingName = false
+            } catch {
+                self.error = ErrorText.message(error)
+            }
+            saving = false
+        }
+    }
+
+    private var questionsPage: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(String(localized: "A Few Questions")).font(.title2.weight(.semibold))
             Text(String(localized: "Answer any you like. Each answer goes to your Inbox, where you can edit it before it becomes a memory."))
@@ -53,15 +152,6 @@ struct SeedQuestionsSheet: View {
                     .keyboardShortcut(.defaultAction)
                     .disabled(saving || (answered == 0 && neverShare == loadedNeverShare))
             }
-        }
-        .padding(24)
-        // Fits the main window at its minimum size; the questions scroll.
-        .frame(width: 600, height: 540)
-        .task {
-            let current = (try? await model.services.agents.neverShareCategories()) ?? []
-            loadedNeverShare = current
-            // Health, Finance and Legal start ticked until the user has chosen.
-            neverShare = current.isEmpty ? Set(["health", "finance", "legal"]).intersection(model.categories.map(\.key)) : current
         }
     }
 

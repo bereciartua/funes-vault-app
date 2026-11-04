@@ -18,7 +18,9 @@ let package = Package(
             dependencies: [
                 "FunesProtocol",
                 .product(name: "GRDB", package: "GRDB.swift"),
-            ]
+            ],
+            // The bundled benchmark Calibrate runs (synthetic; model providers §8).
+            resources: [.copy("Resources/calibration")]
         ),
         .testTarget(
             name: "FunesCoreTests",

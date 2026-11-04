@@ -2,47 +2,54 @@ import FunesPhone
 import FunesProtocol
 import SwiftUI
 
-/// The tabs (UX: iPhone): Capture, where the app opens, Search, Inbox and Settings.
+/// The tabs (UX: iPhone): Home, where the app opens, Search, Inbox and Settings, and the status
+/// bar above them, only when something needs you.
 struct RootView: View {
     enum Tab: Hashable {
-        case capture, search, inbox, settings
+        case home, search, inbox, settings
     }
 
     let model: PhoneModel
-    #if DEBUG
-    @State private var tab = ScreenshotScene.current?.tab ?? Tab.capture
-    #else
-    @State private var tab = Tab.capture
-    #endif
 
     var body: some View {
-        TabView(selection: $tab) {
-            CaptureView(model: model)
-                .tabItem { Label("Capture", systemImage: "square.and.pencil") }
-                // Requests waiting for an answer are listed at the top of Capture.
+        TabView(selection: Bindable(model).tab) {
+            HomeView(model: model)
+                .ownStatusBar(model)
+                .tabItem { Label("Home", systemImage: "house") }
+                // Requests waiting for an answer are listed near the top of Home.
                 .badge(model.approvals.waiting.count)
-                .tag(Tab.capture)
+                .tag(Tab.home)
             SearchView(model: model)
+                .ownStatusBar(model)
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
                 .tag(Tab.search)
             InboxView(model: model)
+                .ownStatusBar(model)
                 .tabItem { Label("Inbox", systemImage: "tray") }
                 .badge(model.inboxBadge)
                 .tag(Tab.inbox)
             SettingsView(model: model)
+                .ownStatusBar(model)
                 .tabItem { Label("Settings", systemImage: "gear") }
                 .tag(Tab.settings)
         }
-        // The Control opens Capture.
-        .onChange(of: model.captureRequests) { tab = .capture }
+        .statusBarAccessory(model)
+        .onChange(of: model.banner, initial: true) { _, banner in model.statusBar.update(banner, isDemo: model.isDemo) }
+        // VoiceOver hears each new state once, not every new count.
+        .onChange(of: model.statusBar.item) { old, new in
+            guard let new, !new.isSameState(as: old) else { return }
+            AccessibilityNotification.Announcement(StatusBarContent.text(new)).post()
+        }
+        // The Control opens Home's composer.
+        .onChange(of: model.captureRequests) { model.tab = .home }
         .sheet(isPresented: Bindable(model).presentingPairing) { PairingSheet(model: model) }
-        .sheet(isPresented: Bindable(model).presentingWhy) { WhySheet(model: model) }
+        .sheet(isPresented: Bindable(model).presentingStatus) { StatusSheet(model: model) }
         // A tapped approval notification, or a row of the list.
         .sheet(item: Bindable(model).openApproval) { open in ApprovalPanelView(model: model, panel: open.panel) }
     }
 }
 
-/// Settings: pair, the Mac's connection and status, this iPhone, and the queue.
+/// Settings: pair, the Mac's connection and status, this iPhone, the queue, and this app's version.
 struct SettingsView: View {
     let model: PhoneModel
     @State private var confirmingUnpair = false
@@ -55,6 +62,7 @@ struct SettingsView: View {
                     demoSection
                 } else if let record = model.record {
                     macSection(record)
+                    SearchAnswersSection(model: model)
                     ApprovalSettingsSection(model: model)
                     deviceSection(record)
                 } else {
@@ -68,6 +76,9 @@ struct SettingsView: View {
                     Section {
                         Button("Unpair This iPhone…", role: .destructive) { confirmingUnpair = true }
                     }
+                }
+                Section("Funes for iPhone") {
+                    LabeledContent("Version", value: Self.versionText)
                 }
             }
             .navigationTitle("Settings")
@@ -94,6 +105,12 @@ struct SettingsView: View {
                 Text("They haven't reached your Mac and can't be recovered.")
             }
         }
+    }
+
+    /// This app's "0.5.0 (11)": the Mac section's version is the Mac's.
+    static var versionText: String {
+        let info = Bundle.main.infoDictionary ?? [:]
+        return "\(info["CFBundleShortVersionString"] as? String ?? "?") (\(info["CFBundleVersion"] as? String ?? "?"))"
     }
 
     /// Queue: N waiting, "Send now", "Delete queued captures…" (UX: iPhone, Settings tab).
@@ -168,7 +185,7 @@ struct SettingsView: View {
             LabeledContent("Mac", value: record.macName)
             ReachabilityRow(reachability: model.reachability, path: model.path)
             if case let .connected(connection) = model.reachability {
-                LabeledContent("Funes", value: connection.status.appVersion)
+                LabeledContent("Funes on the Mac", value: connection.status.appVersion)
                 LabeledContent("Waiting in Inbox", value: connection.status.inboxPending.formatted())
                 LabeledContent("Round trip", value: "\(connection.roundTrip.milliseconds) ms")
             }
@@ -272,3 +289,39 @@ struct SpikeSection: View {
     }
 }
 #endif
+
+/// Settings ▸ Search answers (UX: iPhone ▸ Settings, FR-iOS-13): Show Ask in Search (this iPhone
+/// only) and the engine the Mac answers with. The model is chosen on the Mac.
+struct SearchAnswersSection: View {
+    let model: PhoneModel
+    @AppStorage(SearchAnswersSettings.showAskKey) private var showAsk = true
+
+    var body: some View {
+        Section {
+            if let answers = model.macAnswers {
+                Toggle("Show Ask in Search", isOn: $showAsk)
+                LabeledContent("Answered by", value: answers.engine)
+                LabeledContent("Answers", value: Self.trigger(answers.trigger))
+            } else if model.reachability.isConnected {
+                Text("Search answers are off on your Mac.").foregroundStyle(.secondary)
+            } else {
+                Toggle("Show Ask in Search", isOn: $showAsk)
+            }
+        } header: {
+            Text("Search answers")
+        } footer: {
+            if let answers = model.macAnswers {
+                Text("Your Mac reads the top results and asks \(answers.engine). Change the model, and when searches are answered, on your Mac in Settings ▸ AI ▸ Features ▸ Search answers. With Show Ask off, nothing is asked from this iPhone.")
+            }
+        }
+    }
+
+    /// When the Mac answers a search (memory processing §10.6).
+    static func trigger(_ trigger: AnswerTrigger) -> String {
+        switch trigger {
+        case .ask: String(localized: "When you ask")
+        case .questions: String(localized: "Automatically for questions")
+        case .everySearch: String(localized: "Automatically for every search")
+        }
+    }
+}

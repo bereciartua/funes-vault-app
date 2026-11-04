@@ -17,6 +17,8 @@ Apple counts data as *collected* when it's sent off the device in a way that let
 | APNs registration | Apple | Apple's service; Apple-controlled data isn't the developer's to declare |
 | Crash reports, if the user shares analytics with developers; TestFlight feedback | Apple, which may pass them on | Collected by Apple under its own consent; not declared by apps |
 
+What stays on the iPhone isn't collection either: the capture queue, the pairing in the Keychain and, from v0.4, the vault's counts for Home and the widgets (`overview.json` in the App Group: counts, dates and agent names, no memory text; [ADR-0025](../../architecture/decisions/0025-vault-overview-and-iphone-cache.md)) never leave the device.
+
 No analytics, advertising, tracking or third-party SDKs are in the app or its extensions (FunesPhone and FunesProtocol depend only on system frameworks).
 
 ## The privacy manifests

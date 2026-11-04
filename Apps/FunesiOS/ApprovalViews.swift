@@ -3,7 +3,7 @@ import FunesProtocol
 import SwiftUI
 import UIKit
 
-/// "Waiting for you" at the top of Capture: the requests on the Mac this iPhone can answer
+/// "Waiting for you" on Home, under the composer: the requests on the Mac this iPhone can answer
 /// (`approvals.list`), soonest deadline first. For a notification that never came or was dismissed.
 struct ApprovalsSection: View {
     let model: PhoneModel

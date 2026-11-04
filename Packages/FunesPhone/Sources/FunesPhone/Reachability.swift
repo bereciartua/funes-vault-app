@@ -30,8 +30,8 @@ public enum Reachability: Sendable, Equatable {
     }
 }
 
-/// The reachability state machine behind every tab's banner. `status.get` drives it, and so do
-/// the other calls' failures, capture delivery and the network path, so the banner doesn't wait
+/// The reachability state machine behind the status bar. `status.get` drives it, and so do
+/// the other calls' failures, capture delivery and the network path, so the bar doesn't wait
 /// for the next foreground to notice the Mac has gone.
 public struct ReachabilityTracker: Sendable, Equatable {
     public enum Event: Sendable, Equatable {
@@ -48,6 +48,15 @@ public struct ReachabilityTracker: Sendable, Equatable {
 
     public private(set) var state = Reachability.notPaired
     public private(set) var lastChecked: Date?
+    /// When and how the Mac last answered, for the status sheet.
+    public private(set) var lastReached: LastReached?
+    private var path: NetworkPath?
+
+    /// "Last reached 5 minutes ago over Wi-Fi".
+    public struct LastReached: Sendable, Equatable {
+        public var at: Date
+        public var route: ConnectionRoute
+    }
 
     public init() {}
 
@@ -57,11 +66,12 @@ public struct ReachabilityTracker: Sendable, Equatable {
             if !paired {
                 state = .notPaired
                 lastChecked = nil
+                lastReached = nil
             } else if state == .notPaired {
                 state = .connecting
             }
         case .checkStarted:
-            // A connected Mac stays connected while it's checked again, so the banner doesn't
+            // A connected Mac stays connected while it's checked again, so the bar doesn't
             // flicker on every foreground; a removed iPhone stays removed until it pairs again.
             switch state {
             case .connected, .revoked, .notPaired: break
@@ -70,6 +80,7 @@ public struct ReachabilityTracker: Sendable, Equatable {
         case let .checked(.success(connection), at):
             state = .connected(connection)
             lastChecked = at
+            lastReached = LastReached(at: at, route: ConnectionRoute(connection.address.connectionKind, path: path))
         case let .checked(.failure(error), at):
             state = Reachability(error)
             lastChecked = at
@@ -83,6 +94,7 @@ public struct ReachabilityTracker: Sendable, Equatable {
             case .drained, .waiting, .busy, .storage: break
             }
         case let .path(path):
+            self.path = path
             switch state {
             case .connected, .connecting:
                 if !path.isSatisfied { state = .unreachable(localNetworkDenied: false) }
@@ -106,7 +118,7 @@ public struct ReachabilityTracker: Sendable, Equatable {
     }
 }
 
-/// How a connected Mac is reached, as the banner names it.
+/// How a connected Mac is reached, as the status sheet names it.
 public enum ConnectionRoute: String, Sendable, Equatable {
     case wifi, vpn, tailscale, tunnel
 
@@ -121,7 +133,7 @@ public enum ConnectionRoute: String, Sendable, Equatable {
     }
 }
 
-/// What the banner at the top of each tab says (UX: iPhone, States). The app words it.
+/// The connection's state, as the status bar shows it (UX: iPhone, Status bar). The app words it.
 public enum BannerState: Sendable, Equatable {
     /// "Pair with your Mac to start" [Pair].
     case notPaired(waiting: Int)
@@ -151,7 +163,7 @@ public enum BannerState: Sendable, Equatable {
         }
     }
 
-    /// The banner offers the "Why?" sheet.
+    /// The bar's button is **Why?** (the status sheet) or **Fix**.
     public var offersWhy: Bool {
         switch self {
         case .unreachable, .localNetworkOff, .failed: true
@@ -159,7 +171,7 @@ public enum BannerState: Sendable, Equatable {
         }
     }
 
-    /// The banner offers pairing: [Pair] or [Pair Again].
+    /// The bar offers pairing: [Pair] or [Pair Again].
     public var offersPairing: Bool {
         switch self {
         case .notPaired, .revoked: true

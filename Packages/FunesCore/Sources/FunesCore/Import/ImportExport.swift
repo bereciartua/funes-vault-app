@@ -19,9 +19,18 @@ public struct ImportItem: Sendable, Hashable {
     public var sensitivity: Sensitivity?
     public var expiresAt: Date?
     public var createdAt: Date?
+    /// From a Funes export: the memory's id there, its status and its split and merge links, which
+    /// a restore as memories keeps (archived stays archived).
+    public var exportID: UUID?
+    public var status: MemoryStatus?
+    public var links: [FunesExport.Link]
 
     public init(title: String, body: String, categoryKeys: [String] = [], unmatchedHeading: String? = nil,
-                kind: MemoryKind? = nil, sensitivity: Sensitivity? = nil, expiresAt: Date? = nil, createdAt: Date? = nil) {
+                kind: MemoryKind? = nil, sensitivity: Sensitivity? = nil, expiresAt: Date? = nil, createdAt: Date? = nil,
+                exportID: UUID? = nil, status: MemoryStatus? = nil, links: [FunesExport.Link] = []) {
+        self.exportID = exportID
+        self.status = status
+        self.links = links
         self.title = title
         self.body = body
         self.categoryKeys = categoryKeys
@@ -155,8 +164,8 @@ extension String {
     var isBlank: Bool { trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 }
 
-/// `funesvault.export.v1` (FR-X-05): categories and memories, never keys, devices, agents, access
-/// or Activity.
+/// `funesvault.export.v1` (FR-X-05): categories, memories and the profile, never keys, devices,
+/// agents, access or Activity.
 public struct FunesExport: Codable, Sendable, Hashable {
     public static let formatID = "funesvault.export.v1"
 
@@ -178,12 +187,29 @@ public struct FunesExport: Codable, Sendable, Hashable {
         public var expiresAt: Date?
         public var createdAt: Date
         public var updatedAt: Date
+        /// Split and merge links to other exported memories (v0.3); absent in older exports.
+        public var links: [Link]?
+    }
+
+    /// One side of a split or merge: the provenance event and the other memory's id.
+    public struct Link: Codable, Sendable, Hashable {
+        public var event: ProvenanceEvent
+        public var memoryId: UUID
+
+        public init(event: ProvenanceEvent, memoryId: UUID) {
+            self.event = event
+            self.memoryId = memoryId
+        }
+
+        static let events: [ProvenanceEvent] = [.splitInto, .splitFrom, .mergedInto, .mergedFrom]
     }
 
     public var format: String
     public var exportedAt: Date
     public var categories: [Category]
     public var memories: [Memory]
+    /// About you (v0.5); absent when it's empty, and in older exports.
+    public var profile: Profile?
 }
 
 /// What an import would do, shown before anything is stored (FR-X-04).
@@ -206,11 +232,27 @@ public struct ImportPreview: Sendable, Hashable {
     public var entries: [Entry]
     /// Categories a Funes export brings that the vault doesn't have yet (created on commit).
     public var newCategories: [FunesExport.Category]
+    /// A Funes export's profile, restored only into an empty one (FR-X-06).
+    public var profile: Profile?
 
     public var total: Int { entries.count }
     public var duplicates: Int { entries.filter { if case .duplicate = $0.status { true } else { false } }.count }
     public var blocked: Int { entries.filter { if case .blocked = $0.status { true } else { false } }.count }
     public var tooLong: Int { entries.filter { $0.status == .tooLong }.count }
+
+    /// Model requests splitting would make for the items that would be stored (memory processing
+    /// §5.8): one extraction call per chunk and one decision call per item, at most. Shown next to
+    /// what's left of today's cap; a Funes export restore isn't split.
+    public func estimatedRequests(includeDuplicates: Bool = false) -> Int {
+        guard source != .funes else { return 0 }
+        return entries.filter { e in
+            switch e.status {
+            case .ready: true
+            case .duplicate: includeDuplicates
+            default: false
+            }
+        }.reduce(0) { $0 + Chunker.chunks($1.item.body).count + 1 }
+    }
 
     public enum LongItems: Sendable { case split, truncate }
 
@@ -241,6 +283,8 @@ public struct ImportResult: Sendable, Hashable {
     public var suggestionIDs: [UUID]
     public var memoryIDs: [UUID]
     public var skipped: Int
+    /// The export's profile went into the vault's empty one.
+    public var restoredProfile = false
 }
 
 /// Import preview and commit, and export (FR-X-01..06). Imports create suggestions (or, for a
@@ -285,15 +329,20 @@ public final class ImportService: Sendable {
     public func preview(funesExport export: FunesExport) async throws -> ImportPreview {
         let items = export.memories.filter { $0.status != .deleted }.map {
             ImportItem(title: $0.title, body: $0.body, categoryKeys: $0.categories, kind: $0.kind, sensitivity: $0.sensitivity,
-                       expiresAt: $0.expiresAt, createdAt: $0.createdAt)
+                       expiresAt: $0.expiresAt, createdAt: $0.createdAt, exportID: $0.id, status: $0.status, links: $0.links ?? [])
         }
-        return try await preview(items, source: .funes, newCategories: export.categories)
+        var preview = try await preview(items, source: .funes, newCategories: export.categories)
+        preview.profile = export.profile
+        return preview
     }
 
     /// Stores the ready items (and duplicates when asked) in one transaction, with an import run.
     /// Blocked and over-long items are never stored. `asMemories` (Funes exports only, after the
-    /// user confirms) creates active memories instead of suggestions.
-    public func commit(_ preview: ImportPreview, includeDuplicates: Bool = false, asMemories: Bool = false,
+    /// user confirms) creates memories instead of suggestions, keeping each one's status, its id
+    /// when the vault doesn't have it yet, and its split and merge links; they're marked
+    /// reconciled, so the tidy-up doesn't split restored memories again.
+    /// `split` false is "Import without splitting": the items are stored as they are, as in v0.2.
+    public func commit(_ preview: ImportPreview, includeDuplicates: Bool = false, asMemories: Bool = false, split: Bool = true,
                        now: Date) async throws -> ImportResult {
         guard !asMemories || preview.source == .funes else { throw VaultError.invalidInput(field: "as_memories") }
         let runID = UUID()
@@ -310,6 +359,8 @@ public final class ImportService: Sendable {
             let categories = try CategoryStore.all(db)
             let known = Set(categories.map(\.key))
             var out = ImportResult(importRunID: runID, suggestionIDs: [], memoryIDs: [], skipped: 0)
+            var restored: [UUID: UUID] = [:]
+            var links: [(UUID, [FunesExport.Link])] = []
             for entry in preview.entries {
                 switch entry.status {
                 case .ready: break
@@ -333,25 +384,54 @@ public final class ImportService: Sendable {
                 var keys = item.categoryKeys.filter(known.contains)
                 if keys.isEmpty { keys = RulesClassifier.propose(item.title + "\n" + item.body, categories: categories).categoryKeys }
                 if asMemories {
-                    let m = try MemoryStore.insert(db, MemoryDraft(
+                    let free = try item.exportID.map { try MemoryStore.fetch(db, id: $0) == nil } ?? false
+                    var m = try MemoryStore.insert(db, MemoryDraft(
                         title: item.title, body: item.body, kind: item.kind ?? .fact, categoryKeys: keys,
-                        sensitivity: item.sensitivity, expiresAt: item.expiresAt, source: .importFunes), actor: .importRun(runID), now: now)
+                        sensitivity: item.sensitivity, expiresAt: item.expiresAt, source: .importFunes), actor: .importRun(runID), now: now,
+                        id: free ? item.exportID! : UUID())
+                    if item.status == .archived {
+                        m = try MemoryStore.setStatus(db, id: m.id, to: .archived, actor: .importRun(runID), now: now)
+                    }
+                    try db.execute(sql: "UPDATE memory SET reconciled_version = version WHERE id = ?", arguments: [m.id.db])
+                    if let exportID = item.exportID {
+                        restored[exportID] = m.id
+                        if !item.links.isEmpty { links.append((m.id, item.links)) }
+                    }
                     out.memoryIDs.append(m.id)
                 } else {
                     let sensitivity = try item.sensitivity ?? MemoryStore.defaultSensitivity(db, categoryKeys: keys)
                     let id = try SuggestionService.insertSuggestion(
                         db, origin: .import, importRunID: runID,
                         input: SuggestInput(title: item.title, body: item.body, kind: item.kind, expiresAt: item.expiresAt),
-                        categories: keys, sensitivity: sensitivity, now: now)
+                        categories: keys, sensitivity: sensitivity,
+                        // A Funes export restore is reviewed memories: not processed again (§5.2).
+                        process: split && preview.source != .funes, now: now)
                     out.suggestionIDs.append(id)
                 }
             }
+            // Links between memories restored together.
+            for (memoryID, memoryLinks) in links {
+                for link in memoryLinks where FunesExport.Link.events.contains(link.event) {
+                    guard let other = restored[link.memoryId] else { continue }
+                    try MemoryStore.appendProvenance(db, memoryID: memoryID, event: link.event, actor: .importRun(runID), at: now,
+                                                     relatedMemoryID: other)
+                }
+            }
             try db.execute(sql: "UPDATE import_run SET blocked = ? WHERE id = ?", arguments: [blocked, runID.db])
+            // The export's profile, only into an empty one, and only if it would save (FR-X-06).
+            if let profile = preview.profile?.normalized(), !profile.isEmpty, try ProfileStore.fetch(db).isEmpty,
+               (try? ProfileStore.validate(profile)) != nil {
+                var restored = profile
+                restored.updatedAt = now
+                try ProfileStore.write(db, restored)
+                out.restoredProfile = true
+            }
             return out
         }
         activity.record(ActivityEvent(time: now, phase: .event, actor: .importRun(runID), via: .app, event: "import",
                                       outcome: "committed", counts: ["suggestions": result.suggestionIDs.count,
-                                                                     "memories": result.memoryIDs.count, "skipped": result.skipped]))
+                                                                     "memories": result.memoryIDs.count, "skipped": result.skipped,
+                                                                     "profile": result.restoredProfile ? 1 : 0]))
         return result
     }
 
@@ -363,11 +443,19 @@ public final class ImportService: Sendable {
             }
             var memories = try MemoryStore.list(db, filter: MemoryFilter(status: .activeIncludingExpired, sort: .created), now: now)
             if includeArchived { memories += try MemoryStore.list(db, filter: MemoryFilter(status: .archived, sort: .created), now: now) }
-            return FunesExport(format: FunesExport.formatID, exportedAt: now, categories: categories, memories: memories.map {
-                FunesExport.Memory(id: $0.id, title: $0.title, body: $0.body, kind: $0.kind, categories: $0.categoryKeys,
-                                   sensitivity: $0.sensitivity, status: $0.status, expiresAt: $0.expiresAt,
-                                   createdAt: $0.createdAt, updatedAt: $0.updatedAt)
-            })
+            let exported = Set(memories.map(\.id))
+            let profile = try ProfileStore.fetch(db)
+            return FunesExport(format: FunesExport.formatID, exportedAt: now, categories: categories, memories: try memories.map { m in
+                // Split and merge links to other memories in the export; never the undo log.
+                let links = try MemoryStore.provenance(db, memoryID: m.id).compactMap { entry -> FunesExport.Link? in
+                    guard FunesExport.Link.events.contains(entry.event), let other = entry.relatedMemoryID,
+                          exported.contains(other) else { return nil }
+                    return FunesExport.Link(event: entry.event, memoryId: other)
+                }
+                return FunesExport.Memory(id: m.id, title: m.title, body: m.body, kind: m.kind, categories: m.categoryKeys,
+                                          sensitivity: m.sensitivity, status: m.status, expiresAt: m.expiresAt,
+                                          createdAt: m.createdAt, updatedAt: m.updatedAt, links: links.isEmpty ? nil : links)
+            }, profile: profile.isEmpty ? nil : profile)
         }
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601

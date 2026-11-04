@@ -11,7 +11,7 @@ public final class FunesMCPServer {
     public let limiter: RateLimiter
     public let counters: MCPTrafficCounters
     public let configuration: BridgeConfiguration
-    /// The port `start()` listens on (Settings ▸ MCP). Changing it takes effect at the next start.
+    /// The port `start()` listens on (Settings ▸ Agent Server). Changing it takes effect at the next start.
     public var port: Int
     let pipeline: RequestPipeline
     let services: FunesServices

@@ -1,6 +1,88 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@: %lld in · %lld shared · %lld refused" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$lld in · %3$lld shared · %4$lld refused"
+          }
+        }
+      }
+    },
+    "%lld in" : {
+
+    },
+    "%lld in (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld in (%2$@)"
+          }
+        }
+      }
+    },
+    "%lld memories" : {
+
+    },
+    "%lld refused" : {
+
+    },
+    "%lld saved" : {
+
+    },
+    "%lld shared" : {
+
+    },
+    "%lld shared (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld shared (%2$@)"
+          }
+        }
+      }
+    },
+    "%lld shared with %lld agents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld shared with %2$lld agents"
+          }
+        }
+      }
+    },
+    "%lld shared with 1 agent" : {
+
+    },
+    "%lld-week streak" : {
+
+    },
+    "0 in" : {
+
+    },
+    "1-week streak" : {
+
+    },
+    "12 months" : {
+
+    },
+    "12 weeks" : {
+
+    },
+    "30 days" : {
+
+    },
+    "7 days" : {
+
+    },
+    "Agents" : {
+
+    },
     "Capture" : {
 
     },
@@ -10,16 +92,144 @@
     "Couldn't save on this iPhone." : {
 
     },
+    "DEMO" : {
+
+    },
+    "Date" : {
+
+    },
+    "Demo vault: not your data" : {
+
+    },
+    "Dictate" : {
+
+    },
+    "Dictate in Funes" : {
+
+    },
+    "Funes" : {
+
+    },
+    "Funes · this week" : {
+
+    },
+    "Imports" : {
+
+    },
+    "In" : {
+
+    },
+    "Internal" : {
+
+    },
+    "Last %lld days: %lld in · %lld shared · %lld refused" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Last %1$lld days: %2$lld in · %3$lld shared · %4$lld refused"
+          }
+        }
+      }
+    },
+    "Last 12 months" : {
+
+    },
+    "Last 12 weeks" : {
+
+    },
+    "Last 30 days" : {
+
+    },
+    "Last 7 days" : {
+
+    },
+    "Less" : {
+
+    },
+    "Low" : {
+
+    },
+    "Mac" : {
+
+    },
+    "Memories" : {
+
+    },
+    "More" : {
+
+    },
+    "Most on %@s" : {
+
+    },
+    "No streak yet" : {
+
+    },
     "Not saved: it looks like a password, key or card number. Funes never stores secrets." : {
 
     },
-    "Opens Funes Vault on Capture, ready to type or dictate." : {
+    "Nothing new this week." : {
+
+    },
+    "Open Funes once your Mac is near." : {
+
+    },
+    "Open Funes to pair." : {
+
+    },
+    "Opens Funes Vault on Home, ready to dictate." : {
+
+    },
+    "Opens Funes Vault on Home, ready to type or dictate." : {
+
+    },
+    "Opens Funes ready to type or dictate something to remember." : {
+
+    },
+    "Other" : {
+
+    },
+    "Out" : {
+
+    },
+    "Pair with your Mac" : {
+
+    },
+    "Public" : {
+
+    },
+    "Pulse" : {
 
     },
     "Queue full: connect to your Mac." : {
 
     },
+    "Refused" : {
+
+    },
+    "Remember" : {
+
+    },
     "Remember in Funes" : {
+
+    },
+    "Restricted" : {
+
+    },
+    "Rhythm" : {
+
+    },
+    "Rhythm, last 12 weeks: %lld memories saved. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Rhythm, last 12 weeks: %1$lld memories saved. %2$@"
+          }
+        }
+      }
+    },
+    "Rhythm, last 12 weeks: 1 memory saved. %@" : {
 
     },
     "Saved" : {
@@ -28,13 +238,73 @@
     "Saves text to your Funes vault. It waits here until your vault has it." : {
 
     },
+    "Secret" : {
+
+    },
+    "Sensitive" : {
+
+    },
+    "Shared" : {
+
+    },
+    "Shared with %@" : {
+
+    },
+    "Shared: %@" : {
+
+    },
     "Text" : {
 
     },
     "That's over 10,000 characters." : {
 
     },
+    "The days you added memories, week by week." : {
+
+    },
     "There's nothing to remember." : {
+
+    },
+    "This week's numbers, and what came in and went out to agents over 14 days." : {
+
+    },
+    "This week: %@." : {
+
+    },
+    "Tidy-up" : {
+
+    },
+    "Too few memories for a rhythm yet" : {
+
+    },
+    "Too few memories yet" : {
+
+    },
+    "Vault" : {
+
+    },
+    "Vault: %@" : {
+
+    },
+    "Week of %@" : {
+
+    },
+    "What should Funes remember?" : {
+
+    },
+    "Your pulse shows here" : {
+
+    },
+    "Your pulse starts with your first memories" : {
+
+    },
+    "Your rhythm shows here" : {
+
+    },
+    "as of %@" : {
+
+    },
+    "iPhone" : {
 
     }
   },

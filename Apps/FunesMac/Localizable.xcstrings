@@ -4,7 +4,13 @@
     "" : {
 
     },
+    " (up to %@)" : {
+
+    },
     " and %lld more" : {
+
+    },
+    " · %@" : {
 
     },
     "%@ (%lld)" : {
@@ -29,6 +35,9 @@
     "%@ (remote token)" : {
 
     },
+    "%@ (same as New memories)" : {
+
+    },
     "%@ / %@" : {
       "localizations" : {
         "en" : {
@@ -39,6 +48,9 @@
         }
       }
     },
+    "%@ Privacy Settings" : {
+
+    },
     "%@ access" : {
 
     },
@@ -48,6 +60,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ already has a %2$@ entry, but its settings file wasn't where %3$@ expected, so nothing was changed."
+          }
+        }
+      }
+    },
+    "%@ also has %@, as set in " : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ also has %2$@, as set in "
           }
         }
       }
@@ -121,7 +143,23 @@
         }
       }
     },
+    "%@ didn't accept the API key. Check it in Settings ▸ AI ▸ Models & Accounts ▸ %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ didn't accept the API key. Check it in Settings ▸ AI ▸ Models & Accounts ▸ %2$@."
+          }
+        }
+      }
+    },
+    "%@ didn't answer. Try again." : {
+
+    },
     "%@ didn't finish within 20 seconds." : {
+
+    },
+    "%@ follows New memories and will use Apple on-device." : {
 
     },
     "%@ forwards only some of the Remote Access paths." : {
@@ -140,6 +178,44 @@
     "%@ has no access yet. It can connect, but sees nothing until you change its access." : {
 
     },
+    "%@ is an embedding model, so it can't answer chat requests. Choose it in Features ▸ Search index, and test a chat model here." : {
+
+    },
+    "%@ is an embedding model: choose a chat model. Until then: on-device, then rules." : {
+
+    },
+    "%@ is an embedding model: it can't propose fields or split memories. Choose it in Features ▸ Search index instead, and put a chat model here, or leave this empty." : {
+
+    },
+    "%@ is an embedding model: it can't propose fields, tidy up or answer. Choose it in Features ▸ Search index instead." : {
+
+    },
+    "%@ is paused: test its connection in Settings ▸ AI ▸ Models & Accounts ▸ %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is paused: test its connection in Settings ▸ AI ▸ Models & Accounts ▸ %2$@."
+          }
+        }
+      }
+    },
+    "%@ isn't available right now." : {
+
+    },
+    "%@ isn't available: check it in Settings ▸ AI ▸ Models & Accounts ▸ %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ isn't available: check it in Settings ▸ AI ▸ Models & Accounts ▸ %2$@."
+          }
+        }
+      }
+    },
+    "%@ isn't installed on this Mac" : {
+
+    },
     "%@ isn't installed on this Mac." : {
 
     },
@@ -150,6 +226,12 @@
 
     },
     "%@ isn't running, so cloud agents can't reach Funes Vault." : {
+
+    },
+    "%@ isn't signed in on your Mac." : {
+
+    },
+    "%@ needs an update on your Mac." : {
 
     },
     "%@ on this Mac. It may send what it reads to its AI service." : {
@@ -165,7 +247,13 @@
         }
       }
     },
+    "%@ runs on this Mac or your local network, so every memory is embedded and nothing leaves it." : {
+
+    },
     "%@ runs, but isn't connected yet." : {
+
+    },
+    "%@ says to slow down. Try again later." : {
 
     },
     "%@ suggested a memory. Review it in the Inbox." : {
@@ -174,8 +262,30 @@
     "%@ suggests a memory for Funes" : {
 
     },
+    "%@ through your Claude Code sign-in" : {
+
+    },
+    "%@ through your Codex sign-in" : {
+
+    },
+    "%@ to answer" : {
+
+    },
     "%@ to review" : {
 
+    },
+    "%@ use it and go back to their default." : {
+
+    },
+    "%@ uses %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ uses %2$@."
+          }
+        }
+      }
     },
     "%@ via Remote Access" : {
 
@@ -202,6 +312,9 @@
           }
         }
       }
+    },
+    "%@ wants to connect" : {
+
     },
     "%@ wants to connect as %@" : {
       "localizations" : {
@@ -236,6 +349,12 @@
     "%@ wants to read your memories" : {
 
     },
+    "%@ wants to save a correction" : {
+
+    },
+    "%@ wants to save a memory" : {
+
+    },
     "%@ wants to suggest memories" : {
 
     },
@@ -244,6 +363,26 @@
     },
     "%@ will get matching memories it's allowed to read without asking you. You'll see each share in Activity." : {
 
+    },
+    "%@ works: it proposed “%@” in %@ s." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ works: it proposed “%2$@” in %3$@ s."
+          }
+        }
+      }
+    },
+    "%@ works: it proposed “%@”." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ works: it proposed “%2$@”."
+          }
+        }
+      }
     },
     "%@ · %@" : {
       "localizations" : {
@@ -265,6 +404,9 @@
         }
       }
     },
+    "%@ · Choose a model" : {
+
+    },
     "%@ · access" : {
 
     },
@@ -277,6 +419,16 @@
     "%@ · share" : {
 
     },
+    "%@ → %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ → %2$@"
+          }
+        }
+      }
+    },
     "%@'s access changed while you were editing (for example, Always Allow from a panel). Review it again before saving." : {
 
     },
@@ -285,6 +437,16 @@
     },
     "%@'s request waited 15 minutes without an answer." : {
 
+    },
+    "%@, %@ and %lld more" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@ and %3$lld more"
+          }
+        }
+      }
     },
     "%@, %@, %lld requests waiting" : {
       "localizations" : {
@@ -325,6 +487,19 @@
           }
         }
       }
+    },
+    "%@, %lld memories shared" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld memories shared"
+          }
+        }
+      }
+    },
+    "%@, 1 memory shared" : {
+
     },
     "%@, a cloud agent, through Remote Access" : {
 
@@ -391,14 +566,73 @@
         }
       }
     },
+    "%@: %@ before, %@ after" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@ before, %3$@ after"
+          }
+        }
+      }
+    },
+    "%@: %@, %lld shared, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@, %3$lld shared, %4$@"
+          }
+        }
+      }
+    },
+    "%@: not signed in. Run `%@` in Terminal and sign in with %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: not signed in. Run `%2$@` in Terminal and sign in with %3$@."
+          }
+        }
+      }
+    },
+    "%@: unavailable, see the status above." : {
+
+    },
+    "%@: your %@ plan's limit is reached. Try again later." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: your %2$@ plan's limit is reached. Try again later."
+          }
+        }
+      }
+    },
+    "%@…" : {
+
+    },
     "%lld" : {
 
     },
     "%lld above its sensitivity limit" : {
 
     },
+    "%lld ahead of it" : {
+
+    },
     "%lld applied" : {
 
+    },
+    "%lld applied, %lld to review" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld applied, %2$lld to review"
+          }
+        }
+      }
     },
     "%lld archived" : {
 
@@ -407,6 +641,18 @@
 
     },
     "%lld changed" : {
+
+    },
+    "%lld changed since suggested" : {
+
+    },
+    "%lld changes undone" : {
+
+    },
+    "%lld claims" : {
+
+    },
+    "%lld claims left out: they didn't quote a memory" : {
 
     },
     "%lld couldn't be changed" : {
@@ -424,16 +670,61 @@
     "%lld expired" : {
 
     },
+    "%lld in" : {
+
+    },
+    "%lld in (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld in (%2$@)"
+          }
+        }
+      }
+    },
     "%lld in categories it can't read" : {
 
     },
+    "%lld left for next time" : {
+
+    },
+    "%lld left: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld left: %2$@"
+          }
+        }
+      }
+    },
     "%lld memories" : {
+
+    },
+    "%lld memories above %@ weren't read" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld memories above %2$@ weren't read"
+          }
+        }
+      }
+    },
+    "%lld memories checked" : {
+
+    },
+    "%lld memories in" : {
 
     },
     "%lld memories restored." : {
 
     },
     "%lld memories selected" : {
+
+    },
+    "%lld memories weren't read: they look like they hold secrets" : {
 
     },
     "%lld minutes %lld seconds left" : {
@@ -471,6 +762,9 @@
     "%lld moved to Recently Deleted" : {
 
     },
+    "%lld need your answer" : {
+
+    },
     "%lld not shareable" : {
 
     },
@@ -480,7 +774,19 @@
     "%lld of 4" : {
 
     },
+    "%lld out" : {
+
+    },
+    "%lld refused" : {
+
+    },
     "%lld rejected" : {
+
+    },
+    "%lld requests refused" : {
+
+    },
+    "%lld requests waiting for you" : {
 
     },
     "%lld requests waiting in Funes" : {
@@ -502,6 +808,9 @@
     "%lld s" : {
 
     },
+    "%lld saved" : {
+
+    },
     "%lld seconds left" : {
 
     },
@@ -511,16 +820,64 @@
     "%lld selected" : {
 
     },
+    "%lld shared" : {
+
+    },
+    "%lld shared (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld shared (%2$@)"
+          }
+        }
+      }
+    },
+    "%lld shared with %lld agents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld shared with %2$lld agents"
+          }
+        }
+      }
+    },
+    "%lld shared with 1 agent" : {
+
+    },
+    "%lld still processing" : {
+
+    },
+    "%lld suggestions" : {
+
+    },
     "%lld suggestions are in your Inbox." : {
 
     },
     "%lld suggestions waiting for you" : {
 
     },
+    "%lld waiting in Inbox" : {
+
+    },
     "%lld withheld" : {
 
     },
+    "%lld%% %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld%% %2$@"
+          }
+        }
+      }
+    },
     "%lld, never imported" : {
+
+    },
+    "%lld-week streak" : {
 
     },
     "%lld. %@" : {
@@ -542,11 +899,60 @@
     "+%lld more" : {
 
     },
+    "+%lld this week" : {
+
+    },
+    "1 ahead of it" : {
+
+    },
+    "1 claim" : {
+
+    },
+    "1 claim left out: it didn't quote a memory" : {
+
+    },
     "1 memory" : {
+
+    },
+    "1 memory above %@ wasn't read" : {
+
+    },
+    "1 memory in" : {
+
+    },
+    "1 memory wasn't read: it looks like it holds a secret" : {
+
+    },
+    "1 model" : {
+
+    },
+    "1 request refused" : {
+
+    },
+    "1 request waiting for you" : {
 
     },
     "1 suggestion waiting for you" : {
 
+    },
+    "1-week streak" : {
+
+    },
+    "12 months" : {
+
+    },
+    "12 weeks" : {
+
+    },
+    "12 weeks: %lld memories saved on %lld days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "12 weeks: %1$lld memories saved on %2$lld days"
+          }
+        }
+      }
     },
     "30 days" : {
 
@@ -566,6 +972,12 @@
     "A category with that name already exists." : {
 
     },
+    "A chat model for New memories, the tidy-up and search answers; add more on the account's page. Embedding models are chosen in Features ▸ Search index; leave this empty if you only use this account for embeddings." : {
+
+    },
+    "A copy" : {
+
+    },
     "A free dev domain with an ngrok account. TLS ends at ngrok." : {
 
     },
@@ -576,6 +988,9 @@
 
     },
     "A memory can have at most 12 categories." : {
+
+    },
+    "A memory it changes was archived or deleted. Reject it, or restore that memory first." : {
 
     },
     "A new path stops the old URL. Paired iPhones learn the new one when they pair again." : {
@@ -605,22 +1020,57 @@
     "A vault file has unsafe permissions." : {
 
     },
+    "AI" : {
+
+    },
     "AI Assistant has known problems with local HTTP servers, so only the launcher is offered." : {
 
     },
-    "AI Models" : {
-
-    },
-    "AI Models…" : {
+    "AI features send nothing off this Mac." : {
 
     },
     "API key" : {
 
     },
+    "API keys" : {
+
+    },
     "About %@" : {
 
     },
+    "About %lld memories to check. Roughly %lld requests the first week, then a few a day." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "About %1$lld memories to check. Roughly %2$lld requests the first week, then a few a day."
+          }
+        }
+      }
+    },
+    "About %lld tokens go to %@. Memories above %@ stay on this Mac's index only." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "About %1$lld tokens go to %2$@. Memories above %3$@ stay on this Mac's index only."
+          }
+        }
+      }
+    },
     "About Funes Vault" : {
+
+    },
+    "About You" : {
+
+    },
+    "About You, %@" : {
+
+    },
+    "About You…" : {
+
+    },
+    "About you" : {
 
     },
     "Above its sensitivity limit" : {
@@ -653,6 +1103,12 @@
     "Add %@" : {
 
     },
+    "Add %@'s API key in Models & Accounts." : {
+
+    },
+    "Add Account" : {
+
+    },
     "Add Agent" : {
 
     },
@@ -671,7 +1127,10 @@
     "Add Funes Vault to %@?" : {
 
     },
-    "Add Provider" : {
+    "Add Language" : {
+
+    },
+    "Add a Model…" : {
 
     },
     "Add a category" : {
@@ -765,6 +1224,9 @@
     "Agent ID" : {
 
     },
+    "Agent Server" : {
+
+    },
     "Agent added" : {
 
     },
@@ -789,6 +1251,9 @@
     "Agents can't connect: the server is off" : {
 
     },
+    "Agents get only the fields you tick in each one's Access tab, with their answers, without asking. New agents get your name." : {
+
+    },
     "Agents get the answer when they check again." : {
 
     },
@@ -805,6 +1270,15 @@
 
     },
     "Agents' access is set per category. Built-in categories can be renamed; your own can also be deleted." : {
+
+    },
+    "Agents' requests are refused. Capture and the Inbox keep working." : {
+
+    },
+    "Agents, Remote Access and your iPhone are in their own panes." : {
+
+    },
+    "Agents: %@" : {
 
     },
     "All" : {
@@ -843,13 +1317,28 @@
     "Allow only if this code matches the one in your browser. It will use %@'s access." : {
 
     },
+    "Already Saved" : {
+
+    },
     "Already delivered" : {
+
+    },
+    "Already in your vault: “%@”" : {
+
+    },
+    "Already saved" : {
 
     },
     "Already set up" : {
 
     },
+    "Also archives “%@”" : {
+
+    },
     "Also matched, less closely" : {
+
+    },
+    "Also sent" : {
 
     },
     "Always Allow %@ to Add to %@" : {
@@ -896,6 +1385,9 @@
     "Another app is using port %@. Quit it, then turn this off and on again." : {
 
     },
+    "Answer" : {
+
+    },
     "Answer a Few Questions" : {
 
     },
@@ -911,10 +1403,19 @@
     "Answer any you like. Each answer goes to your Inbox, where you can edit it before it becomes a memory." : {
 
     },
+    "Answer this search from its top results" : {
+
+    },
     "Answered a question" : {
 
     },
+    "Answered a search" : {
+
+    },
     "Answered on %@." : {
+
+    },
+    "Answers this search from its top results, quoting your memories." : {
 
     },
     "Anthropic API (MCP connector)" : {
@@ -951,13 +1452,25 @@
     "Apple on-device" : {
 
     },
+    "Apple's on-device model is slow on this Mac: answers may take 30 s or more." : {
+
+    },
+    "Apple's on-device model is too slow to answer on its own: it answers only when you ask, and may take 30 s or more." : {
+
+    },
     "Applications" : {
 
     },
     "Applied" : {
 
     },
+    "Applied a change automatically" : {
+
+    },
     "Applied a suggestion" : {
+
+    },
+    "Applied automatically (%lld)" : {
 
     },
     "Applied from the Inbox" : {
@@ -969,7 +1482,7 @@
     "Applied. Similar memory exists:" : {
 
     },
-    "Applies to every cloud provider. Captures are checked on this Mac first, and anything that looks like a secret is never sent." : {
+    "Applies to every cloud provider and every task. Text is checked on this Mac first, and anything that looks like a secret is never sent, whatever the limit." : {
 
     },
     "Apply" : {
@@ -979,6 +1492,15 @@
 
     },
     "Apply (⌘⏎)" : {
+
+    },
+    "Apply All" : {
+
+    },
+    "Apply changes automatically" : {
+
+    },
+    "Apply each piece as it says. Pieces outside an agent's scope wait for you." : {
 
     },
     "Apply what's right." : {
@@ -1017,7 +1539,16 @@
     "Archived memories are kept, but never shared with agents." : {
 
     },
+    "Archived “%@”" : {
+
+    },
+    "Archives “%@”" : {
+
+    },
     "Are there practical constraints that often shape your work or availability?" : {
+
+    },
+    "Ask Funes" : {
 
     },
     "Ask before saving" : {
@@ -1038,6 +1569,12 @@
     "Asked for more access" : {
 
     },
+    "Asks before turning Remote Access on" : {
+
+    },
+    "At" : {
+
+    },
     "At claude.ai/code, edit the cloud environment and add %@=%@ under Environment variables. %@ is below." : {
       "localizations" : {
         "en" : {
@@ -1054,6 +1591,9 @@
     "At least %@" : {
 
     },
+    "At most %lld characters." : {
+
+    },
     "At most 20,000 important rows are kept. Older rows go at the next cleanup (at launch and every 6 hours)." : {
 
     },
@@ -1066,13 +1606,25 @@
     "Automatic" : {
 
     },
+    "Automatic (%@)" : {
+
+    },
     "Automatic follows macOS." : {
+
+    },
+    "Automatically for every search" : {
+
+    },
+    "Automatically for questions" : {
 
     },
     "Back" : {
 
     },
     "Back Up Now" : {
+
+    },
+    "Back to %@" : {
 
     },
     "Back up the vault every day" : {
@@ -1099,10 +1651,16 @@
     "Beyond the session" : {
 
     },
+    "Both Are True" : {
+
+    },
     "Both need the same Wi-Fi, or Tailscale on both." : {
 
     },
     "Both tunnels can run at the same time." : {
+
+    },
+    "Bottom" : {
 
     },
     "Brings a waiting approval panel forward from any app, so Return and Esc answer it." : {
@@ -1111,10 +1669,28 @@
     "Built in" : {
 
     },
-    "Built in (bge-small, on this Mac)" : {
+    "Built in (bge-small) · Ready" : {
+
+    },
+    "Built in (bge-small) · Unavailable" : {
 
     },
     "Built-in categories can be renamed but not deleted." : {
+
+    },
+    "Calibrate" : {
+
+    },
+    "Calibrate %@?" : {
+
+    },
+    "Calibrate…" : {
+
+    },
+    "Calibrating…" : {
+
+    },
+    "Call me" : {
 
     },
     "Can't check on this Mac" : {
@@ -1123,7 +1699,10 @@
     "Cancel" : {
 
     },
-    "Capture" : {
+    "Cancelled" : {
+
+    },
+    "Capture & Shortcuts" : {
 
     },
     "Capture shortcut" : {
@@ -1138,16 +1717,28 @@
     "Captured on iPhone · %@" : {
 
     },
+    "Captured on iPhone · %lld pieces" : {
+
+    },
     "Captured on this Mac" : {
 
     },
     "Captured on this Mac · %@" : {
 
     },
+    "Captured on this Mac · %lld pieces" : {
+
+    },
     "Captures" : {
 
     },
     "Captures get simple proposals from rules on this Mac." : {
+
+    },
+    "Captures get simple proposals from rules on this Mac. Turn on proposals in Features ▸ New memories." : {
+
+    },
+    "Captures, your answers, agents' suggestions and imports become one suggestion per claim, each marked new, an update, already saved or a removal. You review every piece in the Inbox." : {
 
     },
     "Categories" : {
@@ -1183,7 +1774,25 @@
     "Change tunnel" : {
 
     },
+    "Changed" : {
+
+    },
+    "Changed automatically" : {
+
+    },
     "Changed since approval" : {
+
+    },
+    "Changed since this was suggested" : {
+
+    },
+    "Changed since this was suggested." : {
+
+    },
+    "Changed “%@”" : {
+
+    },
+    "Changes Funes made without asking. You can undo each for 30 days." : {
 
     },
     "Changes to the file" : {
@@ -1195,7 +1804,13 @@
     "Change…" : {
 
     },
+    "Chat models, for New memories, the tidy-up and search answers. Embedding models are chosen in Features ▸ Search index." : {
+
+    },
     "ChatGPT" : {
+
+    },
+    "ChatGPT (Codex)" : {
 
     },
     "ChatGPT Memories…" : {
@@ -1216,7 +1831,22 @@
     "Check the address and the key." : {
 
     },
+    "Check the memories the last tidy-up didn't get to." : {
+
+    },
+    "Check the provider's API key." : {
+
+    },
+    "Check this memory against itself and related memories now." : {
+
+    },
+    "Checked" : {
+
+    },
     "Checked a request" : {
+
+    },
+    "Checking…" : {
 
     },
     "Choose" : {
@@ -1237,7 +1867,16 @@
     "Choose a funesvault.export.v1 file. Its memories come in as suggestions, or as memories if you choose so below. It never brings agents or access." : {
 
     },
-    "Choose a model in %@'s settings. Until then: on-device, then rules." : {
+    "Choose a model" : {
+
+    },
+    "Choose a model to answer searches in Settings ▸ AI ▸ Features ▸ Search answers." : {
+
+    },
+    "Choose a model to answer searches." : {
+
+    },
+    "Choose a model to tidy up with." : {
 
     },
     "Choose a port from %@ to %@." : {
@@ -1250,7 +1889,16 @@
         }
       }
     },
+    "Choose a tidy-up model in Settings ▸ AI ▸ Features ▸ Daily tidy-up first." : {
+
+    },
+    "Choose a tidy-up model in Settings ▸ AI ▸ Features ▸ Daily tidy-up to tidy up a memory." : {
+
+    },
     "Choose a tunnel" : {
+
+    },
+    "Choose an answer first." : {
 
     },
     "Choose at least one category." : {
@@ -1259,23 +1907,13 @@
     "Choose at least one way to reach this Mac." : {
 
     },
+    "Choose one of %@'s models. Until then: on-device, then rules." : {
+
+    },
     "Choose the memories file from your ChatGPT data export (JSON). Each memory becomes a suggestion." : {
 
     },
-    "Classification" : {
-
-    },
-    "Classification sends new captures (up to %@) and your category names and descriptions to %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Classification sends new captures (up to %1$@) and your category names and descriptions to %2$@."
-          }
-        }
-      }
-    },
-    "Classification sends nothing to %@: the cloud limit is Never send captures, so it runs on this Mac." : {
+    "Claude (Claude Code)" : {
 
     },
     "Claude Code" : {
@@ -1303,9 +1941,6 @@
 
     },
     "Claude memories" : {
-
-    },
-    "Cleanup suggestion · %@" : {
 
     },
     "Clear" : {
@@ -1341,7 +1976,16 @@
     "Close" : {
 
     },
+    "Close Details" : {
+
+    },
     "Close Window" : {
+
+    },
+    "Close details" : {
+
+    },
+    "Closes every Save panel. The suggestions stay in the Inbox." : {
 
     },
     "Cloud" : {
@@ -1380,10 +2024,10 @@
     "Cloud agents you allow will be able to reach %@ through a public address from a tunnel you run. What you share with them goes to their servers. Nothing is reachable until you set up a tunnel and allow an agent cloud access." : {
 
     },
-    "Cloud limit" : {
+    "Cloud providers need an https:// address." : {
 
     },
-    "Cloud providers need an https:// address." : {
+    "Cloud requests per day" : {
 
     },
     "Cloud sessions load .mcp.json only when the session has one repository." : {
@@ -1416,6 +2060,9 @@
     "Codex" : {
 
     },
+    "Codex can run commands that read files on this Mac. Funes runs it in an empty folder, read-only, with no internet, and discards any run that uses a command, but it can't switch this ability off. Use it only if you accept that." : {
+
+    },
     "Codex cloud tasks" : {
 
     },
@@ -1432,6 +2079,12 @@
 
     },
     "Command" : {
+
+    },
+    "Compare with the memory as it is now, then decide again." : {
+
+    },
+    "Compares memories that changed with related ones and proposes updates, merges, splits and archives, and asks you about conflicts. Proposals wait in the Inbox's Tidy-up section." : {
 
     },
     "Confirmed still true %@" : {
@@ -1467,6 +2120,12 @@
           }
         }
       }
+    },
+    "Connection" : {
+
+    },
+    "Connections" : {
+
     },
     "Constraint" : {
 
@@ -1535,7 +2194,13 @@
     "Couldn't reach the server." : {
 
     },
+    "Couldn't split" : {
+
+    },
     "Couldn't start" : {
+
+    },
+    "Couldn't undo: the memory changed since." : {
 
     },
     "Counts only: Funes never logs what agents send or receive." : {
@@ -1565,16 +2230,57 @@
     "Cut" : {
 
     },
+    "Daily" : {
+
+    },
+    "Daily Tidy-up…" : {
+
+    },
+    "Daily at %@" : {
+
+    },
+    "Daily tidy-up" : {
+
+    },
+    "Daily tidy-up follows New memories and will use its rules only." : {
+
+    },
+    "Daily tidy-up: nothing to %@; the cloud limit is Nothing." : {
+
+    },
+    "Daily tidy-up: related memories%@, with their dates and sources, to %@, every day at %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Daily tidy-up: related memories%1$@, with their dates and sources, to %2$@, every day at %3$@."
+          }
+        }
+      }
+    },
+    "Daily tidy-up: related memories%@, with their dates and sources, to %@, when you tidy up." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Daily tidy-up: related memories%1$@, with their dates and sources, to %2$@, when you tidy up."
+          }
+        }
+      }
+    },
     "Dark" : {
 
     },
-    "Data" : {
+    "Data & Backups" : {
 
     },
     "Data folder" : {
 
     },
     "Date Created" : {
+
+    },
+    "Day" : {
 
     },
     "Delete" : {
@@ -1586,16 +2292,25 @@
     "Delete %lld memories now?" : {
 
     },
+    "Delete Earlier Versions" : {
+
+    },
     "Delete Now" : {
 
     },
     "Delete Now…" : {
 
     },
+    "Delete the earlier text of this memory. Its history keeps the labels." : {
+
+    },
     "Delete this memory now?" : {
 
     },
     "Delete “%@”?" : {
+
+    },
+    "Deleted" : {
 
     },
     "Deleted %@" : {
@@ -1638,10 +2353,22 @@
     "Details" : {
 
     },
+    "Details of automatic changes are kept for 30 days." : {
+
+    },
     "Devin" : {
 
     },
     "Devin Desktop" : {
+
+    },
+    "Dictate" : {
+
+    },
+    "Dictation didn't start. Try again." : {
+
+    },
+    "Dictation doesn't support your language yet." : {
 
     },
     "Direct HTTP" : {
@@ -1674,16 +2401,25 @@
     "Downloads" : {
 
     },
+    "Duplicates only" : {
+
+    },
     "Each agent gets its own key and only the access you give it." : {
 
     },
     "Each agent gets only the access you give it, and Funes shows you the exact text before anything is shared." : {
 
     },
-    "Edit" : {
+    "Each claim quotes the memory it came from, and claims it can't quote aren't shown." : {
 
     },
-    "Edit %@" : {
+    "Each feature uses a model from Models & Accounts." : {
+
+    },
+    "Earlier versions" : {
+
+    },
+    "Edit" : {
 
     },
     "Edit %@'s access…" : {
@@ -1702,14 +2438,50 @@
         }
       }
     },
+    "Edited About you" : {
+
+    },
     "Edited a memory" : {
 
     },
     "Edit…" : {
 
     },
-    "Embeddings" : {
+    "Embed" : {
 
+    },
+    "Embed %lld memories with %@?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Embed %1$lld memories with %2$@?"
+          }
+        }
+      }
+    },
+    "Embed agent requests with the cloud model" : {
+
+    },
+    "Embedding %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Embedding %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Embedding %lld of %lld. Search uses bge-small until it's done." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Embedding %1$lld of %2$lld. Search uses bge-small until it's done."
+          }
+        }
+      }
     },
     "Empty allow list means all categories. Deny always wins." : {
 
@@ -1741,7 +2513,19 @@
     "Every cloud agent setup uses the current URL and stops working until you give it the new one." : {
 
     },
+    "Every earlier version is deleted now, and changes won't keep one. History keeps its labels; automatic changes keep theirs until Undo expires." : {
+
+    },
     "Everyday preferences. Fine for most of your agents." : {
+
+    },
+    "Everything except conflicts" : {
+
+    },
+    "Everything here is optional. Home greets you by the name in Call me, or your given name." : {
+
+    },
+    "Everything, including Secret" : {
 
     },
     "Experimental" : {
@@ -1780,7 +2564,22 @@
     "Fact" : {
 
     },
+    "Failed" : {
+
+    },
+    "Failed: proposed by rules" : {
+
+    },
+    "Family name" : {
+
+    },
+    "Features" : {
+
+    },
     "Fetch Funes Vault's health URL through the tunnel" : {
+
+    },
+    "Fields suggested by %@" : {
 
     },
     "File" : {
@@ -1790,6 +2589,9 @@
 
     },
     "Filled in from the running tunnel. Check it, then test." : {
+
+    },
+    "Finds exact duplicates and expired memories on this Mac. Choose a local server or a cloud model to also find updates, merges, splits and conflicts; Apple's on-device model isn't used for this." : {
 
     },
     "Find…" : {
@@ -1804,10 +2606,16 @@
     "First, turn on Remote Access. Port %@ opens on this Mac for the tunnel; nothing is reachable until the tunnel runs." : {
 
     },
+    "First, what should Funes call you?" : {
+
+    },
     "Five iPhones are already paired. Remove one first." : {
 
     },
     "Five iPhones are paired, the most Funes Vault allows. Remove one to pair another." : {
+
+    },
+    "Fix…" : {
 
     },
     "For 1 Hour" : {
@@ -1827,6 +2635,15 @@
 
     },
     "For the session" : {
+
+    },
+    "Forget Earlier Versions" : {
+
+    },
+    "Forget Earlier Versions…" : {
+
+    },
+    "Forget this memory's earlier versions?" : {
 
     },
     "Forward this URL to http://127.0.0.1:%@:" : {
@@ -1870,7 +2687,29 @@
     "From" : {
 
     },
+    "From %@ · %lld pieces" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "From %1$@ · %2$lld pieces"
+          }
+        }
+      }
+    },
     "From %@. It's in your Inbox either way." : {
+
+    },
+    "From ChatGPT · %lld pieces" : {
+
+    },
+    "From Claude · %lld pieces" : {
+
+    },
+    "From Markdown · %lld pieces" : {
+
+    },
+    "From a merge or split" : {
 
     },
     "From agents" : {
@@ -1879,37 +2718,25 @@
     "From other apps" : {
 
     },
+    "From: “%@”" : {
+
+    },
     "Funes Vault" : {
 
     },
     "Funes Vault Export…" : {
 
     },
-    "Funes Vault Settings" : {
-
-    },
     "Funes Vault always stays in the menu bar. Without the Dock icon, it shows in the Dock only while a window is open." : {
-
-    },
-    "Funes Vault is off" : {
-
-    },
-    "Funes Vault is on · %lld agents" : {
-
-    },
-    "Funes Vault is on · 1 agent" : {
-
-    },
-    "Funes Vault is paused" : {
-
-    },
-    "Funes Vault is starting…" : {
 
     },
     "Funes Vault paused" : {
 
     },
     "Funes Vault resumed" : {
+
+    },
+    "Funes Vault, can't connect" : {
 
     },
     "Funes Vault, off" : {
@@ -1921,10 +2748,47 @@
     "Funes Vault, waiting for you" : {
 
     },
+    "Funes applied %lld changes and has %lld for you to review." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funes applied %1$lld changes and has %2$lld for you to review."
+          }
+        }
+      }
+    },
+    "Funes applied %lld changes. You can undo them in the Inbox." : {
+
+    },
     "Funes backs up the file next to it first." : {
 
     },
+    "Funes can't use speech recognition. Allow it in System Settings ▸ Privacy & Security ▸ Speech Recognition." : {
+
+    },
+    "Funes can't use the microphone. Allow it in System Settings ▸ Privacy & Security ▸ Microphone." : {
+
+    },
+    "Funes couldn't read your vault. Try again." : {
+
+    },
     "Funes didn't send it: it looked like a secret, or was above the cloud limit." : {
+
+    },
+    "Funes has %lld suggestions for this memory in the Inbox." : {
+
+    },
+    "Funes has %lld tidy-up suggestions for you to review." : {
+
+    },
+    "Funes has a suggestion for this memory in the Inbox." : {
+
+    },
+    "Funes hasn't measured this model, so search keeps its 10 closest matches until you calibrate it." : {
+
+    },
+    "Funes hasn't measured this model, so search keeps its 10 closest matches. Calibrate measures where its matches start with Funes's made-up benchmark." : {
 
     },
     "Funes keeps the last 7 backups in its data folder." : {
@@ -1933,13 +2797,22 @@
     "Funes notes that you checked it today." : {
 
     },
-    "Funes relaunches with the vault as it was then. The current vault is kept in Backups first." : {
+    "Funes proposes a title, kind and categories with the New memories model; you review every proposal in the Inbox." : {
+
+    },
+    "Funes quit during the run" : {
+
+    },
+    "Funes relaunches with the vault as it was then, except that agents, their access and paired iPhones stay as they are now. The current vault is kept in Backups first." : {
 
     },
     "Funes runs this command, replacing the existing funes entry:" : {
 
     },
     "Funes runs this command:" : {
+
+    },
+    "Funes sends its 230 made-up benchmark texts, none of your memories, to %@: about 7,000 tokens." : {
 
     },
     "Funes shows Connected here after the first request from %@." : {
@@ -2013,6 +2886,9 @@
     "Give it a name, paste this URL under Connection, and choose OAuth." : {
 
     },
+    "Given name" : {
+
+    },
     "Goal" : {
 
     },
@@ -2028,7 +2904,38 @@
     "Goes to your Inbox · fields suggested by %@" : {
 
     },
+    "Good afternoon, %@." : {
+
+    },
+    "Good afternoon." : {
+
+    },
+    "Good evening, %@." : {
+
+    },
+    "Good evening." : {
+
+    },
+    "Good morning, %@." : {
+
+    },
+    "Good morning." : {
+
+    },
+    "Growth over 12 weeks: from %lld to %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Growth over 12 weeks: from %1$lld to %2$lld"
+          }
+        }
+      }
+    },
     "HTTP %@" : {
+
+    },
+    "Has words that aren't in the original: check the wording." : {
 
     },
     "Have it rewrite Host to 127.0.0.1 and the port, or keep its public hostname, which must then be the address you paste." : {
@@ -2052,13 +2959,25 @@
     "Hide Funes Vault" : {
 
     },
+    "Hide what changed" : {
+
+    },
     "History" : {
+
+    },
+    "Home" : {
+
+    },
+    "Home greets you by this name, and agents get it with their answers unless you turn it off in their Access tab. Pronouns, languages and more are in Settings ▸ About You." : {
 
     },
     "Hostname" : {
 
     },
     "Hostname for %@" : {
+
+    },
+    "Hour" : {
 
     },
     "How do you like AI assistants to collaborate with you?" : {
@@ -2070,6 +2989,9 @@
     "If TLS ends at the provider's edge, the provider can read the traffic." : {
 
     },
+    "If it fails, Funes uses the on-device model, then rules." : {
+
+    },
     "Import" : {
 
     },
@@ -2077,6 +2999,9 @@
 
     },
     "Import ChatGPT Memories…" : {
+
+    },
+    "Import Without Splitting" : {
 
     },
     "Import a Funes Vault Export" : {
@@ -2121,10 +3046,16 @@
     "Imported · %@" : {
 
     },
+    "Imported · %lld pieces" : {
+
+    },
     "Imports" : {
 
     },
     "Import…" : {
+
+    },
+    "In" : {
 
     },
     "In ChatGPT, open Plugins, click +, then Create custom MCP server." : {
@@ -2191,6 +3122,16 @@
     "Incomplete" : {
 
     },
+    "Install %@ and sign in to use your %@ plan." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Install %1$@ and sign in to use your %2$@ plan."
+          }
+        }
+      }
+    },
     "Install Tailscale on this Mac and sign in." : {
 
     },
@@ -2215,6 +3156,9 @@
     "Internal" : {
 
     },
+    "Internal (recommended)" : {
+
+    },
     "Invalid input" : {
 
     },
@@ -2225,6 +3169,9 @@
 
     },
     "It already got what it may read. Always Allow is for next time." : {
+
+    },
+    "It can be saved once it's split." : {
 
     },
     "It can connect, but sees nothing until you give it access." : {
@@ -2242,7 +3189,13 @@
     "It couldn't be saved. Try again." : {
 
     },
+    "It expired %@." : {
+
+    },
     "It stops working now. To use it again, connect it again." : {
+
+    },
+    "It was changed since, so it can't be undone." : {
 
     },
     "It was deleted for good." : {
@@ -2269,6 +3222,9 @@
     "It's the only category some agents may read. Choose a replacement, or change those agents first." : {
 
     },
+    "Its key is deleted from the Keychain and its usage is cleared." : {
+
+    },
     "Its key stops working at once and its access is deleted. Activity keeps its history, labelled “removed agent”. Its entry in the agent's own settings stays until you delete it there." : {
 
     },
@@ -2278,13 +3234,28 @@
     "Its remote token and every connected cloud app stop working now. Its access on this Mac isn't affected." : {
 
     },
-    "Its weekly check found a problem. Restore a backup in Settings ▸ Data." : {
+    "Its suggestions are in the Inbox" : {
+
+    },
+    "Its vectors are deleted and search uses bge-small alone." : {
+
+    },
+    "Its weekly check found a problem. Restore a backup in Settings ▸ Data & Backups." : {
 
     },
     "JetBrains AI Assistant" : {
 
     },
     "Keep Both" : {
+
+    },
+    "Keep This" : {
+
+    },
+    "Keep as One" : {
+
+    },
+    "Keep earlier versions for 90 days" : {
 
     },
     "Keep everything else" : {
@@ -2299,10 +3270,25 @@
     "Keep this Mac awake while on power" : {
 
     },
+    "Keep “%@”" : {
+
+    },
     "Keeps what it gets" : {
 
     },
     "Keeps what it gets: %@" : {
+
+    },
+    "Keeps “%@”" : {
+
+    },
+    "Keeps: %@" : {
+
+    },
+    "Kept" : {
+
+    },
+    "Kept as one" : {
 
     },
     "Kept on this Mac: looked sensitive" : {
@@ -2326,6 +3312,37 @@
     "Kind" : {
 
     },
+    "Languages" : {
+
+    },
+    "Last 12 months" : {
+
+    },
+    "Last 12 weeks" : {
+
+    },
+    "Last 24 hours" : {
+
+    },
+    "Last 24 hours: %@, %lld shared, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Last 24 hours: %1$@, %2$lld shared, %3$@"
+          }
+        }
+      }
+    },
+    "Last 24 hours: nothing in or out" : {
+
+    },
+    "Last 30 days" : {
+
+    },
+    "Last 7 days" : {
+
+    },
     "Last Updated" : {
 
     },
@@ -2333,6 +3350,19 @@
 
     },
     "Last checked" : {
+
+    },
+    "Last run %@, %lld suggestions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Last run %1$@, %2$lld suggestions"
+          }
+        }
+      }
+    },
+    "Last run %@, 1 suggestion" : {
 
     },
     "Last seen %@" : {
@@ -2347,6 +3377,12 @@
     "Last seen %@ through the tunnel" : {
 
     },
+    "Last tidy-up %@" : {
+
+    },
+    "Last tidy-up: %@" : {
+
+    },
     "Last use" : {
 
     },
@@ -2354,6 +3390,12 @@
 
     },
     "Later" : {
+
+    },
+    "Later changes depend on this one. Undo it together with the %lld later changes." : {
+
+    },
+    "Later for all %lld suggestions" : {
 
     },
     "Launcher" : {
@@ -2392,19 +3434,31 @@
     "Listening on port %@" : {
 
     },
+    "Load Again" : {
+
+    },
     "Load Models" : {
 
     },
     "Local server" : {
 
     },
+    "Local servers" : {
+
+    },
     "Location" : {
+
+    },
+    "Long input: %lld shown. The original text is attached." : {
 
     },
     "Long items:" : {
 
     },
     "Longer than 10,000 characters" : {
+
+    },
+    "Look for duplicates, outdated memories and conflicts now." : {
 
     },
     "Look like secrets" : {
@@ -2417,9 +3471,6 @@
 
     },
     "Low" : {
-
-    },
-    "MCP" : {
 
     },
     "MCP URL" : {
@@ -2440,6 +3491,9 @@
     "Maximum sensitivity" : {
 
     },
+    "May contain more than one thing." : {
+
+    },
     "Memories" : {
 
     },
@@ -2452,6 +3506,31 @@
     "Memories stay in a vault on this Mac." : {
 
     },
+    "Memories up to %@ can then be sent to %@. They can include health, money, family or legal matters. Funes still never sends anything that looks like a secret." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Memories up to %1$@ can then be sent to %2$@. They can include health, money, family or legal matters. Funes still never sends anything that looks like a secret."
+          }
+        }
+      }
+    },
+    "Merge" : {
+
+    },
+    "Merged from another memory %@" : {
+
+    },
+    "Merged into a new memory %@" : {
+
+    },
+    "Merged into “%@”" : {
+
+    },
+    "Merges %lld memories into one:" : {
+
+    },
     "Method" : {
 
     },
@@ -2461,6 +3540,21 @@
     "Model" : {
 
     },
+    "Model name" : {
+
+    },
+    "Model: %@" : {
+
+    },
+    "Models" : {
+
+    },
+    "Models & Accounts" : {
+
+    },
+    "More" : {
+
+    },
     "More Time" : {
 
     },
@@ -2468,6 +3562,15 @@
 
     },
     "More than 5 requests were refused in 10 minutes. See why in Activity." : {
+
+    },
+    "Most on %@s" : {
+
+    },
+    "Move %@ down" : {
+
+    },
+    "Move %@ up" : {
 
     },
     "Move its memories to" : {
@@ -2491,19 +3594,34 @@
     "Name" : {
 
     },
+    "Needs Read." : {
+
+    },
+    "Needs a key" : {
+
+    },
+    "Needs an update" : {
+
+    },
+    "Needs attention" : {
+
+    },
+    "Needs your OK" : {
+
+    },
+    "Needs your OK to read files" : {
+
+    },
     "Never" : {
-
-    },
-    "Never send captures" : {
-
-    },
-    "Never send captures above" : {
 
     },
     "Never shared with agents unless you raise an agent's ceiling to Secret." : {
 
     },
     "Never shared with an agent" : {
+
+    },
+    "New" : {
 
     },
     "New Memory" : {
@@ -2524,7 +3642,7 @@
     "New captures" : {
 
     },
-    "New captures are sent to %@ to suggest their fields, within the cloud limit in AI Models." : {
+    "New captures are sent to %@ to suggest their fields, within the cloud limit in Privacy & Limits." : {
 
     },
     "New categories" : {
@@ -2536,13 +3654,94 @@
     "New key issued. The old one no longer works." : {
 
     },
+    "New memories" : {
+
+    },
+    "New memories sends captures, agent suggestions and imports, plus related memories (up to %@), to %@ through your %@ sign-in. It counts toward your plan's limits, and your %@ account's training setting applies." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New memories sends captures, agent suggestions and imports, plus related memories (up to %1$@), to %2$@ through your %3$@ sign-in. It counts toward your plan's limits, and your %4$@ account's training setting applies."
+          }
+        }
+      }
+    },
+    "New memories sends new captures (up to %@) and your category names and descriptions to %@ through your %@ sign-in. It counts toward your plan's limits, and your %@ account's training setting applies." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New memories sends new captures (up to %1$@) and your category names and descriptions to %2$@ through your %3$@ sign-in. It counts toward your plan's limits, and your %4$@ account's training setting applies."
+          }
+        }
+      }
+    },
+    "New memories sends new captures (up to %@) and your category names and descriptions to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New memories sends new captures (up to %1$@) and your category names and descriptions to %2$@."
+          }
+        }
+      }
+    },
+    "New memories sends new captures, your answers, agents' suggestions and saved memories, and imports (up to %@), then each piece with up to 5 related memories, and your category names and descriptions, to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New memories sends new captures, your answers, agents' suggestions and saved memories, and imports (up to %1$@), then each piece with up to 5 related memories, and your category names and descriptions, to %2$@."
+          }
+        }
+      }
+    },
+    "New memories sends nothing to %@: the cloud limit is Nothing, so it runs on this Mac." : {
+
+    },
     "New memories start at" : {
+
+    },
+    "New memories will use Apple on-device." : {
 
     },
     "New memories: %@" : {
 
     },
+    "New memories: captures, your answers, agents' suggestions and imports%@, each with up to 5 related memories, and your category names and descriptions, to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New memories: captures, your answers, agents' suggestions and imports%1$@, each with up to 5 related memories, and your category names and descriptions, to %2$@."
+          }
+        }
+      }
+    },
+    "New memories: new captures%@ and your category names and descriptions, to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New memories: new captures%1$@ and your category names and descriptions, to %2$@."
+          }
+        }
+      }
+    },
+    "New memories: nothing to %@; the cloud limit is Nothing." : {
+
+    },
+    "New memories: nothing; Apple on-device proposes fields on this Mac, then rules." : {
+
+    },
+    "New memories…" : {
+
+    },
     "New secret path. Update the URL in each cloud agent." : {
+
+    },
+    "Next in line" : {
 
     },
     "No Funnel port on this Mac can take %@'s paths without changing another app: %@. Change one of them, or choose another tunnel." : {
@@ -2567,10 +3766,22 @@
     "No agent can be used from the cloud yet. Turn on Allow cloud access in an agent's Cloud tab, or add a cloud agent with Add Agent…." : {
 
     },
+    "No agent has read your vault yet." : {
+
+    },
     "No agents yet" : {
 
     },
+    "No answer" : {
+
+    },
+    "No answer from %@ within 90 seconds." : {
+
+    },
     "No answer in 15 minutes" : {
+
+    },
+    "No answer in the %lld results read." : {
 
     },
     "No answer within 10 seconds. Is the tunnel running?" : {
@@ -2591,6 +3802,9 @@
     "No credentials yet" : {
 
     },
+    "No feature uses this account." : {
+
+    },
     "No iPhone paired yet." : {
 
     },
@@ -2600,7 +3814,16 @@
     "No memories match these filters" : {
 
     },
+    "No memories yet" : {
+
+    },
     "No memory selected" : {
+
+    },
+    "No models" : {
+
+    },
+    "No models yet. Add the chat models you want to use." : {
 
     },
     "No problems" : {
@@ -2612,13 +3835,19 @@
     "No shareable port" : {
 
     },
+    "No tidy-up yet" : {
+
+    },
     "None" : {
+
+    },
+    "None new this week" : {
 
     },
     "None yet" : {
 
     },
-    "None yet. Funes uses Apple's on-device model, or simple rules when that isn't available." : {
+    "None. Add one with Add Account…" : {
 
     },
     "Not Now" : {
@@ -2633,6 +3862,9 @@
     "Not at all" : {
 
     },
+    "Not available on this Mac" : {
+
+    },
     "Not found" : {
 
     },
@@ -2645,16 +3877,50 @@
     "Not reachable" : {
 
     },
+    "Not run yet" : {
+
+    },
     "Not running" : {
 
     },
     "Not said" : {
 
     },
+    "Not set up" : {
+
+    },
+    "Not shared" : {
+
+    },
+    "Not signed in" : {
+
+    },
+    "Not signed in: run `%@` in Terminal and sign in with %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not signed in: run `%1$@` in Terminal and sign in with %2$@"
+          }
+        }
+      }
+    },
+    "Not supported yet" : {
+
+    },
     "Not tested" : {
 
     },
+    "Nothing" : {
+
+    },
     "Nothing archived" : {
+
+    },
+    "Nothing came in or went out" : {
+
+    },
+    "Nothing changes: it's already in your vault." : {
 
     },
     "Nothing expired" : {
@@ -2663,19 +3929,37 @@
     "Nothing here" : {
 
     },
+    "Nothing in %@" : {
+
+    },
     "Nothing is saved yet" : {
 
     },
     "Nothing matches these filters." : {
 
     },
+    "Nothing matches." : {
+
+    },
+    "Nothing new this week" : {
+
+    },
     "Nothing relevant" : {
+
+    },
+    "Nothing shared in the %@" : {
 
     },
     "Nothing to change: it's already set up." : {
 
     },
     "Nothing to import was found." : {
+
+    },
+    "Nothing to tidy up: this memory looks right." : {
+
+    },
+    "Nothing usable came back." : {
 
     },
     "Nothing waiting" : {
@@ -2696,13 +3980,28 @@
     "OAuth settings" : {
 
     },
+    "Occupation" : {
+
+    },
     "Off" : {
+
+    },
+    "Off · agents can't connect" : {
 
     },
     "Off: cloud agents can't use this agent." : {
 
     },
+    "Off: every proposal waits for you in the Inbox. No model has been accurate enough yet to save new memories by itself. Agents always follow their own access." : {
+
+    },
+    "Off: it can read files on this Mac. Turn on the switch below to use it anyway." : {
+
+    },
     "Off: it saves memories directly. On: they wait in your Inbox." : {
+
+    },
+    "Off: needs your OK to read files" : {
 
     },
     "On" : {
@@ -2720,7 +4019,34 @@
     "On this Mac" : {
 
     },
+    "On this Mac until tomorrow" : {
+
+    },
     "On your iPhone, open Funes Vault, tap Pair with Mac and scan this code." : {
+
+    },
+    "On · %lld agents" : {
+
+    },
+    "On · %lld cloud agents" : {
+
+    },
+    "On · 1 agent" : {
+
+    },
+    "On · 1 cloud agent" : {
+
+    },
+    "On · not listening" : {
+
+    },
+    "On · told it's paused" : {
+
+    },
+    "On · tunnel down" : {
+
+    },
+    "On · until %@" : {
 
     },
     "On, but Funes is paused" : {
@@ -2735,13 +4061,25 @@
     "One-click setup isn't available." : {
 
     },
+    "Only active memories can be tidied up." : {
+
+    },
     "Only agents you give cloud access can be used from the internet, each with its own remote token or signed-in app, and only with the access you set for that agent. Panels still ask on this Mac." : {
 
     },
     "Only allowed categories can be shared. Deny always wins." : {
 
     },
+    "Only when I ask" : {
+
+    },
+    "Only when you ask (⌘⏎)" : {
+
+    },
     "Open %@." : {
+
+    },
+    "Open Access for" : {
 
     },
     "Open Funes Vault" : {
@@ -2774,10 +4112,22 @@
     "Opened the Inbox" : {
 
     },
+    "Opens Agents" : {
+
+    },
+    "Opens Remote Access" : {
+
+    },
     "Opens the capture box from any app. Funes doesn't need Accessibility access for it." : {
 
     },
     "Option" : {
+
+    },
+    "Optional: a provider's embedding model as a second index next to bge-small, mainly for tasks without keywords and for other languages. Add Ollama, LM Studio or OpenAI in Models & Accounts first." : {
+
+    },
+    "Optional: a provider's embedding model as a second index next to bge-small, mainly for tasks without keywords and for other languages. Funes has measured Qwen3-Embedding-0.6B (Ollama, LM Studio) and OpenAI's text-embedding-3. Memories above the cloud limit keep bge-small only." : {
 
     },
     "Optionally, allow only your agent's addresses with a Traffic Policy IP restriction, for example Anthropic's 160.79.104.0/21." : {
@@ -2792,6 +4142,9 @@
     "Or set it up yourself" : {
 
     },
+    "Original text" : {
+
+    },
     "Other" : {
 
     },
@@ -2802,6 +4155,15 @@
 
     },
     "Other tunnel" : {
+
+    },
+    "Out" : {
+
+    },
+    "Out of date" : {
+
+    },
+    "Outside %@'s scope" : {
 
     },
     "Pair iPhone" : {
@@ -2867,10 +4229,10 @@
     "Pause" : {
 
     },
-    "Pause Funes Vault" : {
+    "Paused" : {
 
     },
-    "Paused" : {
+    "Paused after a tool use" : {
 
     },
     "Paused until %@" : {
@@ -2882,16 +4244,22 @@
     "Paused until you resume" : {
 
     },
-    "Pending requests" : {
+    "Pauses all agents" : {
 
     },
-    "Pending requests: %lld" : {
+    "Pending requests" : {
 
     },
     "Period" : {
 
     },
     "Personal: health, money, family. Share rarely, and always ask." : {
+
+    },
+    "Piece: %@" : {
+
+    },
+    "Pieces that change other memories stay in your Inbox to review on their own." : {
 
     },
     "Point the tunnel at http://127.0.0.1 and the Remote Access port, never at the port local agents use." : {
@@ -2921,7 +4289,13 @@
     "Press the new shortcut…" : {
 
     },
+    "Press ⌘⏎ to ask about this search." : {
+
+    },
     "Preview" : {
+
+    },
+    "Privacy & Limits" : {
 
     },
     "Problems" : {
@@ -2930,7 +4304,16 @@
     "Problems %lld" : {
 
     },
+    "Processed a new memory" : {
+
+    },
+    "Processing…" : {
+
+    },
     "Project Context" : {
+
+    },
+    "Pronouns" : {
 
     },
     "Propose a title, kind and categories" : {
@@ -2955,7 +4338,7 @@
     "Proposed on this Mac" : {
 
     },
-    "Providers" : {
+    "Proposes a title, kind and categories" : {
 
     },
     "Public" : {
@@ -2979,13 +4362,25 @@
     "Quick capture" : {
 
     },
+    "Quiet: nothing in or out" : {
+
+    },
     "Quit Funes Vault" : {
 
     },
     "Quit the other copy first." : {
 
     },
+    "Quoted in the answer" : {
+
+    },
     "Raise %@'s limit…" : {
+
+    },
+    "Raised a memory's sensitivity" : {
+
+    },
+    "Range" : {
 
     },
     "Reach this Mac over" : {
@@ -2994,8 +4389,24 @@
     "Reachable" : {
 
     },
+    "Reached today's cloud requests" : {
+
+    },
     "Read" : {
 
+    },
+    "Read %lld" : {
+
+    },
+    "Read %lld of %lld results · %lld s" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read %1$lld of %2$lld results · %3$lld s"
+          }
+        }
+      }
     },
     "Read and suggest, ask first" : {
 
@@ -3006,7 +4417,13 @@
     "Read low-sensitivity memories, ask first" : {
 
     },
+    "Read the vault's counts" : {
+
+    },
     "Read, up to Low, in all categories. Funes asks before sharing." : {
+
+    },
+    "Reading %lld results…" : {
 
     },
     "Reads %@ and below %@" : {
@@ -3025,8 +4442,37 @@
     "Ready" : {
 
     },
+    "Ready. A search that's a question is answered after a short pause, on this Mac and your iPhone; press ⌘⏎ to ask about any other." : {
+
+    },
+    "Ready. Every search is answered after a short pause, on this Mac and your iPhone." : {
+
+    },
     "Ready. If it fails, Funes uses the on-device model, then rules." : {
 
+    },
+    "Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone." : {
+
+    },
+    "Ready: %lld memories use %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ready: %1$lld memories use %2$@."
+          }
+        }
+      }
+    },
+    "Ready: %lld memories use %@; those above %@ use bge-small." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ready: %1$lld memories use %2$@; those above %3$@ use bge-small."
+          }
+        }
+      }
     },
     "Recently Deleted" : {
 
@@ -3041,6 +4487,9 @@
 
     },
     "Refuse this agent's requests until you resume it" : {
+
+    },
+    "Refused" : {
 
     },
     "Refused a request" : {
@@ -3058,6 +4507,9 @@
     "Reject (⌫ or ⌘⌫)" : {
 
     },
+    "Reject “%@”" : {
+
+    },
     "Rejected" : {
 
     },
@@ -3067,7 +4519,16 @@
     "Relationship" : {
 
     },
+    "Reload" : {
+
+    },
     "Remember" : {
+
+    },
+    "Remember something, or search" : {
+
+    },
+    "Remember something, or search…" : {
 
     },
     "Remember…" : {
@@ -3112,6 +4573,9 @@
     "Remote Access, %@" : {
 
     },
+    "Remote Access: %@" : {
+
+    },
     "Remote token" : {
 
     },
@@ -3133,10 +4597,22 @@
     "Remove %@?" : {
 
     },
+    "Remove Account" : {
+
+    },
+    "Remove Account…" : {
+
+    },
+    "Remove Key" : {
+
+    },
     "Remove Link" : {
 
     },
     "Remove “%@”?" : {
+
+    },
+    "Removed" : {
 
     },
     "Removed agent" : {
@@ -3146,6 +4622,9 @@
 
     },
     "Removed." : {
+
+    },
+    "Removes “%@”" : {
 
     },
     "Remove…" : {
@@ -3250,6 +4729,9 @@
     "Restore this backup?" : {
 
     },
+    "Restored" : {
+
+    },
     "Restored %@" : {
 
     },
@@ -3271,36 +4753,31 @@
     "Resume Funes Vault" : {
 
     },
+    "Resumes all agents" : {
+
+    },
+    "Retry" : {
+
+    },
+    "Return remembers it in your Inbox. Command-Return searches your vault." : {
+
+    },
+    "Return remembers it. Command-Return searches your vault." : {
+
+    },
     "Returns to %@" : {
 
     },
     "Revert" : {
 
     },
-    "Review %@'s Request · %@…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Review %1$@'s Request · %2$@…"
-          }
-        }
-      }
-    },
-    "Review %@'s Request · %lld min left…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Review %1$@'s Request · %2$lld min left…"
-          }
-        }
-      }
-    },
-    "Review %@'s Request…" : {
+    "Review" : {
 
     },
     "Review %@'s request" : {
+
+    },
+    "Review Again" : {
 
     },
     "Review Now" : {
@@ -3312,7 +4789,16 @@
     "Review Request shortcut" : {
 
     },
+    "Review Suggestions in the Inbox" : {
+
+    },
+    "Review it as it is, as one memory." : {
+
+    },
     "Review your Inbox" : {
+
+    },
+    "Review: %@" : {
 
     },
     "Review…" : {
@@ -3324,6 +4810,9 @@
     "Revoke “%@”?" : {
 
     },
+    "Rhythm" : {
+
+    },
     "Rotate %@'s key?" : {
 
     },
@@ -3331,6 +4820,9 @@
 
     },
     "Rotate Key…" : {
+
+    },
+    "Rules only" : {
 
     },
     "Run it in Terminal, or add the lines below to ~/.codex/config.toml." : {
@@ -3354,10 +4846,19 @@
     "Same Wi-Fi" : {
 
     },
+    "Same as New memories" : {
+
+    },
+    "Same model" : {
+
+    },
     "Save" : {
 
     },
     "Save Address" : {
+
+    },
+    "Save Key" : {
 
     },
     "Save new memories, within the limits below. Corrections still wait in your Inbox." : {
@@ -3394,6 +4895,9 @@
     "Saved to Inbox" : {
 
     },
+    "Saved “%@”" : {
+
+    },
     "Saved. A similar memory exists:" : {
 
     },
@@ -3406,19 +4910,215 @@
     "Saving cancels %@'s pending requests; it can ask again." : {
 
     },
+    "Saving…" : {
+
+    },
+    "Says “%@” is no longer true" : {
+
+    },
+    "Schedule" : {
+
+    },
     "Scopes" : {
+
+    },
+    "Search" : {
 
     },
     "Search activity" : {
 
     },
-    "Search and agents' requests are matched on this Mac. Other embedding models come in a later version." : {
+    "Search answers" : {
+
+    },
+    "Search answers send nothing to %@: the cloud limit is Nothing, so there's no answer." : {
+
+    },
+    "Search answers send your search and its top results (up to %@) to %@ %@, each time you pause on a search. Each answer counts toward your plan's limits and today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, each time you pause on a search. Each answer counts toward your plan's limits and today's %4$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@ %@, when you ask or pause on a question. Each answer counts toward your plan's limits and today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, when you ask or pause on a question. Each answer counts toward your plan's limits and today's %4$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@ %@, when you ask. It counts toward your plan's limits." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, when you ask. It counts toward your plan's limits."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@, each time you pause on a search. Each answer counts toward today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, each time you pause on a search. Each answer counts toward today's %3$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@, when you ask or pause on a question. Each answer counts toward today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, when you ask or pause on a question. Each answer counts toward today's %3$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send your search and its top results (up to %@) to %@, when you ask." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, when you ask."
+          }
+        }
+      }
+    },
+    "Search answers will use the same model as New memories." : {
+
+    },
+    "Search answers: nothing to %@; the cloud limit is Nothing." : {
+
+    },
+    "Search answers: nothing; Apple on-device answers on this Mac." : {
+
+    },
+    "Search answers: your search and its top results%@, to %@, each time you pause on a search." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers: your search and its top results%1$@, to %2$@, each time you pause on a search."
+          }
+        }
+      }
+    },
+    "Search answers: your search and its top results%@, to %@, when you ask or pause on a question." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers: your search and its top results%1$@, to %2$@, when you ask or pause on a question."
+          }
+        }
+      }
+    },
+    "Search answers: your search and its top results%@, to %@, when you ask." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers: your search and its top results%1$@, to %2$@, when you ask."
+          }
+        }
+      }
+    },
+    "Search embeddings send memory text (up to %@) and your searches to %@. Agents' requests are matched on this Mac." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search embeddings send memory text (up to %1$@) and your searches to %2$@. Agents' requests are matched on this Mac."
+          }
+        }
+      }
+    },
+    "Search embeddings send memory text (up to %@), your searches and agents' task descriptions to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search embeddings send memory text (up to %1$@), your searches and agents' task descriptions to %2$@."
+          }
+        }
+      }
+    },
+    "Search embeddings send your searches and agents' task descriptions to %@, but no memory text: the cloud limit is Nothing." : {
+
+    },
+    "Search embeddings send your searches to %@, but no memory text: the cloud limit is Nothing." : {
+
+    },
+    "Search index" : {
+
+    },
+    "Search index · %@" : {
+
+    },
+    "Search index: memory text (up to %@) and your searches, to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search index: memory text (up to %1$@) and your searches, to %2$@."
+          }
+        }
+      }
+    },
+    "Search index: memory text (up to %@), your searches and agents' task descriptions, to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search index: memory text (up to %1$@), your searches and agents' task descriptions, to %2$@."
+          }
+        }
+      }
+    },
+    "Search index: memory text and your searches, to %@." : {
+
+    },
+    "Search index: memory text, your searches and agents' task descriptions, to %@." : {
+
+    },
+    "Search index: your searches and agents' task descriptions, but no memory text, to %@." : {
+
+    },
+    "Search index: your searches, but no memory text, to %@." : {
+
+    },
+    "Search keeps using bge-small until it's done; you can cancel any time." : {
 
     },
     "Search memories" : {
 
     },
+    "Search uses bge-small meanwhile." : {
+
+    },
+    "Search uses bge-small." : {
+
+    },
     "Searched memories" : {
+
+    },
+    "Searched on this Mac only (above cloud limit)." : {
+
+    },
+    "Searching…" : {
+
+    },
+    "Second index" : {
 
     },
     "Secret" : {
@@ -3439,7 +5139,26 @@
     "Select text in any app, then choose Services ▸ Remember in Funes. It goes to your Inbox." : {
 
     },
+    "Send %@: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Send %1$@: %2$@"
+          }
+        }
+      }
+    },
     "Send %lld to Inbox" : {
+
+    },
+    "Send Up to %@" : {
+
+    },
+    "Send memories to cloud models up to" : {
+
+    },
+    "Send more sensitive memories to cloud models?" : {
 
     },
     "Sensitive" : {
@@ -3449,6 +5168,12 @@
 
     },
     "Sensitivity: %@" : {
+
+    },
+    "Sent with every answer to %@'s requests, without asking. Edit them in Settings ▸ About You." : {
+
+    },
+    "Series" : {
 
     },
     "Server URL" : {
@@ -3479,10 +5204,16 @@
     "Set Up Remote Access…" : {
 
     },
+    "Set Up…" : {
+
+    },
     "Set up Funes Vault" : {
 
     },
     "Set up for" : {
+
+    },
+    "Settings" : {
 
     },
     "Settings ▸ Advanced brings it back" : {
@@ -3535,19 +5266,38 @@
     "Shared with %@" : {
 
     },
+    "Shared with agents" : {
+
+    },
     "Shared without asking" : {
 
+    },
+    "Shared: %lld%% %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shared: %1$lld%% %2$@"
+          }
+        }
+      }
     },
     "Shift" : {
 
     },
-    "Shortcut" : {
+    "Shortcuts" : {
 
     },
     "Shorten Them" : {
 
     },
     "Show" : {
+
+    },
+    "Show %@ memories in the Vault" : {
+
+    },
+    "Show %@'s Activity" : {
 
     },
     "Show Activity" : {
@@ -3559,10 +5309,22 @@
     "Show All %lld Agents" : {
 
     },
+    "Show All %lld in Vault" : {
+
+    },
+    "Show All Pending Requests" : {
+
+    },
+    "Show All in Activity" : {
+
+    },
     "Show Less" : {
 
     },
     "Show Only Agents Found on This Mac" : {
+
+    },
+    "Show Problems" : {
 
     },
     "Show Setup" : {
@@ -3586,6 +5348,9 @@
     "Show in Finder" : {
 
     },
+    "Show in Inbox" : {
+
+    },
     "Show less of %@" : {
 
     },
@@ -3593,6 +5358,18 @@
 
     },
     "Show the Setup Checklist Again" : {
+
+    },
+    "Show the newest in the Vault" : {
+
+    },
+    "Show this memory" : {
+
+    },
+    "Show what came in, in Activity" : {
+
+    },
+    "Show what changed" : {
 
     },
     "Showing %@ only" : {
@@ -3613,7 +5390,29 @@
     "Sign up at ngrok.com, then put your authtoken and your free dev domain from the dashboard into the commands." : {
 
     },
+    "Signed in" : {
+
+    },
+    "Signed in to %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Signed in to %1$@ %2$@"
+          }
+        }
+      }
+    },
     "Similar memory exists:" : {
+
+    },
+    "Simple rules on this Mac" : {
+
+    },
+    "Skip" : {
+
+    },
+    "Skipped: already saved “%@”" : {
 
     },
     "Some memories are only in this category. Choose a replacement." : {
@@ -3654,10 +5453,92 @@
     "Source" : {
 
     },
+    "Source %lld" : {
+
+    },
+    "Source %lld: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Source %1$lld: %2$@"
+          }
+        }
+      }
+    },
     "Space" : {
 
     },
     "Split Them" : {
+
+    },
+    "Split a memory" : {
+
+    },
+    "Split by %@" : {
+
+    },
+    "Split by %@ via %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Split by %1$@ via %2$@"
+          }
+        }
+      }
+    },
+    "Split from another memory %@" : {
+
+    },
+    "Split into %lld" : {
+
+    },
+    "Split into %lld pieces" : {
+
+    },
+    "Split into a new memory %@" : {
+
+    },
+    "Split into separate memories" : {
+
+    },
+    "Split suggestion with %lld pieces" : {
+
+    },
+    "Split “%@”" : {
+
+    },
+    "Splits notes" : {
+
+    },
+    "Splits “%@” into %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Splits “%1$@” into %2$lld"
+          }
+        }
+      }
+    },
+    "Splitting needs a local server or a cloud model. Apple's on-device model proposes fields only." : {
+
+    },
+    "Splitting them into separate memories takes about %lld requests to %@. With a cloud model, %lld of today's requests are left; the rest wait for tomorrow." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Splitting them into separate memories takes about %1$lld requests to %2$@. With a cloud model, %3$lld of today's requests are left; the rest wait for tomorrow."
+          }
+        }
+      }
+    },
+    "Splitting with %@…" : {
+
+    },
+    "Splitting…" : {
 
     },
     "Start" : {
@@ -3703,7 +5584,34 @@
     "Still True…" : {
 
     },
+    "Still answerable · %lld min left" : {
+
+    },
+    "Still answerable, %lld minutes left" : {
+
+    },
+    "Still processing. It can be saved once it's done." : {
+
+    },
+    "Stop Dictating" : {
+
+    },
+    "Stop Using %@…" : {
+
+    },
+    "Stop Using It" : {
+
+    },
+    "Stop keeping earlier versions?" : {
+
+    },
+    "Stop using %@?" : {
+
+    },
     "Stopped after an error" : {
+
+    },
+    "Stopped at today's cloud limit. Try again tomorrow." : {
 
     },
     "Stored in the Keychain" : {
@@ -3819,7 +5727,7 @@
     "Task text not stored" : {
 
     },
-    "Tasks" : {
+    "Tell me something, or search what I know…" : {
 
     },
     "Test" : {
@@ -3856,6 +5764,12 @@
 
     },
     "That isn't a Funes Vault export." : {
+
+    },
+    "That isn't a URL; the saved one is kept." : {
+
+    },
+    "That model didn't return usable vectors. Check it's an embedding model." : {
 
     },
     "That name can't be used for a category." : {
@@ -3924,6 +5838,19 @@
     "The copy's signature didn't check out, so it was moved to the Trash." : {
 
     },
+    "The daily tidy-up sends nothing to %@: the cloud limit is Nothing, so only exact duplicates and expired memories are found." : {
+
+    },
+    "The daily tidy-up sends related memories (up to %@), with their dates and sources, to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The daily tidy-up sends related memories (up to %1$@), with their dates and sources, to %2$@."
+          }
+        }
+      }
+    },
     "The export couldn't be written." : {
 
     },
@@ -3965,10 +5892,37 @@
     "The link couldn't be made." : {
 
     },
+    "The model declined to answer." : {
+
+    },
     "The model declined." : {
 
     },
+    "The model failed." : {
+
+    },
+    "The model isn't available." : {
+
+    },
+    "The model returned an error. Try again later." : {
+
+    },
+    "The model took too long to answer. Try again." : {
+
+    },
+    "The model took too long." : {
+
+    },
+    "The model's answer couldn't be read. Try again." : {
+
+    },
+    "The model's answer wasn't usable." : {
+
+    },
     "The model's answer wasn't usable. Try another model." : {
+
+    },
+    "The model's provider asked Funes to slow down. Try again in a few minutes." : {
 
     },
     "The name needs 1 to 60 characters." : {
@@ -3986,10 +5940,22 @@
     "The provider answered with an error (%lld)." : {
 
     },
+    "The provider asked to slow down; continuing at %@." : {
+
+    },
+    "The provider is busy." : {
+
+    },
+    "The provider refused the request (400). Check that %@ is a chat model the provider has." : {
+
+    },
     "The provider says to slow down. Try again later." : {
 
     },
     "The request failed (%@)." : {
+
+    },
+    "The second index uses it: its vectors are deleted and search uses bge-small alone." : {
 
     },
     "The secret path changed. Move Tailscale Funnel to the new one in Terminal:" : {
@@ -4002,6 +5968,15 @@
 
     },
     "The text needs 1 to 10,000 characters." : {
+
+    },
+    "The tidy-up model isn't working. Check it in Settings ▸ AI ▸ Features ▸ Daily tidy-up." : {
+
+    },
+    "The tidy-up will use the same model as New memories." : {
+
+    },
+    "The tidy-up's model hasn't been accurate enough to change memories by itself, so its proposals all wait for you." : {
 
     },
     "The title is longer than 180 characters." : {
@@ -4043,6 +6018,9 @@
     "The weekly check found a problem with the vault file. Restore the latest backup." : {
 
     },
+    "Their text is deleted from this Mac. The history keeps its labels, and automatic changes keep theirs until Undo expires." : {
+
+    },
     "Then ask %@: “What do you know about how I like to work?”" : {
 
     },
@@ -4061,6 +6039,9 @@
     "There's no link to remove." : {
 
     },
+    "There's no microphone to listen with." : {
+
+    },
     "There's no one-click setup for %@." : {
 
     },
@@ -4070,10 +6051,16 @@
     "These cloud apps are disconnected and have to connect again: %@." : {
 
     },
+    "These disagree. Which is true?" : {
+
+    },
     "They skip the Inbox. Only do this with your own export." : {
 
     },
     "They're removed for good, with their history. This can't be undone." : {
+
+    },
+    "This %@ version isn't supported yet" : {
 
     },
     "This address goes through %@, not %@." : {
@@ -4110,10 +6097,22 @@
     "This looks like %@. Funes never stores secrets." : {
 
     },
+    "This memory changed since you started editing. Reload it to see the change; your edits will be lost." : {
+
+    },
+    "This memory is above what you let cloud models see." : {
+
+    },
+    "This memory is already in a suggestion or a share waiting for you." : {
+
+    },
     "This memory is gone" : {
 
     },
     "This request changed; review again." : {
+
+    },
+    "This search is too long for the on-device model." : {
 
     },
     "This switch is no longer open." : {
@@ -4122,7 +6121,81 @@
     "This vault was written by a newer Funes Vault. Update the app." : {
 
     },
+    "This version of Funes Vault can't apply this suggestion. Update the app, or reject it." : {
+
+    },
+    "This week: %@." : {
+
+    },
+    "Throw the pieces away and keep what arrived as one suggestion." : {
+
+    },
+    "Tidied up a memory" : {
+
+    },
+    "Tidied up the vault" : {
+
+    },
+    "Tidy Up" : {
+
+    },
+    "Tidy Up Now" : {
+
+    },
+    "Tidy-up" : {
+
+    },
+    "Tidy-up finished" : {
+
+    },
+    "Tidy-up · %@" : {
+
+    },
+    "Tidy-up · %lld pieces" : {
+
+    },
+    "Tidy-up: archived “%@”" : {
+
+    },
+    "Tidy-up: changed “%@”" : {
+
+    },
+    "Tidy-up: merged %lld memories into “%@”" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tidy-up: merged %1$lld memories into “%2$@”"
+          }
+        }
+      }
+    },
+    "Tidy-up: split “%@” into %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tidy-up: split “%1$@” into %2$lld"
+          }
+        }
+      }
+    },
+    "Tidy-up: updated “%@”" : {
+
+    },
+    "Tidy-up: updated “%@” and archived a copy" : {
+
+    },
+    "Tidying Up…" : {
+
+    },
     "Time" : {
+
+    },
+    "Time zone" : {
+
+    },
+    "Time zone: %@" : {
 
     },
     "Title" : {
@@ -4143,16 +6216,44 @@
     "Today" : {
 
     },
+    "Today's %lld cloud requests are used up. Search still works; answers are back tomorrow." : {
+
+    },
+    "Today's cloud requests are used up. New captures are classified on this Mac until tomorrow." : {
+
+    },
+    "Today's cloud requests are used up. Try again tomorrow, or raise the limit." : {
+
+    },
+    "Today: %lld of %lld, agents %lld of %lld. Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Today: %1$lld of %2$lld, agents %3$lld of %4$lld. Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow."
+          }
+        }
+      }
+    },
     "Token" : {
 
     },
     "Token URL" : {
 
     },
+    "Too few memories for a rhythm yet" : {
+
+    },
     "Too many requests" : {
 
     },
     "Too many tries with this code." : {
+
+    },
+    "Took too long. Try again." : {
+
+    },
+    "Top" : {
 
     },
     "Traffic since launch" : {
@@ -4176,13 +6277,13 @@
     "Turn Off" : {
 
     },
-    "Turn Off Remote Access" : {
-
-    },
     "Turn On" : {
 
     },
     "Turn On Remote Access" : {
+
+    },
+    "Turn On…" : {
 
     },
     "Turn off" : {
@@ -4203,6 +6304,9 @@
     "Turn on Remote Access?" : {
 
     },
+    "Turns Remote Access off now" : {
+
+    },
     "Type" : {
 
     },
@@ -4212,16 +6316,43 @@
     "URL" : {
 
     },
+    "Unavailable" : {
+
+    },
     "Unavailable: check API key. Using on-device instead." : {
 
     },
     "Unavailable: check the API key." : {
 
     },
+    "Unavailable: it tried to use a tool. Test Connection to try again." : {
+
+    },
     "Unavailable: keyword search only" : {
 
     },
+    "Undid %lld changes" : {
+
+    },
+    "Undid a change" : {
+
+    },
     "Undo" : {
+
+    },
+    "Undo This and %lld Later Changes" : {
+
+    },
+    "Undo any automatic change for 30 days in the Inbox." : {
+
+    },
+    "Undo: %@" : {
+
+    },
+    "Undone" : {
+
+    },
+    "Undone %@" : {
 
     },
     "Unknown" : {
@@ -4239,6 +6370,9 @@
     "Until Tomorrow" : {
 
     },
+    "Update %@ to use it" : {
+
+    },
     "Update the URL in" : {
 
     },
@@ -4251,13 +6385,35 @@
     "Update the URL in: %@." : {
 
     },
+    "Updated “%@”" : {
+
+    },
     "Updates" : {
 
     },
     "Updates come from GitHub, signed for Funes Vault. Installing always takes a click, and waits while a request is waiting for you." : {
 
     },
+    "Updates “%@”" : {
+
+    },
+    "Updating: %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Updating: %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Usage" : {
+
+    },
     "Use %@" : {
+
+    },
+    "Use Codex even though it can read files on this Mac" : {
 
     },
     "Use This Port" : {
@@ -4281,10 +6437,31 @@
     "Use your own ~/.cursor/mcp.json, never a project's .cursor/mcp.json, which often gets committed." : {
 
     },
+    "Use “%@”" : {
+
+    },
     "Use ⌘, ⌥ or ⌃ with a key." : {
 
     },
-    "Uses the Classification model in AI Models; you review every proposal in the Inbox." : {
+    "Used by" : {
+
+    },
+    "Used by: %@" : {
+
+    },
+    "Used by: Search index" : {
+
+    },
+    "Used by: none" : {
+
+    },
+    "Uses your plan's limits, through the Claude Code you installed and signed in to. Funes never sees your sign-in. Your account's training setting applies." : {
+
+    },
+    "Uses your plan's limits, through the Codex you installed and signed in to. Funes never sees your sign-in. Your account's training setting applies." : {
+
+    },
+    "Use…" : {
 
     },
     "VS Code (Copilot)" : {
@@ -4302,6 +6479,16 @@
     },
     "Vault" : {
 
+    },
+    "Vault: %lld%% %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Vault: %1$lld%% %2$@"
+          }
+        }
+      }
     },
     "Version" : {
 
@@ -4324,13 +6511,28 @@
     "Waiting for you" : {
 
     },
+    "Waiting for you: %lld" : {
+
+    },
     "Waiting in Inbox" : {
+
+    },
+    "Waiting to try again" : {
+
+    },
+    "Waiting: today's model limit reached" : {
+
+    },
+    "What AI features send" : {
 
     },
     "What belongs here (agents see this)" : {
 
     },
     "What it can do" : {
+
+    },
+    "What leaves this Mac" : {
 
     },
     "What long-term goals should assistants keep in mind when helping you?" : {
@@ -4340,6 +6542,9 @@
 
     },
     "What should coding assistants know about how you build software?" : {
+
+    },
+    "What this change saved isn't kept." : {
 
     },
     "What tone, level of detail, or format do you usually prefer?" : {
@@ -4354,6 +6559,9 @@
           }
         }
       }
+    },
+    "When a memory changes, Funes keeps the text it replaced, so History and Activity can show what changed. Up to 50 versions a memory, on this Mac only: never shared with agents, exported or sent to your iPhone." : {
+
     },
     "When a request is refused only because a category isn't allowed, Funes asks you: Not Now, Allow Once or Always Allow. At most once an hour." : {
 
@@ -4379,10 +6587,16 @@
     "While Remote Access is on, cloud agents reach Funes Vault through a public address. What you share with them goes to their servers." : {
 
     },
+    "Who reads your vault" : {
+
+    },
     "Why" : {
 
     },
     "Why, as reported: “%@”" : {
+
+    },
+    "Why, as the model put it: “%@”" : {
 
     },
     "Window" : {
@@ -4394,21 +6608,17 @@
     "With this method the agent sends the key without checking that the program on the port is Funes Vault. The launcher checks first." : {
 
     },
+    "With this model the tidy-up can apply updates, merges, splits and archives by itself; conflicts always wait for you." : {
+
+    },
+    "With this model the tidy-up can archive duplicates by itself; everything else waits for you." : {
+
+    },
     "Withheld" : {
 
     },
     "Work or project context. Share with agents you use for that work." : {
 
-    },
-    "Works: it proposed “%@” in %@ s." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Works: it proposed “%1$@” in %2$@ s."
-          }
-        }
-      }
     },
     "Write" : {
 
@@ -4420,6 +6630,9 @@
 
     },
     "You" : {
+
+    },
+    "You (Mac)" : {
 
     },
     "You applied a suggestion" : {
@@ -4440,6 +6653,9 @@
     "You rejected a suggestion" : {
 
     },
+    "You review every proposal in the Inbox." : {
+
+    },
     "You're all set" : {
 
     },
@@ -4452,7 +6668,13 @@
     "Your answer · %@" : {
 
     },
+    "Your answer · %lld pieces" : {
+
+    },
     "Your answers" : {
+
+    },
+    "Your last note wasn't saved" : {
 
     },
     "Your memory, shared only as you allow" : {
@@ -4467,10 +6689,22 @@
     "Your note on how this agent keeps data. Its Share panels show it next to what the agent says; it doesn't change what's shared." : {
 
     },
+    "Your plan decides which models you can use." : {
+
+    },
+    "Your plans" : {
+
+    },
     "Your previous setup couldn't be put back; it's in %@." : {
 
     },
     "Your previous setup was put back." : {
+
+    },
+    "Your pulse starts with your first memories" : {
+
+    },
+    "Your search looks like it contains a secret, so it wasn't sent." : {
 
     },
     "Your tailnet policy doesn't allow Funnel for this Mac. Add the funnel node attribute in the Tailscale admin console." : {
@@ -4485,10 +6719,16 @@
     "Zed starts a sign-in when a remote server has no Authorization header, so only the launcher is offered." : {
 
     },
+    "Zero" : {
+
+    },
     "Zoom" : {
 
     },
     "a card number" : {
+
+    },
+    "a memory" : {
 
     },
     "a password or secret" : {
@@ -4525,6 +6765,9 @@
 
     },
     "at %@" : {
+
+    },
+    "bge-small, on this Mac" : {
 
     },
     "by %@" : {
@@ -4577,6 +6820,15 @@
     "done" : {
 
     },
+    "e.g. Lisbon, Portugal" : {
+
+    },
+    "e.g. Staff engineer at a climate startup" : {
+
+    },
+    "e.g. she/her" : {
+
+    },
     "expires %@" : {
 
     },
@@ -4625,6 +6877,9 @@
     "in all categories" : {
 
     },
+    "its Access" : {
+
+    },
     "its HTTPS address" : {
 
     },
@@ -4637,7 +6892,25 @@
     "kind" : {
 
     },
+    "knows %lld things about you" : {
+
+    },
+    "knows 1 thing about you" : {
+
+    },
+    "knows your name" : {
+
+    },
+    "knows your name and %lld more" : {
+
+    },
+    "languages" : {
+
+    },
     "last used %@" : {
+
+    },
+    "location" : {
 
     },
     "macOS didn't add Funes Vault to Login Items." : {
@@ -4652,10 +6925,16 @@
     "macOS needs your approval in System Settings ▸ General ▸ Login Items." : {
 
     },
-    "ngrok" : {
+    "more next time" : {
 
     },
-    "no model" : {
+    "most used" : {
+
+    },
+    "name" : {
+
+    },
+    "ngrok" : {
 
     },
     "none" : {
@@ -4664,10 +6943,31 @@
     "not done" : {
 
     },
+    "not set" : {
+
+    },
+    "nothing" : {
+
+    },
+    "nothing in or out" : {
+
+    },
+    "now" : {
+
+    },
+    "occupation" : {
+
+    },
     "on iPhone" : {
 
     },
+    "on this Mac" : {
+
+    },
     "on this Mac · forwards to %@" : {
+
+    },
+    "on your local network" : {
 
     },
     "or press %@ in any app" : {
@@ -4699,6 +6999,9 @@
         }
       }
     },
+    "pronouns" : {
+
+    },
     "saves without asking" : {
 
     },
@@ -4717,6 +7020,12 @@
     "stdio command" : {
 
     },
+    "stopped at today's cloud limit" : {
+
+    },
+    "stopped early: %@" : {
+
+    },
     "suggests" : {
 
     },
@@ -4729,7 +7038,31 @@
     "that address" : {
 
     },
+    "the agent" : {
+
+    },
+    "the cloud limit" : {
+
+    },
+    "the cloud providers you choose" : {
+
+    },
     "the disk image" : {
+
+    },
+    "the model isn't available" : {
+
+    },
+    "the model returned an error" : {
+
+    },
+    "the model took too long to answer" : {
+
+    },
+    "the model's provider asked Funes to slow down" : {
+
+    },
+    "the model's sign-in or API key didn't work" : {
 
     },
     "the “%@” folder" : {
@@ -4738,7 +7071,22 @@
     "through %@" : {
 
     },
+    "through your Claude Code sign-in" : {
+
+    },
+    "through your Codex sign-in" : {
+
+    },
+    "time zone" : {
+
+    },
     "title" : {
+
+    },
+    "today" : {
+
+    },
+    "today %@" : {
 
     },
     "until %@" : {
@@ -4747,7 +7095,19 @@
     "via Remote Access" : {
 
     },
+    "yesterday" : {
+
+    },
+    "yesterday %@" : {
+
+    },
     "your Mac's Funnel address, such as https://my-mac.tail1234.ts.net" : {
+
+    },
+    "your name" : {
+
+    },
+    "· %@" : {
 
     },
     "· confirmed %@" : {
@@ -4763,6 +7123,21 @@
 
     },
     "“%@” wants to pair" : {
+
+    },
+    "⌘⏎" : {
+
+    },
+    "⏎ Open · Esc Back" : {
+
+    },
+    "⏎ Open · ⌘⏎ Ask · Esc Back" : {
+
+    },
+    "⏎ Remember · ⌘⏎ Search" : {
+
+    },
+    "⏎ Remember · ⌘⏎ Search vault" : {
 
     },
     "⏎ Save · ⇧⏎ New line · Esc Cancel" : {

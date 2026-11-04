@@ -1,0 +1,688 @@
+{
+  "format": "funes.fixture.queries-expanded.v1",
+  "note": "Rioplatense Spanish version of queries-30-expanded for the Phase 6c embeddings benchmark: query text verbatim from queries-30-es.json, keywords translated as a Spanish-speaking agent would write them; categories and relevant unchanged.",
+  "queries": [
+    {
+      "id": "q01",
+      "query": "Escribí un mensaje de commit para mi último cambio",
+      "keywords": [
+        "convenciones de mensajes de commit",
+        "git",
+        "estilo de commits",
+        "conventional commits",
+        "control de versiones",
+        "tono",
+        "changelog"
+      ],
+      "categories": [
+        "software_development",
+        "communication_style"
+      ],
+      "relevant": [
+        "m059",
+        "m003"
+      ]
+    },
+    {
+      "id": "q02",
+      "query": "Planificá las cenas de la semana para mí",
+      "keywords": [
+        "dieta",
+        "restricciones alimentarias",
+        "alergias alimentarias",
+        "preferencias de comida",
+        "cocinas favoritas",
+        "cocina",
+        "recetas",
+        "planificación de comidas",
+        "nutrición",
+        "presupuesto del supermercado"
+      ],
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "relevant": [
+        "m027",
+        "m136",
+        "m048"
+      ]
+    },
+    {
+      "id": "q03",
+      "query": "Redactá un correo para recordarle al tesorero del club de vela que la factura del mes pasado está vencida",
+      "keywords": [
+        "factura",
+        "pago vencido",
+        "recordatorio de pago",
+        "pago atrasado",
+        "cliente",
+        "tesorero",
+        "club de vela",
+        "tono de los correos",
+        "firma de correo",
+        "condiciones de facturación"
+      ],
+      "categories": [
+        "finance",
+        "communication_style",
+        "project_context"
+      ],
+      "relevant": [
+        "m170",
+        "m091",
+        "m005"
+      ]
+    },
+    {
+      "id": "q04",
+      "query": "Reservá pasajes de tren y alojamiento para un fin de semana en Oporto",
+      "keywords": [
+        "preferencias de viaje",
+        "tren",
+        "hotel",
+        "alojamiento",
+        "preferencia de asiento",
+        "presupuesto de viaje",
+        "tarjeta de pago",
+        "escapada de fin de semana"
+      ],
+      "categories": [
+        "personal_preferences",
+        "finance"
+      ],
+      "relevant": [
+        "m031",
+        "m180"
+      ]
+    },
+    {
+      "id": "q05",
+      "query": "¿Qué debería pedir en un café esta tarde?",
+      "keywords": [
+        "café",
+        "té",
+        "preferencias de bebidas",
+        "cafeína",
+        "leche",
+        "restricciones alimentarias",
+        "alergias alimentarias",
+        "snacks"
+      ],
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "relevant": [
+        "m141",
+        "m024",
+        "m147"
+      ]
+    },
+    {
+      "id": "q06",
+      "query": "Armá un proyecto nuevo en Python que procese los extractos bancarios exportados",
+      "keywords": [
+        "Python",
+        "configuración del proyecto",
+        "convenciones de código",
+        "linting",
+        "type hints",
+        "testing",
+        "CSV",
+        "extractos bancarios",
+        "parseo",
+        "presupuesto personal",
+        "dependencias"
+      ],
+      "categories": [
+        "software_development",
+        "finance",
+        "project_context"
+      ],
+      "relevant": [
+        "m057",
+        "m097"
+      ]
+    },
+    {
+      "id": "q07",
+      "query": "Revisá este pull request del servicio de despacho de Nordwind",
+      "keywords": [
+        "code review",
+        "pull request",
+        "estilo de revisión",
+        "Nordwind",
+        "proyecto de cliente",
+        "estándares de código",
+        "TypeScript",
+        "testing"
+      ],
+      "categories": [
+        "software_development",
+        "project_context"
+      ],
+      "relevant": [
+        "m062",
+        "m100",
+        "m101"
+      ]
+    },
+    {
+      "id": "q08",
+      "query": "Sugerime un plan de carrera para las próximas cuatro semanas",
+      "keywords": [
+        "running",
+        "plan de entrenamiento",
+        "estado físico",
+        "lesiones",
+        "objetivo de carrera",
+        "maratón",
+        "kilometraje semanal",
+        "frecuencia cardíaca",
+        "horarios"
+      ],
+      "categories": [
+        "health",
+        "personal_preferences"
+      ],
+      "relevant": [
+        "m146",
+        "m106",
+        "m153"
+      ]
+    },
+    {
+      "id": "q09",
+      "query": "Buscá un horario la semana que viene para una llamada de presentación con un posible cliente",
+      "keywords": [
+        "calendario",
+        "disponibilidad",
+        "horario de trabajo",
+        "preferencias de reuniones",
+        "llamadas",
+        "zona horaria",
+        "agenda",
+        "cliente",
+        "tiempo de concentración"
+      ],
+      "categories": [
+        "personal_preferences",
+        "communication_style",
+        "project_context"
+      ],
+      "relevant": [
+        "m035",
+        "m020"
+      ]
+    },
+    {
+      "id": "q10",
+      "query": "El médico quiere recetarme antibióticos. ¿Hay algo que debería saber?",
+      "keywords": [
+        "alergias",
+        "alergias a medicamentos",
+        "medicación",
+        "historia clínica",
+        "medicación actual",
+        "condiciones de salud",
+        "efectos secundarios"
+      ],
+      "categories": [
+        "health"
+      ],
+      "relevant": [
+        "m135"
+      ]
+    },
+    {
+      "id": "q11",
+      "query": "Ayudame a juntar los papeles para la declaración de impuestos de este año",
+      "keywords": [
+        "impuesto a la renta",
+        "declaración de impuestos",
+        "contador",
+        "comprobantes",
+        "facturas",
+        "deducciones",
+        "gastos del negocio",
+        "ingresos freelance",
+        "vencimientos impositivos"
+      ],
+      "categories": [
+        "finance",
+        "legal"
+      ],
+      "relevant": [
+        "m165",
+        "m166",
+        "m174"
+      ]
+    },
+    {
+      "id": "q12",
+      "query": "Ayudame a escribir una entrada de blog sobre cómo construí la app Harbor",
+      "keywords": [
+        "blog",
+        "estilo de escritura",
+        "tono",
+        "app Harbor",
+        "detalles del proyecto",
+        "público",
+        "extensión del post",
+        "desarrollo de apps"
+      ],
+      "categories": [
+        "communication_style",
+        "project_context",
+        "software_development"
+      ],
+      "relevant": [
+        "m015",
+        "m104",
+        "m090"
+      ]
+    },
+    {
+      "id": "q13",
+      "query": "Un cliente me mandó un contrato con una cláusula de no competencia de 12 meses. ¿Lo firmo?",
+      "keywords": [
+        "contrato",
+        "cláusula de no competencia",
+        "revisión legal",
+        "abogado",
+        "condiciones del contrato",
+        "contratos freelance",
+        "negociación"
+      ],
+      "categories": [
+        "legal"
+      ],
+      "relevant": [
+        "m190",
+        "m189",
+        "m187"
+      ]
+    },
+    {
+      "id": "q14",
+      "query": "Resumí los términos y condiciones de este servicio nuevo",
+      "keywords": [
+        "términos de servicio",
+        "formato del resumen",
+        "privacidad",
+        "uso compartido de datos",
+        "términos legales",
+        "suscripciones",
+        "renovación automática"
+      ],
+      "categories": [
+        "legal",
+        "privacy_preferences",
+        "communication_style"
+      ],
+      "relevant": [
+        "m200"
+      ]
+    },
+    {
+      "id": "q15",
+      "query": "Hacé una pantalla de ajustes para mi app en SwiftUI",
+      "keywords": [
+        "SwiftUI",
+        "estilo de Swift",
+        "iOS",
+        "macOS",
+        "convenciones de UI",
+        "accesibilidad",
+        "arquitectura",
+        "manejo de estado",
+        "diseño"
+      ],
+      "categories": [
+        "software_development"
+      ],
+      "relevant": [
+        "m087",
+        "m075",
+        "m054"
+      ]
+    },
+    {
+      "id": "q16",
+      "query": "¿Qué le regalo a Jordan para su cumpleaños?",
+      "keywords": [
+        "Jordan",
+        "ideas de regalo",
+        "cumpleaños",
+        "pareja",
+        "intereses",
+        "hobbies",
+        "gustos",
+        "presupuesto"
+      ],
+      "categories": [
+        "personal_preferences"
+      ],
+      "relevant": [
+        "m040",
+        "m044"
+      ]
+    },
+    {
+      "id": "q17",
+      "query": "Me duele la cabeza después de un día largo frente a la computadora. ¿Algún consejo?",
+      "keywords": [
+        "dolor de cabeza",
+        "migraña",
+        "vista cansada",
+        "tiempo frente a la pantalla",
+        "postura",
+        "pausas",
+        "sueño",
+        "hidratación",
+        "estrés",
+        "medicación"
+      ],
+      "categories": [
+        "health"
+      ],
+      "relevant": [
+        "m137",
+        "m145",
+        "m149"
+      ]
+    },
+    {
+      "id": "q18",
+      "query": "¿Cuánto debería destinar a ahorros e inversiones este mes?",
+      "keywords": [
+        "ahorros",
+        "inversiones",
+        "presupuesto",
+        "fondo de emergencia",
+        "ingresos",
+        "gastos",
+        "objetivos financieros",
+        "jubilación",
+        "tolerancia al riesgo"
+      ],
+      "categories": [
+        "finance"
+      ],
+      "relevant": [
+        "m161",
+        "m162",
+        "m160"
+      ]
+    },
+    {
+      "id": "q19",
+      "query": "Escribí la política de privacidad de mi app para iOS",
+      "keywords": [
+        "política de privacidad",
+        "recolección de datos",
+        "analytics",
+        "tracking",
+        "App Store",
+        "RGPD",
+        "datos de usuarios",
+        "detalles de la app"
+      ],
+      "categories": [
+        "legal",
+        "privacy_preferences",
+        "software_development"
+      ],
+      "relevant": [
+        "m194",
+        "m127"
+      ]
+    },
+    {
+      "id": "q20",
+      "query": "Ayudame a escribirle un mensaje a mi mamá sobre mi próxima visita",
+      "keywords": [
+        "mamá",
+        "padres",
+        "familia",
+        "idioma",
+        "tono",
+        "planes de viaje",
+        "visita"
+      ],
+      "categories": [
+        "communication_style",
+        "personal_preferences"
+      ],
+      "relevant": [
+        "m006",
+        "m043"
+      ]
+    },
+    {
+      "id": "q21",
+      "query": "Configurá compilaciones y pruebas automáticas para mi biblioteca de código abierto",
+      "keywords": [
+        "integración continua",
+        "CI",
+        "GitHub Actions",
+        "testing",
+        "build",
+        "biblioteca open source",
+        "proyecto",
+        "licencia"
+      ],
+      "categories": [
+        "software_development",
+        "project_context"
+      ],
+      "relevant": [
+        "m070",
+        "m112"
+      ]
+    },
+    {
+      "id": "q22",
+      "query": "¿Dónde debería desplegar el servidor de la app de reservas?",
+      "keywords": [
+        "hosting",
+        "despliegue",
+        "servidor",
+        "proveedor cloud",
+        "infraestructura",
+        "Docker",
+        "app de reservas",
+        "backend",
+        "presupuesto"
+      ],
+      "categories": [
+        "software_development",
+        "project_context"
+      ],
+      "relevant": [
+        "m071",
+        "m092"
+      ]
+    },
+    {
+      "id": "q23",
+      "query": "Prepará un presupuesto para un trabajo freelance de tres semanas",
+      "keywords": [
+        "tarifa",
+        "precios",
+        "tarifa diaria",
+        "disponibilidad",
+        "propuesta",
+        "alcance",
+        "condiciones de pago",
+        "moneda",
+        "IVA",
+        "contrato"
+      ],
+      "categories": [
+        "finance",
+        "project_context",
+        "communication_style"
+      ],
+      "relevant": [
+        "m108",
+        "m107",
+        "m021"
+      ]
+    },
+    {
+      "id": "q24",
+      "query": "El dueño del departamento preguntó si nos vamos a quedar cuando termine el contrato",
+      "keywords": [
+        "contrato de locación",
+        "contrato de alquiler",
+        "alquiler",
+        "dueño del departamento",
+        "inquilino",
+        "preaviso",
+        "vivienda",
+        "mudanza"
+      ],
+      "categories": [
+        "legal",
+        "finance"
+      ],
+      "relevant": [
+        "m185",
+        "m173"
+      ]
+    },
+    {
+      "id": "q25",
+      "query": "Pasá en limpio las notas de la reunión diaria de hoy",
+      "keywords": [
+        "notas de reunión",
+        "reunión diaria",
+        "formato",
+        "tareas pendientes",
+        "equipo",
+        "proyecto",
+        "resumen"
+      ],
+      "categories": [
+        "communication_style",
+        "project_context"
+      ],
+      "relevant": [
+        "m008",
+        "m102"
+      ]
+    },
+    {
+      "id": "q26",
+      "query": "¿Puedo pegar el esquema de la base de datos del cliente en ChatGPT para depurar una consulta?",
+      "keywords": [
+        "datos del cliente",
+        "confidencialidad",
+        "NDA",
+        "privacidad",
+        "herramientas de IA",
+        "compartir datos",
+        "base de datos",
+        "seguridad"
+      ],
+      "categories": [
+        "privacy_preferences",
+        "legal",
+        "project_context"
+      ],
+      "relevant": [
+        "m101",
+        "m126"
+      ]
+    },
+    {
+      "id": "q27",
+      "query": "Prepará las diapositivas para mi charla en la conferencia de Oporto",
+      "keywords": [
+        "presentación",
+        "diapositivas",
+        "charla",
+        "conferencia",
+        "estilo de presentación",
+        "diseño de diapositivas",
+        "notas del orador"
+      ],
+      "categories": [
+        "communication_style",
+        "project_context"
+      ],
+      "relevant": [
+        "m016",
+        "m109"
+      ]
+    },
+    {
+      "id": "q28",
+      "query": "Buscá una receta que pueda cocinar esta noche en media hora",
+      "keywords": [
+        "receta",
+        "cena rápida",
+        "dieta",
+        "restricciones alimentarias",
+        "alergias",
+        "utensilios de cocina",
+        "tipo de cocina",
+        "unidades de medida"
+      ],
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "relevant": [
+        "m048",
+        "m027",
+        "m013"
+      ]
+    },
+    {
+      "id": "q29",
+      "query": "¿Qué llevo para pasar un día en el agua?",
+      "keywords": [
+        "navegación",
+        "vela",
+        "lista de cosas para llevar",
+        "protección solar",
+        "clima",
+        "equipo",
+        "actividades acuáticas"
+      ],
+      "categories": [
+        "personal_preferences",
+        "health"
+      ],
+      "relevant": [
+        "m156",
+        "m032"
+      ]
+    },
+    {
+      "id": "q30",
+      "query": "¿Cuánto podemos gastar en reformar la cocina y cómo lo vamos a pagar?",
+      "keywords": [
+        "reforma de la cocina",
+        "remodelación",
+        "presupuesto",
+        "ahorros",
+        "financiación",
+        "préstamo",
+        "mejoras del hogar",
+        "costos"
+      ],
+      "categories": [
+        "finance",
+        "project_context"
+      ],
+      "relevant": [
+        "m105",
+        "m184"
+      ]
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import Observation
 import SwiftUI
 
 /// Funes Vault for iPhone: a thin client of the vault on the Mac (spec/product/05-ux-iphone.md).
-/// It opens on Capture; captures wait in the queue on this iPhone until the Mac has them.
+/// It opens on Home; captures wait in the queue on this iPhone until the Mac has them.
 @main
 struct FunesApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
@@ -22,6 +22,10 @@ struct FunesApp: App {
                     delegate.open = { [model] ref in model.open(ref) }
                     delegate.rang = { [model] in model.rang() }
                     await model.start()
+                }
+                // A tap on the Pulse or Rhythm widget.
+                .onOpenURL { url in
+                    if url == FunesWidgets.homeURL { state.model.tab = .home }
                 }
                 .onChange(of: scenePhase) { _, phase in
                     let model = state.model
@@ -62,6 +66,10 @@ final class AppState {
     func setDemo(_ on: Bool) {
         guard on != model.isDemo else { return }
         if !on { PhoneServices.discardDemo(in: Self.demoDirectory) }
+        // The cached counts are the demo's or the Mac's, never both (ADR-0025): leaving the demo
+        // deletes its own, and the paired Mac's come back on the next refresh.
+        OverviewCache.appGroup()?.delete()
+        FunesWidgets.reload()
         model = PhoneModel(services: Self.services(demo: on))
         model.switchDemo = { [weak self] on in self?.setDemo(on) }
     }

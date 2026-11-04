@@ -19,7 +19,8 @@ struct RemoteAccessPage: View {
         if let change = remote.tunnelSwitch { return .switching(change) }
         if remote.guideActive { return .guide }
         if remote.origin != nil { return .setUp }
-        return remote.enabled ? .guide : .intro
+        // The menu bar panel's tile says "Not set up" by the same rule.
+        return remote.showsIntroduction ? .intro : .guide
     }
 
     var body: some View {

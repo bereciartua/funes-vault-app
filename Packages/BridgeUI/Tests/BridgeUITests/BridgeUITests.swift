@@ -189,6 +189,27 @@ struct ApprovalQueueTests {
         #expect(queue.items.isEmpty && queue.current == nil)
     }
 
+    /// Later for all: every Save panel is answered Later; a Share panel an agent waits on stays.
+    @Test func laterForAllSaves() {
+        let queue = ApprovalQueue()
+        func save() -> PanelItem {
+            PanelItem(id: UUID(), kind: .save, agentID: "a", title: "Save this memory?",
+                      rows: [PanelItem.Row(id: "s", title: "One", selectable: false)],
+                      primary: "Save", secondary: "Later", announcement: "Save?")
+        }
+        var answers = [PanelAnswer]()
+        queue.enqueue(save()) { answers.append($0) }
+        let share = item(expires: Date() + 45)
+        queue.enqueue(share) { answers.append($0) }
+        for _ in 0..<4 { queue.enqueue(save()) { answers.append($0) } }
+        #expect(queue.saveCount == 5)
+        #expect(queue.hiddenCount == 3)
+        queue.laterForAllSaves()
+        #expect(answers == Array(repeating: .secondary, count: 5))
+        #expect(queue.items.map(\.id) == [share.id])
+        #expect(queue.saveCount == 0)
+    }
+
     /// Pausing Funes withdraws the panels but doesn't close the queue: later requests still show.
     @Test func withdrawAllLeavesTheQueueOpen() {
         let queue = ApprovalQueue()
@@ -459,5 +480,29 @@ struct UpdateRelaunchGateTests {
         let deadline = Date().addingTimeInterval(5)
         while store.records().count > 1, Date() < deadline { _ = store.compact() }
         #expect(store.records().map(\.rowID) == ["new"])
+    }
+}
+
+/// The Share panel's aside (Funes ADR-0026): what the agent already has, with a link that doesn't
+/// answer the panel.
+@Suite("Panel aside")
+@MainActor
+struct PanelAsideTests {
+    @Test func shareCarriesItsAsideAndTheLinkLeavesThePanelOpen() {
+        let aside = PanelItem.Aside(text: "Claude Code also has your name, as set in ", link: "its Access", after: ".")
+        let item = PanelItem.share(id: UUID(), agentID: "a", agentName: "Claude Code", destination: nil, task: nil, keywords: [],
+                                   purpose: nil, keepsIt: nil, sharedWith: [],
+                                   rows: [PanelItem.Row(id: "m", title: "Coffee", detail: "Flat white.", version: "1")],
+                                   note: nil, aside: aside, expiresAt: nil)
+        #expect(item.aside == aside)
+        let queue = ApprovalQueue()
+        var answers: [PanelAnswer] = []
+        var clicked: [UUID] = []
+        queue.asideLinkClicked = { clicked.append($0.id) }
+        queue.enqueue(item) { answers.append($0) }
+        queue.asideLinkClicked(item)
+        #expect(clicked == [item.id] && answers.isEmpty && queue.items.count == 1)
+        #expect(PanelItem.share(id: UUID(), agentID: "a", agentName: "A", destination: nil, task: nil, keywords: [], purpose: nil,
+                                keepsIt: nil, sharedWith: [], rows: [], note: nil, expiresAt: nil).aside == nil)
     }
 }

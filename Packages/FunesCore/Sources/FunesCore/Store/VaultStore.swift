@@ -92,7 +92,8 @@ public final class VaultStore: Sendable {
     /// as `Backups/pre-restore-<time>.sqlite` with SQLite's online backup, so transactions still in
     /// its WAL are in that one self-contained file like every other backup; then `backupName` (a
     /// file in `Backups/`) replaces `vault.sqlite`, and the old WAL and shared-memory files go.
-    /// Nothing changes if the snapshot fails. Returns the snapshot's URL (nil without a vault).
+    /// The copy keeps the current vault's agents, access and devices (`RestoreAccess`, T38).
+    /// Nothing changes if the snapshot or that step fails. Returns the snapshot's URL (nil without a vault).
     @discardableResult
     public static func restoreBackup(_ backupName: String, in directory: URL, now: Date) throws -> URL? {
         guard !backupName.contains("/"), backupName.hasSuffix(".sqlite") else { throw VaultError.invalidInput(field: "backup") }
@@ -115,14 +116,26 @@ public final class VaultStore: Sendable {
         }
         // The copy goes in under a temporary name first, so a failed copy leaves the vault as it was.
         let incoming = directory.appending(path: fileName + ".restoring")
-        try? manager.removeItem(at: incoming)
+        RestoreAccess.removeWithSidecars(incoming)
         try manager.copyItem(at: source, to: incoming)
         _ = chmod(incoming.path, 0o600)
-        for suffix in ["", "-wal", "-shm"] {
+        do {
+            try RestoreAccess.prepare(incoming, current: snapshot, now: now)
+        } catch {
+            RestoreAccess.removeWithSidecars(incoming)
+            throw error
+        }
+        // The old WAL and shared-memory files go first (what they held is in the snapshot), so the
+        // copy is never paired with them; then one rename puts it in place of `vault.sqlite`.
+        for suffix in ["-wal", "-shm", "-journal"] {
             let file = directory.appending(path: fileName + suffix)
             if manager.fileExists(atPath: file.path) { try manager.removeItem(at: file) }
         }
-        try manager.moveItem(at: incoming, to: current)
+        guard rename(incoming.path, current.path) == 0 else {
+            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+        }
+        // A backup in WAL mode can leave the copy's shared-memory file behind.
+        RestoreAccess.removeWithSidecars(incoming)
         return snapshot
     }
 

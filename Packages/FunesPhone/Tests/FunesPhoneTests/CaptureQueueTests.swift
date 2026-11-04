@@ -167,11 +167,22 @@ func temporaryQueue() -> CaptureQueue {
         let suite = "funes-test-\(UUID().uuidString)"
         defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
         let launch = CaptureLaunch(suiteName: suite)
-        #expect(!launch.take(now: t0))
+        #expect(launch.take(now: t0) == nil)
         launch.request(now: t0)
-        #expect(launch.take(now: t0.addingTimeInterval(2)))
-        #expect(!launch.take(now: t0.addingTimeInterval(3)))
+        #expect(launch.take(now: t0.addingTimeInterval(2)) == .type)
+        #expect(launch.take(now: t0.addingTimeInterval(3)) == nil)
         launch.request(now: t0)
-        #expect(!launch.take(now: t0.addingTimeInterval(CaptureLaunch.lifetime + 1)))
+        #expect(launch.take(now: t0.addingTimeInterval(CaptureLaunch.lifetime + 1)) == nil)
+    }
+
+    /// The Remember widget's 🎙 opens the composer dictating; the next request types again.
+    @Test func carriesTheMode() {
+        let suite = "funes-test-\(UUID().uuidString)"
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        let launch = CaptureLaunch(suiteName: suite)
+        launch.request(.dictate, now: t0)
+        #expect(launch.take(now: t0) == .dictate)
+        launch.request(now: t0)
+        #expect(launch.take(now: t0) == .type)
     }
 }

@@ -58,6 +58,7 @@ public struct AppleFoundationGenerator: GenerationProvider {
             return DynamicGenerationSchema(type: String.self)
         case .boolean: return DynamicGenerationSchema(type: Bool.self)
         case .number: return DynamicGenerationSchema(type: Double.self)
+        case .integer: return DynamicGenerationSchema(type: Int.self)
         case let .array(items, _, minItems, maxItems):
             return DynamicGenerationSchema(arrayOf: dynamic(items, name: name + "Item"), minimumElements: minItems,
                                            maximumElements: maxItems)
@@ -73,7 +74,7 @@ public struct AppleFoundationGenerator: GenerationProvider {
 extension JSONSchema {
     var description: String? {
         switch self {
-        case let .string(d, _), let .boolean(d), let .number(d), let .array(_, d, _, _), let .object(_, d, _): d
+        case let .string(d, _), let .boolean(d), let .number(d), let .integer(d), let .array(_, d, _, _), let .object(_, d, _): d
         }
     }
 }
@@ -121,7 +122,8 @@ enum ClassificationPrompt {
 
 // MARK: - Router
 
-/// "Never send memories above <level> to cloud models" (FR-AI-07). Default Internal (Q21).
+/// "Send memories to cloud models up to <level>" (FR-AI-07, ADR-0022): Public to Everything
+/// (`.upTo(.secret)`), or Nothing. Default Internal (Q21). One limit for every task.
 public enum CloudLimit: Sendable, Hashable, Codable {
     case upTo(Sensitivity)
     case never
@@ -131,6 +133,65 @@ public enum CloudLimit: Sendable, Hashable, Codable {
         case let .upTo(limit): s <= limit
         case .never: false
         }
+    }
+
+    /// Above Internal: choosing it asks once to confirm, naming the provider (ADR-0022).
+    public var needsConfirmation: Bool {
+        if case let .upTo(level) = self { return level > .internal }
+        return false
+    }
+}
+
+/// One text an embedding call carries (model providers §5): a memory with its sensitivity (nil when
+/// unknown, which never goes to a cloud provider), a search query or agent task, or made-up text
+/// (Calibrate, the dimensions probe).
+public enum EmbeddingItem: Sendable, Hashable {
+    case memory(String, sensitivity: Sensitivity?)
+    case query(String)
+    case synthetic(String)
+
+    public var text: String {
+        switch self {
+        case let .memory(text, _), let .query(text), let .synthetic(text): text
+        }
+    }
+}
+
+/// One piece of user text a model call carries (model providers §5.6): a memory (or text that
+/// becomes one) with its sensitivity, nil when it isn't known, which never goes to a cloud
+/// provider; or, from v0.6, a search's text, which the secret scanner checks but the cloud limit
+/// doesn't apply to, as for embeddings.
+public struct ModelItem: Sendable, Hashable {
+    public enum Kind: Sendable, Hashable {
+        case memory(sensitivity: Sensitivity?)
+        case query
+    }
+
+    public var text: String
+    public var kind: Kind
+
+    /// A memory, or text that becomes one.
+    public init(_ text: String, sensitivity: Sensitivity?) {
+        self.text = text
+        kind = .memory(sensitivity: sensitivity)
+    }
+
+    /// A search's text.
+    public static func query(_ text: String) -> ModelItem {
+        var item = ModelItem(text, sensitivity: nil)
+        item.kind = .query
+        return item
+    }
+
+    /// A memory's sensitivity; nil for a query or an unknown level.
+    public var sensitivity: Sensitivity? {
+        if case let .memory(sensitivity) = kind { return sensitivity }
+        return nil
+    }
+
+    var isMemory: Bool {
+        if case .memory = kind { return true }
+        return false
     }
 }
 
@@ -142,6 +203,11 @@ public final class ModelRouter: Sendable {
     public let onDevice: (any GenerationProvider)?
     public let cloudLimit: CloudLimit
     public let generationTimeout: Duration
+    /// The daily cap on cloud requests; nil counts nothing (tests, Test connection).
+    public let cap: CloudRequestCap?
+    /// Per call of the splitting tasks: an extraction can return 30 pieces (Spike E: up to 21 s a
+    /// call on a cloud model, minutes on a small local one).
+    public let splitTimeout: Duration
 
     private let usage = Mutex<[ProviderID: ProviderUsage]>([:])
     private let backoff = Mutex<[ProviderID: Date]>([:])
@@ -150,22 +216,38 @@ public final class ModelRouter: Sendable {
     /// `classifier` is the user's choice for Classification (nil: Apple on-device); `onDevice` the
     /// Apple model when available.
     public init(classifier: (any GenerationProvider)?, onDevice: (any GenerationProvider)? = AppleFoundationGenerator(),
-                cloudLimit: CloudLimit = .upTo(.internal), generationTimeout: Duration = .seconds(20)) {
+                cloudLimit: CloudLimit = .upTo(.internal), generationTimeout: Duration = .seconds(20),
+                splitTimeout: Duration = .seconds(180), cap: CloudRequestCap? = nil) {
         self.classifier = classifier
         self.onDevice = onDevice
         self.cloudLimit = cloudLimit
         self.generationTimeout = generationTimeout
+        self.splitTimeout = splitTimeout
+        self.cap = cap
+    }
+
+    /// The on-device sensitivity pre-screen (model providers §5.2): the rules classifier's
+    /// estimate (keyword categories and their defaults), raised to the user's hint and to a
+    /// declared level. A declared level never lowers it, so an agent can't get sensitive text
+    /// past the guard by declaring it Low.
+    public static func prescreen(_ text: String, categories: [MemoryCategory], declared: Sensitivity? = nil,
+                                 hint: Sensitivity? = nil) -> Sensitivity {
+        max(RulesClassifier.propose(text, categories: categories, hint: hint).sensitivity, declared ?? .public, hint ?? .public)
     }
 
     /// A classification proposal for a capture, suggestion or import item.
-    /// - `knownSensitivity`: agent suggestions and imports carry one; the guard uses it directly.
+    /// - `knownSensitivity`: agent suggestions and imports carry one; the guard uses the higher of
+    ///   it and the pre-screen.
     /// - `hint`: the sensitivity the user picked when capturing.
-    /// Captures are pre-screened on the device first: if the estimate is above the cloud limit,
-    /// the text never reaches a cloud model and the record says it was kept on this Mac.
+    /// - `requester`: whose request it is, for the daily cap's agents' share.
+    /// Text is pre-screened on the device first: if the estimate is above the cloud limit, it
+    /// never reaches a cloud model and the record says it was kept on this Mac. At the daily cap
+    /// it falls back to the on-device model.
     public func classify(_ text: String, categories: [MemoryCategory], knownSensitivity: Sensitivity? = nil,
-                         hint: Sensitivity? = nil, now: Date = Date()) async -> ClassificationRecord {
+                         hint: Sensitivity? = nil, requester: CloudRequestCap.Requester = .user,
+                         now: Date = Date()) async -> ClassificationRecord {
         let rules = RulesClassifier.propose(text, categories: categories, hint: hint)
-        let estimate = knownSensitivity ?? max(rules.sensitivity, hint ?? .public)
+        let estimate = Self.prescreen(text, categories: categories, declared: knownSensitivity, hint: hint)
         let request = ClassificationPrompt.request(text, categories: categories)
         var keptOnDevice = false
         var chain: [any GenerationProvider] = []
@@ -174,8 +256,9 @@ public final class ModelRouter: Sendable {
         for provider in chain {
             if let until = backoff.withLock({ $0[provider.id] }), now < until { continue }
             do {
-                let (output, used) = try await Self.send(request, to: provider, sensitivity: estimate, cloudLimit: cloudLimit,
-                                                         timeout: generationTimeout)
+                let (output, used) = try await Self.send(request, items: [ModelItem(text, sensitivity: estimate)], to: provider,
+                                                         cloudLimit: cloudLimit, cap: cap, requester: requester,
+                                                         timeout: generationTimeout, now: now)
                 record(used, for: provider.id)
                 let proposal = ClassificationPrompt.proposal(output).validated(categories: categories, fallbackTitle: rules.title,
                                                                                floor: hint)
@@ -184,6 +267,9 @@ public final class ModelRouter: Sendable {
             } catch ProviderError.blocked {
                 // A secret, or above the cloud limit: it stays on this Mac (§5).
                 if !provider.locality.isLocal { keptOnDevice = true }
+                continue
+            } catch ProviderError.capReached {
+                // The user's captures fall back to on-device at the cap (§6).
                 continue
             } catch let error as ProviderError {
                 record(ProviderUsage(requests: 1), for: provider.id)
@@ -199,9 +285,56 @@ public final class ModelRouter: Sendable {
         return ClassificationRecord(engine: RulesClassifier.engine, proposal: rules, keptOnDevice: keptOnDevice)
     }
 
-    /// Embeds with the bundled model, keyword-only on failure or after 10 s (FR-AI-10).
-    public func embedQuery(_ text: String, with provider: any EmbeddingProvider) async -> [Float]? {
-        try? await withTimeout(.seconds(10)) { try await provider.embed([text], as: .query).first ?? [] }
+    /// The New memories engine that splits and links (memory processing §5.2): the chosen
+    /// provider when it's a local server or a cloud model. Apple on-device only classifies (Spike
+    /// E §1), so with it, or with no choice, nothing is split.
+    public var splitter: (any GenerationProvider)? {
+        guard let classifier, classifier.locality != .onDevice else { return nil }
+        return classifier
+    }
+
+    /// A search answer's call, from when it's sent (memory processing §10.3).
+    public static let searchAnswerTimeout: Duration = .seconds(45)
+
+    /// The model that answers searches with a router built for Search answers: the chosen
+    /// provider, or Apple on-device; nil when neither can (only the rules), so there's no answer.
+    public var answerer: (any GenerationProvider)? { classifier ?? onDevice }
+
+    /// One search answer (§10.3): through the guardrails (`send`), within 45 s, counted against the
+    /// daily cap as the user's for a cloud provider. No fallback to another provider (§6).
+    func answer<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem], now: Date) async throws -> T {
+        guard let provider = answerer else { throw ProviderError.unavailable }
+        return try await call(request, items: items, with: provider, requester: .user, timeout: Self.searchAnswerTimeout, now: now)
+    }
+
+    /// How a proposal names its engine: `apple.foundation`, or `<provider>/<model>`.
+    public static func engine(_ provider: any GenerationProvider) -> String {
+        provider.id == "apple.foundation" ? "apple.foundation" : "\(provider.id)/\(provider.modelID)"
+    }
+
+    /// One call of the splitting tasks or the tidy-up through the guardrails (`send`), counted in
+    /// the usage counters, within `timeout` (the split timeout by default). A provider that
+    /// rate-limited is skipped until its backoff ends.
+    func call<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem], with provider: any GenerationProvider,
+                                       requester: CloudRequestCap.Requester, timeout: Duration? = nil, now: Date) async throws -> T {
+        if let until = backoff.withLock({ $0[provider.id] }), now < until { throw ProviderError.rateLimited(retryAfter: until.timeIntervalSince(now)) }
+        do {
+            let (output, used) = try await Self.send(request, items: items, to: provider, cloudLimit: cloudLimit, cap: cap,
+                                                     requester: requester, timeout: timeout ?? splitTimeout, now: now)
+            record(used, for: provider.id)
+            return output
+        } catch let error as ProviderError {
+            switch error {
+            case .blocked, .capReached: break
+            case let .rateLimited(retryAfter):
+                record(ProviderUsage(requests: 1), for: provider.id)
+                backoff.withLock { $0[provider.id] = now + (retryAfter ?? 60) }
+            default:
+                record(ProviderUsage(requests: 1), for: provider.id)
+            }
+            logger.error("Provider \(provider.id.rawValue, privacy: .public) failed: \(String(describing: error), privacy: .public)") // log-safe: provider id and error code, no text
+            throw error
+        }
     }
 
     private func record(_ used: ProviderUsage, for id: ProviderID) {
@@ -281,19 +414,53 @@ public final class InMemoryProviderKeyStore: ProviderKeyStore {
 
 extension ModelRouter {
     /// The only way Funes sends text to a model (model providers §5; test.sh fails on any other
-    /// call of a provider's generate). Text with a secret-scanner match never goes to a provider that isn't on
-    /// this Mac; a cloud provider also gets nothing above the cloud limit, and nothing at all when
-    /// the sensitivity isn't known. Either refusal is `ProviderError.blocked`, before any request.
-    public static func send<T: Decodable & Sendable>(_ request: StructuredRequest<T>, to provider: any GenerationProvider,
-                                                     sensitivity: Sensitivity?, cloudLimit: CloudLimit,
-                                                     timeout: Duration) async throws -> (T, ProviderUsage) {
-        if provider.locality != .onDevice, !SecretScanner.scan(request.outgoingTexts).isEmpty {
+    /// call of a provider's generate). `items` are the user texts the request carries, each with
+    /// its sensitivity. A secret-scanner match in any item or anywhere in the request never goes
+    /// to a provider that isn't on this Mac. A cloud provider also gets nothing when any item is
+    /// above the cloud limit or of unknown sensitivity, or when it carries no memory (a search's
+    /// text alone isn't sent). Either refusal is `ProviderError.blocked`, before any request. A
+    /// cloud request then counts against the daily cap, or is refused with
+    /// `ProviderError.capReached` (ADR-0022).
+    public static func send<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem],
+                                                     to provider: any GenerationProvider, cloudLimit: CloudLimit,
+                                                     cap: CloudRequestCap? = nil, requester: CloudRequestCap.Requester = .user,
+                                                     timeout: Duration, now: Date = Date()) async throws -> (T, ProviderUsage) {
+        if provider.locality != .onDevice, !SecretScanner.scan(request.outgoingTexts + items.map(\.text)).isEmpty {
             throw ProviderError.blocked
         }
         if !provider.locality.isLocal {
-            guard let sensitivity, cloudLimit.allows(sensitivity) else { throw ProviderError.blocked }
+            let memories = items.filter(\.isMemory)
+            guard !memories.isEmpty, memories.allSatisfy({ $0.sensitivity.map(cloudLimit.allows) ?? false }) else {
+                throw ProviderError.blocked
+            }
+            try await cap?.consume(requester, now: now)
         }
         return try await withTimeout(timeout) { try await provider.generate(request) }
+    }
+
+    /// The only way text reaches a provider embedding model (model providers §5; test.sh fails on
+    /// any other embedding call outside the bundled index). For a provider not on this Mac, a
+    /// secret-scanner match in any item refuses the call. A cloud provider also gets nothing when a
+    /// memory is above the cloud limit or of unknown sensitivity, or when there are no items. Either
+    /// refusal is `ProviderError.blocked`, before any request. Queries and synthetic text carry no
+    /// memory: the disclosure line names them (searches, agents' tasks when the user allows it).
+    /// Embeddings don't count against the daily cap (ADR-0022).
+    public static func embed(_ items: [EmbeddingItem], as role: EmbeddingRole, with provider: any EmbeddingProvider,
+                             cloudLimit: CloudLimit, timeout: Duration = .seconds(10)) async throws -> ([[Float]], ProviderUsage) {
+        guard !items.isEmpty else { throw ProviderError.blocked }
+        if provider.locality != .onDevice, !SecretScanner.scan(items.map(\.text)).isEmpty { throw ProviderError.blocked }
+        if !provider.locality.isLocal {
+            for item in items {
+                if case let .memory(_, sensitivity) = item, !(sensitivity.map(cloudLimit.allows) ?? false) {
+                    throw ProviderError.blocked
+                }
+            }
+        }
+        let texts = items.map(\.text)
+        return try await withTimeout(timeout) {
+            if let counting = provider as? OpenAICompatibleEmbedder { return try await counting.embedCounting(texts, as: role) }
+            return (try await provider.embed(texts, as: role), ProviderUsage(requests: 1))
+        }
     }
 
     // MARK: Test connection
@@ -307,12 +474,12 @@ extension ModelRouter {
     public static var testCategories: [MemoryCategory] { MemoryCategory.builtins }
 
     /// One tiny classification with `provider`, through the same guardrails as every call, within
-    /// the generation timeout (Settings ▸ AI Models ▸ Test connection). Throws the provider's error.
+    /// the generation timeout (Settings ▸ AI ▸ Models & Accounts ▸ Test Connection). Throws the provider's error.
     public static func testConnection(_ provider: any GenerationProvider,
                                       timeout: Duration = .seconds(20)) async throws -> CaptureProposal {
         let request = ClassificationPrompt.request(testNote, categories: testCategories)
-        let (output, _) = try await send(request, to: provider, sensitivity: .public, cloudLimit: .upTo(.public),
-                                         timeout: timeout)
+        let (output, _) = try await send(request, items: [ModelItem(testNote, sensitivity: .public)], to: provider,
+                                         cloudLimit: .upTo(.public), timeout: timeout)
         return ClassificationPrompt.proposal(output).validated(categories: testCategories, fallbackTitle: testNote)
     }
 }

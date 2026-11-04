@@ -83,18 +83,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         mainWindow.visibilityChanged = { [weak self] in self?.updateActivationPolicy() }
         settingsWindow.visibilityChanged = { [weak self] in self?.updateActivationPolicy() }
         model.openMainWindow = { mainWindow.show() }
-        model.openSettings = { tab in
-            if let tab { model.settingsTab = tab }
+        model.openSettings = { destination in
+            model.goToSettings(destination)
             settingsWindow.show()
         }
         model.openPendingRequest = { id in Task { await environment.approvals.open(requestID: id) } }
         model.dockPreferenceChanged = { [weak self] in self?.updateActivationPolicy() }
 
         wirePanels(environment, model: model)
-        let capture = CaptureController(model: model, hud: hud)
+        let saver = CaptureSaver(model: model, hud: hud)
+        model.saveCapture = { saver.save($0) }
+        let capture = CaptureController(model: model, saver: saver)
         self.capture = capture
-        model.openCapture = { capture.show() }
-        let hotKey = HotKey { capture.show() }
+        model.openCapture = { [weak self] in
+            self?.menu?.panel.close("capture box")
+            capture.show()
+        }
+        let hotKey = HotKey { model.openCapture() }
         hotKey.register(preferences.captureShortcut)
         self.hotKey = hotKey
         model.setCaptureShortcut = { [preferences] shortcut in
@@ -105,11 +110,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences.captureShortcut = shortcut
             return true
         }
-        // Review Request (⌃⌥⌘R): the keyboard path to a waiting panel, which never takes focus by itself.
+        // Review Request (⌃⌥⌘R): the keyboard path to a waiting panel, which never takes focus by
+        // itself. The menu bar panel's card that shows the shortcut does the same (WaitingItems).
         let approvals = environment.approvals
-        model.reviewRequest = {
-            guard !approvals.review() else { return }
-            if let newest = model.pending.first(where: { $0.status == .needsApproval }) { model.openPendingRequest(newest.id) }
+        model.reviewRequest = { [weak self] in
+            guard let target = model.waiting(now: Date()).reviewTarget else { return }
+            // The menu bar panel sits above every panel: it closes first, as a card's Review does.
+            self?.menu?.panel.close("review request")
+            model.review(target, signIn: { self?.signInPanel?.bringForward() })
         }
         let reviewHotKey = HotKey(id: 2) { model.reviewRequest() }
         reviewHotKey.register(preferences.reviewShortcut)
@@ -126,7 +134,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         NSApp.servicesProvider = capture
         NSUpdateDynamicServices()
-        let menu = StatusMenuController(model: model)
+        let panelModel = MenuBarPanelModel(app: model, saver: saver)
+        panelModel.reviewSignIn = { [weak self] in self?.signInPanel?.bringForward() }
+        let menu = StatusMenuController(model: model, panel: MenuBarPanelController(model: panelModel))
         self.menu = menu
         // Updates (FR-G-03): the relaunch waits while a panel is waiting for the user.
         let gate = UpdateRelaunchGate(pendingApprovals: { environment.approvals.queue.items.count },
@@ -139,9 +149,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.updatesAvailable = { model.updater.isAvailable() }
         model.data.integrityFailed = { [notifier] in
             notifier.post(.refused, title: String(localized: "The vault needs attention"),
-                          body: String(localized: "Its weekly check found a problem. Restore a backup in Settings ▸ Data."))
+                          body: String(localized: "Its weekly check found a problem. Restore a backup in Settings ▸ Data & Backups."))
         }
         model.data.startJobs()
+        // Find the subscription CLIs first, so the processing queue and the tidy-up can use a
+        // chosen plan (ADR-0024).
+        model.tidyUp.finished = { [notifier] run in
+            notifier.post(.tidyUp, title: String(localized: "Tidy-up finished"), body: TidyUpController.notice(run))
+        }
+        Task { @MainActor in
+            await model.modelSettings.refreshSubscriptions()
+            model.processing.kick()
+            model.tidyUp.start()
+        }
+        model.processing.start()
+        model.embeddings.apply()
         model.changed = { [weak menu] in menu?.update() }
 
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
@@ -196,13 +218,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         offerMoveToApplications()
         #if DEBUG
-        // FUNES_DEBUG_OPEN=vault|inbox|agents|activity|settings[:tab] opens a window at launch.
+        // FUNES_DEBUG_OPEN=home|vault|inbox|agents|activity|capture|panel|settings[:destination] opens a window at launch.
         if let open = ProcessInfo.processInfo.environment["FUNES_DEBUG_OPEN"], !open.isEmpty {
             let parts = open.split(separator: ":").map(String.init)
             if parts[0] == "capture" {
                 model.openCapture()
+            } else if parts[0] == "panel" {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { menu.showPanel() }
             } else if parts[0] == "settings" {
-                model.openSettings(parts.count > 1 ? SettingsTab(rawValue: parts[1]) : nil)
+                model.openSettings(parts.count > 1 ? SettingsDestination(rawValue: parts[1]) : nil)
             } else if let section = AppSection(rawValue: parts[0]) {
                 model.show(section)
                 if parts.count > 2, let tab = AgentTab(rawValue: parts[2]) { model.agentTab = tab }
@@ -256,8 +280,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         keepAwake.set(false)
     }
 
+    /// The Dock icon: the window as it was while it's open, else on Home.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        mainWindow?.show()
+        if mainWindow?.isVisible == true { mainWindow?.show() } else { model?.showHome() }
         return false
     }
 
@@ -270,6 +295,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         approvals.remoteTunnel = { agentID in
             model.remoteServer?.note(agentID: agentID, near: Date())?.tunnel?.name ?? model.remoteAccess.inUseTunnelProvider?.name
         }
+        approvals.queue.asideLinkClicked = { item in
+            guard let id = UUID(uuidString: item.agentID) else { return }
+            model.agentTab = .access
+            model.showAgent(id)
+        }
         approvals.editSuggestion = { id in
             model.inboxState.focused = id
             model.show(.inbox)
@@ -280,7 +310,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                           body: String(localized: "\(name) suggested a memory. Review it in the Inbox."))
         }
         model.requestNotificationPermission = { done in notifier.requestPermission(done) }
-        model.activityAppended = { event in
+        model.activityAppended = { [hud] event in
+            // The daily cap's notice (ADR-0022): Activity has the row once a day; no text.
+            if event.event == "cap_reached", event.actor == "system" {
+                hud.show(String(localized: "Today's cloud requests are used up. New captures are classified on this Mac until tomorrow."),
+                         symbol: "gauge.with.dots.needle.100percent", seconds: 6)
+                return
+            }
             guard preferences.notifyRefused, event.outcome == "denied", event.actor.hasPrefix("agent:"),
                   let id = UUID(uuidString: String(event.actor.dropFirst(6))),
                   notifier.noteRefusal(agentID: id, at: event.time) else { return }
@@ -290,14 +326,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         notifier.onOpen = { kind, agent in
             switch kind {
-            case .suggestion: model.show(.inbox)
+            case .suggestion, .tidyUp: model.show(.inbox)
             case .expired, .refused: model.showActivity(agent.map(ActivityFocus.agent))
             case .tunnelDown: model.show(.remoteAccess)
             }
         }
     }
 
-    /// The MCP server switch (Settings ▸ MCP). Remote Access runs only while it's on: the remote
+    /// The MCP server switch (Settings ▸ Agent Server). Remote Access runs only while it's on: the remote
     /// listener is a second door to the same server.
     private func setServer(_ on: Bool) {
         preferences.mcpEnabled = on
@@ -364,7 +400,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Another port (Settings ▸ MCP): the listener moves now. Setups that start `funes-mcp` find it
+    /// Another port (Settings ▸ Agent Server): the listener moves now. Setups that start `funes-mcp` find it
     /// through the endpoint file; setups that name the address need copying again.
     private func setPort(_ port: Int) {
         guard let mcp, FunesMCPConfiguration.portRange.contains(port), port != mcp.port else { return }
