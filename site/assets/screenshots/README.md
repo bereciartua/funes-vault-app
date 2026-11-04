@@ -6,4 +6,4 @@ The landing page (`site/index.html`) shows two of the README's Mac screenshots, 
 cp docs/images/{share-panel,remote-access}-{light,dark}.png docs/images/iphone-{home,approval}.png site/assets/screenshots/
 ```
 
-and don't commit the copies. Regenerate the Mac ones with `sh scripts/ui_snapshots.sh` (sample data in a throwaway vault, never a real one). The iPhone ones come from demo mode (`sh scripts/app_store_screenshots.sh`, scenes `home` and `share`), scaled to about 588 × 1280: `sips -Z 1280`.
+and don't commit the copies. Regenerate the Mac ones with `sh scripts/ui_snapshots.sh` (sample data in a throwaway vault, never a real one). The iPhone ones come from demo mode (`sh scripts/app_store_screenshots.sh`, scenes `home` and `share`), scaled to 589 × 1280: `sips -Z 1280`.
