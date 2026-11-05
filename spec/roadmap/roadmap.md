@@ -6,6 +6,8 @@ Planned as a **side project**: about one weekend (around 8–10 h) per week. Dat
 
 **Status (2026-10-19):** Phases 0–3 and Phase 4's preparation are done. [Phase 4b](../plans/phase-4b-remote-access.md) (Remote Access, [ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)) comes before the launch. The chart starts from today's state.
 
+**Update (2026-11-04):** v0.3 to v0.9 shipped on the Mac as version **0.5.1** (build 12), the first release since 0.2.0: 0.5.0 was built but never published. Besides v0.3 to v0.5, it has search answers (v0.6), the menu bar panel (v0.7), the Settings window (v0.8) and the Mac's side of every Inbox card on the iPhone (v0.9). The iPhone's 0.5.0 (build 24), with Home and widgets, About you, search answers and every Inbox card, is in App Review; 0.2.0 is on the App Store.
+
 **Update (2026-10-30):** **Phase 10** (the menu bar panel, v0.7) is planned: see [v0.7](#v07-menu-bar-panel-phase-10).
 
 **Update (2026-10-27):** v0.3, v0.4 and v0.5 ship together as version **0.5.0** (build 11), on the Mac and as the iPhone's next App Store version; the iPhone's first App Store version stays 0.2.0.
@@ -151,6 +153,8 @@ Funes learns your name and a few details, greets you by name, and gives each age
 ### v0.6: Search answers (Phase 9)
 Search shows the sentence that matches, and when you ask (or on its own, if you choose), the model you chose answers from the top results, quoting the memory behind every claim, on the Mac and the iPhone ([ADR-0028](../architecture/decisions/0028-search-answers.md)). About 2.5–3 weekends.
 
+**Shipped** in the Mac's 0.5.1 (2026-11-04); on the iPhone in 0.5.0, in App Review.
+
 | Step | Plan | Exit criteria |
 |---|---|---|
 | **9.1 Snippets** | [plan](../plans/phase-9-search-answers.md#91-snippets--½-weekend) | Matching-sentence snippets on both apps within 150 ms; used for a few days |
@@ -167,6 +171,8 @@ Search shows the sentence that matches, and when you ask (or on its own, if you 
 
 ### v0.7: Menu bar panel (Phase 10)
 A click on the menu bar icon opens a panel instead of a menu: what waits for you, with Review; the Agents and Remote Access switches; a field that remembers or searches; and the last 24 hours as a chart ([ADR-0029](../architecture/decisions/0029-menu-bar-panel.md)). About 2 weekends.
+
+**Shipped** in the Mac's 0.5.1 (2026-11-04).
 
 | Step | Plan | Exit criteria |
 |---|---|---|
@@ -186,6 +192,8 @@ A click on the menu bar icon opens a panel instead of a menu: what waits for you
 ### v0.8: Settings (Phase 11)
 A Settings window a first-time user can find their way around: a sidebar, AI split into what it does, where models come from and what may leave the Mac, and a different model per task on one account ([ADR-0030](../architecture/decisions/0030-settings-window.md)). About 3 weekends. (v0.7, the menu bar panel of Phase 10, landed first.)
 
+**Shipped** in the Mac's 0.5.1 (2026-11-04).
+
 | Step | Plan | Exit criteria |
 |---|---|---|
 | **11.0 Prototype** | [plan](../plans/phase-11-settings.md#110-navigation-prototype--⅛-weekend) | The sidebar holds its width and can't collapse on every supported macOS, or the fallback is chosen |
@@ -203,6 +211,8 @@ A Settings window a first-time user can find their way around: a sidebar, AI spl
 
 ### v0.9: Every Inbox card on the iPhone (Phase 12)
 The iPhone answers every card the Mac's Inbox does, the daily tidy-up's included, showing the memories each one changes first ([ADR-0031](../architecture/decisions/0031-iphone-answers-every-inbox-card.md)). About 1 weekend.
+
+**Shipped** on the Mac in 0.5.1 (2026-11-04); on the iPhone in 0.5.0, in App Review.
 
 | Step | Plan | Exit criteria |
 |---|---|---|

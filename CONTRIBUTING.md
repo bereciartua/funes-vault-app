@@ -6,7 +6,7 @@ Report security problems privately, as described in [SECURITY.md](SECURITY.md), 
 
 ## The spec comes first
 
-The product is defined in [`spec/`](spec/README.md), and it's the source of truth: requirements with ids such as `FR-D-12`, the [access policy](spec/domain/access-policy.md) with its test vectors T1–T35, the architecture, and the decision records. Read the relevant part before you change behaviour.
+The product is defined in [`spec/`](spec/README.md), and it's the source of truth: requirements with ids such as `FR-D-12`, the [access policy](spec/domain/access-policy.md) with its test vectors T1–T46, the architecture, and the decision records. Read the relevant part before you change behaviour.
 
 - When a design changes, update the spec in the same change, and add an ADR in `spec/architecture/decisions/` for an architectural decision.
 - Cite requirement ids and test vectors in commits and tests where they apply.
@@ -21,7 +21,7 @@ sh scripts/fetch_embedding_model.sh   # once: the bundled embedding model, cache
 sh scripts/test.sh                    # everything: package tests, the MCP harness, goldens, checks and builds
 ```
 
-`test.sh` runs the log-privacy check, the App Store text check, a check that models are called only through `ModelRouter.send` and `ModelRouter.embed`, the tests of the six packages, the Python MCP and Remote Access harnesses against `funes-mcp-test-server`, unsigned Debug builds of the Mac app and the iPhone app, the UI-review build and the string catalog check. Without the model, the model-dependent tests skip; CI requires it. [Testing](docs/TESTING.md) lists what each part covers. To run one package:
+`test.sh` runs the log-privacy check, the App Store text check, a check that models are called only through `ModelRouter.send` and `ModelRouter.embed`, a check that the menu bar panel never answers a request, suggestion or sign-in, the tests of the six packages, the Python MCP and Remote Access harnesses against `funes-mcp-test-server`, unsigned Debug builds of the Mac app and the iPhone app, the UI-review build and the string catalog check. Without the model, the model-dependent tests skip; CI requires it. [Testing](docs/TESTING.md) lists what each part covers. To run one package:
 
 ```sh
 swift test --package-path Packages/FunesCore

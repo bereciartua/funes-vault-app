@@ -1,10 +1,10 @@
 # Architecture and security boundary
 
-This page describes how Funes Vault works, as the code on `main` builds it: the Mac app and its MCP server, the iPhone companion, and how text moves between them, agents and the AI models you choose. Features under **[Unreleased]** in the [changelog](../CHANGELOG.md) (About You, Split into separate memories, the daily tidy-up, provider embeddings, subscription providers, Home) are described here but aren't in the latest release yet.
+This page describes how Funes Vault works, as the code on `main` builds it: the Mac app and its MCP server, the iPhone companion, and how text moves between them, agents and the AI models you choose. Anything listed under **[Unreleased]** in the [changelog](../CHANGELOG.md) is described here before it's in a release.
 
 The full design, with the reasons behind it, is in [`spec/`](../spec/README.md): the [architecture overview](../spec/architecture/overview.md), the [access policy](../spec/domain/access-policy.md), [memory processing](../spec/domain/memory-processing.md), the [companion protocol](../spec/architecture/companion-protocol.md) and the [decision records](../spec/architecture/decisions/README.md). When this page and the spec disagree, the spec is the source of truth and this page has a bug.
 
-**On this page:** [System at a glance](#system-at-a-glance) · [Packages and targets](#packages-and-targets) · [Background work](#background-work) · [Data on disk](#data-on-disk) · [Request pipeline](#request-pipeline) · [Access policy](#access-policy) · [Search](#search) · [Suggestions and new memories](#suggestions-and-new-memories) · [Daily tidy-up](#daily-tidy-up) · [AI model providers](#ai-model-providers) · [iPhone companion](#iphone-companion) · [Remote Access](#remote-access) · [Updates](#updates) · [Threat model](#threat-model) · [Decision records](#decision-records)
+**On this page:** [System at a glance](#system-at-a-glance) · [Packages and targets](#packages-and-targets) · [Background work](#background-work) · [Data on disk](#data-on-disk) · [Request pipeline](#request-pipeline) · [Access policy](#access-policy) · [Search](#search) · [Search answers](#search-answers) · [Suggestions and new memories](#suggestions-and-new-memories) · [Daily tidy-up](#daily-tidy-up) · [AI model providers](#ai-model-providers) · [iPhone companion](#iphone-companion) · [Remote Access](#remote-access) · [Updates](#updates) · [Threat model](#threat-model) · [Decision records](#decision-records)
 
 ## System at a glance
 
@@ -66,11 +66,11 @@ flowchart BT
 | Part | What it holds | Depends on |
 | --- | --- | --- |
 | `Packages/FunesProtocol` | Types shared by the Mac and the iPhone: memories, categories, sensitivity, reason codes, input limits, identifiers, the About You profile, the companion's envelopes and methods, and the secret scanner. | System frameworks only |
-| `Packages/FunesCore` | The vault, Mac only: the GRDB store and migrations (v1 to v6), the policy engine, retrieval and search, the bundle compiler, disclosures (requests, approvals, delivery), suggestions and the Inbox, captures, agents and their keys, the profile, import and export, the processing queue, New memories and the tidy-up (`Processing/`), the vault overview, the undo log, and the AI model providers with `ModelRouter`. No AppKit, SwiftUI or MCP. | FunesProtocol, [GRDB.swift](https://github.com/groue/GRDB.swift) 7.11.1 |
+| `Packages/FunesCore` | The vault, Mac only: the GRDB store and migrations (v1 to v8), memories' earlier versions, the policy engine, retrieval and search, search answers, the bundle compiler, disclosures (requests, approvals, delivery), suggestions and the Inbox, captures, agents and their keys, the profile, import and export, the processing queue, New memories and the tidy-up (`Processing/`), the vault overview, the undo log, and the AI model providers with `ModelRouter`. No AppKit, SwiftUI or MCP. | FunesProtocol, [GRDB.swift](https://github.com/groue/GRDB.swift) 7.11.1 |
 | `Packages/FunesMCP` | The MCP adapter: the tool contract (`Sources/FunesMCP/Resources/mcp-tools.json`), tool visibility, Funes's server configuration (port, key prefix, limits, wording), key lookup, `RequestPipeline` and the five handlers, the Remote Access server (`FunesRemoteServer`), and `funes-mcp-test-server`, the test build the Python harness drives ([ADR-0017](../spec/architecture/decisions/0017-funes-mcp-package.md)). No AppKit. | FunesCore, BridgeKitCore, BridgeKitRemote |
 | `Packages/FunesCompanion` | The Mac's side of the iPhone companion: the listener on 47626 (`CompanionListener`, a BSD socket), the router and address policy, pairing, the device registry, the method handlers (which call FunesCore as the owner), approvals from the iPhone and the doorbell channel. No AppKit or CloudKit. | FunesCore, FunesProtocol, BridgeKitCore (its HTTP parser) |
-| `Packages/FunesPhone` | The iPhone's side: device keys (Secure Enclave, with a Keychain fallback), the pairing record, `CompanionClient` (address selection, retries), the offline capture queue and its delivery, the overview cache and widget snapshots, demo mode, and the view models of Search, the memory detail, the Inbox and approvals. | FunesProtocol, SQLite3 |
-| `Packages/BridgeUI` | UI and workflow pieces adapted from EK Bridge: the approval queue and panels, the Activity store, agent detection, agent setups and one-click setup, `RemoteAccessController` and the cloud and tunnel setups, the app mover and the updater's relaunch gate. `Upstream/` keeps the copied originals; see its `PROVENANCE.md`. | BridgeKit |
+| `Packages/FunesPhone` | The iPhone's side: device keys (Secure Enclave, with a Keychain fallback), the pairing record, `CompanionClient` (address selection, retries), the offline capture queue and its delivery, the overview cache and widget snapshots, demo mode, and the view models of Search (with its answers), the memory detail, the Inbox and approvals, and the status bar. | FunesProtocol, SQLite3 |
+| `Packages/BridgeUI` | UI and workflow pieces adapted from EK Bridge: the approval queue and panels, the menu bar panel's models (written for Funes: `MenuBarPanel.swift`, what waits for you and the Agents and Remote Access tiles; `PanelField`, the field's keys, draft and late-result handling), the Activity store, agent detection, agent setups and one-click setup, `RemoteAccessController` and the cloud and tunnel setups, the app mover and the updater's relaunch gate. `Upstream/` keeps the copied originals; see its `PROVENANCE.md`. | BridgeKit |
 | BridgeKit (`BridgeKitCore`, `BridgeKitRemote`) | External package, [`bereciartua/bridgekit`](https://github.com/bereciartua/bridgekit), pinned to exactly **0.4.1**, shared with EK Bridge. BridgeKitCore: the loopback HTTP listener, JSON-RPC and MCP protocol versions, the JSON Schema validator, keys, rate limits, safe files, the launcher and the agent config writer ([ADR-0013](../spec/architecture/decisions/0013-shared-bridgekit-core.md)). BridgeKitRemote: Remote Access's listener and gate, the OAuth server and its store, the client-metadata fetch, the tunnel checks, and path sharing for Tailscale Funnel ([ADR-0018](../spec/architecture/decisions/0018-remote-access-in-v0.1.md)). | System frameworks only |
 | `Apps/FunesMac` | The app target, `FunesVault.app` (`com.funesvault.mac`): the menu bar icon and its panel (`MenuBar/`: a non-activating `NSPanel` with Review cards, the Agents and Remote Access switches, a field that remembers or searches, and the last 24 hours from `VaultStore.recentPulse`; [ADR-0029](../spec/architecture/decisions/0029-menu-bar-panel.md)), the main window (Home, Vault, Inbox, Activity, Agents, Remote Access), Settings, the capture box and dictation, the panels' wiring, the processing runner and tidy-up scheduler, the iPhone settings and CloudKit doorbell, the Sparkle wrapper and the app's lifecycle. A menu bar app (`LSUIElement`), hardened runtime, not sandboxed, macOS 15 or later, Developer ID ([ADR-0007](../spec/architecture/decisions/0007-developer-id-not-sandboxed.md)). | All of the above, [Sparkle](https://sparkle-project.org) 2.10.0 |
 | `Apps/FunesMCPLauncher` | The `funes-mcp` command-line tool, signed with its own identifier `com.funesvault.mac.mcp` and embedded at `FunesVault.app/Contents/MacOS/funes-mcp`. It links BridgeKitCore and FunesProtocol only, so it carries no vault code. | BridgeKit, FunesProtocol |
@@ -85,9 +85,9 @@ The UI, the panels and the pipeline's decisions that touch approvals run on the 
 | Job | When | What it does |
 | --- | --- | --- |
 | Minute job | At launch, then every minute | Denies requests still waiting after 15 minutes (`approval_expired`), expires suggestions older than 30 days, takes back doorbell records of requests that stopped waiting, and posts the "A request expired" notice if you turned it on. |
-| Maintenance | At launch, then hourly, for what's due | The daily backup, purging deleted memories, capture receipts (90 days), finished processing jobs and undo entries (30 days), dropping the text of split inputs whose pieces are all decided, and the weekly integrity check. |
+| Maintenance | At launch, then hourly, for what's due | The daily backup, purging deleted memories, capture receipts (90 days), finished processing jobs and undo entries (30 days), memories' earlier versions (past 90 days, or beyond 50 a memory), dropping the text of split inputs whose pieces are all decided, and the weekly integrity check. |
 | Processing runner (`ProcessingRunner`) | At launch (resuming jobs a quit left running), after every vault change, and every minute for retries | Drains the processing queue one job at a time: classification and New memories splitting. See [the ingest pipeline](#the-ingest-pipeline). |
-| Tidy-up scheduler (`TidyUpController`) | An `NSBackgroundActivityScheduler` every half hour, plus launch and wake | Runs the daily tidy-up when its time has passed since the last run, or on **Tidy Up Now**. |
+| Tidy-up scheduler (`TidyUpController`) | An `NSBackgroundActivityScheduler` every half hour, plus launch and wake | Runs the daily tidy-up when its time has passed since the last run, or on **Tidy Up Now**; also **Tidy Up** on one memory, when you ask. |
 | Embedding indexer | After a memory is saved or changed, at low priority | Embeds it with bge-small. With a provider embedding model, `ProviderEmbeddingIndexer` keeps the second index up to date in batches that resume after a cancel. |
 
 ## Data on disk
@@ -96,7 +96,7 @@ Everything lives in `~/Library/Application Support/FunesVault/`, a folder only y
 
 | Path | Contents |
 | --- | --- |
-| `vault.sqlite` (with `-wal` and `-shm`) | Memories and their provenance, categories, suggestions (with their targets, groups and processing jobs), agents and their access (including the profile fields each may get), disclosures (requests and what was delivered), paired devices and capture receipts, the About You profile, the undo log, tidy-up runs and dismissals, the full-text index and the embedding vectors (bge-small and, if chosen, a provider model's). Agent keys are stored only as SHA-256 hashes. The schema is in [storage](../spec/architecture/storage.md). |
+| `vault.sqlite` (with `-wal` and `-shm`) | Memories and their provenance, categories, suggestions (with their targets, groups and processing jobs), agents and their access (including the profile fields each may get), disclosures (requests and what was delivered), paired devices and capture receipts, the About You profile, the undo log, memories' earlier versions (`memory_revision`: the state each change replaced, kept 90 days and at most 50 a memory, never shared with agents, exported or sent to the iPhone; [ADR-0027](../spec/architecture/decisions/0027-memory-revisions.md)), tidy-up runs (the whole vault's or one memory's) and dismissals, the full-text index and the embedding vectors (bge-small and, if chosen, a provider model's). Agent keys are stored only as SHA-256 hashes. The schema is in [storage](../spec/architecture/storage.md). |
 | `agent-keys/<agent id>.key` | Each agent's MCP key (`fns_mcp_v1_` and 64 hex digits), bare with no newline. Read by the launcher and by **Copy Key…**; deleted when the agent is removed. |
 | `agent-keys/<agent id>.remote.key` | The agent's Remote Access token (`fns_mcpr_v1_` and 64 hex digits), only while it has cloud access. Read only by **Copy Remote Token…**; deleted when cloud access is turned off or the agent is removed. |
 | `remote-connections.json` | Remote Access's OAuth state: connected cloud apps (agent, app name, OAuth client, MCP URL, SHA-256 digests of their access and refresh tokens, expiry and use times) and registered OAuth clients. Fails closed: a wrong owner, mode or content makes OAuth unavailable, and the file is never overwritten. |
@@ -104,14 +104,16 @@ Everything lives in `~/Library/Application Support/FunesVault/`, a folder only y
 | `mcp-endpoint.json` | `{"version":1,"url","port","pid","startedAt"}`, written while the MCP server listens and removed when it stops. The launcher reads it to find the server. |
 | `Backups/vault-YYYYMMDD-HHMM.sqlite` | Online backups: daily while **Settings ▸ Data & Backups ▸ Back up the vault every day** is on, keeping the last 7. Also `pre-<migration>-<time>.sqlite` before a schema migration and `pre-restore-<time>.sqlite` before a restore. |
 
+**Restore from Backup…** (Settings ▸ Data & Backups) relaunches the app and replaces the vault before it opens, after saving the current one as `pre-restore-…` (`RestoreAccess`, storage §5.1). It brings back memories, never credentials or access: the backup is migrated to the current schema, then its agents, keys, remote tokens, access, cloud access and paired devices are replaced by the current vault's, including those added since the backup. Memories come back with their sensitivity and categories as they were then; a category deleted since comes back denied to every agent; requests that were waiting in the backup end as `approval_expired`, so nothing approved is delivered twice. A backup from a newer version of Funes is refused and the vault is left as it was. Without the current vault to copy from (none, or another vault's backup), every agent is removed and every device revoked, to be set up again.
+
 Elsewhere on the Mac:
 
 - **Keychain:** API keys for the model providers you add (service `com.funesvault.provider`), and the Mac's companion signing and HPKE keys (service `com.funesvault.companion`, created when you first turn on iPhone access), all this device only.
-- **User defaults** (`com.funesvault.mac`): UI preferences, the capture hotkey, whether agents may connect, Activity retention, update settings, the setup checklist, AI model settings (providers without their keys, the choice per task, the cloud limit, the daily cap, usage counts, Split, Apply changes automatically, the tidy-up's schedule and model, the embedding choice and calibrations), the iPhone settings (on or off, modes, port, tunnel path), and the Remote Access settings (on or off, port, secret path, public address, tunnel choice, automatic turn-off, keep awake, the tunnel-down notification). The secret paths are defence in depth, not credentials.
+- **User defaults** (`com.funesvault.mac`): UI preferences, the capture hotkey, whether agents may connect, Activity retention, update settings, the setup checklist, AI model settings (providers without their keys, the account and model per job, Search answers and when they answer, the cloud limit, the daily cap, usage counts, Split, Apply changes automatically, the tidy-up's schedule and model, the embedding choice and calibrations), the iPhone settings (on or off, modes, port, tunnel path), and the Remote Access settings (on or off, port, secret path, public address, tunnel choice, automatic turn-off, keep awake, the tunnel-down notification). The secret paths are defence in depth, not credentials.
 
 On the iPhone, in the App Group container: the capture queue (`SQLite`, protected until first unlock), the overview cache (`overview.json`) and the widget snapshots. The device keys are in the Secure Enclave (signing) and the Keychain (`com.funesvault.ios.companion`, shared with the extensions). Nothing of the vault is stored there beyond counts.
 
-Nothing lives in `/tmp`. Exports (`funesvault.export.v1`) contain your categories, memories and profile, never agents, their access, keys or Activity. The vault has no encryption of its own: FileVault protects it at rest.
+Nothing of the vault is kept outside these places. The one temporary use: a call through your Claude or ChatGPT plan runs in a new empty folder (0700) under the system's temporary directory, where Codex is given the request's schema and instructions and writes its last message, and the folder is deleted when the call ends. Exports (`funesvault.export.v1`) contain your categories, memories and profile, never agents, their access, keys or Activity. The vault has no encryption of its own: FileVault protects it at rest.
 
 ## Request pipeline
 
@@ -309,9 +311,23 @@ flowchart TD
 | Calibrate… | Uncalibrated | A model Funes has no thresholds for keeps its 10 closest matches (plus keyword hits) until you run its made-up benchmark. |
 | Stop Using, or cancel | | Deletes the provider's vectors. |
 
+**Snippets.** A result's preview, in the Vault and the iPhone's Search, is the sentence that matches the search, trimmed around its first match (80 characters in the Vault's list, 160 for `memories.search`), with the matched words marked. `BodyMatches` finds them with FTS5's `highlight()` and the same query keyword search built, so they agree with it; a result kept by meaning alone, or matched only in its title, shows the body's start ([memory processing §10.1–10.2](../spec/domain/memory-processing.md#101-where-a-body-matches)).
+
+## Search answers
+
+An answer reads the top results of a search and states what they say in up to three claims, each quoting the memory it comes from ([ADR-0028](../spec/architecture/decisions/0028-search-answers.md), [memory processing §10](../spec/domain/memory-processing.md#10-search-snippets-and-answers)). Search itself doesn't change: the results stay where they were, under the answer. `SearchAnswerer` does the work, and nothing it produces is stored.
+
+- **Where.** Off by default (**Settings ▸ AI ▸ Features ▸ Search answers**). In the Vault, ⌘Return or **Ask Funes** above the results. In the menu bar panel's field, ⌘Return searches, and ⌘Return again asks. On the iPhone, **Ask Funes** in Search, answered by the Mac through `memories.answer` with the ids of the results the phone shows.
+- **The model.** The job's own choice, which follows New memories unless you pick another, else Apple on-device; with only the built-in rules there's no answer. One structured-output call through `ModelRouter.answer`, which applies `send`'s guardrails, with no fallback to another provider.
+- **What it reads.** The top 10 results as shown (5 for Apple on-device), active and unexpired. For a cloud provider, memories above the cloud limit are left out and counted as withheld, not replaced by the next results; for any provider off this Mac, so is a memory the secret scanner matches, and a search that matches it isn't sent at all. Each memory goes under an alias (`m1`…) with its title, kind, categories, dates, source and text: the whole body up to 1,500 characters (600 on device), else its best-matching passages. With nothing left to send, the answer is "no answer" and no call is made.
+- **Validation, in code.** At most 3 claims of up to 300 characters, each citing 1 or 2 of this call's aliases with a quote of 8 to 300 characters found in the text sent for that memory (`QuoteLocator`, which the iPhone also uses to highlight the quote). A claim that fails is dropped, never shortened, and the secret scanner runs over the claims.
+- **Limits.** 45 s for the model call; `memories.answer` has its own 50 s deadline, and a new ask from the same device cancels the previous one (ending a subscription CLI's process). A call that reaches a cloud provider counts once against the daily cap, as yours rather than the agents' share, even if it then fails; on-device and local-server calls don't count.
+- **Automatic answers.** **Answer** offers **Only when I ask** (the default), **Automatically for questions** (a search ending in "?" or starting with a question word, in English or Spanish) and **Automatically for every search**: the answer starts once the results have stayed the same for a short pause, once per search. Apple on-device answers only when asked. The iPhone follows the Mac's setting (`status.get`'s `searchAnswers`), and the Mac checks it again for an automatic `memories.answer`, answering `ask_required` without sending anything if it no longer applies.
+- **Activity** records one `search_answered` row per attempt: the outcome, the engine, the duration and counts, never the search or a claim.
+
 ## Suggestions and new memories
 
-Nothing reaches the vault without going through a suggestion, except an agent's direct write (which you allow per agent, and which is processed afterwards). Every way in becomes a pending suggestion and a processing job, in the same transaction.
+Nothing an agent, a capture or an import sends reaches the vault without going through a suggestion, except an agent's direct write (which you allow per agent, and which is processed afterwards). Every such way in becomes a pending suggestion and a processing job, in the same transaction. What you save yourself goes straight in, with no suggestion and no processing job: **New Memory** in the Mac's Vault, restoring a Funes export as memories (which keeps each one's status and links and marks it as already seen by the tidy-up), and the companion's `memories.create`, which the iPhone app doesn't use.
 
 ### `suggest_memory`
 
@@ -420,7 +436,7 @@ sequenceDiagram
 
 At most 30 pieces a chunk and 40 an input. A cloud provider's decision call gets only pieces and related memories within the cloud limit; the others are proposed as new, with the duplicate hint. A small local model's decision calls go 4 pieces at a time, a cloud model's 40. If a decision call fails, its pieces are proposed as new.
 
-**How pieces are stored.** A piece becomes `create`, `update` (the target's title, kind and categories with the new text, never below the target's sensitivity), `duplicate`, or `archive` for a retraction. A target that changed since the decision call makes it `create`. A piece of an agent's input outside that agent's scope is marked **Outside *agent*'s scope**, and **Apply All** leaves it for you. One piece that covers at least 80% of the input just updates the card's fields. An agent's direct write is offered as **Split This Memory**, and made more sensitive at once if a piece is.
+**How pieces are stored.** A piece becomes `create`, `update` (the new text with the title the decision call gave for it, or the target's title when that one is empty, too long or matches the secret scanner; the target's kind and categories; never below the target's sensitivity), `duplicate`, or `archive` for a retraction. A target that changed since the decision call makes it `create`. A piece of an agent's input outside that agent's scope is marked **Outside *agent*'s scope**, and **Apply All** leaves it for you. One piece that covers at least 80% of the input just updates the card's fields. An agent's direct write is offered as **Split This Memory**, and made more sensitive at once if a piece is.
 
 ### Suggestion states
 
@@ -462,7 +478,7 @@ flowchart TD
     NB --> CL["Clusters of at most 6"]
     CL --> LONG{"A body over 600 characters<br/>or not atomic?"}
     LONG -->|yes| SPL["The New memories splitter"]
-    LONG -->|no| CALL["One structured-output call per cluster:<br/>m1, m2 aliases, 20 s timeout"]
+    LONG -->|no| CALL["One structured-output call per cluster:<br/>m1, m2 aliases, 20 s timeout (60 s for a plan)"]
     SPL --> VAL
     CALL --> VAL["Validate every action in code"]
     CODE --> VAL
@@ -474,7 +490,9 @@ flowchart TD
 
 - **Actions:** archive a copy or an out-of-date memory, update a memory with a newer fact, merge memories that say parts of one thing, split a memory that holds several, and conflicts, which always ask you: **Keep This**, **Both Are True** or **Edit…**.
 - **Validation:** ids only from the cluster, one action per memory, merges only of memories with the same sensitivity and categories that keep every qualifier ("not", "never", "except", …), the secret scanner, and a sensitivity floor: a change never makes a memory easier for an agent to read.
-- **Budget:** at most 40 clusters or splits a run, sharing the daily cap with New memories. At the cap or a provider failure the run stops, and what's left rolls over: a large vault is worked through over a few days.
+- **Budget:** at most 40 clusters or splits a run, sharing the daily cap with New memories and search answers. What's left rolls over: a large vault is worked through over a few days.
+- **Failures:** a call gets 20 s through an API or local server and 60 s through your Claude or ChatGPT plan, whose CLI starts a new process each time. A timeout, a server or network error, an answer outside the schema or a refusal is tried once more after 5 s; if it fails again, the run skips those memories (they wait for the next run) and goes on, stopping only after 3 failed clusters or splits in a row. The daily cap, a rate limit, or a sign-in or setup problem stops the run at once. A cluster the guard blocks (something in it can't leave the Mac) is marked as looked at and never sent. A run that stopped early says in the Inbox how many memories are left and why, with **Try Again**.
+- **Tidy Up on one memory** (a memory's detail, or the Vault list's right-click menu): that memory and up to 5 related ones in one call, sent even when nothing is related, through the same validation, splitter and code-only rules. It looks whether or not the memory changed, offers again what you dismissed before, never applies anything automatically, and is recorded with `tidy_up_run.scope` `memory`, so it doesn't count as the day's run.
 - **Dismissals:** rejections and **Both Are True** are kept in `tidy_up_dismissal` by memory ids and a content hash, so they aren't asked again while those memories stay the same. A proposal whose memories change before you decide is dropped and looked at again, unless you have its card open.
 - **Auto-apply** follows `TidyUpAutoApply`: **Everything except conflicts** with Claude Opus 5.5 and Claude Haiku 5.5, **Duplicates only** with GPT-5.6-Terra, nothing with other models. The code-only rules aren't capped. Nothing is changed on the strength of what an agent wrote, except archiving an exact copy of it. A notification says how many changes were applied and how many wait, with no memory text.
 
@@ -486,32 +504,32 @@ flowchart TD
 
 ## AI model providers
 
-Models are used for three things ([model providers](../spec/architecture/model-providers.md), [ADR-0014](../spec/architecture/decisions/0014-user-selectable-models.md)): embeddings for [search](#search), [new memories](#suggestions-and-new-memories) (classification and splitting) and the [tidy-up](#daily-tidy-up). The clients are small `URLSession` code in FunesCore, with no provider SDKs.
+Models are used for four things ([model providers](../spec/architecture/model-providers.md), [ADR-0014](../spec/architecture/decisions/0014-user-selectable-models.md)): embeddings for [search](#search), [new memories](#suggestions-and-new-memories) (classification and splitting), the [tidy-up](#daily-tidy-up) and [search answers](#search-answers). Each job picks an account (an API key, a local server or a plan) and one of its models, so one account can serve several jobs with different models ([ADR-0030](../spec/architecture/decisions/0030-settings-window.md)). The clients are small `URLSession` code in FunesCore, with no provider SDKs.
 
 | Engine | Locality | Used for |
 | --- | --- | --- |
 | bge-small, bundled | On this Mac | Search, always; the related-memories finder |
-| Apple Foundation Models | On this Mac (macOS 26 with Apple Intelligence) | Classification, by default. Never splitting or the tidy-up. |
+| Apple Foundation Models | On this Mac (macOS 26 with Apple Intelligence) | Classification, by default. Search answers (only when asked) when chosen for them or when no other model is. Never splitting or the tidy-up. |
 | Built-in rules | On this Mac | Classification fallback; the sensitivity pre-screen |
 | Ollama, LM Studio, another server on a loopback or private address | Local server | Anything you choose it for |
 | Anthropic, OpenAI, another OpenAI-compatible server | Cloud, `https://` only | Anything you choose it for |
-| Your Claude or ChatGPT plan, through the `claude` or `codex` CLI you installed and signed in to ([ADR-0024](../spec/architecture/decisions/0024-subscription-providers.md)) | Cloud | New memories and the tidy-up. No API key; Funes runs each request with no tools. Codex needs a separate opt-in because it can read files. |
+| Your Claude or ChatGPT plan, through the `claude` or `codex` CLI you installed and signed in to ([ADR-0024](../spec/architecture/decisions/0024-subscription-providers.md)) | Cloud | New memories, the tidy-up and search answers. No API key; Funes runs each request with no tools. Codex needs a separate opt-in because it can read files. |
 
 A provider counts as **local** when its host is loopback or a private address (and you haven't marked it as cloud); anything else is **cloud**. Every generation call goes through `ModelRouter.send`, and every provider embedding call through `ModelRouter.embed`; `scripts/test.sh` fails if anything calls a provider any other way.
 
 ```mermaid
 flowchart TD
-    REQ["A model call: classification, extraction,<br/>decision, tidy-up, or embedding"] --> ITEMS["Each user text it carries,<br/>with its sensitivity, unknown if not known"]
+    REQ["A model call: classification, extraction,<br/>decision, tidy-up, search answer, or embedding"] --> ITEMS["Each user text it carries,<br/>with its sensitivity, unknown if not known"]
     ITEMS --> LOC{"Provider on this Mac?<br/>Apple on-device"}
     LOC -->|yes| SEND
     LOC -->|no| SCAN{"Secret scanner over every item<br/>and the whole request"}
     SCAN -->|match| BLK["blocked: nothing sent"]
     SCAN -->|clean| CLOUD{"Cloud provider?"}
     CLOUD -->|"no: local server"| SEND
-    CLOUD -->|yes| LIM{"Every item at or below the cloud limit,<br/>and none unknown?"}
+    CLOUD -->|yes| LIM{"Every memory item at or below the cloud limit,<br/>and none unknown? (queries and task text:<br/>secret scan only)"}
     LIM -->|no| BLK
     LIM -->|yes| CAP{"Generation: under today's cap,<br/>and agents under their 40% share?"}
-    CAP -->|no| CAPR["capReached: captures classify on the Mac,<br/>agent input and imports wait for tomorrow"]
+    CAP -->|no| CAPR["capReached: captures classify on the Mac,<br/>agent input and imports wait for tomorrow,<br/>a search answer says so"]
     CAP -->|"yes, or an embedding"| SEND["Send, with a timeout.<br/>Errors logged by status code and provider id only"]
 ```
 
@@ -524,11 +542,11 @@ flowchart TD
 | Accounts | None | API keys and local servers, each with its list of models. API keys go to the Keychain, this device only. **Load Models** and **Test Connection** send none of your data. |
 | Your plans | Not used | Claude (Claude Code) and ChatGPT (Codex), each with its list of models. Shows whether Claude Code and Codex are installed and signed in, and the command to sign in. |
 | Cloud limit | Internal | Public, Low, Internal, Sensitive, Restricted, Everything including Secret, or Nothing. One limit for every cloud task. Above Internal asks once to confirm. |
-| Cloud requests per day | 300 | 10 to 10,000, counted per local day in the vault and shared by New memories and the tidy-up; agents' input gets at most 40%. Embeddings and on-device models don't count. The first refusal of a day posts one notice. |
+| Cloud requests per day | 300 | 10 to 10,000, counted per local day in the vault and shared by New memories, the tidy-up and search answers; agents' input gets at most 40%. Embeddings and on-device models don't count. The first refusal of a day posts one notice. |
 
 ## iPhone companion
 
-The iPhone app is a thin client of the Mac ([companion protocol](../spec/architecture/companion-protocol.md)). It captures at any time, and searches, edits, reviews the Inbox and answers agents' requests while the Mac is reachable. iPhone access is off until you turn it on in **Settings ▸ iPhone**.
+The iPhone app is a thin client of the Mac ([companion protocol](../spec/architecture/companion-protocol.md)). It captures at any time, and searches (with answers, when the Mac's Search answers are on), edits, reviews the Inbox and answers agents' requests while the Mac is reachable. iPhone access is off until you turn it on in **Settings ▸ iPhone**.
 
 ### Pairing
 
@@ -600,7 +618,11 @@ sequenceDiagram
     Mac->>CK: delete the record
 ```
 
-The record holds no text, title, agent name, count or request id; the Mac maps its name to the request in memory only ([ADR-0019](../spec/architecture/decisions/0019-cloudkit-doorbell-for-iphone-approvals.md)). The Mac rings at most once per request and device, only while iPhone access and that device's approvals are on, and deletes the records when the request is answered, expires or is withdrawn, and at launch. Answers are bound to the panel's revision, so a panel shown before a memory or the agent's access changed is `request_changed`. Tidy-up proposals, merges, splits and conflicts are answered on the Mac.
+The record holds no text, title, agent name, count or request id; the Mac maps its name to the request in memory only ([ADR-0019](../spec/architecture/decisions/0019-cloudkit-doorbell-for-iphone-approvals.md)). The Mac rings at most once per request and device, only while iPhone access and that device's approvals are on, and deletes the records when the request is answered, expires or is withdrawn, and at launch. Answers are bound to the panel's revision, so a panel shown before a memory or the agent's access changed is `request_changed`.
+
+**The Inbox** ([ADR-0031](../spec/architecture/decisions/0031-iphone-answers-every-inbox-card.md), companion protocol §4.2). Every card, from any origin, the tidy-up's included, is answered on the iPhone with the Mac card's choices. `inbox.get` returns one suggestion in full for its screen, built fresh: the memories it refers to with their roles, a split's pieces, whether it's stale, the tidy-up's reason and what each merge source keeps, and a `revision`. `inbox.apply` takes the card's `mode` (`replace`, `keep_both`, `keep` with `keepMemoryId`, `both_true`) and that `revision`, and FunesCore applies it with the same per-action apply as the Mac's Inbox; a card that changed on the Mac since `inbox.get` is refused with `request_changed`, and the phone shows it again. A stale card offers **Review Again** (`inbox.reviewAgain`). Undo of automatic changes, Later and Apply All stay on the Mac, and an action the phone doesn't know (from a newer Mac) says "Review on your Mac".
+
+**Search answers.** **Ask Funes** in the iPhone's Search calls `memories.answer` with the results the phone shows; the Mac answers as in [Search answers](#search-answers), with its own 50 s deadline. `status.get` says whether the Mac answers and when the phone should ask on its own. The phone holds the last answer in memory only, never on disk.
 
 **The overview.** Home and the widgets show counts the Mac sends (`overview.get`): what came in and went out each day, totals by sensitivity, category and kind, and the agents' names and last requests, never a memory's text or title ([ADR-0025](../spec/architecture/decisions/0025-vault-overview-and-iphone-cache.md)). The phone keeps the last answer for when the Mac is away; the widgets never contact the Mac themselves.
 
@@ -664,7 +686,7 @@ Remote Access adds a door the internet can reach while it's on. The same policy 
 
 | Threat | Mitigation |
 | --- | --- |
-| Scanning, guessing and flooding the public address (T23) | Off by default, asks first; per-agent **Allow cloud access**, off by default; a 128-bit secret path, so anything else is 404 before `Host` or a credential is read; `Host` allowlist (421); 256-bit credentials; more than 30 failed authentications a minute from one forwarded address: 429 for 5 minutes (never for a well-formed credential); stricter remote rate limits (60 calls, 10 suggestions a minute) on top of the agent's own; the menu bar panel's **Remote Access** switch (off at once, on only after asking), a menu bar globe, optional automatic turn-off. Residual: forwarded addresses can be spoofed, and a flood can fill the port's 32 connections while it's on. |
+| Scanning, guessing and flooding the public address (T23) | Off by default, asks first; per-agent **Allow cloud access**, off by default; a 128-bit secret path, so anything else is 404 before `Host` or a credential is read; `Host` allowlist (421); 256-bit credentials; more than 30 failed authentications a minute from one forwarded address: 429 for 5 minutes for requests without a valid credential (a valid one still works; a well-formed wrong one is refused too); stricter remote rate limits (60 calls, 10 suggestions a minute) on top of the agent's own; the menu bar panel's **Remote Access** switch (off at once, on only after asking), a menu bar globe, optional automatic turn-off. Residual: forwarded addresses can be spoofed, and a flood can fill the port's 32 connections while it's on. |
 | OAuth consent phishing or spam (T24) | Nothing is fetched or shown unless you opened a 10-minute pairing window for one agent. The browser and the panel show the same six-digit code; the panel names the agent, the app as reported, its metadata URL and the return host; **Allow** arms after one second; a second sign-in waits. Exact redirect URIs, PKCE S256, `state` and `iss`; one app per window. Residual: allowing without comparing codes connects the wrong app, with only that agent's access, until **Revoke**. |
 | A stolen remote credential (T25) | Local and remote credentials are separate; digests only, in 0600 files that fail closed; access tokens last an hour and are bound to the MCP URL; refresh tokens rotate and a reused one revokes the connection; codes are single use. **Reset Remote Token…**, **Revoke**, **Reset Path…** or turning cloud access off end them at once, even for a call in progress. The secret scanner knows all four prefixes. |
 | SSRF through the client-metadata fetch (T26) | Only during pairing; `https` to a DNS name whose every address is public, checked again on connect; TLS verified; no proxies or redirects; 16 KB, 5 s; no credential sent. |
@@ -701,5 +723,10 @@ Remote Access adds a door the internet can reach while it's on. The same policy 
 | [0024](../spec/architecture/decisions/0024-subscription-providers.md) | Claude and ChatGPT subscriptions as model providers, through the user's own Claude Code and Codex |
 | [0025](../spec/architecture/decisions/0025-vault-overview-and-iphone-cache.md) | A vault overview of counts only, served to the iPhone, which caches it for Home and widgets |
 | [0026](../spec/architecture/decisions/0026-about-you-profile.md) | A small About You profile, shared per agent and per field with memory requests |
+| [0027](../spec/architecture/decisions/0027-memory-revisions.md) | Each memory's earlier versions are kept for 90 days, so every change can show what it replaced |
+| [0028](../spec/architecture/decisions/0028-search-answers.md) | Search answers: snippets that show the matching sentence, and an Ask that quotes your memories, on the Mac and the iPhone |
+| [0029](../spec/architecture/decisions/0029-menu-bar-panel.md) | The menu bar icon opens a panel: Review cards, two switches, a field and the last 24 hours |
+| [0030](../spec/architecture/decisions/0030-settings-window.md) | Settings gets a sidebar; AI splits into features, accounts and limits; an account offers several models |
+| [0031](../spec/architecture/decisions/0031-iphone-answers-every-inbox-card.md) | The iPhone answers every Inbox card |
 
 The [full list](../spec/architecture/decisions/README.md) includes the superseded and proposed records.
