@@ -7,9 +7,11 @@ DEMO MODE (no Mac needed)
 
 Things to try in the demo:
 - Home: "Waiting for you" lists three agent requests. Open "Claude Code wants 4 memories" to see the Share panel: untick a memory and tap Share. The other two are a Save request (Save / Discard / Later) and an access request (Allow Once / Not Now).
-- Home: type something and tap Remember. Below, the Pulse card charts what came into the sample vault and what went out to its agents; tap its sentence for the longer ranges. It's sent to the demo Inbox.
+- Home: type something and tap Remember; it's sent to the demo Inbox. Below, tiles chart the sample vault: the week (hold a finger on a day for its numbers, tap the header for 30 days and longer), Memories, Rhythm, Sensitivity and Who reads. Counts only, never a memory's text.
 - Search: search "garden", open a memory, tap Edit, change the text and Save. Archive, Restore and Delete are on the same screen; Archived and Recently Deleted are scopes above the results.
-- Inbox: swipe right to Save a suggestion, left to Reject, or tap one for Save, Edit & Save… and Reject.
+- Search answers (new in 0.5.0): search "When does my lease renew?" and tap Ask Funes (if the answer doesn't start on its own). A real Mac answers with its user's chosen AI model; the demo gives a canned answer for its three sample questions ("When does my lease renew?", "What's my next garden milestone?", "How often do I run?"). Tap a number to open the quoted memory.
+- Inbox (every card answerable in 0.5.0): swipe right to Save a new suggestion, left to Reject, or tap any card to see what it changes and answer it: Save or Edit & Save…, Archive, Replace, Merge, Split, or for a conflict Keep This / Both Are True. The demo has four tidy-up cards.
+- Widgets: add Funes Vault's Pulse, Rhythm or Remember widget from the Home Screen; in the demo they show sample counts labelled DEMO.
 - Settings: the Demo section; "Leave Demo" in that bar or the Demo Vault switch returns to the unpaired app and discards the demo's changes.
 
 WHAT NEEDS A REAL MAC

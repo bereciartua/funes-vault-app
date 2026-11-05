@@ -1,0 +1,22 @@
+HOME
+• The app now opens on Home: remember something (typed or dictated), see what's waiting for you, and your vault at a glance, all on one screen.
+• Tiles show your week (what you saved, what each agent read, what was refused), Memories, Rhythm, Sensitivity and Who reads. Hold a day for its numbers; tap the week for 30 days and longer. Counts only, never a memory's text.
+• "Good morning", "Good afternoon" or "Good evening" when you open it.
+
+WIDGETS
+• Pulse, Rhythm and Remember for your Home Screen. Remember opens Home ready to type or dictate, even before you pair.
+
+ASK YOUR VAULT
+• Ask Funes: ask a question in Search and your Mac answers in a few short claims, each quoting the memory it comes from. Tap a number to open that memory. Turn it on in Funes Vault for Mac; hide it in Settings here.
+• Search results show the sentence that matches, with your words in bold.
+
+THE WHOLE INBOX
+• Every Inbox card can be answered here, as on your Mac: archive, replace, merge, split or settle a conflict, each showing what it changes first.
+• A correction that changed since it was suggested says so, instead of overwriting newer text.
+
+ALSO
+• One bar above the tabs says when something needs you (Mac not reachable, Local Network off) instead of a banner on every tab.
+• Search no longer says your Mac isn't reachable while you type.
+• Settings shows this app's own version.
+
+Home, Ask Funes and the new Inbox cards need the latest Funes Vault for Mac. Still no account, no cloud copy, no tracking.

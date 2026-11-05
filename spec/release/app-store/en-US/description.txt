@@ -12,9 +12,14 @@ APPROVE FROM YOUR PHONE
 • Open it to see exactly what would be shared, untick anything you'd rather keep, and answer: Share, Deny, Save, Discard or Allow Once. The first answer, on the Mac or the phone, counts.
 • Answers need your iPhone unlocked.
 
-SEARCH, EDIT AND REVIEW
+SEE WHAT AGENTS READ
+• Home shows your week at a glance: what you saved, what each agent read, what was refused, and your rhythm, day by day. Counts only, never a memory's text.
+• Widgets for your Home Screen: Pulse, Rhythm, and Remember to capture in one tap.
+
+SEARCH, ASK AND REVIEW
 • Search your vault on the Mac from your phone, read a memory with where it came from, and edit, archive or delete it.
-• Review the Inbox: what agents and your captures suggest. Swipe to save or reject.
+• Ask Funes a question and your Mac answers in short claims, each quoting the memory it comes from.
+• Review the Inbox: what agents, your captures and the daily tidy-up suggest. Save, merge, split or reject, as on your Mac.
 
 PRIVATE BY DESIGN
 • No account, no cloud copy, no analytics, no tracking. Data Not Collected.
