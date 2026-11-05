@@ -3,7 +3,7 @@ set -eu
 
 # Checks the App Store texts in spec/release/app-store/<locale>/ against App Store Connect's
 # limits, so they paste in as they are: name and subtitle 30 characters, promotional text 170,
-# description 4,000, keywords 100 bytes with no space after a comma, and https URLs. Also
+# description and What's New 4,000, keywords 100 bytes with no space after a comma, and https URLs. Also
 # App Intents' titles and descriptions, which App Store Connect rejects when they name an Apple
 # product (ITMS-90626: "cannot contain 'mac'", 2026-10-22).
 #
@@ -20,6 +20,10 @@ for dir in spec/release/app-store/*/; do
         [ -s "$file" ] || { fail "$file is missing or empty"; continue; }
         [ "$(chars "$file")" -le "${limit#*:}" ] || fail "$file is over ${limit#*:} characters ($(chars "$file"))"
     done
+    # What's New, for every version after the first; optional so a first version passes.
+    if [ -f "$dir/whats-new.txt" ]; then
+        [ "$(chars "$dir/whats-new.txt")" -le 4000 ] || fail "$dir/whats-new.txt is over 4000 characters"
+    fi
     keywords="$dir/keywords.txt"
     [ "$(bytes "$keywords")" -le 100 ] || fail "$keywords is over 100 bytes ($(bytes "$keywords"))"
     ! grep -q ', ' "$keywords" || fail "$keywords has a space after a comma, which wastes a byte"
