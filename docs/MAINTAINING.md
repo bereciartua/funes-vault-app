@@ -14,7 +14,7 @@ This guide is for maintainers: how a change is made, checked and released, and w
 | `Packages/FunesProtocol`, `FunesCore`, `FunesMCP`, `FunesCompanion`, `FunesPhone`, `BridgeUI` | Shared types; the vault logic; the MCP adapter; the Mac's side of the iPhone companion; the iPhone's side; UI pieces from EK Bridge ([Architecture](ARCHITECTURE.md#packages-and-targets)) |
 | `FunesVault.xcodeproj` | Six targets: FunesMac, FunesMCPLauncher, FunesiOS, FunesShareExtension, FunesIntents and FunesNotifications. The version lives here, once, at project level: `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION`, shared by the Mac and the iPhone |
 | `Licenses/` | Third-party license texts (GRDB, Sparkle, the bge-small model) that ship in the app with `LICENSE` and `NOTICE` |
-| `scripts/test.sh` | Everything offline: the six packages' tests, the MCP and Remote Access harnesses, the log-privacy, model-call and App Store text checks, the Mac Debug and UI-review builds, the iPhone Debug build, the String Catalog check |
+| `scripts/test.sh` | Everything offline: the six packages' tests, the MCP and Remote Access harnesses, the log-privacy, model-call and App Store text checks, the check that the menu bar panel never answers anything, the Mac Debug and UI-review builds, the iPhone Debug build, the String Catalog check. Locally (not on CI) also the overview and snippet benchmarks, each run alone, the snippet one in a release build |
 | `scripts/sync_strings.sh` | Adds new UI strings to the five String Catalogs after a build; `CHECK=1` only checks |
 | `scripts/fetch_embedding_model.sh`, `scripts/embedding_model/` | The bundled model: fetched at a pinned revision, checksummed, converted to Core ML, cached in `~/Library/Caches/com.funesvault.dev/` ([ADR-0016](../spec/architecture/decisions/0016-bundled-bge-small-embeddings.md)) |
 | `scripts/embed_resources.sh` | The FunesMac build phase **Embed Resources**: copies the model (checked against the pinned checksums) and the license files into the app. A Release build fails without the model; a Debug build warns and falls back to the cache folder |
@@ -66,7 +66,7 @@ The Xcode project is the one source of the version. A release is a tag `v<MARKET
 8. With a Sparkle key, signs the zip with `sign_update`, checks the signature against the app's `SUPublicEDKey` as installed copies will (`scripts/verify_update_signature.swift`), and writes `appcast.xml` (`scripts/appcast.py`) with the changelog section as HTML.
 9. Creates the draft release `v<version>` with both DMG names, the zip, `SHA256SUMS`, `appcast.xml` and notes: the changelog section (`scripts/release_notes.py`) followed by Install and Checksums.
 
-Everything goes to `dist/` (ignored). `sh scripts/release.sh --help` lists the options and environment variables.
+Everything goes to `dist/` (ignored). `sh scripts/release.sh --help` lists the options and environment variables. Besides `--untagged`, `--no-release` and `--skip-tests`, `--no-notarize` skips notarization and stapling for a rehearsal without Apple's notary service: the output is signed but Gatekeeper blocks it on other Macs, and it implies `--no-release`.
 
 ### Cutting a release
 
@@ -107,7 +107,7 @@ Since v0.2 the app uses CloudKit, only to ring the iPhone's doorbell for approva
 
 ### The iPhone app
 
-The iPhone app ships through App Store Connect, not GitHub. `sh scripts/ios_release.sh` archives it (Release, automatic signing for team JVNJ326L7B) and checks the archive; `--export` signs an `.ipa` for App Store Connect into `dist/ios/`, and `--upload` sends it to TestFlight. `FUNES_IOS_VERSION` sets the version when it must differ from the project's `MARKETING_VERSION` (to match the version being prepared in App Store Connect), and `FUNES_IOS_BUILD` a higher build number for another upload of the same version. The texts, privacy answers, screenshots plan, App Review notes and the steps in App Store Connect are in [spec/release/app-store](../spec/release/app-store/README.md).
+The iPhone app ships through App Store Connect, not GitHub. `sh scripts/ios_release.sh` archives it (Release, automatic signing for team JVNJ326L7B) and checks the archive; `--export` signs an `.ipa` for App Store Connect into `dist/ios/`, and `--upload` sends it to TestFlight. `FUNES_IOS_VERSION` sets the version when it must differ from the project's `MARKETING_VERSION` (to match the version being prepared in App Store Connect), and `FUNES_IOS_BUILD` a higher build number for another upload of the same version. `FUNES_ASC_KEY`, `FUNES_ASC_KEY_ID` and `FUNES_ASC_ISSUER` (a `.p8` path, key ID and issuer ID) give an App Store Connect API key for signing and uploading; without them Xcode uses the account signed in under Xcode ▸ Settings ▸ Accounts. `--allow-provisioning-updates` lets Xcode create or renew certificates and profiles in the team's account, needed the first time this Mac has no Apple Distribution certificate or App Store profile; it changes the developer account, so like `--upload` it runs only with the maintainer's go-ahead. `sh scripts/ios_release.sh --help` lists the options. The texts, privacy answers, screenshots plan, App Review notes and the steps in App Store Connect are in [spec/release/app-store](../spec/release/app-store/README.md).
 
 ## Updates
 

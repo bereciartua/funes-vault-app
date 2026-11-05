@@ -4,6 +4,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+### Changed
+
+- **The privacy statement is up to date with 0.5.1.** [PRIVACY.md](PRIVACY.md) and funesvault.com/privacy, which had fallen behind at v0.1, now describe everything 0.5.1 can send or keep: Tidy Up on one memory, Search answers (including the menu bar panel), the cloud limit covering memories but not search text, earlier versions of memories and where backups keep them, the iPhone's counts cache, and the speech files dictation may download. No behaviour changed.
+
 ## [0.5.1] - 2026-11-04
 
 0.5.0 was built but never published, so this is the first release since 0.2.0 and includes everything in [0.5.0](https://github.com/bereciartua/funes-vault-app/blob/main/CHANGELOG.md#050---2026-10-27). It's also the Mac side of Funes Vault for iPhone 0.5.0: Ask Funes, every Inbox card on the iPhone, and the Rhythm grid need it.
