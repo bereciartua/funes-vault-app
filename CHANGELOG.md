@@ -4,6 +4,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-04
+
+0.5.0 was built but never published, so this is the first release since 0.2.0 and includes everything in [0.5.0](https://github.com/bereciartua/funes-vault-app/blob/main/CHANGELOG.md#050---2026-10-27). It's also the Mac side of Funes Vault for iPhone 0.5.0: Ask Funes, every Inbox card on the iPhone, and the Rhythm grid need it.
+
 ### Added
 
 - **iPhone: answer every Inbox card.** The tidy-up's overnight cards, and any merge, split or conflict, used to offer only Reject on the iPhone. Now each one opens to what it changes, as on the Mac: an archive shows the memory it archives and the one it keeps, with why ("A copy", "Out of date", "Expired"); a change shows the old and new text, and any copy it also archives; a merge lists the memories it combines and what each keeps; a split shows the original and its pieces; a conflict shows both memories. Answer with the Mac's choices: **Archive**, **Replace** (or **Keep Both** for an agent's correction), **Merge** or **Edit & Merge…**, **Split into N**, **Already Saved**, and for a conflict **Keep This**, **Both Are True** or **Edit…**. A card whose memories changed since it was suggested says so, with **Review Again**, and a card that changes on your Mac while it's open is shown again rather than applied. Swipe right now saves only a new memory or closes one already saved, since that's all a row shows; every other card opens first. Undo for automatic changes, Later and Apply All stay on the Mac. The demo vault has four tidy-up cards to try.
@@ -319,7 +323,8 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
 - **Licences in the app**: the bundled embedding model ships inside the app with its MIT licence, and the app includes the licence texts of GRDB.swift, Sparkle and the model alongside its own `LICENSE` and `NOTICE`.
 - **Open source**: the code, the product definition in `spec/`, and the tests are public under the Apache License 2.0. See [Testing](docs/TESTING.md) for what has been checked.
 
-[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/bereciartua/funes-vault-app/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/bereciartua/funes-vault-app/compare/v0.2.0...v0.5.0
 [0.2.0]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.3...v0.1.4
