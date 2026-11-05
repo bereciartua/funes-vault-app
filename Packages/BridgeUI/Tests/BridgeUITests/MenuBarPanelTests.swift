@@ -404,7 +404,7 @@ struct MenuBarPanelTests {
     @Test func automaticAnswer() async {
         let calls = Calls()
         let field = field(calls)
-        field.autoAskPause = { $0.hasSuffix("?") ? .milliseconds(30) : nil }
+        field.autoAskPause = { $0.hasSuffix("?") ? .milliseconds(400) : nil }
         field.text = "coffee"
         field.commandReturn()
         await settle { field.page != nil }
@@ -422,7 +422,7 @@ struct MenuBarPanelTests {
         field.commandReturn()
         await settle { field.page != nil }
         field.text = "tea"
-        try? await Task.sleep(for: .milliseconds(60))
+        try? await Task.sleep(for: .milliseconds(600))
         #expect(calls.asks.count == asks)
     }
 

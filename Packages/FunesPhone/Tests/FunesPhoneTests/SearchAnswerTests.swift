@@ -90,7 +90,7 @@ import Testing
     @Test func anAnswerOnItsWayLandsAfterComingBack() async throws {
         let vault = FakeVault()
         vault.add("Coffee", body: "Oat milk flat white.")
-        vault.answerDelay = .milliseconds(300)
+        vault.answerDelay = .seconds(3)
         let search = await Self.loaded(vault)
         let asking = Task { await search.ask() }
         try await Task.sleep(for: .milliseconds(50))
@@ -192,7 +192,7 @@ import Testing
         search.macAnswers = SearchAnswersStatus(engine: "GPT-6-Luna (Codex)", locality: .cloud)
         #expect(search.answer == .idle && search.canAsk)
 
-        vault.answerDelay = .milliseconds(300)
+        vault.answerDelay = .seconds(3)
         let asking = Task { await search.ask() }
         try await Task.sleep(for: .milliseconds(50))
         search.macAnswers = Self.claude
@@ -263,7 +263,7 @@ import Testing
         let vault = FakeVault()
         vault.add("Coffee", body: "Oat milk flat white.")
         vault.add("Tea", body: "Green tea in the afternoon.")
-        vault.answerDelay = .milliseconds(300)
+        vault.answerDelay = .seconds(3)
         let search = await Self.loaded(vault)
         let asking = Task { await search.ask() }
         try await Task.sleep(for: .milliseconds(50))
@@ -312,7 +312,7 @@ import Testing
     @Test func onDeviceReadsAtMostFive() async throws {
         let vault = FakeVault()
         for i in 0..<10 { vault.add("Coffee \(i)", updated: TimeInterval(-i)) }
-        vault.answerDelay = .milliseconds(200)
+        vault.answerDelay = .seconds(3)
         let search = await Self.loaded(vault)
         search.macAnswers = SearchAnswersStatus(engine: "Apple on-device", locality: .onDevice)
         let asking = Task { await search.ask() }
