@@ -194,7 +194,12 @@ struct DataSettings: View {
         }
         .confirmationDialog(String(localized: "Restore this backup?"), isPresented: Binding(get: { restoring != nil }, set: { if !$0 { restoring = nil } })) {
             Button(String(localized: "Restore and Relaunch")) {
-                if let restoring { try? model.data.restore(restoring) }
+                guard let restoring else { return }
+                do {
+                    try model.data.restore(restoring)
+                } catch {
+                    message = String(localized: "The restore couldn't start. Your vault wasn't changed.")
+                }
             }
         } message: {
             Text(String(localized: "Funes relaunches with the vault as it was then, except that agents, their access and paired iPhones stay as they are now. The current vault is kept in Backups first."))

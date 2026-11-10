@@ -225,6 +225,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             mainWindow.show()
         }
         offerMoveToApplications()
+        reportRestore()
         #if DEBUG
         // FUNES_DEBUG_OPEN=home|vault|inbox|agents|activity|capture|panel|settings[:destination] opens a window at launch.
         if let open = ProcessInfo.processInfo.environment["FUNES_DEBUG_OPEN"], !open.isEmpty {
@@ -475,6 +476,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             failure.runModal()
         }
         #endif
+    }
+
+    /// After a relaunch for Restore from Backup (FR-G-04): how it went.
+    private func reportRestore() {
+        switch DataOperations.restoreOutcome {
+        case .restored?:
+            hud.show(String(localized: "Backup restored"), symbol: "clock.arrow.circlepath", seconds: 4)
+        case .failed?:
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = String(localized: "The backup couldn't be restored")
+            alert.informativeText = String(localized: "Your vault is as it was before. You can try another backup in Settings ▸ Data & Backups.")
+            NSApp.activate()
+            alert.runModal()
+        case nil:
+            break
+        }
     }
 
     /// The vault can't open (a newer schema, unsafe permissions): say so in the menu bar.

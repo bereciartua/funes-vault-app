@@ -96,20 +96,31 @@ final class DataOperations {
         Self.relaunch()
     }
 
+    /// How the restore asked for before this launch went, said once the app is up.
+    enum RestoreOutcome { case restored, failed }
+    private(set) static var restoreOutcome: RestoreOutcome?
+
     /// At launch, before the vault opens: FunesCore saves the current vault as a self-contained
     /// `Backups/pre-restore-…` backup (with what was still in its WAL), then puts the chosen backup in
-    /// place (`VaultStore.restoreBackup`).
+    /// place (`VaultStore.restoreBackup`). The marker goes first, so a restore that fails is never
+    /// tried at every launch; `restoreOutcome` keeps the result for the user.
     static func applyPendingRestore(dataFolder: URL) {
         let manager = FileManager.default
         let marker = dataFolder.appendingPathComponent(restoreMarker)
         guard let data = manager.contents(atPath: marker.path) else { return }
         try? manager.removeItem(at: marker)
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: String],
-              let name = object["backup"] else { return }
+              let name = object["backup"] else {
+            logger.error("The restore marker was unreadable")
+            restoreOutcome = .failed
+            return
+        }
         do {
             try VaultStore.restoreBackup(name, in: dataFolder, now: Date())
+            restoreOutcome = .restored
         } catch {
             logger.error("Restoring a backup failed")
+            restoreOutcome = .failed
         }
     }
 
