@@ -26,12 +26,19 @@ final class Dictation {
     private var analyzer: SpeechAnalyzer?
     private var input: AsyncStream<AnalyzerInput>.Continuation?
     private var results: Task<Void, Never>?
+    /// Counts starts and stops: a start still awaiting access or the language's model when it was
+    /// stopped (and maybe started again) finds it moved on, and never starts a second engine.
+    private var generation = 0
 
     /// Listens until `stop()`, handing `update` the words so far: what's settled, then what may
     /// still change.
     func start(update: @escaping @MainActor (String) -> Void) async {
         guard state == .idle || state.isFailure else { return }
         state = .starting
+        generation += 1
+        let mine = generation
+        // Still this start's to finish: not stopped, nor started again, while it waited.
+        let current = { [weak self] in self?.state == .starting && self?.generation == mine }
         do {
             try await Self.askForAccess()
             guard let locale = await DictationTranscriber.supportedLocale(equivalentTo: Locale.current) else {
@@ -41,7 +48,7 @@ final class Dictation {
             if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
                 try await request.downloadAndInstall()
             }
-            guard state == .starting else { return }
+            guard current() else { return }
             let engine = AVAudioEngine()
             let natural = engine.inputNode.outputFormat(forBus: 0)
             guard natural.channelCount > 0,
@@ -52,7 +59,7 @@ final class Dictation {
             let analyzer = SpeechAnalyzer(modules: [transcriber])
             try await analyzer.start(inputSequence: stream)
             // Stopped while the analyzer started.
-            guard state == .starting else {
+            guard current() else {
                 input.finish()
                 await analyzer.cancelAndFinishNow()
                 return
@@ -79,8 +86,10 @@ final class Dictation {
             self.input = input
             state = .listening
         } catch let failure as Failure {
+            guard current() else { return }
             state = .failed(failure.message)
         } catch {
+            guard current() else { return }
             logger.error("Dictation didn't start")
             await stop()
             state = .failed(String(localized: "Dictation didn't start. Try again."))
@@ -91,6 +100,7 @@ final class Dictation {
     func stop() async {
         guard state == .listening || state == .starting else { return }
         state = .idle
+        generation += 1
         if let engine {
             engine.inputNode.removeTap(onBus: 0)
             engine.stop()

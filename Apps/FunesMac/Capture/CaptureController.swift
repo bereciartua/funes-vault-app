@@ -26,9 +26,8 @@ final class CaptureController: NSObject {
         box.restore = { [weak self] in self?.reopen() }
     }
 
-    func show(text: String = "", error: String? = nil) {
-        box.text = text
-        box.error = error
+    /// Opens the box with whatever was left in it: reopening never wipes a draft (FR-C-01).
+    func show() {
         reopen()
     }
 
@@ -75,21 +74,36 @@ final class CaptureController: NSObject {
             // Clicking elsewhere puts the box away, keeping what was typed.
             if self?.box.text.isEmpty == true { self?.close() }
         }
+        // Esc puts it away the same way: dictation stops, and the text stays.
+        panel.onCancel = { [weak self] in self?.close() }
         return panel
     }
 
     // MARK: Services ▸ Remember in Funes (FR-C-03)
 
     /// NSServices `rememberInFunes`: the selected text goes straight to the Inbox, or into the box
-    /// with the reason when it can't be saved as it is.
+    /// with the reason when it can't be saved as it is. It's saved through a box of its own, so a
+    /// draft left in the capture box is never replaced.
     @objc func rememberInFunes(_ pasteboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
         guard let text = pasteboard.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
             error.pointee = String(localized: "There's no text to remember.") as NSString
             return
         }
-        box.text = text
-        box.error = nil
-        if !saver.save(box) { reopen() }
+        let incoming = CaptureBoxModel()
+        incoming.text = text
+        incoming.restore = { [weak self, weak incoming] in
+            guard let incoming else { return }
+            self?.takeBack(incoming)
+        }
+        if !saver.save(incoming) { takeBack(incoming) }
+    }
+
+    /// Text from Services that couldn't be saved: into the box with the reason, after any draft
+    /// already there.
+    private func takeBack(_ incoming: CaptureBoxModel) {
+        box.text = box.text.isEmpty ? incoming.text : box.text + "\n\n" + incoming.text
+        box.error = incoming.error
+        reopen()
     }
 }
 
@@ -160,10 +174,11 @@ final class CaptureSaver {
 /// A panel that takes typing without activating Funes, like Spotlight.
 final class CapturePanel: NSPanel {
     var onResign: () -> Void = {}
+    var onCancel: () -> Void = {}
     override var canBecomeKey: Bool { true }
     override func resignKey() {
         super.resignKey()
         onResign()
     }
-    override func cancelOperation(_ sender: Any?) { orderOut(nil) }
+    override func cancelOperation(_ sender: Any?) { onCancel() }
 }
