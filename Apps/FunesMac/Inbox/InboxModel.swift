@@ -30,6 +30,8 @@ final class InboxModel {
     /// What each card shows, kept while the Inbox reloads (edited ones keep the user's values).
     var drafts: [UUID: SuggestionDraft] = [:]
     @ObservationIgnored var categories: () -> [MemoryCategory] = { [] }
+    /// The user applied or rejected a card here (the setup checklist's "Review your Inbox").
+    @ObservationIgnored var decided: () -> Void = {}
 
     init(services: VaultEnvironment) {
         self.services = services
@@ -147,6 +149,7 @@ final class InboxModel {
     func edited(_ id: UUID) { services.holds.hold(id, .editing) }
 
     private func done(_ id: UUID) {
+        decided()
         drafts[id] = nil
         selection.remove(id)
         services.holds.release(id, .editing)

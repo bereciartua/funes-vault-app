@@ -239,6 +239,7 @@ final class AppModel {
                                         approvals: services.phoneApprovals, appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
         pausedUntil = services.pause.pausedUntil(at: Date())
         inboxState.categories = { [weak self] in self?.categories ?? [] }
+        inboxState.decided = { [weak self] in self?.checklist.markReviewed() }
         vault.answers = searchAnswers
         self.modelSettings.embeddingInputsChanged = { [weak self] in self?.embeddings.apply() }
         composer.save = { [weak self, composer] _ in self?.saveCapture(composer) ?? false }
