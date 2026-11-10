@@ -329,8 +329,11 @@ final class VaultModel: AnswerCardSource {
 
     /// Runs the search after the debounce; filters and sort apply at once.
     func scheduleSearch(now: Bool = false) {
-        // A new search or filters: it may be answered on its own again.
+        // A new search or filters: it may be answered on its own again, and a memory "Show this
+        // memory" asked for is held only until the user changes them (reveal sets it after its
+        // own changes).
         autoAsked = nil
+        revealed = nil
         clearAnswer()
         searchTask?.cancel()
         searchTask = Task { [weak self] in
