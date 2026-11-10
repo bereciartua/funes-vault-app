@@ -57,6 +57,7 @@
 - Acceptance:
   - Deleting a category that is in use requires choosing a replacement category, or removing it from those memories.
   - Agents' allow and deny lists update accordingly. A removed allowed category never silently widens access.
+  - A removed denied category never silently widens access either: with a replacement, the replacement is denied too; without one, deleting is refused while a memory in it has another category that an agent denying it doesn't deny, until the user picks a replacement or changes those memories or agents.
 
 **FR-V-07 Sensitivity levels** · M · v0.1
 - The six ordered levels are PUBLIC < LOW < INTERNAL < SENSITIVE < RESTRICTED < SECRET, each shown with a plain-language description.

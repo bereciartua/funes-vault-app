@@ -81,7 +81,8 @@ extension VaultStore {
     /// - Memories in it move to `replacement` when given; otherwise the category is removed from
     ///   them, and that is refused (`categoryInUse`) if any would be left without a category.
     /// - Agents' deny lists: with a replacement, the replacement is denied too, so memories that
-    ///   were hidden stay hidden. Allow lists drop the key; if that would leave an agent's allow list
+    ///   were hidden stay hidden. Without one, the deletion is refused (`deniedCategoryInUse`) if a
+    ///   memory in it has another category an agent that denies it doesn't deny. Allow lists drop the key; if that would leave an agent's allow list
     ///   empty (meaning *all* categories) the deletion is refused (`onlyAllowedCategory`), because a
     ///   removed allowed category must never silently widen access. Each changed agent's revision
     ///   goes up, which invalidates its pending approvals.
@@ -101,6 +102,22 @@ extension VaultStore {
                                   AND b.category_key != a.category_key)
                 """, arguments: [key]).compactMap(UUID.init(uuidString:))
             if replacement == nil, !onlyAllowed.isEmpty { throw VaultError.onlyAllowedCategory(agentIDs: onlyAllowed) }
+            // Agents that deny this category and would lose it from a memory that keeps another
+            // category they don't deny: without a replacement to deny instead, that memory would no
+            // longer be hidden from them (fail closed; any status, since a restore brings it back).
+            if replacement == nil {
+                let uncovered = try String.fetchAll(db, sql: """
+                    SELECT DISTINCT d.agent_id FROM access_category d
+                    JOIN memory_category mc ON mc.category_key = d.category_key
+                    WHERE d.mode = 'deny' AND d.category_key = ?
+                      AND EXISTS (SELECT 1 FROM memory_category o WHERE o.memory_id = mc.memory_id
+                                    AND o.category_key != d.category_key
+                                    AND NOT EXISTS (SELECT 1 FROM access_category x WHERE x.agent_id = d.agent_id
+                                                      AND x.mode = 'deny' AND x.category_key = o.category_key))
+                    ORDER BY d.agent_id
+                    """, arguments: [key]).compactMap(UUID.init(uuidString:))
+                if !uncovered.isEmpty { throw VaultError.deniedCategoryInUse(agentIDs: uncovered) }
+            }
 
             let memoryIDs = try String.fetchAll(db, sql: "SELECT memory_id FROM memory_category WHERE category_key = ?",
                                                 arguments: [key]).compactMap(UUID.init(uuidString:))

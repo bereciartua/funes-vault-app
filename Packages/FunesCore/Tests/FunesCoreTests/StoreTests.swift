@@ -285,6 +285,36 @@ import Testing
         #expect(try v.count("SELECT count(*) FROM agent WHERE revision = 2") == 3)
     }
 
+    /// Review fix-first #6 (FR-V-06): deleting a denied category without a replacement would
+    /// show its memories that have another category to the agents denying it. Refused.
+    @Test func deletingADeniedCategoryWithoutAReplacementIsRefused() throws {
+        let v = try TestVault()
+        try v.store.createCategory(key: "garden", name: "Garden")
+        let denier = UUID(), alsoDeniesPrefs = UUID()
+        try v.store.writer.write { db in
+            for (id, rows) in [(denier.db, ["garden"]), (alsoDeniesPrefs.db, ["garden", "personal_preferences"])] {
+                try db.execute(sql: "INSERT INTO agent (id, name, agent_kind, created_at) VALUES (?, ?, 'other', ?)", arguments: [id, id, t0])
+                for key in rows {
+                    try db.execute(sql: "INSERT INTO access_category VALUES (?, ?, 'deny')", arguments: [id, key])
+                }
+            }
+        }
+        let both = try v.memory("Tomatoes", categories: ["garden", "personal_preferences"])
+        // Only the agent that would see it is named; the other still denies the remaining category.
+        #expect(throws: VaultError.deniedCategoryInUse(agentIDs: [denier])) { try v.store.deleteCategory(key: "garden", now: t0) }
+        #expect(try v.store.categories().contains { $0.key == "garden" })
+        #expect(try v.count("SELECT count(*) FROM access_category WHERE category_key = 'garden'") == 2)
+        // Archived or deleted memories count too: a restore brings them back.
+        try v.store.deleteMemory(id: both.id, now: t0)
+        #expect(throws: VaultError.deniedCategoryInUse(agentIDs: [denier])) { try v.store.deleteCategory(key: "garden", now: t0) }
+        // With the category off the memory, nothing is left to hide: the deletion goes ahead.
+        try v.store.writer.write { db in
+            try MemoryStore.setCategories(db, memoryID: both.id, keys: ["personal_preferences"])
+        }
+        try v.store.deleteCategory(key: "garden", now: t0)
+        #expect(try !v.store.categories().contains { $0.key == "garden" })
+    }
+
     // MARK: Backups
 
     @Test func onlineBackups() throws {
