@@ -18,6 +18,8 @@ final class ChecklistModel {
     private(set) var dismissed = false
     /// Just hidden: Home offers Undo for a few seconds (UX review F7).
     private(set) var justHidden = false
+    /// The Inbox held suggestions at the last update.
+    @ObservationIgnored private var inboxHadItems = false
     var showSeedQuestions = false
     var showImport: ImportKind?
 
@@ -36,11 +38,15 @@ final class ChecklistModel {
             done.insert(.seed)
             if !seededBefore { preferences.set(Preferences.Key.checklistSeeded, true) }
         }
+        // Reviewed only once the user has decided something: a card applied or rejected in the
+        // Inbox (markReviewed), or an Inbox that held suggestions emptied (decided on the iPhone,
+        // say). A memory made by hand with an empty Inbox isn't a review.
         let reviewedBefore = preferences.flag(Preferences.Key.checklistReviewed)
-        if reviewedBefore || (done.contains(.seed) && model.hasMemories && model.inbox.isEmpty) {
+        if reviewedBefore || (inboxHadItems && model.inbox.isEmpty) {
             done.insert(.review)
             if !reviewedBefore { preferences.set(Preferences.Key.checklistReviewed, true) }
         }
+        inboxHadItems = !model.inbox.isEmpty
         if !model.agents.isEmpty { done.insert(.add) }
         if let first = model.agents.compactMap({ agent in agent.firstRequestAt.map { (agent, $0) } }).min(by: { $0.1 < $1.1 }) {
             done.insert(.connect)
@@ -49,6 +55,13 @@ final class ChecklistModel {
             connectedLine = nil
         }
         self.done = done
+    }
+
+    /// A card was applied or rejected in the Inbox.
+    func markReviewed() {
+        guard !done.contains(.review) else { return }
+        preferences.set(Preferences.Key.checklistReviewed, true)
+        done.insert(.review)
     }
 
     func dismiss() {

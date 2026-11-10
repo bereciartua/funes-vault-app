@@ -96,20 +96,31 @@ final class DataOperations {
         Self.relaunch()
     }
 
+    /// How the restore asked for before this launch went, said once the app is up.
+    enum RestoreOutcome { case restored, failed }
+    private(set) static var restoreOutcome: RestoreOutcome?
+
     /// At launch, before the vault opens: FunesCore saves the current vault as a self-contained
     /// `Backups/pre-restore-…` backup (with what was still in its WAL), then puts the chosen backup in
-    /// place (`VaultStore.restoreBackup`).
+    /// place (`VaultStore.restoreBackup`). The marker goes first, so a restore that fails is never
+    /// tried at every launch; `restoreOutcome` keeps the result for the user.
     static func applyPendingRestore(dataFolder: URL) {
         let manager = FileManager.default
         let marker = dataFolder.appendingPathComponent(restoreMarker)
         guard let data = manager.contents(atPath: marker.path) else { return }
         try? manager.removeItem(at: marker)
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: String],
-              let name = object["backup"] else { return }
+              let name = object["backup"] else {
+            logger.error("The restore marker was unreadable")
+            restoreOutcome = .failed
+            return
+        }
         do {
             try VaultStore.restoreBackup(name, in: dataFolder, now: Date())
+            restoreOutcome = .restored
         } catch {
             logger.error("Restoring a backup failed")
+            restoreOutcome = .failed
         }
     }
 
@@ -121,17 +132,47 @@ final class DataOperations {
 
     // MARK: Erase All Data (FR-G-05)
 
+    static let eraseMarker = "erase-pending"
+
     /// Deletes the vault, keys, Activity and backups in the data folder, the AI provider keys and
-    /// the app's settings, then relaunches empty. Agents' own config files aren't touched.
-    func eraseAll(modelSettings: ModelSettings) {
-        let manager = FileManager.default
+    /// the app's settings, then relaunches empty. Agents' own config files aren't touched. The
+    /// files and settings go at the next launch, before anything opens them (as a restore does),
+    /// so no service still running writes them back; this writes the marker, removes the provider
+    /// keys and relaunches. Throws, deleting nothing, when the marker can't be written.
+    func eraseAll(modelSettings: ModelSettings) throws {
+        let marker = environment.dataFolder.appendingPathComponent(Self.eraseMarker)
+        try Data().write(to: marker, options: .atomic)
         for account in modelSettings.accounts { modelSettings.removeAccount(account.id) }
-        if let items = try? manager.contentsOfDirectory(at: environment.dataFolder, includingPropertiesForKeys: nil) {
-            for item in items { try? manager.removeItem(at: item) }
+        Self.relaunch()
+    }
+
+    /// Something in the data folder couldn't be deleted by the last erase: said once the app is up,
+    /// with the folder, so the user can finish it.
+    private(set) static var eraseIncomplete = false
+
+    /// At launch, after the previous copy quit and before the settings are read or the vault
+    /// opens: carries out a pending Erase All Data. The marker goes last, so an erase cut short
+    /// by a crash runs again at the next launch; one that couldn't delete something isn't retried
+    /// (it would erase what the next session keeps) but reported (`eraseIncomplete`).
+    static func applyPendingErase(dataFolder: URL, defaults: UserDefaults) {
+        let manager = FileManager.default
+        let marker = dataFolder.appendingPathComponent(eraseMarker)
+        guard manager.fileExists(atPath: marker.path) else { return }
+        var failed = false
+        do {
+            let items = try manager.contentsOfDirectory(at: dataFolder, includingPropertiesForKeys: nil)
+            // The instance lock stays: this copy holds it.
+            for item in items where ![eraseMarker, AppDelegate.instanceLockName].contains(item.lastPathComponent) {
+                do { try manager.removeItem(at: item) } catch { failed = true }
+            }
+        } catch {
+            failed = true
         }
         let domain = Preferences.isDevelopmentVault ? "com.funesvault.dev" : Identifiers.macBundleID
-        preferences.defaults.removePersistentDomain(forName: domain)
-        Self.relaunch()
+        defaults.removePersistentDomain(forName: domain)
+        try? manager.removeItem(at: marker)
+        eraseIncomplete = failed
+        if failed { logger.error("Erase All Data left something in the data folder") } else { logger.notice("Erased all data") }
     }
 
     /// Opens a new copy of the app (with this one's environment and arguments) and quits.
@@ -139,10 +180,27 @@ final class DataOperations {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.createsNewApplicationInstance = true
         configuration.environment = ProcessInfo.processInfo.environment
-        configuration.arguments = Array(CommandLine.arguments.dropFirst()).filter { $0 != "--dev-seed" }
-        let me = ProcessInfo.processInfo.processIdentifier
-        configuration.arguments += [AppMover.waitForArgument, String(me)]
+        configuration.arguments = relaunchArguments(Array(CommandLine.arguments.dropFirst()),
+                                                    pid: ProcessInfo.processInfo.processIdentifier)
         NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, _ in }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { NSApp.terminate(nil) }
+    }
+
+    /// This copy's arguments for the next one: without `--dev-seed`, and without the
+    /// `--wait-for-pid` and `--moved-from` pairs this copy was launched with, so the next copy
+    /// waits for this one (`AppMover.waitForPreviousCopy` reads the first pair it finds).
+    static func relaunchArguments(_ arguments: [String], pid: Int32) -> [String] {
+        var kept: [String] = []
+        var index = arguments.startIndex
+        while index < arguments.endIndex {
+            let argument = arguments[index]
+            if argument == AppMover.waitForArgument || argument == AppMover.movedFromArgument {
+                index += 2
+                continue
+            }
+            if argument != "--dev-seed" { kept.append(argument) }
+            index += 1
+        }
+        return kept + [AppMover.waitForArgument, String(pid)]
     }
 }

@@ -129,4 +129,43 @@ extension InboxSupportTests {
         let fallback = SuggestionDraft(bare, categories: categories)
         #expect(fallback.categoryKeys == ["personal_preferences"] && fallback.sensitivity == .low)
     }
+
+    /// FR-V-07: moving a card into Health, Finance or Legal raises its sensitivity to the
+    /// category's default, as the New Memory editor does; removing it again never lowers it.
+    @Test func movingIntoAProtectedCategoryRaisesSensitivity() throws {
+        let categories = MemoryCategory.builtins
+        let health = try #require(categories.first { $0.key == "health" })
+        #expect(health.defaultSensitivity == .sensitive)
+        let base = Suggestion(id: UUID(), origin: .captureMac, action: .create, title: "Dentist", body: "Tuesday at 9", kind: .event,
+                              categoryKeys: ["personal_preferences"], sensitivity: .low, status: .pending,
+                              createdAt: Date(), expiresAfter: Date())
+        var draft = SuggestionDraft(base, categories: categories)
+        draft.categoryKeys = ["health"]
+        #expect(draft.sensitivity == .sensitive && draft.touched && !draft.sensitivityChosen)
+        draft.categoryKeys = ["personal_preferences"]
+        #expect(draft.sensitivity == .sensitive)
+        // Added beside another, and after a refresh, it still raises.
+        var other = SuggestionDraft(base, categories: categories)
+        other.title = "Mine"
+        other = other.refreshed(from: base, categories: categories)
+        other.categoryKeys.append("finance")
+        #expect(other.sensitivity == .sensitive)
+        // A higher proposal stays as it is.
+        var secret = base
+        secret.sensitivity = .secret
+        var high = SuggestionDraft(secret, categories: categories)
+        high.categoryKeys = ["health"]
+        #expect(high.sensitivity == .secret)
+    }
+
+    @Test func aSensitivityTheUserPickedIsKept() {
+        let categories = MemoryCategory.builtins
+        let base = Suggestion(id: UUID(), origin: .captureMac, action: .create, title: "Budget", body: "Rent first", kind: .fact,
+                              categoryKeys: ["personal_preferences"], sensitivity: .low, status: .pending,
+                              createdAt: Date(), expiresAfter: Date())
+        var draft = SuggestionDraft(base, categories: categories)
+        draft.sensitivity = .internal
+        draft.categoryKeys = ["finance"]
+        #expect(draft.sensitivity == .internal && draft.sensitivityChosen)
+    }
 }

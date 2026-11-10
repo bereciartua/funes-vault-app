@@ -30,6 +30,8 @@ final class InboxModel {
     /// What each card shows, kept while the Inbox reloads (edited ones keep the user's values).
     var drafts: [UUID: SuggestionDraft] = [:]
     @ObservationIgnored var categories: () -> [MemoryCategory] = { [] }
+    /// The user applied or rejected a card here (the setup checklist's "Review your Inbox").
+    @ObservationIgnored var decided: () -> Void = {}
 
     init(services: VaultEnvironment) {
         self.services = services
@@ -133,10 +135,21 @@ final class InboxModel {
         }
     }
 
+    /// What Select All takes: the cards that show a checkbox and aren't put off until Later. A
+    /// split input's pieces have none (their group card decides them), so they're never selected
+    /// unseen (FR-I-03).
+    func selectable(_ inbox: [Suggestion]) -> [UUID] {
+        grouped(inbox).flatMap(\.1).compactMap { entry in
+            guard case let .single(suggestion) = entry, !later.contains(suggestion.id) else { return nil }
+            return suggestion.id
+        }
+    }
+
     /// The user changed a card: the tidy-up leaves it alone (memory processing §9.5).
     func edited(_ id: UUID) { services.holds.hold(id, .editing) }
 
     private func done(_ id: UUID) {
+        decided()
         drafts[id] = nil
         selection.remove(id)
         services.holds.release(id, .editing)

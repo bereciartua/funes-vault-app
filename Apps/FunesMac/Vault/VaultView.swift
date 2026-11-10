@@ -35,10 +35,8 @@ struct VaultView: View {
         .onChange(of: vault.answersOn ? vault.answers?.trigger : nil) { _, _ in vault.scheduleAutoAsk() }
         .onChange(of: model.searchFocusRequest) { _, _ in searchFocused = true }
         .onChange(of: model.newMemoryRequest) { _, _ in creating = true }
-        .onChange(of: model.dataGeneration) { _, _ in Task { await vault.load() } }
-        .onChange(of: model.selectedMemoryID) { _, id in
-            if let id, !vault.selection.contains(id) { vault.selection = [id] }
-        }
+        // Only a change to the vault reloads the list; an Activity row alone doesn't.
+        .onChange(of: model.memoriesGeneration) { _, _ in Task { await vault.load() } }
         .onChange(of: vault.selection) { _, selection in
             model.selectedMemoryID = selection.count == 1 ? selection.first : nil
         }
@@ -171,7 +169,7 @@ struct VaultView: View {
                     }
                     ForEach(vault.memories) { memory in
                         MemoryRow(memory: memory, model: model, now: model.now, snippet: vault.snippets[memory.id],
-                                  source: vault.sourceNumber(memory.id))
+                                  source: vault.sourceNumber(memory.id), unsaved: vault.draftIDs.contains(memory.id))
                             .tag(memory.id)
                             .onAppear { vault.rowAppeared(memory.id) }
                             .onDisappear { vault.rowDisappeared(memory.id) }
@@ -199,13 +197,15 @@ struct VaultView: View {
             Button(String(localized: "Delete"), role: .destructive) { Task { await vault.perform(.delete, on: [memory.id]) } }
         case .active:
             Button(String(localized: "Tidy Up")) {
-                model.selectedMemoryID = memory.id
+                vault.selection = [memory.id]
                 Task {
                     await model.tidyUp.tidy(memoryID: memory.id, version: memory.version)
                     await model.refresh()
                 }
             }
-            .disabled(!model.tidyUp.canTidyMemory || model.tidyUp.running || model.tidyUp.tidying != nil)
+            // Not over unsaved edits, as in the detail.
+            .disabled(!model.tidyUp.canTidyMemory || model.tidyUp.running || model.tidyUp.tidying != nil
+                      || vault.draftIDs.contains(memory.id))
             Divider()
             Button(String(localized: "Archive")) { Task { await vault.perform(.archive, on: [memory.id]) } }
             Button(String(localized: "Delete"), role: .destructive) { Task { await vault.perform(.delete, on: [memory.id]) } }
@@ -268,6 +268,8 @@ struct MemoryRow: View {
     var snippet: Snippet?
     /// The answer's number for this memory, when the answer cites it.
     var source: Int?
+    /// It has unsaved edits.
+    var unsaved = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -280,6 +282,12 @@ struct MemoryRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(memory.title).fontWeight(.medium).lineLimit(1)
+                    if unsaved {
+                        Image(systemName: "pencil")
+                            .font(.caption).foregroundStyle(.secondary)
+                            .help(String(localized: "Unsaved changes"))
+                            .accessibilityLabel(String(localized: "Unsaved changes"))
+                    }
                     if let source {
                         SourceChip(number: source).accessibilityLabel(String(localized: "Source \(source)"))
                     }
@@ -393,6 +401,8 @@ struct BulkBar: View {
     let ids: Set<UUID>
     let status: VaultModel.StatusChoice
     @State private var confirmDelete = false
+    /// Move to a category that replaces others: asked first, since it can change agents' access.
+    @State private var confirmMove: MemoryCategory?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -409,7 +419,7 @@ struct BulkBar: View {
                 Button(String(localized: "Archive")) { run(.archive) }
                 Menu(String(localized: "Category")) {
                     ForEach(model.categories) { category in
-                        Button(String(localized: "Move to \(category.name)")) { run(.moveToCategory(category.key)) }
+                        Button(String(localized: "Move to \(category.name)")) { move(to: category) }
                     }
                 }
                 .fixedSize()
@@ -430,6 +440,33 @@ struct BulkBar: View {
         } message: {
             Text(String(localized: "They're removed for good, with their history. This can't be undone."))
         }
+        .confirmationDialog(String(localized: "Move \(ids.count) memories to \(confirmMove?.name ?? "")?"),
+                            isPresented: Binding(get: { confirmMove != nil }, set: { if !$0 { confirmMove = nil } }),
+                            presenting: confirmMove) { category in
+            Button(String(localized: "Move to \(category.name)")) { run(.moveToCategory(category.key)) }
+        } message: { category in
+            let removed = removedCategories(category.key)
+            Text(removed.isEmpty
+                 ? String(localized: "This replaces their categories. Agents' access to them may change.")
+                 : String(localized: "This replaces their categories, so they'll no longer be in \(removed.formatted(.list(type: .and))). Agents' access to them may change."))
+        }
+    }
+
+    /// Moving replaces every category of the selected memories (FR-V-14). When that removes one,
+    /// or some selected memory isn't listed to tell, it asks first, naming what goes.
+    private func move(to category: MemoryCategory) {
+        let listed = model.vault.memories.filter { ids.contains($0.id) }
+        if listed.count == ids.count, removedCategories(category.key).isEmpty {
+            run(.moveToCategory(category.key))
+        } else {
+            confirmMove = category
+        }
+    }
+
+    /// The names of the categories a move to `key` takes from the selected memories.
+    private func removedCategories(_ key: String) -> [String] {
+        let keys = Set(model.vault.memories.filter { ids.contains($0.id) }.flatMap(\.categoryKeys)).subtracting([key])
+        return keys.map(model.categoryName).sorted()
     }
 
     private func run(_ action: VaultModel.BulkAction) {
