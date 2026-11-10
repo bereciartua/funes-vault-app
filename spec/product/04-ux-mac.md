@@ -36,7 +36,7 @@ The tooltip says the same in words ("Agents paused until 14:00", "Inbox: 3", "Wa
 
 **Clicks:**
 - **A click** opens the panel. Another click on the icon closes it, and so do Esc (see [Keys](#keys-in-the-panel)), a click outside, switching to another app (⌘⇥ included), and switching Spaces.
-- **A right click** or Control-click shows a short native menu: **Open Funes Vault** ⌘O, **Settings…** ⌘,, **Check for Updates…** (only in a copy that can update itself) and **Quit Funes Vault** ⌘Q.
+- **A right click** or Control-click shows a short native menu: **Open Funes Vault** ⌘O, **Settings…** ⌘,, **Check for Updates…** (only in a copy that can update itself) and **Quit Funes Vault** ⌘Q. When a scheduled check has found an update (Sparkle's gentle reminders never open a window on their own), Check for Updates… reads **Update Available: 0.6.0…** ("Security Update Available: …" for a critical one), the icon's tooltip has the same line, and the panel shows it as a row above its footer; each opens Sparkle's window on the update, and they go once it's been seen (FR-G-03).
 
 ### The panel
 ```

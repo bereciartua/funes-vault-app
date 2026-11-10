@@ -142,6 +142,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let gate = UpdateRelaunchGate(pendingApprovals: { environment.approvals.queue.items.count },
                                       maximumWait: FunesApprovals.panelSeconds + 15)
         let updater = SparkleUpdater(gate: gate)
+        // A scheduled check never opens a window: what it found shows in the menu bar.
+        updater.foundUpdateChanged = { [weak model, weak menu] found in
+            model?.foundUpdate = found
+            menu?.update()
+        }
         updater.start()
         self.updater = updater
         model.updater = updater.controls

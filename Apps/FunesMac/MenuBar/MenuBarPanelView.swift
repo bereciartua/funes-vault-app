@@ -517,6 +517,21 @@ private struct PanelFooter: View {
     var body: some View {
         VStack(spacing: 0) {
             Divider()
+            // An update a scheduled check found: Sparkle's window shows it (FR-G-03).
+            if let found = model.app.foundUpdate, model.app.updater.isAvailable() {
+                Button {
+                    model.closePanel()
+                    model.app.updater.checkForUpdates()
+                } label: {
+                    Label(found.menuTitle, systemImage: "arrow.down.circle.fill")
+                        .foregroundStyle(found.critical ? Color.red : Color.accentColor)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.accessoryBar)
+                .controlSize(.small)
+                .padding(.horizontal, 8)
+                .padding(.top, 6)
+            }
             HStack(spacing: 6) {
                 Button { model.show(.inbox) } label: {
                     HStack(spacing: 5) {

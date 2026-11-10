@@ -127,6 +127,9 @@ final class AppModel {
     var cloudMessage: String?
     /// Sparkle, or a stand-in where this build can't update itself.
     @ObservationIgnored var updater = UpdaterControls.unavailable
+    /// An update a scheduled check found (Sparkle's gentle reminders), until the user opens it:
+    /// the menu bar panel, the status menu and the icon's tooltip show it (FR-G-03).
+    var foundUpdate: FoundUpdate?
     /// MCP traffic counts since launch (Settings ▸ Agent Server).
     @ObservationIgnored var trafficCounts: () -> MCPTrafficCounters.Snapshot = { MCPTrafficCounters.Snapshot() }
 
