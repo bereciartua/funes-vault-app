@@ -471,17 +471,16 @@ public struct TidyUpAutoApply: Sendable, Hashable {
         }
     }
 
-    /// §9.5's trust rule: new text (update, merge) may come from any memory in the call; an
-    /// archive, split or conflict leans on the memories it names. Archiving the untrusted copy of
-    /// an exact duplicate doesn't: only keeping an untrusted copy over a trusted one does.
+    /// §9.5's trust rule: the model reads every memory in the call, so any of them can steer what
+    /// it proposes, whichever memories the action names. Any action leans on untrusted text when
+    /// the cluster has some. The one exception is code-checked: archiving the untrusted copy of an
+    /// exact duplicate (same normalized text) loses nothing; only keeping an untrusted copy over a
+    /// trusted one does.
     static func leansOnUntrusted(_ action: TidyUpAction, cluster: TidyUpCluster) -> Bool {
         if action.type == .archive, action.exact, let target = action.target, let survivor = action.survivor {
             return cluster.member(id: survivor)?.trust == .untrusted && cluster.member(id: target)?.trust == .trusted
         }
-        return switch action.type {
-        case .update, .merge: cluster.hasUntrustedText
-        case .archive, .split, .conflict: action.named.contains { cluster.member(id: $0)?.trust == .untrusted }
-        }
+        return cluster.hasUntrustedText
     }
 }
 
