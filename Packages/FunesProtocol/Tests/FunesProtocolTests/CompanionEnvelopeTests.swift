@@ -192,10 +192,61 @@ func flippingBit(_ body: Data, _ key: String, byte: Int = 0) -> Data {
         let skew = CompanionAuthError.clockSkew(serverTime: Date(timeIntervalSince1970: 1_792_000_000))
         #expect(String(decoding: skew.body, as: UTF8.self) == #"{"error":"clock_skew","server_time":1792000000000}"#)
         #expect(String(decoding: CompanionAuthError.replay.body, as: UTF8.self) == #"{"error":"replay"}"#)
-        for error in [CompanionAuthError.unknownDevice, .revoked, skew, .replay, .invalidSignature, .invalidEnvelope, .decryptionFailed] {
+        for error in [CompanionAuthError.unknownDevice, .revoked, .unavailable, skew, .replay, .invalidSignature, .invalidEnvelope,
+                      .decryptionFailed] {
             #expect(CompanionAuthError(body: error.body) == error)
         }
         #expect(CompanionAuthError(body: Data("nonsense".utf8)) == .invalidEnvelope)
+    }
+
+    /// After a relaunch the cache is empty, so an envelope sent before it started could have been
+    /// seen already: it's refused as `clock_skew` with the Mac's time, which the phone resends at.
+    @Test func sentBeforeTheCacheStartedIsRefused() throws {
+        var f = CompanionFixture()
+        f.cache = ReplayCache(startedAt: f.now)
+        let before = try f.seal(at: f.now.addingTimeInterval(-30)).envelope.body
+        #expect(throws: CompanionAuthError.clockSkew(serverTime: f.now)) { try f.open(before) }
+        _ = try f.open(try f.seal().envelope.body)
+        _ = try f.open(try f.seal(at: f.now.addingTimeInterval(1)).envelope.body)
+    }
+
+    /// Refusals are signed by the Mac and bound to the refused request's device and nonce (§3).
+    @Test func signedRefusalsVerifyOnlyForTheirRequest() throws {
+        let mac = P256.Signing.PrivateKey()
+        let did = UUID(), nonce = Data(repeating: 3, count: 16)
+        let skew = CompanionAuthError.clockSkew(serverTime: Date(timeIntervalSince1970: 1_792_000_000))
+        for refusal in [CompanionAuthError.unknownDevice, .revoked, .unavailable, skew, .replay, .invalidSignature, .decryptionFailed] {
+            let body = refusal.signedBody(deviceID: did, nonce: nonce, signer: mac)
+            #expect(CompanionAuthError(signedBody: body, deviceID: did, nonce: nonce, macSigningKey: mac.publicKey) == refusal)
+            #expect(CompanionAuthError(body: body) == refusal)
+            // Another request, another device, another Mac: not trusted.
+            #expect(CompanionAuthError(signedBody: body, deviceID: did, nonce: Data(repeating: 4, count: 16),
+                                       macSigningKey: mac.publicKey) == nil)
+            #expect(CompanionAuthError(signedBody: body, deviceID: UUID(), nonce: nonce, macSigningKey: mac.publicKey) == nil)
+            #expect(CompanionAuthError(signedBody: body, deviceID: did, nonce: nonce,
+                                       macSigningKey: P256.Signing.PrivateKey().publicKey) == nil)
+            // Unsigned, as from another host or an older Mac.
+            #expect(CompanionAuthError(signedBody: refusal.body, deviceID: did, nonce: nonce, macSigningKey: mac.publicKey) == nil)
+        }
+        // The code and the time are covered by the signature.
+        let signed = CompanionAuthError.unknownDevice.signedBody(deviceID: did, nonce: nonce, signer: mac)
+        #expect(CompanionAuthError(signedBody: replacing(signed, "error", with: "revoked"), deviceID: did, nonce: nonce,
+                                   macSigningKey: mac.publicKey) == nil)
+        let skewBody = skew.signedBody(deviceID: did, nonce: nonce, signer: mac)
+        #expect(CompanionAuthError(signedBody: replacing(skewBody, "server_time", with: Int64.max), deviceID: did, nonce: nonce,
+                                   macSigningKey: mac.publicKey) == nil)
+        let keys = try #require(try JSONSerialization.jsonObject(with: skewBody) as? [String: Any]).keys
+        #expect(Set(keys) == ["error", "server_time", "sig"])
+    }
+
+    /// A date past `Int64`'s milliseconds saturates instead of trapping (a hostile `server_time`).
+    @Test func millisecondsSaturate() {
+        #expect(Date(companionMilliseconds: .max).addingTimeInterval(86_400).companionMilliseconds == .max)
+        #expect(Date(timeIntervalSince1970: 1e300).companionMilliseconds == .max)
+        #expect(Date(timeIntervalSince1970: -1e300).companionMilliseconds == .min)
+        #expect(Date.distantFuture.companionMilliseconds == Int64((Date.distantFuture.timeIntervalSince1970 * 1000).rounded()))
+        #expect(Date(timeIntervalSince1970: 1_792_000_000.5).companionMilliseconds == 1_792_000_000_500)
+        #expect(CompanionAuthError.clockSkew(serverTime: Date(timeIntervalSince1970: 1e300)).body.count > 0)
     }
 
     @Test func tamperedResponseIsRefused() throws {

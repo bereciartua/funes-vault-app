@@ -5,15 +5,22 @@ import Foundation
 /// When a device's list is full, the oldest nonce is dropped and its timestamp becomes that
 /// device's floor: any later envelope sent at or before the floor counts as a replay. So a full
 /// cache refuses old envelopes instead of forgetting them (fail closed). Hold it in an actor.
+///
+/// The cache lives in memory, so it starts empty at each launch. `startedAt` is when: an envelope
+/// sent before it may have been seen by an earlier cache, so `open` refuses it (as `clock_skew`,
+/// which a phone resends with the Mac's clock).
 public struct ReplayCache: Sendable {
     public let window: TimeInterval
     public let capacityPerDevice: Int
+    /// Envelopes sent before this are refused. Nil only for caches that never forget (tests).
+    public let startedAt: Date?
     private var devices: [UUID: DeviceNonces] = [:]
 
     public init(window: TimeInterval = CompanionProtocol.replayWindow,
-                capacityPerDevice: Int = CompanionProtocol.replayCapacityPerDevice) {
+                capacityPerDevice: Int = CompanionProtocol.replayCapacityPerDevice, startedAt: Date? = nil) {
         self.window = window
         self.capacityPerDevice = max(1, capacityPerDevice)
+        self.startedAt = startedAt
     }
 
     /// Whether an envelope with this nonce, sent at `sentAt`, must be refused.

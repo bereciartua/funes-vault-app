@@ -87,11 +87,17 @@ public actor CompanionClient {
         var record: PairingRecord
         var keys: DeviceKeys
         var macHPKEKey: P256.KeyAgreement.PublicKey
+        /// Verifies the Mac's signed refusals (§3).
+        var macSigningKey: P256.Signing.PublicKey
     }
 
     enum SendFailure: Error {
         /// No HTTP answer at all.
         case transport(TransportError)
+        /// A `401` the paired Mac didn't sign for this request, with the code it claimed: another
+        /// host on the address, or a Mac before signed refusals. Nothing in it is acted on; it
+        /// counts as no answer (fail closed: never "removed", never a clock change).
+        case unverified(String)
         case client(CompanionClientError)
     }
 
@@ -153,8 +159,8 @@ public actor CompanionClient {
             throw .local
         }
         guard let record, let keys else { throw .notPaired }
-        guard let macKey = try? record.hpkeKey else { throw .local }
-        let loaded = Paired(record: record, keys: keys, macHPKEKey: macKey)
+        guard let macKey = try? record.hpkeKey, let macSigningKey = try? record.signingKey else { throw .local }
+        let loaded = Paired(record: record, keys: keys, macHPKEKey: macKey, macSigningKey: macSigningKey)
         paired = loaded
         return loaded
     }
@@ -177,7 +183,7 @@ public actor CompanionClient {
         let paired = try loadPaired()
         if !fresh, let address = currentAddress {
             do { return try await probe(address, paired: paired, timeout: Self.probeTimeout) } catch {
-                guard case .transport = error else { throw Self.clientError(error) }
+                guard error.isNoAnswer else { throw Self.clientError(error) }
                 cached = nil
             }
         }
@@ -190,17 +196,19 @@ public actor CompanionClient {
         let address = try await reachableAddress(paired)
         let timeout = Self.timeout(for: Call.method)
         do { return try await send(call, params, to: address, paired: paired, timeout: timeout) } catch {
-            guard case let .transport(transportError) = error else { throw Self.clientError(error) }
+            guard error.isNoAnswer else { throw Self.clientError(error) }
             // Cancelled by the caller, not unanswered: the address is still good.
             guard !Task.isCancelled else { throw Self.clientError(error) }
             // A search answer that took too long: the Mac is there, its model is slow. Never resent.
-            if Call.method == .memoriesAnswer, transportError == .timedOut { throw .answerTimedOut }
+            if Call.method == .memoriesAnswer, case let .transport(transportError) = error, transportError == .timedOut {
+                throw .answerTimedOut
+            }
             cached = nil
             guard Self.repeatable.contains(Call.method) else { throw .unreachable(localNetworkDenied: false) }
         }
         let retry = try await select(paired).address
         do { return try await send(call, params, to: retry, paired: paired, timeout: timeout) } catch {
-            if case .transport = error, !Task.isCancelled { cached = nil }
+            if error.isNoAnswer, !Task.isCancelled { cached = nil }
             throw Self.clientError(error)
         }
     }
@@ -229,7 +237,9 @@ public actor CompanionClient {
         }
     }
 
-    /// Seals, posts and opens one call. A `clock_skew` refusal is retried once with the Mac's time.
+    /// Seals, posts and opens one call. A `401` counts only when the paired Mac signed it for this
+    /// request (§3); a signed `clock_skew` is retried once with the Mac's time, if it's within
+    /// `maxClockOffset` of ours.
     private func send<Call: CompanionCall>(_ call: Call.Type, _ params: Call.Params, to address: MacAddress, paired: Paired,
                                            timeout: TimeInterval, skewRetry: Bool = true) async throws(SendFailure) -> Call.Result {
         let request = CompanionRequest(call, params: params)
@@ -252,9 +262,14 @@ public actor CompanionClient {
             else { throw .client(.badResponse(status: 200)) }
             do { return try reply.get() } catch { throw .client(.method(error)) }
         case CompanionAuthError.httpStatus:
-            let refusal = CompanionAuthError(body: response.body)
+            guard let refusal = CompanionAuthError(signedBody: response.body, deviceID: paired.record.deviceID,
+                                                   nonce: sealed.envelope.nonce, macSigningKey: paired.macSigningKey)
+            else { throw .unverified(CompanionAuthError(body: response.body).code) }
             if case let .clockSkew(serverTime) = refusal, skewRetry {
-                clockOffset = serverTime.timeIntervalSince(clock())
+                let offset = serverTime.timeIntervalSince(clock())
+                // A Mac a day or more away isn't followed: the refusal stands.
+                guard abs(offset) <= CompanionProtocol.maxClockOffset else { throw .client(.refused(refusal)) }
+                clockOffset = offset
                 return try await send(call, params, to: address, paired: paired, timeout: timeout, skewRetry: false)
             }
             throw .client(.refused(refusal))
@@ -265,7 +280,7 @@ public actor CompanionClient {
 
     private static func clientError(_ failure: SendFailure) -> CompanionClientError {
         switch failure {
-        case .transport: .unreachable(localNetworkDenied: false)
+        case .transport, .unverified: .unreachable(localNetworkDenied: false)
         case let .client(error): error
         }
     }
@@ -282,8 +297,8 @@ public actor CompanionClient {
             logger.info("Reached the Mac over \(address.kind.rawValue, privacy: .public)") // log-safe: an address kind, not the address
             return connection
         }
-        // Nothing answered properly. A refusal says more than silence; `revoked` most of all,
-        // since only the paired Mac knows this device.
+        // Nothing answered properly. A refusal says more than silence; `revoked` most of all.
+        // Each was signed by the paired Mac for its probe (unsigned ones are no answer).
         let refusals = race.failures.compactMap { failure -> CompanionClientError? in
             if case let .client(error) = failure { return error }
             return nil
@@ -358,6 +373,7 @@ public actor CompanionClient {
     static func describe(_ failure: SendFailure) -> String {
         switch failure {
         case let .transport(error): error.reason
+        case let .unverified(code): "unsigned \(code)"
         case let .client(.refused(refusal)): refusal.code
         case let .client(.badResponse(status)): "HTTP \(status)"
         case let .client(error): "\(error)"
@@ -401,7 +417,7 @@ public actor CompanionClient {
         }
 
         let record = PairingRecord(payload: payload, confirmation: confirmation, deviceName: deviceName, pairedAt: clock())
-        guard let macKey = try? record.hpkeKey else { throw .local }
+        guard let macKey = try? record.hpkeKey, let macSigningKey = try? record.signingKey else { throw .local }
         do {
             try keyStore.save(keys)
             try recordStore.save(record)
@@ -409,7 +425,7 @@ public actor CompanionClient {
             logger.error("Couldn't save the pairing to the Keychain")
             throw .local
         }
-        paired = Paired(record: record, keys: keys, macHPKEKey: macKey)
+        paired = Paired(record: record, keys: keys, macHPKEKey: macKey, macSigningKey: macSigningKey)
         cached = (address, clock())
         clockOffset = 0
         logger.info("Paired over \(address.kind.rawValue, privacy: .public)") // log-safe: an address kind, not the address
@@ -491,5 +507,15 @@ public actor CompanionClient {
         bytes[bytes.count - 1] ^= 0x01
         json[field] = Base64URL.encode(bytes)
         return (try? JSONSerialization.data(withJSONObject: json)) ?? body
+    }
+}
+
+extension CompanionClient.SendFailure {
+    /// No answer from the paired Mac: nothing came back, or a refusal it didn't sign.
+    var isNoAnswer: Bool {
+        switch self {
+        case .transport, .unverified: true
+        case .client: false
+        }
     }
 }

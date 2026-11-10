@@ -464,6 +464,8 @@ final class PhoneModel {
             String(localized: "This code didn't match your Mac. Show a new one and scan again.")
         case .refused(.revoked), .refused(.unknownDevice):
             String(localized: "This iPhone was removed from Funes on your Mac.")
+        case .refused(.unavailable):
+            String(localized: "Your vault isn't available on your Mac right now. Try again in a moment.")
         case let .refused(refusal):
             String(localized: "Your Mac refused the request (\(refusal.code)).")
         case let .method(error):

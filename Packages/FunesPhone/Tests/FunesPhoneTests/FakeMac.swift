@@ -37,6 +37,12 @@ final class FakeMac: @unchecked Sendable {
 
     /// How far the Mac's clock is ahead of the phone's.
     var skew: TimeInterval = 0
+    /// Whether refusals are signed (§3); false plays a Mac from before signed refusals.
+    var signsRefusals = true
+    /// The device lookup fails, as a momentary database error does.
+    var lookupFails = false
+    /// Forgets every device, as an erased vault does.
+    func forgetDevices() { lock.withLock { devices = [:] } }
     var now: Date { clock.now.addingTimeInterval(skew) }
 
     init(clock: TestClock) { self.clock = clock }
@@ -86,13 +92,20 @@ final class FakeMac: @unchecked Sendable {
 
     private func rpc(_ body: Data) -> TransportResponse {
         let opened: OpenedCompanionRequest
+        let envelope: CompanionRequestEnvelope
+        do { envelope = try CompanionRequestEnvelope(body: body) } catch {
+            return TransportResponse(status: CompanionAuthError.httpStatus, body: error.body)
+        }
         do {
-            let envelope = try CompanionRequestEnvelope(body: body)
             opened = try lock.withLock {
-                try envelope.open(device: devices[envelope.deviceID], macHPKEKey: hpke, replayCache: &cache, now: now)
+                if lookupFails { throw CompanionAuthError.unavailable }
+                return try envelope.open(device: devices[envelope.deviceID], macHPKEKey: hpke, replayCache: &cache, now: now)
             }
         } catch let error as CompanionAuthError {
-            return TransportResponse(status: CompanionAuthError.httpStatus, body: error.body)
+            // Signed and bound to the request (§3), unless playing a Mac from before that.
+            let body = lock.withLock { signsRefusals }
+                ? error.signedBody(deviceID: envelope.deviceID, nonce: envelope.nonce, signer: signing) : error.body
+            return TransportResponse(status: CompanionAuthError.httpStatus, body: body)
         } catch {
             return TransportResponse(status: 500, body: Data())
         }
@@ -135,6 +148,8 @@ final class RoutedTransport: CompanionTransport, @unchecked Sendable {
         /// Times out at once, as if the caller's whole timeout had passed.
         case timesOut
         case status(Int)
+        /// Any host answering with this status and body: a hostile one, say.
+        case reply(Int, Data)
     }
 
     private let lock = NSLock()
@@ -170,6 +185,8 @@ final class RoutedTransport: CompanionTransport, @unchecked Sendable {
             throw .timedOut
         case let .status(code):
             return TransportResponse(status: code, body: Data())
+        case let .reply(status, body):
+            return TransportResponse(status: status, body: body)
         }
     }
 

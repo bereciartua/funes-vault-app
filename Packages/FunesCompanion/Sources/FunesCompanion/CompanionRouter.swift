@@ -15,17 +15,20 @@ public final class CompanionRouter: Sendable {
     let pairing: PairingService
     let handlers: CompanionHandlers
     let gate: TunnelGate?
-    let guardian = EnvelopeGuard()
+    let guardian: EnvelopeGuard
     let limits = DeviceLimits()
     let clock: @Sendable () -> Date
 
+    /// `guardian` is the server's replay cache, kept across the routers a settings change makes;
+    /// nil makes one starting now.
     public init(identity: MacIdentity, devices: DeviceService, pairing: PairingService, handlers: CompanionHandlers,
-                gate: TunnelGate?, clock: @escaping @Sendable () -> Date = Date.init) {
+                gate: TunnelGate?, guardian: EnvelopeGuard? = nil, clock: @escaping @Sendable () -> Date = Date.init) {
         self.identity = identity
         self.devices = devices
         self.pairing = pairing
         self.handlers = handlers
         self.gate = gate
+        self.guardian = guardian ?? EnvelopeGuard(startedAt: clock())
         self.clock = clock
     }
 
@@ -51,17 +54,28 @@ public final class CompanionRouter: Sendable {
 
     func rpc(_ body: Data, transport: DeviceTransport) async -> HTTPResponse {
         let now = clock()
+        let envelope: CompanionRequestEnvelope
+        do { envelope = try CompanionRequestEnvelope(body: body) } catch {
+            // Nothing parsed to bind a signature to.
+            return .json(CompanionAuthError.httpStatus, error.body)
+        }
         let opened: OpenedCompanionRequest
-        do {
-            let envelope = try CompanionRequestEnvelope(body: body)
-            let device = try? await devices.device(id: envelope.deviceID)
+        do throws(CompanionAuthError) {
+            let device: Device?
+            do { device = try await devices.device(id: envelope.deviceID) } catch {
+                // The database failed for a moment: not a verdict on the device (§3, step 1).
+                logger.error("Couldn't look up a companion device")
+                throw CompanionAuthError.unavailable
+            }
             let record = device.flatMap { d in
                 (try? P256.Signing.PublicKey(x963Representation: d.signingPublicKey))
                     .map { CompanionDeviceRecord(id: d.id, signingKey: $0, isRevoked: d.isRevoked) }
             }
             opened = try await guardian.open(envelope, device: record, macKey: identity.hpkeKey, now: now)
         } catch {
-            return .json(CompanionAuthError.httpStatus, error.body)
+            // Signed and bound to this request, so the phone can trust it and nobody can replay it.
+            return .json(CompanionAuthError.httpStatus,
+                         error.signedBody(deviceID: envelope.deviceID, nonce: envelope.nonce, signer: identity.signingKey))
         }
         try? await devices.touch(deviceID: opened.deviceID, transport: transport, now: now)
         let reply: Data
@@ -86,9 +100,13 @@ public final class CompanionRouter: Sendable {
     }
 }
 
-/// Holds the replay cache, so the check and the record happen together.
-actor EnvelopeGuard {
-    private var cache = ReplayCache()
+/// Holds the replay cache, so the check and the record happen together. One per server, kept
+/// across settings changes; envelopes sent before it started are refused (`ReplayCache.startedAt`),
+/// since a cache from before a relaunch may have seen them.
+public actor EnvelopeGuard {
+    private var cache: ReplayCache
+
+    public init(startedAt: Date = Date()) { cache = ReplayCache(startedAt: startedAt) }
 
     func open(_ envelope: CompanionRequestEnvelope, device: CompanionDeviceRecord?, macKey: P256.KeyAgreement.PrivateKey,
               now: Date) throws(CompanionAuthError) -> OpenedCompanionRequest {
