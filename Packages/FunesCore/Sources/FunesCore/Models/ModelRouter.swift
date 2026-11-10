@@ -395,40 +395,26 @@ public protocol ProviderKeyStore: Sendable {
 public enum KeychainError: Error, Equatable { case status(OSStatus) }
 
 /// `kSecClassGenericPassword`, service `com.funesvault.provider`, account = provider id,
-/// `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`.
+/// `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, in the data-protection Keychain, moved
+/// there from the login keychain on first read (`MigratingKeychain`).
 public struct KeychainProviderKeyStore: ProviderKeyStore {
-    public let service: String
+    public var service: String { keychain.service }
+    let keychain: MigratingKeychain
 
-    public init(service: String = Identifiers.providerKeychainService) { self.service = service }
-
-    private func query(_ provider: ProviderID) -> [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
-         kSecAttrAccount as String: provider.rawValue]
+    public init(service: String = Identifiers.providerKeychainService, backend: any KeychainBackend = SystemKeychain()) {
+        keychain = MigratingKeychain(service: service, backend: backend)
     }
 
     public func key(for provider: ProviderID) throws -> String? {
-        var q = query(provider)
-        q[kSecReturnData as String] = true
-        q[kSecMatchLimit as String] = kSecMatchLimitOne
-        var out: CFTypeRef?
-        let status = SecItemCopyMatching(q as CFDictionary, &out)
-        if status == errSecItemNotFound { return nil }
-        guard status == errSecSuccess, let data = out as? Data else { throw KeychainError.status(status) }
-        return String(decoding: data, as: UTF8.self)
+        try keychain.read(account: provider.rawValue).map { String(decoding: $0, as: UTF8.self) }
     }
 
     public func setKey(_ key: String, for provider: ProviderID) throws {
-        try deleteKey(for: provider)
-        var q = query(provider)
-        q[kSecValueData as String] = Data(key.utf8)
-        q[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        let status = SecItemAdd(q as CFDictionary, nil)
-        guard status == errSecSuccess else { throw KeychainError.status(status) }
+        try keychain.write(Data(key.utf8), account: provider.rawValue)
     }
 
     public func deleteKey(for provider: ProviderID) throws {
-        let status = SecItemDelete(query(provider) as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else { throw KeychainError.status(status) }
+        try keychain.delete(account: provider.rawValue)
     }
 }
 

@@ -7,10 +7,13 @@ The iPhone is a **thin client** of the Mac. There is no replication and no cloud
 ## 1. Keys
 | Key | Algorithm | Where | Purpose |
 |---|---|---|---|
-| Mac signing key | P-256 ECDSA | Mac Keychain, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` | Signs pairing confirmations and refusals (§3.2) |
+| Mac signing key | P-256 ECDSA | Mac's **data-protection** Keychain, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` (below) | Signs pairing confirmations and refusals (§3.2) |
 | Mac HPKE key | P-256 key agreement | Mac Keychain, same | Recipient of every phone request |
 | Device signing key | P-256 ECDSA | iPhone **Secure Enclave** (`SecureEnclave.P256.Signing`); Keychain fallback on devices without one | Signs every request |
 | Device HPKE key | P-256 key agreement | iPhone Keychain (`…AfterFirstUnlockThisDeviceOnly`) | Recipient of pairing confirmations |
+
+- **Where the Mac's keys live.** One generic-password item (service `com.funesvault.companion`, `.dev` for a development vault; account `mac-identity`) in the data-protection Keychain (`kSecUseDataProtectionKeychain`), where `…ThisDeviceOnly` holds: the keys never leave this Mac, not with Migration Assistant or a restored login keychain either. It needs the app signed with an application identifier, which the release build has from its Developer ID provisioning profile (`JVNJ326L7B.com.funesvault.mac`, checked by `scripts/check_bundle.sh`); that identifier is the item's access group, so no other entitlement is needed.
+- **Moving from the login keychain** (up to 0.5.1 the item was in the file-based login keychain, which ignores the accessibility attribute). On read, the data-protection Keychain is asked first; if the item isn't there, the login keychain's is copied to it, read back and compared, and only then deleted. A copy that's refused or doesn't read back the same leaves the old item as it was, and it's used. A build that can't use the data-protection Keychain (unsigned, or `swift test`: `errSecMissingEntitlement`) keeps using the login keychain exactly as before, so no phone is unpaired; only status codes are logged. A failure that is neither "not there" nor "not for this build", with no old item, is an error rather than "no identity", so the Mac never makes a new identity (which would unpair every phone) because the Keychain was locked. New items go to the data-protection Keychain when it takes them; a delete removes both. `MigratingKeychain` in FunesCore, shared with the provider API keys ([model providers](model-providers.md)).
 | Pairing secret | 32 random bytes | QR code only, valid once for 5 min | Proves the phone saw the Mac's screen |
 
 - **Ciphersuite:** HPKE base mode, `P256_SHA256_AES_GCM_256` (CryptoKit `HPKE`, macOS 14+ / iOS 17+).
