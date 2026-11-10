@@ -94,7 +94,7 @@ The MCP Registry workflow needs `MCP_REGISTRY_DNS_KEY` in its own `registry` env
 
 - **model**, with no environment, no secrets and a read-only token, converts the model (or restores it from the cache) and hands only the `.mlpackage` and `vocab.txt` on as an artifact, kept 31 days so a late approval still finds it.
 - **release**, in the `release` environment with only `contents: write`, checks every file of that artifact against the pins in the checkout and compiles it (`fetch_embedding_model.sh --install`; `FUNES_MODEL_VERIFY_ONLY=1` stops it from ever converting). It imports the certificate into a temporary keychain, non-extractable and trusted only to `codesign`, installs the profile in `~/Library/Developer/Xcode/UserData/Provisioning Profiles`, writes the keys to files under `RUNNER_TEMP`, runs `scripts/release.sh` and deletes the keychain, the profile and the keys.
-- **attest**, the only job with an OIDC token, checks the DMGs and the zip against `SHA256SUMS` and attests them (`gh attestation verify FunesVault-<version>.dmg --repo bereciartua/funes-vault-app`). It needs a public repository.
+- **attest**, the only job with an OIDC token, attests the DMGs and the zip from the release job's `SHA256SUMS` (the builds themselves stay out of the run's artifacts, so nobody can download one before the draft is published) (`gh attestation verify FunesVault-<version>.dmg --repo bereciartua/funes-vault-app`). It needs a public repository.
 
 Keep the `.p12` and the Sparkle key backed up outside GitHub.
 
