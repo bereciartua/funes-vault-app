@@ -369,16 +369,21 @@ enum MemoryStore {
         return db.changesCount
     }
 
-    /// A purged memory leaves no copy of its text (FR-V-04, storage §2): the piece it was saved
-    /// from, and its split input's original text, lose theirs.
+    /// A purged memory leaves no copy of its text (FR-V-04, storage §4): every suggestion it was
+    /// saved from or that targets it (grouped or not, any status), and its split input's original
+    /// text, lose theirs. Runs before the DELETE, which nulls `result_memory_id` and
+    /// `target_memory_id`.
     static func dropGroupText(_ db: Database, memoryIDs: [String]) throws {
         guard !memoryIDs.isEmpty else { return }
         let marks = databaseQuestionMarks(count: memoryIDs.count)
         let groups = try String.fetchAll(db, sql: """
             SELECT DISTINCT group_id FROM suggestion WHERE group_id IS NOT NULL AND result_memory_id IN (\(marks))
             """, arguments: StatementArguments(memoryIDs))
-        try db.execute(sql: "UPDATE suggestion SET title = '', body = '', evidence = NULL WHERE group_id IS NOT NULL AND result_memory_id IN (\(marks))",
-                       arguments: StatementArguments(memoryIDs))
+        try db.execute(sql: """
+            UPDATE suggestion SET title = '', body = '', evidence = NULL
+            WHERE result_memory_id IN (\(marks)) OR target_memory_id IN (\(marks))
+              OR id IN (SELECT suggestion_id FROM suggestion_target WHERE memory_id IN (\(marks)))
+            """, arguments: StatementArguments(memoryIDs + memoryIDs + memoryIDs))
         for group in groups {
             try db.execute(sql: "UPDATE suggestion_group SET source_text = NULL WHERE id = ?", arguments: [group])
             try db.execute(sql: "UPDATE suggestion SET title = '', body = '' WHERE id = ? AND status = 'split'", arguments: [group])
