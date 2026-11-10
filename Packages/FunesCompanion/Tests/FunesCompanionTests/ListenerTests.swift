@@ -258,6 +258,59 @@ import Testing
         #expect(CompanionListener.firstByteTimeout < CompanionListener.idleTimeout)
     }
 
+    /// Sends a request on a raw connection and leaves it open, for the caller to close.
+    func send(port: Int, path: String, host: String, body: Data) async -> NWConnection {
+        let connection = await openIdle(port: port)
+        let head = "POST \(path) HTTP/1.1\r\nHost: \(host)\r\nContent-Type: \(CompanionProtocol.envelopeContentType)\r\n"
+            + "Content-Length: \(body.count)\r\n\r\n"
+        connection.send(content: Data(head.utf8) + body, completion: .idempotent)
+        return connection
+    }
+
+    /// A client that goes away while its request is handled cancels the handler.
+    @Test func aClientThatGoesAwayCancelsItsHandler() async throws {
+        let port = Self.freePort()
+        let gate = AsyncStream<String>.makeStream()
+        let listener = CompanionListener(port: port, modes: [.tunnel], bonjour: nil) { _, _ in
+            gate.continuation.yield("started")
+            await withTaskCancellationHandler {
+                while !Task.isCancelled { try? await Task.sleep(for: .milliseconds(20)) }
+            } onCancel: { gate.continuation.yield("cancelled") }
+            return HTTPResponse(status: 204)
+        }
+        defer { listener.stop() }
+        _ = try await start(listener)
+        let client = await send(port: port, path: "/hello", host: "127.0.0.1:\(port)", body: Data("{}".utf8))
+        var events = gate.stream.makeAsyncIterator()
+        #expect(await events.next() == "started")
+        client.cancel()
+        #expect(await events.next() == "cancelled")
+    }
+
+    /// The phone cancels its pairing while the Mac asks: the prompt is withdrawn as a Deny, and
+    /// an Allow afterwards registers nothing.
+    @Test func aPairingWhoseClientGoesAwayIsWithdrawn() async throws {
+        let gate = TunnelGate(secret: TunnelGate.newSecret(), publicHost: "maya.tailnet.ts.net")
+        let h = try CompanionHarness(gate: gate)
+        let port = Self.freePort()
+        let router = h.router
+        let listener = CompanionListener(port: port, modes: [.tunnel], bonjour: nil) { await router.handle($0, transport: $1) }
+        defer { listener.stop() }
+        _ = try await start(listener)
+        let phone = CompanionHarness.Phone()
+        let (_, body) = try PairingClient.start(payload: await h.qr(), deviceName: "Sam's iPhone", model: "iPhone17,1",
+                                                signer: phone.signer, deviceHPKEKey: phone.hpke, now: h.clock.now)
+        let client = await send(port: port, path: "/r/\(gate.secret)\(CompanionProtocol.pairPath)", host: "maya.tailnet.ts.net", body: body)
+        for _ in 0..<300 where !(await h.pairing.isAsking) { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(await h.pairing.isAsking)
+        client.cancel()
+        for _ in 0..<300 where await h.pairing.isAsking { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(await h.pairing.state == .ended(.denied))
+        await h.pairing.answer(allow: true)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(try await h.services.devices.devices().isEmpty)
+    }
+
     /// Settings changes restart the listener on the same port.
     @Test func restartsOnTheSamePort() async throws {
         let port = Self.freePort()

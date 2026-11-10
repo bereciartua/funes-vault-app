@@ -191,6 +191,8 @@ public final class CompanionListener: @unchecked Sendable {
         private var outbox = Data()
         private var written = 0
         private var drained: [@Sendable () -> Void] = []
+        /// The handler of the request being answered, cancelled if the client goes away.
+        private var handling: Task<Void, Never>?
         var onClose: (@Sendable () -> Void)?
 
         init(_ fd: Int32, address: [UInt8], transport: DeviceTransport, limits: Limits, queue: DispatchQueue,
@@ -228,6 +230,10 @@ public final class CompanionListener: @unchecked Sendable {
 
         private func readAvailable() {
             guard !closed else { return }
+            if busy {
+                clientGoneWhileBusy()
+                return
+            }
             var buffer = [UInt8](repeating: 0, count: 65_536)
             let count = Darwin.read(fd, &buffer, buffer.count)
             if count > 0 {
@@ -247,12 +253,25 @@ public final class CompanionListener: @unchecked Sendable {
             }
         }
 
+        /// While a request is handled the socket is only watched, not read: a client that goes
+        /// away cancels its handler (a pairing request waiting for Allow is then denied, §2.2),
+        /// and a pipelined request waits in the socket until this one is answered.
+        private func clientGoneWhileBusy() {
+            var byte: UInt8 = 0
+            let peeked = recv(fd, &byte, 1, MSG_PEEK)
+            if peeked > 0 {
+                pauseReading()
+            } else if peeked == 0 || (errno != EAGAIN && errno != EINTR) {
+                handling?.cancel()
+                close()
+            }
+        }
+
         private func handle(_ request: HTTPRequest) {
             busy = true
-            pauseReading()
             timer?.cancel()
             let transport = self.transport, handler = self.handler
-            Task {
+            handling = Task {
                 let response = await handler(request, transport)
                 self.queue.async {
                     guard !self.closed else { return }

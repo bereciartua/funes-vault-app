@@ -152,13 +152,23 @@ public actor PairingService {
         let id = UUID(), timeout = promptTimeout
         // Never two prompts: one still waiting is denied rather than left hanging.
         cancelPrompt()
-        return await withCheckedContinuation { continuation in
-            prompt = continuation
-            promptID = id
-            Task { [weak self] in
-                try? await Task.sleep(for: .seconds(timeout))
-                await self?.timeOut(id)
+        // The phone gave up (its connection closed, so the listener cancels this request): the
+        // prompt is withdrawn as a Deny, so a later Allow can't register a device nobody holds.
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                prompt = continuation
+                promptID = id
+                if Task.isCancelled {
+                    answer(allow: false)
+                    return
+                }
+                Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(timeout))
+                    await self?.timeOut(id)
+                }
             }
+        } onCancel: {
+            Task { await self.timeOut(id) }
         }
     }
 
