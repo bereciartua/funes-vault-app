@@ -172,7 +172,26 @@
 
     },
     "%lld captures waiting" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld capture waiting"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld captures waiting"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld claims left out: they didn't quote a memory" : {
 
@@ -197,16 +216,92 @@
 
     },
     "%lld memories" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memory"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memories"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld memories shared" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memory shared"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memories shared"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld memories weren't read: they look like they hold secrets" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memory wasn't read: it looks like it holds secrets"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memories weren't read: they look like they hold secrets"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld memories weren't read: they're above your Mac's cloud limit" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memory wasn't read: it's above your Mac's cloud limit"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memories weren't read: they're above your Mac's cloud limit"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld more matched but can't go to this agent (%@)." : {
       "localizations" : {
@@ -464,7 +559,26 @@
 
     },
     "Back online · %lld captures sent" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Back online · %lld capture sent"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Back online · %lld captures sent"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Beyond the session" : {
 
@@ -1029,7 +1143,26 @@
 
     },
     "No answer in the %lld results read." : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "No answer in the %lld result read."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "No answer in the %lld results read."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "No captures waiting" : {
 
@@ -1252,7 +1385,26 @@
       }
     },
     "Reading %lld results…" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Reading %lld result…"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Reading %lld results…"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Recent Captures" : {
 
@@ -1464,7 +1616,26 @@
 
     },
     "Shared %lld memories." : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Shared %lld memory."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Shared %lld memories."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Shared %lld times" : {
 
@@ -1654,6 +1825,9 @@
 
     },
     "This iPhone" : {
+
+    },
+    "This iPhone can't scan codes with its camera." : {
 
     },
     "This iPhone is offline. Captures wait here and go to your Mac once it's back online." : {
@@ -1888,7 +2062,26 @@
 
     },
     "Your Mac forgets this iPhone, and this iPhone forgets its keys. %lld captures haven't reached your Mac yet: keep them to send after pairing again, or delete them." : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Your Mac forgets this iPhone, and this iPhone forgets its keys. %lld capture hasn't reached your Mac yet: keep it to send after pairing again, or delete it."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Your Mac forgets this iPhone, and this iPhone forgets its keys. %lld captures haven't reached your Mac yet: keep them to send after pairing again, or delete them."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Your Mac forgets this iPhone, and this iPhone forgets its keys. You can pair again with a new code." : {
 
