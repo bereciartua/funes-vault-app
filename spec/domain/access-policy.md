@@ -85,11 +85,11 @@ The task text and keywords are kept in memory only, tied to the request id, for 
 
 ### 3.6 Approval (panel or pending list)
 - The UI shows each eligible memory's **current** text, read fresh from the database when shown.
-- **Rebuilding:** when the panel is built, the snapshot is re-checked against the current memories and access. If a memory's version or eligibility, or the agent's revision, changed, the snapshot is rebuilt (only the original candidates that are still eligible, with their current versions) and gets a new `snapshotRevision`. If none remain eligible, the request is denied with `no_allowed_memories`. So an access change invalidates pending approvals (FR-A-03), and a panel built before the change is refused on approval (T22).
+- **Rebuilding:** when the panel is built, the snapshot is re-checked against the current memories and access. If a memory's version or eligibility, or the agent's revision, changed, the snapshot is rebuilt (only the original candidates that are still eligible, with their current versions) and gets a new `snapshotRevision`. If none remain eligible, the request is denied with `no_allowed_memories` (an Activity row, and a call waiting in `request_memory` gets the denial at once, as it does for one approved after its 15 minutes, denied with `approval_expired`). So an access change invalidates pending approvals (FR-A-03), and a panel built before the change is refused on approval (T22).
 - **Allow:**
   - The user picks a non-empty subset S of the eligible ids.
   - The UI submits `{requestId, snapshotRevision, S}`.
-  - It's refused if the revision doesn't match the stored one ("This request changed; review again"). The UI then rebuilds the panel.
+  - It's refused if the revision doesn't match the stored one ("This request changed; review again"), and also if the agent's revision, or a snapshot memory's version or eligibility, changed since the stored snapshot was built, even when no panel was built since. The UI then rebuilds the panel.
   - On success: `status = approved`, `approvedMemoryIds = S`, `approvalExpiresAt = now + 15 min`, `decidedAt = now`.
 - **Deny:** `status = denied`, reason `denied_by_user`.
 
@@ -211,7 +211,7 @@ Offered only when **all** of these hold:
   - **A read that was denied or needs approval:** inside the call, within the same 45 s as the Share panel. Allow Once or Always Allow runs the request again; a request that was waiting for approval is replaced (denied with `policy_changed`, recorded as "replaced"), and the new one gets its own panel for the rest of the 45 s.
   - **A read shared without asking** (some memories allowed, `askBeforeSharing` off): the agent gets its answer at once, and the panel offers only **Not Now** and **Always Allow**, for its next request, with no default button.
   - **A suggestion:** the agent gets its refusal at once (suggestions never wait). If the user picks Allow Once or Always Allow, that suggestion is stored again and goes to the Inbox with its Save panel, even for an agent that may save without asking. Allow Once for a suggestion holds only at the agent's revision when the offer was made (a stale panel is refused with `policy_changed`), and grants only what was offered: a category, or the missing operation, never both.
-- The panel asks about one category: the primary category of the first withheld memory, in score order. Every offer records the agent's revision; Allow Once for a read is bound to that revision too, so an access change while the panel is open makes it fail closed.
+- The panel asks about one category: the primary category of the first withheld memory, in score order. Every offer records the agent's revision; Allow Once for a read is bound to that revision too, so an access change while the panel is open makes it fail closed: the request is denied with `policy_changed`, as is one carrying a grant already used.
 
 ## 8. Reason codes
 | Code | Where | Meaning shown to the user / agent |
