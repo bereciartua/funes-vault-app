@@ -253,14 +253,14 @@ enum ExtractionPrompt {
             parts.append("The note answers the question: \"\(hint.question)\" (likely kind \(hint.kind.rawValue), category \(hint.categoryKey)).")
         }
         if let context {
-            parts.append("<context>\n\(context)\n</context>\n\(contextNote)")
+            parts.append("<context>\n\(PromptTags.neutralized(context, tags: PromptTags.extraction))\n</context>\n\(contextNote)")
         }
         var attributes = ""
         if let note {
-            if let title = note.titleText { attributes += " title=\"\(title)\"" }
+            if let title = note.titleText { attributes += " title=\"\(PromptTags.neutralized(title, tags: PromptTags.extraction))\"" }
             attributes += " written=\"\(note.writtenText(timeZone: timeZone))\""
         }
-        parts.append("<note\(attributes)>\n\(chunk)\n</note>")
+        parts.append("<note\(attributes)>\n\(PromptTags.neutralized(chunk, tags: PromptTags.extraction))\n</note>")
         return parts.joined(separator: "\n")
     }
 
@@ -346,6 +346,36 @@ enum ExtractionPrompt {
     }
 }
 
+/// Stored text inside a tagged prompt (memory processing §5.3, §5.5, §9.3): a `<` that would start
+/// one of the prompt's own tags or closing tags (any case, spaces allowed) is sent as a look-alike,
+/// so a memory or note can't close its block and forge another. Quotes, evidence and new text the
+/// model copies from it get the `<` back.
+enum PromptTags {
+    static let standIn = "\u{2039}"
+
+    static let tidyUp = ["memory", "title", "body"]
+    static let extraction = ["note", "context"]
+    static let decision = ["piece"]
+
+    static func neutralized(_ text: String, tags: [String]) -> String {
+        guard text.contains("<") else { return text }
+        // Without the pattern, every `<` goes (fail closed).
+        guard let pattern = pattern("<", tags) else { return text.replacingOccurrences(of: "<", with: standIn) }
+        return text.replacing(pattern) { standIn + ($0.output[1].substring ?? "") }
+    }
+
+    /// `text` with the stand-ins before those tags put back: what the stored text itself says.
+    static func restored(_ text: String, tags: [String]) -> String {
+        guard text.contains(standIn), let pattern = pattern(standIn, tags) else { return text }
+        return text.replacing(pattern) { "<" + ($0.output[1].substring ?? "") }
+    }
+
+    private static func pattern(_ lead: String, _ tags: [String]) -> Regex<AnyRegexOutput>? {
+        let names = tags.map(NSRegularExpression.escapedPattern(for:)).joined(separator: "|")
+        return (try? Regex(NSRegularExpression.escapedPattern(for: lead) + #"(\s*/?\s*(?:"# + names + #")\b)"#))?.ignoresCase()
+    }
+}
+
 /// Decodes a value, or nil instead of failing the whole array.
 struct Lenient<T: Decodable>: Decodable {
     let value: T?
@@ -390,13 +420,18 @@ enum ExtractionValidator {
             overflow += max(0, pieces.count - ExtractionPrompt.maxPiecesPerChunk)
             for p in pieces.prefix(ExtractionPrompt.maxPiecesPerChunk) {
                 // Quotes lose the prompt's delimiter tags; empty quotes are ignored (Spike E §3).
-                let evidence = (p.evidence ?? []).map(stripTags).filter { !$0.isEmpty }
-                guard !evidence.isEmpty, evidence.allSatisfy({ quoteAppears($0, in: normalizedSource) }) else {
+                // A quote of neutralized text counts as the source's own words, and is kept as those.
+                let quotes = (p.evidence ?? []).filter { !stripTags($0).isEmpty }
+                let evidence = quotes.compactMap { q in
+                    [stripTags(q), stripTags(PromptTags.restored(q, tags: PromptTags.extraction))]
+                        .first { quoteAppears($0, in: normalizedSource) }
+                }
+                guard !quotes.isEmpty, evidence.count == quotes.count else {
                     dropped[.evidence, default: 0] += 1
                     continue
                 }
-                let body = (p.body ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-                let title = (p.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let body = PromptTags.restored((p.body ?? "").trimmingCharacters(in: .whitespacesAndNewlines), tags: PromptTags.extraction)
+                let title = PromptTags.restored((p.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines), tags: PromptTags.extraction)
                 guard !body.isEmpty else {
                     dropped[.empty, default: 0] += 1
                     continue

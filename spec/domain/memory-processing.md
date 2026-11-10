@@ -274,7 +274,7 @@ Phase 6b ([ADR-0021](../architecture/decisions/0021-daily-tidy-up.md)); replaces
 - **Eligibility:** active, no pending tidy-up suggestion, not in a pending Share panel, and within the cloud limit for a cloud provider. Above the limit, only a local provider or the code-only rules.
 
 ### 9.3 The model call
-One call per cluster, with a timeout (§9.6). Input per memory, as Spike E sent it: an alias (`m1`, `m2`…, never the id, as in §5.5), kind, title, body, categories, sensitivity, created and updated dates, source. The title and body are separate tags (`<title>`, `<body>`), so a title that no longer matches its body shows; Spike E joined them as "title. body". A read-only memory (one an earlier cluster of the run holds) is sent like the others; validation refuses any change to it. Output:
+One call per cluster, with a timeout (§9.6). Input per memory, as Spike E sent it: an alias (`m1`, `m2`…, never the id, as in §5.5), kind, title, body, categories, sensitivity, created and updated dates, source. The title and body are separate tags (`<title>`, `<body>`), so a title that no longer matches its body shows; Spike E joined them as "title. body". A `<` in stored text that would start one of the prompt's own tags or closing tags (`memory`, `title`, `body`; any case, spaces allowed) is sent as `‹`, so a memory can't close its block and forge another; new text the model copies from it gets the `<` back. Extraction (`note`, `context`) and the decision call (`piece`) do the same, and evidence matches as given or with the `<` put back, and is kept as the input's own words. A read-only memory (one an earlier cluster of the run holds) is sent like the others; validation refuses any change to it. Output:
 
 ```
 actions: [

@@ -203,7 +203,8 @@ enum TidyUpPrompt {
             return "<memory id=\"\(m.alias)\" kind=\"\(memory.kind.rawValue)\" categories=\"\(memory.categoryKeys.joined(separator: ","))\" "
                 + "sensitivity=\"\(memory.sensitivity.name)\" created=\"\(DecisionPrompt.day(memory.createdAt))\" "
                 + "updated=\"\(DecisionPrompt.day(memory.updatedAt))\" source=\"\(memory.source.rawValue)\">\n"
-                + "<title>\(memory.title)</title>\n<body>\(memory.body)</body>\n</memory>"
+                + "<title>\(PromptTags.neutralized(memory.title, tags: PromptTags.tidyUp))</title>\n"
+                + "<body>\(PromptTags.neutralized(memory.body, tags: PromptTags.tidyUp))</body>\n</memory>"
         }.joined(separator: "\n")
         guard let focus = cluster.focus.flatMap(cluster.member(id:)) else { return memories }
         let others = cluster.members.count > 1 ? " against the others and" : ""
@@ -262,7 +263,10 @@ enum TidyUpValidator {
         var kept: [TidyUpAction] = []
         var blocked: [Block: Int] = [:]
 
-        func text(_ s: String?) -> String { (s ?? "").trimmingCharacters(in: .whitespacesAndNewlines) }
+        // New text copied from a neutralized prompt gets its `<` back (PromptTags).
+        func text(_ s: String?) -> String {
+            PromptTags.restored((s ?? "").trimmingCharacters(in: .whitespacesAndNewlines), tags: PromptTags.tidyUp)
+        }
 
         for raw in output.actions {
             func block(_ why: Block) { blocked[why, default: 0] += 1 }
