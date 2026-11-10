@@ -159,7 +159,7 @@ A request still in `needs_approval` 15 minutes after creation becomes `denied` w
 |---|---|
 | Lengths: title 1–180, body 1–10,000, evidence ≤ 2,000, purpose ≤ 160, ≤ 12 categories | `invalid_input` |
 | Every category key exists | `unknown_category` |
-| Secret scanner over title, body, evidence and caller metadata | `secret_like_content` (the response lists pattern *types* only) |
+| Secret scanner over title, body, evidence, purpose and caller metadata | `secret_like_content` (the response lists pattern *types* only) |
 | `target_memory_id`, when given, refers to an active memory that this agent could read (§3.3 eligibility with `read` assumed) | otherwise `not_found` (never reveals that a memory exists) |
 
 ### 5.2 Gate
@@ -167,6 +167,8 @@ G1–G3 as in §3.1.
 
 ### 5.3 Scope check for the proposed memory
 Run M3–M5 against the proposed sensitivity (default LOW) and categories. A failure means `denied` with that reason. An agent can't plant memories outside its own scope.
+
+A correction (`target_memory_id`) takes its target's categories and the higher of the proposed sensitivity and the target's, as a tidy-up update does: an agent can't move a memory out of a category or lower its sensitivity. Replace applies them so (re-read from the target at apply time) unless the user changes them in the Inbox.
 
 **After splitting** (Phase 6, [ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md)): Funes's own classification of the pieces of an accepted suggestion may put a piece outside the agent's scope (another category, a higher sensitivity). Such a piece is never saved for the agent and never auto-applied: it goes to the Inbox flagged "Outside <agent>'s scope" and is left out of Apply all. The agent can't *save* outside its scope; its input can still be *proposed* to the user. The agent learns nothing about it ([memory processing §5.6](memory-processing.md#56-agent-input-and-the-policy)).
 
@@ -179,7 +181,7 @@ Run M3–M5 against the proposed sensitivity (default LOW) and categories. A fai
 
 - `suggest_memory` never blocks waiting for the user. The panel is a convenience; the result is final when returned.
 - Caller metadata is stored as inert JSON under `callerMetadata` and is never interpreted.
-- Corrections (`target_memory_id`) always create `action = update` suggestions, even for an agent with `write` and ask before saving off: agents can't edit or delete in v0.1 ([FR-S-06](../product/03-requirements.md), Q12). Applying one offers Replace or Keep both.
+- Corrections (`target_memory_id`) always create `action = update` suggestions, even for an agent with `write` and ask before saving off: agents can't edit or delete in v0.1 ([FR-S-06](../product/03-requirements.md), Q12). Applying one offers Replace or Keep both. Replace keeps the target's expiry unless the suggestion or the user's edit sets one.
 - **Splitting** (Phase 6): a queued suggestion may become a group of suggestions; a saved memory may be replaced by its pieces (create-only, within the agent's write scope) when the user allows auto-apply, or get a Split this memory suggestion. The result returned to the agent doesn't change. Updates and retractions derived from agent input are always suggestions, whatever the auto-apply setting. A memory an agent saved directly is **untrusted**: auto-apply never changes or archives another memory on its strength ([memory processing §5.7](memory-processing.md#57-auto-apply-for-new-memories)).
 - **Defaults:** kind `fact`; categories from the rules classifier, falling back to `personal_preferences`; sensitivity LOW raised to the categories' default (so a Health suggestion without a sensitivity is SENSITIVE, and is checked as such in §5.3).
 - **Rate limits:** see the MCP spec (writes: 20 per minute, bursts of 10; 250 per day).

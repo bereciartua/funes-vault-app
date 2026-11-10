@@ -265,7 +265,7 @@ stateDiagram-v2
 - **Processing** (Phase 6, memory processing §5.2): a new input waits in `pending` while its job splits it; Apply is refused (`processing`) until the result replaces it or the split fails.
 - **Apply per action** (Phase 6.1), each in one transaction with the suggestion's status and provenance:
   - `create`: a new memory.
-  - `update`: **Replace** (the default: the target takes the proposal) or **Keep both** (a new memory; Mac only).
+  - `update`: **Replace** (the default: the target takes the proposal, keeping its expiry unless the proposal or the user's edit sets one; an agent's correction also keeps the target's categories and never lowers its sensitivity unless the user changes them) or **Keep both** (a new memory; Mac only).
   - `archive`: archives the target; a `survivor` must still be active.
   - `duplicate`: no memory changes.
   - `split`: the pending pieces of its group become memories (source `tidy_up`, never below the original's sensitivity, `split_from`/`split_into` provenance) and the original is archived.

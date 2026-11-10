@@ -52,6 +52,7 @@ import Testing
         let secret = "sk-abc" + String(repeating: "d", count: 24)
         for input in [SuggestInput(title: "Key", body: "my key \(secret)"),
                       SuggestInput(title: "Key", body: "fine", evidence: "the user said \(secret)"),
+                      SuggestInput(title: "Key", body: "fine", purpose: "store \(secret)"),
                       SuggestInput(title: "Key", body: "fine", metadataJSON: #"{"note": "\#(secret)"}"#)] {
             let out = try await s.suggest(agentID: fx.agentID, input, now: fx.now)
             #expect(out.status == .denied && out.reason == .secretLikeContent && out.findings == [.openAIStyleKey])
@@ -373,5 +374,95 @@ import Testing
         let none = CaptureProposal(title: "T", kind: .fact, categoryKeys: ["x"], sensitivity: .low, timeLimited: false)
             .validated(categories: MemoryCategory.builtins, fallbackTitle: "")
         #expect(none.categoryKeys == ["personal_preferences"])
+    }
+
+    // MARK: Review fixes
+
+    /// An agent's correction keeps its target's categories and never lowers its sensitivity
+    /// (access policy §5.3), when suggested and again at Replace; the user's own edits still win.
+    @Test func anAgentCorrectionIsFlooredAtItsTarget() async throws {
+        let (fx, s) = try SuggestionServiceTests.make()
+        try fx.setAccess { $0.operations = [.suggest]; $0.maxSensitivity = .secret }
+        let target = fx.id("m3")  // health, SENSITIVE
+        var input = SuggestInput(title: "Memory m3", body: "Corrected", categories: ["personal_preferences"], sensitivity: .low)
+        input.targetMemoryID = target
+        let out = try await s.suggest(agentID: fx.agentID, input, now: fx.now)
+        let suggestionID = try #require(out.suggestionID)
+        let stored = try #require(try await s.suggestion(id: suggestionID))
+        #expect(stored.categoryKeys == ["health"] && stored.sensitivity == .sensitive)
+        _ = try await s.apply(suggestionID: stored.id, now: fx.now)
+        var m = try #require(try fx.store.memory(id: target))
+        #expect(m.body == "Corrected" && m.categoryKeys == ["health"] && m.sensitivity == .sensitive)
+
+        // A row stored with lower values (before this rule) is floored at Replace too.
+        let legacy = try await fx.store.writer.write { db in
+            try SuggestionService.insertSuggestion(
+                db, origin: .agent, agentID: fx.agentID,
+                input: SuggestInput(title: "Memory m3", body: "Lowered", categories: ["personal_preferences"], targetMemoryID: target),
+                categories: ["personal_preferences"], sensitivity: .low, now: fx.now)
+        }
+        _ = try await s.apply(suggestionID: legacy, now: fx.now)
+        m = try #require(try fx.store.memory(id: target))
+        #expect(m.body == "Lowered" && m.categoryKeys == ["health"] && m.sensitivity == .sensitive)
+        // Raising is kept.
+        input.sensitivity = .restricted
+        let raised = try await s.suggest(agentID: fx.agentID, input, now: fx.now)
+        #expect(try await s.suggestion(id: raised.suggestionID!)?.sensitivity == .restricted)
+        // The user may change them when applying.
+        _ = try await s.apply(suggestionID: raised.suggestionID!,
+                              edits: SuggestionEdit(categoryKeys: ["personal_preferences"], sensitivity: .low), now: fx.now)
+        m = try #require(try fx.store.memory(id: target))
+        #expect(m.categoryKeys == ["personal_preferences"] && m.sensitivity == .low)
+    }
+
+    /// Replace keeps the target's expiry unless the suggestion or the user's edit sets one.
+    @Test func replaceKeepsTheTargetsExpiry() async throws {
+        let (fx, s) = try SuggestionServiceTests.make()
+        let target = fx.id("m1")
+        let expiry = fx.now.plus(days: 10)
+        _ = try fx.store.updateMemory(id: target, MemoryEdit(expiresAt: .some(expiry)), now: fx.now)
+        func update(_ body: String, expiresAt: Date? = nil) throws -> UUID {
+            try fx.store.writer.write { db in
+                try SuggestionService.insertSuggestion(
+                    db, origin: .consolidation, action: .update,
+                    input: SuggestInput(title: "Memory m1", body: body, categories: ["communication_style"], expiresAt: expiresAt,
+                                        targetMemoryID: target),
+                    categories: ["communication_style"], sensitivity: .low, now: fx.now)
+            }
+        }
+        _ = try await s.apply(suggestionID: try update("No expiry proposed"), now: fx.now)
+        #expect(try fx.store.memory(id: target)?.expiresAt == expiry)
+        let later = fx.now.plus(days: 20)
+        _ = try await s.apply(suggestionID: try update("Proposes one", expiresAt: later), now: fx.now)
+        #expect(try fx.store.memory(id: target)?.expiresAt == later)
+        _ = try await s.apply(suggestionID: try update("User clears it"), edits: SuggestionEdit(expiresAt: .some(nil)), now: fx.now)
+        #expect(try fx.store.memory(id: target)?.expiresAt == nil)
+    }
+
+    struct Refused: Error {}
+
+    /// The precondition runs inside the applying (or rejecting) transaction on the suggestion as
+    /// it is then; throwing refuses and writes nothing (companion revisions).
+    @Test func aPreconditionRefusesInsideTheTransaction() async throws {
+        let (fx, s) = try SuggestionServiceTests.make()
+        try fx.setAccess { $0.operations = [.suggest] }
+        var input = SuggestInput(title: "Memory m1", body: "Corrected", categories: ["communication_style"], sensitivity: .low)
+        input.targetMemoryID = fx.id("m1")
+        let id = try #require(try await s.suggest(agentID: fx.agentID, input, now: fx.now).suggestionID)
+        await #expect(throws: Refused.self) {
+            try await s.apply(suggestionID: id, now: fx.now) { snapshot in
+                guard snapshot.suggestion.id == id, snapshot.memoryVersions[fx.id("m1")] == 1 else { return }
+                throw Refused()
+            }
+        }
+        await #expect(throws: Refused.self) {
+            try await s.reject(suggestionID: id, now: fx.now) { _ in throw Refused() }
+        }
+        #expect(try await s.suggestion(id: id)?.status == .pending)
+        #expect(try fx.store.memory(id: fx.id("m1"))?.body == "Body of m1")
+        // Without a refusal: applied, and a second answer finds it decided.
+        _ = try await s.apply(suggestionID: id, now: fx.now) { _ in }
+        #expect(try await s.suggestion(id: id)?.status == .applied)
+        await #expect(throws: VaultError.invalidState) { try await s.reject(suggestionID: id, now: fx.now) }
     }
 }
