@@ -399,7 +399,14 @@ final class PhoneModel {
     func pair(_ payload: PairingQRPayload, deviceName: String) async throws(CompanionClientError) -> Duration {
         guard let client = services.client else { throw .notPaired }
         let start = ContinuousClock.now
-        record = try await client.pair(payload, deviceName: deviceName, model: DeviceInfo.model)
+        let paired = try await client.pair(payload, deviceName: deviceName, model: DeviceInfo.model)
+        guard !Task.isCancelled else {
+            // Cancelled on the phone just as the Mac said Allow: undo it there (best effort, in a
+            // task of its own, since this one is cancelled) and here.
+            await Task { try? await client.unpair() }.value
+            throw .notPaired
+        }
+        record = paired
         pairingGone = false
         tracker.handle(.pairing(paired: true))
         let elapsed = ContinuousClock.now - start

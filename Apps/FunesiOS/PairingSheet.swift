@@ -1,3 +1,4 @@
+import AVFoundation
 import FunesPhone
 import FunesProtocol
 import SwiftUI
@@ -14,8 +15,13 @@ struct PairingSheet: View {
 
     let model: PhoneModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var step = Step.scanning
     @State private var deviceName = DeviceInfo.name
+    /// Camera access, asked for the first time the scanner shows.
+    @State private var camera = AVCaptureDevice.authorizationStatus(for: .video)
+    /// The pairing request waiting for Allow on the Mac; Cancel stops it.
+    @State private var pairing: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -64,10 +70,19 @@ struct PairingSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    if case .paired = step {} else { Button("Cancel") { dismiss() } }
+                    if case .paired = step {} else {
+                        Button("Cancel") {
+                            pairing?.cancel()
+                            dismiss()
+                        }
+                    }
                 }
             }
             .interactiveDismissDisabled(step.isWaiting)
+            // Back from Settings, where camera access may have been turned on.
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { camera = AVCaptureDevice.authorizationStatus(for: .video) }
+            }
         }
     }
 
@@ -79,7 +94,22 @@ struct PairingSheet: View {
             .font(.footnote)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
-        if DataScannerViewController.isSupported, DataScannerViewController.isAvailable {
+        if !DataScannerViewController.isSupported {
+            Spacer()
+            Text("This iPhone can't scan codes with its camera.")
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+            Spacer()
+        } else if camera == .notDetermined {
+            // iOS asks once; the answer decides what shows.
+            Spacer()
+            ProgressView()
+                .task {
+                    _ = await AVCaptureDevice.requestAccess(for: .video)
+                    camera = AVCaptureDevice.authorizationStatus(for: .video)
+                }
+            Spacer()
+        } else if camera == .authorized, DataScannerViewController.isAvailable {
             QRScanner { code in scanned(code) }
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             Text("Point the camera at the code in Funes Settings ▸ iPhone on your Mac.")
@@ -87,6 +117,7 @@ struct PairingSheet: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         } else {
+            // Denied or restricted.
             Spacer()
             Text("Scanning needs the camera. Allow camera access for Funes in Settings, then try again.")
                 .multilineTextAlignment(.center)
@@ -103,11 +134,12 @@ struct PairingSheet: View {
         }
         let name = deviceName.trimmingCharacters(in: .whitespacesAndNewlines)
         step = .waiting(macName: payload.macName)
-        Task {
+        pairing = Task {
             do throws(CompanionClientError) {
                 let elapsed = try await model.pair(payload, deviceName: name.isEmpty ? DeviceInfo.name : name)
                 step = .paired(macName: payload.macName, seconds: Double(elapsed.milliseconds) / 1000)
             } catch {
+                guard !Task.isCancelled else { return }
                 step = .failed(PhoneModel.message(for: error))
             }
         }
