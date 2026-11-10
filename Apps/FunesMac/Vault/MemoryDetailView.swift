@@ -380,6 +380,8 @@ struct HistoryList: View {
     @State private var confirmForget = false
     @State private var relatedTitles: [UUID: String] = [:]
     @State private var expanded: Set<ProvenanceEntry> = []
+    /// Forget Earlier Versions failed: why.
+    @State private var forgetError: String?
 
     #if FUNES_UI_REVIEW
     /// The UI-review build opens every change's details.
@@ -403,6 +405,9 @@ struct HistoryList: View {
                         .buttonStyle(.link).font(.callout)
                 }
             }
+            if let forgetError {
+                Label(forgetError, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.callout)
+            }
             ForEach(Array(rows.enumerated()), id: \.offset) { index, entry in
                 row(index, entry, detail: details[index])
             }
@@ -414,7 +419,12 @@ struct HistoryList: View {
         .confirmationDialog(String(localized: "Forget this memory's earlier versions?"), isPresented: $confirmForget) {
             Button(String(localized: "Forget Earlier Versions"), role: .destructive) {
                 guard let id = entries.first?.memoryID else { return }
-                _ = try? model.services.store.forgetEarlierVersions(memoryID: id)
+                do {
+                    _ = try model.services.store.forgetEarlierVersions(memoryID: id)
+                    forgetError = nil
+                } catch {
+                    forgetError = String(localized: "The earlier versions couldn't be forgotten. \(ErrorText.message(error))")
+                }
                 Task { await load() }
             }
         } message: {

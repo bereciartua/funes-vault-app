@@ -34,10 +34,16 @@ struct SeedQuestionsSheet: View {
         // Fits the main window at its minimum size; the questions scroll.
         .frame(width: 600, height: 540)
         .task {
-            let current = (try? await model.services.agents.neverShareCategories()) ?? []
-            loadedNeverShare = current
-            // Health, Finance and Legal start ticked until the user has chosen.
-            neverShare = current.isEmpty ? Set(["health", "finance", "legal"]).intersection(model.categories.map(\.key)) : current
+            // Unread, the step stays off and Save never writes it, so a list that didn't load is
+            // never replaced.
+            do {
+                let current = try await model.services.agents.neverShareCategories()
+                loadedNeverShare = current
+                // Health, Finance and Legal start ticked until the user has chosen.
+                neverShare = current.isEmpty ? Set(["health", "finance", "legal"]).intersection(model.categories.map(\.key)) : current
+            } catch {
+                self.error = String(localized: "Funes couldn't read which categories agents never see, so that step is off. Your answers can still be sent.")
+            }
             // The saved name, else the macOS account's when it looks like a person's (never "mib").
             let profile = model.profile
             if profile.hasValue(.name) {
@@ -150,7 +156,7 @@ struct SeedQuestionsSheet: View {
                 Button(String(localized: "Cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
                 Button(answered == 0 ? String(localized: "Save") : String(localized: "Send \(answered) to Inbox")) { save() }
                     .keyboardShortcut(.defaultAction)
-                    .disabled(saving || (answered == 0 && neverShare == loadedNeverShare))
+                    .disabled(saving || (answered == 0 && (loadedNeverShare == nil || neverShare == loadedNeverShare)))
             }
         }
     }
@@ -168,6 +174,7 @@ struct SeedQuestionsSheet: View {
                     .toggleStyle(.checkbox)
                 }
             }
+            .disabled(loadedNeverShare == nil)
             Text(String(localized: "Every agent gets Deny for these, and new agents start with it. Nothing you tick here is saved as a memory, and you can change it for each agent in its Access tab."))
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
@@ -192,7 +199,7 @@ struct SeedQuestionsSheet: View {
             let answer = (answers[question.id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             return answer.isEmpty ? nil : (question, answer)
         }
-        let neverShare = neverShare, changedNeverShare = neverShare != loadedNeverShare
+        let neverShare = neverShare, changedNeverShare = loadedNeverShare != nil && neverShare != loadedNeverShare
         Task {
             var failed: [String] = []
             if changedNeverShare {
