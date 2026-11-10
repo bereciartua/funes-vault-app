@@ -302,13 +302,8 @@ struct ConnectTab: View {
             keyMessage = String(localized: "The key file couldn't be read. Rotate the key to make a new one.")
             return
         }
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(key, forType: .string)
+        SecretClipboard.copy(key, clearAfter: 60)
         keyMessage = String(localized: "Copied. Funes clears the clipboard in 60 seconds.")
-        let count = NSPasteboard.general.changeCount
-        DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
-            if NSPasteboard.general.changeCount == count { NSPasteboard.general.clearContents() }
-        }
     }
 
     private func rotate() {
