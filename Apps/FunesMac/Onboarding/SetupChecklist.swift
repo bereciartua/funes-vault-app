@@ -18,8 +18,6 @@ final class ChecklistModel {
     private(set) var dismissed = false
     /// Just hidden: Home offers Undo for a few seconds (UX review F7).
     private(set) var justHidden = false
-    /// The Inbox held suggestions at the last update.
-    @ObservationIgnored private var inboxHadItems = false
     var showSeedQuestions = false
     var showImport: ImportKind?
 
@@ -38,15 +36,10 @@ final class ChecklistModel {
             done.insert(.seed)
             if !seededBefore { preferences.set(Preferences.Key.checklistSeeded, true) }
         }
-        // Reviewed only once the user has decided something: a card applied or rejected in the
-        // Inbox (markReviewed), or an Inbox that held suggestions emptied (decided on the iPhone,
-        // say). A memory made by hand with an empty Inbox isn't a review.
-        let reviewedBefore = preferences.flag(Preferences.Key.checklistReviewed)
-        if reviewedBefore || (inboxHadItems && model.inbox.isEmpty) {
-            done.insert(.review)
-            if !reviewedBefore { preferences.set(Preferences.Key.checklistReviewed, true) }
-        }
-        inboxHadItems = !model.inbox.isEmpty
+        // Reviewed only once the user has decided a suggestion (markReviewed): in the Mac's Inbox,
+        // or on the iPhone as the owner. An Inbox that empties by itself (automatic changes, the
+        // tidy-up, expiry) or a memory made by hand isn't a review.
+        if preferences.flag(Preferences.Key.checklistReviewed) { done.insert(.review) }
         if !model.agents.isEmpty { done.insert(.add) }
         if let first = model.agents.compactMap({ agent in agent.firstRequestAt.map { (agent, $0) } }).min(by: { $0.1 < $1.1 }) {
             done.insert(.connect)
@@ -57,7 +50,7 @@ final class ChecklistModel {
         self.done = done
     }
 
-    /// A card was applied or rejected in the Inbox.
+    /// The user applied or rejected a suggestion: a card in the Inbox, or on the iPhone.
     func markReviewed() {
         guard !done.contains(.review) else { return }
         preferences.set(Preferences.Key.checklistReviewed, true)
