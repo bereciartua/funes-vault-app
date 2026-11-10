@@ -69,8 +69,25 @@ final class VaultModel: AnswerCardSource {
     /// Whether the last load finished; until then the list doesn't claim to be empty.
     private(set) var loaded = false
     var selection = Set<UUID>() {
-        didSet { if let quoted, selection != [quoted.memoryID] { self.quoted = nil } }
+        didSet {
+            if let quoted, selection != [quoted.memoryID] { self.quoted = nil }
+            if let revealed, selection != [revealed] { self.revealed = nil }
+        }
     }
+    /// The memory "Show this memory" asked for: kept selected through reloads while it exists,
+    /// even when the list doesn't hold it, until the selection changes.
+    @ObservationIgnored private var revealed: UUID?
+    /// Unsaved edits, per memory (FR-V-02): kept here rather than in the detail view, so selecting
+    /// another memory, switching section, closing the window or a reload never discards them.
+    struct Draft: Equatable {
+        var form: MemoryForm
+        /// The version the edits started from, so Save still notices a change made meanwhile.
+        var version: Int?
+    }
+    @ObservationIgnored private var draftStore: [UUID: Draft] = [:]
+    /// The memories with unsaved edits: the rows' mark. Changes only when one gains or loses its
+    /// draft, not on every keystroke.
+    private(set) var draftIDs = Set<UUID>()
     /// A message under the toolbar after a bulk action ("12 archived, 1 couldn't be changed").
     var bulkResult: String?
 
@@ -81,6 +98,8 @@ final class VaultModel: AnswerCardSource {
     /// The filters the list shows, as `listedQuery` is its search.
     @ObservationIgnored private var listedFilter = MemoryFilter()
     @ObservationIgnored private var listing = 0
+    /// Counts loads as they start, so one that finishes after a newer one is dropped.
+    @ObservationIgnored private var loadStamp = 0
     @ObservationIgnored private var rowIndex: [UUID: Int] = [:]
     @ObservationIgnored private var snippetPages = Set<Int>()
     @ObservationIgnored private var visibleRows = Set<UUID>()
@@ -117,6 +136,9 @@ final class VaultModel: AnswerCardSource {
     private struct Quoted: Equatable { let memoryID: UUID; let quote: String }
     private var quotedValue: Quoted?
     @ObservationIgnored private var answerTask: Task<Void, Never>?
+    /// The version of each memory the answer was asked from: when a cited one changes or leaves
+    /// the list, the card goes, so it never cites text that's no longer there.
+    @ObservationIgnored private var answerBasis: [UUID: Int]?
     /// The automatic Ask waiting for its pause (memory processing §10.6) and what it waits with:
     /// the search, filters, first results and trigger; and the search and filters an Ask
     /// (automatic or not) started for, so a reload of the same list (a memory saved elsewhere),
@@ -149,7 +171,9 @@ final class VaultModel: AnswerCardSource {
         // Any Ask, automatic or not, is this search's one: none follows on its own after it.
         autoAsked = AutoKey(query: query, filter: filter)
         cancelAutoAsk()
-        let ids = Array(memories.prefix(SearchAnswerer.memoryCount).map(\.id))
+        let sent = memories.prefix(SearchAnswerer.memoryCount)
+        let ids = sent.map(\.id)
+        answerBasis = Dictionary(sent.map { ($0.id, $0.version) }, uniquingKeysWith: { a, _ in a })
         let total = memories.count
         let engine = answers.engineName, limit = answers.cloudLimitName
         answer = .reading(count: min(ids.count, answers.readsAtMost))
@@ -217,7 +241,21 @@ final class VaultModel: AnswerCardSource {
         answerTask = nil
         cancelAutoAsk()
         answer = nil
+        answerBasis = nil
         quoted = nil
+    }
+
+    /// After a load: an answer whose cited memories (or, while reading, any memory it was asked
+    /// from) changed or left the list is cleared.
+    private func clearAnswerIfStale(_ found: [Memory]) {
+        guard let basis = answerBasis, let answer else { return }
+        let watched: [UUID] = switch answer {
+        case let .answered(result, _, _, _): result.claims.flatMap(\.citations).map(\.memoryID)
+        case .reading: Array(basis.keys)
+        case .failed: []
+        }
+        let versions = Dictionary(found.map { ($0.id, $0.version) }, uniquingKeysWith: { a, _ in a })
+        if watched.contains(where: { versions[$0] == nil || versions[$0] != basis[$0] }) { clearAnswer() }
     }
 
     /// The cited memories in the order the answer first cites them: their numbers on the card and
@@ -244,6 +282,35 @@ final class VaultModel: AnswerCardSource {
     func showSource(_ id: UUID, quote: String) {
         selection = [id]
         quoted = (id, quote)
+    }
+
+    // MARK: Show this memory, and drafts
+
+    /// "Show this memory" (Activity, the Inbox, history and duplicate links, the menu bar panel):
+    /// selects it, first moving to its status and clearing the search and filters when the list
+    /// doesn't hold it (as Home's cards do), and keeps it selected through reloads while it exists.
+    func reveal(_ id: UUID) {
+        if !memories.contains(where: { $0.id == id }), let memory = try? services.store.memory(id: id) {
+            let target: StatusChoice = switch memory.status {
+            case .deleted: .recentlyDeleted
+            case .archived: .archived
+            case .active: memory.isExpired(at: Date()) ? .expired : .active
+            }
+            clearFilters()
+            query = ""
+            status = target
+        }
+        selection = [id]
+        revealed = id
+    }
+
+    func draft(_ id: UUID) -> Draft? { draftStore[id] }
+
+    /// Keeps a memory's unsaved edits, or forgets them (nil).
+    func setDraft(_ draft: Draft?, for id: UUID) {
+        draftStore[id] = draft
+        if draft != nil, !draftIDs.contains(id) { draftIDs.insert(id) }
+        if draft == nil, draftIDs.contains(id) { draftIDs.remove(id) }
     }
 
     var filter: MemoryFilter {
@@ -274,16 +341,31 @@ final class VaultModel: AnswerCardSource {
     }
 
     func load() async {
+        loadStamp += 1
+        let stamp = loadStamp
         let now = Date()
         let filter = self.filter
         let query = self.query
+        // A single selected memory stays selected when it leaves the list through a change to the
+        // data (archived from its detail, edited out of a filter), or when it was asked for by
+        // "Show this memory"; a new search or filter drops what it doesn't list.
+        let single = selection.count == 1 ? selection.first : nil
+        let sameListing = loaded && query == listedQuery && filter == listedFilter
+        let keepable = single.flatMap { sameListing || $0 == revealed ? $0 : nil }
+        let store = services.store
         do {
             let hits = try await services.search.vaultSearch(query, filter: filter, now: now)
-            guard !Task.isCancelled, query == self.query, filter == self.filter else { return }
-            let found = try services.store.memories(ids: hits.map(\.memoryID))
+            guard !Task.isCancelled, stamp == loadStamp, query == self.query, filter == self.filter else { return }
+            let ids = hits.map(\.memoryID)
+            // Off the main actor: a long list takes a while to read.
+            let (found, keep) = try await Task.detached(priority: .userInitiated) {
+                let found = try store.memories(ids: ids)
+                guard let keepable, !found.contains(where: { $0.id == keepable }) else { return (found, false) }
+                return (found, try store.memory(id: keepable) != nil)
+            }.value
             // The first page's snippets come with the list, so its rows don't change under the eye.
             let first = try await Self.snippets(for: found.prefix(Self.snippetPage), query: query, search: services.search)
-            guard !Task.isCancelled, query == self.query, filter == self.filter else { return }
+            guard !Task.isCancelled, stamp == loadStamp, query == self.query, filter == self.filter else { return }
             memories = found
             listedQuery = query
             listedFilter = filter
@@ -293,8 +375,11 @@ final class VaultModel: AnswerCardSource {
             snippets = first
             // Rows still in view past the first page (a refresh while scrolled) get theirs again.
             for id in visibleRows { requestSnippets(for: id) }
-            selection = selection.intersection(memories.map(\.id))
+            // Unless the selection changed meanwhile.
+            let kept = keep && keepable.map { selection == [$0] } == true
+            if !kept { selection = selection.intersection(memories.map(\.id)) }
             loaded = true
+            clearAnswerIfStale(found)
             scheduleAutoAsk()
         } catch {
             loaded = true

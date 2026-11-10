@@ -89,6 +89,9 @@ final class AppModel {
     var activityGeneration = 0
     /// Bumped after every vault change, so open screens reload.
     var dataGeneration = 0
+    /// Bumped only when the vault's database changed (not for an Activity row alone): the Vault's
+    /// list and detail reload on it.
+    var memoriesGeneration = 0
 
     let vault: VaultModel
     /// Search answers with the user's settings (FR-AI-17): the Vault's Ask, and the iPhone's.
@@ -205,6 +208,11 @@ final class AppModel {
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
     @ObservationIgnored private var observation: AnyObject?
     @ObservationIgnored private var refreshPending = false
+    /// The database changed since the last refresh.
+    @ObservationIgnored private var storeChanged = true
+    /// The processing queue started (after the subscription CLIs were found): until then a vault
+    /// change doesn't kick it, so a job that should split on a plan model never runs without it.
+    @ObservationIgnored var processingStarted = false
 
     init(services: VaultEnvironment, preferences: Preferences, modelSettings: ModelSettings? = nil) {
         self.services = services
@@ -234,8 +242,10 @@ final class AppModel {
         composer.search = { [weak self] text in self?.showVault(query: text.trimmingCharacters(in: .whitespacesAndNewlines)) }
         observation = services.store.observeChanges { [weak self] in
             Task { @MainActor in
-                self?.scheduleRefresh()
-                self?.processing.kick()
+                guard let self else { return }
+                self.storeChanged = true
+                self.scheduleRefresh()
+                if self.processingStarted { self.processing.kick() }
             }
         }
         services.activity.onAppend = { [weak self] event in
@@ -281,6 +291,9 @@ final class AppModel {
     }
 
     func refresh() async {
+        // Taken first: a change that arrives while this reads schedules another refresh.
+        let storeDidChange = storeChanged
+        storeChanged = false
         let now = Date()
         self.now = now
         pausedUntil = services.pause.pausedUntil(at: now)
@@ -301,6 +314,7 @@ final class AppModel {
         profile = (try? services.store.profile()) ?? Profile()
         hasMemories = !((try? services.store.memories(MemoryFilter(status: .activeIncludingExpired), now: now, limit: 1)) ?? []).isEmpty
         dataGeneration += 1
+        if storeDidChange { memoriesGeneration += 1 }
         checklist.update(model: self)
         changed()
     }
@@ -440,8 +454,9 @@ final class AppModel {
         openMainWindow()
     }
 
+    /// "Show this memory": the Vault on that memory, whatever its status or the filters.
     func showMemory(_ id: UUID) {
-        selectedMemoryID = id
+        vault.reveal(id)
         show(.vault)
     }
 

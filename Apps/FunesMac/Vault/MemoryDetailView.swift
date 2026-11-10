@@ -19,6 +19,8 @@ struct MemoryDetailView: View {
     @State private var similar: [Memory] = []
     @State private var confirmStillTrue = false
     @State private var confirmDeleteNow = false
+    /// Delete over unsaved edits: asked first, since a deleted memory can't be edited.
+    @State private var confirmDiscardDelete = false
     @State private var missing = false
 
     private var dirty: Bool { memory.map { MemoryForm($0) != form } ?? false }
@@ -72,7 +74,11 @@ struct MemoryDetailView: View {
             }
         }
         .background(Palette.pane)
+        // Unsaved edits left on this memory come back (FR-V-02).
         .task { load(resetForm: true) }
+        // Edits are kept on the Vault's model as they're made, so leaving never discards them.
+        .onChange(of: form) { _, _ in keepDraft() }
+        .onChange(of: formVersion) { _, _ in keepDraft() }
         // A quoted sentence stays highlighted until the text is edited (04-ux-mac.md ▸ Search answers).
         .onChange(of: form.body) { _, body in
             if let memory, body != memory.body, model.vault.quoted?.memoryID == memoryID { model.vault.quoted = nil }
@@ -81,7 +87,7 @@ struct MemoryDetailView: View {
         .onChange(of: memory?.body) { old, _ in
             if old != nil, model.vault.quoted?.memoryID == memoryID { model.vault.quoted = nil }
         }
-        .onChange(of: model.dataGeneration) { _, _ in load(resetForm: !dirty) }
+        .onChange(of: model.memoriesGeneration) { _, _ in load(resetForm: !dirty) }
         .confirmationDialog(String(localized: "Is this still true?"), isPresented: $confirmStillTrue) {
             Button(String(localized: "Still True")) { stillTrue() }
         } message: {
@@ -91,6 +97,11 @@ struct MemoryDetailView: View {
             Button(String(localized: "Delete Now"), role: .destructive) { deleteNow() }
         } message: {
             Text(String(localized: "It's removed for good, with its history. This can't be undone."))
+        }
+        .confirmationDialog(String(localized: "Discard your changes and delete this memory?"), isPresented: $confirmDiscardDelete) {
+            Button(String(localized: "Discard and Delete"), role: .destructive) { delete(discarding: true) }
+        } message: {
+            Text(String(localized: "Your unsaved changes are lost. The memory goes to Recently Deleted."))
         }
     }
 
@@ -139,6 +150,7 @@ struct MemoryDetailView: View {
             }
             Spacer()
             Button(changedMeanwhile ? String(localized: "Reload") : String(localized: "Revert")) {
+                model.vault.setDraft(nil, for: memoryID)
                 load(resetForm: true)
                 error = nil
             }
@@ -200,21 +212,17 @@ struct MemoryDetailView: View {
                       ? String(localized: "Check this memory against itself and related memories now.")
                       : String(localized: "Choose a tidy-up model in Settings ▸ AI ▸ Features ▸ Daily tidy-up to tidy up a memory."))
                 Button(String(localized: "Archive")) {
-                    act { try model.services.store.archiveMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
+                    act { try model.services.store.archiveMemory(id: memoryID, expectedVersion: memory.version, now: Date()).version }
                 }
-                Button(String(localized: "Delete"), role: .destructive) {
-                    act { try model.services.store.deleteMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
-                }
+                Button(String(localized: "Delete"), role: .destructive) { delete() }
             case .archived:
                 Button(String(localized: "Restore")) {
-                    act { try model.services.store.restoreMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
+                    act { try model.services.store.restoreMemory(id: memoryID, expectedVersion: memory.version, now: Date()).version }
                 }
-                Button(String(localized: "Delete"), role: .destructive) {
-                    act { try model.services.store.deleteMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
-                }
+                Button(String(localized: "Delete"), role: .destructive) { delete() }
             case .deleted:
                 Button(String(localized: "Restore")) {
-                    act { try model.services.store.restoreMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
+                    act { try model.services.store.restoreMemory(id: memoryID, expectedVersion: memory.version, now: Date()).version }
                 }
                 Button(String(localized: "Delete Now…"), role: .destructive) { confirmDeleteNow = true }
             }
@@ -246,6 +254,7 @@ struct MemoryDetailView: View {
             guard let found = try model.services.store.memory(id: memoryID) else {
                 memory = nil
                 missing = true
+                model.vault.setDraft(nil, for: memoryID)
                 return
             }
             let changed = memory?.version != found.version
@@ -255,6 +264,13 @@ struct MemoryDetailView: View {
                 form = MemoryForm(found)
                 formVersion = found.version
                 changedMeanwhile = false
+                // Unsaved edits left on it come back (FR-V-02), with the version they started from,
+                // so Save still catches a change made meanwhile. Not while it's deleted (it can't be
+                // edited there); they're back once it's restored.
+                if found.status != .deleted, let draft = model.vault.draft(memoryID) {
+                    form = draft.form
+                    formVersion = draft.version
+                }
             }
         } catch {
             missing = true
@@ -282,7 +298,32 @@ struct MemoryDetailView: View {
     }
 
     private func stillTrue() {
-        act { try model.services.store.confirmMemory(id: memoryID, now: Date()) }
+        act {
+            try model.services.store.confirmMemory(id: memoryID, now: Date())
+            return nil
+        }
+    }
+
+    /// The form's edits, kept on the Vault's model while they differ from the memory. A deleted
+    /// memory's form can't be edited, so its draft (from before a delete elsewhere) is left as it is.
+    private func keepDraft() {
+        guard let memory, memory.status != .deleted else { return }
+        model.vault.setDraft(dirty ? VaultModel.Draft(form: form, version: formVersion) : nil, for: memoryID)
+    }
+
+    /// Delete moves the memory to Recently Deleted, where it can't be edited: over unsaved edits
+    /// it asks first.
+    private func delete(discarding: Bool = false) {
+        guard let memory else { return }
+        if dirty, !discarding {
+            confirmDiscardDelete = true
+            return
+        }
+        if discarding {
+            model.vault.setDraft(nil, for: memoryID)
+            form = MemoryForm(memory)
+        }
+        act { try model.services.store.deleteMemory(id: memoryID, expectedVersion: memory.version, now: Date()).version }
     }
 
     private func deleteNow() {
@@ -294,11 +335,19 @@ struct MemoryDetailView: View {
         }
     }
 
-    private func act(_ body: () throws -> Void) {
+    /// Still True, Archive and Restore change only the status or the date checked, never the
+    /// form's fields: unsaved edits stay. `body` returns the version its write made (nil when it
+    /// made none, as Still True); a status change checks the version it acted on, so when the
+    /// edits started from that version they carry to the new one, and a change made meanwhile
+    /// elsewhere is still caught at Save.
+    private func act(_ body: () throws -> Int?) {
+        let keep = dirty
+        let carry = keep && formVersion == memory?.version
         do {
-            try body()
+            let version = try body()
             error = nil
-            load(resetForm: true)
+            load(resetForm: !keep)
+            if carry, let version { formVersion = version }
         } catch {
             self.error = ErrorText.message(error)
         }
