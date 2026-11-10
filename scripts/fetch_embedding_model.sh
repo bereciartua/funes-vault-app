@@ -7,7 +7,9 @@
 # as bge-small-en-v1.5.mlpackage, bge-small-en-v1.5.mlmodelc, vocab.txt and manifest.json.
 # FunesCore's model-dependent tests look there (or in FUNES_EMBEDDING_MODEL_DIR).
 #
-# Needs curl, Python 3.11 (FUNES_PYTHON, default python3.11) and Xcode's coremlcompiler.
+# Needs curl, Python 3.11 (FUNES_PYTHON, default python3.11) and Xcode's coremlcompiler. The
+# conversion's Python packages come from scripts/embedding_model/requirements-lock.txt, each
+# checked against its SHA-256.
 # Set FUNES_MODEL_FP16=1 to also write the fp16-weight variant (bge-small-en-v1.5-fp16.*), the
 # Spike 2b model: same recall on the benchmark at twice the size (phase-1 notes in spike-results.md).
 set -eu
@@ -61,7 +63,8 @@ VENV="$DIR/venv"
 if [ ! -x "$VENV/bin/python" ]; then
     "$PYTHON" -m venv "$VENV"
 fi
-"$VENV/bin/python" -m pip install --quiet --disable-pip-version-check -r scripts/embedding_model/requirements.txt
+"$VENV/bin/python" -m pip install --quiet --disable-pip-version-check --require-hashes --only-binary=:all: \
+    -r scripts/embedding_model/requirements-lock.txt
 
 convert() {  # convert <output name> <expected weights SHA-256> [int8]
     rm -rf "$DIR/$1.mlpackage" "$DIR/$1.mlmodelc"
