@@ -360,7 +360,7 @@ A card at the top of Home, above the greeting (before v0.4, at the top of the Va
   - **Access:**
     - **Operations:** Read, Suggest and Write toggles, with plain explanations.
     - **Maximum sensitivity:** a slider from Public to Secret.
-    - **Categories:** a table with one row per category and an Allow / — / Deny control. Shows "Empty allow list means all categories".
+    - **Categories:** a table with one row per category and an Allow / — / Deny control. Shows "Empty allow list means all categories". Clearing the last Allow of an agent that had some shows a warning ("With no category allowed, <agent> can use every category that isn't denied, not just the ones it had."), and Save asks first ("Let <agent> use every category?", **Allow Every Category**), since it widens access.
     - **Ask before sharing:** on by default. Turning it off shows a warning.
     - **Ask before saving:** shown only with Write.
     - **Access expires:** never, or a date.
