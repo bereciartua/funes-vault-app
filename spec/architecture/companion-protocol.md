@@ -285,6 +285,7 @@ The last `overview.get` answer for each range is kept in `overview.json` in the 
 - 256 KiB request body;
 - 10 s per call (then `unavailable`; the work still finishes on the Mac, and a capture's receipt keeps a resend from duplicating it). **Except `memories.answer`** (v0.6): 50 s on the Mac, 55 s on the phone (`CompanionClient`'s timeout is per method). The listener doesn't watch for a closed connection while a handler runs, so its work ends at its result, this deadline, or the same device's next `memories.answer`;
 - one `memories.answer` in flight per device.
+- **A cancelled pairing can leave a device on the Mac.** For the same reason, the Mac's Allow prompt (§2.2, up to 60 s) stays up when the phone cancels and closes its connection. If the user then clicks Allow, the Mac stores the device though the phone never learns it was paired (the phone undoes only an Allow that lands as it cancels, with `device.unpair`). The user removes it in Settings ▸ iPhone on the Mac; it counts toward the 5 devices until then.
 
 ## 8. Revocation and unpairing
 - **Revoke on the Mac:** the device row gets `revokedAt`. Its next request gets `401 revoked`. The phone shows the revoked state and keeps its queued captures until the user re-pairs or deletes them.
