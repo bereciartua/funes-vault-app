@@ -23,8 +23,9 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// Task text of the requests this session showed a panel for, for Activity's detail pane. In
     /// memory only: the vault keeps a hash (FR-L-01), so after a relaunch it's "Task text not stored".
     @MainActor private var tasks: [UUID: String] = [:]
-    /// Requests that came through Remote Access, so their panel says so when it's reopened.
-    @MainActor private var remoteRequests = Set<UUID>()
+    /// Which way the requests this session saw arrive came (true: through Remote Access), so a
+    /// reopened panel says so. In memory only: after a relaunch `channel(known:agent:)` decides.
+    @MainActor private var channels = [UUID: Bool]()
     @MainActor private lazy var controller = ApprovalPanelController(queue: queue)
     /// Shows a short notice (the HUD), e.g. when a request waited past its panel.
     @MainActor var notice: (String) -> Void = { _ in }
@@ -79,7 +80,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     }
 
     func showApproval(requestID: UUID, agentID: UUID, remote: Bool) async {
-        if remote { await MainActor.run { _ = remoteRequests.insert(requestID) } }
+        await MainActor.run { channels[requestID] = remote }
         await present(requestID: requestID, by: .arrival)
     }
 
@@ -113,8 +114,9 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         guard let panel = try? await disclosures.panel(requestID: requestID, now: now) else { return }
         let disclosure = try? await disclosures.disclosure(requestID: requestID)
         let agent = try? await environment.agents.agent(id: panel.agentID)
-        let (remote, tunnel) = await MainActor.run {
-            (remoteRequests.contains(requestID), remoteRequests.contains(requestID) ? remoteTunnel(panel.agentID) : nil)
+        let (remote, tunnel) = await MainActor.run { () -> (Bool?, String?) in
+            let remote = Self.channel(known: channels[requestID], agent: agent)
+            return (remote, remote == false ? nil : remoteTunnel(panel.agentID))
         }
         var item = Self.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: now, agent: agent, remote: remote,
                                   tunnel: tunnel, profileFields: disclosure?.profileFieldsSent ?? [])
@@ -132,7 +134,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         }
         // A new request rings the paired iPhones; one reopened on the Mac doesn't.
         if shown, !focus {
-            let destination = ApprovalDestination(remote: remote, vendor: agent?.agentKind.cloudAgent?.vendor, tunnel: tunnel)
+            let destination = ApprovalDestination(remote: remote != false, vendor: agent?.agentKind.cloudAgent?.vendor, tunnel: tunnel)
             await desk.waiting(.share(requestID), destination: destination)
         }
     }
@@ -141,7 +143,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// said (labelled as such), the user's own note on the agent, and the memories, strong matches
     /// ticked and weaker ones offered unticked (access policy §3.2).
     static func shareItem(_ panel: ApprovalPanel, withheld: [ReasonCode: Int], now: Date, agent: Agent?,
-                          remote: Bool = false, tunnel: String? = nil, profileFields: [ProfileField] = []) -> PanelItem {
+                          remote: Bool? = false, tunnel: String? = nil, profileFields: [ProfileField] = []) -> PanelItem {
         let rows = panel.memories.map { memory in
             let weak = !panel.strong.contains(memory.id)
             return PanelItem.Row(id: memory.id.uuidString, title: memory.title, detail: memory.body,
@@ -174,10 +176,27 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
                                link: String(localized: "its Access"), after: ".")
     }
 
+    /// Which way a request came when this session didn't see it arrive (it was made before a
+    /// relaunch): an agent without cloud access can't have a remote request still waiting
+    /// (turning it off ends them), and a cloud agent with it comes through Remote Access.
+    /// Otherwise Funes can't tell: nil, and the panel says it may be either.
+    static func channel(known: Bool?, agent: Agent?) -> Bool? {
+        if let known { return known }
+        guard let agent else { return nil }
+        if !agent.cloudAccess { return false }
+        return agent.agentKind.cloudAgent != nil ? true : nil
+    }
+
     /// Goes to: built only from facts Funes holds. A local agent may pass what it reads on to its AI
     /// service, which Funes can't see; a cloud agent's vendor comes from a fixed table, and the
-    /// tunnel from Remote Access (UX review F2).
-    static func destination(agentName: String, kind: AgentKind?, remote: Bool, tunnel: String?) -> PanelItem.Destination {
+    /// tunnel from Remote Access (UX review F2). When the channel isn't known (`remote` nil), it
+    /// says either may apply, with the Cloud chip: never less cautious than the truth.
+    static func destination(agentName: String, kind: AgentKind?, remote: Bool?, tunnel: String?) -> PanelItem.Destination {
+        guard let remote else {
+            return PanelItem.Destination(
+                text: String(localized: "\(agentName), on this Mac or through Remote Access. It may send what it reads to its AI service."),
+                isCloud: true)
+        }
         guard remote else {
             return PanelItem.Destination(text: String(localized: "\(agentName) on this Mac. It may send what it reads to its AI service."),
                                          isCloud: false)
@@ -502,7 +521,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// nothing (its credential epoch moved).
     @MainActor
     func withdrawRemote() {
-        for item in queue.items where remoteRequests.contains(item.id) { queue.withdraw(item.id) }
+        for item in queue.items where channels[item.id] == true { queue.withdraw(item.id) }
     }
 
     @MainActor
