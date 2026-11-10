@@ -226,6 +226,22 @@ import Testing
         second.cancel()
     }
 
+    /// IPv6 aliases in one /64 share a cap; IPv4 addresses (plain or mapped) each have their own.
+    @Test func capGroups() {
+        let a: [UInt8] = [0xfd, 0x12, 0x34, 0x56, 0, 0, 0, 1, 0xaa, 0, 0, 0, 0, 0, 0, 1]
+        var alias = a
+        alias[15] = 2
+        var otherNet = a
+        otherNet[7] = 2
+        #expect(CompanionListener.capGroup(a) == CompanionListener.capGroup(alias))
+        #expect(CompanionListener.capGroup(a) != CompanionListener.capGroup(otherNet))
+        #expect(CompanionListener.capGroup([192, 168, 1, 20]) != CompanionListener.capGroup([192, 168, 1, 21]))
+        let mapped: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 192, 168, 1, 20]
+        let mappedOther: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 192, 168, 1, 21]
+        #expect(CompanionListener.capGroup(mapped) == [192, 168, 1, 20])
+        #expect(CompanionListener.capGroup(mapped) != CompanionListener.capGroup(mappedOther))
+    }
+
     /// A connection that sends nothing is closed after the first-byte deadline, well before the
     /// 30 s idle one.
     @Test func closesAConnectionThatSendsNothing() async throws {

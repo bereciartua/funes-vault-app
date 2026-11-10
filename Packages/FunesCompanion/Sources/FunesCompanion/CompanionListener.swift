@@ -14,8 +14,8 @@ import FunesProtocol
 ///
 /// One request at a time per connection, with fixed deadlines that later bytes don't extend: the
 /// first byte within 5 s of the connection, the whole request within 10 s of its first byte, 30 s
-/// idle between requests. At most 32 connections, and 8 from any one address, so one host on the
-/// network can't hold every slot.
+/// idle between requests. At most 32 connections, and 8 from any one IPv4 address or IPv6 /64, so
+/// one host on the network can't hold every slot.
 public final class CompanionListener: @unchecked Sendable {
     public typealias Handler = @Sendable (HTTPRequest, DeviceTransport) async -> HTTPResponse
 
@@ -140,7 +140,7 @@ public final class CompanionListener: @unchecked Sendable {
     private func accept(_ fd: Int32, address: [UInt8]) {
         guard connections.count < limits.maxConnections,
               let transport = AddressPolicy.transport(forAddress: address, modes: modes),
-              connections.values.count(where: { $0.address == address }) < limits.maxPerAddress else {
+              connections.values.count(where: { Self.capGroup($0.address) == Self.capGroup(address) }) < limits.maxPerAddress else {
             Darwin.close(fd)
             return
         }
@@ -149,6 +149,15 @@ public final class CompanionListener: @unchecked Sendable {
         connections[key] = connection
         connection.onClose = { [weak self] in self?.connections[key] = nil }
         connection.start()
+    }
+
+    /// The peers that share a per-address cap: an IPv4 address on its own (also as an
+    /// IPv4-mapped IPv6 one), and every IPv6 address in one /64, since a host can take as many
+    /// IPv6 aliases as it likes.
+    static func capGroup(_ address: [UInt8]) -> [UInt8] {
+        guard address.count == 16 else { return address }
+        let mapped = address[0..<10].allSatisfy { $0 == 0 } && address[10] == 0xff && address[11] == 0xff
+        return mapped ? Array(address[12...]) : Array(address[0..<8])
     }
 
     private func closeAll() {
