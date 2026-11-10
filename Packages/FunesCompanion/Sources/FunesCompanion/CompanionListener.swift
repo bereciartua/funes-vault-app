@@ -14,7 +14,8 @@ import FunesProtocol
 ///
 /// One request at a time per connection, with fixed deadlines that later bytes don't extend: the
 /// first byte within 5 s of the connection, the whole request within 10 s of its first byte, 30 s
-/// idle between requests. At most 32 connections, and 8 from any one IPv4 address or IPv6 /64, so
+/// idle between requests. At most 32 connections, 8 from any one address and 16 from any one IPv6
+/// /64 (a host can take any number of IPv6 aliases), so
 /// one host on the network can't hold every slot.
 public final class CompanionListener: @unchecked Sendable {
     public typealias Handler = @Sendable (HTTPRequest, DeviceTransport) async -> HTTPResponse
@@ -37,6 +38,9 @@ public final class CompanionListener: @unchecked Sendable {
     public static let firstByteTimeout: TimeInterval = 5
     public static let maxConnections = 32
     public static let maxConnectionsPerAddress = 8
+    /// Every address in one IPv6 /64 together: half the slots, so a host with many aliases can't
+    /// take them all, and ordinary IPv6 neighbours on the same network keep their own 8 each.
+    public static let maxConnectionsPerIPv6Prefix = 16
 
     private let queue = DispatchQueue(label: "com.funesvault.companion.listener")
     private let port: Int
@@ -55,6 +59,7 @@ public final class CompanionListener: @unchecked Sendable {
     struct Limits: Sendable {
         var maxConnections = CompanionListener.maxConnections
         var maxPerAddress = CompanionListener.maxConnectionsPerAddress
+        var maxPerIPv6Prefix = CompanionListener.maxConnectionsPerIPv6Prefix
         var firstByte = CompanionListener.firstByteTimeout
         var request = CompanionListener.requestTimeout
         var idle = CompanionListener.idleTimeout
@@ -138,9 +143,8 @@ public final class CompanionListener: @unchecked Sendable {
     }
 
     private func accept(_ fd: Int32, address: [UInt8]) {
-        guard connections.count < limits.maxConnections,
-              let transport = AddressPolicy.transport(forAddress: address, modes: modes),
-              connections.values.count(where: { Self.capGroup($0.address) == Self.capGroup(address) }) < limits.maxPerAddress else {
+        guard let transport = AddressPolicy.transport(forAddress: address, modes: modes),
+              Self.admits(address, among: connections.values.map(\.address), limits: limits) else {
             Darwin.close(fd)
             return
         }
@@ -151,13 +155,28 @@ public final class CompanionListener: @unchecked Sendable {
         connection.start()
     }
 
-    /// The peers that share a per-address cap: an IPv4 address on its own (also as an
-    /// IPv4-mapped IPv6 one), and every IPv6 address in one /64, since a host can take as many
-    /// IPv6 aliases as it likes.
-    static func capGroup(_ address: [UInt8]) -> [UInt8] {
-        guard address.count == 16 else { return address }
-        let mapped = address[0..<10].allSatisfy { $0 == 0 } && address[10] == 0xff && address[11] == 0xff
-        return mapped ? Array(address[12...]) : Array(address[0..<8])
+    /// Whether a connection from `address` fits beside those from `open`: under the total, under
+    /// 8 from that address, and, for IPv6, under 16 from its /64.
+    static func admits(_ address: [UInt8], among open: [[UInt8]], limits: Limits) -> Bool {
+        guard open.count < limits.maxConnections else { return false }
+        let peer = peerAddress(address)
+        guard open.count(where: { peerAddress($0) == peer }) < limits.maxPerAddress else { return false }
+        guard let prefix = ipv6Prefix(address) else { return true }
+        return open.count(where: { ipv6Prefix($0) == prefix }) < limits.maxPerIPv6Prefix
+    }
+
+    /// An IPv4-mapped IPv6 address as the IPv4 address it is (the socket is dual-stack).
+    static func peerAddress(_ address: [UInt8]) -> [UInt8] {
+        guard address.count == 16, address[0..<10].allSatisfy({ $0 == 0 }), address[10] == 0xff, address[11] == 0xff else {
+            return address
+        }
+        return Array(address[12...])
+    }
+
+    /// The /64 of an IPv6 address; nil for IPv4, plain or mapped.
+    static func ipv6Prefix(_ address: [UInt8]) -> [UInt8]? {
+        let peer = peerAddress(address)
+        return peer.count == 16 ? Array(peer[0..<8]) : nil
     }
 
     private func closeAll() {

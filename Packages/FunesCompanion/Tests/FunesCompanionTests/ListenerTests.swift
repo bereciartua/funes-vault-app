@@ -226,20 +226,29 @@ import Testing
         second.cancel()
     }
 
-    /// IPv6 aliases in one /64 share a cap; IPv4 addresses (plain or mapped) each have their own.
+    /// 8 from any one address; 16 from one IPv6 /64, however many aliases, so a neighbour on the
+    /// same network keeps its own 8; IPv4 addresses (plain or mapped) only the first cap.
     @Test func capGroups() {
-        let a: [UInt8] = [0xfd, 0x12, 0x34, 0x56, 0, 0, 0, 1, 0xaa, 0, 0, 0, 0, 0, 0, 1]
-        var alias = a
-        alias[15] = 2
-        var otherNet = a
-        otherNet[7] = 2
-        #expect(CompanionListener.capGroup(a) == CompanionListener.capGroup(alias))
-        #expect(CompanionListener.capGroup(a) != CompanionListener.capGroup(otherNet))
-        #expect(CompanionListener.capGroup([192, 168, 1, 20]) != CompanionListener.capGroup([192, 168, 1, 21]))
-        let mapped: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 192, 168, 1, 20]
-        let mappedOther: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 192, 168, 1, 21]
-        #expect(CompanionListener.capGroup(mapped) == [192, 168, 1, 20])
-        #expect(CompanionListener.capGroup(mapped) != CompanionListener.capGroup(mappedOther))
+        let limits = CompanionListener.Limits()
+        func v6(_ host: UInt8, net: UInt8 = 1) -> [UInt8] { [0xfd, 0x12, 0x34, 0x56, 0, 0, 0, net, 0xaa, 0, 0, 0, 0, 0, 0, host] }
+        func mapped(_ host: UInt8) -> [UInt8] { [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 192, 168, 1, host] }
+        func admits(_ address: [UInt8], _ open: [[UInt8]]) -> Bool { CompanionListener.admits(address, among: open, limits: limits) }
+
+        // One address: 8.
+        #expect(admits(v6(1), Array(repeating: v6(1), count: 7)))
+        #expect(!admits(v6(1), Array(repeating: v6(1), count: 8)))
+        // Aliases in one /64 (8 each from two of them): no more from that /64, a neighbour too.
+        let aliases = Array(repeating: v6(1), count: 8) + Array(repeating: v6(2), count: 8)
+        #expect(!admits(v6(3), aliases))
+        // Under 16 there, a neighbour gets its own 8; another /64 isn't counted.
+        #expect(admits(v6(3), Array(repeating: v6(1), count: 8) + Array(repeating: v6(2), count: 7)))
+        #expect(admits(v6(1, net: 2), aliases))
+        // IPv4, plain or mapped, is one address each, and never counts against a /64.
+        #expect(admits([192, 168, 1, 21], Array(repeating: [192, 168, 1, 20], count: 8)))
+        #expect(!admits(mapped(20), Array(repeating: [192, 168, 1, 20], count: 8)))
+        #expect(admits(mapped(21), Array(repeating: mapped(20), count: 8) + aliases))
+        // The total stays 32.
+        #expect(!admits([10, 0, 0, 1], (0..<32).map { [10, 0, 1, UInt8($0)] }))
     }
 
     /// A connection that sends nothing is closed after the first-byte deadline, well before the
