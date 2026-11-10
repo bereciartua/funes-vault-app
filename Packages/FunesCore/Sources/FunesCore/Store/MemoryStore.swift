@@ -379,8 +379,13 @@ enum MemoryStore {
         let groups = try String.fetchAll(db, sql: """
             SELECT DISTINCT group_id FROM suggestion WHERE group_id IS NOT NULL AND result_memory_id IN (\(marks))
             """, arguments: StatementArguments(memoryIDs))
+        // A pending suggestion about a purged memory can't be applied any more: it's closed as
+        // rejected (which, unlike expired, can't be restored to the Inbox), not left pending with
+        // no text.
         try db.execute(sql: """
-            UPDATE suggestion SET title = '', body = '', evidence = NULL
+            UPDATE suggestion SET title = '', body = '', evidence = NULL,
+              status = CASE WHEN status = 'pending' THEN 'rejected' ELSE status END,
+              decided_at = CASE WHEN status = 'pending' THEN CURRENT_TIMESTAMP ELSE decided_at END
             WHERE result_memory_id IN (\(marks)) OR target_memory_id IN (\(marks))
               OR id IN (SELECT suggestion_id FROM suggestion_target WHERE memory_id IN (\(marks)))
             """, arguments: StatementArguments(memoryIDs + memoryIDs + memoryIDs))

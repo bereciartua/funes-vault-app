@@ -117,9 +117,11 @@ import Testing
                                     "plugins": [["name": "cc-plugin-new-thing", "path": "builtin"]]])
         let hooks = Self.json(["type": "system", "subtype": "init", "tools": ["StructuredOutput"], "apiKeySource": "none",
                                "hooks": ["SessionStart": ["x"]]])
+        // An MCP server loaded stops the run even when the event lacks the tool list or key source.
+        let mcpWithoutEvidence = Self.json(["type": "system", "subtype": "init", "mcp_servers": [["name": "funes", "status": "connected"]]])
         for stream in [[mcp, Self.claudeResult()], [Self.claudeInit, bash, Self.claudeResult()], [tools, Self.claudeResult()],
                        [apiKey, Self.claudeResult()], [Self.claudeInit, hook, Self.claudeResult()], [installed, Self.claudeResult()],
-                       [newBuiltin, Self.claudeResult()], [hooks, Self.claudeResult()]] {
+                       [newBuiltin, Self.claudeResult()], [hooks, Self.claudeResult()], [mcpWithoutEvidence, Self.claudeResult()]] {
             CLIRunner.unblock(ClaudeCodeClient.providerID)
             let (client, _) = Self.claude(stream)
             await #expect(throws: ProviderError.unavailable) { try await client.generate(Self.request) }

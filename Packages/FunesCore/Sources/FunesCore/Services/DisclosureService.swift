@@ -258,8 +258,15 @@ public final class DisclosureService: Sendable {
                 return Result(outcome: RequestOutcome(status: .denied, requestID: requestID, reason: .policyChanged,
                                                       maxTokens: input.maxTokens), delivered: [], withheldCategories: [])
             }
+            if let reason = PolicyEngine.gate(agent: agent, access: access, globalPaused: paused, now: now) {
+                row.status = .denied
+                row.reason = reason
+                try Self.insert(db, row)
+                return Result(outcome: RequestOutcome(status: .denied, requestID: requestID, reason: reason,
+                                                      maxTokens: input.maxTokens), delivered: [], withheldCategories: [])
+            }
             var replacedRow = false
-            // The grant checks out: the request it replaces stops waiting, and stops counting
+            // The grant checks out and the gate lets the agent in: the request it replaces stops waiting, and stops counting
             // against the cap below.
             if let replacing {
                 try db.execute(sql: """
@@ -267,14 +274,6 @@ public final class DisclosureService: Sendable {
                     WHERE id = ? AND agent_id = ? AND status = 'needs_approval'
                     """, arguments: [ReasonCode.policyChanged.rawValue, now, replacing.db, agentID.db])
                 replacedRow = db.changesCount > 0
-            }
-            if let reason = PolicyEngine.gate(agent: agent, access: access, globalPaused: paused, now: now) {
-                row.status = .denied
-                row.reason = reason
-                try Self.insert(db, row)
-                return Result(outcome: RequestOutcome(status: .denied, requestID: requestID, reason: reason,
-                                                      maxTokens: input.maxTokens), delivered: [], withheldCategories: [],
-                              replaced: replacedRow)
             }
             // The profile as it is now, never part of the decision or the snapshot (§3.10 rule 4).
             let profile = try ProfileStore.fetch(db).shared(access.profileFields)

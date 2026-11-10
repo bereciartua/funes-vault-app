@@ -159,13 +159,6 @@ final class ClaudeStream: @unchecked Sendable {
         let subtype = event["subtype"] as? String
         switch (type, subtype) {
         case ("system", "init"):
-            // Missing evidence isn't clean evidence: without the tool list or the key source, the
-            // start isn't verified, and an answer after it is discarded.
-            guard let tools = event["tools"] as? [Any], let keySource = event["apiKeySource"] as? String else {
-                verifiedStart = false
-                return true
-            }
-            let allowed = tools.allSatisfy { ($0 as? String) == ClaudeCodeClient.structuredOutputTool }
             // Built-in agent types and skills are allowed: without the Agent or Skill tool they can't run.
             let empty = ["mcp_servers", "hooks"].allSatisfy { key in
                 guard let value = event[key] else { return true }
@@ -178,9 +171,18 @@ final class ClaudeStream: @unchecked Sendable {
                 guard let p = plugin as? [String: Any], p["path"] as? String == "builtin", let name = p["name"] as? String else { return false }
                 return ClaudeCodeClient.knownBuiltinPlugins.contains(name)
             }
+            // Anything loaded that shouldn't be stops the run, whatever else the event says.
+            if !empty || !builtins { return stop() }
+            // Missing evidence isn't clean evidence: without the tool list or the key source, the
+            // start isn't verified, and an answer after it is discarded.
+            guard let tools = event["tools"] as? [Any], let keySource = event["apiKeySource"] as? String else {
+                verifiedStart = false
+                return true
+            }
+            let allowed = tools.allSatisfy { ($0 as? String) == ClaudeCodeClient.structuredOutputTool }
             // A key or helper in managed settings would bill the API, not the plan.
             let plan = keySource == "none"
-            if !allowed || !empty || !builtins || !plan { return stop() }
+            if !allowed || !plan { return stop() }
             verifiedStart = true
         case ("system", let sub?) where sub.hasPrefix("hook"):
             return stop()

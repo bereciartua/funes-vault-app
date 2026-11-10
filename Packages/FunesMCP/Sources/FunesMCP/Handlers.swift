@@ -129,8 +129,10 @@ extension RequestPipeline {
                 let next = try await disclosures.request(agentID: agent.id, input, now: now(), grant: grant,
                                                          replacing: grant == nil ? nil : waiting,
                                                          maxPendingApprovals: limit, via: via, credential: credential)
-                if grant != nil, waiting != nil, next.status == .denied, next.reason == .policyChanged {
-                    // Keep the waiting request: the agent still gets its answer below.
+                if grant != nil, let waiting, next.status == .denied,
+                   (try? await disclosures.disclosure(requestID: waiting))??.status == .needsApproval {
+                    // The grant was stale, or the gate refused the new request (Funes paused, access
+                    // expired): the waiting request wasn't replaced, so the agent gets its answer below.
                 } else {
                     outcome = next
                 }

@@ -481,6 +481,23 @@ import Testing
         #expect(try await fx.status(waitingID) == (.denied, .policyChanged))
     }
 
+    /// A good grant whose new request the gate refuses (Funes paused while the prompt was open)
+    /// doesn't replace the waiting request either.
+    @Test func allowOnceRefusedAtTheGateKeepsTheWaitingRequest() async throws {
+        let fx = try ServiceFixture()
+        try fx.setAgent(asksForAccess: true)
+        try fx.setAccess { $0.allowedCategoryKeys = ["communication_style"] }
+        fx.retriever.set([fx.id("m1"), fx.id("m2")])
+        let waitingID = try #require(try await fx.request().requestID)
+        let revision = try await fx.store.writer.read { db in try AgentStore.fetch(db, id: fx.agentID)!.revision }
+        fx.pause.pause(until: fx.now.plus(minutes: 30))
+        let good = OnceGrant(offeredByRequestID: waitingID, agentRevision: revision, categoryKey: "project_context")
+        let refused = try await fx.disclosures.request(agentID: fx.agentID, MemoryRequest(task: "Draft my weekly status update", maxTokens: 1200),
+                                                       now: fx.now, grant: good, replacing: waitingID)
+        #expect(refused.status == .denied && refused.reason == .funesPaused)
+        #expect(try await fx.status(waitingID).0 == .needsApproval)
+    }
+
     /// The grant is bound to the agent's revision: any access change before delivery invalidates it.
     @Test func allowOnceGrantDropsWhenAccessChanges() async throws {
         let fx = try ServiceFixture()

@@ -102,19 +102,19 @@ public struct PieceRecord: Sendable, Hashable, Codable {
 public enum RulesClassifier {
     public static let engine = "rules"
 
-    /// Single words match whole words; entries with a space match whole-word phrases. Words with an
-    /// everyday meaning ("will", "paid", "court", "mg") are only listed in phrases that keep their
-    /// sensitive sense, so ordinary sentences aren't rated Sensitive.
+    /// Single words match whole words; entries with a space match whole-word phrases. "will",
+    /// "paid" and "mg" are too common on their own, so they're listed only in phrases that keep
+    /// their sensitive sense. "court" stays a word: a stray "tennis court" only keeps a note on
+    /// this Mac, which is the safe side of the pre-screen.
     static let keywords: [String: [String]] = [
         "health": ["doctor", "medication", "medicine", "allergy", "allergic", "prescription", "hospital", "symptom",
                    "diagnosis", "therapy", "therapist", "dentist", "surgery", "vaccine", "blood", "pharmacy", "migraine",
                    "asthma", "diabetes", "epipen"],
         "finance": ["bank", "salary", "rent", "mortgage", "invoice", "tax", "taxes", "budget", "payment", "loan", "credit",
                     "debt", "invest", "investment", "pension", "savings", "insurance", "expense", "expenses", "paycheck",
-                    "get paid", "got paid"],
+                    "get paid", "got paid", "was paid", "were paid", "paid me"],
         "legal": ["contract", "lawyer", "attorney", "lease", "lawsuit", "agreement", "notary", "visa", "custody",
-                  "testament", "nda", "legal", "my will", "a will", "last will", "living will", "in court", "to court",
-                  "court date", "court case", "court order", "court hearing"],
+                  "testament", "nda", "legal", "court", "my will", "a will", "the will", "last will", "living will"],
         "software_development": ["code", "repo", "repository", "git", "commit", "swift", "python", "typescript", "javascript",
                                  "api", "deploy", "bug", "build", "compiler", "xcode", "pnpm", "npm", "test", "tests",
                                  "refactor", "pull", "branch"],

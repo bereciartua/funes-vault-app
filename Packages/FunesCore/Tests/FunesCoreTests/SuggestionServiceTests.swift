@@ -385,7 +385,7 @@ import Testing
     @Test func ambiguousWordsMatchOnlyInTheirSensitiveSense() {
         let cats = MemoryCategory.builtins
         for text in ["I will send the draft tomorrow", "Paid attention to the tone of the reply",
-                     "Plays on the tennis court on Sundays", "Drives an old MG roadster", "Free will is a hard problem"] {
+                     "Drives an old MG roadster", "Free will is a hard problem"] {
             #expect(ModelRouter.prescreen(text, categories: cats) < .sensitive, "\(text)")
         }
         for (text, key) in [("Updated my will with the notary's help", "legal"), ("Wrote a living will last year", "legal"),
