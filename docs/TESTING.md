@@ -112,7 +112,7 @@ Before the first public release, and after any change to the bundle layout, sign
 - [ ] Download `FunesVault.dmg` from the draft release in Safari, so it carries the quarantine flag.
 - [ ] Open it: no Gatekeeper warning. `spctl --assess --type open --context context:primary-signature -v FunesVault.dmg` says `source=Notarized Developer ID`.
 - [ ] Drag the app to Applications and open it: no warning; the menu bar icon appears and the window opens on Home with the setup checklist.
-- [ ] `sh scripts/check_bundle.sh /Applications/FunesVault.app arm64 x86_64` passes: both architectures, `funes-mcp` signed as `com.funesvault.mac.mcp` by the same team, the hardened runtime, Sparkle's feed and key, the bundled model's checksums, and the licence files.
+- [ ] `sh scripts/check_bundle.sh /Applications/FunesVault.app arm64 x86_64` passes: both architectures, `funes-mcp` signed as `com.funesvault.mac.mcp` by the same team, the hardened runtime, Sparkle's feed and key, the bundled model (byte for byte a fresh compile of the pinned package; it needs the model cache from `sh scripts/fetch_embedding_model.sh` on this Mac), and the licence files.
 - [ ] Vault search finds a memory by meaning, not just by its words (the model loaded).
 - [ ] Add one agent, connect it with one click, and run `funes-mcp check` against it.
 - [ ] `lsof -nP -iTCP -sTCP:LISTEN` shows Funes Vault only on `127.0.0.1:47625` (Remote Access off; with it on, also `127.0.0.1:47627`). No firewall or Local Network prompt while iPhone access is off; turning it on (Same Wi-Fi) adds `*:47626` and macOS asks for Local Network access.
