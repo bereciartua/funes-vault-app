@@ -332,20 +332,13 @@ public final class SearchAnswerer: Sendable {
             .replacingOccurrences(of: "<", with: "&lt;")
     }
 
-    /// What stands in for `<` before one of the prompt's own tags (memory, title, text, search):
-    /// a look-alike, so the text still reads the same but can't open or close a tag (§10.3).
-    static let tagStandIn = "\u{2039}"
+    /// The prompt's own tags (§10.3): stored text can't open or close them (`PromptTags`).
+    static let promptTags = ["memory", "title", "text", "search"]
 
-    /// `text` with every `<` that would start one of the prompt's tags (`<text`, `</memory`, any
-    /// case, spaces allowed) replaced by the stand-in, so stored text can't forge a block.
-    static func neutralized(_ text: String) -> String {
-        text.replacing(#/<(\s*/?\s*(?:memory|title|text|search)\b)/#.ignoresCase()) { tagStandIn + $0.output.1 }
-    }
+    static func neutralized(_ text: String) -> String { PromptTags.neutralized(text, tags: promptTags) }
 
     /// A quote copied from neutralized text, with the stand-ins put back: what the memory itself says.
-    static func restored(_ quote: String) -> String {
-        quote.replacing(#/\u{2039}(\s*/?\s*(?:memory|title|text|search)\b)/#.ignoresCase()) { "<" + $0.output.1 }
-    }
+    static func restored(_ quote: String) -> String { PromptTags.restored(quote, tags: promptTags) }
 
     static func request(query: String, sent: [Sent], context: Context, now: Date) -> StructuredRequest<Output> {
         var lines = ["Today is \(DecisionPrompt.day(now)) (\(weekday(now))).", "<search>\(neutralized(query))</search>"]
