@@ -87,8 +87,8 @@ struct InboxView: View {
                 Button(String(localized: "Apply \(items.count)")) { Task { await inbox.bulk(apply: true, items) } }
                     .buttonStyle(.borderedProminent)
                 Button(String(localized: "Deselect")) { inbox.selection = [] }.buttonStyle(.link)
-            } else if model.inbox.count > 1 {
-                Button(String(localized: "Select All")) { inbox.selection = Set(model.inbox.map(\.id)) }
+            } else if inbox.selectable(model.inbox).count > 1 {
+                Button(String(localized: "Select All")) { inbox.selection = Set(inbox.selectable(model.inbox)) }
             }
         }
     }

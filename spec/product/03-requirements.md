@@ -151,7 +151,7 @@
   - Reject keeps an id-only record in Activity.
 
 **FR-I-03 Bulk review** · S · v0.1
-- Multi-select Apply or Reject, with per-item results ("12 applied, 1 blocked by the secret scanner"). Each item applies with its own action, never Keep both for everything; pieces flagged "Outside <agent>'s scope" are left out.
+- Multi-select Apply or Reject, with per-item results ("12 applied, 1 blocked by the secret scanner"). Each item applies with its own action, never Keep both for everything; pieces flagged "Outside <agent>'s scope" are left out. Select All takes only the cards that show a checkbox and aren't put off until Later: never a split input's pieces, which their group card decides.
 
 **FR-I-04 Badge** · M · v0.1
 - The menu bar icon and the Inbox tab show the pending count.
