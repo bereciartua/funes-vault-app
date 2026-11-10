@@ -7,7 +7,7 @@ The iPhone is a **thin client** of the Mac. There is no replication and no cloud
 ## 1. Keys
 | Key | Algorithm | Where | Purpose |
 |---|---|---|---|
-| Mac signing key | P-256 ECDSA | Mac Keychain, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` | Signs pairing confirmations |
+| Mac signing key | P-256 ECDSA | Mac Keychain, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` | Signs pairing confirmations and refusals (§3.2) |
 | Mac HPKE key | P-256 key agreement | Mac Keychain, same | Recipient of every phone request |
 | Device signing key | P-256 ECDSA | iPhone **Secure Enclave** (`SecureEnclave.P256.Signing`); Keychain fallback on devices without one | Signs every request |
 | Device HPKE key | P-256 key agreement | iPhone Keychain (`…AfterFirstUnlockThisDeviceOnly`) | Recipient of pairing confirmations |
@@ -74,11 +74,11 @@ Limits: at most 5 paired devices, and 3 pairing attempts per pairing session.
   - `aad = v ‖ did ‖ ts ‖ nonce`.
 - **Signature:** `ECDSA-P256-SHA256` over `"funes-req-v1" ‖ v ‖ did ‖ ts ‖ nonce ‖ enc ‖ ct`.
 
-**Mac verification order** (every failure is `401` with a minimal plaintext error, `{"error":"<code>"}`, and no details beyond the code):
+**Mac verification order** (every failure is `401` with a minimal plaintext error, `{"error":"<code>"}`, and no details beyond the code; from step 1 on it's signed, §3.2):
 0. The body is a well-formed version-1 envelope of at most 256 KiB, with every field the right size. Otherwise `invalid_envelope`.
-1. `did` is known and not revoked. Otherwise `unknown_device` or `revoked`.
-2. `|now − ts| ≤ 120 s`. Otherwise `clock_skew`, and the reply includes `server_time` (milliseconds), which isn't secret.
-3. The `nonce` hasn't been seen in the last 10 minutes (up to 10,000 per device). Otherwise `replay`.
+1. `did` is known and not revoked. Otherwise `unknown_device` or `revoked`. A lookup that fails (the database, for a moment) is `unavailable`: try again later; it says nothing about the device.
+2. `|now − ts| ≤ 120 s`. Otherwise `clock_skew`, and the reply includes `server_time` (milliseconds), which isn't secret. An envelope sent before the Mac's replay cache started (it lives in memory, so at each launch) is also `clock_skew`: a cache from before may have seen it, and the phone resends with the Mac's time, which is past the start.
+3. The `nonce` hasn't been seen in the last 10 minutes (up to 10,000 per device). Otherwise `replay`. One cache per launch, kept when Settings ▸ iPhone changes and the listener restarts.
 4. The signature verifies with the device signing key. Otherwise `invalid_signature`. Only now is the nonce remembered, so nobody without the device key can fill the cache and push a real nonce out of it.
 5. The HPKE open succeeds. Otherwise `decryption_failed`.
 
@@ -97,6 +97,13 @@ When a device's 10,000 slots are full, the oldest nonce is dropped and its `ts` 
 - Only the device that sealed the request (and the Mac) can derive `k`. The response is therefore confidential and authenticated to that exchange.
 
 **Response JSON:** `{"id":"<call id>","result":{…}}` or `{"id":"…","error":{"code":"…","message":"…"}}`.
+
+### 3.2 Signed refusals
+A `401` is plaintext, so anyone on the path, or any host at an address the phone probes, could write one. So the Mac signs every refusal of an envelope that parsed (steps 1–5), with its signing key, which the phone has from the QR code:
+- **Body:** `{"error":"<code>","server_time"?:<ms>,"sig":"<64-byte r ‖ s, b64url>"}`.
+- **Signature:** over `"funes-refusal-v1" ‖ v ‖ did ‖ nonce ‖ error ‖ server_time`, the `did` and `nonce` of the refused envelope, and `server_time` as no bytes when absent. So a refusal can't be forged, moved to another device, or replayed against a later request.
+- `invalid_envelope` has no request to bind to and stays unsigned; only the empty probe before pairing (§5) reads it.
+- **The phone acts only on a refusal that verifies** for the request it sent: `revoked` and `unknown_device` (removed), `clock_skew` (§5, Retries), `unavailable`. An unsigned or badly signed `401` (another host, or a Mac before signed refusals) counts as no answer: the Mac is unreachable, never removed, and the phone's clock doesn't move.
 
 ## 4. Methods
 All methods act as the **owner** ([access policy §6](../domain/access-policy.md#6-owner-devices-paired-iphone)). Each is logged in Activity as `device:<id>` (via `companion`), except `status.get`, the reachability probe the phone sends on every foreground, and `approvals.settings.get`, which it sends as often. Reads log one row without text (`memories_searched` with a result count, `memory_viewed`, `inbox_listed`, from v0.9 `inbox_viewed` with the suggestion's id, `categories_listed`, `approvals_listed`, `approval_viewed`, from v0.4 `overview_viewed`, and from v0.6 `search_answered` with counts only). Writes log what FunesCore logs for them (`capture`, `memory_created`, `memory_edited`, `memory_archived`, `memory_restored`, `memory_deleted`, `suggestion_applied`, `suggestion_rejected`, `device_revoked`, `approval`, `access_answered`, `device_approvals`).
@@ -234,16 +241,16 @@ The Mac words nothing for the phone: the panels are data, worded and localized o
 - **Subnet routers:** a Tailscale subnet router (or any VPN gateway) that routes the Mac's LAN presents the phone's traffic as coming from a LAN address. Same Wi-Fi mode then accepts it from anywhere on that VPN, and the phone, which tries LAN addresses first, uses it ([Spike 1e](../plans/spike-results.md#spike-1-companion-transport)). The envelope still makes every request authenticated and confidential. The phone shows "Connected · VPN" when a LAN address answers while it isn't on Wi-Fi or Ethernet.
 - **Why not `NWListener` (Spike 1e, 2026-10-21):** on macOS 27, an `NWListener` gets inbound flows over Tailscale's `utun` interface but never completes the TCP handshake, so the phone couldn't reach the Mac's 100.x address. The kernel's `accept` on a BSD socket does. `CompanionListener` accepts with a dispatch source and advertises Bonjour through `DNSServiceRegister`.
 - **Bonjour:** while Same Wi-Fi is on, the Mac advertises `_funes._tcp` on port 47626, with TXT `v=1`, `mac=<SHA-256(macId) first 8 bytes hex>` (the hash of the lowercase id string). The phone browses with `NWBrowser` and matches the hash. The Mac app's Info.plist has `NSLocalNetworkUsageDescription` and `NSBonjourServices` for macOS's Local Network permission.
-- **HTTP refusals before the envelope:** tunnel requests without the secret prefix `404`, with the wrong `Host` `421`; a `/r/…` path off the tunnel `404`; a body over 256 KiB `413`. The whole request must arrive within 10 s of its first byte (`408`), and an idle connection closes after 30 s.
+- **HTTP refusals before the envelope:** tunnel requests without the secret prefix `404`, with the wrong `Host` `421`; a `/r/…` path off the tunnel `404`; a body over 256 KiB `413`. The first byte must arrive within 5 s of the connection, the whole request within 10 s of its first byte (`408`), and an idle connection between requests closes after 30 s. At most 32 connections at once, and 8 from any one address (beyond that the connection is closed before a byte is read), so one host on the network can't hold every slot.
 - **The QR code's addresses:** the Mac's `.local` name and its current LAN IPv4 address (Same Wi-Fi), its `100.x` address (Tailscale), and `https://<public host>/r/<secret>` (tunnel). Only enabled modes are listed. **Reset Path** in Settings makes a new secret; phones learn it by pairing again.
 - **Address selection (phone):**
   1. A Bonjour hit for the paired Mac, or a LAN address saved from the QR code (same Wi-Fi, so whichever answers first).
   2. The saved Tailscale IP.
   3. The saved tunnel URL.
 
-  Each is probed with `status.get` (3 s timeout), all at once, with the Bonjour browse (2 s) alongside. The best-ranked address that answers wins as soon as no better-ranked probe is still running. The last working address is cached for 10 minutes, and forgotten when `NWPathMonitor` reports a new path. If none answers, a `401 revoked` from any of them is reported as revoked; otherwise the Mac is unreachable, with "Local Network access is off" when iOS refused the browse.
+  Each is probed with `status.get` (3 s timeout), all at once, with the Bonjour browse (2 s) alongside. The best-ranked address that answers wins as soon as no better-ranked probe is still running. The last working address is cached for 10 minutes, and forgotten when `NWPathMonitor` reports a new path. If none answers, a signed `401 revoked` (§3.2) from any of them is reported as revoked, then any other signed refusal; otherwise the Mac is unreachable, with "Local Network access is off" when iOS refused the browse. An unsigned `401` is no answer.
 - **Before pairing,** the phone has no device id to seal a `status.get` with, so it probes the QR code's addresses (and Bonjour) with an empty `POST /c/v1/rpc`: a Funes Mac answers `401 invalid_envelope` without reading further. Only then does it send the pairing request, so an address that doesn't answer never uses up one of the session's 3 attempts. The request goes to the best-ranked address that answered.
-- **Retries (phone):** a `clock_skew` refusal is resent once, sealed with the Mac's `server_time`, and the offset is kept for later calls. A call with no answer at all (no connection, a timeout, a lost response) starts address selection over and is resent once if it's safe to repeat: `status.get`, `captures.submit` (duplicates are accepted, §6) and the reads (with `overview.get`, `approvals.list`, `approvals.get` and `approvals.settings.get`). Edits, deletes, Inbox answers, approval answers, `approvals.settings.set` `device.unpair` and `memories.answer` (each attempt costs a model call) aren't resent; the user sees the error and can try again, and a stale `version` comes back as `conflict`.
+- **Retries (phone):** a signed `clock_skew` refusal (§3.2) is resent once, sealed with the Mac's `server_time`, and the offset is kept for later calls, unless the Mac's time is more than a day from the phone's: then the refusal stands and the offset doesn't move. An unsigned one changes nothing. A call with no answer at all (no connection, a timeout, a lost response) starts address selection over and is resent once if it's safe to repeat: `status.get`, `captures.submit` (duplicates are accepted, §6) and the reads (with `overview.get`, `approvals.list`, `approvals.get` and `approvals.settings.get`). Edits, deletes, Inbox answers, approval answers, `approvals.settings.set` `device.unpair` and `memories.answer` (each attempt costs a model call) aren't resent; the user sees the error and can try again, and a stale `version` comes back as `conflict`.
 - **Implementation (task 5.3):** `Packages/FunesPhone`: `CompanionClient` (an actor), `DeviceKeyStore`, `PairingRecordStore`, `BonjourDiscovery` (an `NWBrowser`; a match is resolved to its IPv4 address by opening a TCP connection, since `URLSession` can't use a service endpoint), `NetworkPathWatcher`, and `CompanionHTTPTransport`: a small HTTP/1.1 client on `NWConnection` for `http://` (one POST per connection, `Connection: close`, the reply read to its `Content-Length`, at most 4 MiB), and an ephemeral `URLSession` for the tunnel's `https://`. Each request has a hard deadline. The device keys and the pairing record are Keychain items, service `com.funesvault.ios.companion`, in the access group the app and its extensions share. The phone waits 70 s for the pairing answer.
 
 ## 6. Offline capture queue (phone)
@@ -285,7 +292,8 @@ The last `overview.get` answer for each range is kept in `overview.json` in the 
 
 ## 9. Test plan
 - Pairing: happy path, expired QR, wrong secret, denied on the Mac, a 4th attempt.
-- Envelope: tampered `ct`, `enc` or `sig`; replayed nonce; skewed clock; unknown or revoked device.
+- Envelope: tampered `ct`, `enc` or `sig`; replayed nonce, also across a listener restart and after a relaunch; skewed clock; unknown or revoked device; a failed device lookup.
+- Refusals (§3.2): signed and bound to the request; the phone ignores an unsigned one, one signed by another Mac or for another request, and a hostile `server_time` (`Int64.max`) without crashing or moving its clock; a Mac's clock more than a day away isn't followed.
 - Captures:
   - a duplicate `captureId`;
   - a response dropped after the commit;

@@ -34,6 +34,11 @@ public struct PairingRecord: Codable, Sendable, Equatable {
         get throws { try P256.KeyAgreement.PublicKey(x963Representation: macHPKEKey) }
     }
 
+    /// The Mac's signing key, which signs its refusals (§3).
+    public var signingKey: P256.Signing.PublicKey {
+        get throws { try P256.Signing.PublicKey(x963Representation: macSigningKey) }
+    }
+
     /// The TXT record's `mac` value the paired Mac advertises over Bonjour.
     public var bonjourTag: String { CompanionBonjour.macTag(macID) }
 }

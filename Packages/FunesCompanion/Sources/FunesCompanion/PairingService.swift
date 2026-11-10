@@ -117,8 +117,9 @@ public actor PairingService {
             return Self.failure(.invalidRequest)
         }
 
-        // Asking: other attempts on this session are refused until the user answers.
-        guard var asking = session, asking.payload.pairingID == request.pairingID else { return Self.failure(.expired) }
+        // Asking: other attempts on this session are refused until the user answers, including one
+        // that passed the first check while this one waited for the device count.
+        guard var asking = session, asking.payload.pairingID == request.pairingID, !asking.asking else { return Self.failure(.expired) }
         asking.asking = true
         session = asking
         publish(.asking(deviceName: request.deviceName, model: request.model))
@@ -149,6 +150,8 @@ public actor PairingService {
 
     private func ask() async -> Bool {
         let id = UUID(), timeout = promptTimeout
+        // Never two prompts: one still waiting is denied rather than left hanging.
+        cancelPrompt()
         return await withCheckedContinuation { continuation in
             prompt = continuation
             promptID = id

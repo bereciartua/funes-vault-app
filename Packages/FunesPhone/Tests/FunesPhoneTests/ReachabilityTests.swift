@@ -55,6 +55,7 @@ import Testing
     /// A method's error came from a Mac that answered: the banner stays Connected.
     @Test func methodErrorsDontChangeTheBanner() {
         var tracker = ReachabilityTracker()
+        tracker.handle(.pairing(paired: true))
         tracker.handle(.checked(.success(Self.connection()), at: t0))
         tracker.handle(.callFailed(.method(CompanionError(.conflict))))
         tracker.handle(.callFailed(.method(CompanionError(.notFound))))
@@ -65,6 +66,7 @@ import Testing
 
     @Test func removedOnTheMac() {
         var tracker = ReachabilityTracker()
+        tracker.handle(.pairing(paired: true))
         tracker.handle(.checked(.success(Self.connection()), at: t0))
         tracker.handle(.callFailed(.refused(.revoked)))
         #expect(tracker.state == .revoked)
@@ -73,6 +75,7 @@ import Testing
         #expect(tracker.state == .revoked)
 
         var viaDelivery = ReachabilityTracker()
+        viaDelivery.handle(.pairing(paired: true))
         viaDelivery.handle(.checked(.success(Self.connection()), at: t0))
         viaDelivery.handle(.delivered(.revoked))
         #expect(viaDelivery.state == .revoked)
@@ -81,12 +84,14 @@ import Testing
         #expect(viaDelivery.lastChecked == nil)
 
         var unknown = ReachabilityTracker()
+        unknown.handle(.pairing(paired: true))
         unknown.handle(.checked(.failure(.refused(.unknownDevice)), at: t0))
         #expect(unknown.state == .revoked)
     }
 
     @Test func deliveryFailureMeansUnreachable() {
         var tracker = ReachabilityTracker()
+        tracker.handle(.pairing(paired: true))
         tracker.handle(.checked(.success(Self.connection()), at: t0))
         tracker.handle(.delivered(.failed(Self.unreachable, retryAt: t0, sent: 0)))
         #expect(tracker.state == .unreachable(localNetworkDenied: false))
@@ -94,6 +99,7 @@ import Testing
 
     @Test func networkPathChanges() {
         var tracker = ReachabilityTracker()
+        tracker.handle(.pairing(paired: true))
         tracker.handle(.checked(.success(Self.connection()), at: t0))
         tracker.handle(.path(Self.offline))
         #expect(tracker.state == .unreachable(localNetworkDenied: false))
@@ -108,6 +114,7 @@ import Testing
 
     @Test func otherFailures() {
         var tracker = ReachabilityTracker()
+        tracker.handle(.pairing(paired: true))
         tracker.handle(.checked(.failure(.badResponse(status: 404)), at: t0))
         #expect(tracker.state == .failed(.badResponse(status: 404)))
         tracker.handle(.checkStarted)

@@ -171,6 +171,88 @@ import Testing
         #expect(CompanionAuthError(body: skewed.body) == .clockSkew(serverTime: t0))
     }
 
+    /// Every refusal of an envelope that parsed is signed with the Mac's key and bound to that
+    /// request's device and nonce (§3); a body that isn't an envelope can't be, and isn't.
+    @Test func refusalsAreSignedForTheirRequest() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let macKey = h.identity.signingKey.publicKey
+        func refuse(_ phone: CompanionHarness.Phone, at time: Date) async throws -> (HTTPResponse, CompanionRequestEnvelope) {
+            let request = try CompanionRequest(StatusGet.self, params: EmptyParams()).encoded()
+            let sealed = try CompanionRequestEnvelope.seal(request, deviceID: phone.deviceID!, macHPKEKey: h.identity.hpkeKey.publicKey,
+                                                           signer: phone.signer, now: time)
+            let response = await h.router.handle(CompanionHarness.request(CompanionProtocol.rpcPath, body: sealed.envelope.body),
+                                                 transport: .lan)
+            return (response, sealed.envelope)
+        }
+        let (skewed, envelope) = try await refuse(phone, at: t0.addingTimeInterval(-300))
+        #expect(skewed.status == 401)
+        #expect(CompanionAuthError(signedBody: skewed.body, deviceID: envelope.deviceID, nonce: envelope.nonce, macSigningKey: macKey)
+            == .clockSkew(serverTime: t0))
+        // Bound to that request: another nonce doesn't verify.
+        #expect(CompanionAuthError(signedBody: skewed.body, deviceID: envelope.deviceID, nonce: Data(count: 16), macSigningKey: macKey)
+            == nil)
+
+        var stranger = CompanionHarness.Phone()
+        stranger.deviceID = UUID()
+        let (unknown, strangerEnvelope) = try await refuse(stranger, at: t0)
+        #expect(CompanionAuthError(signedBody: unknown.body, deviceID: strangerEnvelope.deviceID, nonce: strangerEnvelope.nonce,
+                                   macSigningKey: macKey) == .unknownDevice)
+
+        try await h.services.devices.revoke(deviceID: phone.deviceID!, now: t0, actor: .user)
+        let (revoked, revokedEnvelope) = try await refuse(phone, at: t0)
+        #expect(CompanionAuthError(signedBody: revoked.body, deviceID: revokedEnvelope.deviceID, nonce: revokedEnvelope.nonce,
+                                   macSigningKey: macKey) == .revoked)
+
+        let garbage = await h.router.handle(CompanionHarness.request(CompanionProtocol.rpcPath, body: Data("{}".utf8)), transport: .lan)
+        #expect(garbage.status == 401 && CompanionAuthError(body: garbage.body) == .invalidEnvelope)
+        #expect(field(garbage.body, "sig") == nil)
+    }
+
+    /// A device lookup that fails (the database, for a moment) is `unavailable`, signed, never
+    /// `unknown_device`, which the phone reads as removed.
+    @Test func aFailedLookupIsUnavailable() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        try await h.store.writer.write { db in try db.execute(sql: "ALTER TABLE device RENAME TO device_away") }
+        let request = try CompanionRequest(StatusGet.self, params: EmptyParams()).encoded()
+        let sealed = try CompanionRequestEnvelope.seal(request, deviceID: phone.deviceID!, macHPKEKey: h.identity.hpkeKey.publicKey,
+                                                       signer: phone.signer, now: t0)
+        let response = await h.router.handle(CompanionHarness.request(CompanionProtocol.rpcPath, body: sealed.envelope.body),
+                                             transport: .lan)
+        #expect(response.status == 401)
+        #expect(CompanionAuthError(signedBody: response.body, deviceID: phone.deviceID!, nonce: sealed.envelope.nonce,
+                                   macSigningKey: h.identity.signingKey.publicKey) == .unavailable)
+    }
+
+    /// The replay cache outlives the router: a settings change makes a new router with the
+    /// server's guard, and a captured request is still a replay. A cache that started after an
+    /// envelope was sent (a relaunch) refuses it as `clock_skew`.
+    @Test func replaysAreRefusedAcrossRouters() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let request = try CompanionRequest(StatusGet.self, params: EmptyParams()).encoded()
+        let sealed = try CompanionRequestEnvelope.seal(request, deviceID: phone.deviceID!, macHPKEKey: h.identity.hpkeKey.publicKey,
+                                                       signer: phone.signer, now: t0)
+        let http = CompanionHarness.request(CompanionProtocol.rpcPath, body: sealed.envelope.body)
+        #expect(await h.router.handle(http, transport: .lan).status == 200)
+
+        let clock = h.clock
+        let again = CompanionRouter(identity: h.identity, devices: h.services.devices, pairing: h.pairing, handlers: h.router.handlers,
+                                    gate: nil, guardian: h.router.guardian, clock: { clock.now })
+        #expect(CompanionAuthError(body: await again.handle(http, transport: .lan).body) == .replay)
+
+        h.clock.advance(5)
+        let relaunched = CompanionRouter(identity: h.identity, devices: h.services.devices, pairing: h.pairing,
+                                         handlers: h.router.handlers, gate: nil, clock: { clock.now })
+        #expect(CompanionAuthError(body: await relaunched.handle(http, transport: .lan).body) == .clockSkew(serverTime: t0 + 5))
+        // A request sent now, on the Mac's clock, goes through.
+        let fresh = try CompanionRequestEnvelope.seal(request, deviceID: phone.deviceID!, macHPKEKey: h.identity.hpkeKey.publicKey,
+                                                      signer: phone.signer, now: clock.now)
+        #expect(await relaunched.handle(CompanionHarness.request(CompanionProtocol.rpcPath, body: fresh.envelope.body),
+                                        transport: .lan).status == 200)
+    }
+
     @Test func tamperedEnvelopeIsRefused() async throws {
         let h = try CompanionHarness()
         let phone = try await h.pairedPhone()
@@ -650,4 +732,8 @@ import Testing
         #expect(reply?.error?.code == .rateLimited)
         #expect((reply?.error?.retryAfterSeconds ?? 0) > 0)
     }
+}
+
+private func field(_ body: Data, _ key: String) -> Any? {
+    ((try? JSONSerialization.jsonObject(with: body)) as? [String: Any])?[key]
 }

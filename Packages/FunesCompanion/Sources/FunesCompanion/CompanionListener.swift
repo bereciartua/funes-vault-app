@@ -13,7 +13,9 @@ import FunesProtocol
 /// tunnel-only mode, `127.0.0.1` and `::1` instead, so nothing outside the Mac reaches the port.
 ///
 /// One request at a time per connection, with fixed deadlines that later bytes don't extend: the
-/// whole request within 10 s of its first byte, 30 s idle between requests.
+/// first byte within 5 s of the connection, the whole request within 10 s of its first byte, 30 s
+/// idle between requests. At most 32 connections, and 8 from any one address, so one host on the
+/// network can't hold every slot.
 public final class CompanionListener: @unchecked Sendable {
     public typealias Handler = @Sendable (HTTPRequest, DeviceTransport) async -> HTTPResponse
 
@@ -31,13 +33,17 @@ public final class CompanionListener: @unchecked Sendable {
 
     public static let requestTimeout: TimeInterval = 10
     public static let idleTimeout: TimeInterval = 30
+    /// A new connection that sends nothing for this long is closed.
+    public static let firstByteTimeout: TimeInterval = 5
     public static let maxConnections = 32
+    public static let maxConnectionsPerAddress = 8
 
     private let queue = DispatchQueue(label: "com.funesvault.companion.listener")
     private let port: Int
     private let modes: CompanionModes
     private let bonjour: [String: String]?
     private let handler: Handler
+    private let limits: Limits
     private var sources: [DispatchSourceRead] = []
     private let socketsClosed = DispatchGroup()
     private var stopped = false
@@ -45,11 +51,25 @@ public final class CompanionListener: @unchecked Sendable {
     private var connections: [ObjectIdentifier: Connection] = [:]
     private var stateChanged: (@Sendable (State) -> Void)?
 
+    /// The connection caps and deadlines; tests shorten them.
+    struct Limits: Sendable {
+        var maxConnections = CompanionListener.maxConnections
+        var maxPerAddress = CompanionListener.maxConnectionsPerAddress
+        var firstByte = CompanionListener.firstByteTimeout
+        var request = CompanionListener.requestTimeout
+        var idle = CompanionListener.idleTimeout
+    }
+
     /// `bonjour` is the TXT record to advertise, or nil not to advertise.
-    public init(port: Int, modes: CompanionModes, bonjour: [String: String]?, handler: @escaping Handler) {
+    public convenience init(port: Int, modes: CompanionModes, bonjour: [String: String]?, handler: @escaping Handler) {
+        self.init(port: port, modes: modes, bonjour: bonjour, limits: Limits(), handler: handler)
+    }
+
+    init(port: Int, modes: CompanionModes, bonjour: [String: String]?, limits: Limits, handler: @escaping Handler) {
         self.port = port
         self.modes = modes
         self.bonjour = bonjour
+        self.limits = limits
         self.handler = handler
     }
 
@@ -118,12 +138,13 @@ public final class CompanionListener: @unchecked Sendable {
     }
 
     private func accept(_ fd: Int32, address: [UInt8]) {
-        guard connections.count < Self.maxConnections,
-              let transport = AddressPolicy.transport(forAddress: address, modes: modes) else {
+        guard connections.count < limits.maxConnections,
+              let transport = AddressPolicy.transport(forAddress: address, modes: modes),
+              connections.values.count(where: { $0.address == address }) < limits.maxPerAddress else {
             Darwin.close(fd)
             return
         }
-        let connection = Connection(fd, transport: transport, queue: queue, handler: handler)
+        let connection = Connection(fd, address: address, transport: transport, limits: limits, queue: queue, handler: handler)
         let key = ObjectIdentifier(connection)
         connections[key] = connection
         connection.onClose = { [weak self] in self?.connections[key] = nil }
@@ -144,7 +165,10 @@ public final class CompanionListener: @unchecked Sendable {
     /// queue. The socket is closed once every dispatch source on it has been cancelled.
     private final class Connection: @unchecked Sendable {
         private let fd: Int32
+        /// The remote address, for the per-address cap.
+        let address: [UInt8]
         private let transport: DeviceTransport
+        private let limits: Limits
         private let queue: DispatchQueue
         private let handler: Handler
         private var parser = HTTPParser(limits: HTTPLimits(maxBodyBytes: CompanionProtocol.maxRequestBytes))
@@ -160,9 +184,12 @@ public final class CompanionListener: @unchecked Sendable {
         private var drained: [@Sendable () -> Void] = []
         var onClose: (@Sendable () -> Void)?
 
-        init(_ fd: Int32, transport: DeviceTransport, queue: DispatchQueue, handler: @escaping Handler) {
+        init(_ fd: Int32, address: [UInt8], transport: DeviceTransport, limits: Limits, queue: DispatchQueue,
+             handler: @escaping Handler) {
             self.fd = fd
+            self.address = address
             self.transport = transport
+            self.limits = limits
             self.queue = queue
             self.handler = handler
         }
@@ -173,11 +200,8 @@ public final class CompanionListener: @unchecked Sendable {
             reader.setEventHandler { [weak self] in self?.readAvailable() }
             self.reader = reader
             reader.resume()
-            arm(Self.idle)
+            arm(limits.firstByte)
         }
-
-        private static let idle = CompanionListener.idleTimeout
-        private static let request = CompanionListener.requestTimeout
 
         /// Reads only while no request is being handled; bytes that arrive meanwhile wait in the
         /// socket.
@@ -198,7 +222,7 @@ public final class CompanionListener: @unchecked Sendable {
             var buffer = [UInt8](repeating: 0, count: 65_536)
             let count = Darwin.read(fd, &buffer, buffer.count)
             if count > 0 {
-                if !parser.hasBufferedBytes { arm(Self.request) }
+                if !parser.hasBufferedBytes { arm(limits.request) }
                 feed(Data(buffer[0..<count]))
             } else if count == 0 || (errno != EAGAIN && errno != EINTR) {
                 close()
@@ -225,7 +249,7 @@ public final class CompanionListener: @unchecked Sendable {
                     guard !self.closed else { return }
                     self.write(response, close: request.wantsClose) {
                         self.busy = false
-                        self.arm(Self.idle)
+                        self.arm(self.limits.idle)
                         // A pipelined request may already be buffered.
                         if self.parser.hasBufferedBytes { self.feed(Data()) }
                         if !self.busy { self.receive() }

@@ -130,6 +130,31 @@ import Testing
         await #expect(throws: CompanionClientError.refused(.revoked)) { try await phone.status() }
     }
 
+    /// The phone follows the real Mac's signed `clock_skew` (§3, §5): its clock falls ten minutes
+    /// behind, and the call goes through on the retry with the Mac's time.
+    @Test func followsTheMacsSignedClock() async throws {
+        let h = try CompanionHarness()
+        let lag = Lag()
+        let clock = h.clock
+        let phone = CompanionClient(store: MemorySecretStore(), transport: RouterTransport(harness: h), discovery: NoBonjour(),
+                                    secureEnclave: false, clock: { clock.now.addingTimeInterval(-lag.seconds) })
+        let payload = await h.qr()
+        async let paired = phone.pair(payload, deviceName: "Sam's iPhone", model: "iPhone14,4")
+        try await h.answerWhenAsked(true)
+        _ = try await paired
+        lag.seconds = 600
+        #expect(try await phone.status(fresh: true).status.serverTime == t0)
+    }
+
+    final class Lag: @unchecked Sendable {
+        private let lock = NSLock()
+        private var value: TimeInterval = 0
+        var seconds: TimeInterval {
+            get { lock.withLock { value } }
+            set { lock.withLock { value = newValue } }
+        }
+    }
+
     /// The overview through the real client into the phone's cache (ADR-0025): counts and agent
     /// names reach `overview.json`, memory text never does; a revocation clears it.
     @MainActor @Test func overviewIsCachedWithoutText() async throws {

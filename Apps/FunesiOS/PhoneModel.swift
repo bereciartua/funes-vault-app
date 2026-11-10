@@ -77,6 +77,14 @@ final class PhoneModel {
     private var pendingCapture: CaptureLaunch.Mode?
     private var started = false
     private var refreshing = false
+    /// The first read of the pairing from the Keychain. Until it's done the tracker's "not
+    /// paired" is only its starting state, so launch, foreground and background work wait for it.
+    private var firstReload: Task<Void, Never>?
+    /// The pairing is known to be gone: the Keychain read back empty, the client found no
+    /// pairing, or the user unpaired. Never set by a Keychain read that failed.
+    private var pairingGone = false
+    /// The last read of the pairing failed: the next foreground reads it again.
+    private var pairingUnreadable = false
 
     init(services: PhoneServices) {
         self.services = services
@@ -179,7 +187,7 @@ final class PhoneModel {
             return
         }
         #endif
-        await reload()
+        await pairingLoaded()
         // The demo has no network to watch and no extensions' queue to read.
         if isDemo {
             #if DEBUG
@@ -238,6 +246,7 @@ final class PhoneModel {
         #if DEBUG
         if ConnectionScene.current != nil, !isDemo { return }
         #endif
+        await pairingLoaded()
         await refresh()
         await capture.deliver(.foreground)
         // Suggestions may have been answered or added on the Mac meanwhile.
@@ -250,6 +259,7 @@ final class PhoneModel {
     /// extension and the Control can queue more while the app stays closed.
     func backgroundDelivery() async {
         guard !isDemo else { return }
+        await pairingLoaded()
         capture.reload()
         if capture.queuedCount > 0 { await capture.deliver(.background) }
         await overview.load()
@@ -270,6 +280,8 @@ final class PhoneModel {
     }
 
     private func delivered(_ outcome: DeliveryOutcome) {
+        // The client read the Keychain and found no pairing.
+        if outcome == .notPaired { pairingGone = true }
         tracker.handle(.delivered(outcome))
         statusBar.delivered(outcome)
         leaveVaultIfGone()
@@ -281,21 +293,39 @@ final class PhoneModel {
 
     /// A Search, memory or Inbox call failed: the connection's state hears about it.
     private func callFailed(_ error: CompanionClientError) {
+        // The client read the Keychain and found no pairing.
+        if error == .notPaired { pairingGone = true }
         tracker.handle(.callFailed(error))
         leaveVaultIfGone()
     }
 
     /// Unpaired or removed: what Search and the Inbox read from the Mac leaves the phone, and so
-    /// does the cached overview.
+    /// does the cached overview. Only when that's known: removed on the Mac (a refusal it
+    /// signed), or no pairing in the Keychain. Not the tracker's starting state before the
+    /// Keychain is read, and not a Keychain read that failed.
     private func leaveVaultIfGone() {
         switch reachability {
-        case .notPaired, .revoked:
-            search.clear()
-            inbox.clear()
-            approvals.clear()
-            overview.clear()
-            openApproval = nil
-        default: break
+        case .revoked: break
+        case .notPaired where pairingGone: break
+        default: return
+        }
+        search.clear()
+        inbox.clear()
+        approvals.clear()
+        overview.clear()
+        openApproval = nil
+    }
+
+    /// Waits for the first read of the pairing, starting it if nothing has; a read that failed
+    /// (a launch in the background before the first unlock) is tried again.
+    private func pairingLoaded() async {
+        if let firstReload {
+            await firstReload.value
+            if pairingUnreadable { await reload() }
+        } else {
+            let first = Task { await reload() }
+            firstReload = first
+            await first.value
         }
     }
 
@@ -308,9 +338,15 @@ final class PhoneModel {
         }
         do {
             record = try await client.record()
+            pairingGone = record == nil
+            pairingUnreadable = false
         } catch {
+            // Unreadable for now (the Keychain before first unlock, say): not the same as no
+            // pairing, so nothing is wiped. The next read tries again.
             logger.error("Couldn't read the pairing")
             record = nil
+            pairingGone = false
+            pairingUnreadable = true
         }
         usesSecureEnclave = await client.usesSecureEnclave()
         tracker.handle(.pairing(paired: record != nil))
@@ -344,8 +380,9 @@ final class PhoneModel {
         } catch {
             tracker.handle(.checked(.failure(error), at: Date()))
         }
-        // The called name the check kept with the pairing, for while the Mac is away.
-        record = (try? await client.record()) ?? record
+        // The called name the check kept with the pairing, for while the Mac is away. Unpaired
+        // meanwhile, it's gone; a Keychain read that failed keeps what's shown.
+        do { record = try await client.record() } catch { logger.error("Couldn't read the pairing") }
         probes = await client.lastProbes
         leaveVaultIfGone()
         guard reachability.isConnected else { return }
@@ -362,7 +399,15 @@ final class PhoneModel {
     func pair(_ payload: PairingQRPayload, deviceName: String) async throws(CompanionClientError) -> Duration {
         guard let client = services.client else { throw .notPaired }
         let start = ContinuousClock.now
-        record = try await client.pair(payload, deviceName: deviceName, model: DeviceInfo.model)
+        let paired = try await client.pair(payload, deviceName: deviceName, model: DeviceInfo.model)
+        guard !Task.isCancelled else {
+            // Cancelled on the phone just as the Mac said Allow: undo it there (best effort, in a
+            // task of its own, since this one is cancelled) and here.
+            await Task { try? await client.unpair() }.value
+            throw .notPaired
+        }
+        record = paired
+        pairingGone = false
         tracker.handle(.pairing(paired: true))
         let elapsed = ContinuousClock.now - start
         usesSecureEnclave = await client.usesSecureEnclave()
@@ -464,6 +509,8 @@ final class PhoneModel {
             String(localized: "This code didn't match your Mac. Show a new one and scan again.")
         case .refused(.revoked), .refused(.unknownDevice):
             String(localized: "This iPhone was removed from Funes on your Mac.")
+        case .refused(.unavailable):
+            String(localized: "Your vault isn't available on your Mac right now. Try again in a moment.")
         case let .refused(refusal):
             String(localized: "Your Mac refused the request (\(refusal.code)).")
         case let .method(error):

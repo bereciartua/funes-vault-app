@@ -86,18 +86,23 @@ import Testing
         guard case .answered = search.answer else { Issue.record("\(search.answer)"); return }
     }
 
-    /// An answer still on its way when a memory opens lands when Search comes back.
+    /// An answer still on its way when a memory opens lands when Search comes back. The answer
+    /// is held at a gate until Search is back, so the test doesn't depend on timing.
     @Test func anAnswerOnItsWayLandsAfterComingBack() async throws {
         let vault = FakeVault()
         vault.add("Coffee", body: "Oat milk flat white.")
-        vault.answerDelay = .seconds(3)
-        let search = await Self.loaded(vault)
+        let gate = Gate()
+        let search = SearchModel(caller: GatedCaller(inner: vault, method: .memoriesAnswer, gate: gate))
+        search.macAnswers = Self.claude
+        search.query = "coffee"
+        await search.search()
         let asking = Task { await search.ask() }
-        try await Task.sleep(for: .milliseconds(50))
+        await gate.arrived()
         search.visible = false
         search.visible = true
         await search.search()
         #expect(search.answer == .reading(count: 1))
+        gate.open()
         await asking.value
         guard case .answered = search.answer else { Issue.record("\(search.answer)"); return }
         #expect(vault.asks.count == 1)

@@ -45,6 +45,10 @@ public final class InboxModel {
     @ObservationIgnored public var onFailure: @MainActor (CompanionClientError) -> Void
     /// Answers on their way to the Mac: a refresh meanwhile doesn't bring their rows back.
     private var answering: Set<UUID> = []
+    /// Rows that left for good (answered here or on the Mac), each with the count of answers when
+    /// it left, so a page asked for before then doesn't bring it back.
+    private var settled: [UUID: Int] = [:]
+    private var settledCount = 0
 
     public init(caller: any CompanionCalling, onFailure: @escaping @MainActor (CompanionClientError) -> Void = { _ in }) {
         self.caller = caller
@@ -54,9 +58,10 @@ public final class InboxModel {
     /// `inbox.list`, from the first page. Pull to refresh.
     public func load() async {
         if items.isEmpty { phase = .loading }
+        let asked = settledCount
         do {
             let page = try await caller.call(InboxList.self, InboxListParams())
-            items = page.items.filter { !answering.contains($0.id) }
+            items = page.items.filter { !answering.contains($0.id) && !settled(after: asked, $0.id) }
             nextCursor = page.nextCursor
             phase = .loaded
         } catch {
@@ -70,10 +75,11 @@ public final class InboxModel {
     public func loadMore() async {
         guard let cursor = nextCursor, phase == .loaded else { return }
         nextCursor = nil
+        let asked = settledCount
         do {
             let page = try await caller.call(InboxList.self, InboxListParams(cursor: cursor))
             let known = Set(items.map(\.id)).union(answering)
-            items += page.items.filter { !known.contains($0.id) }
+            items += page.items.filter { !known.contains($0.id) && !settled(after: asked, $0.id) }
             nextCursor = page.nextCursor
         } catch {
             nextCursor = cursor
@@ -196,9 +202,11 @@ public final class InboxModel {
         defer { answering.remove(id) }
         do {
             try await send()
+            settle(id)
             return true
         } catch .method(let error) where error.code == .notFound {
             // Saved or rejected on the Mac first: it's no longer waiting.
+            settle(id)
             answeredElsewhere += 1
             return false
         } catch .method(let refusal) where refusal.code == .conflict {
@@ -222,6 +230,14 @@ public final class InboxModel {
         }
     }
 
+    private func settle(_ id: UUID) {
+        settledCount += 1
+        settled[id] = settledCount
+    }
+
+    /// Whether `id` left after a page was asked for (when `settledCount` was `asked`).
+    private func settled(after asked: Int, _ id: UUID) -> Bool { settled[id].map { $0 > asked } ?? false }
+
     /// Leaving the Mac (unpaired, removed): nothing stays on the phone.
     public func clear() {
         items = []
@@ -229,5 +245,6 @@ public final class InboxModel {
         phase = .idle
         failure = nil
         answeredElsewhere = 0
+        settled = [:]
     }
 }

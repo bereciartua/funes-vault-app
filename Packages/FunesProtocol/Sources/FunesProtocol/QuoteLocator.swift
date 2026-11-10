@@ -12,15 +12,21 @@ public enum QuoteLocator {
 
     /// The range of the first occurrence of `quote` in `text`, after normalizing both; nil when it
     /// isn't there or the quote is empty.
+    ///
+    /// Matched a whole character at a time, so a quote never matches part of one: "🇦" isn't in
+    /// "🇦🇧", nor "👍" in "👍🏽".
     public static func range(of quote: String, in text: String) -> Range<String.Index>? {
-        let needle = normalize(quote)
+        var needle = Normalized(quote).characters[...]
+        while needle.first == " " { needle.removeFirst() }
+        while needle.last == " " { needle.removeLast() }
         guard !needle.isEmpty else { return nil }
         let haystack = Normalized(text)
-        let joined = String(haystack.characters)
-        guard let found = joined.range(of: needle, options: [.literal]) else { return nil }
-        let start = joined.distance(from: joined.startIndex, to: found.lowerBound)
-        let count = joined.distance(from: found.lowerBound, to: found.upperBound)
-        return haystack.origins[start].lowerBound..<haystack.origins[start + count - 1].upperBound
+        let characters = haystack.characters
+        guard characters.count >= needle.count else { return nil }
+        for start in 0...(characters.count - needle.count) where characters[start..<start + needle.count].elementsEqual(needle) {
+            return haystack.origins[start].lowerBound..<haystack.origins[start + needle.count - 1].upperBound
+        }
+        return nil
     }
 
     /// Whether `quote` appears in `text`.

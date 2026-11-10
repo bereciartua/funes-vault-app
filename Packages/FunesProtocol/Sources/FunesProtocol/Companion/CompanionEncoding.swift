@@ -11,6 +11,9 @@ public enum CompanionProtocol {
 
     /// `|now − ts|` above this is `clock_skew` (§3, step 2).
     public static let maxClockSkew: TimeInterval = 120
+    /// The furthest the phone moves its clock to match a signed `clock_skew` (§5, Retries). A Mac
+    /// whose clock is further from the phone's than this isn't followed.
+    public static let maxClockOffset: TimeInterval = 24 * 3600
     /// How long a nonce is remembered (§3, step 3).
     public static let replayWindow: TimeInterval = 600
     public static let replayCapacityPerDevice = 10_000
@@ -100,8 +103,14 @@ public enum CompanionJSON {
 }
 
 extension Date {
-    /// Milliseconds since 1970, the protocol's `ts`.
-    var companionMilliseconds: Int64 { Int64((timeIntervalSince1970 * 1000).rounded()) }
+    /// Milliseconds since 1970, the protocol's `ts`. Saturates at `Int64`'s limits rather than
+    /// trapping, so no date (a hostile `server_time` added to the clock, say) can crash the caller.
+    var companionMilliseconds: Int64 {
+        let ms = (timeIntervalSince1970 * 1000).rounded()
+        if let exact = Int64(exactly: ms) { return exact }
+        if ms.isNaN { return 0 }
+        return ms > 0 ? .max : .min
+    }
 
     init(companionMilliseconds ms: Int64) { self.init(timeIntervalSince1970: Double(ms) / 1000) }
 }

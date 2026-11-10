@@ -77,7 +77,8 @@ public final class CompanionHandlers: Sendable {
         }
         let device = deviceID
         if method == .memoriesAnswer {
-            return await withTimeout(id: head.id, limit: answerLimit, error: CompanionError(.modelTimeout, message: "Deadline")) { [self] in
+            return await withTimeout(id: head.id, limit: answerLimit, error: CompanionError(.modelTimeout, message: "Deadline"),
+                                     cancelsWork: true) { [self] in
                 await run(MemoriesAnswer.self, head) { try await answer($0, device: device, now: now) }
             }
         }
@@ -468,22 +469,22 @@ public final class CompanionHandlers: Sendable {
         }
     }
 
-    /// 10 s per call (§7); a slower one answers `unavailable` and keeps running to its end.
-    /// (`memories.answer` has its own deadline, past which its work is cancelled.)
-    private func withTimeout(id: String, limit: Duration, error: CompanionError = CompanionError(.unavailable, message: "Timed out"),
-                             _ work: @escaping @Sendable () async -> Data) async -> Data {
-        await withTaskGroup(of: Data?.self) { group in
-            group.addTask { await work() }
-            group.addTask {
+    /// 10 s per call (§7): past it the phone gets `unavailable` at once, and the work goes on to
+    /// its end on the Mac (a capture's receipt keeps a resend from duplicating it). With
+    /// `cancelsWork` (`memories.answer`, its own deadline) the work is cancelled instead, and the
+    /// reply doesn't wait for it to stop.
+    func withTimeout(id: String, limit: Duration, error: CompanionError = CompanionError(.unavailable, message: "Timed out"),
+                             cancelsWork: Bool = false, _ work: @escaping @Sendable () async -> Data) async -> Data {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Data, Never>) in
+            let reply = FirstReply(continuation)
+            let running = Task { reply.give(await work()) }
+            reply.timer = Task {
                 try? await Task.sleep(for: limit)
-                return nil
+                guard !Task.isCancelled, reply.give(Self.errorReply(id: id, error)), cancelsWork else { return }
+                running.cancel()
             }
-            let first = await group.next() ?? nil
-            group.cancelAll()
-            return first ?? Self.errorReply(id: id, error)
         }
     }
-
     static func errorReply(id: String, _ error: CompanionError) -> Data {
         (try? CompanionResponse<EmptyResult>(id: id, error: error).encoded()) ?? Data()
     }
@@ -576,5 +577,40 @@ extension AnswerLocality {
         case .appleCloud: self = .appleCloud
         case .cloud: self = .cloud
         }
+    }
+}
+
+/// Resumes a call's reply once: with the work's result or the deadline's error, whichever comes
+/// first. The work finishing first stops the deadline's timer.
+private final class FirstReply: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Data, Never>?
+    private var pendingTimer: Task<Void, Never>?
+
+    init(_ continuation: CheckedContinuation<Data, Never>) { self.continuation = continuation }
+
+    var timer: Task<Void, Never>? {
+        get { lock.withLock { pendingTimer } }
+        set {
+            // Set after the work started: if it's already done, the timer goes at once.
+            let done = lock.withLock { () -> Bool in
+                pendingTimer = newValue
+                return continuation == nil
+            }
+            if done { newValue?.cancel() }
+        }
+    }
+
+    /// True for the first reply, which is the one sent.
+    @discardableResult
+    func give(_ data: Data) -> Bool {
+        let (first, timer) = lock.withLock { () -> (CheckedContinuation<Data, Never>?, Task<Void, Never>?) in
+            defer { continuation = nil }
+            return (continuation, pendingTimer)
+        }
+        guard let first else { return false }
+        first.resume(returning: data)
+        timer?.cancel()
+        return true
     }
 }

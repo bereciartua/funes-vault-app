@@ -37,7 +37,7 @@ public enum SecretScanner {
     // MARK: - Patterns
 
     private static let sources: [(SecretPattern, String, NSRegularExpression.Options)] = [
-        (.privateKey, #"-----BEGIN (RSA |DSA |EC |OPENSSH |PGP )?PRIVATE KEY-----"#, [.caseInsensitive]),
+        (.privateKey, #"-----BEGIN (RSA |DSA |EC |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY( BLOCK)?-----"#, [.caseInsensitive]),
         (.awsAccessKey, #"\b(AKIA|ASIA)[A-Z0-9]{16}\b"#, []),
         (.openAIStyleKey, #"\bsk-[A-Za-z0-9_-]{20,}\b"#, []),
         (.githubToken, #"\b(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}\b|\bgithub_pat_[A-Za-z0-9_]{22,}\b"#, []),

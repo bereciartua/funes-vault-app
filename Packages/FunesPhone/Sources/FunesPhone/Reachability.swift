@@ -77,6 +77,10 @@ public struct ReachabilityTracker: Sendable, Equatable {
             case .connected, .revoked, .notPaired: break
             case .connecting, .unreachable, .failed: state = .connecting
             }
+        // A check that comes back after the pairing went (unpaired while it was on its way) is
+        // about a pairing that's gone: it changes nothing.
+        case .checked where state == .notPaired:
+            break
         case let .checked(.success(connection), at):
             state = .connected(connection)
             lastChecked = at

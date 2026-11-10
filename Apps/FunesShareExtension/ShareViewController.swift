@@ -80,7 +80,11 @@ private struct ShareView: View {
             }
             .onChange(of: note) { problem = nil }
             .task {
-                shared = await SharedContent.text(from: providers)
+                switch await SharedContent.text(from: providers) {
+                case let .text(text): shared = text
+                case .tooLong: problem = Self.message(for: .tooLong)
+                case .nothing: break
+                }
                 loading = false
             }
         }
@@ -110,21 +114,54 @@ private struct ShareView: View {
 
 /// The text to save from what was shared: the selected text, the link, or both.
 @MainActor enum SharedContent {
-    static func text(from providers: [NSItemProvider]) async -> String? {
+    enum Loaded: Sendable {
+        case text(String)
+        /// Far over a capture's 10,000 characters: not read in full.
+        case tooLong
+        case nothing
+    }
+
+    /// A shared text's size is checked before it's read: a capture is at most 10,000 characters,
+    /// so anything over this many bytes can't be one (the queue checks the exact count).
+    nonisolated static let maxTextBytes = 256 * 1024
+
+    static func text(from providers: [NSItemProvider]) async -> Loaded {
         var texts: [String] = [], links: [String] = []
         for provider in providers {
             if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier),
                let url = await load(URL.self, from: provider), !url.isFileURL {
                 links.append(url.absoluteString)
-            } else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier),
-                      let text = await load(String.self, from: provider) {
-                texts.append(text)
+            } else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
+                switch await loadText(from: provider) {
+                case let .text(text): texts.append(text)
+                case .tooLong: return .tooLong
+                case .nothing: break
+                }
             }
         }
         // A link that's also the shared text needn't appear twice.
         let parts = texts + links.filter { link in !texts.contains { $0.contains(link) } }
         let joined = parts.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }.joined(separator: "\n\n")
-        return joined.isEmpty ? nil : joined
+        return joined.isEmpty ? .nothing : .text(joined)
+    }
+
+    /// The shared text through a file, so its size is known before it's read; a provider that
+    /// can't give a file gives the text itself.
+    private static func loadText(from provider: NSItemProvider) async -> Loaded {
+        let viaFile: Loaded? = await withCheckedContinuation { continuation in
+            _ = provider.loadFileRepresentation(forTypeIdentifier: UTType.plainText.identifier) { url, _ in
+                guard let url else { return continuation.resume(returning: nil) }
+                // The file goes once this returns, so it's read here.
+                let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? Int.max
+                guard size <= maxTextBytes else { return continuation.resume(returning: .tooLong) }
+                var encoding = String.Encoding.utf8
+                let text = (try? Data(contentsOf: url)).flatMap { String(data: $0, encoding: .utf8) }
+                    ?? (try? String(contentsOf: url, usedEncoding: &encoding))
+                continuation.resume(returning: text.map(Loaded.text))
+            }
+        }
+        if let viaFile { return viaFile }
+        return await load(String.self, from: provider).map(Loaded.text) ?? .nothing
     }
 
     private static func load<T: _ObjectiveCBridgeable & Sendable>(_ type: T.Type, from provider: NSItemProvider) async -> T?

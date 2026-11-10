@@ -19,7 +19,7 @@ Everything here runs on the Mac. By default, AI tasks use **Apple's on-device mo
 
 | Name | Pattern (Swift Regex, case notes) |
 |---|---|
-| ★ private_key | `-----BEGIN (RSA \|DSA \|EC \|OPENSSH \|PGP )?PRIVATE KEY-----` (case-insensitive) |
+| ★ private_key | `-----BEGIN (RSA \|DSA \|EC \|OPENSSH \|PGP \|ENCRYPTED )?PRIVATE KEY( BLOCK)?-----` (case-insensitive; covers PGP's `PRIVATE KEY BLOCK` and PKCS #8's `ENCRYPTED PRIVATE KEY`) |
 | ★ aws_access_key | `\b(AKIA\|ASIA)[A-Z0-9]{16}\b` |
 | ★ openai_style_key | `\bsk-[A-Za-z0-9_-]{20,}\b` (also covers `sk-ant-…`, `sk-proj-…`) |
 | ★ github_token | `\b(ghp\|gho\|ghu\|ghs\|ghr)_[A-Za-z0-9_]{20,}\b` and `\bgithub_pat_[A-Za-z0-9_]{22,}\b` |

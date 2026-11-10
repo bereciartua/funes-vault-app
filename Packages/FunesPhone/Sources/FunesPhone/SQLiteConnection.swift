@@ -61,7 +61,10 @@ final class SQLiteConnection {
             case .null: sqlite3_bind_null(statement, position)
             case let .int(int): sqlite3_bind_int64(statement, position, int)
             case let .double(double): sqlite3_bind_double(statement, position, double)
-            case let .text(text): sqlite3_bind_text(statement, position, text, -1, Self.transient)
+            // By length, not up to a NUL: a capture may hold one, and is stored whole.
+            case let .text(text): text.utf8CString.withUnsafeBufferPointer {
+                sqlite3_bind_text64(statement, position, $0.baseAddress, UInt64($0.count - 1), Self.transient, UInt8(SQLITE_UTF8))
+            }
             }
             guard bound == SQLITE_OK else { throw error(bound) }
         }
@@ -106,9 +109,11 @@ struct SQLiteRow {
     func isNull(_ column: Int32) -> Bool { sqlite3_column_type(statement, column) == SQLITE_NULL }
     func int(_ column: Int32) -> Int64 { sqlite3_column_int64(statement, column) }
     func double(_ column: Int32) -> Double { sqlite3_column_double(statement, column) }
+    /// The whole value, embedded NULs included (`String(cString:)` would stop at the first).
     func text(_ column: Int32) -> String? {
         guard let pointer = sqlite3_column_text(statement, column) else { return nil }
-        return String(cString: pointer)
+        let count = Int(sqlite3_column_bytes(statement, column))
+        return String(decoding: UnsafeBufferPointer(start: pointer, count: count), as: UTF8.self)
     }
     func date(_ column: Int32) -> Date? { isNull(column) ? nil : Date(timeIntervalSince1970: double(column)) }
 }
