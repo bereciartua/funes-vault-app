@@ -83,6 +83,33 @@ import Testing
         #expect(try await env.suggestions.suggestion(id: apple.suggestionID)?.title == "On device")
     }
 
+    /// "Propose a title, kind and categories" off with Split on (§5.1, review 2026-11-10): the
+    /// router is there for the split, but nothing classifies the capture, by the cloud model or on
+    /// this Mac; it keeps the rules' proposal it was saved with.
+    @Test func withProposalsOffNothingClassifies() async throws {
+        let env = try Env()
+        let noPieces: @Sendable (Int, String) -> [[String: Any]] = { _, _ in [P.piece("Made up.", quote: "made up")] }
+        for classify in [false, true] {
+            let provider = P(extract: noPieces)
+            let capture = try await env.captures.capture("Likes jazz on Sunday mornings \(classify)", now: t0)
+            let router = ModelRouter(classifier: provider, onDevice: nil)
+            let processor = NewMemoryProcessor(store: env.v.store, captures: env.captures, now: { t0 },
+                                               configuration: { .init(router: router, classify: classify, split: true) })
+            #expect(try await env.run(processor) == [.failed(code: "no_pieces")])
+            #expect(provider.extractions.count == 1)
+            #expect(provider.all.contains { $0.schema == "CaptureProposal" } == classify, "classify \(classify)")
+            let s = try #require(try await env.suggestions.suggestion(id: capture.suggestionID))
+            #expect(JSON.decode(ClassificationRecord.self, s.classification)?.engine == RulesClassifier.engine)
+        }
+        // Apple on-device chosen (it never splits): no classification either.
+        let apple = P(id: "apple.foundation", locality: .onDevice, extract: noPieces)
+        _ = try await env.captures.capture("Likes tea", now: t0)
+        let processor = NewMemoryProcessor(store: env.v.store, captures: env.captures, now: { t0 },
+                                           configuration: { .init(router: ModelRouter(classifier: apple, onDevice: nil), classify: false, split: true) })
+        #expect(try await env.run(processor) == [.done(engine: nil)])
+        #expect(apple.all.isEmpty)
+    }
+
     // MARK: A capture becomes a group
 
     /// An update that changes what the title says takes the model's new title (memory processing

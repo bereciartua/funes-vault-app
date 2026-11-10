@@ -131,12 +131,12 @@ From v0.8 ([ADR-0030](decisions/0030-settings-window.md)) AI settings are three 
 | Embedding provider down for a query or agent task | Keyword-only for that call (v0.3 with a provider model: the bundled index). Never blocks or fails the MCP request |
 | New memories or tidy-up provider down (v0.3) | New memories: on-device, then rules (no split); the result is never auto-applied. Tidy-up: the run stops and resumes next time |
 | Daily cap reached (v0.3) | The user's captures: on-device. Agent input, imports, the tidy-up: wait for the next day. One notice a day |
-| Rate-limited (429) | Respect `retry-after`; background re-embedding pauses |
+| Rate-limited (429) | Respect `retry-after` (a minute without one); background re-embedding pauses. The backoff is kept per provider in one `ProviderBackoff` the app shares between the routers it builds per job, so it outlives the job that hit it |
 | API key invalid or revoked | Status "Unavailable: check API key", plus a notification once a day |
 | Search answers provider down, timed out (45 s), invalid output or unavailable (v0.6) | The card says why with **Try Again**. No fallback to another provider: Apple on-device would mean a 30 s wait for weaker quotes. Search itself is unaffected |
 | Daily cap reached, for a search answer (v0.6) | The card says so ("Today's 300 cloud requests are used up. Search still works; answers are back tomorrow.") |
 | Subscription CLI missing, signed out, too old, or an unsupported Codex feature (v0.3) | Status says which ("Not signed in to Claude Code", "Update Codex"…), notification once a day; calls fall back as for a provider that's down |
-| Subscription plan limit reached (v0.3) | Treated like a 429: back off until the CLI's reset time if it gives one, otherwise an hour; captures fall back to on-device meanwhile |
+| Subscription plan limit reached (v0.3) | Treated like a 429: back off until the CLI's reset time if it gives one (Claude Code's `…limit reached|<Unix seconds>`, at most a week), otherwise an hour; captures fall back to on-device meanwhile |
 | A tool or command event in a CLI run (v0.3) | Stop the run, discard its output, mark the provider unavailable until Test connection passes |
 
 ## 7. Choosing a provider embedding model

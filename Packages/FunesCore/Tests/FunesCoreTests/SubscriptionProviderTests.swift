@@ -149,6 +149,26 @@ import Testing
         #expect(!CLIRunner.isBlocked(ClaudeCodeClient.providerID))
     }
 
+    /// A plan limit backs off until the CLI's reset time, or an hour without one (model providers §6).
+    @Test func aPlanLimitBacksOffUntilTheResetOrAnHour() async throws {
+        CLIRunner.unblock(ClaudeCodeClient.providerID)
+        let reset = Int(Date().timeIntervalSince1970) + 7_200
+        for (error, expected) in [("Claude AI usage limit reached", ProviderBackoff.subscriptionDefault),
+                                  ("Claude AI usage limit reached|\(reset)", 7_200.0)] {
+            let (client, cli) = Self.claude([Self.claudeInit, Self.claudeResult(nil, error: error)], exitCode: 1)
+            let backoff = ProviderBackoff()
+            let now = Date()
+            _ = await ModelRouter(classifier: client, onDevice: nil, backoff: backoff).classify("Likes tea", categories: MemoryCategory.builtins, now: now)
+            let until = try #require(backoff.until(ClaudeCodeClient.providerID, now: now))
+            #expect(abs(until.timeIntervalSince(now) - expected) < 5, "\(error)")
+            // The next job's router doesn't run the CLI again.
+            _ = await ModelRouter(classifier: client, onDevice: nil, backoff: backoff).classify("Likes tea", categories: MemoryCategory.builtins, now: now + 60)
+            #expect(cli.invocations.count == 1)
+        }
+        #expect(ClaudeStream.resetDelay("limit reached|1761300000") == nil)  // past
+        #expect(ClaudeStream.resetDelay("limit reached") == nil)
+    }
+
     @Test func claudeStatus() async {
         CLIRunner.unblock(ClaudeCodeClient.providerID)
         let help = ClaudeCodeClient.requiredFlags.joined(separator: "\n")

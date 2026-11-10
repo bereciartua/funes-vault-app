@@ -227,11 +227,22 @@ final class ClaudeStream: @unchecked Sendable {
     static func error(_ event: [String: Any]) -> ProviderError {
         let text = ((event["result"] as? String) ?? (event["subtype"] as? String) ?? "").lowercased()
         if event["stop_reason"] as? String == "refusal" { return .refused }
-        if text.contains("limit") { return .rateLimited(retryAfter: nil) }
+        if text.contains("limit") { return .rateLimited(retryAfter: resetDelay(text)) }
         if text.contains("log in") || text.contains("login") || text.contains("not logged") || text.contains("auth") {
             return .unauthorized
         }
         return .invalidOutput
+    }
+
+    /// The plan limit's reset time, when Claude Code gives one ("…usage limit reached|1761300000",
+    /// Unix seconds): how long until then, at most a week; nil when it's missing or past.
+    static func resetDelay(_ text: String, now: Date = Date()) -> TimeInterval? {
+        guard let bar = text.lastIndex(of: "|"),
+              let epoch = TimeInterval(text[text.index(after: bar)...].trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            return nil
+        }
+        let delay = epoch - now.timeIntervalSince1970
+        return delay > 0 ? min(delay, 7 * 86_400) : nil
     }
 
     func result<T: Decodable>(as type: T.Type, exitCode: Int32) throws -> (T, ProviderUsage) {

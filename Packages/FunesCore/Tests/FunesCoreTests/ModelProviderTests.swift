@@ -427,6 +427,33 @@ import Testing
         #expect(CloudLimit.upTo(.restricted).needsConfirmation && !CloudLimit.upTo(.internal).needsConfirmation && !CloudLimit.never.needsConfirmation)
     }
 
+    /// A rate limit outlives the router that hit it (model providers §6, review 2026-11-10): the
+    /// app builds a router per job, and they share one backoff. Without retry-after, an API waits a
+    /// minute.
+    @Test func aRateLimitCarriesAcrossRouters() async throws {
+        let calls = Mutex(0)
+        let stub = StubURLProtocol.Session { _ in
+            calls.withLock { $0 += 1 }
+            return .json([:], status: 429)
+        }
+        let client = try OpenAICompatibleClient(endpoint: .openAI(), model: "m", apiKey: "k", session: stub.session)
+        let backoff = ProviderBackoff()
+        let first = ModelRouter(classifier: client, onDevice: nil, backoff: backoff)
+        _ = await first.classify("Likes tea", categories: MemoryCategory.builtins, now: t0)
+        #expect(calls.withLock { $0 } == 1)
+        #expect(backoff.until("openai", now: t0) == t0 + ProviderBackoff.apiDefault)
+        let second = ModelRouter(classifier: client, onDevice: nil, backoff: backoff)
+        _ = await second.classify("Likes coffee", categories: MemoryCategory.builtins, now: t0 + 30)
+        await #expect(throws: ProviderError.rateLimited(retryAfter: 30)) {
+            _ = try await second.call(ClassificationPrompt.request("x", categories: MemoryCategory.builtins),
+                                      items: [ModelItem("x", sensitivity: .low)], with: client, requester: .user, now: t0 + 30)
+        }
+        #expect(calls.withLock { $0 } == 1)
+        // After it ends, the provider is asked again.
+        _ = await second.classify("Likes coffee", categories: MemoryCategory.builtins, now: t0 + 61)
+        #expect(calls.withLock { $0 } == 2)
+    }
+
     /// An agent declaring Low can't get text the pre-screen finds Sensitive past the guard.
     @Test func preScreenedAgentTextIsGuarded() async throws {
         let stub = StubURLProtocol.Session { _ in .json(ModelRouterTests.proposal()) }

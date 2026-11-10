@@ -89,6 +89,8 @@ Decision: [ADR-0016](../architecture/decisions/0016-bundled-bge-small-embeddings
 
 Classification proposes a title, kind, categories and sensitivity. On its own it never applies anything; auto-apply (§5.7) is a Phase 6 setting.
 
+With **Propose a title, kind and categories** off, no model classifies a capture, even with splitting on (the router is built for the split only): a capture that isn't split, or whose split fails, keeps the rules' proposal it was saved with.
+
 - **Engine:** user-selectable (Settings ▸ AI ▸ Features ▸ New memories, "Classification" until Phase 6); see [model providers](../architecture/model-providers.md).
   - **Default:** the Apple Foundation Models on-device model (macOS 26+ with Apple Intelligence), using guided generation.
   - **Other providers:** local or cloud generation models receive the same instructions and an equivalent **JSON schema** (structured output). Cloud classification of captures follows an on-device sensitivity pre-screen ([model providers §5](../architecture/model-providers.md#5-guardrails-all-non-local-providers)).
