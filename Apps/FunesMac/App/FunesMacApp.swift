@@ -57,6 +57,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var updater: SparkleUpdater?
     private var hotKey: HotKey?
     private var reviewHotKey: HotKey?
+    /// The data folder's instance lock, held while this copy runs.
+    private var instanceLock: Int32 = -1
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // A relaunch waits for the copy before it to quit, then carries out a pending Erase All
@@ -229,6 +231,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         offerMoveToApplications()
         reportRestore()
+        reportErase()
         #if DEBUG
         // FUNES_DEBUG_OPEN=home|vault|inbox|agents|activity|capture|panel|settings[:destination] opens a window at launch.
         if let open = ProcessInfo.processInfo.environment["FUNES_DEBUG_OPEN"], !open.isEmpty {
@@ -481,36 +484,79 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #endif
     }
 
-    /// One copy at a time on the vault: when another copy with this bundle id is already running,
-    /// it comes forward (as reopening it does) and this one quits before opening anything. The copy
-    /// a relaunch waits for doesn't count, in case it's still quitting; of two launched at once the
-    /// older stays. A development vault (Debug on FUNES_DATA_DIR) runs beside the installed app.
+    /// One copy at a time on a vault: each copy holds an exclusive lock on `instance.lock` in its
+    /// data folder for as long as it runs. A copy that can't take it brings the running one forward
+    /// (as reopening it does) and quits before opening anything. A relaunch waits a while longer
+    /// for the copy it names to let go. A development vault (Debug on FUNES_DATA_DIR) has its own
+    /// folder, so it runs beside the installed app.
     private func handOffToRunningCopy() -> Bool {
-        if Preferences.isDevelopmentVault { return false }
-        let me = NSRunningApplication.current
+        let folder = VaultEnvironment.defaultDataFolder()
+        if Self.lockInstance(folder, into: &instanceLock) { return false }
         let arguments = CommandLine.arguments
-        let waitedFor = arguments.firstIndex(of: AppMover.waitForArgument)
-            .flatMap { $0 + 1 < arguments.count ? pid_t(arguments[$0 + 1]) : nil }
-        let myLaunch = me.launchDate ?? .distantFuture
-        let older = NSRunningApplication.runningApplications(withBundleIdentifier: Identifiers.macBundleID).first { other in
-            guard other.processIdentifier != me.processIdentifier, other.processIdentifier != waitedFor, !other.isTerminated
-            else { return false }
-            let launched = other.launchDate ?? .distantPast
-            return launched < myLaunch || (launched == myLaunch && other.processIdentifier < me.processIdentifier)
+        if let waitedFor = arguments.firstIndex(of: AppMover.waitForArgument)
+            .flatMap({ $0 + 1 < arguments.count ? pid_t(arguments[$0 + 1]) : nil }) {
+            let deadline = Date().addingTimeInterval(10)
+            while kill(waitedFor, 0) == 0, Date() < deadline {
+                Thread.sleep(forTimeInterval: 0.1)
+                if Self.lockInstance(folder, into: &instanceLock) { return false }
+            }
+            if Self.lockInstance(folder, into: &instanceLock) { return false }
         }
-        guard let older else { return false }
-        logger.notice("Another copy is running; handing over to it")
-        if let url = older.bundleURL {
+        logger.notice("Another copy has this vault open; handing over to it")
+        let me = NSRunningApplication.current
+        let others = NSRunningApplication.runningApplications(withBundleIdentifier: Identifiers.macBundleID)
+            .filter { $0.processIdentifier != me.processIdentifier && !$0.isTerminated }
+        // The same copy first: another build (a development one) may be running too.
+        let running = others.first { $0.bundleURL == Bundle.main.bundleURL } ?? others.first
+        if let running, let url = running.bundleURL {
             let configuration = NSWorkspace.OpenConfiguration()
             configuration.activates = true
             NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, _ in
                 DispatchQueue.main.async { NSApp.terminate(nil) }
             }
         } else {
-            older.activate()
+            running?.activate()
             NSApp.terminate(nil)
         }
         return true
+    }
+
+    /// The lock's name in the data folder; Erase All Data leaves it.
+    static let instanceLockName = "instance.lock"
+
+    /// Takes the data folder's instance lock (kept until the process ends); false while another
+    /// process holds it.
+    private static func lockInstance(_ folder: URL, into descriptor: inout Int32) -> Bool {
+        if descriptor >= 0 { return true }
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true,
+                                                 attributes: [.posixPermissions: 0o700])
+        let fd = open(folder.appendingPathComponent(instanceLockName).path, O_RDWR | O_CREAT | O_CLOEXEC, 0o600)
+        guard fd >= 0 else {
+            // Fail open on a folder it can't write: the vault's own open reports the problem.
+            logger.error("The instance lock couldn't be opened")
+            return true
+        }
+        guard flock(fd, LOCK_EX | LOCK_NB) == 0 else {
+            close(fd)
+            return false
+        }
+        descriptor = fd
+        return true
+    }
+
+    /// After a relaunch for Erase All Data (FR-G-05): only when something couldn't be deleted.
+    private func reportErase() {
+        guard DataOperations.eraseIncomplete else { return }
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = String(localized: "Some data couldn't be erased")
+        alert.informativeText = String(localized: "Funes Vault couldn't delete everything in its data folder. Quit Funes Vault and delete what's left in \(VaultEnvironment.defaultDataFolder().path).")
+        alert.addButton(withTitle: String(localized: "Show in Finder"))
+        alert.addButton(withTitle: String(localized: "OK"))
+        NSApp.activate()
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSWorkspace.shared.activateFileViewerSelecting([VaultEnvironment.defaultDataFolder()])
+        }
     }
 
     /// After a relaunch for Restore from Backup (FR-G-04): how it went.

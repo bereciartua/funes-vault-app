@@ -146,19 +146,33 @@ final class DataOperations {
         Self.relaunch()
     }
 
+    /// Something in the data folder couldn't be deleted by the last erase: said once the app is up,
+    /// with the folder, so the user can finish it.
+    private(set) static var eraseIncomplete = false
+
     /// At launch, after the previous copy quit and before the settings are read or the vault
     /// opens: carries out a pending Erase All Data. The marker goes last, so an erase cut short
-    /// runs again at the next launch.
+    /// by a crash runs again at the next launch; one that couldn't delete something isn't retried
+    /// (it would erase what the next session keeps) but reported (`eraseIncomplete`).
     static func applyPendingErase(dataFolder: URL, defaults: UserDefaults) {
         let manager = FileManager.default
         let marker = dataFolder.appendingPathComponent(eraseMarker)
         guard manager.fileExists(atPath: marker.path) else { return }
-        let items = (try? manager.contentsOfDirectory(at: dataFolder, includingPropertiesForKeys: nil)) ?? []
-        for item in items where item.lastPathComponent != eraseMarker { try? manager.removeItem(at: item) }
+        var failed = false
+        do {
+            let items = try manager.contentsOfDirectory(at: dataFolder, includingPropertiesForKeys: nil)
+            // The instance lock stays: this copy holds it.
+            for item in items where ![eraseMarker, AppDelegate.instanceLockName].contains(item.lastPathComponent) {
+                do { try manager.removeItem(at: item) } catch { failed = true }
+            }
+        } catch {
+            failed = true
+        }
         let domain = Preferences.isDevelopmentVault ? "com.funesvault.dev" : Identifiers.macBundleID
         defaults.removePersistentDomain(forName: domain)
         try? manager.removeItem(at: marker)
-        logger.notice("Erased all data")
+        eraseIncomplete = failed
+        if failed { logger.error("Erase All Data left something in the data folder") } else { logger.notice("Erased all data") }
     }
 
     /// Opens a new copy of the app (with this one's environment and arguments) and quits.

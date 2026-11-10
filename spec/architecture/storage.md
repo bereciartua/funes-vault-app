@@ -11,6 +11,8 @@ Everything lives under `~/Library/Application Support/FunesVault/`, in a 0700 fo
 | `remote-connections.json` | Remote Access OAuth state: connected cloud apps (agent id, app name, OAuth client id, MCP URL, SHA-256 digests of the access, refresh and recently rotated refresh tokens, expiry and use times) and registered OAuth clients (`dcr_`, and `cfg_` with the digest of its `fns_ocs_v1_` secret) | BridgeKitRemote's `OAuthStore`: written atomically with fsync, fails closed (a wrong owner, mode, size or content makes OAuth unavailable and the file is never overwritten). No token in the clear. Never exported |
 | `activity/activity.jsonl` | Activity log, append-only | BridgeUI `ActivityStore` (copied from EK Bridge); `fsync` per row |
 | `mcp-endpoint.json` | `{"version":1,"url","port","pid","startedAt"}` | Only while listening |
+| `instance.lock` | Empty; an exclusive `flock` while a copy of the app has this folder open | One copy at a time on a vault: a copy that can't take the lock brings the running one forward and quits before opening anything (a relaunch first waits for the copy it names). Erase All Data leaves it |
+| `restore-pending.json`, `erase-pending` | A restore or Erase All Data asked for, carried out at the next launch before anything opens | Removed when it's been carried out; the app then says how it went |
 | `Backups/vault-YYYYMMDD-HHMM.sqlite` | Online backups (GRDB `backup(to:)`) | Daily, keep 7; also before each migration |
 | `companion/` (v0.2) | Replay-nonce cache snapshot (optional) | Keys live in the Keychain, not here |
 
