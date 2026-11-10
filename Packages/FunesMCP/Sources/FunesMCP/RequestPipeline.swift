@@ -71,9 +71,10 @@ public struct FunesAuthenticator: AgentAuthenticator {
     }
 }
 
-/// Every tool call after authentication and schema validation: Funes on? → agent state → rate
-/// limits (calls, writes, in flight, pending approvals) → handler → Activity (mcp-server.md §4, §9).
-/// Fails closed: any doubt is a refusal (ADR-0009).
+/// Every tool call after authentication and schema validation: rate limits (calls, writes) →
+/// Funes on? → agent state → calls in flight → handler (pending approvals) → Activity
+/// (mcp-server.md §4, §9). The buckets come first so a paused or expired agent that loops is
+/// throttled like any other. Fails closed: any doubt is a refusal (ADR-0009).
 public final class RequestPipeline: BridgeHandler {
     /// mcp-server.md §9.
     public static let maxInFlightPerAgent = 8
@@ -132,9 +133,20 @@ public final class RequestPipeline: BridgeHandler {
                 logger.notice("\(tool, privacy: .public) call cancelled by the client after \(seconds) s (remote: \(remote))") // log-safe: a contract tool name, a duration and a flag
             }
         }
-        // 1. Funes on.
+        // 1. Rate limits: calls (and writes) per agent, the same buckets on every channel. Remote
+        // calls also take a token from the stricter remote buckets (60 calls and 10 writes a
+        // minute): network hygiene for the tunnel, not an access rule (ADR-0018). Before the pause
+        // and agent checks, so their refusals are throttled too (each one is an Activity row).
+        let isWrite = call.name == "suggest_memory"
+        if case .limited(let wait) = limiter.allow(call.agent.id, write: isWrite) {
+            return rateLimited(call, agentID, wait)
+        }
+        if call.remote, case .limited(let wait) = limiter.allow(call.agent.id, write: isWrite, remote: true) {
+            return rateLimited(call, agentID, wait)
+        }
+        // 2. Funes on.
         if services.pause.isPaused(at: started) { return refuse(call, agentID, .funesPaused) }
-        // 2. Agent state. Removed agents never authenticate; a row that can't be read is a refusal.
+        // 3. Agent state. Removed agents never authenticate; a row that can't be read is a refusal.
         let agent: Agent
         do {
             guard let found = try await services.agents.agent(id: agentID), !found.isRemoved else {
@@ -146,16 +158,7 @@ public final class RequestPipeline: BridgeHandler {
         }
         if agent.paused { return refuse(call, agentID, .agentPaused) }
         if let expiry = agent.access.expiresAt, expiry <= started { return refuse(call, agentID, .accessExpired) }
-        // 3. Rate limits: calls (and writes) per agent, the same buckets on every channel, then calls
-        // in flight. Remote calls also take a token from the stricter remote buckets (60 calls and 10
-        // writes a minute): network hygiene for the tunnel, not an access rule (ADR-0018).
-        let isWrite = call.name == "suggest_memory"
-        if case .limited(let wait) = limiter.allow(call.agent.id, write: isWrite) {
-            return rateLimited(call, agentID, wait)
-        }
-        if call.remote, case .limited(let wait) = limiter.allow(call.agent.id, write: isWrite, remote: true) {
-            return rateLimited(call, agentID, wait)
-        }
+        // 4. Calls in flight.
         let admitted = inFlight.withLock { counts -> Bool in
             guard counts[agentID, default: 0] < Self.maxInFlightPerAgent else { return false }
             counts[agentID, default: 0] += 1
@@ -163,7 +166,7 @@ public final class RequestPipeline: BridgeHandler {
         }
         guard admitted else { return rateLimited(call, agentID, 1) }
         defer { inFlight.withLock { counts in counts[agentID] = max(0, counts[agentID, default: 1] - 1) } }
-        // 4. The handler. Disclosures and suggestions record their own Activity rows.
+        // 5. The handler. Disclosures and suggestions record their own Activity rows.
         let credential = credentialCheck(call, epoch: epoch)
         switch call.name {
         case "list_memory_categories": return listCategories(call, agent)

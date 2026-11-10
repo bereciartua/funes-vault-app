@@ -71,6 +71,32 @@ public struct ActivityRetention: Sendable, Equatable {
     }
 }
 
+/// Repeats of a refusal already kept as important: the same agent refused the same way again
+/// within `window` of the last important row. The app stores them as routine rows, so a looping
+/// agent can't push approvals, refusals and access changes out of the important limit, while
+/// every call still has its row (for 30 days) and anything counting refusals still sees each one.
+/// One important row per key per window keeps a long loop visible for the full 400 days.
+public struct RepeatedRows<Key: Hashable & Sendable>: Sendable {
+    public static var window: TimeInterval { 3_600 }
+    /// Keys are forgotten once their window is over and there are more than this.
+    static var maxKeys: Int { 1_000 }
+
+    private var lastImportant = [Key: Date]()
+
+    public init() {}
+
+    /// True when this row repeats one kept as important less than `window` ago; false when it's
+    /// the important one (the first, or the first after the window), which starts a new window.
+    public mutating func isRepeat(_ key: Key, at now: Date) -> Bool {
+        if let last = lastImportant[key], now >= last, now.timeIntervalSince(last) < Self.window { return true }
+        lastImportant[key] = now
+        if lastImportant.count > Self.maxKeys {
+            lastImportant = lastImportant.filter { now.timeIntervalSince($0.value) < Self.window }
+        }
+        return false
+    }
+}
+
 /// `<data>/activity/activity.jsonl`: append-only JSON Lines, one
 /// row per line, 0600 in a 0700 folder.
 ///

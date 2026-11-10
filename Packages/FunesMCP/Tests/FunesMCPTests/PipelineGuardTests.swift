@@ -5,7 +5,8 @@ import FunesCore
 import FunesProtocol
 import Testing
 
-/// Code review 2026-11-10: Remote Access turned off with remote calls in flight.
+/// Code review 2026-11-10: refusals that came before the rate limiter, and Remote Access turned
+/// off with remote calls in flight.
 @MainActor
 @Suite("Pipeline guards")
 struct PipelineGuardTests {
@@ -58,6 +59,36 @@ struct PipelineGuardTests {
 
     static func content(_ result: ToolResult?) -> [String: Any] {
         result?.json["structuredContent"] as? [String: Any] ?? [:]
+    }
+
+    /// A paused Funes refuses with `funes_paused`, but a looping agent still runs out of calls:
+    /// past the burst it gets `rate_limited` (mcp-server.md §9), so it can't write a refusal row
+    /// per call at any rate it likes.
+    @Test func pauseRefusalsAreThrottled() async throws {
+        let f = try await make()
+        defer { try? FileManager.default.removeItem(at: f.directory) }
+        f.pause.pause(until: Date().addingTimeInterval(3_600))
+        let pipeline = f.local.pipeline
+        var reasons = [String]()
+        for _ in 0..<(Self.burst + 5) {
+            reasons.append(Self.content(await pipeline.handle(call(f, "list_memory_categories")))["reason"] as? String ?? "")
+        }
+        #expect(reasons.first == "funes_paused")
+        #expect(reasons.last == "rate_limited")
+        #expect(reasons.filter { $0 == "funes_paused" }.count == Self.burst)
+    }
+
+    /// The same for a paused agent.
+    @Test func pausedAgentRefusalsAreThrottled() async throws {
+        let f = try await make()
+        defer { try? FileManager.default.removeItem(at: f.directory) }
+        _ = try await f.agents.pause(agentID: f.agent.id, now: Date())
+        let pipeline = f.local.pipeline
+        var last: [String: Any] = [:]
+        for _ in 0..<(Self.burst + 1) {
+            last = Self.content(await pipeline.handle(call(f, "open_in_funes")))
+        }
+        #expect(last["reason"] as? String == "rate_limited")
     }
 
     /// Turning Remote Access off ends every remote call in flight: retrieval suspended, the

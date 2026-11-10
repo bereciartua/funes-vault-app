@@ -74,6 +74,30 @@ struct ActivityStoreTests {
         #expect(limited.keep(many, now: now + 10).map(\.rowID) == ["i1", "i2", "i4"])
     }
 
+    /// Code review 2026-11-10: a looping agent's identical refusals are important once an hour per
+    /// key; the rest are routine, so they can't push other important rows past the limit.
+    @Test func repeatedRefusalsAreImportantOnceAnHour() {
+        var repeats = RepeatedRows<String>()
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let answers = [("a|paused", 0.0), ("a|paused", 1), ("a|paused", 3_599), ("b|paused", 2), ("a|expired", 2),
+                       ("a|paused", 3_600), ("a|paused", 3_601)].map { repeats.isRepeat($0.0, at: start + $0.1) }
+        // Another key, or another reason, has its own window; a new window starts with an important row.
+        #expect(answers == [false, true, true, false, false, false, true])
+        // A day of one refusal a second, through the retention limits: a day's important rows plus
+        // the ones that were there first.
+        var loop = RepeatedRows<String>()
+        let earlier = (0..<5).map { Row(rowID: "approval\($0)", at: start - 10 + Double($0), phase: "event", important: true) }
+        let flood = (0..<86_400).map { second in
+            Row(rowID: "r\(second)", at: start + Double(second), phase: "result",
+                important: !loop.isRepeat("agent|list|agent_paused", at: start + Double(second)))
+        }
+        #expect(flood.filter(\.important).count == 24)
+        let limits = ActivityRetention(importantAge: 400 * 86_400, importantLimit: 30, routineAge: 30 * 86_400,
+                                       routineLimit: 100)
+        let kept = limits.keep(earlier + flood, now: start + 86_400)
+        #expect(earlier.allSatisfy { row in kept.contains { $0.rowID == row.rowID } }, "the approvals survive the loop")
+    }
+
     @Test func compactionKeepsWhatRetentionKeeps() throws {
         let data = try folder()
         defer { try? FileManager.default.removeItem(at: data) }
