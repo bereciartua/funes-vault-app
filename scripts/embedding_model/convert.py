@@ -11,6 +11,7 @@ dependency is needed (and transformers' own BertModel traces to ops coremltools 
 """
 import json
 import sys
+import uuid
 from pathlib import Path
 
 import coremltools as ct
@@ -92,7 +93,24 @@ if int8:
     mlmodel = linear_quantize_weights(mlmodel, OptimizationConfig(global_config=OpLinearQuantizerConfig(mode="linear_symmetric")))
 mlmodel.short_description = "BAAI/bge-small-en-v1.5, CLS pooling, L2-normalized (Funes Vault, ADR-0016)"
 mlmodel.license = "MIT (BAAI)"
+# The package is pinned file by file (scripts/check_embedding_model.sh), so it must come out the same
+# on any day: no conversion date or tool versions in the metadata (requirements-lock.txt pins the
+# tools; an empty map also keeps coremlcompiler's output stable), the spec serialized with its maps
+# in a fixed order, and the package manifest's random item ids replaced by fixed ones.
+mlmodel.user_defined_metadata.clear()
 mlmodel.save(out)
+package = Path(out)
+spec_path = package / "Data" / "com.apple.CoreML" / "model.mlmodel"
+spec = ct.proto.Model_pb2.Model()
+spec.ParseFromString(spec_path.read_bytes())
+spec_path.write_bytes(spec.SerializeToString(deterministic=True))
+manifest_path = package / "Manifest.json"
+manifest = json.loads(manifest_path.read_text())
+ids = {old: str(uuid.uuid5(uuid.NAMESPACE_URL, "funesvault:" + entry["path"])).upper()
+       for old, entry in manifest["itemInfoEntries"].items()}
+manifest["itemInfoEntries"] = {ids[old]: entry for old, entry in manifest["itemInfoEntries"].items()}
+manifest["rootModelIdentifier"] = ids[manifest["rootModelIdentifier"]]
+manifest_path.write_text(json.dumps(manifest, indent=4, sort_keys=True) + "\n")
 
 # Check against reference vectors from sentence-transformers (PyTorch fp32), on the CPU as Funes runs it.
 tok = Tokenizer.from_file(str(hf_dir / "tokenizer.json"))
