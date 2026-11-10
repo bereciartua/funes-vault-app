@@ -169,6 +169,7 @@
   - Tiles for agents on this Mac and for cloud agents (Remote Access, experimental) are on separate tabs; agents found on the Mac come first.
   - For an agent with one-click setup, **Add and Connect…** adds it and shows the change to its settings at once.
   - New agents start with Deny for the vault's never-share categories (FR-O-02).
+  - A never-share category also leaves the agent's allow list, unless that would empty it: an empty allow list means every category, so the category then stays on both lists and Deny wins (T8). The same holds when the never-share categories are applied to existing agents.
 
 **FR-A-02 Starting access presets** · M · v0.1
 - Presets:

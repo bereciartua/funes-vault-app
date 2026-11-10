@@ -104,9 +104,7 @@ public final class AgentService: Sendable {
         let key = try issuer.issue()
         // Never-share categories: every new agent starts with Deny for them (UX review F4).
         var access = access
-        let neverShare = try await neverShareCategories()
-        access.deniedCategoryKeys.formUnion(neverShare)
-        access.allowedCategoryKeys.subtract(neverShare)
+        access.denyNeverShare(try await neverShareCategories())
         let agent = Agent(id: UUID(), name: name, agentKind: kind, keyIssuedAt: now, paused: false, revision: 1,
                           declaredRetention: declaredRetention, asksForAccess: asksForAccess, createdAt: now, access: access)
         try await store.writer.write { db in
@@ -133,7 +131,7 @@ public final class AgentService: Sendable {
     }
 
     /// Replaces the never-share categories. With `applyToAgents`, every agent also gets Deny for
-    /// them (and loses them from its allow list); each agent that changes gets an access change, so
+    /// them (and loses them from its allow list, unless that would empty it); each agent that changes gets an access change, so
     /// its revision goes up and its waiting requests must be asked again. Taking a category off the
     /// list never lifts an agent's Deny: that's done in the agent's Access tab.
     public func setNeverShareCategories(_ keys: Set<String>, applyToAgents: Bool, now: Date) async throws {
@@ -144,8 +142,7 @@ public final class AgentService: Sendable {
             var changed = [UUID]()
             for agent in try AgentStore.all(db, includingRemoved: false) {
                 var access = agent.access
-                access.deniedCategoryKeys.formUnion(keys)
-                access.allowedCategoryKeys.subtract(keys)
+                access.denyNeverShare(keys)
                 guard access != agent.access else { continue }
                 try AgentStore.writeAccess(db, agentID: agent.id, access)
                 try AgentStore.bumpRevision(db, agentID: agent.id)
@@ -317,5 +314,16 @@ public final class AgentService: Sendable {
         }
         activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: event, ids: [agentID]))
         return agent
+    }
+}
+
+extension Access {
+    /// Denies the never-share categories and takes them off the allow list, except when that would
+    /// empty a non-empty allow list: empty means every category, so the keys stay on both lists
+    /// and Deny wins (T8). The agent then reads nothing rather than everything (fail closed).
+    mutating func denyNeverShare(_ keys: Set<String>) {
+        deniedCategoryKeys.formUnion(keys)
+        let remaining = allowedCategoryKeys.subtracting(keys)
+        if !remaining.isEmpty { allowedCategoryKeys = remaining }
     }
 }

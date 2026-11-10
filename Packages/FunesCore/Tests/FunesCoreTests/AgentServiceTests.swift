@@ -54,12 +54,39 @@ import Testing
         #expect(updated.revision == before.revision + 1)
         let (after, _) = try await agents.create(name: "Codex", kind: .codex,
                                                  access: Access(operations: [.read], allowedCategoryKeys: ["finance"]), now: t0)
-        #expect(after.access.deniedCategoryKeys == ["health", "finance"] && after.access.allowedCategoryKeys.isEmpty)
+        // Its only allowed category is never-share: it stays allowed and denied (Deny wins, T8), so
+        // the allow list never empties into "every category" (fail closed).
+        #expect(after.access.deniedCategoryKeys == ["health", "finance"] && after.access.allowedCategoryKeys == ["finance"])
+        #expect(PolicyEngine.scopeCheck(sensitivity: .public, categoryKeys: ["project_context"], access: after.access) != nil)
+        #expect(PolicyEngine.scopeCheck(sensitivity: .public, categoryKeys: ["finance"], access: after.access) != nil)
         // Off the list: new agents only; nobody's Deny is lifted, and nothing changes without applying.
         try await agents.setNeverShareCategories(["health"], applyToAgents: false, now: t0)
         #expect(try #require(try await agents.agent(id: after.id)).access.deniedCategoryKeys == ["health", "finance"])
         let (third, _) = try await agents.create(name: "Zed", kind: .zed, now: t0)
         #expect(third.access.deniedCategoryKeys == ["health"])
+    }
+
+    /// Review fix-first #1: applying never-share categories to an agent whose allow list holds
+    /// only them must not empty the list, which would mean every category.
+    @Test func applyingNeverShareNeverWidensAnAllowList() async throws {
+        let (vault, agents, _) = try Self.make()
+        defer { withExtendedLifetime(vault) {} }
+        let (narrow, _) = try await agents.create(name: "Cursor", kind: .cursor,
+                                                  access: Access(operations: [.read], maxSensitivity: .secret,
+                                                                 allowedCategoryKeys: ["health"]), now: t0)
+        let (open, _) = try await agents.create(name: "Codex", kind: .codex,
+                                                access: Access(operations: [.read], maxSensitivity: .secret), now: t0)
+        try await agents.setNeverShareCategories(["health", "finance"], applyToAgents: true, now: t0)
+        let updated = try #require(try await agents.agent(id: narrow.id))
+        #expect(updated.access.allowedCategoryKeys == ["health"] && updated.access.deniedCategoryKeys == ["health", "finance"])
+        #expect(updated.revision == narrow.revision + 1)
+        for keys in [["health"], ["project_context"], ["finance", "project_context"]] {
+            #expect(PolicyEngine.scopeCheck(sensitivity: .public, categoryKeys: keys, access: updated.access) != nil)
+        }
+        // An agent that already allowed every category keeps doing so, minus the denied ones.
+        let all = try #require(try await agents.agent(id: open.id))
+        #expect(all.access.allowedCategoryKeys.isEmpty && all.access.deniedCategoryKeys == ["health", "finance"])
+        #expect(PolicyEngine.scopeCheck(sensitivity: .public, categoryKeys: ["project_context"], access: all.access) == nil)
     }
 
     @Test func namesAreUniqueAmongActiveAgents() async throws {
