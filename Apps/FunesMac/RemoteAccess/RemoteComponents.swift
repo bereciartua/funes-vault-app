@@ -97,8 +97,10 @@ enum SecretClipboard {
     @MainActor
     static func copy(_ secret: String, clearAfter seconds: Int = seconds) {
         let pasteboard = NSPasteboard.general
+        // prepareForNewContents clears the pasteboard and sets the host-only option; declareTypes
+        // would clear it again and drop the option, so the types are added to it instead.
         pasteboard.prepareForNewContents(with: .currentHostOnly)
-        pasteboard.declareTypes([.string, concealed, transient], owner: nil)
+        pasteboard.addTypes([.string, concealed, transient], owner: nil)
         pasteboard.setString(secret, forType: .string)
         pasteboard.setData(Data(), forType: concealed)
         pasteboard.setData(Data(), forType: transient)
