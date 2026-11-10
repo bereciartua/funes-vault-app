@@ -25,8 +25,12 @@ for dir in spec/release/app-store/*/; do
         [ "$(chars "$dir/whats-new.txt")" -le 4000 ] || fail "$dir/whats-new.txt is over 4000 characters"
     fi
     keywords="$dir/keywords.txt"
-    [ "$(bytes "$keywords")" -le 100 ] || fail "$keywords is over 100 bytes ($(bytes "$keywords"))"
-    ! grep -q ', ' "$keywords" || fail "$keywords has a space after a comma, which wastes a byte"
+    if [ -s "$keywords" ]; then
+        [ "$(bytes "$keywords")" -le 100 ] || fail "$keywords is over 100 bytes ($(bytes "$keywords"))"
+        ! grep -q ', ' "$keywords" || fail "$keywords has a space after a comma, which wastes a byte"
+    else
+        fail "$keywords is missing or empty"
+    fi
     for url in support-url privacy-url marketing-url; do
         grep -Eqx 'https://[^ ]+' "$dir/$url.txt" || fail "$dir/$url.txt isn't one https URL"
     done
