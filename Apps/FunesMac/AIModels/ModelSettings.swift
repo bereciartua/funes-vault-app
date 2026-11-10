@@ -258,6 +258,16 @@ final class ModelSettings {
         #if FUNES_UI_REVIEW
         if plansFixed { return }
         #endif
+        await locateSubscriptions()
+        await checkSubscriptions()
+    }
+
+    /// Finds the CLIs only, without checking them (each check can take up to 15 s): enough for a
+    /// router to use a chosen plan, as the processing queue does at launch.
+    func locateSubscriptions() async {
+        #if FUNES_UI_REVIEW
+        if plansFixed { return }
+        #endif
         let home = NSHomeDirectory()
         let found = await Task.detached(priority: .utility) {
             Dictionary(uniqueKeysWithValues: PlanKind.allCases.compactMap { kind in
@@ -265,6 +275,13 @@ final class ModelSettings {
             })
         }.value
         executables = found
+    }
+
+    /// Checks each CLI found (version, flags, sign-in) for Settings.
+    func checkSubscriptions() async {
+        #if FUNES_UI_REVIEW
+        if plansFixed { return }
+        #endif
         for kind in PlanKind.allCases {
             if let client = subscriptionClient(kind) {
                 subscriptionStatus[kind] = await client.status()

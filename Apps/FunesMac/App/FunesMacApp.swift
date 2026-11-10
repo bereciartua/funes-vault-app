@@ -169,11 +169,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             notifier.post(.tidyUp, title: String(localized: "Tidy-up finished"), body: TidyUpController.notice(run))
         }
         Task { @MainActor in
-            await model.modelSettings.refreshSubscriptions()
-            // Resumes what a quit left, now that a chosen plan can split it; until here a vault
-            // change doesn't kick the queue either.
+            // Once the CLIs are found, the queue resumes what a quit left, so a chosen plan can
+            // split it; until then a vault change doesn't kick it either. It doesn't wait for the
+            // CLIs' checks (up to 15 s each): a call that fails falls back as any failure does.
+            await model.modelSettings.locateSubscriptions()
             model.processing.start()
             model.processingStarted = true
+            await model.modelSettings.checkSubscriptions()
             model.tidyUp.start()
         }
         model.embeddings.apply()
