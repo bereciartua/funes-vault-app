@@ -142,6 +142,11 @@ final class ClaudeStream: @unchecked Sendable {
     private var usage = ProviderUsage(requests: 1)
     private var failure: ProviderError?
     private(set) var toolEvent = false
+    /// A start event with the evidence the isolation check needs, all of it clean, came first.
+    private var verifiedStart = false
+    /// An answer arrived without that start event: the run's isolation is unknown, so the provider
+    /// is unavailable (ADR-0024: unavailable rather than unsafe) and the answer is discarded.
+    private var unverified = false
 
     /// False stops the run: something loaded or used that isn't the structured-output tool.
     func take(_ line: String) -> Bool {
@@ -154,7 +159,12 @@ final class ClaudeStream: @unchecked Sendable {
         let subtype = event["subtype"] as? String
         switch (type, subtype) {
         case ("system", "init"):
-            let tools = (event["tools"] as? [Any]) ?? []
+            // Missing evidence isn't clean evidence: without the tool list or the key source, the
+            // start isn't verified, and an answer after it is discarded.
+            guard let tools = event["tools"] as? [Any], let keySource = event["apiKeySource"] as? String else {
+                verifiedStart = false
+                return true
+            }
             let allowed = tools.allSatisfy { ($0 as? String) == ClaudeCodeClient.structuredOutputTool }
             // Built-in agent types and skills are allowed: without the Agent or Skill tool they can't run.
             let empty = ["mcp_servers", "hooks"].allSatisfy { key in
@@ -169,18 +179,25 @@ final class ClaudeStream: @unchecked Sendable {
                 return ClaudeCodeClient.knownBuiltinPlugins.contains(name)
             }
             // A key or helper in managed settings would bill the API, not the plan.
-            let plan = (event["apiKeySource"] as? String).map { $0 == "none" } ?? true
+            let plan = keySource == "none"
             if !allowed || !empty || !builtins || !plan { return stop() }
+            verifiedStart = true
         case ("system", let sub?) where sub.hasPrefix("hook"):
             return stop()
         case ("assistant", _):
             let content = ((event["message"] as? [String: Any])?["content"] as? [[String: Any]]) ?? []
             for block in content where (block["type"] as? String)?.hasSuffix("tool_use") == true {
                 guard block["name"] as? String == ClaudeCodeClient.structuredOutputTool else { return stop() }
+                guard verifiedStart else {
+                    unverified = true
+                    continue
+                }
                 if let input = block["input"] as? [String: Any] { structured = input }
             }
         case ("result", _):
-            if let output = event["structured_output"] as? [String: Any] { structured = output }
+            if let output = event["structured_output"] as? [String: Any] {
+                if verifiedStart { structured = output } else { unverified = true }
+            }
             if let model = (event["modelUsage"] as? [String: Any])?.values.first as? [String: Any] {
                 usage.inputTokens = ["inputTokens", "cacheReadInputTokens", "cacheCreationInputTokens"].reduce(0) {
                     $0 + (model[$1] as? Int ?? 0)
@@ -221,6 +238,7 @@ final class ClaudeStream: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         if let failure { throw failure }
+        if unverified { throw ProviderError.unavailable }
         guard let structured else { throw exitCode == 0 ? ProviderError.invalidOutput : ProviderError.server(status: Int(exitCode)) }
         return (try ClaudeCodeClient.decodeOutput(structured, as: T.self), usage)
     }
@@ -361,7 +379,11 @@ public struct CodexClient: SubscriptionClient {
             return .unsupportedFeatures(version: version, features: [])
         }
         let unknown = Self.unknownEnabled(list.lines, allowing: allowsFileReads ? [Self.fileReadFeature] : [])
-        let status: SubscriptionStatus = if unknown.isEmpty {
+        let status: SubscriptionStatus = if !Self.reportsEveryDisabledFeature(list.lines) {
+            // The list doesn't show what Funes turned off (a new format, or a feature gone): unknown
+            // isn't safe, so Funes needs updating first.
+            .unsupportedFeatures(version: version, features: [])
+        } else if unknown.isEmpty {
             .ready(version: version)
         } else if unknown == [Self.fileReadFeature] {
             .fileReadsNotAllowed(version: version)
@@ -370,6 +392,18 @@ public struct CodexClient: SubscriptionClient {
         }
         Self.checked.withLock { $0[key] = status }
         return status
+    }
+
+    /// Whether the list has a `name stage state` line for every feature Funes turns off, each off,
+    /// removed, or on only where `unknownEnabled` then reports it. A list Funes can't read shows
+    /// none, so it fails.
+    static func reportsEveryDisabledFeature(_ lines: [String]) -> Bool {
+        let reported = Set(lines.compactMap { line -> String? in
+            let fields = line.split(whereSeparator: \.isWhitespace).map(String.init)
+            guard fields.count >= 3, ["true", "false"].contains(fields.last) else { return nil }
+            return fields[0]
+        })
+        return !reported.isEmpty && disabledFeatures.allSatisfy(reported.contains)
     }
 
     /// Lines of `name stage state`: features that are on, not removed, and not known to be safe

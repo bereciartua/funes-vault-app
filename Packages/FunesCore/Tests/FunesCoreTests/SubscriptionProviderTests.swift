@@ -180,8 +180,10 @@ import Testing
         json(["type": "item.completed", "item": ["id": "2", "type": "agent_message", "text": #"{"title":"Green tea"}"#]]),
         json(["type": "turn.completed", "usage": ["input_tokens": 8_000, "cached_input_tokens": 6_000, "output_tokens": 30]]),
     ]
-    static let featuresOK = ["fast_mode stable true", "apps stable false", "shell_tool stable false", "collaboration_modes removed true",
-                             "chronicle under development false"]
+    /// Every feature Funes turns off reported off, as `codex features list --disable …` prints them.
+    static let featuresOK = CodexClient.disabledFeatures.map { "\($0) stable false" }
+        + ["fast_mode stable true", "collaboration_modes removed true", "chronicle under development false"]
+    static let featuresWithExec = featuresOK.filter { !$0.hasPrefix("unified_exec ") } + ["unified_exec stable true"]
 
     static func codex(_ events: [String], features: [String] = featuresOK, exitCode: Int32 = 0, allowsFileReads: Bool = false,
                       lastMessage: String? = #"{"title":"Green tea"}"#) -> (CodexClient, FakeCLI) {
@@ -250,11 +252,42 @@ import Testing
         #expect(await ready.status() == .ready(version: "0.164.0"))
     }
 
+    /// Missing evidence isn't clean evidence (review 2026-11-10): a list that doesn't report a
+    /// feature Funes turns off, or that Funes can't read at all, makes Codex unavailable.
+    @Test func codexNeedsEveryDisabledFeatureReported() async throws {
+        CLIRunner.unblock(CodexClient.providerID)
+        let missing = Self.featuresOK.filter { !$0.hasPrefix("shell_tool ") }
+        for features in [missing, [], ["Feature  Stage  Enabled"], ["{\"features\": []}"]] {
+            let (client, cli) = Self.codex(Self.codexEvents, features: features)
+            #expect(await client.status() == .unsupportedFeatures(version: "0.164.0", features: []), "\(features.count)")
+            await #expect(throws: ProviderError.unavailable) { try await client.generate(Self.request) }
+            #expect(!cli.invocations.contains { $0.arguments.first == "exec" && !$0.arguments.contains("--help") })
+        }
+        #expect(CodexClient.reportsEveryDisabledFeature(Self.featuresOK))
+        #expect(!CodexClient.reportsEveryDisabledFeature(Self.featuresOK.map { $0.replacingOccurrences(of: " false", with: " off") }))
+    }
+
+    /// An answer with no start event before it, or one without the tool list or key source, is
+    /// discarded: the run's isolation is unknown (ADR-0024: unavailable rather than unsafe).
+    @Test func claudeNeedsAVerifiedStartEvent() async throws {
+        CLIRunner.unblock(ClaudeCodeClient.providerID)
+        let noTools = Self.json(["type": "system", "subtype": "init", "apiKeySource": "none"])
+        let noKeySource = Self.json(["type": "system", "subtype": "init", "tools": ["StructuredOutput"]])
+        let structured = Self.json(["type": "assistant", "message": ["content": [["type": "tool_use", "name": "StructuredOutput",
+                                                                                  "input": ["title": "Tea"]]]]])
+        for stream in [[Self.claudeResult()], [noTools, Self.claudeResult()], [noKeySource, Self.claudeResult()],
+                       [structured, Self.claudeResult(nil)], [Self.claudeResult(), Self.claudeInit]] {
+            let (client, _) = Self.claude(stream)
+            await #expect(throws: ProviderError.unavailable) { try await client.generate(Self.request) }
+            #expect(!CLIRunner.isBlocked(ClaudeCodeClient.providerID))
+        }
+    }
+
     /// Codex 0.164 keeps `unified_exec` on whatever Funes asks: only the user's opt-in accepts it,
     /// nothing else, and a command is still stopped and discarded.
     @Test func codexFileReadsNeedTheOptIn() async throws {
         CLIRunner.unblock(CodexClient.providerID)
-        let withExec = Self.featuresOK + ["unified_exec stable true"]
+        let withExec = Self.featuresWithExec
         let (off, offCLI) = Self.codex(Self.codexEvents, features: withExec)
         #expect(await off.status() == .fileReadsNotAllowed(version: "0.164.0"))
         await #expect(throws: ProviderError.unavailable) { try await off.generate(Self.request) }
