@@ -74,13 +74,36 @@
           },
           "now": {
             "type": "string"
+          },
+          "status": {
+            "const": "denied",
+            "description": "Present only when the call was refused; then reason and message say why."
+          },
+          "reason": {
+            "$ref": "#/$defs/reason"
+          },
+          "message": {
+            "type": "string"
+          },
+          "retry_after_s": {
+            "type": "integer"
           }
         },
-        "required": [
-          "categories",
-          "max_sensitivity",
-          "asks_before_sharing",
-          "now"
+        "anyOf": [
+          {
+            "required": [
+              "categories",
+              "max_sensitivity",
+              "asks_before_sharing",
+              "now"
+            ]
+          },
+          {
+            "required": [
+              "status",
+              "reason"
+            ]
+          }
         ]
       },
       "annotations": {
@@ -544,10 +567,30 @@
           },
           "reason": {
             "$ref": "#/$defs/reason"
+          },
+          "status": {
+            "const": "denied",
+            "description": "Present only when the call was refused; then reason and message say why."
+          },
+          "message": {
+            "type": "string"
+          },
+          "retry_after_s": {
+            "type": "integer"
           }
         },
-        "required": [
-          "opened"
+        "anyOf": [
+          {
+            "required": [
+              "opened"
+            ]
+          },
+          {
+            "required": [
+              "status",
+              "reason"
+            ]
+          }
         ]
       },
       "annotations": {
