@@ -31,6 +31,8 @@ import Testing
         #expect(sent.url.absoluteString == "https://api.openai.com/v1/chat/completions" && sent.method == "POST")
         #expect(sent.headers["Authorization"] == "Bearer test-key")
         #expect(sent.json["model"] as? String == "gpt-small")
+        // OpenAI's reasoning models refuse `max_tokens` (review 2026-11-10).
+        #expect(sent.json["max_completion_tokens"] as? Int == Self.request.maxOutputTokens && sent.json["max_tokens"] == nil)
         let format = try #require(sent.json["response_format"] as? [String: Any])
         let schema = try #require(format["json_schema"] as? [String: Any])
         #expect(format["type"] as? String == "json_schema" && schema["strict"] as? Bool == true && schema["name"] as? String == "Answer")
@@ -50,6 +52,9 @@ import Testing
         #expect(try await client.listModels() == ["a-model", "b-model"])
         await #expect(throws: ProviderError.refused) { try await client.generate(Self.request) }
         #expect(stub.requests.allSatisfy { $0.headers["Authorization"] == nil })
+        // Other OpenAI-compatible servers keep `max_tokens`.
+        let chat = try #require(stub.requests.first { $0.url.path.hasSuffix("/chat/completions") })
+        #expect(chat.json["max_tokens"] as? Int == Self.request.maxOutputTokens && chat.json["max_completion_tokens"] == nil)
         #expect(stub.requests.first?.url.absoluteString == "http://127.0.0.1:11434/v1/models")
         #expect(client.locality == .localServer)
     }

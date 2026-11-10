@@ -51,7 +51,7 @@ public protocol GenerationProvider: Sendable {
 - **Implementations** (in FunesCore, `Search/` and `Models/`):
   - `BundledBGEEmbedder` (ADR-0016; Apple's NaturalLanguage embeddings are not used);
   - `AppleFoundationGenerator` (guided generation with a dynamic schema); `ApplePCCGenerator` later, when the entitlement is granted;
-  - `OpenAICompatibleClient`: chat with `response_format: json_schema` (strict) and the model list; `OpenAICompatibleEmbedder` (v0.3): `/v1/embeddings`, with the query and document prefixes of the models in `EmbeddingCatalog`;
+  - `OpenAICompatibleClient`: chat with `response_format: json_schema` (strict) and the model list; the output limit is `max_completion_tokens` for api.openai.com (its reasoning models refuse the deprecated `max_tokens`) and `max_tokens` for every other server; `OpenAICompatibleEmbedder` (v0.3): `/v1/embeddings`, with the query and document prefixes of the models in `EmbeddingCatalog`;
   - `AnthropicClient` (generation only; Messages API with structured output via `output_config.format`, type `json_schema`; suggested default `claude-haiku-5-5`);
   - `RulesClassifier`, the always-available fallback and the capture pre-screen;
   - v0.3 ([ADR-0024](decisions/0024-subscription-providers.md)): `ClaudeCodeClient` and `CodexClient` (generation only), on a shared `CLIRunner`: finds the executable (BridgeKitCore's `ExecutableLocator`), checks its version and sign-in, and runs each call as a child process in a new empty temporary directory with API keys removed from its environment, a 90 s timeout, and the call's prompt on stdin. Each parses the CLI's JSON event stream, and stops the run and discards its output on any tool or command event (§5.8).

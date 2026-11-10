@@ -184,10 +184,17 @@ public struct OpenAICompatibleClient: GenerationProvider {
 
     var headers: [String: String] { apiKey.map { ["Authorization": "Bearer \($0)"] } ?? [:] }
 
+    /// OpenAI's own API takes `max_completion_tokens` (its reasoning models, such as the preset's
+    /// `gpt-5-mini`, refuse the deprecated `max_tokens`); other OpenAI-compatible servers (Ollama,
+    /// LM Studio, OpenRouter…) are sent `max_tokens`, which they all read.
+    var maxTokensField: String {
+        http.endpoint.baseURL.host()?.lowercased() == "api.openai.com" ? "max_completion_tokens" : "max_tokens"
+    }
+
     public func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage) {
         let body: [String: Any] = [
             "model": modelID,
-            "max_tokens": request.maxOutputTokens,
+            maxTokensField: request.maxOutputTokens,
             "messages": [["role": "system", "content": request.instructions], ["role": "user", "content": request.prompt]],
             "response_format": ["type": "json_schema",
                                 "json_schema": ["name": request.schemaName, "strict": true, "schema": request.schema.wire]],
@@ -296,10 +303,17 @@ public struct AnthropicClient: GenerationProvider {
 
     var headers: [String: String] { ["x-api-key": apiKey, "anthropic-version": Self.apiVersion] }
 
+    /// OpenAI's own API takes `max_completion_tokens` (its reasoning models, such as the preset's
+    /// `gpt-5-mini`, refuse the deprecated `max_tokens`); other OpenAI-compatible servers (Ollama,
+    /// LM Studio, OpenRouter…) are sent `max_tokens`, which they all read.
+    var maxTokensField: String {
+        http.endpoint.baseURL.host()?.lowercased() == "api.openai.com" ? "max_completion_tokens" : "max_tokens"
+    }
+
     public func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage) {
         let body: [String: Any] = [
             "model": modelID,
-            "max_tokens": request.maxOutputTokens,
+            maxTokensField: request.maxOutputTokens,
             "system": request.instructions,
             "messages": [["role": "user", "content": request.prompt]],
             "output_config": ["format": ["type": "json_schema", "schema": request.schema.wire]],
