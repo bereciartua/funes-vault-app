@@ -139,10 +139,27 @@ final class DataOperations {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.createsNewApplicationInstance = true
         configuration.environment = ProcessInfo.processInfo.environment
-        configuration.arguments = Array(CommandLine.arguments.dropFirst()).filter { $0 != "--dev-seed" }
-        let me = ProcessInfo.processInfo.processIdentifier
-        configuration.arguments += [AppMover.waitForArgument, String(me)]
+        configuration.arguments = relaunchArguments(Array(CommandLine.arguments.dropFirst()),
+                                                    pid: ProcessInfo.processInfo.processIdentifier)
         NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, _ in }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { NSApp.terminate(nil) }
+    }
+
+    /// This copy's arguments for the next one: without `--dev-seed`, and without the
+    /// `--wait-for-pid` and `--moved-from` pairs this copy was launched with, so the next copy
+    /// waits for this one (`AppMover.waitForPreviousCopy` reads the first pair it finds).
+    static func relaunchArguments(_ arguments: [String], pid: Int32) -> [String] {
+        var kept: [String] = []
+        var index = arguments.startIndex
+        while index < arguments.endIndex {
+            let argument = arguments[index]
+            if argument == AppMover.waitForArgument || argument == AppMover.movedFromArgument {
+                index += 2
+                continue
+            }
+            if argument != "--dev-seed" { kept.append(argument) }
+            index += 1
+        }
+        return kept + [AppMover.waitForArgument, String(pid)]
     }
 }
