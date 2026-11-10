@@ -490,10 +490,10 @@
 - From v0.3, with splitting on: the estimated model requests next to what's left of today's cap (FR-AI-15), and **Import without splitting**. A Funes export restore is never split.
 
 **FR-X-05 Export** · M · v0.1
-- `funesvault.export.v1` JSON with categories and memories (optionally archived ones), and from v0.5 the profile (an optional `profile` object, FR-U-01). It never includes keys, devices, agents' access (so not which agents see which profile fields) or Activity.
+- `funesvault.export.v1` JSON with categories and memories (optionally archived ones), and from v0.5 the profile (an optional `profile` object, FR-U-01). Each memory carries its `trust` (`trusted` or `untrusted`, memory processing §5.7; optional, absent in older exports). It never includes keys, devices, agents' access (so not which agents see which profile fields) or Activity.
 
 **FR-X-06 Import a Funes export** · S · v0.1
-- Restores a `funesvault.export.v1` file, as suggestions (default) or as active memories after confirmation. From v0.5, an export's `profile` fills About You only if the vault's profile is empty; otherwise the preview says "About you in this file isn't restored: yours is already set."
+- Restores a `funesvault.export.v1` file, as suggestions (default) or as active memories after confirmation. Restored memories keep their `trust`; one without it (an older export) is restored untrusted, since nothing says the user wrote it. From v0.5, an export's `profile` fills About You only if the vault's profile is empty; otherwise the preview says "About you in this file isn't restored: yours is already set."
 
 ### Onboarding (FR-O)
 
