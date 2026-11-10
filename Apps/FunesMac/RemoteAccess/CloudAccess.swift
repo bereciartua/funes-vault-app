@@ -109,9 +109,15 @@ extension AppModel {
         Task {
             do {
                 let token: String
-                if agent.hasRemoteKey, let url = services.keys.remoteURL(agentID: agent.id),
-                   let saved = try? String(contentsOf: url, encoding: .utf8),
-                   saved.hasPrefix(Identifiers.remoteKeyPrefix) {
+                if agent.hasRemoteKey {
+                    // A live token whose file can't be read: issuing a new one here would stop the
+                    // cloud agent using it without Reset's warning, so it's Reset's job.
+                    guard let url = services.keys.remoteURL(agentID: agent.id),
+                          let saved = try? String(contentsOf: url, encoding: .utf8),
+                          saved.hasPrefix(Identifiers.remoteKeyPrefix) else {
+                        cloudMessage = String(localized: "The remote token's file couldn't be read. Use Reset Remote Token… to make a new one.")
+                        return
+                    }
                     token = saved.trimmingCharacters(in: .whitespacesAndNewlines)
                 } else {
                     guard let remoteServer else { return }
