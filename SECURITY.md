@@ -6,10 +6,9 @@ Funes Vault keeps personal memories on your Mac and gives AI agents scoped acces
 
 | Version | Supported |
 | --- | --- |
-| Mac 0.5.x (public preview) | Yes: the latest release |
-| iPhone 0.2.x (on the App Store) | Yes, until 0.5 replaces it |
-| iPhone 0.5.x (in App Review) | Yes, once it's on the App Store |
-| Older builds (Mac 0.2.x and earlier), and builds from source | No |
+| The latest Mac release ([Releases](https://github.com/bereciartua/funes-vault-app/releases/latest)) | Yes |
+| The latest iPhone version on the App Store | Yes |
+| Earlier versions, and builds from source | No |
 
 Fixes ship as a new release and are listed in the [changelog](CHANGELOG.md). On the Mac they reach installed copies through the in-app updater (Sparkle); on the iPhone, through the App Store.
 
