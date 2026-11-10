@@ -361,7 +361,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.remoteAccess.host = RemoteAccessHost(
             start: { configuration in if preferences.mcpEnabled { remote.start(configuration) } },
             update: { remote.update($0) },
-            stop: { remote.stop() },
+            stop: { remote.stop(); environment.approvals.withdrawRemote() },
             test: { configuration, done in RemoteProbe.test(configuration, nonces: remote.service.nonces, completion: done) },
             portIsFree: { PortProbe.isFree($0) },
             setKeepAwake: { keepAwake.set($0) },

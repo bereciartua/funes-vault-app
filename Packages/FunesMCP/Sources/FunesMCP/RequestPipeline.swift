@@ -36,9 +36,18 @@ public final class RemoteCredentialEpochs: Sendable {
 
     public init() {}
 
-    public func current(_ agentID: String) -> Int { epochs.withLock { $0[agentID, default: 0] } }
+    public func current(_ agentID: String) -> Int {
+        epochs.withLock { $0[agentID, default: 0] + $0[Self.everyone, default: 0] }
+    }
 
     public func bump(_ agentID: String) { epochs.withLock { $0[agentID, default: 0] += 1 } }
+
+    /// Every agent's at once: Remote Access was turned off, so no remote call in flight may
+    /// release or save anything more.
+    public func bumpAll() { epochs.withLock { $0[Self.everyone, default: 0] += 1 } }
+
+    /// The key `bumpAll` counts under; never an agent id (those are UUIDs).
+    private static let everyone = "*"
 }
 
 /// Keys presented over MCP, looked up by digest in the vault. Paused and expired agents are still

@@ -497,6 +497,14 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     @MainActor
     func sessionTask(_ requestID: UUID) -> String? { tasks[requestID] }
 
+    /// Remote Access was turned off: the Share panels of requests that came through it go. The
+    /// requests stay in Pending requests, and a remote call still waiting for one releases
+    /// nothing (its credential epoch moved).
+    @MainActor
+    func withdrawRemote() {
+        for item in queue.items where remoteRequests.contains(item.id) { queue.withdraw(item.id) }
+    }
+
     @MainActor
     private func bringForward() {
         NSApp.activate(ignoringOtherApps: true)
