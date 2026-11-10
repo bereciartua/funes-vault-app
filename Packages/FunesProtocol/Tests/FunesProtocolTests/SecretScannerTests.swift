@@ -17,6 +17,8 @@ import Testing
         Sample(pattern: .privateKey, text: "-----BEGIN " + "PRIVATE KEY-----\nMIIEv…"),
         Sample(pattern: .privateKey, text: "here: -----begin rsa " + "private key----- (pasted)"),
         Sample(pattern: .privateKey, text: "-----BEGIN OPENSSH " + "PRIVATE KEY-----"),
+        Sample(pattern: .privateKey, text: "-----BEGIN PGP " + "PRIVATE KEY BLOCK-----\n\nlQOYBF…"),
+        Sample(pattern: .privateKey, text: "-----BEGIN ENCRYPTED " + "PRIVATE KEY-----\nMIIFHz…"),
         Sample(pattern: .awsAccessKey, text: "key AKIA" + rep("Z", 8) + "12345678 in prod"),
         Sample(pattern: .awsAccessKey, text: "ASIA" + rep("A1", 8)),
         Sample(pattern: .openAIStyleKey, text: "use sk-" + rep("abc", 7) + " for the bot"),
@@ -52,6 +54,7 @@ import Testing
 
     static let negatives: [Sample] = [
         Sample(pattern: .privateKey, text: "-----BEGIN PUBLIC KEY-----"),
+        Sample(pattern: .privateKey, text: "-----BEGIN PGP PUBLIC KEY BLOCK-----"),
         Sample(pattern: .awsAccessKey, text: "AKIA" + rep("Z", 15)),
         Sample(pattern: .awsAccessKey, text: "akia" + rep("z", 16)),
         Sample(pattern: .openAIStyleKey, text: "sk-short-key"),

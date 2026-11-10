@@ -38,6 +38,18 @@ import Testing
         #expect(Self.found("Party 🎉 at", in: text) == "Party 🎉 at")
     }
 
+    /// A quote that is part of a character (one flag half, a thumbs-up before its skin tone) isn't
+    /// found: it used to read before the start of the text and crash.
+    @Test func partOfACharacterIsNotAMatch() {
+        #expect(QuoteLocator.range(of: "🇦", in: "🇦🇧 flag") == nil)
+        #expect(QuoteLocator.range(of: "👍", in: "👍🏽 great") == nil)
+        #expect(QuoteLocator.range(of: "a 🇦", in: "a 🇦🇧 flag") == nil)
+        #expect(QuoteLocator.range(of: "e", in: "cafe\u{301}") == nil)
+        #expect(Self.found("🇦🇧 flag", in: "the 🇦🇧 flag") == "🇦🇧 flag")
+        #expect(Self.found("👍🏽", in: "ok 👍🏽") == "👍🏽")
+        #expect(Self.found("flag", in: "🇦🇧 flag") == "flag")
+    }
+
     @Test func emptyAndMissingQuotes() {
         #expect(QuoteLocator.range(of: "", in: "anything") == nil)
         #expect(QuoteLocator.range(of: "   ", in: "anything") == nil)
