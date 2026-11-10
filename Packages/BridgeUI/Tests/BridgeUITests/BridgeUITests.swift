@@ -47,6 +47,25 @@ struct ActivityStoreTests {
         #expect(again.contains(id: "a#2"))
     }
 
+    /// Code review 2026-11-10: a crash left the last line torn (no newline). The next row still
+    /// reads back; only the torn one is skipped.
+    @Test func aTornLastLineDoesntSwallowTheNextRow() throws {
+        let data = try folder()
+        defer { try? FileManager.default.removeItem(at: data) }
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let store = ActivityStore<Row>(dataFolder: data, retention: .funes)
+        #expect(store.append(Row(rowID: "a", at: now, phase: "event", important: true)))
+        let handle = try FileHandle(forWritingTo: store.file)
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data(#"{"rowID":"torn","at":18"#.utf8))
+        try handle.close()
+        let again = ActivityStore<Row>(dataFolder: data, retention: .funes)
+        #expect(again.append(Row(rowID: "b", at: now, phase: "event", important: true)))
+        let reread = ActivityStore<Row>(dataFolder: data, retention: .funes)
+        #expect(reread.records().map(\.rowID) == ["a", "b"])
+        #expect(reread.skippedLines == 1)
+    }
+
     @Test func failingSyncRefusesTheRow() throws {
         let data = try folder()
         defer { try? FileManager.default.removeItem(at: data) }

@@ -333,13 +333,24 @@ public final class ActivityStore<Record: ActivityRow>: @unchecked Sendable {
         guard lstat(folder.path, &info) == 0, info.st_uid == getuid(),
               info.st_mode & S_IFMT == S_IFDIR else { return false }
         if info.st_mode & 0o077 != 0 { chmod(folder.path, 0o700) }
-        let fd = open(file.path, O_WRONLY | O_APPEND | O_CREAT | O_NOFOLLOW | O_CLOEXEC, 0o600)
+        // Read as well as write, to look at the last byte below.
+        let fd = open(file.path, O_RDWR | O_APPEND | O_CREAT | O_NOFOLLOW | O_CLOEXEC, 0o600)
         guard fd >= 0 else { return false }
         guard fstat(fd, &info) == 0, info.st_uid == getuid(), info.st_mode & S_IFMT == S_IFREG else {
             close(fd)
             return false
         }
         if info.st_mode & 0o077 != 0 { fchmod(fd, 0o600) }
+        // A crash mid-write can leave the last line without its newline; the next row would join
+        // it and be lost too. End it first: the torn line stays unreadable (and skipped), alone.
+        var last: UInt8 = 0
+        if info.st_size > 0, pread(fd, &last, 1, off_t(info.st_size - 1)) == 1, last != 0x0A {
+            guard Darwin.write(fd, [UInt8(0x0A)], 1) == 1 else {
+                close(fd)
+                return false
+            }
+            fileBytes += 1
+        }
         descriptor = fd
         return true
     }
