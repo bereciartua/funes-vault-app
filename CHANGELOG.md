@@ -4,6 +4,52 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+Fixes from a full code review of the Mac app, the iPhone app and the release pipeline. **Update the Mac and the iPhone together:** the iPhone now trusts only refusals your Mac has signed, so a new iPhone app with an older Mac can't correct its clock or learn it was removed.
+
+### Security
+
+- **Never-share categories can't open up an agent.** Marking a category never-share took it off each agent's allow list, and an agent whose list emptied could read every category. Now the agent reads nothing instead.
+- **Deleting a category keeps agents out.** Deleting a category that an agent is denied, with no replacement, used to drop that denial, so its memories that were also in another category became readable. Funes now asks for a replacement.
+- **Approval panels don't take the keyboard.** An agent's Open in Funes made the panel key with Return ready to share, so Return typed for another app could approve. Now the panel only shows the request; it takes the keyboard only when you click Review, and Return and Esc wait a moment each time it does.
+- **Sensitive text stays on the Mac.** The check before sending text to a cloud model looked only at the three strongest topics, so one health, money or legal mention among other topics could be sent. Every topic now counts. Everyday words like "will", "paid" and "court" no longer mark a note Sensitive.
+- **Purging a memory removes all of its text.** A purged memory's text stayed in the suggestion it was saved from when that suggestion wasn't part of a split, and in every later backup.
+- **iPhone: fake replies from your network are ignored.** A device on the same Wi-Fi could crash the app, move its clock, or make it show "Removed from Funes". The iPhone now acts on a refusal only when your Mac signed it.
+- **Mac: iPhone requests can't be replayed,** even after a change in Settings ▸ iPhone or a restart, and one device on your network can no longer use up every connection and lock your iPhone out.
+- **Agent corrections keep a memory's protection.** Saving an agent's correction with Replace could lower the memory's sensitivity, change its categories or clear its expiry. They now stay unless you change them. An Inbox card moved into Health, Finance or Legal raises its sensitivity, as New Memory does.
+- **Trust survives a restore.** Exports now record whether a memory came from you or from an agent, and a restore keeps it; memories from older exports are restored as not from you.
+- **Stored text can't steer the models.** Memory text that imitates the structure of the prompts Funes sends (for search answers, the tidy-up, splitting and extraction) is no longer read as structure. The tidy-up no longer applies a change on its own when an agent's memory is in the same group.
+- **Anthropic accounts always count as cloud,** even at a local address, so the cloud limit and daily cap apply.
+- **Claude Code and Codex are reported unavailable** when Funes can't confirm they run without tools.
+- **Turning Remote Access off cuts off remote requests in progress** and closes their panels. After a relaunch, a reopened Share panel no longer says a remote request goes to an agent "on this Mac".
+- **A looping agent can't erase your history.** Refusals are now rate-limited even for a paused agent, and repeated identical refusals no longer push older rows out of Activity.
+- **Keys and tokens on the clipboard stay on this Mac** and are hidden from clipboard managers that honour the standard markers. Copy Remote Token never silently replaces a working token.
+- Secrets in a suggestion's purpose, PGP private key blocks and encrypted private keys are now blocked.
+- The release pipeline converts the embedding model without access to any signing key, pins every file of it, and installs its Python tools from a locked list.
+
+### Fixed
+
+- **"Show this memory" opens the right memory,** even when it's archived, expired, deleted or filtered out. Before, the Vault could open on the memory selected earlier.
+- **Unsaved edits are kept** when you select another memory, switch section, close the window, change the Status filter, or press Still True, Archive or Restore. Rows with unsaved edits show a pencil, and Delete asks first.
+- A Search answer quoting part of an emoji (one half of a flag) no longer crashes the Mac or the iPhone app.
+- An approval made before pausing an agent can still be collected after resuming. A panel that went stale while open is refused with "This request changed" instead of failing at delivery, and expired or emptied requests now appear in Activity.
+- Allow Once on a request whose access changed while the panel was open keeps the original request waiting, instead of dropping it.
+- Clearing an agent's last allowed category asks before it opens up every category.
+- Moving several memories to a category asks first when it removes their other categories.
+- The shortcut recorder no longer takes keys in other windows after you leave it.
+- The capture box keeps its draft when reopened or when you use Services, and Esc stops dictation. Stopping dictation while it's starting no longer leaves the microphone on, on the Mac or the iPhone.
+- An update found by the daily check now shows in the menu bar panel, the right-click menu and the icon's tooltip.
+- Erase All Data deletes at the next launch, before anything opens, and says if something couldn't be deleted. Restore from Backup says how it went, and works when the current vault is damaged.
+- Only one copy of Funes Vault runs on a vault; opening a second brings the first forward. Restarting twice in a row no longer starts before the previous copy has quit.
+- With "Propose a title, kind and categories" off, captures aren't sent to a model to be classified. Captures waiting from before a quit can split with a Claude Code or Codex plan.
+- After a plan's usage limit, Funes waits until the reset time, or an hour, before asking again. Claude Code and Codex installed with npm now start. OpenAI's newer models such as gpt-5-mini no longer fail on the output-limit field.
+- Select All in the Inbox selects only cards you can see and untick. An import can't run twice on a double click, and large files are refused before they're read. Errors with never-share categories and Forget Earlier Versions are shown. "Review your Inbox" in the setup checklist is ticked only after a review.
+- The Vault list no longer reloads on every Activity row, and a search answer goes away when a memory it cites changes.
+- Add to <Agent>… asks you to move Funes Vault to Applications first, and one-click setup backs up and restores a symlinked settings file correctly.
+- Keep this Mac awake now follows plugging in and unplugging. A crash can no longer cost the next Activity row. Agents get the request id when a request outlasts the 55-second wait.
+- iPhone: Home's counts and the widgets are no longer cleared at launch or in a background refresh before the pairing is read. If your Mac can't check this iPhone for a moment, it says your vault isn't available, not that the iPhone was removed.
+- iPhone: pairing asks for camera access the first time, and Cancel while waiting for Allow on the Mac cancels the pairing.
+- iPhone: after unpairing, a late reply no longer shows Connected or brings the counts back; a reload that fails after "Changed on your Mac" keeps your edit; an answered Inbox card no longer comes back; a request that rings while the list is loading now shows; captures containing a NUL character are saved whole; sharing a very large text is refused instead of risking the extension.
+
 ### Changed
 
 - **The privacy statement is up to date with 0.5.1.** [PRIVACY.md](PRIVACY.md) and funesvault.com/privacy, which had fallen behind at v0.1, now describe everything 0.5.1 can send or keep: Tidy Up on one memory, Search answers (including the menu bar panel), the cloud limit covering memories but not search text, earlier versions of memories and where backups keep them, the iPhone's counts cache, and the speech files dictation may download. No behaviour changed.
