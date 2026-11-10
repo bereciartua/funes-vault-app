@@ -365,16 +365,27 @@ public final class CompanionHandlers: Sendable {
     /// and current versions (a missing one is -1), and a split's pieces. An edit or a Review Again
     /// on the Mac changes it.
     static func revision(of s: Suggestion, suggestions: SuggestionService, store: VaultStore) async throws -> String {
+        let targets = try await suggestions.targets(suggestionID: s.id)
+        let ids = (s.targetMemoryID.map { [$0] } ?? []) + targets.map(\.memoryID)
+        let current = Dictionary(try store.memories(ids: ids).map { ($0.id, $0.version) }, uniquingKeysWith: { a, _ in a })
+        let pieces = s.action == .split ? try await suggestions.pieces(groupID: s.id) : []
+        return revision(of: s, targets: targets, current: current, pieces: pieces)
+    }
+
+    /// The same revision from what FunesCore read inside the transaction that applies the answer,
+    /// so a change between the check and the apply is refused (access policy §3.6).
+    static func revision(of snapshot: SuggestionSnapshot) -> String {
+        revision(of: snapshot.suggestion, targets: snapshot.targets, current: snapshot.memoryVersions, pieces: snapshot.pieces)
+    }
+
+    static func revision(of s: Suggestion, targets: [SuggestionTarget], current: [UUID: Int], pieces: [Suggestion]) -> String {
         struct Ref: Encodable { var id: String, role: String, stored: Int?, current: Int }
         struct Piece: Encodable { var id: String, action: String, title: String, body: String }
         struct Canonical: Encodable {
             var save: String, refs: [Ref], pieces: [Piece], targetVersion: Int?
         }
-        let targets = try await suggestions.targets(suggestionID: s.id)
         var refs = s.targetMemoryID.map { [(id: $0, role: "target", stored: s.targetMemoryVersion)] } ?? []
         refs += targets.filter { $0.memoryID != s.targetMemoryID }.map { ($0.memoryID, $0.role.rawValue, Optional($0.memoryVersion)) }
-        let current = Dictionary(uniqueKeysWithValues: try store.memories(ids: refs.map(\.id)).map { ($0.id, $0.version) })
-        let pieces = s.action == .split ? try await suggestions.pieces(groupID: s.id) : []
         let canonical = Canonical(
             save: CompanionApprovals.revision(of: s),
             refs: refs.map { Ref(id: $0.id.uuidString.lowercased(), role: $0.role, stored: $0.stored, current: current[$0.id] ?? -1) },
@@ -382,7 +393,8 @@ public final class CompanionHandlers: Sendable {
             targetVersion: s.targetMemoryVersion)
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
-        return SHA256.hash(data: try encoder.encode(canonical)).map { String(format: "%02x", $0) }.joined()
+        let data = (try? encoder.encode(canonical)) ?? Data()
+        return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 
     static func role(_ role: SuggestionTarget.Role) -> InboxMemoryRole {
@@ -413,8 +425,14 @@ public final class CompanionHandlers: Sendable {
         case .bothTrue: .bothTrue
         }
         let edits = params.edits.map(Self.suggestionEdit) ?? SuggestionEdit()
-        let result = try await services.suggestions.apply(suggestionID: params.suggestionId, edits: edits, mode: mode, now: now,
-                                                          actor: .device(device), via: .companion)
+        // Checked again inside the write, so an edit or reclassification after the check above
+        // isn't applied unseen.
+        let shown = params.revision
+        let result = try await services.suggestions.apply(
+            suggestionID: params.suggestionId, edits: edits, mode: mode, now: now, actor: .device(device), via: .companion,
+            precondition: { snapshot in
+                if let shown, Self.revision(of: snapshot) != shown { throw CompanionError(.requestChanged) }
+            })
         return InboxApplied(memoryId: result.memoryID)
     }
 
@@ -502,7 +520,7 @@ public final class CompanionHandlers: Sendable {
         case .unauthenticated: CompanionError(.notFound)
         case let .invalidInput(field): CompanionError(.invalidInput, message: field)
         case let .unknownCategory(key): CompanionError(.invalidInput, message: "Unknown category \(key)")
-        case .noCategories, .builtinCategory, .categoryExists, .categoryInUse, .onlyAllowedCategory, .nameTaken:
+        case .noCategories, .builtinCategory, .categoryExists, .categoryInUse, .onlyAllowedCategory, .deniedCategoryInUse, .nameTaken:
             CompanionError(.invalidInput)
         }
     }
