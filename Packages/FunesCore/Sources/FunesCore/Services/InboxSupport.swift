@@ -101,15 +101,34 @@ extension SuggestionService {
 /// What an Inbox card shows and the user may edit before Apply (FR-I-02). Apply sends all of it,
 /// so what's applied is exactly what was on screen, even if the suggestion changed underneath
 /// (background classification). A draft the user hasn't touched follows such changes; one they
-/// edited keeps their values (PR #3 review 4304175704).
+/// edited keeps their values (PR #3 review 4304175704). Moving it into a category with a higher
+/// default (Health, Finance, Legal) raises its sensitivity to that default, as the New Memory
+/// editor does, unless the user picked a level themselves (FR-V-07).
 public struct SuggestionDraft: Sendable, Hashable {
     public var title: String { didSet { touched = true } }
     public var body: String { didSet { touched = true } }
     public var kind: MemoryKind { didSet { touched = true } }
-    public var categoryKeys: [String] { didSet { touched = true } }
-    public var sensitivity: Sensitivity { didSet { touched = true } }
+    public var categoryKeys: [String] {
+        didSet {
+            touched = true
+            if !sensitivityChosen { level = max(level, Self.floor(categoryKeys, defaults)) }
+        }
+    }
+    public var sensitivity: Sensitivity {
+        get { level }
+        set {
+            level = newValue
+            touched = true
+            sensitivityChosen = true
+        }
+    }
     /// The user changed something.
     public private(set) var touched = false
+    /// The user picked the sensitivity: categories no longer raise it.
+    public private(set) var sensitivityChosen = false
+    private var level: Sensitivity
+    /// Each category's default sensitivity, as of the last refresh.
+    private var defaults: [String: Sensitivity]
 
     /// The suggestion's proposal; no categories means Personal preferences, and no sensitivity the
     /// categories' default (as Apply would decide).
@@ -118,14 +137,28 @@ public struct SuggestionDraft: Sendable, Hashable {
         body = suggestion.body
         kind = suggestion.kind ?? .fact
         let keys = suggestion.categoryKeys.isEmpty ? ["personal_preferences"] : suggestion.categoryKeys
+        let defaults = Self.defaults(categories)
         categoryKeys = keys
-        sensitivity = suggestion.sensitivity
-            ?? max(.low, categories.filter { keys.contains($0.key) }.map(\.defaultSensitivity).max() ?? .low)
+        self.defaults = defaults
+        level = suggestion.sensitivity ?? Self.floor(keys, defaults)
     }
 
-    /// The draft for `suggestion` as it is now: rebuilt when untouched, kept when edited.
+    /// The draft for `suggestion` as it is now: rebuilt when untouched, kept when edited (with the
+    /// categories' current defaults).
     public func refreshed(from suggestion: Suggestion, categories: [MemoryCategory]) -> SuggestionDraft {
-        touched ? self : SuggestionDraft(suggestion, categories: categories)
+        guard touched else { return SuggestionDraft(suggestion, categories: categories) }
+        var kept = self
+        kept.defaults = Self.defaults(categories)
+        return kept
+    }
+
+    private static func defaults(_ categories: [MemoryCategory]) -> [String: Sensitivity] {
+        Dictionary(categories.map { ($0.key, $0.defaultSensitivity) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    /// LOW, raised to the highest default of `keys`.
+    private static func floor(_ keys: [String], _ defaults: [String: Sensitivity]) -> Sensitivity {
+        max(.low, keys.compactMap { defaults[$0] }.max() ?? .low)
     }
 
     /// Every field as shown, trimmed, for `SuggestionService.apply`.

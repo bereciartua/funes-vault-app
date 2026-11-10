@@ -60,7 +60,7 @@
 
 **FR-V-07 Sensitivity levels** · M · v0.1
 - The six ordered levels are PUBLIC < LOW < INTERNAL < SENSITIVE < RESTRICTED < SECRET, each shown with a plain-language description.
-- Acceptance: the UI explains each level in one line. Health, Finance and Legal default to SENSITIVE when a memory is created in them.
+- Acceptance: the UI explains each level in one line. Health, Finance and Legal default to SENSITIVE when a memory is created in them. Moving an Inbox card into one of them raises its sensitivity to that default too (never lowers it), unless the user picked a level on the card.
 
 **FR-V-08 Kinds** · M · v0.1
 - Kinds: Fact, Preference, Instruction, Goal, Project Context, Relationship, Constraint, Event, Summary.
