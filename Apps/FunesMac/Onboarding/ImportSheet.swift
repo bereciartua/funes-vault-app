@@ -31,6 +31,10 @@ struct ImportSheet: View {
     @State private var asMemories = false
     @State private var error: String?
     @State private var done: String?
+    /// A commit is running: a second click or Return doesn't import again.
+    @State private var committing = false
+    /// The chosen file is being read.
+    @State private var reading = false
     /// Today's cloud requests, for the split estimate (memory processing §5.8).
     @State private var today: CloudRequestCap.Day?
 
@@ -84,7 +88,7 @@ struct ImportSheet: View {
             HStack {
                 Spacer()
                 Button(String(localized: "Cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
-                Button(String(localized: "Choose File…")) { chooseFile() }.keyboardShortcut(.defaultAction)
+                Button(String(localized: "Choose File…")) { chooseFile() }.keyboardShortcut(.defaultAction).disabled(reading)
             }
         }
     }
@@ -149,11 +153,11 @@ struct ImportSheet: View {
                 let count = ready + (includeDuplicates ? preview.duplicates : 0)
                 if splits {
                     Button(String(localized: "Import Without Splitting")) { commit(preview, split: false) }
-                        .disabled(count == 0 || preview.tooLong > 0)
+                        .disabled(count == 0 || preview.tooLong > 0 || committing)
                 }
                 Button(asMemories ? String(localized: "Restore \(count)") : String(localized: "Send \(count) to Inbox")) { commit(preview) }
                     .keyboardShortcut(.defaultAction)
-                    .disabled(count == 0 || preview.tooLong > 0)
+                    .disabled(count == 0 || preview.tooLong > 0 || committing)
             }
         }
     }
@@ -169,20 +173,40 @@ struct ImportSheet: View {
         default: panel.allowedContentTypes = [.json]
         }
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        do {
-            let data = try Data(contentsOf: url)
-            guard data.count <= 20 << 20 else {
-                error = String(localized: "That file is over 20 MB.")
-                return
+        reading = true
+        Task {
+            defer { reading = false }
+            switch await Self.read(url) {
+            case .tooLarge: error = String(localized: "That file is over 20 MB.")
+            case .unreadable: error = String(localized: "The file couldn't be read.")
+            case .read(let data):
+                if kind == .markdown {
+                    load(text: String(decoding: data, as: UTF8.self))
+                } else {
+                    load(data: data)
+                }
             }
-            if kind == .markdown {
-                load(text: String(decoding: data, as: UTF8.self))
-            } else {
-                load(data: data)
-            }
-        } catch {
-            self.error = String(localized: "The file couldn't be read.")
         }
+    }
+
+    /// The largest file an import reads.
+    nonisolated static let maximumSize = 20 << 20
+
+    enum FileRead: Sendable {
+        case read(Data)
+        case tooLarge
+        case unreadable
+    }
+
+    /// Reads the file off the main actor, checking its size before reading any of it.
+    nonisolated static func read(_ url: URL) async -> FileRead {
+        await Task.detached(priority: .userInitiated) {
+            guard let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize else { return .unreadable }
+            guard size <= Self.maximumSize else { return .tooLarge }
+            guard let data = try? Data(contentsOf: url) else { return .unreadable }
+            // It may have grown since.
+            return data.count <= Self.maximumSize ? .read(data) : .tooLarge
+        }.value
     }
 
     private func load(text: String) {
@@ -229,7 +253,10 @@ struct ImportSheet: View {
     }
 
     private func commit(_ preview: ImportPreview, split: Bool = true) {
+        guard !committing else { return }
+        committing = true
         Task {
+            defer { committing = false }
             do {
                 let result = try await model.services.imports.commit(preview, includeDuplicates: includeDuplicates,
                                                                      asMemories: asMemories, split: split, now: Date())
