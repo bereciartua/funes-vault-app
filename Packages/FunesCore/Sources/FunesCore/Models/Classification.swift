@@ -97,18 +97,24 @@ public struct PieceRecord: Sendable, Hashable, Codable {
 
 /// The always-available fallback (memory processing §5): title from the first line, kind `fact`,
 /// categories by keyword lists, sensitivity from the category default. Also the on-device
-/// sensitivity pre-screen before any cloud classification (model providers §5).
+/// sensitivity pre-screen before any cloud classification (model providers §5.2), which takes
+/// every matched category into account, not only the three proposed (`estimate`).
 public enum RulesClassifier {
     public static let engine = "rules"
 
+    /// Single words match whole words; entries with a space match whole-word phrases. Words with an
+    /// everyday meaning ("will", "paid", "court", "mg") are only listed in phrases that keep their
+    /// sensitive sense, so ordinary sentences aren't rated Sensitive.
     static let keywords: [String: [String]] = [
         "health": ["doctor", "medication", "medicine", "allergy", "allergic", "prescription", "hospital", "symptom",
                    "diagnosis", "therapy", "therapist", "dentist", "surgery", "vaccine", "blood", "pharmacy", "migraine",
-                   "asthma", "diabetes", "epipen", "mg"],
+                   "asthma", "diabetes", "epipen"],
         "finance": ["bank", "salary", "rent", "mortgage", "invoice", "tax", "taxes", "budget", "payment", "loan", "credit",
-                    "debt", "invest", "investment", "pension", "savings", "insurance", "expense", "expenses", "paid"],
-        "legal": ["contract", "lawyer", "attorney", "court", "lease", "lawsuit", "agreement", "notary", "visa", "custody",
-                  "will", "testament", "nda", "legal"],
+                    "debt", "invest", "investment", "pension", "savings", "insurance", "expense", "expenses", "paycheck",
+                    "get paid", "got paid"],
+        "legal": ["contract", "lawyer", "attorney", "lease", "lawsuit", "agreement", "notary", "visa", "custody",
+                  "testament", "nda", "legal", "my will", "a will", "last will", "living will", "in court", "to court",
+                  "court date", "court case", "court order", "court hearing"],
         "software_development": ["code", "repo", "repository", "git", "commit", "swift", "python", "typescript", "javascript",
                                  "api", "deploy", "bug", "build", "compiler", "xcode", "pnpm", "npm", "test", "tests",
                                  "refactor", "pull", "branch"],
@@ -124,20 +130,39 @@ public enum RulesClassifier {
     /// A proposal for `text`, among the vault's categories. Sensitivity is at least `hint`.
     public static func propose(_ text: String, categories: [MemoryCategory], hint: Sensitivity? = nil) -> CaptureProposal {
         let lower = text.lowercased()
-        let words = Set(lower.split { !$0.isLetter && !$0.isNumber }.map(String.init))
-        let known = Set(categories.map(\.key))
-        var scored: [(String, Int)] = []
-        for (key, list) in keywords where known.contains(key) {
-            let hits = list.filter { $0.contains(" ") ? lower.contains($0) : words.contains($0) }.count
-            if hits > 0 { scored.append((key, hits)) }
-        }
-        // Custom categories match by name.
-        for c in categories where !c.builtin && words.contains(c.name.lowercased()) { scored.append((c.key, 1)) }
-        scored.sort { $0.1 != $1.1 ? $0.1 > $1.1 : $0.0 < $1.0 }
+        let scored = matches(lower, categories: categories)
         let firstLine = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? text
         let proposal = CaptureProposal(
             title: firstLine, kind: .fact, categoryKeys: scored.prefix(3).map(\.0), sensitivity: hint ?? .low,
             timeLimited: timeWords.contains { lower.contains($0) })
         return proposal.validated(categories: categories, fallbackTitle: text)
+    }
+
+    /// The on-device sensitivity estimate (model providers §5.2): the proposal's sensitivity raised
+    /// to the default of **every** matched category, not only the three a proposal keeps, and to
+    /// `hint`. A health word among many project words still rates the text Sensitive.
+    public static func estimate(_ text: String, categories: [MemoryCategory], hint: Sensitivity? = nil) -> Sensitivity {
+        let known = Dictionary(categories.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+        let matched = matches(text.lowercased(), categories: categories).compactMap { known[$0.0]?.defaultSensitivity }
+        return ([propose(text, categories: categories, hint: hint).sensitivity, hint ?? .public] + matched).max() ?? .low
+    }
+
+    /// Every category with a keyword (or, for a custom category, its name) in `lower`, most hits first.
+    static func matches(_ lower: String, categories: [MemoryCategory]) -> [(String, Int)] {
+        let tokens = lower.split { !$0.isLetter && !$0.isNumber }.map(String.init)
+        let words = Set(tokens)
+        let spaced = " " + tokens.joined(separator: " ") + " "
+        let known = Set(categories.map(\.key))
+        var scored: [(String, Int)] = []
+        for (key, list) in keywords where known.contains(key) {
+            var hits = list.filter { $0.contains(" ") ? spaced.contains(" \($0) ") : words.contains($0) }.count
+            // A dose ("10 mg", "2.5mg") rather than the bare letters.
+            if key == "health", lower.contains(#/\d\s?mg\b/#) { hits += 1 }
+            if hits > 0 { scored.append((key, hits)) }
+        }
+        // Custom categories match by name.
+        for c in categories where !c.builtin && words.contains(c.name.lowercased()) { scored.append((c.key, 1)) }
+        scored.sort { $0.1 != $1.1 ? $0.1 > $1.1 : $0.0 < $1.0 }
+        return scored
     }
 }

@@ -209,7 +209,8 @@ enum DecisionPrompt {
     static func prompt(_ batch: Batch) -> String {
         var lines: [String] = []
         for (index, piece) in batch.pieces {
-            lines.append("<piece index=\"\(index)\" intent=\"\(piece.intent.rawValue)\">\(piece.title). \(piece.body)</piece>")
+            let text = PromptTags.neutralized("\(piece.title). \(piece.body)", tags: PromptTags.decision)
+            lines.append("<piece index=\"\(index)\" intent=\"\(piece.intent.rawValue)\">\(text)</piece>")
             let related = batch.related[index] ?? []
             if related.isEmpty {
                 lines.append("Related memories: none")
@@ -217,7 +218,9 @@ enum DecisionPrompt {
                 lines.append("Related memories:")
                 // Title and body apart, so an update's new body doesn't take the old title in.
                 for (alias, m) in related {
-                    lines.append("- \(alias) (created \(day(m.createdAt)), updated \(day(m.updatedAt))) title: \(m.title) | body: \(m.body)")
+                    lines.append("- \(alias) (created \(day(m.createdAt)), updated \(day(m.updatedAt))) "
+                                 + "title: \(PromptTags.neutralized(m.title, tags: PromptTags.decision)) | "
+                                 + "body: \(PromptTags.neutralized(m.body, tags: PromptTags.decision))")
                 }
             }
             lines.append("")
@@ -253,12 +256,12 @@ enum DecisionPrompt {
             var decision = LinkDecision(action: action, target: memory.id, targetVersion: memory.version, reason: reason,
                                         confidence: confidence)
             if action == .update {
-                let body = (d.body ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let body = PromptTags.restored((d.body ?? "").trimmingCharacters(in: .whitespacesAndNewlines), tags: PromptTags.decision)
                 guard !body.isEmpty, InputLimits.body.contains(InputLimits.length(of: body)), SecretScanner.scan(body).isEmpty else {
                     continue
                 }
                 decision.updatedBody = body
-                let title = (d.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let title = PromptTags.restored((d.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines), tags: PromptTags.decision)
                 if !title.isEmpty, InputLimits.title.contains(InputLimits.length(of: title)), SecretScanner.scan(title).isEmpty {
                     decision.updatedTitle = title
                 }

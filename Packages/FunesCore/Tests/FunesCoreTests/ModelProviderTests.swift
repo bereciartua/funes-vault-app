@@ -31,6 +31,8 @@ import Testing
         #expect(sent.url.absoluteString == "https://api.openai.com/v1/chat/completions" && sent.method == "POST")
         #expect(sent.headers["Authorization"] == "Bearer test-key")
         #expect(sent.json["model"] as? String == "gpt-small")
+        // OpenAI's reasoning models refuse `max_tokens` (review 2026-11-10).
+        #expect(sent.json["max_completion_tokens"] as? Int == Self.request.maxOutputTokens && sent.json["max_tokens"] == nil)
         let format = try #require(sent.json["response_format"] as? [String: Any])
         let schema = try #require(format["json_schema"] as? [String: Any])
         #expect(format["type"] as? String == "json_schema" && schema["strict"] as? Bool == true && schema["name"] as? String == "Answer")
@@ -50,6 +52,9 @@ import Testing
         #expect(try await client.listModels() == ["a-model", "b-model"])
         await #expect(throws: ProviderError.refused) { try await client.generate(Self.request) }
         #expect(stub.requests.allSatisfy { $0.headers["Authorization"] == nil })
+        // Other OpenAI-compatible servers keep `max_tokens`.
+        let chat = try #require(stub.requests.first { $0.url.path.hasSuffix("/chat/completions") })
+        #expect(chat.json["max_tokens"] as? Int == Self.request.maxOutputTokens && chat.json["max_completion_tokens"] == nil)
         #expect(stub.requests.first?.url.absoluteString == "http://127.0.0.1:11434/v1/models")
         #expect(client.locality == .localServer)
     }
@@ -123,7 +128,7 @@ import Testing
     @Test func localityDetection() {
         let none: @Sendable (String) -> [String] = { _ in [] }
         for host in ["127.0.0.1", "127.8.9.1", "10.1.2.3", "172.16.0.1", "172.31.255.255", "192.168.1.20", "169.254.1.1",
-                     "::1", "[::1]", "fc00::1", "fd12:3456::1", "fe80::1", "::ffff:10.0.0.1", "localhost", "ollama.localhost"] {
+                     "::1", "[::1]", "fc00::1", "fd12:3456::1", "fe80::1", "::ffff:10.0.0.1"] {
             #expect(LocalityDetector.isLocal(host: host, resolve: none), "\(host)")
         }
         for host in ["8.8.8.8", "172.32.0.1", "192.169.0.1", "100.64.0.1", "2001:4860::8888", "::ffff:8.8.8.8", "api.openai.com"] {
@@ -135,6 +140,29 @@ import Testing
         #expect(!LocalityDetector.isLocal(host: "mixed.example", resolve: mixed))
         #expect(ProviderEndpoint.anthropic().locality(resolve: none) == .cloud)
         #expect(ProviderEndpoint.ollama().locality(resolve: none) == .localServer)
+        // `localhost` names are local only when they resolve to loopback alone, not on their suffix.
+        let loopback: @Sendable (String) -> [String] = { _ in ["127.0.0.1", "::1"] }
+        let partly: @Sendable (String) -> [String] = { _ in ["127.0.0.1", "8.8.8.8"] }
+        for host in ["localhost", "ollama.localhost"] {
+            #expect(LocalityDetector.isLocal(host: host, resolve: loopback), "\(host)")
+            #expect(!LocalityDetector.isLocal(host: host, resolve: none), "\(host)")
+            #expect(!LocalityDetector.isLocal(host: host, resolve: privateOnly), "\(host)")
+            #expect(!LocalityDetector.isLocal(host: host, resolve: partly), "\(host)")
+        }
+        #expect(LocalityDetector.isLocal(host: "ollama.localhost"))  // the system resolver
+    }
+
+    /// An Anthropic Messages endpoint is cloud even on a local address: it's a forwarding proxy, so
+    /// the cloud limit and the daily cap apply (review 2026-11-10).
+    @Test func anthropicEndpointsAreAlwaysCloud() throws {
+        let local: @Sendable (String) -> [String] = { _ in ["127.0.0.1"] }
+        let proxy = ProviderEndpoint(id: "proxy", kind: .anthropic, baseURL: URL(string: "https://127.0.0.1:8443/v1")!)
+        #expect(proxy.locality(resolve: local) == .cloud)
+        #expect(try AnthropicClient(endpoint: proxy, apiKey: "k").locality == .cloud)
+        let plain = ProviderEndpoint(id: "proxy", kind: .anthropic, baseURL: URL(string: "http://localhost:8080/v1")!)
+        #expect(throws: ProviderError.insecureEndpoint) { try AnthropicClient(endpoint: plain, apiKey: "k") }
+        let compatible = ProviderEndpoint(id: "proxy", kind: .openAICompatible, baseURL: URL(string: "http://127.0.0.1:8080/v1")!)
+        #expect(compatible.locality(resolve: local) == .localServer)
     }
 
     @Test func schemasUseTheStrictSubset() {
@@ -402,6 +430,33 @@ import Testing
                                        to: client, cloudLimit: .upTo(.secret), timeout: .seconds(5))
         #expect(stub.requests.count == 1)
         #expect(CloudLimit.upTo(.restricted).needsConfirmation && !CloudLimit.upTo(.internal).needsConfirmation && !CloudLimit.never.needsConfirmation)
+    }
+
+    /// A rate limit outlives the router that hit it (model providers §6, review 2026-11-10): the
+    /// app builds a router per job, and they share one backoff. Without retry-after, an API waits a
+    /// minute.
+    @Test func aRateLimitCarriesAcrossRouters() async throws {
+        let calls = Mutex(0)
+        let stub = StubURLProtocol.Session { _ in
+            calls.withLock { $0 += 1 }
+            return .json([:], status: 429)
+        }
+        let client = try OpenAICompatibleClient(endpoint: .openAI(), model: "m", apiKey: "k", session: stub.session)
+        let backoff = ProviderBackoff()
+        let first = ModelRouter(classifier: client, onDevice: nil, backoff: backoff)
+        _ = await first.classify("Likes tea", categories: MemoryCategory.builtins, now: t0)
+        #expect(calls.withLock { $0 } == 1)
+        #expect(backoff.until("openai", now: t0) == t0 + ProviderBackoff.apiDefault)
+        let second = ModelRouter(classifier: client, onDevice: nil, backoff: backoff)
+        _ = await second.classify("Likes coffee", categories: MemoryCategory.builtins, now: t0 + 30)
+        await #expect(throws: ProviderError.rateLimited(retryAfter: 30)) {
+            _ = try await second.call(ClassificationPrompt.request("x", categories: MemoryCategory.builtins),
+                                      items: [ModelItem("x", sensitivity: .low)], with: client, requester: .user, now: t0 + 30)
+        }
+        #expect(calls.withLock { $0 } == 1)
+        // After it ends, the provider is asked again.
+        _ = await second.classify("Likes coffee", categories: MemoryCategory.builtins, now: t0 + 61)
+        #expect(calls.withLock { $0 } == 2)
     }
 
     /// An agent declaring Low can't get text the pre-screen finds Sensitive past the guard.

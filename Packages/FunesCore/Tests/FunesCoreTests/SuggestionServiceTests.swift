@@ -366,6 +366,36 @@ import Testing
         #expect(RulesClassifier.propose("The garden needs water this week", categories: custom).categoryKeys == ["garden"])
     }
 
+    /// Model providers §5.2: the pre-screen takes every matched category, not only the three a
+    /// proposal keeps (review 2026-11-10, fix-first #3).
+    @Test func thePreScreenCountsEveryMatchedCategory() {
+        let cats = MemoryCategory.builtins
+        let text = "Project roadmap for the team: sprint milestone, client meeting and launch deadline. "
+            + "Reply in a concise, formal tone with bullets and no emoji. Code review in the repo with swift tests. "
+            + "Also the doctor."
+        let p = RulesClassifier.propose(text, categories: cats)
+        #expect(!p.categoryKeys.contains("health") && p.sensitivity == .low)
+        #expect(RulesClassifier.estimate(text, categories: cats) == .sensitive)
+        #expect(ModelRouter.prescreen(text, categories: cats) == .sensitive)
+        #expect(ModelRouter.prescreen("Project roadmap for the team", categories: cats) == .low)
+        #expect(RulesClassifier.estimate("Likes jazz", categories: cats, hint: .restricted) == .restricted)
+    }
+
+    /// Everyday words aren't rated Sensitive; their sensitive phrases still are.
+    @Test func ambiguousWordsMatchOnlyInTheirSensitiveSense() {
+        let cats = MemoryCategory.builtins
+        for text in ["I will send the draft tomorrow", "Paid attention to the tone of the reply",
+                     "Plays on the tennis court on Sundays", "Drives an old MG roadster", "Free will is a hard problem"] {
+            #expect(ModelRouter.prescreen(text, categories: cats) < .sensitive, "\(text)")
+        }
+        for (text, key) in [("Updated my will with the notary's help", "legal"), ("Wrote a living will last year", "legal"),
+                            ("Has a court date in March", "legal"), ("Takes 20 mg of something every morning", "health"),
+                            ("Takes 2.5mg at night", "health"), ("Got paid on the 25th", "finance")] {
+            #expect(ModelRouter.prescreen(text, categories: cats) == .sensitive, "\(text)")
+            #expect(RulesClassifier.propose(text, categories: cats).categoryKeys.contains(key), "\(text)")
+        }
+    }
+
     @Test func validationDropsUnknownCategoriesAndRaisesSensitivity() {
         let p = CaptureProposal(title: "  ", kind: .goal, categoryKeys: ["nope", "legal", "legal", "health", "finance", "communication_style"],
                                 sensitivity: .public, timeLimited: false)

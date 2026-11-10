@@ -67,6 +67,9 @@ final class ModelSettings {
     private(set) var stored: AISettings
     /// Bumped when a key is saved or removed, so views reading `hasKey` refresh.
     private(set) var keyGeneration = 0
+    /// Rate-limit backoff shared by every router built here: routers are built per job, and a 429
+    /// or a plan limit has to outlive the job that hit it (model providers §6).
+    @ObservationIgnored let backoff = ProviderBackoff()
 
     init(defaults: UserDefaults, keys: any ProviderKeyStore) {
         self.defaults = defaults
@@ -283,19 +286,6 @@ final class ModelSettings {
 
     // MARK: Clients
 
-    /// The client for an account or plan's model; nil when it can't be made (no CLI, no key).
-    func generator(account id: String, model: String) -> (any GenerationProvider)? {
-        if let kind = PlanKind(rawValue: id) { return subscriptionClient(kind, model: model) }
-        return account(id).flatMap { try? client(for: $0, model: model) }
-    }
-
-    /// The client for a job's effective model; nil for Apple on-device, the rules or an
-    /// unresolved choice.
-    private func generator(_ model: EffectiveModel) -> (any GenerationProvider)? {
-        guard case let .model(account, model) = model else { return nil }
-        return generator(account: account, model: model)
-    }
-
     /// A client for an account's model, with its key from the Keychain.
     func client(for account: AIAccount, model: String) throws -> any GenerationProvider {
         try Self.client(for: account, model: model, key: try keys.key(for: account.endpoint.id))
@@ -327,10 +317,30 @@ final class ModelSettings {
     /// New memories' plan, when it's one.
     var newMemoriesPlan: PlanKind? { newMemoriesModel.flatMap { PlanKind(rawValue: $0.account) } }
 
-    /// The router for New memories: its model, then Apple on-device, then rules, with cloud
-    /// requests counted against `cap`.
-    func makeRouter(cap: CloudRequestCap?) -> ModelRouter {
-        ModelRouter(classifier: generator(resolve(.newMemories).model), cloudLimit: cloudLimit, cap: cap)
+    /// The router for New memories, built by the returned closure off the main actor (an HTTP
+    /// client resolves its host to learn its locality): its model, then Apple on-device, then
+    /// rules, with cloud requests counted against `cap`.
+    func newMemoriesRouterBuilder(cap: CloudRequestCap?) -> @Sendable () -> ModelRouter {
+        routerBuilder(resolve(.newMemories).model, cap: cap) { classifier, limit, cap, backoff in
+            ModelRouter(classifier: classifier, cloudLimit: limit, cap: cap, backoff: backoff)
+        }
+    }
+
+    /// A router builder for a job's effective model: what needs the main actor (the plan's CLI,
+    /// the Keychain) is read now; the client, which may resolve a host, is made when it runs. A
+    /// client that can't be made (no key) leaves the router without it, as `generator` does.
+    private func routerBuilder(_ effective: EffectiveModel, cap: CloudRequestCap?,
+                               make: @escaping @Sendable ((any GenerationProvider)?, CloudLimit, CloudRequestCap?, ProviderBackoff) -> ModelRouter)
+        -> @Sendable () -> ModelRouter {
+        let limit = cloudLimit, backoff = backoff
+        guard case let .model(id, model) = effective else { return { make(nil, limit, cap, backoff) } }
+        if let kind = PlanKind(rawValue: id) {
+            let client = subscriptionClient(kind, model: model)
+            return { make(client, limit, cap, backoff) }
+        }
+        guard let account = account(id) else { return { make(nil, limit, cap, backoff) } }
+        let key = (try? keys.key(for: account.endpoint.id)) ?? nil
+        return { make(try? Self.client(for: account, model: model, key: key), limit, cap, backoff) }
     }
 
     /// Who new captures go to when it isn't local and the cloud limit lets anything go (the
@@ -357,10 +367,19 @@ final class ModelSettings {
     /// The model id the tidy-up's auto-apply levels are measured on ("claude-opus-5-5", "haiku").
     var tidyUpModel: String? { resolve(.tidyUp).model.model }
 
-    /// The tidy-up's router: its model and no on-device fallback; with none, only the code-only
-    /// rules run. At the cap it waits for the next day (ADR-0022).
+    /// The tidy-up's router, built by the returned closure off the main actor: its model and no
+    /// on-device fallback; with none, only the code-only rules run. At the cap it waits for the
+    /// next day (ADR-0022).
+    func tidyUpRouterBuilder(cap: CloudRequestCap?) -> @Sendable () -> ModelRouter {
+        routerBuilder(resolve(.tidyUp).model, cap: cap) { classifier, limit, cap, backoff in
+            ModelRouter(classifier: classifier, onDevice: nil, cloudLimit: limit, cap: cap, backoff: backoff)
+        }
+    }
+
+    /// The tidy-up's router, built here on the main actor. Prefer `tidyUpRouterBuilder` run off it:
+    /// an HTTP account's client resolves its host.
     func makeTidyUpRouter(cap: CloudRequestCap?) -> ModelRouter {
-        ModelRouter(classifier: generator(resolve(.tidyUp).model), onDevice: nil, cloudLimit: cloudLimit, cap: cap)
+        tidyUpRouterBuilder(cap: cap)()
     }
 
     // MARK: Search answers (memory processing §10, FR-AI-17)
@@ -404,21 +423,24 @@ final class ModelSettings {
     /// to another (model providers §6). It throws the client's own error, such as `unauthorized`
     /// for an account without its key.
     func searchAnswerRouterBuilder(cap: CloudRequestCap?) -> @Sendable () throws -> ModelRouter {
-        let limit = cloudLimit
+        let limit = cloudLimit, backoff = backoff
         switch resolve(.searchAnswers).model {
         case .onDevice:
             return { ModelRouter(classifier: nil, onDevice: AppleFoundationGenerator.isAvailable ? AppleFoundationGenerator() : nil,
-                                 cloudLimit: limit, cap: cap) }
+                                 cloudLimit: limit, cap: cap, backoff: backoff) }
         case .rules, .unresolved:
-            return { ModelRouter(classifier: nil, onDevice: nil, cloudLimit: limit, cap: cap) }
+            return { ModelRouter(classifier: nil, onDevice: nil, cloudLimit: limit, cap: cap, backoff: backoff) }
         case let .model(id, model):
             if let kind = PlanKind(rawValue: id) {
                 let client = subscriptionClient(kind, model: model)
-                return { ModelRouter(classifier: client, onDevice: nil, cloudLimit: limit, cap: cap) }
+                return { ModelRouter(classifier: client, onDevice: nil, cloudLimit: limit, cap: cap, backoff: backoff) }
             }
-            guard let account = account(id) else { return { ModelRouter(classifier: nil, onDevice: nil, cloudLimit: limit, cap: cap) } }
+            guard let account = account(id) else {
+                return { ModelRouter(classifier: nil, onDevice: nil, cloudLimit: limit, cap: cap, backoff: backoff) }
+            }
             let key = try? keys.key(for: account.endpoint.id)
-            return { ModelRouter(classifier: try Self.client(for: account, model: model, key: key), onDevice: nil, cloudLimit: limit, cap: cap) }
+            return { ModelRouter(classifier: try Self.client(for: account, model: model, key: key), onDevice: nil, cloudLimit: limit,
+                                 cap: cap, backoff: backoff) }
         }
     }
 

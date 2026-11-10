@@ -34,11 +34,16 @@ final class ProcessingRunner {
             finder: RelatedMemoryFinder(store: environment.store, indexer: environment.indexer),
             configuration: { @MainActor [store = environment.store, activity = environment.activity] in
                 // Splitting needs the router even with proposals off; the job splits only with a
-                // local server or cloud model chosen (memory processing §5.2).
-                let split = preferences.splitNewMemories
-                let router = preferences.classifyCaptures || split
-                    ? settings.makeRouter(cap: settings.cap(store: store, activity: activity)) : nil
-                return NewMemoryProcessor.Configuration(router: router, split: split,
+                // local server or cloud model chosen (memory processing §5.2), and classifies only
+                // with proposals on (§5.1).
+                let split = preferences.splitNewMemories, classify = preferences.classifyCaptures
+                var router: ModelRouter?
+                if classify || split {
+                    // Built off the main actor: an HTTP account's client resolves its host.
+                    let build = settings.newMemoriesRouterBuilder(cap: settings.cap(store: store, activity: activity))
+                    router = await Task.detached(priority: .utility) { build() }.value
+                }
+                return NewMemoryProcessor.Configuration(router: router, classify: classify, split: split,
                                                         autoApply: NewMemoryAutoApply(level: preferences.applyAutomatically))
             },
             finished: { @MainActor router in settings.collectUsage(from: router) })
