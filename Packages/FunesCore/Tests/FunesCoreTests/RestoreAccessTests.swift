@@ -233,6 +233,51 @@ import Testing
         #expect(try f.value("SELECT count(*) FROM device WHERE id = ? AND revoked_at IS NOT NULL", [device.db]) == 1)
     }
 
+    /// Review: a current vault that can't be read doesn't stop the restore (it's often the reason
+    /// for one). It's kept as it was, and the copy is restored as with no vault (fail closed).
+    @Test func anUnreadableCurrentVaultIsKeptAndEveryoneIsSetUpAgain() async throws {
+        let f = try Folder()
+        let (agent, key) = try await f.agents.create(name: "Claude", kind: .claudeCode,
+                                                     access: Access(operations: [.read]), now: t0)
+        let device = UUID()
+        try f.addDevice(device)
+        try f.store.createMemory(MemoryDraft(title: "Kept", body: "In the backup", categoryKeys: ["personal_preferences"]), now: t0)
+        let backup = try f.backUp()
+        try f.store.writer.close()
+        for suffix in ["-wal", "-shm"] {
+            try? FileManager.default.removeItem(at: f.directory.appending(path: VaultStore.fileName + suffix))
+        }
+        let garbage = Data(repeating: 0x5A, count: 8_192)
+        try garbage.write(to: f.directory.appending(path: VaultStore.fileName))
+        let snapshot = try #require(try VaultStore.restoreBackup(backup, in: f.directory, now: t0.plus(days: 1)))
+        #expect(try Data(contentsOf: snapshot) == garbage)
+        f.store = try VaultStore.open(directory: f.directory)
+        f.agents = AgentService(store: f.store, keys: InMemoryAgentKeyStore(), activity: InMemoryActivityLog())
+
+        #expect(try f.value("SELECT count(*) FROM memory WHERE title = 'Kept'") == 1)
+        #expect(try await f.agents.authenticate(key: key.plaintext) == nil)
+        let restored = try #require(try await f.agents.agent(id: agent.id))
+        #expect(restored.removedAt != nil && restored.access.operations.isEmpty)
+        #expect(try f.value("SELECT count(*) FROM device WHERE id = ? AND revoked_at IS NOT NULL", [device.db]) == 1)
+    }
+
+    /// A current vault SQLite can copy but Funes can't migrate counts as no vault too.
+    @Test func aCurrentVaultThatCantBeMigratedCountsAsNone() async throws {
+        let f = try Folder()
+        let (_, key) = try await f.agents.create(name: "Claude", kind: .claudeCode, access: Access(operations: [.read]), now: t0)
+        let backup = try f.backUp()
+        try f.store.writer.close()
+        for suffix in ["", "-wal", "-shm"] {
+            try? FileManager.default.removeItem(at: f.directory.appending(path: VaultStore.fileName + suffix))
+        }
+        let broken = try DatabaseQueue(path: f.directory.appending(path: VaultStore.fileName).path)
+        try await broken.write { db in try db.execute(sql: "CREATE TABLE agent (unrelated INTEGER)") }
+        try broken.close()
+        try f.restore(backup)
+        #expect(try await f.agents.authenticate(key: key.plaintext) == nil)
+        #expect(try f.value("SELECT count(*) FROM agent WHERE removed_at IS NULL") == 0)
+    }
+
     @Test func anotherVaultsBackupLetsNobodyIn() async throws {
         let other = try Folder()
         let (_, key) = try await other.agents.create(name: "Claude", kind: .claudeCode, now: t0)

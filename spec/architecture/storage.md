@@ -317,7 +317,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 Restoring brings back memories, never credentials or access settings ([security](security-and-privacy.md) T38). A backup holds the agents' key and remote-token digests, their access and the paired devices as they were when it was taken, and authentication trusts the digests in the database. Restoring it as is would let back in a key, token or device removed or reset since, and widen access narrowed since.
 
 So at the next launch, before the vault opens (`VaultStore.restoreBackup`, `RestoreAccess`):
-1. The current vault is saved as a self-contained `Backups/pre-restore-…` backup. It's never written again: a scratch copy of it (`vault.sqlite.restoring-current`) is what gets migrated and read.
+1. The current vault is saved as a self-contained `Backups/pre-restore-…` backup. It's never written again: a scratch copy of it (`vault.sqlite.restoring-current`) is what gets migrated and read. A current vault that can't be read (often the reason to restore) is kept instead as its files are, WAL included, under the same name, and counts as no current vault in step 4.
 2. The chosen backup is copied in as `vault.sqlite.restoring` (leftovers of an earlier attempt, journals included, are deleted first) and migrated to this version's schema. A backup from a newer version is refused, and the vault is left as it was.
 3. In one transaction on the copy, if both are the same vault (`meta.vault_id`), the current vault's state replaces the backup's:
    - agents (keys, remote tokens, cloud access, pause, names, removal);
@@ -326,7 +326,7 @@ So at the next launch, before the vault opens (`VaultStore.restoreBackup`, `Rest
    - paired devices (revocation, approvals, doorbell tag).
 
    Agents and devices added since the backup are kept, so their keys and pairings keep working. Categories the backup lacks come along, because dropping an allow rule would widen an allow list (an empty one allows every category). A category deleted since comes back with the backup's memories, but its rules can't be rebuilt (deleting it moved its memories and their denies elsewhere), so every agent is denied it until the user decides.
-4. Without a current vault, or when the backup is another vault's, nothing can be carried forward. Every agent is removed (keys, remote tokens and access cleared) and every device revoked, so they're set up again.
+4. Without a current vault, when it can't be read or migrated (a newer version's is still refused, as in step 2), or when the backup is another vault's, nothing can be carried forward. Every agent is removed (keys, remote tokens and access cleared) and every device revoked, so they're set up again.
 5. Either way, requests waiting in the backup (`needs_approval`, `approved`) are denied with `approval_expired`, so an approval can't be answered or delivered a second time.
 6. The current vault's WAL and shared-memory files are deleted (what they held is in the pre-restore backup), then one `rename` puts the copy in place of `vault.sqlite`, and the scratch files go.
 
