@@ -22,7 +22,7 @@ How Funes uses AI models, how users choose them, and what protects their data. D
 | **Ollama** | Local | `/v1/embeddings` (v0.3, second index): `qwen3-embedding:0.6b` with built-in thresholds; others, e.g. `nomic-embed-text`, uncalibrated | `/v1/chat/completions` | Base URL (default `http://127.0.0.1:11434/v1`) |
 | **LM Studio** | Local | Same | Same | Base URL (default `http://127.0.0.1:1234/v1`) |
 | **OpenAI** | Cloud | `text-embedding-3-small` / `-large` (v0.3, second index, built-in thresholds) | Chat models | API key |
-| **Anthropic** | Cloud | — | Claude models (Messages API) | API key |
+| **Anthropic** | Cloud, always (a local base URL is a forwarding proxy to Anthropic) | — | Claude models (Messages API) | API key |
 | **Google Gemini** | Cloud | Gemini embedding models (OpenAI-compatible endpoint) | Gemini models | API key |
 | **OpenRouter** | Cloud | If offered | Many models | API key |
 | **Custom OpenAI-compatible** | Local or cloud (the user marks which) | If offered | Chat completions | Base URL, optional key, locality flag |
@@ -56,7 +56,7 @@ public protocol GenerationProvider: Sendable {
   - `RulesClassifier`, the always-available fallback and the capture pre-screen;
   - v0.3 ([ADR-0024](decisions/0024-subscription-providers.md)): `ClaudeCodeClient` and `CodexClient` (generation only), on a shared `CLIRunner`: finds the executable (BridgeKitCore's `ExecutableLocator`), checks its version and sign-in, and runs each call as a child process in a new empty temporary directory with API keys removed from its environment, a 90 s timeout, and the call's prompt on stdin. Each parses the CLI's JSON event stream, and stops the run and discards its output on any tool or command event (§5.8).
 - **Schemas** are a small `JSONSchema` type that serializes to the strict subset both APIs accept (closed objects, all properties required, no length or size constraints, which are re-checked by validation) and converts to Foundation Models' `DynamicGenerationSchema`.
-- **Locality:** a literal loopback, RFC 1918, link-local or IPv6 unique-local address, `localhost`, or a host whose every resolved address is one of those, is local; anything else is cloud. Cloud endpoints must be `https://`.
+- **Locality:** a literal loopback, RFC 1918, link-local or IPv6 unique-local address, or a host whose every resolved address is one of those, is local; `localhost` and `*.localhost` are local only when they resolve to loopback alone, never on their name; anything else is cloud. An Anthropic endpoint is cloud whatever its address. Cloud endpoints must be `https://`. The check is a lookup made when the client is built, separate from the one the connection makes, so a name whose answers change in between (DNS rebinding) isn't caught; literal addresses avoid that.
 - **`ModelRouter`:**
   - resolves the configured provider per task;
   - applies the guardrails (§5);

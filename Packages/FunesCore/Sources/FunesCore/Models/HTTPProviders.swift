@@ -34,9 +34,10 @@ public struct ProviderEndpoint: Sendable, Hashable, Codable {
     }
 
     /// Local server when the host is loopback or a private address and the user didn't mark it
-    /// as cloud; cloud otherwise (model providers §2).
+    /// as cloud; cloud otherwise (model providers §2). An Anthropic Messages endpoint is always
+    /// cloud: no local server speaks it, so a local address is a forwarding proxy to Anthropic.
     public func locality(resolve: @Sendable (String) -> [String] = LocalityDetector.resolve) -> Locality {
-        guard !markedCloud, let host = baseURL.host() else { return .cloud }
+        guard !markedCloud, kind != .anthropic, let host = baseURL.host() else { return .cloud }
         return LocalityDetector.isLocal(host: host, resolve: resolve) ? .localServer : .cloud
     }
 }
@@ -45,10 +46,23 @@ public struct ProviderEndpoint: Sendable, Hashable, Codable {
 public enum LocalityDetector {
     public static func isLocal(host: String, resolve: @Sendable (String) -> [String] = resolve) -> Bool {
         let h = host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
-        if h == "localhost" || h.hasSuffix(".localhost") { return true }
         if isLiteralAddress(h) { return isLocalAddress(h) }
         let addresses = resolve(h)
+        // `localhost` and `*.localhost` aren't local on their name alone: only when they resolve to
+        // loopback and nothing else.
+        if h == "localhost" || h.hasSuffix(".localhost") { return !addresses.isEmpty && addresses.allSatisfy(isLoopback) }
         return !addresses.isEmpty && addresses.allSatisfy(isLocalAddress)
+    }
+
+    /// 127.0.0.0/8, ::1, and ::ffff:127.x.x.x.
+    static func isLoopback(_ s: String) -> Bool {
+        var v4 = in_addr()
+        if inet_pton(AF_INET, s, &v4) == 1 { return withUnsafeBytes(of: v4.s_addr) { $0[0] } == 127 }
+        var v6 = in6_addr()
+        guard inet_pton(AF_INET6, s, &v6) == 1 else { return false }
+        let b = withUnsafeBytes(of: v6) { Array($0) }
+        if b[0..<15].allSatisfy({ $0 == 0 }) && b[15] == 1 { return true }
+        return b[0..<10].allSatisfy({ $0 == 0 }) && b[10] == 0xFF && b[11] == 0xFF && b[12] == 127
     }
 
     static func isLiteralAddress(_ s: String) -> Bool {
