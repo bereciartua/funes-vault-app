@@ -120,11 +120,20 @@ extension RequestPipeline {
                     // was open makes the grant fail closed (§7).
                     grant = OnceGrant(offeredByRequestID: offeredBy, agentRevision: offer.agentRevision, categoryKey: key)
                 }
-                if outcome.status == .needsApproval, let waiting = outcome.requestID {
+                if grant == nil, let waiting {
+                    // Always Allow changed the agent's access, which voids the waiting request anyway.
                     try? await disclosures.supersede(requestID: waiting, now: now())
                 }
-                outcome = try await disclosures.request(agentID: agent.id, input, now: now(), grant: grant,
-                                                        maxPendingApprovals: limit, via: via, credential: credential)
+                // Allow Once replaces the waiting request only once its grant checks out, in the
+                // same transaction; a stale grant (§7) leaves the waiting request and its panel.
+                let next = try await disclosures.request(agentID: agent.id, input, now: now(), grant: grant,
+                                                         replacing: grant == nil ? nil : waiting,
+                                                         maxPendingApprovals: limit, via: via, credential: credential)
+                if grant != nil, waiting != nil, next.status == .denied, next.reason == .policyChanged {
+                    // Keep the waiting request: the agent still gets its answer below.
+                } else {
+                    outcome = next
+                }
                 await Self.noteWaiting(outcome, in: context)
             }
         }

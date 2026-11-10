@@ -208,8 +208,11 @@ public final class DisclosureService: Sendable {
     /// over the cap the request is denied with `rate_limited`. `via` is for Activity only: the
     /// decision never depends on the channel (ADR-0018).
     /// `credential` fails closed with `unauthenticated`, before anything is stored.
+    /// `replacing` is the agent's waiting request that an Allow Once answer replaces (§7): it's
+    /// superseded in the same transaction, and only once the grant checks out, so a stale grant
+    /// leaves the waiting request as it was.
     public func request(agentID: UUID, _ input: MemoryRequest, now: Date, grant: OnceGrant? = nil,
-                        maxPendingApprovals: Int? = nil, via: ActivityEvent.Via = .mcp,
+                        replacing: UUID? = nil, maxPendingApprovals: Int? = nil, via: ActivityEvent.Via = .mcp,
                         credential: CredentialCheck? = nil) async throws -> RequestOutcome {
         try input.validate()
         let agent = try await store.writer.read { db in try AgentStore.fetch(db, id: agentID) }
@@ -235,6 +238,7 @@ public final class DisclosureService: Sendable {
             var delivered: [UUID]
             var withheldCategories: [String]
             var revision = 0
+            var replaced = false
         }
         let result = try await store.writer.write { db -> Result in
             // Re-read inside the transaction, so the decision and the stored snapshot agree.
@@ -254,12 +258,23 @@ public final class DisclosureService: Sendable {
                 return Result(outcome: RequestOutcome(status: .denied, requestID: requestID, reason: .policyChanged,
                                                       maxTokens: input.maxTokens), delivered: [], withheldCategories: [])
             }
+            var replacedRow = false
+            // The grant checks out: the request it replaces stops waiting, and stops counting
+            // against the cap below.
+            if let replacing {
+                try db.execute(sql: """
+                    UPDATE disclosure SET status = 'denied', reason = ?, decided_at = ?
+                    WHERE id = ? AND agent_id = ? AND status = 'needs_approval'
+                    """, arguments: [ReasonCode.policyChanged.rawValue, now, replacing.db, agentID.db])
+                replacedRow = db.changesCount > 0
+            }
             if let reason = PolicyEngine.gate(agent: agent, access: access, globalPaused: paused, now: now) {
                 row.status = .denied
                 row.reason = reason
                 try Self.insert(db, row)
                 return Result(outcome: RequestOutcome(status: .denied, requestID: requestID, reason: reason,
-                                                      maxTokens: input.maxTokens), delivered: [], withheldCategories: [])
+                                                      maxTokens: input.maxTokens), delivered: [], withheldCategories: [],
+                              replaced: replacedRow)
             }
             // The profile as it is now, never part of the decision or the snapshot (§3.10 rule 4).
             let profile = try ProfileStore.fetch(db).shared(access.profileFields)
@@ -303,7 +318,7 @@ public final class DisclosureService: Sendable {
                         try Self.insert(db, row)
                         outcome.reason = .rateLimited
                         outcome.profile = nil
-                        return Result(outcome: outcome, delivered: [], withheldCategories: [])
+                        return Result(outcome: outcome, delivered: [], withheldCategories: [], replaced: replacedRow)
                     }
                 }
                 row.status = .needsApproval
@@ -313,7 +328,15 @@ public final class DisclosureService: Sendable {
                 outcome.status = .needsApproval
             }
             return Result(outcome: outcome, delivered: delivered, withheldCategories: withheldCategories,
-                          revision: agent.revision)
+                          revision: agent.revision, replaced: replacedRow)
+        }
+
+        if result.replaced, let replacing {
+            tasks.withLock { _ = $0.removeValue(forKey: replacing) }
+            requestGrants.withLock { _ = $0.removeValue(forKey: replacing) }
+            activity.record(ActivityEvent(time: now, requestID: replacing, phase: .event, actor: .system, via: .app,
+                                          event: "approval", outcome: "replaced", reason: .policyChanged))
+            notify(replacing)
         }
 
         var outcome = result.outcome

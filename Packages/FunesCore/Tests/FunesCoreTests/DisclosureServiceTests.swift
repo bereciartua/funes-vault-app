@@ -457,6 +457,30 @@ import Testing
         #expect(try await fx.request().withheld == [.categoryNotAllowed: 1])
     }
 
+    /// Allow Once replaces the agent's waiting request only once the grant checks out (§7): a stale
+    /// grant leaves it waiting, a good one supersedes it in the same transaction.
+    @Test func allowOnceReplacesTheWaitingRequestOnlyWithAGoodGrant() async throws {
+        let fx = try ServiceFixture()
+        try fx.setAgent(asksForAccess: true)
+        try fx.setAccess { $0.allowedCategoryKeys = ["communication_style"] }
+        fx.retriever.set([fx.id("m1"), fx.id("m2")])
+        let waiting = try await fx.request()
+        let waitingID = try #require(waiting.requestID)
+        #expect(waiting.status == .needsApproval)
+        let revision = try await fx.store.writer.read { db in try AgentStore.fetch(db, id: fx.agentID)!.revision }
+        let input = MemoryRequest(task: "Draft my weekly status update", maxTokens: 1200)
+
+        let stale = OnceGrant(offeredByRequestID: waitingID, agentRevision: revision + 1, categoryKey: "project_context")
+        let refused = try await fx.disclosures.request(agentID: fx.agentID, input, now: fx.now, grant: stale, replacing: waitingID)
+        #expect(refused.status == .denied && refused.reason == .policyChanged)
+        #expect(try await fx.status(waitingID).0 == .needsApproval)
+
+        let good = OnceGrant(offeredByRequestID: waitingID, agentRevision: revision, categoryKey: "project_context")
+        let next = try await fx.disclosures.request(agentID: fx.agentID, input, now: fx.now, grant: good, replacing: waitingID)
+        #expect(next.status == .needsApproval && next.requestID != waitingID)
+        #expect(try await fx.status(waitingID) == (.denied, .policyChanged))
+    }
+
     /// The grant is bound to the agent's revision: any access change before delivery invalidates it.
     @Test func allowOnceGrantDropsWhenAccessChanges() async throws {
         let fx = try ServiceFixture()
