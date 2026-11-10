@@ -114,7 +114,7 @@ final class ModelSettings {
     /// An account's or plan's models.
     func models(of id: String) -> [String] { stored.models(of: id) ?? [] }
 
-    /// Resolved localities (a DNS lookup for host names) by endpoint, filled by
+    /// Localities by endpoint (from the URL alone), filled by
     /// `resolveLocalities()`. Keyed by the endpoint, not the account, so an account whose address
     /// or cloud flag just changed counts as cloud until its new endpoint is resolved (fail closed),
     /// and a lookup that finishes late only fills in the endpoint it looked up.
@@ -308,8 +308,7 @@ final class ModelSettings {
         try Self.client(for: account, model: model, key: try keys.key(for: account.endpoint.id))
     }
 
-    /// A client for an account's model with this key. Resolves the account's host, so off the main
-    /// actor where it can wait.
+    /// A client for an account's model with this key.
     nonisolated static func client(for account: AIAccount, model: String, key: String?) throws -> any GenerationProvider {
         switch account.endpoint.kind {
         case .anthropic:
@@ -334,8 +333,7 @@ final class ModelSettings {
     /// New memories' plan, when it's one.
     var newMemoriesPlan: PlanKind? { newMemoriesModel.flatMap { PlanKind(rawValue: $0.account) } }
 
-    /// The router for New memories, built by the returned closure off the main actor (an HTTP
-    /// client resolves its host to learn its locality): its model, then Apple on-device, then
+    /// The router for New memories, built by the returned closure off the main actor: its model, then Apple on-device, then
     /// rules, with cloud requests counted against `cap`.
     func newMemoriesRouterBuilder(cap: CloudRequestCap?) -> @Sendable () -> ModelRouter {
         routerBuilder(resolve(.newMemories).model, cap: cap) { classifier, limit, cap, backoff in
@@ -362,7 +360,6 @@ final class ModelSettings {
 
     /// Who new captures go to when it isn't local and the cloud limit lets anything go (the
     /// capture box says so; UX review F6): "Claude", "Anthropic". Nil when they stay on this Mac.
-    /// Locality needs a DNS lookup for host names, so it's worked out off the main thread.
     func cloudClassifierName() async -> String? {
         guard let chosen = newMemoriesModel, case .upTo = cloudLimit else { return nil }
         if let kind = PlanKind(rawValue: chosen.account) { return kind.plan }
@@ -429,8 +426,7 @@ final class ModelSettings {
     /// Whether the effective choice is a plan (its own sign-in and limits).
     var searchAnswersPlan: PlanKind? { searchAnswersAccount.flatMap(PlanKind.init(rawValue:)) }
 
-    /// Search answers' router, built by the returned closure off the main actor (an HTTP client
-    /// resolves its host to learn its locality): the chosen model, or Apple on-device; no fallback
+    /// Search answers' router, built by the returned closure off the main actor: the chosen model, or Apple on-device; no fallback
     /// to another (model providers §6). It throws the client's own error, such as `unauthorized`
     /// for an account without its key.
     func searchAnswerRouterBuilder(cap: CloudRequestCap?) -> @Sendable () throws -> ModelRouter {
@@ -498,8 +494,7 @@ final class ModelSettings {
     }
 
     /// What it takes to build the second index's client: the endpoint, model, key and any
-    /// calibrated thresholds. `make()` resolves the locality (a DNS lookup), so call it off the
-    /// main thread.
+    /// calibrated thresholds. `make()` builds the client.
     func embeddingRecipe(_ choice: EmbeddingChoice? = nil) -> EmbeddingRecipe? {
         guard let choice = choice ?? stored.embedding, let account = account(choice.provider), account.offersEmbeddings else { return nil }
         let id = OpenAICompatibleEmbedder.modelID(provider: account.endpoint.id, model: choice.model)

@@ -60,8 +60,8 @@ final class SearchAnswersController: SearchAnswering {
             return settings.executables[plan] == nil ? nil : SearchAnswerEngine(name: engineName, locality: .cloud, trigger: trigger)
         }
         guard let account = settings.account(id), !settings.needsKey(account) else { return nil }
-        // Never waits on DNS (status.get is the phone's 3 s probe): the last resolved locality, and
-        // cloud until the lookup in the background says otherwise (fail closed).
+        // Never waits (status.get is the phone's 3 s probe): the last known locality, and cloud
+        // until it's known (fail closed).
         let endpoint = account.endpoint
         if resolved[endpoint] == nil {
             Task.detached(priority: .utility) { [weak self] in

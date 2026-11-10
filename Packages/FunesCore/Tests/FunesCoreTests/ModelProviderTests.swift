@@ -127,7 +127,7 @@ import Testing
 
     @Test func localityDetection() {
         for host in ["127.0.0.1", "127.8.9.1", "10.1.2.3", "172.16.0.1", "172.31.255.255", "192.168.1.20", "169.254.1.1",
-                     "::1", "[::1]", "fc00::1", "fd12:3456::1", "fe80::1", "::ffff:10.0.0.1", "localhost", "ollama.localhost", "LOCALHOST"] {
+                     "::1", "[::1]", "fc00::1", "fd12:3456::1", "fe80::1", "::ffff:10.0.0.1", "localhost", "LOCALHOST"] {
             #expect(LocalityDetector.isLocal(host: host), "\(host)")
         }
         for host in ["8.8.8.8", "172.32.0.1", "192.169.0.1", "100.64.0.1", "2001:4860::8888", "::ffff:8.8.8.8", "api.openai.com"] {
@@ -141,7 +141,7 @@ import Testing
     /// "private" and the connection reach a public address (DNS rebinding). Names that resolve to
     /// private addresses, `.local` ones included, are cloud, with the cloud rules.
     @Test func hostNamesAreNeverLocalByLookup() throws {
-        for host in ["nas.home", "mac-mini.local", "localhost.example.com", "127.0.0.1.nip.io", "ollama.lan"] {
+        for host in ["nas.home", "mac-mini.local", "localhost.example.com", "127.0.0.1.nip.io", "ollama.lan", "ollama.localhost"] {
             #expect(!LocalityDetector.isLocal(host: host), "\(host)")
             let endpoint = ProviderEndpoint(id: "custom", kind: .openAICompatible, baseURL: URL(string: "https://\(host):11434/v1")!)
             #expect(endpoint.locality() == .cloud, "\(host)")

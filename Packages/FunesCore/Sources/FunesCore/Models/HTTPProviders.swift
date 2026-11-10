@@ -44,15 +44,14 @@ public struct ProviderEndpoint: Sendable, Hashable, Codable {
 }
 
 /// "Local" is decided from the URL alone (model providers §2): a literal loopback, private or
-/// link-local address, or `localhost` and `*.localhost`, which the system resolver answers itself
-/// with loopback. No other name is looked up: a lookup apart from the connection's could say
-/// "private" and the connection then reach a public address (DNS rebinding), so any other host
-/// name, `.local` ones included, is cloud.
+/// link-local address, or exactly `localhost`. No other name is looked up: a lookup apart from the
+/// connection's could say "private" and the connection then reach a public address (DNS
+/// rebinding), so any other host name, `.local` and `*.localhost` ones included, is cloud.
 public enum LocalityDetector {
     public static func isLocal(host: String) -> Bool {
         let h = host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
         if isLiteralAddress(h) { return isLocalAddress(h) }
-        return h == "localhost" || h.hasSuffix(".localhost")
+        return h == "localhost"
     }
 
     static func isLiteralAddress(_ s: String) -> Bool {

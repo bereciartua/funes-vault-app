@@ -39,7 +39,7 @@ final class ProcessingRunner {
                 let split = preferences.splitNewMemories, classify = preferences.classifyCaptures
                 var router: ModelRouter?
                 if classify || split {
-                    // Built off the main actor: an HTTP account's client resolves its host.
+                    // Built off the main actor, where building a client can wait.
                     let build = settings.newMemoriesRouterBuilder(cap: settings.cap(store: store, activity: activity))
                     router = await Task.detached(priority: .utility) { build() }.value
                 }
