@@ -89,7 +89,7 @@ public struct CompanionRequestEnvelope: Sendable, Equatable {
     // MARK: Mac side
 
     /// Verifies the envelope in the spec's order: the device (the caller looks up `deviceID` and
-    /// passes what it found, or nil), the clock (and the cache's start), the nonce, the signature,
+    /// passes what it found, or nil), the clock, the nonce, the signature,
     /// then the HPKE open. Reply to a refusal with `signedBody(deviceID:nonce:signer:)`.
     ///
     /// The nonce is remembered only once the signature verifies, so nobody without the device key
@@ -100,9 +100,6 @@ public struct CompanionRequestEnvelope: Sendable, Equatable {
         guard !device.isRevoked else { throw .revoked }
         let sent = Date(companionMilliseconds: timestamp)
         guard abs(sent.timeIntervalSince(now)) <= CompanionProtocol.maxClockSkew else { throw .clockSkew(serverTime: now) }
-        // Sent before this cache started (a relaunch): an earlier cache may have seen it. The
-        // phone resends with the Mac's clock, which is past the start.
-        if let start = replayCache.startedAt, sent < start { throw .clockSkew(serverTime: now) }
         guard !replayCache.isReplay(nonce: nonce, deviceID: deviceID, sentAt: sent, now: now) else { throw .replay }
 
         guard let sig = try? P256.Signing.ECDSASignature(rawRepresentation: signature),

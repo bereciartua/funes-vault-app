@@ -28,7 +28,7 @@ public final class CompanionRouter: Sendable {
         self.pairing = pairing
         self.handlers = handlers
         self.gate = gate
-        self.guardian = guardian ?? EnvelopeGuard(startedAt: clock())
+        self.guardian = guardian ?? EnvelopeGuard()
         self.clock = clock
     }
 
@@ -101,16 +101,67 @@ public final class CompanionRouter: Sendable {
 }
 
 /// Holds the replay cache, so the check and the record happen together. One per server, kept
-/// across settings changes; envelopes sent before it started are refused (`ReplayCache.startedAt`),
-/// since a cache from before a relaunch may have seen them.
+/// across settings changes, and with a journal on disk (`NonceJournal`) across relaunches: each
+/// nonce is written through before its call runs, and loaded back at launch. So replay
+/// protection doesn't depend on the phone's and the Mac's clocks agreeing.
+///
+/// Fails closed: a journal that exists but can't be read refuses every call (`unavailable`) for
+/// the replay window, on the monotonic clock, since its nonces could be replayed meanwhile; a
+/// nonce that can't be written refuses its call.
 public actor EnvelopeGuard {
-    private var cache: ReplayCache
+    private var cache = ReplayCache()
+    private var journal: NonceJournal?
+    private var blindUntil: ContinuousClock.Instant?
 
-    public init(startedAt: Date = Date()) { cache = ReplayCache(startedAt: startedAt) }
+    /// `journal` is the file to keep the nonces in; nil keeps them in memory only (tests).
+    public init(journal url: URL? = nil, now: Date = Date()) {
+        guard let url else { return }
+        var journal = NonceJournal(url: url)
+        do {
+            let entries = try journal.load(since: now.addingTimeInterval(-cache.window))
+            for entry in entries {
+                cache.record(nonce: entry.nonce, deviceID: entry.deviceID, sentAt: entry.sentAt, now: entry.recordedAt)
+            }
+            try? journal.rewrite(cache.entries)
+        } catch {
+            logger.error("The companion's nonce journal couldn't be read; refusing calls for the replay window")
+            blindUntil = .now + .seconds(cache.window)
+        }
+        self.journal = journal
+    }
+
+    /// The journal in the vault's folder.
+    public static func journalURL(dataDirectory: URL) -> URL { dataDirectory.appending(path: NonceJournal.fileName) }
 
     func open(_ envelope: CompanionRequestEnvelope, device: CompanionDeviceRecord?, macKey: P256.KeyAgreement.PrivateKey,
               now: Date) throws(CompanionAuthError) -> OpenedCompanionRequest {
-        try envelope.open(device: device, macHPKEKey: macKey, replayCache: &cache, now: now)
+        if let blindUntil {
+            guard ContinuousClock.now >= blindUntil else { throw .unavailable }
+            self.blindUntil = nil
+        }
+        do {
+            let opened = try envelope.open(device: device, macHPKEKey: macKey, replayCache: &cache, now: now)
+            try write(envelope, now: now)
+            return opened
+        } catch .decryptionFailed {
+            // Only after the signature verified, which is when the nonce was remembered.
+            try write(envelope, now: now)
+            throw .decryptionFailed
+        }
+    }
+
+    private func write(_ envelope: CompanionRequestEnvelope, now: Date) throws(CompanionAuthError) {
+        guard var journal else { return }
+        defer { self.journal = journal }
+        do {
+            try journal.append(ReplayCache.Entry(deviceID: envelope.deviceID, nonce: envelope.nonce,
+                                                 sentAt: Date(timeIntervalSince1970: Double(envelope.timestamp) / 1000), recordedAt: now))
+            let live = cache.entries
+            if journal.needsRewrite(live: live.count) { try journal.rewrite(live) }
+        } catch {
+            logger.error("The companion's nonce journal couldn't be written")
+            throw .unavailable
+        }
     }
 
     func forget(deviceID: UUID) { cache.remove(deviceID: deviceID) }

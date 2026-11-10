@@ -6,21 +6,32 @@ import Foundation
 /// device's floor: any later envelope sent at or before the floor counts as a replay. So a full
 /// cache refuses old envelopes instead of forgetting them (fail closed). Hold it in an actor.
 ///
-/// The cache lives in memory, so it starts empty at each launch. `startedAt` is when: an envelope
-/// sent before it may have been seen by an earlier cache, so `open` refuses it (as `clock_skew`,
-/// which a phone resends with the Mac's clock).
+/// The cache itself lives in memory; the Mac keeps its entries on disk too and records them
+/// back at launch (`entries`), so a relaunch doesn't forget what it saw.
 public struct ReplayCache: Sendable {
     public let window: TimeInterval
     public let capacityPerDevice: Int
-    /// Envelopes sent before this are refused. Nil only for caches that never forget (tests).
-    public let startedAt: Date?
     private var devices: [UUID: DeviceNonces] = [:]
 
+    /// One remembered nonce: whose, the envelope's own `ts`, and when the Mac recorded it.
+    public struct Entry: Sendable, Equatable {
+        public var deviceID: UUID
+        public var nonce: Data
+        public var sentAt: Date
+        public var recordedAt: Date
+
+        public init(deviceID: UUID, nonce: Data, sentAt: Date, recordedAt: Date) {
+            self.deviceID = deviceID
+            self.nonce = nonce
+            self.sentAt = sentAt
+            self.recordedAt = recordedAt
+        }
+    }
+
     public init(window: TimeInterval = CompanionProtocol.replayWindow,
-                capacityPerDevice: Int = CompanionProtocol.replayCapacityPerDevice, startedAt: Date? = nil) {
+                capacityPerDevice: Int = CompanionProtocol.replayCapacityPerDevice) {
         self.window = window
         self.capacityPerDevice = max(1, capacityPerDevice)
-        self.startedAt = startedAt
     }
 
     /// Whether an envelope with this nonce, sent at `sentAt`, must be refused.
@@ -42,6 +53,17 @@ public struct ReplayCache: Sendable {
 
     /// Nonces remembered for a device; for tests.
     public func count(deviceID: UUID) -> Int { devices[deviceID]?.seen.count ?? 0 }
+
+    /// Every nonce remembered, each device's in the order recorded. Recording them again, oldest
+    /// first, with `now` their `recordedAt`, gives the same cache (a full device's floor comes
+    /// back from its own overflow; under the rate limit a device never fills it).
+    public var entries: [Entry] {
+        devices.flatMap { deviceID, nonces in
+            nonces.order[nonces.head...].compactMap { item in
+                nonces.seen[item.nonce].map { Entry(deviceID: deviceID, nonce: item.nonce, sentAt: item.sentAt, recordedAt: $0) }
+            }
+        }
+    }
 
     private struct DeviceNonces: Sendable {
         /// Nonce → when the Mac recorded it.

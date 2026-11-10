@@ -226,33 +226,15 @@ import Testing
     }
 
     /// The replay cache outlives the router: a settings change makes a new router with the
-    /// server's guard, and a captured request is still a replay. A cache that started after an
-    /// envelope was sent (a relaunch) refuses it as `clock_skew`.
+    /// server's guard, and a captured request is still a replay.
     @Test func replaysAreRefusedAcrossRouters() async throws {
         let h = try CompanionHarness()
         let phone = try await h.pairedPhone()
-        let request = try CompanionRequest(StatusGet.self, params: EmptyParams()).encoded()
-        let sealed = try CompanionRequestEnvelope.seal(request, deviceID: phone.deviceID!, macHPKEKey: h.identity.hpkeKey.publicKey,
-                                                       signer: phone.signer, now: t0)
-        let http = CompanionHarness.request(CompanionProtocol.rpcPath, body: sealed.envelope.body)
+        let http = try h.sealedRequest(phone: phone, at: t0)
         #expect(await h.router.handle(http, transport: .lan).status == 200)
-
-        let clock = h.clock
-        let again = CompanionRouter(identity: h.identity, devices: h.services.devices, pairing: h.pairing, handlers: h.router.handlers,
-                                    gate: nil, guardian: h.router.guardian, clock: { clock.now })
+        let again = h.router(guardian: h.router.guardian)
         #expect(CompanionAuthError(body: await again.handle(http, transport: .lan).body) == .replay)
-
-        h.clock.advance(5)
-        let relaunched = CompanionRouter(identity: h.identity, devices: h.services.devices, pairing: h.pairing,
-                                         handlers: h.router.handlers, gate: nil, clock: { clock.now })
-        #expect(CompanionAuthError(body: await relaunched.handle(http, transport: .lan).body) == .clockSkew(serverTime: t0 + 5))
-        // A request sent now, on the Mac's clock, goes through.
-        let fresh = try CompanionRequestEnvelope.seal(request, deviceID: phone.deviceID!, macHPKEKey: h.identity.hpkeKey.publicKey,
-                                                      signer: phone.signer, now: clock.now)
-        #expect(await relaunched.handle(CompanionHarness.request(CompanionProtocol.rpcPath, body: fresh.envelope.body),
-                                        transport: .lan).status == 200)
     }
-
     @Test func tamperedEnvelopeIsRefused() async throws {
         let h = try CompanionHarness()
         let phone = try await h.pairedPhone()

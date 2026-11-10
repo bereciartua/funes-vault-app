@@ -199,15 +199,20 @@ func flippingBit(_ body: Data, _ key: String, byte: Int = 0) -> Data {
         #expect(CompanionAuthError(body: Data("nonsense".utf8)) == .invalidEnvelope)
     }
 
-    /// After a relaunch the cache is empty, so an envelope sent before it started could have been
-    /// seen already: it's refused as `clock_skew` with the Mac's time, which the phone resends at.
-    @Test func sentBeforeTheCacheStartedIsRefused() throws {
+    /// The Mac keeps the cache's entries across a relaunch: a cache rebuilt from them refuses
+    /// the same envelopes, whatever the clocks say (a phone 90 s fast included).
+    @Test func aCacheRebuiltFromItsEntriesRefusesTheSameReplays() throws {
         var f = CompanionFixture()
-        f.cache = ReplayCache(startedAt: f.now)
-        let before = try f.seal(at: f.now.addingTimeInterval(-30)).envelope.body
-        #expect(throws: CompanionAuthError.clockSkew(serverTime: f.now)) { try f.open(before) }
+        let fast = try f.seal(at: f.now.addingTimeInterval(90)).envelope.body
+        _ = try f.open(fast)
         _ = try f.open(try f.seal().envelope.body)
-        _ = try f.open(try f.seal(at: f.now.addingTimeInterval(1)).envelope.body)
+        var rebuilt = ReplayCache()
+        for entry in f.cache.entries.sorted(by: { $0.recordedAt < $1.recordedAt }) {
+            rebuilt.record(nonce: entry.nonce, deviceID: entry.deviceID, sentAt: entry.sentAt, now: entry.recordedAt)
+        }
+        #expect(rebuilt.entries.count == 2)
+        f.cache = rebuilt
+        #expect(throws: CompanionAuthError.replay) { try f.open(fast, at: f.now.addingTimeInterval(5)) }
     }
 
     /// Refusals are signed by the Mac and bound to the refused request's device and nonce (§3).
