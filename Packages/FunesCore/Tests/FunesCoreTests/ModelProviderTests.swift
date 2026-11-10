@@ -126,43 +126,44 @@ import Testing
     // MARK: Locality
 
     @Test func localityDetection() {
-        let none: @Sendable (String) -> [String] = { _ in [] }
         for host in ["127.0.0.1", "127.8.9.1", "10.1.2.3", "172.16.0.1", "172.31.255.255", "192.168.1.20", "169.254.1.1",
-                     "::1", "[::1]", "fc00::1", "fd12:3456::1", "fe80::1", "::ffff:10.0.0.1"] {
-            #expect(LocalityDetector.isLocal(host: host, resolve: none), "\(host)")
+                     "::1", "[::1]", "fc00::1", "fd12:3456::1", "fe80::1", "::ffff:10.0.0.1", "localhost", "ollama.localhost", "LOCALHOST"] {
+            #expect(LocalityDetector.isLocal(host: host), "\(host)")
         }
         for host in ["8.8.8.8", "172.32.0.1", "192.169.0.1", "100.64.0.1", "2001:4860::8888", "::ffff:8.8.8.8", "api.openai.com"] {
-            #expect(!LocalityDetector.isLocal(host: host, resolve: none), "\(host)")
+            #expect(!LocalityDetector.isLocal(host: host), "\(host)")
         }
-        let privateOnly: @Sendable (String) -> [String] = { _ in ["192.168.1.5", "fd00::5"] }
-        let mixed: @Sendable (String) -> [String] = { _ in ["192.168.1.5", "8.8.4.4"] }
-        #expect(LocalityDetector.isLocal(host: "nas.home", resolve: privateOnly))
-        #expect(!LocalityDetector.isLocal(host: "mixed.example", resolve: mixed))
-        #expect(ProviderEndpoint.anthropic().locality(resolve: none) == .cloud)
-        #expect(ProviderEndpoint.ollama().locality(resolve: none) == .localServer)
-        // `localhost` names are local only when they resolve to loopback alone, not on their suffix.
-        let loopback: @Sendable (String) -> [String] = { _ in ["127.0.0.1", "::1"] }
-        let partly: @Sendable (String) -> [String] = { _ in ["127.0.0.1", "8.8.8.8"] }
-        for host in ["localhost", "ollama.localhost"] {
-            #expect(LocalityDetector.isLocal(host: host, resolve: loopback), "\(host)")
-            #expect(!LocalityDetector.isLocal(host: host, resolve: none), "\(host)")
-            #expect(!LocalityDetector.isLocal(host: host, resolve: privateOnly), "\(host)")
-            #expect(!LocalityDetector.isLocal(host: host, resolve: partly), "\(host)")
+        #expect(ProviderEndpoint.anthropic().locality() == .cloud)
+        #expect(ProviderEndpoint.ollama().locality() == .localServer)
+    }
+
+    /// No host name is looked up (review of PR #97): a lookup apart from the connection's could say
+    /// "private" and the connection reach a public address (DNS rebinding). Names that resolve to
+    /// private addresses, `.local` ones included, are cloud, with the cloud rules.
+    @Test func hostNamesAreNeverLocalByLookup() throws {
+        for host in ["nas.home", "mac-mini.local", "localhost.example.com", "127.0.0.1.nip.io", "ollama.lan"] {
+            #expect(!LocalityDetector.isLocal(host: host), "\(host)")
+            let endpoint = ProviderEndpoint(id: "custom", kind: .openAICompatible, baseURL: URL(string: "https://\(host):11434/v1")!)
+            #expect(endpoint.locality() == .cloud, "\(host)")
+            // So plain HTTP is refused, as for any cloud endpoint.
+            let plain = ProviderEndpoint(id: "custom", kind: .openAICompatible, baseURL: URL(string: "http://\(host):11434/v1")!)
+            #expect(throws: ProviderError.insecureEndpoint) { try OpenAICompatibleClient(endpoint: plain, model: "m", apiKey: nil) }
         }
-        #expect(LocalityDetector.isLocal(host: "ollama.localhost"))  // the system resolver
+        // By address, the same server is local and may use plain HTTP.
+        let byAddress = ProviderEndpoint(id: "custom", kind: .openAICompatible, baseURL: URL(string: "http://192.168.1.5:11434/v1")!)
+        #expect(try OpenAICompatibleClient(endpoint: byAddress, model: "m", apiKey: nil).locality == .localServer)
     }
 
     /// An Anthropic Messages endpoint is cloud even on a local address: it's a forwarding proxy, so
     /// the cloud limit and the daily cap apply (review 2026-11-10).
     @Test func anthropicEndpointsAreAlwaysCloud() throws {
-        let local: @Sendable (String) -> [String] = { _ in ["127.0.0.1"] }
         let proxy = ProviderEndpoint(id: "proxy", kind: .anthropic, baseURL: URL(string: "https://127.0.0.1:8443/v1")!)
-        #expect(proxy.locality(resolve: local) == .cloud)
+        #expect(proxy.locality() == .cloud)
         #expect(try AnthropicClient(endpoint: proxy, apiKey: "k").locality == .cloud)
         let plain = ProviderEndpoint(id: "proxy", kind: .anthropic, baseURL: URL(string: "http://localhost:8080/v1")!)
         #expect(throws: ProviderError.insecureEndpoint) { try AnthropicClient(endpoint: plain, apiKey: "k") }
         let compatible = ProviderEndpoint(id: "proxy", kind: .openAICompatible, baseURL: URL(string: "http://127.0.0.1:8080/v1")!)
-        #expect(compatible.locality(resolve: local) == .localServer)
+        #expect(compatible.locality() == .localServer)
     }
 
     @Test func schemasUseTheStrictSubset() {

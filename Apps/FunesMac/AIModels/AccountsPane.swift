@@ -526,7 +526,7 @@ struct APIAccountPage: View {
                             changed.endpoint.markedCloud = on
                             settings.upsert(changed)
                         }
-                    Text(String(localized: "Funes treats any server that isn't on this Mac or your local network as cloud, whatever this says."))
+                    Text(String(localized: "Enter a local server by its address, like 127.0.0.1 or 192.168.1.20, or as localhost. Funes treats any other name, .local ones included, as cloud, whatever this says."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -716,7 +716,7 @@ struct AddAccountSheet: View {
                 SecureField(String(localized: "API key"), text: $key, prompt: Text(String(localized: "Stored in the Keychain")))
                 if account.endpoint.kind == .openAICompatible {
                     Toggle(String(localized: "It's a cloud service"), isOn: $account.endpoint.markedCloud)
-                    Text(String(localized: "Funes treats any server that isn't on this Mac or your local network as cloud, whatever this says."))
+                    Text(String(localized: "Enter a local server by its address, like 127.0.0.1 or 192.168.1.20, or as localhost. Funes treats any other name, .local ones included, as cloud, whatever this says."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 HStack {
