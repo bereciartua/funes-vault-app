@@ -376,12 +376,6 @@ final class ModelSettings {
         }
     }
 
-    /// The tidy-up's router, built here on the main actor. Prefer `tidyUpRouterBuilder` run off it:
-    /// an HTTP account's client resolves its host.
-    func makeTidyUpRouter(cap: CloudRequestCap?) -> ModelRouter {
-        tidyUpRouterBuilder(cap: cap)()
-    }
-
     // MARK: Search answers (memory processing §10, FR-AI-17)
 
     /// Whether Search answers are on (Off is the default).

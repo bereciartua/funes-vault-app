@@ -461,7 +461,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if NSApp.activationPolicy() != policy { NSApp.setActivationPolicy(policy) }
     }
 
-    /// FR-O-03: offered once per launch when the app runs from Downloads or a disk image.
+    /// FR-O-03: offered when the app runs from Downloads or a disk image, until Not Now; Agents ▸
+    /// Connect offers the move again before setting up an agent.
     private func offerMoveToApplications() {
         #if !DEBUG
         guard AppMover.location != .applications, !preferences.flag("MoveDeclined") else { return }

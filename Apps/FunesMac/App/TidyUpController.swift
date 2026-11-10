@@ -105,7 +105,8 @@ final class TidyUpController {
         running = true
         defer { running = false }
         let cap = settings.cap(store: environment.store, activity: environment.activity)
-        let router = settings.makeTidyUpRouter(cap: cap)
+        let build = settings.tidyUpRouterBuilder(cap: cap)
+        let router = await Task.detached(priority: .utility) { build() }.value
         do {
             let run = try await service.run(.init(router: router, autoApply: TidyUpAutoApply(level: preferences.applyAutomatically)))
             settings.collectUsage(from: router)
@@ -126,7 +127,8 @@ final class TidyUpController {
         memoryResults[memoryID] = nil
         defer { tidying = nil }
         let cap = settings.cap(store: environment.store, activity: environment.activity)
-        let router = settings.makeTidyUpRouter(cap: cap)
+        let build = settings.tidyUpRouterBuilder(cap: cap)
+        let router = await Task.detached(priority: .utility) { build() }.value
         do {
             let result = try await service.tidy(memoryID: memoryID, .init(router: router, honorDismissals: false))
             settings.collectUsage(from: router)
