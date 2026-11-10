@@ -227,12 +227,12 @@ public final class ModelRouter: Sendable {
     }
 
     /// The on-device sensitivity pre-screen (model providers §5.2): the rules classifier's
-    /// estimate (keyword categories and their defaults), raised to the user's hint and to a
-    /// declared level. A declared level never lowers it, so an agent can't get sensitive text
+    /// estimate (the defaults of every keyword category matched, not only the three proposed),
+    /// raised to the user's hint and to a declared level. A declared level never lowers it, so an agent can't get sensitive text
     /// past the guard by declaring it Low.
     public static func prescreen(_ text: String, categories: [MemoryCategory], declared: Sensitivity? = nil,
                                  hint: Sensitivity? = nil) -> Sensitivity {
-        max(RulesClassifier.propose(text, categories: categories, hint: hint).sensitivity, declared ?? .public, hint ?? .public)
+        max(RulesClassifier.estimate(text, categories: categories, hint: hint), declared ?? .public, hint ?? .public)
     }
 
     /// A classification proposal for a capture, suggestion or import item.

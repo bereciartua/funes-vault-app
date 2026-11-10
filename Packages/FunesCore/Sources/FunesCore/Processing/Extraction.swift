@@ -417,8 +417,7 @@ enum ExtractionValidator {
                 }
                 let modelSensitivity = p.sensitivity.flatMap(Sensitivity.init(name:))
                 // The on-device pre-screen of this piece's own words.
-                let prescreen = RulesClassifier.propose(([title, body] + evidence).joined(separator: "\n"), categories: categories)
-                    .sensitivity
+                let prescreen = RulesClassifier.estimate(([title, body] + evidence).joined(separator: "\n"), categories: categories)
                 let proposal = CaptureProposal(title: title, kind: p.kind.flatMap(MemoryKind.init(rawValue:)) ?? .fact,
                                                categoryKeys: p.categoryKeys ?? [], sensitivity: modelSensitivity ?? .low,
                                                timeLimited: p.timeLimited ?? false)
