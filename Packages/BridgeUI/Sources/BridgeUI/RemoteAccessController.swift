@@ -174,6 +174,7 @@ public final class RemoteAccessController {
     @ObservationIgnored private var tunnelCheckAgain = false
     @ObservationIgnored private var tunnelCheckStarted: Date?
     @ObservationIgnored private var timer: Timer?
+    @ObservationIgnored private var lastPowerCheck: Date?
 
     public init(defaults: UserDefaults, appName: String, names: RemoteNames, defaultPort: Int, host: RemoteAccessHost) {
         self.defaults = defaults
@@ -356,6 +357,19 @@ public final class RemoteAccessController {
 
     /// Only while Remote Access is on and the Mac is on power.
     public func updateKeepAwake() { host.setKeepAwake(enabled && keepAwake && host.onACPower()) }
+
+    /// How often keep-awake looks at the power source while it's wanted.
+    static let powerCheckInterval: TimeInterval = 10
+
+    /// The Mac can go on battery, or back on power, at any time: while keep-awake is wanted, the
+    /// clock re-checks every `powerCheckInterval`, so the assertion goes on battery and comes back
+    /// on power.
+    func checkPowerSource(now: Date = Date()) {
+        guard enabled, keepAwake else { return }
+        if let last = lastPowerCheck, now >= last, now.timeIntervalSince(last) < Self.powerCheckInterval { return }
+        lastPowerCheck = now
+        updateKeepAwake()
+    }
 
     // MARK: Address, port and secret path
 
@@ -829,6 +843,7 @@ public final class RemoteAccessController {
             notice = String(localized: "Remote Access turned off, as scheduled.")
             return
         }
+        checkPowerSource()
         let interval = TunnelCheckSchedule.interval(remoteOn: enabled, waitingForTunnel: waitingForTunnel)
         guard !tunnelCheckRunning,
               TunnelCheckSchedule.isDue(lastCheck: tunnelCheckStarted, now: Date(), interval: interval) else { return }

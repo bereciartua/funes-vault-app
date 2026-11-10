@@ -337,6 +337,7 @@
 
 **FR-L-03 Retention** · M · v0.1
 - Disclosures, changes and problems are kept 400 days (up to 20,000 rows); other rows 30 days. Compaction runs at launch and every 6 hours.
+- An agent's (or device's) identical refusals (same tool, channel, reason and counts) count as problems once an hour; the repeats in between are kept as other rows. A looping agent can't push approvals, refusals and access changes out of the 20,000.
 
 **FR-L-04 Notifications** · S · v0.1
 - Optional notifications:

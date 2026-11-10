@@ -151,9 +151,12 @@ public final class FunesRemoteServer {
         return settings.oauthContext.map { oauth.revokeConnections(notFor: $0.resource) } ?? 0
     }
 
-    /// Turning Remote Access off: the port closes at once and pairing ends. Cloud access, remote
-    /// tokens and connected apps are kept for next time.
+    /// Turning Remote Access off: the port closes at once and pairing ends, and remote calls still
+    /// in flight release and save nothing more (every agent's credential epoch moves). The app
+    /// withdraws remote Share panels. Cloud access, remote tokens and connected apps are kept for
+    /// next time.
     public func stop() {
+        epochs.bumpAll()
         service.stop()
         oauth.closePairing()
     }

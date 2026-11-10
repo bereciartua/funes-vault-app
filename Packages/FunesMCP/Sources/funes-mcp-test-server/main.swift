@@ -80,8 +80,8 @@ final class FakeResponder: FunesPresenter, @unchecked Sendable {
         }
     }
 
-    func open(requestID: UUID) async { lock.withLock { opened.append("request:" + requestID.uuidString.lowercased()) } }
-    func open(suggestionID: UUID) async {
+    func openInFunes(requestID: UUID) async { lock.withLock { opened.append("request:" + requestID.uuidString.lowercased()) } }
+    func openInFunes(suggestionID: UUID) async {
         lock.withLock { opened.append("suggestion:" + suggestionID.uuidString.lowercased()) }
     }
 

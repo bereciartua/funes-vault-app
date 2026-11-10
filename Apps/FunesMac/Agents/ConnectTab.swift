@@ -24,6 +24,7 @@ struct ConnectTab: View {
     @State private var confirmCopyKey = false
     @State private var confirmRotate = false
     @State private var keyMessage: String?
+    @State private var moveProblem: String?
 
     #if FUNES_UI_REVIEW
     /// The UI-review build sets this to open the one-click sheet through Add to <Agent>…'s own path.
@@ -51,6 +52,7 @@ struct ConnectTab: View {
                           systemImage: "info.circle")
                         .font(.callout).foregroundStyle(.secondary)
                 }
+                if !Self.installedInApplications { notInApplications }
                 if target.oneClick { oneClickCard }
                 snippetCard
                 details
@@ -77,7 +79,7 @@ struct ConnectTab: View {
             model.pendingOneClick = nil
             try? await Task.sleep(for: .milliseconds(450))
             let setup = agent.agentKind.setupAgent
-            if setup.oneClick {
+            if setup.oneClick, Self.installedInApplications {
                 target = setup
                 startPreview(setup)
             }
@@ -107,6 +109,37 @@ struct ConnectTab: View {
 
     private var context: SetupContext { model.setupContext(for: agent) }
 
+    // MARK: Where the app is
+
+    /// Setups point at the launcher inside this copy of the app. From Downloads, a disk image or
+    /// App Translocation's temporary copy that path breaks once the copy moves, is ejected or is
+    /// gone, so Add to <Agent>… waits until it's in Applications (as EK Bridge's
+    /// NotInApplicationsNotice). Debug builds run from the build folder and aren't held back.
+    static var installedInApplications: Bool {
+        #if DEBUG
+        true
+        #else
+        AppMover.location == .applications
+        #endif
+    }
+
+    private var notInApplications: some View {
+        Card {
+            Label(String(localized: "Move Funes Vault to Applications first"), systemImage: "exclamationmark.triangle.fill")
+                .font(.headline).foregroundStyle(.orange)
+            Text(String(localized: "It's running from \(AppMover.location.placeName(home: NSHomeDirectory())). Setups point at the launcher inside the app, so an agent set up from here stops connecting once this copy moves or goes away."))
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Button(String(localized: "Move to Applications")) {
+                if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { NSApp.terminate(nil) }) {
+                    moveProblem = problem
+                }
+            }
+            if let moveProblem {
+                Text(moveProblem).font(.callout).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
     // MARK: One click
 
     private var oneClickCard: some View {
@@ -117,7 +150,7 @@ struct ConnectTab: View {
             HStack {
                 Button(String(localized: "Add to \(target.displayName)…")) { startPreview(target) }
                     .buttonStyle(.borderedProminent)
-                    .disabled(preparing)
+                    .disabled(preparing || !Self.installedInApplications)
                 if preparing { ProgressView().controlSize(.small) }
                 if let result {
                     if result.alreadySetUp {
@@ -269,13 +302,8 @@ struct ConnectTab: View {
             keyMessage = String(localized: "The key file couldn't be read. Rotate the key to make a new one.")
             return
         }
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(key, forType: .string)
+        SecretClipboard.copy(key, clearAfter: 60)
         keyMessage = String(localized: "Copied. Funes clears the clipboard in 60 seconds.")
-        let count = NSPasteboard.general.changeCount
-        DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
-            if NSPasteboard.general.changeCount == count { NSPasteboard.general.clearContents() }
-        }
     }
 
     private func rotate() {

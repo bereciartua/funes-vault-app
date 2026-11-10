@@ -28,8 +28,8 @@ final class SilentPresenter: FunesPresenter {
     func showApproval(requestID: UUID, agentID: UUID) async {}
     func showSuggestion(suggestionID: UUID, agentID: UUID) async {}
     func askForAccess(_ prompt: AccessPrompt) async -> AccessAnswer { .notNow }
-    func open(requestID: UUID) async {}
-    func open(suggestionID: UUID) async {}
+    func openInFunes(requestID: UUID) async {}
+    func openInFunes(suggestionID: UUID) async {}
 }
 
 /// Phase 4b, task 4b.13 (ADR-0018 decision 2): `RequestPipeline`, and the FunesCore services and

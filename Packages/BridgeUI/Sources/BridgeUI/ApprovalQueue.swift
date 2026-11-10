@@ -244,6 +244,9 @@ public final class ApprovalQueue {
     public private(set) var expanded = Set<String>()
     /// Set by `close()`: the app is quitting, so nothing new is shown.
     public private(set) var isClosed = false
+    /// Bumped each time the panel becomes key, so Return and Esc wait out the arming delay again:
+    /// a key press meant for the app that was frontmost can't answer it.
+    public private(set) var keyGeneration = 0
 
     @ObservationIgnored private var completions = [UUID: (PanelAnswer) -> Void]()
     @ObservationIgnored private let clock: () -> Date
@@ -360,6 +363,9 @@ public final class ApprovalQueue {
     }
 
     public func generation(of id: UUID) -> Int { generations[id, default: 0] }
+
+    /// The panel became key (a click into it, Review Request, a card's Review).
+    public func panelBecameKey() { keyGeneration += 1 }
 
     public func isExpanded(row: String, in id: UUID) -> Bool { expanded.contains(key(id, row)) }
 

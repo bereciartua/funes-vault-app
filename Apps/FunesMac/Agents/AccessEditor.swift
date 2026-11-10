@@ -24,6 +24,13 @@ struct AccessEditor: View {
     }
     @State private var error: String?
     @State private var saved = false
+    @State private var confirmAllCategories = false
+
+    /// The draft clears an allow list the agent has: an empty list means every category, so the
+    /// save would widen its access, not narrow it. Saving asks first.
+    private var widensToAllCategories: Bool {
+        !agent.access.allowedCategoryKeys.isEmpty && access.allowedCategoryKeys.isEmpty
+    }
 
     private var dirty: Bool { draft.isEdited }
 
@@ -44,6 +51,11 @@ struct AccessEditor: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onChange(of: agent) { _, agent in draft = draft.refreshed(from: agent) }
+        .confirmationDialog(String(localized: "Let \(agent.name) use every category?"), isPresented: $confirmAllCategories) {
+            Button(String(localized: "Allow Every Category")) { save() }
+        } message: {
+            Text(String(localized: "No category is set to Allow any more, and an empty allow list means every category that isn't denied. To share nothing, turn Read off instead."))
+        }
     }
 
     // MARK: Sections
@@ -95,6 +107,9 @@ struct AccessEditor: View {
                  ? String(localized: "Empty allow list means all categories. Deny always wins.")
                  : String(localized: "Only allowed categories can be shared. Deny always wins."))
                 .font(.callout).foregroundStyle(.secondary)
+            if widensToAllCategories {
+                WarningLabel(text: String(localized: "With no category allowed, \(agent.name) can use every category that isn't denied, not just the ones it had."))
+            }
             Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 8) {
                 ForEach(model.categories) { category in
                     GridRow {
@@ -196,7 +211,7 @@ struct AccessEditor: View {
             }
             Spacer()
             Button(String(localized: "Revert"), action: reset).disabled(!dirty)
-            Button(String(localized: "Save")) { save() }
+            Button(String(localized: "Save")) { if widensToAllCategories { confirmAllCategories = true } else { save() } }
                 .keyboardShortcut("s", modifiers: .command)
                 .buttonStyle(.borderedProminent)
                 .disabled(!dirty || draft.isStale)
