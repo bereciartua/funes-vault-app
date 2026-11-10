@@ -411,6 +411,41 @@ struct OneClickReplaceTests {
         #expect(try String(contentsOfFile: home + "/.claude.json", encoding: .utf8) == original)
     }
 
+    /// Code review 2026-11-10: `~/.claude.json` linked from a dotfiles folder. The backup holds the
+    /// target's bytes (not a second link that follows the change), a failed add puts them back in
+    /// the target, and the link stays a link.
+    @Test func aSymlinkedConfigIsBackedUpAndRestoredByItsBytes() throws {
+        let (home, result, original) = try run(.claudeCode, file: ".claude.json") { home in
+            try Self.linkIntoDotfiles(home)
+            FileManager.default.createFile(atPath: home + "/add-fails", contents: nil)
+        }
+        defer { try? FileManager.default.removeItem(atPath: home) }
+        guard case .failure(let failure) = result else {
+            Issue.record("expected a failure")
+            return
+        }
+        #expect(failure.message.contains("previous setup was put back"))
+        #expect(try String(contentsOfFile: home + "/dotfiles/claude.json", encoding: .utf8) == original)
+        #expect(try FileManager.default.destinationOfSymbolicLink(atPath: home + "/.claude.json") == home + "/dotfiles/claude.json")
+    }
+
+    @Test func aSymlinkedConfigsBackupIsAFile() throws {
+        let (home, result, original) = try run(.claudeCode, file: ".claude.json") { try Self.linkIntoDotfiles($0) }
+        defer { try? FileManager.default.removeItem(atPath: home) }
+        let backup = try #require(try result.get().backup)
+        #expect((try? FileManager.default.destinationOfSymbolicLink(atPath: backup.path)) == nil, "the backup is a link")
+        #expect(try String(contentsOf: backup, encoding: .utf8) == original)
+        #expect(try String(contentsOfFile: home + "/dotfiles/claude.json", encoding: .utf8) == #"{"new":true}"#)
+    }
+
+    /// Moves `~/.claude.json` to `~/dotfiles/claude.json` and links it back.
+    static func linkIntoDotfiles(_ home: String) throws {
+        let manager = FileManager.default
+        try manager.createDirectory(atPath: home + "/dotfiles", withIntermediateDirectories: true)
+        try manager.moveItem(atPath: home + "/.claude.json", toPath: home + "/dotfiles/claude.json")
+        try manager.createSymbolicLink(atPath: home + "/.claude.json", withDestinationPath: home + "/dotfiles/claude.json")
+    }
+
     @Test func aSuccessfulReplaceKeepsABackup() throws {
         let (home, result, original) = try run(.claudeCode, file: ".claude.json") { _ in }
         defer { try? FileManager.default.removeItem(atPath: home) }
