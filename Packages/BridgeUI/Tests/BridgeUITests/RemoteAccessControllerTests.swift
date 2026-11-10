@@ -24,6 +24,36 @@ struct RemoteAccessControllerTests {
         return (controller, defaults, suite)
     }
 
+    /// Code review 2026-11-10: keep-awake follows the power source while Remote Access is on.
+    @Test func keepAwakeFollowsThePowerSource() {
+        let suite = "funes-remote-controller-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        final class Power {
+            var onAC = true
+            var held = [Bool]()
+        }
+        let power = Power()
+        var host = RemoteAccessHost.inert
+        host.onACPower = { power.onAC }
+        host.setKeepAwake = { power.held.append($0) }
+        let controller = RemoteAccessController(defaults: defaults, appName: "Funes Vault", names: .funes,
+                                                defaultPort: 47_627, host: host)
+        controller.reviewSet(enabled: true, origin: nil, tunnel: .tailscaleFunnel)
+        controller.setKeepAwake(true)
+        #expect(power.held.last == true)
+        let start = Date()
+        controller.checkPowerSource(now: start)
+        power.onAC = false
+        controller.checkPowerSource(now: start + 1)
+        #expect(power.held.last == true, "checked at most every 10 s")
+        controller.checkPowerSource(now: start + RemoteAccessController.powerCheckInterval)
+        #expect(power.held.last == false, "on battery: the assertion goes")
+        power.onAC = true
+        controller.checkPowerSource(now: start + 2 * RemoteAccessController.powerCheckInterval)
+        #expect(power.held.last == true, "back on power: it comes back")
+    }
+
     /// Funnel shared with other apps by path: the guide uses 443 unless it can't take the paths,
     /// the Tunnel row the address's port and the missing paths, and neither offers a command that
     /// would make another app's tailnet-only entry public.
