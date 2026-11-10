@@ -308,6 +308,7 @@ public final class ImportService: Sendable {
     public func preview(_ items: [ImportItem], source: ImportSource, newCategories: [FunesExport.Category] = []) async throws -> ImportPreview {
         try await store.writer.read { db in
             let existing = Set(try CategoryStore.all(db).map(\.key))
+            let vault = try MemoryStore.activeTextIndex(db)
             var seen: [String: Int] = [:]
             var entries: [ImportPreview.Entry] = []
             for item in items {
@@ -318,7 +319,7 @@ public final class ImportService: Sendable {
                     status = .blocked(findings)
                 } else if InputLimits.length(of: item.body) > InputLimits.body.upperBound {
                     status = .tooLong
-                } else if let dup = try MemoryStore.exactDuplicates(db, title: item.title, body: item.body).first {
+                } else if let dup = vault[MemoryStore.TextKey(title: item.title, body: item.body)] {
                     status = .duplicate(of: dup)
                 } else if seen[key] != nil {
                     status = .duplicate(of: nil)

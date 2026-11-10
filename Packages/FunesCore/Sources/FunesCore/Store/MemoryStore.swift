@@ -412,6 +412,29 @@ enum MemoryStore {
         text.lowercased().split(whereSeparator: \.isWhitespace).joined(separator: " ")
     }
 
+    /// A normalized title and body: the exact-duplicate key.
+    struct TextKey: Hashable {
+        var title: String
+        var body: String
+
+        init(title: String, body: String) {
+            self.title = MemoryStore.normalized(title)
+            self.body = MemoryStore.normalized(body)
+        }
+    }
+
+    /// The first active memory with each normalized title and body, read once: `exactDuplicates`
+    /// for many items at a time (an import preview).
+    static func activeTextIndex(_ db: Database) throws -> [TextKey: UUID] {
+        var index: [TextKey: UUID] = [:]
+        for row in try Row.fetchAll(db, sql: "SELECT id, title, body FROM memory WHERE status = 'active'") {
+            guard let id = row.uuid("id") else { continue }
+            let key = TextKey(title: row["title"], body: row["body"])
+            if index[key] == nil { index[key] = id }
+        }
+        return index
+    }
+
     /// Active memories whose normalized title and body equal these.
     static func exactDuplicates(_ db: Database, title: String, body: String, excluding: UUID? = nil) throws -> [UUID] {
         let t = normalized(title), b = normalized(body)
