@@ -149,6 +149,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                       maximumWait: FunesApprovals.panelSeconds + 15)
         let updater = SparkleUpdater(gate: gate)
         // A scheduled check never opens a window: what it found shows in the menu bar.
+        // Installing relaunches: it asks about unsaved edits first, and on Cancel waits for them.
+        updater.holdForDrafts = { [weak self, weak model] resume in
+            guard let self, let model, !self.confirmDiscardingDrafts() else { return false }
+            model.vault.whenNoDrafts = resume
+            return true
+        }
+        model.data.confirmQuit = { [weak self] in self?.confirmDiscardingDrafts() ?? true }
         updater.foundUpdateChanged = { [weak model, weak menu] found in
             model?.foundUpdate = found
             menu?.update()
@@ -274,6 +281,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// with its request id (mcp-server.md §7). The quit waits for them, 3 seconds at most. The panel
     /// queue closes, so no panel shows after this, even one a call was still building.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Unsaved edits live only in memory: a quit asks before dropping them.
+        guard confirmDiscardingDrafts() else { return .terminateCancel }
         guard let mcp, mcp.callsInProgress > 0 else { return .terminateNow }
         mcp.quit()
         environment?.approvals.queue.close()
@@ -544,6 +553,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return false
         }
         descriptor = fd
+        return true
+    }
+
+    /// True when no memory has unsaved edits, or the user chose to discard them (FR-V-02): they
+    /// aren't kept across a quit or relaunch.
+    private func confirmDiscardingDrafts() -> Bool {
+        guard let vault = model?.vault, !vault.draftIDs.isEmpty else { return true }
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = String(localized: "Discard unsaved changes?")
+        alert.informativeText = String(localized: "\(vault.draftIDs.count) memories have changes you haven't saved. Funes Vault doesn't keep them when it quits.")
+        alert.addButton(withTitle: String(localized: "Discard and Quit"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
+        NSApp.activate()
+        guard alert.runModal() == .alertFirstButtonReturn else { return false }
+        vault.discardDrafts()
         return true
     }
 

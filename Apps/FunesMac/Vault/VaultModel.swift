@@ -309,11 +309,29 @@ final class VaultModel: AnswerCardSource {
 
     func draft(_ id: UUID) -> Draft? { draftStore[id] }
 
+    /// Called once when the last draft goes (saved, reverted or discarded): an update waiting
+    /// for them relaunches then.
+    @ObservationIgnored var whenNoDrafts: (() -> Void)?
+
     /// Keeps a memory's unsaved edits, or forgets them (nil).
     func setDraft(_ draft: Draft?, for id: UUID) {
         draftStore[id] = draft
         if draft != nil, !draftIDs.contains(id) { draftIDs.insert(id) }
         if draft == nil, draftIDs.contains(id) { draftIDs.remove(id) }
+        if draftIDs.isEmpty, let waiting = whenNoDrafts {
+            whenNoDrafts = nil
+            waiting()
+        }
+    }
+
+    /// Quitting with them confirmed: they're dropped, so nothing asks again.
+    func discardDrafts() {
+        draftStore = [:]
+        draftIDs = []
+        if let waiting = whenNoDrafts {
+            whenNoDrafts = nil
+            waiting()
+        }
     }
 
     var filter: MemoryFilter {

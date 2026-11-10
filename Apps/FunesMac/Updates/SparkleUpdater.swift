@@ -18,6 +18,9 @@ private let logger = Logger(subsystem: "com.funesvault.mac", category: "updates"
 @MainActor
 final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate {
     var foundUpdateChanged: (FoundUpdate?) -> Void = { _ in }
+    /// Before the relaunch: true holds it while unsaved edits remain (the user chose Cancel), and
+    /// the app calls `resume` once they're saved or reverted.
+    var holdForDrafts: (_ resume: @escaping () -> Void) -> Bool = { _ in false }
 
     private let gate: UpdateRelaunchGate
     private var controller: SPUStandardUpdaterController!
@@ -90,7 +93,11 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
 
     func updater(_ updater: SPUUpdater, shouldPostponeRelaunchForUpdate item: SUAppcastItem,
                  untilInvokingBlock installHandler: @escaping () -> Void) -> Bool {
-        gate.postpone(installHandler)
+        let held = holdForDrafts { [weak self] in
+            // Then the approvals' wait, as without edits.
+            guard let self, self.gate.postpone(installHandler) else { return installHandler() }
+        }
+        return held || gate.postpone(installHandler)
     }
 
     // MARK: SPUStandardUserDriverDelegate

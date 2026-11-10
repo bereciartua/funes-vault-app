@@ -18,6 +18,8 @@ final class DataOperations {
     /// The weekly integrity check failed: Settings ▸ Data offers a restore.
     private(set) var integrityProblem = false
     var integrityFailed: () -> Void = {}
+    /// Before a relaunch: false when the user kept unsaved edits that a quit would drop.
+    var confirmQuit: () -> Bool = { true }
 
     init(environment: VaultEnvironment, preferences: Preferences) {
         self.environment = environment
@@ -89,6 +91,7 @@ final class DataOperations {
     /// Restoring replaces the open database, so it happens at the next launch, before the vault
     /// opens: this writes the marker and relaunches.
     func restore(_ backup: URL) throws {
+        guard confirmQuit() else { return }
         let marker = environment.dataFolder.appendingPathComponent(Self.restoreMarker)
         let data = try JSONSerialization.data(withJSONObject: ["backup": backup.lastPathComponent])
         try data.write(to: marker, options: .atomic)
@@ -140,6 +143,7 @@ final class DataOperations {
     /// so no service still running writes them back; this writes the marker, removes the provider
     /// keys and relaunches. Throws, deleting nothing, when the marker can't be written.
     func eraseAll(modelSettings: ModelSettings) throws {
+        guard confirmQuit() else { return }
         let marker = environment.dataFolder.appendingPathComponent(Self.eraseMarker)
         try Data().write(to: marker, options: .atomic)
         for account in modelSettings.accounts { modelSettings.removeAccount(account.id) }
