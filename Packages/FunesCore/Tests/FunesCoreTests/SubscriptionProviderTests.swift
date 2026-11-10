@@ -94,6 +94,8 @@ import Testing
         #expect(!args.contains { $0.contains("green tea") })
         for key in CLIRunner.strippedVariables { #expect(run.environment[key] == nil) }
         #expect(run.environment["HOME"] == "/Users/test" && run.environment["DISABLE_TELEMETRY"] == "1")
+        // The CLI's own directory and Homebrew's come first, so `#!/usr/bin/env node` finds node.
+        #expect(run.environment["PATH"] == "/Users/test/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin")
         #expect(run.timeout == .seconds(90))
         // A new empty directory per call, outside the repository, gone afterwards.
         let (dir, empty) = try #require(cli.directories.withLock { $0.first })

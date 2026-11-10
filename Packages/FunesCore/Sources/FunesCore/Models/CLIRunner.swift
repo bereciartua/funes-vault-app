@@ -203,11 +203,23 @@ public enum CLIRunner {
 
     static let logger = Logger(subsystem: "com.funesvault.mac", category: "models")
 
-    /// The environment a call gets: Funes's own, minus API keys, plus `extra`.
+    /// Where Homebrew puts `node` and npm's global commands (Apple silicon, then Intel).
+    static let toolDirectories = ["/opt/homebrew/bin", "/usr/local/bin"]
+
+    /// The environment a call gets: Funes's own, minus API keys, plus `extra`. An app started from
+    /// the Finder has a minimal `PATH`, so an npm-installed CLI (`#!/usr/bin/env node`) wouldn't
+    /// find `node`: the executable's own directory and Homebrew's go first.
     public static func environment(_ base: [String: String] = ProcessInfo.processInfo.environment,
-                                   extra: [String: String] = [:]) -> [String: String] {
+                                   executable: String? = nil, extra: [String: String] = [:]) -> [String: String] {
         var env = base
         for key in strippedVariables { env[key] = nil }
+        if let executable {
+            let own = (executable as NSString).deletingLastPathComponent
+            var path: [String] = []
+            for dir in [own] + toolDirectories + (base["PATH"] ?? "").split(separator: ":").map(String.init)
+            where !dir.isEmpty && !path.contains(dir) { path.append(dir) }
+            env["PATH"] = path.joined(separator: ":")
+        }
         env.merge(extra) { _, new in new }
         return env
     }

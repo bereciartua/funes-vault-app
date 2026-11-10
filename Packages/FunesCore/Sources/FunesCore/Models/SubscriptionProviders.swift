@@ -86,7 +86,7 @@ public struct ClaudeCodeClient: SubscriptionClient {
         baseEnvironment = environment
     }
 
-    var environment: [String: String] { CLIRunner.environment(baseEnvironment, extra: Self.quiet) }
+    var environment: [String: String] { CLIRunner.environment(baseEnvironment, executable: executable, extra: Self.quiet) }
 
     /// The call's arguments (model providers §5.8).
     func arguments(instructions: String, schema: JSONSchema) -> [String] {
@@ -316,7 +316,7 @@ public struct CodexClient: SubscriptionClient {
         baseEnvironment = environment
     }
 
-    var environment: [String: String] { CLIRunner.environment(baseEnvironment) }
+    var environment: [String: String] { CLIRunner.environment(baseEnvironment, executable: executable) }
 
     var disableArguments: [String] { Self.disabledFeatures.flatMap { ["--disable", $0] } }
 
