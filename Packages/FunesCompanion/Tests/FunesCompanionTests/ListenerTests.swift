@@ -215,12 +215,14 @@ import Testing
         let listener = CompanionListener(port: port, modes: [.tunnel], bonjour: nil, limits: limits) { _, _ in HTTPResponse(status: 204) }
         defer { listener.stop() }
         _ = try await start(listener)
+        // The kernel hands connections over in order, so these two are taken before the third.
         let first = await openIdle(port: port), second = await openIdle(port: port)
-        try await Task.sleep(for: .milliseconds(200))
         #expect(try await post(port: port, path: "/hello") == nil)
         first.cancel()
-        try await Task.sleep(for: .milliseconds(200))
-        #expect(try await post(port: port, path: "/hello") == 204)
+        // Its slot comes back once the listener sees it close.
+        var status: Int?
+        for _ in 0..<50 where status == nil { status = try await post(port: port, path: "/hello") }
+        #expect(status == 204)
         second.cancel()
     }
 
