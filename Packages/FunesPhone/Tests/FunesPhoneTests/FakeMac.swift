@@ -150,6 +150,8 @@ final class RoutedTransport: CompanionTransport, @unchecked Sendable {
         case status(Int)
         /// Any host answering with this status and body: a hostile one, say.
         case reply(Int, Data)
+        /// The Mac, once the gate opens.
+        case held(Gate, FakeMac)
     }
 
     private let lock = NSLock()
@@ -187,6 +189,9 @@ final class RoutedTransport: CompanionTransport, @unchecked Sendable {
             return TransportResponse(status: code, body: Data())
         case let .reply(status, body):
             return TransportResponse(status: status, body: body)
+        case let .held(gate, mac):
+            await gate.pass()
+            return mac.handle(path: url.path(), body: body)
         }
     }
 

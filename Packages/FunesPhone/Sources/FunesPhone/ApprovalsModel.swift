@@ -15,6 +15,9 @@ public final class ApprovalsModel {
     public private(set) var phase = Phase.idle
     /// One `approvals.list` at a time: a foreground, a network change and a ring can come together.
     private var loading = false
+    /// A forced load (a ring, an answer) asked for while one was running: that one goes again
+    /// once it's back, since its answer may predate what the ring announced.
+    private var forceAgain = false
     /// When the list last came back. Each call is a row in the Mac's Activity, so a read this
     /// recent is enough unless something says the list changed (a ring, an answer).
     private var loadedAt: Date?
@@ -37,19 +40,25 @@ public final class ApprovalsModel {
 
     /// `approvals.list`, unless it came back less than `freshFor` ago; `force` after a ring.
     public func load(force: Bool = false) async {
-        guard !loading else { return }
+        guard !loading else {
+            if force { forceAgain = true }
+            return
+        }
         if !force, phase == .loaded, let loadedAt, clock().timeIntervalSince(loadedAt) < Self.freshFor { return }
         loading = true
         defer { loading = false }
-        if items.isEmpty { phase = .loading }
-        do {
-            items = try await caller.call(ApprovalsList.self, EmptyParams()).items.sorted { $0.expiresAt < $1.expiresAt }
-            loadedAt = clock()
-            phase = .loaded
-        } catch {
-            if items.isEmpty { phase = .failed(error) }
-            onFailure(error)
-        }
+        repeat {
+            forceAgain = false
+            if items.isEmpty { phase = .loading }
+            do {
+                items = try await caller.call(ApprovalsList.self, EmptyParams()).items.sorted { $0.expiresAt < $1.expiresAt }
+                loadedAt = clock()
+                phase = .loaded
+            } catch {
+                if items.isEmpty { phase = .failed(error) }
+                onFailure(error)
+            }
+        } while forceAgain
     }
 
     /// Answered or closed in its panel.
@@ -60,6 +69,7 @@ public final class ApprovalsModel {
         items = []
         phase = .idle
         loadedAt = nil
+        forceAgain = false
     }
 }
 

@@ -172,15 +172,19 @@ public actor CompanionClient {
     /// `status.get` on the cached address, or address selection when there is none (or `fresh`).
     /// The reachability probe the app sends on every foreground.
     public func status(fresh: Bool = false) async throws(CompanionClientError) -> MacConnection {
-        do { return try await checkStatus(fresh: fresh) } catch {
+        let paired = try loadPaired()
+        do { return try await checkStatus(fresh: fresh, paired: paired) } catch {
             // Removed on the Mac: the name it said to call the user by goes now (ADR-0026).
-            if error == .refused(.revoked) || error == .refused(.unknownDevice) { remember(calledName: nil) }
+            if error == .refused(.revoked) || error == .refused(.unknownDevice) { remember(calledName: nil, for: paired) }
             throw error
         }
     }
 
-    private func checkStatus(fresh: Bool) async throws(CompanionClientError) -> MacConnection {
-        let paired = try loadPaired()
+    /// Whether `paired` is still this iPhone's pairing: not unpaired, or paired again, while a
+    /// call for it was on its way. What such a call learnt stays out of the new pairing.
+    private func isCurrent(_ paired: Paired) -> Bool { self.paired?.record.deviceID == paired.record.deviceID }
+
+    private func checkStatus(fresh: Bool, paired: Paired) async throws(CompanionClientError) -> MacConnection {
         if !fresh, let address = currentAddress {
             do { return try await probe(address, paired: paired, timeout: Self.probeTimeout) } catch {
                 guard error.isNoAnswer else { throw Self.clientError(error) }
@@ -221,13 +225,14 @@ public actor CompanionClient {
     private func probe(_ address: MacAddress, paired: Paired, timeout: TimeInterval) async throws(SendFailure) -> MacConnection {
         let start = ContinuousClock.now
         let status = try await send(StatusGet.self, EmptyParams(), to: address, paired: paired, timeout: timeout)
-        remember(calledName: status.calledName)
+        remember(calledName: status.calledName, for: paired)
         return MacConnection(address: address, status: status, roundTrip: ContinuousClock.now - start)
     }
 
-    /// Keeps the Mac's latest called name in the pairing record, unless it was forgotten meanwhile.
-    private func remember(calledName: String?) {
-        guard var current = paired, current.record.calledName != calledName else { return }
+    /// Keeps the Mac's latest called name in the pairing record, unless it was forgotten (or
+    /// replaced by a new pairing) meanwhile.
+    private func remember(calledName: String?, for pairing: Paired) {
+        guard isCurrent(pairing), var current = paired, current.record.calledName != calledName else { return }
         current.record.calledName = calledName
         do {
             try recordStore.save(current.record)
@@ -269,7 +274,7 @@ public actor CompanionClient {
                 let offset = serverTime.timeIntervalSince(clock())
                 // A Mac a day or more away isn't followed: the refusal stands.
                 guard abs(offset) <= CompanionProtocol.maxClockOffset else { throw .client(.refused(refusal)) }
-                clockOffset = offset
+                if isCurrent(paired) { clockOffset = offset }
                 return try await send(call, params, to: address, paired: paired, timeout: timeout, skewRetry: false)
             }
             throw .client(.refused(refusal))
@@ -291,6 +296,9 @@ public actor CompanionClient {
         let race = await race(saved: paired.record.addresses.macAddresses, tag: paired.record.bonjourTag) { address throws(SendFailure) in
             try await self.probe(address, paired: paired, timeout: Self.probeTimeout)
         }
+        // Unpaired or paired again meanwhile: this was about the old pairing, so none of it is
+        // kept, and the caller hears nothing it could take for the new one's state.
+        guard isCurrent(paired) else { throw self.paired == nil ? .notPaired : .unreachable(localNetworkDenied: false) }
         lastProbes = race.probes
         if let (address, connection) = race.winner {
             cached = (address, clock())
