@@ -236,6 +236,19 @@ import Testing
         #expect(try await fx.disclosures.deliver(requestID: id, agentID: fx.agentID, now: fx.now).status == .delivered)
     }
 
+    /// The same through AgentService, as the app pauses: pausing doesn't change the revision, so
+    /// the approval made before it is still retrieved after resuming (access policy §3.7, FR-D-08).
+    @Test func pausingThroughAgentServiceKeepsTheApproval() async throws {
+        let fx = try ServiceFixture()
+        let agents = AgentService(store: fx.store, keys: InMemoryAgentKeyStore(), activity: fx.activity)
+        let id = try await fx.approved(["m1"])
+        _ = try await agents.pause(agentID: fx.agentID, now: fx.now)
+        #expect(try await fx.disclosures.deliver(requestID: id, agentID: fx.agentID, now: fx.now).reason == .agentPaused)
+        #expect(try await fx.status(id).0 == .approved)
+        _ = try await agents.resume(agentID: fx.agentID, now: fx.now)
+        #expect(try await fx.disclosures.deliver(requestID: id, agentID: fx.agentID, now: fx.now).status == .delivered)
+    }
+
     // MARK: In-call flow
 
     @Test func inCallApprovalDeliversInTheSameCall() async throws {

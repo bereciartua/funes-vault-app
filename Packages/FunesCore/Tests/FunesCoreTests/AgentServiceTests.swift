@@ -112,8 +112,9 @@ import Testing
         }
         expectBump(try await agents.updateAccess(agentID: agent.id, Access.Preset.readAndSuggestAskFirst.access, now: t0))
         expectBump(try await agents.updateAccess(agentID: agent.id, Access.Preset.readAndSuggestAskFirst.access, now: t0))
-        expectBump(try await agents.pause(agentID: agent.id, now: t0))
-        expectBump(try await agents.resume(agentID: agent.id, now: t0))
+        // Pause and resume don't: an approval stands until it expires (access policy §3.7).
+        #expect(try await agents.pause(agentID: agent.id, now: t0).revision == revision)
+        #expect(try await agents.resume(agentID: agent.id, now: t0).revision == revision)
         expectBump(try await agents.allowCategory(agentID: agent.id, "legal", now: t0))
         expectBump(try await agents.allowOperation(agentID: agent.id, .write, now: t0))
         _ = try await agents.rotateKey(agentID: agent.id, now: t0)

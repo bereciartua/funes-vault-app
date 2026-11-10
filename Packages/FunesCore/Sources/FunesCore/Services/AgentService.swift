@@ -71,7 +71,9 @@ public final class InMemoryAgentKeyStore: AgentKeyStore {
 }
 
 /// Adding, configuring, pausing, removing and authenticating agents (FR-A-01..12). Every change to
-/// access, pause or key increments the revision, which invalidates pending approvals (FR-A-03).
+/// access or key increments the revision, which invalidates pending approvals (FR-A-03). Pause and
+/// resume don't: the gate refuses a paused agent, and an approval stands until it expires, so it
+/// can be retrieved after resuming (access policy §3.7).
 public final class AgentService: Sendable {
     public let store: VaultStore
     public let issuer: any AgentKeyIssuer
@@ -192,14 +194,14 @@ public final class AgentService: Sendable {
 
     @discardableResult
     public func pause(agentID: UUID, now: Date) async throws -> Agent {
-        try await change(agentID, event: "agent_paused", now: now) { db in
+        try await change(agentID, event: "agent_paused", now: now, bumpRevision: false) { db in
             try db.execute(sql: "UPDATE agent SET paused = 1 WHERE id = ?", arguments: [agentID.db])
         }
     }
 
     @discardableResult
     public func resume(agentID: UUID, now: Date) async throws -> Agent {
-        try await change(agentID, event: "agent_resumed", now: now) { db in
+        try await change(agentID, event: "agent_resumed", now: now, bumpRevision: false) { db in
             try db.execute(sql: "UPDATE agent SET paused = 0 WHERE id = ?", arguments: [agentID.db])
         }
     }
@@ -304,12 +306,12 @@ public final class AgentService: Sendable {
     }
 
     @discardableResult
-    private func change(_ agentID: UUID, event: String, now: Date,
+    private func change(_ agentID: UUID, event: String, now: Date, bumpRevision: Bool = true,
                         _ body: @escaping @Sendable (Database) throws -> Void) async throws -> Agent {
         let agent = try await store.writer.write { db -> Agent in
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.notFound }
             try body(db)
-            try AgentStore.bumpRevision(db, agentID: agentID)
+            if bumpRevision { try AgentStore.bumpRevision(db, agentID: agentID) }
             return try AgentStore.fetch(db, id: agentID) ?? agent
         }
         activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: event, ids: [agentID]))

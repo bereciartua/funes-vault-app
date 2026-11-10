@@ -267,7 +267,7 @@
 
 **FR-D-08 Invalidation** · M · v0.1
 - An approved but undelivered release is invalidated, and goes back to `needs_approval` with reason `policy_changed`, if any of these change before retrieval:
-  - the agent's revision (access edited, paused or key rotated);
+  - the agent's revision (access edited or key rotated; pausing doesn't change it, as a paused agent's delivery is refused and the approval stands until it expires);
   - any included memory's version, status or eligibility.
 
 **FR-D-09 Token budget** · M · v0.1
