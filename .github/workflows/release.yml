@@ -79,7 +79,8 @@ jobs:
           name: embedding-model
           path: ${{ runner.temp }}/embedding-model
           if-no-files-found: error
-          retention-days: 3
+          # Outlives the release environment's approval wait (at most 30 days).
+          retention-days: 31
 
   release:
     name: Build, notarize and draft the release
@@ -203,7 +204,7 @@ jobs:
             dist/*.zip
             dist/SHA256SUMS
           if-no-files-found: error
-          retention-days: 3
+          retention-days: 7
 
       - name: Remove the keychain, profile and keys
         if: ${{ always() }}
