@@ -57,6 +57,7 @@
 - Acceptance:
   - Deleting a category that is in use requires choosing a replacement category, or removing it from those memories.
   - Agents' allow and deny lists update accordingly. A removed allowed category never silently widens access.
+  - A removed denied category never silently widens access either: with a replacement, the replacement is denied too; without one, deleting is refused while a memory in it has another category that an agent denying it doesn't deny, until the user picks a replacement or changes those memories or agents.
 
 **FR-V-07 Sensitivity levels** · M · v0.1
 - The six ordered levels are PUBLIC < LOW < INTERNAL < SENSITIVE < RESTRICTED < SECRET, each shown with a plain-language description.
@@ -169,6 +170,7 @@
   - Tiles for agents on this Mac and for cloud agents (Remote Access, experimental) are on separate tabs; agents found on the Mac come first.
   - For an agent with one-click setup, **Add and Connect…** adds it and shows the change to its settings at once.
   - New agents start with Deny for the vault's never-share categories (FR-O-02).
+  - A never-share category also leaves the agent's allow list, unless that would empty it: an empty allow list means every category, so the category then stays on both lists and Deny wins (T8). The same holds when the never-share categories are applied to existing agents.
 
 **FR-A-02 Starting access presets** · M · v0.1
 - Presets:
@@ -265,7 +267,7 @@
 
 **FR-D-08 Invalidation** · M · v0.1
 - An approved but undelivered release is invalidated, and goes back to `needs_approval` with reason `policy_changed`, if any of these change before retrieval:
-  - the agent's revision (access edited, paused or key rotated);
+  - the agent's revision (access edited or key rotated; pausing doesn't change it, as a paused agent's delivery is refused and the approval stands until it expires);
   - any included memory's version, status or eligibility.
 
 **FR-D-09 Token budget** · M · v0.1
@@ -488,10 +490,10 @@
 - From v0.3, with splitting on: the estimated model requests next to what's left of today's cap (FR-AI-15), and **Import without splitting**. A Funes export restore is never split.
 
 **FR-X-05 Export** · M · v0.1
-- `funesvault.export.v1` JSON with categories and memories (optionally archived ones), and from v0.5 the profile (an optional `profile` object, FR-U-01). It never includes keys, devices, agents' access (so not which agents see which profile fields) or Activity.
+- `funesvault.export.v1` JSON with categories and memories (optionally archived ones), and from v0.5 the profile (an optional `profile` object, FR-U-01). Each memory carries its `trust` (`trusted` or `untrusted`, memory processing §5.7; optional, absent in older exports). It never includes keys, devices, agents' access (so not which agents see which profile fields) or Activity.
 
 **FR-X-06 Import a Funes export** · S · v0.1
-- Restores a `funesvault.export.v1` file, as suggestions (default) or as active memories after confirmation. From v0.5, an export's `profile` fills About You only if the vault's profile is empty; otherwise the preview says "About you in this file isn't restored: yours is already set."
+- Restores a `funesvault.export.v1` file, as suggestions (default) or as active memories after confirmation. Restored memories keep their `trust`; one without it (an older export) is restored untrusted, since nothing says the user wrote it. From v0.5, an export's `profile` fills About You only if the vault's profile is empty; otherwise the preview says "About you in this file isn't restored: yours is already set."
 
 ### Onboarding (FR-O)
 

@@ -24,13 +24,17 @@ public struct ImportItem: Sendable, Hashable {
     public var exportID: UUID?
     public var status: MemoryStatus?
     public var links: [FunesExport.Link]
+    /// From a Funes export: the memory's trust there; nil when the export predates it, which a
+    /// restore as memories takes as untrusted (fail closed).
+    public var trust: MemoryTrust?
 
     public init(title: String, body: String, categoryKeys: [String] = [], unmatchedHeading: String? = nil,
                 kind: MemoryKind? = nil, sensitivity: Sensitivity? = nil, expiresAt: Date? = nil, createdAt: Date? = nil,
-                exportID: UUID? = nil, status: MemoryStatus? = nil, links: [FunesExport.Link] = []) {
+                exportID: UUID? = nil, status: MemoryStatus? = nil, links: [FunesExport.Link] = [], trust: MemoryTrust? = nil) {
         self.exportID = exportID
         self.status = status
         self.links = links
+        self.trust = trust
         self.title = title
         self.body = body
         self.categoryKeys = categoryKeys
@@ -189,6 +193,9 @@ public struct FunesExport: Codable, Sendable, Hashable {
         public var updatedAt: Date
         /// Split and merge links to other exported memories (v0.3); absent in older exports.
         public var links: [Link]?
+        /// Whether the user wrote or vouched for it (memory processing §5.7); absent in older
+        /// exports, and then restored as untrusted.
+        public var trust: MemoryTrust?
     }
 
     /// One side of a split or merge: the provenance event and the other memory's id.
@@ -301,6 +308,7 @@ public final class ImportService: Sendable {
     public func preview(_ items: [ImportItem], source: ImportSource, newCategories: [FunesExport.Category] = []) async throws -> ImportPreview {
         try await store.writer.read { db in
             let existing = Set(try CategoryStore.all(db).map(\.key))
+            let vault = try MemoryStore.activeTextIndex(db)
             var seen: [String: Int] = [:]
             var entries: [ImportPreview.Entry] = []
             for item in items {
@@ -311,7 +319,7 @@ public final class ImportService: Sendable {
                     status = .blocked(findings)
                 } else if InputLimits.length(of: item.body) > InputLimits.body.upperBound {
                     status = .tooLong
-                } else if let dup = try MemoryStore.exactDuplicates(db, title: item.title, body: item.body).first {
+                } else if let dup = vault[MemoryStore.TextKey(title: item.title, body: item.body)] {
                     status = .duplicate(of: dup)
                 } else if seen[key] != nil {
                     status = .duplicate(of: nil)
@@ -329,7 +337,8 @@ public final class ImportService: Sendable {
     public func preview(funesExport export: FunesExport) async throws -> ImportPreview {
         let items = export.memories.filter { $0.status != .deleted }.map {
             ImportItem(title: $0.title, body: $0.body, categoryKeys: $0.categories, kind: $0.kind, sensitivity: $0.sensitivity,
-                       expiresAt: $0.expiresAt, createdAt: $0.createdAt, exportID: $0.id, status: $0.status, links: $0.links ?? [])
+                       expiresAt: $0.expiresAt, createdAt: $0.createdAt, exportID: $0.id, status: $0.status, links: $0.links ?? [],
+                       trust: $0.trust)
         }
         var preview = try await preview(items, source: .funes, newCategories: export.categories)
         preview.profile = export.profile
@@ -387,7 +396,9 @@ public final class ImportService: Sendable {
                     let free = try item.exportID.map { try MemoryStore.fetch(db, id: $0) == nil } ?? false
                     var m = try MemoryStore.insert(db, MemoryDraft(
                         title: item.title, body: item.body, kind: item.kind ?? .fact, categoryKeys: keys,
-                        sensitivity: item.sensitivity, expiresAt: item.expiresAt, source: .importFunes), actor: .importRun(runID), now: now,
+                        sensitivity: item.sensitivity, expiresAt: item.expiresAt, source: .importFunes,
+                        // An export without trust can't say the user wrote it (fail closed).
+                        trust: item.trust ?? .untrusted), actor: .importRun(runID), now: now,
                         id: free ? item.exportID! : UUID())
                     if item.status == .archived {
                         m = try MemoryStore.setStatus(db, id: m.id, to: .archived, actor: .importRun(runID), now: now)
@@ -454,7 +465,8 @@ public final class ImportService: Sendable {
                 }
                 return FunesExport.Memory(id: m.id, title: m.title, body: m.body, kind: m.kind, categories: m.categoryKeys,
                                           sensitivity: m.sensitivity, status: m.status, expiresAt: m.expiresAt,
-                                          createdAt: m.createdAt, updatedAt: m.updatedAt, links: links.isEmpty ? nil : links)
+                                          createdAt: m.createdAt, updatedAt: m.updatedAt, links: links.isEmpty ? nil : links,
+                                          trust: try MemoryStore.trust(db, id: m.id) ?? .untrusted)
             }, profile: profile.isEmpty ? nil : profile)
         }
         let encoder = JSONEncoder()

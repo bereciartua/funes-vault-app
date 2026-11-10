@@ -120,7 +120,7 @@ An MCP client the user has added. It is EK Bridge's "connection".
 | `cloudAccess` | bool | Default false. Lets the agent's remote token and OAuth-connected cloud apps reach it through Remote Access ([ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)). It never changes the agent's access |
 | `remoteKeyDigest`, `remoteKeyIssuedAt` | SHA-256?, timestamp? | The remote token (`fns_mcpr_v1_`), only with `cloudAccess`. Deleted when cloud access is turned off |
 | `paused` | bool | |
-| `revision` | int | +1 on any change to access, pause, key, cloud access, remote token or connected cloud apps. Pending approvals bind to it |
+| `revision` | int | +1 on any change to access, key, cloud access, remote token or connected cloud apps. Pending approvals bind to it. Pause and resume don't change it: the gate refuses a paused agent, and an approval stands until it expires (access policy §3.7) |
 | `declaredRetention` | `none` · `session` · `persistent` · `unknown` | Informational |
 | `asksForAccess` | bool | Default false |
 | `firstRequestAt`, `lastRequestAt` | timestamp? | |
@@ -265,7 +265,7 @@ stateDiagram-v2
 - **Processing** (Phase 6, memory processing §5.2): a new input waits in `pending` while its job splits it; Apply is refused (`processing`) until the result replaces it or the split fails.
 - **Apply per action** (Phase 6.1), each in one transaction with the suggestion's status and provenance:
   - `create`: a new memory.
-  - `update`: **Replace** (the default: the target takes the proposal) or **Keep both** (a new memory; Mac only).
+  - `update`: **Replace** (the default: the target takes the proposal, keeping its expiry unless the proposal or the user's edit sets one; an agent's correction also keeps the target's categories and never lowers its sensitivity unless the user changes them) or **Keep both** (a new memory; Mac only).
   - `archive`: archives the target; a `survivor` must still be active.
   - `duplicate`: no memory changes.
   - `split`: the pending pieces of its group become memories (source `tidy_up`, never below the original's sensitivity, `split_from`/`split_into` provenance) and the original is archived.

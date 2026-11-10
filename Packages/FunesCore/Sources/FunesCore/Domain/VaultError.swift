@@ -18,6 +18,9 @@ public enum VaultError: Error, Sendable, Equatable {
     case categoryInUse
     /// The category is the only allowed category of these agents; deleting it would widen their access.
     case onlyAllowedCategory(agentIDs: [UUID])
+    /// These agents deny the category, and some memories in it are also in a category they may
+    /// read; without a replacement to deny instead, deleting it would show those memories to them.
+    case deniedCategoryInUse(agentIDs: [UUID])
     case nameTaken
     /// The vault was written by a newer version of Funes: refuse to open it ("Update Funes").
     case newerSchema

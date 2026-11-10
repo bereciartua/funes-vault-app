@@ -200,18 +200,26 @@ public final class ProviderEmbeddingIndexer: Sendable {
             return true
         }
         guard start else { return 0 }
-        defer { run.withLock { $0.running = false } }
         var written = 0
         do {
-            repeat {
+            var more = true
+            while more {
                 run.withLock { $0.again = false }
                 written += try await pass()
-            } while run.withLock({ $0.again })
+                // Decide to stop and clear `running` together, so a call arriving in between isn't lost.
+                more = run.withLock { s in
+                    if s.again { return true }
+                    s.running = false
+                    return false
+                }
+            }
         } catch let error as ProviderError {
+            run.withLock { $0.running = false }
             update { $0.state = .failed(error) }
             logger.error("Provider embedding pass failed: \(String(describing: error), privacy: .public)") // log-safe: error code only
             throw error
         } catch {
+            run.withLock { $0.running = false }
             update { $0.state = .idle }
             throw error
         }

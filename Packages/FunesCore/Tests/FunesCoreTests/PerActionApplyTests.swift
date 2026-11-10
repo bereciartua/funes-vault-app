@@ -221,6 +221,25 @@ import Testing
         #expect(try await s.isStale(create) == false)
     }
 
+    /// Review fix-first #4 (FR-V-04): purging a memory blanks every suggestion holding its text,
+    /// grouped or not: the one it was saved from, one targeting it, and one listing it as a source.
+    @Test func purgingBlanksUngroupedSuggestionsText() async throws {
+        let (v, s, _) = try Self.make()
+        let create = try Self.suggestion(v, .create, title: "Saved title", body: "Saved body", origin: .captureMac)
+        let saved = try await s.apply(suggestionID: create, now: t0).memoryID
+        let update = try Self.suggestion(v, .update, title: "Fix", body: "Corrected body", target: saved)
+        let merge = try Self.suggestion(v, .merge, title: "Merged", body: "Merged body",
+                                        targets: [(saved, .source), (try v.memory("Other").id, .source)])
+        let unrelated = try Self.suggestion(v, .create, title: "Keep me", body: "Untouched")
+        try v.store.deleteMemory(id: saved, now: t0)
+        try v.store.purgeMemory(id: saved)
+        for id in [create, update, merge] {
+            let row = try #require(try await s.suggestion(id: id))
+            #expect(row.title.isEmpty && row.body.isEmpty && row.evidence == nil)
+        }
+        #expect(try await s.suggestion(id: unrelated)?.body == "Untouched")
+    }
+
     @Test func agentCorrectionsRecordTheTargetsVersion() async throws {
         let fx = try ServiceFixture()
         let s = SuggestionService(store: fx.store, activity: fx.activity, pause: fx.pause)

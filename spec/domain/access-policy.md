@@ -85,11 +85,11 @@ The task text and keywords are kept in memory only, tied to the request id, for 
 
 ### 3.6 Approval (panel or pending list)
 - The UI shows each eligible memory's **current** text, read fresh from the database when shown.
-- **Rebuilding:** when the panel is built, the snapshot is re-checked against the current memories and access. If a memory's version or eligibility, or the agent's revision, changed, the snapshot is rebuilt (only the original candidates that are still eligible, with their current versions) and gets a new `snapshotRevision`. If none remain eligible, the request is denied with `no_allowed_memories`. So an access change invalidates pending approvals (FR-A-03), and a panel built before the change is refused on approval (T22).
+- **Rebuilding:** when the panel is built, the snapshot is re-checked against the current memories and access. If a memory's version or eligibility, or the agent's revision, changed, the snapshot is rebuilt (only the original candidates that are still eligible, with their current versions) and gets a new `snapshotRevision`. If none remain eligible, the request is denied with `no_allowed_memories` (an Activity row, and a call waiting in `request_memory` gets the denial at once, as it does for one approved after its 15 minutes, denied with `approval_expired`). So an access change invalidates pending approvals (FR-A-03), and a panel built before the change is refused on approval (T22).
 - **Allow:**
   - The user picks a non-empty subset S of the eligible ids.
   - The UI submits `{requestId, snapshotRevision, S}`.
-  - It's refused if the revision doesn't match the stored one ("This request changed; review again"). The UI then rebuilds the panel.
+  - It's refused if the revision doesn't match the stored one ("This request changed; review again"), and also if the agent's revision, or a snapshot memory's version or eligibility, changed since the stored snapshot was built, even when no panel was built since. The UI then rebuilds the panel.
   - On success: `status = approved`, `approvedMemoryIds = S`, `approvalExpiresAt = now + 15 min`, `decidedAt = now`.
 - **Deny:** `status = denied`, reason `denied_by_user`.
 
@@ -159,7 +159,7 @@ A request still in `needs_approval` 15 minutes after creation becomes `denied` w
 |---|---|
 | Lengths: title 1–180, body 1–10,000, evidence ≤ 2,000, purpose ≤ 160, ≤ 12 categories | `invalid_input` |
 | Every category key exists | `unknown_category` |
-| Secret scanner over title, body, evidence and caller metadata | `secret_like_content` (the response lists pattern *types* only) |
+| Secret scanner over title, body, evidence, purpose and caller metadata | `secret_like_content` (the response lists pattern *types* only) |
 | `target_memory_id`, when given, refers to an active memory that this agent could read (§3.3 eligibility with `read` assumed) | otherwise `not_found` (never reveals that a memory exists) |
 
 ### 5.2 Gate
@@ -167,6 +167,8 @@ G1–G3 as in §3.1.
 
 ### 5.3 Scope check for the proposed memory
 Run M3–M5 against the proposed sensitivity (default LOW) and categories. A failure means `denied` with that reason. An agent can't plant memories outside its own scope.
+
+A correction (`target_memory_id`) takes its target's categories and the higher of the proposed sensitivity and the target's, as a tidy-up update does: an agent can't move a memory out of a category or lower its sensitivity. Replace applies them so (re-read from the target at apply time) unless the user changes them in the Inbox.
 
 **After splitting** (Phase 6, [ADR-0020](../architecture/decisions/0020-atomic-extraction-for-every-source.md)): Funes's own classification of the pieces of an accepted suggestion may put a piece outside the agent's scope (another category, a higher sensitivity). Such a piece is never saved for the agent and never auto-applied: it goes to the Inbox flagged "Outside <agent>'s scope" and is left out of Apply all. The agent can't *save* outside its scope; its input can still be *proposed* to the user. The agent learns nothing about it ([memory processing §5.6](memory-processing.md#56-agent-input-and-the-policy)).
 
@@ -179,7 +181,7 @@ Run M3–M5 against the proposed sensitivity (default LOW) and categories. A fai
 
 - `suggest_memory` never blocks waiting for the user. The panel is a convenience; the result is final when returned.
 - Caller metadata is stored as inert JSON under `callerMetadata` and is never interpreted.
-- Corrections (`target_memory_id`) always create `action = update` suggestions, even for an agent with `write` and ask before saving off: agents can't edit or delete in v0.1 ([FR-S-06](../product/03-requirements.md), Q12). Applying one offers Replace or Keep both.
+- Corrections (`target_memory_id`) always create `action = update` suggestions, even for an agent with `write` and ask before saving off: agents can't edit or delete in v0.1 ([FR-S-06](../product/03-requirements.md), Q12). Applying one offers Replace or Keep both. Replace keeps the target's expiry unless the suggestion or the user's edit sets one.
 - **Splitting** (Phase 6): a queued suggestion may become a group of suggestions; a saved memory may be replaced by its pieces (create-only, within the agent's write scope) when the user allows auto-apply, or get a Split this memory suggestion. The result returned to the agent doesn't change. Updates and retractions derived from agent input are always suggestions, whatever the auto-apply setting. A memory an agent saved directly is **untrusted**: auto-apply never changes or archives another memory on its strength ([memory processing §5.7](memory-processing.md#57-auto-apply-for-new-memories)).
 - **Defaults:** kind `fact`; categories from the rules classifier, falling back to `personal_preferences`; sensitivity LOW raised to the categories' default (so a Health suggestion without a sensitivity is SENSITIVE, and is checked as such in §5.3).
 - **Rate limits:** see the MCP spec (writes: 20 per minute, bursts of 10; 250 per day).
@@ -209,7 +211,7 @@ Offered only when **all** of these hold:
   - **A read that was denied or needs approval:** inside the call, within the same 45 s as the Share panel. Allow Once or Always Allow runs the request again; a request that was waiting for approval is replaced (denied with `policy_changed`, recorded as "replaced"), and the new one gets its own panel for the rest of the 45 s.
   - **A read shared without asking** (some memories allowed, `askBeforeSharing` off): the agent gets its answer at once, and the panel offers only **Not Now** and **Always Allow**, for its next request, with no default button.
   - **A suggestion:** the agent gets its refusal at once (suggestions never wait). If the user picks Allow Once or Always Allow, that suggestion is stored again and goes to the Inbox with its Save panel, even for an agent that may save without asking. Allow Once for a suggestion holds only at the agent's revision when the offer was made (a stale panel is refused with `policy_changed`), and grants only what was offered: a category, or the missing operation, never both.
-- The panel asks about one category: the primary category of the first withheld memory, in score order. Every offer records the agent's revision; Allow Once for a read is bound to that revision too, so an access change while the panel is open makes it fail closed.
+- The panel asks about one category: the primary category of the first withheld memory, in score order. Every offer records the agent's revision; Allow Once for a read is bound to that revision too, so an access change while the panel is open makes it fail closed: the request is denied with `policy_changed`, as is one carrying a grant already used.
 
 ## 8. Reason codes
 | Code | Where | Meaning shown to the user / agent |

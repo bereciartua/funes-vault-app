@@ -214,11 +214,13 @@ public final class DisclosureService: Sendable {
         try input.validate()
         let agent = try await store.writer.read { db in try AgentStore.fetch(db, id: agentID) }
         guard let agent, !agent.isRemoved else { throw VaultError.unauthenticated }
-        let access = try useGrant(grant, agent: agent)
+        // A stale Allow Once grant fails closed with `policy_changed` (§7); nothing is retrieved.
+        let granted = useGrant(grant, agent: agent)
+        let access = granted ?? agent.access
 
         // A denial at the gate doesn't run retrieval (§3.1): the task isn't even embedded.
         let retrieved: [RetrievedCandidate] =
-            if PolicyEngine.gate(agent: agent, access: access, globalPaused: pause.isPaused(at: now), now: now) == nil {
+            if granted != nil, PolicyEngine.gate(agent: agent, access: access, globalPaused: pause.isPaused(at: now), now: now) == nil {
                 try await retriever.candidates(task: input.task, keywords: input.keywords, categories: input.categories)
             } else {
                 []
@@ -226,7 +228,6 @@ public final class DisclosureService: Sendable {
         let candidateIDs = retrieved.map(\.id)
         let scores = Dictionary(retrieved.map { ($0.id, $0.score) }, uniquingKeysWith: { first, _ in first })
         let window = windows.withLock { $0[agentID] }
-        let paused = pause.isPaused(at: now)
         let requestID = UUID()
 
         struct Result {
@@ -243,7 +244,16 @@ public final class DisclosureService: Sendable {
             if let grant, grant.agentRevision == agent.revision { access.allowedCategoryKeys.insert(grant.categoryKey) }
             try AgentStore.recordRequest(db, agentID: agentID, now: now)
             var row = Self.newRow(id: requestID, agent: agent, input: input, now: now)
+            // Read under the write lock, so a pause that lands before this transaction applies to it.
+            let paused = self.pause.isPaused(at: now)
 
+            if granted == nil || (grant.map { $0.agentRevision != agent.revision } ?? false) {
+                row.status = .denied
+                row.reason = .policyChanged
+                try Self.insert(db, row)
+                return Result(outcome: RequestOutcome(status: .denied, requestID: requestID, reason: .policyChanged,
+                                                      maxTokens: input.maxTokens), delivered: [], withheldCategories: [])
+            }
             if let reason = PolicyEngine.gate(agent: agent, access: access, globalPaused: paused, now: now) {
                 row.status = .denied
                 row.reason = reason
@@ -358,10 +368,11 @@ public final class DisclosureService: Sendable {
     /// panel's revision is refused on approval; T22).
     public func panel(requestID: UUID, now: Date) async throws -> ApprovalPanel? {
         let cached = tasks.withLock { $0[requestID] }.flatMap { $0.expires > now ? $0 : nil }
-        return try await store.writer.write { db -> ApprovalPanel? in
+        enum Built { case panel(ApprovalPanel), none, denied }
+        let built = try await store.writer.write { db -> Built in
             guard var d = try Self.fetch(db, id: requestID), d.status == .needsApproval,
                   now < d.createdAt + Self.window,
-                  let agent = try AgentStore.fetch(db, id: d.agentID), !agent.isRemoved else { return nil }
+                  let agent = try AgentStore.fetch(db, id: d.agentID), !agent.isRemoved else { return .none }
             let access = self.access(agent, requestID: requestID)
             let snapshot = try MemoryStore.fetch(db, ids: d.candidateSnapshot.map(\.id))
             let current = snapshot.filter { PolicyEngine.eligibility($0, access: access, now: now) == nil }
@@ -374,18 +385,35 @@ public final class DisclosureService: Sendable {
                 if items.isEmpty {
                     try db.execute(sql: "UPDATE disclosure SET status = 'denied', reason = ?, decided_at = ? WHERE id = ?",
                                    arguments: [ReasonCode.noAllowedMemories.rawValue, now, requestID.db])
-                    return nil
+                    return .denied
                 }
                 try db.execute(sql: """
                     UPDATE disclosure SET candidate_snapshot = ?, agent_revision = ?, snapshot_revision = ? WHERE id = ?
                     """, arguments: [JSON.encode(items), agent.revision, d.snapshotRevision, requestID.db])
             }
-            return ApprovalPanel(requestID: d.id, agentID: agent.id, agentName: agent.name, task: cached?.task,
-                                 keywords: cached?.keywords ?? [], purpose: d.purpose, retention: d.retention,
-                                 processors: d.processors, memories: current,
-                                 strong: PolicyEngine.strongMatches(items), snapshotRevision: d.snapshotRevision ?? "",
-                                 createdAt: d.createdAt, expiresAt: d.createdAt + Self.window)
+            return .panel(ApprovalPanel(requestID: d.id, agentID: agent.id, agentName: agent.name, task: cached?.task,
+                                        keywords: cached?.keywords ?? [], purpose: d.purpose, retention: d.retention,
+                                        processors: d.processors, memories: current,
+                                        strong: PolicyEngine.strongMatches(items), snapshotRevision: d.snapshotRevision ?? "",
+                                        createdAt: d.createdAt, expiresAt: d.createdAt + Self.window))
         }
+        switch built {
+        case let .panel(panel): return panel
+        case .none: return nil
+        case .denied:
+            ended(requestID, now: now, reason: .noAllowedMemories, approval: .denied)
+            return nil
+        }
+    }
+
+    /// A waiting request Funes ended itself: its caches go, Activity has the row, and a call
+    /// waiting for it hears at once.
+    private func ended(_ requestID: UUID, now: Date, reason: ReasonCode, approval: ActivityEvent.Approval) {
+        tasks.withLock { _ = $0.removeValue(forKey: requestID) }
+        requestGrants.withLock { _ = $0.removeValue(forKey: requestID) }
+        activity.record(ActivityEvent(time: now, requestID: requestID, phase: .event, actor: .system, via: .app, event: "approval",
+                                      outcome: "denied", reason: reason, approval: approval))
+        notify(requestID)
     }
 
     /// Requests waiting for the user or approved and not yet retrieved, newest first.
@@ -414,6 +442,14 @@ public final class DisclosureService: Sendable {
                 return .expired
             }
             guard d.snapshotRevision == snapshotRevision else { return .error(.snapshotChanged) }
+            // The stored snapshot is only rebuilt when a panel is built: a change since the panel
+            // was (the agent's access, a memory's version or eligibility) refuses it too (§3.6, T22).
+            guard let agent = try AgentStore.fetch(db, id: d.agentID), !agent.isRemoved else { return .error(.invalidState) }
+            let access = self.access(agent, requestID: requestID)
+            let versions = Dictionary(uniqueKeysWithValues: try MemoryStore.fetch(db, ids: d.candidateSnapshot.map(\.id))
+                .filter { PolicyEngine.eligibility($0, access: access, now: now) == nil }.map { ($0.id, $0.version) })
+            guard agent.revision == d.agentRevisionAtRequest,
+                  d.candidateSnapshot.allSatisfy({ versions[$0.id] == $0.version }) else { return .error(.snapshotChanged) }
             let chosen = Set(memoryIDs)
             let ordered = d.candidateSnapshot.map(\.id).filter(chosen.contains)
             guard !chosen.isEmpty, ordered.count == chosen.count else { return .error(.invalidInput(field: "memory_ids")) }
@@ -430,7 +466,7 @@ public final class DisclosureService: Sendable {
                                           approval: .approved))
             notify(requestID)
         case .expired:
-            notify(requestID)
+            ended(requestID, now: now, reason: .approvalExpired, approval: .timeout)
             throw VaultError.invalidState
         case let .error(e):
             throw e
@@ -490,17 +526,19 @@ public final class DisclosureService: Sendable {
                         credential: CredentialCheck? = nil) async throws -> RequestOutcome {
         guard let requestID = outcome.requestID else { throw VaultError.notFound }
         var delivered = try await deliver(requestID: requestID, agentID: agentID, now: now, via: via, credential: credential,
-                                          reservingBytes: outcome.profile?.wireBytes ?? 0)
+                                          reservingBytes: outcome.profile?.wireBytes ?? 0, event: "request_memory")
         if let reason = delivered.reason, PolicyEngine.gateReasons.contains(reason) { return delivered }
         delivered.profile = outcome.profile
         return delivered
     }
 
-    /// Delivery with `reservingBytes` kept back from the bundle.
+    /// Delivery with `reservingBytes` kept back from the bundle. `event` names the Activity row:
+    /// the agent's call it answers (`request_memory` when it waited in the call).
     func deliver(requestID: UUID, agentID: UUID, now: Date, via: ActivityEvent.Via, credential: CredentialCheck?,
-                 reservingBytes: Int) async throws -> RequestOutcome {
-        let paused = pause.isPaused(at: now)
+                 reservingBytes: Int, event: String = "get_memory_request") async throws -> RequestOutcome {
         let outcome = try await store.writer.write { db -> RequestOutcome in
+            // Read under the write lock, so a pause that lands before this transaction applies to it.
+            let paused = self.pause.isPaused(at: now)
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.unauthenticated }
             if let credential, !credential(agent) { throw VaultError.unauthenticated }
             try AgentStore.recordRequest(db, agentID: agentID, now: now)
@@ -566,7 +604,7 @@ public final class DisclosureService: Sendable {
             requestGrants.withLock { _ = $0.removeValue(forKey: requestID) }
         }
         activity.record(ActivityEvent(
-            time: now, requestID: requestID, actor: .agent(agentID), via: via, event: "get_memory_request",
+            time: now, requestID: requestID, actor: .agent(agentID), via: via, event: event,
             outcome: outcome.status.rawValue, ids: outcome.bundle?.items.map(\.memoryID) ?? [], reason: outcome.reason,
             approval: outcome.status == .delivered ? .approved : nil))
         return outcome
@@ -701,8 +739,9 @@ public final class DisclosureService: Sendable {
         return access
     }
 
-    /// Validates and consumes an Allow Once grant; returns the access to evaluate with.
-    private func useGrant(_ grant: OnceGrant?, agent: Agent) throws -> Access {
+    /// Validates and consumes an Allow Once grant; returns the access to evaluate with, or nil when
+    /// the grant is stale or unknown (the caller refuses with `policy_changed`).
+    private func useGrant(_ grant: OnceGrant?, agent: Agent) -> Access? {
         var access = agent.access
         guard let grant else { return access }
         let ok = grants.withLock { g -> Bool in
@@ -712,7 +751,7 @@ public final class DisclosureService: Sendable {
             g[grant.offeredByRequestID]?.remove(grant.categoryKey)
             return true
         }
-        guard ok else { throw VaultError.invalidState }
+        guard ok else { return nil }
         access.allowedCategoryKeys.insert(grant.categoryKey)
         return access
     }

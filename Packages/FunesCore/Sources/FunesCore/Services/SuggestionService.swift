@@ -100,6 +100,16 @@ public struct ApplyResult: Sendable, Hashable {
     public var similarMemoryIDs: [UUID]
 }
 
+/// A suggestion as an apply or reject reads it in its own transaction, for the caller's
+/// precondition: the memories it refers to beyond its single target, every referenced memory's
+/// current version (absent once purged), and a split's pending pieces (empty otherwise).
+public struct SuggestionSnapshot: Sendable, Hashable {
+    public var suggestion: Suggestion
+    public var targets: [SuggestionTarget]
+    public var memoryVersions: [UUID: Int]
+    public var pieces: [Suggestion]
+}
+
 /// Agent suggestions and direct writes (access policy §5) and the Inbox (FR-I-01..05).
 public final class SuggestionService: Sendable {
     public static let lifetime: TimeInterval = 30 * 86_400
@@ -140,9 +150,10 @@ public final class SuggestionService: Sendable {
     public func suggest(agentID: UUID, _ input: SuggestInput, now: Date, allowOnce: AccessRequestOffer? = nil,
                         alwaysQueue: Bool = false, via: ActivityEvent.Via = .mcp,
                         credential: CredentialCheck? = nil) async throws -> SuggestOutcome {
-        let paused = pause.isPaused(at: now)
         enum Step { case done(SuggestOutcome), offer(SuggestOutcome, [String], AccessOperation, Int) }
         let step = try await store.writer.write { db -> Step in
+            // Read under the write lock, so a pause that lands before this transaction applies to it.
+            let paused = self.pause.isPaused(at: now)
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.unauthenticated }
             if let credential, !credential(agent) { throw VaultError.unauthenticated }
             try AgentStore.recordRequest(db, agentID: agentID, now: now)
@@ -162,19 +173,22 @@ public final class SuggestionService: Sendable {
             if let reason = Self.invalid(input, now: now) { return .done(.denied(reason)) }
             let known = Set(try String.fetchAll(db, sql: "SELECT key FROM category"))
             if input.categories.contains(where: { !known.contains($0) }) { return .done(.denied(.unknownCategory)) }
-            let findings = SecretScanner.scan([input.title, input.body, input.evidence ?? "", input.metadataJSON ?? ""])
+            let findings = SecretScanner.scan([input.title, input.body, input.evidence ?? "", input.purpose ?? "",
+                                               input.metadataJSON ?? ""])
             if !findings.isEmpty { return .done(.denied(.secretLikeContent, findings: findings)) }
             var input = input
-            if let target = input.targetMemoryID {
+            var target: Memory?
+            if let targetID = input.targetMemoryID {
                 // A correction of a memory that was split goes to the piece it's about, among the
                 // pieces this agent can read (memory processing §5.6).
-                if let m = try MemoryStore.fetch(db, id: target), m.status == .archived,
+                if let m = try MemoryStore.fetch(db, id: targetID), m.status == .archived,
                    let piece = try Self.splitRedirect(db, from: m, input: input, access: access, now: now) {
                     input.targetMemoryID = piece
                 }
                 // Never reveal that a memory exists: anything this agent couldn't read is not_found.
                 guard let m = try MemoryStore.fetch(db, id: input.targetMemoryID!),
                       PolicyEngine.eligibility(m, access: access, now: now) == nil else { return .done(.denied(.notFound)) }
+                target = m
             }
 
             // §5.2 gate (G1–G3).
@@ -182,9 +196,15 @@ public final class SuggestionService: Sendable {
                 return .done(.denied(reason))
             }
 
-            // §5.3 scope of the proposed memory.
-            let categories = try Self.categories(db, input)
-            let sensitivity = try input.sensitivity ?? MemoryStore.defaultSensitivity(db, categoryKeys: categories)
+            // §5.3 scope of the proposed memory. A correction keeps its target's categories and
+            // never goes below its sensitivity, as a tidy-up update does; the user may change them
+            // when applying.
+            var categories = try Self.categories(db, input)
+            var sensitivity = try input.sensitivity ?? MemoryStore.defaultSensitivity(db, categoryKeys: categories)
+            if let target {
+                categories = target.categoryKeys
+                sensitivity = max(input.sensitivity ?? target.sensitivity, target.sensitivity)
+            }
             if let reason = PolicyEngine.scopeCheck(sensitivity: sensitivity, categoryKeys: categories, access: access) {
                 let out = SuggestOutcome.denied(reason)
                 return reason == .categoryNotAllowed && agent.asksForAccess
@@ -385,13 +405,19 @@ public final class SuggestionService: Sendable {
     /// must still be active at the version the suggestion was made on (`targetChanged`).
     /// New text goes through validation and the secret scanner again. A new input still being
     /// split is refused (`processing`, memory processing §5.2).
+    ///
+    /// `precondition` runs inside the applying transaction, on the suggestion as it is now (once
+    /// it's known to be pending), so a caller can check what the user answered against it with no
+    /// gap (the companion's revisions); throwing refuses the apply and nothing is written.
     @discardableResult
     public func apply(suggestionID: UUID, edits: SuggestionEdit = SuggestionEdit(), mode: ApplyMode? = nil,
-                      now: Date, actor: Actor = .user, via: ActivityEvent.Via = .app) async throws -> ApplyResult {
+                      now: Date, actor: Actor = .user, via: ActivityEvent.Via = .app,
+                      precondition: (@Sendable (SuggestionSnapshot) throws -> Void)? = nil) async throws -> ApplyResult {
         let splitting = self.splitting.isOn
         let result = try await store.writer.write { db -> ApplyResult in
             guard let s = try Self.fetch(db, id: suggestionID) else { throw VaultError.notFound }
             guard s.status == .pending else { throw VaultError.invalidState }
+            if let precondition { try precondition(try Self.snapshot(db, s)) }
             guard !(try Self.isProcessing(db, suggestionID, splitting: splitting, now: now)) else { throw VaultError.processing }
             let result = try Self.applyAction(db, s, edits: edits, mode: mode, now: now, actor: actor)
             try db.execute(sql: "UPDATE suggestion SET status = 'applied', decided_at = ?, result_memory_id = ? WHERE id = ?",
@@ -406,6 +432,16 @@ public final class SuggestionService: Sendable {
         activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "suggestion_applied",
                                       outcome: "applied", ids: [suggestionID] + result.memoryIDs))
         return result
+    }
+
+    /// The suggestion with what it refers to, read in the caller's transaction.
+    static func snapshot(_ db: Database, _ s: Suggestion) throws -> SuggestionSnapshot {
+        let targets = try extraTargets(db, suggestionID: s.id)
+        let ids = (s.targetMemoryID.map { [$0] } ?? []) + targets.map(\.memoryID)
+        var versions: [UUID: Int] = [:]
+        for m in try MemoryStore.fetch(db, ids: ids) { versions[m.id] = m.version }
+        return SuggestionSnapshot(suggestion: s, targets: targets, memoryVersions: versions,
+                                  pieces: s.action == .split ? try pieces(db, groupID: s.id) : [])
     }
 
     /// A memory the suggestion refers to, at the version it was made on (nil: made before v0.3,
@@ -496,12 +532,20 @@ public final class SuggestionService: Sendable {
                 guard absorbed.isEmpty else { throw VaultError.unsupportedAction }
                 return try saveProposal()
             case .replace:
-                guard let target = refs.first(where: { $0.role == .target }) else { throw VaultError.targetChanged }
-                _ = try checked(db, [target] + absorbed)
-                let d = try draft(db, s, edits, source: origin.source, actor: actor)
+                guard let target = refs.first(where: { $0.role == .target }),
+                      let current = try checked(db, [target] + absorbed)[target.memoryID] else { throw VaultError.targetChanged }
+                var d = try draft(db, s, edits, source: origin.source, actor: actor)
+                if s.origin == .agent {
+                    // An agent's correction never lowers its target's sensitivity or drops its
+                    // categories; only the user's own edits change them (access policy §5.3).
+                    if edits.categoryKeys == nil { d.categoryKeys = current.categoryKeys }
+                    if edits.sensitivity == nil { d.sensitivity = max(d.sensitivity ?? current.sensitivity, current.sensitivity) }
+                }
+                // The target keeps its expiry unless the proposal or the user's edit sets one.
+                let expiry: Date?? = edits.expiresAt ?? s.expiresAt.map { .some($0) }
                 let m = try MemoryStore.update(db, id: target.memoryID, MemoryEdit(
                     title: d.title, body: d.body, kind: edits.kind ?? s.kind, categoryKeys: d.categoryKeys,
-                    sensitivity: d.sensitivity, expiresAt: .some(d.expiresAt)), actor: actor, now: now)
+                    sensitivity: d.sensitivity, expiresAt: expiry), actor: actor, now: now)
                 try applied(m.id)
                 for copy in absorbed {
                     try MemoryStore.setStatus(db, id: copy.memoryID, to: .archived, actor: actor, now: now)
@@ -639,13 +683,19 @@ public final class SuggestionService: Sendable {
     /// Rejecting a Split this memory suggestion rejects its undecided pieces too. Rejecting a new
     /// input that is still processing cancels its job (memory processing §5.2).
     /// A tidy-up proposal's memories and their text are remembered, so it isn't asked again (§9.5).
-    public func reject(suggestionID: UUID, now: Date, actor: Actor = .user, via: ActivityEvent.Via = .app) async throws {
-        try await setStatus(suggestionID, from: .pending, to: .rejected, now: now)
+    /// One transaction. `precondition` works as in `apply`.
+    public func reject(suggestionID: UUID, now: Date, actor: Actor = .user, via: ActivityEvent.Via = .app,
+                       precondition: (@Sendable (SuggestionSnapshot) throws -> Void)? = nil) async throws {
         try await store.writer.write { db in
+            guard let s = try Self.fetch(db, id: suggestionID) else { throw VaultError.notFound }
+            guard s.status == .pending else { throw VaultError.invalidState }
+            if let precondition { try precondition(try Self.snapshot(db, s)) }
+            try db.execute(sql: "UPDATE suggestion SET status = 'rejected', decided_at = ? WHERE id = ?",
+                           arguments: [now, suggestionID.db])
             try db.execute(sql: "UPDATE suggestion SET status = 'rejected', decided_at = ? WHERE group_id = ? AND status = 'pending'",
                            arguments: [now, suggestionID.db])
             try Self.cancelProcessing(db, suggestionID, now: now)
-            if let s = try Self.fetch(db, id: suggestionID) { try TidyUpDismissals.record(db, s, now: now) }
+            try TidyUpDismissals.record(db, s, now: now)
         }
         activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "suggestion_rejected",
                                       outcome: "rejected", ids: [suggestionID]))
@@ -663,15 +713,6 @@ public final class SuggestionService: Sendable {
                 UPDATE suggestion SET status = 'pending', decided_at = NULL, expires_after = ?
                 WHERE status = 'expired' AND (id = ? OR group_id = ? OR (id = ? AND ? IS NOT NULL))
                 """, arguments: [now + Self.lifetime, suggestionID.db, group.db, group.db, s.groupID?.db])
-        }
-    }
-
-    private func setStatus(_ id: UUID, from: SuggestionStatus, to: SuggestionStatus, now: Date) async throws {
-        try await store.writer.write { db in
-            guard let s = try Self.fetch(db, id: id) else { throw VaultError.notFound }
-            guard s.status == from else { throw VaultError.invalidState }
-            try db.execute(sql: "UPDATE suggestion SET status = ?, decided_at = ? WHERE id = ?",
-                           arguments: [to.rawValue, now, id.db])
         }
     }
 
