@@ -531,10 +531,12 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     }
 
     /// A reopened item, selected in the panel. Brought forward and made key only for the user's
-    /// own Review; for an agent's `open_in_funes` it shows where it is, without taking focus.
+    /// own Review. An agent's `open_in_funes` shows it without taking focus, and selects it only
+    /// when the user hasn't picked another item, so it never switches one under the cursor.
     @MainActor
     private func select(_ id: UUID, activate: Bool) {
-        queue.select(id)
+        let userPicked = queue.selectedID.map { picked in picked != id && queue.items.contains { $0.id == picked } } ?? false
+        if activate || !userPicked { queue.select(id) }
         if activate { bringForward() } else { controller.update() }
     }
 

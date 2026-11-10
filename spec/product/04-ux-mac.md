@@ -785,7 +785,7 @@ All panels are non-activating floating `NSPanel`s at the top right. When several
 - **Strong matches are ticked; weaker ones are offered unticked** under "Also matched, less closely" (access policy §3.2).
 - The body text is clipped to 3 lines (at most 160 characters), with "Show all" to expand. The text is the exact text that will be sent, and every row whose text is cut offers "Show all", so everything Share would release can be read first.
 - The panel is never taller than the screen's visible area: the title and the buttons stay in place and the rows between them scroll.
-- Opening a pending request again (from the menu bar panel's Review, Pending requests or an agent's `open_in_funes`) refreshes the same panel and selects it; only the user's own Review makes it key. Rows whose memory is unchanged keep the user's ticks. If anything that would be shared changed, the buttons arm again. It counts down to the end of its 15 minutes ("9:05").
+- Opening a pending request again (from the menu bar panel's Review, Pending requests or an agent's `open_in_funes`) refreshes the same panel and selects it (an agent's `open_in_funes` doesn't switch away from an item the user picked); only the user's own Review makes it key. Rows whose memory is unchanged keep the user's ticks. If anything that would be shared changed, the buttons arm again. It counts down to the end of its 15 minutes ("9:05").
 - **More Time** moves the request to Pending requests at once (a HUD says until when). On timeout the HUD says "No answer: Claude Code was told to wait. It's in Pending requests."
 
 ### Save this memory?
