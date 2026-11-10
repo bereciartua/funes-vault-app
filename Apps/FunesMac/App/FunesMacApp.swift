@@ -62,6 +62,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // A relaunch waits for the copy before it to quit, then carries out a pending Erase All
         // Data before the settings are read or the vault opens (FR-G-05).
         AppMover.waitForPreviousCopy()
+        if handOffToRunningCopy() { return }
         DataOperations.applyPendingErase(dataFolder: VaultEnvironment.defaultDataFolder(), defaults: preferences.defaults)
         // Before any window, panel or alert shows (FR-G-06).
         preferences.appearance.apply()
@@ -476,6 +477,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             failure.runModal()
         }
         #endif
+    }
+
+    /// One copy at a time on the vault: when another copy with this bundle id is already running,
+    /// it comes forward (as reopening it does) and this one quits before opening anything. The copy
+    /// a relaunch waits for doesn't count, in case it's still quitting; of two launched at once the
+    /// older stays. A development vault (Debug on FUNES_DATA_DIR) runs beside the installed app.
+    private func handOffToRunningCopy() -> Bool {
+        if Preferences.isDevelopmentVault { return false }
+        let me = NSRunningApplication.current
+        let arguments = CommandLine.arguments
+        let waitedFor = arguments.firstIndex(of: AppMover.waitForArgument)
+            .flatMap { $0 + 1 < arguments.count ? pid_t(arguments[$0 + 1]) : nil }
+        let myLaunch = me.launchDate ?? .distantFuture
+        let older = NSRunningApplication.runningApplications(withBundleIdentifier: Identifiers.macBundleID).first { other in
+            guard other.processIdentifier != me.processIdentifier, other.processIdentifier != waitedFor, !other.isTerminated
+            else { return false }
+            let launched = other.launchDate ?? .distantPast
+            return launched < myLaunch || (launched == myLaunch && other.processIdentifier < me.processIdentifier)
+        }
+        guard let older else { return false }
+        logger.notice("Another copy is running; handing over to it")
+        if let url = older.bundleURL {
+            let configuration = NSWorkspace.OpenConfiguration()
+            configuration.activates = true
+            NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, _ in
+                DispatchQueue.main.async { NSApp.terminate(nil) }
+            }
+        } else {
+            older.activate()
+            NSApp.terminate(nil)
+        }
+        return true
     }
 
     /// After a relaunch for Restore from Backup (FR-G-04): how it went.
