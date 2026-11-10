@@ -5,8 +5,8 @@ import FunesCore
 import FunesProtocol
 import Testing
 
-/// Code review 2026-11-10: refusals that came before the rate limiter, and Remote Access turned
-/// off with remote calls in flight.
+/// Code review 2026-11-10: refusals that came before the rate limiter, Remote Access turned off
+/// with remote calls in flight, and a `request_memory` that outlasts the call's 55 s.
 @MainActor
 @Suite("Pipeline guards")
 struct PipelineGuardTests {
@@ -111,5 +111,36 @@ struct PipelineGuardTests {
         await f.retriever.waitUntilRetrieving()
         f.retriever.release([f.memory.id])
         #expect(Self.content(await localCall.value)["status"] as? String == "fulfilled")
+    }
+
+    /// Once a request waits for the user, the call's timeout answer is that request with its id,
+    /// not a bare `timeout`, so an agent cut off at 55 s can still ask for it.
+    @Test func timeoutAnswerCarriesTheWaitingRequest() async throws {
+        let f = try await make(askBeforeSharing: true, inCallWait: .milliseconds(300))
+        defer { try? FileManager.default.removeItem(at: f.directory) }
+        let pipeline = f.local.pipeline
+        let context = CallContext()
+        let inFlight = Task { await pipeline.handle(call(f, "request_memory", context: context)) }
+        await f.retriever.waitUntilRetrieving()
+        f.retriever.release([f.memory.id])
+        let result = Self.content(await inFlight.value)
+        let fallback = Self.content(context.timeoutResult)
+        #expect(result["status"] as? String == "needs_approval")
+        #expect(fallback["status"] as? String == "needs_approval")
+        #expect(fallback["request_id"] as? String == result["request_id"] as? String)
+        #expect(fallback["request_id"] != nil)
+    }
+
+    /// A call that never waits leaves the registry's `timeout` in place.
+    @Test func noTimeoutAnswerWithoutAWaitingRequest() async throws {
+        let f = try await make()
+        defer { try? FileManager.default.removeItem(at: f.directory) }
+        let pipeline = f.local.pipeline
+        let context = CallContext()
+        let inFlight = Task { await pipeline.handle(call(f, "request_memory", context: context)) }
+        await f.retriever.waitUntilRetrieving()
+        f.retriever.release([f.memory.id])
+        #expect(Self.content(await inFlight.value)["status"] as? String == "fulfilled")
+        #expect(context.timeoutResult == nil)
     }
 }

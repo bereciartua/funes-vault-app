@@ -192,7 +192,7 @@ Shows a pending request or suggestion in Funes on the Mac: its panel, selected. 
 | Calls in progress per agent | 8 | `rate_limited` |
 | Requests waiting for approval per agent | 3 (each up to 45 s in a panel, then 15 min pending), counted in the write transaction that would add one, so concurrent calls can't exceed it | `rate_limited` (`retry_after_s` 60) |
 | Panels on screen | 3 (others queue) | — |
-| Time to answer a call | 55 s | `timeout` |
+| Time to answer a call | 55 s | `timeout`; a `request_memory` whose request is waiting for the user gets `needs_approval` with its `request_id` instead |
 | Result size | 200,000 bytes for the whole response body, JSON-RPC envelope and echoed id included; met by compiling bundles to fit, with room kept for the longest id accepted ([access policy §4](../domain/access-policy.md#4-bundle-compilation)) | the item is skipped, or clipped if it's the first |
 | `get_memory_request` per request id | once per 5 s | `rate_limited` |
 | Failed authentications (all callers) | 120/min | 429 for 60 s |
