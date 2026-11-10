@@ -1,4 +1,6 @@
 # Converts bge-small-en-v1.5 to Core ML (scripts/fetch_embedding_model.sh). Pinned; no transformers.
+# The input of requirements-lock.txt, which fetch_embedding_model.sh installs (every package of the
+# tree, hashed); after a change here, regenerate it (scripts/embedding_model/lock_requirements.py).
 coremltools==9.0
 numpy==2.4.6
 safetensors==0.8.0

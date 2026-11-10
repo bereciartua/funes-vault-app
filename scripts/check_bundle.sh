@@ -6,12 +6,15 @@ set -eu
 # signed with the hardened runtime by the app's team and nothing carries get-task-allow; the app
 # embeds its Developer ID profile and has iCloud with CloudKit Production for the iPhone's
 # doorbell (ADR-0019), and funes-mcp has no iCloud; it's a Release build (no Debug-only code); Sparkle is embedded and the app knows its feed and key;
-# the bundled embedding model matches the pinned checksums; the icon, LICENSE, NOTICE and the
+# the bundled embedding model is exactly what coremlcompiler makes of the pinned package, with the
+# pinned vocabulary; the icon, LICENSE, NOTICE and the
 # third-party licenses are inside; and the whole bundle verifies. Used by the release script.
 #
 # Usage: sh scripts/check_bundle.sh APP [ARCH...]   (default: this Mac's arch)
 #   FUNES_ALLOW_NO_UPDATES=1 accepts an empty SUFeedURL or SUPublicEDKey (a rehearsal before the
 #   Sparkle keys exist); a release never sets it.
+#   The model is compared with the checked package in the model cache (FUNES_EMBEDDING_MODEL_DIR,
+#   else ~/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-<rev>/; scripts/fetch_embedding_model.sh).
 app=${1:?usage: check_bundle.sh APP [ARCH...]}
 shift
 [ "$#" -gt 0 ] || set -- "$(uname -m)"
@@ -103,15 +106,16 @@ for key in SUFeedURL SUPublicEDKey; do
     fi
 done
 
-# The bundled model (ADR-0016), exactly the pinned one.
+# The bundled model (ADR-0016), exactly the pinned one: every file of the compiled model is what
+# coremlcompiler makes of the pinned package, and nothing else is in its folder.
 fetch="$project_dir/scripts/fetch_embedding_model.sh"
 model="$contents/Resources/bge-small-en-v1.5"
-sha() { shasum -a 256 "$1" | cut -d' ' -f1; }
-[ "$(sha "$model/bge-small-en-v1.5.mlmodelc/weights/weight.bin" 2>/dev/null)" \
-    = "$(sed -n 's/^WEIGHTS_SHA256="\([0-9a-f]*\)"$/\1/p' "$fetch")" ] \
+revision=$(sed -n 's/^REVISION="\([0-9a-f]*\)"$/\1/p' "$fetch")
+model_source=${FUNES_EMBEDDING_MODEL_DIR:-$HOME/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-$(echo "$revision" | cut -c1-7)}
+[ "$(ls -A "$model" 2>/dev/null)" = "$(printf '%s\n' bge-small-en-v1.5.mlmodelc vocab.txt)" ] \
+    || fail "Resources/bge-small-en-v1.5 should hold bge-small-en-v1.5.mlmodelc and vocab.txt, and nothing else"
+sh "$project_dir/scripts/check_embedding_model.sh" "$model_source" "$model" \
     || fail "Resources/bge-small-en-v1.5 lacks the pinned model"
-[ "$(sha "$model/vocab.txt" 2>/dev/null)" = "$(sed -n 's/^vocab.txt \([0-9a-f]*\)$/\1/p' "$fetch")" ] \
-    || fail "Resources/bge-small-en-v1.5 lacks the pinned vocab.txt"
 
 # The icon, compiled by actool into Assets.car (and AppIcon.icns for older Finder paths).
 [ -s "$contents/Resources/Assets.car" ] || fail "Resources/Assets.car is missing"

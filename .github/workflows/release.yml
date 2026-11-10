@@ -5,7 +5,16 @@ name: Release
 # with the notarized DMG and zip, SHA256SUMS and appcast.xml. The maintainer
 # reviews the draft and publishes it (docs/MAINTAINING.md).
 #
-# scripts/release.sh does the work, the same script that runs by hand. The workflow
+# Three jobs, so the model conversion's third-party Python never runs next to the secrets:
+#   model    Converts the bundled embedding model (ADR-0016) with no environment, no secrets
+#            and a read-only token, and hands the .mlpackage and vocab.txt on as an artifact.
+#   release  In the "release" environment: checks every file of that artifact against the
+#            checksums pinned in the repository and compiles it (scripts/fetch_embedding_model.sh
+#            --install), then runs scripts/release.sh, which never converts here
+#            (FUNES_MODEL_VERIFY_ONLY=1).
+#   attest   Attests the DMGs and the zip the release job built; the only job with an OIDC token.
+#
+# scripts/release.sh does the work, the same script that runs by hand. The release job
 # only provides the secrets: the Developer ID certificate in a temporary
 # keychain, the Developer ID provisioning profile where Xcode finds it, and the
 # notary API key and the Sparkle key as files, all deleted at the end. Secrets
@@ -19,25 +28,74 @@ on:
   push:
     tags: ["v*"]
 
+# Each job asks for what it needs.
 permissions:
-  contents: write # the draft release and its assets
-  id-token: write # build attestations
-  attestations: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  model:
+    name: Convert the embedding model
+    runs-on: xcode-27
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+
+      # Cached like CI's: the converted model only.
+      - name: Embedding model cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7
+            !~/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7/venv
+            !~/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7/hf
+          key: embedding-model-${{ runner.os }}-${{ hashFiles('scripts/fetch_embedding_model.sh', 'scripts/embedding_model/**') }}
+
+      - name: Embedding model
+        run: FUNES_PYTHON=python3.11 sh scripts/fetch_embedding_model.sh
+
+      - name: Stage the package and the vocabulary
+        run: |
+          set -eu
+          model="$HOME/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7"
+          mkdir -p "$RUNNER_TEMP/embedding-model"
+          cp -R "$model/bge-small-en-v1.5.mlpackage" "$model/vocab.txt" "$RUNNER_TEMP/embedding-model/"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: embedding-model
+          path: ${{ runner.temp }}/embedding-model
+          if-no-files-found: error
+          # Outlives the release environment's approval wait (at most 30 days).
+          retention-days: 31
+
   release:
     name: Build, notarize and draft the release
+    needs: model
     runs-on: xcode-27
     environment: release
-    # Two notarizations of up to 45 minutes each (release.sh), plus the model, tests and archive.
+    permissions:
+      contents: write # the draft release and its assets
+    # Two notarizations of up to 45 minutes each (release.sh), plus the tests and archive.
     timeout-minutes: 120
     env:
       # The same Xcode as CI's first matrix entry and the maintainer's Mac.
       DEVELOPER_DIR: /Applications/Xcode_27.0.app/Contents/Developer
+      # Only the model job converts; here anything but the pinned model fails the run.
+      FUNES_MODEL_VERIFY_ONLY: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -52,22 +110,20 @@ jobs:
           xcrun swiftc --version
           xcrun notarytool --version
 
+      # The python3 that release.sh, test.sh and check_bundle.sh run; no packages are installed.
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
 
-      # The bundled model (ADR-0016), cached like CI's: the converted model only.
-      - name: Embedding model cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          path: |
-            ~/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7
-            !~/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7/venv
-            !~/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-5c38ec7/hf
-          key: embedding-model-${{ runner.os }}-${{ hashFiles('scripts/fetch_embedding_model.sh', 'scripts/embedding_model/**') }}
+          name: embedding-model
+          path: ${{ runner.temp }}/embedding-model
 
+      # Every file checked against the checksums pinned in this checkout, then compiled with
+      # this runner's coremlcompiler; nothing compiled by the model job is used.
       - name: Embedding model
-        run: FUNES_PYTHON=python3.11 sh scripts/fetch_embedding_model.sh
+        run: sh scripts/fetch_embedding_model.sh --install "$RUNNER_TEMP/embedding-model"
 
       - name: Import the signing certificate into a temporary keychain
         env:
@@ -84,8 +140,10 @@ jobs:
           security set-keychain-settings -lut 5400 "$keychain"
           security unlock-keychain -p "$keychain_password" "$keychain"
           printf '%s' "$DEVELOPER_ID_P12" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          # The private key can't be exported again (-x), and only codesign is trusted with it:
+          # nothing in the pipeline exports it.
           security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" -P "$DEVELOPER_ID_P12_PASSWORD" \
-            -T /usr/bin/codesign -T /usr/bin/security
+            -x -T /usr/bin/codesign
           rm -f "$RUNNER_TEMP/certificate.p12"
           # Let codesign use the key without a prompt.
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain" > /dev/null
@@ -135,14 +193,18 @@ jobs:
           [ -n "$FUNES_NOTARY_KEY_ID" ] || { echo "The NOTARY_KEY_ID secret is needed" >&2; exit 1; }
           sh scripts/release.sh
 
-      - name: Attest the downloads
-        # Build attestations need a public repository (or GitHub Enterprise).
+      # For the attest job. Build attestations need a public repository (or GitHub Enterprise).
+      - name: Hand the downloads to the attest job
         if: ${{ !github.event.repository.private }}
-        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          subject-path: |
+          name: release-downloads
+          path: |
             dist/*.dmg
             dist/*.zip
+            dist/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Remove the keychain, profile and keys
         if: ${{ always() }}
@@ -151,3 +213,31 @@ jobs:
           [ -z "${RELEASE_PROFILE:-}" ] || rm -f "$RELEASE_PROFILE"
           rm -f "$RUNNER_TEMP/AuthKey.p8" "$RUNNER_TEMP/sparkle.key" "$RUNNER_TEMP/certificate.p12" \
             "$RUNNER_TEMP/profile.provisionprofile"
+
+  attest:
+    name: Attest the downloads
+    needs: release
+    # Build attestations need a public repository (or GitHub Enterprise).
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write # build attestations
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-downloads
+          path: dist
+
+      # The same files as in the draft release, whose SHA256SUMS the release job wrote.
+      - name: Check the downloads against SHA256SUMS
+        working-directory: dist
+        run: sha256sum --check --strict SHA256SUMS
+
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.dmg
+            dist/*.zip

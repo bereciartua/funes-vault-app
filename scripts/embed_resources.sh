@@ -5,8 +5,9 @@
 # Contents/Resources/bge-small-en-v1.5/ as
 # bge-small-en-v1.5.mlmodelc and vocab.txt, from the copy scripts/fetch_embedding_model.sh makes
 # (FUNES_EMBEDDING_MODEL_DIR, else ~/Library/Caches/com.funesvault.dev/bge-small-en-v1.5-<rev>/).
-# The compiled weights and the vocabulary must match the checksums pinned in
-# fetch_embedding_model.sh, so a build never ships another model.
+# The package and the vocabulary must match the checksums pinned in fetch_embedding_model.sh
+# (scripts/check_embedding_model.sh), and the compiled model is made here from that checked
+# package, so a build never ships another model.
 #
 # Release builds fail without the model: a release must never fall back to keyword search
 # silently. Debug builds skip it with a warning, and the app then looks in the cache folder itself.
@@ -16,10 +17,8 @@ project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 fetch="$project_dir/scripts/fetch_embedding_model.sh"
 name=bge-small-en-v1.5
 revision=$(sed -n 's/^REVISION="\([0-9a-f]*\)"$/\1/p' "$fetch")
-weights_sha=$(sed -n 's/^WEIGHTS_SHA256="\([0-9a-f]*\)"$/\1/p' "$fetch")
-vocab_sha=$(sed -n 's/^vocab.txt \([0-9a-f]*\)$/\1/p' "$fetch")
-[ -n "$revision" ] && [ -n "$weights_sha" ] && [ -n "$vocab_sha" ] || {
-    echo "error: can't read the pinned model checksums from scripts/fetch_embedding_model.sh" >&2
+[ -n "$revision" ] || {
+    echo "error: can't read the pinned model revision from scripts/fetch_embedding_model.sh" >&2
     exit 1
 }
 source_dir=${FUNES_EMBEDDING_MODEL_DIR:-$HOME/Library/Caches/com.funesvault.dev/$name-$(echo "$revision" | cut -c1-7)}
@@ -40,15 +39,13 @@ missing() {
     exit 0
 }
 
-[ -d "$source_dir/$name.mlmodelc" ] && [ -f "$source_dir/vocab.txt" ] \
+[ -d "$source_dir/$name.mlpackage" ] && [ -f "$source_dir/vocab.txt" ] \
     || missing "the embedding model isn't at $source_dir"
-sha() { shasum -a 256 "$1" | cut -d' ' -f1; }
-[ "$(sha "$source_dir/$name.mlmodelc/weights/weight.bin")" = "$weights_sha" ] \
-    || missing "$source_dir/$name.mlmodelc has weights other than the pinned ones"
-[ "$(sha "$source_dir/vocab.txt")" = "$vocab_sha" ] \
-    || missing "$source_dir/vocab.txt isn't the pinned vocabulary"
+sh "$project_dir/scripts/check_embedding_model.sh" "$source_dir" \
+    || missing "$source_dir doesn't hold the pinned embedding model"
 
+rm -rf "$destination"
 mkdir -p "$destination"
-rsync -a --delete "$source_dir/$name.mlmodelc" "$destination/"
+xcrun coremlcompiler compile "$source_dir/$name.mlpackage" "$destination" > /dev/null
 cp "$source_dir/vocab.txt" "$destination/vocab.txt"
-echo "embed_embedding_model: $name ($weights_sha) in $destination"
+echo "embed_embedding_model: $name, compiled from the pinned package, in $destination"
