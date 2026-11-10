@@ -174,6 +174,72 @@ import Testing
         }
     }
 
+    /// A connection that's open and ready, sending nothing.
+    func openIdle(port: Int) async -> NWConnection {
+        let connection = NWConnection(host: "127.0.0.1", port: NWEndpoint.Port(rawValue: UInt16(port))!, using: .tcp)
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            let done = OSAllocatedUnfairLock(initialState: false)
+            connection.stateUpdateHandler = { state in
+                switch state {
+                case .ready, .failed, .cancelled:
+                    if done.withLock({ let was = $0; $0 = true; return !was }) { continuation.resume() }
+                default: break
+                }
+            }
+            connection.start(queue: DispatchQueue(label: "test.idle"))
+        }
+        return connection
+    }
+
+    /// Whether the listener closes `connection` within `seconds`.
+    func closes(_ connection: NWConnection, within seconds: TimeInterval) async -> Bool {
+        await withCheckedContinuation { continuation in
+            let done = OSAllocatedUnfairLock(initialState: false)
+            @Sendable func finish(_ closed: Bool) {
+                guard done.withLock({ let was = $0; $0 = true; return !was }) else { return }
+                continuation.resume(returning: closed)
+            }
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 1) { data, _, complete, error in
+                finish(complete || error != nil || data == nil)
+            }
+            DispatchQueue.global().asyncAfter(deadline: .now() + seconds) { finish(false) }
+        }
+    }
+
+    /// One address can't hold every slot: past its share, its connections are closed at once,
+    /// and a slot comes back when one of its connections goes.
+    @Test func capsConnectionsPerAddress() async throws {
+        let port = Self.freePort()
+        var limits = CompanionListener.Limits()
+        limits.maxPerAddress = 2
+        let listener = CompanionListener(port: port, modes: [.tunnel], bonjour: nil, limits: limits) { _, _ in HTTPResponse(status: 204) }
+        defer { listener.stop() }
+        _ = try await start(listener)
+        let first = await openIdle(port: port), second = await openIdle(port: port)
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(try await post(port: port, path: "/hello") == nil)
+        first.cancel()
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(try await post(port: port, path: "/hello") == 204)
+        second.cancel()
+    }
+
+    /// A connection that sends nothing is closed after the first-byte deadline, well before the
+    /// 30 s idle one.
+    @Test func closesAConnectionThatSendsNothing() async throws {
+        let port = Self.freePort()
+        var limits = CompanionListener.Limits()
+        limits.firstByte = 0.3
+        let listener = CompanionListener(port: port, modes: [.tunnel], bonjour: nil, limits: limits) { _, _ in HTTPResponse(status: 204) }
+        defer { listener.stop() }
+        _ = try await start(listener)
+        let silent = await openIdle(port: port)
+        defer { silent.cancel() }
+        #expect(await closes(silent, within: 3))
+        #expect(try await post(port: port, path: "/hello") == 204)
+        #expect(CompanionListener.firstByteTimeout < CompanionListener.idleTimeout)
+    }
+
     /// Settings changes restart the listener on the same port.
     @Test func restartsOnTheSamePort() async throws {
         let port = Self.freePort()
