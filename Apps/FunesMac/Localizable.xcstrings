@@ -78,8 +78,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ asks to use %2$lld memories in Funes"
+            "state" : "translated",
+            "value" : "%1$@ asks to use %#@count@ in Funes"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -294,8 +316,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ wants %2$lld memories"
+            "state" : "translated",
+            "value" : "%1$@ wants %#@count@"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -452,8 +496,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@, %2$@, %3$lld requests waiting"
+            "state" : "translated",
+            "value" : "%1$@, %2$@, %#@count@ waiting"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 3,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg request"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg requests"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -492,8 +558,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@, %2$lld memories shared"
+            "state" : "translated",
+            "value" : "%1$@, %#@count@ shared"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -672,10 +760,48 @@
       }
     },
     "%lld claims" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld claim"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld claims"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld claims left out: they didn't quote a memory" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld claim left out: it didn't quote a memory"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld claims left out: they didn't quote a memory"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld couldn't be changed" : {
 
@@ -802,6 +928,28 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld memories checked"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld memories have changes you haven't saved. Funes Vault doesn't keep them when it quits." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memory has changes you haven't saved. Funes Vault doesn't keep them when it quits."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memories have changes you haven't saved. Funes Vault doesn't keep them when it quits."
                 }
               }
             }
@@ -2708,8 +2856,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Deleted %1$@. It's removed for good in %2$lld days unless you restore it."
+            "state" : "translated",
+            "value" : "Deleted %1$@. It's removed for good in %#@count@ unless you restore it."
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg day"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg days"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -2766,6 +2936,12 @@
 
     },
     "Discard and Delete" : {
+
+    },
+    "Discard and Quit" : {
+
+    },
+    "Discard unsaved changes?" : {
 
     },
     "Discard your changes and delete this memory?" : {
@@ -2848,8 +3024,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Embed %1$lld memories with %2$@?"
+            "state" : "translated",
+            "value" : "Embed %#@count@ with %2$@?"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3085,8 +3283,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "From %1$@ · %2$lld pieces"
+            "state" : "translated",
+            "value" : "From %1$@ · %#@count@"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg piece"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pieces"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3223,7 +3443,7 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Funes applied %lld change. You can undo them in the Inbox."
+                  "value" : "Funes applied %lld change. You can undo it in the Inbox."
                 }
               },
               "other" : {
@@ -3281,7 +3501,26 @@
       }
     },
     "Funes has %lld tidy-up suggestions for you to review." : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Funes has %lld tidy-up suggestion for you to review."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Funes has %lld tidy-up suggestions for you to review."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Funes has a suggestion for this memory in the Inbox." : {
 
@@ -3898,8 +4137,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Last run %1$@, %2$lld suggestions"
+            "state" : "translated",
+            "value" : "Last run %1$@, %#@count@"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg suggestion"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg suggestions"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -4122,8 +4383,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Move %1$lld memories to %2$@?"
+            "state" : "translated",
+            "value" : "Move %#@count@ to %2$@?"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -4634,7 +4917,26 @@
       }
     },
     "On · %lld cloud agents" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "On · %lld cloud agent"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "On · %lld cloud agents"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "On · 1 agent" : {
 
@@ -5180,7 +5482,26 @@
 
     },
     "Remote Access on · %lld cloud agents" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Remote Access on · %lld cloud agent"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Remote Access on · %lld cloud agents"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Remote Access on · 1 cloud agent" : {
 
@@ -5887,8 +6208,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Shared %1$lld times · last with %2$@ %3$@"
+            "state" : "translated",
+            "value" : "Shared %#@count@ · last with %2$@ %3$@"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg time"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg times"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

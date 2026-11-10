@@ -49,8 +49,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ wants %2$lld memories"
+            "state" : "translated",
+            "value" : "%1$@ wants %#@count@"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -194,7 +216,26 @@
       }
     },
     "%lld claims left out: they didn't quote a memory" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld claim left out: it didn't quote a memory"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld claims left out: they didn't quote a memory"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld expired" : {
 
@@ -772,7 +813,26 @@
 
     },
     "Delete %lld Captures" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Delete %lld Capture"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Delete %lld Captures"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Delete Queued Captures…" : {
 
@@ -1488,8 +1548,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Rhythm, last 12 weeks: %1$lld memories saved. %2$@"
+            "state" : "translated",
+            "value" : "Rhythm, last 12 weeks: %#@count@ saved. %2$@"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1638,14 +1720,55 @@
       }
     },
     "Shared %lld times" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Shared %lld time"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Shared %lld times"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Shared %lld times · last %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Shared %1$lld times · last %2$@"
+            "state" : "translated",
+            "value" : "Shared %#@count@ · last %2$@"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg time"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg times"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

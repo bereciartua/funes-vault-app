@@ -4,7 +4,7 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
-Fixes from a full code review of the Mac app, the iPhone app and the release pipeline. **Update the Mac and the iPhone together:** the iPhone now trusts only refusals your Mac has signed, so a new iPhone app with an older Mac can't correct its clock or learn it was removed.
+Fixes from a full code review of the Mac app, the iPhone app and the release pipeline. **Update the Mac first, then the iPhone:** the iPhone now trusts only refusals your Mac has signed, so a new iPhone app with an older Mac can't correct its clock or learn it was removed (it shows the Mac as unreachable instead).
 
 ### Security
 
@@ -12,9 +12,9 @@ Fixes from a full code review of the Mac app, the iPhone app and the release pip
 - **Deleting a category keeps agents out.** Deleting a category that an agent is denied, with no replacement, used to drop that denial, so its memories that were also in another category became readable. Funes now asks for a replacement.
 - **Approval panels don't take the keyboard.** An agent's Open in Funes made the panel key with Return ready to share, so Return typed for another app could approve. Now the panel only shows the request; it takes the keyboard only when you click Review, and Return and Esc wait a moment each time it does.
 - **Sensitive text stays on the Mac.** The check before sending text to a cloud model looked only at the three strongest topics, so one health, money or legal mention among other topics could be sent. Every topic now counts. Everyday words like "will", "paid" and "court" no longer mark a note Sensitive.
-- **Purging a memory removes all of its text.** A purged memory's text stayed in the suggestion it was saved from when that suggestion wasn't part of a split, and in every later backup.
+- **Purging a memory removes all of its text.** A purged memory's text stayed in the suggestion it was saved from when that suggestion wasn't part of a split, and in every later backup. Suggestions still waiting about a purged memory are closed.
 - **iPhone: fake replies from your network are ignored.** A device on the same Wi-Fi could crash the app, move its clock, or make it show "Removed from Funes". The iPhone now acts on a refusal only when your Mac signed it.
-- **Mac: iPhone requests can't be replayed,** even after a change in Settings ▸ iPhone or a restart, and one device on your network can no longer use up every connection and lock your iPhone out.
+- **Mac: iPhone requests can't be replayed,** even after a change in Settings ▸ iPhone or a restart, whatever the two clocks say, and one device on your network can no longer use up every connection and lock your iPhone out. A Mac whose clock is corrected after login no longer refuses the iPhone for a while.
 - **Agent corrections keep a memory's protection.** Saving an agent's correction with Replace could lower the memory's sensitivity, change its categories or clear its expiry. They now stay unless you change them. An Inbox card moved into Health, Finance or Legal raises its sensitivity, as New Memory does.
 - **Trust survives a restore.** Exports now record whether a memory came from you or from an agent, and a restore keeps it; memories from older exports are restored as not from you.
 - **Stored text can't steer the models.** Memory text that imitates the structure of the prompts Funes sends (for search answers, the tidy-up, splitting and extraction) is no longer read as structure. The tidy-up no longer applies a change on its own when an agent's memory is in the same group.
@@ -24,16 +24,17 @@ Fixes from a full code review of the Mac app, the iPhone app and the release pip
 - **A looping agent can't erase your history.** Refusals are now rate-limited even for a paused agent, and repeated identical refusals no longer push older rows out of Activity.
 - **Keys and tokens on the clipboard stay on this Mac** and are hidden from clipboard managers that honour the standard markers. Copy Remote Token never silently replaces a working token.
 - Secrets in a suggestion's purpose, PGP private key blocks and encrypted private keys are now blocked.
-- The release pipeline converts the embedding model without access to any signing key, pins every file of it, and installs its Python tools from a locked list.
+- The release pipeline converts the embedding model without access to any signing key, pins every file of it, and installs its Python tools from a locked list. Attestation works from the checksums, so notarized builds never leave the signing job before you publish them.
 
 ### Fixed
 
 - **"Show this memory" opens the right memory,** even when it's archived, expired, deleted or filtered out. Before, the Vault could open on the memory selected earlier.
-- **Unsaved edits are kept** when you select another memory, switch section, close the window, change the Status filter, or press Still True, Archive or Restore. Rows with unsaved edits show a pencil, and Delete asks first.
+- **Unsaved edits are kept** when you select another memory, switch section, close the window, change the Status filter, or press Still True, Archive or Restore, and they move onto the memory if something else about it changes meanwhile. Rows with unsaved edits show a pencil; Delete, Quit and a relaunch to update ask first.
 - A Search answer quoting part of an emoji (one half of a flag) no longer crashes the Mac or the iPhone app.
 - An approval made before pausing an agent can still be collected after resuming. A panel that went stale while open is refused with "This request changed" instead of failing at delivery, and expired or emptied requests now appear in Activity.
 - Allow Once on a request whose access changed while the panel was open keeps the original request waiting, instead of dropping it.
 - Clearing an agent's last allowed category asks before it opens up every category.
+- Counts read right for one: "1 memory", "Imported 1 item", "in 1 day".
 - Moving several memories to a category asks first when it removes their other categories.
 - The shortcut recorder no longer takes keys in other windows after you leave it.
 - The capture box keeps its draft when reopened or when you use Services, and Esc stops dictation. Stopping dictation while it's starting no longer leaves the microphone on, on the Mac or the iPhone.
