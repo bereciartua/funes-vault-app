@@ -43,7 +43,7 @@ CI is kept cheap while macOS minutes are scarce: it runs the tests on pull reque
 - [ ] A higher `CURRENT_PROJECT_VERSION` and the new `MARKETING_VERSION` in the project (project level only; `scripts/check_version.sh` rejects a second, different value, such as a target override), `version` in `server.json`, and a `## [x.y.z]` section in the changelog.
 - [ ] The [provisioning profile](#the-provisioning-profile) "Funes Vault Mac Developer ID" is installed and the `DEVELOPER_ID_PROFILE` secret holds the same one, not near its expiry (`release.sh` prints it).
 - [ ] Docs match the behaviour: README, [MCP](MCP.md), [Testing](TESTING.md), [Privacy](../PRIVACY.md), the website.
-- [ ] No personal data in the tree or the new commits: `gitleaks git` over the new commits is clean.
+- [ ] No personal data in the tree or the new commits: `gitleaks git` and `gitleaks dir` are clean. Both read `.gitleaks.toml`, which allowlists the repo's known false positives (key type declarations and the secret scanner's fake test secrets), each with its reason; a real secret is rotated and removed, never allowlisted.
 - [ ] UI snapshots reviewed, light and dark.
 - [ ] The [live matrix](TESTING.md#live-agent-matrix) ran for the four agents, and the results are recorded.
 - [ ] If the iPhone app changed with the Mac's companion protocol or methods: pairing, capture and an approval checked on a real iPhone against the release build, and a new build sent to TestFlight with `sh scripts/ios_release.sh --upload` ([The iPhone app](#the-iphone-app)).

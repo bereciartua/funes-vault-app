@@ -1,0 +1,25 @@
+# gitleaks: the default rules, plus the false positives this repo is known to have. Each entry
+# says why it isn't a secret. Real findings must never be allowlisted here: rotate and remove them.
+title = "Funes Vault"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "The secret scanner's own test data: fictional passwords and keys that the processing fixtures and their spike use to check that secret-like text is blocked."
+paths = [
+  '''^Packages/FunesCore/Tests/FunesCoreTests/fixtures/processing/''',
+  '''^spikes/memory-processing/''',
+]
+
+[[allowlists]]
+description = "Swift declarations of key types and key fields (P256 keys, their x963 representations), not key material."
+regexTarget = "line"
+regexes = [
+  '''\b\w*[Kk]ey\s*:\s*P256\.''',
+  '''\b\w*[Kk]ey\s*=\s*\w*[Kk]ey\.x963Representation\b''',
+]
+
+[[allowlists]]
+description = "Fixed test values: the Remote Access harness's secret path and a fake key the import test expects to be blocked."
+stopwords = ["q7Zk2vN4bXwP9sL1mT6hYa", "abcdefgh12345678"]
