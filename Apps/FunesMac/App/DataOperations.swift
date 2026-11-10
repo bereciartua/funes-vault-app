@@ -121,17 +121,33 @@ final class DataOperations {
 
     // MARK: Erase All Data (FR-G-05)
 
+    static let eraseMarker = "erase-pending"
+
     /// Deletes the vault, keys, Activity and backups in the data folder, the AI provider keys and
-    /// the app's settings, then relaunches empty. Agents' own config files aren't touched.
-    func eraseAll(modelSettings: ModelSettings) {
-        let manager = FileManager.default
+    /// the app's settings, then relaunches empty. Agents' own config files aren't touched. The
+    /// files and settings go at the next launch, before anything opens them (as a restore does),
+    /// so no service still running writes them back; this writes the marker, removes the provider
+    /// keys and relaunches. Throws, deleting nothing, when the marker can't be written.
+    func eraseAll(modelSettings: ModelSettings) throws {
+        let marker = environment.dataFolder.appendingPathComponent(Self.eraseMarker)
+        try Data().write(to: marker, options: .atomic)
         for account in modelSettings.accounts { modelSettings.removeAccount(account.id) }
-        if let items = try? manager.contentsOfDirectory(at: environment.dataFolder, includingPropertiesForKeys: nil) {
-            for item in items { try? manager.removeItem(at: item) }
-        }
-        let domain = Preferences.isDevelopmentVault ? "com.funesvault.dev" : Identifiers.macBundleID
-        preferences.defaults.removePersistentDomain(forName: domain)
         Self.relaunch()
+    }
+
+    /// At launch, after the previous copy quit and before the settings are read or the vault
+    /// opens: carries out a pending Erase All Data. The marker goes last, so an erase cut short
+    /// runs again at the next launch.
+    static func applyPendingErase(dataFolder: URL, defaults: UserDefaults) {
+        let manager = FileManager.default
+        let marker = dataFolder.appendingPathComponent(eraseMarker)
+        guard manager.fileExists(atPath: marker.path) else { return }
+        let items = (try? manager.contentsOfDirectory(at: dataFolder, includingPropertiesForKeys: nil)) ?? []
+        for item in items where item.lastPathComponent != eraseMarker { try? manager.removeItem(at: item) }
+        let domain = Preferences.isDevelopmentVault ? "com.funesvault.dev" : Identifiers.macBundleID
+        defaults.removePersistentDomain(forName: domain)
+        try? manager.removeItem(at: marker)
+        logger.notice("Erased all data")
     }
 
     /// Opens a new copy of the app (with this one's environment and arguments) and quits.

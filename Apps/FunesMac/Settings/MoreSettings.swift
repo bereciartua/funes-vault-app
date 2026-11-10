@@ -201,7 +201,13 @@ struct DataSettings: View {
         }
         .confirmationDialog(String(localized: "Erase all of Funes Vault's data?"), isPresented: $erasing) {
             Button(String(localized: "Export First…")) { export() }
-            Button(String(localized: "Erase All Data"), role: .destructive) { model.data.eraseAll(modelSettings: model.modelSettings) }
+            Button(String(localized: "Erase All Data"), role: .destructive) {
+                do {
+                    try model.data.eraseAll(modelSettings: model.modelSettings)
+                } catch {
+                    message = String(localized: "Funes Vault couldn't erase its data. Nothing was deleted.")
+                }
+            }
         } message: {
             Text(String(localized: "This deletes every memory, suggestion, agent and key, Activity, backups and AI provider keys, then relaunches empty. It can't be undone. Agents' own settings still name Funes until you remove it there."))
         }

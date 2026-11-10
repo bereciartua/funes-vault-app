@@ -59,9 +59,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var reviewHotKey: HotKey?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // A relaunch waits for the copy before it to quit, then carries out a pending Erase All
+        // Data before the settings are read or the vault opens (FR-G-05).
+        AppMover.waitForPreviousCopy()
+        DataOperations.applyPendingErase(dataFolder: VaultEnvironment.defaultDataFolder(), defaults: preferences.defaults)
         // Before any window, panel or alert shows (FR-G-06).
         preferences.appearance.apply()
-        AppMover.waitForPreviousCopy()
         NSApp.mainMenu = MainMenu.build(target: self)
         let environment: VaultEnvironment
         do {
