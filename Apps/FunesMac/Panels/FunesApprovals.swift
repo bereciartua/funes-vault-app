@@ -26,6 +26,10 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// Which way the requests this session saw arrive came (true: through Remote Access), so a
     /// reopened panel says so. In memory only: after a relaunch `channel(known:agent:)` decides.
     @MainActor private var channels = [UUID: Bool]()
+    /// Reopened requests that came, or may have come, through Remote Access (decided by
+    /// `channel(known:agent:)` for one made before a relaunch): turning Remote Access off withdraws
+    /// their panels too.
+    @MainActor private var maybeRemote = Set<UUID>()
     @MainActor private lazy var controller = ApprovalPanelController(queue: queue)
     /// Shows a short notice (the HUD), e.g. when a request waited past its panel.
     @MainActor var notice: (String) -> Void = { _ in }
@@ -116,6 +120,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
         let agent = try? await environment.agents.agent(id: panel.agentID)
         let (remote, tunnel) = await MainActor.run { () -> (Bool?, String?) in
             let remote = Self.channel(known: channels[requestID], agent: agent)
+            if remote == false { maybeRemote.remove(requestID) } else { maybeRemote.insert(requestID) }
             return (remote, remote == false ? nil : remoteTunnel(panel.agentID))
         }
         var item = Self.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: now, agent: agent, remote: remote,
@@ -520,8 +525,10 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// requests stay in Pending requests, and a remote call still waiting for one releases
     /// nothing (its credential epoch moved).
     @MainActor
+    /// Remote Access turned off: the panels of requests that came, or may have come, through it go.
+    /// They stay in Pending requests, and the agent can only collect them through Remote Access.
     func withdrawRemote() {
-        for item in queue.items where channels[item.id] == true { queue.withdraw(item.id) }
+        for item in queue.items where channels[item.id] == true || maybeRemote.contains(item.id) { queue.withdraw(item.id) }
     }
 
     @MainActor
