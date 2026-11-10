@@ -16,6 +16,7 @@ public final class ApprovalPanelController {
     private var panel: NSPanel?
     private var host: NSHostingController<ApprovalPanelView>?
     private var announced = Set<UUID>()
+    private var keyObserver: NSObjectProtocol?
 
     public init(queue: ApprovalQueue) {
         self.queue = queue
@@ -70,8 +71,9 @@ public final class ApprovalPanelController {
         return parts.joined(separator: ". ") + "."
     }
 
-    /// Brings the panel forward and makes it key, so Return and Escape answer it (Open in Funes,
-    /// the Review Request shortcut, the menu's Review item).
+    /// Brings the panel forward and makes it key, so Return and Escape answer it once re-armed
+    /// (the Review Request shortcut, the menu's Review item, Pending requests). Only for the user's
+    /// own actions: an agent's `open_in_funes` never makes it key.
     public func bringForward() {
         guard let panel, queue.current != nil else { return }
         panel.orderFrontRegardless()
@@ -127,6 +129,12 @@ public final class ApprovalPanelController {
         host.sizingOptions = []
         panel.contentViewController = host
         self.host = host
+        // However it becomes key, Return and Esc wait out the arming delay again. Posted on the
+        // main thread, so the block runs there, at once.
+        keyObserver = NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: panel,
+                                                             queue: nil) { [weak self] _ in
+            MainActor.assumeIsolated { self?.queue.panelBecameKey() }
+        }
         return panel
     }
 
@@ -149,11 +157,14 @@ public struct ApprovalPanelView: View {
     /// changes (one expired, the user picked another, or a refresh changed what would be shared),
     /// they wait a moment so a click meant for the old content can't approve the new one.
     @State private var armed: ArmKey?
+    /// Return and Esc: armed like the buttons, and again each time the panel becomes key.
+    @State private var keysArmed: ArmKey?
     public static let armingDelay: TimeInterval = 0.6
 
     struct ArmKey: Equatable {
         let id: UUID
         let generation: Int
+        var keyGeneration = 0
     }
 
     public init(queue: ApprovalQueue, scrolls: Bool = true) {
@@ -169,6 +180,7 @@ public struct ApprovalPanelView: View {
     private var content: some View {
         if let item = queue.current {
             let key = ArmKey(id: item.id, generation: queue.generation(of: item.id))
+            let keysKey = ArmKey(id: item.id, generation: key.generation, keyGeneration: queue.keyGeneration)
             VStack(alignment: .leading, spacing: 0) {
                 if queue.shown.count > 1 {
                     chips(current: item)
@@ -185,7 +197,7 @@ public struct ApprovalPanelView: View {
                     middle(item)
                 }
                 Divider()
-                footer(item, armed: armed == key)
+                footer(item, armed: armed == key, keysArmed: armed == key && keysArmed == keysKey)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
             }
@@ -199,6 +211,18 @@ public struct ApprovalPanelView: View {
                         if let current = queue.current,
                            ArmKey(id: current.id, generation: queue.generation(of: current.id)) == key {
                             armed = key
+                        }
+                    }
+                }
+            }
+            .onChange(of: keysKey, initial: true) { _, key in
+                keysArmed = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + Self.armingDelay) {
+                    MainActor.assumeIsolated {
+                        if let current = queue.current,
+                           ArmKey(id: current.id, generation: queue.generation(of: current.id),
+                                  keyGeneration: queue.keyGeneration) == key {
+                            keysArmed = key
                         }
                     }
                 }
@@ -421,8 +445,10 @@ public struct ApprovalPanelView: View {
     /// The buttons. The default (Return, once the panel is key) is drawn prominent and is never a
     /// choice with lasting effect: Share N, Save, or Allow Once. Always Allow is a link on its own
     /// line, so it can't be truncated and is never hit by habit (UX review F1).
-    private func footer(_ item: PanelItem, armed: Bool) -> some View {
+    private func footer(_ item: PanelItem, armed: Bool, keysArmed: Bool) -> some View {
         let count = item.selectedIDs.count
+        let defaultKey: KeyboardShortcut? = keysArmed ? .defaultAction : nil
+        let cancelKey: KeyboardShortcut? = keysArmed ? .cancelAction : nil
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 if let seconds = queue.remaining(item) {
@@ -444,11 +470,11 @@ public struct ApprovalPanelView: View {
                 switch item.kind {
                 case .access:
                     Button(item.secondary) { queue.answer(item.id, .secondary) }
-                        .keyboardShortcut(.cancelAction)
+                        .keyboardShortcut(cancelKey)
                         .disabled(!armed)
                     if let tertiary = item.tertiary {
                         Button(tertiary) { queue.answer(item.id, .tertiary) }
-                            .keyboardShortcut(.defaultAction)
+                            .keyboardShortcut(defaultKey)
                             .buttonStyle(.borderedProminent)
                             // The panel is rarely key; draw the default as primary anyway.
                             .environment(\.controlActiveState, .key)
@@ -460,12 +486,12 @@ public struct ApprovalPanelView: View {
                             .disabled(!armed)
                     }
                     Button(item.secondary) { queue.answer(item.id, .secondary) }
-                        .keyboardShortcut(.cancelAction)
+                        .keyboardShortcut(cancelKey)
                         .disabled(!armed)
                     Button(item.kind == .share ? "\(item.primary) \(count)" : item.primary) {
                         queue.answer(item.id, .primary(selected: item.selectedIDs))
                     }
-                    .keyboardShortcut(.defaultAction)
+                    .keyboardShortcut(defaultKey)
                     .buttonStyle(.borderedProminent)
                             // The panel is rarely key; draw the default as primary anyway.
                             .environment(\.controlActiveState, .key)

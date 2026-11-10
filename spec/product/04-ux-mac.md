@@ -747,11 +747,11 @@ Unchanged: Activity retention (two steppers, Restore Defaults) and Show the Setu
 
 All panels are non-activating floating `NSPanel`s at the top right. When several wait, one panel shows them one at a time, with a chip for each at the top ("Cursor · access · 0:13"), at most 3; later ones wait unseen ("+2 more").
 - **Order:** items on a clock come first, soonest first; a Save panel, which waits for nothing, comes last. Once the user picks a chip or acts on an item, a more urgent arrival doesn't replace it under the cursor.
-- **Arming:** buttons are disabled for 0.6 s after the content appears or changes.
+- **Arming:** buttons are disabled for 0.6 s after the content appears or changes. Return and Esc also wait 0.6 s each time the panel becomes key.
 - **Default button:** drawn prominent, and never a choice with lasting effect: Share N, Save, or Allow Once. Return and Esc work once the panel is key: after a click, or after **Review Request** (⌃⌥⌘R, or the menu's first item).
 - **Countdown:** visible, and read as "41 seconds left" by VoiceOver.
 - **Announcements:** one VoiceOver announcement for everything that arrived together, with the time to answer and the shortcut ("Cursor wants to read Project context. 38 seconds to answer. Control-Option-Command-R to review.").
-- Panels never take keyboard focus from the frontmost app by themselves.
+- Panels never take keyboard focus from the frontmost app by themselves. Only the user's own Review (Review Request, the menu bar panel's Review, Pending requests' Review…) activates Funes and makes the panel key; an agent's `open_in_funes` selects its item in the panel and leaves the keyboard where it was.
 
 ### <agent> wants N memories (Share)
 ```
@@ -785,7 +785,7 @@ All panels are non-activating floating `NSPanel`s at the top right. When several
 - **Strong matches are ticked; weaker ones are offered unticked** under "Also matched, less closely" (access policy §3.2).
 - The body text is clipped to 3 lines (at most 160 characters), with "Show all" to expand. The text is the exact text that will be sent, and every row whose text is cut offers "Show all", so everything Share would release can be read first.
 - The panel is never taller than the screen's visible area: the title and the buttons stay in place and the rows between them scroll.
-- Opening a pending request again (from the menu bar panel's Review, Pending requests or an agent's `open_in_funes`) refreshes the same panel. Rows whose memory is unchanged keep the user's ticks. If anything that would be shared changed, the buttons arm again. It counts down to the end of its 15 minutes ("9:05").
+- Opening a pending request again (from the menu bar panel's Review, Pending requests or an agent's `open_in_funes`) refreshes the same panel and selects it; only the user's own Review makes it key. Rows whose memory is unchanged keep the user's ticks. If anything that would be shared changed, the buttons arm again. It counts down to the end of its 15 minutes ("9:05").
 - **More Time** moves the request to Pending requests at once (a HUD says until when). On timeout the HUD says "No answer: Claude Code was told to wait. It's in Pending requests."
 
 ### Save this memory?
@@ -793,7 +793,7 @@ All panels are non-activating floating `NSPanel`s at the top right. When several
 - Buttons: Edit… (a link) · Discard · Later · **Save**. No countdown: it's in the Inbox either way.
 - **Later for all N suggestions** (a link on its own line) when more than one Save panel waits, shown or behind "+N more": answers each Later, so all of them stay in the Inbox. Share and access panels stay, since an agent waits on them.
 - **Answered elsewhere, gone here** (FR-S-02): a panel whose suggestion was saved, rejected or split in an Inbox (the iPhone's or the Mac's), expired or deleted is withdrawn at the next vault change, quietly (no HUD), and its iPhone doorbell is taken back.
-- **Waits for New memories processing** (v0.3, memory processing §5.6): with splitting on, no panel shows while the suggestion is processing. When it's done, one panel per resulting piece, queued with the chips ("+4 more"), or one for the suggestion when nothing changed or the split failed. The arrival notification comes once. Opening a processing suggestion (`open_in_funes`) shows its Processing… card in the Inbox. With splitting off, the panel shows at once.
+- **Waits for New memories processing** (v0.3, memory processing §5.6): with splitting on, no panel shows while the suggestion is processing. When it's done, one panel per resulting piece, queued with the chips ("+4 more"), or one for the suggestion when nothing changed or the split failed. The arrival notification comes once. Opening a processing or split suggestion with `open_in_funes` doesn't bring a window forward: a HUD says "An agent's suggestion is waiting in your Inbox."; its card is there. With splitting off, the panel shows at once.
 
 ### <app> wants to connect (cloud sign-in)
 - Shown only while pairing is open for one agent. Example: "**Claude** wants to connect as **claude.ai**", with the app's metadata URL, "Returns to claude.ai", and the six-digit code the browser shows ("482 913", read digit by digit by VoiceOver).

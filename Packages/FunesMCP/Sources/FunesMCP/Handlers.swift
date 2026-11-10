@@ -361,7 +361,7 @@ extension RequestPipeline {
                 record(call, agent.id, outcome: "not_found", reason: .notFound)
                 return notFound
             }
-            await presenter.open(requestID: id)
+            await presenter.openInFunes(requestID: id)
         } else if let text = call.arguments["suggestion_id"] as? String {
             guard let id = UUID(uuidString: text),
                   let suggestion = try? await services.suggestions.suggestion(id: id),
@@ -371,7 +371,7 @@ extension RequestPipeline {
                 record(call, agent.id, outcome: "not_found", reason: .notFound)
                 return notFound
             }
-            await presenter.open(suggestionID: id)
+            await presenter.openInFunes(suggestionID: id)
         } else {
             return refuse(call, agent.id, .invalidInput, message: "Pass request_id or suggestion_id.")
         }

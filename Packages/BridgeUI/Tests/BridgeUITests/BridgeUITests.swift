@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import SwiftUI
 import Testing
@@ -278,6 +279,22 @@ struct SharePanelReviewTests {
         let added = PanelItem.Row(id: "new", title: "New", detail: "Added.", version: "1")
         queue.enqueue(Self.shareItem(id, rows: [edited, Self.privateRow, added])) { _ in }
         #expect(queue.generation(of: id) == generation + 2)
+    }
+
+    // Code review 2026-11-10: whenever the panel becomes key, Return and Esc arm again, so a key
+    // press meant for the app that was frontmost can't answer it.
+    @Test func becomingKeyReArmsTheKeys() throws {
+        let queue = ApprovalQueue()
+        let controller = ApprovalPanelController(queue: queue)
+        queue.queueChanged = { controller.update() }
+        queue.enqueue(Self.shareItem(UUID(), rows: [Self.publicRow])) { _ in }
+        let window = try #require(controller.window)
+        let before = queue.keyGeneration
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        #expect(queue.keyGeneration == before + 1)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: NSWindow())
+        #expect(queue.keyGeneration == before + 1, "another window becoming key changes nothing")
+        queue.withdrawAll()
     }
 
     // 4303295925: the user can read everything they'd share before sharing it.

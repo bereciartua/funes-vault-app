@@ -158,7 +158,7 @@ Lists the categories that exist and what this agent may do in each. It returns n
 Validation errors return `status: denied` with `invalid_input`, `unknown_category` or `secret_like_content`. For a secret match, the output also has `findings: ["openai_style_key"]`.
 
 ### 6.5 `open_in_funes`
-Brings Funes to the front on the Mac, at a pending request or suggestion.
+Shows a pending request or suggestion in Funes on the Mac: its panel, selected. The agent asked, not the user, so Funes isn't activated and the panel doesn't become key (UX, Panels); a processing or split suggestion gets a HUD pointing to the Inbox.
 - **Input:** `{"request_id"?: string, "suggestion_id"?: string}`
 - **Output:** `{"opened": true}`, or `{"opened": false, "reason": "not_found"}`.
 - Only this agent's own items can be opened.

@@ -65,32 +65,49 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
 
 
 
+    /// Who brought a panel up: a new arrival, the agent's `open_in_funes`, or the user (the menu,
+    /// Pending requests, Activity). Only the user's own action activates Funes and makes the panel
+    /// key; panels never take keyboard focus from the frontmost app by themselves.
+    private enum Opener {
+        case arrival, agent, user
+
+        var reopens: Bool { self != .arrival }
+    }
+
     func showApproval(requestID: UUID, agentID: UUID) async {
-        await present(requestID: requestID, focus: false)
+        await present(requestID: requestID, by: .arrival)
     }
 
     func showApproval(requestID: UUID, agentID: UUID, remote: Bool) async {
         if remote { await MainActor.run { _ = remoteRequests.insert(requestID) } }
-        await present(requestID: requestID, focus: false)
+        await present(requestID: requestID, by: .arrival)
     }
 
     func showSuggestion(suggestionID: UUID, agentID: UUID) async {
-        await present(suggestionID: suggestionID, focus: false)
+        await present(suggestionID: suggestionID, by: .arrival)
     }
 
+    /// `open_in_funes`: shown and selected, never activated or made key.
+    func openInFunes(requestID: UUID) async {
+        await present(requestID: requestID, by: .agent)
+    }
+
+    func openInFunes(suggestionID: UUID) async {
+        await present(suggestionID: suggestionID, by: .agent)
+    }
+
+    /// The user's Review of a pending request (the menu bar panel, Pending requests): its panel
+    /// comes forward and becomes key.
     func open(requestID: UUID) async {
-        await present(requestID: requestID, focus: true)
-    }
-
-    func open(suggestionID: UUID) async {
-        await present(suggestionID: suggestionID, focus: true)
+        await present(requestID: requestID, by: .user)
     }
 
     // MARK: Share with…
 
-    /// `focus` is a reopened pending request (the menu, Activity or `open_in_funes`): it counts
-    /// down to the end of its 15 minutes instead of the 45-second in-call wait.
-    private func present(requestID: UUID, focus: Bool) async {
+    /// A reopened pending request counts down to the end of its 15 minutes instead of the
+    /// 45-second in-call wait.
+    private func present(requestID: UUID, by opener: Opener) async {
+        let focus = opener.reopens
         let disclosures = environment.disclosures
         let now = Date()
         guard let panel = try? await disclosures.panel(requestID: requestID, now: now) else { return }
@@ -110,7 +127,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             guard !queue.isClosed else { return false }
             if let task = panel.task { tasks[requestID] = task }
             queue.enqueue(item) { [weak self] answer in self?.answered(panel, answer) }
-            if focus { bringForward() }
+            if focus { select(requestID, activate: opener == .user) }
             return true
         }
         // A new request rings the paired iPhones; one reopened on the Mac doesn't.
@@ -206,7 +223,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
                 }
             } catch VaultError.snapshotChanged {
                 // Something changed while the panel was up: show it again with fresh text.
-                await present(requestID: panel.requestID, focus: false)
+                await present(requestID: panel.requestID, by: .arrival)
             } catch VaultError.invalidState {
                 // Answered first on an iPhone, or the 15 minutes ran out.
                 await desk.ended(.share(panel.requestID), answered: false)
@@ -221,33 +238,47 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// A processing job's outcome is recorded: the Save panels waiting for it show now.
     func processingEnded(_ id: UUID) async {
         guard await MainActor.run(body: { awaitingProcessing.contains(id) }) else { return }
-        await present(suggestionID: id, focus: false)
+        await present(suggestionID: id, by: .arrival)
     }
 
     /// The Save panels for an agent's suggestion, once New memories processing is done with it:
     /// one per piece of a split, or the suggestion itself. While it's processing nothing shows
     /// (opened from elsewhere, its "Processing…" card in the Inbox) and `processingEnded` comes
     /// back to it. With splitting off nothing waits.
-    private func present(suggestionID: UUID, focus: Bool) async {
+    private func present(suggestionID: UUID, by opener: Opener) async {
+        let focus = opener.reopens
         await MainActor.run { _ = awaitingProcessing.insert(suggestionID) }
         let ids: [UUID]?
         do { ids = try await environment.suggestions.savePanels(for: suggestionID, now: Date()) } catch { ids = [] }
         guard let ids else {
-            if focus { await MainActor.run { editSuggestion(suggestionID) } }
+            if focus { await MainActor.run { showInInbox(suggestionID, by: opener) } }
             return
         }
         // The job's end and the arrival may both get here: the first one shows the panels.
         guard await MainActor.run(body: { awaitingProcessing.remove(suggestionID) != nil }) else { return }
         // Opened from elsewhere, a split input is reviewed on its group card in the Inbox.
         if focus, ids != [suggestionID] {
-            if !ids.isEmpty { await MainActor.run { editSuggestion(suggestionID) } }
+            if !ids.isEmpty { await MainActor.run { showInInbox(suggestionID, by: opener) } }
             return
         }
         // The pieces queue behind each other ("+N more"); the notification comes once.
-        for (i, id) in ids.enumerated() { await presentPanel(id, focus: focus, announce: i == 0) }
+        for (i, id) in ids.enumerated() { await presentPanel(id, by: opener, announce: i == 0) }
     }
 
-    private func presentPanel(_ suggestionID: UUID, focus: Bool, announce: Bool) async {
+    /// A suggestion with no panel of its own (processing, or split): the user's Review opens its
+    /// card in the Inbox; an agent's `open_in_funes` doesn't bring a window forward, it says where
+    /// the card is.
+    @MainActor
+    private func showInInbox(_ suggestionID: UUID, by opener: Opener) {
+        if opener == .user {
+            editSuggestion(suggestionID)
+        } else {
+            notice(String(localized: "An agent's suggestion is waiting in your Inbox."))
+        }
+    }
+
+    private func presentPanel(_ suggestionID: UUID, by opener: Opener, announce: Bool) async {
+        let focus = opener.reopens
         guard let suggestion = try? await environment.suggestions.suggestion(id: suggestionID), suggestion.status == .pending else {
             return
         }
@@ -285,7 +316,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             // While the panel (or the iPhone's approval) is up, the tidy-up leaves it alone.
             environment.holds.hold(suggestion.id, .savePanel)
             queue.enqueue(item) { [weak self] answer in self?.answered(suggestion: suggestion.id, answer) }
-            if focus { bringForward() } else if announce { suggestionArrived(agentName) }
+            if focus { select(suggestion.id, activate: opener == .user) } else if announce { suggestionArrived(agentName) }
             return true
         }
         if shown, !focus { await desk.waiting(.save(suggestion.id)) }
@@ -470,6 +501,14 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     private func bringForward() {
         NSApp.activate(ignoringOtherApps: true)
         controller.bringForward()
+    }
+
+    /// A reopened item, selected in the panel. Brought forward and made key only for the user's
+    /// own Review; for an agent's `open_in_funes` it shows where it is, without taking focus.
+    @MainActor
+    private func select(_ id: UUID, activate: Bool) {
+        queue.select(id)
+        if activate { bringForward() } else { controller.update() }
     }
 
 

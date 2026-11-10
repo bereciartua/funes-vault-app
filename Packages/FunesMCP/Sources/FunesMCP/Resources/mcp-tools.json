@@ -521,7 +521,7 @@
     {
       "name": "open_in_funes",
       "title": "Open in Funes",
-      "description": "Brings Funes to the front on the user's Mac at one of your pending requests or suggestions, so the user can answer it.",
+      "description": "Shows one of your pending requests or suggestions in Funes on the user's Mac, so the user can answer it. It doesn't take the keyboard from the app the user is in.",
       "inputSchema": {
         "type": "object",
         "properties": {
