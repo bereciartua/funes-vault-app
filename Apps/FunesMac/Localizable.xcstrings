@@ -832,7 +832,36 @@
 
     },
     "%lld earlier entries" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$#@v0@"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg earlier entry"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg earlier entries"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld expired" : {
 
@@ -907,8 +936,50 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld memories above %2$@ weren't read"
+            "state" : "translated",
+            "value" : "%1$#@v0@ above %2$@ %1$#@v1@ read"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            },
+            "v1" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "wasn't"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "weren't"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1049,8 +1120,50 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld minutes %2$lld seconds left"
+            "state" : "translated",
+            "value" : "%1$#@v0@ %2$#@v1@ left"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg minute"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg minutes"
+                    }
+                  }
+                }
+              }
+            },
+            "v1" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg second"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg seconds"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1100,7 +1213,36 @@
       }
     },
     "%lld models" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$#@v0@"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg model"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg models"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld more matched but can't go to this agent (%@)." : {
       "localizations" : {
@@ -1119,7 +1261,36 @@
 
     },
     "%lld need your answer" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$#@v0@ your answer"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg needs"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg need"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld not shareable" : {
 
@@ -1209,8 +1380,50 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld requests · %2$lld tokens in · %3$lld out"
+            "state" : "translated",
+            "value" : "%1$#@v0@ · %2$#@v1@ in · %3$lld out"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg request"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg requests"
+                    }
+                  }
+                }
+              }
+            },
+            "v1" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg token"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg tokens"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1225,10 +1438,68 @@
 
     },
     "%lld seconds left" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$#@v0@ left"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg second"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg seconds"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld seconds to answer" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$#@v0@ to answer"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg second"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg seconds"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld selected" : {
 
@@ -1418,8 +1689,50 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "12 weeks: %1$lld memories saved on %2$lld days"
+            "state" : "translated",
+            "value" : "12 weeks: %1$#@v0@ saved on %2$#@v1@"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            },
+            "v1" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg day"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg days"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1512,8 +1825,50 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "About %1$lld memories to check. Roughly %2$lld requests the first week, then a few a day."
+            "state" : "translated",
+            "value" : "About %1$#@v0@ to check. Roughly %2$#@v1@ the first week, then a few a day."
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            },
+            "v1" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg request"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg requests"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1522,8 +1877,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "About %1$lld tokens go to %2$@. Memories above %3$@ stay on this Mac's index only."
+            "state" : "translated",
+            "value" : "About %1$#@v0@ to %2$@. Memories above %3$@ stay on this Mac's index only."
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg token goes"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg tokens go"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3078,6 +3455,9 @@
     "Empty allow list means all categories. Deny always wins." : {
 
     },
+    "Enter a local server by its address, like 127.0.0.1 or 192.168.1.20, or as localhost. Funes treats any other name, .local ones included, as cloud, whatever this says." : {
+
+    },
     "Enter the tunnel's https address, like https://my-mac.tail1234.ts.net, without a path." : {
 
     },
@@ -3429,8 +3809,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Funes applied %1$lld changes and has %2$lld for you to review."
+            "state" : "translated",
+            "value" : "Funes applied %1$#@v0@ and has %2$lld for you to review."
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg change"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg changes"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -3559,9 +3961,6 @@
 
     },
     "Funes shows the exact change first, backs up the file and never writes the key into it." : {
-
-    },
-    "Funes treats any server that isn't on this Mac or your local network as cloud, whatever this says." : {
 
     },
     "Funes was paused" : {
@@ -4196,10 +4595,68 @@
 
     },
     "Later changes depend on this one. Undo it together with the %lld later changes." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later changes depend on this one. Undo it together with %1$#@v0@."
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "the %arg later change"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "the %arg later changes"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Later for all %lld suggestions" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later for %1$#@v0@"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg suggestion"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "all %arg suggestions"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Launcher" : {
 
@@ -4335,7 +4792,36 @@
 
     },
     "Merges %lld memories into one:" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Merges %1$#@v0@ into one:"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Method" : {
 
@@ -5384,8 +5870,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Ready: %1$lld memories use %2$@."
+            "state" : "translated",
+            "value" : "Ready: %1$#@v0@ %2$@."
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory uses"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories use"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -5394,8 +5902,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Ready: %1$lld memories use %2$@; those above %3$@ use bge-small."
+            "state" : "translated",
+            "value" : "Ready: %1$#@v0@ %2$@; those above %3$@ use bge-small."
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory uses"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories use"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -5883,8 +6413,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, each time you pause on a search. Each answer counts toward your plan's limits and today's %4$lld cloud requests."
+            "state" : "translated",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, each time you pause on a search. Each answer counts toward your plan's limits and %4$#@v0@."
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 4,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "today's %arg cloud request"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "today's %arg cloud requests"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -5893,8 +6445,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, when you ask or pause on a question. Each answer counts toward your plan's limits and today's %4$lld cloud requests."
+            "state" : "translated",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, when you ask or pause on a question. Each answer counts toward your plan's limits and %4$#@v0@."
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 4,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "today's %arg cloud request"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "today's %arg cloud requests"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -5913,8 +6487,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, each time you pause on a search. Each answer counts toward today's %3$lld cloud requests."
+            "state" : "translated",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, each time you pause on a search. Each answer counts toward %3$#@v0@."
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 3,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "today's %arg cloud request"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "today's %arg cloud requests"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -5923,8 +6519,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, when you ask or pause on a question. Each answer counts toward today's %3$lld cloud requests."
+            "state" : "translated",
+            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, when you ask or pause on a question. Each answer counts toward %3$#@v0@."
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 3,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "today's %arg cloud request"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "today's %arg cloud requests"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -6296,7 +6914,36 @@
 
     },
     "Show All %lld Agents" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show %1$#@v0@"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Agent"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "All %arg Agents"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Show All %lld in Vault" : {
 
@@ -6562,8 +7209,50 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Splitting them into separate memories takes about %1$lld requests to %2$@. With a cloud model, %3$lld of today's requests are left; the rest wait for tomorrow."
+            "state" : "translated",
+            "value" : "Splitting them into separate memories takes %1$#@v0@ to %2$@. With a cloud model, %3$#@v1@; the rest wait for tomorrow."
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "about %arg request"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "about %arg requests"
+                    }
+                  }
+                }
+              }
+            },
+            "v1" : {
+              "argNum" : 3,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg of today's requests is left"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg of today's requests are left"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -7256,8 +7945,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Tidy-up: merged %1$lld memories into “%2$@”"
+            "state" : "translated",
+            "value" : "Tidy-up: merged %1$#@v0@ into “%2$@”"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -7309,7 +8020,36 @@
 
     },
     "Today's %lld cloud requests are used up. Search still works; answers are back tomorrow." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$#@v0@ used up. Search still works; answers are back tomorrow."
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Today's %arg cloud request is"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Today's %arg cloud requests are"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Today's cloud requests are used up. New captures are classified on this Mac until tomorrow." : {
 
@@ -7452,7 +8192,36 @@
 
     },
     "Undo This and %lld Later Changes" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo This and %1$#@v0@"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Later Change"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Later Changes"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Undo any automatic change for 30 days in the Inbox." : {
 
@@ -8076,7 +8845,36 @@
 
     },
     "knows %lld things about you" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "knows %1$#@v0@ about you"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg thing"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg things"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "knows 1 thing about you" : {
 
