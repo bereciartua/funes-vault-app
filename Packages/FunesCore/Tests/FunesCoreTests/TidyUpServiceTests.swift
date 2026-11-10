@@ -533,6 +533,31 @@ final class PromptLog: Sendable {
         #expect(try !env.inspected(old.id))
     }
 
+    /// The same when nothing is stored (review 2026-11-10): a cluster that can't be sent is marked
+    /// inspected at the versions the run looked at, so an edit made meanwhile is looked at next time.
+    @Test func aMemoryChangedWhileItsClusterWasRefusedIsLookedAtAgain() async throws {
+        final class EditsThenRefuses: GenerationProvider {
+            let id: ProviderID = "anthropic"
+            let locality = Locality.cloud
+            let modelID = "claude-opus-5-5"
+            let edit: @Sendable () -> Void
+            init(_ edit: @escaping @Sendable () -> Void) { self.edit = edit }
+            func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage) {
+                edit()
+                throw ProviderError.blocked
+            }
+        }
+        let env = try Env()
+        let (old, new) = try Self.rent(env)
+        let store = env.v.store
+        let run = try await env.run(EditsThenRefuses {
+            _ = try? store.updateMemory(id: old.id, MemoryEdit(title: "Rent amount (2025)"), now: t0)
+        })
+        #expect(run.suggestions == 0)
+        #expect(try !env.inspected(old.id) && env.inspected(new.id))
+        #expect(try env.v.count("SELECT COUNT(*) FROM memory WHERE id = ? AND reconciled_version IS NULL", [old.id.db]) == 1)
+    }
+
     @Test func aStaleProposalIsDroppedAndAskedAgain() async throws {
         let env = try Env()
         let (old, _) = try Self.rent(env)

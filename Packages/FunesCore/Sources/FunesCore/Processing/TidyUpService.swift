@@ -171,10 +171,20 @@ public struct TidyUpService: Sendable {
         return TidyUpEstimate(memories: n, requests: min(Self.maxClusters * 7, (n + 2) / 3))
     }
 
-    /// Marks memories inspected at their current version, in the caller's transaction (§9.2).
+    /// Marks memories inspected at their current version, in the caller's transaction: after an
+    /// apply, at the versions it just wrote (§9.5's no-loop rule).
     static func markInspected(_ db: Database, _ ids: [UUID]) throws {
         for id in ids {
             try db.execute(sql: "UPDATE memory SET reconciled_version = version WHERE id = ?", arguments: [id.db])
+        }
+    }
+
+    /// Marks memories inspected at the version the tidy-up looked at, in the caller's transaction
+    /// (§9.2, §9.4). A memory edited since keeps its old mark, so the next run looks at it again.
+    static func markInspected(_ db: Database, seen memories: [Memory]) throws {
+        for m in memories {
+            try db.execute(sql: "UPDATE memory SET reconciled_version = version WHERE id = ? AND version = ?",
+                           arguments: [m.id.db, m.version])
         }
     }
 
@@ -571,9 +581,9 @@ public struct TidyUpService: Sendable {
             .sorted { $0.updatedAt != $1.updatedAt ? $0.updatedAt > $1.updatedAt : $0.id.db < $1.id.db }
 
         // Above the cloud limit with a cloud provider: marked inspected, never sent (§9.2).
-        let above = candidates.filter { !allowed($0) }.map(\.id)
+        let above = candidates.filter { !allowed($0) }
         if !above.isEmpty {
-            try await store.writer.write { db in try Self.markInspected(db, above) }
+            try await store.writer.write { db in try Self.markInspected(db, seen: above) }
             totals.inspected += above.count
         }
         var eligible = candidates.filter(allowed)
@@ -621,10 +631,10 @@ public struct TidyUpService: Sendable {
         // cluster holds is read-only context in the later ones (§9.2).
         var claimed = Set<UUID>()
         var clusters: [[(UUID, Bool)]] = []
-        var lonely: [UUID] = []
+        var lonely: [Memory] = []
         let changedEligible = Set(considered.map(\.id))
         for m in considered where !claimed.contains(m.id) {
-            guard let first = neighbours[m.id], !first.isEmpty else { lonely.append(m.id); continue }
+            guard let first = neighbours[m.id], !first.isEmpty else { lonely.append(m); continue }
             var members = [m.id]
             var queue = first
             while !queue.isEmpty, members.count < Self.clusterSize {
@@ -638,7 +648,7 @@ public struct TidyUpService: Sendable {
         }
         // No neighbours: nothing to compare with, so inspected (§9.2).
         if !lonely.isEmpty {
-            try await store.writer.write { [lonely] db in try Self.markInspected(db, lonely) }
+            try await store.writer.write { [lonely] db in try Self.markInspected(db, seen: lonely) }
             totals.inspected += lonely.count
         }
 
@@ -656,9 +666,9 @@ public struct TidyUpService: Sendable {
                 failures = 0
             } catch ProviderError.blocked {
                 // Something in it can't leave the Mac: inspected, never sent.
-                let ids = cluster.members.filter(\.editable).map(\.memory.id)
-                try await store.writer.write { db in try Self.markInspected(db, ids) }
-                totals.inspected += ids.count
+                let seen = cluster.members.filter(\.editable).map(\.memory)
+                try await store.writer.write { db in try Self.markInspected(db, seen: seen) }
+                totals.inspected += seen.count
                 continue
             } catch let stop as Stop {
                 // At the cap the tidy-up waits for the next day; a failure that won't pass stops the run.
@@ -770,8 +780,8 @@ public struct TidyUpService: Sendable {
                 totals.proposals.append(id)
             }
         }
-        let editable = cluster.members.filter(\.editable).map(\.memory.id)
-        try markInspected(db, editable)
+        let editable = cluster.members.filter(\.editable).map(\.memory)
+        try markInspected(db, seen: editable)
         totals.inspected += editable.count
         return true
     }
@@ -835,7 +845,7 @@ public struct TidyUpService: Sendable {
         } catch let SplitError.failed(error) {
             throw Stop.from(error)
         } catch is SplitError {
-            try await store.writer.write { db in try Self.markInspected(db, [m.id]) }
+            try await store.writer.write { db in try Self.markInspected(db, seen: [m]) }
             totals.inspected += 1
             return true
         }
@@ -849,7 +859,7 @@ public struct TidyUpService: Sendable {
             }
             guard isSplit else { return (totals, false) }
             if configuration.honorDismissals, try TidyUpDismissals.all(db).contains(TidyUpDismissals.key([current])) {
-                try Self.markInspected(db, [m.id])
+                try Self.markInspected(db, seen: [m])
                 totals.inspected += 1
                 return (totals, true)
             }
@@ -872,7 +882,7 @@ public struct TidyUpService: Sendable {
                 totals.suggestions += 1
                 totals.proposals.append(id)
             }
-            try Self.markInspected(db, [m.id])
+            try Self.markInspected(db, seen: [m])
             totals.inspected += 1
             return (totals, true)
         }
