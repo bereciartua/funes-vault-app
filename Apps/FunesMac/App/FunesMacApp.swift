@@ -168,10 +168,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         Task { @MainActor in
             await model.modelSettings.refreshSubscriptions()
-            model.processing.kick()
+            // Resumes what a quit left, now that a chosen plan can split it; until here a vault
+            // change doesn't kick the queue either.
+            model.processing.start()
+            model.processingStarted = true
             model.tidyUp.start()
         }
-        model.processing.start()
         model.embeddings.apply()
         model.changed = { [weak menu] in menu?.update() }
 
