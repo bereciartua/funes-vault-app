@@ -13,6 +13,8 @@ struct MemoryDetailView: View {
     /// The version the form was filled from: Save sends it, so a change made meanwhile (from the
     /// iPhone, the Inbox, an import) isn't silently overwritten (6.1.2).
     @State private var formVersion: Int?
+    /// The memory's fields at `formVersion`: what the edits started from.
+    @State private var formBase: MemoryForm?
     /// Save found a newer version: offer to reload it.
     @State private var changedMeanwhile = false
     @State private var error: String?
@@ -212,17 +214,17 @@ struct MemoryDetailView: View {
                       ? String(localized: "Check this memory against itself and related memories now.")
                       : String(localized: "Choose a tidy-up model in Settings ▸ AI ▸ Features ▸ Daily tidy-up to tidy up a memory."))
                 Button(String(localized: "Archive")) {
-                    act { try model.services.store.archiveMemory(id: memoryID, expectedVersion: memory.version, now: Date()).version }
+                    act { try model.services.store.archiveMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
                 }
                 Button(String(localized: "Delete"), role: .destructive) { delete() }
             case .archived:
                 Button(String(localized: "Restore")) {
-                    act { try model.services.store.restoreMemory(id: memoryID, expectedVersion: memory.version, now: Date()).version }
+                    act { try model.services.store.restoreMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
                 }
                 Button(String(localized: "Delete"), role: .destructive) { delete() }
             case .deleted:
                 Button(String(localized: "Restore")) {
-                    act { try model.services.store.restoreMemory(id: memoryID, expectedVersion: memory.version, now: Date()).version }
+                    act { try model.services.store.restoreMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
                 }
                 Button(String(localized: "Delete Now…"), role: .destructive) { confirmDeleteNow = true }
             }
@@ -263,14 +265,19 @@ struct MemoryDetailView: View {
             if resetForm || (changed && !dirty) {
                 form = MemoryForm(found)
                 formVersion = found.version
+                formBase = MemoryForm(found)
                 changedMeanwhile = false
-                // Unsaved edits left on it come back (FR-V-02), with the version they started from,
-                // so Save still catches a change made meanwhile. Not while it's deleted (it can't be
+                // Unsaved edits left on it come back (FR-V-02). Not while it's deleted (it can't be
                 // edited there); they're back once it's restored.
                 if found.status != .deleted, let draft = model.vault.draft(memoryID) {
                     form = draft.form
                     formVersion = draft.version
+                    formBase = draft.base
+                    rebase(onto: found)
                 }
+            } else if changed, dirty {
+                // Changed while being edited (a status change here or elsewhere, the iPhone).
+                rebase(onto: found)
             }
         } catch {
             missing = true
@@ -285,6 +292,7 @@ struct MemoryDetailView: View {
             self.memory = saved
             form = MemoryForm(saved)
             formVersion = saved.version
+            formBase = MemoryForm(saved)
             changedMeanwhile = false
             error = nil
             history = (try? model.services.store.provenance(memoryID: memoryID)) ?? []
@@ -298,17 +306,26 @@ struct MemoryDetailView: View {
     }
 
     private func stillTrue() {
-        act {
-            try model.services.store.confirmMemory(id: memoryID, now: Date())
-            return nil
-        }
+        act { try model.services.store.confirmMemory(id: memoryID, now: Date()) }
     }
 
     /// The form's edits, kept on the Vault's model while they differ from the memory. A deleted
     /// memory's form can't be edited, so its draft (from before a delete elsewhere) is left as it is.
     private func keepDraft() {
         guard let memory, memory.status != .deleted else { return }
-        model.vault.setDraft(dirty ? VaultModel.Draft(form: form, version: formVersion) : nil, for: memoryID)
+        model.vault.setDraft(dirty ? VaultModel.Draft(form: form, version: formVersion, base: formBase ?? MemoryForm(memory)) : nil,
+                             for: memoryID)
+    }
+
+    /// Edits that started from an older version move onto `found` when only fields they didn't
+    /// touch changed since; when a field they edited changed too, they keep their version and
+    /// Save reports the conflict.
+    private func rebase(onto found: Memory) {
+        guard let version = formVersion, version != found.version, let base = formBase,
+              let rebased = form.rebased(from: base, onto: MemoryForm(found)) else { return }
+        form = rebased
+        formVersion = found.version
+        formBase = MemoryForm(found)
     }
 
     /// Delete moves the memory to Recently Deleted, where it can't be edited: over unsaved edits
@@ -323,7 +340,7 @@ struct MemoryDetailView: View {
             model.vault.setDraft(nil, for: memoryID)
             form = MemoryForm(memory)
         }
-        act { try model.services.store.deleteMemory(id: memoryID, expectedVersion: memory.version, now: Date()).version }
+        act { try model.services.store.deleteMemory(id: memoryID, expectedVersion: memory.version, now: Date()) }
     }
 
     private func deleteNow() {
@@ -336,18 +353,14 @@ struct MemoryDetailView: View {
     }
 
     /// Still True, Archive and Restore change only the status or the date checked, never the
-    /// form's fields: unsaved edits stay. `body` returns the version its write made (nil when it
-    /// made none, as Still True); a status change checks the version it acted on, so when the
-    /// edits started from that version they carry to the new one, and a change made meanwhile
-    /// elsewhere is still caught at Save.
-    private func act(_ body: () throws -> Int?) {
+    /// form's fields: unsaved edits stay, and the reload moves them onto the new version (`rebase`),
+    /// while a field they edited that changed meanwhile elsewhere is still caught at Save.
+    private func act(_ body: () throws -> Void) {
         let keep = dirty
-        let carry = keep && formVersion == memory?.version
         do {
-            let version = try body()
+            try body()
             error = nil
             load(resetForm: !keep)
-            if carry, let version { formVersion = version }
         } catch {
             self.error = ErrorText.message(error)
         }

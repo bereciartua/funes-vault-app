@@ -35,6 +35,29 @@ struct MemoryForm: Equatable {
             && a.sensitivity == b.sensitivity && a.expiry == b.expiry
     }
 
+    /// These edits (where this form differs from `base`, the memory they started from) applied to
+    /// `current`, the memory as it is now: nil when a field they edited also changed since, to
+    /// something else, so Save still reports that conflict. Fields they didn't edit take
+    /// `current`'s values (a status change, Still True or an edit elsewhere to another field).
+    func rebased(from base: MemoryForm, onto current: MemoryForm) -> MemoryForm? {
+        var out = current
+        func take<T: Equatable>(_ path: WritableKeyPath<MemoryForm, T>) -> Bool {
+            let edited = self[keyPath: path] != base[keyPath: path]
+            guard edited else { return true }
+            if current[keyPath: path] != base[keyPath: path], current[keyPath: path] != self[keyPath: path] { return false }
+            out[keyPath: path] = self[keyPath: path]
+            return true
+        }
+        guard take(\.title), take(\.body), take(\.kind), take(\.categoryKeys), take(\.sensitivity) else { return nil }
+        if expiry != base.expiry {
+            if current.expiry != base.expiry, current.expiry != expiry { return nil }
+            out.expires = expires
+            out.expiresAt = expiresAt
+        }
+        out.sensitivityChosen = sensitivityChosen
+        return out
+    }
+
     /// LOW, raised to the highest default of the chosen categories.
     static func defaultSensitivity(_ keys: [String], categories: [MemoryCategory]) -> Sensitivity {
         max(.low, categories.filter { keys.contains($0.key) }.map(\.defaultSensitivity).max() ?? .low)

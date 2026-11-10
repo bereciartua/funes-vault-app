@@ -83,6 +83,9 @@ final class VaultModel: AnswerCardSource {
         var form: MemoryForm
         /// The version the edits started from, so Save still notices a change made meanwhile.
         var version: Int?
+        /// The memory's fields at that version: a later change to fields the edits didn't touch
+        /// moves the draft onto it (`MemoryForm.rebased`).
+        var base: MemoryForm
     }
     @ObservationIgnored private var draftStore: [UUID: Draft] = [:]
     /// The memories with unsaved edits: the rows' mark. Changes only when one gains or loses its
