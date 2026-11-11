@@ -349,13 +349,13 @@ enum MemoryStore {
     /// Hard-deletes a deleted memory: its row, categories, FTS rows, embeddings, provenance and
     /// the undo entries holding its earlier text.
     /// Disclosure items keep the id for Activity labels.
-    static func purge(_ db: Database, id: UUID) throws {
+    static func purge(_ db: Database, id: UUID, now: Date = Date()) throws {
         guard let status = try String.fetchOne(db, sql: "SELECT status FROM memory WHERE id = ?", arguments: [id.db]) else {
             throw VaultError.notFound
         }
         guard status == MemoryStatus.deleted.rawValue else { throw VaultError.invalidState }
         try UndoLog.purge(db, memoryIDs: [id.db])
-        try dropGroupText(db, memoryIDs: [id.db])
+        try dropGroupText(db, memoryIDs: [id.db], now: now)
         try db.execute(sql: "DELETE FROM memory WHERE id = ?", arguments: [id.db])
     }
 
@@ -364,7 +364,7 @@ enum MemoryStore {
         let cutoff = now.addingTimeInterval(-deletedRetention)
         let ids = try String.fetchAll(db, sql: "SELECT id FROM memory WHERE status = 'deleted' AND deleted_at <= ?", arguments: [cutoff])
         try UndoLog.purge(db, memoryIDs: ids)
-        try dropGroupText(db, memoryIDs: ids)
+        try dropGroupText(db, memoryIDs: ids, now: now)
         try db.execute(sql: "DELETE FROM memory WHERE status = 'deleted' AND deleted_at <= ?", arguments: [cutoff])
         return db.changesCount
     }
@@ -373,7 +373,7 @@ enum MemoryStore {
     /// saved from or that targets it (grouped or not, any status), and its split input's original
     /// text, lose theirs. Runs before the DELETE, which nulls `result_memory_id` and
     /// `target_memory_id`.
-    static func dropGroupText(_ db: Database, memoryIDs: [String]) throws {
+    static func dropGroupText(_ db: Database, memoryIDs: [String], now: Date) throws {
         guard !memoryIDs.isEmpty else { return }
         let marks = databaseQuestionMarks(count: memoryIDs.count)
         let groups = try String.fetchAll(db, sql: """
@@ -385,10 +385,10 @@ enum MemoryStore {
         try db.execute(sql: """
             UPDATE suggestion SET title = '', body = '', evidence = NULL,
               status = CASE WHEN status = 'pending' THEN 'rejected' ELSE status END,
-              decided_at = CASE WHEN status = 'pending' THEN CURRENT_TIMESTAMP ELSE decided_at END
+              decided_at = CASE WHEN status = 'pending' THEN ? ELSE decided_at END
             WHERE result_memory_id IN (\(marks)) OR target_memory_id IN (\(marks))
               OR id IN (SELECT suggestion_id FROM suggestion_target WHERE memory_id IN (\(marks)))
-            """, arguments: StatementArguments(memoryIDs + memoryIDs + memoryIDs))
+            """, arguments: StatementArguments([now]) + StatementArguments(memoryIDs + memoryIDs + memoryIDs))
         for group in groups {
             try db.execute(sql: "UPDATE suggestion_group SET source_text = NULL WHERE id = ?", arguments: [group])
             try db.execute(sql: "UPDATE suggestion SET title = '', body = '' WHERE id = ? AND status = 'split'", arguments: [group])
