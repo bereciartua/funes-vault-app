@@ -8,13 +8,13 @@ Fixes from a full code review of the Mac app, the iPhone app and the release pip
 
 ### Security
 
-- **Never-share categories can't open up an agent.** Marking a category never-share took it off each agent's allow list, and an agent whose list emptied could read every category. Now the agent reads nothing instead.
+- **Never-share categories can't open up an agent.** Marking a category never-share took it off each agent's allow list, and an agent whose list emptied could read every category. Now the agent reads nothing instead, and the vault refuses any change that would empty an agent's allow list unless you confirm it in the access editor.
 - **Deleting a category keeps agents out.** Deleting a category that an agent is denied, with no replacement, used to drop that denial, so its memories that were also in another category became readable. Funes now asks for a replacement.
 - **Approval panels don't take the keyboard.** An agent's Open in Funes made the panel key with Return ready to share, so Return typed for another app could approve. Now the panel only shows the request; it takes the keyboard only when you click Review, and Return and Esc wait a moment each time it does.
 - **Sensitive text stays on the Mac.** The check before sending text to a cloud model looked only at the three strongest topics, so one health, money or legal mention among other topics could be sent. Every topic now counts. Everyday words like "will", "paid" and "court" no longer mark a note Sensitive.
-- **Purging a memory removes all of its text.** A purged memory's text stayed in the suggestion it was saved from when that suggestion wasn't part of a split, and in every later backup. Suggestions still waiting about a purged memory are closed.
+- **Purging a memory removes all of its text.** A purged memory's text stayed in the suggestion it was saved from when that suggestion wasn't part of a split, and in every later backup. Suggestions still waiting about a purged memory are closed, and the classifier's notes and an agent's purpose on any suggestion about it are cleared too.
 - **iPhone: fake replies from your network are ignored.** A device on the same Wi-Fi could crash the app, move its clock, or make it show "Removed from Funes". The iPhone now acts on a refusal only when your Mac signed it.
-- **Mac: iPhone requests can't be replayed,** even after a change in Settings ▸ iPhone or a restart, whatever the two clocks say, and one device on your network can no longer use up every connection and lock your iPhone out. A Mac whose clock is corrected after login no longer refuses the iPhone for a while.
+- **Mac: iPhone requests can't be replayed,** even after a change in Settings ▸ iPhone or a restart, whatever the two clocks say, and one device on your network can no longer use up every connection and lock your iPhone out (a full Mac makes way for a new connection by closing the longest-idle one). A Mac whose clock is corrected after login no longer refuses the iPhone for a while.
 - **Agent corrections keep a memory's protection.** Saving an agent's correction with Replace could lower the memory's sensitivity, change its categories or clear its expiry. They now stay unless you change them. An Inbox card moved into Health, Finance or Legal raises its sensitivity, as New Memory does.
 - **Trust survives a restore.** Exports now record whether a memory came from you or from an agent, and a restore keeps it; memories from older exports are restored as not from you.
 - **Stored text can't steer the models.** Memory text that imitates the structure of the prompts Funes sends (for search answers, the tidy-up, splitting and extraction) is no longer read as structure. The tidy-up no longer applies a change on its own when an agent's memory is in the same group.
@@ -37,7 +37,7 @@ Fixes from a full code review of the Mac app, the iPhone app and the release pip
 - Allow Once on a request whose access changed while the panel was open keeps the original request waiting, instead of dropping it.
 - Clearing an agent's last allowed category asks before it opens up every category.
 - Counts read right for one everywhere: "1 memory", "Imported 1 item", "in 1 day", "1 memory above Internal wasn't read".
-- Moving several memories to a category asks first when it removes their other categories.
+- Moving several memories to a category asks first when it removes their other categories, and raises their sensitivity to at least that category's default, as the editor does.
 - The shortcut recorder no longer takes keys in other windows after you leave it.
 - The capture box keeps its draft when reopened or when you use Services, and Esc stops dictation. Stopping dictation while it's starting no longer leaves the microphone on, on the Mac or the iPhone.
 - An update found by the daily check now shows in the menu bar panel, the right-click menu and the icon's tooltip.
@@ -50,6 +50,7 @@ Fixes from a full code review of the Mac app, the iPhone app and the release pip
 - Add to <Agent>… asks you to move Funes Vault to Applications first, and one-click setup backs up and restores a symlinked settings file correctly.
 - Keep this Mac awake now follows plugging in and unplugging. A crash can no longer cost the next Activity row. Agents get the request id when a request outlasts the 55-second wait.
 - iPhone: Home's counts and the widgets are no longer cleared at launch or in a background refresh before the pairing is read. If your Mac can't check this iPhone for a moment, it says your vault isn't available, not that the iPhone was removed.
+- Showing a new pairing code while the Mac's Allow prompt is up no longer spoils the new code.
 - iPhone: pairing asks for camera access the first time, and Cancel while waiting for Allow on the Mac cancels the pairing and closes the Mac's Allow prompt, so a later click can't add a device.
 - iPhone: after unpairing, a late reply no longer shows Connected or brings the counts back; a reload that fails after "Changed on your Mac" keeps your edit; an answered Inbox card no longer comes back; a request that rings while the list is loading now shows; captures containing a NUL character are saved whole; sharing a very large text is refused instead of risking the extension.
 
