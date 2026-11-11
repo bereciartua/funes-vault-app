@@ -379,6 +379,9 @@ public final class CompanionListener: @unchecked Sendable {
         func close() {
             guard !closed else { return }
             closed = true
+            // However it closes (the client went, the listener stopped for a settings change), a
+            // handler still running hears it: a pairing waiting for Allow is denied.
+            handling?.cancel()
             timer?.cancel()
             timer = nil
             writer?.cancel()

@@ -62,7 +62,10 @@ public final class CompanionRouter: Sendable {
         let opened: OpenedCompanionRequest
         do throws(CompanionAuthError) {
             let device: Device?
-            do { device = try await devices.device(id: envelope.deviceID) } catch {
+            // In a task of its own, so a client going away (which cancels this handler) can't
+            // turn the lookup into `unavailable`.
+            let lookup = Task { [devices] in try await devices.device(id: envelope.deviceID) }
+            do { device = try await lookup.value } catch {
                 // The database failed for a moment: not a verdict on the device (§3, step 1).
                 logger.error("Couldn't look up a companion device")
                 throw CompanionAuthError.unavailable
@@ -105,27 +108,39 @@ public final class CompanionRouter: Sendable {
 /// nonce is written through before its call runs, and loaded back at launch. So replay
 /// protection doesn't depend on the phone's and the Mac's clocks agreeing.
 ///
-/// Fails closed: a journal that exists but can't be read refuses every call (`unavailable`) for
-/// the replay window, on the monotonic clock, since its nonces could be replayed meanwhile; a
-/// nonce that can't be written refuses its call.
+/// Fails closed, refusing calls with `unavailable` (the phone retries), on the monotonic clock:
+/// - a journal that exists but can't be read: for the replay window, since its nonces could be
+///   replayed meanwhile;
+/// - no journal (the first launch with one, or deleted): for the clock-skew window, past which
+///   nothing the last run accepted can still pass the clock check;
+/// - a nonce that can't be written: its call.
 public actor EnvelopeGuard {
     private var cache = ReplayCache()
     private var journal: NonceJournal?
     private var blindUntil: ContinuousClock.Instant?
+    private let monotonic: @Sendable () -> ContinuousClock.Instant
 
     /// `journal` is the file to keep the nonces in; nil keeps them in memory only (tests).
-    public init(journal url: URL? = nil, now: Date = Date()) {
+    /// `monotonic` is the clock the refusal windows run on (tests move it).
+    public init(journal url: URL? = nil, now: Date = Date(),
+                monotonic: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now }) {
+        self.monotonic = monotonic
         guard let url else { return }
         var journal = NonceJournal(url: url)
         do {
-            let entries = try journal.load(since: now.addingTimeInterval(-cache.window))
-            for entry in entries {
-                cache.record(nonce: entry.nonce, deviceID: entry.deviceID, sentAt: entry.sentAt, now: entry.recordedAt)
+            switch try journal.load(since: now.addingTimeInterval(-cache.window)) {
+            case .missing:
+                logger.error("No companion nonce journal; refusing calls for the clock-skew window")
+                blindUntil = monotonic() + .seconds(CompanionProtocol.maxClockSkew)
+            case let .entries(entries):
+                for entry in entries {
+                    cache.record(nonce: entry.nonce, deviceID: entry.deviceID, sentAt: entry.sentAt, now: entry.recordedAt)
+                }
             }
             try? journal.rewrite(cache.entries)
         } catch {
             logger.error("The companion's nonce journal couldn't be read; refusing calls for the replay window")
-            blindUntil = .now + .seconds(cache.window)
+            blindUntil = monotonic() + .seconds(cache.window)
         }
         self.journal = journal
     }
@@ -136,7 +151,7 @@ public actor EnvelopeGuard {
     func open(_ envelope: CompanionRequestEnvelope, device: CompanionDeviceRecord?, macKey: P256.KeyAgreement.PrivateKey,
               now: Date) throws(CompanionAuthError) -> OpenedCompanionRequest {
         if let blindUntil {
-            guard ContinuousClock.now >= blindUntil else { throw .unavailable }
+            guard monotonic() >= blindUntil else { throw .unavailable }
             self.blindUntil = nil
         }
         do {

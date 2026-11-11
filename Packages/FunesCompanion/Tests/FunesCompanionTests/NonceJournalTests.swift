@@ -10,16 +10,57 @@ import Testing
 @Suite struct NonceJournalTests {
     static func journal(_ h: CompanionHarness) -> URL { EnvelopeGuard.journalURL(dataDirectory: h.directory) }
 
+    /// A guard on the harness's journal, as a launch after the first one with it finds it.
+    static func guardian(_ h: CompanionHarness) -> EnvelopeGuard {
+        let url = journal(h)
+        if !FileManager.default.fileExists(atPath: url.path) {
+            FileManager.default.createFile(atPath: url.path, contents: Data(), attributes: [.posixPermissions: 0o600])
+        }
+        return EnvelopeGuard(journal: url, now: h.clock.now)
+    }
+
+    static func entries(_ url: URL) throws -> [ReplayCache.Entry] {
+        guard case let .entries(entries) = try NonceJournal(url: url).load(since: .distantPast) else { return [] }
+        return entries
+    }
+
+    /// The monotonic clock the refusal windows run on, moved by hand.
+    final class Uptime: @unchecked Sendable {
+        private let lock = NSLock()
+        private let start = ContinuousClock.now
+        private var offset: Duration = .zero
+        var now: ContinuousClock.Instant { lock.withLock { start + offset } }
+        func advance(_ seconds: Double) { lock.withLock { offset += .seconds(seconds) } }
+    }
+
+    /// No journal (the first launch with it, or deleted): what the last run accepted in its last
+    /// two minutes is unknown, so calls are refused, signed and retryable, until the clock-skew
+    /// window has passed; then they go through, and the journal exists from then on.
+    @Test func noJournalRefusesForTheClockSkewWindow() async throws {
+        let h = try CompanionHarness()
+        let phone = try await h.pairedPhone()
+        let uptime = Uptime()
+        let router = h.router(guardian: EnvelopeGuard(journal: Self.journal(h), now: h.clock.now, monotonic: { uptime.now }))
+        let early = await router.handle(try h.sealedRequest(phone: phone, at: t0), transport: .lan)
+        #expect(early.status == 401 && CompanionAuthError(body: early.body) == .unavailable)
+        uptime.advance(CompanionProtocol.maxClockSkew - 1)
+        #expect(CompanionAuthError(body: await router.handle(try h.sealedRequest(phone: phone, at: t0), transport: .lan).body)
+            == .unavailable)
+        uptime.advance(2)
+        #expect(await router.handle(try h.sealedRequest(phone: phone, at: t0), transport: .lan).status == 200)
+        #expect(FileManager.default.fileExists(atPath: Self.journal(h).path))
+    }
+
     /// A phone 90 s fast: an envelope it sent before the Mac restarts is still a replay after.
     @Test func aFastPhonesEnvelopeIsAReplayAfterARelaunch() async throws {
         let h = try CompanionHarness()
         let phone = try await h.pairedPhone()
-        let before = h.router(guardian: EnvelopeGuard(journal: Self.journal(h), now: h.clock.now))
+        let before = h.router(guardian: Self.guardian(h))
         let captured = try h.sealedRequest(phone: phone, at: t0.addingTimeInterval(90))
         #expect(await before.handle(captured, transport: .lan).status == 200)
 
         h.clock.advance(5)
-        let relaunched = h.router(guardian: EnvelopeGuard(journal: Self.journal(h), now: h.clock.now))
+        let relaunched = h.router(guardian: Self.guardian(h))
         #expect(CompanionAuthError(body: await relaunched.handle(captured, transport: .lan).body) == .replay)
         // New requests go through, on any clock within two minutes.
         #expect(await relaunched.handle(try h.sealedRequest(phone: phone, at: h.clock.now.addingTimeInterval(90)),
@@ -32,7 +73,7 @@ import Testing
     @Test func aMacClockSteppingBackRefusesNothingNew() async throws {
         let h = try CompanionHarness()
         let phone = try await h.pairedPhone()
-        let router = h.router(guardian: EnvelopeGuard(journal: Self.journal(h), now: h.clock.now))
+        let router = h.router(guardian: Self.guardian(h))
         let early = try h.sealedRequest(phone: phone, at: t0)
         #expect(await router.handle(early, transport: .lan).status == 200)
         h.clock.advance(-300)
@@ -40,7 +81,7 @@ import Testing
         #expect(await router.handle(request, transport: .lan).status == 200)
         #expect(CompanionAuthError(body: await router.handle(request, transport: .lan).body) == .replay)
         // Relaunched on the corrected clock, the earlier nonces are still remembered.
-        let relaunched = h.router(guardian: EnvelopeGuard(journal: Self.journal(h), now: h.clock.now))
+        let relaunched = h.router(guardian: Self.guardian(h))
         #expect(CompanionAuthError(body: await relaunched.handle(request, transport: .lan).body) == .replay)
     }
 
@@ -50,7 +91,7 @@ import Testing
         let h = try CompanionHarness()
         let phone = try await h.pairedPhone()
         let url = Self.journal(h)
-        let router = h.router(guardian: EnvelopeGuard(journal: url, now: h.clock.now))
+        let router = h.router(guardian: Self.guardian(h))
         for i in 0..<3 {
             #expect(await router.handle(try h.sealedRequest(phone: phone, at: t0.addingTimeInterval(Double(i))), transport: .lan).status == 200)
         }
@@ -62,7 +103,12 @@ import Testing
         try handle.seekToEnd()
         try handle.write(contentsOf: Data(count: 20))
         try handle.close()
-        #expect(try NonceJournal(url: url).load(since: .distantPast).count == 3)
+        #expect(try Self.entries(url).count == 3)
+        // The next append cuts the torn tail off first, so nothing after it is out of line.
+        var journal = NonceJournal(url: url)
+        try journal.append(ReplayCache.Entry(deviceID: UUID(), nonce: Data(count: 16), sentAt: t0, recordedAt: t0))
+        #expect(try Self.entries(url).count == 4)
+        #expect((try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.intValue == 4 * NonceJournal.recordBytes)
 
         // A launch past the window drops them all.
         _ = EnvelopeGuard(journal: url, now: t0.addingTimeInterval(CompanionProtocol.replayWindow + 60))

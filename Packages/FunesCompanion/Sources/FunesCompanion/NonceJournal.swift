@@ -8,33 +8,41 @@ import FunesProtocol
 /// with only the live entries at launch and whenever it holds twice as many as it needs.
 ///
 /// A record is 48 bytes: the device id (16), the nonce (16), the envelope's `ts` and when the
-/// Mac recorded it (milliseconds, 8 each, big-endian). A torn last record (a crash mid-write) is
-/// ignored. Nothing in it is secret: nonces are random and the device ids are the phone's.
+/// Mac recorded it (milliseconds, 8 each, big-endian). Each append is synced before its call
+/// runs. A torn last record (a crash mid-write) is ignored on load and cut off before the next
+/// append, and a short or failed append is cut back to the last whole record, so records never
+/// drift out of line. Nothing in it is secret: nonces are random and the device ids are the
+/// phone's.
 struct NonceJournal {
     static let fileName = "companion-nonces"
     static let recordBytes = 48
 
     enum Failure: Error { case unreadable, unwritable }
 
+    enum Loaded: Equatable {
+        /// No journal: a first launch with it, or one deleted. What the last run saw is unknown.
+        case missing
+        case entries([ReplayCache.Entry])
+    }
+
     let url: URL
     private var appendedSinceRewrite = 0
 
     init(url: URL) { self.url = url }
 
-    /// The entries recorded since `cutoff`, oldest first. A missing file is none; one that exists
-    /// but can't be opened as a plain file (a symlink, wrong permissions) is `unreadable`.
-    func load(since cutoff: Date) throws(Failure) -> [ReplayCache.Entry] {
+    /// The entries recorded since `cutoff`, oldest first, or `missing`. One that exists but can't
+    /// be opened as a plain file (a symlink, wrong permissions) or read is `unreadable`.
+    func load(since cutoff: Date) throws(Failure) -> Loaded {
         let fd = Darwin.open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
         if fd < 0 {
-            if errno == ENOENT { return [] }
+            if errno == ENOENT { return .missing }
             throw .unreadable
         }
         defer { Darwin.close(fd) }
         var info = stat()
         guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG else { throw .unreadable }
-        guard let data = try? FileHandle(fileDescriptor: fd, closeOnDealloc: false).readToEnd() else {
-            return []
-        }
+        let data: Data
+        do { data = try FileHandle(fileDescriptor: fd, closeOnDealloc: false).readToEnd() ?? Data() } catch { throw .unreadable }
         var entries: [ReplayCache.Entry] = []
         var offset = data.startIndex
         while offset + Self.recordBytes <= data.endIndex {
@@ -43,17 +51,25 @@ struct NonceJournal {
             guard let entry = Self.decode(record), entry.recordedAt > cutoff else { continue }
             entries.append(entry)
         }
-        return entries.sorted { $0.recordedAt < $1.recordedAt }
+        return .entries(entries.sorted { $0.recordedAt < $1.recordedAt })
     }
 
-    /// Adds one entry; a new file is created 0600.
+    /// Adds one entry and syncs it; a new file is created 0600. A torn tail is cut off first, and
+    /// a short or failed write is cut back, so the file only ever holds whole records.
     mutating func append(_ entry: ReplayCache.Entry) throws(Failure) {
         let fd = Darwin.open(url.path, O_WRONLY | O_APPEND | O_CREAT | O_NOFOLLOW | O_CLOEXEC, 0o600)
         guard fd >= 0 else { throw .unwritable }
         defer { Darwin.close(fd) }
+        var info = stat()
+        guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG else { throw .unwritable }
+        let whole = info.st_size - info.st_size % off_t(Self.recordBytes)
+        if whole != info.st_size { guard ftruncate(fd, whole) == 0 else { throw .unwritable } }
         let bytes = Self.encode(entry)
         let written = bytes.withUnsafeBytes { Darwin.write(fd, $0.baseAddress, $0.count) }
-        guard written == bytes.count else { throw .unwritable }
+        guard written == bytes.count, fsync(fd) == 0 else {
+            _ = ftruncate(fd, whole)
+            throw .unwritable
+        }
         appendedSinceRewrite += 1
     }
 
