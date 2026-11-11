@@ -121,6 +121,9 @@ public actor EnvelopeGuard {
     private var cache = ReplayCache()
     private var journal: NonceJournal?
     private var blindUntil: ContinuousClock.Instant?
+    /// With no journal, the window also waits for the wall clock: step 2 compares wall time, so a
+    /// clock that steps back during it would otherwise let an old timestamp pass afterwards.
+    private var blindUntilWall: Date?
     private let monotonic: @Sendable () -> ContinuousClock.Instant
 
     /// `journal` is the file to keep the nonces in; nil keeps them in memory only (tests).
@@ -135,6 +138,7 @@ public actor EnvelopeGuard {
             case .missing:
                 logger.error("No companion nonce journal; refusing calls for twice the clock-skew window")
                 blindUntil = monotonic() + .seconds(2 * CompanionProtocol.maxClockSkew)
+                blindUntilWall = now.addingTimeInterval(2 * CompanionProtocol.maxClockSkew)
             case let .entries(entries):
                 for entry in entries {
                     cache.record(nonce: entry.nonce, deviceID: entry.deviceID, sentAt: entry.sentAt, now: entry.recordedAt)
@@ -154,8 +158,9 @@ public actor EnvelopeGuard {
     func open(_ envelope: CompanionRequestEnvelope, device: CompanionDeviceRecord?, macKey: P256.KeyAgreement.PrivateKey,
               now: Date) throws(CompanionAuthError) -> OpenedCompanionRequest {
         if let blindUntil {
-            guard monotonic() >= blindUntil else { throw .unavailable }
+            guard monotonic() >= blindUntil, blindUntilWall.map({ now >= $0 }) ?? true else { throw .unavailable }
             self.blindUntil = nil
+            blindUntilWall = nil
         }
         do {
             let opened = try envelope.open(device: device, macHPKEKey: macKey, replayCache: &cache, now: now)

@@ -33,9 +33,6 @@ import Testing
         func advance(_ seconds: Double) { lock.withLock { offset += .seconds(seconds) } }
     }
 
-    /// No journal (the first launch with it, or deleted): what the last run accepted in its last
-    /// two minutes is unknown, so calls are refused, signed and retryable, until the clock-skew
-    /// window has passed; then they go through, and the journal exists from then on.
     /// No journal: refused for twice the clock skew, since a phone up to the skew fast sends a
     /// timestamp that stays acceptable that long; a relaunch inside the window starts it again,
     /// because the file only appears once a call is accepted.
@@ -56,8 +53,15 @@ import Testing
                                                           monotonic: { relaunchUptime.now }))
         #expect(CompanionAuthError(body: await relaunched.handle(try h.sealedRequest(phone: phone, at: t0), transport: .lan).body)
             == .unavailable)
+        // The monotonic window has passed, but the wall clock stepped back: still refused, since
+        // step 2 compares wall time.
         uptime.advance(2)
-        #expect(await router.handle(try h.sealedRequest(phone: phone, at: t0), transport: .lan).status == 200)
+        h.clock.advance(2 * CompanionProtocol.maxClockSkew - 60)
+        #expect(CompanionAuthError(body: await router.handle(try h.sealedRequest(phone: phone, at: h.clock.now),
+                                                             transport: .lan).body) == .unavailable)
+        // Both clocks past it: through, and the journal exists from then on.
+        h.clock.advance(61)
+        #expect(await router.handle(try h.sealedRequest(phone: phone, at: h.clock.now), transport: .lan).status == 200)
         #expect(FileManager.default.fileExists(atPath: Self.journal(h).path))
     }
 
