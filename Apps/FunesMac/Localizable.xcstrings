@@ -3799,6 +3799,9 @@
     "Funes Vault didn't quit, so what you asked for happens the next time it opens." : {
 
     },
+    "Funes Vault didn't quit. Quit it, then open the copy in Applications." : {
+
+    },
     "Funes Vault paused" : {
 
     },
@@ -7722,6 +7725,9 @@
 
     },
     "The model's provider asked Funes to slow down. Try again in a few minutes." : {
+
+    },
+    "The move to Applications didn't finish" : {
 
     },
     "The name needs 1 to 60 characters." : {

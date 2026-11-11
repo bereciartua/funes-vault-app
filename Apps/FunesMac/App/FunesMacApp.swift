@@ -152,11 +152,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // edits around, a downloaded update waits for Install Now in the menu bar panel.
         model.askToDiscardDrafts = { [weak self] button in self?.askToDiscardDrafts(button: button) ?? true }
         model.showInstallerBusy = { [weak self] in self?.installerBusy() }
-        model.showRelaunchUnfinished = { [weak self] in self?.relaunchUnfinished() }
+        model.showRelaunchUnfinished = { [weak self] relaunch in self?.relaunchUnfinished(relaunch) }
         model.data.relaunchCalledOff = { [weak model] in model?.appRelaunchCalledOff() }
         model.installerLive = { [weak updater] in updater?.installerMayBeRunning ?? false }
         updater.postponeRelaunch = { [weak model] install in model?.postponeRelaunch(install) ?? false }
-        model.data.confirmQuit = { [weak model] in model?.confirmAppRelaunch() ?? true }
+        model.data.confirmQuit = { [weak model] in model?.confirmAppRelaunch(.dataChange) ?? true }
         updater.aborted = { [weak model] in model?.updateAborted() }
         updater.foundUpdateChanged = { [weak model, weak menu] found in
             model?.foundUpdate = found
@@ -496,7 +496,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         // Not while an update is installing (it would land in the copy the move trashes); unsaved
         // edits are asked about before the move launches the new copy, and go at the quit.
-        if let model, !model.confirmAppRelaunch() { return }
+        if let model, !model.confirmAppRelaunch(.move) { return }
         if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { NSApp.terminate(nil) },
                                                      openFailed: { [weak self] in self?.moveDidntOpen() }) {
             model?.appRelaunchCalledOff()
@@ -588,13 +588,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
 
-    /// A Restore, Erase or Move whose quit was cancelled: it finishes when the app next opens.
-    /// Shown after the current event.
-    private func relaunchUnfinished() {
+    /// A Restore, Erase or Move whose quit was cancelled. A restore or erase finishes when the app
+    /// next opens; a move doesn't. Shown after the current event.
+    private func relaunchUnfinished(_ relaunch: AppModel.AppRelaunch) {
         DispatchQueue.main.async {
             let alert = NSAlert()
-            alert.messageText = String(localized: "Quit and reopen Funes Vault to finish")
-            alert.informativeText = String(localized: "Funes Vault didn't quit, so what you asked for happens the next time it opens.")
+            switch relaunch {
+            case .dataChange:
+                alert.messageText = String(localized: "Quit and reopen Funes Vault to finish")
+                alert.informativeText = String(localized: "Funes Vault didn't quit, so what you asked for happens the next time it opens.")
+            case .move:
+                alert.messageText = String(localized: "The move to Applications didn't finish")
+                alert.informativeText = String(localized: "Funes Vault didn't quit. Quit it, then open the copy in Applications.")
+            }
             alert.addButton(withTitle: String(localized: "OK"))
             alert.runModal()
         }

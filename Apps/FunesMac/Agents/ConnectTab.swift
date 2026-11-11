@@ -132,7 +132,7 @@ struct ConnectTab: View {
             Button(String(localized: "Move to Applications")) {
                 // Not while an update is installing; unsaved edits are asked about before the move
                 // launches the new copy, and go at the quit.
-                guard model.confirmAppRelaunch() else { return }
+                guard model.confirmAppRelaunch(.move) else { return }
                 if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { NSApp.terminate(nil) },
                                                              openFailed: { [model] in
                                                                  model.appRelaunchCalledOff()

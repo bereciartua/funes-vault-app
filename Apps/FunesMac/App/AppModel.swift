@@ -142,20 +142,26 @@ final class AppModel {
     @ObservationIgnored private var quitting = false
     /// Waits for approval panels before a relaunch (set by the app).
     @ObservationIgnored var relaunchGate: UpdateRelaunchGate?
-    /// Whether Sparkle's installer may be running (from extraction on, or a session in progress;
-    /// set by the app). While it is, the app never relaunches itself: Autoupdate quits every copy
+    /// Whether Sparkle's installer may be running (from extraction, or an install-on-quit, until
+    /// the app quits; set by the app). While it is, the app never relaunches itself: Autoupdate quits every copy
     /// of the app and replaces the bundle when this one exits.
     @ObservationIgnored var installerLive: () -> Bool = { false }
-    /// The edits a Restore, Erase or Move just asked about, and when: the quit that follows within
-    /// a minute doesn't ask about them again (it asks about any others).
-    @ObservationIgnored private var askedForQuit: (ids: Set<UUID>, at: Date)?
+    /// The edits a Restore, Erase, Move or Install Now just asked about, as they were then, and
+    /// until when that answer holds: the quit that follows doesn't ask about them again, unless
+    /// they changed since (it asks about those, and about any others).
+    @ObservationIgnored private var askedForQuit: (drafts: [UUID: VaultModel.Draft], until: Date)?
+    private var askedDrafts: [UUID: VaultModel.Draft] {
+        Dictionary(uniqueKeysWithValues: vault.draftIDs.compactMap { id in vault.draft(id).map { (id, $0) } })
+    }
+    /// What a Restore, Erase or Move that asked is about to do by quitting.
+    enum AppRelaunch { case dataChange, move }
     /// Tells the user an update is installing, so Restore, Erase or Move must wait (set by the app).
     @ObservationIgnored var showInstallerBusy: () -> Void = {}
-    /// Tells the user a Restore, Erase or Move didn't finish because its quit was cancelled: it
-    /// finishes the next time the app opens (set by the app).
-    @ObservationIgnored var showRelaunchUnfinished: () -> Void = {}
+    /// Tells the user a Restore, Erase or Move didn't finish because its quit was cancelled (set by
+    /// the app).
+    @ObservationIgnored var showRelaunchUnfinished: (AppRelaunch) -> Void = { _ in }
     /// A Restore, Erase or Move has asked and is about to quit the app.
-    @ObservationIgnored private var relaunchRequested = false
+    @ObservationIgnored private var relaunchRequested: AppRelaunch?
     /// Asks before unsaved edits are dropped, with this button ("Discard and Quit"); true when
     /// there are none or the user agreed. Discards nothing itself (set by the app).
     @ObservationIgnored var askToDiscardDrafts: (_ button: String) -> Bool = { _ in true }
@@ -404,24 +410,28 @@ final class AppModel {
             }
         }
         pendingInstall = nil
+        // Install Now's answer holds only for the quit this install brings, right away.
+        if ignoringDrafts { askedForQuit?.until = Date().addingTimeInterval(10) }
         if !sparkleRelaunches { install() }
         return true
     }
 
-    /// The menu bar panel's Install Now: asks about unsaved edits ("Discard and Install"), drops
-    /// them on agreement, and lets the update go (after any approvals' wait).
+    /// The menu bar panel's Install Now: asks about unsaved edits ("Discard and Install") and lets
+    /// the update go (after any approvals' wait); the edits go at the quit it brings.
     func installHeldUpdate() {
         guard pendingInstall != nil, askToDiscardDrafts(String(localized: "Discard and Install")) else { return }
         // The alert's run loop can deliver an abort; re-check. The edits go at the quit the install
         // brings, which doesn't ask about them again; if it never comes, they're kept.
         guard pendingInstall != nil else { return }
-        askedForQuit = (vault.draftIDs, Date())
+        // Held through the approvals' wait (up to the gate's maximum), then 10 s from the install.
+        askedForQuit = (askedDrafts, Date().addingTimeInterval(90))
         updateHeld = false
         installIfFree(ignoringDrafts: true)
     }
 
     /// Sparkle ended the update with an error: nothing is held any more.
     func updateAborted() {
+        askedForQuit = nil
         pendingInstall = nil
         updateHeld = false
         relaunchGate?.cancel()
@@ -433,20 +443,21 @@ final class AppModel {
     /// without relaunching.
     func confirmTermination() -> Bool {
         quitting = true
-        let asked = askedForQuit.flatMap { Date().timeIntervalSince($0.at) < 60 ? $0.ids : nil } ?? []
+        let asked = askedForQuit.flatMap { Date() < $0.until ? $0.drafts : nil } ?? [:]
         askedForQuit = nil
-        guard vault.draftIDs.isSubset(of: asked) || askToDiscardDrafts(String(localized: "Discard and Quit")) else {
+        let answered = vault.draftIDs.allSatisfy { id in asked[id].map { $0 == vault.draft(id) } ?? false }
+        guard answered || askToDiscardDrafts(String(localized: "Discard and Quit")) else {
             quitting = false
-            if relaunchRequested {
-                relaunchRequested = false
-                showRelaunchUnfinished()
+            if let relaunch = relaunchRequested {
+                relaunchRequested = nil
+                showRelaunchUnfinished(relaunch)
             }
             // An install held while the alert was up shows again (Install Now), or goes if free.
             if pendingInstall != nil, !installIfFree() { updateHeld = true }
             return false
         }
         quitting = false
-        relaunchRequested = false
+        relaunchRequested = nil
         pendingInstall = nil
         updateHeld = false
         relaunchGate?.cancel()
@@ -458,14 +469,14 @@ final class AppModel {
     /// Sparkle's installer may be running (`showInstallerBusy` says so), then asks about
     /// unsaved edits. True: go on; the quit that follows won't ask about these edits again (and
     /// drops them then, not before, so a move whose copy never opens loses nothing).
-    func confirmAppRelaunch() -> Bool {
+    func confirmAppRelaunch(_ relaunch: AppRelaunch) -> Bool {
         if installerLive() || pendingInstall != nil {
             showInstallerBusy()
             return false
         }
         guard askToDiscardDrafts(String(localized: "Discard and Quit")) else { return false }
-        askedForQuit = (vault.draftIDs, Date())
-        relaunchRequested = true
+        askedForQuit = (askedDrafts, Date().addingTimeInterval(60))
+        relaunchRequested = relaunch
         return true
     }
 
@@ -473,7 +484,7 @@ final class AppModel {
     /// failed, or the moved copy didn't open): the edits it asked about are asked about again.
     func appRelaunchCalledOff() {
         askedForQuit = nil
-        relaunchRequested = false
+        relaunchRequested = nil
     }
 
     /// Drafts of memories that are gone (purged here or elsewhere) can't be saved or reverted:
