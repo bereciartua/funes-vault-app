@@ -155,7 +155,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.vault.draftsChanged = { [weak model] in model?.tryPendingInstall() }
         model.data.confirmQuit = { [weak model] in model?.beginQuit(String(localized: "Discard and Quit")) ?? true }
         model.data.quitAborted = { [weak model] in model?.quitCancelled() }
-        model.data.willQuit = { [weak model] otherwise in model?.relaunchThroughPendingUpdate(otherwise: otherwise) ?? false }
+        // Through a waiting update; if its relaunch never comes, the edits go and the app relaunches itself.
+        model.data.willQuit = { [weak model] otherwise in
+            model?.relaunchThroughPendingUpdate(otherwise: { [weak model] in
+                model?.discardDraftsForQuit()
+                otherwise()
+            }) ?? false
+        }
         updater.aborted = { [weak model] in model?.updateAborted() }
         updater.foundUpdateChanged = { [weak model, weak menu] found in
             model?.foundUpdate = found
@@ -287,7 +293,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Edits the user already agreed to discard for an install aren't asked about again;
             // edits to other memories made since are. No install starts while it asks, and a
             // pending one is let go so Sparkle installs at this quit, without relaunching.
-            guard model.beginQuit(String(localized: "Discard and Quit")) else { return .terminateCancel }
+            guard model.beginQuit(String(localized: "Discard and Quit"), terminating: true) else { return .terminateCancel }
             model.discardDraftsForQuit()
         }
         guard let mcp, mcp.callsInProgress > 0 else { return .terminateNow }
@@ -506,9 +512,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             model?.discardDraftsForQuit()
             NSApp.terminate(nil)
         })
-        // The new copy may still fail to open: the quit it would bring mustn't stay expected.
-        model?.expectQuit(otherwise: { [weak model] in model?.quitCancelled() })
-        if case .failed(let problem) = moved {
+        switch moved {
+        case .moving:
+            // The new copy may still fail to open: the quit it would bring mustn't stay expected.
+            model?.expectQuit(otherwise: { [weak model] in model?.quitCancelled() })
+        case .failed(let problem):
             model?.quitCancelled()
             let failure = NSAlert()
             failure.messageText = String(localized: "Funes Vault couldn't be moved")

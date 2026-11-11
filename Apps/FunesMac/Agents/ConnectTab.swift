@@ -141,9 +141,11 @@ struct ConnectTab: View {
                     model.discardDraftsForQuit()
                     NSApp.terminate(nil)
                 })
-                // The new copy may still fail to open: the quit it would bring mustn't stay expected.
-                model.expectQuit(otherwise: { [model] in model.quitCancelled() })
-                if case .failed(let problem) = moved {
+                switch moved {
+                case .moving:
+                    // The new copy may still fail to open: the quit it would bring mustn't stay expected.
+                    model.expectQuit(otherwise: { [model] in model.quitCancelled() })
+                case .failed(let problem):
                     model.quitCancelled()
                     moveProblem = problem
                 }

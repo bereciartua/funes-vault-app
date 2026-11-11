@@ -375,6 +375,7 @@ final class AppModel {
     /// Sparkle's `shouldPostponeRelaunchForUpdate`: asks about unsaved edits, then relaunches now
     /// (false) or keeps the install for when nothing holds it (true).
     func postponeRelaunch(_ install: @escaping () -> Void) -> Bool {
+        cancelQuitWatch()
         if !draftsConsented, askToDiscardDrafts(String(localized: "Discard and Install")) { consentedDiscard = vault.draftIDs }
         pendingInstall = install
         return !tryPendingInstall(sparkleRelaunches: true)
@@ -412,6 +413,8 @@ final class AppModel {
     /// have happened (Sparkle's handler can do nothing; a moved copy can fail to open), so nothing
     /// stays held for a quit that never comes. Each new call replaces the last.
     @ObservationIgnored private var quitWatch = 0
+    /// What a watchdog waited for resolved another way (a cancelled quit, a new or aborted update).
+    private func cancelQuitWatch() { quitWatch += 1 }
     func expectQuit(within seconds: Double = 20, otherwise: @escaping () -> Void) {
         quitWatch += 1
         let watch = quitWatch
@@ -421,9 +424,10 @@ final class AppModel {
         }
     }
 
-    /// Sparkle ended the update without installing (an error, or the user dismissed it): nothing is
-    /// pending any more.
+    /// Sparkle ended the update with an error: nothing is pending any more. (A session that ends
+    /// without an error doesn't call this; the watchdog covers an install that never comes.)
     func updateAborted() {
+        cancelQuitWatch()
         pendingInstall = nil
         updateHeld = false
         consentedDiscard = []
@@ -438,8 +442,11 @@ final class AppModel {
     }
 
     /// A quit or relaunch the user asked for is starting: asks about edits not already agreed to
-    /// (`button`), and holds any install meanwhile. False (Cancel) withdraws the agreement.
-    func beginQuit(_ button: String) -> Bool {
+    /// (`button`), and holds any install meanwhile. False (Cancel) withdraws the agreement. While
+    /// one is under way (Restore relaunching, say) another is refused, except the quit itself
+    /// (`terminating`, from `applicationShouldTerminate`).
+    func beginQuit(_ button: String, terminating: Bool = false) -> Bool {
+        if quitting, !terminating { return false }
         quitting = true
         guard draftsConsented || askToDiscardDrafts(button) else {
             quitCancelled()
@@ -450,6 +457,7 @@ final class AppModel {
 
     /// The quit or relaunch didn't happen (Cancel, or its marker couldn't be written).
     func quitCancelled() {
+        cancelQuitWatch()
         quitting = false
         consentedDiscard = []
         tryPendingInstall()
@@ -472,10 +480,17 @@ final class AppModel {
     /// A relaunch the app makes itself (Restore, Erase, Move): edits go, and a pending update
     /// relaunches the app instead, so Autoupdate never replaces it while the new launch starts from
     /// it. True when it asked Sparkle to relaunch; if that doesn't happen, `otherwise` runs.
+    /// The user already agreed (`beginQuit`): the edits go at the quit Sparkle's relaunch brings,
+    /// not before, so if it never comes they're kept and `otherwise` decides.
     func relaunchThroughPendingUpdate(otherwise: @escaping () -> Void) -> Bool {
-        let install = pendingInstall
-        discardDraftsForQuit()
-        guard let install else { return false }
+        guard let install = pendingInstall else {
+            discardDraftsForQuit()
+            return false
+        }
+        pendingInstall = nil
+        updateHeld = false
+        consentedDiscard = vault.draftIDs
+        relaunchGate?.cancel()
         install()
         expectQuit(otherwise: otherwise)
         return true
