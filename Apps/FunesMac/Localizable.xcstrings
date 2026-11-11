@@ -5169,6 +5169,9 @@
     "No category is set to Allow any more, and an empty allow list means every category that isn't denied. To share nothing, turn Read off instead." : {
 
     },
+    "No category would be allowed any more, which means every category. Nothing was saved: allow a category, or confirm to allow every one." : {
+
+    },
     "No cloud agents use the current URL yet." : {
 
     },
