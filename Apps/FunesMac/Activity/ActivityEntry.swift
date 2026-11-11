@@ -34,7 +34,7 @@ struct ActivityEntry: Identifiable, Equatable {
     /// Memories released by this row.
     var sharedCount: Int {
         switch (event.event, event.outcome) {
-        case ("request_memory", "fulfilled"), ("get_memory_request", "delivered"): event.ids.count
+        case ("request_memory", "fulfilled"), ("request_memory", "delivered"), ("get_memory_request", "delivered"): event.ids.count
         default: 0
         }
     }
@@ -75,7 +75,7 @@ struct ActivityEntry: Identifiable, Equatable {
         switch e.event {
         case "request_memory":
             switch e.outcome {
-            case "fulfilled": return Self.shared(e.ids.count)
+            case "fulfilled", "delivered": return Self.shared(e.ids.count)
             case "needs_approval": return String(localized: "Asked for memories")
             default: return String(localized: "Refused a request")
             }
@@ -162,7 +162,7 @@ struct ActivityEntry: Identifiable, Equatable {
         case ("request_memory", "fulfilled"):
             return e.approval == .notRequired ? (String(localized: "Shared without asking"), .good) : (String(localized: "Shared"), .good)
         case ("request_memory", "needs_approval"): return (String(localized: "Waiting for you"), .accent)
-        case ("get_memory_request", "delivered"): return (String(localized: "Approved by you"), .good)
+        case ("get_memory_request", "delivered"), ("request_memory", "delivered"): return (String(localized: "Approved by you"), .good)
         case ("approval", _):
             switch e.approval {
             case .approved: return (String(localized: "Approved"), .good)

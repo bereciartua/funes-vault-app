@@ -58,6 +58,7 @@ final class StatusMenuController: NSObject {
         let waiting = model.waiting(now: Date()).cards.count
         if waiting > 0 { lines.append(String(localized: "Waiting for you: \(waiting)")) }
         if model.inboxCount > 0 { lines.append(String(localized: "Inbox: \(model.inboxCount)")) }
+        if let found = model.foundUpdate { lines.append(found.menuTitle) }
         return lines.joined(separator: "\n")
     }
 
@@ -82,7 +83,12 @@ final class StatusMenuController: NSObject {
         let settings = NSMenuItem(title: String(localized: "Settings…"), action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
-        if checkForUpdates != nil, updatesAvailable() {
+        if checkForUpdates != nil, updatesAvailable(), let found = model.foundUpdate {
+            let updates = NSMenuItem(title: found.menuTitle, action: #selector(checkUpdates), keyEquivalent: "")
+            updates.target = self
+            updates.image = NSImage(systemSymbolName: "arrow.down.circle.fill", accessibilityDescription: nil)
+            menu.addItem(updates)
+        } else if checkForUpdates != nil, updatesAvailable() {
             let updates = NSMenuItem(title: String(localized: "Check for Updates…"), action: #selector(checkUpdates), keyEquivalent: "")
             updates.target = self
             menu.addItem(updates)
@@ -96,4 +102,11 @@ final class StatusMenuController: NSObject {
     @objc private func openWindow() { model.showHome() }
     @objc private func openSettings() { model.openSettings(nil) }
     @objc private func checkUpdates() { checkForUpdates?() }
+}
+
+extension FoundUpdate {
+    /// "Update Available: 0.6.0…", or a security update's.
+    var menuTitle: String {
+        critical ? String(localized: "Security Update Available: \(version)…") : String(localized: "Update Available: \(version)…")
+    }
 }

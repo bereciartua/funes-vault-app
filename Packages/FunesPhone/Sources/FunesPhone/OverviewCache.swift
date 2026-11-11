@@ -104,6 +104,9 @@ public final class OverviewModel {
     private let caller: any CompanionCalling
     private let cache: OverviewCache?
     private let demo: Bool
+    /// Bumped by `clear()`, so an answer that was on its way when the counts left the phone
+    /// (unpaired or removed meanwhile) isn't shown or cached.
+    private var generation = 0
 
     /// With `demo`, `caller` is the demo vault and the cache is marked as the demo's. Without, a
     /// demo's cache left behind (the app was closed in the demo) is deleted.
@@ -124,8 +127,10 @@ public final class OverviewModel {
 
     /// Asks for `range` and keeps the answer, here and in the cache.
     public func load(_ range: OverviewRange = .days30) async {
+        let generation = self.generation
         do {
             let overview = try await caller.overview(range)
+            guard generation == self.generation else { return }
             overviews[range] = overview
             do {
                 try cache?.write(overview, demo: demo)
@@ -146,6 +151,7 @@ public final class OverviewModel {
 
     /// Unpaired, removed or leaving the demo: the counts leave the phone.
     public func clear() {
+        generation += 1
         overviews = [:]
         cache?.delete()
         onCacheChange?()

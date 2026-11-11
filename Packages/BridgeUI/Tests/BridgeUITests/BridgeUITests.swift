@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import SwiftUI
 import Testing
@@ -46,6 +47,25 @@ struct ActivityStoreTests {
         #expect(again.contains(id: "a#2"))
     }
 
+    /// Code review 2026-11-10: a crash left the last line torn (no newline). The next row still
+    /// reads back; only the torn one is skipped.
+    @Test func aTornLastLineDoesntSwallowTheNextRow() throws {
+        let data = try folder()
+        defer { try? FileManager.default.removeItem(at: data) }
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let store = ActivityStore<Row>(dataFolder: data, retention: .funes)
+        #expect(store.append(Row(rowID: "a", at: now, phase: "event", important: true)))
+        let handle = try FileHandle(forWritingTo: store.file)
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data(#"{"rowID":"torn","at":18"#.utf8))
+        try handle.close()
+        let again = ActivityStore<Row>(dataFolder: data, retention: .funes)
+        #expect(again.append(Row(rowID: "b", at: now, phase: "event", important: true)))
+        let reread = ActivityStore<Row>(dataFolder: data, retention: .funes)
+        #expect(reread.records().map(\.rowID) == ["a", "b"])
+        #expect(reread.skippedLines == 1)
+    }
+
     @Test func failingSyncRefusesTheRow() throws {
         let data = try folder()
         defer { try? FileManager.default.removeItem(at: data) }
@@ -71,6 +91,30 @@ struct ActivityStoreTests {
         let limited = ActivityRetention(importantAge: 1e9, importantLimit: 2, routineAge: 1e9, routineLimit: 1)
         let many = (0..<5).map { Row(rowID: "i\($0)", at: now + Double($0), phase: "result", important: $0 < 3) }
         #expect(limited.keep(many, now: now + 10).map(\.rowID) == ["i1", "i2", "i4"])
+    }
+
+    /// Code review 2026-11-10: a looping agent's identical refusals are important once an hour per
+    /// key; the rest are routine, so they can't push other important rows past the limit.
+    @Test func repeatedRefusalsAreImportantOnceAnHour() {
+        var repeats = RepeatedRows<String>()
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let answers = [("a|paused", 0.0), ("a|paused", 1), ("a|paused", 3_599), ("b|paused", 2), ("a|expired", 2),
+                       ("a|paused", 3_600), ("a|paused", 3_601)].map { repeats.isRepeat($0.0, at: start + $0.1) }
+        // Another key, or another reason, has its own window; a new window starts with an important row.
+        #expect(answers == [false, true, true, false, false, false, true])
+        // A day of one refusal a second, through the retention limits: a day's important rows plus
+        // the ones that were there first.
+        var loop = RepeatedRows<String>()
+        let earlier = (0..<5).map { Row(rowID: "approval\($0)", at: start - 10 + Double($0), phase: "event", important: true) }
+        let flood = (0..<86_400).map { second in
+            Row(rowID: "r\(second)", at: start + Double(second), phase: "result",
+                important: !loop.isRepeat("agent|list|agent_paused", at: start + Double(second)))
+        }
+        #expect(flood.filter(\.important).count == 24)
+        let limits = ActivityRetention(importantAge: 400 * 86_400, importantLimit: 30, routineAge: 30 * 86_400,
+                                       routineLimit: 100)
+        let kept = limits.keep(earlier + flood, now: start + 86_400)
+        #expect(earlier.allSatisfy { row in kept.contains { $0.rowID == row.rowID } }, "the approvals survive the loop")
     }
 
     @Test func compactionKeepsWhatRetentionKeeps() throws {
@@ -280,6 +324,22 @@ struct SharePanelReviewTests {
         #expect(queue.generation(of: id) == generation + 2)
     }
 
+    // Code review 2026-11-10: whenever the panel becomes key, Return and Esc arm again, so a key
+    // press meant for the app that was frontmost can't answer it.
+    @Test func becomingKeyReArmsTheKeys() throws {
+        let queue = ApprovalQueue()
+        let controller = ApprovalPanelController(queue: queue)
+        queue.queueChanged = { controller.update() }
+        queue.enqueue(Self.shareItem(UUID(), rows: [Self.publicRow])) { _ in }
+        let window = try #require(controller.window)
+        let before = queue.keyGeneration
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: window)
+        #expect(queue.keyGeneration == before + 1)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: NSWindow())
+        #expect(queue.keyGeneration == before + 1, "another window becoming key changes nothing")
+        queue.withdrawAll()
+    }
+
     // 4303295925: the user can read everything they'd share before sharing it.
     @Test func showAllRevealsTheExactText() {
         let long = (1...40).map { "Line \($0) of a long memory body with details." }.joined(separator: " ")
@@ -462,6 +522,21 @@ struct UpdateRelaunchGateTests {
         clock += 61
         scheduled.removeFirst()()
         #expect(proceeded == 2)
+    }
+
+    /// A quit cancels a waiting relaunch: it never runs, even once the approvals are answered.
+    @Test func aCancelledWaitNeverProceeds() {
+        var pending = 1
+        var scheduled: [@MainActor () -> Void] = []
+        let gate = UpdateRelaunchGate(pendingApprovals: { pending }, maximumWait: 60,
+                                      schedule: { _, action in scheduled.append(action) })
+        var proceeded = false
+        #expect(gate.postpone { proceeded = true })
+        gate.cancel()
+        #expect(!gate.isWaiting)
+        pending = 0
+        while !scheduled.isEmpty { scheduled.removeFirst()() }
+        #expect(!proceeded)
     }
 
     @Test func retentionCanChange() throws {

@@ -86,15 +86,25 @@ struct Prominent: ViewModifier {
 }
 
 /// A key, token or secret on the clipboard: confirmed first by the caller, cleared after 90 s
-/// unless something else was copied since (T25).
+/// unless something else was copied since (T25). It stays on this Mac (no Universal Clipboard)
+/// and is marked concealed and transient (nspasteboard.org), so clipboard managers that honour
+/// the markers neither show nor keep it.
 enum SecretClipboard {
     static let seconds = 90
+    static let concealed = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
+    static let transient = NSPasteboard.PasteboardType("org.nspasteboard.TransientType")
 
     @MainActor
-    static func copy(_ secret: String) {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(secret, forType: .string)
-        let count = NSPasteboard.general.changeCount
+    static func copy(_ secret: String, clearAfter seconds: Int = seconds) {
+        let pasteboard = NSPasteboard.general
+        // prepareForNewContents clears the pasteboard and sets the host-only option; declareTypes
+        // would clear it again and drop the option, so the types are added to it instead.
+        pasteboard.prepareForNewContents(with: .currentHostOnly)
+        pasteboard.addTypes([.string, concealed, transient], owner: nil)
+        pasteboard.setString(secret, forType: .string)
+        pasteboard.setData(Data(), forType: concealed)
+        pasteboard.setData(Data(), forType: transient)
+        let count = pasteboard.changeCount
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(seconds)) {
             if NSPasteboard.general.changeCount == count { NSPasteboard.general.clearContents() }
         }

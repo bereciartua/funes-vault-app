@@ -517,6 +517,40 @@ private struct PanelFooter: View {
     var body: some View {
         VStack(spacing: 0) {
             Divider()
+            // An update held because of unsaved edits, until the user installs it (FR-V-02).
+            if model.app.updateHeld {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label(String(localized: "Update ready to install"), systemImage: "arrow.down.circle.fill")
+                        .foregroundStyle(Color.accentColor)
+                    Text(String(localized: "It waited because you have unsaved changes. Installing relaunches Funes Vault."))
+                        .font(.caption).foregroundStyle(.secondary)
+                    Button(String(localized: "Install Now…")) {
+                        model.closePanel()
+                        // After the panel has gone: it asks about unsaved changes first.
+                        DispatchQueue.main.async { model.app.installHeldUpdate() }
+                    }
+                    .buttonStyle(.link)
+                }
+                .controlSize(.small)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
+            }
+            // An update a scheduled check found: Sparkle's window shows it (FR-G-03).
+            if let found = model.app.foundUpdate, model.app.updater.isAvailable() {
+                Button {
+                    model.closePanel()
+                    model.app.updater.checkForUpdates()
+                } label: {
+                    Label(found.menuTitle, systemImage: "arrow.down.circle.fill")
+                        .foregroundStyle(found.critical ? Color.red : Color.accentColor)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.accessoryBar)
+                .controlSize(.small)
+                .padding(.horizontal, 8)
+                .padding(.top, 6)
+            }
             HStack(spacing: 6) {
                 Button { model.show(.inbox) } label: {
                     HStack(spacing: 5) {

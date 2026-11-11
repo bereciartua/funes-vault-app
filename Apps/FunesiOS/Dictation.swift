@@ -22,6 +22,10 @@ final class Dictation {
     private(set) var transcript = ""
     private var finalized = ""
     private var session: AnyObject?
+    /// Bumped by every start, and by a stop while preparing, so a start still on its way when stop
+    /// came (asking for the microphone, loading the model) knows to stop the session it made
+    /// instead of leaving the microphone on.
+    private var generation = 0
 
     static var isAvailable: Bool {
         if #available(iOS 26, *) { true } else { false }
@@ -31,35 +35,53 @@ final class Dictation {
 
     func start() async {
         guard #available(iOS 26, *), !isActive else { return }
+        generation += 1
+        let current = generation
         state = .preparing
         transcript = ""
         finalized = ""
-        guard await AVAudioApplication.requestRecordPermission() else {
+        let allowed = await AVAudioApplication.requestRecordPermission()
+        // Stopped while iOS asked.
+        guard current == generation else { return }
+        guard allowed else {
             state = .failed(String(localized: "Funes can't use the microphone. Turn it on in Settings ▸ Funes Vault."))
             return
         }
         let session = DictationSession()
         self.session = session
         do {
-            try await session.start { [weak self] text, isFinal in self?.heard(text, isFinal: isFinal) }
-            if state == .preparing { state = .listening }
+            try await session.start { [weak self] text, isFinal in
+                guard let self, self.generation == current else { return }
+                self.heard(text, isFinal: isFinal)
+            }
+            guard current == generation else {
+                // Stopped while it was starting: stop() left it to this.
+                await session.stop()
+                return
+            }
+            state = .listening
         } catch {
             logger.error("Dictation didn't start: \(String(describing: type(of: error)), privacy: .public)") // log-safe: an error type
             await session.stop()
+            guard current == generation else { return }
             self.session = nil
             state = .failed(String(localized: "Dictation isn't available right now. Use the microphone on the keyboard instead."))
         }
     }
 
-    /// Stops listening and returns everything heard.
+    /// Stops listening and returns everything heard (its last words arrive while it stops). While
+    /// it's still preparing, the start on its way stops its own session once it gets there.
     func stop() async -> String {
-        guard #available(iOS 26, *), let session = session as? DictationSession else {
-            state = .idle
-            return transcript
-        }
-        await session.stop()
-        self.session = nil
+        let preparing = state == .preparing
+        let listening = state == .listening
+        let running = session
+        session = nil
         state = .idle
+        if preparing {
+            generation += 1
+        } else if #available(iOS 26, *), listening, let running = running as? DictationSession {
+            await running.stop()
+        }
         return transcript.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 

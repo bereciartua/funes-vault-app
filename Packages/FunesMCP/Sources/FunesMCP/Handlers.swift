@@ -45,7 +45,8 @@ extension RequestPipeline {
             retention: (a["retention"] as? String).flatMap(Retention.init(rawValue:)) ?? .unknown,
             processors: a["processors"] as? [String] ?? [])
         do {
-            let outcome = try await requestInCall(agent, input, via: Self.via(call), credential: credential)
+            let outcome = try await requestInCall(agent, input, via: Self.via(call), credential: credential,
+                                                  context: call.context)
             if outcome.status == .denied, outcome.reason == .rateLimited {
                 // FunesCore recorded it in Activity; the agent gets the usual infrastructure answer.
                 return ToolOutput.denied(.rateLimited, message: Messages.rateLimited(Self.pendingRetrySeconds),
@@ -69,9 +70,10 @@ extension RequestPipeline {
     /// again, replacing a waiting one); if it needs approval, show the panel and wait for the rest of
     /// the time; deliver when approved. On timeout the request waits in Pending requests.
     /// Once Funes is quitting, nothing new is shown: the call throws `QuitBeforeAsking` instead
-    /// (mcp-server.md §7; PR #5 review 4307518013).
+    /// (mcp-server.md §7; PR #5 review 4307518013). While a request waits, `context`'s timeout
+    /// answer is that request, so a call that runs past 55 s still gives the agent its id (§9).
     func requestInCall(_ agent: Agent, _ input: MemoryRequest, via: ActivityEvent.Via,
-                       credential: CredentialCheck? = nil) async throws -> RequestOutcome {
+                       credential: CredentialCheck? = nil, context: CallContext? = nil) async throws -> RequestOutcome {
         let disclosures = services.disclosures
         let deadline = now().addingTimeInterval(Double(inCallWait.components.seconds))
         // Requests waiting for the user: at most 3 per agent (§9), counted by FunesCore in the write
@@ -79,6 +81,7 @@ extension RequestPipeline {
         let limit = Self.maxPendingApprovalsPerAgent
         var outcome = try await disclosures.request(agentID: agent.id, input, now: now(), maxPendingApprovals: limit,
                                                     via: via, credential: credential)
+        await Self.noteWaiting(outcome, in: context)
         if outcome.status == .fulfilled, let offer = outcome.accessOffer, let key = offer.categoryKeys.first, !isQuitting {
             // Shared without asking: the agent gets its answer now; Always Allow is for next time.
             let prompt = AccessPrompt(agentID: agent.id, categoryKey: key, operation: .read, task: input.task,
@@ -117,11 +120,23 @@ extension RequestPipeline {
                     // was open makes the grant fail closed (§7).
                     grant = OnceGrant(offeredByRequestID: offeredBy, agentRevision: offer.agentRevision, categoryKey: key)
                 }
-                if outcome.status == .needsApproval, let waiting = outcome.requestID {
+                if grant == nil, let waiting {
+                    // Always Allow changed the agent's access, which voids the waiting request anyway.
                     try? await disclosures.supersede(requestID: waiting, now: now())
                 }
-                outcome = try await disclosures.request(agentID: agent.id, input, now: now(), grant: grant,
-                                                        maxPendingApprovals: limit, via: via, credential: credential)
+                // Allow Once replaces the waiting request only once its grant checks out, in the
+                // same transaction; a stale grant (§7) leaves the waiting request and its panel.
+                let next = try await disclosures.request(agentID: agent.id, input, now: now(), grant: grant,
+                                                         replacing: grant == nil ? nil : waiting,
+                                                         maxPendingApprovals: limit, via: via, credential: credential)
+                if grant != nil, let waiting, next.status == .denied,
+                   (try? await disclosures.disclosure(requestID: waiting))??.status == .needsApproval {
+                    // The grant was stale, or the gate refused the new request (Funes paused, access
+                    // expired): the waiting request wasn't replaced, so the agent gets its answer below.
+                } else {
+                    outcome = next
+                }
+                await Self.noteWaiting(outcome, in: context)
             }
         }
         guard outcome.status == .needsApproval, let id = outcome.requestID, !isQuitting else { return outcome }
@@ -140,6 +155,15 @@ extension RequestPipeline {
         default:
             return outcome
         }
+    }
+
+    /// What BridgeKit answers if the call outlasts `toolCallTimeout`: while a request waits for the
+    /// user, that request (`needs_approval` with its id, so the agent can call `get_memory_request`),
+    /// rather than a bare `timeout`; otherwise the registry's `timeout`.
+    static func noteWaiting(_ outcome: RequestOutcome, in context: CallContext?) async {
+        guard let context else { return }
+        let waiting = outcome.status == .needsApproval && outcome.requestID != nil ? output(outcome) : nil
+        await MainActor.run { context.timeoutResult = waiting }
     }
 
     /// Funes began quitting before the user was asked. `requestID` is the request still waiting in
@@ -361,7 +385,7 @@ extension RequestPipeline {
                 record(call, agent.id, outcome: "not_found", reason: .notFound)
                 return notFound
             }
-            await presenter.open(requestID: id)
+            await presenter.openInFunes(requestID: id)
         } else if let text = call.arguments["suggestion_id"] as? String {
             guard let id = UUID(uuidString: text),
                   let suggestion = try? await services.suggestions.suggestion(id: id),
@@ -371,7 +395,7 @@ extension RequestPipeline {
                 record(call, agent.id, outcome: "not_found", reason: .notFound)
                 return notFound
             }
-            await presenter.open(suggestionID: id)
+            await presenter.openInFunes(suggestionID: id)
         } else {
             return refuse(call, agent.id, .invalidInput, message: "Pass request_id or suggestion_id.")
         }

@@ -124,6 +124,21 @@ final class CompanionHarness: @unchecked Sendable {
         return (response, try sealed.responseKey.open(response.body))
     }
 
+    /// A `status.get` sealed by `phone` at `time`, as an HTTP request to send as often as a test likes.
+    func sealedRequest(phone: Phone, at time: Date) throws -> HTTPRequest {
+        let request = try CompanionRequest(StatusGet.self, params: EmptyParams()).encoded()
+        let sealed = try CompanionRequestEnvelope.seal(request, deviceID: phone.deviceID!, macHPKEKey: identity.hpkeKey.publicKey,
+                                                       signer: phone.signer, now: time)
+        return Self.request(CompanionProtocol.rpcPath, body: sealed.envelope.body)
+    }
+
+    /// Another router on this vault, as a settings change or a relaunch makes, with `guardian`.
+    func router(guardian: EnvelopeGuard) -> CompanionRouter {
+        let clock = self.clock
+        return CompanionRouter(identity: identity, devices: services.devices, pairing: pairing, handlers: router.handlers, gate: nil,
+                               guardian: guardian, clock: { clock.now })
+    }
+
     /// The result, or the call's error thrown.
     func result<Call: CompanionCall>(_ call: Call.Type, _ params: Call.Params, phone: Phone) async throws -> Call.Result {
         let (response, reply) = try await self.call(call, params, phone: phone)

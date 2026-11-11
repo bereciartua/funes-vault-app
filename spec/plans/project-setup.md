@@ -38,7 +38,7 @@
 | Logger subsystem | `com.funesvault.mac` / `com.funesvault.ios` |
 | Keychain service (provider keys) | `com.funesvault.provider` |
 | Keychain service (Mac companion identity) | `com.funesvault.companion` (`.dev` for a development vault) |
-| Keychain service (iPhone device keys and pairing record) | `com.funesvault.ios.companion`, access group `JVNJ326L7B.com.funesvault.shared` (Keychain Sharing, `$(AppIdentifierPrefix)com.funesvault.shared`), shared by the app and its extensions |
+| Keychain service (iPhone device keys and pairing record) | `com.funesvault.ios.companion`, access group `JVNJ326L7B.com.funesvault.shared` (Keychain Sharing, `$(AppIdentifierPrefix)com.funesvault.shared`), shared by the app and its Intents and Notifications extensions |
 | Background task (iOS) | `com.funesvault.ios.deliver` |
 | MCP server key / launcher / key prefix | `funes` / `funes-mcp` / `fns_mcp_v1_` (kept short on purpose) |
 | Bonjour service | `_funes._tcp` |
@@ -92,8 +92,8 @@ The OpenAI-compatible and Anthropic model clients are small `URLSession` code in
 - `NSSpeechRecognitionUsageDescription` and `NSMicrophoneUsageDescription`, for dictation.
 - ATS: `NSAllowsLocalNetworking = YES`.
 - `BGTaskSchedulerPermittedIdentifiers = ["com.funesvault.ios.deliver"]` (task 5.4).
-- `FunesKeychainGroup = $(AppIdentifierPrefix)com.funesvault.shared`, in the app's and each extension's Info.plist, so the code knows the shared Keychain access group with its team prefix.
-- The files: `Apps/FunesiOS-Info.plist`, `Apps/FunesShareExtension-Info.plist`, `Apps/FunesIntents-Info.plist`, `Apps/FunesNotifications-Info.plist`, and an `Apps/<target>.entitlements` for each (App Group and Keychain Sharing; the app's adds iCloud, `aps-environment` and Time Sensitive Notifications). The iOS targets inherit the project's `MARKETING_VERSION` (one version for the whole project, which `scripts/check_version.sh` requires) until the App Store release (task 5.7) decides otherwise.
+- `FunesKeychainGroup = $(AppIdentifierPrefix)com.funesvault.shared`, in the Info.plist of the app and of each extension that reads the pairing (Intents, Notifications; not Share, which only writes the queue), so the code knows the shared Keychain access group with its team prefix.
+- The files: `Apps/FunesiOS-Info.plist`, `Apps/FunesShareExtension-Info.plist`, `Apps/FunesIntents-Info.plist`, `Apps/FunesNotifications-Info.plist`, and an `Apps/<target>.entitlements` for each (App Group, and Keychain Sharing except for the share extension, which never reads the Keychain; the app's adds iCloud, `aps-environment` and Time Sensitive Notifications). The iOS targets inherit the project's `MARKETING_VERSION` (one version for the whole project, which `scripts/check_version.sh` requires) until the App Store release (task 5.7) decides otherwise.
 
 ## Developer environment
 - Xcode 27.x and Python 3 (for the MCP harness and appcast scripts).

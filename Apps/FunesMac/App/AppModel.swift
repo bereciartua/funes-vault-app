@@ -89,6 +89,9 @@ final class AppModel {
     var activityGeneration = 0
     /// Bumped after every vault change, so open screens reload.
     var dataGeneration = 0
+    /// Bumped only when the vault's database changed (not for an Activity row alone): the Vault's
+    /// list and detail reload on it.
+    var memoriesGeneration = 0
 
     let vault: VaultModel
     /// Search answers with the user's settings (FR-AI-17): the Vault's Ask, and the iPhone's.
@@ -124,6 +127,44 @@ final class AppModel {
     var cloudMessage: String?
     /// Sparkle, or a stand-in where this build can't update itself.
     @ObservationIgnored var updater = UpdaterControls.unavailable
+    /// An update a scheduled check found (Sparkle's gentle reminders), until the user opens it:
+    /// the menu bar panel, the status menu and the icon's tooltip show it (FR-G-03).
+    var foundUpdate: FoundUpdate?
+    /// Updates and unsaved edits: when an update relaunches, and what a quit asks (BridgeUI's
+    /// `UpdateCoordinator`, with its tests); the app wires Sparkle and the alerts to it.
+    let updates = UpdateCoordinator<VaultModel.Draft>()
+    /// An update is downloaded and ready, held because memories have unsaved edits: the menu bar
+    /// panel says so and offers Install Now (FR-V-02, FR-G-03).
+    var updateHeld: Bool { updates.updateHeld }
+    /// Waits for approval panels before a relaunch (set by the app).
+    var relaunchGate: UpdateRelaunchGate? {
+        get { updates.gate }
+        set { updates.gate = newValue }
+    }
+    /// Whether Sparkle's installer may be running (from an update's download, or one resumed at
+    /// its installing stage, until the app quits; set by the app). While it is, the app never
+    /// relaunches itself: Autoupdate quits every copy of the app and replaces the bundle when this
+    /// one exits.
+    var installerLive: () -> Bool {
+        get { updates.installerLive }
+        set { updates.installerLive = newValue }
+    }
+    /// What a Restore, Erase or Move that asked is about to do by quitting.
+    typealias AppRelaunch = BridgeUI.AppRelaunch
+    /// Tells the user an update is installing, so Restore, Erase or Move must wait (set by the app).
+    var showInstallerBusy: () -> Void {
+        get { updates.showInstallerBusy }
+        set { updates.showInstallerBusy = newValue }
+    }
+    /// Tells the user a Restore, Erase or Move didn't finish because its quit was cancelled (set by
+    /// the app).
+    var showRelaunchUnfinished: (AppRelaunch) -> Void {
+        get { updates.showRelaunchUnfinished }
+        set { updates.showRelaunchUnfinished = newValue }
+    }
+    /// Asks before unsaved edits are dropped, with this button ("Discard and Quit"); true when
+    /// there are none or the user agreed. Discards nothing itself (set by the app).
+    @ObservationIgnored var askToDiscardDrafts: (_ button: String) -> Bool = { _ in true }
     /// MCP traffic counts since launch (Settings ▸ Agent Server).
     @ObservationIgnored var trafficCounts: () -> MCPTrafficCounters.Snapshot = { MCPTrafficCounters.Snapshot() }
 
@@ -205,6 +246,11 @@ final class AppModel {
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
     @ObservationIgnored private var observation: AnyObject?
     @ObservationIgnored private var refreshPending = false
+    /// The database changed since the last refresh.
+    @ObservationIgnored private var storeChanged = true
+    /// The processing queue started (after the subscription CLIs were found): until then a vault
+    /// change doesn't kick it, so a job that should split on a plan model never runs without it.
+    @ObservationIgnored var processingStarted = false
 
     init(services: VaultEnvironment, preferences: Preferences, modelSettings: ModelSettings? = nil) {
         self.services = services
@@ -228,19 +274,39 @@ final class AppModel {
                                         approvals: services.phoneApprovals, appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
         pausedUntil = services.pause.pausedUntil(at: Date())
         inboxState.categories = { [weak self] in self?.categories ?? [] }
+        inboxState.decided = { [weak self] in self?.checklist.markReviewed() }
         vault.answers = searchAnswers
+        updates.drafts = { [weak self] in
+            guard let vault = self?.vault else { return [:] }
+            return Dictionary(uniqueKeysWithValues: vault.draftIDs.compactMap { id in vault.draft(id).map { (id, $0) } })
+        }
+        updates.discardDrafts = { [weak self] in self?.vault.discardDrafts() }
+        updates.ask = { [weak self] question in
+            self?.askToDiscardDrafts(question == .discardAndQuit ? String(localized: "Discard and Quit")
+                                                                 : String(localized: "Discard and Install")) ?? true
+        }
         self.modelSettings.embeddingInputsChanged = { [weak self] in self?.embeddings.apply() }
         composer.save = { [weak self, composer] _ in self?.saveCapture(composer) ?? false }
         composer.search = { [weak self] text in self?.showVault(query: text.trimmingCharacters(in: .whitespacesAndNewlines)) }
         observation = services.store.observeChanges { [weak self] in
             Task { @MainActor in
-                self?.scheduleRefresh()
-                self?.processing.kick()
+                guard let self else { return }
+                self.storeChanged = true
+                self.scheduleRefresh()
+                if self.processingStarted { self.processing.kick() }
             }
         }
         services.activity.onAppend = { [weak self] event in
             Task { @MainActor in
                 self?.activityGeneration += 1
+                // A suggestion the user decided reviews the Inbox (the setup checklist): in a Save
+                // panel or the Inbox on this Mac (actor `user`), or on the iPhone as the owner
+                // (`device:`). Only those decide through apply/reject; automatic changes and the
+                // tidy-up record their own events as `system`.
+                if ["suggestion_applied", "suggestion_rejected"].contains(event.event),
+                   event.actor == "user" || event.actor.hasPrefix("device:") {
+                    self?.checklist.markReviewed()
+                }
                 self?.activityAppended(event)
                 self?.scheduleRefresh()
             }
@@ -281,6 +347,9 @@ final class AppModel {
     }
 
     func refresh() async {
+        // Taken first: a change that arrives while this reads schedules another refresh.
+        let storeDidChange = storeChanged
+        storeChanged = false
         let now = Date()
         self.now = now
         pausedUntil = services.pause.pausedUntil(at: now)
@@ -301,6 +370,10 @@ final class AppModel {
         profile = (try? services.store.profile()) ?? Profile()
         hasMemories = !((try? services.store.memories(MemoryFilter(status: .activeIncludingExpired), now: now, limit: 1)) ?? []).isEmpty
         dataGeneration += 1
+        if storeDidChange {
+            memoriesGeneration += 1
+            pruneDrafts()
+        }
         checklist.update(model: self)
         changed()
     }
@@ -314,6 +387,38 @@ final class AppModel {
         }
         pending.removeAll { $0.expiresAt <= now }
         changed()
+    }
+
+    // MARK: Unsaved edits and quitting (FR-V-02)
+
+    // Updates and unsaved edits (FR-V-02): the decisions are `UpdateCoordinator`'s (BridgeUI);
+    // these pass Sparkle's delegate, the quit, Restore, Erase, Move and Install Now to it.
+
+    /// Sparkle's `shouldPostponeRelaunchForUpdate`: false relaunches now; true keeps `install`.
+    func postponeRelaunch(_ install: @escaping () -> Void) -> Bool { updates.postponeRelaunch(install) }
+
+    /// The menu bar panel's Install Now.
+    func installHeldUpdate() { updates.installHeldUpdate() }
+
+    /// Sparkle ended the update with an error.
+    func updateAborted() { updates.updateAborted() }
+
+    /// `applicationShouldTerminate`: true lets the quit go on (the edits are dropped).
+    func confirmTermination() -> Bool { updates.confirmTermination() }
+
+    /// Before Restore, Erase All Data or Move to Applications relaunch the app; true: go on.
+    func confirmAppRelaunch(_ relaunch: AppRelaunch) -> Bool { updates.confirmAppRelaunch(relaunch) }
+
+    /// The Restore, Erase or Move didn't start after all.
+    func appRelaunchCalledOff() { updates.appRelaunchCalledOff() }
+
+    /// Drafts of memories that are gone (purged here or elsewhere) can't be saved or reverted:
+    /// they go, so they never hold a quit or an update.
+    private func pruneDrafts() {
+        let ids = vault.draftIDs
+        guard !ids.isEmpty, let found = try? services.store.memories(ids: Array(ids)) else { return }
+        let alive = Set(found.map(\.id))
+        for id in ids where !alive.contains(id) { vault.setDraft(nil, for: id) }
     }
 
     // MARK: Pause (FR-A-11)
@@ -440,8 +545,9 @@ final class AppModel {
         openMainWindow()
     }
 
+    /// "Show this memory": the Vault on that memory, whatever its status or the filters.
     func showMemory(_ id: UUID) {
-        selectedMemoryID = id
+        vault.reveal(id)
         show(.vault)
     }
 

@@ -15,17 +15,20 @@ public final class CompanionRouter: Sendable {
     let pairing: PairingService
     let handlers: CompanionHandlers
     let gate: TunnelGate?
-    let guardian = EnvelopeGuard()
+    let guardian: EnvelopeGuard
     let limits = DeviceLimits()
     let clock: @Sendable () -> Date
 
+    /// `guardian` is the server's replay cache, kept across the routers a settings change makes;
+    /// nil makes one starting now.
     public init(identity: MacIdentity, devices: DeviceService, pairing: PairingService, handlers: CompanionHandlers,
-                gate: TunnelGate?, clock: @escaping @Sendable () -> Date = Date.init) {
+                gate: TunnelGate?, guardian: EnvelopeGuard? = nil, clock: @escaping @Sendable () -> Date = Date.init) {
         self.identity = identity
         self.devices = devices
         self.pairing = pairing
         self.handlers = handlers
         self.gate = gate
+        self.guardian = guardian ?? EnvelopeGuard()
         self.clock = clock
     }
 
@@ -51,17 +54,31 @@ public final class CompanionRouter: Sendable {
 
     func rpc(_ body: Data, transport: DeviceTransport) async -> HTTPResponse {
         let now = clock()
+        let envelope: CompanionRequestEnvelope
+        do { envelope = try CompanionRequestEnvelope(body: body) } catch {
+            // Nothing parsed to bind a signature to.
+            return .json(CompanionAuthError.httpStatus, error.body)
+        }
         let opened: OpenedCompanionRequest
-        do {
-            let envelope = try CompanionRequestEnvelope(body: body)
-            let device = try? await devices.device(id: envelope.deviceID)
+        do throws(CompanionAuthError) {
+            let device: Device?
+            // In a task of its own, so a client going away (which cancels this handler) can't
+            // turn the lookup into `unavailable`.
+            let lookup = Task { [devices] in try await devices.device(id: envelope.deviceID) }
+            do { device = try await lookup.value } catch {
+                // The database failed for a moment: not a verdict on the device (§3, step 1).
+                logger.error("Couldn't look up a companion device")
+                throw CompanionAuthError.unavailable
+            }
             let record = device.flatMap { d in
                 (try? P256.Signing.PublicKey(x963Representation: d.signingPublicKey))
                     .map { CompanionDeviceRecord(id: d.id, signingKey: $0, isRevoked: d.isRevoked) }
             }
             opened = try await guardian.open(envelope, device: record, macKey: identity.hpkeKey, now: now)
         } catch {
-            return .json(CompanionAuthError.httpStatus, error.body)
+            // Signed and bound to this request, so the phone can trust it and nobody can replay it.
+            return .json(CompanionAuthError.httpStatus,
+                         error.signedBody(deviceID: envelope.deviceID, nonce: envelope.nonce, signer: identity.signingKey))
         }
         try? await devices.touch(deviceID: opened.deviceID, transport: transport, now: now)
         let reply: Data
@@ -86,13 +103,90 @@ public final class CompanionRouter: Sendable {
     }
 }
 
-/// Holds the replay cache, so the check and the record happen together.
-actor EnvelopeGuard {
+/// Holds the replay cache, so the check and the record happen together. One per server, kept
+/// across settings changes, and with a journal on disk (`NonceJournal`) across relaunches: each
+/// nonce is written through before its call runs, and loaded back at launch. So replay
+/// protection doesn't depend on the phone's and the Mac's clocks agreeing.
+///
+/// Fails closed, refusing calls with `unavailable` (the phone retries), for windows that end only
+/// once both the monotonic and the wall clock have passed them (step 2 compares wall time):
+/// - a journal that exists but can't be read: for the replay window, since its nonces could be
+///   replayed meanwhile;
+/// - no journal (the first launch with one, or deleted): for twice the clock skew, past which
+///   nothing the last run accepted can still pass the clock check (a phone up to the skew fast
+///   sends a timestamp up to the skew ahead, which stays acceptable for up to twice the skew).
+///   The file isn't created until a call is accepted after that, so a relaunch inside the window
+///   starts it again;
+/// - a nonce that can't be written: its call.
+public actor EnvelopeGuard {
     private var cache = ReplayCache()
+    private var journal: NonceJournal?
+    private var blindUntil: ContinuousClock.Instant?
+    /// The refusal windows also wait for the wall clock: step 2 compares wall time, so a
+    /// clock that steps back during it would otherwise let an old timestamp pass afterwards.
+    private var blindUntilWall: Date?
+    private let monotonic: @Sendable () -> ContinuousClock.Instant
+
+    /// `journal` is the file to keep the nonces in; nil keeps them in memory only (tests).
+    /// `monotonic` is the clock the refusal windows run on (tests move it).
+    public init(journal url: URL? = nil, now: Date = Date(),
+                monotonic: @escaping @Sendable () -> ContinuousClock.Instant = { ContinuousClock.now }) {
+        self.monotonic = monotonic
+        guard let url else { return }
+        var journal = NonceJournal(url: url)
+        do {
+            switch try journal.load(since: now.addingTimeInterval(-cache.window)) {
+            case .missing:
+                logger.error("No companion nonce journal; refusing calls for twice the clock-skew window")
+                blindUntil = monotonic() + .seconds(2 * CompanionProtocol.maxClockSkew)
+                blindUntilWall = now.addingTimeInterval(2 * CompanionProtocol.maxClockSkew)
+            case let .entries(entries):
+                for entry in entries {
+                    cache.record(nonce: entry.nonce, deviceID: entry.deviceID, sentAt: entry.sentAt, now: entry.recordedAt)
+                }
+                try? journal.rewrite(cache.entries)
+            }
+        } catch {
+            logger.error("The companion's nonce journal couldn't be read; refusing calls for the replay window")
+            blindUntil = monotonic() + .seconds(cache.window)
+            blindUntilWall = now.addingTimeInterval(cache.window)
+        }
+        self.journal = journal
+    }
+
+    /// The journal in the vault's folder.
+    public static func journalURL(dataDirectory: URL) -> URL { dataDirectory.appending(path: NonceJournal.fileName) }
 
     func open(_ envelope: CompanionRequestEnvelope, device: CompanionDeviceRecord?, macKey: P256.KeyAgreement.PrivateKey,
               now: Date) throws(CompanionAuthError) -> OpenedCompanionRequest {
-        try envelope.open(device: device, macHPKEKey: macKey, replayCache: &cache, now: now)
+        if let blindUntil {
+            guard monotonic() >= blindUntil, blindUntilWall.map({ now >= $0 }) ?? true else { throw .unavailable }
+            self.blindUntil = nil
+            blindUntilWall = nil
+        }
+        do {
+            let opened = try envelope.open(device: device, macHPKEKey: macKey, replayCache: &cache, now: now)
+            try write(envelope, now: now)
+            return opened
+        } catch .decryptionFailed {
+            // Only after the signature verified, which is when the nonce was remembered.
+            try write(envelope, now: now)
+            throw .decryptionFailed
+        }
+    }
+
+    private func write(_ envelope: CompanionRequestEnvelope, now: Date) throws(CompanionAuthError) {
+        guard var journal else { return }
+        defer { self.journal = journal }
+        do {
+            try journal.append(ReplayCache.Entry(deviceID: envelope.deviceID, nonce: envelope.nonce,
+                                                 sentAt: Date(timeIntervalSince1970: Double(envelope.timestamp) / 1000), recordedAt: now))
+            let live = cache.entries
+            if journal.needsRewrite(live: live.count) { try journal.rewrite(live) }
+        } catch {
+            logger.error("The companion's nonce journal couldn't be written")
+            throw .unavailable
+        }
     }
 
     func forget(deviceID: UUID) { cache.remove(deviceID: deviceID) }

@@ -45,6 +45,9 @@ public final class CompanionServer {
     public private(set) var status = Status.off
     public var statusChanged: ((Status) -> Void)?
     private let handlers: CompanionHandlers
+    /// The replay cache, for the server's whole life and, through its journal in the vault's
+    /// folder, across relaunches: a settings change makes a new router, never an empty cache.
+    private let guardian: EnvelopeGuard
     private var router: CompanionRouter?
     private var listener: CompanionListener?
 
@@ -56,6 +59,7 @@ public final class CompanionServer {
         self.services = services
         self.approvals = approvals
         pairing = PairingService(identity: identity, devices: services.devices, activity: services.activity)
+        guardian = EnvelopeGuard(journal: EnvelopeGuard.journalURL(dataDirectory: services.store.path.deletingLastPathComponent()))
         handlers = CompanionHandlers(services: services, macName: macName, appVersion: appVersion, approvals: approvals)
     }
 
@@ -74,7 +78,7 @@ public final class CompanionServer {
             return
         }
         let router = CompanionRouter(identity: identity, devices: services.devices, pairing: pairing, handlers: handlers,
-                                     gate: modes.contains(.tunnel) ? configuration.tunnel : nil)
+                                     gate: modes.contains(.tunnel) ? configuration.tunnel : nil, guardian: guardian)
         let listener = CompanionListener(port: configuration.port, modes: modes,
                                          bonjour: CompanionBonjour.txtRecord(macID: identity.macID)) { request, transport in
             await router.handle(request, transport: transport)

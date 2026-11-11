@@ -25,6 +25,9 @@ PREFIX = "fns_mcp_v1_"
 
 failures = []
 checks = 0
+# Tool definitions by name, with $defs inlined; every structured result is checked against its
+# tool's outputSchema (refusals included).
+catalog = {}
 
 
 def check(name, condition, detail=""):
@@ -101,6 +104,9 @@ class Client:
         if status != 200 or "result" not in body:
             return {"_status": status, "_body": body}
         result = body["result"]
+        if tool in catalog and "structuredContent" in result:
+            errors = schema_errors(result["structuredContent"], catalog[tool].get("outputSchema", {}))
+            check(f"outputSchema {tool}", not errors, (errors, result["structuredContent"]))
         out = dict(result.get("structuredContent") or {})
         out["_isError"] = result.get("isError")
         out["_text"] = result["content"][0]["text"]
@@ -120,6 +126,51 @@ def inline(value, shared):
     if isinstance(value, list):
         return [inline(v, shared) for v in value]
     return value
+
+
+JSON_TYPES = {
+    "object": lambda v: isinstance(v, dict),
+    "array": lambda v: isinstance(v, list),
+    "string": lambda v: isinstance(v, str),
+    "integer": lambda v: isinstance(v, int) and not isinstance(v, bool),
+    "number": lambda v: isinstance(v, (int, float)) and not isinstance(v, bool),
+    "boolean": lambda v: isinstance(v, bool),
+    "null": lambda v: v is None,
+}
+
+
+def schema_errors(value, schema, path="$"):
+    """The JSON Schema keywords the contract uses: type, enum, const, properties, required,
+    additionalProperties, items and anyOf. Returns what doesn't conform, or []."""
+    errors = []
+    kind = schema.get("type")
+    if kind is not None:
+        kinds = kind if isinstance(kind, list) else [kind]
+        if not any(JSON_TYPES[k](value) for k in kinds):
+            return [f"{path}: expected {kind}, got {type(value).__name__}"]
+    if "enum" in schema and value not in schema["enum"]:
+        errors.append(f"{path}: {value!r} not in {schema['enum']}")
+    if "const" in schema and value != schema["const"]:
+        errors.append(f"{path}: {value!r} isn't {schema['const']!r}")
+    if isinstance(value, dict):
+        properties = schema.get("properties", {})
+        for name in schema.get("required", []):
+            if name not in value:
+                errors.append(f"{path}: missing {name}")
+        extra = schema.get("additionalProperties", True)
+        for name, item in value.items():
+            if name in properties:
+                errors += schema_errors(item, properties[name], f"{path}.{name}")
+            elif extra is False:
+                errors.append(f"{path}: unexpected {name}")
+            elif isinstance(extra, dict):
+                errors += schema_errors(item, extra, f"{path}.{name}")
+    if isinstance(value, list) and isinstance(schema.get("items"), dict):
+        for index, item in enumerate(value):
+            errors += schema_errors(item, schema["items"], f"{path}[{index}]")
+    if "anyOf" in schema and all(schema_errors(value, option, path) for option in schema["anyOf"]):
+        errors.append(f"{path}: matches none of anyOf")
+    return errors
 
 
 def wait_for(condition, seconds=10):
@@ -143,7 +194,8 @@ def main():
     with open(tools_path) as f:
         contract = json.load(f)
     shared = {k: v for k, v in contract["$defs"].items() if k != "$comment"}
-    catalog = {t["name"]: inline(t, shared) for t in contract["tools"]}
+    catalog.update({t["name"]: inline(t, shared) for t in contract["tools"]})
+    run_schema_checker()
 
     h = Harness(binary, FUNES_MCP_TEST_WAIT=3)
     try:
@@ -199,6 +251,15 @@ def main():
           "limits, "
           "quit, response size) "
           "passed")
+
+
+def run_schema_checker():
+    """The checker itself: it must catch the refusal shape a schema doesn't admit."""
+    strict = {"type": "object", "properties": {"opened": {"type": "boolean"}}, "required": ["opened"]}
+    check("schema checker catches a missing field", schema_errors({"status": "denied"}, strict) != [])
+    check("schema checker anyOf", schema_errors({"status": "denied", "reason": "agent_paused"},
+                                                catalog["open_in_funes"]["outputSchema"]) == [])
+    check("schema checker types", schema_errors({"opened": "yes"}, catalog["open_in_funes"]["outputSchema"]) != [])
 
 
 def run_protocol(h, catalog, contract):
@@ -611,6 +672,13 @@ def run_agent_state(h):
     check("paused agent still authenticated", status == 200, status)
     result = c.call("request_memory", {"task": "x"})
     check("agent paused", result.get("reason") == "agent_paused", result)
+    # The launcher's probe reads this shape; outputSchema admits it (checked in Client.call).
+    result = c.call("list_memory_categories")
+    check("agent paused: categories refused", result.get("status") == "denied" and
+          result.get("reason") == "agent_paused", result)
+    result = c.call("open_in_funes", {"request_id": "x"})
+    check("agent paused: open refused", result.get("status") == "denied" and
+          result.get("reason") == "agent_paused", result)
     h.control(cmd="agent_pause", agent="reader", on=False)
     e = Client(h, h.key("expired"))
     result = e.call("list_memory_categories")

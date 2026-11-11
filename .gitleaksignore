@@ -7,7 +7,7 @@ d31ec9d1b7f6f9d62c06230a35ae9d0525a3dcf6:Packages/FunesMCP/Sources/funes-mcp-tes
 521f5e5291e9bac602b84c63ff2c344dcaba86ad:Packages/BridgeUI/Sources/BridgeUI/RemoteAccessController.swift:generic-api-key:754
 24904fb9110126058549759ea54a8b0df870f963:Tests/mcp/remote_test.py:generic-api-key:33
 24904fb9110126058549759ea54a8b0df870f963:Tests/mcp/remote_test.py:generic-api-key:289
-Packages/BridgeUI/Sources/BridgeUI/RemoteAccessController.swift:generic-api-key:767
-Packages/FunesMCP/Sources/funes-mcp-test-server/main.swift:generic-api-key:123
+Packages/BridgeUI/Sources/BridgeUI/RemoteAccessController.swift:generic-api-key:858
+Packages/FunesMCP/Sources/funes-mcp-test-server/main.swift:generic-api-key:124
 Tests/mcp/remote_test.py:generic-api-key:33
 Tests/mcp/remote_test.py:generic-api-key:289

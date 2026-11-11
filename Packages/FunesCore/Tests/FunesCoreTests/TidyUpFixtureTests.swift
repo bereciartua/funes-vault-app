@@ -7,8 +7,8 @@ import Testing
 /// second prompt, through Funes's validation and auto-apply rules (memory processing §9.4, §9.5).
 /// A level is offered for an engine only where what it applies reaches 95% right on at least 20
 /// applied actions, and the safety rules hold for every engine, whatever it answered. Replayed
-/// here (right/applied): Duplicates only, Opus 35/36, Haiku 35/36, Terra 32/33, Luna 27/29;
-/// Everything except conflicts, Opus 71/74, Haiku 63/65, Terra 72/76, Luna 54/59.
+/// here (right/applied): Duplicates only, Opus 34/35, Haiku 34/35, Terra 31/32, Luna 26/28;
+/// Everything except conflicts, Opus 70/73, Haiku 62/64, Terra 71/75, Luna 53/58.
 @Suite struct TidyUpFixtureTests {
     struct Verdict {
         var cluster: SpikeETidy.Cluster

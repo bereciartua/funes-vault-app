@@ -91,9 +91,8 @@ struct EmbeddingRows: View {
 
     private var suggestions: [String] {
         guard let provider = chosenProvider else { return [] }
-        // Only a literal local address or localhost counts here: no DNS lookup on the main thread.
-        let local = !provider.endpoint.markedCloud
-            && LocalityDetector.isLocal(host: provider.endpoint.baseURL.host() ?? "", resolve: { _ in [] })
+        // Locality comes from the URL alone (a local address or localhost), with no lookup.
+        let local = !provider.endpoint.markedCloud && LocalityDetector.isLocal(host: provider.endpoint.baseURL.host() ?? "")
         return EmbeddingCatalog.suggestions(cloud: !local)
     }
 

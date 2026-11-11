@@ -153,16 +153,22 @@ public final class EmbeddingIndexer: Sendable {
         guard start else { return 0 }
         var written = 0
         do {
-            repeat {
+            var more = true
+            while more {
                 run.withLock { $0.again = false }
                 written += try await pass(batchSize: batchSize)
-            } while run.withLock({ $0.again })
+                // Decide to stop and clear `running` together, so a call arriving in between isn't lost.
+                more = run.withLock { s in
+                    if s.again { return true }
+                    s.running = false
+                    return false
+                }
+            }
         } catch {
             run.withLock { $0.running = false }
             logger.error("Embedding pass failed")
             throw error
         }
-        run.withLock { $0.running = false }
         return written
     }
 

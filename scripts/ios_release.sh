@@ -69,15 +69,16 @@ printf '%s\n' "$version" | grep -Eqx '[0-9]+\.[0-9]+\.[0-9]+' || fail "the versi
 build_number=${FUNES_IOS_BUILD:-$(project_setting CURRENT_PROJECT_VERSION)}
 case "$build_number" in ''|*[!0-9]*) fail "the build number \"$build_number\" isn't a whole number" ;; esac
 
-auth_args=""
+# The signing arguments both xcodebuild runs take, kept as the positional parameters (the options
+# were read above) so a key path with spaces stays one argument.
+set --
 if [ -n "${FUNES_ASC_KEY:-}" ]; then
     [ -f "$FUNES_ASC_KEY" ] && [ -n "${FUNES_ASC_KEY_ID:-}" ] \
         || fail "FUNES_ASC_KEY needs to be a .p8 file, with FUNES_ASC_KEY_ID (and FUNES_ASC_ISSUER for a team key)"
-    auth_args="-authenticationKeyPath $FUNES_ASC_KEY -authenticationKeyID $FUNES_ASC_KEY_ID"
-    [ -z "${FUNES_ASC_ISSUER:-}" ] || auth_args="$auth_args -authenticationKeyIssuerID $FUNES_ASC_ISSUER"
+    set -- -authenticationKeyPath "$FUNES_ASC_KEY" -authenticationKeyID "$FUNES_ASC_KEY_ID"
+    [ -z "${FUNES_ASC_ISSUER:-}" ] || set -- "$@" -authenticationKeyIssuerID "$FUNES_ASC_ISSUER"
 fi
-provisioning_args=""
-[ "$provisioning" = 0 ] || provisioning_args="-allowProvisioningUpdates"
+[ "$provisioning" = 0 ] || set -- -allowProvisioningUpdates "$@"
 
 # 1. The tree and the tests.
 step "Funes Vault for iPhone $version ($build_number) at $(git -C "$project_dir" rev-parse --short HEAD)"
@@ -95,11 +96,10 @@ fi
 step "Archiving (Release, generic iOS device)"
 rm -rf "$archive"
 mkdir -p "$build_dir"
-# shellcheck disable=SC2086 # the argument lists are meant to split
 xcodebuild -project "$project_dir/FunesVault.xcodeproj" -scheme FunesiOS -configuration Release \
     -destination 'generic/platform=iOS' -derivedDataPath "$build_dir/DerivedData" \
     -archivePath "$archive" DEVELOPMENT_TEAM="$team_id" MARKETING_VERSION="$version" CURRENT_PROJECT_VERSION="$build_number" \
-    $provisioning_args $auth_args -quiet archive \
+    "$@" -quiet archive \
     || fail "the archive failed (no signing profile? see --allow-provisioning-updates)"
 
 # 3. What App Review and App Store Connect check, before anything is sent.
@@ -158,9 +158,8 @@ cat > "$options" <<EOF
 EOF
 rm -rf "$dist_dir"
 mkdir -p "$dist_dir"
-# shellcheck disable=SC2086
 xcodebuild -exportArchive -archivePath "$archive" -exportOptionsPlist "$options" -exportPath "$dist_dir" \
-    $provisioning_args $auth_args \
+    "$@" \
     || fail "the export failed (an Apple Distribution certificate and App Store profiles are needed; see --allow-provisioning-updates)"
 
 if [ "$upload" = 1 ]; then

@@ -64,7 +64,8 @@ public enum AppMover {
     /// Copies, checks and relaunches. `prepareToQuit` runs once the new copy
     /// is ready; it quits this one (waiting for changes in the approval
     /// panel first).
-    public static func move(_ app: Identity, prepareToQuit: @escaping @MainActor @Sendable () -> Void) -> MoveResult {
+    public static func move(_ app: Identity, prepareToQuit: @escaping @MainActor @Sendable () -> Void,
+                            openFailed: @escaping @MainActor @Sendable () -> Void = {}) -> MoveResult {
         let location = location
         guard location != .applications else { return .failed(String(localized: "It's already in Applications.")) }
         let running = Bundle.main.bundleURL.standardizedFileURL.path
@@ -123,7 +124,7 @@ public enum AppMover {
         NSWorkspace.shared.openApplication(at: destinationURL, configuration: configuration) { _, error in
             let opened = error == nil
             DispatchQueue.main.async {
-                MainActor.assumeIsolated { if opened { prepareToQuit() } }
+                MainActor.assumeIsolated { if opened { prepareToQuit() } else { openFailed() } }
             }
         }
         return .moving

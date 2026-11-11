@@ -23,8 +23,13 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// Task text of the requests this session showed a panel for, for Activity's detail pane. In
     /// memory only: the vault keeps a hash (FR-L-01), so after a relaunch it's "Task text not stored".
     @MainActor private var tasks: [UUID: String] = [:]
-    /// Requests that came through Remote Access, so their panel says so when it's reopened.
-    @MainActor private var remoteRequests = Set<UUID>()
+    /// Which way the requests this session saw arrive came (true: through Remote Access), so a
+    /// reopened panel says so. In memory only: after a relaunch `channel(known:agent:)` decides.
+    @MainActor private var channels = [UUID: Bool]()
+    /// Reopened requests that came, or may have come, through Remote Access (decided by
+    /// `channel(known:agent:)` for one made before a relaunch): turning Remote Access off withdraws
+    /// their panels too.
+    @MainActor private var maybeRemote = Set<UUID>()
     @MainActor private lazy var controller = ApprovalPanelController(queue: queue)
     /// Shows a short notice (the HUD), e.g. when a request waited past its panel.
     @MainActor var notice: (String) -> Void = { _ in }
@@ -65,39 +70,58 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
 
 
 
+    /// Who brought a panel up: a new arrival, the agent's `open_in_funes`, or the user (the menu,
+    /// Pending requests, Activity). Only the user's own action activates Funes and makes the panel
+    /// key; panels never take keyboard focus from the frontmost app by themselves.
+    private enum Opener {
+        case arrival, agent, user
+
+        var reopens: Bool { self != .arrival }
+    }
+
     func showApproval(requestID: UUID, agentID: UUID) async {
-        await present(requestID: requestID, focus: false)
+        await present(requestID: requestID, by: .arrival)
     }
 
     func showApproval(requestID: UUID, agentID: UUID, remote: Bool) async {
-        if remote { await MainActor.run { _ = remoteRequests.insert(requestID) } }
-        await present(requestID: requestID, focus: false)
+        await MainActor.run { channels[requestID] = remote }
+        await present(requestID: requestID, by: .arrival)
     }
 
     func showSuggestion(suggestionID: UUID, agentID: UUID) async {
-        await present(suggestionID: suggestionID, focus: false)
+        await present(suggestionID: suggestionID, by: .arrival)
     }
 
+    /// `open_in_funes`: shown and selected, never activated or made key.
+    func openInFunes(requestID: UUID) async {
+        await present(requestID: requestID, by: .agent)
+    }
+
+    func openInFunes(suggestionID: UUID) async {
+        await present(suggestionID: suggestionID, by: .agent)
+    }
+
+    /// The user's Review of a pending request (the menu bar panel, Pending requests): its panel
+    /// comes forward and becomes key.
     func open(requestID: UUID) async {
-        await present(requestID: requestID, focus: true)
-    }
-
-    func open(suggestionID: UUID) async {
-        await present(suggestionID: suggestionID, focus: true)
+        await present(requestID: requestID, by: .user)
     }
 
     // MARK: Share with…
 
-    /// `focus` is a reopened pending request (the menu, Activity or `open_in_funes`): it counts
-    /// down to the end of its 15 minutes instead of the 45-second in-call wait.
-    private func present(requestID: UUID, focus: Bool) async {
+    /// A reopened pending request counts down to the end of its 15 minutes instead of the
+    /// 45-second in-call wait.
+    private func present(requestID: UUID, by opener: Opener) async {
+        let focus = opener.reopens
         let disclosures = environment.disclosures
         let now = Date()
         guard let panel = try? await disclosures.panel(requestID: requestID, now: now) else { return }
         let disclosure = try? await disclosures.disclosure(requestID: requestID)
         let agent = try? await environment.agents.agent(id: panel.agentID)
-        let (remote, tunnel) = await MainActor.run {
-            (remoteRequests.contains(requestID), remoteRequests.contains(requestID) ? remoteTunnel(panel.agentID) : nil)
+        let (remote, tunnel) = await MainActor.run { () -> (Bool?, String?) in
+            let remote = Self.channel(known: channels[requestID], agent: agent)
+            if remote == false { maybeRemote.remove(requestID) } else { maybeRemote.insert(requestID) }
+            return (remote, remote == false ? nil : remoteTunnel(panel.agentID))
         }
         var item = Self.shareItem(panel, withheld: disclosure?.withheld ?? [:], now: now, agent: agent, remote: remote,
                                   tunnel: tunnel, profileFields: disclosure?.profileFieldsSent ?? [])
@@ -110,12 +134,12 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             guard !queue.isClosed else { return false }
             if let task = panel.task { tasks[requestID] = task }
             queue.enqueue(item) { [weak self] answer in self?.answered(panel, answer) }
-            if focus { bringForward() }
+            if focus { select(requestID, activate: opener == .user) }
             return true
         }
         // A new request rings the paired iPhones; one reopened on the Mac doesn't.
         if shown, !focus {
-            let destination = ApprovalDestination(remote: remote, vendor: agent?.agentKind.cloudAgent?.vendor, tunnel: tunnel)
+            let destination = ApprovalDestination(remote: remote != false, vendor: agent?.agentKind.cloudAgent?.vendor, tunnel: tunnel)
             await desk.waiting(.share(requestID), destination: destination)
         }
     }
@@ -124,7 +148,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// said (labelled as such), the user's own note on the agent, and the memories, strong matches
     /// ticked and weaker ones offered unticked (access policy §3.2).
     static func shareItem(_ panel: ApprovalPanel, withheld: [ReasonCode: Int], now: Date, agent: Agent?,
-                          remote: Bool = false, tunnel: String? = nil, profileFields: [ProfileField] = []) -> PanelItem {
+                          remote: Bool? = false, tunnel: String? = nil, profileFields: [ProfileField] = []) -> PanelItem {
         let rows = panel.memories.map { memory in
             let weak = !panel.strong.contains(memory.id)
             return PanelItem.Row(id: memory.id.uuidString, title: memory.title, detail: memory.body,
@@ -157,10 +181,27 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
                                link: String(localized: "its Access"), after: ".")
     }
 
+    /// Which way a request came when this session didn't see it arrive (it was made before a
+    /// relaunch): an agent without cloud access can't have a remote request still waiting
+    /// (turning it off ends them), and a cloud agent with it comes through Remote Access.
+    /// Otherwise Funes can't tell: nil, and the panel says it may be either.
+    static func channel(known: Bool?, agent: Agent?) -> Bool? {
+        if let known { return known }
+        guard let agent else { return nil }
+        if !agent.cloudAccess { return false }
+        return agent.agentKind.cloudAgent != nil ? true : nil
+    }
+
     /// Goes to: built only from facts Funes holds. A local agent may pass what it reads on to its AI
     /// service, which Funes can't see; a cloud agent's vendor comes from a fixed table, and the
-    /// tunnel from Remote Access (UX review F2).
-    static func destination(agentName: String, kind: AgentKind?, remote: Bool, tunnel: String?) -> PanelItem.Destination {
+    /// tunnel from Remote Access (UX review F2). When the channel isn't known (`remote` nil), it
+    /// says either may apply, with the Cloud chip: never less cautious than the truth.
+    static func destination(agentName: String, kind: AgentKind?, remote: Bool?, tunnel: String?) -> PanelItem.Destination {
+        guard let remote else {
+            return PanelItem.Destination(
+                text: String(localized: "\(agentName), on this Mac or through Remote Access. It may send what it reads to its AI service."),
+                isCloud: true)
+        }
         guard remote else {
             return PanelItem.Destination(text: String(localized: "\(agentName) on this Mac. It may send what it reads to its AI service."),
                                          isCloud: false)
@@ -206,7 +247,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
                 }
             } catch VaultError.snapshotChanged {
                 // Something changed while the panel was up: show it again with fresh text.
-                await present(requestID: panel.requestID, focus: false)
+                await present(requestID: panel.requestID, by: .arrival)
             } catch VaultError.invalidState {
                 // Answered first on an iPhone, or the 15 minutes ran out.
                 await desk.ended(.share(panel.requestID), answered: false)
@@ -221,33 +262,47 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     /// A processing job's outcome is recorded: the Save panels waiting for it show now.
     func processingEnded(_ id: UUID) async {
         guard await MainActor.run(body: { awaitingProcessing.contains(id) }) else { return }
-        await present(suggestionID: id, focus: false)
+        await present(suggestionID: id, by: .arrival)
     }
 
     /// The Save panels for an agent's suggestion, once New memories processing is done with it:
     /// one per piece of a split, or the suggestion itself. While it's processing nothing shows
     /// (opened from elsewhere, its "Processing…" card in the Inbox) and `processingEnded` comes
     /// back to it. With splitting off nothing waits.
-    private func present(suggestionID: UUID, focus: Bool) async {
+    private func present(suggestionID: UUID, by opener: Opener) async {
+        let focus = opener.reopens
         await MainActor.run { _ = awaitingProcessing.insert(suggestionID) }
         let ids: [UUID]?
         do { ids = try await environment.suggestions.savePanels(for: suggestionID, now: Date()) } catch { ids = [] }
         guard let ids else {
-            if focus { await MainActor.run { editSuggestion(suggestionID) } }
+            if focus { await MainActor.run { showInInbox(suggestionID, by: opener) } }
             return
         }
         // The job's end and the arrival may both get here: the first one shows the panels.
         guard await MainActor.run(body: { awaitingProcessing.remove(suggestionID) != nil }) else { return }
         // Opened from elsewhere, a split input is reviewed on its group card in the Inbox.
         if focus, ids != [suggestionID] {
-            if !ids.isEmpty { await MainActor.run { editSuggestion(suggestionID) } }
+            if !ids.isEmpty { await MainActor.run { showInInbox(suggestionID, by: opener) } }
             return
         }
         // The pieces queue behind each other ("+N more"); the notification comes once.
-        for (i, id) in ids.enumerated() { await presentPanel(id, focus: focus, announce: i == 0) }
+        for (i, id) in ids.enumerated() { await presentPanel(id, by: opener, announce: i == 0) }
     }
 
-    private func presentPanel(_ suggestionID: UUID, focus: Bool, announce: Bool) async {
+    /// A suggestion with no panel of its own (processing, or split): the user's Review opens its
+    /// card in the Inbox; an agent's `open_in_funes` doesn't bring a window forward, it says where
+    /// the card is.
+    @MainActor
+    private func showInInbox(_ suggestionID: UUID, by opener: Opener) {
+        if opener == .user {
+            editSuggestion(suggestionID)
+        } else {
+            notice(String(localized: "An agent's suggestion is waiting in your Inbox."))
+        }
+    }
+
+    private func presentPanel(_ suggestionID: UUID, by opener: Opener, announce: Bool) async {
+        let focus = opener.reopens
         guard let suggestion = try? await environment.suggestions.suggestion(id: suggestionID), suggestion.status == .pending else {
             return
         }
@@ -285,7 +340,7 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
             // While the panel (or the iPhone's approval) is up, the tidy-up leaves it alone.
             environment.holds.hold(suggestion.id, .savePanel)
             queue.enqueue(item) { [weak self] answer in self?.answered(suggestion: suggestion.id, answer) }
-            if focus { bringForward() } else if announce { suggestionArrived(agentName) }
+            if focus { select(suggestion.id, activate: opener == .user) } else if announce { suggestionArrived(agentName) }
             return true
         }
         if shown, !focus { await desk.waiting(.save(suggestion.id)) }
@@ -466,10 +521,30 @@ final class FunesApprovals: FunesPresenter, @unchecked Sendable {
     @MainActor
     func sessionTask(_ requestID: UUID) -> String? { tasks[requestID] }
 
+    /// Remote Access was turned off: the Share panels of requests that came through it go. The
+    /// requests stay in Pending requests, and a remote call still waiting for one releases
+    /// nothing (its credential epoch moved).
+    @MainActor
+    /// Remote Access turned off: the panels of requests that came, or may have come, through it go.
+    /// They stay in Pending requests, and the agent can only collect them through Remote Access.
+    func withdrawRemote() {
+        for item in queue.items where channels[item.id] == true || maybeRemote.contains(item.id) { queue.withdraw(item.id) }
+    }
+
     @MainActor
     private func bringForward() {
         NSApp.activate(ignoringOtherApps: true)
         controller.bringForward()
+    }
+
+    /// A reopened item, selected in the panel. Brought forward and made key only for the user's
+    /// own Review. An agent's `open_in_funes` shows it without taking focus, and selects it only
+    /// when the user hasn't picked another item, so it never switches one under the cursor.
+    @MainActor
+    private func select(_ id: UUID, activate: Bool) {
+        let userPicked = queue.selectedID.map { picked in picked != id && queue.items.contains { $0.id == picked } } ?? false
+        if activate || !userPicked { queue.select(id) }
+        if activate { bringForward() } else { controller.update() }
     }
 
 

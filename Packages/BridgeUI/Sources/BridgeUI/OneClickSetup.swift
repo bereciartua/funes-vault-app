@@ -197,9 +197,7 @@ public enum OneClickAgents {
                 let copy = file.deletingLastPathComponent()
                     .appendingPathComponent("\(file.lastPathComponent).\(tag)-backup-\(AgentConfigWriter.backupSuffix())")
                 do {
-                    try? FileManager.default.removeItem(at: copy)
-                    try FileManager.default.copyItem(at: file, to: copy)
-                    try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: copy.path)
+                    try backUp(file, to: copy)
                 } catch {
                     return .failure(OneClickFailure(message: String(localized: "\(appName) couldn't back up \(file.lastPathComponent) first, so nothing was changed.")))
                 }
@@ -239,19 +237,33 @@ public enum OneClickAgents {
         agent == .codex ? codexConfig("~/.codex/config.toml", home: home) : expand("~/.claude.json", home: home)
     }
 
-    /// Copies the backup over the file again; true when it matches afterwards.
+    /// The file's bytes, read through any symlink (a dotfiles setup links `~/.claude.json`), as a
+    /// new 0600 file at `copy`. A copy of the link itself would follow the agent's own change and
+    /// back up nothing.
+    static func backUp(_ file: URL, to copy: URL) throws {
+        let data = try Data(contentsOf: file)
+        try? FileManager.default.removeItem(at: copy)
+        guard FileManager.default.createFile(atPath: copy.path, contents: data, attributes: [.posixPermissions: 0o600]) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+    }
+
+    /// Writes the backup's bytes over the file again, through any symlink, so the link stays and
+    /// its target gets the old contents; true when the file reads the same as the backup afterwards.
     static func restore(_ backup: (file: URL, copy: URL)?) -> Bool {
         guard let backup else { return true }
         let manager = FileManager.default
-        let staged = backup.file.deletingLastPathComponent().appendingPathComponent(".\(backup.file.lastPathComponent).restoring")
+        let target = backup.file.resolvingSymlinksInPath()
+        guard let data = manager.contents(atPath: backup.copy.path) else { return false }
+        let staged = target.deletingLastPathComponent().appendingPathComponent(".\(target.lastPathComponent).restoring")
         try? manager.removeItem(at: staged)
-        guard (try? manager.copyItem(at: backup.copy, to: staged)) != nil else { return false }
-        if manager.fileExists(atPath: backup.file.path) {
-            guard (try? manager.replaceItemAt(backup.file, withItemAt: staged)) != nil else { return false }
+        guard manager.createFile(atPath: staged.path, contents: data, attributes: [.posixPermissions: 0o600]) else { return false }
+        if manager.fileExists(atPath: target.path) {
+            guard (try? manager.replaceItemAt(target, withItemAt: staged)) != nil else { return false }
         } else {
-            guard (try? manager.moveItem(at: staged, to: backup.file)) != nil else { return false }
+            guard (try? manager.moveItem(at: staged, to: target)) != nil else { return false }
         }
-        return manager.contents(atPath: backup.file.path) == manager.contents(atPath: backup.copy.path)
+        return manager.contents(atPath: backup.file.path) == data
     }
 
     /// A GUI app's PATH is minimal; `claude` may be a Node script, so its own folder and the usual

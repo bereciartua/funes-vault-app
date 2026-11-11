@@ -89,7 +89,8 @@ public struct CompanionRequestEnvelope: Sendable, Equatable {
     // MARK: Mac side
 
     /// Verifies the envelope in the spec's order: the device (the caller looks up `deviceID` and
-    /// passes what it found, or nil), the clock, the nonce, the signature, then the HPKE open.
+    /// passes what it found, or nil), the clock, the nonce, the signature,
+    /// then the HPKE open. Reply to a refusal with `signedBody(deviceID:nonce:signer:)`.
     ///
     /// The nonce is remembered only once the signature verifies, so nobody without the device key
     /// can fill the cache and push a real nonce out of it.

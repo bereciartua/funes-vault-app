@@ -83,6 +83,8 @@ public final class PanelField<Row: Identifiable & Sendable & Equatable, Answer: 
     @ObservationIgnored public var answersOn: () -> Bool = { false }
     /// The pause before asking on its own for this search, or nil to wait for ⌘⏎.
     @ObservationIgnored public var autoAskPause: (String) -> Duration? = { _ in nil }
+    /// Waits out that pause; throws when cancelled. Tests replace it with a gate they open.
+    @ObservationIgnored public var pause: @MainActor (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
     /// How many of the rows an answer reads (5 on device, else 10).
     @ObservationIgnored public var readsAtMost: () -> Int = { 10 }
     @ObservationIgnored public var ask: @MainActor (String, [Row.ID]) async throws -> Answer = { _, _ in throw CancellationError() }
@@ -258,8 +260,9 @@ public final class PanelField<Row: Identifiable & Sendable & Equatable, Answer: 
     private func scheduleAutoAsk(_ query: String) {
         guard canAsk, answer == nil, let pause = autoAskPause(query) else { return }
         let mine = generation
+        let wait = self.pause
         autoTask = Task { [weak self] in
-            try? await Task.sleep(for: pause)
+            try? await wait(pause)
             guard !Task.isCancelled, let self, self.generation == mine, self.answer == nil else { return }
             self.askNow()
         }

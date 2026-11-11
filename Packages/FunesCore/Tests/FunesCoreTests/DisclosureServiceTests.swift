@@ -185,6 +185,53 @@ import Testing
         #expect(try await fx.disclosures.deliver(requestID: id, agentID: fx.agentID, now: fx.now).bundle?.items.first?.title == "Edited m1")
     }
 
+    /// Review: a panel built before an access or memory change is refused at approval even when
+    /// no new panel was built since (§3.6, T22).
+    @Test func aPanelBuiltBeforeAChangeIsRefusedWithoutARebuild() async throws {
+        let fx = try ServiceFixture()
+        let id = try await fx.request().requestID!
+        let panel = try #require(try await fx.disclosures.panel(requestID: id, now: fx.now))
+        try fx.setAccess { $0.askBeforeSharing = true }  // any edit bumps the revision
+        await #expect(throws: VaultError.snapshotChanged) {
+            try await fx.disclosures.approve(requestID: id, snapshotRevision: panel.snapshotRevision, memoryIDs: [fx.id("m1")], now: fx.now)
+        }
+        let rebuilt = try #require(try await fx.disclosures.panel(requestID: id, now: fx.now))
+        try fx.store.updateMemory(id: fx.id("m2"), MemoryEdit(title: "Edited m2"), now: fx.now)
+        await #expect(throws: VaultError.snapshotChanged) {
+            try await fx.disclosures.approve(requestID: id, snapshotRevision: rebuilt.snapshotRevision, memoryIDs: [fx.id("m1")], now: fx.now)
+        }
+        #expect(try await fx.status(id).0 == .needsApproval)
+        let fresh = try #require(try await fx.disclosures.panel(requestID: id, now: fx.now))
+        try await fx.disclosures.approve(requestID: id, snapshotRevision: fresh.snapshotRevision, memoryIDs: [fx.id("m1")], now: fx.now)
+        #expect(try await fx.status(id).0 == .approved)
+    }
+
+    /// Review: a request Funes ends itself (nothing left to share when the panel is built, or
+    /// approved too late) has its Activity row, and a call waiting for it hears at once.
+    @Test func requestsFunesEndsAreLoggedAndWakeTheirWaiters() async throws {
+        let fx = try ServiceFixture()
+        let id = try await fx.request().requestID!
+        async let waited = fx.disclosures.waitForDecision(requestID: id, timeout: .seconds(30))
+        try await Task.sleep(for: .milliseconds(50))
+        try fx.setAccess { $0.maxSensitivity = .public }
+        #expect(try await fx.disclosures.panel(requestID: id, now: fx.now) == nil)
+        let started = ContinuousClock.now
+        #expect(await waited == .denied)
+        #expect(ContinuousClock.now - started < .seconds(10))
+        let row = try #require(fx.activity.events.last)
+        #expect(row.event == "approval" && row.reason == .noAllowedMemories && row.requestID == id)
+
+        let late = try ServiceFixture()
+        let lateID = try await late.request().requestID!
+        let panel = try #require(try await late.disclosures.panel(requestID: lateID, now: late.now))
+        await #expect(throws: VaultError.invalidState) {
+            try await late.disclosures.approve(requestID: lateID, snapshotRevision: panel.snapshotRevision,
+                                               memoryIDs: [late.id("m1")], now: late.now.plus(minutes: 16))
+        }
+        let expired = try #require(late.activity.events.last)
+        #expect(expired.event == "approval" && expired.reason == .approvalExpired && expired.approval == .timeout)
+    }
+
     @Test func accessChangesRebuildPendingPanels() async throws {
         let fx = try ServiceFixture()
         let id = try await fx.request().requestID!
@@ -236,6 +283,19 @@ import Testing
         #expect(try await fx.disclosures.deliver(requestID: id, agentID: fx.agentID, now: fx.now).status == .delivered)
     }
 
+    /// The same through AgentService, as the app pauses: pausing doesn't change the revision, so
+    /// the approval made before it is still retrieved after resuming (access policy §3.7, FR-D-08).
+    @Test func pausingThroughAgentServiceKeepsTheApproval() async throws {
+        let fx = try ServiceFixture()
+        let agents = AgentService(store: fx.store, keys: InMemoryAgentKeyStore(), activity: fx.activity)
+        let id = try await fx.approved(["m1"])
+        _ = try await agents.pause(agentID: fx.agentID, now: fx.now)
+        #expect(try await fx.disclosures.deliver(requestID: id, agentID: fx.agentID, now: fx.now).reason == .agentPaused)
+        #expect(try await fx.status(id).0 == .approved)
+        _ = try await agents.resume(agentID: fx.agentID, now: fx.now)
+        #expect(try await fx.disclosures.deliver(requestID: id, agentID: fx.agentID, now: fx.now).status == .delivered)
+    }
+
     // MARK: In-call flow
 
     @Test func inCallApprovalDeliversInTheSameCall() async throws {
@@ -252,6 +312,9 @@ import Testing
         try await fx.disclosures.approve(requestID: id, snapshotRevision: panel.snapshotRevision, memoryIDs: [fx.id("m2")], now: fx.now)
         let out = try await call
         #expect(out.status == .delivered && out.bundle?.items.map(\.memoryID) == [fx.id("m2")])
+        // It answers the agent's request_memory call; the agent never called get_memory_request.
+        let delivered = try #require(fx.activity.events.last { $0.outcome == "delivered" })
+        #expect(delivered.event == "request_memory" && delivered.ids == [fx.id("m2")])
     }
 
     @Test func inCallDenial() async throws {
@@ -366,7 +429,11 @@ import Testing
         let grant = OnceGrant(offeredByRequestID: first.requestID!, agentRevision: revision, categoryKey: "project_context")
         let again = try await fx.request(grant: grant)
         #expect(again.status == .needsApproval && again.withheld == [:])
-        await #expect(throws: VaultError.invalidState) { try await fx.request(grant: grant) }
+        // Used up: refused with policy_changed (fail closed, §7), and nothing is retrieved.
+        let reused = try await fx.request(grant: grant)
+        #expect(reused.status == .denied && reused.reason == .policyChanged && reused.bundle == nil && reused.profile == nil)
+        #expect(try await fx.status(reused.requestID!) == (.denied, .policyChanged))
+        #expect(fx.activity.events.last?.event == "request_memory" && fx.activity.events.last?.reason == .policyChanged)
         #expect(try await fx.request().withheld == [.categoryNotAllowed: 1])
     }
 
@@ -388,6 +455,47 @@ import Testing
         #expect(out.status == .delivered && out.bundle?.items.map(\.memoryID) == [fx.id("m2")])
         // The grant belongs to that request only.
         #expect(try await fx.request().withheld == [.categoryNotAllowed: 1])
+    }
+
+    /// Allow Once replaces the agent's waiting request only once the grant checks out (§7): a stale
+    /// grant leaves it waiting, a good one supersedes it in the same transaction.
+    @Test func allowOnceReplacesTheWaitingRequestOnlyWithAGoodGrant() async throws {
+        let fx = try ServiceFixture()
+        try fx.setAgent(asksForAccess: true)
+        try fx.setAccess { $0.allowedCategoryKeys = ["communication_style"] }
+        fx.retriever.set([fx.id("m1"), fx.id("m2")])
+        let waiting = try await fx.request()
+        let waitingID = try #require(waiting.requestID)
+        #expect(waiting.status == .needsApproval)
+        let revision = try await fx.store.writer.read { db in try AgentStore.fetch(db, id: fx.agentID)!.revision }
+        let input = MemoryRequest(task: "Draft my weekly status update", maxTokens: 1200)
+
+        let stale = OnceGrant(offeredByRequestID: waitingID, agentRevision: revision + 1, categoryKey: "project_context")
+        let refused = try await fx.disclosures.request(agentID: fx.agentID, input, now: fx.now, grant: stale, replacing: waitingID)
+        #expect(refused.status == .denied && refused.reason == .policyChanged)
+        #expect(try await fx.status(waitingID).0 == .needsApproval)
+
+        let good = OnceGrant(offeredByRequestID: waitingID, agentRevision: revision, categoryKey: "project_context")
+        let next = try await fx.disclosures.request(agentID: fx.agentID, input, now: fx.now, grant: good, replacing: waitingID)
+        #expect(next.status == .needsApproval && next.requestID != waitingID)
+        #expect(try await fx.status(waitingID) == (.denied, .policyChanged))
+    }
+
+    /// A good grant whose new request the gate refuses (Funes paused while the prompt was open)
+    /// doesn't replace the waiting request either.
+    @Test func allowOnceRefusedAtTheGateKeepsTheWaitingRequest() async throws {
+        let fx = try ServiceFixture()
+        try fx.setAgent(asksForAccess: true)
+        try fx.setAccess { $0.allowedCategoryKeys = ["communication_style"] }
+        fx.retriever.set([fx.id("m1"), fx.id("m2")])
+        let waitingID = try #require(try await fx.request().requestID)
+        let revision = try await fx.store.writer.read { db in try AgentStore.fetch(db, id: fx.agentID)!.revision }
+        fx.pause.pause(until: fx.now.plus(minutes: 30))
+        let good = OnceGrant(offeredByRequestID: waitingID, agentRevision: revision, categoryKey: "project_context")
+        let refused = try await fx.disclosures.request(agentID: fx.agentID, MemoryRequest(task: "Draft my weekly status update", maxTokens: 1200),
+                                                       now: fx.now, grant: good, replacing: waitingID)
+        #expect(refused.status == .denied && refused.reason == .funesPaused)
+        #expect(try await fx.status(waitingID).0 == .needsApproval)
     }
 
     /// The grant is bound to the agent's revision: any access change before delivery invalidates it.

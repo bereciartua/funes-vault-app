@@ -203,8 +203,9 @@ import Testing
         _ = try await s.apply(suggestionID: archive, now: t0)
     }
 
-    /// A target deleted for good goes null in the suggestion (ON DELETE SET NULL): it's stale, and
-    /// Review Again can't make it appliable (companion protocol §4.2).
+    /// A target deleted for good goes null in the suggestion (ON DELETE SET NULL), and the pending
+    /// suggestion is closed with its text gone (FR-V-04): it leaves the Inbox, and neither Review
+    /// Again nor apply can bring it back (companion protocol §4.2).
     @Test func aPurgedTargetIsStaleAndCantBeReviewedAgain() async throws {
         let (v, s, _) = try Self.make()
         let m = try v.memory("Gone for good")
@@ -213,12 +214,49 @@ import Testing
         try v.store.purgeMemory(id: m.id)
         let suggestion = try #require(try await s.suggestion(id: archive))
         #expect(suggestion.targetMemoryID == nil && suggestion.targetMemoryVersion == 1)
+        #expect(suggestion.status == .rejected && suggestion.body.isEmpty)
         #expect(try await s.isStale(suggestion))
-        await #expect(throws: VaultError.targetChanged) { try await s.reviewAgain(suggestionID: archive) }
-        await #expect(throws: VaultError.targetChanged) { try await s.apply(suggestionID: archive, now: t0) }
+        await #expect(throws: VaultError.self) { try await s.reviewAgain(suggestionID: archive) }
+        await #expect(throws: VaultError.invalidState) { try await s.apply(suggestionID: archive, now: t0) }
         // A new memory never had a target: not stale.
         let create = try #require(try await s.suggestion(id: try Self.suggestion(v, .create)))
         #expect(try await s.isStale(create) == false)
+    }
+
+    /// Review fix-first #4 (FR-V-04): purging a memory blanks every suggestion holding its text,
+    /// grouped or not: the one it was saved from, one targeting it, and one listing it as a source.
+    @Test func purgingBlanksUngroupedSuggestionsText() async throws {
+        let (v, s, _) = try Self.make()
+        let create = try Self.suggestion(v, .create, title: "Saved title", body: "Saved body", origin: .captureMac)
+        let saved = try await s.apply(suggestionID: create, now: t0).memoryID
+        let update = try Self.suggestion(v, .update, title: "Fix", body: "Corrected body", target: saved)
+        let merge = try Self.suggestion(v, .merge, title: "Merged", body: "Merged body",
+                                        targets: [(saved, .source), (try v.memory("Other").id, .source)])
+        let unrelated = try Self.suggestion(v, .create, title: "Keep me", body: "Untouched")
+        // What else a suggestion can carry of the memory's text: the classifier's record, the
+        // agent's purpose and metadata.
+        try await v.store.writer.write { db in
+            try db.execute(sql: """
+                UPDATE suggestion SET classification = '{"proposal":{"title":"Saved title"}}', purpose = 'Saved title',
+                  caller_metadata = '{"note":"Saved body"}'
+                """)
+        }
+        try v.store.deleteMemory(id: saved, now: t0)
+        try v.store.purgeMemory(id: saved)
+        for id in [create, update, merge] {
+            let row = try #require(try await s.suggestion(id: id))
+            #expect(row.title.isEmpty && row.body.isEmpty && row.evidence == nil)
+            // The classifier's record (its proposed title, a piece's claim) and what came with it go too.
+            #expect(row.classification == nil && row.purpose == nil && row.callerMetadata == nil)
+        }
+        // The applied one stays applied; the pending ones about the purged memory are closed, not
+        // left in the Inbox empty.
+        #expect(try await s.suggestion(id: create)?.status == .applied)
+        #expect(try await s.suggestion(id: update)?.status == .rejected)
+        #expect(try await s.suggestion(id: merge)?.status == .rejected)
+        #expect(try await s.suggestion(id: unrelated)?.body == "Untouched")
+        #expect(try await s.suggestion(id: unrelated)?.status == .pending)
+        #expect(try await s.suggestion(id: unrelated)?.purpose == "Saved title")
     }
 
     @Test func agentCorrectionsRecordTheTargetsVersion() async throws {

@@ -71,7 +71,9 @@ public final class InMemoryAgentKeyStore: AgentKeyStore {
 }
 
 /// Adding, configuring, pausing, removing and authenticating agents (FR-A-01..12). Every change to
-/// access, pause or key increments the revision, which invalidates pending approvals (FR-A-03).
+/// access or key increments the revision, which invalidates pending approvals (FR-A-03). Pause and
+/// resume don't: the gate refuses a paused agent, and an approval stands until it expires, so it
+/// can be retrieved after resuming (access policy §3.7).
 public final class AgentService: Sendable {
     public let store: VaultStore
     public let issuer: any AgentKeyIssuer
@@ -104,9 +106,7 @@ public final class AgentService: Sendable {
         let key = try issuer.issue()
         // Never-share categories: every new agent starts with Deny for them (UX review F4).
         var access = access
-        let neverShare = try await neverShareCategories()
-        access.deniedCategoryKeys.formUnion(neverShare)
-        access.allowedCategoryKeys.subtract(neverShare)
+        access.denyNeverShare(try await neverShareCategories())
         let agent = Agent(id: UUID(), name: name, agentKind: kind, keyIssuedAt: now, paused: false, revision: 1,
                           declaredRetention: declaredRetention, asksForAccess: asksForAccess, createdAt: now, access: access)
         try await store.writer.write { db in
@@ -133,7 +133,7 @@ public final class AgentService: Sendable {
     }
 
     /// Replaces the never-share categories. With `applyToAgents`, every agent also gets Deny for
-    /// them (and loses them from its allow list); each agent that changes gets an access change, so
+    /// them (and loses them from its allow list, unless that would empty it); each agent that changes gets an access change, so
     /// its revision goes up and its waiting requests must be asked again. Taking a category off the
     /// list never lifts an agent's Deny: that's done in the agent's Access tab.
     public func setNeverShareCategories(_ keys: Set<String>, applyToAgents: Bool, now: Date) async throws {
@@ -144,8 +144,7 @@ public final class AgentService: Sendable {
             var changed = [UUID]()
             for agent in try AgentStore.all(db, includingRemoved: false) {
                 var access = agent.access
-                access.deniedCategoryKeys.formUnion(keys)
-                access.allowedCategoryKeys.subtract(keys)
+                access.denyNeverShare(keys)
                 guard access != agent.access else { continue }
                 try AgentStore.writeAccess(db, agentID: agent.id, access)
                 try AgentStore.bumpRevision(db, agentID: agent.id)
@@ -162,12 +161,15 @@ public final class AgentService: Sendable {
     /// `expectedRevision` is the revision the editor read: if the access changed since (another
     /// window, Always Allow), nothing is written and it throws `revisionChanged` (fail closed).
     @discardableResult
-    public func updateAccess(agentID: UUID, _ access: Access, expectedRevision: Int? = nil, now: Date) async throws -> Agent {
+    /// An empty allow list means every category, so taking a non-empty one to empty is refused
+    /// (`wouldAllowEveryCategory`) unless `allowingEveryCategory` says the user confirmed it.
+    public func updateAccess(agentID: UUID, _ access: Access, expectedRevision: Int? = nil,
+                             allowingEveryCategory: Bool = false, now: Date) async throws -> Agent {
         try await change(agentID, event: "access_changed", now: now) { db in
-            if let expectedRevision {
-                guard let current = try AgentStore.fetch(db, id: agentID), current.revision == expectedRevision else {
-                    throw VaultError.revisionChanged
-                }
+            guard let current = try AgentStore.fetch(db, id: agentID) else { throw VaultError.notFound }
+            if let expectedRevision, current.revision != expectedRevision { throw VaultError.revisionChanged }
+            if !current.access.allowedCategoryKeys.isEmpty, access.allowedCategoryKeys.isEmpty, !allowingEveryCategory {
+                throw VaultError.wouldAllowEveryCategory
             }
             try AgentStore.writeAccess(db, agentID: agentID, access)
         }
@@ -195,14 +197,14 @@ public final class AgentService: Sendable {
 
     @discardableResult
     public func pause(agentID: UUID, now: Date) async throws -> Agent {
-        try await change(agentID, event: "agent_paused", now: now) { db in
+        try await change(agentID, event: "agent_paused", now: now, bumpRevision: false) { db in
             try db.execute(sql: "UPDATE agent SET paused = 1 WHERE id = ?", arguments: [agentID.db])
         }
     }
 
     @discardableResult
     public func resume(agentID: UUID, now: Date) async throws -> Agent {
-        try await change(agentID, event: "agent_resumed", now: now) { db in
+        try await change(agentID, event: "agent_resumed", now: now, bumpRevision: false) { db in
             try db.execute(sql: "UPDATE agent SET paused = 0 WHERE id = ?", arguments: [agentID.db])
         }
     }
@@ -307,15 +309,26 @@ public final class AgentService: Sendable {
     }
 
     @discardableResult
-    private func change(_ agentID: UUID, event: String, now: Date,
+    private func change(_ agentID: UUID, event: String, now: Date, bumpRevision: Bool = true,
                         _ body: @escaping @Sendable (Database) throws -> Void) async throws -> Agent {
         let agent = try await store.writer.write { db -> Agent in
             guard let agent = try AgentStore.fetch(db, id: agentID), !agent.isRemoved else { throw VaultError.notFound }
             try body(db)
-            try AgentStore.bumpRevision(db, agentID: agentID)
+            if bumpRevision { try AgentStore.bumpRevision(db, agentID: agentID) }
             return try AgentStore.fetch(db, id: agentID) ?? agent
         }
         activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: event, ids: [agentID]))
         return agent
+    }
+}
+
+extension Access {
+    /// Denies the never-share categories and takes them off the allow list, except when that would
+    /// empty a non-empty allow list: empty means every category, so the keys stay on both lists
+    /// and Deny wins (T8). The agent then reads nothing rather than everything (fail closed).
+    mutating func denyNeverShare(_ keys: Set<String>) {
+        deniedCategoryKeys.formUnion(keys)
+        let remaining = allowedCategoryKeys.subtracting(keys)
+        if !remaining.isEmpty { allowedCategoryKeys = remaining }
     }
 }

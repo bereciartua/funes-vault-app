@@ -13,12 +13,18 @@ public struct NewMemoryProcessor: Sendable {
     public struct Configuration: Sendable {
         /// The New memories router, or nil while classification and splitting are both off.
         public var router: ModelRouter?
+        /// Settings ▸ AI ▸ Features ▸ New memories ▸ Propose a title, kind and categories. Off, a
+        /// capture keeps the rules' proposal it was saved with: no model classifies it, even when
+        /// the router is there for splitting.
+        public var classify: Bool
         /// Settings ▸ AI ▸ Features ▸ New memories ▸ Split into separate memories.
         public var split: Bool
         public var autoApply: NewMemoryAutoApply
 
-        public init(router: ModelRouter?, split: Bool = false, autoApply: NewMemoryAutoApply = NewMemoryAutoApply()) {
+        public init(router: ModelRouter?, classify: Bool = true, split: Bool = false,
+                    autoApply: NewMemoryAutoApply = NewMemoryAutoApply()) {
             self.router = router
+            self.classify = classify
             self.split = split
             self.autoApply = autoApply
         }
@@ -100,7 +106,7 @@ public struct NewMemoryProcessor: Sendable {
             }
         }
         var outcome = ProcessingQueue.Outcome.done(engine: nil)
-        if isCapture { outcome = try await classify(s, hint: hint, router: router) }
+        if isCapture, config.classify { outcome = try await classify(s, hint: hint, router: router) }
         return failure.map { .failed(code: $0) } ?? outcome
     }
 

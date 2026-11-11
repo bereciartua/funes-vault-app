@@ -12,6 +12,11 @@ struct CategoriesSheet: View {
     @State private var deleting: MemoryCategory?
     /// Categories new agents start with Deny for (UX review F4).
     @State private var neverShare: Set<String> = []
+    /// The list was read; until then its checkboxes are off, so it's never overwritten unread.
+    @State private var neverShareLoaded = false
+    /// A change is being saved: the checkboxes wait for it, so writes never land out of order.
+    @State private var savingNeverShare = false
+    @State private var error: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -39,6 +44,7 @@ struct CategoriesSheet: View {
                             set: { on in setNeverShare(category.key, on) }))
                             .toggleStyle(.checkbox)
                             .font(.caption)
+                            .disabled(!neverShareLoaded || savingNeverShare)
                             .help(String(localized: "New agents start with Deny for this category. Existing agents keep their access."))
                         Button(String(localized: "Rename…")) { editing = category }
                             .accessibilityLabel(String(localized: "Rename \(category.name)"))
@@ -52,6 +58,7 @@ struct CategoriesSheet: View {
             }
             .listStyle(.bordered(alternatesRowBackgrounds: true))
             .frame(minHeight: 280)
+            if let error { Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red).font(.callout) }
             HStack {
                 Button { adding = true } label: { Label(String(localized: "Add Category…"), systemImage: "plus") }
                 Spacer()
@@ -60,16 +67,36 @@ struct CategoriesSheet: View {
         }
         .padding(24)
         .frame(width: 720, height: 520)
-        .task { neverShare = (try? await model.services.agents.neverShareCategories()) ?? [] }
+        .task {
+            do {
+                neverShare = try await model.services.agents.neverShareCategories()
+                neverShareLoaded = true
+            } catch {
+                self.error = String(localized: "Funes couldn't read which categories new agents can't read. Close this and try again.")
+            }
+        }
         .sheet(item: $editing) { category in CategoryForm(model: model, existing: category) }
         .sheet(isPresented: $adding) { CategoryForm(model: model, existing: nil) }
         .sheet(item: $deleting) { category in DeleteCategoryForm(model: model, category: category) }
     }
 
+    /// Saves the whole list; a failed save puts the checkbox back and says so.
     private func setNeverShare(_ key: String, _ on: Bool) {
+        guard neverShareLoaded, !savingNeverShare else { return }
+        let before = neverShare
         if on { neverShare.insert(key) } else { neverShare.remove(key) }
         let keys = neverShare
-        Task { try? await model.services.agents.setNeverShareCategories(keys, applyToAgents: false, now: Date()) }
+        savingNeverShare = true
+        Task {
+            do {
+                try await model.services.agents.setNeverShareCategories(keys, applyToAgents: false, now: Date())
+                error = nil
+            } catch {
+                neverShare = before
+                self.error = String(localized: "That change couldn't be saved. \(ErrorText.message(error))")
+            }
+            savingNeverShare = false
+        }
     }
 }
 

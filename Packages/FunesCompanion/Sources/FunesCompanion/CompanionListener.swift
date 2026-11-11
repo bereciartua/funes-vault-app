@@ -13,7 +13,10 @@ import FunesProtocol
 /// tunnel-only mode, `127.0.0.1` and `::1` instead, so nothing outside the Mac reaches the port.
 ///
 /// One request at a time per connection, with fixed deadlines that later bytes don't extend: the
-/// whole request within 10 s of its first byte, 30 s idle between requests.
+/// first byte within 5 s of the connection, the whole request within 10 s of its first byte, 30 s
+/// idle between requests. At most 32 connections, 8 from any one address and 16 from any one IPv6
+/// /64 (a host can take any number of IPv6 aliases), so
+/// one host on the network can't hold every slot.
 public final class CompanionListener: @unchecked Sendable {
     public typealias Handler = @Sendable (HTTPRequest, DeviceTransport) async -> HTTPResponse
 
@@ -31,13 +34,20 @@ public final class CompanionListener: @unchecked Sendable {
 
     public static let requestTimeout: TimeInterval = 10
     public static let idleTimeout: TimeInterval = 30
+    /// A new connection that sends nothing for this long is closed.
+    public static let firstByteTimeout: TimeInterval = 5
     public static let maxConnections = 32
+    public static let maxConnectionsPerAddress = 8
+    /// Every address in one IPv6 /64 together: half the slots, so a host with many aliases can't
+    /// take them all, and ordinary IPv6 neighbours on the same network keep their own 8 each.
+    public static let maxConnectionsPerIPv6Prefix = 16
 
     private let queue = DispatchQueue(label: "com.funesvault.companion.listener")
     private let port: Int
     private let modes: CompanionModes
     private let bonjour: [String: String]?
     private let handler: Handler
+    private let limits: Limits
     private var sources: [DispatchSourceRead] = []
     private let socketsClosed = DispatchGroup()
     private var stopped = false
@@ -45,11 +55,26 @@ public final class CompanionListener: @unchecked Sendable {
     private var connections: [ObjectIdentifier: Connection] = [:]
     private var stateChanged: (@Sendable (State) -> Void)?
 
+    /// The connection caps and deadlines; tests shorten them.
+    struct Limits: Sendable {
+        var maxConnections = CompanionListener.maxConnections
+        var maxPerAddress = CompanionListener.maxConnectionsPerAddress
+        var maxPerIPv6Prefix = CompanionListener.maxConnectionsPerIPv6Prefix
+        var firstByte = CompanionListener.firstByteTimeout
+        var request = CompanionListener.requestTimeout
+        var idle = CompanionListener.idleTimeout
+    }
+
     /// `bonjour` is the TXT record to advertise, or nil not to advertise.
-    public init(port: Int, modes: CompanionModes, bonjour: [String: String]?, handler: @escaping Handler) {
+    public convenience init(port: Int, modes: CompanionModes, bonjour: [String: String]?, handler: @escaping Handler) {
+        self.init(port: port, modes: modes, bonjour: bonjour, limits: Limits(), handler: handler)
+    }
+
+    init(port: Int, modes: CompanionModes, bonjour: [String: String]?, limits: Limits, handler: @escaping Handler) {
         self.port = port
         self.modes = modes
         self.bonjour = bonjour
+        self.limits = limits
         self.handler = handler
     }
 
@@ -118,16 +143,86 @@ public final class CompanionListener: @unchecked Sendable {
     }
 
     private func accept(_ fd: Int32, address: [UInt8]) {
-        guard connections.count < Self.maxConnections,
-              let transport = AddressPolicy.transport(forAddress: address, modes: modes) else {
+        guard let transport = AddressPolicy.transport(forAddress: address, modes: modes) else {
             Darwin.close(fd)
             return
         }
-        let connection = Connection(fd, transport: transport, queue: queue, handler: handler)
+        let open = Array(connections.values)
+        switch Self.admission(address, among: open.map { Peer(address: $0.address, busy: $0.isBusy, receiving: $0.isReceiving, idleSince: $0.idleSince) },
+                              limits: limits) {
+        case .refuse:
+            Darwin.close(fd)
+            return
+        case let .evict(index):
+            open[index].close()
+        case .admit:
+            break
+        }
+        let connection = Connection(fd, address: address, transport: transport, limits: limits, queue: queue, handler: handler)
         let key = ObjectIdentifier(connection)
         connections[key] = connection
         connection.onClose = { [weak self] in self?.connections[key] = nil }
         connection.start()
+    }
+
+    /// Whether bytes are waiting to be read on `fd`, without reading or blocking: false when there
+    /// are none (EAGAIN), at end of file, or on any error.
+    static func hasPendingBytes(_ fd: Int32) -> Bool {
+        var byte: UInt8 = 0
+        return recv(fd, &byte, 1, MSG_PEEK | MSG_DONTWAIT) > 0
+    }
+
+    /// An open connection, as admission sees it.
+    struct Peer: Equatable {
+        var address: [UInt8]
+        /// Handling a request: never evicted.
+        var busy: Bool
+        /// A request has started arriving (bytes read or waiting in the socket): evicted only if
+        /// every idle connection is, so a flood of partial requests can't hold the table either.
+        var receiving: Bool = false
+        /// When it last had nothing to do: opened, or its last reply written (uptime, ns).
+        var idleSince: UInt64
+    }
+
+    enum Admission: Equatable {
+        case admit
+        /// Admit, closing the open connection at this index first.
+        case evict(Int)
+        case refuse
+    }
+
+    /// Whether a connection from `address` gets in beside `open`. It must be under 8 from that
+    /// address and, for IPv6, under 16 from its /64. When all 32 slots are taken, the connection
+    /// idle longest (never one handling a request, and one with a request arriving only when every
+    /// idle one has) makes way, since addresses can't tell hosts
+    /// apart: a host with many IPv4 addresses could otherwise fill the table and keep the phone
+    /// out. With every connection busy, it's refused.
+    static func admission(_ address: [UInt8], among open: [Peer], limits: Limits) -> Admission {
+        let peer = peerAddress(address)
+        guard open.count(where: { peerAddress($0.address) == peer }) < limits.maxPerAddress else { return .refuse }
+        if let prefix = ipv6Prefix(address), open.count(where: { ipv6Prefix($0.address) == prefix }) >= limits.maxPerIPv6Prefix {
+            return .refuse
+        }
+        guard open.count >= limits.maxConnections else { return .admit }
+        let idle = open.indices.filter { !open[$0].busy }
+        let quiet = idle.filter { !open[$0].receiving }
+        let candidates = quiet.isEmpty ? idle : quiet
+        guard let oldest = candidates.min(by: { open[$0].idleSince < open[$1].idleSince }) else { return .refuse }
+        return .evict(oldest)
+    }
+
+    /// An IPv4-mapped IPv6 address as the IPv4 address it is (the socket is dual-stack).
+    static func peerAddress(_ address: [UInt8]) -> [UInt8] {
+        guard address.count == 16, address[0..<10].allSatisfy({ $0 == 0 }), address[10] == 0xff, address[11] == 0xff else {
+            return address
+        }
+        return Array(address[12...])
+    }
+
+    /// The /64 of an IPv6 address; nil for IPv4, plain or mapped.
+    static func ipv6Prefix(_ address: [UInt8]) -> [UInt8]? {
+        let peer = peerAddress(address)
+        return peer.count == 16 ? Array(peer[0..<8]) : nil
     }
 
     private func closeAll() {
@@ -144,11 +239,19 @@ public final class CompanionListener: @unchecked Sendable {
     /// queue. The socket is closed once every dispatch source on it has been cancelled.
     private final class Connection: @unchecked Sendable {
         private let fd: Int32
+        /// The remote address, for the per-address cap.
+        let address: [UInt8]
         private let transport: DeviceTransport
+        private let limits: Limits
         private let queue: DispatchQueue
         private let handler: Handler
         private var parser = HTTPParser(limits: HTTPLimits(maxBodyBytes: CompanionProtocol.maxRequestBytes))
         private var busy = false
+        /// When it last had nothing to do: opened, or its last reply written (uptime, ns).
+        private(set) var idleSince = DispatchTime.now().uptimeNanoseconds
+        var isBusy: Bool { busy }
+        /// A request has started arriving: part of it parsed, or bytes waiting in the socket.
+        var isReceiving: Bool { parser.hasBufferedBytes || CompanionListener.hasPendingBytes(fd) }
         private var closed = false
         private var timer: DispatchSourceTimer?
         private var reader: DispatchSourceRead?
@@ -158,11 +261,16 @@ public final class CompanionListener: @unchecked Sendable {
         private var outbox = Data()
         private var written = 0
         private var drained: [@Sendable () -> Void] = []
+        /// The handler of the request being answered, cancelled if the client goes away.
+        private var handling: Task<Void, Never>?
         var onClose: (@Sendable () -> Void)?
 
-        init(_ fd: Int32, transport: DeviceTransport, queue: DispatchQueue, handler: @escaping Handler) {
+        init(_ fd: Int32, address: [UInt8], transport: DeviceTransport, limits: Limits, queue: DispatchQueue,
+             handler: @escaping Handler) {
             self.fd = fd
+            self.address = address
             self.transport = transport
+            self.limits = limits
             self.queue = queue
             self.handler = handler
         }
@@ -173,11 +281,8 @@ public final class CompanionListener: @unchecked Sendable {
             reader.setEventHandler { [weak self] in self?.readAvailable() }
             self.reader = reader
             reader.resume()
-            arm(Self.idle)
+            arm(limits.firstByte)
         }
-
-        private static let idle = CompanionListener.idleTimeout
-        private static let request = CompanionListener.requestTimeout
 
         /// Reads only while no request is being handled; bytes that arrive meanwhile wait in the
         /// socket.
@@ -195,10 +300,14 @@ public final class CompanionListener: @unchecked Sendable {
 
         private func readAvailable() {
             guard !closed else { return }
+            if busy {
+                clientGoneWhileBusy()
+                return
+            }
             var buffer = [UInt8](repeating: 0, count: 65_536)
             let count = Darwin.read(fd, &buffer, buffer.count)
             if count > 0 {
-                if !parser.hasBufferedBytes { arm(Self.request) }
+                if !parser.hasBufferedBytes { arm(limits.request) }
                 feed(Data(buffer[0..<count]))
             } else if count == 0 || (errno != EAGAIN && errno != EINTR) {
                 close()
@@ -214,18 +323,32 @@ public final class CompanionListener: @unchecked Sendable {
             }
         }
 
+        /// While a request is handled the socket is only watched, not read: a client that goes
+        /// away cancels its handler (a pairing request waiting for Allow is then denied, §2.2),
+        /// and a pipelined request waits in the socket until this one is answered.
+        private func clientGoneWhileBusy() {
+            var byte: UInt8 = 0
+            let peeked = recv(fd, &byte, 1, MSG_PEEK)
+            if peeked > 0 {
+                pauseReading()
+            } else if peeked == 0 || (errno != EAGAIN && errno != EINTR) {
+                handling?.cancel()
+                close()
+            }
+        }
+
         private func handle(_ request: HTTPRequest) {
             busy = true
-            pauseReading()
             timer?.cancel()
             let transport = self.transport, handler = self.handler
-            Task {
+            handling = Task {
                 let response = await handler(request, transport)
                 self.queue.async {
                     guard !self.closed else { return }
                     self.write(response, close: request.wantsClose) {
                         self.busy = false
-                        self.arm(Self.idle)
+                        self.idleSince = DispatchTime.now().uptimeNanoseconds
+                        self.arm(self.limits.idle)
                         // A pipelined request may already be buffered.
                         if self.parser.hasBufferedBytes { self.feed(Data()) }
                         if !self.busy { self.receive() }
@@ -308,6 +431,9 @@ public final class CompanionListener: @unchecked Sendable {
         func close() {
             guard !closed else { return }
             closed = true
+            // However it closes (the client went, the listener stopped for a settings change), a
+            // handler still running hears it: a pairing waiting for Allow is denied.
+            handling?.cancel()
             timer?.cancel()
             timer = nil
             writer?.cancel()

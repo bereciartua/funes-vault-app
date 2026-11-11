@@ -77,7 +77,8 @@ public final class CompanionHandlers: Sendable {
         }
         let device = deviceID
         if method == .memoriesAnswer {
-            return await withTimeout(id: head.id, limit: answerLimit, error: CompanionError(.modelTimeout, message: "Deadline")) { [self] in
+            return await withTimeout(id: head.id, limit: answerLimit, error: CompanionError(.modelTimeout, message: "Deadline"),
+                                     cancelsWork: true) { [self] in
                 await run(MemoriesAnswer.self, head) { try await answer($0, device: device, now: now) }
             }
         }
@@ -364,16 +365,27 @@ public final class CompanionHandlers: Sendable {
     /// and current versions (a missing one is -1), and a split's pieces. An edit or a Review Again
     /// on the Mac changes it.
     static func revision(of s: Suggestion, suggestions: SuggestionService, store: VaultStore) async throws -> String {
+        let targets = try await suggestions.targets(suggestionID: s.id)
+        let ids = (s.targetMemoryID.map { [$0] } ?? []) + targets.map(\.memoryID)
+        let current = Dictionary(try store.memories(ids: ids).map { ($0.id, $0.version) }, uniquingKeysWith: { a, _ in a })
+        let pieces = s.action == .split ? try await suggestions.pieces(groupID: s.id) : []
+        return revision(of: s, targets: targets, current: current, pieces: pieces)
+    }
+
+    /// The same revision from what FunesCore read inside the transaction that applies the answer,
+    /// so a change between the check and the apply is refused (access policy §3.6).
+    static func revision(of snapshot: SuggestionSnapshot) -> String {
+        revision(of: snapshot.suggestion, targets: snapshot.targets, current: snapshot.memoryVersions, pieces: snapshot.pieces)
+    }
+
+    static func revision(of s: Suggestion, targets: [SuggestionTarget], current: [UUID: Int], pieces: [Suggestion]) -> String {
         struct Ref: Encodable { var id: String, role: String, stored: Int?, current: Int }
         struct Piece: Encodable { var id: String, action: String, title: String, body: String }
         struct Canonical: Encodable {
             var save: String, refs: [Ref], pieces: [Piece], targetVersion: Int?
         }
-        let targets = try await suggestions.targets(suggestionID: s.id)
         var refs = s.targetMemoryID.map { [(id: $0, role: "target", stored: s.targetMemoryVersion)] } ?? []
         refs += targets.filter { $0.memoryID != s.targetMemoryID }.map { ($0.memoryID, $0.role.rawValue, Optional($0.memoryVersion)) }
-        let current = Dictionary(uniqueKeysWithValues: try store.memories(ids: refs.map(\.id)).map { ($0.id, $0.version) })
-        let pieces = s.action == .split ? try await suggestions.pieces(groupID: s.id) : []
         let canonical = Canonical(
             save: CompanionApprovals.revision(of: s),
             refs: refs.map { Ref(id: $0.id.uuidString.lowercased(), role: $0.role, stored: $0.stored, current: current[$0.id] ?? -1) },
@@ -381,7 +393,8 @@ public final class CompanionHandlers: Sendable {
             targetVersion: s.targetMemoryVersion)
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
-        return SHA256.hash(data: try encoder.encode(canonical)).map { String(format: "%02x", $0) }.joined()
+        let data = (try? encoder.encode(canonical)) ?? Data()
+        return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
 
     static func role(_ role: SuggestionTarget.Role) -> InboxMemoryRole {
@@ -412,8 +425,14 @@ public final class CompanionHandlers: Sendable {
         case .bothTrue: .bothTrue
         }
         let edits = params.edits.map(Self.suggestionEdit) ?? SuggestionEdit()
-        let result = try await services.suggestions.apply(suggestionID: params.suggestionId, edits: edits, mode: mode, now: now,
-                                                          actor: .device(device), via: .companion)
+        // Checked again inside the write, so an edit or reclassification after the check above
+        // isn't applied unseen.
+        let shown = params.revision
+        let result = try await services.suggestions.apply(
+            suggestionID: params.suggestionId, edits: edits, mode: mode, now: now, actor: .device(device), via: .companion,
+            precondition: { snapshot in
+                if let shown, Self.revision(of: snapshot) != shown { throw CompanionError(.requestChanged) }
+            })
         return InboxApplied(memoryId: result.memoryID)
     }
 
@@ -468,22 +487,22 @@ public final class CompanionHandlers: Sendable {
         }
     }
 
-    /// 10 s per call (§7); a slower one answers `unavailable` and keeps running to its end.
-    /// (`memories.answer` has its own deadline, past which its work is cancelled.)
-    private func withTimeout(id: String, limit: Duration, error: CompanionError = CompanionError(.unavailable, message: "Timed out"),
-                             _ work: @escaping @Sendable () async -> Data) async -> Data {
-        await withTaskGroup(of: Data?.self) { group in
-            group.addTask { await work() }
-            group.addTask {
+    /// 10 s per call (§7): past it the phone gets `unavailable` at once, and the work goes on to
+    /// its end on the Mac (a capture's receipt keeps a resend from duplicating it). With
+    /// `cancelsWork` (`memories.answer`, its own deadline) the work is cancelled instead, and the
+    /// reply doesn't wait for it to stop.
+    func withTimeout(id: String, limit: Duration, error: CompanionError = CompanionError(.unavailable, message: "Timed out"),
+                             cancelsWork: Bool = false, _ work: @escaping @Sendable () async -> Data) async -> Data {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Data, Never>) in
+            let reply = FirstReply(continuation)
+            let running = Task { reply.give(await work()) }
+            reply.timer = Task {
                 try? await Task.sleep(for: limit)
-                return nil
+                guard !Task.isCancelled, reply.give(Self.errorReply(id: id, error)), cancelsWork else { return }
+                running.cancel()
             }
-            let first = await group.next() ?? nil
-            group.cancelAll()
-            return first ?? Self.errorReply(id: id, error)
         }
     }
-
     static func errorReply(id: String, _ error: CompanionError) -> Data {
         (try? CompanionResponse<EmptyResult>(id: id, error: error).encoded()) ?? Data()
     }
@@ -501,7 +520,8 @@ public final class CompanionHandlers: Sendable {
         case .unauthenticated: CompanionError(.notFound)
         case let .invalidInput(field): CompanionError(.invalidInput, message: field)
         case let .unknownCategory(key): CompanionError(.invalidInput, message: "Unknown category \(key)")
-        case .noCategories, .builtinCategory, .categoryExists, .categoryInUse, .onlyAllowedCategory, .nameTaken:
+        case .noCategories, .builtinCategory, .categoryExists, .categoryInUse, .onlyAllowedCategory, .deniedCategoryInUse,
+             .wouldAllowEveryCategory, .nameTaken:
             CompanionError(.invalidInput)
         }
     }
@@ -576,5 +596,40 @@ extension AnswerLocality {
         case .appleCloud: self = .appleCloud
         case .cloud: self = .cloud
         }
+    }
+}
+
+/// Resumes a call's reply once: with the work's result or the deadline's error, whichever comes
+/// first. The work finishing first stops the deadline's timer.
+private final class FirstReply: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Data, Never>?
+    private var pendingTimer: Task<Void, Never>?
+
+    init(_ continuation: CheckedContinuation<Data, Never>) { self.continuation = continuation }
+
+    var timer: Task<Void, Never>? {
+        get { lock.withLock { pendingTimer } }
+        set {
+            // Set after the work started: if it's already done, the timer goes at once.
+            let done = lock.withLock { () -> Bool in
+                pendingTimer = newValue
+                return continuation == nil
+            }
+            if done { newValue?.cancel() }
+        }
+    }
+
+    /// True for the first reply, which is the one sent.
+    @discardableResult
+    func give(_ data: Data) -> Bool {
+        let (first, timer) = lock.withLock { () -> (CheckedContinuation<Data, Never>?, Task<Void, Never>?) in
+            defer { continuation = nil }
+            return (continuation, pendingTimer)
+        }
+        guard let first else { return false }
+        first.resume(returning: data)
+        timer?.cancel()
+        return true
     }
 }

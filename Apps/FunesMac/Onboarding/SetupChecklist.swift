@@ -36,11 +36,10 @@ final class ChecklistModel {
             done.insert(.seed)
             if !seededBefore { preferences.set(Preferences.Key.checklistSeeded, true) }
         }
-        let reviewedBefore = preferences.flag(Preferences.Key.checklistReviewed)
-        if reviewedBefore || (done.contains(.seed) && model.hasMemories && model.inbox.isEmpty) {
-            done.insert(.review)
-            if !reviewedBefore { preferences.set(Preferences.Key.checklistReviewed, true) }
-        }
+        // Reviewed only once the user has decided a suggestion (markReviewed): in the Mac's Inbox,
+        // or on the iPhone as the owner. An Inbox that empties by itself (automatic changes, the
+        // tidy-up, expiry) or a memory made by hand isn't a review.
+        if preferences.flag(Preferences.Key.checklistReviewed) { done.insert(.review) }
         if !model.agents.isEmpty { done.insert(.add) }
         if let first = model.agents.compactMap({ agent in agent.firstRequestAt.map { (agent, $0) } }).min(by: { $0.1 < $1.1 }) {
             done.insert(.connect)
@@ -49,6 +48,13 @@ final class ChecklistModel {
             connectedLine = nil
         }
         self.done = done
+    }
+
+    /// The user applied or rejected a suggestion: a card in the Inbox, or on the iPhone.
+    func markReviewed() {
+        guard !done.contains(.review) else { return }
+        preferences.set(Preferences.Key.checklistReviewed, true)
+        done.insert(.review)
     }
 
     func dismiss() {

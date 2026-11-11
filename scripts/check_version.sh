@@ -2,10 +2,10 @@
 set -eu
 
 # Checks the version before a release. The Xcode project is the one source of it: the
-# project-level MARKETING_VERSION is x.y.z and CURRENT_PROJECT_VERSION a whole number higher
-# than in the newest earlier v* tag (both targets inherit them, so the app and funes-mcp always
-# agree); a tag, if given, is v<x.y.z>; CHANGELOG.md has a "## [x.y.z]" section for the release
-# notes; and server.json, the MCP Registry entry, has the same version.
+# project-level MARKETING_VERSION is x.y.z, above the newest earlier v* tag's version, and
+# CURRENT_PROJECT_VERSION a whole number higher than in that tag (both targets inherit them, so the
+# app and funes-mcp always agree); a tag, if given, is v<x.y.z>; CHANGELOG.md has a "## [x.y.z]"
+# section for the release notes; and server.json, the MCP Registry entry, has the same version.
 #
 # Usage: sh scripts/check_version.sh [TAG]
 project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
@@ -36,6 +36,9 @@ fi
 
 previous=$(git -C "$project_dir" tag --list 'v*' --sort=-v:refname | grep -vx "v$version" | head -n 1 || true)
 if [ -n "$previous" ]; then
+    # Never backwards: Sparkle and the App Store only offer a higher version.
+    [ "$(printf '%s\n%s\n' "${previous#v}" "$version" | sort -V | tail -n 1)" = "$version" ] \
+        || fail "MARKETING_VERSION $version isn't higher than $previous"
     previous_build=$(git -C "$project_dir" show "$previous:$project_file" | setting CURRENT_PROJECT_VERSION)
     [ "$build" -gt "$previous_build" ] \
         || fail "CURRENT_PROJECT_VERSION $build isn't higher than $previous's $previous_build"

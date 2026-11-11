@@ -243,6 +243,91 @@ struct Rig {
         #expect(rig.transport.count("192.168.1.20") == calls + 1)
     }
 
+    /// A Mac whose clock is a day or more from the phone's isn't followed, even signed; a hostile
+    /// `server_time` of `Int64.max` neither crashes the phone nor moves its clock.
+    @Test func aClockTooFarAwayIsNotFollowed() async throws {
+        let rig = Rig()
+        try await rig.pair()
+        rig.mac.skew = 2 * 86_400
+        await #expect(throws: CompanionClientError.refused(.clockSkew(serverTime: t0.addingTimeInterval(2 * 86_400)))) {
+            try await rig.client.status()
+        }
+        // Past Int64's milliseconds: the Mac's time saturates, the phone stays put.
+        rig.mac.skew = 9.3e15
+        await #expect(throws: CompanionClientError.refused(.clockSkew(serverTime: Date(timeIntervalSince1970: Double(Int64.max) / 1000)))) {
+            try await rig.client.status()
+        }
+        rig.mac.skew = 0
+        let calls = rig.transport.count("192.168.1.20")
+        #expect(try await rig.client.status().status.serverTime == t0)
+        #expect(rig.transport.count("192.168.1.20") == calls + 1)
+    }
+
+    /// An unsigned `401` (another host at the Mac's address, or a Mac before signed refusals) is
+    /// no answer: never "removed", and never a clock change (§3).
+    @Test func unsignedRefusalsAreNoAnswer() async throws {
+        let hostileSkew = Data(#"{"error":"clock_skew","server_time":9223372036854775807}"#.utf8)
+        for body in [hostileSkew, Data(#"{"error":"revoked"}"#.utf8), Data(#"{"error":"unknown_device"}"#.utf8)] {
+            let rig = Rig()
+            try await rig.pair([Addresses.lan])
+            rig.mac.calledName = "Maya"
+            _ = try await rig.client.status(fresh: true)
+            rig.transport.set("192.168.1.20", .reply(401, body))
+            await #expect(throws: CompanionClientError.unreachable(localNetworkDenied: false)) { try await rig.client.status() }
+            await #expect(throws: CompanionClientError.unreachable(localNetworkDenied: false)) {
+                try await rig.client.call(CategoriesList.self, EmptyParams())
+            }
+            #expect(await rig.client.lastProbes.map(\.outcome).allSatisfy { $0.hasPrefix("unsigned ") })
+            #expect(try await rig.client.record()?.calledName == "Maya")
+            // The Mac again: the clock never moved.
+            rig.transport.set("192.168.1.20", .mac(rig.mac))
+            #expect(try await rig.client.status().status.serverTime == t0)
+        }
+    }
+
+    /// A Mac before signed refusals: its `revoked` and `clock_skew` aren't trusted.
+    @Test func anOlderMacsRefusalsAreNotTrusted() async throws {
+        let rig = Rig()
+        let record = try await rig.pair([Addresses.lan])
+        rig.mac.signsRefusals = false
+        rig.mac.skew = 600
+        await #expect(throws: CompanionClientError.unreachable(localNetworkDenied: false)) { try await rig.client.status() }
+        rig.mac.skew = 0
+        rig.mac.revoke(record.deviceID)
+        await #expect(throws: CompanionClientError.unreachable(localNetworkDenied: false)) { try await rig.client.status(fresh: true) }
+        rig.mac.signsRefusals = true
+        await #expect(throws: CompanionClientError.refused(.revoked)) { try await rig.client.status(fresh: true) }
+    }
+
+    /// A refusal signed by another Mac, or replayed from another request, isn't trusted.
+    @Test func aRefusalForSomeoneElseIsNotTrusted() async throws {
+        let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .refused] })
+        let record = try await rig.pair([Addresses.lan, Addresses.tailscale])
+        let other = FakeMac(clock: rig.clock)
+        let foreign = CompanionAuthError.revoked.signedBody(deviceID: record.deviceID, nonce: Data(count: 16), signer: other.signing)
+        let replayed = CompanionAuthError.revoked.signedBody(deviceID: record.deviceID, nonce: Data(count: 16), signer: rig.mac.signing)
+        for body in [foreign, replayed] {
+            rig.transport.set("192.168.1.20", .refused)
+            rig.transport.set("100.101.102.103", .reply(401, body))
+            await #expect(throws: CompanionClientError.unreachable(localNetworkDenied: false)) { try await rig.client.status(fresh: true) }
+        }
+    }
+
+    /// A momentary database error on the Mac is its own refusal, not "removed"; a Mac that no
+    /// longer knows the device (signed) is.
+    @Test func aFailedLookupIsNotRemoval() async throws {
+        let rig = Rig()
+        try await rig.pair([Addresses.lan])
+        rig.mac.lookupFails = true
+        await #expect(throws: CompanionClientError.refused(.unavailable)) { try await rig.client.status(fresh: true) }
+        #expect(Reachability(.refused(.unavailable)) != .revoked)
+        rig.mac.lookupFails = false
+        _ = try await rig.client.status(fresh: true)
+        rig.mac.forgetDevices()
+        await #expect(throws: CompanionClientError.refused(.unknownDevice)) { try await rig.client.status(fresh: true) }
+        #expect(Reachability(.refused(.unknownDevice)) == .revoked)
+    }
+
     @Test func aRepeatableCallIsResentAfterNoAnswer() async throws {
         let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .mac($0)] })
         try await rig.pair([Addresses.lan, Addresses.tailscale])

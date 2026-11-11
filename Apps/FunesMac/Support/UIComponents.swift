@@ -254,6 +254,8 @@ enum ErrorText {
         case .categoryExists: return String(localized: "A category with that name already exists.")
         case .categoryInUse: return String(localized: "Some memories are only in this category. Choose a replacement.")
         case .onlyAllowedCategory: return String(localized: "It's the only category some agents may read. Choose a replacement, or change those agents first.")
+        case .wouldAllowEveryCategory: return String(localized: "No category would be allowed any more, which means every category. Nothing was saved: allow a category, or confirm to allow every one.")
+        case .deniedCategoryInUse: return String(localized: "Some agents can't see this category, but its memories are also in categories they can. Choose a replacement, or change those memories or agents first.")
         case .nameTaken: return String(localized: "Another agent already has that name.")
         case .notFound: return String(localized: "It was deleted or changed elsewhere.")
         case .invalidState: return String(localized: "It changed in the meantime. Look again and retry.")

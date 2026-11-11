@@ -277,7 +277,7 @@ enum ActivityText {
         case "agent_added", "agent_removed", "agent_paused", "agent_resumed", "access_changed", "key_rotated",
              "cloud_access_on", "cloud_access_off", "remote_key_issued", "cloud_apps_changed":
             return e.ids.first.map(model.agentName) ?? ""
-        case "request_memory" where e.outcome != "fulfilled":
+        case "request_memory" where e.outcome != "fulfilled" && e.outcome != "delivered":
             let withheld = e.counts.values.reduce(0, +)
             return withheld > 0 ? String(localized: "\(withheld) withheld") : ""
         case "profile_edited":

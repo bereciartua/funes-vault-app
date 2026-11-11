@@ -49,8 +49,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ wants %2$lld memories"
+            "state" : "translated",
+            "value" : "%1$@ wants %#@count@"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -172,10 +194,48 @@
 
     },
     "%lld captures waiting" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld capture waiting"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld captures waiting"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld claims left out: they didn't quote a memory" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld claim left out: it didn't quote a memory"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld claims left out: they didn't quote a memory"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld expired" : {
 
@@ -197,16 +257,92 @@
 
     },
     "%lld memories" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memory"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memories"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld memories shared" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memory shared"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memories shared"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld memories weren't read: they look like they hold secrets" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memory wasn't read: it looks like it holds secrets"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memories weren't read: they look like they hold secrets"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld memories weren't read: they're above your Mac's cloud limit" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memory wasn't read: it's above your Mac's cloud limit"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld memories weren't read: they're above your Mac's cloud limit"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld more matched but can't go to this agent (%@)." : {
       "localizations" : {
@@ -464,7 +600,26 @@
 
     },
     "Back online · %lld captures sent" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Back online · %lld capture sent"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Back online · %lld captures sent"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Beyond the session" : {
 
@@ -658,7 +813,26 @@
 
     },
     "Delete %lld Captures" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Delete %lld Capture"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Delete %lld Captures"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Delete Queued Captures…" : {
 
@@ -895,8 +1069,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Last %1$lld days: %2$lld in · %3$lld shared · %4$lld refused"
+            "state" : "translated",
+            "value" : "%1$#@v0@: %2$lld in · %3$lld shared · %4$lld refused"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Last %arg day"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Last %arg days"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -996,7 +1192,36 @@
 
     },
     "Merges %lld memories into one:" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Merges %1$#@v0@ into one:"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "More" : {
 
@@ -1029,7 +1254,26 @@
 
     },
     "No answer in the %lld results read." : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "No answer in the %lld result read."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "No answer in the %lld results read."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "No captures waiting" : {
 
@@ -1245,14 +1489,55 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Read %1$lld of %2$lld results · %3$lld s"
+            "state" : "translated",
+            "value" : "Read %1$lld of %2$#@v0@ · %3$lld s"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg result"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg results"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "Reading %lld results…" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Reading %lld result…"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Reading %lld results…"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Recent Captures" : {
 
@@ -1336,8 +1621,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Rhythm, last 12 weeks: %1$lld memories saved. %2$@"
+            "state" : "translated",
+            "value" : "Rhythm, last 12 weeks: %#@count@ saved. %2$@"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memory"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg memories"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1464,17 +1771,77 @@
 
     },
     "Shared %lld memories." : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Shared %lld memory."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Shared %lld memories."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Shared %lld times" : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Shared %lld time"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Shared %lld times"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Shared %lld times · last %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Shared %1$lld times · last %2$@"
+            "state" : "translated",
+            "value" : "Shared %#@count@ · last %2$@"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg time"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg times"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1654,6 +2021,9 @@
 
     },
     "This iPhone" : {
+
+    },
+    "This iPhone can't scan codes with its camera." : {
 
     },
     "This iPhone is offline. Captures wait here and go to your Mac once it's back online." : {
@@ -1888,7 +2258,26 @@
 
     },
     "Your Mac forgets this iPhone, and this iPhone forgets its keys. %lld captures haven't reached your Mac yet: keep them to send after pairing again, or delete them." : {
-
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Your Mac forgets this iPhone, and this iPhone forgets its keys. %lld capture hasn't reached your Mac yet: keep it to send after pairing again, or delete it."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Your Mac forgets this iPhone, and this iPhone forgets its keys. %lld captures haven't reached your Mac yet: keep them to send after pairing again, or delete them."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Your Mac forgets this iPhone, and this iPhone forgets its keys. You can pair again with a new code." : {
 

@@ -11,12 +11,13 @@ import GRDB
 /// access, remote tokens and devices are replaced by those of the vault it replaces (the
 /// `pre-restore-…` snapshot): who can get in, and what they may read, stays as it is now. Without
 /// that vault to copy from (no vault, or another vault's backup), every agent is removed and every
-/// device revoked; they're set up again. Either way, nothing waiting for an answer in the backup
-/// can be answered or delivered again.
+/// device revoked; they're set up again. The same holds when that vault can't be read (fail
+/// closed). Either way, nothing waiting for an answer in the backup can be answered or delivered again.
 enum RestoreAccess {
     /// Rewrites `incoming` in place; `current` is the snapshot of the vault being replaced, if any.
     /// The snapshot itself is never written: it's read from a migrated copy next to `incoming`.
-    /// Throws, leaving the vault untouched, when either is from a newer version or can't be read.
+    /// Throws, leaving the vault untouched, when either is from a newer version, or when `incoming`
+    /// can't be read. A `current` that can't be read counts as no vault (fail closed).
     static func prepare(_ incoming: URL, current: URL?, now: Date) throws {
         var live: URL?
         if let current {
@@ -27,7 +28,26 @@ enum RestoreAccess {
             _ = chmod(copy.path, 0o600)
         }
         defer { if let live { removeWithSidecars(live) } }
-        if let live { try migrated(live).close() }
+        var readable = live
+        if let live {
+            do {
+                try migrated(live).close()
+            } catch VaultError.newerSchema {
+                throw VaultError.newerSchema
+            } catch {
+                readable = nil
+            }
+        }
+        do {
+            try rewrite(incoming, live: readable, now: now)
+        } catch let error where readable != nil && error as? VaultError != .newerSchema {
+            // The live vault failed partway (the copy's transaction rolled back): as with no vault.
+            try rewrite(incoming, live: nil, now: now)
+        }
+    }
+
+    /// Migrates `incoming` and rewrites its access from `live`.
+    private static func rewrite(_ incoming: URL, live: URL?, now: Date) throws {
         let queue = try migrated(incoming)
         do {
             try rewrite(queue, live: live, now: now)

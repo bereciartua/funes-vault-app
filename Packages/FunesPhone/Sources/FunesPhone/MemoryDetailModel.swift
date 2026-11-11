@@ -49,29 +49,36 @@ public final class MemoryDetailModel {
         self.clock = clock
     }
 
-    /// `memories.get`. A refetch that fails keeps what's shown.
-    public func load() async {
+    /// `memories.get`. A refetch that fails keeps what's shown. True when the Mac's copy came.
+    @discardableResult
+    public func load() async -> Bool {
         if detail == nil { phase = .loading }
         do {
             detail = try await caller.call(MemoriesGet.self, MemoryID(id: id))
             phase = .loaded
+            return true
         } catch .method(let error) where error.code == .notFound {
             gone()
         } catch {
             // Cancelled (the screen closed): not the Mac's failure.
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled else { return false }
             if detail == nil { phase = .failed(error) }
             onFailure(error)
         }
+        return false
     }
 
     /// "Reload" on the conflict question: the Mac's version replaces this one. While editing, the
-    /// editor stays open with the Mac's version in place of the phone's edit, to change again.
+    /// editor stays open with the Mac's version in place of the phone's edit, to change again. If
+    /// the Mac's version doesn't come, the edit stays, and so does the question.
     public func reload() async {
         let editing = draft != nil
         conflict = false
         error = nil
-        await load()
+        guard await load() else {
+            if phase != .gone { conflict = true }
+            return
+        }
         if let memory, editing {
             draft = MemoryEditDraft(memory)
         } else {

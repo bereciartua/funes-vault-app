@@ -203,7 +203,8 @@ enum TidyUpPrompt {
             return "<memory id=\"\(m.alias)\" kind=\"\(memory.kind.rawValue)\" categories=\"\(memory.categoryKeys.joined(separator: ","))\" "
                 + "sensitivity=\"\(memory.sensitivity.name)\" created=\"\(DecisionPrompt.day(memory.createdAt))\" "
                 + "updated=\"\(DecisionPrompt.day(memory.updatedAt))\" source=\"\(memory.source.rawValue)\">\n"
-                + "<title>\(memory.title)</title>\n<body>\(memory.body)</body>\n</memory>"
+                + "<title>\(PromptTags.neutralized(memory.title, tags: PromptTags.tidyUp))</title>\n"
+                + "<body>\(PromptTags.neutralized(memory.body, tags: PromptTags.tidyUp))</body>\n</memory>"
         }.joined(separator: "\n")
         guard let focus = cluster.focus.flatMap(cluster.member(id:)) else { return memories }
         let others = cluster.members.count > 1 ? " against the others and" : ""
@@ -262,7 +263,10 @@ enum TidyUpValidator {
         var kept: [TidyUpAction] = []
         var blocked: [Block: Int] = [:]
 
-        func text(_ s: String?) -> String { (s ?? "").trimmingCharacters(in: .whitespacesAndNewlines) }
+        // New text copied from a neutralized prompt gets its `<` back (PromptTags).
+        func text(_ s: String?) -> String {
+            PromptTags.restored((s ?? "").trimmingCharacters(in: .whitespacesAndNewlines), tags: PromptTags.tidyUp)
+        }
 
         for raw in output.actions {
             func block(_ why: Block) { blocked[why, default: 0] += 1 }
@@ -471,17 +475,16 @@ public struct TidyUpAutoApply: Sendable, Hashable {
         }
     }
 
-    /// §9.5's trust rule: new text (update, merge) may come from any memory in the call; an
-    /// archive, split or conflict leans on the memories it names. Archiving the untrusted copy of
-    /// an exact duplicate doesn't: only keeping an untrusted copy over a trusted one does.
+    /// §9.5's trust rule: the model reads every memory in the call, so any of them can steer what
+    /// it proposes, whichever memories the action names. Any action leans on untrusted text when
+    /// the cluster has some. The one exception is code-checked: archiving the untrusted copy of an
+    /// exact duplicate (same normalized text) loses nothing; only keeping an untrusted copy over a
+    /// trusted one does.
     static func leansOnUntrusted(_ action: TidyUpAction, cluster: TidyUpCluster) -> Bool {
         if action.type == .archive, action.exact, let target = action.target, let survivor = action.survivor {
             return cluster.member(id: survivor)?.trust == .untrusted && cluster.member(id: target)?.trust == .trusted
         }
-        return switch action.type {
-        case .update, .merge: cluster.hasUntrustedText
-        case .archive, .split, .conflict: action.named.contains { cluster.member(id: $0)?.trust == .untrusted }
-        }
+        return cluster.hasUntrustedText
     }
 }
 

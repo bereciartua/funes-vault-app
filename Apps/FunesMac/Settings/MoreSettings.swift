@@ -194,14 +194,25 @@ struct DataSettings: View {
         }
         .confirmationDialog(String(localized: "Restore this backup?"), isPresented: Binding(get: { restoring != nil }, set: { if !$0 { restoring = nil } })) {
             Button(String(localized: "Restore and Relaunch")) {
-                if let restoring { try? model.data.restore(restoring) }
+                guard let restoring else { return }
+                do {
+                    try model.data.restore(restoring)
+                } catch {
+                    message = String(localized: "The restore couldn't start. Your vault wasn't changed.")
+                }
             }
         } message: {
             Text(String(localized: "Funes relaunches with the vault as it was then, except that agents, their access and paired iPhones stay as they are now. The current vault is kept in Backups first."))
         }
         .confirmationDialog(String(localized: "Erase all of Funes Vault's data?"), isPresented: $erasing) {
             Button(String(localized: "Export First…")) { export() }
-            Button(String(localized: "Erase All Data"), role: .destructive) { model.data.eraseAll(modelSettings: model.modelSettings) }
+            Button(String(localized: "Erase All Data"), role: .destructive) {
+                do {
+                    try model.data.eraseAll(modelSettings: model.modelSettings)
+                } catch {
+                    message = String(localized: "Funes Vault couldn't erase its data. Nothing was deleted.")
+                }
+            }
         } message: {
             Text(String(localized: "This deletes every memory, suggestion, agent and key, Activity, backups and AI provider keys, then relaunches empty. It can't be undone. Agents' own settings still name Funes until you remove it there."))
         }

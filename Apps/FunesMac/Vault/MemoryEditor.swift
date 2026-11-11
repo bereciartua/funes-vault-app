@@ -35,6 +35,33 @@ struct MemoryForm: Equatable {
             && a.sensitivity == b.sensitivity && a.expiry == b.expiry
     }
 
+    /// These edits (where this form differs from `base`, the memory they started from) applied to
+    /// `current`, the memory as it is now: nil when a field they edited also changed since, to
+    /// something else, so Save still reports that conflict. Fields they didn't edit take
+    /// `current`'s values (a status change, Still True or an edit elsewhere to another field).
+    /// The merge itself is FunesCore's `MemoryFields.rebased`, with its tests.
+    func rebased(from base: MemoryForm, onto current: MemoryForm) -> MemoryForm? {
+        guard let merged = fields.rebased(from: base.fields, onto: current.fields) else { return nil }
+        var out = current
+        out.title = merged.title
+        out.body = merged.body
+        out.kind = merged.kind
+        out.categoryKeys = merged.categoryKeys
+        out.sensitivity = merged.sensitivity
+        // The edited expiry, with its picker as the edits left it.
+        if merged.expiresAt != current.expiry {
+            out.expires = expires
+            out.expiresAt = expiresAt
+        }
+        out.sensitivityChosen = sensitivityChosen
+        return out
+    }
+
+    /// The fields a save writes, for merging.
+    var fields: MemoryFields {
+        MemoryFields(title: title, body: body, kind: kind, categoryKeys: categoryKeys, sensitivity: sensitivity, expiresAt: expiry)
+    }
+
     /// LOW, raised to the highest default of the chosen categories.
     static func defaultSensitivity(_ keys: [String], categories: [MemoryCategory]) -> Sensitivity {
         max(.low, categories.filter { keys.contains($0.key) }.map(\.defaultSensitivity).max() ?? .low)

@@ -193,6 +193,36 @@ import Testing
         #expect(try fresh.count("SELECT COUNT(*) FROM undo_entry") == 0)
     }
 
+    /// Review: an export carries each memory's trust and a restore keeps it; an export without it
+    /// (older files) restores untrusted, never trusted (FR-X-05, FR-X-06; memory processing §5.7).
+    @Test func trustSurvivesExportAndRestore() async throws {
+        let v = try TestVault()
+        let mine = try v.memory("Mine", "I wrote this.")
+        let written = try await v.store.writer.write { db in
+            try MemoryStore.insert(db, MemoryDraft(title: "Agent's", body: "An agent wrote this.", categoryKeys: ["personal_preferences"],
+                                                   source: .agentWrite), actor: .system, now: t0)
+        }
+        let service = ImportService(store: v.store, activity: InMemoryActivityLog())
+        let export = try ImportParser.funesExport(try await service.export(now: t0))
+        #expect(export.memories.first { $0.id == mine.id }?.trust == .trusted)
+        #expect(export.memories.first { $0.id == written.id }?.trust == .untrusted)
+
+        let fresh = try TestVault()
+        let importer = ImportService(store: fresh.store, activity: InMemoryActivityLog())
+        _ = try await importer.commit(try await importer.preview(funesExport: export), asMemories: true, now: t0)
+        #expect(try fresh.store.trust(memoryID: mine.id) == .trusted)
+        #expect(try fresh.store.trust(memoryID: written.id) == .untrusted)
+
+        // An older export has no trust: restored untrusted.
+        var old = export
+        for i in old.memories.indices { old.memories[i].trust = nil }
+        let older = try TestVault()
+        let olderImporter = ImportService(store: older.store, activity: InMemoryActivityLog())
+        _ = try await olderImporter.commit(try await olderImporter.preview(funesExport: old), asMemories: true, now: t0)
+        #expect(try older.store.trust(memoryID: mine.id) == .untrusted)
+        #expect(try older.store.trust(memoryID: written.id) == .untrusted)
+    }
+
     @Test func exportsNeverContainKeysAgentsOrDevices() async throws {
         let v = try TestVault()
         try v.memory("Fact", "A fact")

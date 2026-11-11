@@ -1,10 +1,16 @@
+import CryptoKit
 import Foundation
 
 /// Why the Mac refused an envelope before reading it (§3, verification order). Sent as a plaintext
-/// `401` body, `{"error":"<code>"}`, with nothing else except `server_time` on `clock_skew`.
+/// `401` body, `{"error":"<code>"}`, plus `server_time` on `clock_skew`. Every refusal of an
+/// envelope that parsed is signed by the Mac and bound to that request (`signedBody`), and the
+/// phone acts on one only when the signature verifies (`init(signedBody:…)`).
 public enum CompanionAuthError: Error, Sendable, Equatable {
     case unknownDevice
     case revoked
+    /// The Mac couldn't look the device up (its database failed for a moment). Try again later;
+    /// it says nothing about the pairing.
+    case unavailable
     /// The Mac's clock, which isn't secret, so the phone can retry with a corrected `ts`.
     case clockSkew(serverTime: Date)
     case replay
@@ -17,6 +23,7 @@ public enum CompanionAuthError: Error, Sendable, Equatable {
         switch self {
         case .unknownDevice: "unknown_device"
         case .revoked: "revoked"
+        case .unavailable: "unavailable"
         case .clockSkew: "clock_skew"
         case .replay: "replay"
         case .invalidSignature: "invalid_signature"
@@ -27,32 +34,79 @@ public enum CompanionAuthError: Error, Sendable, Equatable {
 
     public static let httpStatus = 401
 
-    /// The plaintext body of the `401`.
+    /// The unsigned plaintext body of the `401`: only for `invalid_envelope`, which has no
+    /// request to bind a signature to. Every other refusal is `signedBody`.
     public var body: Data {
-        let wire = CompanionFailureBody(error: code, serverTime: {
-            if case let .clockSkew(time) = self { return time.companionMilliseconds }
-            return nil
-        }())
-        return (try? CompanionJSON.encoder().encode(wire)) ?? Data()
+        (try? CompanionJSON.encoder().encode(CompanionFailureBody(error: code, serverTime: serverTimeMilliseconds))) ?? Data()
     }
 
-    /// Reads a `401` body back on the phone. Unknown codes are `invalidEnvelope`.
+    /// Reads a `401` body's code, signed or not. Unknown codes are `invalidEnvelope`. Nothing
+    /// checks who wrote it: the phone acts only on `init(signedBody:…)`.
     public init(body: Data) {
         guard let wire = try? CompanionJSON.decoder().decode(CompanionFailureBody.self, from: body) else {
             self = .invalidEnvelope
             return
         }
+        self = Self(wire) ?? .invalidEnvelope
+    }
+
+    private init?(_ wire: CompanionFailureBody) {
         switch wire.error {
         case "unknown_device": self = .unknownDevice
         case "revoked": self = .revoked
+        case "unavailable": self = .unavailable
         case "clock_skew":
-            guard let ms = wire.serverTime else { self = .invalidEnvelope; return }
+            guard let ms = wire.serverTime else { return nil }
             self = .clockSkew(serverTime: Date(companionMilliseconds: ms))
         case "replay": self = .replay
         case "invalid_signature": self = .invalidSignature
         case "decryption_failed": self = .decryptionFailed
-        default: self = .invalidEnvelope
+        case "invalid_envelope": self = .invalidEnvelope
+        default: return nil
         }
+    }
+
+    // MARK: Signed refusals (§3)
+
+    /// The `401` body signed with the Mac's signing key and bound to the refused envelope's
+    /// device id and nonce, so it can't be forged, or replayed to another request:
+    /// `{"error":…,"server_time"?:…,"sig":…}`, the signature over
+    /// `"funes-refusal-v1" ‖ v ‖ did ‖ nonce ‖ error ‖ server_time` (no bytes when absent).
+    public func signedBody(deviceID: UUID, nonce: Data, signer: some CompanionSigner) -> Data {
+        var wire = CompanionFailureBody(error: code, serverTime: serverTimeMilliseconds)
+        let bytes = Self.signedBytes(deviceID: deviceID, nonce: nonce, code: wire.error, serverTime: wire.serverTime)
+        guard let sig = try? signer.signature(for: bytes).rawRepresentation else { return body }
+        wire.sig = Base64URL.encode(sig)
+        return (try? CompanionJSON.encoder().encode(wire)) ?? Data()
+    }
+
+    /// The refusal in a `401` body, only when the paired Mac signed it for this request (the
+    /// device id and nonce the phone sent). Nil for an unsigned body (another host, or a Mac
+    /// before signed refusals), a bad signature, or one bound to another request.
+    public init?(signedBody body: Data, deviceID: UUID, nonce: Data, macSigningKey: P256.Signing.PublicKey) {
+        guard let wire = try? CompanionJSON.decoder().decode(CompanionFailureBody.self, from: body),
+              let encoded = wire.sig, let raw = Base64URL.decode(encoded), raw.count == CompanionProtocol.signatureBytes,
+              let sig = try? P256.Signing.ECDSASignature(rawRepresentation: raw),
+              macSigningKey.isValidSignature(sig, for: Self.signedBytes(deviceID: deviceID, nonce: nonce, code: wire.error,
+                                                                        serverTime: wire.serverTime)),
+              let refusal = Self(wire)
+        else { return nil }
+        self = refusal
+    }
+
+    private var serverTimeMilliseconds: Int64? {
+        if case let .clockSkew(time) = self { return time.companionMilliseconds }
+        return nil
+    }
+
+    static func signedBytes(deviceID: UUID, nonce: Data, code: String, serverTime: Int64?) -> Data {
+        var t = Transcript("funes-refusal-v1")
+        t.append(CompanionProtocol.version)
+        t.append(deviceID.companionString)
+        t.append(nonce)
+        t.append(code)
+        if let serverTime { t.append(serverTime) } else { t.append(Data()) }
+        return t.bytes
     }
 }
 
@@ -88,9 +142,11 @@ public enum PairingError: String, Error, Sendable, CaseIterable {
 struct CompanionFailureBody: Codable {
     var error: String
     var serverTime: Int64?
+    /// The Mac's signature on a refusal (§3), base64url `r ‖ s`.
+    var sig: String?
 
     enum CodingKeys: String, CodingKey {
-        case error
+        case error, sig
         case serverTime = "server_time"
     }
 }

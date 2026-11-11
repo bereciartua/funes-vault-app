@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import FunesCore
 import FunesProtocol
 import Security
 
@@ -49,45 +50,43 @@ extension MacIdentityStore {
 }
 
 /// `kSecClassGenericPassword`, service `com.funesvault.companion` (`.dev` for a development
-/// vault), `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, so it never moves to another Mac.
+/// vault), `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, in the data-protection Keychain so
+/// it never moves to another Mac. An identity from before is moved there from the login
+/// keychain on first read, verified before the old item goes (`MigratingKeychain`); a build that
+/// can't use the data-protection Keychain keeps using the old item, so no phone is unpaired.
 public struct KeychainMacIdentityStore: MacIdentityStore {
     public static let account = "mac-identity"
-    public let service: String
+    public var service: String { keychain.service }
+    let keychain: MigratingKeychain
 
-    public init(service: String = Identifiers.companionKeychainService) { self.service = service }
-
-    private var query: [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
-         kSecAttrAccount as String: Self.account]
+    public init(service: String = Identifiers.companionKeychainService, backend: any KeychainBackend = SystemKeychain()) {
+        keychain = MigratingKeychain(service: service, backend: backend)
     }
 
     public func load() throws -> MacIdentity? {
-        var q = query
-        q[kSecReturnData as String] = true
-        q[kSecMatchLimit as String] = kSecMatchLimitOne
-        var out: CFTypeRef?
-        let status = SecItemCopyMatching(q as CFDictionary, &out)
-        if status == errSecItemNotFound { return nil }
-        guard status == errSecSuccess, let data = out as? Data else { throw CompanionKeychainError.status(status) }
+        let data: Data?
+        do { data = try keychain.read(account: Self.account) } catch { throw CompanionKeychainError(error) }
+        guard let data else { return nil }
         return try MacIdentity(JSONDecoder().decode(MacIdentity.Stored.self, from: data))
     }
 
     public func save(_ identity: MacIdentity) throws {
-        try delete()
-        var q = query
-        q[kSecValueData as String] = try JSONEncoder().encode(identity.stored)
-        q[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        let status = SecItemAdd(q as CFDictionary, nil)
-        guard status == errSecSuccess else { throw CompanionKeychainError.status(status) }
+        let data = try JSONEncoder().encode(identity.stored)
+        do { try keychain.write(data, account: Self.account) } catch { throw CompanionKeychainError(error) }
     }
 
     public func delete() throws {
-        let status = SecItemDelete(query as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else { throw CompanionKeychainError.status(status) }
+        do { try keychain.delete(account: Self.account) } catch { throw CompanionKeychainError(error) }
     }
 }
 
-public enum CompanionKeychainError: Error, Equatable { case status(OSStatus) }
+public enum CompanionKeychainError: Error, Equatable {
+    case status(OSStatus)
+
+    init(_ error: KeychainError) {
+        switch error { case let .status(status): self = .status(status) }
+    }
+}
 
 /// For tests.
 public final class InMemoryMacIdentityStore: MacIdentityStore, @unchecked Sendable {

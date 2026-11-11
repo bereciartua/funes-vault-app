@@ -84,6 +84,17 @@ enum HomeText {
             }
         }
 
+        /// "2 from iPhone": one string with the count, so the catalog can vary it by number.
+        func counted(_ n: Int) -> String {
+            switch self {
+            case .mac: String(localized: "\(n) from you on this Mac")
+            case .iphone: String(localized: "\(n) from iPhone")
+            case .agent: String(localized: "\(n) from agents")
+            case .import: String(localized: "\(n) imported")
+            case .tidy: String(localized: "\(n) from tidy-up")
+            }
+        }
+
         func count(_ sources: VaultOverview.Sources) -> Int {
             switch self {
             case .mac: sources.mac
@@ -95,7 +106,7 @@ enum HomeText {
         }
     }
 
-    /// The day's breakdown for hover and VoiceOver: "4 in (2 iPhone, 2 Agents)", "11 shared
+    /// The day's breakdown for hover and VoiceOver: "4 in (2 from iPhone, 2 from agents)", "11 shared
     /// (Claude Code 8, Cursor 3)", "1 refused"; nothing for a quiet day.
     static func breakdown(_ bucket: VaultOverview.Bucket, in insights: OverviewInsights,
                           name: (OverviewInsights.OutSeries) -> String) -> [String] {
@@ -104,7 +115,7 @@ enum HomeText {
         if total > 0 {
             let parts = Source.allCases.compactMap { source -> String? in
                 let n = source.count(bucket.inbound)
-                return n > 0 ? "\(n) \(source.title)" : nil
+                return n > 0 ? source.counted(n) : nil
             }
             lines.append(String(localized: "\(total) in (\(parts.joined(separator: ", ")))"))
         }
@@ -116,7 +127,7 @@ enum HomeText {
         return lines
     }
 
-    /// One line for VoiceOver: "Tue 21 Oct · 4 in (2 iPhone, 2 Agents) · 1 refused".
+    /// One line for VoiceOver: "Tue 21 Oct · 4 in (2 from iPhone, 2 from agents) · 1 refused".
     static func dayLabel(_ bucket: VaultOverview.Bucket, in insights: OverviewInsights,
                          name: (OverviewInsights.OutSeries) -> String) -> String {
         let lines = breakdown(bucket, in: insights, name: name)

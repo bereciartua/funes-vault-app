@@ -214,8 +214,55 @@ struct MenuBarPanelTests {
         return field
     }
 
-    func settle(_ condition: @escaping @MainActor () -> Bool) async {
-        for _ in 0..<200 where !condition() { try? await Task.sleep(for: .milliseconds(5)) }
+    /// Waits until `condition` holds, polling; records an issue if it doesn't within `seconds`.
+    func settle(seconds: Int = 5, sourceLocation: SourceLocation = #_sourceLocation,
+                _ condition: @escaping @MainActor () -> Bool) async {
+        let deadline = ContinuousClock.now + .seconds(seconds)
+        while !condition() {
+            guard ContinuousClock.now < deadline else {
+                Issue.record("Timed out after \(seconds) s waiting for a condition", sourceLocation: sourceLocation)
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+    }
+
+    /// The automatic answer's pause, opened by the test instead of a clock: each wait ends when
+    /// `open()` is called, or throws when its task is cancelled, like `Task.sleep`.
+    @MainActor final class PauseGate {
+        private var waiting = [UUID: CheckedContinuation<Void, Error>]()
+        private(set) var started = 0
+        private(set) var ended = 0
+        private(set) var cancelled = 0
+
+        func wait(_ duration: Duration) async throws {
+            started += 1
+            defer { ended += 1 }
+            let id = UUID()
+            try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                    if Task.isCancelled {
+                        continuation.resume(throwing: CancellationError())
+                    } else {
+                        waiting[id] = continuation
+                    }
+                }
+            } onCancel: {
+                Task { @MainActor in self.cancel(id) }
+            }
+        }
+
+        func open() {
+            let all = waiting
+            waiting.removeAll()
+            all.values.forEach { $0.resume() }
+        }
+
+        private func cancel(_ id: UUID) {
+            guard let continuation = waiting.removeValue(forKey: id) else { return }
+            cancelled += 1
+            continuation.resume(throwing: CancellationError())
+        }
     }
 
     /// No retrieved vault content before the user searches: typing and saving show none.
@@ -400,30 +447,37 @@ struct MenuBarPanelTests {
         #expect(field.page == nil && !field.searching)
     }
 
-    /// The automatic answer waits for its pause, and is cancelled by an edit during it.
+    /// The automatic answer waits for its pause, and is cancelled by an edit during it. The pause
+    /// is a gate the test opens, so nothing depends on how fast the machine is.
     @Test func automaticAnswer() async {
         let calls = Calls()
         let field = field(calls)
+        let gate = PauseGate()
+        field.pause = { try await gate.wait($0) }
         field.autoAskPause = { $0.hasSuffix("?") ? .milliseconds(400) : nil }
         field.text = "coffee"
         field.commandReturn()
         await settle { field.page != nil }
-        try? await Task.sleep(for: .milliseconds(60))
+        #expect(gate.started == 0, "no pause without a question")
         #expect(field.answer == nil)
 
         field.text = "coffee?"
         field.commandReturn()
-        await settle { field.page != nil }
+        await settle { field.page != nil && gate.started == 1 }
+        #expect(field.answer == nil && calls.asks.isEmpty, "nothing asked during the pause")
+        gate.open()
         await settle { field.answer == .answered("Answer to coffee?") }
-        #expect(field.answer == .answered("Answer to coffee?"))
+        #expect(calls.asks.count == 1)
 
-        let asks = calls.asks.count
         field.text = "tea?"
         field.commandReturn()
-        await settle { field.page != nil }
+        await settle { field.page != nil && gate.started == 2 }
         field.text = "tea"
-        try? await Task.sleep(for: .milliseconds(600))
-        #expect(calls.asks.count == asks)
+        await settle { gate.ended == 2 }
+        #expect(gate.cancelled == 1, "the edit cancelled the pause")
+        gate.open()
+        #expect(calls.asks.count == 1)
+        #expect(field.answer == nil)
     }
 
     /// The draft lives in memory: nothing the field holds reaches user defaults.

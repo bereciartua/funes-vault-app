@@ -93,7 +93,10 @@ public final class VaultStore: Sendable {
     /// its WAL are in that one self-contained file like every other backup; then `backupName` (a
     /// file in `Backups/`) replaces `vault.sqlite`, and the old WAL and shared-memory files go.
     /// The copy keeps the current vault's agents, access and devices (`RestoreAccess`, T38).
-    /// Nothing changes if the snapshot or that step fails. Returns the snapshot's URL (nil without a vault).
+    /// A current vault that can't be read (often why one restores) is kept as its files are, and
+    /// the copy is restored as with no vault: every agent removed and every device revoked (fail
+    /// closed). Nothing changes if keeping the current vault or preparing the copy fails. Returns
+    /// the snapshot's URL (nil without a vault).
     @discardableResult
     public static func restoreBackup(_ backupName: String, in directory: URL, now: Date) throws -> URL? {
         guard !backupName.contains("/"), backupName.hasSuffix(".sqlite") else { throw VaultError.invalidInput(field: "backup") }
@@ -103,14 +106,25 @@ public final class VaultStore: Sendable {
         guard manager.fileExists(atPath: source.path) else { throw VaultError.notFound }
         let current = directory.appending(path: fileName)
         var snapshot: URL?
+        /// The snapshot, when the current vault could be read into it.
+        var readable: URL?
         if manager.fileExists(atPath: current.path) {
             try FileSafety.prepareDirectory(backups)
             let url = backups.appending(path: "pre-restore-\(stamp(now))-\(Int(now.timeIntervalSince1970) % 60).sqlite")
-            let from = try DatabaseQueue(path: current.path)
-            let to = try DatabaseQueue(path: url.path)
-            try from.backup(to: to)
-            try to.close()
-            try from.close()
+            do {
+                try onlineBackup(current, to: url)
+                readable = url
+            } catch {
+                // Unreadable: its files are kept byte for byte instead, WAL included.
+                RestoreAccess.removeWithSidecars(url)
+                for suffix in ["", "-wal", "-shm"] {
+                    let file = directory.appending(path: fileName + suffix)
+                    guard manager.fileExists(atPath: file.path) else { continue }
+                    let kept = backups.appending(path: url.lastPathComponent + suffix)
+                    try manager.copyItem(at: file, to: kept)
+                    _ = chmod(kept.path, 0o600)
+                }
+            }
             _ = chmod(url.path, 0o600)
             snapshot = url
         }
@@ -120,7 +134,7 @@ public final class VaultStore: Sendable {
         try manager.copyItem(at: source, to: incoming)
         _ = chmod(incoming.path, 0o600)
         do {
-            try RestoreAccess.prepare(incoming, current: snapshot, now: now)
+            try RestoreAccess.prepare(incoming, current: readable, now: now)
         } catch {
             RestoreAccess.removeWithSidecars(incoming)
             throw error
@@ -137,6 +151,25 @@ public final class VaultStore: Sendable {
         // A backup in WAL mode can leave the copy's shared-memory file behind.
         RestoreAccess.removeWithSidecars(incoming)
         return snapshot
+    }
+
+    /// SQLite's online backup of `source` into a new file at `url`.
+    private static func onlineBackup(_ source: URL, to url: URL) throws {
+        let from = try DatabaseQueue(path: source.path)
+        do {
+            let to = try DatabaseQueue(path: url.path)
+            do {
+                try from.backup(to: to)
+                try to.close()
+            } catch {
+                try? to.close()
+                throw error
+            }
+            try from.close()
+        } catch {
+            try? from.close()
+            throw error
+        }
     }
 
     // MARK: - Meta

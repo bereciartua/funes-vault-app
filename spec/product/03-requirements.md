@@ -57,10 +57,11 @@
 - Acceptance:
   - Deleting a category that is in use requires choosing a replacement category, or removing it from those memories.
   - Agents' allow and deny lists update accordingly. A removed allowed category never silently widens access.
+  - A removed denied category never silently widens access either: with a replacement, the replacement is denied too; without one, deleting is refused while a memory in it has another category that an agent denying it doesn't deny, until the user picks a replacement or changes those memories or agents.
 
 **FR-V-07 Sensitivity levels** · M · v0.1
 - The six ordered levels are PUBLIC < LOW < INTERNAL < SENSITIVE < RESTRICTED < SECRET, each shown with a plain-language description.
-- Acceptance: the UI explains each level in one line. Health, Finance and Legal default to SENSITIVE when a memory is created in them.
+- Acceptance: the UI explains each level in one line. Health, Finance and Legal default to SENSITIVE when a memory is created in them. Moving an Inbox card into one of them raises its sensitivity to that default too (never lowers it), unless the user picked a level on the card.
 
 **FR-V-08 Kinds** · M · v0.1
 - Kinds: Fact, Preference, Instruction, Goal, Project Context, Relationship, Constraint, Event, Summary.
@@ -96,7 +97,7 @@
 - Acceptance: a hint only; it never blocks saving.
 
 **FR-V-14 Bulk actions** · S · v0.1
-- Multi-select to archive, delete, change category or change sensitivity.
+- Multi-select to archive, delete, change category or change sensitivity. Moving to a category replaces their categories and raises each memory's sensitivity to at least the category's default, never lowering it (FR-V-07).
 
 **FR-V-15 Confirm a memory** · C · v0.1
 - "Still true" marks `lastConfirmedAt`, shown as "confirmed 3 months ago".
@@ -151,7 +152,7 @@
   - Reject keeps an id-only record in Activity.
 
 **FR-I-03 Bulk review** · S · v0.1
-- Multi-select Apply or Reject, with per-item results ("12 applied, 1 blocked by the secret scanner"). Each item applies with its own action, never Keep both for everything; pieces flagged "Outside <agent>'s scope" are left out.
+- Multi-select Apply or Reject, with per-item results ("12 applied, 1 blocked by the secret scanner"). Each item applies with its own action, never Keep both for everything; pieces flagged "Outside <agent>'s scope" are left out. Select All takes only the cards that show a checkbox and aren't put off until Later: never a split input's pieces, which their group card decides.
 
 **FR-I-04 Badge** · M · v0.1
 - The menu bar icon and the Inbox tab show the pending count.
@@ -169,6 +170,7 @@
   - Tiles for agents on this Mac and for cloud agents (Remote Access, experimental) are on separate tabs; agents found on the Mac come first.
   - For an agent with one-click setup, **Add and Connect…** adds it and shows the change to its settings at once.
   - New agents start with Deny for the vault's never-share categories (FR-O-02).
+  - A never-share category also leaves the agent's allow list, unless that would empty it: an empty allow list means every category, so the category then stays on both lists and Deny wins (T8). The same holds when the never-share categories are applied to existing agents.
 
 **FR-A-02 Starting access presets** · M · v0.1
 - Presets:
@@ -265,7 +267,7 @@
 
 **FR-D-08 Invalidation** · M · v0.1
 - An approved but undelivered release is invalidated, and goes back to `needs_approval` with reason `policy_changed`, if any of these change before retrieval:
-  - the agent's revision (access edited, paused or key rotated);
+  - the agent's revision (access edited or key rotated; pausing doesn't change it, as a paused agent's delivery is refused and the approval stands until it expires);
   - any included memory's version, status or eligibility.
 
 **FR-D-09 Token budget** · M · v0.1
@@ -335,6 +337,7 @@
 
 **FR-L-03 Retention** · M · v0.1
 - Disclosures, changes and problems are kept 400 days (up to 20,000 rows); other rows 30 days. Compaction runs at launch and every 6 hours.
+- An agent's (or device's) identical refusals (same tool, channel, reason and counts) count as problems once an hour; the repeats in between are kept as other rows. A looping agent can't push approvals, refusals and access changes out of the 20,000.
 
 **FR-L-04 Notifications** · S · v0.1
 - Optional notifications:
@@ -488,10 +491,10 @@
 - From v0.3, with splitting on: the estimated model requests next to what's left of today's cap (FR-AI-15), and **Import without splitting**. A Funes export restore is never split.
 
 **FR-X-05 Export** · M · v0.1
-- `funesvault.export.v1` JSON with categories and memories (optionally archived ones), and from v0.5 the profile (an optional `profile` object, FR-U-01). It never includes keys, devices, agents' access (so not which agents see which profile fields) or Activity.
+- `funesvault.export.v1` JSON with categories and memories (optionally archived ones), and from v0.5 the profile (an optional `profile` object, FR-U-01). Each memory carries its `trust` (`trusted` or `untrusted`, memory processing §5.7; optional, absent in older exports). It never includes keys, devices, agents' access (so not which agents see which profile fields) or Activity.
 
 **FR-X-06 Import a Funes export** · S · v0.1
-- Restores a `funesvault.export.v1` file, as suggestions (default) or as active memories after confirmation. From v0.5, an export's `profile` fills About You only if the vault's profile is empty; otherwise the preview says "About you in this file isn't restored: yours is already set."
+- Restores a `funesvault.export.v1` file, as suggestions (default) or as active memories after confirmation. Restored memories keep their `trust`; one without it (an older export) is restored untrusted, since nothing says the user wrote it. From v0.5, an export's `profile` fills About You only if the vault's profile is empty; otherwise the preview says "About you in this file isn't restored: yours is already set."
 
 ### Onboarding (FR-O)
 

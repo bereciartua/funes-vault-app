@@ -332,14 +332,23 @@ public final class SearchAnswerer: Sendable {
             .replacingOccurrences(of: "<", with: "&lt;")
     }
 
+    /// The prompt's own tags (§10.3): stored text can't open or close them (`PromptTags`).
+    static let promptTags = ["memory", "title", "text", "search"]
+
+    static func neutralized(_ text: String) -> String { PromptTags.neutralized(text, tags: promptTags) }
+
+    /// A quote copied from neutralized text, with the stand-ins put back: what the memory itself says.
+    static func restored(_ quote: String) -> String { PromptTags.restored(quote, tags: promptTags) }
+
     static func request(query: String, sent: [Sent], context: Context, now: Date) -> StructuredRequest<Output> {
-        var lines = ["Today is \(DecisionPrompt.day(now)) (\(weekday(now))).", "<search>\(query)</search>"]
+        var lines = ["Today is \(DecisionPrompt.day(now)) (\(weekday(now))).", "<search>\(neutralized(query))</search>"]
         for (i, s) in sent.enumerated() {
             let m = s.memory
             let categories = m.categoryKeys.map { context.categoryNames[$0] ?? $0 }.joined(separator: ", ")
             lines.append("<memory ref=\"m\(i + 1)\" kind=\"\(m.kind.rawValue)\" categories=\"\(attribute(categories))\" "
                          + "created=\"\(DecisionPrompt.day(m.createdAt))\" updated=\"\(DecisionPrompt.day(m.updatedAt))\" "
-                         + "source=\"\(source(m, trust: context.trust[m.id]))\">\n<title>\(m.title)</title>\n<text>\(s.text)</text>\n</memory>")
+                         + "source=\"\(source(m, trust: context.trust[m.id]))\">\n<title>\(neutralized(m.title))</title>\n"
+                         + "<text>\(neutralized(s.text))</text>\n</memory>")
         }
         return StructuredRequest(instructions: instructions, prompt: lines.joined(separator: "\n"), schema: schema, maxOutputTokens: 1_024)
     }
@@ -416,8 +425,12 @@ public final class SearchAnswerer: Sendable {
                 continue
             }
             let citations = cites.compactMap { c -> SearchAnswer.Citation? in
-                guard let ref = c.ref, let quote = c.quote, let source = byRef[ref], quoteFound(quote, in: source.passages) else { return nil }
-                return SearchAnswer.Citation(memoryID: source.memory.id, quote: quote)
+                guard let ref = c.ref, let quote = c.quote, let source = byRef[ref] else { return nil }
+                // A quote of neutralized text counts as the memory's own words, and is kept as those.
+                for candidate in [quote, restored(quote)] where quoteFound(candidate, in: source.passages) {
+                    return SearchAnswer.Citation(memoryID: source.memory.id, quote: candidate)
+                }
+                return nil
             }
             guard citations.count == cites.count else {
                 dropped += 1

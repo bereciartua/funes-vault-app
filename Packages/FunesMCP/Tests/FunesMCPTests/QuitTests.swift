@@ -46,8 +46,8 @@ final class WaitingPresenter: FunesPresenter {
 
     func showApproval(requestID: UUID, agentID: UUID) async { state.withLock { $0.approvals.append(requestID) } }
     func showSuggestion(suggestionID: UUID, agentID: UUID) async {}
-    func open(requestID: UUID) async {}
-    func open(suggestionID: UUID) async {}
+    func openInFunes(requestID: UUID) async {}
+    func openInFunes(suggestionID: UUID) async {}
 
     func askForAccess(_ prompt: AccessPrompt) async -> AccessAnswer {
         await withCheckedContinuation { continuation in

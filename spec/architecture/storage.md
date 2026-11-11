@@ -11,6 +11,8 @@ Everything lives under `~/Library/Application Support/FunesVault/`, in a 0700 fo
 | `remote-connections.json` | Remote Access OAuth state: connected cloud apps (agent id, app name, OAuth client id, MCP URL, SHA-256 digests of the access, refresh and recently rotated refresh tokens, expiry and use times) and registered OAuth clients (`dcr_`, and `cfg_` with the digest of its `fns_ocs_v1_` secret) | BridgeKitRemote's `OAuthStore`: written atomically with fsync, fails closed (a wrong owner, mode, size or content makes OAuth unavailable and the file is never overwritten). No token in the clear. Never exported |
 | `activity/activity.jsonl` | Activity log, append-only | BridgeUI `ActivityStore` (copied from EK Bridge); `fsync` per row |
 | `mcp-endpoint.json` | `{"version":1,"url","port","pid","startedAt"}` | Only while listening |
+| `instance.lock` | Empty; an exclusive `flock` while a copy of the app has this folder open | One copy at a time on a vault: a copy that can't take the lock brings the running one forward and quits before opening anything (a relaunch first waits for the copy it names). Erase All Data leaves it |
+| `restore-pending.json`, `erase-pending` | A restore or Erase All Data asked for, carried out at the next launch before anything opens | Removed when it's been carried out; the app then says how it went |
 | `Backups/vault-YYYYMMDD-HHMM.sqlite` | Online backups (GRDB `backup(to:)`) | Daily, keep 7; also before each migration |
 | `companion/` (v0.2) | Replay-nonce cache snapshot (optional) | Keys live in the Keychain, not here |
 
@@ -294,7 +296,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - **Disclosure items:** written only in delivery transactions.
 - **Captures:** `capture_receipt` is inserted in the same transaction as its suggestion.
 - **Purging** a deleted memory removes its FTS rows, embedding and provenance (cascade). `disclosure_item` rows keep the memory id for Activity labelling, shown as "(deleted memory)".
-- **Purging (v0.3)** also removes the memory's `undo_entry` rows, the text of the piece it was saved from, and the source text of the `suggestion_group` that piece belongs to (with the original row's title and body), so no copy of its text outlives it (FR-V-04). Delete Now does the same at once.
+- **Purging (v0.3)** also removes the memory's `undo_entry` rows, the text (title, body, evidence) of every suggestion it was saved from or that names it as a target or source, grouped or not and whatever its status (a pending one is closed as rejected, since it can no longer be applied), and the source text of the `suggestion_group` a saved piece belongs to (with the original row's title and body), so no copy of its text outlives it (FR-V-04). The text goes before the row does, since the delete nulls `result_memory_id` and `target_memory_id`. Delete Now does the same at once.
 - **Purging (v0.5)** also removes the memory's earlier versions (cascade).
 - **Auto-apply (v0.3):** each automatic change, its `undo_entry`, its provenance and the watermark update are written in one transaction, after re-checking every involved memory's version.
 
@@ -317,7 +319,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 Restoring brings back memories, never credentials or access settings ([security](security-and-privacy.md) T38). A backup holds the agents' key and remote-token digests, their access and the paired devices as they were when it was taken, and authentication trusts the digests in the database. Restoring it as is would let back in a key, token or device removed or reset since, and widen access narrowed since.
 
 So at the next launch, before the vault opens (`VaultStore.restoreBackup`, `RestoreAccess`):
-1. The current vault is saved as a self-contained `Backups/pre-restore-…` backup. It's never written again: a scratch copy of it (`vault.sqlite.restoring-current`) is what gets migrated and read.
+1. The current vault is saved as a self-contained `Backups/pre-restore-…` backup. It's never written again: a scratch copy of it (`vault.sqlite.restoring-current`) is what gets migrated and read. A current vault that can't be read (often the reason to restore) is kept instead as its files are, WAL included, under the same name, and counts as no current vault in step 4.
 2. The chosen backup is copied in as `vault.sqlite.restoring` (leftovers of an earlier attempt, journals included, are deleted first) and migrated to this version's schema. A backup from a newer version is refused, and the vault is left as it was.
 3. In one transaction on the copy, if both are the same vault (`meta.vault_id`), the current vault's state replaces the backup's:
    - agents (keys, remote tokens, cloud access, pause, names, removal);
@@ -326,7 +328,7 @@ So at the next launch, before the vault opens (`VaultStore.restoreBackup`, `Rest
    - paired devices (revocation, approvals, doorbell tag).
 
    Agents and devices added since the backup are kept, so their keys and pairings keep working. Categories the backup lacks come along, because dropping an allow rule would widen an allow list (an empty one allows every category). A category deleted since comes back with the backup's memories, but its rules can't be rebuilt (deleting it moved its memories and their denies elsewhere), so every agent is denied it until the user decides.
-4. Without a current vault, or when the backup is another vault's, nothing can be carried forward. Every agent is removed (keys, remote tokens and access cleared) and every device revoked, so they're set up again.
+4. Without a current vault, when it can't be read or migrated (a newer version's is still refused, as in step 2), or when the backup is another vault's, nothing can be carried forward. Every agent is removed (keys, remote tokens and access cleared) and every device revoked, so they're set up again.
 5. Either way, requests waiting in the backup (`needs_approval`, `approved`) are denied with `approval_expired`, so an approval can't be answered or delivered a second time.
 6. The current vault's WAL and shared-memory files are deleted (what they held is in the pre-restore backup), then one `rename` puts the copy in place of `vault.sqlite`, and the scratch files go.
 

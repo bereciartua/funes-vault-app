@@ -349,13 +349,13 @@ enum MemoryStore {
     /// Hard-deletes a deleted memory: its row, categories, FTS rows, embeddings, provenance and
     /// the undo entries holding its earlier text.
     /// Disclosure items keep the id for Activity labels.
-    static func purge(_ db: Database, id: UUID) throws {
+    static func purge(_ db: Database, id: UUID, now: Date = Date()) throws {
         guard let status = try String.fetchOne(db, sql: "SELECT status FROM memory WHERE id = ?", arguments: [id.db]) else {
             throw VaultError.notFound
         }
         guard status == MemoryStatus.deleted.rawValue else { throw VaultError.invalidState }
         try UndoLog.purge(db, memoryIDs: [id.db])
-        try dropGroupText(db, memoryIDs: [id.db])
+        try dropGroupText(db, memoryIDs: [id.db], now: now)
         try db.execute(sql: "DELETE FROM memory WHERE id = ?", arguments: [id.db])
     }
 
@@ -364,24 +364,38 @@ enum MemoryStore {
         let cutoff = now.addingTimeInterval(-deletedRetention)
         let ids = try String.fetchAll(db, sql: "SELECT id FROM memory WHERE status = 'deleted' AND deleted_at <= ?", arguments: [cutoff])
         try UndoLog.purge(db, memoryIDs: ids)
-        try dropGroupText(db, memoryIDs: ids)
+        try dropGroupText(db, memoryIDs: ids, now: now)
         try db.execute(sql: "DELETE FROM memory WHERE status = 'deleted' AND deleted_at <= ?", arguments: [cutoff])
         return db.changesCount
     }
 
-    /// A purged memory leaves no copy of its text (FR-V-04, storage §2): the piece it was saved
-    /// from, and its split input's original text, lose theirs.
-    static func dropGroupText(_ db: Database, memoryIDs: [String]) throws {
+    /// A purged memory leaves no copy of its text (FR-V-04, storage §4): every suggestion it was
+    /// saved from or that targets it (grouped or not, any status), and its split input's original
+    /// text, lose theirs. Runs before the DELETE, which nulls `result_memory_id` and
+    /// `target_memory_id`.
+    static func dropGroupText(_ db: Database, memoryIDs: [String], now: Date) throws {
         guard !memoryIDs.isEmpty else { return }
         let marks = databaseQuestionMarks(count: memoryIDs.count)
         let groups = try String.fetchAll(db, sql: """
             SELECT DISTINCT group_id FROM suggestion WHERE group_id IS NOT NULL AND result_memory_id IN (\(marks))
             """, arguments: StatementArguments(memoryIDs))
-        try db.execute(sql: "UPDATE suggestion SET title = '', body = '', evidence = NULL WHERE group_id IS NOT NULL AND result_memory_id IN (\(marks))",
-                       arguments: StatementArguments(memoryIDs))
+        // A pending suggestion about a purged memory can't be applied any more: it's closed as
+        // rejected (which, unlike expired, can't be restored to the Inbox), not left pending with
+        // no text.
+        try db.execute(sql: """
+            UPDATE suggestion SET title = '', body = '', evidence = NULL, purpose = NULL, caller_metadata = NULL,
+              classification = NULL,
+              status = CASE WHEN status = 'pending' THEN 'rejected' ELSE status END,
+              decided_at = CASE WHEN status = 'pending' THEN ? ELSE decided_at END
+            WHERE result_memory_id IN (\(marks)) OR target_memory_id IN (\(marks))
+              OR id IN (SELECT suggestion_id FROM suggestion_target WHERE memory_id IN (\(marks)))
+            """, arguments: StatementArguments([now]) + StatementArguments(memoryIDs + memoryIDs + memoryIDs))
         for group in groups {
             try db.execute(sql: "UPDATE suggestion_group SET source_text = NULL WHERE id = ?", arguments: [group])
-            try db.execute(sql: "UPDATE suggestion SET title = '', body = '' WHERE id = ? AND status = 'split'", arguments: [group])
+            try db.execute(sql: """
+                UPDATE suggestion SET title = '', body = '', evidence = NULL, purpose = NULL, caller_metadata = NULL,
+                  classification = NULL WHERE id = ? AND status = 'split'
+                """, arguments: [group])
         }
     }
 
@@ -405,6 +419,29 @@ enum MemoryStore {
     /// Lowercased with whitespace collapsed: the duplicate hint's exact match (memory processing §8).
     static func normalized(_ text: String) -> String {
         text.lowercased().split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    }
+
+    /// A normalized title and body: the exact-duplicate key.
+    struct TextKey: Hashable {
+        var title: String
+        var body: String
+
+        init(title: String, body: String) {
+            self.title = MemoryStore.normalized(title)
+            self.body = MemoryStore.normalized(body)
+        }
+    }
+
+    /// The first active memory with each normalized title and body, read once: `exactDuplicates`
+    /// for many items at a time (an import preview).
+    static func activeTextIndex(_ db: Database) throws -> [TextKey: UUID] {
+        var index: [TextKey: UUID] = [:]
+        for row in try Row.fetchAll(db, sql: "SELECT id, title, body FROM memory WHERE status = 'active'") {
+            guard let id = row.uuid("id") else { continue }
+            let key = TextKey(title: row["title"], body: row["body"])
+            if index[key] == nil { index[key] = id }
+        }
+        return index
     }
 
     /// Active memories whose normalized title and body equal these.
@@ -485,8 +522,8 @@ extension VaultStore {
     }
 
     /// Delete Now: purges a deleted memory immediately.
-    public func purgeMemory(id: UUID) throws {
-        try writer.write { db in try MemoryStore.purge(db, id: id) }
+    public func purgeMemory(id: UUID, now: Date = Date()) throws {
+        try writer.write { db in try MemoryStore.purge(db, id: id, now: now) }
     }
 
     @discardableResult

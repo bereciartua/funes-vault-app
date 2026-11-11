@@ -4,8 +4,9 @@
 Funes Vault for iPhone's privacy manifest (task 5.7). The same in the app and each extension.
 Data Not Collected: nothing leaves the iPhone except to the user's own paired Mac (end-to-end
 sealed) and an opaque CloudKit doorbell record in the user's own private database (ADR-0019).
-Required-reason APIs: only UserDefaults, for the App Group's defaults (CaptureLaunch, the
-Control's request to open Capture). Checked with `nm -u` on the built binaries; see
+Required-reason APIs: only UserDefaults: the App Group's defaults (CaptureLaunch, the Control's
+request to open Capture; 1C8F.1) and, in the app only, its own defaults (@AppStorage's Show Ask
+setting, debug-build switches; CA92.1). Checked with `nm -u` on the built binaries; see
 spec/release/app-store/privacy.md.
 -->
 <plist version="1.0">
@@ -24,6 +25,7 @@ spec/release/app-store/privacy.md.
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>1C8F.1</string>
+				<string>CA92.1</string>
 			</array>
 		</dict>
 	</array>

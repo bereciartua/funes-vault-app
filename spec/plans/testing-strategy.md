@@ -37,7 +37,7 @@ Following EK Bridge's discipline: **tests are the specification for privacy guar
 ## Test data
 - `Tests/fixtures/memories-200.json`, `queries-30.json` (from Spike 2).
 - Import fixtures: ChatGPT export variants, Claude paste samples, Markdown samples, `funesvault.export.v1`.
-- A demo vault for the iPhone (about 20 memories) and, for the Mac UI review build and `--dev-seed`, `SampleData` (Apps/FunesMac/App/SampleData.swift): memories in every state (active, expiring, archived, recently deleted), three agents (connected, waiting for its first request, paused), suggestions from every source including a correction, a pending request and the Activity they make.
+- A demo vault for the iPhone (about 20 memories) and, for the Mac UI review build and `--dev-seed`, `SampleData` (Apps/FunesMac/App/SampleData.swift): memories in every state (active, expiring, archived, recently deleted), three agents (connected, waiting for its first request, paused), suggestions from every source including a correction, a pending request and the Activity they make. `--dev-seed` runs only in a Debug build on a development vault (`FUNES_DATA_DIR`) that's empty (no memory in any state, nothing in the Inbox, no agent); on one it seeded before it only writes `dev-seed.json` again.
 
 ## Definition of done (per feature)
 1. Requirements' acceptance criteria are met and the related test vectors are implemented.

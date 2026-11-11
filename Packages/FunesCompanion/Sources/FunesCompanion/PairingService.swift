@@ -117,17 +117,20 @@ public actor PairingService {
             return Self.failure(.invalidRequest)
         }
 
-        // Asking: other attempts on this session are refused until the user answers.
-        guard var asking = session, asking.payload.pairingID == request.pairingID else { return Self.failure(.expired) }
+        // Asking: other attempts on this session are refused until the user answers, including one
+        // that passed the first check while this one waited for the device count.
+        guard var asking = session, asking.payload.pairingID == request.pairingID, !asking.asking else { return Self.failure(.expired) }
         asking.asking = true
         session = asking
         publish(.asking(deviceName: request.deviceName, model: request.model))
         let allowed = await ask()
-        // Single use, whatever the answer.
+        // Single use, whatever the answer. A new session started meanwhile (a new code, which
+        // also denied this prompt) is left alone, and so is what the sheet shows for it.
         let secret = asking.payload.secret
-        session = nil
+        let stillMine = session?.payload.pairingID == request.pairingID
+        if stillMine { session = nil }
         guard allowed else {
-            publish(.ended(.denied))
+            if stillMine { publish(.ended(.denied)) }
             return Self.failure(.denied)
         }
         do {
@@ -138,24 +141,36 @@ public actor PairingService {
                                                     macSigner: identity.signingKey)
             activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "device_paired",
                                           outcome: "paired", ids: [device.id]))
-            publish(.paired(deviceName: request.deviceName))
+            if session == nil { publish(.paired(deviceName: request.deviceName)) }
             return .json(200, reply)
         } catch {
             logger.error("Pairing failed after Allow")
-            publish(.ended(.invalidRequest))
+            if session == nil { publish(.ended(.invalidRequest)) }
             return Self.failure(.invalidRequest)
         }
     }
 
     private func ask() async -> Bool {
         let id = UUID(), timeout = promptTimeout
-        return await withCheckedContinuation { continuation in
-            prompt = continuation
-            promptID = id
-            Task { [weak self] in
-                try? await Task.sleep(for: .seconds(timeout))
-                await self?.timeOut(id)
+        // Never two prompts: one still waiting is denied rather than left hanging.
+        cancelPrompt()
+        // The phone gave up (its connection closed, so the listener cancels this request): the
+        // prompt is withdrawn as a Deny, so a later Allow can't register a device nobody holds.
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                prompt = continuation
+                promptID = id
+                if Task.isCancelled {
+                    answer(allow: false)
+                    return
+                }
+                Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(timeout))
+                    await self?.timeOut(id)
+                }
             }
+        } onCancel: {
+            Task { await self.timeOut(id) }
         }
     }
 

@@ -277,12 +277,19 @@ public actor CompanionApprovals {
             guard let s = try await services.suggestions.suggestion(id: id) else { throw CompanionError(.notFound) }
             if let ending = saveEnding(s, now: now) { throw Self.error(for: ending) }
             guard Self.revision(of: s) == params.revision else { throw CompanionError(.requestChanged) }
+            // Checked again inside the write: a reclassification after the check above isn't saved unseen.
+            let shown = params.revision
+            let unchanged: @Sendable (SuggestionSnapshot) throws -> Void = { snapshot in
+                if Self.revision(of: snapshot.suggestion) != shown { throw CompanionError(.requestChanged) }
+            }
             do {
                 if params.choice == .save {
-                    let applied = try await services.suggestions.apply(suggestionID: id, now: now, actor: actor, via: .companion)
+                    let applied = try await services.suggestions.apply(suggestionID: id, now: now, actor: actor, via: .companion,
+                                                                       precondition: unchanged)
                     result.memoryId = applied.memoryID
                 } else {
-                    try await services.suggestions.reject(suggestionID: id, now: now, actor: actor, via: .companion)
+                    try await services.suggestions.reject(suggestionID: id, now: now, actor: actor, via: .companion,
+                                                          precondition: unchanged)
                 }
             } catch VaultError.invalidState {
                 throw CompanionError(.alreadyAnswered)

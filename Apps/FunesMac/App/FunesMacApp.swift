@@ -57,11 +57,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var updater: SparkleUpdater?
     private var hotKey: HotKey?
     private var reviewHotKey: HotKey?
+    /// The data folder's instance lock, held while this copy runs.
+    private var instanceLock: Int32 = -1
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // A relaunch waits for the copy before it to quit, then carries out a pending Erase All
+        // Data before the settings are read or the vault opens (FR-G-05).
+        AppMover.waitForPreviousCopy()
+        if handOffToRunningCopy() { return }
+        DataOperations.applyPendingErase(dataFolder: VaultEnvironment.defaultDataFolder(), defaults: preferences.defaults)
         // Before any window, panel or alert shows (FR-G-06).
         preferences.appearance.apply()
-        AppMover.waitForPreviousCopy()
         NSApp.mainMenu = MainMenu.build(target: self)
         let environment: VaultEnvironment
         do {
@@ -139,9 +145,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = StatusMenuController(model: model, panel: MenuBarPanelController(model: panelModel))
         self.menu = menu
         // Updates (FR-G-03): the relaunch waits while a panel is waiting for the user.
-        let gate = UpdateRelaunchGate(pendingApprovals: { environment.approvals.queue.items.count },
-                                      maximumWait: FunesApprovals.panelSeconds + 15)
-        let updater = SparkleUpdater(gate: gate)
+        model.relaunchGate = UpdateRelaunchGate(pendingApprovals: { environment.approvals.queue.items.count },
+                                                maximumWait: FunesApprovals.panelSeconds + 15)
+        let updater = SparkleUpdater()
+        // A scheduled check never opens a window: what it found shows in the menu bar. With unsaved
+        // edits around, a downloaded update waits for Install Now in the menu bar panel.
+        model.askToDiscardDrafts = { [weak self] button in self?.askToDiscardDrafts(button: button) ?? true }
+        model.showInstallerBusy = { [weak self] in self?.installerBusy() }
+        model.showRelaunchUnfinished = { [weak self] relaunch in self?.relaunchUnfinished(relaunch) }
+        model.data.relaunchCalledOff = { [weak model] in model?.appRelaunchCalledOff() }
+        model.installerLive = { [weak updater] in updater?.installerMayBeRunning ?? false }
+        updater.postponeRelaunch = { [weak model] install in model?.postponeRelaunch(install) ?? false }
+        model.data.confirmQuit = { [weak model] in model?.confirmAppRelaunch(.dataChange) ?? true }
+        updater.aborted = { [weak model] in model?.updateAborted() }
+        updater.foundUpdateChanged = { [weak model, weak menu] found in
+            model?.foundUpdate = found
+            menu?.update()
+        }
         updater.start()
         self.updater = updater
         model.updater = updater.controls
@@ -158,11 +178,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             notifier.post(.tidyUp, title: String(localized: "Tidy-up finished"), body: TidyUpController.notice(run))
         }
         Task { @MainActor in
-            await model.modelSettings.refreshSubscriptions()
-            model.processing.kick()
+            // Once the CLIs are found, the queue resumes what a quit left, so a chosen plan can
+            // split it; until then a vault change doesn't kick it either. It doesn't wait for the
+            // CLIs' checks (up to 15 s each): a call that fails falls back as any failure does.
+            await model.modelSettings.locateSubscriptions()
+            model.processing.start()
+            model.processingStarted = true
+            await model.modelSettings.checkSubscriptions()
             model.tidyUp.start()
         }
-        model.processing.start()
         model.embeddings.apply()
         model.changed = { [weak menu] in menu?.update() }
 
@@ -217,6 +241,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             mainWindow.show()
         }
         offerMoveToApplications()
+        reportRestore()
+        reportErase()
         #if DEBUG
         // FUNES_DEBUG_OPEN=home|vault|inbox|agents|activity|capture|panel|settings[:destination] opens a window at launch.
         if let open = ProcessInfo.processInfo.environment["FUNES_DEBUG_OPEN"], !open.isEmpty {
@@ -257,6 +283,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// with its request id (mcp-server.md §7). The quit waits for them, 3 seconds at most. The panel
     /// queue closes, so no panel shows after this, even one a call was still building.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Unsaved edits live only in memory: a quit asks before dropping them.
+        if let model {
+            // Edits a Restore, Erase, Move or Install Now just asked about aren't asked about again
+            // unless they changed. No install starts while it asks, and a held one is let go so
+            // Sparkle installs at this quit, without relaunching.
+            guard model.confirmTermination() else { return .terminateCancel }
+        }
         guard let mcp, mcp.callsInProgress > 0 else { return .terminateNow }
         mcp.quit()
         environment?.approvals.queue.close()
@@ -361,7 +394,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.remoteAccess.host = RemoteAccessHost(
             start: { configuration in if preferences.mcpEnabled { remote.start(configuration) } },
             update: { remote.update($0) },
-            stop: { remote.stop() },
+            stop: { remote.stop(); environment.approvals.withdrawRemote() },
             test: { configuration, done in RemoteProbe.test(configuration, nonces: remote.service.nonces, completion: done) },
             portIsFree: { PortProbe.isFree($0) },
             setKeepAwake: { keepAwake.set($0) },
@@ -446,7 +479,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if NSApp.activationPolicy() != policy { NSApp.setActivationPolicy(policy) }
     }
 
-    /// FR-O-03: offered once per launch when the app runs from Downloads or a disk image.
+    /// FR-O-03: offered when the app runs from Downloads or a disk image, until Not Now; Agents ▸
+    /// Connect offers the move again before setting up an agent.
     private func offerMoveToApplications() {
         #if !DEBUG
         guard AppMover.location != .applications, !preferences.flag("MoveDeclined") else { return }
@@ -460,13 +494,162 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences.set("MoveDeclined", true)
             return
         }
-        if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { NSApp.terminate(nil) }) {
+        // Not while an update is installing (it would land in the copy the move trashes); unsaved
+        // edits are asked about before the move launches the new copy, and go at the quit.
+        if let model, !model.confirmAppRelaunch(.move) { return }
+        if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { NSApp.terminate(nil) },
+                                                     openFailed: { [weak self] in self?.moveDidntOpen() }) {
+            model?.appRelaunchCalledOff()
             let failure = NSAlert()
             failure.messageText = String(localized: "Funes Vault couldn't be moved")
             failure.informativeText = problem
             failure.runModal()
         }
         #endif
+    }
+
+    /// One copy at a time on a vault: each copy holds an exclusive lock on `instance.lock` in its
+    /// data folder for as long as it runs. A copy that can't take it brings the running one forward
+    /// (as reopening it does) and quits before opening anything. A relaunch waits a while longer
+    /// for the copy it names to let go. A development vault (Debug on FUNES_DATA_DIR) has its own
+    /// folder, so it runs beside the installed app.
+    private func handOffToRunningCopy() -> Bool {
+        let folder = VaultEnvironment.defaultDataFolder()
+        if Self.lockInstance(folder, into: &instanceLock) { return false }
+        let arguments = CommandLine.arguments
+        if let waitedFor = arguments.firstIndex(of: AppMover.waitForArgument)
+            .flatMap({ $0 + 1 < arguments.count ? pid_t(arguments[$0 + 1]) : nil }) {
+            let deadline = Date().addingTimeInterval(10)
+            while kill(waitedFor, 0) == 0, Date() < deadline {
+                Thread.sleep(forTimeInterval: 0.1)
+                if Self.lockInstance(folder, into: &instanceLock) { return false }
+            }
+            if Self.lockInstance(folder, into: &instanceLock) { return false }
+        }
+        logger.notice("Another copy has this vault open; handing over to it")
+        let me = NSRunningApplication.current
+        let others = NSRunningApplication.runningApplications(withBundleIdentifier: Identifiers.macBundleID)
+            .filter { $0.processIdentifier != me.processIdentifier && !$0.isTerminated }
+        // The same copy first: another build (a development one) may be running too.
+        let running = others.first { $0.bundleURL == Bundle.main.bundleURL } ?? others.first
+        if let running, let url = running.bundleURL {
+            let configuration = NSWorkspace.OpenConfiguration()
+            configuration.activates = true
+            NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, _ in
+                DispatchQueue.main.async { NSApp.terminate(nil) }
+            }
+        } else {
+            running?.activate()
+            NSApp.terminate(nil)
+        }
+        return true
+    }
+
+    /// The lock's name in the data folder; Erase All Data leaves it.
+    static let instanceLockName = "instance.lock"
+
+    /// Takes the data folder's instance lock (kept until the process ends); false while another
+    /// process holds it.
+    private static func lockInstance(_ folder: URL, into descriptor: inout Int32) -> Bool {
+        if descriptor >= 0 { return true }
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true,
+                                                 attributes: [.posixPermissions: 0o700])
+        let fd = open(folder.appendingPathComponent(instanceLockName).path, O_RDWR | O_CREAT | O_CLOEXEC, 0o600)
+        guard fd >= 0 else {
+            // Fail open on a folder it can't write: the vault's own open reports the problem.
+            logger.error("The instance lock couldn't be opened")
+            return true
+        }
+        guard flock(fd, LOCK_EX | LOCK_NB) == 0 else {
+            close(fd)
+            return false
+        }
+        descriptor = fd
+        return true
+    }
+
+    /// Restore, Erase or Move asked for while an update is installing: they wait, since the app
+    /// mustn't relaunch itself while Sparkle's installer may replace it.
+    private func installerBusy() {
+        let alert = NSAlert()
+        alert.messageText = String(localized: "An update is installing")
+        alert.informativeText = String(localized: "Quit Funes Vault to finish installing it, then open it again and try once more.")
+        alert.addButton(withTitle: String(localized: "OK"))
+        alert.runModal()
+    }
+
+    /// The moved copy didn't open: this copy keeps running, and the edits stay.
+    func moveDidntOpen() {
+        model?.appRelaunchCalledOff()
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Funes Vault couldn't be moved")
+        alert.informativeText = String(localized: "The copy in Applications didn't open. Quit Funes Vault and open it from Applications.")
+        alert.addButton(withTitle: String(localized: "OK"))
+        alert.runModal()
+    }
+
+    /// A Restore, Erase or Move whose quit was cancelled. A restore or erase finishes when the app
+    /// next opens; a move doesn't. Shown after the current event.
+    private func relaunchUnfinished(_ relaunch: AppModel.AppRelaunch) {
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            switch relaunch {
+            case .dataChange:
+                alert.messageText = String(localized: "Quit and reopen Funes Vault to finish")
+                alert.informativeText = String(localized: "Funes Vault didn't quit, so what you asked for happens the next time it opens.")
+            case .move:
+                alert.messageText = String(localized: "The move to Applications didn't finish")
+                alert.informativeText = String(localized: "Funes Vault didn't quit. Quit it, then open the copy in Applications.")
+            }
+            alert.addButton(withTitle: String(localized: "OK"))
+            alert.runModal()
+        }
+    }
+
+    /// True when no memory has unsaved edits, or the user chose to discard them (FR-V-02): they
+    /// aren't kept across a quit or relaunch.
+    private func askToDiscardDrafts(button: String) -> Bool {
+        guard let vault = model?.vault, !vault.draftIDs.isEmpty else { return true }
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = String(localized: "Discard unsaved changes?")
+        alert.informativeText = String(localized: "\(vault.draftIDs.count) memories have changes you haven't saved. Funes Vault doesn't keep them when it quits.")
+        alert.addButton(withTitle: button)
+        alert.addButton(withTitle: String(localized: "Cancel"))
+        NSApp.activate()
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    /// After a relaunch for Erase All Data (FR-G-05): only when something couldn't be deleted.
+    private func reportErase() {
+        guard DataOperations.eraseIncomplete else { return }
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = String(localized: "Some data couldn't be erased")
+        alert.informativeText = String(localized: "Funes Vault couldn't delete everything in its data folder. Quit Funes Vault and delete what's left in \(VaultEnvironment.defaultDataFolder().path).")
+        alert.addButton(withTitle: String(localized: "Show in Finder"))
+        alert.addButton(withTitle: String(localized: "OK"))
+        NSApp.activate()
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSWorkspace.shared.activateFileViewerSelecting([VaultEnvironment.defaultDataFolder()])
+        }
+    }
+
+    /// After a relaunch for Restore from Backup (FR-G-04): how it went.
+    private func reportRestore() {
+        switch DataOperations.restoreOutcome {
+        case .restored?:
+            hud.show(String(localized: "Backup restored"), symbol: "clock.arrow.circlepath", seconds: 4)
+        case .failed?:
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = String(localized: "The backup couldn't be restored")
+            alert.informativeText = String(localized: "Your vault is as it was before. You can try another backup in Settings ▸ Data & Backups.")
+            NSApp.activate()
+            alert.runModal()
+        case nil:
+            break
+        }
     }
 
     /// The vault can't open (a newer schema, unsafe permissions): say so in the menu bar.

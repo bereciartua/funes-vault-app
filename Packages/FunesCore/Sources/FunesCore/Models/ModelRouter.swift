@@ -195,6 +195,34 @@ public struct ModelItem: Sendable, Hashable {
     }
 }
 
+/// Rate-limit backoff per provider (model providers §6), kept apart from any one router: the app
+/// builds a router per job, so one shared `ProviderBackoff` carries a 429 or a plan limit across
+/// jobs. A provider in backoff gets no request until it ends.
+public final class ProviderBackoff: Sendable {
+    private let until = Mutex<[ProviderID: Date]>([:])
+
+    /// Without a retry time: an hour for a subscription CLI's plan limit, a minute for an API's 429.
+    public static let subscriptionDefault: TimeInterval = 3_600
+    public static let apiDefault: TimeInterval = 60
+
+    public init() {}
+
+    /// When the provider may be asked again; nil when it isn't backing off.
+    public func until(_ id: ProviderID, now: Date = Date()) -> Date? {
+        until.withLock { u in
+            guard let date = u[id] else { return nil }
+            if date <= now { u[id] = nil }
+            return date > now ? date : nil
+        }
+    }
+
+    /// A rate limit: back off for `retryAfter`, or the provider's default.
+    public func rateLimited(_ provider: any GenerationProvider, retryAfter: TimeInterval?, now: Date) {
+        let delay = retryAfter ?? (provider is any SubscriptionClient ? Self.subscriptionDefault : Self.apiDefault)
+        until.withLock { $0[provider.id] = max($0[provider.id] ?? now, now + delay) }
+    }
+}
+
 /// Resolves the configured provider per task and applies the guardrails, timeouts, fallbacks and
 /// usage counters (model providers §3, §5, §6). Classification never fails: it falls back to the
 /// on-device model, then to the rules.
@@ -210,15 +238,17 @@ public final class ModelRouter: Sendable {
     public let splitTimeout: Duration
 
     private let usage = Mutex<[ProviderID: ProviderUsage]>([:])
-    private let backoff = Mutex<[ProviderID: Date]>([:])
+    /// Shared with the app's other routers, so a rate limit outlives this one.
+    public let backoff: ProviderBackoff
     private let logger = Logger(subsystem: "com.funesvault.mac", category: "models")
 
     /// `classifier` is the user's choice for Classification (nil: Apple on-device); `onDevice` the
     /// Apple model when available.
     public init(classifier: (any GenerationProvider)?, onDevice: (any GenerationProvider)? = AppleFoundationGenerator(),
                 cloudLimit: CloudLimit = .upTo(.internal), generationTimeout: Duration = .seconds(20),
-                splitTimeout: Duration = .seconds(180), cap: CloudRequestCap? = nil) {
+                splitTimeout: Duration = .seconds(180), cap: CloudRequestCap? = nil, backoff: ProviderBackoff = ProviderBackoff()) {
         self.classifier = classifier
+        self.backoff = backoff
         self.onDevice = onDevice
         self.cloudLimit = cloudLimit
         self.generationTimeout = generationTimeout
@@ -227,12 +257,12 @@ public final class ModelRouter: Sendable {
     }
 
     /// The on-device sensitivity pre-screen (model providers §5.2): the rules classifier's
-    /// estimate (keyword categories and their defaults), raised to the user's hint and to a
-    /// declared level. A declared level never lowers it, so an agent can't get sensitive text
+    /// estimate (the defaults of every keyword category matched, not only the three proposed),
+    /// raised to the user's hint and to a declared level. A declared level never lowers it, so an agent can't get sensitive text
     /// past the guard by declaring it Low.
     public static func prescreen(_ text: String, categories: [MemoryCategory], declared: Sensitivity? = nil,
                                  hint: Sensitivity? = nil) -> Sensitivity {
-        max(RulesClassifier.propose(text, categories: categories, hint: hint).sensitivity, declared ?? .public, hint ?? .public)
+        max(RulesClassifier.estimate(text, categories: categories, hint: hint), declared ?? .public, hint ?? .public)
     }
 
     /// A classification proposal for a capture, suggestion or import item.
@@ -254,7 +284,7 @@ public final class ModelRouter: Sendable {
         for p in [classifier, onDevice].compactMap({ $0 }) where !chain.contains(where: { $0.id == p.id }) { chain.append(p) }
 
         for provider in chain {
-            if let until = backoff.withLock({ $0[provider.id] }), now < until { continue }
+            if backoff.until(provider.id, now: now) != nil { continue }
             do {
                 let (output, used) = try await Self.send(request, items: [ModelItem(text, sensitivity: estimate)], to: provider,
                                                          cloudLimit: cloudLimit, cap: cap, requester: requester,
@@ -274,7 +304,7 @@ public final class ModelRouter: Sendable {
             } catch let error as ProviderError {
                 record(ProviderUsage(requests: 1), for: provider.id)
                 if case let .rateLimited(retryAfter) = error {
-                    backoff.withLock { $0[provider.id] = now + (retryAfter ?? 60) }
+                    backoff.rateLimited(provider, retryAfter: retryAfter, now: now)
                 }
                 // Status codes and provider ids only (§5.4).
                 logger.error("Classification provider \(provider.id.rawValue, privacy: .public) failed: \(String(describing: error), privacy: .public)") // log-safe: provider id and error code, no text
@@ -317,7 +347,7 @@ public final class ModelRouter: Sendable {
     /// rate-limited is skipped until its backoff ends.
     func call<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem], with provider: any GenerationProvider,
                                        requester: CloudRequestCap.Requester, timeout: Duration? = nil, now: Date) async throws -> T {
-        if let until = backoff.withLock({ $0[provider.id] }), now < until { throw ProviderError.rateLimited(retryAfter: until.timeIntervalSince(now)) }
+        if let until = backoff.until(provider.id, now: now) { throw ProviderError.rateLimited(retryAfter: until.timeIntervalSince(now)) }
         do {
             let (output, used) = try await Self.send(request, items: items, to: provider, cloudLimit: cloudLimit, cap: cap,
                                                      requester: requester, timeout: timeout ?? splitTimeout, now: now)
@@ -328,7 +358,7 @@ public final class ModelRouter: Sendable {
             case .blocked, .capReached: break
             case let .rateLimited(retryAfter):
                 record(ProviderUsage(requests: 1), for: provider.id)
-                backoff.withLock { $0[provider.id] = now + (retryAfter ?? 60) }
+                backoff.rateLimited(provider, retryAfter: retryAfter, now: now)
             default:
                 record(ProviderUsage(requests: 1), for: provider.id)
             }
@@ -365,40 +395,26 @@ public protocol ProviderKeyStore: Sendable {
 public enum KeychainError: Error, Equatable { case status(OSStatus) }
 
 /// `kSecClassGenericPassword`, service `com.funesvault.provider`, account = provider id,
-/// `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`.
+/// `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, in the data-protection Keychain, moved
+/// there from the login keychain on first read (`MigratingKeychain`).
 public struct KeychainProviderKeyStore: ProviderKeyStore {
-    public let service: String
+    public var service: String { keychain.service }
+    let keychain: MigratingKeychain
 
-    public init(service: String = Identifiers.providerKeychainService) { self.service = service }
-
-    private func query(_ provider: ProviderID) -> [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
-         kSecAttrAccount as String: provider.rawValue]
+    public init(service: String = Identifiers.providerKeychainService, backend: any KeychainBackend = SystemKeychain()) {
+        keychain = MigratingKeychain(service: service, backend: backend)
     }
 
     public func key(for provider: ProviderID) throws -> String? {
-        var q = query(provider)
-        q[kSecReturnData as String] = true
-        q[kSecMatchLimit as String] = kSecMatchLimitOne
-        var out: CFTypeRef?
-        let status = SecItemCopyMatching(q as CFDictionary, &out)
-        if status == errSecItemNotFound { return nil }
-        guard status == errSecSuccess, let data = out as? Data else { throw KeychainError.status(status) }
-        return String(decoding: data, as: UTF8.self)
+        try keychain.read(account: provider.rawValue).map { String(decoding: $0, as: UTF8.self) }
     }
 
     public func setKey(_ key: String, for provider: ProviderID) throws {
-        try deleteKey(for: provider)
-        var q = query(provider)
-        q[kSecValueData as String] = Data(key.utf8)
-        q[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        let status = SecItemAdd(q as CFDictionary, nil)
-        guard status == errSecSuccess else { throw KeychainError.status(status) }
+        try keychain.write(Data(key.utf8), account: provider.rawValue)
     }
 
     public func deleteKey(for provider: ProviderID) throws {
-        let status = SecItemDelete(query(provider) as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else { throw KeychainError.status(status) }
+        try keychain.delete(account: provider.rawValue)
     }
 }
 

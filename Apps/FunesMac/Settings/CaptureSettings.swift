@@ -96,13 +96,19 @@ struct ShortcutRecorder: View {
                 }
             }
         }
+        // The pane or window went: the monitor goes with it, so it never takes keys elsewhere.
+        .onDisappear { stopRecording() }
         if let problem { Text(problem).font(.callout).foregroundStyle(.red) }
     }
 
     private func startRecording() {
+        guard monitor == nil else { return }
         problem = nil
         recording = true
-        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+        // Only keys typed in this window are the new shortcut; other Funes windows keep theirs.
+        let window = NSApp.keyWindow
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak window] event in
+            guard let window, event.window === window else { return event }
             if event.keyCode == 53 { // Escape
                 stopRecording()
                 return nil

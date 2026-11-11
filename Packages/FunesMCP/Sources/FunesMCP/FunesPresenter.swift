@@ -13,9 +13,11 @@ public protocol FunesPresenter: Sendable {
     func showApproval(requestID: UUID, agentID: UUID, remote: Bool) async
     /// A suggestion went to the Inbox: show the non-blocking Save panel.
     func showSuggestion(suggestionID: UUID, agentID: UUID) async
-    /// `open_in_funes`, already checked to be this agent's pending item.
-    func open(requestID: UUID) async
-    func open(suggestionID: UUID) async
+    /// `open_in_funes`, already checked to be this agent's pending item. The agent asked, not the
+    /// user: show and select its panel, but never activate Funes or make the panel key, so a key
+    /// press meant for the frontmost app can't answer it.
+    func openInFunes(requestID: UUID) async
+    func openInFunes(suggestionID: UUID) async
     /// "<Agent> wants more access" (access policy §7, FR-A-10): ask, and return the answer, or
     /// `.unanswered` when `prompt.expiresAt` passes or the panel is withdrawn. FunesCore limits this
     /// to once an hour per agent, category and operation; an unanswered offer doesn't count.

@@ -24,11 +24,12 @@ No analytics, advertising, tracking or third-party SDKs are in the app or its ex
 ## The privacy manifests
 `Apps/FunesiOS`, `Apps/FunesShareExtension`, `Apps/FunesIntents` and `Apps/FunesNotifications` each have a `PrivacyInfo.xcprivacy` (the folders are synchronized, so it's in each bundle's resources): no tracking, no tracking domains, no collected data types, and the required-reason APIs below. `scripts/ios_release.sh` checks every bundle in the archive has one.
 
-**Required-reason APIs, checked 2026-10-22** with `nm -u` on the built app, its debug dylib and each extension, for the symbols of Apple's five categories (`NSUserDefaults`; `NSFileCreationDate`, `NSFileModificationDate`, `NSURLContentModificationDateKey`, `NSURLCreationDateKey`, `getattrlist`, `stat`/`fstat`/`lstat`/`fstatat`; `systemUptime`, `mach_absolute_time`; `NSURLVolumeAvailableCapacity…Key`, `statfs`, `statvfs`; `activeInputModes`):
+**Required-reason APIs, checked 2026-10-22** (the app's own defaults added 2026-11-10) with `nm -u` on the built app, its debug dylib and each extension, for the symbols of Apple's five categories (`NSUserDefaults`; `NSFileCreationDate`, `NSFileModificationDate`, `NSURLContentModificationDateKey`, `NSURLCreationDateKey`, `getattrlist`, `stat`/`fstat`/`lstat`/`fstatat`; `systemUptime`, `mach_absolute_time`; `NSURLVolumeAvailableCapacity…Key`, `statfs`, `statvfs`; `activeInputModes`):
 
 | Category | Used by | Reason |
 |---|---|---|
 | `NSPrivacyAccessedAPICategoryUserDefaults` | All four (FunesPhone's `CaptureLaunch`: the Control's "open Capture" request, in the App Group's defaults `group.com.funesvault`) | `1C8F.1`: read and write information shared only within the app's App Group |
+| `NSPrivacyAccessedAPICategoryUserDefaults` | The app only: its own standard defaults (`@AppStorage` for Search's Show Ask setting; debug builds' screenshot and status bar switches) | `CA92.1`: read and write information accessible only to the app itself. Same entry as above, with both reasons |
 
 Nothing else matched. Elapsed times use Swift's `ContinuousClock`, which isn't on Apple's list; SQLite and Network.framework are system libraries. **Re-run the check when a dependency or a file-attribute, uptime, disk-space or keyboard API is added:**
 ```bash
