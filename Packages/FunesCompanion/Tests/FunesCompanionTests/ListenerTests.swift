@@ -232,7 +232,10 @@ import Testing
         let limits = CompanionListener.Limits()
         func v6(_ host: UInt8, net: UInt8 = 1) -> [UInt8] { [0xfd, 0x12, 0x34, 0x56, 0, 0, 0, net, 0xaa, 0, 0, 0, 0, 0, 0, host] }
         func mapped(_ host: UInt8) -> [UInt8] { [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 192, 168, 1, host] }
-        func admits(_ address: [UInt8], _ open: [[UInt8]]) -> Bool { CompanionListener.admits(address, among: open, limits: limits) }
+        // Every open connection busy, so a full table refuses rather than evicts.
+        func admits(_ address: [UInt8], _ open: [[UInt8]]) -> Bool {
+            CompanionListener.admission(address, among: open.map { .init(address: $0, busy: true, idleSince: 0) }, limits: limits) != .refuse
+        }
 
         // One address: 8.
         #expect(admits(v6(1), Array(repeating: v6(1), count: 7)))
@@ -249,6 +252,61 @@ import Testing
         #expect(admits(mapped(21), Array(repeating: mapped(20), count: 8) + aliases))
         // The total stays 32.
         #expect(!admits([10, 0, 0, 1], (0..<32).map { [10, 0, 1, UInt8($0)] }))
+    }
+
+    /// A full table makes way for a newcomer by closing the connection idle longest, never one
+    /// handling a request; with every connection busy, the newcomer is refused. A newcomer over
+    /// its own address's cap never evicts anyone.
+    @Test func aFullTableEvictsTheLongestIdle() {
+        let limits = CompanionListener.Limits()
+        let hosts: [[UInt8]] = (0..<32).map { [192, 168, 1, UInt8(100 + $0)] }
+        var open = hosts.enumerated().map { CompanionListener.Peer(address: $1, busy: false, idleSince: UInt64(100 + $0)) }
+        open[5].idleSince = 7
+        open[3].busy = true
+        open[3].idleSince = 1
+        #expect(CompanionListener.admission([192, 168, 1, 20], among: open, limits: limits) == .evict(5))
+        let allBusy = open.map { CompanionListener.Peer(address: $0.address, busy: true, idleSince: $0.idleSince) }
+        #expect(CompanionListener.admission([192, 168, 1, 20], among: allBusy, limits: limits) == .refuse)
+        let sameHost = Array(repeating: CompanionListener.Peer(address: [192, 168, 1, 9], busy: false, idleSince: 1), count: 8)
+            + open.prefix(24)
+        #expect(CompanionListener.admission([192, 168, 1, 9], among: sameHost, limits: limits) == .refuse)
+        #expect(CompanionListener.admission([192, 168, 1, 20], among: Array(open.prefix(31)), limits: limits) == .admit)
+    }
+
+    /// Over a real socket: a table full of idle connections lets the phone in; one full of
+    /// connections handling requests doesn't, and none of them is closed.
+    @Test func aFullTableOfIdleConnectionsAdmitsANewcomer() async throws {
+        let port = Self.freePort()
+        var limits = CompanionListener.Limits()
+        limits.maxConnections = 3
+        let released = OSAllocatedUnfairLock(initialState: false)
+        let started = AsyncStream<Void>.makeStream()
+        let listener = CompanionListener(port: port, modes: [.tunnel], bonjour: nil, limits: limits) { request, _ in
+            if request.path == "/hold" {
+                started.continuation.yield()
+                while !released.withLock({ $0 }) { try? await Task.sleep(for: .milliseconds(10)) }
+            }
+            return HTTPResponse(status: 204)
+        }
+        defer { listener.stop() }
+        _ = try await start(listener)
+        let idle = [await openIdle(port: port), await openIdle(port: port), await openIdle(port: port)]
+        defer { idle.forEach { $0.cancel() } }
+        var status: Int?
+        for _ in 0..<50 where status == nil { status = try await post(port: port, path: "/hello") }
+        #expect(status == 204)
+        #expect(await closes(idle[0], within: 3))
+
+        // Three requests in progress fill it: the newcomer is refused, and they all finish.
+        let held = [await send(port: port, path: "/hold", host: "127.0.0.1:\(port)", body: Data("{}".utf8)),
+                    await send(port: port, path: "/hold", host: "127.0.0.1:\(port)", body: Data("{}".utf8)),
+                    await send(port: port, path: "/hold", host: "127.0.0.1:\(port)", body: Data("{}".utf8))]
+        defer { held.forEach { $0.cancel() } }
+        var arrivals = started.stream.makeAsyncIterator()
+        for _ in 0..<3 { _ = await arrivals.next() }
+        #expect(try await post(port: port, path: "/hello") == nil)
+        for connection in held { #expect(!(await closes(connection, within: 0.3))) }
+        released.withLock { $0 = true }
     }
 
     /// A connection that sends nothing is closed after the first-byte deadline, well before the

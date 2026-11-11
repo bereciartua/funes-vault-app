@@ -143,10 +143,20 @@ public final class CompanionListener: @unchecked Sendable {
     }
 
     private func accept(_ fd: Int32, address: [UInt8]) {
-        guard let transport = AddressPolicy.transport(forAddress: address, modes: modes),
-              Self.admits(address, among: connections.values.map(\.address), limits: limits) else {
+        guard let transport = AddressPolicy.transport(forAddress: address, modes: modes) else {
             Darwin.close(fd)
             return
+        }
+        let open = Array(connections.values)
+        switch Self.admission(address, among: open.map { Peer(address: $0.address, busy: $0.isBusy, idleSince: $0.idleSince) },
+                              limits: limits) {
+        case .refuse:
+            Darwin.close(fd)
+            return
+        case let .evict(index):
+            open[index].close()
+        case .admit:
+            break
         }
         let connection = Connection(fd, address: address, transport: transport, limits: limits, queue: queue, handler: handler)
         let key = ObjectIdentifier(connection)
@@ -155,14 +165,37 @@ public final class CompanionListener: @unchecked Sendable {
         connection.start()
     }
 
-    /// Whether a connection from `address` fits beside those from `open`: under the total, under
-    /// 8 from that address, and, for IPv6, under 16 from its /64.
-    static func admits(_ address: [UInt8], among open: [[UInt8]], limits: Limits) -> Bool {
-        guard open.count < limits.maxConnections else { return false }
+    /// An open connection, as admission sees it.
+    struct Peer: Equatable {
+        var address: [UInt8]
+        /// Handling a request: never evicted.
+        var busy: Bool
+        /// When it last had nothing to do: opened, or its last reply written (uptime, ns).
+        var idleSince: UInt64
+    }
+
+    enum Admission: Equatable {
+        case admit
+        /// Admit, closing the open connection at this index first.
+        case evict(Int)
+        case refuse
+    }
+
+    /// Whether a connection from `address` gets in beside `open`. It must be under 8 from that
+    /// address and, for IPv6, under 16 from its /64. When all 32 slots are taken, the connection
+    /// idle longest (never one handling a request) makes way, since addresses can't tell hosts
+    /// apart: a host with many IPv4 addresses could otherwise fill the table and keep the phone
+    /// out. With every connection busy, it's refused.
+    static func admission(_ address: [UInt8], among open: [Peer], limits: Limits) -> Admission {
         let peer = peerAddress(address)
-        guard open.count(where: { peerAddress($0) == peer }) < limits.maxPerAddress else { return false }
-        guard let prefix = ipv6Prefix(address) else { return true }
-        return open.count(where: { ipv6Prefix($0) == prefix }) < limits.maxPerIPv6Prefix
+        guard open.count(where: { peerAddress($0.address) == peer }) < limits.maxPerAddress else { return .refuse }
+        if let prefix = ipv6Prefix(address), open.count(where: { ipv6Prefix($0.address) == prefix }) >= limits.maxPerIPv6Prefix {
+            return .refuse
+        }
+        guard open.count >= limits.maxConnections else { return .admit }
+        let idle = open.indices.filter { !open[$0].busy }
+        guard let oldest = idle.min(by: { open[$0].idleSince < open[$1].idleSince }) else { return .refuse }
+        return .evict(oldest)
     }
 
     /// An IPv4-mapped IPv6 address as the IPv4 address it is (the socket is dual-stack).
@@ -201,6 +234,9 @@ public final class CompanionListener: @unchecked Sendable {
         private let handler: Handler
         private var parser = HTTPParser(limits: HTTPLimits(maxBodyBytes: CompanionProtocol.maxRequestBytes))
         private var busy = false
+        /// When it last had nothing to do: opened, or its last reply written (uptime, ns).
+        private(set) var idleSince = DispatchTime.now().uptimeNanoseconds
+        var isBusy: Bool { busy }
         private var closed = false
         private var timer: DispatchSourceTimer?
         private var reader: DispatchSourceRead?
@@ -296,6 +332,7 @@ public final class CompanionListener: @unchecked Sendable {
                     guard !self.closed else { return }
                     self.write(response, close: request.wantsClose) {
                         self.busy = false
+                        self.idleSince = DispatchTime.now().uptimeNanoseconds
                         self.arm(self.limits.idle)
                         // A pipelined request may already be buffered.
                         if self.parser.hasBufferedBytes { self.feed(Data()) }
