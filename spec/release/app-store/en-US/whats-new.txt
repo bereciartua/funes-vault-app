@@ -1,22 +1,17 @@
-HOME
-• The app now opens on Home: remember something (typed or dictated), see what's waiting for you, and your vault at a glance, all on one screen.
-• Tiles show your week (what you saved, what each agent read, what was refused), Memories, Rhythm, Sensitivity and Who reads. Hold a day for its numbers; tap the week for 30 days and longer. Counts only, never a memory's text.
-• "Good morning", "Good afternoon" or "Good evening" when you open it.
+This update fixes what a full review of the app turned up, mostly security and reliability.
 
-WIDGETS
-• Pulse, Rhythm and Remember for your Home Screen. Remember opens Home ready to type or dictate, even before you pair.
+SAFER
+• Your iPhone now acts only on replies your Mac has signed, so another device on the same Wi-Fi can't crash the app, move its clock or make it say it was removed.
+• Stopping dictation while it's starting no longer leaves the microphone on.
 
-ASK YOUR VAULT
-• Ask Funes: ask a question in Search and your Mac answers in a few short claims, each quoting the memory it comes from. Tap a number to open that memory. Turn it on in Funes Vault for Mac; hide it in Settings here.
-• Search results show the sentence that matches, with your words in bold.
+FIXED
+• A search answer quoting part of an emoji no longer crashes the app.
+• Home's counts and the widgets are no longer cleared at launch or in a background refresh.
+• If your Mac can't check this iPhone for a moment, the app says your vault isn't available, not that the iPhone was removed.
+• Pairing asks for camera access the first time, and Cancel while waiting for Allow on your Mac cancels the pairing there too.
+• After unpairing, a late reply no longer shows Connected or brings the counts back.
+• An answered Inbox card no longer comes back, and a request that arrives while the list is loading now shows.
+• A reload that fails after "Changed on your Mac" keeps your edit.
+• Captures with unusual characters are saved whole, and sharing a very large text is refused instead of failing.
 
-THE WHOLE INBOX
-• Every Inbox card can be answered here, as on your Mac: archive, replace, merge, split or settle a conflict, each showing what it changes first.
-• A correction that changed since it was suggested says so, instead of overwriting newer text.
-
-ALSO
-• One bar above the tabs says when something needs you (Mac not reachable, Local Network off) instead of a banner on every tab.
-• Search no longer says your Mac isn't reachable while you type.
-• Settings shows this app's own version.
-
-Home, Ask Funes and the new Inbox cards need the latest Funes Vault for Mac. Still no account, no cloud copy, no tracking.
+Update Funes Vault for Mac to 0.5.2 first: with an older Mac, this version shows your Mac as not reachable.
