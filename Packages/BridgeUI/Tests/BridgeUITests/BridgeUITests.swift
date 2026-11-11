@@ -524,6 +524,21 @@ struct UpdateRelaunchGateTests {
         #expect(proceeded == 2)
     }
 
+    /// A quit cancels a waiting relaunch: it never runs, even once the approvals are answered.
+    @Test func aCancelledWaitNeverProceeds() {
+        var pending = 1
+        var scheduled: [@MainActor () -> Void] = []
+        let gate = UpdateRelaunchGate(pendingApprovals: { pending }, maximumWait: 60,
+                                      schedule: { _, action in scheduled.append(action) })
+        var proceeded = false
+        #expect(gate.postpone { proceeded = true })
+        gate.cancel()
+        #expect(!gate.isWaiting)
+        pending = 0
+        while !scheduled.isEmpty { scheduled.removeFirst()() }
+        #expect(!proceeded)
+    }
+
     @Test func retentionCanChange() throws {
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("bridgeui-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])

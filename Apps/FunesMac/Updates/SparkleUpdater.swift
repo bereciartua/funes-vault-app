@@ -24,9 +24,6 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
         case proceed
         /// The user chose Cancel: held until the app calls `resume`.
         case held
-        /// The user chose Discard and Install: `discard` runs right before the install (after
-        /// any approvals' wait), and returns false when it held the update instead.
-        case discard(() -> Bool)
     }
 
     /// Before the relaunch: what to do about unsaved edits; the app calls `resume` once a held
@@ -34,6 +31,10 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
     var holdForDrafts: (_ resume: @escaping () -> Void) -> DraftDecision = { _ in .proceed }
 
     private let gate: UpdateRelaunchGate
+
+    /// A quit the user asked for: an install still waiting on the approvals doesn't relaunch
+    /// inside it. Sparkle installs at this quit instead, without relaunching.
+    func cancelPendingRelaunch() { gate.cancel() }
     private var controller: SPUStandardUpdaterController!
     private var started = false
 
@@ -113,10 +114,6 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
             return gate.postpone(installHandler)
         case .held:
             return true
-        case let .discard(discard):
-            // The edits go only when the install really happens, not while an approval holds it.
-            if gate.postpone({ if discard() { installHandler() } }) { return true }
-            return !discard()
         }
     }
 

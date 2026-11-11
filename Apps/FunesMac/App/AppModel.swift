@@ -134,8 +134,9 @@ final class AppModel {
     /// menu bar panel says so and offers to discard them and install.
     private(set) var updateHeld = false
     @ObservationIgnored private var heldInstall: (() -> Void)?
-    /// The memories whose edits the user agreed to discard for an install: they go at the quit
-    /// that installs it, not before, since an approval can still hold the relaunch.
+    /// The memories whose edits the user agreed to discard for an install (from Sparkle's prompt or
+    /// the menu bar panel): they go at the quit that installs it, not before, since an approval can
+    /// still hold the relaunch. Withdrawn when a quit is cancelled or the update is held again.
     @ObservationIgnored private(set) var consentedDiscard: Set<UUID>?
     /// Asks before unsaved edits are dropped, with this button ("Discard and Quit"); true when
     /// there are none or the user agreed. Discards nothing itself (set by the app).
@@ -369,18 +370,31 @@ final class AppModel {
 
     /// Holds an update's relaunch until no memory has unsaved edits.
     func holdUpdate(_ install: @escaping () -> Void) {
+        consentedDiscard = nil
         heldInstall = install
         updateHeld = true
         vault.whenNoDrafts = { [weak self] in self?.releaseHeldUpdate() }
     }
 
+    /// The user agreed to discard the current edits for an install.
+    func consentToDiscardForInstall() { consentedDiscard = vault.draftIDs }
+
+    /// A quit was cancelled: an earlier agreement to discard doesn't carry over to the next one.
+    func quitCancelled() { consentedDiscard = nil }
+
+    /// Whether the edits now unsaved are all ones the user already agreed to discard.
+    var draftsConsentedForQuit: Bool { consentedDiscard.map { vault.draftIDs.isSubset(of: $0) } ?? false }
+
     /// The menu bar panel's Discard Changes and Install, after asking.
     func discardDraftsAndInstall() {
         guard updateHeld, askToDiscardDrafts(String(localized: "Discard and Install")) else { return }
         // The edits go at the quit that installs, after any approvals' wait.
-        consentedDiscard = vault.draftIDs
         vault.whenNoDrafts = nil
-        releaseHeldUpdate()
+        let install = heldInstall
+        heldInstall = nil
+        updateHeld = false
+        consentToDiscardForInstall()
+        install?()
     }
 
     private func releaseHeldUpdate() {

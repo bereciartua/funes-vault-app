@@ -157,19 +157,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 model.holdUpdate(resume)
                 return .held
             }
-            // Discarded right before the install. Edits to other memories made while an approval
-            // held it are asked about again.
-            let consented = model.vault.draftIDs
-            return .discard { [weak model] in
-                guard let model else { return true }
-                guard model.vault.draftIDs.isSubset(of: consented)
-                        || model.askToDiscardDrafts(String(localized: "Discard and Install")) else {
-                    model.holdUpdate(resume)
-                    return false
-                }
-                model.discardDraftsForQuit()
-                return true
-            }
+            // The edits go at the quit that installs, after any approvals' wait; edits to other
+            // memories made meanwhile are asked about then.
+            model.consentToDiscardForInstall()
+            return .proceed
         }
         model.data.confirmQuit = { [weak model] in model?.askToDiscardDrafts(String(localized: "Discard and Quit")) ?? true }
         model.data.willQuit = { [weak model] in model?.discardDraftsForQuit() }
@@ -302,10 +293,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let model {
             // Edits the user already agreed to discard for an install aren't asked about again;
             // edits to other memories made since are.
-            let consented = model.consentedDiscard.map { model.vault.draftIDs.isSubset(of: $0) } ?? false
-            guard consented || model.askToDiscardDrafts(String(localized: "Discard and Quit")) else { return .terminateCancel }
+            guard model.draftsConsentedForQuit || model.askToDiscardDrafts(String(localized: "Discard and Quit")) else {
+                model.quitCancelled()
+                return .terminateCancel
+            }
             model.discardDraftsForQuit()
         }
+        // An install still waiting on the approvals doesn't relaunch inside this quit.
+        updater?.cancelPendingRelaunch()
         guard let mcp, mcp.callsInProgress > 0 else { return .terminateNow }
         mcp.quit()
         environment?.approvals.queue.close()

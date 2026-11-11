@@ -56,6 +56,7 @@ public final class UpdateRelaunchGate {
     private let now: () -> Date
     private let schedule: (TimeInterval, @escaping @MainActor () -> Void) -> Void
     public private(set) var isWaiting = false
+    private var generation = 0
 
     /// `maximumWait` is the approval timeout plus a margin, so every waiting request is answered
     /// or times out first.
@@ -75,18 +76,25 @@ public final class UpdateRelaunchGate {
     public func postpone(_ proceed: @escaping () -> Void) -> Bool {
         guard !isWaiting, pendingApprovals() > 0 else { return false }
         isWaiting = true
-        wait(until: now().addingTimeInterval(maximumWait), proceed)
+        generation += 1
+        wait(until: now().addingTimeInterval(maximumWait), generation: generation, proceed)
         return true
     }
 
-    private func wait(until deadline: Date, _ proceed: @escaping () -> Void) {
+    /// Drops a waiting `proceed`, which then never runs (the app is quitting).
+    public func cancel() {
+        generation += 1
+        isWaiting = false
+    }
+
+    private func wait(until deadline: Date, generation: Int, _ proceed: @escaping () -> Void) {
         schedule(Self.pollInterval) { [weak self] in
-            guard let self else { return }
+            guard let self, self.generation == generation else { return }
             if self.pendingApprovals() == 0 || self.now() >= deadline {
                 self.isWaiting = false
                 proceed()
             } else {
-                self.wait(until: deadline, proceed)
+                self.wait(until: deadline, generation: generation, proceed)
             }
         }
     }
