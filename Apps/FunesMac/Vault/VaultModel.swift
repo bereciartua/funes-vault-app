@@ -438,6 +438,7 @@ final class VaultModel: AnswerCardSource {
     func perform(_ action: BulkAction, on ids: Set<UUID>) async {
         let store = services.store
         let now = Date()
+        let categories = (try? store.categories()) ?? []
         var done = 0, failed = 0
         for id in ids {
             do {
@@ -446,7 +447,13 @@ final class VaultModel: AnswerCardSource {
                 case .restore: try store.restoreMemory(id: id, now: now)
                 case .delete: try store.deleteMemory(id: id, now: now)
                 case .deleteNow: try store.purgeMemory(id: id, now: now)
-                case .moveToCategory(let key): try store.updateMemory(id: id, MemoryEdit(categoryKeys: [key]), now: now)
+                case .moveToCategory(let key):
+                    // Raised to at least the category's default, never lowered, as the editor and
+                    // an Inbox card do (FR-V-07); against the version read, so nothing slips in.
+                    guard let memory = try store.memory(id: id) else { throw VaultError.notFound }
+                    let raised = Self.movedSensitivity(memory.sensitivity, to: key, categories: categories)
+                    try store.updateMemory(id: id, MemoryEdit(categoryKeys: [key], sensitivity: raised == memory.sensitivity ? nil : raised),
+                                           expectedVersion: memory.version, now: now)
                 case .sensitivity(let level): try store.updateMemory(id: id, MemoryEdit(sensitivity: level), now: now)
                 }
                 done += 1
@@ -457,6 +464,11 @@ final class VaultModel: AnswerCardSource {
         bulkResult = Self.summary(action, done: done, failed: failed)
         selection = []
         await load()
+    }
+
+    /// A memory's sensitivity once moved to the category `key`: at least its default.
+    static func movedSensitivity(_ current: Sensitivity, to key: String, categories: [MemoryCategory]) -> Sensitivity {
+        max(current, categories.first { $0.key == key }?.defaultSensitivity ?? .low)
     }
 
     static func summary(_ action: BulkAction, done: Int, failed: Int) -> String {

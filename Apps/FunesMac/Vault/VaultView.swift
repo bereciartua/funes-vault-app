@@ -446,9 +446,12 @@ struct BulkBar: View {
             Button(String(localized: "Move to \(category.name)")) { run(.moveToCategory(category.key)) }
         } message: { category in
             let removed = removedCategories(category.key)
-            Text(removed.isEmpty
-                 ? String(localized: "This replaces their categories. Agents' access to them may change.")
-                 : String(localized: "This replaces their categories, so they'll no longer be in \(removed.formatted(.list(type: .and))). Agents' access to them may change."))
+            let replaces = removed.isEmpty
+                ? String(localized: "This replaces their categories. Agents' access to them may change.")
+                : String(localized: "This replaces their categories, so they'll no longer be in \(removed.formatted(.list(type: .and))). Agents' access to them may change.")
+            Text(raisesSensitivity(category)
+                 ? replaces + " " + String(localized: "Their sensitivity is raised to at least \(category.defaultSensitivity.title), \(category.name)'s default.")
+                 : replaces)
         }
     }
 
@@ -456,11 +459,19 @@ struct BulkBar: View {
     /// or some selected memory isn't listed to tell, it asks first, naming what goes.
     private func move(to category: MemoryCategory) {
         let listed = model.vault.memories.filter { ids.contains($0.id) }
-        if listed.count == ids.count, removedCategories(category.key).isEmpty {
+        if listed.count == ids.count, removedCategories(category.key).isEmpty, !raisesSensitivity(category) {
             run(.moveToCategory(category.key))
         } else {
             confirmMove = category
         }
+    }
+
+    /// Some selected memory is below the category's default sensitivity, so the move raises it
+    /// (or one isn't listed to tell).
+    private func raisesSensitivity(_ category: MemoryCategory) -> Bool {
+        let listed = model.vault.memories.filter { ids.contains($0.id) }
+        return listed.count < ids.count && category.defaultSensitivity > .low
+            || listed.contains { VaultModel.movedSensitivity($0.sensitivity, to: category.key, categories: [category]) != $0.sensitivity }
     }
 
     /// The names of the categories a move to `key` takes from the selected memories.

@@ -7829,6 +7829,16 @@
     "The weekly check found a problem with the vault file. Restore the latest backup." : {
 
     },
+    "Their sensitivity is raised to at least %@, %@'s default." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Their sensitivity is raised to at least %1$@, %2$@'s default."
+          }
+        }
+      }
+    },
     "Their text is deleted from this Mac. The history keeps its labels, and automatic changes keep theirs until Undo expires." : {
 
     },

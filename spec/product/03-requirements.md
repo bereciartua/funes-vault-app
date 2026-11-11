@@ -97,7 +97,7 @@
 - Acceptance: a hint only; it never blocks saving.
 
 **FR-V-14 Bulk actions** · S · v0.1
-- Multi-select to archive, delete, change category or change sensitivity.
+- Multi-select to archive, delete, change category or change sensitivity. Moving to a category replaces their categories and raises each memory's sensitivity to at least the category's default, never lowering it (FR-V-07).
 
 **FR-V-15 Confirm a memory** · C · v0.1
 - "Still true" marks `lastConfirmedAt`, shown as "confirmed 3 months ago".
