@@ -3793,6 +3793,9 @@
     "Funes Vault couldn't erase its data. Nothing was deleted." : {
 
     },
+    "Funes Vault couldn't relaunch on its own. What you asked for happens the next time it opens." : {
+
+    },
     "Funes Vault paused" : {
 
     },
@@ -5768,6 +5771,9 @@
 
     },
     "Quit Funes Vault" : {
+
+    },
+    "Quit and reopen Funes Vault to finish" : {
 
     },
     "Quit the other copy first." : {

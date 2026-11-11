@@ -155,12 +155,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.vault.draftsChanged = { [weak model] in model?.tryPendingInstall() }
         model.data.confirmQuit = { [weak model] in model?.beginQuit(String(localized: "Discard and Quit")) ?? true }
         model.data.quitAborted = { [weak model] in model?.quitCancelled() }
-        // Through a waiting update; if its relaunch never comes, the edits go and the app relaunches itself.
-        model.data.willQuit = { [weak model] otherwise in
-            model?.relaunchThroughPendingUpdate(otherwise: { [weak model] in
-                model?.discardDraftsForQuit()
-                otherwise()
-            }) ?? false
+        // Through a waiting update; if its relaunch never comes, the app says to quit and reopen.
+        model.data.willQuit = { [weak model, weak self] in
+            model?.relaunchThroughPendingUpdate(unfinished: { self?.relaunchUnfinished() }) ?? false
         }
         updater.aborted = { [weak model] in model?.updateAborted() }
         updater.foundUpdateChanged = { [weak model, weak menu] found in
@@ -505,7 +502,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // land in the copy the move trashes.
         if let model, !model.beginQuit(String(localized: "Discard and Quit")) { return }
         if let model, model.updatePending {
-            _ = model.relaunchThroughPendingUpdate(otherwise: { [weak model] in model?.quitCancelled() })
+            _ = model.relaunchThroughPendingUpdate(unfinished: {})
             return
         }
         let moved = AppMover.move(FunesMacApp.identity, prepareToQuit: { [weak model] in
@@ -515,7 +512,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch moved {
         case .moving:
             // The new copy may still fail to open: the quit it would bring mustn't stay expected.
-            model?.expectQuit(otherwise: { [weak model] in model?.quitCancelled() })
+            model?.expectQuit()
         case .failed(let problem):
             model?.quitCancelled()
             let failure = NSAlert()
@@ -584,6 +581,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         descriptor = fd
         return true
+    }
+
+    /// A Restore or Erase relaunching through a waiting update didn't relaunch (Sparkle's session
+    /// ended, or its quit was cancelled): it applies at the next launch, so the user is told to
+    /// quit and reopen. Shown after the current event, never inside another alert.
+    private func relaunchUnfinished() {
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.messageText = String(localized: "Quit and reopen Funes Vault to finish")
+            alert.informativeText = String(localized: "Funes Vault couldn't relaunch on its own. What you asked for happens the next time it opens.")
+            alert.addButton(withTitle: String(localized: "OK"))
+            NSApp.activate()
+            alert.runModal()
+        }
     }
 
     /// True when no memory has unsaved edits, or the user chose to discard them (FR-V-02): they
