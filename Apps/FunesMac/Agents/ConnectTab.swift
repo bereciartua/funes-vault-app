@@ -130,23 +130,10 @@ struct ConnectTab: View {
             Text(String(localized: "It's running from \(AppMover.location.placeName(home: NSHomeDirectory())). Setups point at the launcher inside the app, so an agent set up from here stops connecting once this copy moves or goes away."))
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Button(String(localized: "Move to Applications")) {
-                // Unsaved edits are asked about before the move launches the new copy.
-                guard model.beginQuit(String(localized: "Discard and Quit")) else { return }
-                // An update waiting to relaunch goes first; the move is offered again after it.
-                if model.updatePending {
-                    _ = model.relaunchThroughPendingUpdate(unfinished: {})
-                    return
-                }
-                let moved = AppMover.move(FunesMacApp.identity, prepareToQuit: { [model] in
-                    model.discardDraftsForQuit()
-                    NSApp.terminate(nil)
-                })
-                switch moved {
-                case .moving:
-                    // The new copy may still fail to open: the quit it would bring mustn't stay expected.
-                    model.expectQuit()
-                case .failed(let problem):
-                    model.quitCancelled()
+                // Not while an update is installing; unsaved edits are asked about before the move
+                // launches the new copy, and go at the quit.
+                guard model.confirmAppRelaunch() else { return }
+                if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { NSApp.terminate(nil) }) {
                     moveProblem = problem
                 }
             }

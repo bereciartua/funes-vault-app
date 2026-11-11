@@ -517,17 +517,17 @@ private struct PanelFooter: View {
     var body: some View {
         VStack(spacing: 0) {
             Divider()
-            // An update waiting to relaunch until unsaved edits are saved or discarded (FR-V-02).
+            // An update held because of unsaved edits, until the user installs it (FR-V-02).
             if model.app.updateHeld {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(String(localized: "Update ready to install"), systemImage: "arrow.down.circle.fill")
                         .foregroundStyle(Color.accentColor)
-                    Text(String(localized: "Installs once you save or discard your changes."))
+                    Text(String(localized: "It waited because you have unsaved changes. Installing relaunches Funes Vault."))
                         .font(.caption).foregroundStyle(.secondary)
-                    Button(String(localized: "Discard Changes and Install…")) {
+                    Button(String(localized: "Install Now…")) {
                         model.closePanel()
-                        // After the panel has gone: it asks first.
-                        DispatchQueue.main.async { model.app.discardDraftsAndInstall() }
+                        // After the panel has gone: it asks about unsaved changes first.
+                        DispatchQueue.main.async { model.app.installHeldUpdate() }
                     }
                     .buttonStyle(.link)
                 }

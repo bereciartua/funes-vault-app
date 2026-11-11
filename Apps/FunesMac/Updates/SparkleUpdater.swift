@@ -22,8 +22,12 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
     /// `install` later, at most once (approvals waiting, unsaved edits kept). If it never does,
     /// Sparkle installs at the next quit without relaunching.
     var postponeRelaunch: (_ install: @escaping () -> Void) -> Bool = { _ in false }
-    /// Sparkle ended an update without installing it.
+    /// Sparkle ended an update with an error.
     var aborted: () -> Void = {}
+    /// From an update's extraction (Autoupdate is running and installs when the app quits) until an
+    /// error ends it, or while a session is in progress: Sparkle's installer may be running.
+    private var extracted = false
+    var installerMayBeRunning: Bool { extracted || (started && controller.updater.sessionInProgress) }
     private var controller: SPUStandardUpdaterController!
     private var started = false
 
@@ -96,7 +100,12 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
         postponeRelaunch(installHandler)
     }
 
+    func updater(_ updater: SPUUpdater, willExtractUpdate item: SUAppcastItem) {
+        extracted = true
+    }
+
     func updater(_ updater: SPUUpdater, didAbortWithError error: any Error) {
+        extracted = false
         aborted()
     }
 

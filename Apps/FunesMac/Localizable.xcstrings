@@ -2226,6 +2226,9 @@
     "An agent's suggestion is waiting in your Inbox." : {
 
     },
+    "An update is installing" : {
+
+    },
     "Another agent already has that name." : {
 
     },
@@ -3312,9 +3315,6 @@
     "Discard" : {
 
     },
-    "Discard Changes and Install…" : {
-
-    },
     "Discard and Delete" : {
 
     },
@@ -3791,9 +3791,6 @@
 
     },
     "Funes Vault couldn't erase its data. Nothing was deleted." : {
-
-    },
-    "Funes Vault couldn't relaunch on its own. What you asked for happens the next time it opens." : {
 
     },
     "Funes Vault paused" : {
@@ -4318,6 +4315,9 @@
         }
       }
     },
+    "Install Now…" : {
+
+    },
     "Install Tailscale on this Mac and sign in." : {
 
     },
@@ -4334,9 +4334,6 @@
 
     },
     "Install ngrok, or choose another tunnel." : {
-
-    },
-    "Installs once you save or discard your changes." : {
 
     },
     "Instruction" : {
@@ -4382,6 +4379,9 @@
 
     },
     "It stops working now. To use it again, connect it again." : {
+
+    },
+    "It waited because you have unsaved changes. Installing relaunches Funes Vault." : {
 
     },
     "It was changed since, so it can't be undone." : {
@@ -5773,7 +5773,7 @@
     "Quit Funes Vault" : {
 
     },
-    "Quit and reopen Funes Vault to finish" : {
+    "Quit Funes Vault to finish installing it, then open it again and try once more." : {
 
     },
     "Quit the other copy first." : {

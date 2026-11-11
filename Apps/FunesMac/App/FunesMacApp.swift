@@ -148,17 +148,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.relaunchGate = UpdateRelaunchGate(pendingApprovals: { environment.approvals.queue.items.count },
                                                 maximumWait: FunesApprovals.panelSeconds + 15)
         let updater = SparkleUpdater()
-        // A scheduled check never opens a window: what it found shows in the menu bar.
-        // Installing relaunches: it asks about unsaved edits first, and waits for the ones kept.
+        // A scheduled check never opens a window: what it found shows in the menu bar. With unsaved
+        // edits around, a downloaded update waits for Install Now in the menu bar panel.
         model.askToDiscardDrafts = { [weak self] button in self?.askToDiscardDrafts(button: button) ?? true }
+        model.showInstallerBusy = { [weak self] in self?.installerBusy() }
+        model.installerLive = { [weak updater] in updater?.installerMayBeRunning ?? false }
         updater.postponeRelaunch = { [weak model] install in model?.postponeRelaunch(install) ?? false }
-        model.vault.draftsChanged = { [weak model] in model?.tryPendingInstall() }
-        model.data.confirmQuit = { [weak model] in model?.beginQuit(String(localized: "Discard and Quit")) ?? true }
-        model.data.quitAborted = { [weak model] in model?.quitCancelled() }
-        // Through a waiting update; if its relaunch never comes, the app says to quit and reopen.
-        model.data.willQuit = { [weak model, weak self] in
-            model?.relaunchThroughPendingUpdate(unfinished: { self?.relaunchUnfinished() }) ?? false
-        }
+        model.data.confirmQuit = { [weak model] in model?.confirmAppRelaunch() ?? true }
         updater.aborted = { [weak model] in model?.updateAborted() }
         updater.foundUpdateChanged = { [weak model, weak menu] found in
             model?.foundUpdate = found
@@ -290,8 +286,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // Edits the user already agreed to discard for an install aren't asked about again;
             // edits to other memories made since are. No install starts while it asks, and a
             // pending one is let go so Sparkle installs at this quit, without relaunching.
-            guard model.beginQuit(String(localized: "Discard and Quit"), terminating: true) else { return .terminateCancel }
-            model.discardDraftsForQuit()
+            guard model.confirmTermination() else { return .terminateCancel }
         }
         guard let mcp, mcp.callsInProgress > 0 else { return .terminateNow }
         mcp.quit()
@@ -497,24 +492,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences.set("MoveDeclined", true)
             return
         }
-        // Unsaved edits are asked about before the move launches the new copy. An update waiting
-        // to relaunch goes first (the move is offered again then): installed at the quit, it would
-        // land in the copy the move trashes.
-        if let model, !model.beginQuit(String(localized: "Discard and Quit")) { return }
-        if let model, model.updatePending {
-            _ = model.relaunchThroughPendingUpdate(unfinished: {})
-            return
-        }
-        let moved = AppMover.move(FunesMacApp.identity, prepareToQuit: { [weak model] in
-            model?.discardDraftsForQuit()
-            NSApp.terminate(nil)
-        })
-        switch moved {
-        case .moving:
-            // The new copy may still fail to open: the quit it would bring mustn't stay expected.
-            model?.expectQuit()
-        case .failed(let problem):
-            model?.quitCancelled()
+        // Not while an update is installing (it would land in the copy the move trashes); unsaved
+        // edits are asked about before the move launches the new copy, and go at the quit.
+        if let model, !model.confirmAppRelaunch() { return }
+        if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { NSApp.terminate(nil) }) {
             let failure = NSAlert()
             failure.messageText = String(localized: "Funes Vault couldn't be moved")
             failure.informativeText = problem
@@ -583,18 +564,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
-    /// A Restore or Erase relaunching through a waiting update didn't relaunch (Sparkle's session
-    /// ended, or its quit was cancelled): it applies at the next launch, so the user is told to
-    /// quit and reopen. Shown after the current event, never inside another alert.
-    private func relaunchUnfinished() {
-        DispatchQueue.main.async {
-            let alert = NSAlert()
-            alert.messageText = String(localized: "Quit and reopen Funes Vault to finish")
-            alert.informativeText = String(localized: "Funes Vault couldn't relaunch on its own. What you asked for happens the next time it opens.")
-            alert.addButton(withTitle: String(localized: "OK"))
-            NSApp.activate()
-            alert.runModal()
-        }
+    /// Restore, Erase or Move asked for while an update is installing: they wait, since the app
+    /// mustn't relaunch itself while Sparkle's installer may replace it.
+    private func installerBusy() {
+        let alert = NSAlert()
+        alert.messageText = String(localized: "An update is installing")
+        alert.informativeText = String(localized: "Quit Funes Vault to finish installing it, then open it again and try once more.")
+        alert.addButton(withTitle: String(localized: "OK"))
+        alert.runModal()
     }
 
     /// True when no memory has unsaved edits, or the user chose to discard them (FR-V-02): they
