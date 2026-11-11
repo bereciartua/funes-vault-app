@@ -4,6 +4,8 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-11-11
+
 Fixes from a full code review of the Mac app, the iPhone app and the release pipeline. **Update the Mac first, then the iPhone:** the iPhone now trusts only refusals your Mac has signed, so a new iPhone app with an older Mac can't correct its clock or learn it was removed (it shows the Mac as unreachable instead). Right after the Mac updates, the iPhone may see "vault not available" for up to four minutes while replay protection starts; it recovers by itself.
 
 ### Security
@@ -377,7 +379,8 @@ The first public preview of Funes Vault for the Mac: a menu bar app that keeps y
 - **Licences in the app**: the bundled embedding model ships inside the app with its MIT licence, and the app includes the licence texts of GRDB.swift, Sparkle and the model alongside its own `LICENSE` and `NOTICE`.
 - **Open source**: the code, the product definition in `spec/`, and the tests are public under the Apache License 2.0. See [Testing](docs/TESTING.md) for what has been checked.
 
-[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/bereciartua/funes-vault-app/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/bereciartua/funes-vault-app/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/bereciartua/funes-vault-app/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/bereciartua/funes-vault-app/compare/v0.2.0...v0.5.0
 [0.2.0]: https://github.com/bereciartua/funes-vault-app/compare/v0.1.4...v0.2.0
