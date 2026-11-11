@@ -3787,10 +3787,16 @@
     "Funes Vault always stays in the menu bar. Without the Dock icon, it shows in the Dock only while a window is open." : {
 
     },
+    "Funes Vault couldn't be moved" : {
+
+    },
     "Funes Vault couldn't delete everything in its data folder. Quit Funes Vault and delete what's left in %@." : {
 
     },
     "Funes Vault couldn't erase its data. Nothing was deleted." : {
+
+    },
+    "Funes Vault didn't quit, so what you asked for happens the next time it opens." : {
 
     },
     "Funes Vault paused" : {
@@ -5776,6 +5782,9 @@
     "Quit Funes Vault to finish installing it, then open it again and try once more." : {
 
     },
+    "Quit and reopen Funes Vault to finish" : {
+
+    },
     "Quit the other copy first." : {
 
     },
@@ -7617,6 +7626,9 @@
 
     },
     "The copy couldn't be made: %@" : {
+
+    },
+    "The copy in Applications didn't open. Quit Funes Vault and open it from Applications." : {
 
     },
     "The copy's signature didn't check out, so it was moved to the Trash." : {

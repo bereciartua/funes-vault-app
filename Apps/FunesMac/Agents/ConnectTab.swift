@@ -133,7 +133,12 @@ struct ConnectTab: View {
                 // Not while an update is installing; unsaved edits are asked about before the move
                 // launches the new copy, and go at the quit.
                 guard model.confirmAppRelaunch() else { return }
-                if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { NSApp.terminate(nil) }) {
+                if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { NSApp.terminate(nil) },
+                                                             openFailed: { [model] in
+                                                                 model.appRelaunchCalledOff()
+                                                                 moveProblem = String(localized: "The copy in Applications didn't open. Quit Funes Vault and open it from Applications.")
+                                                             }) {
+                    model.appRelaunchCalledOff()
                     moveProblem = problem
                 }
             }

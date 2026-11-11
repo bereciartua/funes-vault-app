@@ -152,6 +152,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // edits around, a downloaded update waits for Install Now in the menu bar panel.
         model.askToDiscardDrafts = { [weak self] button in self?.askToDiscardDrafts(button: button) ?? true }
         model.showInstallerBusy = { [weak self] in self?.installerBusy() }
+        model.showRelaunchUnfinished = { [weak self] in self?.relaunchUnfinished() }
+        model.data.relaunchCalledOff = { [weak model] in model?.appRelaunchCalledOff() }
         model.installerLive = { [weak updater] in updater?.installerMayBeRunning ?? false }
         updater.postponeRelaunch = { [weak model] install in model?.postponeRelaunch(install) ?? false }
         model.data.confirmQuit = { [weak model] in model?.confirmAppRelaunch() ?? true }
@@ -495,7 +497,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Not while an update is installing (it would land in the copy the move trashes); unsaved
         // edits are asked about before the move launches the new copy, and go at the quit.
         if let model, !model.confirmAppRelaunch() { return }
-        if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { NSApp.terminate(nil) }) {
+        if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { NSApp.terminate(nil) },
+                                                     openFailed: { [weak self] in self?.moveDidntOpen() }) {
+            model?.appRelaunchCalledOff()
             let failure = NSAlert()
             failure.messageText = String(localized: "Funes Vault couldn't be moved")
             failure.informativeText = problem
@@ -572,6 +576,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.informativeText = String(localized: "Quit Funes Vault to finish installing it, then open it again and try once more.")
         alert.addButton(withTitle: String(localized: "OK"))
         alert.runModal()
+    }
+
+    /// The moved copy didn't open: this copy keeps running, and the edits stay.
+    func moveDidntOpen() {
+        model?.appRelaunchCalledOff()
+        let alert = NSAlert()
+        alert.messageText = String(localized: "Funes Vault couldn't be moved")
+        alert.informativeText = String(localized: "The copy in Applications didn't open. Quit Funes Vault and open it from Applications.")
+        alert.addButton(withTitle: String(localized: "OK"))
+        alert.runModal()
+    }
+
+    /// A Restore, Erase or Move whose quit was cancelled: it finishes when the app next opens.
+    /// Shown after the current event.
+    private func relaunchUnfinished() {
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.messageText = String(localized: "Quit and reopen Funes Vault to finish")
+            alert.informativeText = String(localized: "Funes Vault didn't quit, so what you asked for happens the next time it opens.")
+            alert.addButton(withTitle: String(localized: "OK"))
+            alert.runModal()
+        }
     }
 
     /// True when no memory has unsaved edits, or the user chose to discard them (FR-V-02): they

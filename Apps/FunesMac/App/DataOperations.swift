@@ -21,6 +21,8 @@ final class DataOperations {
     /// Before a relaunch: false when it can't happen now (an update is installing) or the user kept
     /// unsaved edits; they go at the quit, which doesn't ask about them again.
     var confirmQuit: () -> Bool = { true }
+    /// The relaunch didn't start after `confirmQuit` agreed (its marker couldn't be written).
+    var relaunchCalledOff: () -> Void = {}
 
     init(environment: VaultEnvironment, preferences: Preferences) {
         self.environment = environment
@@ -94,8 +96,13 @@ final class DataOperations {
     func restore(_ backup: URL) throws {
         guard confirmQuit() else { return }
         let marker = environment.dataFolder.appendingPathComponent(Self.restoreMarker)
-        let data = try JSONSerialization.data(withJSONObject: ["backup": backup.lastPathComponent])
-        try data.write(to: marker, options: .atomic)
+        do {
+            let data = try JSONSerialization.data(withJSONObject: ["backup": backup.lastPathComponent])
+            try data.write(to: marker, options: .atomic)
+        } catch {
+            relaunchCalledOff()
+            throw error
+        }
         _ = chmod(marker.path, 0o600)
         Self.relaunch()
     }
@@ -146,7 +153,10 @@ final class DataOperations {
     func eraseAll(modelSettings: ModelSettings) throws {
         guard confirmQuit() else { return }
         let marker = environment.dataFolder.appendingPathComponent(Self.eraseMarker)
-        try Data().write(to: marker, options: .atomic)
+        do { try Data().write(to: marker, options: .atomic) } catch {
+            relaunchCalledOff()
+            throw error
+        }
         for account in modelSettings.accounts { modelSettings.removeAccount(account.id) }
         Self.relaunch()
     }
