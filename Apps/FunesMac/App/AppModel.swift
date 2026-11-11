@@ -134,6 +134,9 @@ final class AppModel {
     /// menu bar panel says so and offers to discard them and install.
     private(set) var updateHeld = false
     @ObservationIgnored private var heldInstall: (() -> Void)?
+    /// The memories whose edits the user agreed to discard for an install: they go at the quit
+    /// that installs it, not before, since an approval can still hold the relaunch.
+    @ObservationIgnored private(set) var consentedDiscard: Set<UUID>?
     /// Asks before unsaved edits are dropped, with this button ("Discard and Quit"); true when
     /// there are none or the user agreed. Discards nothing itself (set by the app).
     @ObservationIgnored var askToDiscardDrafts: (_ button: String) -> Bool = { _ in true }
@@ -357,6 +360,7 @@ final class AppModel {
     /// A quit or relaunch is certain: unsaved edits go, and an update held for them is let go too
     /// (Sparkle installs it at the next launch or check, never inside this quit).
     func discardDraftsForQuit() {
+        consentedDiscard = nil
         heldInstall = nil
         updateHeld = false
         vault.whenNoDrafts = nil
@@ -373,8 +377,9 @@ final class AppModel {
     /// The menu bar panel's Discard Changes and Install, after asking.
     func discardDraftsAndInstall() {
         guard updateHeld, askToDiscardDrafts(String(localized: "Discard and Install")) else { return }
+        // The edits go at the quit that installs, after any approvals' wait.
+        consentedDiscard = vault.draftIDs
         vault.whenNoDrafts = nil
-        vault.discardDrafts()
         releaseHeldUpdate()
     }
 

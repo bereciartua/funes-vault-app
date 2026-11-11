@@ -18,9 +18,20 @@ private let logger = Logger(subsystem: "com.funesvault.mac", category: "updates"
 @MainActor
 final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate {
     var foundUpdateChanged: (FoundUpdate?) -> Void = { _ in }
-    /// Before the relaunch: true holds it while unsaved edits remain (the user chose Cancel), and
-    /// the app calls `resume` once they're saved or reverted.
-    var holdForDrafts: (_ resume: @escaping () -> Void) -> Bool = { _ in false }
+    /// What the relaunch does about unsaved edits.
+    enum DraftDecision {
+        /// None, or nothing to ask: on to the approvals' wait.
+        case proceed
+        /// The user chose Cancel: held until the app calls `resume`.
+        case held
+        /// The user chose Discard and Install: `discard` runs right before the install (after
+        /// any approvals' wait), and returns false when it held the update instead.
+        case discard(() -> Bool)
+    }
+
+    /// Before the relaunch: what to do about unsaved edits; the app calls `resume` once a held
+    /// update may go on.
+    var holdForDrafts: (_ resume: @escaping () -> Void) -> DraftDecision = { _ in .proceed }
 
     private let gate: UpdateRelaunchGate
     private var controller: SPUStandardUpdaterController!
@@ -93,11 +104,20 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
 
     func updater(_ updater: SPUUpdater, shouldPostponeRelaunchForUpdate item: SUAppcastItem,
                  untilInvokingBlock installHandler: @escaping () -> Void) -> Bool {
-        let held = holdForDrafts { [weak self] in
+        let decision = holdForDrafts { [weak self] in
             // Then the approvals' wait, as without edits.
             guard let self, self.gate.postpone(installHandler) else { return installHandler() }
         }
-        return held || gate.postpone(installHandler)
+        switch decision {
+        case .proceed:
+            return gate.postpone(installHandler)
+        case .held:
+            return true
+        case let .discard(discard):
+            // The edits go only when the install really happens, not while an approval holds it.
+            if gate.postpone({ if discard() { installHandler() } }) { return true }
+            return !discard()
+        }
     }
 
     // MARK: SPUStandardUserDriverDelegate
