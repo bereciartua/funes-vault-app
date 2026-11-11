@@ -92,8 +92,17 @@ public struct MigratingKeychain: Sendable {
         defer { Self.lock.unlock() }
         let modern = backend.read(service: service, account: account, dataProtection: true)
         if modern.status == errSecSuccess, let data = modern.data {
-            // A legacy copy whose delete failed after an earlier migration goes now.
-            if cleaned.first(account) { deleteLegacy(account: account) }
+            // A legacy copy whose delete failed after an earlier migration goes now, but only one
+            // that's the same key: a different one (written by an older build after a downgrade)
+            // stays, shadowed, rather than being deleted unseen.
+            if cleaned.first(account) {
+                let legacy = backend.read(service: service, account: account, dataProtection: false)
+                if legacy.status == errSecSuccess, legacy.data == data {
+                    deleteLegacy(account: account)
+                } else if legacy.status == errSecSuccess {
+                    logger.error("Keychain migration: a different legacy item stays") // log-safe: no key material
+                }
+            }
             return data
         }
         let usable = modern.status == errSecItemNotFound

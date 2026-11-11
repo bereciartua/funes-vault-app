@@ -518,8 +518,8 @@ extension VaultStore {
     }
 
     /// Delete Now: purges a deleted memory immediately.
-    public func purgeMemory(id: UUID) throws {
-        try writer.write { db in try MemoryStore.purge(db, id: id) }
+    public func purgeMemory(id: UUID, now: Date = Date()) throws {
+        try writer.write { db in try MemoryStore.purge(db, id: id, now: now) }
     }
 
     @discardableResult

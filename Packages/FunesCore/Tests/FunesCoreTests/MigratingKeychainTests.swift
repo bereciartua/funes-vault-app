@@ -172,6 +172,18 @@ final class FakeKeychains: KeychainBackend, @unchecked Sendable {
         #expect(fake.state.withLock { $0.calls } == ["read modern"])
     }
 
+    /// After a downgrade an older build may write a different key to the login keychain: the
+    /// later read doesn't delete it unseen (it stays, shadowed by the migrated copy).
+    @Test func aDifferentLegacyItemIsNotDeletedOnRead() throws {
+        fake.state.withLock {
+            $0.modern["com.funesvault.provider/openai"] = secret
+            $0.legacy["com.funesvault.provider/openai"] = Data("written by an older build".utf8)
+        }
+        let keychain = self.keychain
+        #expect(try keychain.read(account: "openai") == secret)
+        #expect(stored.legacy == Data("written by an older build".utf8))
+    }
+
     /// Runs `work` on another thread when the fake reaches `call`, waiting a little for it: with
     /// the lock it can't run until the operation under way is done; without, it would land in
     /// the middle of it.
