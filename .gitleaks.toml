@@ -6,10 +6,11 @@ title = "Funes Vault"
 useDefault = true
 
 [[allowlists]]
-description = "The secret scanner's own test data: fictional passwords and keys that the processing fixtures and their spike use to check that secret-like text is blocked."
+description = "The secret scanner's own test data: fictional passwords and keys in the processing fixtures, and the spike script that writes them. Only the data files and that one script; the spike's other scripts and results are scanned."
 paths = [
-  '''^Packages/FunesCore/Tests/FunesCoreTests/fixtures/processing/''',
-  '''^spikes/memory-processing/''',
+  '''^Packages/FunesCore/Tests/FunesCoreTests/fixtures/processing/[^/]+\.json$''',
+  '''^spikes/memory-processing/fixtures/([^/]+/)?[^/]+\.json$''',
+  '''^spikes/memory-processing/build_fixtures\.py$''',
 ]
 
 [[allowlists]]
