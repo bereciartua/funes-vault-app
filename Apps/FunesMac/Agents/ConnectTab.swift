@@ -131,11 +131,17 @@ struct ConnectTab: View {
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Button(String(localized: "Move to Applications")) {
                 // Unsaved edits are asked about before the move launches the new copy.
-                guard model.askToDiscardDrafts(String(localized: "Discard and Quit")) else { return }
+                guard model.beginQuit(String(localized: "Discard and Quit")) else { return }
+                // An update waiting to relaunch goes first; the move is offered again after it.
+                if model.updatePending {
+                    _ = model.relaunchThroughPendingUpdate()
+                    return
+                }
                 if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { [model] in
                     model.discardDraftsForQuit()
                     NSApp.terminate(nil)
                 }) {
+                    model.quitCancelled()
                     moveProblem = problem
                 }
             }

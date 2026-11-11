@@ -20,8 +20,11 @@ final class DataOperations {
     var integrityFailed: () -> Void = {}
     /// Before a relaunch: false when the user kept unsaved edits that a quit would drop.
     var confirmQuit: () -> Bool = { true }
-    /// The relaunch is certain (its marker written): unsaved edits go now.
-    var willQuit: () -> Void = {}
+    /// The relaunch didn't happen after `confirmQuit` agreed (its marker couldn't be written).
+    var quitAborted: () -> Void = {}
+    /// The relaunch is certain (its marker written): unsaved edits go now. True when a pending
+    /// update relaunches the app instead (it applies the marker at its launch).
+    var willQuit: () -> Bool = { false }
 
     init(environment: VaultEnvironment, preferences: Preferences) {
         self.environment = environment
@@ -95,11 +98,15 @@ final class DataOperations {
     func restore(_ backup: URL) throws {
         guard confirmQuit() else { return }
         let marker = environment.dataFolder.appendingPathComponent(Self.restoreMarker)
-        let data = try JSONSerialization.data(withJSONObject: ["backup": backup.lastPathComponent])
-        try data.write(to: marker, options: .atomic)
+        do {
+            let data = try JSONSerialization.data(withJSONObject: ["backup": backup.lastPathComponent])
+            try data.write(to: marker, options: .atomic)
+        } catch {
+            quitAborted()
+            throw error
+        }
         _ = chmod(marker.path, 0o600)
-        willQuit()
-        Self.relaunch()
+        if !willQuit() { Self.relaunch() }
     }
 
     /// How the restore asked for before this launch went, said once the app is up.
@@ -148,10 +155,12 @@ final class DataOperations {
     func eraseAll(modelSettings: ModelSettings) throws {
         guard confirmQuit() else { return }
         let marker = environment.dataFolder.appendingPathComponent(Self.eraseMarker)
-        try Data().write(to: marker, options: .atomic)
-        willQuit()
+        do { try Data().write(to: marker, options: .atomic) } catch {
+            quitAborted()
+            throw error
+        }
         for account in modelSettings.accounts { modelSettings.removeAccount(account.id) }
-        Self.relaunch()
+        if !willQuit() { Self.relaunch() }
     }
 
     /// Something in the data folder couldn't be deleted by the last erase: said once the app is up,

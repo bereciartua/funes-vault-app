@@ -145,25 +145,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = StatusMenuController(model: model, panel: MenuBarPanelController(model: panelModel))
         self.menu = menu
         // Updates (FR-G-03): the relaunch waits while a panel is waiting for the user.
-        let gate = UpdateRelaunchGate(pendingApprovals: { environment.approvals.queue.items.count },
-                                      maximumWait: FunesApprovals.panelSeconds + 15)
-        let updater = SparkleUpdater(gate: gate)
+        model.relaunchGate = UpdateRelaunchGate(pendingApprovals: { environment.approvals.queue.items.count },
+                                                maximumWait: FunesApprovals.panelSeconds + 15)
+        let updater = SparkleUpdater()
         // A scheduled check never opens a window: what it found shows in the menu bar.
-        // Installing relaunches: it asks about unsaved edits first, and on Cancel waits for them.
+        // Installing relaunches: it asks about unsaved edits first, and waits for the ones kept.
         model.askToDiscardDrafts = { [weak self] button in self?.askToDiscardDrafts(button: button) ?? true }
-        updater.holdForDrafts = { [weak model] resume in
-            guard let model, !model.vault.draftIDs.isEmpty else { return .proceed }
-            guard model.askToDiscardDrafts(String(localized: "Discard and Install")) else {
-                model.holdUpdate(resume)
-                return .held
-            }
-            // The edits go at the quit that installs, after any approvals' wait; edits to other
-            // memories made meanwhile are asked about then.
-            model.consentToDiscardForInstall()
-            return .proceed
-        }
-        model.data.confirmQuit = { [weak model] in model?.askToDiscardDrafts(String(localized: "Discard and Quit")) ?? true }
-        model.data.willQuit = { [weak model] in model?.discardDraftsForQuit() }
+        updater.postponeRelaunch = { [weak model] install in model?.postponeRelaunch(install) ?? false }
+        model.vault.draftsChanged = { [weak model] in model?.tryPendingInstall() }
+        model.data.confirmQuit = { [weak model] in model?.beginQuit(String(localized: "Discard and Quit")) ?? true }
+        model.data.quitAborted = { [weak model] in model?.quitCancelled() }
+        model.data.willQuit = { [weak model] in model?.relaunchThroughPendingUpdate() ?? false }
         updater.foundUpdateChanged = { [weak model, weak menu] found in
             model?.foundUpdate = found
             menu?.update()
@@ -292,15 +284,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Unsaved edits live only in memory: a quit asks before dropping them.
         if let model {
             // Edits the user already agreed to discard for an install aren't asked about again;
-            // edits to other memories made since are.
-            guard model.draftsConsentedForQuit || model.askToDiscardDrafts(String(localized: "Discard and Quit")) else {
-                model.quitCancelled()
-                return .terminateCancel
-            }
+            // edits to other memories made since are. No install starts while it asks, and a
+            // pending one is let go so Sparkle installs at this quit, without relaunching.
+            guard model.beginQuit(String(localized: "Discard and Quit")) else { return .terminateCancel }
             model.discardDraftsForQuit()
         }
-        // An install still waiting on the approvals doesn't relaunch inside this quit.
-        updater?.cancelPendingRelaunch()
         guard let mcp, mcp.callsInProgress > 0 else { return .terminateNow }
         mcp.quit()
         environment?.approvals.queue.close()
@@ -505,12 +493,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences.set("MoveDeclined", true)
             return
         }
-        // Unsaved edits are asked about before the move launches the new copy.
-        if let model, !model.askToDiscardDrafts(String(localized: "Discard and Quit")) { return }
+        // Unsaved edits are asked about before the move launches the new copy. An update waiting
+        // to relaunch goes first (the move is offered again then): installed at the quit, it would
+        // land in the copy the move trashes.
+        if let model, !model.beginQuit(String(localized: "Discard and Quit")) { return }
+        if let model, model.updatePending {
+            _ = model.relaunchThroughPendingUpdate()
+            return
+        }
         if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { [weak model] in
             model?.discardDraftsForQuit()
             NSApp.terminate(nil)
         }) {
+            model?.quitCancelled()
             let failure = NSAlert()
             failure.messageText = String(localized: "Funes Vault couldn't be moved")
             failure.informativeText = problem

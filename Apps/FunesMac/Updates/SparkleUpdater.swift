@@ -18,28 +18,14 @@ private let logger = Logger(subsystem: "com.funesvault.mac", category: "updates"
 @MainActor
 final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate {
     var foundUpdateChanged: (FoundUpdate?) -> Void = { _ in }
-    /// What the relaunch does about unsaved edits.
-    enum DraftDecision {
-        /// None, or nothing to ask: on to the approvals' wait.
-        case proceed
-        /// The user chose Cancel: held until the app calls `resume`.
-        case held
-    }
-
-    /// Before the relaunch: what to do about unsaved edits; the app calls `resume` once a held
-    /// update may go on.
-    var holdForDrafts: (_ resume: @escaping () -> Void) -> DraftDecision = { _ in .proceed }
-
-    private let gate: UpdateRelaunchGate
-
-    /// A quit the user asked for: an install still waiting on the approvals doesn't relaunch
-    /// inside it. Sparkle installs at this quit instead, without relaunching.
-    func cancelPendingRelaunch() { gate.cancel() }
+    /// An update is ready to relaunch into: false relaunches now; true means the app calls
+    /// `install` later, at most once (approvals waiting, unsaved edits kept). If it never does,
+    /// Sparkle installs at the next quit without relaunching.
+    var postponeRelaunch: (_ install: @escaping () -> Void) -> Bool = { _ in false }
     private var controller: SPUStandardUpdaterController!
     private var started = false
 
-    init(gate: UpdateRelaunchGate) {
-        self.gate = gate
+    override init() {
         super.init()
         controller = SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: self, userDriverDelegate: self)
     }
@@ -105,16 +91,7 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
 
     func updater(_ updater: SPUUpdater, shouldPostponeRelaunchForUpdate item: SUAppcastItem,
                  untilInvokingBlock installHandler: @escaping () -> Void) -> Bool {
-        let decision = holdForDrafts { [weak self] in
-            // Then the approvals' wait, as without edits.
-            guard let self, self.gate.postpone(installHandler) else { return installHandler() }
-        }
-        switch decision {
-        case .proceed:
-            return gate.postpone(installHandler)
-        case .held:
-            return true
-        }
+        postponeRelaunch(installHandler)
     }
 
     // MARK: SPUStandardUserDriverDelegate
