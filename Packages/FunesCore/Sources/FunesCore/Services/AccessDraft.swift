@@ -46,10 +46,12 @@ public struct AccessDraft: Sendable, Hashable {
 
     /// Saves through `agents`: the access only with the baseline's revision (else `revisionChanged`,
     /// nothing written), then the informational fields. Returns a fresh draft of the saved agent.
-    public func save(with agents: AgentService, now: Date) async throws -> AccessDraft {
+    /// `allowingEveryCategory`: the user confirmed emptying a non-empty allow list.
+    public func save(with agents: AgentService, allowingEveryCategory: Bool = false, now: Date) async throws -> AccessDraft {
         if isStale { throw VaultError.revisionChanged }
         if accessEdited {
-            try await agents.updateAccess(agentID: baseline.id, access, expectedRevision: baseline.revision, now: now)
+            try await agents.updateAccess(agentID: baseline.id, access, expectedRevision: baseline.revision,
+                                          allowingEveryCategory: allowingEveryCategory, now: now)
         }
         if asksForAccess != baseline.asksForAccess || retention != baseline.declaredRetention {
             try await agents.update(agentID: baseline.id, declaredRetention: retention, asksForAccess: asksForAccess)

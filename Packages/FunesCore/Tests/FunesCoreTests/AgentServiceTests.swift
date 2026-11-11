@@ -37,6 +37,27 @@ import Testing
         #expect(try await agents.authenticate(key: "nope") == nil)
     }
 
+    /// An empty allow list means every category: a save that would empty a non-empty one is refused
+    /// unless the user confirmed it, so no write path can widen an agent by accident.
+    @Test func emptyingTheAllowListNeedsConfirmation() async throws {
+        let (vault, agents, _) = try Self.make()
+        defer { withExtendedLifetime(vault) {} }
+        let (agent, _) = try await agents.create(name: "Cursor", kind: .cursor,
+                                                 access: Access(operations: [.read], allowedCategoryKeys: ["health"]), now: t0)
+        var emptied = agent.access
+        emptied.allowedCategoryKeys = []
+        await #expect(throws: VaultError.wouldAllowEveryCategory) {
+            try await agents.updateAccess(agentID: agent.id, emptied, now: t0)
+        }
+        #expect(try #require(try await agents.agent(id: agent.id)).access.allowedCategoryKeys == ["health"])
+        // Confirmed: saved. Other edits that keep it non-empty, or an agent that had all, need nothing.
+        let saved = try await agents.updateAccess(agentID: agent.id, emptied, allowingEveryCategory: true, now: t0)
+        #expect(saved.access.allowedCategoryKeys.isEmpty)
+        var narrowed = saved.access
+        narrowed.allowedCategoryKeys = ["project_context"]
+        _ = try await agents.updateAccess(agentID: agent.id, narrowed, now: t0)
+    }
+
     /// UX review F4: never-share categories. New agents start with Deny for them; applying them
     /// denies them for existing agents too (an access change), and never lifts a Deny.
     @Test func neverShareCategories() async throws {

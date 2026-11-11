@@ -161,12 +161,15 @@ public final class AgentService: Sendable {
     /// `expectedRevision` is the revision the editor read: if the access changed since (another
     /// window, Always Allow), nothing is written and it throws `revisionChanged` (fail closed).
     @discardableResult
-    public func updateAccess(agentID: UUID, _ access: Access, expectedRevision: Int? = nil, now: Date) async throws -> Agent {
+    /// An empty allow list means every category, so taking a non-empty one to empty is refused
+    /// (`wouldAllowEveryCategory`) unless `allowingEveryCategory` says the user confirmed it.
+    public func updateAccess(agentID: UUID, _ access: Access, expectedRevision: Int? = nil,
+                             allowingEveryCategory: Bool = false, now: Date) async throws -> Agent {
         try await change(agentID, event: "access_changed", now: now) { db in
-            if let expectedRevision {
-                guard let current = try AgentStore.fetch(db, id: agentID), current.revision == expectedRevision else {
-                    throw VaultError.revisionChanged
-                }
+            guard let current = try AgentStore.fetch(db, id: agentID) else { throw VaultError.notFound }
+            if let expectedRevision, current.revision != expectedRevision { throw VaultError.revisionChanged }
+            if !current.access.allowedCategoryKeys.isEmpty, access.allowedCategoryKeys.isEmpty, !allowingEveryCategory {
+                throw VaultError.wouldAllowEveryCategory
             }
             try AgentStore.writeAccess(db, agentID: agentID, access)
         }

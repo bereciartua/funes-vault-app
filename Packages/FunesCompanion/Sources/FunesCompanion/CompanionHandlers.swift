@@ -520,7 +520,8 @@ public final class CompanionHandlers: Sendable {
         case .unauthenticated: CompanionError(.notFound)
         case let .invalidInput(field): CompanionError(.invalidInput, message: field)
         case let .unknownCategory(key): CompanionError(.invalidInput, message: "Unknown category \(key)")
-        case .noCategories, .builtinCategory, .categoryExists, .categoryInUse, .onlyAllowedCategory, .deniedCategoryInUse, .nameTaken:
+        case .noCategories, .builtinCategory, .categoryExists, .categoryInUse, .onlyAllowedCategory, .deniedCategoryInUse,
+             .wouldAllowEveryCategory, .nameTaken:
             CompanionError(.invalidInput)
         }
     }

@@ -52,7 +52,7 @@ struct AccessEditor: View {
         }
         .onChange(of: agent) { _, agent in draft = draft.refreshed(from: agent) }
         .confirmationDialog(String(localized: "Let \(agent.name) use every category?"), isPresented: $confirmAllCategories) {
-            Button(String(localized: "Allow Every Category")) { save() }
+            Button(String(localized: "Allow Every Category")) { save(allowingEveryCategory: true) }
         } message: {
             Text(String(localized: "No category is set to Allow any more, and an empty allow list means every category that isn't denied. To share nothing, turn Read off instead."))
         }
@@ -245,11 +245,12 @@ struct AccessEditor: View {
         error = nil
     }
 
-    private func save() {
+    private func save(allowingEveryCategory: Bool = false) {
         let draft = draft
         Task {
             do {
-                self.draft = try await draft.save(with: model.services.agents, now: Date())
+                self.draft = try await draft.save(with: model.services.agents, allowingEveryCategory: allowingEveryCategory,
+                                                  now: Date())
                 error = nil
                 saved = true
                 await model.refresh()

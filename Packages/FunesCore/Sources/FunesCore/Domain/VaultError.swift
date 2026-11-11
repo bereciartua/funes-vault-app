@@ -21,6 +21,9 @@ public enum VaultError: Error, Sendable, Equatable {
     /// These agents deny the category, and some memories in it are also in a category they may
     /// read; without a replacement to deny instead, deleting it would show those memories to them.
     case deniedCategoryInUse(agentIDs: [UUID])
+    /// A save would take a non-empty allow list to empty, which means every category: refused
+    /// unless the user confirmed it (fail closed for any future write path).
+    case wouldAllowEveryCategory
     case nameTaken
     /// The vault was written by a newer version of Funes: refuse to open it ("Update Funes").
     case newerSchema
