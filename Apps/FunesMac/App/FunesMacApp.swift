@@ -285,9 +285,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         // Unsaved edits live only in memory: a quit asks before dropping them.
         if let model {
-            // Edits the user already agreed to discard for an install aren't asked about again;
-            // edits to other memories made since are. No install starts while it asks, and a
-            // pending one is let go so Sparkle installs at this quit, without relaunching.
+            // Edits a Restore, Erase, Move or Install Now just asked about aren't asked about again
+            // unless they changed. No install starts while it asks, and a held one is let go so
+            // Sparkle installs at this quit, without relaunching.
             guard model.confirmTermination() else { return .terminateCancel }
         }
         guard let mcp, mcp.callsInProgress > 0 else { return .terminateNow }

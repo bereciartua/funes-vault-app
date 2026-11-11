@@ -24,10 +24,9 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
     var postponeRelaunch: (_ install: @escaping () -> Void) -> Bool = { _ in false }
     /// Sparkle ended an update with an error.
     var aborted: () -> Void = {}
-    /// From an update's extraction, or Sparkle announcing an install at quit (also for an update
-    /// resumed from an earlier run), for the rest of this run: Autoupdate is running and acts when
-    /// the app quits. Not cleared by an error, since Autoupdate can outlive the driver; a quit and
-    /// reopen clears it.
+    /// From an update's extraction, or Sparkle showing one already installing (resumed from an
+    /// earlier run), for the rest of this run: Autoupdate is running and acts when the app quits.
+    /// Not cleared by an error, since Autoupdate can outlive the driver; a quit and reopen clears it.
     private var extracted = false
     var installerMayBeRunning: Bool { extracted }
     private var controller: SPUStandardUpdaterController!
@@ -106,11 +105,6 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
         extracted = true
     }
 
-    func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem,
-                 immediateInstallationBlock immediateInstallHandler: @escaping () -> Void) -> Bool {
-        extracted = true
-        return false
-    }
 
     func updater(_ updater: SPUUpdater, didAbortWithError error: any Error) {
         aborted()
@@ -127,6 +121,8 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
 
     nonisolated func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem,
                                                                state: SPUUserUpdateState) {
+        // An update resumed at its installing stage: Autoupdate from an earlier run is alive.
+        if state.stage == .installing { MainActor.assumeIsolated { extracted = true } }
         guard !handleShowingUpdate else { return }
         let found = FoundUpdate(version: update.displayVersionString, critical: update.isCriticalUpdate)
         MainActor.assumeIsolated { foundUpdateChanged(found) }

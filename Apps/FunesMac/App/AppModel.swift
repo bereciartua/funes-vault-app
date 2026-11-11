@@ -426,6 +426,8 @@ final class AppModel {
         // Held through the approvals' wait (up to the gate's maximum), then 10 s from the install.
         askedForQuit = (askedDrafts, Date().addingTimeInterval(90))
         updateHeld = false
+        // An approvals' wait started earlier carries the old rule (hold for edits): start it again.
+        relaunchGate?.cancel()
         installIfFree(ignoringDrafts: true)
     }
 
@@ -437,8 +439,8 @@ final class AppModel {
         relaunchGate?.cancel()
     }
 
-    /// `applicationShouldTerminate`: asks about unsaved edits (except those a Restore, Erase or
-    /// Move asked about in the last minute), with no install starting while it asks. True: the quit
+    /// `applicationShouldTerminate`: asks about unsaved edits (except ones a Restore, Erase, Move or
+    /// Install Now just asked about, unchanged since), with no install starting while it asks. True: the quit
     /// goes on; the edits are dropped and a held install is let go so Sparkle installs at this quit
     /// without relaunching.
     func confirmTermination() -> Bool {
@@ -453,7 +455,7 @@ final class AppModel {
                 showRelaunchUnfinished(relaunch)
             }
             // An install held while the alert was up shows again (Install Now), or goes if free.
-            if pendingInstall != nil, !installIfFree() { updateHeld = true }
+            installIfFree()
             return false
         }
         quitting = false
@@ -475,6 +477,11 @@ final class AppModel {
             return false
         }
         guard askToDiscardDrafts(String(localized: "Discard and Quit")) else { return false }
+        // The alert's run loop can deliver an extraction or an install; check again.
+        if installerLive() || pendingInstall != nil {
+            showInstallerBusy()
+            return false
+        }
         askedForQuit = (askedDrafts, Date().addingTimeInterval(60))
         relaunchRequested = relaunch
         return true
