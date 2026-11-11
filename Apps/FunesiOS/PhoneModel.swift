@@ -80,11 +80,8 @@ final class PhoneModel {
     /// The first read of the pairing from the Keychain. Until it's done the tracker's "not
     /// paired" is only its starting state, so launch, foreground and background work wait for it.
     private var firstReload: Task<Void, Never>?
-    /// The pairing is known to be gone: the Keychain read back empty, the client found no
-    /// pairing, or the user unpaired. Never set by a Keychain read that failed.
-    private var pairingGone = false
-    /// The last read of the pairing failed: the next foreground reads it again.
-    private var pairingUnreadable = false
+    /// When what was read from the Mac must leave the phone (FunesPhone's `VaultRetention`).
+    private var retention = VaultRetention()
 
     init(services: PhoneServices) {
         self.services = services
@@ -280,8 +277,7 @@ final class PhoneModel {
     }
 
     private func delivered(_ outcome: DeliveryOutcome) {
-        // The client read the Keychain and found no pairing.
-        if outcome == .notPaired { pairingGone = true }
+        retention.handle(.delivered(outcome))
         tracker.handle(.delivered(outcome))
         statusBar.delivered(outcome)
         leaveVaultIfGone()
@@ -293,22 +289,15 @@ final class PhoneModel {
 
     /// A Search, memory or Inbox call failed: the connection's state hears about it.
     private func callFailed(_ error: CompanionClientError) {
-        // The client read the Keychain and found no pairing.
-        if error == .notPaired { pairingGone = true }
+        retention.handle(.callFailed(error))
         tracker.handle(.callFailed(error))
         leaveVaultIfGone()
     }
 
     /// Unpaired or removed: what Search and the Inbox read from the Mac leaves the phone, and so
-    /// does the cached overview. Only when that's known: removed on the Mac (a refusal it
-    /// signed), or no pairing in the Keychain. Not the tracker's starting state before the
-    /// Keychain is read, and not a Keychain read that failed.
+    /// does the cached overview, once `VaultRetention` says the pairing's end is known.
     private func leaveVaultIfGone() {
-        switch reachability {
-        case .revoked: break
-        case .notPaired where pairingGone: break
-        default: return
-        }
+        guard retention.shouldClear(reachability) else { return }
         search.clear()
         inbox.clear()
         approvals.clear()
@@ -321,7 +310,7 @@ final class PhoneModel {
     private func pairingLoaded() async {
         if let firstReload {
             await firstReload.value
-            if pairingUnreadable { await reload() }
+            if retention.needsRead { await reload() }
         } else {
             let first = Task { await reload() }
             firstReload = first
@@ -333,20 +322,19 @@ final class PhoneModel {
         guard let client = services.client else {
             // Demo mode: "connected" to the demo vault, never paired.
             record = nil
+            retention.handle(.read(paired: true))
             tracker.handle(.pairing(paired: true))
             return
         }
         do {
             record = try await client.record()
-            pairingGone = record == nil
-            pairingUnreadable = false
+            retention.handle(.read(paired: record != nil))
         } catch {
             // Unreadable for now (the Keychain before first unlock, say): not the same as no
             // pairing, so nothing is wiped. The next read tries again.
             logger.error("Couldn't read the pairing")
             record = nil
-            pairingGone = false
-            pairingUnreadable = true
+            retention.handle(.readFailed)
         }
         usesSecureEnclave = await client.usesSecureEnclave()
         tracker.handle(.pairing(paired: record != nil))
@@ -407,7 +395,7 @@ final class PhoneModel {
             throw .notPaired
         }
         record = paired
-        pairingGone = false
+        retention.handle(.paired)
         tracker.handle(.pairing(paired: true))
         let elapsed = ContinuousClock.now - start
         usesSecureEnclave = await client.usesSecureEnclave()
