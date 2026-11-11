@@ -233,11 +233,21 @@ import Testing
         let merge = try Self.suggestion(v, .merge, title: "Merged", body: "Merged body",
                                         targets: [(saved, .source), (try v.memory("Other").id, .source)])
         let unrelated = try Self.suggestion(v, .create, title: "Keep me", body: "Untouched")
+        // What else a suggestion can carry of the memory's text: the classifier's record, the
+        // agent's purpose and metadata.
+        try await v.store.writer.write { db in
+            try db.execute(sql: """
+                UPDATE suggestion SET classification = '{"proposal":{"title":"Saved title"}}', purpose = 'Saved title',
+                  caller_metadata = '{"note":"Saved body"}'
+                """)
+        }
         try v.store.deleteMemory(id: saved, now: t0)
         try v.store.purgeMemory(id: saved)
         for id in [create, update, merge] {
             let row = try #require(try await s.suggestion(id: id))
             #expect(row.title.isEmpty && row.body.isEmpty && row.evidence == nil)
+            // The classifier's record (its proposed title, a piece's claim) and what came with it go too.
+            #expect(row.classification == nil && row.purpose == nil && row.callerMetadata == nil)
         }
         // The applied one stays applied; the pending ones about the purged memory are closed, not
         // left in the Inbox empty.
@@ -246,6 +256,7 @@ import Testing
         #expect(try await s.suggestion(id: merge)?.status == .rejected)
         #expect(try await s.suggestion(id: unrelated)?.body == "Untouched")
         #expect(try await s.suggestion(id: unrelated)?.status == .pending)
+        #expect(try await s.suggestion(id: unrelated)?.purpose == "Saved title")
     }
 
     @Test func agentCorrectionsRecordTheTargetsVersion() async throws {

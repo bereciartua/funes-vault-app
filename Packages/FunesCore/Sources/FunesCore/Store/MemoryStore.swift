@@ -383,7 +383,8 @@ enum MemoryStore {
         // rejected (which, unlike expired, can't be restored to the Inbox), not left pending with
         // no text.
         try db.execute(sql: """
-            UPDATE suggestion SET title = '', body = '', evidence = NULL,
+            UPDATE suggestion SET title = '', body = '', evidence = NULL, purpose = NULL, caller_metadata = NULL,
+              classification = NULL,
               status = CASE WHEN status = 'pending' THEN 'rejected' ELSE status END,
               decided_at = CASE WHEN status = 'pending' THEN ? ELSE decided_at END
             WHERE result_memory_id IN (\(marks)) OR target_memory_id IN (\(marks))
@@ -391,7 +392,10 @@ enum MemoryStore {
             """, arguments: StatementArguments([now]) + StatementArguments(memoryIDs + memoryIDs + memoryIDs))
         for group in groups {
             try db.execute(sql: "UPDATE suggestion_group SET source_text = NULL WHERE id = ?", arguments: [group])
-            try db.execute(sql: "UPDATE suggestion SET title = '', body = '' WHERE id = ? AND status = 'split'", arguments: [group])
+            try db.execute(sql: """
+                UPDATE suggestion SET title = '', body = '', evidence = NULL, purpose = NULL, caller_metadata = NULL,
+                  classification = NULL WHERE id = ? AND status = 'split'
+                """, arguments: [group])
         }
     }
 
