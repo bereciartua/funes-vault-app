@@ -124,11 +124,13 @@ public actor PairingService {
         session = asking
         publish(.asking(deviceName: request.deviceName, model: request.model))
         let allowed = await ask()
-        // Single use, whatever the answer.
+        // Single use, whatever the answer. A new session started meanwhile (a new code, which
+        // also denied this prompt) is left alone, and so is what the sheet shows for it.
         let secret = asking.payload.secret
-        session = nil
+        let stillMine = session?.payload.pairingID == request.pairingID
+        if stillMine { session = nil }
         guard allowed else {
-            publish(.ended(.denied))
+            if stillMine { publish(.ended(.denied)) }
             return Self.failure(.denied)
         }
         do {
@@ -139,11 +141,11 @@ public actor PairingService {
                                                     macSigner: identity.signingKey)
             activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "device_paired",
                                           outcome: "paired", ids: [device.id]))
-            publish(.paired(deviceName: request.deviceName))
+            if session == nil { publish(.paired(deviceName: request.deviceName)) }
             return .json(200, reply)
         } catch {
             logger.error("Pairing failed after Allow")
-            publish(.ended(.invalidRequest))
+            if session == nil { publish(.ended(.invalidRequest)) }
             return Self.failure(.invalidRequest)
         }
     }

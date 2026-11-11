@@ -115,4 +115,23 @@ import Testing
         #expect(statuses == [200, PairingError.httpStatus])
         #expect(try await h.services.devices.devices().count == 1)
     }
+
+    /// A new code shown while the Mac asks about the old one denies the old prompt but leaves
+    /// the new session waiting, and the new code pairs.
+    @Test func aNewSessionDuringThePromptSurvives() async throws {
+        let h = try CompanionHarness()
+        let first = CompanionHarness.Phone()
+        let (_, body) = try PairingClient.start(payload: await h.qr(), deviceName: "Sam's iPhone", model: "iPhone17,1",
+                                                signer: first.signer, deviceHPKEKey: first.hpke, now: h.clock.now)
+        async let old = h.router.handle(CompanionHarness.request(CompanionProtocol.pairPath, body: body), transport: .lan)
+        for _ in 0..<200 where !(await h.pairing.isAsking) { try await Task.sleep(for: .milliseconds(10)) }
+        let fresh = await h.qr()
+        let response = await old
+        #expect(response.status == PairingError.httpStatus && PairingError(body: response.body) == .denied)
+        guard case .waiting = await h.pairing.state else { Issue.record("\(await h.pairing.state)"); return }
+        var second = CompanionHarness.Phone()
+        let (paired, _) = try await h.pair(&second, payload: fresh)
+        #expect(paired.status == 200)
+        #expect(try await h.services.devices.devices().count == 1)
+    }
 }
