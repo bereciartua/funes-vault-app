@@ -111,8 +111,11 @@ public final class CompanionRouter: Sendable {
 /// Fails closed, refusing calls with `unavailable` (the phone retries), on the monotonic clock:
 /// - a journal that exists but can't be read: for the replay window, since its nonces could be
 ///   replayed meanwhile;
-/// - no journal (the first launch with one, or deleted): for the clock-skew window, past which
-///   nothing the last run accepted can still pass the clock check;
+/// - no journal (the first launch with one, or deleted): for twice the clock skew, past which
+///   nothing the last run accepted can still pass the clock check (a phone up to the skew fast
+///   sends a timestamp up to the skew ahead, which stays acceptable for up to twice the skew).
+///   The file isn't created until a call is accepted after that, so a relaunch inside the window
+///   starts it again;
 /// - a nonce that can't be written: its call.
 public actor EnvelopeGuard {
     private var cache = ReplayCache()
@@ -130,14 +133,14 @@ public actor EnvelopeGuard {
         do {
             switch try journal.load(since: now.addingTimeInterval(-cache.window)) {
             case .missing:
-                logger.error("No companion nonce journal; refusing calls for the clock-skew window")
-                blindUntil = monotonic() + .seconds(CompanionProtocol.maxClockSkew)
+                logger.error("No companion nonce journal; refusing calls for twice the clock-skew window")
+                blindUntil = monotonic() + .seconds(2 * CompanionProtocol.maxClockSkew)
             case let .entries(entries):
                 for entry in entries {
                     cache.record(nonce: entry.nonce, deviceID: entry.deviceID, sentAt: entry.sentAt, now: entry.recordedAt)
                 }
+                try? journal.rewrite(cache.entries)
             }
-            try? journal.rewrite(cache.entries)
         } catch {
             logger.error("The companion's nonce journal couldn't be read; refusing calls for the replay window")
             blindUntil = monotonic() + .seconds(cache.window)

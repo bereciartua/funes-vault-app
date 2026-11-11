@@ -36,15 +36,25 @@ import Testing
     /// No journal (the first launch with it, or deleted): what the last run accepted in its last
     /// two minutes is unknown, so calls are refused, signed and retryable, until the clock-skew
     /// window has passed; then they go through, and the journal exists from then on.
-    @Test func noJournalRefusesForTheClockSkewWindow() async throws {
+    /// No journal: refused for twice the clock skew, since a phone up to the skew fast sends a
+    /// timestamp that stays acceptable that long; a relaunch inside the window starts it again,
+    /// because the file only appears once a call is accepted.
+    @Test func noJournalRefusesForTwiceTheClockSkew() async throws {
         let h = try CompanionHarness()
         let phone = try await h.pairedPhone()
         let uptime = Uptime()
         let router = h.router(guardian: EnvelopeGuard(journal: Self.journal(h), now: h.clock.now, monotonic: { uptime.now }))
         let early = await router.handle(try h.sealedRequest(phone: phone, at: t0), transport: .lan)
         #expect(early.status == 401 && CompanionAuthError(body: early.body) == .unavailable)
-        uptime.advance(CompanionProtocol.maxClockSkew - 1)
+        uptime.advance(2 * CompanionProtocol.maxClockSkew - 1)
         #expect(CompanionAuthError(body: await router.handle(try h.sealedRequest(phone: phone, at: t0), transport: .lan).body)
+            == .unavailable)
+        #expect(!FileManager.default.fileExists(atPath: Self.journal(h).path))
+        // Relaunched inside the window: still no journal, so the window starts again.
+        let relaunchUptime = Uptime()
+        let relaunched = h.router(guardian: EnvelopeGuard(journal: Self.journal(h), now: h.clock.now,
+                                                          monotonic: { relaunchUptime.now }))
+        #expect(CompanionAuthError(body: await relaunched.handle(try h.sealedRequest(phone: phone, at: t0), transport: .lan).body)
             == .unavailable)
         uptime.advance(2)
         #expect(await router.handle(try h.sealedRequest(phone: phone, at: t0), transport: .lan).status == 200)
