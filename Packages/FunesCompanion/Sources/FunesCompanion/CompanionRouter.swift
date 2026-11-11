@@ -122,7 +122,7 @@ public actor EnvelopeGuard {
     private var cache = ReplayCache()
     private var journal: NonceJournal?
     private var blindUntil: ContinuousClock.Instant?
-    /// With no journal, the window also waits for the wall clock: step 2 compares wall time, so a
+    /// The refusal windows also wait for the wall clock: step 2 compares wall time, so a
     /// clock that steps back during it would otherwise let an old timestamp pass afterwards.
     private var blindUntilWall: Date?
     private let monotonic: @Sendable () -> ContinuousClock.Instant

@@ -23,8 +23,9 @@ final class DataOperations {
     /// The relaunch didn't happen after `confirmQuit` agreed (its marker couldn't be written).
     var quitAborted: () -> Void = {}
     /// The relaunch is certain (its marker written): unsaved edits go now. True when a pending
-    /// update relaunches the app instead (it applies the marker at its launch).
-    var willQuit: () -> Bool = { false }
+    /// update relaunches the app instead (it applies the marker at its launch); if that relaunch
+    /// doesn't happen, the given relaunch runs instead.
+    var willQuit: (_ otherwise: @escaping () -> Void) -> Bool = { _ in false }
 
     init(environment: VaultEnvironment, preferences: Preferences) {
         self.environment = environment
@@ -106,7 +107,7 @@ final class DataOperations {
             throw error
         }
         _ = chmod(marker.path, 0o600)
-        if !willQuit() { Self.relaunch() }
+        if !willQuit({ Self.relaunch() }) { Self.relaunch() }
     }
 
     /// How the restore asked for before this launch went, said once the app is up.
@@ -160,7 +161,7 @@ final class DataOperations {
             throw error
         }
         for account in modelSettings.accounts { modelSettings.removeAccount(account.id) }
-        if !willQuit() { Self.relaunch() }
+        if !willQuit({ Self.relaunch() }) { Self.relaunch() }
     }
 
     /// Something in the data folder couldn't be deleted by the last erase: said once the app is up,

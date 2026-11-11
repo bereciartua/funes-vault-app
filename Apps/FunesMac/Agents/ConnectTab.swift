@@ -134,13 +134,16 @@ struct ConnectTab: View {
                 guard model.beginQuit(String(localized: "Discard and Quit")) else { return }
                 // An update waiting to relaunch goes first; the move is offered again after it.
                 if model.updatePending {
-                    _ = model.relaunchThroughPendingUpdate()
+                    _ = model.relaunchThroughPendingUpdate(otherwise: { [model] in model.quitCancelled() })
                     return
                 }
-                if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { [model] in
+                let moved = AppMover.move(FunesMacApp.identity, prepareToQuit: { [model] in
                     model.discardDraftsForQuit()
                     NSApp.terminate(nil)
-                }) {
+                })
+                // The new copy may still fail to open: the quit it would bring mustn't stay expected.
+                model.expectQuit(otherwise: { [model] in model.quitCancelled() })
+                if case .failed(let problem) = moved {
                     model.quitCancelled()
                     moveProblem = problem
                 }

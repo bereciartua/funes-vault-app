@@ -6,6 +6,9 @@ import FunesCore
 import FunesMCP
 import FunesProtocol
 import Observation
+import os
+
+private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category: "updates")
 
 /// A request waiting for the user, as the menu and Pending requests show it.
 struct PendingRequest: Identifiable, Equatable {
@@ -381,6 +384,9 @@ final class AppModel {
     /// Sparkle relaunches itself (its delegate returned false), so `install` isn't called.
     @discardableResult
     func tryPendingInstall(sparkleRelaunches: Bool = false, approvalsWaited: Bool = false) -> Bool {
+        // An agreement covers edits that still exist: a memory saved or reverted since leaves it,
+        // so new edits on it are asked about again.
+        consentedDiscard.formIntersection(vault.draftIDs)
         guard let install = pendingInstall, !quitting else { return false }
         updateHeld = !draftsConsented
         guard draftsConsented else { return false }
@@ -389,11 +395,39 @@ final class AppModel {
             if gate.isWaiting { return false }
             if gate.postpone({ [weak self] in self?.tryPendingInstall(approvalsWaited: true) }) { return false }
         }
+        // The agreed edits stay until the quit that installs (it drops them without asking), so
+        // an install that never comes loses nothing.
         pendingInstall = nil
-        vault.discardDrafts()
-        consentedDiscard = []
         if !sparkleRelaunches { install() }
+        expectQuit { [weak self] in
+            // Sparkle's handler did nothing (its session ended): the agreement lapses, edits kept.
+            logger.error("An update's relaunch didn't happen")
+            self?.consentedDiscard = []
+            self?.updateHeld = false
+        }
         return true
+    }
+
+    /// Runs `otherwise` if the app is still running a while after a quit or relaunch that should
+    /// have happened (Sparkle's handler can do nothing; a moved copy can fail to open), so nothing
+    /// stays held for a quit that never comes. Each new call replaces the last.
+    @ObservationIgnored private var quitWatch = 0
+    func expectQuit(within seconds: Double = 20, otherwise: @escaping () -> Void) {
+        quitWatch += 1
+        let watch = quitWatch
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { [weak self] in
+            guard let self, self.quitWatch == watch else { return }
+            otherwise()
+        }
+    }
+
+    /// Sparkle ended the update without installing (an error, or the user dismissed it): nothing is
+    /// pending any more.
+    func updateAborted() {
+        pendingInstall = nil
+        updateHeld = false
+        consentedDiscard = []
+        relaunchGate?.cancel()
     }
 
     /// The menu bar panel's Discard Changes and Install, after asking.
@@ -435,14 +469,15 @@ final class AppModel {
     /// Whether an update is waiting to relaunch.
     var updatePending: Bool { pendingInstall != nil }
 
-    /// A relaunch the app makes itself (Restore, Erase): edits go, and a pending update relaunches
-    /// the app instead, so Autoupdate never replaces it while the new launch starts from it.
-    /// True when Sparkle relaunches.
-    func relaunchThroughPendingUpdate() -> Bool {
+    /// A relaunch the app makes itself (Restore, Erase, Move): edits go, and a pending update
+    /// relaunches the app instead, so Autoupdate never replaces it while the new launch starts from
+    /// it. True when it asked Sparkle to relaunch; if that doesn't happen, `otherwise` runs.
+    func relaunchThroughPendingUpdate(otherwise: @escaping () -> Void) -> Bool {
         let install = pendingInstall
         discardDraftsForQuit()
         guard let install else { return false }
         install()
+        expectQuit(otherwise: otherwise)
         return true
     }
 

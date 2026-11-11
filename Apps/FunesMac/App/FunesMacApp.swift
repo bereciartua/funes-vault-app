@@ -155,7 +155,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.vault.draftsChanged = { [weak model] in model?.tryPendingInstall() }
         model.data.confirmQuit = { [weak model] in model?.beginQuit(String(localized: "Discard and Quit")) ?? true }
         model.data.quitAborted = { [weak model] in model?.quitCancelled() }
-        model.data.willQuit = { [weak model] in model?.relaunchThroughPendingUpdate() ?? false }
+        model.data.willQuit = { [weak model] otherwise in model?.relaunchThroughPendingUpdate(otherwise: otherwise) ?? false }
+        updater.aborted = { [weak model] in model?.updateAborted() }
         updater.foundUpdateChanged = { [weak model, weak menu] found in
             model?.foundUpdate = found
             menu?.update()
@@ -498,13 +499,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // land in the copy the move trashes.
         if let model, !model.beginQuit(String(localized: "Discard and Quit")) { return }
         if let model, model.updatePending {
-            _ = model.relaunchThroughPendingUpdate()
+            _ = model.relaunchThroughPendingUpdate(otherwise: { [weak model] in model?.quitCancelled() })
             return
         }
-        if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { [weak model] in
+        let moved = AppMover.move(FunesMacApp.identity, prepareToQuit: { [weak model] in
             model?.discardDraftsForQuit()
             NSApp.terminate(nil)
-        }) {
+        })
+        // The new copy may still fail to open: the quit it would bring mustn't stay expected.
+        model?.expectQuit(otherwise: { [weak model] in model?.quitCancelled() })
+        if case .failed(let problem) = moved {
             model?.quitCancelled()
             let failure = NSAlert()
             failure.messageText = String(localized: "Funes Vault couldn't be moved")
