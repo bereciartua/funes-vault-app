@@ -20,6 +20,8 @@ final class DataOperations {
     var integrityFailed: () -> Void = {}
     /// Before a relaunch: false when the user kept unsaved edits that a quit would drop.
     var confirmQuit: () -> Bool = { true }
+    /// The relaunch is certain (its marker written): unsaved edits go now.
+    var willQuit: () -> Void = {}
 
     init(environment: VaultEnvironment, preferences: Preferences) {
         self.environment = environment
@@ -96,6 +98,7 @@ final class DataOperations {
         let data = try JSONSerialization.data(withJSONObject: ["backup": backup.lastPathComponent])
         try data.write(to: marker, options: .atomic)
         _ = chmod(marker.path, 0o600)
+        willQuit()
         Self.relaunch()
     }
 
@@ -146,6 +149,7 @@ final class DataOperations {
         guard confirmQuit() else { return }
         let marker = environment.dataFolder.appendingPathComponent(Self.eraseMarker)
         try Data().write(to: marker, options: .atomic)
+        willQuit()
         for account in modelSettings.accounts { modelSettings.removeAccount(account.id) }
         Self.relaunch()
     }

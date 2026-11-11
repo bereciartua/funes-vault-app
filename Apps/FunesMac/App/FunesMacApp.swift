@@ -150,12 +150,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let updater = SparkleUpdater(gate: gate)
         // A scheduled check never opens a window: what it found shows in the menu bar.
         // Installing relaunches: it asks about unsaved edits first, and on Cancel waits for them.
-        updater.holdForDrafts = { [weak self, weak model] resume in
-            guard let self, let model, !self.confirmDiscardingDrafts() else { return false }
-            model.vault.whenNoDrafts = resume
+        model.askToDiscardDrafts = { [weak self] button in self?.askToDiscardDrafts(button: button) ?? true }
+        updater.holdForDrafts = { [weak model] resume in
+            guard let model, !model.vault.draftIDs.isEmpty else { return false }
+            if model.askToDiscardDrafts(String(localized: "Discard and Install")) {
+                model.discardDraftsForQuit()
+                return false
+            }
+            model.holdUpdate(resume)
             return true
         }
-        model.data.confirmQuit = { [weak self] in self?.confirmDiscardingDrafts() ?? true }
+        model.data.confirmQuit = { [weak model] in model?.askToDiscardDrafts(String(localized: "Discard and Quit")) ?? true }
+        model.data.willQuit = { [weak model] in model?.discardDraftsForQuit() }
         updater.foundUpdateChanged = { [weak model, weak menu] found in
             model?.foundUpdate = found
             menu?.update()
@@ -282,7 +288,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// queue closes, so no panel shows after this, even one a call was still building.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         // Unsaved edits live only in memory: a quit asks before dropping them.
-        guard confirmDiscardingDrafts() else { return .terminateCancel }
+        if let model {
+            guard model.askToDiscardDrafts(String(localized: "Discard and Quit")) else { return .terminateCancel }
+            model.discardDraftsForQuit()
+        }
         guard let mcp, mcp.callsInProgress > 0 else { return .terminateNow }
         mcp.quit()
         environment?.approvals.queue.close()
@@ -487,7 +496,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences.set("MoveDeclined", true)
             return
         }
-        if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { NSApp.terminate(nil) }) {
+        // Unsaved edits are asked about before the move launches the new copy.
+        if let model, !model.askToDiscardDrafts(String(localized: "Discard and Quit")) { return }
+        if case .failed(let problem) = AppMover.move(FunesMacApp.identity, prepareToQuit: { [weak model] in
+            model?.discardDraftsForQuit()
+            NSApp.terminate(nil)
+        }) {
             let failure = NSAlert()
             failure.messageText = String(localized: "Funes Vault couldn't be moved")
             failure.informativeText = problem
@@ -558,18 +572,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// True when no memory has unsaved edits, or the user chose to discard them (FR-V-02): they
     /// aren't kept across a quit or relaunch.
-    private func confirmDiscardingDrafts() -> Bool {
+    private func askToDiscardDrafts(button: String) -> Bool {
         guard let vault = model?.vault, !vault.draftIDs.isEmpty else { return true }
         let alert = NSAlert()
         alert.alertStyle = .warning
         alert.messageText = String(localized: "Discard unsaved changes?")
         alert.informativeText = String(localized: "\(vault.draftIDs.count) memories have changes you haven't saved. Funes Vault doesn't keep them when it quits.")
-        alert.addButton(withTitle: String(localized: "Discard and Quit"))
+        alert.addButton(withTitle: button)
         alert.addButton(withTitle: String(localized: "Cancel"))
         NSApp.activate()
-        guard alert.runModal() == .alertFirstButtonReturn else { return false }
-        vault.discardDrafts()
-        return true
+        return alert.runModal() == .alertFirstButtonReturn
     }
 
     /// After a relaunch for Erase All Data (FR-G-05): only when something couldn't be deleted.

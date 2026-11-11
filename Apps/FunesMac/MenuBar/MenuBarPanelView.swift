@@ -517,6 +517,25 @@ private struct PanelFooter: View {
     var body: some View {
         VStack(spacing: 0) {
             Divider()
+            // An update waiting to relaunch until unsaved edits are saved or discarded (FR-V-02).
+            if model.app.updateHeld {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label(String(localized: "Update ready to install"), systemImage: "arrow.down.circle.fill")
+                        .foregroundStyle(Color.accentColor)
+                    Text(String(localized: "Installs once you save or discard your changes."))
+                        .font(.caption).foregroundStyle(.secondary)
+                    Button(String(localized: "Discard Changes and Install…")) {
+                        model.closePanel()
+                        // After the panel has gone: it asks first.
+                        DispatchQueue.main.async { model.app.discardDraftsAndInstall() }
+                    }
+                    .buttonStyle(.link)
+                }
+                .controlSize(.small)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
+            }
             // An update a scheduled check found: Sparkle's window shows it (FR-G-03).
             if let found = model.app.foundUpdate, model.app.updater.isAvailable() {
                 Button {

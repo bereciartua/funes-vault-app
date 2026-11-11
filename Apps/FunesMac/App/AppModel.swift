@@ -130,6 +130,13 @@ final class AppModel {
     /// An update a scheduled check found (Sparkle's gentle reminders), until the user opens it:
     /// the menu bar panel, the status menu and the icon's tooltip show it (FR-G-03).
     var foundUpdate: FoundUpdate?
+    /// An update's relaunch waits for unsaved edits (the user chose Cancel when it asked): the
+    /// menu bar panel says so and offers to discard them and install.
+    private(set) var updateHeld = false
+    @ObservationIgnored private var heldInstall: (() -> Void)?
+    /// Asks before unsaved edits are dropped, with this button ("Discard and Quit"); true when
+    /// there are none or the user agreed. Discards nothing itself (set by the app).
+    @ObservationIgnored var askToDiscardDrafts: (_ button: String) -> Bool = { _ in true }
     /// MCP traffic counts since launch (Settings ▸ Agent Server).
     @ObservationIgnored var trafficCounts: () -> MCPTrafficCounters.Snapshot = { MCPTrafficCounters.Snapshot() }
 
@@ -326,7 +333,10 @@ final class AppModel {
         profile = (try? services.store.profile()) ?? Profile()
         hasMemories = !((try? services.store.memories(MemoryFilter(status: .activeIncludingExpired), now: now, limit: 1)) ?? []).isEmpty
         dataGeneration += 1
-        if storeDidChange { memoriesGeneration += 1 }
+        if storeDidChange {
+            memoriesGeneration += 1
+            pruneDrafts()
+        }
         checklist.update(model: self)
         changed()
     }
@@ -340,6 +350,48 @@ final class AppModel {
         }
         pending.removeAll { $0.expiresAt <= now }
         changed()
+    }
+
+    // MARK: Unsaved edits and quitting (FR-V-02)
+
+    /// A quit or relaunch is certain: unsaved edits go, and an update held for them is let go too
+    /// (Sparkle installs it at the next launch or check, never inside this quit).
+    func discardDraftsForQuit() {
+        heldInstall = nil
+        updateHeld = false
+        vault.whenNoDrafts = nil
+        vault.discardDrafts()
+    }
+
+    /// Holds an update's relaunch until no memory has unsaved edits.
+    func holdUpdate(_ install: @escaping () -> Void) {
+        heldInstall = install
+        updateHeld = true
+        vault.whenNoDrafts = { [weak self] in self?.releaseHeldUpdate() }
+    }
+
+    /// The menu bar panel's Discard Changes and Install, after asking.
+    func discardDraftsAndInstall() {
+        guard updateHeld, askToDiscardDrafts(String(localized: "Discard and Install")) else { return }
+        vault.whenNoDrafts = nil
+        vault.discardDrafts()
+        releaseHeldUpdate()
+    }
+
+    private func releaseHeldUpdate() {
+        let install = heldInstall
+        heldInstall = nil
+        updateHeld = false
+        install?()
+    }
+
+    /// Drafts of memories that are gone (purged here or elsewhere) can't be saved or reverted:
+    /// they go, so they never hold a quit or an update.
+    private func pruneDrafts() {
+        let ids = vault.draftIDs
+        guard !ids.isEmpty, let found = try? services.store.memories(ids: Array(ids)) else { return }
+        let alive = Set(found.map(\.id))
+        for id in ids where !alive.contains(id) { vault.setDraft(nil, for: id) }
     }
 
     // MARK: Pause (FR-A-11)

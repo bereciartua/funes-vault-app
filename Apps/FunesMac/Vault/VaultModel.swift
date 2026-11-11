@@ -324,14 +324,11 @@ final class VaultModel: AnswerCardSource {
         }
     }
 
-    /// Quitting with them confirmed: they're dropped, so nothing asks again.
+    /// Quitting with them confirmed: they're dropped, so nothing asks again. Doesn't call
+    /// `whenNoDrafts` (the caller decides what a held update does).
     func discardDrafts() {
         draftStore = [:]
         draftIDs = []
-        if let waiting = whenNoDrafts {
-            whenNoDrafts = nil
-            waiting()
-        }
     }
 
     var filter: MemoryFilter {
