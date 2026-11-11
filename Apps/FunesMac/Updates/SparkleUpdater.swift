@@ -24,12 +24,14 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
     var postponeRelaunch: (_ install: @escaping () -> Void) -> Bool = { _ in false }
     /// Sparkle ended an update with an error.
     var aborted: () -> Void = {}
-    /// From an update's download (extraction, which starts Autoupdate, follows it without a click),
-    /// or Sparkle showing one already installing (resumed from an earlier run), for the rest of this
-    /// run: Autoupdate may be running and act when the app quits. Not cleared by an error, since
-    /// Autoupdate can outlive the driver; a quit and reopen clears it. A download that fails or is
-    /// cancelled, both before extraction, clears it.
+    /// Whether Autoupdate may be running and act when the app quits, for the rest of this run:
+    /// from an update's download (extraction, which starts Autoupdate, follows it without a click),
+    /// or Sparkle showing one already installing (resumed from an earlier run). An error doesn't
+    /// clear it, since Autoupdate can outlive the driver; a quit and reopen does. Only a download
+    /// that fails or is cancelled before extraction began clears it.
     private var installerStarted = false
+    /// Extraction began (or an install was resumed): from then on nothing clears `installerStarted`.
+    private var extractionBegan = false
     var installerMayBeRunning: Bool { installerStarted }
     private var controller: SPUStandardUpdaterController!
     private var started = false
@@ -108,14 +110,16 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
     }
 
     func updater(_ updater: SPUUpdater, failedToDownloadUpdate item: SUAppcastItem, error: any Error) {
-        installerStarted = false
+        if !extractionBegan { installerStarted = false }
     }
 
     func userDidCancelDownload(_ updater: SPUUpdater) {
-        installerStarted = false
+        // A Cancel handled just after the download finished arrives after extraction began.
+        if !extractionBegan { installerStarted = false }
     }
 
     func updater(_ updater: SPUUpdater, willExtractUpdate item: SUAppcastItem) {
+        extractionBegan = true
         installerStarted = true
     }
 
@@ -136,7 +140,12 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
     nonisolated func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem,
                                                                state: SPUUserUpdateState) {
         // An update resumed at its installing stage: Autoupdate from an earlier run is alive.
-        if state.stage == .installing { MainActor.assumeIsolated { installerStarted = true } }
+        if state.stage == .installing {
+            MainActor.assumeIsolated {
+                extractionBegan = true
+                installerStarted = true
+            }
+        }
         guard !handleShowingUpdate else { return }
         let found = FoundUpdate(version: update.displayVersionString, critical: update.isCriticalUpdate)
         MainActor.assumeIsolated { foundUpdateChanged(found) }
