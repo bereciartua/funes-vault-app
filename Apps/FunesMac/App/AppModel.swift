@@ -255,9 +255,12 @@ final class AppModel {
         services.activity.onAppend = { [weak self] event in
             Task { @MainActor in
                 self?.activityGeneration += 1
-                // A suggestion the owner decided on the iPhone reviews the Inbox too (the setup
-                // checklist); the Mac's Inbox says so itself (InboxModel.decided).
-                if ["suggestion_applied", "suggestion_rejected"].contains(event.event), event.actor.hasPrefix("device:") {
+                // A suggestion the user decided reviews the Inbox (the setup checklist): in a Save
+                // panel or the Inbox on this Mac (actor `user`), or on the iPhone as the owner
+                // (`device:`). Only those decide through apply/reject; automatic changes and the
+                // tidy-up record their own events as `system`.
+                if ["suggestion_applied", "suggestion_rejected"].contains(event.event),
+                   event.actor == "user" || event.actor.hasPrefix("device:") {
                     self?.checklist.markReviewed()
                 }
                 self?.activityAppended(event)

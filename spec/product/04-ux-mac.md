@@ -285,7 +285,7 @@ A card at the top of Home, above the greeting (before v0.4, at the top of the Va
 1. **Connect an agent**: "Found on this Mac: Claude Code, Cursor". [Add…]
 2. **Approve its first request**: [Add to Claude Code…] / [Show Setup]. "Ask it something. Funes shows you exactly what it would share." The step completes when the first request arrives ("Claude Code connected 10:42").
 3. **Seed your vault**: "Answer a few questions or import from ChatGPT or Claude." [Start]. From v0.5 the questions open on **About you** ([Settings ▸ About You](#settings)): "First, what should Funes call you?", with given name, family name and "Call me" prefilled from the macOS account's name when it looks like a person's name (two or more words, or capitalized), and empty otherwise; **Continue** saves it, **Skip** leaves the profile as it is. Pronouns, languages and the rest stay in Settings, so seeding stays short.
-4. **Review your Inbox**: "Apply what's right." [Open Inbox] Done once the user has applied or rejected a suggestion, in the Inbox or on the iPhone; an Inbox that empties by itself (automatic changes, the tidy-up, expiry) or a memory made by hand doesn't count.
+4. **Review your Inbox**: "Apply what's right." [Open Inbox] Done once the user has applied or rejected a suggestion, in the Inbox, a Save panel or on the iPhone; an Inbox that empties by itself (automatic changes, the tidy-up, expiry) or a memory made by hand doesn't count.
 - Home's composer has the initial keyboard focus, and the first unfinished step's button is the checklist's default focus; Hide never is. Hide leaves "Setup checklist hidden. Settings ▸ Advanced brings it back. [Undo]" for 10 seconds.
 
 ### Vault
