@@ -271,6 +271,19 @@ import Testing
             + open.prefix(24)
         #expect(CompanionListener.admission([192, 168, 1, 9], among: sameHost, limits: limits) == .refuse)
         #expect(CompanionListener.admission([192, 168, 1, 20], among: Array(open.prefix(31)), limits: limits) == .admit)
+        // A request already arriving on the longest-idle connection spares it: the next quiet one goes.
+        var arriving = open
+        arriving[5].receiving = true
+        open.indices.filter { $0 != 3 && $0 != 5 }.forEach { arriving[$0].idleSince = UInt64(200 + $0) }
+        arriving[9].idleSince = 50
+        #expect(CompanionListener.admission([192, 168, 1, 20], among: arriving, limits: limits) == .evict(9))
+        // Every idle one receiving (a flood of partial requests): the longest idle goes anyway.
+        let allArriving = arriving.map { peer -> CompanionListener.Peer in
+            var peer = peer
+            peer.receiving = true
+            return peer
+        }
+        #expect(CompanionListener.admission([192, 168, 1, 20], among: allArriving, limits: limits) == .evict(5))
     }
 
     /// Over a real socket: a table full of idle connections lets the phone in; one full of

@@ -148,7 +148,7 @@ public final class CompanionListener: @unchecked Sendable {
             return
         }
         let open = Array(connections.values)
-        switch Self.admission(address, among: open.map { Peer(address: $0.address, busy: $0.isBusy, idleSince: $0.idleSince) },
+        switch Self.admission(address, among: open.map { Peer(address: $0.address, busy: $0.isBusy, receiving: $0.isReceiving, idleSince: $0.idleSince) },
                               limits: limits) {
         case .refuse:
             Darwin.close(fd)
@@ -170,6 +170,9 @@ public final class CompanionListener: @unchecked Sendable {
         var address: [UInt8]
         /// Handling a request: never evicted.
         var busy: Bool
+        /// A request has started arriving (bytes read or waiting in the socket): evicted only if
+        /// every idle connection is, so a flood of partial requests can't hold the table either.
+        var receiving: Bool = false
         /// When it last had nothing to do: opened, or its last reply written (uptime, ns).
         var idleSince: UInt64
     }
@@ -183,7 +186,8 @@ public final class CompanionListener: @unchecked Sendable {
 
     /// Whether a connection from `address` gets in beside `open`. It must be under 8 from that
     /// address and, for IPv6, under 16 from its /64. When all 32 slots are taken, the connection
-    /// idle longest (never one handling a request) makes way, since addresses can't tell hosts
+    /// idle longest (never one handling a request, and one with a request arriving only when every
+    /// idle one has) makes way, since addresses can't tell hosts
     /// apart: a host with many IPv4 addresses could otherwise fill the table and keep the phone
     /// out. With every connection busy, it's refused.
     static func admission(_ address: [UInt8], among open: [Peer], limits: Limits) -> Admission {
@@ -194,7 +198,9 @@ public final class CompanionListener: @unchecked Sendable {
         }
         guard open.count >= limits.maxConnections else { return .admit }
         let idle = open.indices.filter { !open[$0].busy }
-        guard let oldest = idle.min(by: { open[$0].idleSince < open[$1].idleSince }) else { return .refuse }
+        let quiet = idle.filter { !open[$0].receiving }
+        let candidates = quiet.isEmpty ? idle : quiet
+        guard let oldest = candidates.min(by: { open[$0].idleSince < open[$1].idleSince }) else { return .refuse }
         return .evict(oldest)
     }
 
@@ -237,6 +243,12 @@ public final class CompanionListener: @unchecked Sendable {
         /// When it last had nothing to do: opened, or its last reply written (uptime, ns).
         private(set) var idleSince = DispatchTime.now().uptimeNanoseconds
         var isBusy: Bool { busy }
+        /// A request has started arriving: part of it parsed, or bytes waiting in the socket.
+        var isReceiving: Bool {
+            if parser.hasBufferedBytes { return true }
+            var byte: UInt8 = 0
+            return recv(fd, &byte, 1, MSG_PEEK | MSG_DONTWAIT) > 0
+        }
         private var closed = false
         private var timer: DispatchSourceTimer?
         private var reader: DispatchSourceRead?
