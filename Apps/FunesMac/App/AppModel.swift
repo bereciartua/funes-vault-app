@@ -130,35 +130,38 @@ final class AppModel {
     /// An update a scheduled check found (Sparkle's gentle reminders), until the user opens it:
     /// the menu bar panel, the status menu and the icon's tooltip show it (FR-G-03).
     var foundUpdate: FoundUpdate?
+    /// Updates and unsaved edits: when an update relaunches, and what a quit asks (BridgeUI's
+    /// `UpdateCoordinator`, with its tests); the app wires Sparkle and the alerts to it.
+    let updates = UpdateCoordinator<VaultModel.Draft>()
     /// An update is downloaded and ready, held because memories have unsaved edits: the menu bar
     /// panel says so and offers Install Now (FR-V-02, FR-G-03).
-    private(set) var updateHeld = false
-    /// Sparkle's install handler for that update, until it's let go or dropped by a quit.
-    @ObservationIgnored private var pendingInstall: (() -> Void)?
-    /// A quit's alert is up: the approvals' wait doesn't start an install meanwhile.
-    @ObservationIgnored private var quitting = false
+    var updateHeld: Bool { updates.updateHeld }
     /// Waits for approval panels before a relaunch (set by the app).
-    @ObservationIgnored var relaunchGate: UpdateRelaunchGate?
+    var relaunchGate: UpdateRelaunchGate? {
+        get { updates.gate }
+        set { updates.gate = newValue }
+    }
     /// Whether Sparkle's installer may be running (from an update's download, or one resumed at
-    /// its installing stage, until the app quits; set by the app). While it is, the app never relaunches itself: Autoupdate quits every copy
-    /// of the app and replaces the bundle when this one exits.
-    @ObservationIgnored var installerLive: () -> Bool = { false }
-    /// The edits a Restore, Erase, Move or Install Now just asked about, as they were then, and
-    /// until when that answer holds: the quit that follows doesn't ask about them again, unless
-    /// they changed since (it asks about those, and about any others).
-    @ObservationIgnored private var askedForQuit: (drafts: [UUID: VaultModel.Draft], until: Date, forInstall: Bool)?
-    private var askedDrafts: [UUID: VaultModel.Draft] {
-        Dictionary(uniqueKeysWithValues: vault.draftIDs.compactMap { id in vault.draft(id).map { (id, $0) } })
+    /// its installing stage, until the app quits; set by the app). While it is, the app never
+    /// relaunches itself: Autoupdate quits every copy of the app and replaces the bundle when this
+    /// one exits.
+    var installerLive: () -> Bool {
+        get { updates.installerLive }
+        set { updates.installerLive = newValue }
     }
     /// What a Restore, Erase or Move that asked is about to do by quitting.
-    enum AppRelaunch { case dataChange, move }
+    typealias AppRelaunch = BridgeUI.AppRelaunch
     /// Tells the user an update is installing, so Restore, Erase or Move must wait (set by the app).
-    @ObservationIgnored var showInstallerBusy: () -> Void = {}
+    var showInstallerBusy: () -> Void {
+        get { updates.showInstallerBusy }
+        set { updates.showInstallerBusy = newValue }
+    }
     /// Tells the user a Restore, Erase or Move didn't finish because its quit was cancelled (set by
     /// the app).
-    @ObservationIgnored var showRelaunchUnfinished: (AppRelaunch) -> Void = { _ in }
-    /// A Restore, Erase or Move has asked and is about to quit the app.
-    @ObservationIgnored private var relaunchRequested: AppRelaunch?
+    var showRelaunchUnfinished: (AppRelaunch) -> Void {
+        get { updates.showRelaunchUnfinished }
+        set { updates.showRelaunchUnfinished = newValue }
+    }
     /// Asks before unsaved edits are dropped, with this button ("Discard and Quit"); true when
     /// there are none or the user agreed. Discards nothing itself (set by the app).
     @ObservationIgnored var askToDiscardDrafts: (_ button: String) -> Bool = { _ in true }
@@ -273,6 +276,15 @@ final class AppModel {
         inboxState.categories = { [weak self] in self?.categories ?? [] }
         inboxState.decided = { [weak self] in self?.checklist.markReviewed() }
         vault.answers = searchAnswers
+        updates.drafts = { [weak self] in
+            guard let vault = self?.vault else { return [:] }
+            return Dictionary(uniqueKeysWithValues: vault.draftIDs.compactMap { id in vault.draft(id).map { (id, $0) } })
+        }
+        updates.discardDrafts = { [weak self] in self?.vault.discardDrafts() }
+        updates.ask = { [weak self] question in
+            self?.askToDiscardDrafts(question == .discardAndQuit ? String(localized: "Discard and Quit")
+                                                                 : String(localized: "Discard and Install")) ?? true
+        }
         self.modelSettings.embeddingInputsChanged = { [weak self] in self?.embeddings.apply() }
         composer.save = { [weak self, composer] _ in self?.saveCapture(composer) ?? false }
         composer.search = { [weak self] text in self?.showVault(query: text.trimmingCharacters(in: .whitespacesAndNewlines)) }
@@ -379,118 +391,26 @@ final class AppModel {
 
     // MARK: Unsaved edits and quitting (FR-V-02)
 
-    // Updates and unsaved edits (FR-V-02): edits are asked about in one place, the quit. An update
-    // with edits around is held (the panel offers Install Now); without, it waits only for the
-    // approvals. A quit the user asks for never relaunches: the held install is dropped and
-    // Sparkle installs at that quit. While Sparkle's installer may be running, Restore, Erase and
-    // Move aren't started, so the app never relaunches itself under it.
+    // Updates and unsaved edits (FR-V-02): the decisions are `UpdateCoordinator`'s (BridgeUI);
+    // these pass Sparkle's delegate, the quit, Restore, Erase, Move and Install Now to it.
 
-    /// Sparkle's `shouldPostponeRelaunchForUpdate`: false relaunches now; true keeps `install`
-    /// for later (held for edits, or the approvals' wait).
-    func postponeRelaunch(_ install: @escaping () -> Void) -> Bool {
-        pendingInstall = install
-        return !installIfFree(sparkleRelaunches: true)
-    }
+    /// Sparkle's `shouldPostponeRelaunchForUpdate`: false relaunches now; true keeps `install`.
+    func postponeRelaunch(_ install: @escaping () -> Void) -> Bool { updates.postponeRelaunch(install) }
 
-    /// Lets the update go if nothing holds it; true when it did. With `sparkleRelaunches`, Sparkle
-    /// relaunches itself (its delegate returned false), so `install` isn't called here.
-    @discardableResult
-    private func installIfFree(sparkleRelaunches: Bool = false, approvalsWaited: Bool = false,
-                               ignoringDrafts: Bool = false) -> Bool {
-        guard let install = pendingInstall, !quitting else { return false }
-        updateHeld = !ignoringDrafts && !vault.draftIDs.isEmpty
-        guard !updateHeld else { return false }
-        if let gate = relaunchGate, !approvalsWaited {
-            if gate.isWaiting { return false }
-            if gate.postpone({ [weak self] in self?.installIfFree(approvalsWaited: true, ignoringDrafts: ignoringDrafts) }) {
-                return false
-            }
-        }
-        pendingInstall = nil
-        // Install Now's answer holds only for the quit this install brings, right away.
-        if ignoringDrafts { askedForQuit?.until = Date().addingTimeInterval(10) }
-        if !sparkleRelaunches { install() }
-        return true
-    }
+    /// The menu bar panel's Install Now.
+    func installHeldUpdate() { updates.installHeldUpdate() }
 
-    /// The menu bar panel's Install Now: asks about unsaved edits ("Discard and Install") and lets
-    /// the update go (after any approvals' wait); the edits go at the quit it brings.
-    func installHeldUpdate() {
-        guard pendingInstall != nil, askToDiscardDrafts(String(localized: "Discard and Install")) else { return }
-        // The alert's run loop can deliver an abort; re-check. The edits go at the quit the install
-        // brings, which doesn't ask about them again; if it never comes, they're kept.
-        guard pendingInstall != nil else { return }
-        // Held through the approvals' wait (up to the gate's maximum), then 10 s from the install.
-        askedForQuit = (askedDrafts, Date().addingTimeInterval(90), true)
-        updateHeld = false
-        // An approvals' wait started earlier carries the old rule (hold for edits): start it again.
-        relaunchGate?.cancel()
-        installIfFree(ignoringDrafts: true)
-    }
+    /// Sparkle ended the update with an error.
+    func updateAborted() { updates.updateAborted() }
 
-    /// Sparkle ended the update with an error: nothing is held any more.
-    func updateAborted() {
-        // Only Install Now's answer depended on the update; a Restore's, Erase's or Move's stands.
-        if askedForQuit?.forInstall == true { askedForQuit = nil }
-        pendingInstall = nil
-        updateHeld = false
-        relaunchGate?.cancel()
-    }
+    /// `applicationShouldTerminate`: true lets the quit go on (the edits are dropped).
+    func confirmTermination() -> Bool { updates.confirmTermination() }
 
-    /// `applicationShouldTerminate`: asks about unsaved edits (except ones a Restore, Erase, Move or
-    /// Install Now just asked about, unchanged since), with no install starting while it asks. True: the quit
-    /// goes on; the edits are dropped and a held install is let go so Sparkle installs at this quit
-    /// without relaunching.
-    func confirmTermination() -> Bool {
-        quitting = true
-        let asked = askedForQuit.flatMap { Date() < $0.until ? $0.drafts : nil } ?? [:]
-        askedForQuit = nil
-        let answered = vault.draftIDs.allSatisfy { id in asked[id].map { $0 == vault.draft(id) } ?? false }
-        guard answered || askToDiscardDrafts(String(localized: "Discard and Quit")) else {
-            quitting = false
-            if let relaunch = relaunchRequested {
-                relaunchRequested = nil
-                showRelaunchUnfinished(relaunch)
-            }
-            // An install held while the alert was up shows again (Install Now), or goes if free.
-            installIfFree()
-            return false
-        }
-        quitting = false
-        relaunchRequested = nil
-        pendingInstall = nil
-        updateHeld = false
-        relaunchGate?.cancel()
-        vault.discardDrafts()
-        return true
-    }
+    /// Before Restore, Erase All Data or Move to Applications relaunch the app; true: go on.
+    func confirmAppRelaunch(_ relaunch: AppRelaunch) -> Bool { updates.confirmAppRelaunch(relaunch) }
 
-    /// Before Restore, Erase All Data or Move to Applications relaunch the app: refused while
-    /// Sparkle's installer may be running (`showInstallerBusy` says so), then asks about
-    /// unsaved edits. True: go on; the quit that follows won't ask about these edits again (and
-    /// drops them then, not before, so a move whose copy never opens loses nothing).
-    func confirmAppRelaunch(_ relaunch: AppRelaunch) -> Bool {
-        if installerLive() || pendingInstall != nil {
-            showInstallerBusy()
-            return false
-        }
-        guard askToDiscardDrafts(String(localized: "Discard and Quit")) else { return false }
-        // The alert's run loop can deliver an extraction or an install; check again.
-        if installerLive() || pendingInstall != nil {
-            showInstallerBusy()
-            return false
-        }
-        askedForQuit = (askedDrafts, Date().addingTimeInterval(60), false)
-        relaunchRequested = relaunch
-        return true
-    }
-
-    /// The Restore, Erase or Move didn't start after all (its marker couldn't be written, the move
-    /// failed, or the moved copy didn't open): the edits it asked about are asked about again.
-    func appRelaunchCalledOff() {
-        askedForQuit = nil
-        relaunchRequested = nil
-    }
+    /// The Restore, Erase or Move didn't start after all.
+    func appRelaunchCalledOff() { updates.appRelaunchCalledOff() }
 
     /// Drafts of memories that are gone (purged here or elsewhere) can't be saved or reverted:
     /// they go, so they never hold a quit or an update.
