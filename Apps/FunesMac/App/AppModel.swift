@@ -6,9 +6,6 @@ import FunesCore
 import FunesMCP
 import FunesProtocol
 import Observation
-import os
-
-private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category: "updates")
 
 /// A request waiting for the user, as the menu and Pending requests show it.
 struct PendingRequest: Identifiable, Equatable {
@@ -142,14 +139,14 @@ final class AppModel {
     @ObservationIgnored private var quitting = false
     /// Waits for approval panels before a relaunch (set by the app).
     @ObservationIgnored var relaunchGate: UpdateRelaunchGate?
-    /// Whether Sparkle's installer may be running (from extraction, or an install-on-quit, until
-    /// the app quits; set by the app). While it is, the app never relaunches itself: Autoupdate quits every copy
+    /// Whether Sparkle's installer may be running (from an update's download, or one resumed at
+    /// its installing stage, until the app quits; set by the app). While it is, the app never relaunches itself: Autoupdate quits every copy
     /// of the app and replaces the bundle when this one exits.
     @ObservationIgnored var installerLive: () -> Bool = { false }
     /// The edits a Restore, Erase, Move or Install Now just asked about, as they were then, and
     /// until when that answer holds: the quit that follows doesn't ask about them again, unless
     /// they changed since (it asks about those, and about any others).
-    @ObservationIgnored private var askedForQuit: (drafts: [UUID: VaultModel.Draft], until: Date)?
+    @ObservationIgnored private var askedForQuit: (drafts: [UUID: VaultModel.Draft], until: Date, forInstall: Bool)?
     private var askedDrafts: [UUID: VaultModel.Draft] {
         Dictionary(uniqueKeysWithValues: vault.draftIDs.compactMap { id in vault.draft(id).map { (id, $0) } })
     }
@@ -424,7 +421,7 @@ final class AppModel {
         // brings, which doesn't ask about them again; if it never comes, they're kept.
         guard pendingInstall != nil else { return }
         // Held through the approvals' wait (up to the gate's maximum), then 10 s from the install.
-        askedForQuit = (askedDrafts, Date().addingTimeInterval(90))
+        askedForQuit = (askedDrafts, Date().addingTimeInterval(90), true)
         updateHeld = false
         // An approvals' wait started earlier carries the old rule (hold for edits): start it again.
         relaunchGate?.cancel()
@@ -433,7 +430,8 @@ final class AppModel {
 
     /// Sparkle ended the update with an error: nothing is held any more.
     func updateAborted() {
-        askedForQuit = nil
+        // Only Install Now's answer depended on the update; a Restore's, Erase's or Move's stands.
+        if askedForQuit?.forInstall == true { askedForQuit = nil }
         pendingInstall = nil
         updateHeld = false
         relaunchGate?.cancel()
@@ -482,7 +480,7 @@ final class AppModel {
             showInstallerBusy()
             return false
         }
-        askedForQuit = (askedDrafts, Date().addingTimeInterval(60))
+        askedForQuit = (askedDrafts, Date().addingTimeInterval(60), false)
         relaunchRequested = relaunch
         return true
     }

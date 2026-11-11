@@ -24,9 +24,10 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
     var postponeRelaunch: (_ install: @escaping () -> Void) -> Bool = { _ in false }
     /// Sparkle ended an update with an error.
     var aborted: () -> Void = {}
-    /// From an update's extraction, or Sparkle showing one already installing (resumed from an
-    /// earlier run), for the rest of this run: Autoupdate is running and acts when the app quits.
-    /// Not cleared by an error, since Autoupdate can outlive the driver; a quit and reopen clears it.
+    /// From an update's download (extraction, which starts Autoupdate, follows it without a click),
+    /// or Sparkle showing one already installing (resumed from an earlier run), for the rest of this
+    /// run: Autoupdate may be running and act when the app quits. Not cleared by an error, since
+    /// Autoupdate can outlive the driver; a quit and reopen clears it.
     private var extracted = false
     var installerMayBeRunning: Bool { extracted }
     private var controller: SPUStandardUpdaterController!
@@ -99,6 +100,10 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
     func updater(_ updater: SPUUpdater, shouldPostponeRelaunchForUpdate item: SUAppcastItem,
                  untilInvokingBlock installHandler: @escaping () -> Void) -> Bool {
         postponeRelaunch(installHandler)
+    }
+
+    func updater(_ updater: SPUUpdater, willDownloadUpdate item: SUAppcastItem, with request: NSMutableURLRequest) {
+        extracted = true
     }
 
     func updater(_ updater: SPUUpdater, willExtractUpdate item: SUAppcastItem) {
