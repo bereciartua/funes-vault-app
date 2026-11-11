@@ -5795,8 +5795,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Read %1$lld of %2$lld results · %3$lld s"
+            "state" : "translated",
+            "value" : "Read %1$lld of %2$#@v0@ · %3$lld s"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg result"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg results"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

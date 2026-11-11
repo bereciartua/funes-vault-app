@@ -1069,8 +1069,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Last %1$lld days: %2$lld in · %3$lld shared · %4$lld refused"
+            "state" : "translated",
+            "value" : "%1$#@v0@: %2$lld in · %3$lld shared · %4$lld refused"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Last %arg day"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Last %arg days"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -1467,8 +1489,30 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Read %1$lld of %2$lld results · %3$lld s"
+            "state" : "translated",
+            "value" : "Read %1$lld of %2$#@v0@ · %3$lld s"
+          },
+          "substitutions" : {
+            "v0" : {
+              "argNum" : 2,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg result"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg results"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
