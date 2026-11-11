@@ -4,7 +4,7 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
-Fixes from a full code review of the Mac app, the iPhone app and the release pipeline. **Update the Mac first, then the iPhone:** the iPhone now trusts only refusals your Mac has signed, so a new iPhone app with an older Mac can't correct its clock or learn it was removed (it shows the Mac as unreachable instead).
+Fixes from a full code review of the Mac app, the iPhone app and the release pipeline. **Update the Mac first, then the iPhone:** the iPhone now trusts only refusals your Mac has signed, so a new iPhone app with an older Mac can't correct its clock or learn it was removed (it shows the Mac as unreachable instead). Right after the Mac updates, the iPhone may see "vault not available" for up to two minutes while replay protection starts; it recovers by itself.
 
 ### Security
 
@@ -31,7 +31,7 @@ Fixes from a full code review of the Mac app, the iPhone app and the release pip
 ### Fixed
 
 - **"Show this memory" opens the right memory,** even when it's archived, expired, deleted or filtered out. Before, the Vault could open on the memory selected earlier.
-- **Unsaved edits are kept** when you select another memory, switch section, close the window, change the Status filter, or press Still True, Archive or Restore, and they move onto the memory if something else about it changes meanwhile. Rows with unsaved edits show a pencil; Delete, Quit and a relaunch to update ask first.
+- **Unsaved edits are kept** when you select another memory, switch section, close the window, change the Status filter, or press Still True, Archive or Restore, and they move onto the memory if something else about it changes meanwhile. Rows with unsaved edits show a pencil; Delete, Quit, Restore, Erase and Move to Applications ask first, and an update waits for them, with **Discard Changes and Install…** in the menu bar panel.
 - A Search answer quoting part of an emoji (one half of a flag) no longer crashes the Mac or the iPhone app.
 - An approval made before pausing an agent can still be collected after resuming. A panel that went stale while open is refused with "This request changed" instead of failing at delivery, and expired or emptied requests now appear in Activity.
 - Allow Once on a request whose access changed while the panel was open keeps the original request waiting, instead of dropping it.

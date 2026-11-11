@@ -3312,7 +3312,13 @@
     "Discard" : {
 
     },
+    "Discard Changes and Install…" : {
+
+    },
     "Discard and Delete" : {
+
+    },
+    "Discard and Install" : {
 
     },
     "Discard and Quit" : {
@@ -4325,6 +4331,9 @@
 
     },
     "Install ngrok, or choose another tunnel." : {
+
+    },
+    "Installs once you save or discard your changes." : {
 
     },
     "Instruction" : {
@@ -8279,6 +8288,9 @@
 
     },
     "Update Available: %@…" : {
+
+    },
+    "Update ready to install" : {
 
     },
     "Update the URL in" : {
