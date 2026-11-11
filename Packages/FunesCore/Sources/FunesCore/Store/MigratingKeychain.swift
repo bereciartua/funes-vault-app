@@ -65,8 +65,9 @@ public struct SystemKeychain: KeychainBackend {
 ///
 /// Every operation runs under one process-wide lock, so a migrating read can't interleave with a
 /// write, a delete or another migrating read (a save lost, a deleted key brought back, both
-/// copies gone). A legacy item whose delete failed is deleted again on a later read, once per
-/// account for each instance. Only status codes are logged, never data.
+/// copies gone). A legacy item left behind (its delete failed) is deleted on a later read if
+/// it's the same key; a different one (an older build's, after a downgrade) stays, shadowed. A
+/// legacy read or delete that fails for now is tried again on the next read. Only status codes are logged, never data.
 public struct MigratingKeychain: Sendable {
     public let service: String
     let backend: any KeychainBackend
@@ -78,8 +79,9 @@ public struct MigratingKeychain: Sendable {
     /// The accounts whose legacy item this instance has already made sure is gone.
     private final class Cleaned: @unchecked Sendable {
         private var accounts: Set<String> = []
-        /// True the first time for `account` (called under `lock`).
-        func first(_ account: String) -> Bool { accounts.insert(account).inserted }
+        /// Whether `account` is settled (called under `lock`).
+        func contains(_ account: String) -> Bool { accounts.contains(account) }
+        func mark(_ account: String) { accounts.insert(account) }
     }
 
     public init(service: String, backend: any KeychainBackend = SystemKeychain()) {
@@ -95,12 +97,20 @@ public struct MigratingKeychain: Sendable {
             // A legacy copy whose delete failed after an earlier migration goes now, but only one
             // that's the same key: a different one (written by an older build after a downgrade)
             // stays, shadowed, rather than being deleted unseen.
-            if cleaned.first(account) {
+            // Settled once the answer is definite; a read or delete that fails for now is tried
+            // again on a later read.
+            if !cleaned.contains(account) {
                 let legacy = backend.read(service: service, account: account, dataProtection: false)
-                if legacy.status == errSecSuccess, legacy.data == data {
-                    deleteLegacy(account: account)
-                } else if legacy.status == errSecSuccess {
+                switch legacy.status {
+                case errSecItemNotFound:
+                    cleaned.mark(account)
+                case errSecSuccess where legacy.data == data:
+                    if deleteLegacy(account: account) { cleaned.mark(account) }
+                case errSecSuccess:
                     logger.error("Keychain migration: a different legacy item stays") // log-safe: no key material
+                    cleaned.mark(account)
+                default:
+                    logger.error("Keychain migration: legacy read \(legacy.status, privacy: .public)") // log-safe: a status code
                 }
             }
             return data
@@ -141,7 +151,7 @@ public struct MigratingKeychain: Sendable {
             return
         }
         // Marked only once it's gone: if this delete fails, the next read tries again.
-        if deleteLegacy(account: account) { _ = cleaned.first(account) }
+        if deleteLegacy(account: account) { cleaned.mark(account) }
     }
 
     @discardableResult

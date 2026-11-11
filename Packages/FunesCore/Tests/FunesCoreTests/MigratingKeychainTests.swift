@@ -21,6 +21,9 @@ final class FakeKeychains: KeychainBackend, @unchecked Sendable {
         /// Which data-protection reads (1-based) fail for a moment.
         var failingModernReads: Set<Int> = []
         var modernReads = 0
+        /// Which login-keychain reads (1-based) fail for a moment.
+        var failingLegacyReads: Set<Int> = []
+        var legacyReads = 0
         var calls: [String] = []
         /// Run once when the `occurrence`th such call starts, outside the fake's lock.
         var hook: (call: String, occurrence: Int, action: @Sendable () -> Void)?
@@ -47,6 +50,9 @@ final class FakeKeychains: KeychainBackend, @unchecked Sendable {
             if dataProtection {
                 s.modernReads += 1
                 if s.failingModernReads.contains(s.modernReads) { return (errSecInteractionNotAllowed, nil) }
+            } else {
+                s.legacyReads += 1
+                if s.failingLegacyReads.contains(s.legacyReads) { return (errSecInteractionNotAllowed, nil) }
             }
             let data = dataProtection ? s.modern[key(service, account)] : s.legacy[key(service, account)]
             return data.map { (errSecSuccess, $0) } ?? (errSecItemNotFound, nil)
@@ -170,6 +176,21 @@ final class FakeKeychains: KeychainBackend, @unchecked Sendable {
         fake.state.withLock { $0.calls = [] }
         #expect(try keychain.read(account: "openai") == secret)
         #expect(fake.state.withLock { $0.calls } == ["read modern"])
+    }
+
+    /// A leftover legacy copy whose read fails for a moment is checked again on the next read,
+    /// and goes then.
+    @Test func aLegacyLeftoverIsRetriedAfterAFailedRead() throws {
+        fake.state.withLock {
+            $0.modern["com.funesvault.provider/openai"] = secret
+            $0.legacy["com.funesvault.provider/openai"] = secret
+            $0.failingLegacyReads = [1]
+        }
+        let keychain = self.keychain
+        #expect(try keychain.read(account: "openai") == secret)
+        #expect(stored.legacy == secret)
+        #expect(try keychain.read(account: "openai") == secret)
+        #expect(stored.legacy == nil)
     }
 
     /// After a downgrade an older build may write a different key to the login keychain: the

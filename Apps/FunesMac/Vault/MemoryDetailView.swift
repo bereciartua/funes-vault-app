@@ -345,7 +345,7 @@ struct MemoryDetailView: View {
 
     private func deleteNow() {
         do {
-            try model.services.store.purgeMemory(id: memoryID)
+            try model.services.store.purgeMemory(id: memoryID, now: Date())
             model.vault.selection = []
         } catch {
             self.error = ErrorText.message(error)

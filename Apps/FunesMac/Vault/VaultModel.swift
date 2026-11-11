@@ -455,7 +455,7 @@ final class VaultModel: AnswerCardSource {
                 case .archive: try store.archiveMemory(id: id, now: now)
                 case .restore: try store.restoreMemory(id: id, now: now)
                 case .delete: try store.deleteMemory(id: id, now: now)
-                case .deleteNow: try store.purgeMemory(id: id)
+                case .deleteNow: try store.purgeMemory(id: id, now: now)
                 case .moveToCategory(let key): try store.updateMemory(id: id, MemoryEdit(categoryKeys: [key]), now: now)
                 case .sensitivity(let level): try store.updateMemory(id: id, MemoryEdit(sensitivity: level), now: now)
                 }
