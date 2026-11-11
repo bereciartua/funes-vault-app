@@ -254,9 +254,6 @@ import Testing
         #expect(!admits([10, 0, 0, 1], (0..<32).map { [10, 0, 1, UInt8($0)] }))
     }
 
-    /// A full table makes way for a newcomer by closing the connection idle longest, never one
-    /// handling a request; with every connection busy, the newcomer is refused. A newcomer over
-    /// its own address's cap never evicts anyone.
     /// The peek behind `receiving`: bytes waiting count (and stay unread), nothing waiting doesn't,
     /// and neither does the peer having gone (end of file).
     @Test func pendingBytesArePeekedNotRead() throws {
@@ -275,6 +272,9 @@ import Testing
         #expect(!CompanionListener.hasPendingBytes(fds[0]))  // end of file
     }
 
+    /// A full table makes way for a newcomer by closing the connection idle longest, never one
+    /// handling a request; with every connection busy, the newcomer is refused. A newcomer over
+    /// its own address's cap never evicts anyone.
     @Test func aFullTableEvictsTheLongestIdle() {
         let limits = CompanionListener.Limits()
         let hosts: [[UInt8]] = (0..<32).map { [192, 168, 1, UInt8(100 + $0)] }
