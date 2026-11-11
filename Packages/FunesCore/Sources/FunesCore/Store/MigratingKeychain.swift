@@ -67,7 +67,8 @@ public struct SystemKeychain: KeychainBackend {
 /// write, a delete or another migrating read (a save lost, a deleted key brought back, both
 /// copies gone). A legacy item left behind (its delete failed) is deleted on a later read if
 /// it's the same key; a different one (an older build's, after a downgrade) stays, shadowed. A
-/// legacy read or delete that fails for now is tried again on the next read. Only status codes are logged, never data.
+/// legacy read or delete that fails for now is tried again on later reads, up to three times
+/// per account for each instance. Only status codes are logged, never data.
 public struct MigratingKeychain: Sendable {
     public let service: String
     let backend: any KeychainBackend
@@ -79,9 +80,17 @@ public struct MigratingKeychain: Sendable {
     /// The accounts whose legacy item this instance has already made sure is gone.
     private final class Cleaned: @unchecked Sendable {
         private var accounts: Set<String> = []
+        private var failures: [String: Int] = [:]
         /// Whether `account` is settled (called under `lock`).
         func contains(_ account: String) -> Bool { accounts.contains(account) }
         func mark(_ account: String) { accounts.insert(account) }
+        /// A legacy read or delete that failed for now: settled after a few, so a login keychain
+        /// that keeps refusing (locked, or an access prompt declined) isn't asked on every read.
+        func failed(_ account: String) {
+            failures[account, default: 0] += 1
+            if failures[account, default: 0] >= Cleaned.attempts { accounts.insert(account) }
+        }
+        static let attempts = 3
     }
 
     public init(service: String, backend: any KeychainBackend = SystemKeychain()) {
@@ -105,12 +114,13 @@ public struct MigratingKeychain: Sendable {
                 case errSecItemNotFound:
                     cleaned.mark(account)
                 case errSecSuccess where legacy.data == data:
-                    if deleteLegacy(account: account) { cleaned.mark(account) }
+                    if deleteLegacy(account: account) { cleaned.mark(account) } else { cleaned.failed(account) }
                 case errSecSuccess:
                     logger.error("Keychain migration: a different legacy item stays") // log-safe: no key material
                     cleaned.mark(account)
                 default:
                     logger.error("Keychain migration: legacy read \(legacy.status, privacy: .public)") // log-safe: a status code
+                    cleaned.failed(account)
                 }
             }
             return data

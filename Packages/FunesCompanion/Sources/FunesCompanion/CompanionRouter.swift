@@ -108,7 +108,8 @@ public final class CompanionRouter: Sendable {
 /// nonce is written through before its call runs, and loaded back at launch. So replay
 /// protection doesn't depend on the phone's and the Mac's clocks agreeing.
 ///
-/// Fails closed, refusing calls with `unavailable` (the phone retries), on the monotonic clock:
+/// Fails closed, refusing calls with `unavailable` (the phone retries), for windows that end only
+/// once both the monotonic and the wall clock have passed them (step 2 compares wall time):
 /// - a journal that exists but can't be read: for the replay window, since its nonces could be
 ///   replayed meanwhile;
 /// - no journal (the first launch with one, or deleted): for twice the clock skew, past which
@@ -148,6 +149,7 @@ public actor EnvelopeGuard {
         } catch {
             logger.error("The companion's nonce journal couldn't be read; refusing calls for the replay window")
             blindUntil = monotonic() + .seconds(cache.window)
+            blindUntilWall = now.addingTimeInterval(cache.window)
         }
         self.journal = journal
     }

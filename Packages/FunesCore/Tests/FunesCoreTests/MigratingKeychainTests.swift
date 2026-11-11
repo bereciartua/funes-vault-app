@@ -193,6 +193,18 @@ final class FakeKeychains: KeychainBackend, @unchecked Sendable {
         #expect(stored.legacy == nil)
     }
 
+    /// A login keychain that keeps refusing is asked a few times, not on every read.
+    @Test func aLegacyReadThatKeepsFailingIsGivenUp() throws {
+        fake.state.withLock {
+            $0.modern["com.funesvault.provider/openai"] = secret
+            $0.legacy["com.funesvault.provider/openai"] = secret
+            $0.failingLegacyReads = Set(1...100)
+        }
+        let keychain = self.keychain
+        for _ in 0..<6 { #expect(try keychain.read(account: "openai") == secret) }
+        #expect(fake.state.withLock { $0.legacyReads } == 3)
+    }
+
     /// After a downgrade an older build may write a different key to the login keychain: the
     /// later read doesn't delete it unseen (it stays, shadowed by the migrated copy).
     @Test func aDifferentLegacyItemIsNotDeletedOnRead() throws {
