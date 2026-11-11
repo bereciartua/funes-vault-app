@@ -361,9 +361,8 @@ final class VaultModel: AnswerCardSource {
         // A single selected memory stays selected when it leaves the list through a change to the
         // data (archived from its detail, edited out of a filter), or when it was asked for by
         // "Show this memory"; a new search or filter drops what it doesn't list.
-        let single = selection.count == 1 ? selection.first : nil
         let sameListing = loaded && query == listedQuery && filter == listedFilter
-        let keepable = single.flatMap { sameListing || $0 == revealed ? $0 : nil }
+        let keepable = VaultSelection.keepable(selection, sameListing: sameListing, revealed: revealed)
         let store = services.store
         do {
             let hits = try await services.search.vaultSearch(query, filter: filter, now: now)
@@ -388,8 +387,8 @@ final class VaultModel: AnswerCardSource {
             // Rows still in view past the first page (a refresh while scrolled) get theirs again.
             for id in visibleRows { requestSnippets(for: id) }
             // Unless the selection changed meanwhile.
-            let kept = keep && keepable.map { selection == [$0] } == true
-            if !kept { selection = selection.intersection(memories.map(\.id)) }
+            let next = VaultSelection.after(selection, listed: memories.map(\.id), keepable: keepable, exists: keep)
+            if next != selection { selection = next }
             loaded = true
             clearAnswerIfStale(found)
             scheduleAutoAsk()

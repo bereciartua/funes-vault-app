@@ -39,23 +39,27 @@ struct MemoryForm: Equatable {
     /// `current`, the memory as it is now: nil when a field they edited also changed since, to
     /// something else, so Save still reports that conflict. Fields they didn't edit take
     /// `current`'s values (a status change, Still True or an edit elsewhere to another field).
+    /// The merge itself is FunesCore's `MemoryFields.rebased`, with its tests.
     func rebased(from base: MemoryForm, onto current: MemoryForm) -> MemoryForm? {
+        guard let merged = fields.rebased(from: base.fields, onto: current.fields) else { return nil }
         var out = current
-        func take<T: Equatable>(_ path: WritableKeyPath<MemoryForm, T>) -> Bool {
-            let edited = self[keyPath: path] != base[keyPath: path]
-            guard edited else { return true }
-            if current[keyPath: path] != base[keyPath: path], current[keyPath: path] != self[keyPath: path] { return false }
-            out[keyPath: path] = self[keyPath: path]
-            return true
-        }
-        guard take(\.title), take(\.body), take(\.kind), take(\.categoryKeys), take(\.sensitivity) else { return nil }
-        if expiry != base.expiry {
-            if current.expiry != base.expiry, current.expiry != expiry { return nil }
+        out.title = merged.title
+        out.body = merged.body
+        out.kind = merged.kind
+        out.categoryKeys = merged.categoryKeys
+        out.sensitivity = merged.sensitivity
+        // The edited expiry, with its picker as the edits left it.
+        if merged.expiresAt != current.expiry {
             out.expires = expires
             out.expiresAt = expiresAt
         }
         out.sensitivityChosen = sensitivityChosen
         return out
+    }
+
+    /// The fields a save writes, for merging.
+    var fields: MemoryFields {
+        MemoryFields(title: title, body: body, kind: kind, categoryKeys: categoryKeys, sensitivity: sensitivity, expiresAt: expiry)
     }
 
     /// LOW, raised to the highest default of the chosen categories.
