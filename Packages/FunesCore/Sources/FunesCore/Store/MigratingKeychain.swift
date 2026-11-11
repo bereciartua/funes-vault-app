@@ -25,7 +25,9 @@ public struct SystemKeychain: KeychainBackend {
     private func query(_ service: String, _ account: String, _ dataProtection: Bool) -> [String: Any] {
         var query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
                                     kSecAttrAccount as String: account]
-        if dataProtection { query[kSecUseDataProtectionKeychain as String] = true }
+        // Said either way: a legacy query that left it out must never match the data-protection
+        // item, or deleting the old copy after a migration could delete the new one.
+        query[kSecUseDataProtectionKeychain as String] = dataProtection
         return query
     }
 
@@ -61,10 +63,24 @@ public struct SystemKeychain: KeychainBackend {
 /// - **Write:** the data-protection Keychain when it takes it, otherwise the legacy one.
 /// - **Delete:** both.
 ///
-/// Only status codes are logged, never data.
+/// Every operation runs under one process-wide lock, so a migrating read can't interleave with a
+/// write, a delete or another migrating read (a save lost, a deleted key brought back, both
+/// copies gone). A legacy item whose delete failed is deleted again on a later read, once per
+/// account for each instance. Only status codes are logged, never data.
 public struct MigratingKeychain: Sendable {
     public let service: String
     let backend: any KeychainBackend
+    private let cleaned = Cleaned()
+
+    /// One process, one Keychain: every instance's operations take turns.
+    private static let lock = NSLock()
+
+    /// The accounts whose legacy item this instance has already made sure is gone.
+    private final class Cleaned: @unchecked Sendable {
+        private var accounts: Set<String> = []
+        /// True the first time for `account` (called under `lock`).
+        func first(_ account: String) -> Bool { accounts.insert(account).inserted }
+    }
 
     public init(service: String, backend: any KeychainBackend = SystemKeychain()) {
         self.service = service
@@ -72,8 +88,14 @@ public struct MigratingKeychain: Sendable {
     }
 
     public func read(account: String) throws(KeychainError) -> Data? {
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
         let modern = backend.read(service: service, account: account, dataProtection: true)
-        if modern.status == errSecSuccess, let data = modern.data { return data }
+        if modern.status == errSecSuccess, let data = modern.data {
+            // A legacy copy whose delete failed after an earlier migration goes now.
+            if cleaned.first(account) { deleteLegacy(account: account) }
+            return data
+        }
         let usable = modern.status == errSecItemNotFound
         if !usable { logger.error("Data-protection Keychain read: \(modern.status, privacy: .public)") } // log-safe: a status code
 
@@ -104,18 +126,29 @@ public struct MigratingKeychain: Sendable {
         let copy = backend.read(service: service, account: account, dataProtection: true)
         guard copy.status == errSecSuccess, copy.data == data else {
             logger.error("Keychain migration: the copy didn't read back: \(copy.status, privacy: .public)") // log-safe: a status code
-            // Only our own copy goes; one that was already there and differs is left alone.
+            // Only the copy this call made goes (under the lock nothing else can have verified it);
+            // one that was already there is left alone.
             if added == errSecSuccess { _ = backend.delete(service: service, account: account, dataProtection: true) }
             return
         }
+        // Marked only once it's gone: if this delete fails, the next read tries again.
+        if deleteLegacy(account: account) { _ = cleaned.first(account) }
+    }
+
+    @discardableResult
+    private func deleteLegacy(account: String) -> Bool {
         let deleted = backend.delete(service: service, account: account, dataProtection: false)
-        if deleted != errSecSuccess && deleted != errSecItemNotFound {
+        guard deleted == errSecSuccess || deleted == errSecItemNotFound else {
             logger.error("Keychain migration: the legacy item stayed: \(deleted, privacy: .public)") // log-safe: a status code
+            return false
         }
+        return true
     }
 
     public func write(_ data: Data, account: String) throws(KeychainError) {
-        try delete(account: account)
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+        try deleteBoth(account: account)
         let added = backend.add(data, service: service, account: account, dataProtection: true)
         if added == errSecSuccess { return }
         logger.error("Data-protection Keychain write: \(added, privacy: .public); using the login keychain") // log-safe: a status code
@@ -124,6 +157,12 @@ public struct MigratingKeychain: Sendable {
     }
 
     public func delete(account: String) throws(KeychainError) {
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+        try deleteBoth(account: account)
+    }
+
+    private func deleteBoth(account: String) throws(KeychainError) {
         let modern = backend.delete(service: service, account: account, dataProtection: true)
         let legacy = backend.delete(service: service, account: account, dataProtection: false)
         let fine: Set<OSStatus> = [errSecSuccess, errSecItemNotFound, errSecMissingEntitlement]

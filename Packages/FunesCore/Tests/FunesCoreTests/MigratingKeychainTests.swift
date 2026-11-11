@@ -16,24 +16,46 @@ final class FakeKeychains: KeychainBackend, @unchecked Sendable {
         /// The data-protection Keychain stores something else than it was given.
         var corruptsCopies = false
         var legacyDeleteFails: OSStatus?
+        /// How many legacy deletes fail before they work.
+        var legacyDeleteFailures = Int.max
+        /// Which data-protection reads (1-based) fail for a moment.
+        var failingModernReads: Set<Int> = []
+        var modernReads = 0
         var calls: [String] = []
+        /// Run once when the `occurrence`th such call starts, outside the fake's lock.
+        var hook: (call: String, occurrence: Int, action: @Sendable () -> Void)?
     }
     let state = Mutex(State())
+
+    /// Records the call and runs its hook, if it's the one waited for.
+    private func enter(_ call: String) {
+        let action = state.withLock { s -> (@Sendable () -> Void)? in
+            s.calls.append(call)
+            guard let hook = s.hook, hook.call == call, s.calls.filter({ $0 == call }).count == hook.occurrence else { return nil }
+            s.hook = nil
+            return hook.action
+        }
+        action?()
+    }
 
     private func key(_ service: String, _ account: String) -> String { service + "/" + account }
 
     func read(service: String, account: String, dataProtection: Bool) -> (status: OSStatus, data: Data?) {
-        state.withLock { s in
-            s.calls.append("read \(dataProtection ? "modern" : "legacy")")
+        enter("read \(dataProtection ? "modern" : "legacy")")
+        return state.withLock { s in
             if dataProtection, let refused = s.modernRefuses { return (refused, nil) }
+            if dataProtection {
+                s.modernReads += 1
+                if s.failingModernReads.contains(s.modernReads) { return (errSecInteractionNotAllowed, nil) }
+            }
             let data = dataProtection ? s.modern[key(service, account)] : s.legacy[key(service, account)]
             return data.map { (errSecSuccess, $0) } ?? (errSecItemNotFound, nil)
         }
     }
 
     func add(_ data: Data, service: String, account: String, dataProtection: Bool) -> OSStatus {
-        state.withLock { s in
-            s.calls.append("add \(dataProtection ? "modern" : "legacy")")
+        enter("add \(dataProtection ? "modern" : "legacy")")
+        return state.withLock { s in
             if dataProtection {
                 if let refused = s.modernRefuses ?? s.addFails { return refused }
                 guard s.modern[key(service, account)] == nil else { return errSecDuplicateItem }
@@ -47,13 +69,16 @@ final class FakeKeychains: KeychainBackend, @unchecked Sendable {
     }
 
     func delete(service: String, account: String, dataProtection: Bool) -> OSStatus {
-        state.withLock { s in
-            s.calls.append("delete \(dataProtection ? "modern" : "legacy")")
+        enter("delete \(dataProtection ? "modern" : "legacy")")
+        return state.withLock { s in
             if dataProtection {
                 if let refused = s.modernRefuses { return refused }
                 return s.modern.removeValue(forKey: key(service, account)) == nil ? errSecItemNotFound : errSecSuccess
             }
-            if let fails = s.legacyDeleteFails { return fails }
+            if let fails = s.legacyDeleteFails, s.legacyDeleteFailures > 0 {
+                s.legacyDeleteFailures -= 1
+                return fails
+            }
             return s.legacy.removeValue(forKey: key(service, account)) == nil ? errSecItemNotFound : errSecSuccess
         }
     }
@@ -74,6 +99,7 @@ final class FakeKeychains: KeychainBackend, @unchecked Sendable {
 
     @Test func theFirstReadMovesTheItemAndVerifiesBeforeDeleting() throws {
         legacy(secret)
+        let keychain = self.keychain
         #expect(try keychain.read(account: "openai") == secret)
         #expect(stored.legacy == nil && stored.modern == secret)
         #expect(fake.state.withLock { $0.calls } == ["read modern", "read legacy", "add modern", "read modern", "delete legacy"])
@@ -128,12 +154,78 @@ final class FakeKeychains: KeychainBackend, @unchecked Sendable {
         #expect(try keychain.read(account: "openai") == nil)
     }
 
-    /// A legacy item that can't be deleted after the copy is left; the copy is what's read.
-    @Test func aLegacyItemThatWontGoIsHarmless() throws {
+    /// A legacy item that can't be deleted after the copy is tried again on a later read, so it
+    /// doesn't stay in the login keychain; once gone, reads stop asking.
+    @Test func aLegacyItemThatWontGoIsDeletedOnALaterRead() throws {
         legacy(secret)
-        fake.state.withLock { $0.legacyDeleteFails = errSecInteractionNotAllowed }
+        fake.state.withLock {
+            $0.legacyDeleteFails = errSecInteractionNotAllowed
+            $0.legacyDeleteFailures = 1
+        }
+        let keychain = self.keychain
         #expect(try keychain.read(account: "openai") == secret)
         #expect(stored.modern == secret && stored.legacy == secret)
+        #expect(try keychain.read(account: "openai") == secret)
+        #expect(stored.modern == secret && stored.legacy == nil)
+        fake.state.withLock { $0.calls = [] }
+        #expect(try keychain.read(account: "openai") == secret)
+        #expect(fake.state.withLock { $0.calls } == ["read modern"])
+    }
+
+    /// Runs `work` on another thread when the fake reaches `call`, waiting a little for it: with
+    /// the lock it can't run until the operation under way is done; without, it would land in
+    /// the middle of it.
+    func interleave(at call: String, occurrence: Int = 1, _ work: @escaping @Sendable () -> Void) -> DispatchGroup {
+        let group = DispatchGroup()
+        group.enter()
+        fake.state.withLock {
+            $0.hook = (call, occurrence, {
+                Thread.detachNewThread {
+                    work()
+                    group.leave()
+                }
+                _ = group.wait(timeout: .now() + 0.3)
+            })
+        }
+        return group
+    }
+
+    /// A save between a first read's copy and its read-back isn't lost to the old key.
+    @Test func aSaveDuringAMigrationIsKept() throws {
+        legacy(Data("old".utf8))
+        let keychain = self.keychain
+        let done = interleave(at: "read modern", occurrence: 2) { try? keychain.write(Data("new".utf8), account: "openai") }
+        _ = try keychain.read(account: "openai")
+        done.wait()
+        #expect(try keychain.read(account: "openai") == Data("new".utf8))
+        #expect(stored.legacy == nil)
+    }
+
+    /// A delete between a first read's legacy read and its copy isn't undone: a removed key
+    /// doesn't come back.
+    @Test func aDeleteDuringAMigrationStays() throws {
+        legacy(secret)
+        let keychain = self.keychain
+        let done = interleave(at: "add modern") { try? keychain.delete(account: "openai") }
+        _ = try keychain.read(account: "openai")
+        done.wait()
+        #expect(try keychain.read(account: "openai") == nil)
+        #expect(stored.legacy == nil && stored.modern == nil)
+    }
+
+    /// Two first reads at once, with the third data-protection read failing for a moment. Had
+    /// the second read landed between the first's copy and its read-back, it would have found
+    /// the copy and deleted the legacy item, and the first's failed read-back would then have
+    /// deleted the copy: both gone. The key is never lost.
+    @Test func twoFirstReadsNeverLoseTheKey() throws {
+        legacy(secret)
+        fake.state.withLock { $0.failingModernReads = [3] }
+        let keychain = self.keychain
+        let other = MigratingKeychain(service: "com.funesvault.provider", backend: fake)
+        let done = interleave(at: "read modern", occurrence: 2) { _ = try? other.read(account: "openai") }
+        #expect(try keychain.read(account: "openai") == secret)
+        done.wait()
+        #expect(stored.modern == secret || stored.legacy == secret)
         #expect(try keychain.read(account: "openai") == secret)
     }
 
