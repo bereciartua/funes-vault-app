@@ -27,9 +27,10 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
     /// From an update's download (extraction, which starts Autoupdate, follows it without a click),
     /// or Sparkle showing one already installing (resumed from an earlier run), for the rest of this
     /// run: Autoupdate may be running and act when the app quits. Not cleared by an error, since
-    /// Autoupdate can outlive the driver; a quit and reopen clears it.
-    private var extracted = false
-    var installerMayBeRunning: Bool { extracted }
+    /// Autoupdate can outlive the driver; a quit and reopen clears it. A download that fails or is
+    /// cancelled, both before extraction, clears it.
+    private var installerStarted = false
+    var installerMayBeRunning: Bool { installerStarted }
     private var controller: SPUStandardUpdaterController!
     private var started = false
 
@@ -103,11 +104,19 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
     }
 
     func updater(_ updater: SPUUpdater, willDownloadUpdate item: SUAppcastItem, with request: NSMutableURLRequest) {
-        extracted = true
+        installerStarted = true
+    }
+
+    func updater(_ updater: SPUUpdater, failedToDownloadUpdate item: SUAppcastItem, error: any Error) {
+        installerStarted = false
+    }
+
+    func userDidCancelDownload(_ updater: SPUUpdater) {
+        installerStarted = false
     }
 
     func updater(_ updater: SPUUpdater, willExtractUpdate item: SUAppcastItem) {
-        extracted = true
+        installerStarted = true
     }
 
 
@@ -127,7 +136,7 @@ final class SparkleUpdater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverD
     nonisolated func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem,
                                                                state: SPUUserUpdateState) {
         // An update resumed at its installing stage: Autoupdate from an earlier run is alive.
-        if state.stage == .installing { MainActor.assumeIsolated { extracted = true } }
+        if state.stage == .installing { MainActor.assumeIsolated { installerStarted = true } }
         guard !handleShowingUpdate else { return }
         let found = FoundUpdate(version: update.displayVersionString, critical: update.isCriticalUpdate)
         MainActor.assumeIsolated { foundUpdateChanged(found) }
