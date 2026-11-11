@@ -257,6 +257,24 @@ import Testing
     /// A full table makes way for a newcomer by closing the connection idle longest, never one
     /// handling a request; with every connection busy, the newcomer is refused. A newcomer over
     /// its own address's cap never evicts anyone.
+    /// The peek behind `receiving`: bytes waiting count (and stay unread), nothing waiting doesn't,
+    /// and neither does the peer having gone (end of file).
+    @Test func pendingBytesArePeekedNotRead() throws {
+        var fds: [Int32] = [0, 0]
+        #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &fds) == 0)
+        defer { Darwin.close(fds[0]) }
+        #expect(!CompanionListener.hasPendingBytes(fds[0]))
+        let bytes: [UInt8] = Array("POST /rpc".utf8)
+        #expect(Darwin.write(fds[1], bytes, bytes.count) == bytes.count)
+        #expect(CompanionListener.hasPendingBytes(fds[0]))
+        #expect(CompanionListener.hasPendingBytes(fds[0]))  // still there: only peeked
+        var buffer = [UInt8](repeating: 0, count: 64)
+        #expect(Darwin.read(fds[0], &buffer, buffer.count) == bytes.count)
+        #expect(!CompanionListener.hasPendingBytes(fds[0]))
+        Darwin.close(fds[1])
+        #expect(!CompanionListener.hasPendingBytes(fds[0]))  // end of file
+    }
+
     @Test func aFullTableEvictsTheLongestIdle() {
         let limits = CompanionListener.Limits()
         let hosts: [[UInt8]] = (0..<32).map { [192, 168, 1, UInt8(100 + $0)] }

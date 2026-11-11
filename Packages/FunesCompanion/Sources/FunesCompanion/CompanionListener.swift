@@ -165,6 +165,13 @@ public final class CompanionListener: @unchecked Sendable {
         connection.start()
     }
 
+    /// Whether bytes are waiting to be read on `fd`, without reading or blocking: false when there
+    /// are none (EAGAIN), at end of file, or on any error.
+    static func hasPendingBytes(_ fd: Int32) -> Bool {
+        var byte: UInt8 = 0
+        return recv(fd, &byte, 1, MSG_PEEK | MSG_DONTWAIT) > 0
+    }
+
     /// An open connection, as admission sees it.
     struct Peer: Equatable {
         var address: [UInt8]
@@ -244,11 +251,7 @@ public final class CompanionListener: @unchecked Sendable {
         private(set) var idleSince = DispatchTime.now().uptimeNanoseconds
         var isBusy: Bool { busy }
         /// A request has started arriving: part of it parsed, or bytes waiting in the socket.
-        var isReceiving: Bool {
-            if parser.hasBufferedBytes { return true }
-            var byte: UInt8 = 0
-            return recv(fd, &byte, 1, MSG_PEEK | MSG_DONTWAIT) > 0
-        }
+        var isReceiving: Bool { parser.hasBufferedBytes || CompanionListener.hasPendingBytes(fd) }
         private var closed = false
         private var timer: DispatchSourceTimer?
         private var reader: DispatchSourceRead?
