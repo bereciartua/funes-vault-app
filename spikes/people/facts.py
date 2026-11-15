@@ -975,8 +975,10 @@ def episodes(state, pred, untrusted_dates=True):
             nxt = starts[i + 1] if i + 1 < len(starts) else None
             window = [e for e in ends if e >= st and (nxt is None or e < nxt)]
             en = window[0] if window else None
-            if i and eps and eps[-1][1] is None and en is None:
+            if i and eps and eps[-1][1] is None:
                 eps[-1][2] = True          # two starts with no end between: one episode whose start memories disagree
+                eps[-1][1] = en
+                eps[-1][3] = eps[-1][3] or len(window) > 1
                 continue
             eps.append([st, en, False, len(window) > 1])
         if not starts and ends:
@@ -1056,10 +1058,16 @@ def before(state, pred, x, query="", direction="before"):
     stated = _stated(state, pred, x, direction)
     if stated & _stated(state, pred, x, "after" if direction == "before" else "before"):
         stated = set()                   # contradictory order edges, or a cycle: no stated order; only dates can decide
-    if len(stated) == 1 and len(mine) == 1:
-        return stated.pop(), "stated"
     sx = pick_episode(mine, query)
     gap = R.preds[pred].get("gap_months")
+    if len(stated) == 1 and len(mine) == 1:
+        win = stated.pop()
+        other = [e for e in eps if e.entity == win]
+        if gap is not None and len(other) == 1 and sx:      # a stated order still tells a gap the dates show
+            a, b = (other[0].end, sx.start) if direction == "before" else (sx.end, other[0].start)
+            if isinstance(a, int) and isinstance(b, int) and b - a > gap:
+                return win, "gap"
+        return win, "stated"
     if direction == "before":
         if not sx or sx.start is None:
             return None, "ambiguous"
@@ -1108,6 +1116,21 @@ def previous_as_of(state, pred, written):
     return top.pop() if len(top) == 1 else None
 
 
+def other_person_named(state, q, anchor):
+    """A known person, other than the anchor, named in the (folded) query."""
+    anchor_names = {fold(a) for a in state.entities[anchor].aliases} if anchor in state.entities else set()
+    for e in state.entities.values():
+        if e.kind != "person" or not e.name or e.id == anchor:
+            continue
+        for a in e.aliases | {a.split()[0] for a in e.aliases}:
+            fa = fold(a)
+            if any(fa in an for an in anchor_names):
+                continue          # the query names the anchor, which shares this person's name
+            if len(fa) >= 3 and fa not in R.stop_names and re.search(r"(?<!\w)" + re.escape(fa) + r"(?!\w)", q):
+                return True
+    return False
+
+
 def intent(query, state=None):
     """(predicate, operator, anchor entity | None) for a timeline query, or None. A predicate's query cue or lexicon
     word, an operator, and (for before / after) a named anchor holding a fact of the same predicate."""
@@ -1145,5 +1168,7 @@ def intent(query, state=None):
                         break
             if anchor is None:
                 continue
+            if other_person_named(state, q, anchor):
+                return None       # "Where did Ada work before Acme?": someone else's fact, not the user's
         return pred, op, anchor
     return None

@@ -109,8 +109,8 @@ def test_current_or_overlapping_never_before():
 
 
 def test_stated_edge_wins_and_contradictions_fall_back_to_dates():
-    s = state_with([fact(DATED, "Acme", "2015", "2017", "former"), fact(DATED, "Globex", "2010", "2012", "former"),
-                    fact(DATED, "Initech", "2018", preceded_by="Globex")])
+    s = state_with([fact(DATED, "Acme", "2015", "2017", "former"), fact(DATED, "Globex", "2016", "2017", "former"),
+                    fact(DATED, "Initech", "2018", preceded_by="Globex")])      # the dates tie; the stated edge decides
     got, basis = F.before(s, DATED, ent(s, "Initech"))
     assert name(s, got) == "Globex" and basis == "stated"
     s = state_with([fact(DATED, "Acme", "2015", "June 2017", "former", followed_by="Initech"),

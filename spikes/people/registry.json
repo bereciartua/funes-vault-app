@@ -1,5 +1,5 @@
 {
- "version": "h3-2",
+ "version": "h3-3",
  "note": "Spike H3: the predicate registry (ADR-0032 decision 2, plan v6 §4). facts.py reads this; no code names a predicate.",
  "language": {
   "owners": [
@@ -859,7 +859,14 @@
     "entre",
     "dejar",
     "dejé",
-    "deje"
+    "deje",
+    "salir",
+    "salí",
+    "sali",
+    "empecé",
+    "empece",
+    "empezar",
+    "empezé"
    ],
    "phrases": {
     "attribute": "where you worked",
