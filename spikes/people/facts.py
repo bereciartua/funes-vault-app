@@ -946,6 +946,7 @@ class Episode:
     inferred_end: bool = False
     conflict_start: bool = False   # memories disagree on this episode's start: it never decides an answer
     known_former: bool = False     # the fact is stated as ended: an undated end is unknown, not "ended by the next one"
+    held_at: int = None            # the latest memory date that says it holds: "current" is as of that date, not today
     conflict_end: bool = False
 
 
@@ -986,11 +987,11 @@ def episodes(state, pred, untrusted_dates=True):
             eps.append([None, max(ends), False, len(ends) > 1])
         if not eps:
             eps.append([None, None, False, False])
-        if any(a["status"] == "current" for a in rows) and f.status != "former" and eps[-1][1] is None:
-            eps[-1][1] = "now"
+        held = [ym(a["written"]) for a in rows if a["status"] == "current" and a.get("written")]
         slot = slot_of(f)
         out += [Episode(f.entity, s, e, s is None or prec.get(s, True), e in (None, "now") or eprec.get(e, True), slot, trusted,
-                        conflict_start=cs, conflict_end=ce, known_former=f.status == "former") for s, e, cs, ce in eps]
+                        conflict_start=cs, conflict_end=ce, known_former=f.status == "former",
+                        held_at=(max(held) if held and e is None and i == len(eps) - 1 else None)) for i, (s, e, cs, ce) in enumerate(eps)]
     # succession: within a slot, an open episode that is the only open one there ends when the next one starts
     if R.preds[pred].get("succession"):
         for ep in sorted(out, key=lambda e: (e.start is None, e.start or 0)):
@@ -1001,11 +1002,16 @@ def episodes(state, pred, untrusted_dates=True):
             if not nxt or not nxt[0].trusted:
                 continue           # untrusted text never ends a fact
             y = nxt[0]
+            if ep.held_at is not None and ep.held_at > y.start:
+                continue           # a memory says it still held after the next one started: they overlapped
             concurrent = [o for o in out if o.slot == ep.slot and o is not ep and o is not y and o.start is not None
                           and o.start < y.start and o.end in (None, "now")]
             if concurrent:
                 continue           # several open facts in the slot when the next one started: nothing ends
             ep.end, ep.inferred_end, ep.end_precise = y.start, True, y.start_precise
+        for ep in out:
+            if ep.end is None and ep.held_at is not None:
+                ep.end = "now"     # still open after succession: as far as Funes knows, it holds
     return out
 
 
