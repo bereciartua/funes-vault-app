@@ -44,7 +44,7 @@ See [users and use cases](02-users-and-use-cases.md).
 ## Non-goals
 
 - **Not a chat app.** Your AI agents are the chat. Funes doesn't host conversations, voice sessions or an assistant persona.
-- **Not a note-taking app or second brain.** Memories are short, durable facts and instructions (a title plus up to 10,000 characters), not documents, files or a knowledge graph.
+- **Not a note-taking app or second brain.** Memories are short, durable facts and instructions (a title plus up to 10,000 characters), not documents, files or a knowledge graph. From v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md)), Funes learns facts about you that your memories state (the people in your life, your relations to them, where you've worked and when) for your own search and answers. That's an index of facts about you, over your memories and your own corrections, not a graph of everything, and agents don't use it in v0.10.
 - **Not a sync service.** There's no multi-Mac replication and no web access. One Mac holds the vault.
 - **Not a team product.** One person, one vault.
 - **Not a memory layer for agent developers.** No SDK, no hosted API, no multi-tenancy.
