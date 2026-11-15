@@ -17,50 +17,50 @@ import facts as F
 from run_facts import load_state
 
 
-def by_name(state, q):
-    pred = F.R.timeline_preds()[0]
-    kind = F.R.kind_of(pred)
-    names = sorted({a for f in state.facts if f.type == pred for a in state.entities[f.entity].aliases}, key=len, reverse=True)
-    names += [s for v in F.R.preds[pred].get("placeholders", {}).values() for s in v]
-    for n in names:
-        nn = F.norm_name(n, kind)
-        if nn and F.re.search(r"(?<!\w)" + F.re.escape(nn) + r"(?!\w)", F.fold(q["query"])):
-            hits = F.entity_matches(state, pred, n)
-            if hits:
-                return pred, q["kind"], hits[0]
-    return None
+TIMELINE_KINDS = ("before", "after", "year", "current", "previous", "no_answer")
 
 
-def score_work(state, data, out=print, anchor_by_name=False):
-    right = wrong = amb = trig_neg = missed = 0
-    rows = []
+def judge(state, q):
+    """One query -> an outcome: right, right_gap (right entity, gap told), wrong, told (no answer, a note), miss (no
+    intent on a decidable question), told_gap (a gap told where the truth is undecidable), triggered / quiet (negatives)."""
+    it = F.intent(q["query"], state)
+    if q["kind"] in ("negative", "role_in_stint"):
+        return ("triggered" if it else "quiet"), it, None
+    decidable = bool(q.get("answer_org"))
+    if not it:
+        return ("miss" if decidable else "told"), it, None
+    got, basis = F.answer(state, it, q["query"])
+    want = set(F.entity_matches(state, it[0], q["answer_org"])) if decidable else set()
+    if isinstance(got, list):                  # several current jobs: right if the truth is among them
+        got = next((g for g in got if g in want), ("several", tuple(got)))
+    if got is None:
+        return ("told" if not decidable else "told_decidable"), it, basis
+    if decidable and not want and basis == "gap":
+        return "told_gap", it, basis           # the truth isn't an entity of this predicate (a study gap): a gap told is right
+    if not decidable:
+        return ("told_gap" if basis == "gap" else "wrong"), it, basis
+    if got in want:
+        return ("right_gap" if basis == "gap" else "right"), it, basis
+    return "wrong", it, basis
+
+
+def score_work(state, data, out=print):
+    c, rows = {}, []
     for q in data["queries"]:
-        it = F.intent(q["query"], state)
-        if anchor_by_name and q["kind"] in ("before", "after"):
-            it = by_name(state, q)    # H2's scorer: the anchor from the names in the query, no intent rule
-        if q["kind"] in ("negative", "role_in_stint"):
-            trig_neg += it is not None
-            rows.append((q["id"], q["kind"], "triggered" if it else "not triggered"))
+        if q["kind"] not in TIMELINE_KINDS + ("negative", "role_in_stint"):
             continue
-        if q["kind"] not in ("before", "after"):
-            continue
-        if not it or it[1] not in ("before", "after") or it[2] is None:
-            amb += 1
-            missed += it is None
-            rows.append((q["id"], q["kind"], f"no anchor ({it[1] if it else 'no intent'}): ambiguous"))
-            continue
-        pred, op, x = it
-        got, basis = (F.before if q["kind"] == "before" else F.after)(state, pred, x, q["query"])
-        want = set(F.entity_matches(state, pred, q["answer_org"])) if q.get("answer_org") else set()
-        ok = got is not None and got in want and basis != "gap"
-        gap = basis == "gap"
-        right += ok
-        wrong += got is not None and not ok and not gap
-        amb += got is None or gap
-        rows.append((q["id"], q["kind"], f"{basis}: " + ("right" if ok else "gap told" if gap else "ambiguous" if got is None else "WRONG")))
-    out(f"before/after queries: right {right}, wrong {wrong}, ambiguous or gap told {amb} (no intent: {missed}); "
-        f"negative or in-fact queries that triggered the timeline: {trig_neg}")
-    return {"right": right, "wrong": wrong, "ambiguous": amb, "negatives_triggered": trig_neg, "rows": rows}
+        outcome, it, basis = judge(state, q)
+        c[outcome] = c.get(outcome, 0) + 1
+        if it and q["kind"] in ("before", "after") and it[1] != q["kind"]:
+            c["operator_mismatch"] = c.get("operator_mismatch", 0) + 1
+        rows.append((q["id"], q["kind"], f"{basis}: {outcome}" if basis else outcome))
+    dec = sum(c.get(k, 0) for k in ("right", "right_gap", "wrong_decidable", "told_decidable", "miss")) + \
+        sum(1 for q in data["queries"] if q["kind"] in TIMELINE_KINDS and q.get("answer_org") and judge(state, q)[0] == "wrong")
+    out(f"decidable: right {c.get('right', 0)}, right with a gap told {c.get('right_gap', 0)}, told {c.get('told_decidable', 0)}, "
+        f"no intent {c.get('miss', 0)}; undecidable: told {c.get('told', 0)}, gap told {c.get('told_gap', 0)}; "
+        f"WRONG {c.get('wrong', 0)}; negatives triggered {c.get('triggered', 0)} of {c.get('triggered', 0) + c.get('quiet', 0)}; "
+        f"operator mismatches {c.get('operator_mismatch', 0)}")
+    return {"counts": c, "rows": rows}
 
 
 def employers(state, data, out=print):
@@ -110,10 +110,10 @@ def convert(recs, vault):
 
 
 def score_stories(results, fixture, out=print):
-    """Story results saved with --keep-state: each story's timeline queries on its own final state, and the
-    organizations misfiled (clients or vendors recorded under a timeline predicate, vendors recorded as clients)."""
+    """Story results saved with --keep-state: each story's queries on its own final state (per play, and per distinct
+    question: right only if right in every order, wrong if wrong in any), and organizations misfiled."""
     stories = {x["id"]: x for x in json.loads(Path(fixture).read_text())["stories"]}
-    tot = {"right": 0, "wrong": 0, "ambiguous": 0, "negatives_triggered": 0, "runs": 0}
+    plays, per_q = {}, {}
     mis = {"client_as_timeline": 0, "vendor_as_timeline": 0, "vendor_as_recorded": 0, "employers_truth": 0, "employers_found": 0}
     wrong_rows = []
     for line in Path(results).read_text().splitlines():
@@ -123,10 +123,12 @@ def score_stories(results, fixture, out=print):
             continue
         state = load_state(res["state"])
         r = score_work(state, {"timeline": st["timeline"], "queries": st["queries"]}, out=lambda *_: None)
-        tot["runs"] += 1
-        for k in ("right", "wrong", "ambiguous", "negatives_triggered"):
-            tot[k] += r[k]
-        wrong_rows += [(res["story"], res["orderIndex"], *row) for row in r["rows"] if "WRONG" in row[-1] or row[-1] == "triggered"]
+        for k, v in r["counts"].items():
+            plays[k] = plays.get(k, 0) + v
+        for (qid, kind, outcome) in r["rows"]:
+            per_q.setdefault((res["story"], qid), []).append(outcome.split(": ")[-1])
+            if outcome.endswith("wrong") or outcome == "triggered":
+                wrong_rows.append((res["story"], res["orderIndex"], qid, outcome))
         tl = F.R.timeline_preds()
         others = [p for p in F.R.preds if F.R.uses(p, "recorded") and not F.R.uses(p, "linked")]
         for t in st["timeline"]:
@@ -140,14 +142,18 @@ def score_stories(results, fixture, out=print):
             elif t["kind"] in ("employee", "self_employed"):
                 mis["employers_truth"] += 1
                 mis["employers_found"] += hits_tl
-    out(f"story runs {tot['runs']}: before/after right {tot['right']}, wrong {tot['wrong']}, ambiguous or gap told {tot['ambiguous']}; "
-        f"negatives that triggered {tot['negatives_triggered']}")
+    distinct = {}
+    for k, outs in per_q.items():
+        o = "wrong" if "wrong" in outs else ("triggered" if "triggered" in outs else (outs[0] if len(set(outs)) == 1 else "varies"))
+        distinct[o] = distinct.get(o, 0) + 1
+    out("per play: " + ", ".join(f"{k} {v}" for k, v in sorted(plays.items())))
+    out("per distinct question: " + ", ".join(f"{k} {v}" for k, v in sorted(distinct.items())) + f" (of {len(per_q)})")
     out(f"organizations: employers found {mis['employers_found']}/{mis['employers_truth']}; clients under a timeline predicate "
         f"{mis['client_as_timeline']}; vendors under a timeline predicate {mis['vendor_as_timeline']}; vendors recorded as clients "
         f"{mis['vendor_as_recorded']}")
     for row in wrong_rows:
         out("   " + " ".join(str(x) for x in row))
-    return tot, mis
+    return plays, distinct, mis
 
 
 def main():
@@ -172,7 +178,6 @@ def main():
     data = json.loads(Path(a.b).read_text())
     employers(state, data)
     res = score_work(state, data)
-    out2 = score_work(state, data, out=lambda s: print("resolver only (anchor by name, as H2's scorer): " + s), anchor_by_name=True)
     if a.rows:
         for r in res["rows"]:
             print("  ", *r)

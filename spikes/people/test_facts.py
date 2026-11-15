@@ -27,9 +27,11 @@ def fact(pred, name, start=None, end=None, status="unknown", slot=None, preceded
 
 
 def state_with(rows, trust="trusted"):
+    """Rows are facts, or (fact, trust) or (fact, trust, written date). Memories are written 2026-01-01 by default."""
     s = F.State([])
-    for i, (r, tr) in enumerate([(r, trust) if not isinstance(r, tuple) else r for r in rows]):
-        mem = {"id": f"m{i}", "text": r["name"], "sent": r["name"], "written": "2026-01-01", "source": "capture", "trust": tr}
+    rows = [(r, trust, "2026-01-01") if not isinstance(r, tuple) else (r + ("2026-01-01",))[:3] for r in rows]
+    for i, (r, tr, written) in enumerate(rows):
+        mem = {"id": f"m{i}", "text": r["name"], "sent": r["name"], "written": written, "source": "capture", "trust": tr}
         s.memories[mem["id"]] = mem
         F.apply(s, mem, [], [], [r], [], {}, [])
     return s
@@ -45,10 +47,11 @@ def name(s, eid):
 
 def test_side_business_does_not_end_day_job():
     emp, own = SLOT_VALUES
-    s = state_with([fact(DATED, "Acme", "2018", slot=emp), fact(DATED, "MyShop", "2020", slot=own),
-                    fact(DATED, "Initech", "2021", slot=emp)])
+    s = state_with([(fact(DATED, "Acme", "2018", status="current", slot=emp), "trusted", "2018-06-01"),
+                    (fact(DATED, "MyShop", "2020", status="current", slot=own), "trusted", "2020-06-01"),
+                    (fact(DATED, "Initech", "2021", status="current", slot=emp), "trusted", "2021-06-01")])
     eps = {name(s, e.entity): e for e in F.episodes(s, DATED)}
-    assert eps["Acme"].inferred_end and eps["Acme"].end == 2021 * 12      # ended by the next job in its slot
+    assert eps["Acme"].inferred_end and eps["Acme"].ended_by is eps["Initech"]     # ended by the next job in its slot
     assert eps["MyShop"].end is None                                      # nothing in its slot followed it
     got, basis = F.before(s, DATED, ent(s, "Initech"))
     assert name(s, got) == "Acme" and basis == "inferred"
@@ -56,12 +59,14 @@ def test_side_business_does_not_end_day_job():
 
 def test_successive_jobs_chain_but_concurrent_ones_end_nothing():
     emp = SLOT_VALUES[0]
-    s = state_with([fact(DATED, "Acme", "2018", slot=emp), fact(DATED, "Globex", "2019", slot=emp),
-                    fact(DATED, "Initech", "2021", slot=emp)])
+    s = state_with([(fact(DATED, "Acme", "2018", status="current", slot=emp), "trusted", "2018-06-01"),
+                    (fact(DATED, "Globex", "2019", status="current", slot=emp), "trusted", "2019-06-01"),
+                    (fact(DATED, "Initech", "2021", status="current", slot=emp), "trusted", "2021-06-01")])
     eps = {name(s, e.entity): e for e in F.episodes(s, DATED)}
-    assert eps["Acme"].end == 2019 * 12 and eps["Globex"].end == 2021 * 12      # A, then B, then C
-    s = state_with([fact(DATED, "Acme", "2018", status="current", slot=emp), fact(DATED, "Globex", "2019", slot=emp),
-                    fact(DATED, "Initech", "2021", slot=emp)])
+    assert eps["Acme"].ended_by is eps["Globex"] and eps["Globex"].ended_by is eps["Initech"]      # A, then B, then C
+    s = state_with([fact(DATED, "Acme", "2018", status="current", slot=emp),        # said current in 2026: still held
+                    (fact(DATED, "Globex", "2019", status="current", slot=emp), "trusted", "2019-06-01"),
+                    (fact(DATED, "Initech", "2021", status="current", slot=emp), "trusted", "2021-06-01")])
     eps = {name(s, e.entity): e for e in F.episodes(s, DATED)}
     assert eps["Globex"].end is None          # Acme was still open when Initech started: which one ended is unknown
     assert F.before(s, DATED, ent(s, "Initech")) == (None, "ambiguous")
@@ -72,9 +77,8 @@ def test_succession_never_ends_a_fact_stated_as_former():
     s = state_with([fact(DATED, "Acme", "2015", "2018", "former", slot=emp), fact(DATED, "Globex", "2016", status="former", slot=emp),
                     fact(DATED, "Initech", "2019", slot=emp)])
     eps = {name(s, e.entity): e for e in F.episodes(s, DATED)}
-    assert eps["Globex"].end is None and not eps["Globex"].inferred_end    # ended, but when isn't known
-    got, basis = F.before(s, DATED, ent(s, "Initech"))
-    assert name(s, got) == "Acme" and basis == "ordered"
+    assert not eps["Globex"].inferred_end                                 # ended, but when isn't known
+    assert F.before(s, DATED, ent(s, "Initech")) == (None, "ambiguous")    # it could have ended after Acme (H3 review)
 
 
 def test_untrusted_never_triggers_succession():
@@ -116,7 +120,7 @@ def test_stated_edge_wins_and_contradictions_fall_back_to_dates():
     s = state_with([fact(DATED, "Acme", "2015", "June 2017", "former", followed_by="Initech"),
                     fact(DATED, "Initech", "July 2017", preceded_by="Acme"), fact(DATED, "Acme", followed_by=None, preceded_by="Initech")])
     got, basis = F.before(s, DATED, ent(s, "Initech"))
-    assert name(s, got) == "Acme" and basis == "ordered"                    # the cycle is dropped; dates decide
+    assert name(s, got) == "Acme" and basis in ("ordered", "stated")       # the dates rule out the contradictory edge
 
 
 def test_conflicting_end_is_ambiguous():
@@ -211,6 +215,13 @@ def test_no_code_names_a_predicate():
     strings = set(re.findall(r'"([a-z_]+)"', src)) | set(re.findall(r"'([a-z_]+)'", src))
     named = strings & set(F.R.preds)
     assert not named, f"facts.py names predicates: {named}"
+    code = re.sub(r'"""[\s\S]*?"""', "", src)                     # docstrings document; they don't decide
+    code = re.sub(r"(?m)#.*$", "", code)
+    lits = set(re.findall(r'"([^"\n]{2,200})"', code)) | set(re.findall(r"'([^'\n]{2,200})'", code))
+    words = set(F.R.lex) | {c for p in F.R.preds.values() for c in p.get("query_cues", [])} | set(F.R.lang.get("person_nouns", []))
+    words -= {"role", "join"}              # "role" is also the link kind's key; "join" is str.join
+    inside = {w for l in lits for w in re.findall(r"[a-záéíóúñ]+", l.lower()) if w in words}
+    assert not inside, f"facts.py carries registry vocabulary: {inside}"
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 {
- "version": "h3-4",
+ "version": "h3b-1",
  "note": "Spike H3: the predicate registry (ADR-0032 decision 2, plan v6 §4). facts.py reads this; no code names a predicate.",
  "language": {
   "owners": [
@@ -77,7 +77,10 @@
     "current",
     "now",
     "actual",
-    "currently"
+    "currently",
+    "actualmente",
+    "ahora",
+    "hoy"
    ]
   },
   "episode_first": [
@@ -136,7 +139,68 @@
    "frank",
    "summer",
    "autumn"
-  ]
+  ],
+  "person_nouns": [
+   "husband",
+   "wife",
+   "kids",
+   "children",
+   "family",
+   "friends",
+   "boyfriend",
+   "girlfriend"
+  ],
+  "former_prefixes": [
+   "ex-",
+   "ex "
+  ],
+  "former_words": [
+   "former",
+   "ex",
+   "old",
+   "previous",
+   "used to",
+   "broke up",
+   "split",
+   "left",
+   "no longer",
+   "anterior",
+   "antiguo",
+   "antigua",
+   "ya no",
+   "dejé",
+   "deje"
+  ],
+  "anchor_tail_words": [
+   "the",
+   "a",
+   "for",
+   "time",
+   "again",
+   "once",
+   "la",
+   "el",
+   "por",
+   "vez",
+   "de",
+   "period",
+   "stretch",
+   "stint",
+   "spell",
+   "job",
+   "role",
+   "work"
+  ],
+  "prompt_examples": {
+   "group": "I have two sisters",
+   "none": "I don't have kids",
+   "only": "my only brother",
+   "count": "two sisters → 2",
+   "start": "\"since 2022\", \"joined in March 2019\"",
+   "denial": "Marta is not my sister",
+   "pair": "\"Maria is my sister\", \"my sister Maria\"",
+   "denial_role": "Sasha is not my manager"
+  }
  },
  "kinds": {
   "person": {
@@ -160,10 +224,35 @@
  },
  "call_groups": {
   "people": {
-   "intro": "record who it mentions and how they relate to the person, \"the user\""
+   "intro": "record who it mentions and how they relate to the person, \"the user\"",
+   "examples": {
+    "label": [
+     "sister",
+     "mom",
+     "boss",
+     "abuela",
+     "wife",
+     "cousin"
+    ],
+    "former": [
+     "an ex",
+     "broke up",
+     "moved teams",
+     "a former boss"
+    ]
+   }
   },
   "work": {
-   "intro": "record the user's OWN employment that the memory states: organizations the user works or worked for"
+   "intro": "record the user's OWN employment that the memory states: organizations the user works or worked for",
+   "examples": {
+    "label": [
+     "the user's own word for the job, if any"
+    ],
+    "former": [
+     "left the job",
+     "no longer works there"
+    ]
+   }
   }
  },
  "predicates": [
@@ -211,7 +300,8 @@
      "cls": "ex",
      "words": [
       "ex"
-     ]
+     ],
+     "status": "former"
     }
    ],
    "query_cues": [

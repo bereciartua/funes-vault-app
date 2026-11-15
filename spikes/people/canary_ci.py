@@ -22,7 +22,7 @@ def main():
     pred = F.R.timeline_preds()
     pred = next(p for p in pred if F.R.kind_of(p) == "person")
     data = json.loads(Path(fx).read_text())
-    tot = {"right": 0, "wrong": 0, "ambiguous": 0, "negatives_triggered": 0}
+    tot = {}
     rows = []
     for st in data["stories"]:
         s = F.State(data["user"]["aliases"])
@@ -36,16 +36,16 @@ def main():
                  "qualifiers": {k: None for k in F.group_qualifiers([pred])}}
             F.apply(s, mem, [], [{"name": name, "quote": name, "person": "new"}], [r], [], {}, [])
         res = S.score_work(s, {"timeline": st["timeline"], "queries": st["queries"]}, out=lambda *_: None)
-        for k in tot:
-            tot[k] += res[k]
+        for k, v in res["counts"].items():
+            tot[k] = tot.get(k, 0) + v
         rows += [(st["id"], *r) for r in res["rows"]]
-    print(f"canary CI ({F.R.version}): before/after right {tot['right']}, wrong {tot['wrong']}, ambiguous or gap told {tot['ambiguous']}; "
-          f"negatives that triggered {tot['negatives_triggered']}")
+    print(f"canary CI ({F.R.version}): " + ", ".join(f"{k} {v}" for k, v in sorted(tot.items())))
     for r in rows:
-        if "WRONG" in r[-1] or r[-1] == "triggered" or "ambiguous" in r[-1] or "gap" in r[-1]:
+        if r[-1].split(": ")[-1] not in ("right", "quiet", "told"):
             print("  ", *r)
     return tot
 
 
 if __name__ == "__main__":
-    main()
+    t = main()
+    raise SystemExit(1 if t.get("wrong") or t.get("triggered") else 0)
