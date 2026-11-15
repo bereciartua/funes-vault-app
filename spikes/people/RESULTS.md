@@ -15,7 +15,7 @@ H3 showed the model's shape holds, but its temporal rules broke on small counter
   - each became a test and was fixed (round 2);
   - Fable's check of round 2 found 6 more, in narrower cases: a distant year re-dating a role phrase, a rejoined job's other episode, a hand-over assumed despite a stated time, an untrusted "no longer", a date anchor beside a job that may have started, and a missing mirror check in "after". Those were fixed and are tests too (round 3).
 
-  Each round found fewer, narrower cases. Fable's check of round 2 also found that the scripted replay showed 0 wrong throughout, so the counterexamples came only from adversarial probing, never from the fixtures.
+  Each round found fewer, narrower cases. Every one came from adversarial probing: the replayed fixtures showed 0 wrong answers throughout.
 
 ### Verdict: H3b meets ADR-0032's gate. Every counterexample passes, no set has a wrong answer or a wrong link, and coverage rose
 
