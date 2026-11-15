@@ -6,7 +6,7 @@ Planned as a **side project**: about one weekend (around 8–10 h) per week. Dat
 
 **Status (2026-10-19):** Phases 0–3 and Phase 4's preparation are done. [Phase 4b](../plans/phase-4b-remote-access.md) (Remote Access, [ADR-0018](../architecture/decisions/0018-remote-access-in-v0.1.md)) comes before the launch. The chart starts from today's state.
 
-**Update (2026-11-14):** **Phase 13** (facts about you, v0.10) is proposed in ADR-0032; its plan follows acceptance. See [v0.10](#v010-facts-about-you-phase-13-proposed).
+**Update (2026-11-14):** **Phase 13** (facts about you, v0.10) is decided in ADR-0032 (accepted 2026-11-15); its plan is next. See [v0.10](#v010-facts-about-you-phase-13).
 
 **Update (2026-11-04):** v0.3 to v0.9 shipped on the Mac as version **0.5.1** (build 12), the first release since 0.2.0: 0.5.0 was built but never published. Besides v0.3 to v0.5, it has search answers (v0.6), the menu bar panel (v0.7), the Settings window (v0.8) and the Mac's side of every Inbox card on the iPhone (v0.9). The iPhone's 0.5.0 (build 24), with Home and widgets, About you, search answers and every Inbox card, is in App Review; 0.2.0 is on the App Store.
 
@@ -228,14 +228,14 @@ The iPhone answers every card the Mac's Inbox does, the daily tidy-up's included
 - **`inbox.get`, `inbox.reviewAgain` and `inbox.apply`'s `mode`** on the companion channel.
 - **A screen per card type** on the iPhone, and swipe to apply for all but conflicts.
 
-### v0.10: Facts about you (Phase 13, proposed)
-Funes learns facts about you that your memories state, and uses them in your own search and answers ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), proposed):
+### v0.10: Facts about you (Phase 13)
+Funes learns facts about you that your memories state, and uses them in your own search and answers ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), accepted):
 - an answer to "What does Lucía drink?" can use "my sister drinks mate", because the memory says who "my sister" is;
 - "What was my job before …?" is answered from a timeline.
 
 It's one model: the people, organizations, places and things your memories mention, facts about you with dates, and a registry of predicates that is data, not code. v0.10 ships the person relations and where you've worked. Others of the same shape ("lives in", partner history) take a registry entry, a fixture and its gates, not new code; questions of a new shape need a generic capability first.
 
-Spike H and Spike H2 are done ([results](../plans/spike-results.md#spike-h-people-and-work-history)). About 9–11 weekends; the Phase 13 plan follows once the ADR is accepted.
+Spikes H, H2, H3 and H3b are done ([results](../plans/spike-results.md#spike-h-people-and-work-history)). About 9–11 weekends; the Phase 13 plan is next.
 
 **In:**
 - **The Facts task** (working name), a backfill, and a section with each entity's page, your timeline, corrections and manual entry.

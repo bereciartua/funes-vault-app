@@ -1,6 +1,6 @@
 # ADR-0032: Funes learns facts about you from your memories, on one timeline, for your own search and answers
 
-**Status:** Proposed · 2026-11-14.
+**Status:** Accepted · 2026-11-15 (proposed 2026-11-14).
 - Revised the same day after GPT-6-Astra and Fable 5.2 reviewed the first draft.
 - Reworked on 2026-11-15 around one generic model (the first draft had separate structures for people and for work history), then revised after both reviewed the rework.
 - Revised again on 2026-11-15 with Spike H3's results and both reviews of it, then with Spike H3b's.
@@ -253,7 +253,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 | A fresh mixed-predicate fixture, people and jobs in the same memories | every gate above still met, so one prompt (or the chosen groups) doesn't lose accuracy |
 | Search with links on, on the people and work fixtures, Spike G and the search benchmark: targets worse, out of the top 3, or out of the top 10 | 0 |
 | Search latency with links, 50 queries on the author's vault | FR-V-10's 150 ms at p95 |
-| Answers on linked questions (3 samples, a blind judge, every gain and loss read by hand) | coverage ≥ plain search on every question family. 0 wrong entity with correct links. With an injected wrong link, ≤ 1 unmarked claim per 30 answers |
+| Answers on linked questions, on Haiku and on the author's Search answers model (3 samples, a blind judge, every gain and loss read by hand) | coverage ≥ plain search on every question family. 0 wrong entity with correct links. With an injected wrong link, ≤ 1 unmarked claim per 30 answers |
 | Spike G's gates with the feature on | correct claims ≥ 95%, right "no answer" ≥ 90%, answered ≥ 80%, no new wrong claims |
 | Inferred claims code fails to mark (attributes, labels, neighbouring attributes, bridges) | 0 |
 | Each *timeline* predicate (works at in v0.10): a fresh blind fixture · the author's reviewed timeline | every fact right, ≤ 1 wrong date. "Before / after / in <year>" on wordings whose truth is decidable: right entity on ≥ 90%, counting "right entity, gap told" separately. Ambiguous on the others. 0 wrong answers, including gap answers. 0 timeline triggers on negative wordings. 0 succession from untrusted text or across slots. Every counterexample from Spike H3's reviews passes as a test |
@@ -285,6 +285,8 @@ The vault gates have small denominators: the author's vault has 3 role phrases, 
 **Decided before acceptance** (2026-11-15, by the author):
 1. **The backfill:** a one-time exemption from the daily cap, started by the user (an FR-AI-15 amendment, above).
 2. **`sole_known` attributes:** they ship, hedged, when their gate is met on the fixtures (decision 7).
+
+3. **The answer check on the author's model comes first in 13d.** Spike H tested attributes only on Haiku, and H2 tested only bridges on GPT-5.6-Terra, the author's Search answers model. 13d starts by running Spike H's answer arms on Terra: plain, with attributes, and with a wrong attribute. If Terra ignores attributes, or follows wrong ones more than Haiku did, decision 7 changes before 13d ships: bridges only, or attributes only at full basis.
 
 Nothing else is open; the remaining measures are 13a–13e's acceptance tests.
 
