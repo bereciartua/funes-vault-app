@@ -1,0 +1,2253 @@
+[
+ {
+  "id": "s01",
+  "set": "people",
+  "query": "What does Lucía drink?",
+  "people": true,
+  "tags": [
+   "role_memory",
+   "distractor"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "decoy_above_base": 0,
+  "decoy_top3_base": 1,
+  "decoy_above_ppl": 0,
+  "decoy_top3_ppl": 0,
+  "top_base": [
+   "p01",
+   "p02",
+   "m152",
+   "m053",
+   "p07"
+  ],
+  "top_ppl": [
+   "p01",
+   "p07",
+   "m042",
+   "m044",
+   "p02"
+  ]
+ },
+ {
+  "id": "s02",
+  "set": "people",
+  "query": "What is Jordan allergic to?",
+  "people": true,
+  "tags": [
+   "role_memory",
+   "distractor"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "decoy_above_base": 0,
+  "decoy_top3_base": 0,
+  "decoy_above_ppl": 0,
+  "decoy_top3_ppl": 0,
+  "top_base": [
+   "p03",
+   "m135",
+   "m040",
+   "m157",
+   "m136"
+  ],
+  "top_ppl": [
+   "p03",
+   "m040",
+   "m129",
+   "m041",
+   "p16"
+  ]
+ },
+ {
+  "id": "s03",
+  "set": "people",
+  "query": "What should I get my mum?",
+  "people": true,
+  "tags": [
+   "role_query",
+   "group"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "decoy_above_base": 0,
+  "decoy_top3_base": 0,
+  "decoy_above_ppl": 0,
+  "decoy_top3_ppl": 0,
+  "top_base": [
+   "p05",
+   "m178",
+   "m175",
+   "m045",
+   "p20"
+  ],
+  "top_ppl": [
+   "p05",
+   "m006",
+   "m043",
+   "m178",
+   "m175"
+  ]
+ },
+ {
+  "id": "s04",
+  "set": "people",
+  "query": "When is my sister coming to Lisbon?",
+  "people": true,
+  "tags": [
+   "role_query"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "p19",
+   "m043",
+   "m106",
+   "m012",
+   "m042"
+  ],
+  "top_ppl": [
+   "p19",
+   "m042",
+   "m106",
+   "m006",
+   "m012"
+  ]
+ },
+ {
+  "id": "s05",
+  "set": "people",
+  "query": "When is Lucía visiting?",
+  "people": true,
+  "tags": [
+   "role_memory"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "p19",
+   "m044",
+   "m042",
+   "p07",
+   "m198"
+  ],
+  "top_ppl": [
+   "p19",
+   "m044",
+   "m042",
+   "p07",
+   "m006"
+  ]
+ },
+ {
+  "id": "s06",
+  "set": "people",
+  "query": "¿Qué le llevo a Lucía?",
+  "people": true,
+  "tags": [
+   "role_memory",
+   "spanish"
+  ],
+  "base": 5,
+  "ppl": 5,
+  "decoy_above_base": 0,
+  "decoy_top3_base": 0,
+  "decoy_above_ppl": 0,
+  "decoy_top3_ppl": 0,
+  "top_base": [
+   "p07",
+   "m198",
+   "m042",
+   "m044",
+   "p11"
+  ],
+  "top_ppl": [
+   "p07",
+   "m042",
+   "m044",
+   "m198",
+   "p11"
+  ]
+ },
+ {
+  "id": "s07",
+  "set": "people",
+  "query": "Where should I take Jordan for dinner?",
+  "people": true,
+  "tags": [
+   "role_memory"
+  ],
+  "base": 3,
+  "ppl": 3,
+  "top_base": [
+   "p16",
+   "p12",
+   "p21",
+   "m040",
+   "p13"
+  ],
+  "top_ppl": [
+   "p16",
+   "p12",
+   "p21",
+   "m040",
+   "m041"
+  ]
+ },
+ {
+  "id": "s08",
+  "set": "people",
+  "query": "Who is my Nordwind contact now?",
+  "people": false,
+  "tags": [
+   "name_change"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "p09",
+   "a04",
+   "m102",
+   "m101",
+   "m100"
+  ],
+  "top_ppl": [
+   "p09",
+   "a04",
+   "m102",
+   "m101",
+   "m100"
+  ]
+ },
+ {
+  "id": "s09",
+  "set": "people",
+  "query": "How does Priya like updates?",
+  "people": true,
+  "tags": [
+   "control"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "p23",
+   "a08",
+   "p08",
+   "p09",
+   "m117"
+  ],
+  "top_ppl": [
+   "p23",
+   "p09",
+   "a08",
+   "m117",
+   "m060"
+  ]
+ },
+ {
+  "id": "s10",
+  "set": "people",
+  "query": "What does Ana drink?",
+  "people": true,
+  "tags": [
+   "two_names",
+   "distractor"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "decoy_above_base": 0,
+  "decoy_top3_base": 1,
+  "decoy_above_ppl": 0,
+  "decoy_top3_ppl": 0,
+  "top_base": [
+   "p02",
+   "p01",
+   "m152",
+   "m053",
+   "m147"
+  ],
+  "top_ppl": [
+   "p02",
+   "p10",
+   "m152",
+   "m053",
+   "p01"
+  ]
+ },
+ {
+  "id": "s11",
+  "set": "people",
+  "query": "How does Marta want invoices?",
+  "people": true,
+  "tags": [
+   "first_name"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "p14",
+   "a07",
+   "m169",
+   "m091",
+   "m167"
+  ],
+  "top_ppl": [
+   "p14",
+   "a07",
+   "m091",
+   "m169",
+   "m167"
+  ]
+ },
+ {
+  "id": "s12",
+  "set": "people",
+  "query": "What wine did Tomás recommend?",
+  "people": true,
+  "tags": [
+   "control"
+  ],
+  "base": 2,
+  "ppl": 1,
+  "top_base": [
+   "p15",
+   "p16",
+   "p10",
+   "m053"
+  ],
+  "top_ppl": [
+   "p16",
+   "p15",
+   "m053",
+   "p10"
+  ]
+ },
+ {
+  "id": "s13",
+  "set": "people",
+  "query": "What does my partner want for our anniversary?",
+  "people": true,
+  "tags": [
+   "role_query",
+   "untrusted"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "p13",
+   "m041",
+   "p15",
+   "p08",
+   "p03"
+  ],
+  "top_ppl": [
+   "p13",
+   "m041",
+   "p16",
+   "p03",
+   "m040"
+  ]
+ },
+ {
+  "id": "s14",
+  "set": "people",
+  "query": "What gift ideas do I have for my sister's kids?",
+  "people": true,
+  "tags": [
+   "role_query"
+  ],
+  "base": 3,
+  "ppl": 2,
+  "top_base": [
+   "m042",
+   "p19",
+   "p07",
+   "p01",
+   "m040"
+  ],
+  "top_ppl": [
+   "m042",
+   "p07",
+   "p19",
+   "p01",
+   "m006"
+  ]
+ },
+ {
+  "id": "s15",
+  "set": "people",
+  "query": "Jordan",
+  "people": true,
+  "tags": [
+   "person_only"
+  ],
+  "about_base": 5,
+  "about_people": 5,
+  "about_of": 5,
+  "top_base": [
+   "m040",
+   "m041",
+   "m129",
+   "p16",
+   "m191"
+  ],
+  "top_ppl": [
+   "m040",
+   "m041",
+   "m129",
+   "p16",
+   "p12"
+  ]
+ },
+ {
+  "id": "s16",
+  "set": "people",
+  "query": "Lucía",
+  "people": true,
+  "tags": [
+   "person_only",
+   "role_memory"
+  ],
+  "about_base": 4,
+  "about_people": 5,
+  "about_of": 5,
+  "top_base": [
+   "p07",
+   "m042",
+   "m044",
+   "m198",
+   "a07"
+  ],
+  "top_ppl": [
+   "p07",
+   "m042",
+   "m044",
+   "m198",
+   "m006"
+  ]
+ },
+ {
+  "id": "s17",
+  "set": "people",
+  "query": "How does my manager want status updates?",
+  "people": false,
+  "tags": [
+   "role_query"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "p08",
+   "p23",
+   "m060",
+   "m116",
+   "m070"
+  ],
+  "top_ppl": [
+   "p08",
+   "p23",
+   "m060",
+   "m116",
+   "m070"
+  ]
+ },
+ {
+  "id": "s18",
+  "set": "people",
+  "query": "What's Erik's coffee order?",
+  "people": true,
+  "tags": [
+   "distractor"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "decoy_above_base": 0,
+  "decoy_top3_base": 1,
+  "decoy_above_ppl": 0,
+  "decoy_top3_ppl": 0,
+  "top_base": [
+   "p22",
+   "m024",
+   "p04",
+   "m025",
+   "a02"
+  ],
+  "top_ppl": [
+   "p22",
+   "p04",
+   "a04",
+   "m102",
+   "a02"
+  ]
+ },
+ {
+  "id": "s19",
+  "set": "people",
+  "query": "How should I explain video calls to my dad?",
+  "people": true,
+  "tags": [
+   "role_query",
+   "group"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "p06",
+   "m020",
+   "m009",
+   "m018",
+   "m015"
+  ],
+  "top_ppl": [
+   "p06",
+   "m043",
+   "m006",
+   "m020",
+   "m009"
+  ]
+ },
+ {
+  "id": "s20",
+  "set": "people",
+  "query": "What's Lucía's favourite colour?",
+  "people": true,
+  "tags": [
+   "no_answer"
+  ],
+  "top_base": [
+   "p05",
+   "p07",
+   "m044",
+   "m004",
+   "m028"
+  ],
+  "top_ppl": [
+   "p07",
+   "m044",
+   "m042",
+   "p05",
+   "p11"
+  ]
+ },
+ {
+  "id": "q01",
+  "set": "spike-g",
+  "query": "What's my coffee order?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 2,
+  "ppl": 2,
+  "top_base": [
+   "m025",
+   "m024",
+   "p22",
+   "p02",
+   "m026"
+  ],
+  "top_ppl": [
+   "m025",
+   "m024",
+   "p22",
+   "p02",
+   "m026"
+  ]
+ },
+ {
+  "id": "q02",
+  "set": "spike-g",
+  "query": "Do I eat fish?",
+  "people": false,
+  "tags": [
+   "negation"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m027",
+   "m028",
+   "p03",
+   "m047",
+   "m154"
+  ],
+  "top_ppl": [
+   "m027",
+   "m028",
+   "p03",
+   "m047",
+   "m154"
+  ]
+ },
+ {
+  "id": "q03",
+  "set": "spike-g",
+  "query": "What does Jordan do for work?",
+  "people": true,
+  "tags": [
+   "other-person"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m041",
+   "m040",
+   "m085",
+   "m116",
+   "m129"
+  ],
+  "top_ppl": [
+   "m041",
+   "m040",
+   "m129",
+   "p16",
+   "p12"
+  ]
+ },
+ {
+  "id": "q04",
+  "set": "spike-g",
+  "query": "Who is my lead at Nordwind?",
+  "people": false,
+  "tags": [
+   "other-person"
+  ],
+  "base": 2,
+  "ppl": 2,
+  "top_base": [
+   "p09",
+   "m102",
+   "a04",
+   "m101",
+   "a02"
+  ],
+  "top_ppl": [
+   "p09",
+   "m102",
+   "a04",
+   "m101",
+   "a02"
+  ]
+ },
+ {
+  "id": "q05",
+  "set": "spike-g",
+  "query": "What is Erik Halvorsen's title?",
+  "people": true,
+  "tags": [
+   "superseded",
+   "other-person"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "a04",
+   "m102",
+   "p22",
+   "p04",
+   "p09"
+  ],
+  "top_ppl": [
+   "a04",
+   "m102",
+   "p22",
+   "p04",
+   "p09"
+  ]
+ },
+ {
+  "id": "q06",
+  "set": "spike-g",
+  "query": "When is the Harbor beta?",
+  "people": false,
+  "tags": [
+   "superseded"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "a01",
+   "m093",
+   "m096",
+   "m114",
+   "m090"
+  ],
+  "top_ppl": [
+   "a01",
+   "m093",
+   "m096",
+   "m114",
+   "m090"
+  ]
+ },
+ {
+  "id": "q07",
+  "set": "spike-g",
+  "query": "When is the Atlas cut-over?",
+  "people": false,
+  "tags": [
+   "buried",
+   "untrusted"
+  ],
+  "base": 2,
+  "ppl": 2,
+  "top_base": [
+   "m100",
+   "a02",
+   "m141",
+   "m094",
+   "m107"
+  ],
+  "top_ppl": [
+   "m100",
+   "a02",
+   "m141",
+   "m094",
+   "m107"
+  ]
+ },
+ {
+  "id": "q08",
+  "set": "spike-g",
+  "query": "Where am I staying in Kanazawa?",
+  "people": false,
+  "tags": [
+   "buried",
+   "untrusted"
+  ],
+  "base": 2,
+  "ppl": 2,
+  "top_base": [
+   "m051",
+   "a03",
+   "m116",
+   "m050",
+   "m070"
+  ],
+  "top_ppl": [
+   "m051",
+   "a03",
+   "m116",
+   "m050",
+   "m070"
+  ]
+ },
+ {
+  "id": "q09",
+  "set": "spike-g",
+  "query": "When is the Harbor demo for the club board?",
+  "people": false,
+  "tags": [
+   "injection"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "a05",
+   "m093",
+   "a01",
+   "m090",
+   "m193"
+  ],
+  "top_ppl": [
+   "a05",
+   "m093",
+   "a01",
+   "m090",
+   "m193"
+  ]
+ },
+ {
+  "id": "q10",
+  "set": "spike-g",
+  "query": "What's my day rate?",
+  "people": false,
+  "tags": [
+   "above-limit",
+   "injection"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m108",
+   "m153",
+   "m171",
+   "a05",
+   "m012"
+  ],
+  "top_ppl": [
+   "m108",
+   "m153",
+   "m171",
+   "a05",
+   "m012"
+  ]
+ },
+ {
+  "id": "q11",
+  "set": "spike-g",
+  "query": "Who is my family doctor?",
+  "people": false,
+  "tags": [
+   "above-limit"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m143",
+   "m148",
+   "m124",
+   "m006",
+   "m044"
+  ],
+  "top_ppl": [
+   "m143",
+   "m148",
+   "m124",
+   "m006",
+   "m044"
+  ]
+ },
+ {
+  "id": "q12",
+  "set": "spike-g",
+  "query": "What's my cat called?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m039",
+   "p04",
+   "m139",
+   "m043",
+   "m020"
+  ],
+  "top_ppl": [
+   "m039",
+   "p04",
+   "m139",
+   "m043",
+   "m020"
+  ]
+ },
+ {
+  "id": "q13",
+  "set": "spike-g",
+  "query": "Who feeds my cat when I travel?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m039",
+   "m116",
+   "m180",
+   "m031",
+   "p04"
+  ],
+  "top_ppl": [
+   "m039",
+   "m116",
+   "m180",
+   "m031",
+   "p04"
+  ]
+ },
+ {
+  "id": "q14",
+  "set": "spike-g",
+  "query": "Which days do I work from the coworking space?",
+  "people": false,
+  "tags": [
+   "superseded"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m113",
+   "a06",
+   "m026",
+   "m035",
+   "m050"
+  ],
+  "top_ppl": [
+   "m113",
+   "a06",
+   "m026",
+   "m035",
+   "m050"
+  ]
+ },
+ {
+  "id": "q15",
+  "set": "spike-g",
+  "query": "When are the Nordwind standups?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m102",
+   "p09",
+   "m100",
+   "a02",
+   "m101"
+  ],
+  "top_ppl": [
+   "m102",
+   "p09",
+   "m100",
+   "a02",
+   "m101"
+  ]
+ },
+ {
+  "id": "q16",
+  "set": "spike-g",
+  "query": "What's the Harbor App Store submission date?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "top_base": [
+   "a01",
+   "m093",
+   "m090",
+   "m092",
+   "a08"
+  ],
+  "top_ppl": [
+   "a01",
+   "m093",
+   "m090",
+   "m092",
+   "a08"
+  ]
+ },
+ {
+  "id": "q17",
+  "set": "spike-g",
+  "query": "How many people will use Harbor?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m095",
+   "m093",
+   "m090",
+   "m011",
+   "a01"
+  ],
+  "top_ppl": [
+   "m095",
+   "m093",
+   "m090",
+   "m011",
+   "a01"
+  ]
+ },
+ {
+  "id": "q18",
+  "set": "spike-g",
+  "query": "Who approves Harbor invoices?",
+  "people": false,
+  "tags": [
+   "other-person"
+  ],
+  "top_base": [
+   "m091",
+   "p14",
+   "a07",
+   "m169",
+   "m167"
+  ],
+  "top_ppl": [
+   "m091",
+   "p14",
+   "a07",
+   "m169",
+   "m167"
+  ]
+ },
+ {
+  "id": "q19",
+  "set": "spike-g",
+  "query": "What licence do my open-source projects use?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m083",
+   "m112",
+   "m065",
+   "m077",
+   "m097"
+  ],
+  "top_ppl": [
+   "m083",
+   "m112",
+   "m065",
+   "m077",
+   "m097"
+  ]
+ },
+ {
+  "id": "q20",
+  "set": "spike-g",
+  "query": "Which package manager do I use for TypeScript?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m058",
+   "m100",
+   "a02",
+   "m079",
+   "m057"
+  ],
+  "top_ppl": [
+   "m058",
+   "m100",
+   "a02",
+   "m079",
+   "m057"
+  ]
+ },
+ {
+  "id": "q21",
+  "set": "spike-g",
+  "query": "Should commit messages use conventional-commit prefixes?",
+  "people": false,
+  "tags": [
+   "negation"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m059",
+   "m003",
+   "m011",
+   "m006",
+   "m077"
+  ],
+  "top_ppl": [
+   "m059",
+   "m003",
+   "m011",
+   "m006",
+   "m077"
+  ]
+ },
+ {
+  "id": "q22",
+  "set": "spike-g",
+  "query": "How are feature branches merged?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m060",
+   "m117",
+   "m070",
+   "m112",
+   "m054"
+  ],
+  "top_ppl": [
+   "m060",
+   "m117",
+   "m070",
+   "m112",
+   "m054"
+  ]
+ },
+ {
+  "id": "q23",
+  "set": "spike-g",
+  "query": "Who might build Harbor's Android app?",
+  "people": false,
+  "tags": [
+   "other-person"
+  ],
+  "base": 3,
+  "ppl": 3,
+  "top_base": [
+   "m090",
+   "m093",
+   "m117",
+   "m092",
+   "a08"
+  ],
+  "top_ppl": [
+   "m090",
+   "m093",
+   "m117",
+   "m092",
+   "a08"
+  ]
+ },
+ {
+  "id": "q24",
+  "set": "spike-g",
+  "query": "How long before a Harbor booking can I cancel?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m094",
+   "m096",
+   "a01",
+   "m172",
+   "a05"
+  ],
+  "top_ppl": [
+   "m094",
+   "m096",
+   "a01",
+   "m172",
+   "a05"
+  ]
+ },
+ {
+  "id": "q25",
+  "set": "spike-g",
+  "query": "When and where is my conference talk?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m109",
+   "m008",
+   "m012",
+   "a06",
+   "m020"
+  ],
+  "top_ppl": [
+   "m109",
+   "m008",
+   "m012",
+   "a06",
+   "m020"
+  ]
+ },
+ {
+  "id": "q26",
+  "set": "spike-g",
+  "query": "What's my marathon goal?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m106",
+   "m089",
+   "m111",
+   "m034",
+   "m146"
+  ],
+  "top_ppl": [
+   "m106",
+   "m089",
+   "m111",
+   "m034",
+   "m146"
+  ]
+ },
+ {
+  "id": "q27",
+  "set": "spike-g",
+  "query": "When can I take on new client work?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m107",
+   "m116",
+   "m021",
+   "m199",
+   "m035"
+  ],
+  "top_ppl": [
+   "m107",
+   "m116",
+   "m021",
+   "m199",
+   "m035"
+  ]
+ },
+ {
+  "id": "q28",
+  "set": "spike-g",
+  "query": "What's next on the Ledgerly roadmap?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m098",
+   "m097",
+   "m181",
+   "m099",
+   "m195"
+  ],
+  "top_ppl": [
+   "m098",
+   "m097",
+   "m181",
+   "m099",
+   "m195"
+  ]
+ },
+ {
+  "id": "q29",
+  "set": "spike-g",
+  "query": "What time zone am I in?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m012",
+   "m096",
+   "m084",
+   "a01",
+   "m043"
+  ],
+  "top_ppl": [
+   "m012",
+   "m096",
+   "m084",
+   "a01",
+   "m043"
+  ]
+ },
+ {
+  "id": "q30",
+  "set": "spike-g",
+  "query": "¿Cuándo es el cumpleaños de Lucía?",
+  "people": true,
+  "tags": [
+   "spanish"
+  ],
+  "base": 4,
+  "ppl": 4,
+  "top_base": [
+   "p11",
+   "p07",
+   "m042",
+   "m044",
+   "m198"
+  ],
+  "top_ppl": [
+   "p11",
+   "p07",
+   "m042",
+   "m044",
+   "m006"
+  ]
+ },
+ {
+  "id": "q31",
+  "set": "spike-g",
+  "query": "¿Dónde vive mi hermana?",
+  "people": true,
+  "tags": [
+   "spanish",
+   "other-person"
+  ],
+  "base": null,
+  "ppl": 6,
+  "top_base": [
+   "p11",
+   "m006",
+   "p16"
+  ],
+  "top_ppl": [
+   "p11",
+   "m006",
+   "p19",
+   "p07",
+   "p01"
+  ]
+ },
+ {
+  "id": "q32",
+  "set": "spike-g",
+  "query": "¿Cuál es el presupuesto de la reforma de la cocina?",
+  "people": false,
+  "tags": [
+   "spanish"
+  ],
+  "base": 2,
+  "ppl": 2,
+  "top_base": [
+   "p11",
+   "m105",
+   "m184",
+   "p16"
+  ],
+  "top_ppl": [
+   "p11",
+   "m105",
+   "m184",
+   "p16"
+  ]
+ },
+ {
+  "id": "q33",
+  "set": "spike-g",
+  "query": "What's my favourite football team?",
+  "people": false,
+  "tags": [
+   "no-answer"
+  ],
+  "top_base": [
+   "m028",
+   "p05",
+   "m011",
+   "m026",
+   "m030"
+  ],
+  "top_ppl": [
+   "m028",
+   "p05",
+   "m011",
+   "m026",
+   "m030"
+  ]
+ },
+ {
+  "id": "q34",
+  "set": "spike-g",
+  "query": "What's the name of Miso's vet?",
+  "people": false,
+  "tags": [
+   "no-answer"
+  ],
+  "top_base": [
+   "m039",
+   "m191",
+   "m073",
+   "m195",
+   "m129"
+  ],
+  "top_ppl": [
+   "m039",
+   "m191",
+   "m073",
+   "m195",
+   "m129"
+  ]
+ },
+ {
+  "id": "q35",
+  "set": "spike-g",
+  "query": "What car do I drive?",
+  "people": false,
+  "tags": [
+   "negation"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m052",
+   "m047",
+   "m029",
+   "m186",
+   "m046"
+  ],
+  "top_ppl": [
+   "m052",
+   "m047",
+   "m029",
+   "m186",
+   "m046"
+  ]
+ },
+ {
+  "id": "q36",
+  "set": "spike-g",
+  "query": "What's Jordan's favourite colour?",
+  "people": true,
+  "tags": [
+   "no-answer",
+   "other-person"
+  ],
+  "top_base": [
+   "m040",
+   "p16",
+   "m041",
+   "p05",
+   "m004"
+  ],
+  "top_ppl": [
+   "m040",
+   "p16",
+   "m041",
+   "m129",
+   "m044"
+  ]
+ },
+ {
+  "id": "q37",
+  "set": "spike-g",
+  "query": "How much is the club paying for Harbor?",
+  "people": false,
+  "tags": [
+   "no-answer"
+  ],
+  "top_base": [
+   "m091",
+   "a05",
+   "m093",
+   "a01",
+   "m090"
+  ],
+  "top_ppl": [
+   "m091",
+   "a05",
+   "m093",
+   "a01",
+   "m090"
+  ]
+ },
+ {
+  "id": "q38",
+  "set": "spike-g",
+  "query": "What are my Q4 2026 priorities?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m114",
+   "m175",
+   "m161",
+   "m105",
+   "m199"
+  ],
+  "top_ppl": [
+   "m114",
+   "m175",
+   "m161",
+   "m105",
+   "m199"
+  ]
+ },
+ {
+  "id": "q39",
+  "set": "spike-g",
+  "query": "What does Harbor's backend run on?",
+  "people": false,
+  "tags": [
+   "multi"
+  ],
+  "top_base": [
+   "m092",
+   "m090",
+   "m093",
+   "m096",
+   "m193"
+  ],
+  "top_ppl": [
+   "m092",
+   "m090",
+   "m093",
+   "m096",
+   "m193"
+  ]
+ },
+ {
+  "id": "q40",
+  "set": "spike-g",
+  "query": "Can I give clients my phone number?",
+  "people": false,
+  "tags": [
+   "negation"
+  ],
+  "top_base": [
+   "m124",
+   "m005",
+   "m187",
+   "m116",
+   "m193"
+  ],
+  "top_ppl": [
+   "m124",
+   "m005",
+   "m187",
+   "m116",
+   "m193"
+  ]
+ },
+ {
+  "id": "q41",
+  "set": "spike-g",
+  "query": "What do I think of horror films?",
+  "people": false,
+  "tags": [
+   "direct"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m046",
+   "m029"
+  ],
+  "top_ppl": [
+   "m046",
+   "m029"
+  ]
+ },
+ {
+  "id": "q42",
+  "set": "spike-g",
+  "query": "What is the rollback plan for the Atlas cut-over?",
+  "people": false,
+  "tags": [
+   "buried",
+   "untrusted"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "a02",
+   "m100",
+   "m105",
+   "m163",
+   "m114"
+  ],
+  "top_ppl": [
+   "a02",
+   "m100",
+   "m105",
+   "m163",
+   "m114"
+  ]
+ },
+ {
+  "id": "bq01",
+  "set": "bench",
+  "query": "Write a commit message for my latest change",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m059",
+   "m003",
+   "p08",
+   "m011",
+   "p23"
+  ],
+  "top_ppl": [
+   "m059",
+   "m003",
+   "p08",
+   "m011",
+   "p23"
+  ]
+ },
+ {
+  "id": "bq02",
+  "set": "bench",
+  "query": "Plan a week of dinners for me",
+  "people": false,
+  "tags": [],
+  "base": 3,
+  "ppl": 3,
+  "top_base": [
+   "p12",
+   "p13",
+   "m048",
+   "p15",
+   "p16"
+  ],
+  "top_ppl": [
+   "p12",
+   "p13",
+   "m048",
+   "p15",
+   "p16"
+  ]
+ },
+ {
+  "id": "bq03",
+  "set": "bench",
+  "query": "Draft an email reminding the sailing club treasurer that last month's invoice is overdue",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m091",
+   "m169",
+   "p14",
+   "a07",
+   "m023"
+  ],
+  "top_ppl": [
+   "m091",
+   "m169",
+   "p14",
+   "a07",
+   "m023"
+  ]
+ },
+ {
+  "id": "bq04",
+  "set": "bench",
+  "query": "Book train tickets and somewhere to stay for a weekend in Porto",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m031",
+   "p19",
+   "m032",
+   "m109",
+   "a03"
+  ],
+  "top_ppl": [
+   "m031",
+   "p19",
+   "m032",
+   "m109",
+   "a03"
+  ]
+ },
+ {
+  "id": "bq05",
+  "set": "bench",
+  "query": "What should I order at a café this afternoon?",
+  "people": false,
+  "tags": [],
+  "base": 2,
+  "ppl": 2,
+  "top_base": [
+   "m026",
+   "m141",
+   "m043",
+   "m025",
+   "m024"
+  ],
+  "top_ppl": [
+   "m026",
+   "m141",
+   "m043",
+   "m025",
+   "m024"
+  ]
+ },
+ {
+  "id": "bq06",
+  "set": "bench",
+  "query": "Set up a new Python project that parses bank statement exports",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m097",
+   "m057",
+   "m098",
+   "m112",
+   "m159"
+  ],
+  "top_ppl": [
+   "m097",
+   "m057",
+   "m098",
+   "m112",
+   "m159"
+  ]
+ },
+ {
+  "id": "bq07",
+  "set": "bench",
+  "query": "Review this pull request for the Nordwind dispatch service",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m100",
+   "a02",
+   "m070",
+   "m102",
+   "p09"
+  ],
+  "top_ppl": [
+   "m100",
+   "a02",
+   "m070",
+   "m102",
+   "p09"
+  ]
+ },
+ {
+  "id": "bq08",
+  "set": "bench",
+  "query": "Suggest a running plan for the next four weeks",
+  "people": false,
+  "tags": [],
+  "base": 7,
+  "ppl": 7,
+  "top_base": [
+   "m034",
+   "p12",
+   "m051",
+   "p08",
+   "m033"
+  ],
+  "top_ppl": [
+   "m034",
+   "p12",
+   "m051",
+   "p08",
+   "m033"
+  ]
+ },
+ {
+  "id": "bq09",
+  "set": "bench",
+  "query": "Find a time next week for an intro call with a prospective client",
+  "people": false,
+  "tags": [],
+  "base": 7,
+  "ppl": 7,
+  "top_base": [
+   "m021",
+   "m005",
+   "m107",
+   "m170",
+   "m199"
+  ],
+  "top_ppl": [
+   "m021",
+   "m005",
+   "m107",
+   "m170",
+   "m199"
+  ]
+ },
+ {
+  "id": "bq10",
+  "set": "bench",
+  "query": "The doctor wants to prescribe antibiotics. Is there anything they should know?",
+  "people": false,
+  "tags": [],
+  "base": 4,
+  "ppl": 4,
+  "top_base": [
+   "m143",
+   "m151",
+   "m079",
+   "m135",
+   "m142"
+  ],
+  "top_ppl": [
+   "m143",
+   "m151",
+   "m079",
+   "m135",
+   "m142"
+  ]
+ },
+ {
+  "id": "bq11",
+  "set": "bench",
+  "query": "Help me get my paperwork together for this year's income tax filing",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m165",
+   "m164",
+   "m166",
+   "m182",
+   "m177"
+  ],
+  "top_ppl": [
+   "m165",
+   "m164",
+   "m166",
+   "m182",
+   "m177"
+  ]
+ },
+ {
+  "id": "bq12",
+  "set": "bench",
+  "query": "Help me write a blog post about building the Harbor app",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m090",
+   "m104",
+   "m114",
+   "m093",
+   "m092"
+  ],
+  "top_ppl": [
+   "m090",
+   "m104",
+   "m114",
+   "m093",
+   "m092"
+  ]
+ },
+ {
+  "id": "bq13",
+  "set": "bench",
+  "query": "A client sent a contract with a 12-month non-compete. Should I sign it?",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m190",
+   "m187",
+   "m189",
+   "m188",
+   "m199"
+  ],
+  "top_ppl": [
+   "m190",
+   "m187",
+   "m189",
+   "m188",
+   "m199"
+  ]
+ },
+ {
+  "id": "bq14",
+  "set": "bench",
+  "query": "Summarize the terms and conditions of this new service",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m200",
+   "m072",
+   "m100",
+   "a02",
+   "m187"
+  ],
+  "top_ppl": [
+   "m200",
+   "m072",
+   "m100",
+   "a02",
+   "m187"
+  ]
+ },
+ {
+  "id": "bq15",
+  "set": "bench",
+  "query": "Build a settings screen for my SwiftUI app",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m087",
+   "m092",
+   "m090",
+   "m111",
+   "m194"
+  ],
+  "top_ppl": [
+   "m087",
+   "m092",
+   "m090",
+   "m111",
+   "m194"
+  ]
+ },
+ {
+  "id": "bq16",
+  "set": "bench",
+  "query": "What should I get Jordan for their birthday?",
+  "people": true,
+  "tags": [],
+  "base": 2,
+  "ppl": 2,
+  "top_base": [
+   "p16",
+   "m044",
+   "m040",
+   "m041",
+   "p12"
+  ],
+  "top_ppl": [
+   "p16",
+   "m044",
+   "m040",
+   "m041",
+   "p12"
+  ]
+ },
+ {
+  "id": "bq17",
+  "set": "bench",
+  "query": "My head hurts after a long day at the computer. Any advice?",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m145",
+   "m022",
+   "m152",
+   "m149",
+   "m170"
+  ],
+  "top_ppl": [
+   "m145",
+   "m022",
+   "m152",
+   "m149",
+   "m170"
+  ]
+ },
+ {
+  "id": "bq18",
+  "set": "bench",
+  "query": "How much should I put into savings and investments this month?",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m160",
+   "m161",
+   "m162",
+   "m182",
+   "m178"
+  ],
+  "top_ppl": [
+   "m160",
+   "m161",
+   "m162",
+   "m182",
+   "m178"
+  ]
+ },
+ {
+  "id": "bq19",
+  "set": "bench",
+  "query": "Write the privacy policy for my iOS app",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m194",
+   "m127",
+   "m129",
+   "m080",
+   "m090"
+  ],
+  "top_ppl": [
+   "m194",
+   "m127",
+   "m129",
+   "m080",
+   "m090"
+  ]
+ },
+ {
+  "id": "bq20",
+  "set": "bench",
+  "query": "Help me write a message to my mum about my next visit",
+  "people": true,
+  "tags": [],
+  "base": 3,
+  "ppl": 2,
+  "top_base": [
+   "p19",
+   "p05",
+   "m006",
+   "m005",
+   "m103"
+  ],
+  "top_ppl": [
+   "p05",
+   "m006",
+   "m043",
+   "p19",
+   "m005"
+  ]
+ },
+ {
+  "id": "bq21",
+  "set": "bench",
+  "query": "Set up automated builds and tests for my open-source library",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m112",
+   "m083",
+   "m070",
+   "m067",
+   "m065"
+  ],
+  "top_ppl": [
+   "m112",
+   "m083",
+   "m070",
+   "m067",
+   "m065"
+  ]
+ },
+ {
+  "id": "bq22",
+  "set": "bench",
+  "query": "Where should I deploy the server for the booking app?",
+  "people": false,
+  "tags": [],
+  "base": 4,
+  "ppl": 4,
+  "top_base": [
+   "m090",
+   "m066",
+   "m096",
+   "m092",
+   "m194"
+  ],
+  "top_ppl": [
+   "m090",
+   "m066",
+   "m096",
+   "m092",
+   "m194"
+  ]
+ },
+ {
+  "id": "bq23",
+  "set": "bench",
+  "query": "Prepare a quote for a three-week freelance engagement",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m108",
+   "m164",
+   "m187",
+   "p08",
+   "m017"
+  ],
+  "top_ppl": [
+   "m108",
+   "m164",
+   "m187",
+   "p08",
+   "m017"
+  ]
+ },
+ {
+  "id": "bq24",
+  "set": "bench",
+  "query": "The landlord asked whether we'll stay in the flat after the contract ends",
+  "people": false,
+  "tags": [],
+  "base": 2,
+  "ppl": 2,
+  "top_base": [
+   "m175",
+   "m173",
+   "m134",
+   "m185",
+   "m189"
+  ],
+  "top_ppl": [
+   "m175",
+   "m173",
+   "m134",
+   "m185",
+   "m189"
+  ]
+ },
+ {
+  "id": "bq25",
+  "set": "bench",
+  "query": "Write up the notes from today's standup",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m102",
+   "m008",
+   "m016",
+   "m015",
+   "m103"
+  ],
+  "top_ppl": [
+   "m102",
+   "m008",
+   "m016",
+   "m015",
+   "m103"
+  ]
+ },
+ {
+  "id": "bq26",
+  "set": "bench",
+  "query": "Can I paste the client's database schema into ChatGPT to debug a query?",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m101",
+   "m066",
+   "m131",
+   "m089",
+   "m134"
+  ],
+  "top_ppl": [
+   "m101",
+   "m066",
+   "m131",
+   "m089",
+   "m134"
+  ]
+ },
+ {
+  "id": "bq27",
+  "set": "bench",
+  "query": "Make slides for my Porto conference talk",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m109",
+   "m016",
+   "m008",
+   "m023",
+   "m022"
+  ],
+  "top_ppl": [
+   "m109",
+   "m016",
+   "m008",
+   "m023",
+   "m022"
+  ]
+ },
+ {
+  "id": "bq28",
+  "set": "bench",
+  "query": "Find a recipe I can cook tonight in half an hour",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m048",
+   "m035",
+   "m140",
+   "m111",
+   "m031"
+  ],
+  "top_ppl": [
+   "m048",
+   "m035",
+   "m140",
+   "m111",
+   "m031"
+  ]
+ },
+ {
+  "id": "bq29",
+  "set": "bench",
+  "query": "What should I pack for a day out on the water?",
+  "people": false,
+  "tags": [],
+  "base": 7,
+  "ppl": 7,
+  "top_base": [
+   "m152",
+   "m111",
+   "a03",
+   "a05",
+   "m037"
+  ],
+  "top_ppl": [
+   "m152",
+   "m111",
+   "a03",
+   "a05",
+   "m037"
+  ]
+ },
+ {
+  "id": "bq30",
+  "set": "bench",
+  "query": "How much can we spend on remodelling the kitchen, and how will we pay for it?",
+  "people": false,
+  "tags": [],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m184",
+   "m105",
+   "m175",
+   "m173",
+   "m171"
+  ],
+  "top_ppl": [
+   "m184",
+   "m105",
+   "m175",
+   "m173",
+   "m171"
+  ]
+ }
+]

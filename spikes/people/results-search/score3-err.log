@@ -1,0 +1,4 @@
+usage: search_answers.py [-h] [--set SET] [--engine ENGINE]
+                         [--provider PROVIDER] [--reps REPS] [--only ONLY]
+                         {run,judge,score}
+search_answers.py: error: argument --engine: expected one argument

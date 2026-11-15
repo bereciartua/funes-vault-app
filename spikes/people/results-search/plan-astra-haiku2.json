@@ -1,0 +1,1468 @@
+[
+ {
+  "id": "a01",
+  "query": "What does Jordan drink in the evening?",
+  "rest": "What does drink in the evening",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h03",
+   "h04",
+   "h07",
+   "h08",
+   "h09",
+   "h10",
+   "h11",
+   "h12",
+   "h14",
+   "m042",
+   "m091",
+   "m102",
+   "m117"
+  ],
+  "matched": {
+   "Jordan": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p3"
+  ],
+  "admitted": {
+   "m129": "full",
+   "m040": "full",
+   "m041": "full",
+   "m044": "full",
+   "h01": "full",
+   "h06": "full",
+   "h13": "weak"
+  },
+  "via": {
+   "m129": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan",
+    "type": null,
+    "candidates": []
+   },
+   "m040": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan",
+    "type": null,
+    "candidates": []
+   },
+   "m041": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner",
+    "type": "partner",
+    "candidates": []
+   },
+   "m044": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan",
+    "type": null,
+    "candidates": []
+   },
+   "h01": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner",
+    "type": "partner",
+    "candidates": []
+   },
+   "h06": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan",
+    "type": null,
+    "candidates": []
+   },
+   "h13": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "untrusted",
+    "surface": "Sam's partner",
+    "type": "partner",
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a02",
+  "query": "What does Lucía drink in the evening?",
+  "rest": "What does drink in the evening",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h01",
+   "h03",
+   "h04",
+   "h06",
+   "h07",
+   "h08",
+   "h09",
+   "h10",
+   "h11",
+   "h12",
+   "h14",
+   "m040",
+   "m041",
+   "m091",
+   "m102",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Lucía": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p8"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "full",
+   "m044": "full",
+   "h02": "weak",
+   "h05": "weak",
+   "h15": "weak",
+   "m198": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m042": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m044": {
+    "person": "p8",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía",
+    "type": null,
+    "candidates": []
+   },
+   "h02": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "h05": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana",
+    "type": "sibling",
+    "candidates": []
+   },
+   "h15": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m198": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a03",
+  "query": "Elena's evening tea?",
+  "rest": "evening tea",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h01",
+   "h06",
+   "h07",
+   "h08",
+   "h09",
+   "h10",
+   "h11",
+   "h12",
+   "h14",
+   "m040",
+   "m041",
+   "m042",
+   "m044",
+   "m091",
+   "m102",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Elena": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p9"
+  ],
+  "admitted": {
+   "h03": "full",
+   "h04": "full",
+   "h16": "weak"
+  },
+  "via": {
+   "h03": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My mum",
+    "type": "parent",
+    "candidates": []
+   },
+   "h04": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My mum",
+    "type": "parent",
+    "candidates": []
+   },
+   "h16": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "untrusted",
+    "surface": "Sam's mum",
+    "type": "parent",
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a04",
+  "query": "What soup did my partner ask me to pack for work?",
+  "rest": "What soup did ask to pack for work",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h03",
+   "h04",
+   "h07",
+   "h08",
+   "h09",
+   "h10",
+   "h11",
+   "h12",
+   "h14",
+   "m042",
+   "m091",
+   "m102",
+   "m117"
+  ],
+  "matched": {
+   "Jordan": [
+    "full",
+    "role:partner"
+   ]
+  },
+  "matched_ids": [
+   "p3"
+  ],
+  "admitted": {
+   "m129": "full",
+   "m040": "full",
+   "m041": "full",
+   "m044": "full",
+   "h01": "full",
+   "h06": "full",
+   "h13": "weak"
+  },
+  "via": {
+   "m129": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan",
+    "type": null,
+    "candidates": []
+   },
+   "m040": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan",
+    "type": null,
+    "candidates": []
+   },
+   "m041": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner",
+    "type": "partner",
+    "candidates": []
+   },
+   "m044": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan",
+    "type": null,
+    "candidates": []
+   },
+   "h01": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner",
+    "type": "partner",
+    "candidates": []
+   },
+   "h06": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan",
+    "type": null,
+    "candidates": []
+   },
+   "h13": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "untrusted",
+    "surface": "Sam's partner",
+    "type": "partner",
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a05",
+  "query": "¿Qué me pidió Lucía para su cumpleaños?",
+  "rest": "pidió cumpleaños",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h01",
+   "h03",
+   "h04",
+   "h06",
+   "h07",
+   "h08",
+   "h09",
+   "h10",
+   "h11",
+   "h12",
+   "h14",
+   "m040",
+   "m041",
+   "m091",
+   "m102",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Lucía": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p8"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "full",
+   "m044": "full",
+   "h02": "weak",
+   "h05": "weak",
+   "h15": "weak",
+   "m198": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m042": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m044": {
+    "person": "p8",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía",
+    "type": null,
+    "candidates": []
+   },
+   "h02": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "h05": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana",
+    "type": "sibling",
+    "candidates": []
+   },
+   "h15": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m198": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a06",
+  "query": "¿Qué toma mi hermana por la noche?",
+  "rest": "toma noche",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h01",
+   "h03",
+   "h04",
+   "h06",
+   "h07",
+   "h08",
+   "h09",
+   "h10",
+   "h11",
+   "h12",
+   "h14",
+   "m040",
+   "m041",
+   "m091",
+   "m102",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Lucía": [
+    "weak",
+    "role:sibling"
+   ]
+  },
+  "matched_ids": [
+   "p8"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "weak",
+   "m044": "weak",
+   "h02": "weak",
+   "h05": "weak",
+   "h15": "weak",
+   "m198": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m042": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m044": {
+    "person": "p8",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía",
+    "type": null,
+    "candidates": []
+   },
+   "h02": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "h05": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana",
+    "type": "sibling",
+    "candidates": []
+   },
+   "h15": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m198": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a07",
+  "query": "Who's my manager at Nordwind now?",
+  "rest": "Who's at Nordwind now",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h01",
+   "h03",
+   "h04",
+   "h06",
+   "h07",
+   "h10",
+   "h12",
+   "h14",
+   "m040",
+   "m041",
+   "m042",
+   "m044",
+   "m091",
+   "m102",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Erik Lund": [
+    "full",
+    "role:manager"
+   ]
+  },
+  "matched_ids": [
+   "p11"
+  ],
+  "admitted": {
+   "h08": "full",
+   "h09": "full",
+   "h11": "full"
+  },
+  "via": {
+   "h08": {
+    "person": "p11",
+    "kind": "role",
+    "basis": "named",
+    "surface": "my manager",
+    "type": "manager",
+    "candidates": []
+   },
+   "h09": {
+    "person": "p11",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My manager",
+    "type": "manager",
+    "candidates": []
+   },
+   "h11": {
+    "person": "p11",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Lund",
+    "type": null,
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a08",
+  "query": "What format does my manager want for weekly Nordwind updates now?",
+  "rest": "What format does want for weekly Nordwind updates now",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h01",
+   "h03",
+   "h04",
+   "h06",
+   "h07",
+   "h10",
+   "h12",
+   "h14",
+   "m040",
+   "m041",
+   "m042",
+   "m044",
+   "m091",
+   "m102",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Erik Lund": [
+    "full",
+    "role:manager"
+   ]
+  },
+  "matched_ids": [
+   "p11"
+  ],
+  "admitted": {
+   "h08": "full",
+   "h09": "full",
+   "h11": "full"
+  },
+  "via": {
+   "h08": {
+    "person": "p11",
+    "kind": "role",
+    "basis": "named",
+    "surface": "my manager",
+    "type": "manager",
+    "candidates": []
+   },
+   "h09": {
+    "person": "p11",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My manager",
+    "type": "manager",
+    "candidates": []
+   },
+   "h11": {
+    "person": "p11",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Lund",
+    "type": null,
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a09",
+  "query": "What format did Erik Halvorsen ask for when he managed my Nordwind contract?",
+  "rest": "What format did ask for when he managed my Nordwind contract",
+  "others": [
+   "a07",
+   "a08",
+   "h01",
+   "h03",
+   "h04",
+   "h06",
+   "h09",
+   "h11",
+   "h12",
+   "h14",
+   "m040",
+   "m041",
+   "m042",
+   "m044",
+   "m091",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Erik Halvorsen": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p6"
+  ],
+  "admitted": {
+   "a04": "full",
+   "m102": "full",
+   "h07": "full",
+   "h10": "full",
+   "a02": "weak",
+   "h08": "full"
+  },
+  "via": {
+   "a04": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Halvorsen",
+    "type": null,
+    "candidates": []
+   },
+   "m102": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Halvorsen",
+    "type": null,
+    "candidates": []
+   },
+   "h07": {
+    "person": "p6",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "my manager",
+    "type": "manager",
+    "candidates": []
+   },
+   "h10": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Halvorsen",
+    "type": null,
+    "candidates": []
+   },
+   "a02": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "untrusted",
+    "surface": "Erik",
+    "type": null,
+    "candidates": []
+   },
+   "h08": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Halvorsen",
+    "type": null,
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a10",
+  "query": "What does Erik Lund usually drink in meetings?",
+  "rest": "What does usually drink in meetings",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h01",
+   "h03",
+   "h04",
+   "h06",
+   "h07",
+   "h10",
+   "h12",
+   "h14",
+   "m040",
+   "m041",
+   "m042",
+   "m044",
+   "m091",
+   "m102",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Erik Lund": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p11"
+  ],
+  "admitted": {
+   "h08": "full",
+   "h09": "full",
+   "h11": "full"
+  },
+  "via": {
+   "h08": {
+    "person": "p11",
+    "kind": "role",
+    "basis": "named",
+    "surface": "my manager",
+    "type": "manager",
+    "candidates": []
+   },
+   "h09": {
+    "person": "p11",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My manager",
+    "type": "manager",
+    "candidates": []
+   },
+   "h11": {
+    "person": "p11",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Lund",
+    "type": null,
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a11",
+  "query": "Erik Halvorsen's usual meeting drink",
+  "rest": "usual meeting drink",
+  "others": [
+   "a07",
+   "a08",
+   "h01",
+   "h03",
+   "h04",
+   "h06",
+   "h09",
+   "h11",
+   "h12",
+   "h14",
+   "m040",
+   "m041",
+   "m042",
+   "m044",
+   "m091",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Erik Halvorsen": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p6"
+  ],
+  "admitted": {
+   "a04": "full",
+   "m102": "full",
+   "h07": "full",
+   "h10": "full",
+   "a02": "weak",
+   "h08": "full"
+  },
+  "via": {
+   "a04": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Halvorsen",
+    "type": null,
+    "candidates": []
+   },
+   "m102": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Halvorsen",
+    "type": null,
+    "candidates": []
+   },
+   "h07": {
+    "person": "p6",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "my manager",
+    "type": "manager",
+    "candidates": []
+   },
+   "h10": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Halvorsen",
+    "type": null,
+    "candidates": []
+   },
+   "a02": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "untrusted",
+    "surface": "Erik",
+    "type": null,
+    "candidates": []
+   },
+   "h08": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Halvorsen",
+    "type": null,
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a12",
+  "query": "Priya",
+  "rest": "",
+  "others": [
+   "a04",
+   "a07",
+   "h01",
+   "h03",
+   "h04",
+   "h06",
+   "h07",
+   "h08",
+   "h09",
+   "h10",
+   "h11",
+   "h14",
+   "m040",
+   "m041",
+   "m042",
+   "m044",
+   "m091",
+   "m102",
+   "m129"
+  ],
+  "matched": {
+   "Priya": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p7"
+  ],
+  "admitted": {
+   "m117": "full",
+   "h12": "full",
+   "a08": "full"
+  },
+  "via": {
+   "m117": {
+    "person": "p7",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Priya",
+    "type": null,
+    "candidates": []
+   },
+   "h12": {
+    "person": "p7",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Priya",
+    "type": null,
+    "candidates": []
+   },
+   "a08": {
+    "person": "p7",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Priya",
+    "type": null,
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a13",
+  "query": "Marta Silva",
+  "rest": "",
+  "others": [
+   "a04",
+   "a08",
+   "h01",
+   "h03",
+   "h04",
+   "h06",
+   "h07",
+   "h08",
+   "h09",
+   "h10",
+   "h11",
+   "h12",
+   "m040",
+   "m041",
+   "m042",
+   "m044",
+   "m102",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Marta Silva": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p10"
+  ],
+  "admitted": {
+   "m091": "full",
+   "a07": "full",
+   "h14": "full"
+  },
+  "via": {
+   "m091": {
+    "person": "p10",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Marta Silva",
+    "type": null,
+    "candidates": []
+   },
+   "a07": {
+    "person": "p10",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Marta Silva",
+    "type": null,
+    "candidates": []
+   },
+   "h14": {
+    "person": "p10",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Marta Silva",
+    "type": null,
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a14",
+  "query": "Which university did Lucía graduate from?",
+  "rest": "Which university did graduate from",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h01",
+   "h03",
+   "h04",
+   "h06",
+   "h07",
+   "h08",
+   "h09",
+   "h10",
+   "h11",
+   "h12",
+   "h14",
+   "m040",
+   "m041",
+   "m091",
+   "m102",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Lucía": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p8"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "full",
+   "m044": "full",
+   "h02": "weak",
+   "h05": "weak",
+   "h15": "weak",
+   "m198": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m042": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m044": {
+    "person": "p8",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía",
+    "type": null,
+    "candidates": []
+   },
+   "h02": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "h05": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana",
+    "type": "sibling",
+    "candidates": []
+   },
+   "h15": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m198": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a15",
+  "query": "How do I make coffee at home?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "a16",
+  "query": "What colour ceramics does Jordan collect?",
+  "rest": "What colour ceramics does collect",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h03",
+   "h04",
+   "h07",
+   "h08",
+   "h09",
+   "h10",
+   "h11",
+   "h12",
+   "h14",
+   "m042",
+   "m091",
+   "m102",
+   "m117"
+  ],
+  "matched": {
+   "Jordan": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p3"
+  ],
+  "admitted": {
+   "m129": "full",
+   "m040": "full",
+   "m041": "full",
+   "m044": "full",
+   "h01": "full",
+   "h06": "full",
+   "h13": "weak"
+  },
+  "via": {
+   "m129": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan",
+    "type": null,
+    "candidates": []
+   },
+   "m040": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan",
+    "type": null,
+    "candidates": []
+   },
+   "m041": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner",
+    "type": "partner",
+    "candidates": []
+   },
+   "m044": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan",
+    "type": null,
+    "candidates": []
+   },
+   "h01": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner",
+    "type": "partner",
+    "candidates": []
+   },
+   "h06": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan",
+    "type": null,
+    "candidates": []
+   },
+   "h13": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "untrusted",
+    "surface": "Sam's partner",
+    "type": "partner",
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a17",
+  "query": "What colour is Lucía's mate thermos?",
+  "rest": "What colour is mate thermos",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h01",
+   "h03",
+   "h04",
+   "h06",
+   "h07",
+   "h08",
+   "h09",
+   "h10",
+   "h11",
+   "h12",
+   "h14",
+   "m040",
+   "m041",
+   "m091",
+   "m102",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Lucía": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p8"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "full",
+   "m044": "full",
+   "h02": "weak",
+   "h05": "weak",
+   "h15": "weak",
+   "m198": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m042": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m044": {
+    "person": "p8",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía",
+    "type": null,
+    "candidates": []
+   },
+   "h02": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "h05": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana",
+    "type": "sibling",
+    "candidates": []
+   },
+   "h15": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   },
+   "m198": {
+    "person": "p8",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister",
+    "type": "sibling",
+    "candidates": []
+   }
+  }
+ },
+ {
+  "id": "a18",
+  "query": "Which app does Elena prefer for our Sunday calls?",
+  "rest": "Which app does prefer for our Sunday calls",
+  "others": [
+   "a04",
+   "a07",
+   "a08",
+   "h01",
+   "h06",
+   "h07",
+   "h08",
+   "h09",
+   "h10",
+   "h11",
+   "h12",
+   "h14",
+   "m040",
+   "m041",
+   "m042",
+   "m044",
+   "m091",
+   "m102",
+   "m117",
+   "m129"
+  ],
+  "matched": {
+   "Elena": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p9"
+  ],
+  "admitted": {
+   "h03": "full",
+   "h04": "full",
+   "h16": "weak"
+  },
+  "via": {
+   "h03": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My mum",
+    "type": "parent",
+    "candidates": []
+   },
+   "h04": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My mum",
+    "type": "parent",
+    "candidates": []
+   },
+   "h16": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "untrusted",
+    "surface": "Sam's mum",
+    "type": "parent",
+    "candidates": []
+   }
+  }
+ }
+]

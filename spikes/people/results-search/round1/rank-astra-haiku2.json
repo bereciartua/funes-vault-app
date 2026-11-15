@@ -1,0 +1,492 @@
+[
+ {
+  "id": "a01",
+  "set": "people",
+  "query": "What does Jordan drink in the evening?",
+  "people": true,
+  "tags": [
+   "name_to_role",
+   "partner",
+   "drink_collision",
+   "link_evidence"
+  ],
+  "base": 3,
+  "ppl": 1,
+  "top_base": [
+   "h04",
+   "h02",
+   "h01",
+   "h14",
+   "m040"
+  ],
+  "top_ppl": [
+   "h01",
+   "m040",
+   "h06",
+   "h04",
+   "h02"
+  ]
+ },
+ {
+  "id": "a02",
+  "set": "people",
+  "query": "What does Lucía drink in the evening?",
+  "people": true,
+  "tags": [
+   "name_to_role",
+   "sister",
+   "drink_collision",
+   "nested_role_trap",
+   "link_evidence"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "h02",
+   "h01",
+   "h04",
+   "h14",
+   "h12"
+  ],
+  "top_ppl": [
+   "h02",
+   "h01",
+   "h04",
+   "m042",
+   "h14"
+  ]
+ },
+ {
+  "id": "a03",
+  "set": "people",
+  "query": "Elena's evening tea?",
+  "people": true,
+  "tags": [
+   "name_to_role",
+   "mum",
+   "drink_collision",
+   "link_evidence"
+  ],
+  "base": 2,
+  "ppl": 1,
+  "top_base": [
+   "h14",
+   "h04",
+   "h12",
+   "h02",
+   "h01"
+  ],
+  "top_ppl": [
+   "h04",
+   "h14",
+   "h03",
+   "h12",
+   "h02"
+  ]
+ },
+ {
+  "id": "a04",
+  "set": "people",
+  "query": "What soup did my partner ask me to pack for work?",
+  "people": true,
+  "tags": [
+   "role_to_name",
+   "partner",
+   "food"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "h06",
+   "h01",
+   "m041",
+   "h13",
+   "m116"
+  ],
+  "top_ppl": [
+   "h06",
+   "h01",
+   "m041",
+   "h13",
+   "m040"
+  ]
+ },
+ {
+  "id": "a05",
+  "set": "people",
+  "query": "¿Qué me pidió Lucía para su cumpleaños?",
+  "people": true,
+  "tags": [
+   "spanish_query",
+   "spanish_memory",
+   "name_to_role",
+   "sister",
+   "link_evidence"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "h05",
+   "m006",
+   "m044",
+   "m042",
+   "m198"
+  ],
+  "top_ppl": [
+   "h05",
+   "m044",
+   "m042",
+   "m006",
+   "h02"
+  ]
+ },
+ {
+  "id": "a06",
+  "set": "people",
+  "query": "¿Qué toma mi hermana por la noche?",
+  "people": true,
+  "tags": [
+   "spanish_query",
+   "cross_language",
+   "role_query",
+   "sister",
+   "nested_role_trap"
+  ],
+  "base": 3,
+  "ppl": 3,
+  "top_base": [
+   "h05",
+   "m006",
+   "h02"
+  ],
+  "top_ppl": [
+   "h05",
+   "m006",
+   "h02",
+   "m042",
+   "h15"
+  ]
+ },
+ {
+  "id": "a07",
+  "set": "people",
+  "query": "Who's my manager at Nordwind now?",
+  "people": true,
+  "tags": [
+   "changed_role",
+   "current_holder",
+   "shared_first_name",
+   "role_query"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "h08",
+   "h09",
+   "h07",
+   "m102",
+   "a04"
+  ],
+  "top_ppl": [
+   "h08",
+   "h09",
+   "h11",
+   "h07",
+   "m102"
+  ]
+ },
+ {
+  "id": "a08",
+  "set": "people",
+  "query": "What format does my manager want for weekly Nordwind updates now?",
+  "people": true,
+  "tags": [
+   "changed_role",
+   "current_holder",
+   "role_only_memory",
+   "format_collision"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "h09",
+   "h07",
+   "h08",
+   "m102",
+   "a02"
+  ],
+  "top_ppl": [
+   "h09",
+   "h08",
+   "h07",
+   "h11",
+   "a02"
+  ]
+ },
+ {
+  "id": "a09",
+  "set": "people",
+  "query": "What format did Erik Halvorsen ask for when he managed my Nordwind contract?",
+  "people": true,
+  "tags": [
+   "changed_role",
+   "former_holder",
+   "shared_first_name",
+   "format_collision"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "h07",
+   "h08",
+   "a04",
+   "m102",
+   "h09"
+  ],
+  "top_ppl": [
+   "h07",
+   "h08",
+   "a04",
+   "m102",
+   "h10"
+  ]
+ },
+ {
+  "id": "a10",
+  "set": "people",
+  "query": "What does Erik Lund usually drink in meetings?",
+  "people": true,
+  "tags": [
+   "shared_first_name",
+   "full_name_disambiguation",
+   "drink_collision"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "h11",
+   "h10",
+   "h08",
+   "h07",
+   "h01"
+  ],
+  "top_ppl": [
+   "h11",
+   "h08",
+   "h10",
+   "h09",
+   "m053"
+  ]
+ },
+ {
+  "id": "a11",
+  "set": "people",
+  "query": "Erik Halvorsen's usual meeting drink",
+  "people": true,
+  "tags": [
+   "shared_first_name",
+   "full_name_disambiguation",
+   "drink_collision"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "h10",
+   "h11",
+   "h07",
+   "m102",
+   "a04"
+  ],
+  "top_ppl": [
+   "h10",
+   "h07",
+   "m102",
+   "a04",
+   "h08"
+  ]
+ },
+ {
+  "id": "a12",
+  "set": "people",
+  "query": "Priya",
+  "people": true,
+  "tags": [
+   "name_only",
+   "person_recall",
+   "nested_role"
+  ],
+  "about_base": 3,
+  "about_people": 3,
+  "about_of": 3,
+  "top_base": [
+   "h12",
+   "a08",
+   "m117",
+   "h05"
+  ],
+  "top_ppl": [
+   "h12",
+   "a08",
+   "m117",
+   "h05"
+  ]
+ },
+ {
+  "id": "a13",
+  "set": "people",
+  "query": "Marta Silva",
+  "people": true,
+  "tags": [
+   "name_only",
+   "person_recall"
+  ],
+  "about_base": 3,
+  "about_people": 3,
+  "about_of": 3,
+  "top_base": [
+   "a07",
+   "h14",
+   "m091"
+  ],
+  "top_ppl": [
+   "a07",
+   "h14",
+   "m091"
+  ]
+ },
+ {
+  "id": "a14",
+  "set": "people",
+  "query": "Which university did Lucía graduate from?",
+  "people": true,
+  "tags": [
+   "unanswerable",
+   "known_person_unknown_fact",
+   "abstention"
+  ],
+  "top_base": [
+   "m042",
+   "m198",
+   "m044"
+  ],
+  "top_ppl": [
+   "m042",
+   "m044",
+   "m198",
+   "h05",
+   "h02"
+  ]
+ },
+ {
+  "id": "a15",
+  "set": "people",
+  "query": "How do I make coffee at home?",
+  "people": false,
+  "tags": [
+   "no_person",
+   "regression_control",
+   "drink_topic"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "m025",
+   "m048",
+   "m024",
+   "m119",
+   "h01"
+  ],
+  "top_ppl": [
+   "m025",
+   "m048",
+   "m024",
+   "m119",
+   "h01"
+  ]
+ },
+ {
+  "id": "a16",
+  "set": "people",
+  "query": "What colour ceramics does Jordan collect?",
+  "people": true,
+  "tags": [
+   "name_to_role",
+   "third_person_summary",
+   "agent_write",
+   "link_evidence"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "h13",
+   "m040",
+   "h06",
+   "m041",
+   "m191"
+  ],
+  "top_ppl": [
+   "h13",
+   "m040",
+   "h06",
+   "m041",
+   "m044"
+  ]
+ },
+ {
+  "id": "a17",
+  "set": "people",
+  "query": "What colour is Lucía's mate thermos?",
+  "people": true,
+  "tags": [
+   "name_to_role",
+   "sister",
+   "link_evidence",
+   "colour_collision"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "h15",
+   "h02",
+   "h01",
+   "m044",
+   "h13"
+  ],
+  "top_ppl": [
+   "h15",
+   "m044",
+   "m042",
+   "h02",
+   "h05"
+  ]
+ },
+ {
+  "id": "a18",
+  "set": "people",
+  "query": "Which app does Elena prefer for our Sunday calls?",
+  "people": true,
+  "tags": [
+   "name_to_role",
+   "mum",
+   "third_person_summary",
+   "agent_write",
+   "link_evidence"
+  ],
+  "base": 1,
+  "ppl": 1,
+  "top_base": [
+   "h16",
+   "m043",
+   "m020",
+   "h03",
+   "m133"
+  ],
+  "top_ppl": [
+   "h16",
+   "h03",
+   "m043",
+   "m006",
+   "m020"
+  ]
+ }
+]

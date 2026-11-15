@@ -1,0 +1,16 @@
+cloud limit: sensitive; memories to read: 361; above the limit: 7; user aliases: 1
+25/361 memories, 25 calls, 0 failed, $0.01, 71 s
+50/361 memories, 50 calls, 0 failed, $0.02, 141 s
+75/361 memories, 75 calls, 0 failed, $0.02, 204 s
+100/361 memories, 100 calls, 0 failed, $0.03, 272 s
+125/361 memories, 125 calls, 0 failed, $0.04, 348 s
+150/361 memories, 150 calls, 0 failed, $0.05, 419 s
+175/361 memories, 175 calls, 0 failed, $0.05, 487 s
+200/361 memories, 202 calls, 0 failed, $0.06, 568 s
+225/361 memories, 227 calls, 0 failed, $0.07, 642 s
+250/361 memories, 255 calls, 0 failed, $0.08, 730 s
+275/361 memories, 283 calls, 0 failed, $0.09, 811 s
+300/361 memories, 308 calls, 0 failed, $0.10, 883 s
+325/361 memories, 336 calls, 0 failed, $0.11, 974 s
+350/361 memories, 367 calls, 0 failed, $0.13, 1095 s
+done: {'memories': 361, 'calls': 378, 'failed': 0, 'cost': 0.13, 'seconds': 1129, 'people': 24, 'role groups': 7, 'relations': 23, 'things': 86, 'role links': {'sole_known': 20, 'stated_unique': 12, 'named': 12, 'context': 2, 'someone_else': 1, 'group': 3}, 'name links': {'named': 142, 'untrusted': 7}}

@@ -1,0 +1,552 @@
+{
+  "memories": [
+    {
+      "id": "h01",
+      "title": "Evening drink for my partner",
+      "body": "My partner drinks rooibos in the evening. I keep a tin beside the kettle.",
+      "kind": "fact",
+      "categories": ["personal_preferences"],
+      "sensitivity": "internal",
+      "createdAt": "2026-06-02",
+      "source": "manual"
+    },
+    {
+      "id": "h02",
+      "title": "Evening drink for my sister",
+      "body": "My sister drinks unsweetened mate in the evening. I bought her a spare bombilla.",
+      "kind": "fact",
+      "categories": ["personal_preferences"],
+      "sensitivity": "internal",
+      "createdAt": "2026-06-04",
+      "source": "manual"
+    },
+    {
+      "id": "h03",
+      "title": "Mum's name",
+      "body": "My mum is Elena. She and Dad still live in Buenos Aires.",
+      "kind": "relationship",
+      "categories": ["personal_preferences"],
+      "sensitivity": "internal",
+      "createdAt": "2026-06-06",
+      "source": "manual"
+    },
+    {
+      "id": "h04",
+      "title": "Evening drink for Mum",
+      "body": "My mum drinks chamomile tea in the evening. I put a box in her birthday parcel.",
+      "kind": "fact",
+      "categories": ["personal_preferences"],
+      "sensitivity": "internal",
+      "createdAt": "2026-06-08",
+      "source": "manual"
+    },
+    {
+      "id": "h05",
+      "title": "Regalo para mi hermana",
+      "body": "Mi hermana me pidió ovillos de lana amarilla para su próximo cumpleaños. Quiere tejer una bufanda.",
+      "kind": "fact",
+      "categories": ["personal_preferences"],
+      "sensitivity": "internal",
+      "createdAt": "2026-07-01",
+      "source": "manual"
+    },
+    {
+      "id": "h06",
+      "title": "Jordan's work lunch",
+      "body": "Jordan asked me to pack red lentil soup for lunch on workdays.",
+      "kind": "fact",
+      "categories": ["personal_preferences"],
+      "sensitivity": "internal",
+      "createdAt": "2026-07-03",
+      "source": "manual"
+    },
+    {
+      "id": "h07",
+      "title": "Erik Halvorsen's update format",
+      "body": "Erik Halvorsen is my manager for the Nordwind contract. He asked me to send weekly updates as PDF attachments.",
+      "kind": "relationship",
+      "categories": ["project_context", "communication_style"],
+      "sensitivity": "internal",
+      "createdAt": "2026-06-10",
+      "source": "manual"
+    },
+    {
+      "id": "h08",
+      "title": "Nordwind manager handover",
+      "body": "From 19 October 2026, Erik Lund, Nordwind's operations lead, is my manager for the contract. He takes over that role from Erik Halvorsen, who remains CTO. They are two different people.",
+      "kind": "relationship",
+      "categories": ["project_context"],
+      "sensitivity": "internal",
+      "createdAt": "2026-10-19",
+      "source": "manual"
+    },
+    {
+      "id": "h09",
+      "title": "My manager's update format",
+      "body": "My manager now wants my weekly Nordwind updates as Markdown files.",
+      "kind": "fact",
+      "categories": ["project_context", "communication_style"],
+      "sensitivity": "internal",
+      "createdAt": "2026-10-20",
+      "source": "manual"
+    },
+    {
+      "id": "h10",
+      "title": "Erik Halvorsen's meeting drink",
+      "body": "I noted Erik Halvorsen's usual drink for our meetings: a double espresso.",
+      "kind": "fact",
+      "categories": ["project_context", "personal_preferences"],
+      "sensitivity": "internal",
+      "createdAt": "2026-09-14",
+      "source": "manual"
+    },
+    {
+      "id": "h11",
+      "title": "Erik Lund's meeting drink",
+      "body": "I noted Erik Lund's usual drink for our meetings: peppermint tea.",
+      "kind": "fact",
+      "categories": ["project_context", "personal_preferences"],
+      "sensitivity": "internal",
+      "createdAt": "2026-10-21",
+      "source": "manual"
+    },
+    {
+      "id": "h12",
+      "title": "Tea conversation with Priya",
+      "body": "Priya is also a friend of mine. My friend's sister drinks oolong in the evening; Priya mentioned it when I asked about tea gifts.",
+      "kind": "fact",
+      "categories": ["personal_preferences"],
+      "sensitivity": "internal",
+      "createdAt": "2026-08-12",
+      "source": "manual"
+    },
+    {
+      "id": "h13",
+      "title": "Partner's ceramics preference",
+      "body": "Sam's partner collects blue ceramics, especially small bowls.",
+      "kind": "fact",
+      "categories": ["personal_preferences"],
+      "sensitivity": "internal",
+      "createdAt": "2026-08-14",
+      "source": "agent_write"
+    },
+    {
+      "id": "h14",
+      "title": "Marta's evening tea",
+      "body": "Marta Silva told me she drinks jasmine tea in the evening. I brought a packet to the clubhouse.",
+      "kind": "fact",
+      "categories": ["personal_preferences"],
+      "sensitivity": "internal",
+      "createdAt": "2026-10-02",
+      "source": "manual"
+    },
+    {
+      "id": "h15",
+      "title": "My sister's thermos",
+      "body": "My sister uses a green thermos for her mate. I recognised it in the picnic photo she sent.",
+      "kind": "fact",
+      "categories": ["personal_preferences"],
+      "sensitivity": "internal",
+      "createdAt": "2026-08-18",
+      "source": "manual"
+    },
+    {
+      "id": "h16",
+      "title": "Mum's preferred calling app",
+      "body": "Sam's mum prefers Signal for their Sunday calls.",
+      "kind": "fact",
+      "categories": ["personal_preferences", "communication_style"],
+      "sensitivity": "internal",
+      "createdAt": "2026-10-24",
+      "source": "agent_write"
+    }
+  ],
+  "queries": [
+    {
+      "id": "a01",
+      "query": "What does Jordan drink in the evening?",
+      "tags": ["name_to_role", "partner", "drink_collision", "link_evidence"],
+      "answerable": true,
+      "targets": ["h01"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\brooibos\\b"],
+          "required": true,
+          "memory": "h01"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Someone else's evening drink attributed to Jordan",
+          "all": ["\\b(?:mate|chamomile|oolong|jasmine)\\b"],
+          "none": ["\\b(?:not|never|instead|rather|unlike|luc[ií]a|sister|elena|mum|mother|priya|marta)\\b"]
+        }
+      ]
+    },
+    {
+      "id": "a02",
+      "query": "What does Lucía drink in the evening?",
+      "tags": ["name_to_role", "sister", "drink_collision", "nested_role_trap", "link_evidence"],
+      "answerable": true,
+      "targets": ["h02"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\bmate\\b"],
+          "required": true,
+          "memory": "h02"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Partner's or mother's drink attributed to Lucía",
+          "all": ["\\b(?:rooibos|chamomile)\\b"],
+          "none": ["\\b(?:not|never|instead|rather|unlike|jordan|partner|elena|mum|mother)\\b"]
+        },
+        {
+          "label": "Priya's sister's drink attributed to Sam's sister",
+          "all": ["\\boolong\\b"],
+          "none": ["\\b(?:not|never|instead|rather|unlike|priya)\\b", "\\bfriend['’]?s\\s+sister\\b"]
+        },
+        {
+          "label": "Marta's drink attributed to Lucía",
+          "all": ["\\bjasmine\\b"],
+          "none": ["\\b(?:not|never|instead|rather|unlike|marta)\\b"]
+        }
+      ]
+    },
+    {
+      "id": "a03",
+      "query": "Elena's evening tea?",
+      "tags": ["name_to_role", "mum", "drink_collision", "link_evidence"],
+      "answerable": true,
+      "targets": ["h04"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\bchamomile\\b"],
+          "required": true,
+          "memory": "h04"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Another person's tea attributed to Elena",
+          "all": ["\\b(?:rooibos|mate|oolong|jasmine)\\b"],
+          "none": ["\\b(?:not|never|instead|rather|unlike|jordan|partner|luc[ií]a|sister|priya|marta)\\b"]
+        }
+      ]
+    },
+    {
+      "id": "a04",
+      "query": "What soup did my partner ask me to pack for work?",
+      "tags": ["role_to_name", "partner", "food"],
+      "answerable": true,
+      "targets": ["h06"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\bred\\s+lentil\\b"],
+          "required": true,
+          "memory": "h06"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Invented soup filling",
+          "all": ["\\b(?:chicken|beef|fish)\\b"],
+          "none": ["\\b(?:not|never|without|rather|instead)\\b"]
+        }
+      ]
+    },
+    {
+      "id": "a05",
+      "query": "¿Qué me pidió Lucía para su cumpleaños?",
+      "tags": ["spanish_query", "spanish_memory", "name_to_role", "sister", "link_evidence"],
+      "answerable": true,
+      "targets": ["h05"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\b(?:lana|ovillos?|wool|yarn)\\b", "\\b(?:amarill\\w*|yellow)\\b"],
+          "required": true,
+          "memory": "h05"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Partner's ceramics substituted for Lucía's requested gift",
+          "all": ["cer[aá]mic"],
+          "none": ["\\b(?:no|not|nunca|never|jordan|pareja|partner)\\b"]
+        }
+      ]
+    },
+    {
+      "id": "a06",
+      "query": "¿Qué toma mi hermana por la noche?",
+      "tags": ["spanish_query", "cross_language", "role_query", "sister", "nested_role_trap"],
+      "answerable": true,
+      "targets": ["h02"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\bmate\\b"],
+          "required": true,
+          "memory": "h02"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Another relative's drink attributed to Sam's sister",
+          "all": ["\\b(?:rooibos|chamomile|manzanilla|jasmine|jazm[ií]n)\\b"],
+          "none": ["\\b(?:no|not|nunca|never|jordan|pareja|partner|elena|mam[aá]|madre|mum|mother|marta)\\b"]
+        },
+        {
+          "label": "Friend's sister confused with Sam's sister",
+          "all": ["\\boolong\\b"],
+          "none": ["\\b(?:no|not|nunca|never|priya)\\b", "hermana\\s+de\\s+(?:(?:mi|tu|su|una)\\s+)?amiga", "friend['’]?s\\s+sister"]
+        }
+      ]
+    },
+    {
+      "id": "a07",
+      "query": "Who's my manager at Nordwind now?",
+      "tags": ["changed_role", "current_holder", "shared_first_name", "role_query"],
+      "answerable": true,
+      "targets": ["h08"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\berik\\s+lund\\b"],
+          "required": true,
+          "memory": "h08"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Former manager presented as the current manager",
+          "all": ["\\bhalvorsen\\b", "\\b(?:manager|manages|lead|leads)\\b"],
+          "none": ["\\b(?:former|previous|previously|formerly|until|was|replaced|replaces|replacing|succeeded|succeeds|not)\\b", "used to", "takes? over from", "took over from"]
+        }
+      ]
+    },
+    {
+      "id": "a08",
+      "query": "What format does my manager want for weekly Nordwind updates now?",
+      "tags": ["changed_role", "current_holder", "role_only_memory", "format_collision"],
+      "answerable": true,
+      "targets": ["h09"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\bmarkdown\\b"],
+          "required": true,
+          "memory": "h09"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Former manager's PDF preference used as the current requirement",
+          "all": ["\\bpdf\\b"],
+          "none": ["\\b(?:former|previous|previously|formerly|halvorsen|not|instead|rather|used)\\b", "no longer"]
+        }
+      ]
+    },
+    {
+      "id": "a09",
+      "query": "What format did Erik Halvorsen ask for when he managed my Nordwind contract?",
+      "tags": ["changed_role", "former_holder", "shared_first_name", "format_collision"],
+      "answerable": true,
+      "targets": ["h07"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\bpdf\\b"],
+          "required": true,
+          "memory": "h07"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Current manager's Markdown preference attributed to Halvorsen",
+          "all": ["\\bmarkdown\\b"],
+          "none": ["\\b(?:lund|current|now|not|instead|rather)\\b"]
+        }
+      ]
+    },
+    {
+      "id": "a10",
+      "query": "What does Erik Lund usually drink in meetings?",
+      "tags": ["shared_first_name", "full_name_disambiguation", "drink_collision"],
+      "answerable": true,
+      "targets": ["h11"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\bpeppermint\\b"],
+          "required": true,
+          "memory": "h11"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Erik Halvorsen's drink attributed to Erik Lund",
+          "all": ["\\bespresso\\b"],
+          "none": ["\\b(?:halvorsen|not|never|instead|rather|unlike)\\b"]
+        }
+      ]
+    },
+    {
+      "id": "a11",
+      "query": "Erik Halvorsen's usual meeting drink",
+      "tags": ["shared_first_name", "full_name_disambiguation", "drink_collision"],
+      "answerable": true,
+      "targets": ["h10"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\bdouble\\b", "\\bespresso\\b"],
+          "required": true,
+          "memory": "h10"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Erik Lund's drink attributed to Erik Halvorsen",
+          "all": ["\\bpeppermint\\b"],
+          "none": ["\\b(?:lund|not|never|instead|rather|unlike)\\b"]
+        }
+      ]
+    },
+    {
+      "id": "a12",
+      "query": "Priya",
+      "tags": ["name_only", "person_recall", "nested_role"],
+      "answerable": false,
+      "targets": [],
+      "about": ["m117", "a08", "h12"],
+      "facts": [],
+      "must_not": []
+    },
+    {
+      "id": "a13",
+      "query": "Marta Silva",
+      "tags": ["name_only", "person_recall"],
+      "answerable": false,
+      "targets": [],
+      "about": ["m091", "a07", "h14"],
+      "facts": [],
+      "must_not": []
+    },
+    {
+      "id": "a14",
+      "query": "Which university did Lucía graduate from?",
+      "tags": ["unanswerable", "known_person_unknown_fact", "abstention"],
+      "answerable": false,
+      "targets": [],
+      "about": [],
+      "facts": [],
+      "must_not": [
+        {
+          "label": "an invented answer",
+          "all": ["."],
+          "none": []
+        }
+      ]
+    },
+    {
+      "id": "a15",
+      "query": "How do I make coffee at home?",
+      "tags": ["no_person", "regression_control", "drink_topic"],
+      "answerable": true,
+      "targets": ["m025"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\bv\\s*60\\b"],
+          "required": true,
+          "memory": "m025"
+        },
+        {
+          "keys": ["\\blight[ -]?roast\\b", "\\b(?:fresh\\w*|grind\\w*|ground)\\b"],
+          "required": true,
+          "memory": "m025"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Someone else's espresso order substituted for Sam's home coffee method",
+          "all": ["\\bespresso\\b"],
+          "none": ["\\b(?:erik|halvorsen|not|instead|rather|unlike)\\b"]
+        }
+      ]
+    },
+    {
+      "id": "a16",
+      "query": "What colour ceramics does Jordan collect?",
+      "tags": ["name_to_role", "third_person_summary", "agent_write", "link_evidence"],
+      "answerable": true,
+      "targets": ["h13"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\bblue\\b"],
+          "required": true,
+          "memory": "h13"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Sister's gift or thermos colour attributed to Jordan's ceramics",
+          "all": ["\\b(?:yellow|green)\\b"],
+          "none": ["\\b(?:luc[ií]a|sister|wool|yarn|thermos|not|instead|rather)\\b"]
+        }
+      ]
+    },
+    {
+      "id": "a17",
+      "query": "What colour is Lucía's mate thermos?",
+      "tags": ["name_to_role", "sister", "link_evidence", "colour_collision"],
+      "answerable": true,
+      "targets": ["h15"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\bgreen\\b"],
+          "required": true,
+          "memory": "h15"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Ceramics or wool colour substituted for the thermos colour",
+          "all": ["\\b(?:blue|yellow)\\b"],
+          "none": ["\\b(?:jordan|partner|ceramics|wool|yarn|not|instead|rather)\\b"]
+        }
+      ]
+    },
+    {
+      "id": "a18",
+      "query": "Which app does Elena prefer for our Sunday calls?",
+      "tags": ["name_to_role", "mum", "third_person_summary", "agent_write", "link_evidence"],
+      "answerable": true,
+      "targets": ["h16"],
+      "about": [],
+      "facts": [
+        {
+          "keys": ["\\bsignal\\b"],
+          "required": true,
+          "memory": "h16"
+        }
+      ],
+      "must_not": [
+        {
+          "label": "Invented calling app",
+          "all": ["\\b(?:whatsapp|facetime|skype|zoom|telegram)\\b"],
+          "none": ["\\b(?:not|never|instead|rather)\\b"]
+        }
+      ]
+    }
+  ]
+}

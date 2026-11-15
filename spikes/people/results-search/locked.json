@@ -1,0 +1,17 @@
+{
+ "boost": 0.0,
+ "others": 0.1,
+ "cap": null,
+ "locked_at": "2026-11-14T18:40:34",
+ "rule": "no per-target losses on the tune data, then most targets in the top 3, then fewest losses under a missed link",
+ "sha256": {
+  "search.py": "6aab07bf11e47ece50c3c61ccaccba1adbf466f6a06812bcb783fdf7dcc71266",
+  "rank_eval.py": "ed573e72058292e9702f7f65c2e67bb80ef6e3216a7d53a08192440365b34c61",
+  "search_answers.py": "48dcd28fa5f8dfce5dfa0d3b4b524b583ee29d6c56e863e75c254a4e294f766d",
+  "people.py": "409ec09224dcd37e9506de3700064da5b0414a1a2cc0352730df5144bac804c1",
+  "build_search.py": "4c499cb6c11c081b2672280191b558d3b257d2763d339b5b6d94a7992ec8a74e",
+  "fixtures/search-vault-busy.json": "cafa714f7b5b53bdf8b7d7d7593db0dd3e78af0958e711da7a47ef0526c052f3",
+  "fixtures/search-queries-busy.json": "f666d54a7141900f87ded1ea18b97646c1d9f51100311792f19d795f5f08094a",
+  "fixtures/search-queries-astra.json": "031587f7f87071e52de96f9da4d49de09083f668398fd8fd39984ac0961217a0"
+ }
+}

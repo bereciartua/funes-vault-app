@@ -1,0 +1,2733 @@
+[
+ {
+  "id": "s01",
+  "query": "What does Lucía drink?",
+  "rest": "What does drink",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m040",
+   "m041",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p08",
+   "p09",
+   "p10",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Lucía": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p9"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "full",
+   "m044": "full",
+   "p01": "weak",
+   "p07": "full",
+   "p11": "weak",
+   "p19": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister"
+   },
+   "m042": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister"
+   },
+   "m044": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p01": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   },
+   "p07": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p11": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana"
+   },
+   "p19": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   }
+  }
+ },
+ {
+  "id": "s02",
+  "query": "What is Jordan allergic to?",
+  "rest": "What is allergic to",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m006",
+   "m042",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "p01",
+   "p02",
+   "p04",
+   "p05",
+   "p06",
+   "p07",
+   "p08",
+   "p09",
+   "p10",
+   "p11",
+   "p14",
+   "p15",
+   "p19",
+   "p22"
+  ],
+  "matched": {
+   "Jordan": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p3"
+  ],
+  "admitted": {
+   "m129": "full",
+   "m040": "full",
+   "m041": "full",
+   "p12": "full",
+   "p03": "full",
+   "m044": "full",
+   "p21": "full",
+   "p16": "full"
+  },
+  "via": {
+   "m129": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m040": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m041": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p12": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p03": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "m044": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p21": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p16": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   }
+  }
+ },
+ {
+  "id": "s03",
+  "query": "What should I get my mum?",
+  "rest": "What should I get",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m040",
+   "m041",
+   "m042",
+   "m044",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p01",
+   "p02",
+   "p03",
+   "p04",
+   "p06",
+   "p07",
+   "p08",
+   "p09",
+   "p10",
+   "p11",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p19",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "group:parent/": [
+    "full",
+    "role:parent"
+   ],
+   "group:parent/mother": [
+    "full",
+    "role:parent"
+   ]
+  },
+  "matched_ids": [
+   "p15",
+   "p4"
+  ],
+  "admitted": {
+   "m006": "full",
+   "m043": "full",
+   "p05": "full"
+  },
+  "via": {
+   "m006": {
+    "person": "p4",
+    "kind": "role",
+    "basis": "group",
+    "surface": "my parents"
+   },
+   "m043": {
+    "person": "p4",
+    "kind": "role",
+    "basis": "group",
+    "surface": "My parents"
+   },
+   "p05": {
+    "person": "p15",
+    "kind": "role",
+    "basis": "group",
+    "surface": "My mum"
+   }
+  }
+ },
+ {
+  "id": "s04",
+  "query": "When is my sister coming to Lisbon?",
+  "rest": "When is coming to Lisbon",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m040",
+   "m041",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p08",
+   "p09",
+   "p10",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Lucía": [
+    "weak",
+    "role:sibling"
+   ]
+  },
+  "matched_ids": [
+   "p9"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "weak",
+   "m044": "weak",
+   "p01": "weak",
+   "p07": "weak",
+   "p11": "weak",
+   "p19": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister"
+   },
+   "m042": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister"
+   },
+   "m044": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p01": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   },
+   "p07": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p11": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana"
+   },
+   "p19": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   }
+  }
+ },
+ {
+  "id": "s05",
+  "query": "When is Lucía visiting?",
+  "rest": "When is visiting",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m040",
+   "m041",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p08",
+   "p09",
+   "p10",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Lucía": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p9"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "full",
+   "m044": "full",
+   "p01": "weak",
+   "p07": "full",
+   "p11": "weak",
+   "p19": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister"
+   },
+   "m042": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister"
+   },
+   "m044": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p01": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   },
+   "p07": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p11": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana"
+   },
+   "p19": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   }
+  }
+ },
+ {
+  "id": "s06",
+  "query": "¿Qué le llevo a Lucía?",
+  "rest": "Qué le llevo a",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m040",
+   "m041",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p08",
+   "p09",
+   "p10",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Lucía": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p9"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "full",
+   "m044": "full",
+   "p01": "weak",
+   "p07": "full",
+   "p11": "weak",
+   "p19": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister"
+   },
+   "m042": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister"
+   },
+   "m044": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p01": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   },
+   "p07": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p11": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana"
+   },
+   "p19": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   }
+  }
+ },
+ {
+  "id": "s07",
+  "query": "Where should I take Jordan for dinner?",
+  "rest": "Where should I take for dinner",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m006",
+   "m042",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "p01",
+   "p02",
+   "p04",
+   "p05",
+   "p06",
+   "p07",
+   "p08",
+   "p09",
+   "p10",
+   "p11",
+   "p14",
+   "p15",
+   "p19",
+   "p22"
+  ],
+  "matched": {
+   "Jordan": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p3"
+  ],
+  "admitted": {
+   "m129": "full",
+   "m040": "full",
+   "m041": "full",
+   "p12": "full",
+   "p03": "full",
+   "m044": "full",
+   "p21": "full",
+   "p16": "full"
+  },
+  "via": {
+   "m129": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m040": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m041": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p12": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p03": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "m044": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p21": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p16": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   }
+  }
+ },
+ {
+  "id": "s08",
+  "query": "Who is my Nordwind contact now?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "s09",
+  "query": "How does Priya like updates?",
+  "rest": "How does like updates",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m006",
+   "m040",
+   "m041",
+   "m042",
+   "m043",
+   "m044",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p01",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p07",
+   "p08",
+   "p10",
+   "p11",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p19",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Priya Raman": [
+    "full",
+    "name"
+   ],
+   "Priya": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p14",
+   "p8"
+  ],
+  "admitted": {
+   "p09": "full"
+  },
+  "via": {
+   "p09": {
+    "person": "p14",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Priya Raman"
+   }
+  }
+ },
+ {
+  "id": "s10",
+  "query": "What does Ana drink?",
+  "rest": "What does drink",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m006",
+   "m040",
+   "m041",
+   "m042",
+   "m043",
+   "m044",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p01",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p07",
+   "p08",
+   "p09",
+   "p11",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p19",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Ana": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p12"
+  ],
+  "admitted": {
+   "p02": "full",
+   "p10": "full"
+  },
+  "via": {
+   "p02": {
+    "person": "p12",
+    "kind": "role",
+    "basis": "named",
+    "surface": "my climbing friend"
+   },
+   "p10": {
+    "person": "p12",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Ana"
+   }
+  }
+ },
+ {
+  "id": "s11",
+  "query": "How does Marta want invoices?",
+  "rest": "How does want invoices",
+  "others": [
+   "a02",
+   "a04",
+   "m006",
+   "m040",
+   "m041",
+   "m042",
+   "m043",
+   "m044",
+   "m102",
+   "m128",
+   "m129",
+   "p01",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p07",
+   "p08",
+   "p09",
+   "p10",
+   "p11",
+   "p12",
+   "p15",
+   "p16",
+   "p19",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Marta": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p10"
+  ],
+  "admitted": {
+   "p14": "full",
+   "m091": "full",
+   "a07": "full"
+  },
+  "via": {
+   "p14": {
+    "person": "p10",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Marta"
+   },
+   "m091": {
+    "person": "p10",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Marta Silva"
+   },
+   "a07": {
+    "person": "p10",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Marta Silva"
+   }
+  }
+ },
+ {
+  "id": "s12",
+  "query": "What wine did Tomás recommend?",
+  "rest": "What wine did recommend",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m006",
+   "m040",
+   "m041",
+   "m042",
+   "m043",
+   "m044",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p01",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p07",
+   "p08",
+   "p09",
+   "p10",
+   "p11",
+   "p12",
+   "p14",
+   "p19",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Tomás": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p13"
+  ],
+  "admitted": {
+   "p15": "full",
+   "p16": "full"
+  },
+  "via": {
+   "p15": {
+    "person": "p13",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My friend"
+   },
+   "p16": {
+    "person": "p13",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Tomás"
+   }
+  }
+ },
+ {
+  "id": "s13",
+  "query": "What does my partner want for our anniversary?",
+  "rest": "What does want for our anniversary",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m006",
+   "m042",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "p01",
+   "p02",
+   "p04",
+   "p05",
+   "p06",
+   "p07",
+   "p08",
+   "p09",
+   "p10",
+   "p11",
+   "p14",
+   "p15",
+   "p19",
+   "p22"
+  ],
+  "matched": {
+   "Jordan": [
+    "full",
+    "role:partner"
+   ]
+  },
+  "matched_ids": [
+   "p3"
+  ],
+  "admitted": {
+   "m129": "full",
+   "m040": "full",
+   "m041": "full",
+   "p12": "full",
+   "p03": "full",
+   "m044": "full",
+   "p21": "full",
+   "p16": "full"
+  },
+  "via": {
+   "m129": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m040": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m041": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p12": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p03": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "m044": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p21": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p16": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   }
+  }
+ },
+ {
+  "id": "s14",
+  "query": "What gift ideas do I have for my sister's kids?",
+  "rest": "What gift ideas do I have for kids",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m040",
+   "m041",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p08",
+   "p09",
+   "p10",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Lucía": [
+    "weak",
+    "role:sibling"
+   ]
+  },
+  "matched_ids": [
+   "p9"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "weak",
+   "m044": "weak",
+   "p01": "weak",
+   "p07": "weak",
+   "p11": "weak",
+   "p19": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister"
+   },
+   "m042": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister"
+   },
+   "m044": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p01": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   },
+   "p07": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p11": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana"
+   },
+   "p19": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   }
+  }
+ },
+ {
+  "id": "s15",
+  "query": "Jordan",
+  "rest": "",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m006",
+   "m042",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "p01",
+   "p02",
+   "p04",
+   "p05",
+   "p06",
+   "p07",
+   "p08",
+   "p09",
+   "p10",
+   "p11",
+   "p14",
+   "p15",
+   "p19",
+   "p22"
+  ],
+  "matched": {
+   "Jordan": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p3"
+  ],
+  "admitted": {
+   "m129": "full",
+   "m040": "full",
+   "m041": "full",
+   "p12": "full",
+   "p03": "full",
+   "m044": "full",
+   "p21": "full",
+   "p16": "full"
+  },
+  "via": {
+   "m129": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m040": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m041": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p12": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p03": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "m044": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p21": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p16": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   }
+  }
+ },
+ {
+  "id": "s16",
+  "query": "Lucía",
+  "rest": "",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m040",
+   "m041",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p08",
+   "p09",
+   "p10",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Lucía": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p9"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "full",
+   "m044": "full",
+   "p01": "weak",
+   "p07": "full",
+   "p11": "weak",
+   "p19": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister"
+   },
+   "m042": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister"
+   },
+   "m044": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p01": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   },
+   "p07": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p11": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana"
+   },
+   "p19": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   }
+  }
+ },
+ {
+  "id": "s17",
+  "query": "How does my manager want status updates?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "s18",
+  "query": "What's Erik's coffee order?",
+  "rest": "What's coffee order",
+  "others": [
+   "a07",
+   "m006",
+   "m040",
+   "m041",
+   "m042",
+   "m043",
+   "m044",
+   "m091",
+   "m128",
+   "m129",
+   "p01",
+   "p02",
+   "p03",
+   "p05",
+   "p06",
+   "p07",
+   "p10",
+   "p11",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p19",
+   "p21"
+  ],
+  "matched": {
+   "Erik Halvorsen": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p6"
+  ],
+  "admitted": {
+   "a04": "full",
+   "m102": "full",
+   "p22": "full",
+   "p08": "full",
+   "p04": "full",
+   "p09": "full",
+   "a02": "weak"
+  },
+  "via": {
+   "a04": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Halvorsen"
+   },
+   "m102": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Halvorsen"
+   },
+   "p22": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik"
+   },
+   "p08": {
+    "person": "p6",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My manager"
+   },
+   "p04": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik"
+   },
+   "p09": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik"
+   },
+   "a02": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "untrusted",
+    "surface": "Erik"
+   }
+  }
+ },
+ {
+  "id": "s19",
+  "query": "How should I explain video calls to my dad?",
+  "rest": "How should I explain video calls to",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m040",
+   "m041",
+   "m042",
+   "m044",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p01",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p07",
+   "p08",
+   "p09",
+   "p10",
+   "p11",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p19",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "group:parent/": [
+    "full",
+    "role:parent"
+   ],
+   "group:parent/father": [
+    "full",
+    "role:parent"
+   ]
+  },
+  "matched_ids": [
+   "p16",
+   "p4"
+  ],
+  "admitted": {
+   "m006": "full",
+   "m043": "full",
+   "p06": "full"
+  },
+  "via": {
+   "m006": {
+    "person": "p4",
+    "kind": "role",
+    "basis": "group",
+    "surface": "my parents"
+   },
+   "m043": {
+    "person": "p4",
+    "kind": "role",
+    "basis": "group",
+    "surface": "My parents"
+   },
+   "p06": {
+    "person": "p16",
+    "kind": "role",
+    "basis": "group",
+    "surface": "My dad"
+   }
+  }
+ },
+ {
+  "id": "s20",
+  "query": "What's Lucía's favourite colour?",
+  "rest": "What's favourite colour",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m040",
+   "m041",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p08",
+   "p09",
+   "p10",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Lucía": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p9"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "full",
+   "m044": "full",
+   "p01": "weak",
+   "p07": "full",
+   "p11": "weak",
+   "p19": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister"
+   },
+   "m042": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister"
+   },
+   "m044": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p01": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   },
+   "p07": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p11": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana"
+   },
+   "p19": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   }
+  }
+ },
+ {
+  "id": "q01",
+  "query": "What's my coffee order?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q02",
+  "query": "Do I eat fish?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q03",
+  "query": "What does Jordan do for work?",
+  "rest": "What does do for work",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m006",
+   "m042",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "p01",
+   "p02",
+   "p04",
+   "p05",
+   "p06",
+   "p07",
+   "p08",
+   "p09",
+   "p10",
+   "p11",
+   "p14",
+   "p15",
+   "p19",
+   "p22"
+  ],
+  "matched": {
+   "Jordan": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p3"
+  ],
+  "admitted": {
+   "m129": "full",
+   "m040": "full",
+   "m041": "full",
+   "p12": "full",
+   "p03": "full",
+   "m044": "full",
+   "p21": "full",
+   "p16": "full"
+  },
+  "via": {
+   "m129": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m040": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m041": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p12": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p03": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "m044": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p21": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p16": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   }
+  }
+ },
+ {
+  "id": "q04",
+  "query": "Who is my lead at Nordwind?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q05",
+  "query": "What is Erik Halvorsen's title?",
+  "rest": "What is title",
+  "others": [
+   "a07",
+   "m006",
+   "m040",
+   "m041",
+   "m042",
+   "m043",
+   "m044",
+   "m091",
+   "m128",
+   "m129",
+   "p01",
+   "p02",
+   "p03",
+   "p05",
+   "p06",
+   "p07",
+   "p10",
+   "p11",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p19",
+   "p21"
+  ],
+  "matched": {
+   "Erik Halvorsen": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p6"
+  ],
+  "admitted": {
+   "a04": "full",
+   "m102": "full",
+   "p22": "full",
+   "p08": "full",
+   "p04": "full",
+   "p09": "full",
+   "a02": "weak"
+  },
+  "via": {
+   "a04": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Halvorsen"
+   },
+   "m102": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik Halvorsen"
+   },
+   "p22": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik"
+   },
+   "p08": {
+    "person": "p6",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My manager"
+   },
+   "p04": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik"
+   },
+   "p09": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Erik"
+   },
+   "a02": {
+    "person": "p6",
+    "kind": "name",
+    "basis": "untrusted",
+    "surface": "Erik"
+   }
+  }
+ },
+ {
+  "id": "q06",
+  "query": "When is the Harbor beta?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q07",
+  "query": "When is the Atlas cut-over?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q08",
+  "query": "Where am I staying in Kanazawa?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q09",
+  "query": "When is the Harbor demo for the club board?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q10",
+  "query": "What's my day rate?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q11",
+  "query": "Who is my family doctor?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q12",
+  "query": "What's my cat called?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q13",
+  "query": "Who feeds my cat when I travel?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q14",
+  "query": "Which days do I work from the coworking space?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q15",
+  "query": "When are the Nordwind standups?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q16",
+  "query": "What's the Harbor App Store submission date?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q17",
+  "query": "How many people will use Harbor?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q18",
+  "query": "Who approves Harbor invoices?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q19",
+  "query": "What licence do my open-source projects use?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q20",
+  "query": "Which package manager do I use for TypeScript?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q21",
+  "query": "Should commit messages use conventional-commit prefixes?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q22",
+  "query": "How are feature branches merged?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q23",
+  "query": "Who might build Harbor's Android app?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q24",
+  "query": "How long before a Harbor booking can I cancel?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q25",
+  "query": "When and where is my conference talk?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q26",
+  "query": "What's my marathon goal?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q27",
+  "query": "When can I take on new client work?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q28",
+  "query": "What's next on the Ledgerly roadmap?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q29",
+  "query": "What time zone am I in?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q30",
+  "query": "¿Cuándo es el cumpleaños de Lucía?",
+  "rest": "Cuándo es el cumpleaños de",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m040",
+   "m041",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p08",
+   "p09",
+   "p10",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Lucía": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p9"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "full",
+   "m044": "full",
+   "p01": "weak",
+   "p07": "full",
+   "p11": "weak",
+   "p19": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister"
+   },
+   "m042": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister"
+   },
+   "m044": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p01": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   },
+   "p07": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p11": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana"
+   },
+   "p19": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   }
+  }
+ },
+ {
+  "id": "q31",
+  "query": "¿Dónde vive mi hermana?",
+  "rest": "Dónde vive",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m040",
+   "m041",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p02",
+   "p03",
+   "p04",
+   "p05",
+   "p06",
+   "p08",
+   "p09",
+   "p10",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "Lucía": [
+    "weak",
+    "role:sibling"
+   ]
+  },
+  "matched_ids": [
+   "p9"
+  ],
+  "admitted": {
+   "m006": "weak",
+   "m042": "weak",
+   "m044": "weak",
+   "p01": "weak",
+   "p07": "weak",
+   "p11": "weak",
+   "p19": "weak"
+  },
+  "via": {
+   "m006": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "my sister"
+   },
+   "m042": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "named",
+    "surface": "My sister"
+   },
+   "m044": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p01": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   },
+   "p07": {
+    "person": "p9",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Lucía"
+   },
+   "p11": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "Mi hermana"
+   },
+   "p19": {
+    "person": "p9",
+    "kind": "role",
+    "basis": "sole_known",
+    "surface": "My sister"
+   }
+  }
+ },
+ {
+  "id": "q32",
+  "query": "¿Cuál es el presupuesto de la reforma de la cocina?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q33",
+  "query": "What's my favourite football team?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q34",
+  "query": "What's the name of Miso's vet?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q35",
+  "query": "What car do I drive?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q36",
+  "query": "What's Jordan's favourite colour?",
+  "rest": "What's favourite colour",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m006",
+   "m042",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "p01",
+   "p02",
+   "p04",
+   "p05",
+   "p06",
+   "p07",
+   "p08",
+   "p09",
+   "p10",
+   "p11",
+   "p14",
+   "p15",
+   "p19",
+   "p22"
+  ],
+  "matched": {
+   "Jordan": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p3"
+  ],
+  "admitted": {
+   "m129": "full",
+   "m040": "full",
+   "m041": "full",
+   "p12": "full",
+   "p03": "full",
+   "m044": "full",
+   "p21": "full",
+   "p16": "full"
+  },
+  "via": {
+   "m129": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m040": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m041": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p12": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p03": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "m044": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p21": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p16": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   }
+  }
+ },
+ {
+  "id": "q37",
+  "query": "How much is the club paying for Harbor?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q38",
+  "query": "What are my Q4 2026 priorities?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q39",
+  "query": "What does Harbor's backend run on?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q40",
+  "query": "Can I give clients my phone number?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q41",
+  "query": "What do I think of horror films?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "q42",
+  "query": "What is the rollback plan for the Atlas cut-over?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq01",
+  "query": "Write a commit message for my latest change",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq02",
+  "query": "Plan a week of dinners for me",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq03",
+  "query": "Draft an email reminding the sailing club treasurer that last month's invoice is overdue",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq04",
+  "query": "Book train tickets and somewhere to stay for a weekend in Porto",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq05",
+  "query": "What should I order at a café this afternoon?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq06",
+  "query": "Set up a new Python project that parses bank statement exports",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq07",
+  "query": "Review this pull request for the Nordwind dispatch service",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq08",
+  "query": "Suggest a running plan for the next four weeks",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq09",
+  "query": "Find a time next week for an intro call with a prospective client",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq10",
+  "query": "The doctor wants to prescribe antibiotics. Is there anything they should know?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq11",
+  "query": "Help me get my paperwork together for this year's income tax filing",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq12",
+  "query": "Help me write a blog post about building the Harbor app",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq13",
+  "query": "A client sent a contract with a 12-month non-compete. Should I sign it?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq14",
+  "query": "Summarize the terms and conditions of this new service",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq15",
+  "query": "Build a settings screen for my SwiftUI app",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq16",
+  "query": "What should I get Jordan for their birthday?",
+  "rest": "What should I get for their birthday",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m006",
+   "m042",
+   "m043",
+   "m091",
+   "m102",
+   "m128",
+   "p01",
+   "p02",
+   "p04",
+   "p05",
+   "p06",
+   "p07",
+   "p08",
+   "p09",
+   "p10",
+   "p11",
+   "p14",
+   "p15",
+   "p19",
+   "p22"
+  ],
+  "matched": {
+   "Jordan": [
+    "full",
+    "name"
+   ]
+  },
+  "matched_ids": [
+   "p3"
+  ],
+  "admitted": {
+   "m129": "full",
+   "m040": "full",
+   "m041": "full",
+   "p12": "full",
+   "p03": "full",
+   "m044": "full",
+   "p21": "full",
+   "p16": "full"
+  },
+  "via": {
+   "m129": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m040": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "m041": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p12": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p03": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "m044": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   },
+   "p21": {
+    "person": "p3",
+    "kind": "role",
+    "basis": "stated_unique",
+    "surface": "My partner"
+   },
+   "p16": {
+    "person": "p3",
+    "kind": "name",
+    "basis": "named",
+    "surface": "Jordan"
+   }
+  }
+ },
+ {
+  "id": "bq17",
+  "query": "My head hurts after a long day at the computer. Any advice?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq18",
+  "query": "How much should I put into savings and investments this month?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq19",
+  "query": "Write the privacy policy for my iOS app",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq20",
+  "query": "Help me write a message to my mum about my next visit",
+  "rest": "Help me write a message to about my next visit",
+  "others": [
+   "a02",
+   "a04",
+   "a07",
+   "m040",
+   "m041",
+   "m042",
+   "m044",
+   "m091",
+   "m102",
+   "m128",
+   "m129",
+   "p01",
+   "p02",
+   "p03",
+   "p04",
+   "p06",
+   "p07",
+   "p08",
+   "p09",
+   "p10",
+   "p11",
+   "p12",
+   "p14",
+   "p15",
+   "p16",
+   "p19",
+   "p21",
+   "p22"
+  ],
+  "matched": {
+   "group:parent/": [
+    "full",
+    "role:parent"
+   ],
+   "group:parent/mother": [
+    "full",
+    "role:parent"
+   ]
+  },
+  "matched_ids": [
+   "p15",
+   "p4"
+  ],
+  "admitted": {
+   "m006": "full",
+   "m043": "full",
+   "p05": "full"
+  },
+  "via": {
+   "m006": {
+    "person": "p4",
+    "kind": "role",
+    "basis": "group",
+    "surface": "my parents"
+   },
+   "m043": {
+    "person": "p4",
+    "kind": "role",
+    "basis": "group",
+    "surface": "My parents"
+   },
+   "p05": {
+    "person": "p15",
+    "kind": "role",
+    "basis": "group",
+    "surface": "My mum"
+   }
+  }
+ },
+ {
+  "id": "bq21",
+  "query": "Set up automated builds and tests for my open-source library",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq22",
+  "query": "Where should I deploy the server for the booking app?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq23",
+  "query": "Prepare a quote for a three-week freelance engagement",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq24",
+  "query": "The landlord asked whether we'll stay in the flat after the contract ends",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq25",
+  "query": "Write up the notes from today's standup",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq26",
+  "query": "Can I paste the client's database schema into ChatGPT to debug a query?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq27",
+  "query": "Make slides for my Porto conference talk",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq28",
+  "query": "Find a recipe I can cook tonight in half an hour",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq29",
+  "query": "What should I pack for a day out on the water?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ },
+ {
+  "id": "bq30",
+  "query": "How much can we spend on remodelling the kitchen, and how will we pay for it?",
+  "rest": null,
+  "matched": {},
+  "admitted": {},
+  "via": {}
+ }
+]

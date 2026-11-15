@@ -1,0 +1,18 @@
+18 queries, 17 with people; plan → results-search/plan-astra-haiku.json
+  a01: 'What does Jordan drink in the evening?' → {'Jordan': ('full', 'name')} rest='What does drink in the evening' admitted=7
+  a02: 'What does Lucía drink in the evening?' → {'Lucía': ('full', 'name')} rest='What does drink in the evening' admitted=2
+  a03: "Elena's evening tea?" → {'Elena': ('full', 'name')} rest='evening tea' admitted=5
+  a04: 'What soup did my partner ask me to pack for work?' → {'Jordan': ('full', 'role:partner')} rest='What soup did ask me to pack for work' admitted=7
+  a05: '¿Qué me pidió Lucía para su cumpleaños?' → {'Lucía': ('full', 'name')} rest='Qué me pidió para su cumpleaños' admitted=2
+  a06: '¿Qué toma mi hermana por la noche?' → {'group:sibling/sister': ('full', 'role:sibling')} rest='Qué toma por la noche' admitted=5
+  a07: "Who's my manager at Nordwind now?" → {'Erik Lund': ('full', 'role:manager')} rest="Who's at Nordwind now" admitted=3
+  a08: 'What format does my manager want for weekly Nordwind updates now?' → {'Erik Lund': ('full', 'role:manager')} rest='What format does want for weekly Nordwind updates now' admitted=3
+  a09: 'What format did Erik Halvorsen ask for when he managed my Nordwind contract?' → {'Erik Halvorsen': ('full', 'name')} rest='What format did ask for when he managed my Nordwind contract' admitted=6
+  a10: 'What does Erik Lund usually drink in meetings?' → {'Erik Lund': ('full', 'name')} rest='What does usually drink in meetings' admitted=3
+  a11: "Erik Halvorsen's usual meeting drink" → {'Erik Halvorsen': ('full', 'name')} rest='usual meeting drink' admitted=6
+  a12: 'Priya' → {'Priya': ('full', 'name')} rest='' admitted=3
+  a13: 'Marta Silva' → {'Marta Silva': ('full', 'name')} rest='' admitted=3
+  a14: 'Which university did Lucía graduate from?' → {'Lucía': ('full', 'name')} rest='Which university did graduate from' admitted=2
+  a16: 'What colour ceramics does Jordan collect?' → {'Jordan': ('full', 'name')} rest='What colour ceramics does collect' admitted=7
+  a17: "What colour is Lucía's mate thermos?" → {'Lucía': ('full', 'name')} rest='What colour is mate thermos' admitted=2
+  a18: 'Which app does Elena prefer for our Sunday calls?' → {'Elena': ('full', 'name')} rest='Which app does prefer for our Sunday calls' admitted=5
