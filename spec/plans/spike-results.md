@@ -1083,3 +1083,50 @@ Per set, Haiku's correct claims are 51/53 on the main set and 18/19 held-out, Lu
 - **The prompt** gains one rule (finding 2): a claim that only says what the memories don't record isn't an answer; say there's no answer instead.
 - **Suggested model:** any of the three. GPT-6-Luna was the most balanced (one wrong claim, every abstention and both sides of every conflict, the fastest); GPT-5.6-Terra made no wrong claim but gave only the newer value in 3 of 5 conflicts; Claude Haiku passes by one claim. The Settings default stays "Same as New memories" (ADR-0028).
 - **For Phase 9.7 (automatic answers),** whose gate is p50 ≤ 3 s and p95 ≤ 5 s on this Mac: Luna narrowly missed it (3.02 / 5.01 s) under the load of three runs at once. Worth measuring alone before deciding.
+
+## Spike H: People and work history
+
+**Question:** can Funes infer the people your memories mention, your relations to them and your work history without asking you, and do those links make your own search and answers better without making anything worse ([ADR-0032](../architecture/decisions/0032-people-and-work-history.md), proposed)?
+
+**Run:** 13–14 Nov 2026 on the author's MacBook Air M1 (8 GB). The author's vault ran only on private read-only copies outside the repo; only counts are recorded.
+
+**Code:** throwaway harness in [`spikes/people/`](../../spikes/people/) (PR #100), with full results and every review's corrections in its `RESULTS.md`:
+- **Python:** the People pipeline (`people.py`), work history (`work_history.py`), and search and answers (`search.py`, `rank_eval.py`, `search_answers.py`). It calls Claude Code and Codex, not `ModelRouter`.
+- **Swift:** `search-scores`, which runs FunesCore's real vault search with bge-small.
+
+**Reviews:** Fable 5.2 checked each search round; GPT-6-Astra reviewed the round-2 plan before it ran, wrote the blind fixtures, and reviewed plans v2, v4 and this ADR.
+
+### Verdict: links pass; ranking shows no regression; answers help in one shape of question and aren't passed; work history passes on one real question
+
+**Links (fixtures and the author's vault):**
+- **Fixtures:** 26 stories by Claude and 20 by GPT-6-Astra, every arrival order, two runs, four engines. On the final pipeline, full-basis links were right 99.3–100% of the time, recall was 94–97%, and labels invented and forbidden links were 0. Opus 5.5, Haiku 5.5 and Luna made no wrong link.
+- **The author's vault:** 50 of 50 links to a person right, reviewed by the author. 48 of the 50 were name links: the vault has 3 role phrases.
+- **The busy fixture** (written blind by GPT-6-Astra): Haiku found 157 of 159 links and none was wrong. The pipeline was edited after it was written, so it isn't held out.
+
+**Search ranking (bge-small only; the app's qwen3 provider index wasn't re-measured):**
+- Admitting a matched person's memories without a boost never made a target worse, pushed one out of the top 3, or pushed one out of the top 8, in any set or read. That includes 72 regression queries.
+- Plain search already had the answer in the top 3 on the people fixtures, so links didn't move the top 3.
+- Every boost (0.1–0.5) made a missed link rank the right memory below plain search. Even without a boost, an injected missed link did worse than plain search in 2 of 28 held-out cases.
+
+**Answers (Haiku answering, 3 samples, judged blind by Opus 5.5):**
+- **The attribute helps on one shape of question.** On the 5 questions that name a person whose memory says only "my sister" or "my partner", an attribute saying who the memory is about ("Lucía, your sister") took Haiku from 0 of 15 answers naming the person to 15 of 15. Without it, the failures were abstentions and denials.
+- **A wrong attribute led to wrong-person claims:** 7 in 24 answers, and 3 of 3 unhedged when the wrong memory named nobody.
+- **Not passed:** "wrong person named: 0" and "no new wrong claims" weren't met. The evidence is 5 questions of one shape, from one fixture author, with Haiku only; the author's own answer model wasn't tried with attributes.
+
+**Work history (Spike H2):**
+- **The real question:** "What was my job before [current employer]?" failed on the author's iPhone.
+  - The app's real ranking (bge-small plus the qwen3 index, rebuilt from the vault's stored vectors) put the answering memory 34th.
+  - On the author's Search answers model (GPT-5.6-Terra, 6 wordings × 3 samples), the app's real top 10 answered 0 of 18 times.
+  - With 2 memories stating the earlier job added (bridges), 18 of 18 answers named the right employer.
+  - With the bridges chosen by a year-only rule, 18 of 18 named the wrong employer.
+- **The author's review:** 43 of 44 extracted job facts right, the 9 employers right, every date right. The year-only rule guessed a tie; a stint rule with month precision, which leaves ties ambiguous, picks the right job.
+- **The blind fixture** (GPT-6-Astra, 13 stints, 35 questions):
+  - first run (employer-level, years only): 3 right, 5 wrong;
+  - after stints, months, job kinds and gaps: 7 right, 0 wrong, 8 ambiguous;
+  - no negative or in-job question triggered the timeline.
+  - The fixture was used to fix the code, so it's a development set now. 4 clients were still labelled employers, and a role end was once read as a job end.
+
+### Findings
+- **The value of links is in the answer, not the ranking,** at this vault size: who a role-only memory is about, and which job came before which.
+- **A wrong link or a wrong order is the main risk,** because the answer then names the wrong person or job with confidence.
+- **Haiku 5.5 is the default.** It read the author's 365 memories for $0.13 API-equivalent; job extraction added $0.09 (Haiku only).
