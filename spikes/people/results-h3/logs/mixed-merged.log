@@ -1,0 +1,17 @@
+claude-haiku merged run 1 x01 order 0: 5 calls, 0 failed, 35.2 s
+claude-haiku merged run 1 x01 order 1: 6 calls, 0 failed, 40.6 s
+claude-haiku merged run 1 x02 order 0: 5 calls, 0 failed, 28.8 s
+claude-haiku merged run 1 x02 order 1: 5 calls, 0 failed, 29.4 s
+claude-haiku merged run 1 x03 order 0: 6 calls, 0 failed, 44.0 s
+claude-haiku merged run 1 x03 order 1: 6 calls, 0 failed, 40.5 s
+claude-haiku merged run 1 x04 order 0: 5 calls, 0 failed, 27.0 s
+claude-haiku merged run 1 x05 order 0: 6 calls, 0 failed, 39.5 s
+claude-haiku merged run 1 x05 order 1: 6 calls, 0 failed, 38.6 s
+claude-haiku merged run 1 x06 order 0: 7 calls, 0 failed, 41.1 s
+claude-haiku merged run 1 x07 order 0: 6 calls, 0 failed, 40.2 s
+claude-haiku merged run 1 x07 order 1: 5 calls, 0 failed, 35.9 s
+claude-haiku merged run 1 x08 order 0: 6 calls, 0 failed, 33.0 s
+claude-haiku merged run 1 x09 order 0: 5 calls, 0 failed, 33.8 s
+claude-haiku merged run 1 x09 order 1: 6 calls, 0 failed, 42.1 s
+claude-haiku merged run 1 x10 order 0: 6 calls, 0 failed, 31.6 s
+MERGED DONE
