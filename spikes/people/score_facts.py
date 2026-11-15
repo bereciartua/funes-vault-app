@@ -109,14 +109,58 @@ def convert(recs, vault):
     return state
 
 
+def score_stories(results, fixture, out=print):
+    """Story results saved with --keep-state: each story's timeline queries on its own final state, and the
+    organizations misfiled (clients or vendors recorded under a timeline predicate, vendors recorded as clients)."""
+    stories = {x["id"]: x for x in json.loads(Path(fixture).read_text())["stories"]}
+    tot = {"right": 0, "wrong": 0, "ambiguous": 0, "negatives_triggered": 0, "runs": 0}
+    mis = {"client_as_timeline": 0, "vendor_as_timeline": 0, "vendor_as_recorded": 0, "employers_truth": 0, "employers_found": 0}
+    wrong_rows = []
+    for line in Path(results).read_text().splitlines():
+        res = json.loads(line)
+        st = stories[res["story"]]
+        if not st.get("queries"):
+            continue
+        state = load_state(res["state"])
+        r = score_work(state, {"timeline": st["timeline"], "queries": st["queries"]}, out=lambda *_: None)
+        tot["runs"] += 1
+        for k in ("right", "wrong", "ambiguous", "negatives_triggered"):
+            tot[k] += r[k]
+        wrong_rows += [(res["story"], res["orderIndex"], *row) for row in r["rows"] if "WRONG" in row[-1] or row[-1] == "triggered"]
+        tl = F.R.timeline_preds()
+        others = [p for p in F.R.preds if F.R.uses(p, "recorded") and not F.R.uses(p, "linked")]
+        for t in st["timeline"]:
+            hits_tl = any(F.entity_matches(state, p, t["org"]) for p in tl)
+            hits_rec = any(F.entity_matches(state, p, t["org"]) for p in others)
+            if t["kind"] == "client":
+                mis["client_as_timeline"] += hits_tl
+            elif t["kind"] == "vendor":
+                mis["vendor_as_timeline"] += hits_tl
+                mis["vendor_as_recorded"] += hits_rec
+            elif t["kind"] in ("employee", "self_employed"):
+                mis["employers_truth"] += 1
+                mis["employers_found"] += hits_tl
+    out(f"story runs {tot['runs']}: before/after right {tot['right']}, wrong {tot['wrong']}, ambiguous or gap told {tot['ambiguous']}; "
+        f"negatives that triggered {tot['negatives_triggered']}")
+    out(f"organizations: employers found {mis['employers_found']}/{mis['employers_truth']}; clients under a timeline predicate "
+        f"{mis['client_as_timeline']}; vendors under a timeline predicate {mis['vendor_as_timeline']}; vendors recorded as clients "
+        f"{mis['vendor_as_recorded']}")
+    for row in wrong_rows:
+        out("   " + " ".join(str(x) for x in row))
+    return tot, mis
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["work", "convert"])
+    ap.add_argument("cmd", choices=["work", "convert", "stories"])
     ap.add_argument("a")
     ap.add_argument("b")
     ap.add_argument("c", nargs="?")
     ap.add_argument("--rows", action="store_true")
     a = ap.parse_args()
+    if a.cmd == "stories":
+        score_stories(a.a, a.b)
+        return
     if a.cmd == "convert":
         recs = [json.loads(l) for l in Path(a.a).read_text().splitlines()]
         state = convert(recs, a.b)
