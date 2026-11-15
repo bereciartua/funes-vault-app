@@ -1100,6 +1100,8 @@ def before(state, pred, x, query="", direction="before"):
             return None, "ambiguous"     # not decidable at the precision written
         if sx.conflict_start or win.conflict_end:
             return None, "ambiguous"
+        if sx.start - best > 1 and any(e.start is None and e.end is None and e.entity not in (x, win.entity) for e in eps):
+            return None, "ambiguous"     # an undated fact of this predicate could sit in the gap
         if gap is not None and sx.start - best > gap:
             return win.entity, "gap"
         return win.entity, "inferred" if win.inferred_end else "ordered"
@@ -1114,6 +1116,8 @@ def before(state, pred, x, query="", direction="before"):
     if len(top) > 1:
         return None, "ambiguous"
     if sx.conflict_end or win.conflict_start:
+        return None, "ambiguous"
+    if best - sx.end > 1 and any(e.start is None and e.end is None and e.entity not in (x, win.entity) for e in eps):
         return None, "ambiguous"
     if gap is not None and best - sx.end > gap:
         return win.entity, "gap"
