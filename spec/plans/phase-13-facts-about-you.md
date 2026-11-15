@@ -37,8 +37,9 @@
 - a 13a.2 round fixes the known limits first: intervals written as one string ("March to June 2019"), and dates the work prompt misses.
 
 ## 13.0 The Terra answer check · ¼ weekend
-- [ ] **Spike H's answer arms on GPT-5.6-Terra,** the author's Search answers model, with the Python harness (`spikes/people/search_answers.py`): plain, with attributes, and with a wrong attribute (including the nameless trap), 3 samples, the blind judge, every gain and loss read by hand. Run before 13.1 because it can change decision 7, which 13.1 writes into the specs.
-- [ ] **If Terra ignores attributes, or follows wrong ones more than Haiku did,** amend decision 7 first (bridges only, or attributes only at full basis). Record a "Spike H4" section in [spike results](spike-results.md).
+- [x] **Spike H's answer arms on GPT-5.6-Terra,** the author's Search answers model, with the Python harness (`spikes/people/search_answers.py`): plain, with attributes, and with a wrong attribute (including the nameless trap), 3 samples, the blind judge, every gain and loss read by hand. Run before 13.1 because it can change decision 7, which 13.1 writes into the specs.
+- [x] **If Terra ignores attributes, or follows wrong ones more than Haiku did,** amend decision 7 first (bridges only, or attributes only at full basis). Record a "Spike H4" section in [spike results](spike-results.md).
+- *Done (15 Nov 2026): attributes held up on Terra; decision 7 stands, with a marking case added for claims that cite an attributed memory without naming anyone. See [Spike H4](spike-results.md).*
 
 ## 13.1 Spec · 1 weekend
 - [ ] **Amend every document in ADR-0032's Amends table:**
@@ -155,7 +156,8 @@
 - [ ] **Inferred, by code:** a claim is marked inferred, and carries the fact, link or order ids it rests on (and a bridge's order basis), when it:
   - names an entity its cited text doesn't name;
   - states a predicate, label, qualifier or date that text doesn't state;
-  - or cites a bridge.
+  - cites a bridge;
+  - or cites a memory carrying an attribute, when the search names the attributed entity (by name or role phrase) and the cited text doesn't (Spike H4: it marked all 5 wrong-person claims).
 - [ ] **The Mac's answer card:** inferred claims marked, with **Not <name>** and **Not this**. The held answer is dropped when the facts revision changes.
 - [ ] **The companion protocol:**
   - the why line on results;

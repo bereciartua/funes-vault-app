@@ -172,7 +172,8 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
    - **Inferred, from structured data, never from the model's wording.** A claim is marked inferred when it:
      - names an entity its cited text doesn't name;
      - states a predicate, label, qualifier or date its cited text doesn't state;
-     - cites a bridge (it then carries the order's basis).
+     - cites a bridge (it then carries the order's basis);
+     - cites a memory that carries an attribute, when the search names the attributed entity (by name, or by a role phrase that resolves to it) and the cited text doesn't. In Spike H4 this marked all 5 wrong-person claims from a wrong attribute, including the claims about a memory that names nobody.
 
      Each marked claim carries the fact, link or order ids behind it.
    - **Bridges** (timeline answers only): up to 2 memories that state the target fact are added on top of the 10 results. The card says "Read 10 results and 2 from your history". *Linked*-only predicates get no bridges: Spike H showed no gain from role bridges. Apple on-device answers get no bridges.
@@ -286,7 +287,7 @@ The vault gates have small denominators: the author's vault has 3 role phrases, 
 1. **The backfill:** a one-time exemption from the daily cap, started by the user (an FR-AI-15 amendment, above).
 2. **`sole_known` attributes:** they ship, hedged, when their gate is met on the fixtures (decision 7).
 
-3. **The answer check on the author's model comes first** (the Phase 13 plan's step 13.0, before the spec is amended). Spike H tested attributes only on Haiku, and H2 tested only bridges on GPT-5.6-Terra, the author's Search answers model. It runs Spike H's answer arms on Terra: plain, with attributes, and with a wrong attribute. If Terra ignores attributes, or follows wrong ones more than Haiku did, decision 7 changes before the spec is amended: bridges only, or attributes only at full basis.
+3. **The answer check on the author's model comes first** (the Phase 13 plan's step 13.0, before the spec is amended). Spike H tested attributes only on Haiku, and H2 tested only bridges on GPT-5.6-Terra, the author's Search answers model. It runs Spike H's answer arms on Terra: plain, with attributes, and with a wrong attribute. If Terra ignores attributes, or follows wrong ones more than Haiku did, decision 7 changes before the spec is amended: bridges only, or attributes only at full basis. **Done (Spike H4, 15 Nov 2026):** attributes held up on Terra (0 wrong-person claims and 0 denials with correct attributes; 5 wrong-person claims to Haiku's 10 with a wrong one), so decision 7 stands, with the marking case above added.
 
 Nothing else is open; the remaining measures are 13a–13e's acceptance tests.
 

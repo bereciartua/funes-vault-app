@@ -18,6 +18,7 @@ A sample is reused only for an identical request (hash of instructions, prompt, 
 """
 import argparse
 import hashlib
+import os
 import importlib.util
 import json
 import random
@@ -43,7 +44,7 @@ ABOUT_RULE = ("\n- An about=\"…\" attribute on a memory is Funes's own inferen
               "(\"probably\", \"Funes infers\").")
 FULL = {"named", "stated_unique", "context", "confirmed"}
 ARMS = ("A", "B", "C1", "C2", "C3", "W", "M")
-ANS = "answers3"    # round 3 (round 2's answers stay in answers2/)
+ANS = os.environ.get("ANS_DIR", "answers3")    # round 3 (round 2's answers stay in answers2/); Spike H4: answers-terra
 HEDGE = re.compile(r"\b(probabl\w*|infer\w*|likely|seems?|appears?|apparently|presumably|Funes)\b", re.I)
 
 
@@ -207,6 +208,8 @@ def cmd_run(a):
             if q.get("noAnswerCall") or (a.only and q["id"] not in a.only.split(",")):
                 continue
             for arm, (ins, prompt, sent, br, ab, names) in arms_for(q, p, e, bf, mems, cats).items():
+                if a.arms and arm not in a.arms.split(","):
+                    continue
                 h = hashlib.sha256(json.dumps([ins, prompt, SCHEMA, a.provider]).encode()).hexdigest()[:16]
                 for rep in range(1, a.reps + 1):
                     if (q["id"], arm, rep) in done:
@@ -416,7 +419,7 @@ def cmd_score(a):
             r = recs[(q, arm, rep)]
             t = r["claims"][cl["claim"] - 1]["text"] if 0 < cl["claim"] <= len(r["claims"]) else "?"
             lines.append(f"  - {arm}{rep} {cl['label']}: {t} — judge: {cl['why']}")
-    report = OUT / f"report-answers2-{a.set}-{a.engine}{a.judge_tag}.md"
+    report = OUT / (f"report-answers2-{a.set}-{a.engine}{a.judge_tag}.md" if ANS == "answers3" else f"{ANS}/report-{a.set}-{a.engine}{a.judge_tag}.md")
     report.write_text("\n".join(lines))
     print("\n".join(lines))
 
@@ -429,6 +432,7 @@ def main():
     ap.add_argument("--provider", default="claude-haiku")
     ap.add_argument("--reps", type=int, default=3)
     ap.add_argument("--only", default="")
+    ap.add_argument("--arms", default="", help="only these arms (Spike H4: A,B,C1,W,M)")
     ap.add_argument("--judge-tag", default="", help="suffix for a re-judged file (round 3b: -b)")
     a = ap.parse_args()
     {"run": cmd_run, "judge": cmd_judge, "score": cmd_score}[a.cmd](a)

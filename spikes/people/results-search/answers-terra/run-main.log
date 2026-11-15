@@ -1,0 +1,262 @@
+s01 A1: answered, 1 claims
+s01 A2: answered, 1 claims
+s01 A3: answered, 1 claims
+s01 B1: answered, 1 claims (same request as A)
+s01 B2: answered, 1 claims (same request as A)
+s01 B3: answered, 1 claims (same request as A)
+s01 C11: answered, 1 claims
+s01 C12: answered, 1 claims
+s01 C13: answered, 1 claims
+s01 W1: answered, 1 claims
+s01 W2: answered, 1 claims
+s01 W3: answered, 1 claims
+s01 M1: answered, 1 claims
+s01 M2: answered, 1 claims
+s01 M3: answered, 1 claims
+s02 A1: answered, 1 claims
+s02 A2: answered, 1 claims
+s02 A3: answered, 1 claims
+s02 B1: answered, 1 claims (same request as A)
+s02 B2: answered, 1 claims (same request as A)
+s02 B3: answered, 1 claims (same request as A)
+s02 C11: answered, 1 claims
+s02 C12: answered, 1 claims
+s02 C13: answered, 1 claims
+s02 W1: answered, 1 claims
+s02 W2: answered, 1 claims
+s02 W3: answered, 1 claims
+s02 M1: answered, 1 claims
+s02 M2: answered, 1 claims
+s02 M3: answered, 1 claims
+s03 A1: answered, 1 claims
+s03 A2: answered, 1 claims
+s03 A3: answered, 1 claims
+s03 B1: answered, 1 claims
+s03 B2: answered, 1 claims
+s03 B3: answered, 1 claims
+s03 C11: answered, 1 claims (same request as B)
+s03 C12: answered, 1 claims (same request as B)
+s03 C13: answered, 1 claims (same request as B)
+s04 A1: answered, 1 claims
+s04 A2: answered, 1 claims
+s04 A3: answered, 1 claims
+s04 B1: answered, 1 claims
+s04 B2: answered, 1 claims
+s04 B3: answered, 1 claims
+s04 C11: answered, 1 claims
+s04 C12: answered, 1 claims
+s04 C13: answered, 1 claims
+s04 M1: answered, 1 claims
+s04 M2: answered, 1 claims
+s04 M3: answered, 1 claims
+s05 A1: answered, 1 claims
+s05 A2: answered, 1 claims
+s05 A3: answered, 1 claims
+s05 B1: answered, 1 claims
+s05 B2: answered, 1 claims
+s05 B3: answered, 1 claims
+s05 C11: answered, 1 claims
+s05 C12: answered, 1 claims
+s05 C13: answered, 1 claims
+s05 M1: answered, 1 claims
+s05 M2: answered, 1 claims
+s05 M3: answered, 1 claims
+s06 A1: answered, 1 claims
+s06 A2: answered, 1 claims
+s06 A3: answered, 1 claims
+s06 B1: answered, 1 claims
+s06 B2: answered, 1 claims
+s06 B3: answered, 1 claims
+s06 C11: answered, 2 claims
+s06 C12: answered, 1 claims
+s06 C13: answered, 1 claims
+s06 W1: answered, 1 claims
+s06 W2: answered, 1 claims
+s06 W3: answered, 1 claims
+s06 M1: answered, 1 claims
+s06 M2: answered, 1 claims
+s06 M3: answered, 1 claims
+s07 A1: answered, 1 claims
+s07 A2: answered, 1 claims
+s07 A3: answered, 1 claims
+s07 B1: answered, 1 claims (same request as A)
+s07 B2: answered, 1 claims (same request as A)
+s07 B3: answered, 1 claims (same request as A)
+s07 C11: answered, 1 claims
+s07 C12: answered, 2 claims
+s07 C13: answered, 1 claims
+s07 M1: answered, 1 claims
+s07 M2: answered, 1 claims
+s07 M3: answered, 1 claims
+s08 A1: answered, 1 claims
+s08 A2: answered, 1 claims
+s08 A3: answered, 1 claims
+s08 B1: answered, 1 claims (same request as A)
+s08 B2: answered, 1 claims (same request as A)
+s08 B3: answered, 1 claims (same request as A)
+s08 C11: answered, 1 claims (same request as A)
+s08 C12: answered, 1 claims (same request as A)
+s08 C13: answered, 1 claims (same request as A)
+s09 A1: answered, 1 claims
+s09 A2: answered, 1 claims
+s09 A3: answered, 1 claims
+s09 B1: answered, 1 claims
+s09 B2: answered, 1 claims
+s09 B3: answered, 1 claims
+s09 C11: answered, 1 claims (same request as B)
+s09 C12: answered, 1 claims (same request as B)
+s09 C13: answered, 1 claims (same request as B)
+s10 A1: answered, 1 claims
+s10 A2: answered, 1 claims
+s10 A3: answered, 1 claims
+s10 B1: answered, 1 claims
+s10 B2: answered, 1 claims
+s10 B3: answered, 1 claims
+s10 C11: answered, 1 claims
+s10 C12: answered, 1 claims
+s10 C13: answered, 1 claims
+s10 W1: answered, 1 claims
+s10 W2: answered, 1 claims
+s10 W3: answered, 1 claims
+s10 M1: answered, 1 claims
+s10 M2: answered, 1 claims
+s10 M3: answered, 1 claims
+s11 A1: answered, 2 claims
+s11 A2: answered, 1 claims
+s11 A3: answered, 1 claims
+s11 B1: answered, 2 claims (same request as A)
+s11 B2: answered, 1 claims (same request as A)
+s11 B3: answered, 1 claims (same request as A)
+s11 C11: answered, 2 claims (same request as A)
+s11 C12: answered, 1 claims (same request as A)
+s11 C13: answered, 1 claims (same request as A)
+s12 A1: answered, 1 claims
+s12 A2: answered, 1 claims
+s12 A3: answered, 1 claims
+s12 B1: answered, 1 claims
+s12 B2: answered, 1 claims
+s12 B3: answered, 1 claims
+s12 C11: answered, 1 claims
+s12 C12: answered, 1 claims
+s12 C13: answered, 1 claims
+s12 M1: answered, 1 claims
+s12 M2: answered, 1 claims
+s12 M3: answered, 1 claims
+s13 A1: answered, 1 claims
+s13 A2: answered, 1 claims
+s13 A3: answered, 1 claims
+s13 B1: answered, 1 claims
+s13 B2: answered, 1 claims
+s13 B3: answered, 1 claims
+s13 C11: answered, 1 claims
+s13 C12: answered, 1 claims
+s13 C13: answered, 1 claims
+s14 A1: answered, 2 claims
+s14 A2: answered, 2 claims
+s14 A3: answered, 2 claims
+s14 B1: answered, 2 claims (same request as A)
+s14 B2: answered, 2 claims (same request as A)
+s14 B3: answered, 2 claims (same request as A)
+s14 C11: answered, 2 claims (same request as A)
+s14 C12: answered, 2 claims (same request as A)
+s14 C13: answered, 2 claims (same request as A)
+s17 A1: answered, 1 claims
+s17 A2: answered, 1 claims
+s17 A3: answered, 2 claims
+s17 B1: answered, 1 claims
+s17 B2: answered, 2 claims
+s17 B3: answered, 2 claims
+s17 C11: answered, 1 claims (same request as B)
+s17 C12: answered, 2 claims (same request as B)
+s17 C13: answered, 2 claims (same request as B)
+s18 A1: answered, 1 claims
+s18 A2: answered, 1 claims
+s18 A3: answered, 1 claims
+s18 B1: answered, 1 claims
+s18 B2: answered, 1 claims
+s18 B3: answered, 1 claims
+s18 C11: answered, 1 claims
+s18 C12: answered, 1 claims
+s18 C13: answered, 1 claims
+s18 W1: answered, 2 claims
+s18 W2: answered, 1 claims
+s18 W3: answered, 2 claims
+s18 M1: answered, 1 claims
+s18 M2: answered, 1 claims
+s18 M3: answered, 1 claims
+s19 A1: answered, 1 claims
+s19 A2: answered, 1 claims
+s19 A3: answered, 1 claims
+s19 B1: answered, 1 claims
+s19 B2: answered, 1 claims
+s19 B3: answered, 2 claims
+s19 C11: answered, 1 claims (same request as B)
+s19 C12: answered, 1 claims (same request as B)
+s19 C13: answered, 2 claims (same request as B)
+s20 A1: no_answer, 0 claims
+s20 A2: no_answer, 0 claims
+s20 A3: no_answer, 0 claims
+s20 B1: no_answer, 0 claims
+s20 B2: no_answer, 0 claims
+s20 B3: no_answer, 0 claims
+s20 C11: no_answer, 0 claims
+s20 C12: no_answer, 0 claims
+s20 C13: no_answer, 0 claims
+q03 A1: answered, 1 claims
+q03 A2: answered, 1 claims
+q03 A3: answered, 1 claims
+q03 B1: answered, 1 claims (same request as A)
+q03 B2: answered, 1 claims (same request as A)
+q03 B3: answered, 1 claims (same request as A)
+q03 C11: answered, 1 claims
+q03 C12: answered, 1 claims
+q03 C13: answered, 1 claims
+q03 M1: answered, 1 claims
+q03 M2: answered, 1 claims
+q03 M3: answered, 1 claims
+q05 A1: answered, 2 claims
+q05 A2: answered, 2 claims
+q05 A3: answered, 2 claims
+q05 B1: answered, 2 claims
+q05 B2: answered, 1 claims
+q05 B3: answered, 1 claims
+q05 C11: answered, 2 claims
+q05 C12: answered, 2 claims
+q05 C13: answered, 2 claims
+q05 M1: answered, 2 claims
+q05 M2: answered, 2 claims
+q05 M3: answered, 2 claims
+q30 A1: answered, 1 claims
+q30 A2: answered, 1 claims
+q30 A3: answered, 1 claims
+q30 B1: answered, 1 claims
+q30 B2: answered, 1 claims
+q30 B3: answered, 1 claims
+q30 C11: answered, 1 claims
+q30 C12: answered, 1 claims
+q30 C13: answered, 1 claims
+q30 M1: answered, 1 claims
+q30 M2: answered, 1 claims
+q30 M3: answered, 1 claims
+q31 A1: answered, 1 claims
+q31 A2: answered, 1 claims
+q31 A3: no_answer, 0 claims
+q31 B1: answered, 1 claims
+q31 B2: answered, 1 claims
+q31 B3: answered, 1 claims
+q31 C11: answered, 1 claims
+q31 C12: answered, 1 claims
+q31 C13: answered, 1 claims
+q31 M1: answered, 1 claims
+q31 M2: answered, 1 claims
+q31 M3: answered, 1 claims
+q36 A1: no_answer, 0 claims
+q36 A2: no_answer, 0 claims
+q36 A3: no_answer, 0 claims
+q36 B1: no_answer, 0 claims (same request as A)
+q36 B2: no_answer, 0 claims (same request as A)
+q36 B3: no_answer, 0 claims (same request as A)
+q36 C11: no_answer, 0 claims
+q36 C12: no_answer, 0 claims
+q36 C13: no_answer, 0 claims
+DONE main
