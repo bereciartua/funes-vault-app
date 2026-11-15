@@ -67,6 +67,16 @@ def test_successive_jobs_chain_but_concurrent_ones_end_nothing():
     assert F.before(s, DATED, ent(s, "Initech")) == (None, "ambiguous")
 
 
+def test_succession_never_ends_a_fact_stated_as_former():
+    emp = SLOT_VALUES[0]
+    s = state_with([fact(DATED, "Acme", "2015", "2018", "former", slot=emp), fact(DATED, "Globex", "2016", status="former", slot=emp),
+                    fact(DATED, "Initech", "2019", slot=emp)])
+    eps = {name(s, e.entity): e for e in F.episodes(s, DATED)}
+    assert eps["Globex"].end is None and not eps["Globex"].inferred_end    # ended, but when isn't known
+    got, basis = F.before(s, DATED, ent(s, "Initech"))
+    assert name(s, got) == "Acme" and basis == "ordered"
+
+
 def test_untrusted_never_triggers_succession():
     emp = SLOT_VALUES[0]
     s = state_with([fact(DATED, "Acme", "2018", slot=emp), (fact(DATED, "Initech", "2021", slot=emp), "untrusted")])

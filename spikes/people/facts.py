@@ -944,6 +944,7 @@ class Episode:
     trusted: bool
     inferred_end: bool = False
     conflict_start: bool = False   # memories disagree on this episode's start: it never decides an answer
+    known_former: bool = False     # the fact is stated as ended: an undated end is unknown, not "ended by the next one"
     conflict_end: bool = False
 
 
@@ -986,12 +987,12 @@ def episodes(state, pred, untrusted_dates=True):
             eps[-1][1] = "now"
         slot = slot_of(f)
         out += [Episode(f.entity, s, e, s is None or prec.get(s, True), e in (None, "now") or eprec.get(e, True), slot, trusted,
-                        conflict_start=cs, conflict_end=ce) for s, e, cs, ce in eps]
+                        conflict_start=cs, conflict_end=ce, known_former=f.status == "former") for s, e, cs, ce in eps]
     # succession: within a slot, an open episode that is the only open one there ends when the next one starts
     if R.preds[pred].get("succession"):
         for ep in sorted(out, key=lambda e: (e.start is None, e.start or 0)):
-            if ep.end is not None or ep.start is None or not ep.trusted:
-                continue
+            if ep.end is not None or ep.start is None or not ep.trusted or ep.known_former:
+                continue           # succession is for stale currents, not for a fact stated as ended at an unknown time
             nxt = sorted((o for o in out if o.slot == ep.slot and o is not ep and o.start is not None and o.start > ep.start),
                          key=lambda o: o.start)
             if not nxt or not nxt[0].trusted:
