@@ -138,6 +138,11 @@ def merge_dates(vals, end=False):
     return sorted((c[0], c[1]) for c in clusters)
 
 
+def iso_end(s):
+    m = ym(s, end=True)
+    return f"{m // 12}-{m % 12 + 1:02d}-28" if m is not None else None
+
+
 def iso_start(s):
     y = year(s)
     return f"{y}-01-01" if y else None
@@ -836,7 +841,14 @@ def apply(state, mem, phrases, people, rels, roles, ids, things=(), mode="full")
             if existing:
                 for x in existing:
                     if trust == "trusted" or not x.trusted:
-                        x.status, x.valid_to = "former", (x.valid_to or mem["written"])
+                        stated_end = iso_end(r["end"] or r["time"])
+                        x.status = "former"
+                        if stated_end and (not x.valid_to or not getattr(x, "end_stated", False)):
+                            x.valid_to, x.end_stated = stated_end, True   # a stated end replaces an assumed one
+                        elif not x.valid_to:
+                            x.valid_to = mem["written"]
+                        if start and (not x.valid_from or not x.start_stated):
+                            x.valid_from, x.start_stated = start, True
                         x.evidence.append((mid, trust))
                         x.assertions.append(assertion)
                         if states:
@@ -851,8 +863,8 @@ def apply(state, mem, phrases, people, rels, roles, ids, things=(), mode="full")
             if r["label"] and not x.label:
                 x.label, x.cls = r["label"], cls
             x.only |= r["only"]
-            if start and not x.valid_from:
-                x.valid_from, x.start_stated = start, True
+            if start and (not x.valid_from or not x.start_stated):
+                x.valid_from, x.start_stated = start, True      # a stated start replaces a hand-over's assumed one
             x.evidence.append((mid, trust))
             x.assertions.append(assertion)
             if states:
@@ -1162,13 +1174,16 @@ def intent(query, state=None):
             continue
         anchor = None
         if state is not None and op in ("before", "after"):
+            op_at = min((m.end() for w in R.lang["operators"][op]
+                         for m in re.finditer(r"(?<!\w)" + re.escape(fold(w)) + r"(?!\w)", q)), default=0)
             names = sorted({a for f in state.facts if f.type == pred for a in state.entities[f.entity].aliases if f.entity in state.entities}
                            | set(R.preds[pred].get("placeholders", {}))
                            | {s for v in R.preds[pred].get("placeholders", {}).values() for s in v}, key=len, reverse=True)
             kind = R.kind_of(pred)
             for n in names:
                 nn = norm_name(n, kind)
-                if nn and re.search(r"(?<!\w)" + re.escape(nn) + r"(?!\w)", q):
+                found = re.search(r"(?<!\w)" + re.escape(nn) + r"(?!\w)", q[op_at:]) if nn else None
+                if found:          # the anchor is what follows "before" / "after", not any name in the query
                     hits = entity_matches(state, pred, n)
                     if hits:
                         anchor = hits[0]

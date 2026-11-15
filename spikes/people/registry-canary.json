@@ -1,0 +1,925 @@
+{
+ "version": "h3-4+canary-1",
+ "note": "Spike H3: the predicate registry (ADR-0032 decision 2, plan v6 §4). facts.py reads this; no code names a predicate.",
+ "language": {
+  "owners": [
+   "my",
+   "mi",
+   "mis",
+   "the user's"
+  ],
+  "status_cues": {
+   "former": [
+    "old",
+    "former",
+    "previous",
+    "anterior",
+    "antiguo",
+    "antigua"
+   ],
+   "current": [
+    "new",
+    "current",
+    "actual",
+    "nuevo",
+    "nueva"
+   ]
+  },
+  "modifiers": [
+   "only",
+   "other",
+   "old",
+   "new",
+   "late",
+   "former",
+   "current",
+   "younger",
+   "older",
+   "little",
+   "big",
+   "best",
+   "elder",
+   "eldest",
+   "youngest",
+   "engineering",
+   "product",
+   "step",
+   "previous",
+   "first"
+  ],
+  "only_words": [
+   "only"
+  ],
+  "date_cue_words": [
+   "previous",
+   "anterior"
+  ],
+  "operators": {
+   "before": [
+    "before",
+    "antes de",
+    "prior to"
+   ],
+   "after": [
+    "after",
+    "después de",
+    "despues de",
+    "following",
+    "followed"
+   ],
+   "previous": [
+    "previous",
+    "anterior",
+    "last",
+    "former"
+   ],
+   "current": [
+    "current",
+    "now",
+    "actual",
+    "currently"
+   ]
+  },
+  "episode_first": [
+   "first",
+   "primera",
+   "primer",
+   "initial"
+  ],
+  "episode_last": [
+   "return",
+   "returned",
+   "rejoin",
+   "rejoined",
+   "second",
+   "again",
+   "volver",
+   "volvi",
+   "segunda",
+   "regres"
+  ],
+  "pair_before": [
+   "is",
+   "was",
+   "es",
+   "era"
+  ],
+  "pair_adverbs": [
+   "also",
+   "still",
+   "now",
+   "también",
+   "ahora"
+  ],
+  "stop_names": [
+   "will",
+   "may",
+   "rosa",
+   "sol",
+   "mark",
+   "bill",
+   "pat",
+   "april",
+   "june",
+   "august",
+   "grace",
+   "hope",
+   "joy",
+   "faith",
+   "rose",
+   "lily",
+   "papa",
+   "mama",
+   "art",
+   "dean",
+   "jack",
+   "frank",
+   "summer",
+   "autumn"
+  ]
+ },
+ "kinds": {
+  "person": {
+   "match": "first_name",
+   "normalise": []
+  },
+  "organization": {
+   "match": "contains",
+   "normalise": [
+    "legal_suffix"
+   ]
+  },
+  "place": {
+   "match": "exact",
+   "normalise": []
+  },
+  "thing": {
+   "match": "exact",
+   "normalise": []
+  }
+ },
+ "call_groups": {
+  "people": {
+   "intro": "record who it mentions and how they relate to the person, \"the user\""
+  },
+  "work": {
+   "intro": "record the user's OWN employment that the memory states: organizations the user works or worked for"
+  }
+ },
+ "predicates": [
+  {
+   "id": "partner",
+   "object_kind": "person",
+   "call_group": "people",
+   "uses": [
+    "recorded",
+    "linked",
+    "timeline"
+   ],
+   "definition": "partner: a person the user dates, is seeing, goes out with, or has or had a romantic relationship with (wife, husband, girlfriend, boyfriend, spouse, fiancé, fiancée, pareja, novia, novio). Record the user's OWN relationships, including former partners and explicit negative assertions; another person's partner is not the user's partner. Preserve stated relationship starts, ends, precision, succession and explicit overlaps. Getting back together after an ended relationship creates another episode with the same person. Do not turn a mention date, an undated breakup, or a third person's relationship into an invented relationship boundary. A denial is not a positive partner fact.",
+   "exclusive": false,
+   "succession": true,
+   "slot": null,
+   "gap_months": 12,
+   "qualifiers": {
+    "label": {
+     "multi": false
+    }
+   },
+   "lexicon": [
+    {
+     "cls": null,
+     "generic": true,
+     "words": [
+      "partner",
+      "wife",
+      "husband",
+      "girlfriend",
+      "boyfriend",
+      "fiancé",
+      "fiancée",
+      "fiance",
+      "fiancee",
+      "esposa",
+      "esposo",
+      "novia",
+      "novio",
+      "spouse",
+      "pareja"
+     ]
+    },
+    {
+     "cls": "ex",
+     "words": [
+      "ex"
+     ]
+    }
+   ],
+   "query_cues": [
+    "partner",
+    "dating",
+    "seeing",
+    "girlfriend",
+    "boyfriend",
+    "wife",
+    "husband",
+    "pareja",
+    "novia",
+    "novio",
+    "dated",
+    "going out with",
+    "went out with",
+    "go out with",
+    "spouse",
+    "fiancé",
+    "fiancée",
+    "fiance",
+    "fiancee",
+    "esposa",
+    "esposo",
+    "salía",
+    "salia",
+    "salías",
+    "salias",
+    "salí",
+    "sali",
+    "salimos",
+    "saliendo",
+    "salir con",
+    "andaba con",
+    "noviazgo",
+    "relación",
+    "relacion",
+    "breaking up",
+    "broke up",
+    "ruptura"
+   ],
+   "phrases": {
+    "attribute": "your {label}",
+    "note_noun": "partner"
+   }
+  },
+  {
+   "id": "parent",
+   "object_kind": "person",
+   "call_group": "people",
+   "uses": [
+    "recorded",
+    "linked"
+   ],
+   "definition": "parent (mom, dad, stepparents)",
+   "exclusive": false,
+   "succession": false,
+   "slot": null,
+   "gap_months": null,
+   "qualifiers": {
+    "label": {
+     "multi": false
+    }
+   },
+   "lexicon": [
+    {
+     "cls": "mother",
+     "exclusive": true,
+     "words": [
+      "mom",
+      "mum",
+      "mother",
+      "mamá",
+      "mama",
+      "madre",
+      "stepmom",
+      "stepmother"
+     ]
+    },
+    {
+     "cls": "father",
+     "exclusive": true,
+     "words": [
+      "dad",
+      "father",
+      "papá",
+      "papa",
+      "padre",
+      "stepdad",
+      "stepfather"
+     ]
+    },
+    {
+     "cls": null,
+     "generic": true,
+     "plural": true,
+     "words": [
+      "parents"
+     ]
+    }
+   ],
+   "query_cues": [],
+   "phrases": {
+    "attribute": "your {label}",
+    "note_noun": "parent"
+   }
+  },
+  {
+   "id": "child",
+   "object_kind": "person",
+   "call_group": "people",
+   "uses": [
+    "recorded",
+    "linked"
+   ],
+   "definition": "child (son, daughter)",
+   "exclusive": false,
+   "succession": false,
+   "slot": null,
+   "gap_months": null,
+   "qualifiers": {
+    "label": {
+     "multi": false
+    }
+   },
+   "lexicon": [
+    {
+     "cls": "daughter",
+     "words": [
+      "daughter",
+      "hija"
+     ]
+    },
+    {
+     "cls": "son",
+     "words": [
+      "son",
+      "hijo"
+     ]
+    },
+    {
+     "cls": null,
+     "generic": true,
+     "words": [
+      "kid",
+      "child",
+      "baby"
+     ]
+    },
+    {
+     "cls": null,
+     "generic": true,
+     "plural": true,
+     "words": [
+      "kids",
+      "children"
+     ]
+    }
+   ],
+   "query_cues": [],
+   "phrases": {
+    "attribute": "your {label}",
+    "note_noun": "child"
+   }
+  },
+  {
+   "id": "sibling",
+   "object_kind": "person",
+   "call_group": "people",
+   "uses": [
+    "recorded",
+    "linked"
+   ],
+   "definition": "sibling (sister, brother, half-siblings)",
+   "exclusive": false,
+   "succession": false,
+   "slot": null,
+   "gap_months": null,
+   "qualifiers": {
+    "label": {
+     "multi": false
+    }
+   },
+   "lexicon": [
+    {
+     "cls": "sister",
+     "words": [
+      "sister",
+      "hermana"
+     ]
+    },
+    {
+     "cls": "brother",
+     "words": [
+      "brother",
+      "hermano"
+     ]
+    },
+    {
+     "cls": null,
+     "generic": true,
+     "words": [
+      "sibling"
+     ]
+    },
+    {
+     "cls": null,
+     "generic": true,
+     "plural": true,
+     "words": [
+      "siblings"
+     ]
+    },
+    {
+     "cls": "half-sister",
+     "words": [
+      "half-sister",
+      "medio hermana"
+     ]
+    },
+    {
+     "cls": "half-brother",
+     "words": [
+      "half-brother",
+      "medio hermano"
+     ]
+    }
+   ],
+   "query_cues": [],
+   "phrases": {
+    "attribute": "your {label}",
+    "note_noun": "sibling"
+   }
+  },
+  {
+   "id": "other_family",
+   "object_kind": "person",
+   "call_group": "people",
+   "uses": [
+    "recorded",
+    "linked"
+   ],
+   "definition": "other_family (grandparents, aunts, uncles, cousins, in-laws…)",
+   "exclusive": false,
+   "succession": false,
+   "slot": null,
+   "gap_months": null,
+   "qualifiers": {
+    "label": {
+     "multi": false
+    }
+   },
+   "lexicon": [
+    {
+     "cls": "grandmother",
+     "words": [
+      "grandma",
+      "grandmother",
+      "abuela",
+      "granny"
+     ]
+    },
+    {
+     "cls": "grandfather",
+     "words": [
+      "grandpa",
+      "grandfather",
+      "abuelo"
+     ]
+    },
+    {
+     "cls": "aunt",
+     "words": [
+      "aunt",
+      "tía",
+      "tia"
+     ]
+    },
+    {
+     "cls": "uncle",
+     "words": [
+      "uncle",
+      "tío",
+      "tio"
+     ]
+    },
+    {
+     "cls": "cousin",
+     "words": [
+      "cousin",
+      "primo",
+      "prima"
+     ]
+    },
+    {
+     "cls": "niece",
+     "words": [
+      "niece",
+      "sobrina"
+     ]
+    },
+    {
+     "cls": "nephew",
+     "words": [
+      "nephew",
+      "sobrino"
+     ]
+    },
+    {
+     "cls": "mother-in-law",
+     "words": [
+      "mother-in-law",
+      "suegra"
+     ]
+    },
+    {
+     "cls": "father-in-law",
+     "words": [
+      "father-in-law",
+      "suegro"
+     ]
+    },
+    {
+     "cls": "sister-in-law",
+     "words": [
+      "sister-in-law",
+      "cuñada"
+     ]
+    },
+    {
+     "cls": "brother-in-law",
+     "words": [
+      "brother-in-law",
+      "cuñado"
+     ]
+    },
+    {
+     "cls": "stepsister",
+     "words": [
+      "stepsister",
+      "step-sister",
+      "hermanastra"
+     ]
+    },
+    {
+     "cls": "stepbrother",
+     "words": [
+      "stepbrother",
+      "step-brother",
+      "hermanastro"
+     ]
+    },
+    {
+     "cls": "stepson",
+     "words": [
+      "stepson",
+      "hijastro"
+     ]
+    },
+    {
+     "cls": "stepdaughter",
+     "words": [
+      "stepdaughter",
+      "hijastra"
+     ]
+    }
+   ],
+   "query_cues": [],
+   "phrases": {
+    "attribute": "your {label}",
+    "note_noun": "relative"
+   }
+  },
+  {
+   "id": "friend",
+   "object_kind": "person",
+   "call_group": "people",
+   "uses": [
+    "recorded",
+    "linked"
+   ],
+   "definition": "friend",
+   "exclusive": false,
+   "succession": false,
+   "slot": null,
+   "gap_months": null,
+   "qualifiers": {
+    "label": {
+     "multi": false
+    }
+   },
+   "lexicon": [
+    {
+     "cls": null,
+     "generic": true,
+     "words": [
+      "friend",
+      "amigo",
+      "amiga"
+     ]
+    }
+   ],
+   "query_cues": [],
+   "phrases": {
+    "attribute": "your {label}",
+    "note_noun": "friend"
+   }
+  },
+  {
+   "id": "manager",
+   "object_kind": "person",
+   "call_group": "people",
+   "uses": [
+    "recorded",
+    "linked"
+   ],
+   "definition": "manager (boss)",
+   "exclusive": false,
+   "succession": true,
+   "slot": null,
+   "gap_months": null,
+   "qualifiers": {
+    "label": {
+     "multi": false
+    }
+   },
+   "lexicon": [
+    {
+     "cls": null,
+     "generic": true,
+     "words": [
+      "boss",
+      "manager",
+      "jefe",
+      "jefa"
+     ]
+    }
+   ],
+   "query_cues": [],
+   "phrases": {
+    "attribute": "your {label}",
+    "note_noun": "manager"
+   }
+  },
+  {
+   "id": "colleague",
+   "object_kind": "person",
+   "call_group": "people",
+   "uses": [
+    "recorded",
+    "linked"
+   ],
+   "definition": "colleague",
+   "exclusive": false,
+   "succession": false,
+   "slot": null,
+   "gap_months": null,
+   "qualifiers": {
+    "label": {
+     "multi": false
+    }
+   },
+   "lexicon": [
+    {
+     "cls": null,
+     "generic": true,
+     "words": [
+      "coworker",
+      "co-worker",
+      "colleague",
+      "teammate"
+     ]
+    }
+   ],
+   "query_cues": [],
+   "phrases": {
+    "attribute": "your {label}",
+    "note_noun": "colleague"
+   }
+  },
+  {
+   "id": "care",
+   "object_kind": "person",
+   "call_group": "people",
+   "uses": [
+    "recorded",
+    "linked"
+   ],
+   "definition": "care (doctor, dentist, therapist, vet, lawyer…)",
+   "exclusive": false,
+   "succession": false,
+   "slot": null,
+   "gap_months": null,
+   "qualifiers": {
+    "label": {
+     "multi": false
+    }
+   },
+   "lexicon": [
+    {
+     "cls": "dentist",
+     "words": [
+      "dentist"
+     ]
+    },
+    {
+     "cls": "doctor",
+     "words": [
+      "doctor",
+      "médico",
+      "medico"
+     ]
+    },
+    {
+     "cls": "therapist",
+     "words": [
+      "therapist"
+     ]
+    },
+    {
+     "cls": "vet",
+     "words": [
+      "vet"
+     ]
+    },
+    {
+     "cls": "lawyer",
+     "words": [
+      "lawyer"
+     ]
+    },
+    {
+     "cls": "accountant",
+     "words": [
+      "accountant"
+     ]
+    },
+    {
+     "cls": "coach",
+     "words": [
+      "coach"
+     ]
+    },
+    {
+     "cls": "pediatrician",
+     "words": [
+      "pediatrician"
+     ]
+    }
+   ],
+   "query_cues": [],
+   "phrases": {
+    "attribute": "your {label}",
+    "note_noun": "carer"
+   }
+  },
+  {
+   "id": "other",
+   "object_kind": "person",
+   "call_group": "people",
+   "uses": [
+    "recorded",
+    "linked"
+   ],
+   "definition": "other (neighbour, landlord…)",
+   "exclusive": false,
+   "succession": false,
+   "slot": null,
+   "gap_months": null,
+   "qualifiers": {
+    "label": {
+     "multi": false
+    }
+   },
+   "lexicon": [
+    {
+     "cls": "neighbor",
+     "words": [
+      "neighbor",
+      "neighbour",
+      "vecino",
+      "vecina"
+     ]
+    },
+    {
+     "cls": "landlord",
+     "words": [
+      "landlord"
+     ]
+    }
+   ],
+   "query_cues": [],
+   "phrases": {
+    "attribute": "your {label}",
+    "note_noun": "person"
+   }
+  },
+  {
+   "id": "works_at",
+   "object_kind": "organization",
+   "call_group": "work",
+   "uses": [
+    "recorded",
+    "linked",
+    "timeline"
+   ],
+   "definition": "works_at: an organization the user works or worked for as an employee, or the user's own company or self-employment (name it \"Self-employed\" when freelancing without a company name). Not other people's jobs, not clients, not organizations the user only mentions or buys from",
+   "placeholders": {
+    "Self-employed": [
+     "self-employed",
+     "self employed",
+     "sole trader",
+     "freelance",
+     "freelancing",
+     "freelancer",
+     "autónomo",
+     "autonomo"
+    ]
+   },
+   "exclusive": false,
+   "succession": true,
+   "slot": "kind",
+   "gap_months": 2,
+   "qualifiers": {
+    "title": {
+     "multi": false,
+     "describe": "the user's role or title"
+    },
+    "kind": {
+     "multi": false,
+     "values": [
+      "employee",
+      "self_employed"
+     ],
+     "describe": "employee, or self_employed for freelance or sole trader"
+    }
+   },
+   "lexicon": [
+    {
+     "cls": null,
+     "generic": true,
+     "words": [
+      "job",
+      "employer",
+      "trabajo"
+     ]
+    }
+   ],
+   "query_cues": [
+    "job",
+    "jobs",
+    "work",
+    "worked",
+    "working",
+    "employer",
+    "company",
+    "employed",
+    "role",
+    "trabajo",
+    "trabajaba",
+    "trabajé",
+    "trabaje",
+    "empresa",
+    "join",
+    "joining",
+    "joined",
+    "leave",
+    "leaving",
+    "left",
+    "entrar",
+    "entré",
+    "entre",
+    "dejar",
+    "dejé",
+    "deje",
+    "salir",
+    "salí",
+    "sali",
+    "empecé",
+    "empece",
+    "empezar",
+    "empezé"
+   ],
+   "phrases": {
+    "attribute": "where you worked",
+    "note_noun": "job"
+   }
+  },
+  {
+   "id": "client",
+   "object_kind": "organization",
+   "call_group": "work",
+   "uses": [
+    "recorded"
+   ],
+   "definition": "client: an organization the user did work FOR while freelancing or self-employed; never an employer",
+   "exclusive": false,
+   "succession": false,
+   "slot": null,
+   "gap_months": null,
+   "qualifiers": {},
+   "lexicon": [],
+   "query_cues": [],
+   "phrases": {
+    "attribute": "your client",
+    "note_noun": "client"
+   }
+  }
+ ]
+}
