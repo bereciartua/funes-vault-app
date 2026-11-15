@@ -1,0 +1,17 @@
+claude-haiku separate run 1 x01 order 0: 10 calls, 0 failed, 49.6 s
+claude-haiku separate run 1 x01 order 1: 11 calls, 0 failed, 52.0 s
+claude-haiku separate run 1 x02 order 0: 10 calls, 0 failed, 47.9 s
+claude-haiku separate run 1 x02 order 1: 10 calls, 0 failed, 64.4 s
+claude-haiku separate run 1 x03 order 0: 12 calls, 0 failed, 59.8 s
+claude-haiku separate run 1 x03 order 1: 12 calls, 0 failed, 53.3 s
+claude-haiku separate run 1 x04 order 0: 10 calls, 0 failed, 55.7 s
+claude-haiku separate run 1 x05 order 0: 12 calls, 0 failed, 64.7 s
+claude-haiku separate run 1 x05 order 1: 12 calls, 0 failed, 52.5 s
+claude-haiku separate run 1 x06 order 0: 12 calls, 0 failed, 57.7 s
+claude-haiku separate run 1 x07 order 0: 12 calls, 0 failed, 54.3 s
+claude-haiku separate run 1 x07 order 1: 10 calls, 0 failed, 43.7 s
+claude-haiku separate run 1 x08 order 0: 12 calls, 0 failed, 54.7 s
+claude-haiku separate run 1 x09 order 0: 10 calls, 0 failed, 49.9 s
+claude-haiku separate run 1 x09 order 1: 11 calls, 0 failed, 54.7 s
+claude-haiku separate run 1 x10 order 0: 12 calls, 0 failed, 54.0 s
+SEP DONE

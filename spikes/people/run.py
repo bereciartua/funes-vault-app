@@ -12,6 +12,7 @@ parallel (each story stays sequential).
 """
 import argparse
 import json
+import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -101,7 +102,7 @@ def main():
         ins, prompt, _ = build_prompt(state, mem, role_phrases(mem["text"], ua))
         print(ins, "\n---\n", prompt)
         return
-    out_dir = HERE / "results" / a.provider
+    out_dir = HERE / os.environ.get("RESULTS_DIR", "results") / a.provider
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / (f"{a.set}.jsonl" if a.run == 1 else f"{a.set}-run{a.run}.jsonl")
     done = set()

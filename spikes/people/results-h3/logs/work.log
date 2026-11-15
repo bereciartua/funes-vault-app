@@ -1,0 +1,28 @@
+memories 208; calls 256 (0 failed); entities 13; facts 11; cost $0.13; 1094.6 s
+employers in the truth 7; found 7; works_at entities 8 (not employers: 1); clients recorded as works_at: 1 of 3
+before/after queries: right 7, wrong 1, ambiguous or gap told 7 (no intent: 0); negative or in-fact queries that triggered the timeline: 0
+resolver only (anchor by name, as H2's scorer): before/after queries: right 7, wrong 1, ambiguous or gap told 7 (no intent: 0); negative or in-fact queries that triggered the timeline: 0
+   w01 before ordered: right
+   w02 before ordered: right
+   w03 before stated: right
+   w04 before stated: right
+   w05 after stated: right
+   w06 after ordered: right
+   w07 after stated: right
+   w08 after stated: WRONG
+   w09 before ambiguous: ambiguous
+   w10 before ambiguous: ambiguous
+   w11 before ambiguous: ambiguous
+   w12 after ambiguous: ambiguous
+   w13 after ambiguous: ambiguous
+   w14 before ambiguous: ambiguous
+   w22 role_in_stint not triggered
+   w23 role_in_stint not triggered
+   w24 role_in_stint not triggered
+   w25 negative not triggered
+   w26 negative not triggered
+   w27 negative not triggered
+   w28 negative not triggered
+   w29 negative not triggered
+   w33 before ambiguous: ambiguous
+   w34 negative not triggered
