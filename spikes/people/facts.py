@@ -546,7 +546,7 @@ def instructions(group, has_phrases=True):
    - entity: {"; ".join(ent)}.
    - label: the exact word the memory uses for the relation (sister, mom, boss, abuela, wife, cousin), or null. Never derive a label or a gender from a name.
    - polarity: "positive" (is, has), "negative" (is not, doesn't have).
-   - status: "current" (holds now), "former" (no longer: an ex, broke up, moved teams, a former boss, left a job), "unknown" (the memory doesn't say).
+   - status: "current" (holds now), "former" (the relation itself ended: an ex, broke up, moved teams, a former boss, left a job; a person who died is not "former": use deceased), "unknown" (the memory doesn't say).
    - deceased: true for "late", "passed away". only: true when the memory says it's the only one ("my only brother"). count: a number the memory states ("two sisters" → 2), else null. time: a year or date the memory gives for when it was true, when it isn't said to hold now ("my boss in 2023"), else null.
    - start: when it started, as written (a year, month or date: "since 2022", "joined in March 2019"), else null. end: when it ended, as written, else null.
    - preceded_by: the name of another entity of the same predicate that the memory says came just BEFORE this one (the user had that one first), as written, else null. followed_by: one the memory says came just AFTER this one (the user had it next), as written, else null. also_called: another name the memory gives for the same entity, else null.{qual_lines}
@@ -819,7 +819,7 @@ def apply(state, mem, phrases, people, rels, roles, ids, things=(), mode="full")
         if r["deceased"]:
             ent.deceased = True
         start = iso_start(r["start"])
-        ended = r["status"] == "former"
+        ended = r["status"] == "former" and not r["deceased"]     # "late" is an attribute of the person, not an end
         when = f"{r['time']}-07-01" if r["time"] and re.fullmatch(r"\d{4}", r["time"] or "") else mem["written"]
         existing = [x for x in state.facts if x.entity == pid and x.type == pred and not x.negated]
         assertion = {"memory": mid, "trust": trust, "written": mem["written"], "start": r["start"], "end": r["end"],
@@ -859,8 +859,9 @@ def apply(state, mem, phrases, people, rels, roles, ids, things=(), mode="full")
                 x.stating.append(mid)
         else:
             st = start or (when if r["time"] else None)
-            if R.preds[pred].get("exclusive") and any(x.type == pred and x.entity != pid and not x.negated for x in state.facts):
-                st = st or mem["written"]
+            if (R.preds[pred].get("exclusive") or R.preds[pred].get("succession")) and any(
+                    x.type == pred and x.entity != pid and not x.negated for x in state.facts):
+                st = st or mem["written"]      # a new holder starts at the memory that says so (a new boss, a new partner)
             state.facts.append(Fact(pid, pred, r["label"], cls, "current", st, None, r["only"], [(mid, trust)],
                                     start_stated=bool(start), stating=[mid] if states else [], assertions=[assertion]))
         if r["count"] is not None:
