@@ -15,6 +15,7 @@ system made that aren't people (pets, apps, the user), relation precision and re
 """
 import argparse
 import json
+import os
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -194,7 +195,7 @@ def main():
     data = json.loads((HERE / f"fixtures/stories{suffix}.json").read_text())
     stories = {s["id"]: s for s in data["stories"]}
     lines = [f"# Spike H report ({a.set} set)", ""]
-    for d in sorted(x for x in (HERE / "results").iterdir() if x.is_dir()):
+    for d in sorted(x for x in (HERE / os.environ.get("RESULTS_DIR", "results")).iterdir() if x.is_dir()):
         paths = [p for p in [d / f"{a.set}.jsonl"] + sorted(d.glob(f"{a.set}-run*.jsonl")) if p.exists()]
         if not paths:
             continue
@@ -229,7 +230,7 @@ def main():
                   f"{T['ms'] / max(T['calls'], 1) / 1000:.1f} · {T['prompt_tokens']:,}/{T['output_tokens']:,} |", ""]
         if errs:
             lines += ["Errors:", ""] + [f"- {e}" for e in (errs if a.verbose else errs[:40])] + [""]
-    (HERE / "results" / "report.md").write_text("\n".join(lines))
+    (HERE / os.environ.get("RESULTS_DIR", "results") / "report.md").write_text("\n".join(lines))
     print("\n".join(lines))
 
 
