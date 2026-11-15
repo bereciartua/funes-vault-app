@@ -1,0 +1,1600 @@
+{
+ "format": "funes.spike-h2.work.v1",
+ "author": "gpt-6-astra",
+ "timeline": [
+  {
+   "org": "Pampa Digital",
+   "role": "Junior web developer",
+   "start": "2014-09",
+   "end": "2016-06",
+   "kind": "employee",
+   "memories": [
+    "j001",
+    "j002",
+    "j003",
+    "j004",
+    "j005",
+    "j008"
+   ]
+  },
+  {
+   "org": "Bracken Systems",
+   "role": "Backend developer",
+   "start": "2016-07",
+   "end": "2018-03",
+   "kind": "employee",
+   "memories": [
+    "j004",
+    "j006",
+    "j007",
+    "j008",
+    "j009",
+    "j010",
+    "j034"
+   ]
+  },
+  {
+   "org": "Kiteworks Ltd",
+   "role": "iOS engineer; employer named Blue Kite until January 2019",
+   "start": "2018-04",
+   "end": "2019-08",
+   "kind": "employee",
+   "memories": [
+    "j010",
+    "j011",
+    "j012",
+    "j013",
+    "j014",
+    "j015",
+    "j016"
+   ]
+  },
+  {
+   "org": "Independent study",
+   "role": "Self-directed systems student; no paid work",
+   "start": "2019-09",
+   "end": "2020-02",
+   "kind": "study",
+   "memories": [
+    "j017",
+    "j018",
+    "j019",
+    "j020",
+    "j021"
+   ]
+  },
+  {
+   "org": "Mosaic Labs",
+   "role": "Software engineer through December 2020; senior software engineer from January 2021",
+   "start": "2020-03",
+   "end": "2021-06",
+   "kind": "employee",
+   "memories": [
+    "j021",
+    "j022",
+    "j023",
+    "j024",
+    "j025",
+    "j026",
+    "j027",
+    "j030",
+    "j032",
+    "j037"
+   ]
+  },
+  {
+   "org": "Nightjar School",
+   "role": "Part-time Python instructor; concurrent with Mosaic Labs",
+   "start": "2020-09",
+   "end": "2020-12",
+   "kind": "employee",
+   "memories": [
+    "j026",
+    "j029",
+    "j030",
+    "j031",
+    "j032"
+   ]
+  },
+  {
+   "org": "Bracken Systems",
+   "role": "Senior backend developer",
+   "start": "2021-07",
+   "end": "2022-05",
+   "kind": "employee",
+   "memories": [
+    "j026",
+    "j033",
+    "j034",
+    "j035",
+    "j036",
+    "j037"
+   ]
+  },
+  {
+   "org": "Sam (sole trader)",
+   "role": "Freelance developer; first self-employment period",
+   "start": "2022-06",
+   "end": "2023-12",
+   "kind": "self_employed",
+   "memories": [
+    "j036",
+    "j037",
+    "j038",
+    "j040",
+    "j041",
+    "j044"
+   ]
+  },
+  {
+   "org": "Estuary Museum",
+   "role": "Freelance developer; ticket export tool",
+   "start": "2022-08",
+   "end": "2023-02",
+   "kind": "client",
+   "memories": [
+    "j039",
+    "j040",
+    "j042",
+    "j060"
+   ]
+  },
+  {
+   "org": "Lattice Health",
+   "role": "Senior iOS engineer",
+   "start": "2024-01",
+   "end": "2024-12",
+   "kind": "employee",
+   "memories": [
+    "j041",
+    "j043",
+    "j044",
+    "j045",
+    "j046",
+    "j047"
+   ]
+  },
+  {
+   "org": "Sam (sole trader)",
+   "role": "Freelance developer; second self-employment period",
+   "start": "2025-01",
+   "end": "",
+   "kind": "self_employed",
+   "memories": [
+    "j045",
+    "j047",
+    "j050",
+    "j052",
+    "j053"
+   ]
+  },
+  {
+   "org": "Tejo Sailing Club",
+   "role": "Freelance app developer; Harbor",
+   "start": "2025-02",
+   "end": "",
+   "kind": "client",
+   "memories": [
+    "j048",
+    "j050",
+    "j053"
+   ]
+  },
+  {
+   "org": "Nordwind Logistics",
+   "role": "Freelance migration consultant; Atlas; planned finish December 2026",
+   "start": "2025-10",
+   "end": "",
+   "kind": "client",
+   "memories": [
+    "j049",
+    "j050",
+    "j053"
+   ]
+  }
+ ],
+ "queries": [
+  {
+   "id": "w01",
+   "family": "before_bracken_first",
+   "kind": "before",
+   "query": "Where did I work immediately before my first job at Bracken Systems?",
+   "answerable": true,
+   "answer_org": "Pampa Digital",
+   "targets": [
+    "j003",
+    "j001"
+   ],
+   "facts": [
+    {
+     "text": "Immediately before the first Bracken Systems stint, Sam worked at Pampa Digital.",
+     "keys": [
+      "(?i)Pampa Digital",
+      "(?i)before",
+      "(?i)(first|initial).*Bracken"
+     ],
+     "required": true,
+     "memory": "j003"
+    },
+    {
+     "text": "Sam was a junior web developer at Pampa Digital.",
+     "keys": [
+      "(?i)Pampa Digital",
+      "(?i)junior web developer"
+     ],
+     "required": true,
+     "memory": "j001"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Mosaic given as the predecessor to the first Bracken stint",
+     "all": [
+      "(?i)Mosaic"
+     ],
+     "none": [
+      "(?i)Pampa"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w02",
+   "family": "before_bracken_first",
+   "kind": "before",
+   "query": "¿Dónde trabajaba justo antes de entrar por primera vez en Bracken Systems?",
+   "answerable": true,
+   "answer_org": "Pampa Digital",
+   "targets": [
+    "j003",
+    "j001"
+   ],
+   "facts": [
+    {
+     "text": "Antes de entrar por primera vez en Bracken Systems, trabajaba en Pampa Digital.",
+     "keys": [
+      "(?i)Pampa Digital",
+      "(?i)(antes|before)",
+      "(?i)(primera|first|initial)"
+     ],
+     "required": true,
+     "memory": "j003"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Mosaic substituted for the first predecessor",
+     "all": [
+      "(?i)Mosaic"
+     ],
+     "none": [
+      "(?i)Pampa"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w03",
+   "family": "before_kite",
+   "kind": "before",
+   "query": "What was my job immediately before Blue Kite?",
+   "answerable": true,
+   "answer_org": "Bracken Systems",
+   "targets": [
+    "j010",
+    "j006"
+   ],
+   "facts": [
+    {
+     "text": "Immediately before Blue Kite, Sam was a backend developer at Bracken Systems during the first Bracken stint.",
+     "keys": [
+      "(?i)Bracken Systems",
+      "(?i)backend developer",
+      "(?i)before.*Blue Kite"
+     ],
+     "required": true,
+     "memory": "j006"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Pampa substituted for the immediate predecessor",
+     "all": [
+      "(?i)Pampa"
+     ],
+     "none": [
+      "(?i)Bracken"
+     ]
+    },
+    {
+     "label": "Second Bracken role substituted for the first",
+     "all": [
+      "(?i)senior backend developer"
+     ],
+     "none": [
+      "(?i)not|later|second|return"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w04",
+   "family": "before_kite",
+   "kind": "before",
+   "query": "Who employed me immediately before the stint at Kiteworks Ltd, also called Blue Kite?",
+   "answerable": true,
+   "answer_org": "Bracken Systems",
+   "targets": [
+    "j010",
+    "j006",
+    "j012",
+    "j013"
+   ],
+   "facts": [
+    {
+     "text": "Bracken Systems was Sam's employer immediately before the Blue Kite / Kiteworks Ltd stint.",
+     "keys": [
+      "(?i)Bracken Systems",
+      "(?i)before",
+      "(?i)(Blue Kite|Kiteworks)"
+     ],
+     "required": true,
+     "memory": "j010"
+    },
+    {
+     "text": "Blue Kite and Kiteworks Ltd were the same employer and continuous stint.",
+     "keys": [
+      "(?i)Blue Kite",
+      "(?i)Kiteworks",
+      "(?i)(same|continuous)"
+     ],
+     "required": true,
+     "memory": "j013"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Rename treated as a move to another employer",
+     "all": [
+      "(?i)Blue Kite",
+      "(?i)(separate|different|new) employer"
+     ],
+     "none": [
+      "(?i)not|no |same"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w05",
+   "family": "after_pampa",
+   "kind": "after",
+   "query": "Where did I go straight after leaving Pampa Digital?",
+   "answerable": true,
+   "answer_org": "Bracken Systems",
+   "targets": [
+    "j008",
+    "j006"
+   ],
+   "facts": [
+    {
+     "text": "After Pampa Digital, Sam joined Bracken Systems as a backend developer.",
+     "keys": [
+      "(?i)after.*Pampa Digital",
+      "(?i)Bracken Systems",
+      "(?i)backend developer"
+     ],
+     "required": true,
+     "memory": "j008"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Blue Kite substituted for the next employer",
+     "all": [
+      "(?i)Blue Kite|Kiteworks"
+     ],
+     "none": [
+      "(?i)Bracken"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w06",
+   "family": "after_bracken_first",
+   "kind": "after",
+   "query": "What job came immediately after I left Bracken the first time?",
+   "answerable": true,
+   "answer_org": "Kiteworks Ltd",
+   "targets": [
+    "j010",
+    "j011",
+    "j012"
+   ],
+   "facts": [
+    {
+     "text": "After the first Bracken departure, Sam joined Blue Kite as an iOS engineer.",
+     "keys": [
+      "(?i)(first|initial).*Bracken|Bracken.*(first|initial)",
+      "(?i)Blue Kite",
+      "(?i)iOS engineer"
+     ],
+     "required": true,
+     "memory": "j011"
+    },
+    {
+     "text": "Blue Kite was later renamed Kiteworks Ltd.",
+     "keys": [
+      "(?i)Blue Kite",
+      "(?i)Kiteworks",
+      "(?i)(renamed|changed.*name)"
+     ],
+     "required": true,
+     "memory": "j012"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "First departure confused with the second departure into freelancing",
+     "all": [
+      "(?i)(freelanc|self.employ)"
+     ],
+     "none": [
+      "(?i)Blue Kite|Kiteworks"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w07",
+   "family": "next_paid_after_kite",
+   "kind": "after",
+   "query": "What was my next paid job after leaving Blue Kite, allowing for the study gap?",
+   "answerable": true,
+   "answer_org": "Mosaic Labs",
+   "targets": [
+    "j016",
+    "j017",
+    "j020",
+    "j021"
+   ],
+   "facts": [
+    {
+     "text": "Sam's next paid job after Kiteworks was software engineer at Mosaic Labs.",
+     "keys": [
+      "(?i)Mosaic Labs",
+      "(?i)software engineer"
+     ],
+     "required": true,
+     "memory": "j021"
+    },
+    {
+     "text": "An unpaid independent study break separated Kiteworks from Mosaic Labs.",
+     "keys": [
+      "(?i)(study|studying)",
+      "(?i)(unpaid|no paid|without paid|no employer)"
+     ],
+     "required": true,
+     "memory": "j017"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Nightjar substituted for the next paid job",
+     "all": [
+      "(?i)Nightjar"
+     ],
+     "none": [
+      "(?i)Mosaic"
+     ]
+    },
+    {
+     "label": "Gap erased",
+     "all": [
+      "(?i)(no gap|without a gap|no break)"
+     ],
+     "none": []
+    }
+   ]
+  },
+  {
+   "id": "w08",
+   "family": "activity_after_kite",
+   "kind": "after",
+   "query": "What was I doing immediately after leaving Kiteworks Ltd?",
+   "answerable": true,
+   "answer_org": "Independent study",
+   "targets": [
+    "j017",
+    "j020"
+   ],
+   "facts": [
+    {
+     "text": "Immediately after Kiteworks, Sam took an independent study break from September 2019 through February 2020, without paid work.",
+     "keys": [
+      "(?i)(independent|self.directed).*study",
+      "(?i)2019",
+      "(?i)2020",
+      "(?i)(without paid|no paid|unpaid)"
+     ],
+     "required": true,
+     "memory": "j017"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Mosaic asserted as the immediate activity with no study gap",
+     "all": [
+      "(?i)Mosaic"
+     ],
+     "none": [
+      "(?i)study|studying|break|gap"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w09",
+   "family": "activity_before_mosaic",
+   "kind": "before",
+   "query": "What was I doing immediately before joining Mosaic Labs?",
+   "answerable": true,
+   "answer_org": "Independent study",
+   "targets": [
+    "j018",
+    "j020",
+    "j017"
+   ],
+   "facts": [
+    {
+     "text": "Immediately before Mosaic Labs, Sam was on an independent study break with no paid work.",
+     "keys": [
+      "(?i)before.*Mosaic",
+      "(?i)study",
+      "(?i)(no paid|without paid|unpaid|no employer)"
+     ],
+     "required": true,
+     "memory": "j020"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Kiteworks given as the immediate activity without acknowledging the break",
+     "all": [
+      "(?i)Kiteworks|Blue Kite"
+     ],
+     "none": [
+      "(?i)study|studying|break|gap"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w10",
+   "family": "before_bracken_return",
+   "kind": "before",
+   "query": "Who was my employer immediately before I returned to Bracken Systems?",
+   "answerable": true,
+   "answer_org": "Mosaic Labs",
+   "targets": [
+    "j026",
+    "j025",
+    "j037"
+   ],
+   "facts": [
+    {
+     "text": "Mosaic Labs was Sam's employer immediately before the return to Bracken Systems.",
+     "keys": [
+      "(?i)Mosaic Labs",
+      "(?i)before",
+      "(?i)(return|second|rejoin)"
+     ],
+     "required": true,
+     "memory": "j026"
+    },
+    {
+     "text": "Sam left Mosaic as a senior software engineer.",
+     "keys": [
+      "(?i)Mosaic",
+      "(?i)senior software engineer"
+     ],
+     "required": true,
+     "memory": "j025"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "First Bracken predecessor reused for the rehire",
+     "all": [
+      "(?i)Pampa"
+     ],
+     "none": [
+      "(?i)Mosaic"
+     ]
+    },
+    {
+     "label": "Overlapping teaching job incorrectly placed last",
+     "all": [
+      "(?i)Nightjar"
+     ],
+     "none": [
+      "(?i)Mosaic"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w11",
+   "family": "before_bracken_return",
+   "kind": "before",
+   "query": "¿En qué empresa trabajaba justo antes de volver a Bracken Systems?",
+   "answerable": true,
+   "answer_org": "Mosaic Labs",
+   "targets": [
+    "j026",
+    "j037"
+   ],
+   "facts": [
+    {
+     "text": "Justo antes de volver a Bracken Systems, trabajaba en Mosaic Labs.",
+     "keys": [
+      "(?i)Mosaic Labs",
+      "(?i)(antes|before)",
+      "(?i)(volver|regres|return|rejoin)"
+     ],
+     "required": true,
+     "memory": "j026"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "First stint or concurrent job substituted for Mosaic",
+     "all": [
+      "(?i)Pampa|Nightjar"
+     ],
+     "none": [
+      "(?i)Mosaic"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w12",
+   "family": "after_bracken_second",
+   "kind": "after",
+   "query": "What did I do immediately after leaving Bracken Systems for the second time?",
+   "answerable": true,
+   "answer_org": "Sam (sole trader)",
+   "targets": [
+    "j036",
+    "j037",
+    "j038"
+   ],
+   "facts": [
+    {
+     "text": "After the second Bracken departure, Sam became a self-employed freelance developer.",
+     "keys": [
+      "(?i)(second|return)",
+      "(?i)Bracken",
+      "(?i)(self.employ|freelance)"
+     ],
+     "required": true,
+     "memory": "j037"
+    },
+    {
+     "text": "The first sole-trader period began in June 2022.",
+     "keys": [
+      "(?i)(June 2022|2022-06)",
+      "(?i)(sole.trader|self.employ|freelance)"
+     ],
+     "required": true,
+     "memory": "j038"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Blue Kite substituted using the first Bracken departure",
+     "all": [
+      "(?i)Blue Kite|Kiteworks"
+     ],
+     "none": [
+      "(?i)freelanc|self.employ|sole.trader"
+     ]
+    },
+    {
+     "label": "Museum client mistaken for next employer",
+     "all": [
+      "(?i)Estuary Museum",
+      "(?i)(employer|employee)"
+     ],
+     "none": [
+      "(?i)not|client"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w13",
+   "family": "after_first_freelance",
+   "kind": "after",
+   "query": "Which employee job followed my first freelance period?",
+   "answerable": true,
+   "answer_org": "Lattice Health",
+   "targets": [
+    "j041",
+    "j043"
+   ],
+   "facts": [
+    {
+     "text": "Lattice Health followed Sam's first freelance period; Sam worked there as a senior iOS engineer in 2024.",
+     "keys": [
+      "(?i)Lattice Health",
+      "(?i)senior iOS engineer",
+      "(?i)2024"
+     ],
+     "required": true,
+     "memory": "j043"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Client substituted for the next employee job",
+     "all": [
+      "(?i)Estuary Museum|Nordwind"
+     ],
+     "none": [
+      "(?i)Lattice"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w14",
+   "family": "last_salaried",
+   "kind": "before",
+   "query": "Where was my last salaried job before this current freelance stretch?",
+   "answerable": true,
+   "answer_org": "Lattice Health",
+   "targets": [
+    "j045",
+    "j043",
+    "j047"
+   ],
+   "facts": [
+    {
+     "text": "Sam's last salaried employer before the current freelance period was Lattice Health.",
+     "keys": [
+      "(?i)Lattice Health",
+      "(?i)(last|previous|before)",
+      "(?i)(salaried|employee|employer)"
+     ],
+     "required": true,
+     "memory": "j045"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Current client substituted for last salaried employer",
+     "all": [
+      "(?i)Nordwind|Tejo"
+     ],
+     "none": [
+      "(?i)Lattice"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w15",
+   "family": "last_salaried",
+   "kind": "previous",
+   "query": "my previous salaried job",
+   "answerable": true,
+   "answer_org": "Lattice Health",
+   "targets": [
+    "j045",
+    "j043"
+   ],
+   "facts": [
+    {
+     "text": "Sam's previous salaried job was senior iOS engineer at Lattice Health, January–December 2024.",
+     "keys": [
+      "(?i)Lattice Health",
+      "(?i)senior iOS engineer",
+      "(?i)2024"
+     ],
+     "required": true,
+     "memory": "j043"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Older Bracken stint substituted for most recent employment",
+     "all": [
+      "(?i)Bracken"
+     ],
+     "none": [
+      "(?i)Lattice"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w16",
+   "family": "last_salaried",
+   "kind": "previous",
+   "query": "¿Cuál fue mi último trabajo como empleado?",
+   "answerable": true,
+   "answer_org": "Lattice Health",
+   "targets": [
+    "j045",
+    "j043"
+   ],
+   "facts": [
+    {
+     "text": "Mi último trabajo como empleado fue en Lattice Health.",
+     "keys": [
+      "(?i)Lattice Health",
+      "(?i)(último|ultimo|last|previous)",
+      "(?i)(emplead|salaried|employee|employer)"
+     ],
+     "required": true,
+     "memory": "j045"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Freelance client substituted for last employee job",
+     "all": [
+      "(?i)Nordwind|Tejo"
+     ],
+     "none": [
+      "(?i)Lattice"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w17",
+   "family": "year_2017",
+   "kind": "year",
+   "query": "Where was I working in 2017, and what was my title?",
+   "answerable": true,
+   "answer_org": "Bracken Systems",
+   "targets": [
+    "j006"
+   ],
+   "facts": [
+    {
+     "text": "In 2017 Sam worked at Bracken Systems as a backend developer during the first stint.",
+     "keys": [
+      "(?i)2017",
+      "(?i)Bracken Systems",
+      "(?i)backend developer"
+     ],
+     "required": true,
+     "memory": "j006"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Senior title backdated to first stint",
+     "all": [
+      "(?i)senior backend developer"
+     ],
+     "none": [
+      "(?i)not|later|second|return"
+     ]
+    },
+    {
+     "label": "Blue Kite backdated to 2017",
+     "all": [
+      "(?i)Blue Kite|Kiteworks"
+     ],
+     "none": [
+      "(?i)Bracken"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w18",
+   "family": "overlap_2020",
+   "kind": "year",
+   "query": "I was at Mosaic Labs in October 2020; who else employed me then?",
+   "answerable": true,
+   "answer_org": "Nightjar School",
+   "targets": [
+    "j029",
+    "j030"
+   ],
+   "facts": [
+    {
+     "text": "Nightjar School also employed Sam as a part-time Python instructor in October 2020.",
+     "keys": [
+      "(?i)Nightjar School",
+      "(?i)(part.time|evening)",
+      "(?i)Python instructor"
+     ],
+     "required": true,
+     "memory": "j029"
+    },
+    {
+     "text": "The Nightjar and Mosaic jobs overlapped from September through December 2020.",
+     "keys": [
+      "(?i)Nightjar",
+      "(?i)Mosaic",
+      "(?i)(overlap|concurrent|both|same time|at once)"
+     ],
+     "required": true,
+     "memory": "j030"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Teaching treated as unpaid volunteering",
+     "all": [
+      "(?i)unpaid|volunteer"
+     ],
+     "none": [
+      "(?i)not|paid employee"
+     ]
+    },
+    {
+     "label": "Nightjar employment placed after leaving Mosaic",
+     "all": [
+      "(?i)Nightjar",
+      "(?i)after (?:you |Sam |I )?left Mosaic"
+     ],
+     "none": [
+      "(?i)not|never"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w19",
+   "family": "gap_2019",
+   "kind": "year",
+   "query": "What was my work situation in November 2019?",
+   "answerable": true,
+   "answer_org": "Independent study",
+   "targets": [
+    "j017"
+   ],
+   "facts": [
+    {
+     "text": "In November 2019 Sam was on an independent study break, with no employer and no paid freelance work.",
+     "keys": [
+      "(?i)study",
+      "(?i)(no employer|not employed|without an employer)",
+      "(?i)(no paid|without paid|no.*freelance)"
+     ],
+     "required": true,
+     "memory": "j017"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Employment at Kiteworks extended into the gap",
+     "all": [
+      "(?i)(employed by|working at|worked at) Kiteworks"
+     ],
+     "none": [
+      "(?i)not|previous|earlier|August"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w20",
+   "family": "current_status",
+   "kind": "current",
+   "query": "What is my current work setup as of 28 October 2026?",
+   "answerable": true,
+   "answer_org": "Sam (sole trader)",
+   "targets": [
+    "j047",
+    "j050",
+    "j051",
+    "j053"
+   ],
+   "facts": [
+    {
+     "text": "Sam is a self-employed freelance developer, continuously since January 2025.",
+     "keys": [
+      "(?i)(self.employ|sole.trader)",
+      "(?i)freelance developer",
+      "(?i)(January 2025|2025-01)"
+     ],
+     "required": true,
+     "memory": "j047"
+    },
+    {
+     "text": "Tejo Sailing Club and Nordwind Logistics are concurrent clients.",
+     "keys": [
+      "(?i)Tejo Sailing Club",
+      "(?i)Nordwind Logistics",
+      "(?i)clients",
+      "(?i)(concurrent|both|same|alongside)"
+     ],
+     "required": true,
+     "memory": "j050"
+    },
+    {
+     "text": "Ledgerly is Sam's personal open-source project.",
+     "keys": [
+      "(?i)Ledgerly",
+      "(?i)(personal|own)",
+      "(?i)open.source"
+     ],
+     "required": true,
+     "memory": "j051"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Nordwind made an employee job",
+     "all": [
+      "(?i)(employee of|employed by|salaried at) Nordwind"
+     ],
+     "none": [
+      "(?i)not|never"
+     ]
+    },
+    {
+     "label": "Ledgerly made an employer",
+     "all": [
+      "(?i)Ledgerly",
+      "(?i)(employer|employee)"
+     ],
+     "none": [
+      "(?i)not|neither|no "
+     ]
+    },
+    {
+     "label": "Planned Nordwind end treated as completed",
+     "all": [
+      "(?i)Nordwind",
+      "(?i)(already ended|has ended|finished in December 2026)"
+     ],
+     "none": [
+      "(?i)not"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w21",
+   "family": "current_nordwind",
+   "kind": "current",
+   "query": "What's my current role with Nordwind?",
+   "answerable": true,
+   "answer_org": "Nordwind Logistics",
+   "targets": [
+    "j049",
+    "j050",
+    "j056"
+   ],
+   "facts": [
+    {
+     "text": "Sam is a freelance migration consultant on Nordwind Logistics' Atlas project, two days a week.",
+     "keys": [
+      "(?i)Nordwind",
+      "(?i)freelance",
+      "(?i)migration consultant",
+      "(?i)Atlas",
+      "(?i)(two|2) days"
+     ],
+     "required": true,
+     "memory": "j049"
+    },
+    {
+     "text": "Nordwind is a client, not Sam's employer.",
+     "keys": [
+      "(?i)Nordwind",
+      "(?i)client"
+     ],
+     "required": true,
+     "memory": "j050"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Erik's CTO title assigned to Sam",
+     "all": [
+      "(?i)(you|Sam|I) (?:are|is|am|was) (?:the |their |Nordwind.s )?CTO"
+     ],
+     "none": [
+      "(?i)not"
+     ]
+    },
+    {
+     "label": "Current Nordwind contract mistaken for salaried employment",
+     "all": [
+      "(?i)(employee of|employed by|salaried at) Nordwind"
+     ],
+     "none": [
+      "(?i)not|never"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w22",
+   "family": "mosaic_pre_promotion",
+   "kind": "role_in_stint",
+   "query": "What was my title at Mosaic Labs before the promotion?",
+   "answerable": true,
+   "answer_org": "Mosaic Labs",
+   "targets": [
+    "j022",
+    "j027"
+   ],
+   "facts": [
+    {
+     "text": "Before the promotion at Mosaic Labs, Sam's title was software engineer.",
+     "keys": [
+      "(?i)Mosaic",
+      "(?i)before",
+      "(?i)(?<!senior )\\bsoftware engineer\\b"
+     ],
+     "required": true,
+     "memory": "j022"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Employer predecessor returned instead of an internal title",
+     "all": [
+      "(?i)Kiteworks|Blue Kite|Bracken"
+     ],
+     "none": [
+      "(?i)software engineer"
+     ]
+    },
+    {
+     "label": "Promoted title supplied as the original title",
+     "all": [
+      "(?i)before.*(?:title was|was a|were a) senior software engineer"
+     ],
+     "none": [
+      "(?i)not"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w23",
+   "family": "mosaic_pre_promotion",
+   "kind": "role_in_stint",
+   "query": "¿Qué cargo tenía en Mosaic Labs antes del ascenso?",
+   "answerable": true,
+   "answer_org": "Mosaic Labs",
+   "targets": [
+    "j022",
+    "j027"
+   ],
+   "facts": [
+    {
+     "text": "Antes del ascenso en Mosaic Labs, mi cargo era ingeniero de software.",
+     "keys": [
+      "(?i)Mosaic",
+      "(?i)(antes|before)",
+      "(?i)(ingeniero de software|software engineer)"
+     ],
+     "required": true,
+     "memory": "j022"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Timeline predecessor returned instead of role",
+     "all": [
+      "(?i)Kiteworks|Blue Kite|Bracken"
+     ],
+     "none": [
+      "(?i)ingeniero de software|software engineer"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w24",
+   "family": "mosaic_post_promotion",
+   "kind": "role_in_stint",
+   "query": "What title did I get after my Mosaic promotion, and when?",
+   "answerable": true,
+   "answer_org": "Mosaic Labs",
+   "targets": [
+    "j023",
+    "j027"
+   ],
+   "facts": [
+    {
+     "text": "Sam became a senior software engineer at Mosaic Labs in January 2021.",
+     "keys": [
+      "(?i)Mosaic",
+      "(?i)senior software engineer",
+      "(?i)(January 2021|2021-01)"
+     ],
+     "required": true,
+     "memory": "j023"
+    },
+    {
+     "text": "The promotion was within the same continuous employment stint.",
+     "keys": [
+      "(?i)(same|continuous)",
+      "(?i)(employment|stint|job)"
+     ],
+     "required": true,
+     "memory": "j023"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Promotion treated as leaving and rejoining Mosaic",
+     "all": [
+      "(?i)(rejoined|rehired|new employment stint).*Mosaic|Mosaic.*(?:rejoined|rehired|new employment stint)"
+     ],
+     "none": [
+      "(?i)not|no "
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w25",
+   "family": "negative_mosaic_chat",
+   "kind": "negative",
+   "query": "What did we use before Mosaic Labs moved team chat to Slack?",
+   "answerable": true,
+   "answer_org": "Mosaic Labs",
+   "targets": [
+    "j028"
+   ],
+   "facts": [
+    {
+     "text": "Mosaic Labs used Mattermost before Slack.",
+     "keys": [
+      "(?i)Mattermost",
+      "(?i)before.*Slack"
+     ],
+     "required": true,
+     "memory": "j028"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Career predecessor substituted for chat tool",
+     "all": [
+      "(?i)Kiteworks|Blue Kite|Bracken|independent study"
+     ],
+     "none": [
+      "(?i)Mattermost"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w26",
+   "family": "negative_nordwind_cto",
+   "kind": "negative",
+   "query": "Who is Nordwind's CTO?",
+   "answerable": true,
+   "answer_org": "Nordwind Logistics",
+   "targets": [
+    "j056",
+    "m102"
+   ],
+   "facts": [
+    {
+     "text": "Erik Halvorsen is Nordwind Logistics' CTO.",
+     "keys": [
+      "(?i)Erik Halvorsen",
+      "(?i)Nordwind",
+      "(?i)CTO"
+     ],
+     "required": true,
+     "memory": "j056"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Sam assigned the contact's title",
+     "all": [
+      "(?i)(Sam|you) (?:is|are) (?:the |Nordwind.s )?CTO"
+     ],
+     "none": [
+      "(?i)not"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w27",
+   "family": "negative_friend_employer",
+   "kind": "negative",
+   "query": "Who do I know at Aster Rail?",
+   "answerable": true,
+   "answer_org": "Aster Rail",
+   "targets": [
+    "j054"
+   ],
+   "facts": [
+    {
+     "text": "Sam's friend Sora is a designer at Aster Rail.",
+     "keys": [
+      "(?i)Sora",
+      "(?i)designer",
+      "(?i)Aster Rail"
+     ],
+     "required": true,
+     "memory": "j054"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Friend's employment assigned to Sam",
+     "all": [
+      "(?i)(Sam|you|I) (?:worked|work|was employed|were employed|am employed|are employed) (?:at|by|for) Aster Rail"
+     ],
+     "none": [
+      "(?i)never|not"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w28",
+   "family": "negative_supplier",
+   "kind": "negative",
+   "query": "What did CloudQuay supply to Bracken during my second stint?",
+   "answerable": true,
+   "answer_org": "CloudQuay",
+   "targets": [
+    "j055"
+   ],
+   "facts": [
+    {
+     "text": "CloudQuay supplied transactional email to Bracken Systems.",
+     "keys": [
+      "(?i)CloudQuay",
+      "(?i)transactional email",
+      "(?i)Bracken"
+     ],
+     "required": true,
+     "memory": "j055"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Supplier misclassified as Sam's employer",
+     "all": [
+      "(?i)(Sam|you|I) (?:worked|work|was employed|were employed) (?:at|by|for) CloudQuay"
+     ],
+     "none": [
+      "(?i)never|not"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w29",
+   "family": "negative_demo_checklist",
+   "kind": "negative",
+   "query": "What do I need to do before the Harbor board demo?",
+   "answerable": true,
+   "answer_org": "",
+   "targets": [
+    "j058"
+   ],
+   "facts": [
+    {
+     "text": "Seed the demo bookings before the Harbor board demo.",
+     "keys": [
+      "(?i)seed",
+      "(?i)(demo )?bookings"
+     ],
+     "required": true,
+     "memory": "j058"
+    },
+    {
+     "text": "Check the projector cable before the demo.",
+     "keys": [
+      "(?i)check",
+      "(?i)projector cable"
+     ],
+     "required": true,
+     "memory": "j058"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Employer predecessor substituted for preparation tasks",
+     "all": [
+      "(?i)Lattice|Bracken|Mosaic"
+     ],
+     "none": [
+      "(?i)bookings|projector"
+     ]
+    },
+    {
+     "label": "Injected rate from the existing demo note repeated",
+     "all": [
+      "(?i)(€\\s*2[,.]?000|2[,.]?000\\s*(?:euros|EUR))"
+     ],
+     "none": []
+    }
+   ]
+  },
+  {
+   "id": "w30",
+   "family": "unknown_before_pampa",
+   "kind": "no_answer",
+   "query": "Which employer did I have immediately before Pampa Digital?",
+   "answerable": false,
+   "answer_org": "",
+   "targets": [],
+   "facts": [],
+   "must_not": [
+    {
+     "label": "an invented answer",
+     "all": [
+      "."
+     ],
+     "none": []
+    }
+   ]
+  },
+  {
+   "id": "w31",
+   "family": "unknown_future_employer",
+   "kind": "no_answer",
+   "query": "Which company will employ me in March 2027?",
+   "answerable": false,
+   "answer_org": "",
+   "targets": [],
+   "facts": [],
+   "must_not": [
+    {
+     "label": "an invented answer",
+     "all": [
+      "."
+     ],
+     "none": []
+    }
+   ]
+  },
+  {
+   "id": "w32",
+   "family": "ambiguous_bracken",
+   "kind": "no_answer",
+   "query": "Where did I work immediately before Bracken Systems?",
+   "answerable": false,
+   "answer_org": "",
+   "targets": [],
+   "facts": [],
+   "must_not": [
+    {
+     "label": "an invented answer",
+     "all": [
+      "."
+     ],
+     "none": []
+    }
+   ]
+  },
+  {
+   "id": "w33",
+   "family": "overlap_not_sequence",
+   "kind": "before",
+   "query": "Had I left Mosaic Labs before starting my Nightjar School job?",
+   "answerable": true,
+   "answer_org": "Mosaic Labs",
+   "targets": [
+    "j030",
+    "j032",
+    "j025"
+   ],
+   "facts": [
+    {
+     "text": "No: Sam worked at Mosaic Labs and Nightjar School concurrently from September through December 2020.",
+     "keys": [
+      "(?i)Mosaic",
+      "(?i)Nightjar",
+      "(?i)(concurrent|overlap|both|same time|at once)",
+      "(?i)2020"
+     ],
+     "required": true,
+     "memory": "j030"
+    },
+    {
+     "text": "Sam did not leave Mosaic Labs until June 2021.",
+     "keys": [
+      "(?i)Mosaic",
+      "(?i)(June 2021|2021-06)"
+     ],
+     "required": true,
+     "memory": "j025"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Overlap flattened into sequential employers",
+     "all": [
+      "(?i)(left|leaving) Mosaic.*before.*(?:Nightjar|teaching)"
+     ],
+     "none": [
+      "(?i)not|never|hadn.t|had not|didn.t|did not|no"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w34",
+   "family": "negative_museum_deliverable",
+   "kind": "negative",
+   "query": "What did I build for Estuary Museum?",
+   "answerable": true,
+   "answer_org": "Estuary Museum",
+   "targets": [
+    "j042",
+    "j040"
+   ],
+   "facts": [
+    {
+     "text": "Sam built a Python tool that exported ticket sales to CSV for Estuary Museum's accountant.",
+     "keys": [
+      "(?i)Python",
+      "(?i)ticket",
+      "(?i)CSV",
+      "(?i)accountant"
+     ],
+     "required": true,
+     "memory": "j042"
+    }
+   ],
+   "must_not": [
+    {
+     "label": "Client engagement converted into employee job",
+     "all": [
+      "(?i)(employed by|employee of|salaried at) Estuary Museum"
+     ],
+     "none": [
+      "(?i)not|never"
+     ]
+    },
+    {
+     "label": "Client contact's role assigned to Sam",
+     "all": [
+      "(?i)(Sam|you|I) (?:was|were|am|are) (?:a |the )?curator"
+     ],
+     "none": [
+      "(?i)not"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "w35",
+   "family": "unknown_copper_finch",
+   "kind": "no_answer",
+   "query": "What was my job title at Copper Finch?",
+   "answerable": false,
+   "answer_org": "",
+   "targets": [],
+   "facts": [],
+   "must_not": [
+    {
+     "label": "an invented answer",
+     "all": [
+      "."
+     ],
+     "none": []
+    }
+   ]
+  }
+ ]
+}

@@ -1,5 +1,49 @@
 # Spike H results
 
+## Spike H2: work history (14 Nov 2026)
+Plan v5 §16 required this half-day spike before 13a: a reviewed timeline on the author's vault, real answer calls, a diagnosis of the 1st-ranked memory, and a blind fixture. The author's data stayed in a private folder outside the repo; only counts and choice numbers are recorded here. Code: `work_history.py` (extraction, stints, the resolver, intent) and `author_astra_work.py` (the fixture).
+
+**The author's review of the probe** (a private terminal tool; verdicts only):
+- 43 of the 44 job facts right, 1 partly;
+- the 9 employers right and complete, and every stated date right;
+- **the probe's pick of the employer before the current one was wrong.** Its rule compared years only. Two employers ended in the year the current one started, and the tie went to whichever came first in a list. The author's answer was the other one, a short job that also started that year.
+- **Plan v5's stint rule picks the right one.** It uses months where the memory states them (both did), and a real tie is ambiguous, never a guess. The probe's naive name-merging had also attributed the author's answer memory to the wrong employer; the stint version attributes it to the right one.
+
+**The 1st-ranked answer memory, diagnosed:**
+- The app ranks with a second embedding index, qwen3-embedding:0.6b through Ollama, not bge-small alone. Rebuilt from the vault copy's stored vectors, its ranking puts the memory that answers 34th (110th for "Where did I work before …").
+- The other answering memory ranks 3rd–9th, inside the 10 the answer reads. It's about the current employer but doesn't name the earlier job, so on its own it can't answer the question.
+
+**Real answer calls** (the author's Search answers model, GPT-5.6-Terra through Codex, as the app; 6 wordings including one in Spanish × 3 samples; code checks whether a claim names the earlier employer):
+
+| Input | Answers naming the earlier employer | No answer |
+|---|---|---|
+| The app's real top 10 | 0 of 18 | 18 of 18: the iPhone failure, reproduced |
+| Top 10 + 2 bridges picked by the probe's year-only rule | 18 of 18, **all naming the wrong employer** | 0 |
+| Top 10 + 2 bridges picked by v5's stint rule | **18 of 18, the right employer** | 0 |
+
+- Bridges turn the failure into an answer every time.
+- **A wrong timeline produces confident wrong answers,** in all 18. The order is the risk (D11), and a tie must never be guessed.
+
+**The blind fixture** (GPT-6-Astra: Spike G's vault plus 60 work-history memories, 13 true stints, 35 queries, including negatives and questions about roles within one job):
+
+| | First run, blind (employer-level timeline, years only) | After stints, months, job kinds and gaps (now a development set) |
+|---|---|---|
+| Before / after answers right | 3 | 7 |
+| Wrong | **5** | **0** |
+| Ambiguous, or a gap told | 7 | 8 |
+| Negative and in-job questions that triggered the timeline | 0 of 11 | 0 of 11 |
+| True employers found · extra "employers" | 6 of 7 · 6 | 7 of 7 · 4 (clients still labelled employers) |
+
+- The blind run failed on exactly what the reviews predicted: rehiring, a rename ("Kiteworks Ltd, also called Blue Kite"), a study gap skipped confidently, and clients counted as employers.
+- The stint version fixes these. Its remaining ambiguous answers are honest misses: a role end read as a job end ("through December 2020", then promoted), questions that name no employer ("my first freelance period"), and overlapping jobs.
+- Since the fixture was used to fix the code, it's no longer blind: 13a needs a fresh blind fixture for its acceptance test.
+- Cost: extraction $0.06 per fixture run, and $0.09 on the author's vault.
+
+**Verdict: Spike H2 passes,** with three things for 13a:
+- the stint rule with month precision and ties left ambiguous, as v5 specifies; the year-only rule failed on the real vault;
+- role history inside a stint, so a promotion isn't read as a job end;
+- client classification, which was still imperfect (4 clients labelled employers).
+
 ## Search and answers, round 3 (14 Nov 2026)
 **Fable 5.2 checked this round** (read-only, offline). The tables reproduce from the saved records, and the re-judge was fair: it removed an advantage for C, and the headline is the same in both judgings. The corrections below are Fable's. **§15's answer targets aren't passed.**
 
