@@ -20,7 +20,10 @@ from run_facts import load_state
 TIMELINE_KINDS = ("before", "after", "year", "current", "previous", "no_answer")
 
 
-def judge(state, q):
+MODELLED_KINDS = ("employee", "self_employed", "partner")
+
+
+def judge(state, q, timeline=()):
     """One query -> an outcome: right, right_gap (right entity, gap told), wrong, told (no answer, a note), miss (no
     intent on a decidable question), told_gap (a gap told where the truth is undecidable), triggered / quiet (negatives)."""
     it = F.intent(q["query"], state)
@@ -28,15 +31,16 @@ def judge(state, q):
         return ("triggered" if it else "quiet"), it, None
     decidable = bool(q.get("answer_org"))
     if not it:
-        return ("miss" if decidable else "told"), it, None
+        return ("miss" if decidable else "told_no_intent"), it, None
     got, basis = F.answer(state, it, q["query"])
     want = set(F.entity_matches(state, it[0], q["answer_org"])) if decidable else set()
-    if isinstance(got, list):                  # several current jobs: right if the truth is among them
-        got = next((g for g in got if g in want), ("several", tuple(got)))
+    if isinstance(got, list):                  # several answers: right only if they are exactly the truth
+        got = next(iter(want)) if set(got) == want and len(want) == 1 else ("several", tuple(got))
     if got is None:
         return ("told" if not decidable else "told_decidable"), it, basis
-    if decidable and not want and basis == "gap":
-        return "told_gap", it, basis           # the truth isn't an entity of this predicate (a study gap): a gap told is right
+    kinds = {t.get("kind") for t in timeline if F.fold(t.get("org", "")) == F.fold(q["answer_org"])}
+    if decidable and not want and basis == "gap" and kinds and not kinds & set(MODELLED_KINDS):
+        return "told_gap", it, basis           # the truth isn't something the timeline models (a study gap): a gap told is right
     if not decidable:
         return ("told_gap" if basis == "gap" else "wrong"), it, basis
     if got in want:
@@ -49,15 +53,13 @@ def score_work(state, data, out=print):
     for q in data["queries"]:
         if q["kind"] not in TIMELINE_KINDS + ("negative", "role_in_stint"):
             continue
-        outcome, it, basis = judge(state, q)
+        outcome, it, basis = judge(state, q, data.get("timeline", []))
         c[outcome] = c.get(outcome, 0) + 1
         if it and q["kind"] in ("before", "after") and it[1] != q["kind"]:
             c["operator_mismatch"] = c.get("operator_mismatch", 0) + 1
         rows.append((q["id"], q["kind"], f"{basis}: {outcome}" if basis else outcome))
-    dec = sum(c.get(k, 0) for k in ("right", "right_gap", "wrong_decidable", "told_decidable", "miss")) + \
-        sum(1 for q in data["queries"] if q["kind"] in TIMELINE_KINDS and q.get("answer_org") and judge(state, q)[0] == "wrong")
     out(f"decidable: right {c.get('right', 0)}, right with a gap told {c.get('right_gap', 0)}, told {c.get('told_decidable', 0)}, "
-        f"no intent {c.get('miss', 0)}; undecidable: told {c.get('told', 0)}, gap told {c.get('told_gap', 0)}; "
+        f"no intent {c.get('miss', 0)}; undecidable: told {c.get('told', 0)}, no intent {c.get('told_no_intent', 0)}, gap told {c.get('told_gap', 0)}; "
         f"WRONG {c.get('wrong', 0)}; negatives triggered {c.get('triggered', 0)} of {c.get('triggered', 0) + c.get('quiet', 0)}; "
         f"operator mismatches {c.get('operator_mismatch', 0)}")
     return {"counts": c, "rows": rows}

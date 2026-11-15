@@ -199,8 +199,29 @@
    "start": "\"since 2022\", \"joined in March 2019\"",
    "denial": "Marta is not my sister",
    "pair": "\"Maria is my sister\", \"my sister Maria\"",
-   "denial_role": "Sasha is not my manager"
-  }
+   "denial_role": "Sasha is not my manager",
+   "deceased": "\"late\", \"passed away\""
+  },
+  "time_prepositions": [
+   "in",
+   "since",
+   "during",
+   "back in",
+   "until",
+   "en",
+   "desde",
+   "durante",
+   "hasta",
+   "from",
+   "between",
+   "de"
+  ],
+  "owner_words": [
+   "our",
+   "nuestra",
+   "nuestro",
+   "users"
+  ]
  },
  "kinds": {
   "person": {

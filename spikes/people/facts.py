@@ -140,12 +140,22 @@ def parse_date(s):
     m = re.search(r"\b((?:19|20)\d{2})-(\d{1,2})\b(?!-)", t)
     if m and 1 <= int(m.group(2)) <= 12:
         return _month_range(int(m.group(1)), int(m.group(2)))
-    m = re.search(r"\b(" + _MONTH_RE + r")\.?,?\s+(?:\d{1,2}(?:st|nd|rd|th)?,?\s+)?(?:(?:de|of)\s+)?((?:19|20)\d{2})\b", t)
-    if not m:
-        m2 = re.search(r"\b\d{1,2}\s+(?:de\s+)?(" + _MONTH_RE + r")\.?\s+(?:de\s+)?((?:19|20)\d{2})\b", t)
-        m = m2
+    m = re.search(r"\b(" + _MONTH_RE + r")\.?,?\s+(?:(\d{1,2})(?:st|nd|rd|th)?,?\s+)?(?:(?:de|of)\s+)?((?:19|20)\d{2})\b", t)
+    dd = None
     if m:
-        return _month_range(int(m.group(2)), _MONTH[m.group(1)])
+        mon, dd, y = m.group(1), m.group(2), m.group(3)
+    else:
+        m = re.search(r"\b(\d{1,2})\s+(?:de\s+)?(" + _MONTH_RE + r")\.?\s+(?:de\s+)?((?:19|20)\d{2})\b", t)
+        if m:
+            dd, mon, y = m.group(1), m.group(2), m.group(3)
+    if m:
+        if dd:
+            try:
+                d = date(int(y), _MONTH[mon], int(dd)).toordinal()
+                return Range(d, d, "day")
+            except ValueError:
+                pass
+        return _month_range(int(y), _MONTH[mon])
     m = re.search(r"\b((?:19|20)\d{2})\b", t)
     if m:
         y = int(m.group(1))
@@ -230,11 +240,12 @@ def role_phrases(text, user_aliases=(), preds=None):
         qual = mt.group("free").strip().lower() or None
         a = max(text.rfind(c, 0, s) for c in ".!?\n") + 1
         b = min([i for i in (text.find(c, e) for c in ".!?\n") if i >= 0] or [len(text)])
-        cue = re.search(r"\b(19|20)\d{2}\b", text[a:b])            # a year in the same sentence
+        preps = "|".join(re.escape(p) for p in R.lang.get("time_prepositions", []))
+        cue = re.search(r"(?i)\b(?:" + preps + r")\s+((?:(?:" + _MONTH_RE + r")\.?\s+(?:de\s+)?)?(?:19|20)\d{2})\b", text[a:b]) if preps else None
         paired = paired_name(text, s, e, user_aliases) if R.kind_of(pred) == "person" else None
         former = status == "former" or bool(mt.group("prefix")) or any(m in R.former_cues for m in mods)
         current = any(m in R.current_cues for m in mods)
-        out.append(RolePhrase(s, e, text[s:e], word, pred, cls, generic, mods, cue.group(0) if cue else None, qual,
+        out.append(RolePhrase(s, e, text[s:e], word, pred, cls, generic, mods, cue.group(1) if cue else None, qual,
                               paired, plural, excl, former, current, status == "former"))
     return out
 
@@ -270,14 +281,15 @@ def label_class(pred, label):
     return w
 
 
-_OWNERS = {"my", "mi", "mis", "our", "nuestra", "nuestro", "the", "user's", "users"}
+def _owners():
+    return {fold(o) for o in R.lang["owners"] for o in o.split()} | {fold(o) for o in R.lang.get("owner_words", [])}
 
 
 def is_role_name(name):
     words = fold(name).replace("’", "'").split()
-    if not words or words[0] not in _OWNERS:
+    if not words or words[0] not in _owners():
         return False
-    rest = [w for w in words[1:] if w not in _OWNERS]
+    rest = [w for w in words[1:] if w not in _owners()]
     return bool(rest) and rest[-1] in R.lex and all(w in set(R.modifiers) for w in rest[:-1])
 
 
@@ -324,6 +336,7 @@ def mem_trusted(mem):
 class State:
     def __init__(self, user_aliases):
         self.user_aliases = user_aliases
+        self._written = None
         self.entities = {}
         self.facts = []
         self.groups = {}
@@ -405,22 +418,29 @@ class State:
                 continue
             ent = self.entities[r.entity]
             mine = [e for e in eps if e.entity == r.entity]
-            e = next((e for e in reversed(mine) if holds(e, ph, as_of, ent.deceased)), None)
+            e = next((e for e in reversed(mine) if holds(e, ph, as_of, ent.deceased, self._written)), None)
             if e is None:
                 continue
             seen.add(r.entity)
             self._hold_eps[r.entity] = e
             out.append((ent, r))
+        if as_of is not None and any(certainly_holds(self._hold_eps[p.id], as_of) for p, _ in out):
+            # someone certainly held it then: a holder whose stated start comes later isn't a candidate
+            out = [(p, r) for p, r in out if not (self._hold_eps[p.id].stated_start and self._hold_eps[p.id].start.lo > as_of.hi)]
         g = self.groups.get((ph.type, ph.cls)) if not ph.generic else None
         extra = max(0, g.count - len(out)) if g and g.count is not None else 0
         return out, extra
 
     def as_of(self, mem, ph):
+        """When the role phrase talks about, as a Range: a time cue ("in February 2019"), or the memory's date."""
+        d = day(mem["written"]) if mem.get("source") != "import" else None
+        self._written = Range(d, d) if d else None
         if ph.time_cue:
-            return date(int(ph.time_cue), 7, 1).toordinal()
+            return parse_date(ph.time_cue)
         if mem["source"] == "import":
             return None
-        return day(mem["written"])
+        d = day(mem["written"])
+        return Range(d, d) if d else None
 
     def resolve(self, mem, ph):
         key = (mem["id"], ph.start)
@@ -446,10 +466,10 @@ class State:
         if len(hs) + extra > 1:
             return None, "candidates"
         p, r = hs[0]
-        if (not trusted) or (not r.trusted):
-            return p.id, "untrusted"
         e = self._hold_eps.get(p.id)
-        if e is not None and d is not None and e.stated_start and e.start.lo > d:
+        if (not trusted) or not (e.trusted if e is not None else r.trusted):
+            return p.id, "untrusted"           # the episode it rests on has only untrusted evidence
+        if e is not None and d is not None and e.stated_start and e.start.lo > d.hi:
             return p.id, "sole_known"        # a reference before a stated start: probably, not certainly
         exclusive = R.preds[ph.type].get("exclusive", False)
         unique = (any(w in ph.mods for w in R.lang["only_words"]) or r.only or exclusive or ph.exclusive_label
@@ -565,7 +585,7 @@ def instructions(group, has_phrases=True):
     ex_label = ", ".join(w for e in ex for w in e.get("label", []))
     ex_former = ", ".join(w for e in ex for w in e.get("former", []))
     dead = "; a person who died is not \"former\": use deceased" if has_people else ""
-    person_fields = ('deceased: true for "late", "passed away". only: true when the memory says it\'s the only one ("{only}"). '
+    person_fields = ('deceased: true for {deceased}. only: true when the memory says it\'s the only one ("{only}"). '
                      'count: a number the memory states ("{count}"), else null. ').format(**PX()) if has_people else ""
     qual_lines = "".join(f"\n   - qualifiers.{k}: {q.get('describe', k)}" + (f" (one of: {', '.join(q['values'])})" if q.get("values") else ", as written")
                          + ", or null." for k, q in quals.items())
@@ -894,6 +914,8 @@ def apply(state, mem, phrases, people, rels, roles, ids, things=(), mode="full")
             pid = here.get(fold(ref[5:]))
             if pid:
                 state.decisions[key] = (pid, "named" if trust == "trusted" else "untrusted")
+        elif ref in ids and ph.paired and ids[ref].name and fold(ph.paired) in {fold(a) for a in ids[ref].aliases}:
+            state.decisions[key] = (ref, "named" if trust == "trusted" else "untrusted")   # the text pairs them, the model agrees
         elif ref in ids and ids[ref].group and not ids[ref].name and several:
             state.decisions[key] = (ref, "group")
         elif ref in ids and several:
@@ -965,6 +987,7 @@ class Episode:
     inferred_end: bool = False
     assertions: list = field(default_factory=list)
     ended_by: object = None        # the episode whose start ended this one by succession
+    uncertain: bool = False        # an undated "no longer" may have ended it: neither ongoing nor ended
 
     def sort_key(self):
         for r in (self.start, self.end):
@@ -988,7 +1011,7 @@ class Episode:
     @property
     def ongoing(self):
         """No end known and not stated as ended: as far as Funes knows, it holds."""
-        return self.end is None and not self.former
+        return self.end is None and not self.former and not self.uncertain
 
 
 def _former_words():
@@ -1025,9 +1048,7 @@ def fact_episodes(f):
         T = parse_date(a.get("time"))
         hand = Range(W, W, "handover") if (a.get("handover") and not S and W) else None
         status = a.get("status")
-        bound = W if (status == "former" and not E) else None
-        if T and status != "current" and W and T.hi < W and not E:
-            bound = W
+        bound = W if (status == "former" and not E) else None   # "time" (held in 2019) is evidence it held, never an end
         held = W if status == "current" else None
         rows.append({"a": a, "S": S, "E": E, "bound": bound, "held": held, "W": W, "hand": hand})
     eps = []
@@ -1056,8 +1077,16 @@ def fact_episodes(f):
     for r in [r for r in rows if not (r["S"] or r["E"])]:
         target = None
         if r["W"] is not None:
-            if r["bound"] is not None:     # "no longer there": the latest episode already ended by then, if any
-                target = next((ep for ep in reversed(eps) if ep_range(ep, "ends") and ep_range(ep, "ends").hi <= r["W"]), None)
+            if r["bound"] is not None:     # "no longer there": which episode it ended is decided only if just one fits
+                ended = [ep for ep in eps if ep_range(ep, "ends") and ep_range(ep, "ends").hi <= r["W"]]
+                open_ = [ep for ep in eps if not ep_range(ep, "ends") and (ep_range(ep, "starts") is None or ep_range(ep, "starts").lo <= r["W"])]
+                if open_ and ended:
+                    for ep in open_:
+                        ep["uncertain"] = True     # it may have ended, or the memory meant the earlier episode
+                    target = ended[-1]
+                    r = {**r, "bound": None}
+                elif ended:
+                    target = ended[-1]
             if target is None:
                 for ep in reversed(eps):
                     es, ee = ep_range(ep, "starts"), ep_range(ep, "ends")
@@ -1082,13 +1111,15 @@ def fact_episodes(f):
         end, ce, en_tr = _combine(ends, trusted)
         bounds = [r["bound"] for r in ep["rows"] if r["bound"] is not None and (r["a"]["trust"] == "trusted" or not trusted)]
         former = bool(end) or bool(bounds)
+        held = [r["held"] for r in ep["rows"] if r["held"] is not None and (r["a"]["trust"] == "trusted" or not trusted)]
         if end is None and bounds:
             stated = start if start and start.precision != "handover" else None
-            end = Range(stated.lo if stated else MIN_DAY, min(bounds), "bound")
-        held = [r["held"] for r in ep["rows"] if r["held"] is not None]
+            lo = max([stated.lo if stated else MIN_DAY] + [h for h in held if h <= min(bounds)])
+            end = Range(lo, min(bounds), "bound")      # ended after the last day a memory said it held
         vals = [r["a"].get("qualifiers", {}).get(slot_key) for r in ep["rows"] if slot_key and r["a"].get("qualifiers", {}).get(slot_key)]
         out.append(Episode(f.entity, f.type, start, end, cs, ce, st_tr, en_tr, trusted, max(held) if held else None, former,
-                           Counter(vals).most_common(1)[0][0] if vals else "_", False, [r["a"] for r in ep["rows"]]))
+                           Counter(vals).most_common(1)[0][0] if vals else "_", False, [r["a"] for r in ep["rows"]],
+                           uncertain=bool(ep.get("uncertain")) and end is None))
     if not out:
         out.append(Episode(f.entity, f.type, trusted=f.trusted))
     return sorted(out, key=lambda e: e.sort_key())
@@ -1104,7 +1135,7 @@ def episodes(state, pred):
     for e in sorted(eps, key=lambda e: e.sort_key()):
         if not e.ongoing or e.held_at is None or e.tstart is None or not e.trusted or not e.start_trusted or e.conflict_start:
             continue                   # only a stale current: a memory once said it held; otherwise its end is just unknown
-        later = [y for y in eps if y is not e and y.slot == e.slot and y.tstart and y.tstart.lo > e.tstart.hi]
+        later = [y for y in eps if y.entity != e.entity and y.slot == e.slot and y.tstart and y.tstart.lo > e.tstart.hi]
         if not later:
             continue
         y = min(later, key=lambda y: y.tstart.lo)
@@ -1120,18 +1151,29 @@ def episodes(state, pred):
     return eps
 
 
-def holds(e, ph, d, deceased):
-    """Whether episode e holds a role phrase's role at day d (None: now)."""
-    past = ph.former
-    if past:
-        return (e.former or e.inferred_end) and (d is None or e.end is None or e.end.lo <= d)
-    if ph.current or d is None:
-        return (e.ongoing and not e.inferred_end) or deceased
-    if e.handover and e.start.lo > d:
+def _may_hold(e, d):
+    return not (e.end is not None and e.end.hi < d.lo) and not (e.tstart is not None and e.tstart.lo > d.hi)
+
+
+def holds(e, ph, d, deceased, written=None):
+    """Whether episode e may hold a role phrase's role during d (a Range; None: now). "Current" and plain phrases are
+    evaluated at d (a time cue, else the memory's date). "Former" is relative to when the memory was written: the
+    episode may have ended by then, and it held during the time cue, if there is one."""
+    if ph.former:
+        w = written if written is not None else (None if ph.time_cue else d)
+        ended = (e.former or e.inferred_end) and (w is None or e.end is None or e.end.lo <= w.hi)
+        return ended and (not ph.time_cue or d is None or _may_hold(e, d))
+    if d is None:
+        return (e.ongoing and not e.inferred_end) or (deceased and not e.former)
+    if e.handover and e.start.lo > d.hi:
         return False                 # a new holder announced later: someone else held it then
-    if e.end is not None and e.end.hi < d:
+    if e.end is not None and e.end.hi < d.lo:
         return False
     return True
+
+
+def certainly_holds(e, d):
+    return (e.tstart is not None and e.tstart.hi <= d.lo) and (e.ongoing or (e.end is not None and e.end.lo >= d.hi))
 
 
 # --- answers: before / after / in a year / current / previous ----------------------------------------------------------------
@@ -1198,103 +1240,131 @@ def _stated_edges(state, pred, eps):
 
 
 def _order(state, pred, eps, sx, direction):
+    """The one ordering rule. For "before", the anchor's boundary is its start and each candidate's is its end; "after"
+    mirrors it. An answer must certainly lie on the right side, and no other episode may possibly sit closer."""
     gap = R.preds[pred].get("gap_months")
     gap_days = gap * 30.44 if gap is not None else None
+    before_ = direction == "before"
+    A = sx.tstart if before_ else sx.end
+    conflict = sx.conflict_start if before_ else sx.conflict_end
+    bound_of = (lambda e: e.end) if before_ else (lambda e: e.tstart)
     ids = {id(e): e for e in eps}
     edges = _stated_edges(state, pred, eps)
-    if direction == "before":
-        S = sx.tstart
-        if S is None or sx.conflict_start:
-            return None, "ambiguous"
-        stated = [ids[u] for u, v in edges if v == id(sx) and u in ids]
-        if len(stated) == 1:
-            w = stated[0]
-            overlaps = (w.end is None and (w.ongoing or (w.held_at or 0) >= S.lo)) or (w.end is not None and w.end.lo > S.hi)
-            if not overlaps:
-                if w.end is not None and gap_days is not None and S.lo - w.end.hi > gap_days:
-                    return w.entity, "gap"
-                return w.entity, "stated"
-        cands = []
-        for e in eps:
-            if e is sx or (e.tstart and e.tstart.lo > S.hi):
+
+    def between(w):
+        """Another episode certainly sits between w and the anchor."""
+        if A is None:
+            return False
+        for o in eps:
+            if o is w or o is sx or o.tstart is None or o.end is None:
                 continue
-            if e.end is None:
-                if e.held_at is not None and e.held_at >= S.lo:
-                    continue                    # it still held when X started: overlap
-                cands.append((e, None, False))
-                continue
-            if e.end.lo > S.hi:
-                continue                        # certainly still going when X started
-            cands.append((e, e.end, (e.end.hi <= S.lo or e.ended_by is sx) and not e.conflict_end))
-        certain = [c for c in cands if c[2]]
-        if not certain:
-            return None, "ambiguous"
-        w, WE, _ = max(certain, key=lambda c: c[1].lo)
-        contiguous = S.lo - WE.hi <= 31
-        for e, E, _ in cands:
-            if e is w or e.entity == w.entity:
-                continue
-            if E is None:
-                if (e.tstart and e.tstart.lo > WE.hi) or not contiguous:
-                    return None, "ambiguous"    # an undated or open-ended fact could sit between
-                continue
-            if E.hi >= WE.lo:
-                return None, "ambiguous"        # it could have ended as late as the winner, or later
-        if gap_days is not None and S.lo - WE.hi > gap_days:
-            return w.entity, "gap"
-        return w.entity, "inferred" if (w.inferred_end or not w.end_trusted or not sx.start_trusted) else "ordered"
-    E0 = sx.end
-    if E0 is None or sx.conflict_end:
-        return None, "ambiguous"
-    stated = [ids[v] for u, v in edges if u == id(sx) and v in ids]
-    if len(stated) == 1:
+            if before_ and w.end is not None and o.tstart.lo >= w.end.hi and o.end.hi <= A.lo:
+                return True
+            if not before_ and w.tstart is not None and o.tstart.lo >= A.hi and o.end.hi <= w.tstart.lo:
+                return True
+        return False
+
+    def gap_of(w):
+        b = bound_of(w)
+        if A is None or b is None:
+            return None
+        return (A.lo - b.hi) if before_ else (b.lo - A.hi)
+
+    stated = [ids[u] for u, v in edges if v == id(sx) and u in ids] if before_ else [ids[v] for u, v in edges if u == id(sx) and v in ids]
+    if len(stated) == 1 and not conflict:
         w = stated[0]
-        if not (w.tstart is not None and w.tstart.hi < E0.lo):
-            if w.tstart is not None and gap_days is not None and w.tstart.lo - E0.hi > gap_days:
-                return w.entity, "gap"
-            return w.entity, "stated"
-    cands = []
-    for e in eps:
-        if e is sx or (e.end is not None and e.end.hi < E0.lo):
-            continue
-        if e.tstart is None:
-            cands.append((e, None, False))
-            continue
-        if e.tstart.hi < E0.lo:
-            continue                            # it started before X ended: not after X
-        cands.append((e, e.tstart, (e.tstart.lo >= E0.hi or sx.ended_by is e) and not e.conflict_start))
-    certain = [c for c in cands if c[2]]
-    if not certain:
+        if before_:
+            clash = A is not None and ((w.end is None and (w.ongoing or (w.held_at or 0) >= A.lo)) or (w.end is not None and w.end.lo > A.hi))
+        else:
+            clash = A is not None and w.tstart is not None and w.tstart.hi < A.lo
+        if not clash and not between(w):
+            g = gap_of(w)
+            return w.entity, ("gap" if gap_days is not None and g is not None and g > gap_days else "stated")
+    if A is None or conflict:
         return None, "ambiguous"
-    w, WS, _ = min(certain, key=lambda c: c[1].hi)
-    contiguous = WS.lo - E0.hi <= 31
-    for e, S, _ in cands:
+    cands = []          # (episode, boundary or None, certain, near)
+    for e in eps:
+        if e is sx:
+            continue
+        b = bound_of(e)
+        if before_:
+            if e.tstart is not None and e.tstart.lo > A.hi:
+                continue                        # it started after the anchor did
+            if b is None:
+                if e.held_at is not None and e.held_at >= A.lo:
+                    continue                    # it still held when the anchor started: overlap
+                cands.append((e, None, False, False))
+                continue
+            if b.lo > A.hi:
+                continue                        # certainly still going when the anchor started
+            certain = b.hi <= A.lo or e.ended_by is sx
+            near = not certain and e.tstart is not None and e.tstart.hi < A.lo
+        else:
+            if e.end is not None and e.end.hi < A.lo:
+                continue                        # it ended before the anchor did
+            if b is None:
+                cands.append((e, None, False, False))
+                continue
+            if b.hi < A.lo:
+                continue                        # it certainly started before the anchor ended
+            certain = b.lo >= A.hi or sx.ended_by is e
+            near = not certain and sx.tstart is not None and sx.tstart.hi < b.lo and (e.ongoing or (e.end is not None and e.end.lo > A.hi))
+        if (e.conflict_end if before_ else e.conflict_start):
+            certain = near = False
+        cands.append((e, b, certain, near))
+    certain = [c for c in cands if c[2]]
+    pick = (lambda cs: max(cs, key=lambda c: c[1].lo)) if before_ else (lambda cs: min(cs, key=lambda c: c[1].hi))
+    nears = [c for c in cands if c[3]]
+    if certain:
+        w, WB, _, _ = pick(certain)
+        basis_inferred = False
+    elif len(nears) == 1:
+        w, WB, _, _ = nears[0]             # a hand-over in the same year or month, with nothing else that could fit
+        basis_inferred = True
+    else:
+        return None, "ambiguous"
+    contiguous = ((A.hi - WB.lo <= 62) if before_ else (WB.hi - A.lo <= 62)) or \
+        (w.ended_by is sx if before_ else sx.ended_by is w)      # ended by the anchor's own start: nothing fits between
+    for e, b, _, _ in cands:
         if e is w or e.entity == w.entity:
             continue
-        if S is None:
+        if b is None:
+            if before_ and e.tstart is not None and e.tstart.lo > WB.hi:
+                return None, "ambiguous"        # it started after the winner ended
             if not contiguous:
-                return None, "ambiguous"
+                return None, "ambiguous"        # an undated or open-ended fact could sit between
             continue
-        if S.lo <= WS.hi:
-            return None, "ambiguous"
-    if gap_days is not None and WS.lo - E0.hi > gap_days:
+        if (before_ and b.hi >= WB.lo) or (not before_ and b.lo <= WB.hi):
+            return None, "ambiguous"            # it could sit as close to the anchor as the winner, or closer
+    g = gap_of(w)
+    if gap_days is not None and g is not None and g > gap_days:
         return w.entity, "gap"
-    return w.entity, "inferred" if (sx.inferred_end or not sx.end_trusted or not w.start_trusted) else "ordered"
+    untrusted = (not w.end_trusted or not sx.start_trusted) if before_ else (not sx.end_trusted or not w.start_trusted)
+    inferred = basis_inferred or untrusted or (w.inferred_end if before_ else sx.inferred_end)
+    return w.entity, "inferred" if inferred else "ordered"
+
+
+def _current(eps):
+    return [e for e in eps if e.ongoing and not e.inferred_end]
 
 
 def before(state, pred, x, query="", direction="before"):
-    """(entity | None, basis) for "before X" / "after X". X is an entity id, or a Range (a date anchor)."""
+    """(entity | None, basis) for "before X" / "after X". X is an entity id, or a Range (a date anchor: the job held just
+    before or after that date, else the one that ended or started nearest it)."""
     eps = episodes(state, pred)
     if isinstance(x, Range):
+        edge = Range(x.lo - 1, x.lo - 1) if direction == "before" else Range(x.hi + 1, x.hi + 1)
+        held, basis = in_range(state, pred, edge, eps)
+        if held is not None and not isinstance(held, list):
+            return held, basis
         sx = Episode(None, pred, x, x)
-        eps = eps + [sx]
-    else:
-        mine = sorted([e for e in eps if e.entity == x], key=lambda e: e.sort_key())
-        if not mine:
-            return None, "unknown"
-        sx = pick_episode(mine, query)
-        if sx is None:
-            return None, "ambiguous"
+        return _order(state, pred, eps + [sx], sx, direction)
+    mine = sorted([e for e in eps if e.entity == x], key=lambda e: e.sort_key())
+    if not mine:
+        return None, "unknown"
+    sx = pick_episode(mine, query)
+    if sx is None:
+        return None, "ambiguous"
     return _order(state, pred, eps, sx, direction)
 
 
@@ -1303,35 +1373,36 @@ def after(state, pred, x, query=""):
 
 
 def current(state, pred, at=None):
-    eps = episodes(state, pred)
-    return [e for e in eps if e.ongoing and not e.inferred_end and (at is None or (e.tstart is None or e.tstart.hi <= at))]
+    return _current(episodes(state, pred))
 
 
 def previous_as_of(state, pred, written):
     """The episode before the one that held at a memory's date, by the same rule as "before X"."""
     d = day(written)
     eps = episodes(state, pred)
-    now = [e for e in eps if e.tstart and e.tstart.hi <= d and (e.end is None and not e.former or (e.end and e.end.lo >= d))]
+    now = [e for e in eps if certainly_holds(e, Range(d, d))]
     if len(now) != 1:
         return None
     got, basis = _order(state, pred, eps, now[0], "before")
     return got if basis in ("ordered", "stated", "inferred") else None
 
 
-def in_range(state, pred, rng):
-    """Entities whose episodes cover a range (a year): every possible one must be certain, or it's ambiguous."""
-    certain, possible = set(), set()
-    for e in episodes(state, pred):
-        maybe = (e.tstart is None or e.tstart.lo <= rng.hi) and (e.end is None or e.end.hi >= rng.lo)
-        sure = (e.tstart is not None and e.tstart.hi <= rng.hi) and (
-            (e.end is not None and e.end.lo >= rng.lo) or (e.end is None and e.held_at is not None and e.held_at >= rng.lo))
+def in_range(state, pred, rng, eps=None):
+    """Entities whose episodes cover a range (a year, a month, a day): every possible one must be certain."""
+    certain, possible, untrusted = set(), set(), False
+    for e in (eps if eps is not None else episodes(state, pred)):
+        maybe = (e.tstart is None or e.tstart.lo <= rng.hi) and (e.end is None or e.end.hi >= rng.lo) and not (
+            e.end is None and not e.ongoing and e.held_at is not None and e.held_at < rng.lo and e.former)
+        sure = e.tstart is not None and e.tstart.hi <= rng.lo and (
+            (e.end is not None and e.end.lo >= rng.hi) or (e.ongoing and e.held_at is not None and e.held_at >= rng.hi))
         if sure:
             certain.add(e.entity)
+            untrusted |= not (e.start_trusted and e.end_trusted)
         elif maybe:
             possible.add(e.entity)
     if possible - certain or not certain:
         return None, "ambiguous"
-    return (sorted(certain)[0] if len(certain) == 1 else sorted(certain)), "ordered"
+    return (sorted(certain)[0] if len(certain) == 1 else sorted(certain)), "inferred" if untrusted else "ordered"
 
 
 def answer(state, it, query=""):
@@ -1341,15 +1412,17 @@ def answer(state, it, query=""):
         return before(state, pred, anchor, query, direction=op)
     if op == "year":
         return in_range(state, pred, anchor)
-    now = current(state, pred)
+    eps = episodes(state, pred)
+    now = _current(eps)
     if op == "current":
         if not now:
             return None, "ambiguous"
-        return (now[0].entity if len(now) == 1 else sorted({e.entity for e in now})), "ordered"
+        basis = "ordered" if all(e.held_at is not None for e in now) else "inferred"
+        return (now[0].entity if len(now) == 1 else sorted({e.entity for e in now})), basis
     if op == "previous":
         if len(now) != 1:
             return None, "ambiguous"
-        return _order(state, pred, episodes(state, pred), now[0], "before")
+        return _order(state, pred, eps, now[0], "before")
     return None, "ambiguous"
 
 
@@ -1384,13 +1457,32 @@ def _someone_else(state, query, q, pred, anchor_names):
     known = {fold(w) for e in state.entities.values() for a in e.aliases for w in a.split()}
     known |= {fold(w) for p in R.preds.values() for ph, syn in p.get("placeholders", {}).items() for x in [ph] + syn for w in x.split()}
     known |= set(_MONTH)
-    toks = re.findall(r"[^\W\d_][\w'’-]*", query)
-    for i, t in enumerate(toks):
-        if i == 0 or t == "I" or not t[:1].isupper():
-            continue
+    for m in re.finditer(r"[^\W\d_][\w'’-]*", query):
+        t = m.group(0)
+        before_tok = query[:m.start()].rstrip()
+        if not before_tok or before_tok[-1] in ".!?¿¡:" or t == "I" or not t[:1].isupper():
+            continue                           # sentence-initial words are capitalised anyway
         if fold(re.sub(r"['’]s$", "", t)) not in known:
             return True                        # an unknown name: probably someone else ("Where did Zoe work…")
     return False
+
+
+def _person_named(state, q):
+    """A known person's name in the (folded) text."""
+    for e in state.entities.values():
+        if e.kind != "person" or not e.name:
+            continue
+        for a in e.aliases | {a.split()[0] for a in e.aliases}:
+            fa = fold(a)
+            if len(fa) >= 3 and fa not in R.stop_names and _has(q, fa):
+                return True
+    return False
+
+
+def _date_ending_at(q, end):
+    """The whole date expression that ends at a year: "march 2019", "15 de marzo de 2019", or the bare year."""
+    m = re.search(r"(?:(?:\d{1,2}\s+(?:de\s+)?)?(?:" + _MONTH_RE + r")\.?,?\s+(?:\d{1,2}(?:st|nd|rd|th)?,?\s+)?(?:(?:de|of)\s+)?)?(?:19|20)\d{2}$", q[:end])
+    return parse_date(m.group(0)) if m else parse_date(q[end - 4:end])
 
 
 def intent(query, state=None):
@@ -1423,17 +1515,20 @@ def intent(query, state=None):
                     prior = [o for o in ops if o[0] <= m.start()]
                     hits = entity_matches(state, pred, n)
                     if prior and hits and _tail_ok(q, end):
+                        rest = q[:m.start()] + " " + q[end:]
+                        if _person_named(state, rest):
+                            return None    # "Who was Ada dating before Bea?": the subject is someone else
                         return pred, max(prior)[1], hits[0]
             for m in re.finditer(r"\b(19|20)\d{2}\b", q):
                 prior = [o for o in ops if o[0] <= m.start()]
                 if prior and _tail_ok(q, m.end()):
-                    return pred, max(prior)[1], parse_date(q[max(0, m.start() - 12):m.end()])
+                    return pred, max(prior)[1], _date_ending_at(q, m.end())
             continue
         if state is not None and any(re.search(r"(?<!\w)" + re.escape(norm_name(n, kind)) + r"(?!\w)", q) for n in names if norm_name(n, kind)):
             return None                        # "my current role at Acme": a question about one fact, not the timeline
         y = re.search(r"\b(19|20)\d{2}\b", q)
         if y:
-            return pred, "year", parse_date(y.group(0))
+            return pred, "year", _date_ending_at(q, y.end())
         for name in ("previous", "current"):
             if any(_has(q, w) for w in R.lang["operators"][name]):
                 return pred, name, None

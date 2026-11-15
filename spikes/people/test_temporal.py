@@ -199,6 +199,154 @@ def test_date_anchors_and_year_current_previous():       # Astra 6, Fable M5
     assert it and it[1] == "previous" and F.answer(s, it, "What was my previous job?")[0] == ent(s, "Acme")
 
 
+# --- round 2: counterexamples from the reviews of H3b ---------------------------------------------------------------------
+PERSON_PLAIN = next(p for p in F.R.preds if F.R.kind_of(p) == "person" and F.R.preds[p].get("succession")
+                    and not F.R.preds[p].get("exclusive"))
+
+
+def people_state(rows):
+    """rows: (name, start, end, status, written) for PERSON_PLAIN facts."""
+    s = F.State([])
+    for i, (nm, st, en, status, written) in enumerate(rows):
+        text = f"{nm} memory {i}"
+        mem = {"id": f"m{i}", "text": text, "sent": text, "written": written, "source": "capture", "trust": "trusted"}
+        s.memories[mem["id"]] = mem
+        known = [e for e in s.entities.values() if e.name == nm]
+        p = {"name": nm, "quote": nm, "person": known[0].id if known else "new"}
+        ids = {known[0].id: known[0]} if known else {}
+        F.apply(s, mem, [], [p], [{**fact(PERSON_PLAIN, nm, st, en, status), "quote": nm}], [], ids, [])
+    return s
+
+
+def resolve_text(s, text, written):
+    mem = {"id": "q", "text": text, "sent": text, "written": written, "source": "capture"}
+    pid, basis = s.resolve(mem, F.role_phrases(text, [])[0])
+    return name(s, pid), basis
+
+
+def test_current_cue_is_evaluated_at_the_memory_date():      # Astra H1
+    s = people_state([("Ana", "2015", "2019", "former", "2020-01-01"), ("Bo", "2021", None, "current", "2021-06-01")])
+    w = word(PERSON_PLAIN)
+    assert resolve_text(s, f"My current {w} likes tea.", "2018-06-01")[0] != "Bo"
+
+
+def test_a_month_cue_is_a_range_and_needs_a_preposition():   # Fable 1
+    s = people_state([("Ana", "2015", "March 2019", "former", "2019-04-01"), ("Bo", "March 2019", None, "current", "2019-04-02")])
+    w = word(PERSON_PLAIN)
+    assert resolve_text(s, f"In February 2019 my {w} approved the plan.", "2019-05-01")[0] != "Bo"
+    assert resolve_text(s, f"My {w} approved the 2030 roadmap.", "2018-06-01")[0] != "Bo"
+
+
+def test_an_undated_departure_with_two_possible_episodes_is_uncertain():   # Astra H2
+    s = state_with([fact(DATED, "Acme", "2010", "2012", "former"), (fact(DATED, "Acme", "2020", status="current"), "trusted", "2020-06-01"),
+                    (fact(DATED, "Acme", status="former"), "trusted", "2023-06-01")])
+    it = F.intent("What is my current job?", s)
+    got, basis = F.answer(s, it, "What is my current job?")
+    assert got is None or basis != "ordered"
+
+
+def test_untrusted_status_never_enables_succession():        # Astra H3
+    s = state_with([(fact(DATED, "Acme", "2018", slot=EMP), "trusted", "2018-06-01"),
+                    (fact(DATED, "Initech", "2020", status="current", slot=EMP), "trusted", "2020-06-01"),
+                    (fact(DATED, "Acme", status="current", slot=EMP), "untrusted", "2018-07-01")])
+    acme = [e for e in F.episodes(s, DATED) if name(s, e.entity) == "Acme"][0]
+    assert not acme.inferred_end
+
+
+def test_another_holder_as_subject_is_someone_else():        # Astra H4
+    s = state_with([fact(DATED, "Acme", "2015", "2018", "former"), fact(DATED, "Initech", "2019", status="current")])
+    ada = {"id": "ma", "text": "Ada Pell", "sent": "Ada Pell", "written": "2025-01-01", "source": "capture"}
+    s.memories["ma"] = ada
+    F.apply(s, ada, [], [{"name": "Ada Pell", "quote": "Ada Pell", "person": "new"}], [], [], {}, [])
+    assert F.intent("Where did Ada work before Initech?", s) is None
+
+
+def test_a_holder_as_subject_is_someone_else():           # Astra H4, with the canary's partner timeline
+    F.set_registry(F.HERE / "registry-canary-datafix.json")
+    try:
+        part = next(p for p in F.R.timeline_preds() if F.R.kind_of(p) == "person")
+        s = F.State([])
+        for i, (nm, st, en, status) in enumerate([("Ada", "2018", "2019", "former"), ("Bea", "2020", None, "current")]):
+            mem = {"id": f"m{i}", "text": nm, "sent": nm, "written": "2021-01-01", "source": "capture"}
+            s.memories[mem["id"]] = mem
+            F.apply(s, mem, [], [{"name": nm, "quote": nm, "person": "new"}], [{**fact(part, nm, st, en, status), "quote": nm}], [], {}, [])
+        assert F.intent("Who was Ada dating before Bea?", s) is None
+        assert F.intent("Who was I dating before Bea?", s)
+    finally:
+        F.set_registry(F.HERE / "registry.json")
+
+
+def test_a_month_in_a_year_question_is_kept():               # Astra H5, Fable 3
+    s = state_with([fact(DATED, "Acme", "2018", "January 2019", "former"), fact(DATED, "Initech", "February 2019", status="current")])
+    q = "Where was I working in March 2019?"
+    assert F.answer(s, F.intent(q, s), q)[0] == ent(s, "Initech")
+
+
+def test_previous_and_before_agree():                        # Astra M
+    s = state_with([(fact(DATED, "Acme", "2018", status="current", slot=EMP), "trusted", "2018-06-01"),
+                    (fact(DATED, "Globex", "2020", status="current", slot=EMP), "trusted", "2020-06-01"),
+                    (fact(DATED, "Initech", "2022", status="current", slot=EMP), "trusted", "2022-06-01")])
+    q = "What was my previous job?"
+    assert F.answer(s, F.intent(q, s), q)[0] == F.before(s, DATED, ent(s, "Initech"))[0] == ent(s, "Globex")
+
+
+def test_day_dates_keep_their_day():                         # Astra M
+    assert F.parse_date("March 15, 2019").precision == "day"
+
+
+def test_a_date_anchor_answers_with_the_job_held_then():     # Fable 2
+    s = state_with([fact(DATED, "Old", "2005", "2009", "former"), fact(DATED, "Acme", "2010", "2020", "former"),
+                    fact(DATED, "New", "2021", status="current")])
+    for q in ("What job did I have before 2019?", "What job did I have after 2012?"):
+        assert F.answer(s, F.intent(q, s), q)[0] == ent(s, "Acme")
+
+
+def test_a_stated_edge_loses_to_a_job_certainly_between():   # Fable 4
+    s = state_with([fact(DATED, "Acme", "2014", "April 2016", "former"), fact(DATED, "Globex", "May 2016", "May 2016", "former"),
+                    fact(DATED, "Initech", "June 2016", preceded_by="Acme")])
+    assert before(s, "Initech")[0] != "Acme"
+
+
+def test_a_bound_end_starts_after_the_last_held_day():       # Fable 5
+    s = people_state([("Ana", None, None, "current", "2016-06-01"), ("Ana", None, None, "former", "2020-06-01")])
+    w = word(PERSON_PLAIN)
+    assert resolve_text(s, f"My former {w} called.", "2015-06-01")[0] != "Ana"
+
+
+def test_a_time_value_isnt_an_end():                         # Fable 6
+    s = people_state([("Ana", None, None, "current", "2020-01-01"), ("Bo", None, None, "current", "2020-01-02")])
+    mem = {"id": "t", "text": "In 2019 Ana gave me a raise", "sent": "In 2019 Ana gave me a raise", "written": "2021-01-01", "source": "capture"}
+    s.memories["t"] = mem
+    ana = [e for e in s.entities.values() if e.name == "Ana"][0]
+    F.apply(s, mem, [], [{"name": "Ana", "quote": "Ana", "person": ana.id}],
+            [{**fact(PERSON_PLAIN, "Ana", status="unknown"), "time": "2019", "quote": "Ana"}], [], {ana.id: ana}, [])
+    w = word(PERSON_PLAIN)
+    assert resolve_text(s, f"My {w} is on leave.", "2022-01-01")[1] == "candidates"
+
+
+def test_after_and_before_treat_undated_facts_alike():       # Fable 8
+    s = state_with([fact(DATED, "Acme", "2015", "2018", "former"), fact(DATED, "Initech", "2019", status="current"),
+                    fact(DATED, "Mystery", status="former")])
+    assert after(s, "Acme")[0] is None and before(s, "Initech")[0] is None
+
+
+def test_a_return_doesnt_succeed_itself():                   # Fable 9
+    s = state_with([(fact(DATED, "Acme", "2010", status="current"), "trusted", "2011-01-01"),
+                    ({**fact(DATED, "Acme", "2015", status="current"), "quote": "I rejoined Acme in 2015"}, "trusted", "2015-06-01")])
+    first = sorted([e for e in F.episodes(s, DATED) if name(s, e.entity) == "Acme"], key=lambda e: e.sort_key())[0]
+    assert not first.inferred_end
+
+
+def test_a_same_year_hand_over_with_nothing_else_is_answered():   # Fable 10
+    s = state_with([fact(DATED, "Acme", "2015", "2019", "former"), fact(DATED, "Initech", "2019", status="current")])
+    assert before(s, "Initech")[0] == "Acme" and after(s, "Acme")[0] == "Initech"
+
+
+def test_sentence_initial_capitals_dont_kill_intent():       # Fable 11
+    s = state_with([fact(DATED, "Acme", "2015", "2018", "former"), fact(DATED, "Initech", "2019", status="current")])
+    assert F.intent("Quick one. What was my job before Initech?", s)
+
+
 if __name__ == "__main__":
     tests = [(n, f) for n, f in globals().items() if n.startswith("test_")]
     bad = 0
