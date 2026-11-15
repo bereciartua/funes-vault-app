@@ -1,0 +1,8 @@
+cloud limit: internal; memories to read: 170; above the limit: 60; user aliases: 1
+25/170 memories, 25 calls, 0 failed, $0.01, 59 s
+50/170 memories, 50 calls, 0 failed, $0.01, 121 s
+75/170 memories, 75 calls, 0 failed, $0.02, 178 s
+100/170 memories, 100 calls, 0 failed, $0.03, 241 s
+125/170 memories, 125 calls, 0 failed, $0.04, 303 s
+150/170 memories, 150 calls, 0 failed, $0.04, 369 s
+done: {'memories': 170, 'calls': 170, 'failed': 0, 'cost': 0.05, 'seconds': 436, 'people': 9, 'role groups': 6, 'relations': 6, 'things': 68, 'role links': {'group': 2, 'sole_known': 7, 'stated_unique': 5, 'named': 2}, 'name links': {'named': 26, 'ambiguous': 1, 'untrusted': 1}}
