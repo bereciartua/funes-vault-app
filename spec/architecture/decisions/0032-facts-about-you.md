@@ -286,7 +286,7 @@ The vault gates have small denominators: the author's vault has 3 role phrases, 
 1. **The backfill:** a one-time exemption from the daily cap, started by the user (an FR-AI-15 amendment, above).
 2. **`sole_known` attributes:** they ship, hedged, when their gate is met on the fixtures (decision 7).
 
-3. **The answer check on the author's model comes first in 13d.** Spike H tested attributes only on Haiku, and H2 tested only bridges on GPT-5.6-Terra, the author's Search answers model. 13d starts by running Spike H's answer arms on Terra: plain, with attributes, and with a wrong attribute. If Terra ignores attributes, or follows wrong ones more than Haiku did, decision 7 changes before 13d ships: bridges only, or attributes only at full basis.
+3. **The answer check on the author's model comes first** (the Phase 13 plan's step 13.0, before the spec is amended). Spike H tested attributes only on Haiku, and H2 tested only bridges on GPT-5.6-Terra, the author's Search answers model. It runs Spike H's answer arms on Terra: plain, with attributes, and with a wrong attribute. If Terra ignores attributes, or follows wrong ones more than Haiku did, decision 7 changes before the spec is amended: bridges only, or attributes only at full basis.
 
 Nothing else is open; the remaining measures are 13a–13e's acceptance tests.
 
