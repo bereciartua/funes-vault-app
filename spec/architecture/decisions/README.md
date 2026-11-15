@@ -35,4 +35,4 @@ Short records of significant decisions. Format: Status · Context · Decision ·
 | 0029 | [The menu bar icon opens a panel: Review cards, two switches, a field and the last 24 hours](0029-menu-bar-panel.md) | Accepted |
 | 0030 | [Settings gets a sidebar; AI splits into features, accounts and limits; an account offers several models](0030-settings-window.md) | Accepted |
 | 0031 | [The iPhone answers every Inbox card](0031-iphone-answers-every-inbox-card.md) | Accepted |
-| 0032 | [Funes learns the people your memories mention and your work history, for your own search and answers](0032-people-and-work-history.md) | Proposed |
+| 0032 | [Funes learns facts about you from your memories, on one timeline, for your own search and answers](0032-facts-about-you.md) | Proposed |

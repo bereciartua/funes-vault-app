@@ -1086,7 +1086,7 @@ Per set, Haiku's correct claims are 51/53 on the main set and 18/19 held-out, Lu
 
 ## Spike H: People and work history
 
-**Question:** can Funes infer the people your memories mention, your relations to them and your work history without asking you, and do those links make your own search and answers better without making anything worse ([ADR-0032](../architecture/decisions/0032-people-and-work-history.md), proposed)?
+**Question:** can Funes infer the people your memories mention, your relations to them and your work history without asking you, and do those links make your own search and answers better without making anything worse ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), proposed)?
 
 **Run:** 13–14 Nov 2026 on the author's MacBook Air M1 (8 GB). The author's vault ran only on private read-only copies outside the repo; only counts are recorded.
 
@@ -1130,3 +1130,4 @@ Per set, Haiku's correct claims are 51/53 on the main set and 18/19 held-out, Lu
 - **The value of links is in the answer, not the ranking,** at this vault size: who a role-only memory is about, and which job came before which.
 - **A wrong link or a wrong order is the main risk,** because the answer then names the wrong person or job with confidence.
 - **Haiku 5.5 is the default.** It read the author's 365 memories for $0.13 API-equivalent; job extraction added $0.09 (Haiku only).
+- **The time rules aren't about jobs.** Dates at their written precision, "before" from a stated order or the latest end, ties left ambiguous, and a new one probably ending the old one apply to any dated fact about you. ADR-0032 therefore uses one model (entities, facts about you, and a registry of predicates as data) for both people and work history, rather than the harness's two separate structures. These results are baselines for that unified pipeline, not passes it inherits.
