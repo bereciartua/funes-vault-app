@@ -3,7 +3,7 @@
 **Status:** Proposed · 2026-11-14.
 - Revised the same day after GPT-6-Astra and Fable 5.2 reviewed the first draft.
 - Reworked on 2026-11-15 around one generic model (the first draft had separate structures for people and for work history), then revised after both reviewed the rework.
-- Revised again on 2026-11-15 with Spike H3's results and both reviews of it.
+- Revised again on 2026-11-15 with Spike H3's results and both reviews of it, then with Spike H3b's.
 
 **Amends** (the documents change with Phase 13a, after acceptance):
 
@@ -257,6 +257,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 | Inferred claims code fails to mark (attributes, labels, neighbouring attributes, bridges) | 0 |
 | Each *timeline* predicate (works at in v0.10): a fresh blind fixture · the author's reviewed timeline | every fact right, ≤ 1 wrong date. "Before / after / in <year>" on wordings whose truth is decidable: right entity on ≥ 90%, counting "right entity, gap told" separately. Ambiguous on the others. 0 wrong answers, including gap answers. 0 timeline triggers on negative wordings. 0 succession from untrusted text or across slots. Every counterexample from Spike H3's reviews passes as a test |
 | The registry canary: the partner timeline, entry and fixture written blind by GPT-6-Astra after the code freeze, with negatives, concurrency, untrusted text, privacy and corrections, reported as distinct questions | the change touches no source file (checked mechanically). A deterministic part (canned extractions through resolution, timeline and intent) runs in CI. With a model run, it meets the timeline gates above; if it does, it may ship |
+| Adversarial review of the Swift time model: two independent reviewers try to produce a wrong answer or link with canned inputs; every case found becomes a test | none found in a final round |
 | Privacy payload tests: facts and orders stated only above the limit | 0 in any cloud input, including which memories are selected |
 | Port fidelity: Spike H's matrix and Spike H2's timeline | within 1 point of the Python harnesses |
 | After two weeks of use: a fixed sample of 30 links and 10 timeline answers on the author's vault | any wrong one turns that predicate's use, and everything downstream of it, off until fixed |
@@ -273,7 +274,12 @@ The vault gates have small denominators: the author's vault has 3 role phrases, 
 - **The temporal core didn't hold as built.** Each run found a rule the first design lacked; they're written into decisions 2, 4 and 5 above. The reviews then broke what was built with small counterexamples: trust per fact, same-year hand-overs, episodes erased by merging, uncertain competitors, longer cycles, role resolution's own dates, and months read from prose. Hence decision 5's range-based time model.
 - **Coverage** of decidable job questions was 71% on the mixed fixture, mostly from the 2-month gap rule and year padding. The acceptance row now counts gap answers separately.
 
-**Before acceptance, Spike H3b** rebuilds the harness's time model as decision 5 describes. It passes every review counterexample as a test, and re-runs the work, mixed and canary fixtures with no new wrong answers. If the range model can't keep coverage, decision 5 is revised.
+**Spike H3b (done, 2026-11-15): the range-based time model meets the gate.** It rebuilt the harness's time model as decision 5 describes, then re-applied every saved model output through it and re-ran the fixtures fresh.
+- **Every counterexample from the H3 reviews passes as a test,** and so does every counterexample from three further review rounds of H3b itself.
+- **No wrong answer or wrong link remains** on the people, mixed, work or canary fixtures.
+- **Coverage of decidable job questions rose:** 25 of 28 on the mixed fixture (against 20), and 9 of 15 on the work fixture (against 6).
+- **Both choices on the author's vault are safe:** facts.py's own extraction picks the reviewed job, hedged as "probably". H2's older extraction is now told rather than answered, because of a stray date.
+- **The lesson:** the fixtures never exposed a temporal bug; adversarial review by two independent reviewers found every one. The acceptance table now requires that for 13a.
 
 **Open before acceptance:**
 1. The backfill: under the cap, or a one-time, user-started exemption (an FR-AI-15 amendment).

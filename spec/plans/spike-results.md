@@ -1151,4 +1151,16 @@ Per set, Haiku's correct claims are 51/53 on the main set and 18/19 held-out, Lu
   - a stated order still tells a dated gap.
 
   The reviews then broke the rest with small counterexamples: trust per fact, same-year hand-overs, merged episodes, uncertain competitors, cycles, and role resolution's own dates. ADR-0032 now requires a range-based time model, which Spike H3b rebuilds before acceptance.
+
+### Spike H3b: the range-based time model (15 Nov 2026, passed)
+- **What it rebuilt:** dates as ranges at the precision written; episodes from assertion intervals, with evidence, trust, order edges and status each; one resolver for role phrases, "previous", "current", years and before / after.
+- **How it was checked:**
+  - every saved H3 model output, replayed through the new code (the replay reproduces H3's numbers with H3's code);
+  - fresh Haiku runs;
+  - three review rounds by GPT-6-Astra and Fable 5.2.
+- **Results:**
+  - every review counterexample passes as a test (60 tests);
+  - no fixture has a wrong answer or wrong link;
+  - decidable job questions answered rose from 20 to 25 of 28 (mixed) and from 6 to 9 of 15 (work fixture).
+- **What found the bugs:** adversarial review, never the fixtures, so ADR-0032's acceptance now requires adversarial review of the Swift time model.
 - **Coverage** of decidable job questions was 71% on the mixed fixture, mostly from the 2-month gap rule, with 0 wrong answers.
