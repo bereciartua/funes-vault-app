@@ -9,7 +9,7 @@
 
 | Area | Documents |
 |---|---|
-| Product | [vision](../../product/01-vision.md) (the "knowledge graph" non-goal); [requirements](../../product/03-requirements.md): FR-AI-05 (a new task, restricted to qualified models), FR-AI-08 (disclosure), FR-AI-15 (the cap), FR-AI-17 and FR-V-10 (search and answers), FR-iOS-07 (iPhone search), FR-U-01 (About you), plus new FRs for learned facts; [UX: Mac](../../product/04-ux-mac.md) and [UX: iPhone](../../product/05-ux-iphone.md) |
+| Product | [vision](../../product/01-vision.md) (the "knowledge graph" non-goal); [requirements](../../product/03-requirements.md): FR-AI-05 (a new task, restricted to qualified models), FR-AI-08 (disclosure), FR-AI-15 (the cap, and a one-time backfill exemption), FR-AI-17 and FR-V-10 (search and answers), FR-iOS-07 (iPhone search), FR-U-01 (About you), plus new FRs for learned facts; [UX: Mac](../../product/04-ux-mac.md) and [UX: iPhone](../../product/05-ux-iphone.md) |
 | Domain | [domain model](../../domain/domain-model.md) (Entity, Fact, Predicate; Profile); [memory processing](../../domain/memory-processing.md) (vault search §4, answers §10, a new §11); [access policy](../../domain/access-policy.md) (who reads the profile; no change to agent retrieval); the glossaries |
 | Architecture | [storage](../storage.md) (a migration; purge §4; backups and exports); [security and privacy](../security-and-privacy.md) §3 (a trust threat) and §5 (a Facts row, the Search answers row, the rest-of-query embedding); [model providers](../model-providers.md) §1 and §7; [companion protocol](../companion-protocol.md) §3, §4 and §9 |
 | ADRs | [ADR-0022](0022-cloud-limit-and-daily-cap.md) (the limit extends to derived facts); [ADR-0023](0023-provider-embeddings-second-index.md) (a second query embedding); [ADR-0026](0026-about-you-profile.md) (an owner-only use of the profile); [ADR-0028](0028-search-answers.md) (what the model reads, the card, the held answer, bridges, inferred claims); [ADR-0030](0030-settings-window.md) (a Features row) |
@@ -166,7 +166,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 7. **Answers carry the inference, and code marks it.**
    - **The attribute:** each memory that came through a link carries the fact behind it, from the registry's phrases.
      - A full basis gives "Lucía, your sister" or "Acme, where you worked until March 2021".
-     - `sole_known` gives "probably Lucía…".
+     - `sole_known` gives "probably Lucía…". It ships when its gate is met on the fixtures (the author's vault has too few role phrases to measure it), always worded "probably", marked inferred with a correction. The two-week review on the author's vault turns it off at the first wrong one.
      - `candidates` gives "your sister; Funes isn't sure which", without names.
      - Attributes aren't quotable text.
    - **Inferred, from structured data, never from the model's wording.** A claim is marked inferred when it:
@@ -236,7 +236,8 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
   - **a capability flag:** older phones get neither attributes nor bridges, so they never show an inferred claim unmarked;
   - a facts revision in `status.get`.
 - **The cap:** the task's calls count against FR-AI-15's daily cap, and calls caused by agent-written memories count in the agents' 40% share.
-  - The author's backfill takes two to three days, or longer when other work uses the cap. That's about 400 calls per call group.
+  - **The first backfill is exempt, once:** started by the user, with its call count and cost shown first. It runs outside the daily cap, in the low-priority lane, and is resumable if interrupted. For the author's vault that's about 800 calls (two call groups), under an hour. This amends FR-AI-15.
+  - Every other call counts against the cap: new and changed memories, and re-reads after a registry change.
   - Measured cost, API-equivalent: $0.13 on Haiku for 365 memories, and $0.09 for a separate jobs call. The author pays through a plan. These are estimates for the unified prompt.
   - Searches and the timeline make no model call.
 - **The main risk is a wrong link or a wrong order.** In Spike H a wrong timeline turned 18 of 18 answers wrong, and a wrong attribute led to wrong-person claims. Each path ships only once its gate is met, and every inferred claim offers a correction.
@@ -246,7 +247,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 | Measure | Target |
 |---|---|
 | Full-basis links right, person predicates pooled (minimum 20 per predicate on fixtures) and works at: fixtures, two reads · a fresh reviewed sample of 50 on the author's vault | ≥ 98% · ≤ 1 wrong |
-| `sole_known` links right: fixtures · every `sole_known` link on the author's vault, reviewed | ≥ 90% · ≤ 1 wrong; otherwise no `sole_known` attributes |
+| `sole_known` links right: fixtures · every `sole_known` link on the author's vault, reviewed | ≥ 90% on fixtures, which decides whether `sole_known` attributes ship · ≤ 1 wrong on the vault, reviewed in 13e |
 | Recall of resolvable references: fixtures · the author's vault, two reads | ≥ 90% · ≤ 5% differ between reads |
 | Recorded predicates (client): a fixture with clients, employers and companies the user buys from | 0 clients read as employers, 0 vendors recorded as clients |
 | A fresh mixed-predicate fixture, people and jobs in the same memories | every gate above still met, so one prompt (or the chosen groups) doesn't lose accuracy |
@@ -281,9 +282,11 @@ The vault gates have small denominators: the author's vault has 3 role phrases, 
 - **Both choices on the author's vault are safe:** facts.py's own extraction picks the reviewed job, hedged as "probably". H2's older extraction is now told rather than answered, because of a stray date.
 - **The lesson:** the fixtures never exposed a temporal bug; adversarial review by two independent reviewers found every one. The acceptance table now requires that for 13a.
 
-**Open before acceptance:**
-1. The backfill: under the cap, or a one-time, user-started exemption (an FR-AI-15 amendment).
-2. Whether `sole_known` attributes ship if their gate is met only on fixtures.
+**Decided before acceptance** (2026-11-15, by the author):
+1. **The backfill:** a one-time exemption from the daily cap, started by the user (an FR-AI-15 amendment, above).
+2. **`sole_known` attributes:** they ship, hedged, when their gate is met on the fixtures (decision 7).
+
+Nothing else is open; the remaining measures are 13a–13e's acceptance tests.
 
 **Alternatives considered.**
 - **A structure per question shape** (the first draft: people relations, and job stints with their own bases and rules): each new shape would have needed new tables, bases and code. Replaced by one model. The spikes' results are its baselines; its own evidence is the acceptance table.
