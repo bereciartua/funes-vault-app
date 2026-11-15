@@ -22,6 +22,7 @@
 | [Phase 10: Menu bar panel](phase-10-menu-bar-panel.md) | A click on the menu bar icon opens a panel: Review cards for what waits, Agents and Remote Access switches, a field that remembers or searches, and the last 24 hours as a chart; a right click keeps a short menu ([ADR-0029](../architecture/decisions/0029-menu-bar-panel.md)) |
 | [Phase 11: Settings](phase-11-settings.md) | A sidebar Settings window, AI split into Features, Models & Accounts and Privacy & Limits, and an account that offers several models, so each task picks its own ([ADR-0030](../architecture/decisions/0030-settings-window.md)) |
 | [Phase 12: Every Inbox card on the iPhone](phase-12-iphone-inbox.md) | The iPhone answers the tidy-up's cards and every merge, split and conflict, showing what each changes first ([ADR-0031](../architecture/decisions/0031-iphone-answers-every-inbox-card.md)) |
+| [Phase 13: Facts about you](phase-13-facts-about-you.md) | Funes learns the people in your life, your relations to them and your work history, on one timeline, and uses them in your own search and answers; one implementation over a predicate registry ([ADR-0032](../architecture/decisions/0032-facts-about-you.md)) |
 | [Project setup](project-setup.md) | Repo, targets, bundle IDs, platforms, dependencies, signing, conventions |
 | [Testing strategy](testing-strategy.md) | Test layers, privacy assertions, fixtures, definition of done |
 | [Release and distribution](release-and-distribution.md) | Versioning, channels, release checklist, support |
