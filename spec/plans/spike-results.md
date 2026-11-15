@@ -1163,4 +1163,10 @@ Per set, Haiku's correct claims are 51/53 on the main set and 18/19 held-out, Lu
   - no fixture has a wrong answer or wrong link;
   - decidable job questions answered rose from 20 to 25 of 28 (mixed) and from 6 to 9 of 15 (work fixture).
 - **What found the bugs:** adversarial review, never the fixtures, so ADR-0032's acceptance now requires adversarial review of the Swift time model.
+
+### Spike H4: answers on the author's model (15 Nov 2026, Phase 13 step 13.0)
+- **Run:** Spike H's answer arms on GPT-5.6-Terra, the author's Search answers model: 1,551 answers, judged blind by Opus 5.5 ($2.82). Details are in [`spikes/people/RESULTS.md`](../../spikes/people/RESULTS.md).
+- **Attributes hold up.** With them, Terra covered every busy challenge question (plain: 18/24 and 9/18) and 45/45 held-out questions, with 0 wrong-person claims and 0 denials, against Haiku's 3 and 1.
+- **A wrong attribute:** Terra made 5 wrong-person claims to Haiku's 10. But the trap that names nobody is still misattributed 3 of 3.
+- **Terra never hedges an inferred claim itself,** so code marking is required. The marking rule gains one case: a claim citing a memory that carries an attribute is inferred when the search names the attributed entity (by name or role phrase) and the cited text doesn't; it marks all 5 wrong-person claims seen. ADR-0032 decision 7 stands, with that addition.
 - **Coverage** of decidable job questions was 71% on the mixed fixture, mostly from the 2-month gap rule, with 0 wrong answers.

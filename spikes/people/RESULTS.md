@@ -1,5 +1,35 @@
 # Spike H results
 
+## Spike H4: answers on the author's model (15 Nov 2026, Phase 13 step 13.0)
+ADR-0032 decided at acceptance to check attributes on GPT-5.6-Terra, the author's Search answers model, before the spec is amended. Spike H had tested attributes only on Haiku; H2 had tested only bridges on Terra.
+
+**Run:**
+- Spike H's answer harness (`search_answers.py`, with `ANS_DIR=answers-terra` and `--arms`), unchanged otherwise, on the same four sets: main, held-out, busy, and the busy privacy read.
+- Five arms, 3 samples each: A plain, B people ranking, C1 the attribute, W a wrong attribute on a trap, M attributes on neighbouring memories only.
+- 1,551 answers on Terra through Codex, none failed. Judged blind by Opus 5.5 with Spike H's round-3b judge and code notes ($2.82).
+- Outputs are in `results-search/answers-terra/`, and Haiku's are in `results-search/answers3/`.
+
+**Verdict: attributes hold up on Terra. Decision 7 stands, with one addition to the marking rule.**
+
+| All sets, claim labels (answers per arm) | Haiku | Terra |
+|---|---|---|
+| A plain: wrong person · denies a true fact · unsupported (240) | 3 · 5 · 18 | 0 · 9 · 6 |
+| B people ranking (240) | 3 · 2 · 23 | 0 · 7 · 5 |
+| **C1 the attribute** (240) | 3 · 1 · 23 | **0 · 0 · 1** |
+| W a wrong attribute: wrong person (111 · 108) | 10 | 5 |
+| M neighbours only: unsupported, i.e. a link the model made itself (171) | 31 | 20 |
+
+- **The gain holds:**
+  - with the attribute, Terra covered 24/24 and 18/18 on the busy challenge questions (plain: 18/24 and 9/18), and 45/45 on the held-out set (plain 38/45; Haiku 43/45);
+  - denials of true facts went from 9 (plain) to 0;
+  - no wrong-person claim with correct attributes, where Haiku had 3 on the held-out set.
+- **Terra follows a wrong attribute less than Haiku** (5 wrong-person claims against 10). But **the trap that names nobody is still misattributed 3 of 3** ("What's Erik's coffee order?": the user's own order, hinted as Erik's), and Terra presents it as an older or conflicting note rather than a fact.
+- **Terra never hedges an inferred claim itself:** of the 44 claims code marks inferred in C1, it hedged none (Haiku hedged some). Code marking isn't optional.
+- **Terra links "my sister" to a named person by itself,** with no attribute, in plain search too ("When is Lucía visiting?": 2 of 3 plain answers). ADR-0032's structured rule marks those, because the claim names someone its cited text doesn't name. The harness's hint-only rule didn't.
+- **The marking gap:** the trap's wrong-person claims don't name Erik ("an older note lists an oat-milk flat white"), so a rule that only checks names leaves them unmarked.
+  - **The fix, generic:** a claim that cites a memory carrying an attribute is marked inferred when the search names the attributed entity, by name or by a role phrase that resolves to it, and the cited text doesn't.
+  - Checked against the data, it marks all 5 wrong-person claims in W: 3 through a name ("Erik"), 2 through a role ("my sister", "my partner"). The 13d gate (≤ 1 unmarked claim per 30 answers with an injected wrong link) depends on it.
+
 ## Spike H3b: the range-based time model (15 Nov 2026)
 H3 showed the model's shape holds, but its temporal rules broke on small counterexamples. ADR-0032 decision 5 then required a range-based time model, and H3b rebuilds `facts.py` that way:
 - **Dates are ranges** at the precision written ("2019" is the whole year). An order holds only if it holds for every possible date.
