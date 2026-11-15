@@ -69,6 +69,15 @@ def play(provider, mems_in_order, user_aliases, groups):
     return state, calls
 
 
+def span(f):
+    """A fact's latest episode, for the dumps (nothing reads these back)."""
+    from datetime import date
+    eps = F.fact_episodes(f)
+    e = eps[-1] if eps else None
+    iso = lambda d: date.fromordinal(d).isoformat() if d and d not in (F.MIN_DAY, F.MAX_DAY) else None
+    return {"valid_from": iso(e.start.lo) if e and e.start else None, "valid_to": iso(e.end.hi) if e and e.end else None}
+
+
 def dump_people(state, calls):
     person = {k for k, e in state.entities.items() if e.kind == "person"}
     return {
@@ -76,7 +85,7 @@ def dump_people(state, calls):
         "people": [{"id": p.id, "name": p.name, "aliases": sorted(p.aliases), "group": p.group, "count": p.count}
                    for p in state.entities.values() if p.kind == "person"],
         "relations": [{"person": r.entity, "type": r.type, "label": r.label, "cls": r.cls, "status": r.status,
-                       "valid_from": r.valid_from, "valid_to": r.valid_to, "deceased": state.entities[r.entity].deceased,
+                       **span(r), "deceased": state.entities[r.entity].deceased,
                        "only": r.only, "negated": r.negated, "trusted": r.trusted, "evidence": [e[0] for e in r.evidence]}
                       for r in state.facts if r.entity in person],
         "decisions": [{"memory": k[0], "start": k[1], "person": v[0], "basis": v[1]} for k, v in state.decisions.items()],
@@ -91,8 +100,8 @@ def dump_state(state, calls):
         "entities": [{"id": e.id, "kind": e.kind, "name": e.name, "aliases": sorted(e.aliases), "group": e.group,
                       "count": e.count, "deceased": e.deceased} for e in state.entities.values()],
         "facts": [{"entity": f.entity, "type": f.type, "label": f.label, "cls": f.cls, "status": f.status,
-                   "valid_from": f.valid_from, "valid_to": f.valid_to, "only": f.only, "negated": f.negated,
-                   "start_stated": f.start_stated, "evidence": f.evidence, "stating": f.stating, "assertions": f.assertions}
+                   **span(f), "only": f.only, "negated": f.negated,
+                   "evidence": f.evidence, "stating": f.stating, "assertions": f.assertions}
                   for f in state.facts],
         "names": [[k[0], k[1], v[0], v[1], v[2]] for k, v in state.names.items()],
         "decisions": [[k[0], k[1], v[0], v[1]] for k, v in state.decisions.items()],
@@ -112,8 +121,8 @@ def load_state(d):
         if e["group"]:
             s.groups[tuple(e["group"])] = s.entities[e["id"]]
     for f in d["facts"]:
-        s.facts.append(F.Fact(f["entity"], f["type"], f["label"], f["cls"], f["status"], f["valid_from"], f["valid_to"], f["only"],
-                              [tuple(x) for x in f["evidence"]], f["negated"], f["start_stated"], f["stating"], f["assertions"]))
+        s.facts.append(F.Fact(f["entity"], f["type"], f["label"], f["cls"], f["only"], [tuple(x) for x in f["evidence"]],
+                              f["negated"], f["stating"], f["assertions"]))
     for mid, surface, pid, basis, c in d["names"]:
         s.names[(mid, surface)] = (pid, basis, c)
     for mid, st, pid, basis in d["decisions"]:
