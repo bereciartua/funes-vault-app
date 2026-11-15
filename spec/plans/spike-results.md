@@ -1131,3 +1131,24 @@ Per set, Haiku's correct claims are 51/53 on the main set and 18/19 held-out, Lu
 - **A wrong link or a wrong order is the main risk,** because the answer then names the wrong person or job with confidence.
 - **Haiku 5.5 is the default.** It read the author's 365 memories for $0.13 API-equivalent; job extraction added $0.09 (Haiku only).
 - **The time rules aren't about jobs.** Dates at their written precision, "before" from a stated order or the latest end, ties left ambiguous, and a new one probably ending the old one apply to any dated fact about you. ADR-0032 therefore uses one model (entities, facts about you, and a registry of predicates as data) for both people and work history, rather than the harness's two separate structures. These results are baselines for that unified pipeline, not passes it inherits.
+
+### Spike H3: the unified model (15 Nov 2026, a partial validation)
+**Question:** does ADR-0032's reworked model hold? That is, one implementation over a predicate registry, for people and work history and for a predicate added as data.
+
+**Run:** Claude Haiku 5.5, about 2,960 calls, $1.54 API-equivalent. The code is `facts.py` and `registry.json` in [`spikes/people/`](../../spikes/people/), and the results are in its `RESULTS.md`. GPT-6-Astra and Fable 5.2 reviewed the harness and the results.
+
+- **The model's shape held:**
+  - people links matched people.py run the same day (0 wrong; recall 95.8% against 96.6%);
+  - the generic timeline reproduced H2 exactly on H2's extraction;
+  - the author's reviewed job was picked from both extractions;
+  - on a blind fixture mixing people, jobs, clients and vendors, links were 100% right and nothing was misfiled;
+  - the partner-timeline canary, a registry change and fixture written blind after a code freeze, ran with no code change and 0 wrong timeline answers.
+- **Separate call groups:** one merged call lost 7–9 points of relation recall.
+- **The temporal core didn't hold as built.** Each run found a missing generic rule:
+  - "current" is as of the memory's date;
+  - succession is for stale currents only;
+  - the anchor follows the operator;
+  - a stated order still tells a dated gap.
+
+  The reviews then broke the rest with small counterexamples: trust per fact, same-year hand-overs, merged episodes, uncertain competitors, cycles, and role resolution's own dates. ADR-0032 now requires a range-based time model, which Spike H3b rebuilds before acceptance.
+- **Coverage** of decidable job questions was 71% on the mixed fixture, mostly from the 2-month gap rule, with 0 wrong answers.

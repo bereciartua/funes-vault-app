@@ -3,6 +3,7 @@
 **Status:** Proposed · 2026-11-14.
 - Revised the same day after GPT-6-Astra and Fable 5.2 reviewed the first draft.
 - Reworked on 2026-11-15 around one generic model (the first draft had separate structures for people and for work history), then revised after both reviewed the rework.
+- Revised again on 2026-11-15 with Spike H3's results and both reviews of it.
 
 **Amends** (the documents change with Phase 13a, after acceptance):
 
@@ -61,7 +62,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 2. **Predicates are data; the mechanisms are code.** One implementation of extraction, validation, resolution, the timeline, search and answers serves every predicate, and none of it names one. A versioned registry, shipped with the app and not user-editable, defines each predicate:
    - **its object's kind** (person, organization, place, thing);
    - **`exclusive`:** at most one current at a time, which lets "my partner" resolve to the one partner Funes knows (tested for partner in Spike H). It's a claim about the world, so it ships only with its gate;
-   - **`succession` and its slot:** whether a new fact probably ends an open one *in the same slot*. The slot is a qualifier, such as a job's `kind`.
+   - **`succession` and its slot:** whether a new fact probably ends an open one *in the same slot*. The slot is a qualifier, such as a job's `kind`. A new holder of a predicate with succession starts at the memory that says so ("my new boss"). Spike H3 found manager needs this, though it isn't exclusive.
      - A side business doesn't end a day job.
      - With several open facts in the slot, or untrusted evidence, nothing is ended, and the case is `ambiguous`.
    - **`gap_months`:** a gap longer than this is told. Empty means gaps aren't meaningful for that predicate.
@@ -95,7 +96,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 
    **What it reads:** each committed memory version within the cloud limit, in its own low-priority lane.
 
-   **Call groups:** the registry assigns predicates to call groups, and each group has its own prompt version and its own gates. A new group re-reads memories in that group only, and never invalidates another group's gates. 13a decides whether people and jobs share one group, by reproducing Spike H's matrix and Spike H2's reviewed timeline. Spike E found combined work can do worse.
+   **Call groups:** the registry assigns predicates to call groups, and each group has its own prompt version and its own gates. A new group re-reads memories in that group only, and never invalidates another group's gates. People and jobs are separate groups. On Spike H3's blind mixed fixture, one merged call lost 7 to 9 points of relation recall (91% and 89% against 98% and 98%), with links and the timeline otherwise equal. That confirms Spike E's finding that combined work does worse.
 
    **Which models:**
    - Only models that qualified on the fixtures are offered: Claude Haiku 5.5 (the default) and Opus 5.5 for person predicates. Works-at extraction was tried on Haiku only.
@@ -109,32 +110,49 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
    - **Resolution bases** (which entity a mention means): `confirmed`, `named`, `stated_unique`, `context`, `sole_known`, `candidates`, `ambiguous`, `untrusted`, `rejected`.
      - `stated_unique` needs text saying there's only one, or an exclusive predicate whose gate is met.
      - "I have a sister, Maria" isn't `stated_unique`, and a manager never is by default.
-   - **Time bases**, derived per field (start, end, each qualifier's dates, each order edge) and not stored:
+   - **Time bases**, derived per date and per order edge of each episode, and not stored:
      - `stated`: from stated dates or a stated "before / after";
      - `ordered`: from the timeline rule;
      - `inferred`: from succession or an untrusted date;
      - `ambiguous`.
-   - **Trust:** a basis is the weakest in its chain. Untrusted evidence (an agent's or an import's text) never:
+   - **Trust:** a basis is the weakest in its chain, and trust belongs to each date and order edge, not to the fact. Spike H3 found that per-fact trust lets one trusted memory make an untrusted date decide. Untrusted evidence (an agent's or an import's text) never:
      - resolves a trusted memory;
      - ends a fact or triggers succession;
      - changes a trusted decision.
-5. **One timeline rule, for every predicate with the timeline use.**
-   - **"Before X":** X is an anchor, either a named entity's fact ("before Acme") or a date. The answer is a fact of the predicate asked about:
-     - the fact with a stated edge to X;
-     - otherwise the one that ended latest at or before X's start.
-     - A fact that is current or overlaps X never qualifies.
-   - **Other operators:** "after X" mirrors it, "in 2021" means the facts covering it, "current" means every current fact, and "previous" means before the current one (`ambiguous` if several are current).
-   - **Precision:** months are compared where both sides state them. Anything not strictly decidable at the written precision is `ambiguous`.
-   - **Succession:** within a slot, when fact X has no end and is the only open fact there, X is treated as ended by the next fact's start, at `inferred` ("probably former"). "I joined Y" doesn't end X by text.
-   - **Ambiguity is told, never guessed.** The answer gets plain search plus a note ("Funes can't tell which job came before Acme"), and no bridges, when there is:
-     - a tie;
-     - conflicting dates or order edges, or a cycle;
-     - a gap longer than the predicate's `gap_months`;
-     - a missing date;
-     - an anchor matching several facts.
+5. **One time model and one timeline rule, for every predicate with the timeline use.**
+   - **Dates are ranges at the precision written:** "2019" is January to December, "March 2019" is that month. Every comparison is over the possible ranges. An order holds only if it holds for every possible value, and anything else is `ambiguous`.
+     - "Left Acme in 2019, joined Initech in 2019" leaves the two in either order.
+     - A competitor that could have ended later still counts.
+   - **Episodes come from what memories assert, interval by interval:** a start and the end it was stated with, before dates are refined. Evidence, trust, order edges and status belong to an episode, so a rejoin reopens without touching the earlier episode.
+   - **One resolver serves:**
+     - role phrases as of a memory's date ("my partner" in a 2021 memory);
+     - "previous";
+     - before / after.
 
-     On the author's vault a year-only rule guessed a tie and picked the wrong job.
+     There are no stored start and end dates beside it. Spike H3 kept role resolution's own dates and got wrong links when the two disagreed.
+   - **"Before X":** X is an anchor, either a named entity's episode ("before Acme") or a date. The answer is an episode of the predicate asked about:
+     - one with a stated order edge to X, if the dates allow it;
+     - otherwise the one that certainly ended latest, at or before X's start.
+     - An episode that is current or may overlap X never qualifies.
+   - **Other operators:** "after X" mirrors it, "in 2021" means the episodes covering it, "current" means every current episode, and "previous" means before the current one (`ambiguous` if several are current).
+   - **"Current" holds as of the memory's date, not today.**
+   - **Succession ends stale currents only:** within a slot, an episode with no end, that was the only open one there when the next started, ends at the next one's start, at `inferred` ("probably former"). Never when:
+     - a later memory says it still held;
+     - the fact was stated as ended at an unknown time;
+     - the evidence is untrusted.
+
+     On the author's vault, without the first rule the timeline picked the wrong job, and without the second, it did again.
+   - **Ambiguity is told, never guessed.** The answer gets plain search plus a note ("Funes can't tell which job came before Acme"), and no bridges, when there is:
+     - a possible tie;
+     - conflicting dates, or contradictory or cyclic order edges (the edges are then dropped, and the dates may still decide);
+     - a gap longer than the predicate's `gap_months`, measured over the possible ranges;
+     - an undated or half-dated fact of the predicate that could sit in a non-contiguous gap;
+     - an anchor matching several episodes.
+
+     A stated order still tells a gap that the dates show. On the author's vault a year-only rule guessed a tie and picked the wrong job.
    - **Intent:** a timeline query needs a predicate's cue word or role phrase, with an operator and a named anchor or date.
+     - The anchor is what follows the operator.
+     - The question must be about the user: a query whose subject is another person, named or by role ("Where did Ada work before Acme?", "Where did my wife work before Acme?"), isn't the user's timeline, for every operator.
      - In v0.10 the anchor must be of the same predicate. A cross-predicate anchor ("where did I live before I joined Acme") fits the same rule and waits for its own gate.
      - A question about one fact's qualifiers ("my title at Acme before the promotion") isn't a timeline query in v0.10, and neither is "what did we use before Acme moved to Slack".
    - **Time cues in memories:**
@@ -237,25 +255,29 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 | Answers on linked questions (3 samples, a blind judge, every gain and loss read by hand) | coverage ≥ plain search on every question family. 0 wrong entity with correct links. With an injected wrong link, ≤ 1 unmarked claim per 30 answers |
 | Spike G's gates with the feature on | correct claims ≥ 95%, right "no answer" ≥ 90%, answered ≥ 80%, no new wrong claims |
 | Inferred claims code fails to mark (attributes, labels, neighbouring attributes, bridges) | 0 |
-| Each *timeline* predicate (works at in v0.10): a fresh blind fixture · the author's reviewed timeline | every fact right, ≤ 1 wrong date. "Before / after / in <year>" right on ≥ 90% of wordings whose truth is decidable, and ambiguous on the others. 0 wrong answers. 0 timeline triggers on negative wordings. 0 succession from untrusted text or across slots |
-| The registry canary: the partner timeline, entry and fixture written blind by GPT-6-Astra after the code freeze, with negatives, concurrency, privacy and corrections | the change touches no source file (checked mechanically). A deterministic part (canned extractions through resolution, timeline and intent) runs in CI. With a model run, it meets the timeline gates above; if it does, it may ship |
+| Each *timeline* predicate (works at in v0.10): a fresh blind fixture · the author's reviewed timeline | every fact right, ≤ 1 wrong date. "Before / after / in <year>" on wordings whose truth is decidable: right entity on ≥ 90%, counting "right entity, gap told" separately. Ambiguous on the others. 0 wrong answers, including gap answers. 0 timeline triggers on negative wordings. 0 succession from untrusted text or across slots. Every counterexample from Spike H3's reviews passes as a test |
+| The registry canary: the partner timeline, entry and fixture written blind by GPT-6-Astra after the code freeze, with negatives, concurrency, untrusted text, privacy and corrections, reported as distinct questions | the change touches no source file (checked mechanically). A deterministic part (canned extractions through resolution, timeline and intent) runs in CI. With a model run, it meets the timeline gates above; if it does, it may ship |
 | Privacy payload tests: facts and orders stated only above the limit | 0 in any cloud input, including which memories are selected |
 | Port fidelity: Spike H's matrix and Spike H2's timeline | within 1 point of the Python harnesses |
 | After two weeks of use: a fixed sample of 30 links and 10 timeline answers on the author's vault | any wrong one turns that predicate's use, and everything downstream of it, off until fixed |
 
 The vault gates have small denominators: the author's vault has 3 role phrases, so the fixtures carry the `sole_known` gate and the pooled person gate. Spike H measured the top 8; the top-10 gate is new.
 
-**Before acceptance, Spike H3 validates the unified model** in the Python harness:
-- one implementation over a registry reproduces Spike H's matrix and Spike H2's timeline;
-- a blind mixed-predicate fixture decides one call group or two;
-- the partner-timeline canary, written blind after a code freeze, runs with no code change, or names the generic capability that's missing.
+**Spike H3 (done, 2026-11-15): a partial validation** ([results](../../../spikes/people/RESULTS.md)). One implementation over a registry ran Spike H's people matrix and Spike H2's timeline. Two blind fixtures by GPT-6-Astra followed: a mixed-predicate fixture, and the partner-timeline canary, run after a code freeze.
+- **The model's shape held:**
+  - people links matched the baseline (0 wrong; recall within 1 point combined);
+  - the generic timeline reproduced H2 exactly on H2's extraction;
+  - the author's reviewed job was picked from both extractions;
+  - the canary ran on data-only registry changes, with 0 wrong timeline answers on the frozen code;
+  - nothing ever needed predicate-specific code.
+- **The temporal core didn't hold as built.** Each run found a rule the first design lacked; they're written into decisions 2, 4 and 5 above. The reviews then broke what was built with small counterexamples: trust per fact, same-year hand-overs, episodes erased by merging, uncertain competitors, longer cycles, role resolution's own dates, and months read from prose. Hence decision 5's range-based time model.
+- **Coverage** of decidable job questions was 71% on the mixed fixture, mostly from the 2-month gap rule and year padding. The acceptance row now counts gap answers separately.
 
-If H3 fails, this ADR is revised before it's accepted.
+**Before acceptance, Spike H3b** rebuilds the harness's time model as decision 5 describes. It passes every review counterexample as a test, and re-runs the work, mixed and canary fixtures with no new wrong answers. If the range model can't keep coverage, decision 5 is revised.
 
 **Open before acceptance:**
 1. The backfill: under the cap, or a one-time, user-started exemption (an FR-AI-15 amendment).
-2. People and jobs in one call group or two: decided in 13a, as above.
-3. Whether `sole_known` attributes ship if their gate is met only on fixtures.
+2. Whether `sole_known` attributes ship if their gate is met only on fixtures.
 
 **Alternatives considered.**
 - **A structure per question shape** (the first draft: people relations, and job stints with their own bases and rules): each new shape would have needed new tables, bases and code. Replaced by one model. The spikes' results are its baselines; its own evidence is the acceptance table.
