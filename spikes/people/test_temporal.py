@@ -347,6 +347,62 @@ def test_sentence_initial_capitals_dont_kill_intent():       # Fable 11
     assert F.intent("Quick one. What was my job before Initech?", s)
 
 
+# --- round 3: Fable's final check of round 2 ---------------------------------------------------------------------------
+def test_a_distant_year_doesnt_redate_the_phrase():          # 1
+    s = people_state([("Ana", "2015", "2020", "former", "2020-12-01"), ("Bo", "2021", None, "current", "2021-06-01")])
+    w = word(PERSON_PLAIN)
+    assert resolve_text(s, f"My {w} said sales dropped in 2019.", "2022-03-01")[0] == "Bo"
+    assert resolve_text(s, f"My {w} in 2019 was strict.", "2022-03-01")[0] == "Ana"
+
+
+def test_an_entity_holds_through_any_episode_covering_the_date():   # 2
+    s = state_with([fact(DATED, "Initech", "2010", "2018", "former"), fact(DATED, "Acme", "2014", "2016", "former"),
+                    (fact(DATED, "Acme", "2020", status="current"), "trusted", "2020-06-01")])
+    text = f"At my {word(DATED)} I use Emacs."
+    mem = {"id": "q", "text": text, "sent": text, "written": "2015-06-01", "source": "capture"}
+    assert s.resolve(mem, F.role_phrases(text, [])[0])[1] == "candidates"
+
+
+def test_no_handover_when_the_memory_gives_a_time():          # 3
+    s = people_state([("Ana", None, None, "current", "2020-01-01")])
+    mem = {"id": "t", "text": "Bob", "sent": "Bob", "written": "2022-01-01", "source": "capture"}
+    s.memories["t"] = mem
+    F.apply(s, mem, [], [{"name": "Bob", "quote": "Bob", "person": "new"}],
+            [{**fact(PERSON_PLAIN, "Bob", status="unknown"), "time": "2015", "quote": "Bob"}], [], {}, [])
+    assert not any(e.handover for e in F.episodes(s, PERSON_PLAIN))
+
+
+def test_an_untrusted_departure_doesnt_hide_a_current_job():   # 4
+    s = state_with([fact(DATED, "Acme", "2014", "2016", "former", slot=EMP), (fact(DATED, "Acme", "2020", status="current", slot=EMP), "trusted", "2020-06-01"),
+                    (fact(DATED, "MyShop", "2021", status="current", slot=OWN), "trusted", "2021-06-01"),
+                    (fact(DATED, "Acme", status="former"), "untrusted", "2023-01-01")])
+    got, basis = F.answer(s, F.intent("Where do I work now?", s), "Where do I work now?")
+    assert got is None or (isinstance(got, list) and ent(s, "Acme") in got)
+
+
+def test_a_date_anchor_with_a_job_that_may_have_started_is_told():   # 5
+    s = state_with([fact(DATED, "Acme", "2015", "February 2019", "former"), fact(DATED, "Globex", "March 2019", status="current")])
+    q = "Where did I work before March 20, 2019?"
+    assert F.answer(s, F.intent(q, s), q)[0] is None
+    assert F.parse_date("15 March 2019").precision == "day"
+
+
+def test_after_and_before_dont_contradict():                  # 6
+    s = state_with([fact(DATED, "Acme", "2015", "December 2018", "former"), fact(DATED, "Hooli", end="January 2019", status="former"),
+                    fact(DATED, "Globex", "2019-02-01", status="current")])
+    b, a = before(s, "Globex")[0], after(s, "Acme")[0]
+    assert not (b == "Hooli" and a == "Globex")
+
+
+def test_intent_round_3():
+    s = state_with([fact(DATED, "Acme", "2015", "2018", "former"), fact(DATED, "Globex", "2019", "2021", "former"),
+                    fact(DATED, "Initech", "2022", status="current")])
+    assert F.intent("Where did I work last year?", s) is None or F.intent("Where did I work last year?", s)[1] != "previous"
+    assert F.intent("Where did she work before Globex?", s) is None
+    it = F.intent("Where did I work from 2015 to 2019?", s)
+    assert it is None or it[1] != "year" or F.answer(s, it, "Where did I work from 2015 to 2019?")[0] != ent(s, "Acme")
+
+
 if __name__ == "__main__":
     tests = [(n, f) for n, f in globals().items() if n.startswith("test_")]
     bad = 0

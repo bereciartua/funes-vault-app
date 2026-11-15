@@ -1,5 +1,98 @@
 # Spike H results
 
+## Spike H3b: the range-based time model (15 Nov 2026)
+H3 showed the model's shape holds, but its temporal rules broke on small counterexamples. ADR-0032 decision 5 then required a range-based time model, and H3b rebuilds `facts.py` that way:
+- **Dates are ranges** at the precision written ("2019" is the whole year). An order holds only if it holds for every possible date.
+- **Episodes come from assertion intervals** (a start with the end it was stated with). Evidence, trust, order edges and status belong to an episode.
+- **One resolver** answers role phrases as of a date, "previous", "current", years, and before / after, including date anchors ("before 2019").
+- **Code:** `facts.py`; `test_temporal.py` holds every review counterexample as a test (44, plus `test_facts.py`'s 16); `replay.py` and `score_all.sh`.
+
+**Method:**
+- **Replay:** `replay.py` re-applies every saved H3 model output, in its recorded order, through the new code, with no model calls. Replaying through H3's own code reproduced H3's published numbers exactly. Limit: the reconciliation calls are the ones the original run made.
+- **Fresh runs** check the slightly changed prompts: the mixed fixture, the work fixture and the canary, on Haiku (about 470 calls, $0.25).
+- **Reviews, in three rounds:**
+  - GPT-6-Astra and Fable 5.2 reviewed the first H3b build, and both again found wrong answers;
+  - each became a test and was fixed (round 2);
+  - Fable's check of round 2 found 6 more, in narrower cases: a distant year re-dating a role phrase, a rejoined job's other episode, a hand-over assumed despite a stated time, an untrusted "no longer", a date anchor beside a job that may have started, and a missing mirror check in "after". Those were fixed and are tests too (round 3).
+
+  Each round found fewer, narrower cases. Fable's check of round 2 also found that the scripted replay showed 0 wrong throughout, so the counterexamples came only from adversarial probing, never from the fixtures.
+
+### Verdict: H3b meets ADR-0032's gate. Every counterexample passes, no set has a wrong answer or a wrong link, and coverage rose
+
+| Set | H3 (final) | H3b (replay) | H3b (fresh run) |
+|---|---|---|---|
+| People links, main: full-basis right · decidable resolved | 111/111 · 153/160 | 115/115 · 153/160 | — |
+| People links, held-out: full-basis right · decidable resolved | 148/148 · 190/198 | 164/164 · 190/198 | — |
+| Mixed fixture, separate calls: links · relation recall | 35/35 · 98% | 37/37 · 98% | 35/35 · 93% |
+| Mixed timeline: decidable answered (right + right with a gap told) · wrong | 20/28 · 0 | 25/28 · 0 | 25/28 · 0 |
+| Work fixture, facts.py's extraction: decidable answered · wrong | 6/15 · 0 | 8/15 · 0 | 9/15 · 0 |
+| Work fixture, H2's extraction: decidable answered · wrong | 7/15 · 0 | 7/15 · 0 | — |
+| Canary timeline (with the "date" cue): decidable answered, per run · wrong | 33, 31 of 34 · 0 | 30, 29 of 34 · 0 | 30 of 34 · 0 |
+| Canary links: weak bases right | 3 wrong on the frozen code | 13/13 | 7/7 |
+| Negatives that triggered the timeline (all sets) | 0 after the fixes | 0 | 0 |
+| The author's vault (private): facts.py's extraction · H2's extraction | the reviewed job · the reviewed job | the reviewed job (`inferred`) · told, not answered | — |
+
+- **The scorer is stricter than H3's:**
+  - answers go through the operator intent actually returned;
+  - a "gap" answer naming the wrong entity is wrong;
+  - "gap told" is excused only when the truth isn't something the timeline models (a study period);
+  - several answers must be exactly the truth;
+  - year, current, previous and no-answer questions are scored too.
+- **H2's extraction on the author's vault is now told, not answered.** One memory states a stray start date for an old employer, after its end, with no status. The range model can't rule out that episode sitting before the current job, so it refuses rather than guessing. H3 answered it right only through a fact-level "former" rule that per-episode status no longer allows.
+- **The canary answers 3 fewer questions than H3's after-freeze run:**
+  - "before Avery and I got together again" is refused by the rule that the anchor must end the operator phrase;
+  - two questions that H3 answered from a lucky date reading are now told.
+- **Relation recall** on the fresh mixed run was 93% (98% on the replay). It's one run of a slightly reworded prompt: within run-to-run variation, but not shown to be.
+
+**What H3b settled:**
+1. **Dates are ranges;** a same-year hand-over with nothing else between is answered at `inferred`, and with anything that could fit between, it's told.
+2. **Episodes come from intervals:**
+   - an end before the first start is kept;
+   - a return is a new episode, which never succeeds itself;
+   - an assumed hand-over start (for "my new boss") never clusters or bounds anything in the timeline.
+3. **Trust per date, edge and status:**
+   - untrusted evidence never starts, ends or orders anything at full basis;
+   - a link's trust comes from the episode it rests on.
+4. **Status per episode:**
+   - an undated "no longer" ends the episode it fits; if it fits two, the open one becomes uncertain (neither current nor ended);
+   - "current" holds as of the memory's date;
+   - succession ends only a stale current, and only on trusted evidence;
+   - a present-tense negative ("not back together") ends a relation rather than denying it.
+5. **Role resolution uses the same episodes:**
+   - a time cue is a range, and needs a preposition ("in February 2019");
+   - "my current partner" is evaluated at the memory's date;
+   - "my former therapist … in May 2024" means former when written, and holding the role in May 2024;
+   - a holder whose stated start is later drops out when someone else certainly held the role then;
+   - a name the text pairs with the role, which the model also picked, is a named decision.
+6. **Order:**
+   - a stated edge loses to a job the dates certainly put between;
+   - undated facts block a non-contiguous answer in both directions;
+   - contiguity means adjacent at month precision (at most two months could fit).
+7. **Intent:**
+   - the anchor ends the operator phrase;
+   - any person named outside the anchor makes it someone else's question, holders included;
+   - a role subject ("my wife") does too, and so does an unknown capitalised name that doesn't start a sentence;
+   - a question naming one job with current, previous or a year is about that job;
+   - date expressions keep their month and day.
+
+**Known limits** (not fixed; none gives a wrong answer in the tests or fixtures):
+- intervals written as one string ("March to June 2019", "2019–2021") and "between X and Y";
+- "Did I like my job in 2016?" triggers the year resolver (it lists the job, harmlessly);
+- month names and function words are still in code, not the registry;
+- the anchor-tail rule refuses some natural wordings;
+- replay can't re-decide which reconciliations to ask.
+
+8. **Intent, round 3:**
+   - "last year" isn't "previous";
+   - "he", "she" and "they" make it someone else's question;
+   - "from 2015 to 2019" is one span;
+   - an imported note's "my previous job" has no date to resolve against.
+
+**For ADR-0032:**
+- Decision 5 holds as written, and the H3b rules above are its implementation detail for the Phase 13 plan.
+- **The lesson is in how the bugs were found:** no fixture, blind or not, exposed them; only adversarial probing by two independent reviewers did. So 13a's acceptance needs adversarial review of the Swift time model, not only fixture scores.
+- The coverage gate stays a 13a measure on a fresh blind fixture.
+
 ## Spike H3: the unified model (15 Nov 2026)
 ADR-0032 was reworked around one model: entities, facts about the user, and a predicate registry that is data. H3 tests that model before acceptance, in the Python harness, with Claude Haiku 5.5 (about 2,960 calls, $1.54 API-equivalent). The author's vault stayed in a private folder; only yes/no answers and counts are recorded here.
 

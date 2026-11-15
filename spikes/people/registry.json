@@ -221,6 +221,38 @@
    "nuestra",
    "nuestro",
    "users"
+  ],
+  "time_nouns": [
+   "year",
+   "years",
+   "summer",
+   "winter",
+   "spring",
+   "autumn",
+   "fall",
+   "month",
+   "week",
+   "time",
+   "año",
+   "verano",
+   "mes",
+   "semana",
+   "invierno"
+  ],
+  "third_person": [
+   "he",
+   "she",
+   "they",
+   "him",
+   "her",
+   "them",
+   "his",
+   "hers",
+   "their",
+   "él",
+   "ella",
+   "ellos",
+   "ellas"
   ]
  },
  "kinds": {
