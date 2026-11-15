@@ -10,17 +10,21 @@ ADR-0032 was reworked around one model: entities, facts about the user, and a pr
 - `test_facts.py`: 16 deterministic tests (slots, succession, untrusted text, gaps, precision ties, conflicts, cycles, rejoins, exclusivity, date cues, intent negatives).
 - `author_astra_mixed.py`, `author_astra_canary.py`: GPT-6-Astra's blind fixtures. `canary_ci.py`: the canary without a model.
 
-### Verdict: the model holds. Two generic capabilities were missing; no predicate needed its own code
+### Verdict: a partial validation. The shared model and the registry hold; the temporal rules need a range-based redesign
+
+*Revised after GPT-6-Astra and Fable 5.2 reviewed the harness and the first write-up. Both reproduced the counts, then broke the generic temporal rules with small counterexamples, and found overclaims, all corrected below.*
+
 - **People through the one implementation match the baseline.** On Spike H's matrix (Haiku, two runs, both sets) facts.py made 0 wrong links and 0 forbidden links, like people.py run the same day. Recall was 95.8% against 96.6% combined: 0.8 points, inside the 1-point fidelity target. On the main set alone it was 1.9 points: two reconciliations where Haiku answered "unknown" (safe misses) in both runs. On the held-out set the two were identical (190 of 198, the same 8 misses).
 - **The timeline reproduces H2.** On H2's own extraction the generic rule gives H2's result exactly: 7 right, 0 wrong, 8 ambiguous or told.
 - **On the author's vault the timeline picks the reviewed job,** from H2's extraction (basis `ordered`) and from facts.py's own extraction (basis `inferred`, hedged as "probably"). The second needed one fix (below).
 - **People and jobs belong in separate calls.** On the blind mixed fixture, one merged call lost relation recall (91% and 89% in two runs, against 98% and 98% with separate calls). Links, the timeline and organization classification were otherwise equal. That decides the ADR's open question: call groups per predicate family.
-- **The canary found two missing generic capabilities, and no predicate-specific need.** GPT-6-Astra turned on the partner timeline with 8 data-only changes, and wrote a blind fixture, after the code was frozen (`spike-h3-freeze`). On the frozen code it gave 0 wrong timeline answers in two runs. It also showed:
+- **The canary needed no predicate-specific code, but two generic capabilities were missing.** GPT-6-Astra turned on the partner timeline with 8 data-only changes, and wrote a blind fixture, after the code was frozen (`spike-h3-freeze`). The fixture has 17 decidable, 6 undecidable and 8 negative questions; each story is played in two memory orders, so the tables count 34, 12 and 16. On the frozen code it gave 0 wrong timeline answers in two runs, but 3 or 4 negatives triggered and 3 weak-basis links were wrong. It also showed:
   - a data gap: the cue word "date" was missing, and adding it took answered decidable questions from 25 and 23 to 33 and 31 of 34;
   - two code gaps: the anchor must be what follows "before" (3 or 4 of 16 negatives triggered), and role resolution kept its own dates apart from the timeline (3 wrong weak-basis links).
 
   Both code gaps are generic and were fixed after the freeze. Those fixes don't count toward the canary.
-- **No answer was wrong in any set after the fixes.** Coverage is the open issue: decidable job questions were answered 20 of 28 times on the mixed fixture and 6 of 15 on the work fixture. The misses are dates and order edges the extraction didn't capture, and conflicts it created, not the timeline rule.
+- **No answer was wrong in the saved runs after the fixes,** but the reviewers' counterexamples show wrong answers the fixtures didn't exercise (below).
+- **Coverage is limited mostly by the gap policy, not extraction** (corrected; the first write-up blamed extraction). Of the 8 decidable mixed questions not answered, 5 were "gap told" answers naming the right job. Gaps of 3–4 months exist in Astra's truth, and bare years are padded to December. The other 3 were ambiguous: 2 from a conflict the extraction created, 1 from dates it missed.
 
 **People matrix** (Haiku, 2 runs; Spike H's scorer):
 
@@ -43,7 +47,7 @@ ADR-0032 was reworked around one model: entities, facts about the user, and a pr
 |---|---|
 | H2's extraction, generic timeline (anchor by name, as H2's scorer) | 7 right, 0 wrong, 8 told: identical to H2 |
 | The same, with the ADR's intent rule | 4 of 15 wordings had no job word ("after leaving Pampa", "before joining Mosaic"); with join/leave verbs added to the registry, 7, 0, 8 |
-| facts.py's own extraction of the work fixture (one run) | 6 right, 0 wrong, 9 told; 0 negatives triggered |
+| facts.py's own extraction of the work fixture (one run) | 6 right, 0 wrong, 9 told; 0 negatives triggered; 1 of 3 clients recorded as works_at |
 | The author's vault, H2's extraction | the reviewed job, basis `ordered` |
 | The author's vault, facts.py's extraction (379 calls, $0.18) | the reviewed job, basis `inferred`; 12 employers against the 9 reviewed (3 undated extras that don't affect the timeline) |
 
@@ -64,7 +68,7 @@ ADR-0032 was reworked around one model: entities, facts about the user, and a pr
 | | Frozen code, Astra's registry | Frozen code, + the cue "date" | After the fixes (not blind) |
 |---|---|---|---|
 | Source change needed | none | none | anchor position; one time model |
-| Decidable answered (two runs) | 25, 23 of 34 | 33, 31 of 34 | 31 of 34 |
+| Decidable answered (two runs; the last column one run) | 25, 23 of 34 | 33, 31 of 34 | 31 of 34 |
 | Wrong answers | 0, 0 | 0, 0 | 0 |
 | Undecidable told | 12/12 | 12/12 | 12/12 |
 | Negatives that triggered | 4, 3 of 16 | 4, 3 of 16 | 0 |
@@ -90,15 +94,38 @@ ADR-0032 was reworked around one model: entities, facts about the user, and a pr
    - join and leave verbs are cue words (registry data).
 9. **Deceased isn't former;** a new holder of a predicate with succession starts at its memory.
 
+**Known bugs the reviews found** (reproduced with canned inputs; not fixed in H3, because each needs the temporal redesign rather than another rule):
+- **Trust is per fact, not per date or edge.** One trusted memory makes every date of the fact usable. An untrusted start can trigger succession of another fact; an untrusted order edge returns `stated`, and `episodes(untrusted_dates=…)` is unused (`facts.py` `episodes`, `_stated`).
+- **Same-year hand-over.** "Left Acme in 2019, joined Initech in 2019" drops Acme, because a bare-year end is December and a bare-year start is January; `before(Initech)` names the job before Acme at `ordered`.
+- **Merging erases an episode.** Starts are merged apart from their ends: Acme 2020–March 2020, rejoined September 2020, becomes one September episode.
+- **Uncertain competitors drop out.** A competitor with a year-only end in the anchor's year, or a former fact with a start but no end, isn't considered; only the winner's conflicts are checked. Succession also ignores "still current" when it's within the month the next fact starts.
+- **Order edges are per entity, not per episode,** and only two-way contradictions are detected: a longer cycle returns `stated`, and a stated predecessor that overlaps the anchor wins.
+- **Role resolution keeps its own time model** (`holders` reads stored `valid_from`, `valid_to` and `status`). A rejoined job or reunited partner stays `former`; starts are truncated to January ("September 2021" resolves March 2021 memories); `previous_as_of` skips the precision, conflict and gap checks.
+- **Month names are read from prose:** "married" parses as March, "separated" as September, "decided" as December, "2019-20" as month 20.
+- **Intent holes:**
+  - the other-person check runs only for before / after, and only for known people ("Where did Zoe work before Initech?", "Where does Ada work now?" trigger);
+  - role subjects slip through ("Where did my wife work before Acme?");
+  - a cue anywhere counts ("What did I work on before the Initech demo?");
+  - year, current and previous have no resolver.
+- **Deceased overrides an explicit end** ("my former boss, who later died" becomes current).
+- **The scorer dispatches on the gold operator, not the one intent returned,** and never counts a "gap" answer naming the wrong entity as wrong. Neither changed a saved result, but both would hide errors. `canary_ci.py` exits successfully on failures.
+- **Predicate-flavoured content remains in code** despite the mechanical test: `person_nouns`, the "ex" class, prompt examples ("sister, mom, boss", "left a job"), and person fields (deceased, only, count) on every fact's schema. These belong in the registry; the test only greps predicate ids.
+
 **What this means for ADR-0032:**
-- **The reworked model holds.** People and jobs ran through one implementation with no predicate-specific code. A new predicate's timeline reached 0 wrong answers on blind data with data-only changes. What it lacked were generic capabilities, which is the ADR's rule for when code changes.
+- **The model's shape holds.** People and jobs ran through one implementation, people links matched the baseline, and a new predicate's timeline ran on data-only changes. It lacked generic capabilities, never predicate code, which is the ADR's rule for when code changes.
+- **The temporal core doesn't hold as built.** Rule-by-rule patching found real cases but left others (above). The time model needs a design, not more rules:
+  - every date is a range at its written precision ("2019" is January to December), and comparisons are over possible ranges;
+  - evidence, trust and order edges belong to an episode, not to the whole fact;
+  - episodes are built from assertion intervals before dates are refined;
+  - one resolver serves role resolution, "previous", and before / after;
+  - status is per episode.
 - **Decided by H3:**
   - separate call groups for people and work;
-  - one time model: a fact's dates are resolved from evidence, and role resolution uses the same episodes as the timeline;
+  - one time model is required, but **not built in H3**: the after-freeze fix only made stated dates replace assumed ones in `apply`; role resolution still reads the fact's stored dates and status;
   - the intent and succession rules above;
   - order fields named by direction;
   - manager has succession and stays non-exclusive.
-- **Not met:** the ADR's coverage target (≥ 90% of decidable wordings) on job fixtures. It is limited by extraction of dates and order edges. 13a needs a better work prompt, measured on a fresh blind fixture.
+- **Not met:** the ADR's coverage target (≥ 90% of decidable wordings) on job fixtures, mostly because of the gap policy and year padding (above).
 - **Limits:**
   - one or two runs per set, Haiku only;
   - the mixed fixture became development data for one intent rule, and the work fixture for the cue words;
