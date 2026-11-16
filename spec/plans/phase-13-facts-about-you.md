@@ -109,7 +109,7 @@
   - the profile's names are matched locally to *you*, replaced by "the user" in the memory text sent (with an offset map for quotes), never added and never in a roster; another person sharing the name keeps it.
 
   **Payload tests** with sentinel strings at each sensitivity.
-- [ ] **`ProcessingQueue`:** a low-priority lane that pauses while New memories or the tidy-up wait. Today it runs one job at a time and dedupes by subject and kind, so it gains revision- and call-group-aware scheduling. It also runs reconciliation (a new holder, a new fact about a candidate, a name shared).
+- [ ] **`ProcessingQueue`:** a low-priority lane that pauses while New memories or the tidy-up wait. Today it runs one job at a time and dedupes by subject and kind, so it gains revision- and call-group-aware scheduling. It also runs reconciliation (a new holder, a new fact about a candidate, a name shared). 13a.1's graph reopens an earlier bare-name mention as `ambiguous` when a second trusted entity shares the name (`reopenSharedNames`); through the store, the queue finds these from alias evidence (a one-word alias whose normalised form now matches several trusted entities) and re-reads that memory, and its link reads as ambiguous until then.
 - [ ] **Qualification and gating:**
   - each use of each predicate (recorded, linked, timeline, attributes, bridges) is on only with a qualification record for the current model, call-group prompt, registry version, adapter and batching;
   - turning a use off turns off everything downstream of it, with no code change. A test turns linking off and checks that attributes and bridges go too.

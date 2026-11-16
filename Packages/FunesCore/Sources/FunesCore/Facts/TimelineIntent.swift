@@ -100,12 +100,21 @@ extension FactsGraph {
     /// predicate or a date, follows the operator and ends its phrase), year, current, previous.
     public func intent(_ query: String) -> TimelineIntent? {
         let lang = registry.language
-        // Contractions expanded, so "antes del 15 de marzo" has its operator ("antes de") and its determiner ("el").
+        // A contraction that completes an operator is expanded, so "antes del 15 de marzo" has its operator ("antes
+        // de") and its determiner ("el"); elsewhere it stays, so names keep it ("Banco del Sur").
         var q = FactsText.fold(query)
         for (w, full) in lang.contractions {
-            q = FactsText.regex("(?<!\\w)" + FactsText.escape(FactsText.fold(w)) + "(?!\\w)")
-                .stringByReplacingMatches(in: q, range: NSRange(location: 0, length: FactsText.length(q)),
-                                          withTemplate: NSRegularExpression.escapedTemplate(for: FactsText.fold(full)))
+            let parts = FactsText.fold(full).split(separator: " ").map(String.init)
+            guard let head = parts.first else { continue }
+            for op in lang.operators.before + lang.operators.after {
+                var words = FactsText.fold(op).split(separator: " ").map(String.init)
+                guard words.count > 1, words.last == head else { continue }
+                words.removeLast()
+                let lead = words.map(FactsText.escape).joined(separator: "\\s+")
+                q = FactsText.regex("(?<!\\w)(" + lead + ")\\s+" + FactsText.escape(FactsText.fold(w)) + "(?!\\w)")
+                    .stringByReplacingMatches(in: q, range: NSRange(location: 0, length: FactsText.length(q)),
+                                              withTemplate: "$1 " + NSRegularExpression.escapedTemplate(for: parts.joined(separator: " ")))
+            }
         }
         let lex = registry.lexicon
         for pred in registry.timelinePredicates {

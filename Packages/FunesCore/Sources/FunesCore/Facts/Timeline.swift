@@ -33,16 +33,24 @@ public enum TimelineDirection: String, Sendable { case before, after }
 
 extension FactsGraph {
     /// The episode a question means when the entity has several: "the first time", "the second time", "when I
-    /// returned", or none. Cues that disagree, or an ordinal past the episodes known, pick none.
+    /// returned", or none. Cues that disagree, or an ordinal past the episodes known, pick none. Words of the entity's
+    /// own names aren't cues ("First National Bank").
     func pickEpisode(_ eps: [Episode], query: String) -> Episode? {
-        if eps.count == 1 { return eps[0] }
-        let q = FactsText.fold(query)
+        guard let first = eps.first else { return nil }
+        var q = FactsText.fold(query)
+        if let id = first.entity, let e = entities[id] {
+            for a in e.aliases.map(FactsText.fold).sorted(by: { $0.count > $1.count }) where !a.isEmpty {
+                q = FactsText.regex("(?<!\\w)" + FactsText.escape(a) + "(?!\\w)")
+                    .stringByReplacingMatches(in: q, range: NSRange(location: 0, length: FactsText.length(q)), withTemplate: " ")
+            }
+        }
         let lang = registry.language
         func cue(_ words: [String]) -> Bool { words.contains { FactsText.cue(q, $0) } }
         var picks = Set<Int>()
         if cue(lang.episodeFirst) { picks.insert(1) }
         for (w, n) in lang.episodeOrdinals where FactsText.cue(q, w) { picks.insert(n) }
         if cue(lang.episodeLast) { picks.insert(eps.count) }
+        if picks.isEmpty { return eps.count == 1 ? first : nil }
         guard picks.count == 1, let n = picks.first, n >= 1, n <= eps.count else { return nil }
         return eps[n - 1]
     }
@@ -265,7 +273,10 @@ extension FactsGraph {
             if !maybe.subtracting(got.map { [$0] } ?? []).isEmpty { return .none(.ambiguous) }   // another may have held then
             return .one(got, basis)
         case .entity(let x):
-            let mine = eps.filter { $0.entity == x }.stableSorted { $0.sortKey }
+            // The entity's trusted episodes, when it has any: an untrusted one can't renumber them ("the second time").
+            let all = eps.filter { $0.entity == x }.stableSorted { $0.sortKey }
+            let trustedOnes = all.filter(\.trusted)
+            let mine = trustedOnes.isEmpty ? all : trustedOnes
             if mine.isEmpty { return .none(.unknown) }
             guard let sx = pickEpisode(mine, query: query) else { return .none(.ambiguous) }
             let (got, basis) = order(predicate, eps, sx, direction)
