@@ -38,9 +38,13 @@ extension FactsGraph {
             + words.map(FactsText.escape).joined(separator: "|") + ")(?![\\w-])", caseInsensitive: true)
     }
 
-    /// Quoted speech, each kind by its own delimiters: a contraction inside double quotes doesn't end them.
-    private static let quoteRE = FactsText.regex("\"([^\"\\n]+)\"|“([^”\\n]+)”|(?:^|(?<=[\\s:,]))['‘]([^'’\\n]+)['’](?=[\\s.,;:!?]|$)")
-    /// What follows a possessive ("my sister's very kind husband"): up to four words.
+    /// Quoted speech, each kind by its own delimiters: a contraction inside the quotes doesn't end them, and a
+    /// straight quote opens only at the start or after a space or opening punctuation (not an inch mark: 27").
+    private static let quoteRE = FactsText.regex(
+        "(?:^|(?<=[\\s:,(\\[]))\"([^\"\\n]+)\"(?=[\\s.,;:!?)\\]]|$)|“([^”\\n]+)”"
+        + "|(?:^|(?<=[\\s:,(\\[]))['‘]((?:[^'’\\n]|(?<=\\w)['’](?=\\w))+)['’](?=[\\s.,;:!?)\\]]|$)")
+    /// What follows a possessive ("my sister's very kind husband"): up to four words, read up to a function word or
+    /// an owner ("my boss's note to my sister" is the boss's note).
     private static let chainRE = FactsText.regex("['’]s((?:\\s+\\w[\\w-]*){1,4})")
 
     var personNouns: Set<String> {
@@ -55,6 +59,7 @@ extension FactsGraph {
         let ns = text as NSString
         let quoted = FactsText.matches(Self.quoteRE, in: text).compactMap { m in m.groups.first { $0.location != NSNotFound } }
         let nouns = personNouns
+        let chainStops = Set((lang.functionWords + lang.owners.map { String($0.split(separator: " ")[0]) }).map { FactsText.fold($0) })
         let lex = registry.lexicon
         let preps = lang.timePrepositions.map(FactsText.escape).joined(separator: "|")
         let joiners = lang.dateJoiners.map(FactsText.escape).joined(separator: "|")
@@ -86,7 +91,8 @@ extension FactsGraph {
                 continue
             }
             if let chain = FactsText.matchAt(Self.chainRE, in: text, from: e, to: min(e + 60, ns.length)),
-               (chain.group(1) ?? "").split(whereSeparator: \.isWhitespace).contains(where: { nouns.contains($0.lowercased()) }) {
+               (chain.group(1) ?? "").split(whereSeparator: \.isWhitespace).map({ $0.lowercased() })
+                   .prefix(while: { !chainStops.contains(FactsText.fold($0)) }).contains(where: { nouns.contains($0) }) {
                 continue
             }
             let word = mt.group(5)!.lowercased()

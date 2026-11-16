@@ -94,13 +94,23 @@
       "returned",
       "rejoin",
       "rejoined",
-      "second",
       "again",
       "volver",
       "volvi",
-      "segunda",
       "regres*"
     ],
+    "episode_ordinals": {
+      "second": 2,
+      "segunda": 2,
+      "segundo": 2,
+      "third": 3,
+      "tercera": 3,
+      "tercer": 3,
+      "tercero": 3,
+      "fourth": 4,
+      "cuarta": 4,
+      "cuarto": 4
+    },
     "pair_before": [
       "is",
       "was",
@@ -462,10 +472,12 @@
       "este",
       "esta",
       "ese",
-      "esa",
-      "del",
-      "al"
-    ]
+      "esa"
+    ],
+    "contractions": {
+      "del": "de el",
+      "al": "a el"
+    }
   },
   "kinds": {
     "person": {

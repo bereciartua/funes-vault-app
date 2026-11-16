@@ -20,6 +20,7 @@ public struct FactsRegistry: Sendable, Decodable {
         public let operators: Operators
         public let episodeFirst: [String]
         public let episodeLast: [String]
+        public let episodeOrdinals: [String: Int]
         public let pairBefore: [String]
         public let pairAfter: [String]
         public let pairAdverbs: [String]
@@ -30,6 +31,8 @@ public struct FactsRegistry: Sendable, Decodable {
         public let formerWords: [String]
         public let anchorTailWords: [String]
         public let anchorDeterminers: [String]
+        /// Contracted function words, expanded before a question is read ("del" is "de el").
+        public let contractions: [String: String]
         public let timePrepositions: [String]
         public let dayPrepositions: [String]
         public let returnCues: [String]

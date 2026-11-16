@@ -32,14 +32,19 @@ public struct TimelineAnswer: Sendable, Equatable {
 public enum TimelineDirection: String, Sendable { case before, after }
 
 extension FactsGraph {
-    /// The episode a question means when the entity has several: "the first time", "when I returned", or none.
+    /// The episode a question means when the entity has several: "the first time", "the second time", "when I
+    /// returned", or none. Cues that disagree, or an ordinal past the episodes known, pick none.
     func pickEpisode(_ eps: [Episode], query: String) -> Episode? {
         if eps.count == 1 { return eps[0] }
         let q = FactsText.fold(query)
+        let lang = registry.language
         func cue(_ words: [String]) -> Bool { words.contains { FactsText.cue(q, $0) } }
-        if cue(registry.language.episodeFirst) { return eps.first }
-        if cue(registry.language.episodeLast) { return eps.last }
-        return nil
+        var picks = Set<Int>()
+        if cue(lang.episodeFirst) { picks.insert(1) }
+        for (w, n) in lang.episodeOrdinals where FactsText.cue(q, w) { picks.insert(n) }
+        if cue(lang.episodeLast) { picks.insert(eps.count) }
+        guard picks.count == 1, let n = picks.first, n >= 1, n <= eps.count else { return nil }
+        return eps[n - 1]
     }
 
     /// Episode a could come just before episode b: nothing in their dates says a ended after b started.

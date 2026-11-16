@@ -136,7 +136,8 @@ enum FactsExport {
             return r
         }
         let asMemories = memories != nil
-        let modelDecisions = Set(facts.decisions.filter { $0["source"]?.string == "model" }.compactMap { $0["id"]?.string })
+        // Dependencies follow only the decisions restored: one whose memory was skipped (a duplicate) takes them along.
+        var restoredDecisions = Set<String>()
         for t in tables {
             let columns = Set(try Row.fetchAll(db, sql: "PRAGMA table_info(\(t.table))").map { $0["name"] as String })
             for var row in facts[keyPath: t.key] {
@@ -159,7 +160,7 @@ enum FactsExport {
                         row = correction(row)
                     }
                 case "decision_dependency":
-                    guard asMemories || !modelDecisions.contains(row["decision_id"]?.string ?? "") else { continue }
+                    guard restoredDecisions.contains(row["decision_id"]?.string ?? "") else { continue }
                     if row["kind"]?.string == "memory", let old = row["ref_id"]?.string {
                         guard let new = memories?[old] else { continue }
                         row["ref_id"] = .string(new.id)
@@ -174,6 +175,7 @@ enum FactsExport {
                 guard !keys.isEmpty else { continue }
                 try db.execute(sql: "INSERT OR IGNORE INTO \(t.table) (\(keys.joined(separator: ", "))) VALUES (\(databaseQuestionMarks(count: keys.count)))",
                                arguments: StatementArguments(keys.map { row[$0]!.databaseValue }))
+                if t.table == "mention_decision", db.changesCount > 0, let id = row["id"]?.string { restoredDecisions.insert(id) }
             }
         }
         try FactStore.collectGarbage(db, now: now)

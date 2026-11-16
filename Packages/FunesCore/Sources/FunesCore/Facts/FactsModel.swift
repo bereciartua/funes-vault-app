@@ -535,5 +535,19 @@ public struct FactsGraph: Sendable {
                 decisions[key] = MentionDecision(entity: groupFor(ph.predicate, ph.generic ? nil : ph.cls), basis: .group)
             }
         }
+        if trusted { reopenSharedNames(except: mid) }
+    }
+
+    /// A second trusted entity sharing a bare name makes earlier `named` mentions of it `ambiguous` (memory processing
+    /// §11.4), for reconciliation to ask again. An untrusted memory's names never reopen a trusted link.
+    mutating func reopenSharedNames(except mid: String) {
+        var sharing: [String: [String]] = [:]
+        for (key, link) in names where key.memoryID != mid && link.basis == .named {
+            guard let e = link.entity, FactsText.fold(key.surface).split(separator: " ").count == 1 else { continue }
+            let kind = entities[e]?.kind ?? "person"
+            let ids = sharing[key.surface] ?? byName(key.surface, kind: kind, onlyTrusted: true).map(\.id)
+            sharing[key.surface] = ids
+            if ids.count > 1, ids.contains(e) { names[key] = NameLink(entity: nil, basis: .ambiguous, candidates: ids) }
+        }
     }
 }

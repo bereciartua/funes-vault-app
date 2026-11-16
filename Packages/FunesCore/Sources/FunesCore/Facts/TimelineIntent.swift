@@ -24,7 +24,7 @@ extension FactsGraph {
     private func tailOK(_ q: String, _ pos: Int) -> Bool {
         let end = FactsText.first(Self.tailStop, in: q, from: pos)?.start ?? FactsText.length(q)
         let lang = registry.language
-        let allowed = Set((lang.anchorTailWords + lang.episodeFirst + lang.episodeLast).map { FactsText.fold($0.replacingOccurrences(of: "*", with: "")) })
+        let allowed = Set((lang.anchorTailWords + lang.episodeFirst + lang.episodeLast + Array(lang.episodeOrdinals.keys)).map { FactsText.fold($0.replacingOccurrences(of: "*", with: "")) })
         return FactsText.matches(Self.wordRE, in: q, from: pos, to: end).allSatisfy { allowed.contains($0.group(0)!) }
     }
 
@@ -34,7 +34,10 @@ extension FactsGraph {
     /// word between it and the anchor heads another noun phrase.
     private func leadOK(_ q: String, _ from: Int, _ to: Int) -> Bool {
         let determiners = Set(registry.language.anchorDeterminers.map { FactsText.fold($0) })
-        let words = FactsText.matches(Self.wordRE, in: q, from: from, to: to).map { $0.group(0)! }
+        let timeNouns = Set(registry.language.timeNouns.map { FactsText.fold($0) })
+        var words = FactsText.matches(Self.wordRE, in: q, from: from, to: to).map { $0.group(0)! }
+        // A time noun before a date belongs to it ("before the year 2019").
+        while let last = words.last, timeNouns.contains(last) { words.removeLast() }
         return !words.dropLast().contains { determiners.contains($0) }
     }
 
@@ -96,8 +99,14 @@ extension FactsGraph {
     /// The timeline intent of a query, or nil. Operators: before / after (the anchor, an entity holding a fact of the
     /// predicate or a date, follows the operator and ends its phrase), year, current, previous.
     public func intent(_ query: String) -> TimelineIntent? {
-        let q = FactsText.fold(query)
         let lang = registry.language
+        // Contractions expanded, so "antes del 15 de marzo" has its operator ("antes de") and its determiner ("el").
+        var q = FactsText.fold(query)
+        for (w, full) in lang.contractions {
+            q = FactsText.regex("(?<!\\w)" + FactsText.escape(FactsText.fold(w)) + "(?!\\w)")
+                .stringByReplacingMatches(in: q, range: NSRange(location: 0, length: FactsText.length(q)),
+                                          withTemplate: NSRegularExpression.escapedTemplate(for: FactsText.fold(full)))
+        }
         let lex = registry.lexicon
         for pred in registry.timelinePredicates {
             guard let p = registry.predicate(pred) else { continue }

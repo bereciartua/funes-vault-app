@@ -212,7 +212,7 @@ import Testing
     }
 
     /// Two managers, and a memory whose "my boss" the model decided was Ana.
-    private func decidedState() throws -> (decision: String, ana: String, bo: String, memory: Memory) {
+    func decidedState() throws -> (decision: String, ana: String, bo: String, memory: Memory) {
         let a = try memory("Ana became my boss.")
         try apply(a, FactsExtraction(people: [ExtractedPerson(name: "Ana")],
                                      facts: [fact(pp, "Ana", status: .current, quote: "Ana became my boss")]), group: people)
