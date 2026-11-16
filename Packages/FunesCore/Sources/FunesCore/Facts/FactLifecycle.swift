@@ -35,6 +35,9 @@ extension FactStore {
                            arguments: [memoryID, old])
             try collectGarbage(db, now: now, touching: affected)
         } else {
+            // Status or trust may have changed what counts (a delete, an archive, an owner's edit): what this memory
+            // supports changed for the decisions resting on it.
+            let affected = try supportedBy(db, memoryIDs: [memoryID])
             try db.execute(sql: "UPDATE fact_evidence SET memory_version = ? WHERE memory_id = ? AND memory_version = ?",
                            arguments: [new, memoryID, old])
             try db.execute(sql: "UPDATE OR REPLACE alias_evidence SET memory_version = ? WHERE memory_id = ? AND memory_version = ?",
@@ -43,6 +46,7 @@ extension FactStore {
                            arguments: [new, memoryID, old])
             try db.execute(sql: "UPDATE decision_dependency SET ref_version = ? WHERE kind = 'memory' AND ref_id = ? AND ref_version = ?",
                            arguments: [String(new), memoryID, String(old)])
+            try touch(db, facts: affected.facts, entities: affected.entities, except: memoryID, now: now)
         }
         try bumpRevision(db)
     }

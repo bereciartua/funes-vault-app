@@ -213,7 +213,14 @@ extension FactsGraph {
         let key = DecisionKey(memoryID: mem.id, start: ph.start)
         if let dec = decisions[key], !(dec.basis == .group && entity(dec.entity)?.name != nil),
            !(dec.entity.map { rejections[key]?.contains($0) ?? false } ?? false) {     // a correction beats a decision
-            return dec.basis == .someoneElse ? (nil, .someoneElse) : (dec.entity, dec.basis)
+            if dec.basis == .someoneElse { return (nil, .someoneElse) }
+            // A decision can't lift what it chose above that entity's evidence: untrusted facts give an untrusted link.
+            if dec.basis == .context, let e = dec.entity,
+               facts.contains(where: { $0.entity == e && $0.predicate == ph.predicate && !$0.negated }),
+               !facts.contains(where: { $0.entity == e && $0.predicate == ph.predicate && !$0.negated && $0.trusted }) {
+                return (e, .untrusted)
+            }
+            return (dec.entity, dec.basis)
         }
         let rejected = rejections[key] ?? []
         if ph.plural {

@@ -140,8 +140,9 @@ extension FactsGraph {
                 clash = false
             }
             if !clash, !between(w) {
-                if isGap(gapOf(w)) { return (w.entity, .gap) }
-                return (w.entity, w.trusted && sx.trusted ? .stated : .inferred)   // an untrusted-only endpoint
+                let trustedEnds = w.trusted && sx.trusted
+                if isGap(gapOf(w)) { return trustedEnds ? (w.entity, .gap) : (nil, .ambiguous) }
+                return (w.entity, trustedEnds ? .stated : .inferred)   // an untrusted-only endpoint
             }
         }
         guard let a = anchor, !conflict else { return (nil, .ambiguous) }
@@ -202,9 +203,10 @@ extension FactsGraph {
             }
             if before ? b.hi >= wb.lo : b.lo <= wb.hi { return (nil, .ambiguous) }   // it could sit as close, or closer
         }
-        if isGap(gapOf(w)) { return (w.entity, .gap) }
         let untrusted = (before ? (!w.endTrusted || !sx.startTrusted) : (!sx.endTrusted || !w.startTrusted))
             || !w.trusted || !sx.trusted
+        // A gap is told only on trusted dates: untrusted ones can't say how long it was.
+        if isGap(gapOf(w)) { return untrusted ? (nil, .ambiguous) : (w.entity, .gap) }
         let inferred = basisInferred || untrusted || (before ? w.inferredEnd : sx.inferredEnd)
         return (w.entity, inferred ? .inferred : .ordered)
     }
@@ -251,8 +253,16 @@ extension FactsGraph {
     func previousLink(_ predicate: String, written: String) -> (entity: String, trusted: Bool)? {
         guard let d = parser.day(written) else { return nil }
         let eps = episodes(predicate)
-        let now = eps.filter { $0.certainlyHolds(.day(d)) }
+        let day = DateRange.day(d)
+        let now = eps.filter { $0.certainlyHolds(day) }
         guard now.count == 1 else { return nil }
+        // Another job that may also be the current one then makes the anchor, and so "previous", unknown.
+        let rivals = eps.filter { e in
+            e !== now[0] && e.entity != now[0].entity && !e.former && !e.inferredEnd
+                && !(e.start.map { $0.lo > day.hi } ?? false) && !(e.uncertain && (e.uncertainFrom ?? Int.max) < day.lo)
+                && (e.ongoing || e.heldAt != nil)
+        }
+        guard rivals.isEmpty else { return nil }
         let (got, basis) = order(predicate, eps, now[0], .before)
         guard let got, [.ordered, .stated, .inferred].contains(basis) else { return nil }
         let chain = eps.filter { $0.entity == got } + [now[0]]

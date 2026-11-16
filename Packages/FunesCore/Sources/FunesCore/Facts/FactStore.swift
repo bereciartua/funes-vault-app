@@ -257,8 +257,8 @@ enum FactStore {
                 return c.memory.written + String(format: "%012d", c.seq)
             }
             // A role group: its count is the latest counting memory's, and it's not a fact the timeline reads.
-            if groupEntities.contains(ent) {
-                for (r, _) in rows where (r["target_kind"] as String) == "fact" {
+            if groupEntities.contains(ent) {        // only trusted memories set a count
+                for (r, c) in rows where (r["target_kind"] as String) == "fact" && (c?.memory.trusted ?? true) {
                     if let n = object(r["asserted"])["count"] as? Int { g.entities[ent]?.count = n }
                 }
                 continue
@@ -270,7 +270,9 @@ enum FactStore {
             var order: [String] = [], pending: [String: Pending] = [:]
             for (r, c) in rows {
                 let src: String = r["source"]
-                let key = c.map { "m:" + $0.memory.id } ?? "u:" + (r["id"] as String)
+                // One assertion per statement: a memory's rows carry its ordinal ("n"), so two statements stay two.
+                let n = object(r["asserted"])["n"] as? Int ?? 0
+                let key = c.map { "m:" + $0.memory.id + ":" + String(n) } ?? "u:" + (r["id"] as String)
                 if pending[key] == nil {
                     order.append(key)
                     pending[key] = Pending(a: FactAssertion(memoryID: c?.memory.id ?? "user", trusted: c?.memory.trusted ?? true,
@@ -289,6 +291,7 @@ enum FactStore {
                     p.a.time = asserted["time"] as? String
                     p.a.handover = asserted["handover"] as? Bool ?? false
                     p.only = asserted["only"] as? Bool ?? false
+                    p.a.only = p.only
                     p.a.states = (r["states"] as Int) == 1
                     if let c, c.status == "archived", p.a.status == .current {
                         p.a.status = .unknown        // an archived memory keeps its former and dated facts only
@@ -296,7 +299,10 @@ enum FactStore {
                 case "qualifier":
                     if let q: String = r["qualifier"], let v = asserted["value"] as? String {
                         if q == "label" { p.a.label = v }
-                        else if q == "deceased" { if v == "true", c != nil { deceasedByEvidence.insert(ent) } }
+                        else if q == "deceased" {
+                            p.a.deceased = v == "true"
+                            if v == "true", c?.memory.trusted == true { deceasedByEvidence.insert(ent) }
+                        }
                         else { p.a.qualifiers[q] = v }
                     }
                 case "order":
@@ -319,7 +325,6 @@ enum FactStore {
                 if p.denied {
                     // A denial from a memory never negates what the user entered (manual entries win over inference).
                     if let last = incarnations.indices.last, !incarnations[last].negated, !manual,
-                       !incarnations[last].assertions.contains(where: \.fromUser),
                        p.a.trusted || !incarnations[last].trusted {
                         incarnations[last].negated = true
                     }
@@ -330,11 +335,11 @@ enum FactStore {
                                                     negated: false, assertions: []))
                 }
                 let i = incarnations.count - 1
-                if incarnations[i].label == nil, let l = p.a.label {
+                if let l = p.a.label, incarnations[i].label == nil || p.a.fromUser {   // the user's label wins
                     incarnations[i].label = l
                     incarnations[i].cls = g.labelClass(pred, l)
                 }
-                incarnations[i].only = incarnations[i].only || p.only
+                incarnations[i].only = incarnations[i].only || (p.only && p.a.trusted)
                 incarnations[i].assertions.append(p.a)
             }
             g.facts += incarnations
@@ -590,6 +595,7 @@ enum FactStore {
 
         // Facts: only the assertions this apply added, and the denials it made.
         var newFacts = Set<String>()
+        var ordinal: [String: Int] = [:]
         func factID(_ pred: String, _ entity: String) throws -> String {
             if let id = try String.fetchOne(db, sql: "SELECT id FROM fact WHERE predicate = ? AND entity_id = ?", arguments: [pred, entity]) {
                 try db.execute(sql: "UPDATE fact SET tombstone = 0 WHERE id = ?", arguments: [id])
@@ -629,33 +635,34 @@ enum FactStore {
                 }
             }
             let fid = try factID(f.predicate, f.entity)
-            let died = g.entities[f.entity]?.deceased == true && before.entities[f.entity]?.deceased != true
             for a in added {
-                var asserted: [String: Any] = ["status": a.status.rawValue]
+                let n = ordinal[fid, default: 0]
+                ordinal[fid] = n + 1
+                var asserted: [String: Any] = ["status": a.status.rawValue, "n": n]
                 if let v = a.start { asserted["start"] = v }
                 if let v = a.end { asserted["end"] = v }
                 if let v = a.time { asserted["time"] = v }
                 if oldHandover[fid] ?? a.handover { asserted["handover"] = true }
-                if f.only { asserted["only"] = true }
+                if a.only { asserted["only"] = true }      // this statement's own, never the fact's aggregate
                 try evidenceRow(fid, kind: "fact", asserted: asserted, states: a.states, polarity: "affirmed", quote: a.quote)
                 if let l = a.label {
-                    try evidenceRow(fid, kind: "qualifier", qualifier: "label", asserted: ["value": l], states: a.states,
+                    try evidenceRow(fid, kind: "qualifier", qualifier: "label", asserted: ["value": l, "n": n], states: a.states,
                                     polarity: "affirmed", quote: a.quote)
                 }
                 for (q, v) in a.qualifiers.sorted(by: { $0.key < $1.key }) {
-                    try evidenceRow(fid, kind: "qualifier", qualifier: q, asserted: ["value": v], states: a.states,
+                    try evidenceRow(fid, kind: "qualifier", qualifier: q, asserted: ["value": v, "n": n], states: a.states,
                                     polarity: "affirmed", quote: a.quote)
                 }
-                if died {
-                    try evidenceRow(fid, kind: "qualifier", qualifier: "deceased", asserted: ["value": "true"], states: a.states,
+                if a.deceased {
+                    try evidenceRow(fid, kind: "qualifier", qualifier: "deceased", asserted: ["value": "true", "n": n], states: a.states,
                                     polarity: "affirmed", quote: a.quote)
                 }
                 if let v = a.precededBy {
-                    try evidenceRow(fid, kind: "order", direction: "preceded_by", asserted: ["value": v], states: a.states,
+                    try evidenceRow(fid, kind: "order", direction: "preceded_by", asserted: ["value": v, "n": n], states: a.states,
                                     polarity: "affirmed", quote: a.quote)
                 }
                 if let v = a.followedBy {
-                    try evidenceRow(fid, kind: "order", direction: "followed_by", asserted: ["value": v], states: a.states,
+                    try evidenceRow(fid, kind: "order", direction: "followed_by", asserted: ["value": v, "n": n], states: a.states,
                                     polarity: "affirmed", quote: a.quote)
                 }
             }
@@ -665,8 +672,8 @@ enum FactStore {
             }
         }
         // Role groups' counts this memory states, as evidence on the group's fact (so they go with their memory).
-        var counted: [String: String] = [:]          // group id → quote
-        for r in x.facts where preds.contains(r.predicate) {
+        var counted: [String: (Int, String)] = [:]          // group id → (the count this statement gives, its quote)
+        for r in x.facts where preds.contains(r.predicate) && (r.count != nil || r.only || r.entity == "none") {
             let cls = g.labelClass(r.predicate, r.label)
             let gid: String? = {
                 if let e = g.entities[r.entity], e.group != nil, e.name == nil { return r.entity }
@@ -675,10 +682,11 @@ enum FactStore {
                 }
                 return nil
             }()
-            if let gid, g.entities[gid]?.count != nil { counted[gid] = r.quote }
+            let n = r.entity == "none" ? 0 : r.only ? 1 : r.count ?? 0
+            if let gid { counted[gid] = (n, r.quote) }
         }
-        for (gid, quote) in counted.sorted(by: { $0.key < $1.key }) {
-            guard let e = g.entities[gid], let group = e.group, let n = e.count else { continue }
+        for (gid, (n, quote)) in counted.sorted(by: { $0.key < $1.key }) {
+            guard let group = g.entities[gid]?.group else { continue }
             let fid = try factID(group.predicate, gid)
             try evidenceRow(fid, kind: "fact", asserted: ["count": n], states: true, polarity: "affirmed", quote: quote)
         }

@@ -111,52 +111,69 @@ extension FactsGraph {
             return Row(a: a, s: s, e: e, bound: bound, held: held, w: w, hand: hand)
         }
         var eps: [Building] = []
-        for r in rows.filter({ ($0.s != nil || $0.e != nil) && $0.a.selector == nil }).stableSorted(by: { ($0.s ?? $0.e)!.lo }) {
-            var target: Building?
-            for ep in eps.reversed() {
-                let es = ep.startRange(for: r.a.trusted), ee = ep.endRange(for: r.a.trusted)
-                var disjoint = false
-                if let ee, let s = r.s, ee.hi < s.lo { disjoint = true }
-                if let e = r.e, let es, e.hi < es.lo { disjoint = true }
-                if disjoint { continue }
-                if isRejoin(r.a), let s = r.s, let es, s.lo > es.hi { continue }
-                target = ep
-                break
-            }
-            let t = target ?? { let b = Building(); eps.append(b); return b }()
-            if let s = r.s { t.starts.append((s, r.a)) }
-            if let e = r.e { t.ends.append((e, r.a)) }
-            t.rows.append(r)
-        }
-        for var r in rows.filter({ $0.s == nil && $0.e == nil && $0.a.selector == nil }) {
-            var target: Building?
-            if let w = r.w {
-                if r.bound != nil {      // "no longer there": which episode it ended is decided only if just one fits
-                    let ended = eps.filter { ep in ep.endRange(for: r.a.trusted).map { $0.hi <= w } ?? false }
-                    let open = eps.filter { ep in
-                        ep.endRange(for: r.a.trusted) == nil && (ep.startRange(for: r.a.trusted).map { $0.lo <= w } ?? true)
-                    }
-                    if !open.isEmpty, !ended.isEmpty, r.a.trusted {
-                        for ep in open { ep.uncertain = min(ep.uncertain ?? w, w) }   // it may have ended by then
-                        target = ended.last
-                        r.bound = nil
-                    } else if !ended.isEmpty {
-                        target = ended.last
-                    }
+        // Trusted (and the user's) rows are placed first, dated then undated; untrusted rows only afterwards. An
+        // untrusted row may join an episode or start one of its own, but no trusted row lands in one it started.
+        var untrustedOnly: [ObjectIdentifier] = []
+        for pass in [true, false] {
+            let mine = rows.filter { $0.a.selector == nil && $0.a.trusted == pass }
+            for r in mine.filter({ $0.s != nil || $0.e != nil }).stableSorted(by: { ($0.s ?? $0.e)!.lo }) {
+                var target: Building?
+                for ep in eps.reversed() where !(r.a.trusted && untrustedOnly.contains(ObjectIdentifier(ep))) {
+                    let es = ep.startRange(for: r.a.trusted), ee = ep.endRange(for: r.a.trusted)
+                    var disjoint = false
+                    if let ee, let s = r.s, ee.hi < s.lo { disjoint = true }
+                    if let e = r.e, let es, e.hi < es.lo { disjoint = true }
+                    if disjoint { continue }
+                    if isRejoin(r.a), let s = r.s, let es, s.lo > es.hi { continue }
+                    target = ep
+                    break
                 }
-                if target == nil {
-                    for ep in eps.reversed() {
-                        let es = ep.startRange(for: r.a.trusted), ee = ep.endRange(for: r.a.trusted)
-                        if (es.map { $0.lo <= w } ?? true), r.held == nil || ee == nil || ee!.hi >= w {
-                            target = ep
-                            break
+                let t = target ?? {
+                    let b = Building()
+                    eps.append(b)
+                    if !pass { untrustedOnly.append(ObjectIdentifier(b)) }
+                    return b
+                }()
+                if let s = r.s { t.starts.append((s, r.a)) }
+                if let e = r.e { t.ends.append((e, r.a)) }
+                t.rows.append(r)
+            }
+            for var r in mine.filter({ $0.s == nil && $0.e == nil }) {
+                var target: Building?
+                let candidates = eps.filter { !(r.a.trusted && untrustedOnly.contains(ObjectIdentifier($0))) }
+                if let w = r.w {
+                    if r.bound != nil {      // "no longer there": which episode it ended is decided only if just one fits
+                        let ended = candidates.filter { ep in ep.endRange(for: r.a.trusted).map { $0.hi <= w } ?? false }
+                        let open = candidates.filter { ep in
+                            ep.endRange(for: r.a.trusted) == nil && (ep.startRange(for: r.a.trusted).map { $0.lo <= w } ?? true)
+                        }
+                        if !open.isEmpty, !ended.isEmpty, r.a.trusted {
+                            for ep in open { ep.uncertain = min(ep.uncertain ?? w, w) }   // it may have ended by then
+                            target = ended.last
+                            r.bound = nil
+                        } else if !ended.isEmpty {
+                            target = ended.last
+                        }
+                    }
+                    if target == nil {
+                        for ep in candidates.reversed() {
+                            let es = ep.startRange(for: r.a.trusted), ee = ep.endRange(for: r.a.trusted)
+                            if (es.map { $0.lo <= w } ?? true), r.held == nil || ee == nil || ee!.hi >= w {
+                                target = ep
+                                break
+                            }
                         }
                     }
                 }
+                if target == nil { target = candidates.first }
+                let t = target ?? {
+                    let b = Building()
+                    eps.append(b)
+                    if !pass { untrustedOnly.append(ObjectIdentifier(b)) }
+                    return b
+                }()
+                t.rows.append(r)
             }
-            if target == nil { target = eps.first }
-            let t = target ?? { let b = Building(); eps.append(b); return b }()
-            t.rows.append(r)
         }
         // A user's row with an episode selector goes to the one episode overlapping it, by the same boundaries the
         // episodes end up with (a bound counts as an end); the store sends the others to To check before they get here.
@@ -178,14 +195,16 @@ extension FactsGraph {
             let trusted = ep.rows.contains { $0.a.trusted }
             // The user's own status wins: with one, only the user's rows say whether and when it held or ended.
             let userStatus = ep.rows.contains { $0.a.fromUser && $0.a.status != .unknown }
+            let userCurrent = ep.rows.contains { $0.a.fromUser && $0.a.status == .current }
             let counts: (Row) -> Bool = { r in
                 (r.a.trusted || !trusted) && (!userStatus || r.a.fromUser)
             }
             var (start, cs, stTr) = Self.combine(ep.starts.filter { $0.assertion.trusted || !trusted })
             if start == nil {            // only a hand-over's assumed start (role resolution; the timeline ignores it)
-                start = ep.rows.compactMap(\.hand).firstMin { $0.lo }
+                start = ep.rows.filter { $0.a.trusted || !trusted }.compactMap(\.hand).firstMin { $0.lo }
             }
-            var (end, ce, enTr) = Self.combine(ep.ends.filter { $0.assertion.trusted || !trusted })
+            // When the user says it's current, only the user's own end counts.
+            var (end, ce, enTr) = Self.combine(ep.ends.filter { ($0.assertion.trusted || !trusted) && (!userCurrent || $0.assertion.fromUser) })
             let boundRows = ep.rows.filter(counts).filter { $0.bound != nil }
             let bounds = boundRows.compactMap(\.bound)
             let former = end != nil || !bounds.isEmpty

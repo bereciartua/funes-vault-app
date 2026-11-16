@@ -47,6 +47,10 @@ public struct FactAssertion: Sendable, Equatable {
     public var followedByEntity: String?
     /// For a user's order edge: the date range of the other endpoint's episode when the user acted.
     public var otherSelector: DateRange?
+    /// What this statement itself said: "only" one, and that the entity has died (kept per statement, so each goes
+    /// with its own memory).
+    public var only = false
+    public var deceased = false
 }
 
 /// Someone or something memories mention. *You* is never in the graph.
@@ -269,13 +273,13 @@ public struct FactsGraph: Sendable {
     /// A non-person entity by its kind's rule. "Also called" adds the other name as an alias only when no other
     /// entity has it; two entities it would join become a merge suggestion in To check, never a merge
     /// (memory processing §11.4).
-    public mutating func entityFor(_ name: String, kind: String, also: String? = nil) -> String {
+    public mutating func entityFor(_ name: String, kind: String, also: String? = nil, trusted: Bool = true) -> String {
         let hits = byName(name, kind: kind)
         let id = hits.first?.id ?? also.flatMap { byName($0, kind: kind).first?.id } ?? newEntity(name: name, kind: kind)
         entities[id]?.aliases.insert(name)
         if let also {
             let others = byName(also, kind: kind).filter { $0.id != id }
-            if others.isEmpty {
+            if others.isEmpty, trusted {      // an untrusted memory's alias would re-route trusted evidence
                 entities[id]?.aliases.insert(also)
             } else {
                 for o in others where !mergeSuggestions.contains(where: { $0.entity == id && $0.other == o.id }) {
@@ -370,30 +374,33 @@ public struct FactsGraph: Sendable {
             let pred = r.predicate
             let kind = registry.kindOf(pred)
             let cls = labelClass(pred, r.label)
+            // Counts and "only" come from trusted memories alone: an untrusted one could otherwise make a trusted
+            // link stated_unique, or ambiguous.
             if r.entity == "none" {
-                entities[groupFor(pred, cls)]?.count = 0
+                let g = groupFor(pred, cls)
+                if trusted { entities[g]?.count = 0 }
                 continue
             }
             if r.entity == "group" {
                 let g = groupFor(pred, cls)
-                if let c = r.count { entities[g]?.count = c }
-                if r.only { entities[g]?.count = 1 }
+                if trusted, let c = r.count { entities[g]?.count = c }
+                if trusted, r.only { entities[g]?.count = 1 }
                 continue
             }
             let pid: String?
             if kind == "person" {
                 pid = r.entity == "name" ? here[FactsText.fold(r.name)] : (regroup[r.entity] ?? r.entity)
             } else {
-                pid = entityFor(r.name, kind: kind, also: r.alsoCalled)
+                pid = entityFor(r.name, kind: kind, also: r.alsoCalled, trusted: trusted)
             }
             guard let pid, let ent = entities[pid] else { continue }
             let states = statesFact(r, aliases: ent.aliases, phrases: phrases)
             if ent.group != nil, ent.name == nil {
-                if let c = r.count { entities[pid]?.count = c }
-                if r.only { entities[pid]?.count = 1 }
+                if trusted, let c = r.count { entities[pid]?.count = c }
+                if trusted, r.only { entities[pid]?.count = 1 }
                 continue
             }
-            if r.deceased { entities[pid]?.deceased = true }
+            if r.deceased, trusted { entities[pid]?.deceased = true }
             var status = r.status
             if status == .former, r.deceased, !formerWords.contains(where: { FactsText.has(FactsText.fold(r.quote), $0) }) {
                 status = .unknown        // "my late father": a death isn't an end, unless the memory says it ended
@@ -409,23 +416,25 @@ public struct FactsGraph: Sendable {
             let handover = existing.isEmpty && r.start == nil && r.end == nil && r.time == nil && status != .former
                 && ((p?.exclusive ?? false) || (p?.succession ?? false))
                 && facts.contains { $0.predicate == pred && $0.entity != pid && !$0.negated }
-            let a = FactAssertion(memoryID: mid, trusted: trusted, written: mem.written, start: r.start, end: r.end,
+            var a = FactAssertion(memoryID: mid, trusted: trusted, written: mem.written, start: r.start, end: r.end,
                                   time: r.time, status: status, precededBy: r.precededBy, followedBy: r.followedBy,
                                   qualifiers: r.qualifiers.filter { !$0.value.isEmpty }, states: states, label: r.label,
                                   quote: r.quote, handover: handover)
+            a.only = r.only
+            a.deceased = r.deceased
             if let i = existing.first {
                 if r.label != nil, facts[i].label == nil {
                     facts[i].label = r.label
                     facts[i].cls = cls
                 }
-                facts[i].only = facts[i].only || r.only
+                facts[i].only = facts[i].only || (r.only && trusted)
                 facts[i].assertions.append(a)
             } else {
-                facts.append(LearnedFact(entity: pid, predicate: pred, label: r.label, cls: cls, only: r.only,
+                facts.append(LearnedFact(entity: pid, predicate: pred, label: r.label, cls: cls, only: r.only && trusted,
                                          negated: false, assertions: [a]))
             }
-            if let c = r.count { entities[groupFor(pred, cls)]?.count = c }
-            if r.only { entities[groupFor(pred, cls)]?.count = 1 }
+            if trusted, let c = r.count { entities[groupFor(pred, cls)]?.count = c }
+            if trusted, r.only { entities[groupFor(pred, cls)]?.count = 1 }
         }
         for x in roles where phrases.indices.contains(x.phrase) {
             let ph = phrases[x.phrase]
