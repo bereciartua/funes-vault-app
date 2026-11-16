@@ -77,6 +77,8 @@
   - Results within 150 ms for a 10,000-memory vault on an M1.
   - Queries that look like secrets skip semantic embedding, as in the web version.
 - **v0.6:** each result's snippet is the passage that matches the search (FR-V-17), and Search answers can answer from the top results when asked, or on their own (FR-AI-17).
+- **v0.10** ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), FR-F-05): with learned facts in use, an entity named in the search admits its memories without a boost, a memory linked only to entities the search doesn't name drops 0.1, and a result admitted through a link shows its why line. A search that names no known entity is unchanged.
+  - Acceptance: the 150 ms holds with links on (p95 over 50 queries on the author's vault), and no target ranks worse than plain search on the fixtures and the search benchmark.
 
 **FR-V-11 Filters and sort** · M · v0.1
 - Filter by category, kind, sensitivity, status (active, archived, expired, recently deleted) and source. Sort by updated, created or title.
@@ -420,6 +422,8 @@
 **FR-iOS-07 Search and view** · M · v0.2
 - Search the vault through the Mac. Results show titles and snippets; a memory opens with full text and provenance.
 - **v0.6:** snippets show the passage that matches the search (FR-V-17), and Search answers are available on the iPhone (FR-iOS-13).
+- **v0.10** ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), FR-F-05, FR-F-06): with learned facts in use on the Mac, a result admitted through a link shows its why line, with **Not <name>** and **Not this** (sent to the Mac as `facts.reject`), and the answer card marks inferred claims, with the same corrections. There's no entity list on the phone ([UX: iPhone ▸ Search](05-ux-iphone.md#search-tab)).
+  - Acceptance: the phone declares the `facts` capability; for a phone that doesn't, link-admitted results come back as ordinary results, and the Mac sends the model neither attributes nor bridges, drops every claim code would mark inferred (counted in `dropped`) and still withholds unsendable-link results, so it never shows an inferred claim unmarked. For `memories.answer` the Mac recomputes admission and the facts behind each id from the query and filters, never from the ids alone. A held or in-flight answer is dropped when `status.get`'s `factsRevision` changes.
 
 **FR-iOS-08 Edit** · M · v0.2
 - Edit, archive and delete memories, with the same validation as the Mac (the Mac does the validation).
@@ -531,9 +535,10 @@
 - Acceptance:
   - The macOS account's name is offered as a suggestion, never saved without the user's action.
   - The secret scanner checks every field on save; a match keeps the previous value and names the pattern type.
-  - The profile isn't a memory: it never appears in the Vault, the Inbox, search, a Share panel's list or memory processing.
+  - The profile isn't a memory: it never appears in the Vault, the Inbox, search, a Share panel's list or memory processing (except the local matching of its names from v0.10, below).
   - Each field shows how many agents receive it.
   - Edits are logged in Activity with field names only.
+- **v0.10** ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), FR-F-08): the profile's names identify you in memories ("Martin prefers…" is about you) by local matching, for the owner only: your own search and answers. They're replaced by "the user" in any memory text sent (Facts calls and answers, with a map back for quotes), never added to a call or a roster, and never affect agent retrieval; access policy §3.10 is unchanged. Another person with the same name keeps it.
 
 **FR-U-02 Greeting by name** · M · v0.5
 - Home greets the user by the called name (preferred, else given): "Good afternoon, Martin." With no name: "Good afternoon."
@@ -592,6 +597,121 @@
 - Settings ▸ General ▸ Appearance: **Automatic** (follow macOS, the default), **Light** or **Dark**, so Funes can stay dark while macOS is light, or the other way round.
 - Applies at once, app-wide (`NSApp.appearance`, set at launch before anything shows): the main window, Settings, the panels, the capture box, the menu bar panel and its right-click menu, sheets and alerts. The app menus (File, Edit…) follow the menu bar, which macOS draws. Kept across relaunches. EK Bridge uses the same words.
 
+### Facts about you (FR-F)
+*v0.10, [ADR-0032](../architecture/decisions/0032-facts-about-you.md). Funes learns facts about you that your memories state (the people in your life and how they relate to you, where you've worked and when) and uses them in your own search and answers. Agents never use them in v0.10. The rules are in [memory processing §11](../domain/memory-processing.md#11-facts-about-you).*
+
+**FR-F-01 The Facts task** · L · v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md))
+- Settings ▸ AI ▸ Features ▸ **Facts** (working name), off by default. From each committed memory version, the chosen model learns the entities the memory mentions (people, organizations, places, things, each with its aliases) and the facts about you it states. Code validates and computes everything else ([memory processing §11.3](../domain/memory-processing.md#113-the-facts-task)).
+- **Two switches and a removal:**
+  - *Learn from memories* makes the model calls;
+  - *Use in search and answers* uses what's known in Vault search, iPhone search and search answers (FR-F-05, FR-F-06);
+  - **Remove learned facts…** deletes everything inferred, after a confirmation, and keeps manual entries, corrections and the tombstones they need (FR-F-07).
+- **Two call groups,** people and work: one call per group per memory, each with its own prompt version and gates. A new group re-reads memories for that group only.
+- **The low-priority lane:** jobs pause while New memories or the tidy-up wait. A status-only change (archive, restore) carries evidence forward; a text edit drops it at the old version and runs again.
+- **Models:** only models that qualified on the fixtures are offered, per call group: Claude Haiku 5.5 (the default) and Opus 5.5 for people, Haiku for work. Apple on-device and local servers aren't offered. Memories the model can't read (above the cloud limit, no model, the cap reached) still get code-only links, never sent anywhere.
+- **Disclosure** (FR-AI-08): "Facts sends new and changed memories (up to Internal) to Anthropic, with the names and facts about you they mention, including other people's names."
+- Acceptance:
+  - Nothing is sent until *Learn from memories* is on.
+  - Every entity, fact, date and qualifier quotes the memory, checked by code; names, aliases, labels and titles pass the secret scanner. A result is applied in one transaction, only if the memory and every roster entry the call used are unchanged.
+  - Turning *Use in search and answers* off takes learned facts out of search and answers at once, without deleting them.
+  - Remove learned facts keeps manual entries and corrections (tested), and is a `facts_removed` Activity row with counts only.
+  - Each run is a `facts_learned` Activity row with ids and counts only.
+
+**FR-F-02 The predicate registry and gating** · M · v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md))
+- **What Funes can learn is data:** a versioned predicate registry, shipped with the app and not user-editable, defines each predicate's object kind, `exclusive`, `succession` and its slot, `gap_months`, typed qualifiers, English and Spanish language data, call group and uses. One implementation serves every predicate ([memory processing §11.2](../domain/memory-processing.md#112-the-predicate-registry)).
+- **Uses, per predicate** (ADR-0032 decision 9's five paths): *recorded* (stored, shown and correctable), *linked* (search admission, why lines), *timeline* (before / after answers, date cues), *attributes* (on answer inputs) and *bridges* (on timeline answers). Each is on only with a qualification record naming the model, the call group's prompt version, the registry version, the adapter, the batching and the gate passed, and optionally a basis (the `sole_known` attribute gate). Changing any of them re-runs the gates ([§11.10](../domain/memory-processing.md#1110-gating)).
+- **Qualification records** ship with the app as `Resources/facts-qualification.json`; the two-week review's off-switches are local rows. Neither is exported, and Remove learned facts doesn't touch them.
+- **v0.10's 12 predicates:**
+  - ten person predicates, *linked*: partner (exclusive), parent, child, sibling, other family, friend, manager, colleague, care, other;
+  - **works at**, *linked* and *timeline*, with `kind` (employee, self-employed) as its slot and `title` as a qualifier;
+  - **client**, *recorded* only, so a client is never read as an employer.
+- Acceptance:
+  - A use can't be on without the uses it depends on (*linked* needs *recorded*; *timeline* and *attributes* need *linked*; *bridges* need *timeline*). Turning a use off (a failed gate, or a wrong one in the two-week review) turns off everything downstream with no code change: a test turns linking off and checks that attributes and bridges go too.
+  - No Swift source names a predicate or carries registry vocabulary, and a test-only predicate added through the registry alone works end to end.
+  - The registry canary (the partner timeline, written blind after the code freeze) touches no source file, checked mechanically.
+  - The gates are ADR-0032's acceptance table.
+
+**FR-F-03 Backfill and cost** · M · v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md))
+- **The first backfill** reads the memories already in the vault. It's the one-time exemption from FR-AI-15's daily cap: started by the user, with its call count and estimated cost shown first, run in the low-priority lane outside the cap, and resumable if interrupted. It's one exemption in total, covering both call groups. For the author's vault that's about 800 calls (two call groups), about $0.25 API-equivalent, under an hour.
+- **After it,** every call counts against the cap: new and changed memories, reconciliation, and re-reads. Calls caused by agent-written memories count in the agents' 40% share.
+- **A registry change:** a language-only change (query cues, attribute phrases) applies at once, with no re-read. A change to a call group's extraction (a new predicate, template or definition) re-reads only that group, in the low-priority lane under the cap. Registry changes are batched per release.
+- Searches and the timeline make no model call.
+- Acceptance:
+  - The exemption applies once, to the first backfill, and only when the user starts it; nothing is sent before the count and cost are shown.
+  - An interrupted backfill (quit, sleep, offline, provider failure) resumes where it stopped, without sending a finished memory again.
+  - The cloud limit and the secret scanner apply to every backfill call.
+  - At the cap, Facts jobs wait for the next day, and their memories keep code-only links meanwhile.
+  - `facts_backfill` Activity rows carry ids and counts only.
+
+**FR-F-04 Resolution and the timeline** · L · v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md))
+- **Role phrases and names** in memories ("my sister", "Alex", "my previous job") resolve to entities as of the memory's date, each with an honest basis: `confirmed`, `named`, `stated_unique`, `context`, `sole_known`, `candidates`, `ambiguous`, `untrusted`, `rejected`. "I have a sister, Maria" isn't `stated_unique`, and a manager never is by default ([memory processing §11.4](../domain/memory-processing.md#114-resolving-role-phrases-and-names)).
+- **One time model:** dates are ranges at the precision written; episodes are derived from what memories assert, and no start or end date is stored. One resolver serves role phrases, "previous", "current", years and before / after ([§11.5](../domain/memory-processing.md#115-the-time-model)).
+- **Timeline questions** about you, for a predicate with the *timeline* use ("What was my job before Acme?", "Where did I work in 2021?"), are answered from the time model with no model call. A question about someone else ("Where did my wife work before Acme?") isn't your timeline ([§11.6](../domain/memory-processing.md#116-timeline-answers), [§11.7](../domain/memory-processing.md#117-timeline-intent)).
+- Acceptance:
+  - An order holds only if it holds for every possible date. A possible tie, conflicting dates, contradictory or cyclic order edges, an undated episode that could sit in a gap, or an anchor with several episodes is told ("Funes can't tell which job came before Acme"), never guessed.
+  - A hand-over in the same year or month ("left Acme in 2019, joined Initech in 2019") is answered at `inferred` when the earlier episode certainly started before X and nothing else could fit in the window; otherwise it's told.
+  - A gap longer than the predicate's `gap_months` gives a `gap` answer: it names the entity and tells the gap ("there's a gap of about 6 months"), and may carry bridges.
+  - Succession ends only a stale current, within its slot, never from untrusted evidence, and gives "probably former".
+  - A shared name matches everyone who has it; a second person sharing a bare name makes earlier `named` mentions `ambiguous`. Merges are suggested in To check, never made automatically.
+  - Spike H3's and H3b's counterexamples pass as tests; an adversarial review of the Swift time model by two independent reviewers finds no wrong answer or link in a final round; works at meets ADR-0032's timeline gate.
+
+**FR-F-05 Search with learned facts** · M · v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md))
+- With *Use in search and answers* on, Vault search and iPhone search use learned facts ([memory processing §4](../domain/memory-processing.md#4-ranking)):
+  - **an entity matched in the search** by name, alias or role phrase admits its memories, each scored by the better of the search and the rest of the search (without the matched names). There's no boost;
+  - **a memory linked only to entities the search doesn't name** drops 0.1;
+  - **a timeline query** admits the answer fact's stating memories, and the anchor's own memories drop 0.1;
+  - **a search that names no known entity** is unchanged.
+- **Why lines:** a result admitted through a link says why ("my sister → Maria (only sister Funes knows)", "worked at Acme until 2023"), with **Not <name>** and **Not this** (FR-F-07).
+- **Owner side only:** agent retrieval, the related-memories finder and the tidy-up never use links.
+- Acceptance:
+  - On the people and work fixtures, Spike G and the search benchmark, with bge-small and with the provider index: 0 targets worse, out of the top 3, or out of the top 10.
+  - FR-V-10's 150 ms holds at p95 over 50 queries on the author's vault.
+  - Regression tests prove agent retrieval, the finder and the tidy-up get the same results with links on and off.
+  - The rest of the search is embedded locally with bge-small; with a provider index (FR-AI-11) it's also a second embedding request, covered by that index's disclosure, but only when every matched name comes from sendable facts (FR-F-08). Otherwise it's embedded locally only.
+
+**FR-F-06 Answers with learned facts** · M · v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md))
+- With Search answers and *Use in search and answers* on ([memory processing §10.3](../domain/memory-processing.md#103-the-answer-call)):
+  - **Attributes:** a memory that came through a link carries the fact behind it, from the registry's phrases: "Lucía, your sister"; "probably Lucía, your sister (the only one Funes knows)" for `sole_known`, once its fixture gate is met; "your sister; Funes isn't sure which" for `candidates`, without names; "Acme, where you worked until March 2021". Attributes are never quotable text.
+  - **Bridges,** for timeline answers only: up to 2 memories that state the answer fact go on top of the 10 results ("Read 10 results and 2 from your history"), so an answer reads up to 12 memories and 15,000 + 3,000 characters; `read` counts the results, and bridges are counted separately. *Linked*-only predicates and Apple on-device get none. An undecidable order gets plain search and a note, with no bridges; a `gap` answer may carry them.
+  - **Inferred claims, marked by code** from structured data, never from the model's wording: a claim that names an entity its cited text doesn't name, states a predicate, label, qualifier or date that text doesn't state, cites a bridge, or cites an attributed memory when the search names the attributed entity and the cited text doesn't. Each carries the fact, link or order ids behind it, and its corrections: one target per link, fact or order, labelled as its button ("Not Maria", "Not this"). A target with a memory corrects that memory's quoted span; one without corrects the fact or order everywhere ([§10.4](../domain/memory-processing.md#104-validation-code)).
+  - **Your own names** from About you become "the user" in the input, with a map back so quotes still highlight in the original. A namesake keeps their name.
+- **Sendable facts only, for a cloud model:** the answer reads the top results of the search re-ranked as if only sendable facts existed (admission, the −0.1 demotions, the rest-of-query score, the timeline's choice and bridges), restricted to results you see. A shown result that wouldn't be in that set isn't read: the card counts it ("1 result wasn't read: what links it is above Internal"), and its slot isn't refilled. An answer fact decided only by a fact above the limit gets plain search.
+- **The facts revision:** only the iPhone holds an answer; it drops it, and one still on its way, when the facts revision changes. The Mac drops an answer in flight when it changes.
+- Acceptance:
+  - On linked questions, on Haiku and on the author's Search answers model (3 samples, a blind judge, every gain and loss read by hand): coverage ≥ plain search on every question family; 0 wrong entity with correct links; with an injected wrong link, ≤ 1 unmarked claim per 30 answers.
+  - Spike G's gates hold with the feature on; inferred claims code fails to mark: 0.
+  - For an iPhone that doesn't declare the `facts` capability, the Mac sends the model neither attributes nor bridges, drops every claim code would mark inferred (counted as left out), and still withholds unsendable-link results, so it never shows an inferred claim unmarked (tested).
+
+**FR-F-07 People & history and corrections** · M · v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md))
+- **Vault ▸ People & history** (working name) on the Mac ([UX: Mac ▸ People & history](04-ux-mac.md#people--history-v010)):
+  - **the list:** entities by how many memories mention them, role groups, filters by kind;
+  - **an entity's page:** its name, aliases and kind, the facts about you that involve it with their basis, and every memory that mentions it with its why line. *Recorded* facts (clients) are shown and can be removed;
+  - **your timeline:** dated facts with title history, stating memories and basis ("probably former"); conflicting dates and undecidable orders shown as such;
+  - **To check:** only candidates the model couldn't settle, suggested merges, and corrections or manual dates whose episode no longer matches one episode. No question is ever required of you;
+  - **manual entry:** add or edit an entity, a fact, a label, dates or an order yourself. Your dates, orders and qualifiers are evidence from you, and win over inference. One set on a single episode carries that episode's date range, and follows the episode that overlaps it; if none or several do, it goes to To check.
+- **Corrections:** **Not <name>** and **Not this** (a fact) on every why line and inferred claim, on the Mac and the iPhone. Anything that depends on them recomputes at once. Merge With… and Not the Same are kept as corrections on the entity.
+- Acceptance:
+  - Manual entries win over inference, carry the sensitivity you pick, are never purged with memories, and survive Remove learned facts.
+  - An entity or fact a manual entry, an override or a correction references is never deleted, by a purge or by Remove learned facts. With nothing else supporting it, it's a tombstone holding its id, its predicate, your own values and the normalised alias you confirmed or typed, never an inferred name or quote; it re-attaches when a memory again supports the same predicate and alias.
+  - A correction made from a memory is keyed to the memory and the quoted span's text: it survives an edit that keeps the span, and moves with the span through tidy-up merges and splits. After a purge it holds again only through an identity-preserving restore (a Funes export restored as active memories). One made without a memory applies everywhere.
+  - `facts_corrected` Activity rows carry ids and counts only.
+  - VoiceOver, the string catalog, and UI snapshots of the list, an entity's page, the timeline and To check, in light and dark.
+
+**FR-F-08 Privacy and trust for learned facts** · M · v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md))
+- **The cloud limit covers derived facts, conservatively:** a fact, qualifier, date, order edge or decision may be sent, or may shape which memories a cloud answer gets, only if every memory behind it, decision dependencies included, is within the limit. Manual entries use the sensitivity you picked. *Recorded* facts enter the model's roster under the same rule ([memory processing §11.9](../domain/memory-processing.md#119-privacy-and-trust)).
+  - **A cloud answer's selection uses sendable facts only** (FR-F-06): admission, demotions, the rest-of-query score, the timeline's choice and bridges are computed as if only sendable facts existed.
+  - **The rest of the search** goes to a cloud embedding index only when every matched name comes from sendable facts; otherwise it's embedded on the Mac only.
+- **Trust:** a basis is the weakest in its chain. Untrusted evidence (an agent's or an import's text) never resolves a trusted memory, never ends an episode that has trusted evidence or triggers succession, never orders anything at full basis, and never changes a trusted decision; an episode with only untrusted evidence gives its dates at `inferred` at most and its links at `untrusted`. Untrusted links carry no attribute in v0.10; their why line says "(from text you didn't write)".
+- **About you's names** are matched locally to identify you in memories. They're replaced by "the user" before any memory is sent (Facts calls and answers), never added to a call, never in a roster, and never affect agent retrieval (FR-U-01).
+- **Purge:** every inferred name, label and qualifier goes when its last supporting memory is permanently deleted, undo data included; what a manual entry, an override or a correction references stays as a tombstone (FR-F-07). Backups and exports carry the facts tables.
+- **Activity:** `facts_learned`, `facts_corrected`, `facts_backfill` and `facts_removed` carry ids and counts, never names, labels or quotes.
+- **Nothing reaches agents:** no MCP tool, `request_memory` answer or agent retrieval reads learned facts in v0.10.
+- Acceptance:
+  - Payload tests with sentinel strings at each sensitivity: facts, orders and decisions stated only above the limit appear in no cloud input, including which memories are selected.
+  - The trust rule has a test per clause.
+  - The profile's names appear in no Facts call, roster or answer input (request capture); a namesake in the same memory keeps the name.
+  - A purge test checks every facts table and undo snapshot.
+
 ### Intelligence (FR-AI)
 
 **FR-AI-01 Embeddings** · M · v0.1
@@ -627,7 +747,7 @@
   - Activity marks remote rows ("via Remote Access") and stores no forwarded address.
 
 **FR-AI-05 Choose models per task** · M · v0.1
-- Settings ▸ AI ▸ Features (Settings ▸ AI Models before v0.8, [ADR-0030](../architecture/decisions/0030-settings-window.md)) has one row per task, each with a provider and a model: Embeddings (built in with no choice until v0.3, then optionally a provider model, FR-AI-11); Classification, renamed **New memories** in v0.3 (FR-AI-13); from v0.3 **Daily tidy-up** (FR-AI-03); and from v0.6 **Search answers** (FR-AI-17), off by default.
+- Settings ▸ AI ▸ Features (Settings ▸ AI Models before v0.8, [ADR-0030](../architecture/decisions/0030-settings-window.md)) has one row per task, each with a provider and a model: Embeddings (built in with no choice until v0.3, then optionally a provider model, FR-AI-11); Classification, renamed **New memories** in v0.3 (FR-AI-13); from v0.3 **Daily tidy-up** (FR-AI-03); from v0.6 **Search answers** (FR-AI-17), off by default; and from v0.10 **Facts** (FR-F-01), off by default.
 - **Providers:** Apple on-device (default), Apple Private Cloud Compute, Ollama, LM Studio, OpenAI, Anthropic, Google Gemini, OpenRouter, and custom OpenAI-compatible endpoints; from v0.3, the user's Claude or ChatGPT plan through their own Claude Code or Codex (FR-AI-16).
 - Acceptance:
   - The defaults send nothing off the Mac.
@@ -635,6 +755,7 @@
   - Model lists come from the provider.
   - **Test connection** verifies the setup.
   - From v0.8 each account offers the models the user added, and each task picks an account and one of its models, so one key or plan can serve different tasks with different models. A task's choice never silently changes to another account or model.
+- **v0.10** ([ADR-0032](../architecture/decisions/0032-facts-about-you.md)): a task can be restricted to qualified models. Facts offers only models that qualified on its fixtures, per call group: Claude Haiku 5.5 (the default) and Opus 5.5 for the people group, Haiku for the work group. Apple on-device and local servers aren't offered until one qualifies. A model whose qualification lapses (a new prompt, registry or adapter version) turns its uses off until the gates pass again ([memory processing §11.10](../domain/memory-processing.md#1110-gating)).
 
 **FR-AI-06 Provider credentials** · M · v0.1
 - The user adds API keys and base URLs per provider (from v0.8, an **account** in Settings ▸ AI ▸ Models & Accounts, with its list of models).
@@ -650,7 +771,7 @@
   - With a provider embedding model, memories above the limit keep only their bundled vector (FR-AI-11).
 
 **FR-AI-08 Disclosure of model use** · M · v0.1
-- Under each non-local choice, a plain sentence says what is sent where. For example: "Search embeddings send memory text (up to Internal), your searches and agents' task descriptions to OpenAI." From v0.3: "New memories sends captures, agent suggestions and imports, plus related memories (up to Internal) and your category names, to Anthropic." From v0.6: "Search answers send your search and its top results (up to Internal) to Anthropic, when you ask."
+- Under each non-local choice, a plain sentence says what is sent where. For example: "Search embeddings send memory text (up to Internal), your searches and agents' task descriptions to OpenAI." From v0.3: "New memories sends captures, agent suggestions and imports, plus related memories (up to Internal) and your category names, to Anthropic." From v0.6: "Search answers send your search and its top results (up to Internal) to Anthropic, when you ask." From v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md)): "Facts sends new and changed memories (up to Internal) to Anthropic, with the names and facts about you they mention, including other people's names." With learned facts in use, Search answers' line adds "…and what Funes learned about them, plus up to 2 memories from your history".
 - Inbox cards show which engine proposed their fields, and Applied automatically rows which engine proposed the change.
 
 **FR-AI-09 Agent task text and cloud embeddings** · M · v0.3 (ADR-0016, ADR-0023)
@@ -693,8 +814,9 @@
   - A level can't be enabled until its thresholds reach the target precision on the fixtures.
 
 **FR-AI-15 Daily request cap** · S · v0.3 ([ADR-0022](../architecture/decisions/0022-cloud-limit-and-daily-cap.md))
-- At most N cloud generation requests per local day (default 300, adjustable), shared by FR-AI-13, FR-AI-03 and, from v0.6, FR-AI-17 (not in the agents' share); embeddings don't count. Agents may use at most 40% of it.
-- Acceptance: the count survives restarts; at the cap the user's captures fall back to on-device, while agent input, imports and the tidy-up wait for the next day; a notice says so once a day.
+- At most N cloud generation requests per local day (default 300, adjustable), shared by FR-AI-13, FR-AI-03, from v0.6 FR-AI-17 (not in the agents' share), and from v0.10 the Facts task (FR-F-01; calls for agent-written memories count in the agents' share); embeddings don't count. Agents may use at most 40% of it.
+- **v0.10** ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), FR-F-03): **the first Facts backfill is exempt, once.** The user starts it after seeing its call count and estimated cost; it runs outside the cap, in the low-priority lane, and resumes if interrupted. Every other Facts call counts: new and changed memories, reconciliation, and re-reads after a registry change.
+- Acceptance: the count survives restarts; at the cap the user's captures fall back to on-device, while agent input, imports, the tidy-up and Facts jobs wait for the next day; a notice says so once a day. The backfill's calls never count against the cap, and no other Facts call is exempt.
 
 **FR-AI-16 Subscription providers** · M · v0.3 ([ADR-0024](../architecture/decisions/0024-subscription-providers.md))
 - Settings ▸ AI ▸ Models & Accounts (AI Models before v0.8) offers **Claude (Claude Code)** and **ChatGPT (Codex)** when the CLI is installed, each with its list of models (from v0.8): generation runs through the user's own signed-in CLI, on their plan, with no API key in Funes.
@@ -716,6 +838,8 @@
   - A failed, timed-out (45 s) or unavailable model shows why, with **Try Again**; there's no fallback to another model.
   - Nothing is stored but a text-free Activity row (`search_answered`: counts, engine, duration, outcome).
   - Ships only after Spike G's gates: correct claims ≥ 95%, the right "no answer" ≥ 90%, answered ≥ 80% of answerable questions, p95 ≤ 15 s with the chosen default model ([Phase 9.2](../plans/phase-9-search-answers.md#92-spike-g-answer-quality--½-weekend)).
+- **v0.10** ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), FR-F-06): with learned facts in use, a memory admitted through a link carries an **attribute** ("Lucía, your sister", "probably…" for `sole_known`, "your sister; Funes isn't sure which" for `candidates`); a timeline answer gets up to 2 **bridges** on top of the 10 results (up to 12 memories a call); your own names become "the user"; and code marks a claim **inferred** when its cited text doesn't state what it says, with **Not <name>** and **Not this** on it. The card adds "Read 10 results and 2 from your history", "1 result wasn't read: what links it is above Internal", or the undecidable-timeline note.
+  - Acceptance: inferred claims code fails to mark: 0; Spike G's gates still hold with the feature on; attributes and bridges are sent only when every memory behind them is within the cloud limit, and a cloud answer's results are chosen with sendable facts only; the iPhone's held answer, and an answer in flight on either device, is dropped when the facts revision changes.
 
 ---
 

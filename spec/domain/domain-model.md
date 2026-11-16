@@ -144,6 +144,11 @@ An MCP client the user has added. It is EK Bridge's "connection".
 ### Profile
 What the user tells Funes about themself, shown in the app as **About you** ([ADR-0026](../architecture/decisions/0026-about-you-profile.md)). One per vault; every field is optional and starts empty. It isn't a memory: no categories, sensitivity, kind or provenance, never in a disclosure's snapshot, and memory processing (splitting, classification, the tidy-up) never reads or changes it.
 
+**Its names identify you in memories** (v0.10, [ADR-0032](../architecture/decisions/0032-facts-about-you.md) decision 8). The Facts task matches the given, family and preferred names locally, so "Martin prefers…" is about *you* ([memory processing §11.9](memory-processing.md#119-privacy-and-trust)). The same names become "the user" in any memory text sent to a model (a Facts call or a search answer's input), with a map of offsets back for quotes. This use is for the owner only:
+- the names are replaced before any memory is sent, never added to a call, never in a roster, and never stored on an entity (*you* has no stored name);
+- another person sharing the name keeps it, in the same memory too;
+- agent retrieval and `request_memory` answers are unchanged ([access policy §3.10–3.11](access-policy.md#311-learned-facts-and-the-profile-v010)).
+
 | Field | Type | Notes |
 |---|---|---|
 | `givenName`, `familyName` | string? ≤ 80 each | Kept as `PersonNameComponents`, so the app shows them in the locale's order |
@@ -206,9 +211,79 @@ Stored in an append-only JSONL file (the EK Bridge `ActivityStore` pattern):
 - ids, `reason`, `counts`, `approval` (`approved` · `denied` · `timeout` · `not_required`);
 - `profileFields` (the profile fields a `request_memory` answer carried, names only), and the `profile_edited` event (the fields changed, names only);
 - v0.6, for `search_answered`: `engine` (the model, `<provider>/<model>` or `apple.foundation`) and `code` (a failure's reason, such as `model_timeout`, which isn't an agent-facing ReasonCode) ([memory processing §10.5](memory-processing.md#105-results-and-activity));
-- `agentReportedName` (sanitized, ≤ 64 bytes).
+- `agentReportedName` (sanitized, ≤ 64 bytes);
+- v0.10: `facts_learned`, `facts_corrected`, `facts_backfill` and `facts_removed` events, with ids and counts only, never names, labels or quotes ([memory processing §11.9](memory-processing.md#119-privacy-and-trust)).
 
 No text, task, keys or bodies.
+
+### Learned facts (v0.10)
+What Funes learns about the user from committed memory versions: the entities memories mention, and facts whose subject is *you* ([ADR-0032](../architecture/decisions/0032-facts-about-you.md); the rules are in [memory processing §11](memory-processing.md#11-facts-about-you), the tables in [storage](../architecture/storage.md#3-migrations), `v9_facts`). Owner side only: agents never see or use them in v0.10. Off until the user turns on the Facts task.
+
+```mermaid
+erDiagram
+    ENTITY ||--o{ ENTITY_ALIAS : "called"
+    ENTITY_ALIAS ||--o{ ALIAS_EVIDENCE : "seen in"
+    ENTITY ||--o{ FACT : "object of"
+    PREDICATE ||--o{ FACT : "defines"
+    FACT ||--o{ FACT_EVIDENCE : "asserted by"
+    FACT ||--o{ FACT_EVIDENCE : "ordered against"
+    MEMORY |o--o{ FACT_EVIDENCE : "version states or mentions"
+    MEMORY ||--o{ ALIAS_EVIDENCE : ""
+    MEMORY ||--o{ MENTION_DECISION : "mention in"
+    MENTION_DECISION ||--o{ DECISION_DEPENDENCY : "relied on"
+    MANUAL_OVERRIDE }o--o| ENTITY : "corrects"
+    MANUAL_OVERRIDE }o--o| FACT : "corrects"
+    PREDICATE ||--o{ QUALIFICATION : "use gated by"
+```
+
+**Entity:** a person, organization, place or thing memories mention, named or unnamed ([§11.1](memory-processing.md#111-the-model)).
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | UUID | |
+| `kind` | EntityKind | A pet, a company or an app is its own kind, so it's never made a person |
+| `isYou` | bool | Exactly one entity is *you*. It has no stored name or alias; the profile's names find it ([Profile](#profile)) |
+| `name` | string? | The name shown, from its aliases or the user's. Inferred names go with their last supporting memory |
+| `group` | `{predicate, label?, count?}`? | A **role group** ("your sisters", count optional): an entity until its members are named. "My parents" always means the group |
+| `deceased` | bool | Learned from memories ("my late grandmother"), or set by the user (Mark as Deceased) |
+| `hidden` | bool | Set by the user |
+| `manual` | bool | The user created it. Never purged with memories |
+| `tombstone` | bool | No memory supports it any more, but a manual entry, an override or a correction references it: it keeps only its id, the user's own values and the aliases the user confirmed or typed ([§11.8](memory-processing.md#118-keeping-it-right)) |
+| `createdAt`, `updatedAt` | timestamps | |
+
+**Alias:** a name an entity goes by, normalised per kind (case and accents; legal suffixes for organizations), with **alias evidence**: each memory version it was seen in, the quoted span, and that memory's sensitivity and trust. An alias the user typed (`manual`) or confirmed (`confirmed`) survives in a tombstone, normalised. A shared name matches every entity that has it; a merge is only ever suggested, and the user's Merge With… or Not the Same is a ManualOverride on the entity (`merged_into` · `not_same`).
+
+**Fact:** you → predicate → entity ([§11.1](memory-processing.md#111-the-model)). Only facts whose subject is *you* in v0.10.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | UUID | |
+| `predicate` | Predicate key | From the registry, e.g. `sibling`, `works_at`, `client` |
+| `entityId` | UUID | The object, of the predicate's kind. Deleting an entity never deletes a manual fact |
+| `manual` | bool | The user entered it. It wins over inference and carries the sensitivity the user picked |
+| `tombstone` | bool | Kept only because a manual entry, a user evidence row, an override or a correction references it: its id, predicate and the user's own values. It re-attaches when a memory again supports the same predicate and normalised alias |
+| `createdAt`, `updatedAt` | timestamps | |
+
+A fact's other parts come from its evidence, never from stored columns:
+- **Typed qualifiers** with their own dates, from the registry: `label` (your word: "girlfriend", later "wife"), and for a job `title` and `kind` (employee · self-employed). A promotion changes the title, not the fact.
+- **Order edges:** a memory's statement that the fact came just before or after another one ("I was at Acme before Initech"), `preceded_by` / `followed_by`.
+- **Status** (`current` · `former` · `unknown`) as of each memory's date.
+
+**Fact evidence:** one row per memory version, or per user entry, that asserts something about a fact, a qualifier or an order edge: its `source` (`memory` · `user`), the target, the memory id and version and the quoted span (offsets and text), none for a user row, the values as written (start, end, status, time, qualifier value, order direction) with their precision, whether the memory *states* the fact or only mentions it, polarity, and the memory's sensitivity and trust at that version. Conflicting values are all kept. Trust belongs to each date and order edge, not to the fact ([§11.9](memory-processing.md#119-privacy-and-trust)). Dates, orders and qualifiers the user enters are user rows: trusted, with the user's sensitivity, and they win over inference. A user row that targets one episode, and each endpoint of a user order edge, may carry an **episode selector**: that episode's date range when the user acted ([§11.8](memory-processing.md#118-keeping-it-right)).
+
+**Episode** (derived, never stored): one interval of a fact, from what its evidence asserts interval by interval, with dates as ranges at the precision written ([§11.5](memory-processing.md#115-the-time-model)). A new episode starts only on disjoint dates or a stated return ("rejoined"). There are no stored start or end dates: role resolution, "previous", "current", years and before / after all read episodes.
+
+**Predicate** (the registry, not a table): `Resources/facts-registry.json`, versioned, shipped with the app, not user-editable ([§11.2](memory-processing.md#112-the-predicate-registry)). Per predicate: the object's kind, `exclusive`, `succession` with its slot, `gap_months`, typed qualifiers, English and Spanish language data, its call group (`people` · `work`) and its uses (`recorded` · `linked` · `timeline` · `attributes` · `bridges`). v0.10 has 12: ten person predicates, `works_at` and `client`. Predicates are data; no code names one.
+
+**Decision** (`MentionDecision`): what code can't recompute from the text ([§11.1](memory-processing.md#111-the-model)): the model's choice between candidates for a mention, or the user's correction. Fields: `id`, `memoryId`, `memoryVersion` (for the model's; none for the user's), the mention and its quoted span, the outcome (an entity, the role group, someone else, unknown, or `rejected` for **Not <name>**), its resolution basis, its source (`model` · `user`), its call group and run. Its **dependencies** are the facts, entities and memory versions it relied on; a change to any of them invalidates a model decision. A user's decision is keyed to the memory and the quoted span's text, so it survives an edit that keeps the span, and moves with the span through tidy-up merges and splits.
+
+**ManualOverride:** an entry or correction the user made in People & history, or **Not this** on a why line or claim: `id`, the target (an entity, alias, fact, qualifier, date, status or order edge), the field and its value (including `merged_into` and `not_same` on an entity, for Merge With… and Not the Same), an optional episode selector, the **sensitivity the user picked**, optionally the memory and quoted span it was made from (without one it applies everywhere), and `createdAt`, `updatedAt`. Manual overrides win over inference, survive **Remove learned facts**, and are never purged with memories: a correction whose memory is gone loses its quote, and what it targets stays as a tombstone ([§11.8](memory-processing.md#118-keeping-it-right)).
+
+**Qualification:** the record that turns one use of one predicate on ([§11.10](memory-processing.md#1110-gating)): the predicate, the use (`recorded` · `linked` · `timeline` · `attributes` · `bridges`, ADR-0032 decision 9's five paths), an optional `basis` (the `sole_known` attribute gate), the model, the call group's prompt version, the registry version, the adapter, the batching, and the gate it passed. Records ship with the app as `Resources/facts-qualification.json`; the two-week review's off-switches are local rows. Neither is exported nor touched by Remove learned facts. A use is on only with a passed record matching what's running now, and never without the uses it depends on. Turning a use off turns off everything downstream.
+
+**FactsRun:** one pass of the Facts task: `id`, kind (`backfill` · `incremental` · `reread` · `reconciliation`), call group, registry and prompt versions, engine, counts, whether it was exempt from the daily cap (the first backfill only), a resume point, `startedAt`, `finishedAt`, error code. Its work is `ProcessingJob`s of kind `facts`, one per committed memory version and call group, in the queue's low-priority lane ([§11.3](memory-processing.md#113-the-facts-task)).
+
+**Bases** (derived; [§11.4](memory-processing.md#114-resolving-role-phrases-and-names), [§11.6](memory-processing.md#116-timeline-answers)): a link's resolution basis is the weakest in its chain; a date's or an order's time basis is derived per episode and order edge.
 
 ## Enumerations
 
@@ -223,6 +298,12 @@ No text, task, keys or bodies.
 | SuggestionAction | `create`, `update`, `archive`; Phase 6: `duplicate`, `split`, `merge`, `conflict` |
 | MemoryTrust | `trusted`, `untrusted` (Phase 6) |
 | ProfileField | `name` (given, family and called name together), `pronouns`, `languages`, `location`, `time_zone`, `occupation` |
+| EntityKind (v0.10) | `person`, `organization`, `place`, `thing` |
+| FactStatus (v0.10) | `current`, `former`, `unknown` |
+| PredicateUse (v0.10) | `recorded`, `linked` (needs `recorded`), `timeline` and `attributes` (each needs `linked`), `bridges` (needs `timeline`) |
+| CallGroup (v0.10) | `people`, `work` |
+| ResolutionBasis (v0.10, strongest first) | `confirmed`, `named`, `stated_unique`, `context`, `sole_known`, `candidates`, `ambiguous`, `untrusted`, `rejected` |
+| TimeBasis (v0.10) | `stated`, `ordered`, `inferred`, `gap`, `ambiguous` |
 
 Reason codes are listed in [access policy](access-policy.md#8-reason-codes).
 

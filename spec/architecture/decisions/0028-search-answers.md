@@ -2,6 +2,14 @@
 
 **Status:** Accepted · 2026-10-29 (corrected the same day after a GPT-6-Astra review of the spec: matches from FTS5, keyword-only passages, sources in the prompt, no disconnect cancellation, no highlight offsets); amended 2026-10-30 at the author's request: top 10 results, and automatic answers (below) · **Amends** [FR-V-10](../../product/03-requirements.md) (search), [FR-AI-05](../../product/03-requirements.md) (tasks), [FR-AI-08](../../product/03-requirements.md) (disclosure), [FR-AI-15](../../product/03-requirements.md) (daily cap), [FR-iOS-07](../../product/03-requirements.md) (iPhone search), [model providers §1, §3–6 and §9](../model-providers.md), [memory processing](../../domain/memory-processing.md) (new §10), [companion protocol §4 and §7](../companion-protocol.md), [security and privacy §3 and §5](../security-and-privacy.md), [UX: Mac ▸ Vault and Settings](../../product/04-ux-mac.md), [UX: iPhone ▸ Search and Settings](../../product/05-ux-iphone.md); adds FR-V-17, FR-AI-17 and FR-iOS-13
 
+**Amended by [ADR-0032](0032-facts-about-you.md) (2026-11-15):** with learned facts in use, an answer's input and card change ([memory processing §10](../../domain/memory-processing.md#10-search-snippets-and-answers)):
+- memories that came through a link carry an attribute (who or what they're about), never quotable;
+- timeline answers get up to 2 bridge memories on top of the 10 results ("Read 10 results and 2 from your history"), so up to 12 memories and 15,000 + 3,000 characters a call; `read` still counts the results;
+- the user's names become "the user", with a map back for quotes;
+- code marks claims inferred, with their corrections (Not <name>, Not this);
+- a cloud answer reads the results as re-ranked with sendable facts only; a shown result outside that set isn't read, and its slot isn't refilled;
+- the iPhone's held-answer key gains a facts revision: the phone drops its held answer, and one in flight, when it changes. The Mac holds no answer; it drops one in flight.
+
 **Context.**
 - **Search finds the right memories, but the fact is buried.** The author's feedback after daily use of both apps: for "What's my title at Chatham?" the right memories come back on the first page, but the answer sits in the middle of one result's body, and an older memory says something else. Today a result's snippet is the first 160 characters of its body (`CompanionHandlers.snippet`, and the Vault's one-line preview), so the sentence that answers is usually cut off, and the only way to the fact is opening memory after memory.
 - **The author asked for an optional, configurable model step** that reads the question and the first page of results and narrows them down or answers, on the Mac and the iPhone, keeping search as it is.

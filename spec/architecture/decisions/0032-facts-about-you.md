@@ -4,6 +4,13 @@
 - Revised the same day after GPT-6-Astra and Fable 5.2 reviewed the first draft.
 - Reworked on 2026-11-15 around one generic model (the first draft had separate structures for people and for work history), then revised after both reviewed the rework.
 - Revised again on 2026-11-15 with Spike H3's results and both reviews of it, then with Spike H3b's.
+- **Amended on 2026-11-15** when the spec was amended (Phase 13.1), after both reviewed it. The changes in substance:
+  - a same-year hand-over with nothing else in the window is answered at `inferred`, from Spike H3b;
+  - a gap answer names the entity and tells the gap;
+  - the user's names are replaced in the Facts call's input too, not only in answers;
+  - corrections and manual entries keep tombstones (the user's own values and confirmed alias) instead of ids only;
+  - untrusted evidence never ends an episode *that has trusted evidence*. An episode with only untrusted evidence keeps its dates at `inferred` at most and its links at `untrusted`, because dates and links have separate bases.
+- **Clarified at the same time:** cloud selection uses sendable facts only, the five gated uses, correction targets, and older phones.
 
 **Amends** (the documents change with Phase 13a, after acceptance):
 
@@ -46,7 +53,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 **Decision.**
 1. **One model: entities, and facts about you.**
    - **An entity** is a person, organization, place or thing your memories mention, with its aliases. A role group ("your sisters", count optional) is an entity until its members are named. One entity is *you*, with no stored name. A pet, a company or an app is an entity of its own kind, so it's never made a person.
-   - **A fact** is you → predicate → entity, as one episode. A new episode starts only when text says so ("rejoined", "back together") or the dates are disjoint. A fact has:
+   - **A fact** is you → predicate → entity. Its episodes (a job held twice is two) are derived from its evidence (decision 5); a new episode starts only when text says so ("rejoined", "back together") or the dates are disjoint. A fact has:
      - a status (`current`, `former`, `unknown`) and a start and end at the precision written;
      - **typed qualifiers** with their own dates: your word for it (`label`: "girlfriend", later "wife"), your title at a job (a promotion changes the title, not the job), and a job's `kind` (employee or self-employed);
      - evidence: the memory versions that state it or only mention it, with the value each asserts, its sensitivity and its trust;
@@ -74,10 +81,12 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
      - query cue words;
      - attribute and note phrases;
    - **its call group** (decision 3);
-   - **its uses** (decision 9):
+   - **its uses** (decision 9's five paths):
      - *recorded*: stored, shown and correctable, used only so nothing is misread;
-     - *linked*: search admission, attributes, why lines;
-     - *timeline*: "before / after" answers, bridges, and resolving time cues as of a memory's date.
+     - *linked*: search admission and why lines;
+     - *timeline*: "before / after" answers, and resolving time cues as of a memory's date;
+     - *attributes*: the inference carried on an answer's memories (decision 7);
+     - *bridges*: memories added to a timeline answer (decision 7).
 
    **What a registry entry can add:** a predicate whose facts are you → entity, found by a supported template, anchored by a named entity or a date, and decidable on the timeline. Adding one takes a registry entry, a fixture, its gates and a re-read of one call group.
 
@@ -113,15 +122,18 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
    - **Time bases**, derived per date and per order edge of each episode, and not stored:
      - `stated`: from stated dates or a stated "before / after";
      - `ordered`: from the timeline rule;
-     - `inferred`: from succession or an untrusted date;
+     - `inferred`: from succession, a same-year hand-over (decision 5) or an untrusted date;
      - `ambiguous`.
    - **Trust:** a basis is the weakest in its chain, and trust belongs to each date and order edge, not to the fact. Spike H3 found that per-fact trust lets one trusted memory make an untrusted date decide. Untrusted evidence (an agent's or an import's text) never:
      - resolves a trusted memory;
-     - ends a fact or triggers succession;
+     - ends an episode that has trusted evidence, or triggers succession;
+     - orders anything at full basis;
      - changes a trusted decision.
+
+     An episode with only untrusted evidence gives its dates at `inferred` at most and its links at `untrusted`. Untrusted links carry no attribute in v0.10.
 5. **One time model and one timeline rule, for every predicate with the timeline use.**
    - **Dates are ranges at the precision written:** "2019" is January to December, "March 2019" is that month. Every comparison is over the possible ranges. An order holds only if it holds for every possible value, and anything else is `ambiguous`.
-     - "Left Acme in 2019, joined Initech in 2019" leaves the two in either order.
+     - "Left Acme in 2019, joined Initech in 2019" leaves the two in either order. The one exception (Spike H3b): a hand-over in the same year or month is answered at `inferred` when the earlier episode certainly started before X and nothing else could fit in the window; otherwise it's told.
      - A competitor that could have ended later still counts.
    - **Episodes come from what memories assert, interval by interval:** a start and the end it was stated with, before dates are refined. Evidence, trust, order edges and status belong to an episode, so a rejoin reopens without touching the earlier episode.
    - **One resolver serves:**
@@ -145,11 +157,11 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
    - **Ambiguity is told, never guessed.** The answer gets plain search plus a note ("Funes can't tell which job came before Acme"), and no bridges, when there is:
      - a possible tie;
      - conflicting dates, or contradictory or cyclic order edges (the edges are then dropped, and the dates may still decide);
-     - a gap longer than the predicate's `gap_months`, measured over the possible ranges;
      - an undated or half-dated fact of the predicate that could sit in a non-contiguous gap;
      - an anchor matching several episodes.
 
-     A stated order still tells a gap that the dates show. On the author's vault a year-only rule guessed a tie and picked the wrong job.
+     On the author's vault a year-only rule guessed a tie and picked the wrong job.
+   - **Gaps are told, with the answer.** A gap longer than the predicate's `gap_months`, measured over the possible ranges, gives a `gap` answer: it names the entity and tells the gap ("there's a gap of about 6 months"), and may carry bridges. A stated order still tells a gap that the dates show.
    - **Intent:** a timeline query needs a predicate's cue word or role phrase, with an operator and a named anchor or date.
      - The anchor is what follows the operator.
      - The question must be about the user: a query whose subject is another person, named or by role ("Where did Ada work before Acme?", "Where did my wife work before Acme?"), isn't the user's timeline, for every operator.
@@ -177,10 +189,10 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 
      Each marked claim carries the fact, link or order ids behind it.
    - **Bridges** (timeline answers only): up to 2 memories that state the target fact are added on top of the 10 results. The card says "Read 10 results and 2 from your history". *Linked*-only predicates get no bridges: Spike H showed no gain from role bridges. Apple on-device answers get no bridges.
-   - **Your own names**, from About you, become "the user" in the answer's input, with a map back so quotes still highlight in the original. Another person sharing the name isn't replaced.
+   - **Your own names**, from About you, become "the user" in the answer's input, as in the Facts call (decision 8), with a map back so quotes still highlight in the original. Another person sharing the name isn't replaced.
 8. **About you, used locally and for the owner only.**
    - The profile's names identify *you* in memories, by local matching.
-   - They're never sent in a roster or an answer input, and never affect agent retrieval.
+   - Before any memory text is sent (a Facts call or an answer), they're replaced by "the user", with a map of offsets back for quotes; a namesake in the same memory keeps the name. They're never added to a call, never in a roster, and never affect agent retrieval.
    - Access policy §3.10 is unchanged. This is the separate decision ADR-0026 called for.
 9. **Every path is gated, by the same tests for every predicate.**
    - **What's gated:** extraction (with recording), linking, timeline resolution, attributes and bridges. Each is a separate use per predicate, and a use can't turn on before the ones it depends on.
@@ -200,7 +212,8 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 
 **Consequences.**
 - **The cloud limit covers derived facts, conservatively.** A fact, qualifier, date, order or decision may be sent, or may shape which memories a cloud answer gets, only if every memory behind it is within the limit. Manual entries use their own sensitivity.
-  - A memory admitted only through a link that isn't sendable appears in your results but not in a cloud answer. The card counts it as not read, and the slot isn't refilled.
+  - A cloud answer reads the results as re-ranked if only sendable facts existed (admission, demotions, the rest-of-query score, the timeline's choice and bridges), restricted to the results you see. A shown result outside that set appears in your results but not in the cloud answer. The card counts it as not read, and the slot isn't refilled.
+  - The rest of the query goes to a cloud embedding index only when every matched name comes from sendable facts.
   - If the answer fact is decided only by a fact above the limit, the cloud answer gets plain search.
   - *Recorded* facts enter the model's roster only under the same rule.
   - Per-label sensitivity is deferred.
@@ -213,7 +226,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
     - manual overrides;
     - the registry and prompt versions each run used.
   - **In backups and exports.**
-  - **Purge:** every inferred name, label and qualifier goes when its last supporting memory is deleted. Manual entries and corrections stay, keeping only ids where nothing else remains.
+  - **Purge:** every inferred name, label and qualifier goes when its last supporting memory is deleted. Manual entries and corrections stay, and what they reference is never deleted: with nothing else supporting it, it's a tombstone with its id, its predicate, your own values and the normalised alias you confirmed or typed, never an inferred name or quote. Remove learned facts keeps them the same way.
   - **Activity** records ids and counts only.
 - **What a registry change costs:**
   - **Language-only changes** (query cues, attribute phrases) take effect at once, with no re-read.
@@ -228,18 +241,18 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
   These need rows in security and privacy §5, PRIVACY.md and the Settings disclosure line. A new threat, an agent steering your answers through untrusted text, is answered by the trust rule (decision 4) and gets a row in §3.
 - **ADR-0028 changes:**
   - **what the model reads:** attributes, your names replaced, bridges on top of "results as shown";
-  - **the card:** "inferred" claims, and results not read because of an unsendable link;
+  - **the card:** "inferred" claims with their corrections, and shown results not read because a cloud answer reads the results as ranked with sendable facts only;
   - **the held-answer key**, which gains a facts revision.
 - **The companion protocol** gains:
   - the why line on results;
-  - an inferred flag and fact ids on claims;
+  - an inferred flag, fact ids and correction targets on claims;
   - `facts.reject`;
-  - **a capability flag:** older phones get neither attributes nor bridges, so they never show an inferred claim unmarked;
+  - **a capability flag:** for older phones the Mac sends neither attributes nor bridges and drops every claim it would mark inferred, so they never show an inferred claim unmarked;
   - a facts revision in `status.get`.
 - **The cap:** the task's calls count against FR-AI-15's daily cap, and calls caused by agent-written memories count in the agents' 40% share.
-  - **The first backfill is exempt, once:** started by the user, with its call count and cost shown first. It runs outside the daily cap, in the low-priority lane, and is resumable if interrupted. For the author's vault that's about 800 calls (two call groups), under an hour. This amends FR-AI-15.
+  - **The first backfill is exempt, once:** started by the user, with its call count and cost shown first. It runs outside the daily cap, in the low-priority lane, and is resumable if interrupted. It's one exemption in total, for both call groups. For the author's vault that's about 800 calls (two call groups), about $0.25 API-equivalent, under an hour. This amends FR-AI-15.
   - Every other call counts against the cap: new and changed memories, and re-reads after a registry change.
-  - Measured cost, API-equivalent: $0.13 on Haiku for 365 memories, and $0.09 for a separate jobs call. The author pays through a plan. These are estimates for the unified prompt.
+  - Measured cost, API-equivalent: $0.13 on Haiku for 365 memories, and $0.09 for a separate jobs call, about $0.25 in all. The author pays through a plan. These are estimates for the unified prompt.
   - Searches and the timeline make no model call.
 - **The main risk is a wrong link or a wrong order.** In Spike H a wrong timeline turned 18 of 18 answers wrong, and a wrong attribute led to wrong-person claims. Each path ships only once its gate is met, and every inferred claim offers a correction.
 

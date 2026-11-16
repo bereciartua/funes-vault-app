@@ -10,7 +10,7 @@ Menu bar icon ─┬─ Panel ────────────── (v0.7) 
                ├─ Capture box ───────── (⌥⌘M) quick capture
                └─ Panels (top right) ── <agent> wants N memories · Save this memory? · <agent> wants to read <category> · <app> wants to connect
 Main window ───┬─ Home         (v0.4: compose, the vault's pulse and shape; where the window opens)
-               ├─ Vault        (memories: list + detail)
+               ├─ Vault        (memories: list + detail; v0.10: People & history)
                ├─ Inbox        (suggestions to review)
                ├─ Agents       (connections: access, connect, cloud, activity)
                ├─ Remote Access (cloud agents through your tunnel; experimental, off by default)
@@ -150,6 +150,7 @@ Two tiles side by side. Each has an icon, a name, a status line and a switch or 
   - the answer card: up to 3 claims with numbered chips, a one-line quote each, the engine badge, the footer, and every message and failure of §10.5.
   - **A claim's number** opens that memory in the Vault with the quoted sentence highlighted, as the Vault's numbers do, and closes the panel. The answer reads the same 10 results as the Vault's (5 for Apple on-device), so a cited memory may not be one of the 5 rows shown.
   - **Logging:** Activity records it as `search_answered`, actor the user, as in the Vault.
+- **With learned facts in use** (v0.10, FR-F-05, FR-F-06), the panel's search and its answers use them exactly as Vault search does: the same admission, demotions and results, the same answer input (attributes, bridges, sendable facts only for a cloud model), and the same Inferred tags, footer lines and corrections on the card. The 5 rows show no why lines; **Show All in Vault** shows them.
 - **Editing the text** after a search clears the results and the answer, cancels a call in progress and an automatic answer's wait, and the chart comes back. ⌘⏎ searches again.
 - **Dictation stops** when the capture is saved, on ⌘⏎, on Esc and when the panel closes. Words that arrive after it stopped are dropped.
 - **A draft** left in the field when the panel closes is still there when it opens again, until it's saved or cleared, or Funes quits. It's kept in memory only. Results and answers aren't drafts: closing clears them and cancels their calls, and a late response is dropped. Reopening shows the chart under the draft, and ⌘⏎ searches again.
@@ -209,6 +210,7 @@ Modelled on EK Bridge's sidebar, top to bottom:
 ```
 Home                  ⌘1   (v0.4)
 Vault                 ⌘2
+  People & history         (v0.10)
 Inbox             3   ⌘3
 Activity              ⌘4
 AGENTS             +
@@ -222,6 +224,7 @@ Settings…             ⌘,
 ```
 
 - **Home, Vault, Inbox, Activity** at the top. Inbox's badge counts the suggestions waiting. (Before v0.4 there's no Home, and the shortcuts start at Vault ⌘1.)
+- **People & history** (v0.10, working name), indented under Vault: shown while Settings ▸ AI ▸ Features ▸ Facts is on, or while manual entries or corrections are kept ([below](#people--history-v010)). It has no badge: To check never asks for attention.
 - **Agents:** a section listing each agent (⌘5 shows the last one shown, or the first). Each row shows the agent's icon, name, a colored dot and a short status: "2 min. ago", "No requests yet", "Paused", "Access expired", with "Cloud · " in front for a cloud agent. Its badge counts that agent's pending requests. The header's **+** opens Add Agent; with no agents the section shows **Add Agent…** instead. A row's context menu has Pause or Resume and Show Activity. Removing an agent shows the first one left.
 - **Remote Access** and **Settings…** stay pinned at the bottom; agents scroll under them, which get a bar background once the list is long. Settings… opens the Settings window, as ⌘, does. It is a button, not a page.
 - **The status line** shows under them only while something's off: agents paused (with **Resume**), the agent server turned off, or the server stopped ("Port 47627 is in use by another app"). While agents can connect there is none; the menu bar icon says so.
@@ -297,6 +300,7 @@ A card at the top of Home, above the greeting (before v0.4, at the top of the Va
 - **List row:**
   - title;
   - one-line body preview; while searching (v0.6), the passage that matches the search, with the search's words highlighted (FR-V-17, [memory processing §10.2](../domain/memory-processing.md#102-snippets));
+  - while searching with learned facts in use (v0.10), a **why line** under the preview for a result a learned fact admitted, in secondary text with a link glyph (see Why lines below);
   - category chips;
   - a sensitivity badge, colored by level in its fill, with the level's name in primary text;
   - kind icon;
@@ -318,7 +322,20 @@ A card at the top of Home, above the greeting (before v0.4, at the top of the Va
   - **A number** selects that memory; the detail shows the quoted sentence (found with `QuoteLocator`) highlighted in its context in a "Quoted in the answer" box above the text, until the selection changes or the text is edited (the text field itself can't highlight a range). Nothing is selected automatically, and rows never move.
   - **No answer and failures:** "No answer in the 10 results read."; "Your search looks like it contains a secret, so it wasn't sent."; "Today's 300 cloud requests are used up. Search still works; answers are back tomorrow."; "Took too long."; the provider's state ("Claude Code isn't signed in on your Mac."). **Try Again** where it can help.
   - **Automatically** (Answer set to Automatically for questions or for every search, [memory processing §10.6](../domain/memory-processing.md#106-limits-and-automatic-answers)): the Ask row turns into the reading card on its own once the results have shown unchanged for 0.6 s (a question) or 1 s (any search), once for each search; ⌘⏎ still asks about any other search.
+  - **With learned facts in use** (v0.10, FR-F-06, [memory processing §10.5](../domain/memory-processing.md#105-results-and-activity)):
+    - **An inferred claim** ends with an **Inferred** tag (secondary, with a dotted underline); hovering it says what the claim rests on that its quote doesn't say ("Maria is your sister: the only sister Funes knows", "From your history: Acme came before Initech"). Its menu has one button per correction target the claim carries, labelled as the target says ("Not Maria", "Not this"): a target tied to a memory corrects only that memory's quoted span, one without corrects the fact or order everywhere. VoiceOver reads "Inferred" after the claim.
+    - **Footer lines:** "Read 10 results and 2 from your history" when bridges were read; "1 result wasn't read: what links it is above Internal"; and, for a timeline question Funes can't decide, the note above the footer ("Funes can't tell which job came before Acme"), with the answer from plain search.
+    - **A bridge's number** opens that memory in a sheet, with its quote highlighted, since a bridge needn't be in the list.
+    - **A correction** made from the card clears it, as a change to a cited memory does; the list reloads with the correction applied.
   - **Changing the search,** the scope or a filter clears the card (and cancels a call in progress). So does a change to a cited memory (or, while reading, to any memory it reads) or its leaving the list, so the card never cites text that's no longer there. Home's composer keeps ⌘⏎ for Search vault; the Vault it opens shows the Ask row.
+- **Why lines** (v0.10, FR-F-05, [memory processing §4](../domain/memory-processing.md#4-ranking)), only while Facts' *Use in search and answers* is on and the search matched a known name, alias or role phrase:
+  - **What it says:** the link or fact that admitted the result, from the registry's phrases, with its basis in words: "my sister → Maria (only sister Funes knows)", "Maria, your sister", "worked at Acme until 2023", "your job before Initech → Acme (from the dates)". A `candidates` link says "your sister; Funes isn't sure which", without names. An untrusted link adds "(from text you didn't write)" and carries no attribute into answers. Results that would have matched anyway have no why line.
+  - **Corrections,** from the line's ⋯ menu and the row's context menu:
+    - **Not Maria** says this memory isn't about Maria: the link is rejected for this memory only;
+    - **Not this** says the fact is wrong ("Maria isn't your sister"), for every memory.
+
+    Both apply at once: dependent links, the timeline and the list recompute, and the result drops out if nothing else admits it. Each correction is listed on the entity's page in People & history, where it can be undone.
+  - **VoiceOver** reads the why line after the snippet ("Why: my sister is Maria, the only sister Funes knows"), and the corrections as actions on the row.
 - **Empty state:** "Your vault is empty. Answer a few questions to get started, or press ⌥⌘M anytime to remember something."
 - **First run** (no memories yet, nothing filtered): a welcome instead of the toolbar, list and detail: "Your memory, shared only as you allow", three lines on the promise (the vault stays on this Mac; each agent gets only the access you give it and you see the exact text first; Activity records every request, without the text), [Answer a Few Questions…] [New Memory…] "or press ⌥⌘M in any app".
 
@@ -332,6 +349,55 @@ A card at the top of Home, above the greeting (before v0.4, at the top of the Va
 | Sensitive | Personal: health, money, family. Share rarely, and always ask. |
 | Restricted | Very personal. Only for agents you fully trust, and always ask. |
 | Secret | Never shared with agents unless you raise an agent's ceiling to Secret. |
+
+### People & history (v0.10)
+*Working name. FR-F-07, [ADR-0032](../architecture/decisions/0032-facts-about-you.md), [memory processing §11](../domain/memory-processing.md#11-facts-about-you).* What Funes learned about you from your memories: the people, organizations, places and things they mention, and your timeline. Everything here is yours only: agents never see it in v0.10.
+
+```
+[People & names | Your timeline | To check 2]        [Search names]  [Kind ▾]  [+ ▾]
+┌───────────────────────────────────┬──────────────────────────────────────────────┐
+│ ● Maria         your sister    14 │ Maria                                Person ▾ │
+│ ● Your parents                  6 │ Also called: Mari (3), my sister (9)          │
+│ ▣ Acme          until 2021     22 │ ABOUT YOU                                     │
+│ ▣ Initech       since 2021     31 │ Your sister · the only sister Funes knows     │
+│ ▣ Globex        client          4 │ MEMORIES (14)                                 │
+│ …                                 │ Mate, bitter, no sugar                        │
+│                                   │   my sister → Maria (only sister Funes knows) │
+└───────────────────────────────────┴──────────────────────────────────────────────┘
+```
+- **People & names** (the list): entities by how many memories mention them, with role groups ("Your parents", "Your sisters (2)") until their members are named. Each row has the kind's icon, the name, the fact about you in a few words ("your sister", "where you worked until 2021", "client") and the count. **Kind ▾** filters People, Organizations, Places, Things; **Hidden** shows hidden entries. The *you* entity isn't listed.
+- **An entity's page:**
+  - **name, aliases** (each with how many memories use it) and **kind**;
+  - **About you:** each fact that involves it, with its label, dates, status and basis in words (below). *Recorded* facts are shown too ("Globex · your client · recorded only, not used in search"), with **Remove**;
+  - **Memories:** every memory that mentions it, with its why line; a row opens the memory in the Vault (Show this memory). **Not <name>** is on each row;
+  - **Corrections:** what you changed here, each with **Undo**;
+  - **actions:** Rename…, Kind ▾, Relation… (the predicate and your word for it: "sister", "girlfriend", later "wife"), Mark as Former, Mark as Deceased, Merge With…, Hide, and **Not this** on each fact.
+- **Your timeline:** your dated facts, newest first, grouped by predicate (in v0.10, where you've worked). Each episode shows the entity, its dates at the precision written ("2019 – March 2021"), its kind (employee or self-employed), the title history under it ("Engineer, then Senior engineer from 2020"), its stating memories and its basis ("probably former"). Conflicting dates ("2019 or 2020: two memories disagree"), gaps longer than the predicate allows ("Gap of 8 months") and orders Funes can't decide ("Funes can't tell which came first") are shown as such, never smoothed over. Actions: Set Dates…, Clear Dates, Mark as Current, Mark as Former, Add Order… ("came just before"), and Add a Fact…. What you set on one episode stays with that episode as memories change; if Funes can't tell which episode it meant any more, it asks in To check.
+- **To check:** only what the model couldn't settle, suggested merges, and your corrections or dates whose episode no longer matches one episode:
+  - "Who is “my boss” in *Budget review moved to Friday*?" with the candidates, **Someone Else** and **Skip**;
+  - "Are Maria and María López the same person?" with **Merge** and **Not the Same** (kept as your corrections on the entity);
+  - a date or order you set on one episode that no longer matches exactly one episode after memories changed: "Which Acme job did you mean, 2015 – 2017 or since 2021?"
+
+  It never notifies or badges, and nothing waits on it: a skipped item keeps its basis (`candidates`, `ambiguous`), and search treats it as it is.
+- **Manual entry** (**+ ▾**: Person…, Organization…, Place…, Thing…, A Fact About You…): a sheet with the name, kind, relation and label, dates (year, month or day), current or former, and a **sensitivity** picker with FR-V-07's levels. It starts at the highest sensitivity among the memories behind what you're editing, or Internal for a new entry; the cloud limit applies to manual entries by this level. Manual entries and edits are tagged **You**, win over anything learned, and stay through Remove Learned Facts and memory deletion. When no memory supports what you entered or corrected any more, it stays with only what you typed or confirmed, and joins up again when a memory mentions it.
+- **Basis, in words:**
+
+| Basis | Shown as |
+|---|---|
+| `confirmed` | You said so |
+| `named` | Named in the memory |
+| `stated_unique` | The memory says there's only one ("your only sister") |
+| `context` | From the memory's context |
+| `sole_known` | Probably: the only sister Funes knows |
+| `candidates` | Funes isn't sure which |
+| `ambiguous` | Two people share this name |
+| `untrusted` | From an agent's or an import's text |
+| `rejected` | You said it isn't |
+| time: `stated` · `ordered` · `inferred` · `gap` · `ambiguous` | Stated · From the dates · Probably · Gap of N months · Funes can't tell |
+
+- **After the first backfill:** "Funes found 23 people, 9 employers and 41 other names." with **Show People & History**.
+- **Empty states:** with Facts off, "Funes can learn the people in your life and where you've worked from your memories, for your own search. Turn on Facts in Settings ▸ AI ▸ Features." with **Open Settings**; while the backfill runs, "Reading your memories: 120 of 365".
+- **VoiceOver:** a list row reads as one element ("Maria, person, your sister, 14 memories"); a basis reads in words, never as a code. UI snapshots `people-list`, `people-entity`, `people-timeline`, `people-to-check`, light and dark.
 
 ### Inbox
 - **Sections:** From agents · Captures · Imports · Your answers (seed questions) · Tidy-up (v0.3) · Applied automatically (v0.3). Expired suggestions (FR-I-05) sit at the end with Restore.
@@ -404,6 +470,7 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
   - "Shared 3 memories" · Approved by you
   - "Refused" · Category not allowed
   - "Suggested *Prefers Vitest*" · Waiting in Inbox. The title is looked up live; if the memory was deleted, the row shows "(deleted memory)".
+  - (v0.10) "Learned facts from 3 memories" · 2 people, 1 employer; "Read existing memories" · 365 of 365; "Corrected a fact"; "Removed learned facts" · 23 people, 9 employers. Counts only, never names, labels or quotes (`facts_learned`, `facts_backfill`, `facts_corrected`, `facts_removed`).
 - **Filters:** All, Shared, Suggestions, Problems, Remote Access; Agent ▾; Device ▾; Today / 7 days / 30 days / All.
 - Rows from cloud agents carry a cloud icon and "via Remote Access". The detail pane shows the tunnel and forwarded address for the last 50 remote requests, kept in memory only.
 - **Detail pane:**
@@ -560,6 +627,8 @@ FROM OTHER APPS
 │   Daily at 03:00 · Last run today, 4 suggestions             │
 ├ Search answers                   Apple on-device [On this Mac] › ┤
 │   Only when you ask (⌘⏎)                                     │
+├ Facts                            Claude · haiku  [Cloud]   › ┤   (v0.10)
+│   Learning from memories · Used in search and answers        │
 ├ Search index                                    [On this Mac] › ┤
 │   Built in (bge-small) · Ready                               │
 └──────────────────────────────────────────────────────────────┘
@@ -575,9 +644,10 @@ What leaves this Mac ›            (opens Privacy & Limits)
   - New memories: "Proposes a title, kind and categories", then "· Splits notes" when split is on; with proposals off, "Splits notes" when split is on, or "Simple rules on this Mac".
   - Daily tidy-up: "Off", or "Daily at 03:00", then "· Last run today, 4 suggestions" or "· Not run yet".
   - Search answers: "Off", "Only when you ask (⌘⏎)", "Automatically for questions", "Automatically for every search".
+  - Facts (v0.10): "Off", "Learning from memories", "Reading your memories: 120 of 365", then "· Used in search and answers" when that's on, or "Used in search and answers" alone while learning is off.
   - Search index: "Built in (bge-small) · Ready", plus " · qwen3-embedding:0.6b (Ollama): Embedding 1,240 of 3,000" or "…: Ready".
 - **Row trailing:** the effective model ("Claude · haiku", "Same model" when it follows New memories, "Apple on-device", "Rules only" for a tidy-up with no model) and its locality badge. When the job can't run as chosen, an orange label replaces both, from configuration only ([ADR-0030 §6](../architecture/decisions/0030-settings-window.md)): "Choose a model" (unresolved), "Needs a key", "Not signed in", "Needs your OK" (Codex), "Paused after a tool use", "Not available on this Mac" (Apple Intelligence).
-- Search answers' row shows no model while Answer is Off.
+- Search answers' row shows no model while Answer is Off, and Facts' row while *Learn from memories* is off.
 - **Apply changes automatically:** Off (recommended) · Duplicates only · Everything except conflicts. A level whose engine hasn't reached its target precision is disabled (none has for New memories; the tidy-up's level follows its chosen model).
 
 ##### Page: New memories
@@ -612,6 +682,37 @@ Model             [Same as New memories ▾] [Cloud]        (hidden while Off)
 - **Answer:** Off, the default · Only when I ask · Automatically for questions · Automatically for every search. **Model:** Same as New memories, Apple on-device, or an account's model, with the locality badge.
 - **Status:** "Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone."; with an automatic choice, "Ready. A search that's a question is answered after a short pause, on this Mac and your iPhone; press ⌘⏎ to ask about any other." or "Ready. Every search is answered after a short pause, on this Mac and your iPhone."; for Apple on-device "Apple's on-device model is slow on this Mac: answers may take 30 s or more." (or, with an automatic choice, "…too slow to answer on its own: it answers only when you ask…"); "Choose a model to answer searches."
 - **Disclosure:** "Search answers send your search and its top results (up to Internal) to Claude through your Claude Code sign-in, when you ask. It counts toward your plan's limits."; with an automatic choice, "…when you ask or pause on a question." or "…each time you pause on a search.", and "Each answer counts toward your plan's limits and today's 300 cloud requests."
+
+##### Page: Facts
+v0.10, working name (FR-F-01, FR-F-03, [ADR-0032](../architecture/decisions/0032-facts-about-you.md)). Off by default.
+```
+Learn from memories             [ ]
+  Funes reads each memory to learn who the people in it are to you, and where you've worked and when.
+Use in search and answers       [ ]
+  Your searches find "my sister" when you ask about Maria, and answers say what they inferred.
+Model             [Claude · haiku ▾] [Cloud]
+  Ready. Funes learns from new and changed memories.
+  ↗ Facts sends new and changed memories (up to Internal) to Claude through your Claude Code sign-in, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents.
+[Read Existing Memories…]       [Remove Learned Facts…]
+```
+- **Model:** only models that qualified on Funes's fixtures, per call group: Claude Haiku 5.5 (the default) and Claude Opus 5.5, from any account that offers them (an Anthropic key or your Claude plan). Opus reads the people group only and says so ("opus · people; work uses haiku"). Apple on-device, local servers and other models aren't listed; the menu's footer says "Only models that passed Funes's tests for Facts are listed." With no account offering one: "Facts needs Claude Haiku 5.5 or Opus 5.5. Add a Model…".
+- **Status:** "Ready. Funes learns from new and changed memories."; "Reading your memories: 120 of 365 · Pause" (or **Resume**); "Waiting: today's 300 cloud requests are used up. Funes carries on tomorrow."; "Choose a model to learn facts.".
+- **Disclosure:** the line above, following FR-AI-08 and the plan's training setting as for any task; with *Use in search and answers* on and Search answers on, the Search answers page's line adds "…and what Funes learned about them, plus up to 2 memories from your history".
+- **Turning Learn from memories on** the first time, with memories in the vault, opens the backfill sheet. **Read Existing Memories…** opens it later, until the first backfill has finished.
+- **The backfill sheet** (FR-F-03), with the count and cost first:
+  ```
+  Read your existing memories?
+  Funes will send 365 memories (up to Internal) to Claude, in about 800 requests: two for each memory.
+  About $0.25 at Anthropic's API prices. With your Claude plan, it counts toward the plan's limits instead.
+  It takes under an hour, while Funes isn't busy, and doesn't count toward today's 300 cloud requests.
+  This happens once. After it, new and changed memories count as usual.
+  42 memories above Internal stay on this Mac: Funes links them from what it already knows.
+                                                          [Not Now]  [Start Reading]
+  ```
+  - **Start Reading** runs it in the background, in the low-priority lane; progress shows on the page, the Features row and People & history. **Pause** stops after the current request. A quit, sleep, a network loss or a provider failure pauses it too, and it resumes where it stopped at the next launch or when the provider is back, sending no memory twice.
+  - **Not Now** leaves learning on for new and changed memories, under the cap, and keeps **Read Existing Memories…** on the page.
+  - When it finishes: a notification, if Funes's notifications are on, and the People & history summary ("Funes found 23 people, 9 employers and 41 other names.").
+- **Remove Learned Facts…** asks first: "Remove everything Funes learned about you? The facts and corrections you entered yourself stay. Learning turns off; turning it on again reads your memories again, within today's cloud requests." The button inside is **Remove**. Activity logs it as `facts_removed`, with counts only.
 
 ##### Page: Search index
 Today's Embeddings rows (FR-AI-09, FR-AI-11): the built-in bge-small and its status; **Second index**: account (OpenAI-compatible accounts only) and model, Load Models, Use… with its confirmation; once chosen, its status, Cancel or Retry, Calibrate…, "Embed agent requests with the cloud model" and the disclosure line for a cloud model, and Stop Using…. "Provider model" is renamed **Second index**. **Use…** checks the model and asks to confirm with the memory and token counts; the status reads "Embedding 1,240 of 3,000. Search uses bge-small until it's done.", "Ready: …" or an error with **Retry**. A memory above the cloud limit says "Searched on this Mac only (above cloud limit)." on its page.
@@ -720,6 +821,7 @@ WHAT AI FEATURES SEND
 ↗ New memories: new captures (up to Internal) and your category names and descriptions, to Claude through your Claude Code sign-in.
 ↗ Daily tidy-up: related memories (up to Internal), with their dates and sources, to Claude through your Claude Code sign-in.
 ⌂ Search answers: nothing; Apple on-device answers on this Mac.
+↗ Facts: new and changed memories (up to Internal), with the names and facts about you they mention, including other people's names, to Claude through your Claude Code sign-in.
 ⌂ Search index: memory text and your searches to Ollama, on your local network.
   Agents, Remote Access and your iPhone are in their own panes.
 ```
@@ -728,7 +830,8 @@ WHAT AI FEATURES SEND
 - **What AI features send:** one line per job that can send anything, from the same facts as the job page's disclosure, prefixed with the job's name. A local account's line says where it runs ("on this Mac", "on your local network").
   - New memories: listed while proposals or splitting is on; with splitting, the split payload (captures, your answers, agents' suggestions and imports, each with up to 5 related memories).
   - Daily tidy-up: listed whenever it has a model, scheduled or not, ending "every day at 03:00" or "when you tidy up".
-  - Search answers: listed while Answer isn't Off, with the effective trigger (Apple on-device answers only when asked).
+  - Search answers: listed while Answer isn't Off, with the effective trigger (Apple on-device answers only when asked). With learned facts in use, it adds "and what Funes learned about them".
+  - Facts (v0.10): listed while *Learn from memories* is on.
   - Search index: the built-in index sends nothing; a second index's line follows the agent-request switch and the cloud limit, including Nothing ("your searches and agents' task descriptions, but no memory text").
   - With nothing listed: "AI features send nothing off this Mac."
 
