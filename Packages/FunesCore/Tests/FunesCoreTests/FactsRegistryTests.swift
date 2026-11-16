@@ -75,6 +75,8 @@ import Testing
                 let sql = lit.range(of: "\\b(SELECT|INSERT|UPDATE|DELETE|WHERE|FROM|SET|AND|NOT|EXISTS)\\b",
                                     options: .regularExpression) != nil
                 if sql { continue }
+                // Snake_case keys ("not_same", "merged_into") are storage field names from the spec, not language.
+                if lit.range(of: "^[a-z]+(_[a-z]+)+$", options: .regularExpression) != nil { continue }
                 let lower = lit.lowercased()
                 if words.contains(lower) { Issue.record("\(file) carries registry vocabulary: \(lit)") }
                 let ns = lower as NSString

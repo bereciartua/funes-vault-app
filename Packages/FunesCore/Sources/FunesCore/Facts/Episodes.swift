@@ -152,8 +152,11 @@ extension FactsGraph {
                     target = candidates.firstMax { ($0.startRange ?? $0.endRange)?.lo ?? $0.rows.compactMap(\.w).max() ?? DateRange.minDay }
                 }
                 // An undated return ("I rejoined Acme") is a new episode when every one so far has ended.
-                if target == nil, isRejoin(r.a), r.bound == nil, let w = r.w, !candidates.isEmpty,
-                   candidates.allSatisfy({ ep in
+                // Only a return that says it holds now; a look back at one ("when I rejoined…") joins the latest stint.
+                // Stints that hadn't begun by then don't count.
+                let begun = candidates.filter { ep in (ep.startRange(for: r.a.trusted)?.lo).map { lo in r.w.map { lo <= $0 } ?? true } ?? true }
+                if target == nil, isRejoin(r.a), r.bound == nil, r.held != nil, let w = r.w, !begun.isEmpty,
+                   begun.allSatisfy({ ep in
                        let end = ep.endRange(for: r.a.trusted)?.hi ?? ep.rows.compactMap(\.bound).min()
                        return end.map { $0 <= w } ?? false            // every stint so far had ended by then
                    }) {
@@ -253,8 +256,13 @@ extension FactsGraph {
             if end == nil, let minBound = bounds.min() {
                 let stated = start?.precision != .handover ? start : nil
                 let lo = ([stated?.lo ?? DateRange.minDay] + held.filter { $0 <= minBound }).max()!
-                end = DateRange(lo: lo, hi: minBound, precision: .bound)   // ended after the last day it held
-                ce = false
+                if lo > minBound {         // "no longer" written before the stated start: the memories disagree
+                    end = DateRange(lo: minBound, hi: lo, precision: .conflict)
+                    ce = true
+                } else {
+                    end = DateRange(lo: lo, hi: minBound, precision: .bound)   // ended after the last day it held
+                    ce = false
+                }
                 enTr = boundRows.contains { $0.a.trusted }
             }
             // The slot: the user's values first; in a trusted episode untrusted values never count (they could start

@@ -144,7 +144,7 @@ extension FactsGraph {
                             : edges.filter { $0.from == me }.compactMap { ids[$0.to] }
         if stated.count == 1, !conflict {
             let w = stated[0]
-            let clash: Bool
+            var clash: Bool
             if let a = anchor {
                 if before {
                     clash = (w.end == nil && (w.ongoing || (w.heldAt ?? 0) >= a.lo)) || (w.end.map { $0.lo > a.hi } ?? false)
@@ -154,6 +154,8 @@ extension FactsGraph {
             } else {
                 clash = false
             }
+            // The memories disagree on the boundary the edge rests on: the edge can't be checked against it.
+            if before ? w.conflictEnd : w.conflictStart { clash = true }
             if !clash, !between(w) {
                 let trustedEnds = w.trusted && sx.trusted
                 if isGap(gapOf(w)) { return trustedEnds ? (w.entity, .gap) : (nil, .ambiguous) }
@@ -207,6 +209,8 @@ extension FactsGraph {
             return (nil, .ambiguous)
         }
         let w = winner.e, wb = winner.b!
+        // The user rejected this order: the dates don't bring it back, and nothing else is guessed in its place.
+        if before ? isRejected(w, sx) : isRejected(sx, w) { return (nil, .ambiguous) }
         let contiguous = (before ? a.hi - wb.lo <= 62 : wb.hi - a.lo <= 62)
             || (before ? w.endedBy === sx : sx.endedBy === w)   // ended by the anchor's own start: nothing between
         for c in cands where c.e !== w && c.e.entity != w.entity {

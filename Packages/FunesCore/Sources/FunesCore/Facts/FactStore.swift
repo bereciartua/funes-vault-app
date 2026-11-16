@@ -359,14 +359,18 @@ enum FactStore {
             a.written != b.written ? a.written < b.written : (seqOf[a.memoryID] ?? 0) < (seqOf[b.memoryID] ?? 0)
         }
         for i in g.facts.indices {
+            // The first trusted statement (an earlier untrusted one doesn't take its place), else the first of an
+            // untrusted-only fact.
+            let memoryRows = g.facts[i].assertions.indices.filter { !g.facts[i].assertions[$0].fromUser }
             guard let p = registry.predicate(g.facts[i].predicate), p.exclusive || p.succession,
-                  let first = g.facts[i].assertions.first, !first.fromUser,
-                  first.start == nil, first.end == nil, first.time == nil, first.status != .former else { continue }
+                  let fi = memoryRows.first(where: { g.facts[i].assertions[$0].trusted }) ?? memoryRows.first else { continue }
+            let first = g.facts[i].assertions[fi]
+            guard first.start == nil, first.end == nil, first.time == nil, first.status != .former else { continue }
             let earlier = g.facts.contains { o in
                 o.predicate == g.facts[i].predicate && o.entity != g.facts[i].entity && !o.negated
                     && o.assertions.contains { a in (a.trusted || !first.trusted) && !a.fromUser && before(a, first) }
             }
-            if earlier { g.facts[i].assertions[0].handover = true }
+            if earlier { g.facts[i].assertions[fi].handover = true }
         }
 
         // Overrides win: names, deceased, labels, merges.
@@ -383,6 +387,8 @@ enum FactStore {
                     g.entities[target]?.name = n
                     g.addAlias(target, n, trusted: true)
                 }
+            case ("entity", "not_same"):
+                if let other = value as? String { g.notSame.insert([target, other]) }
             case ("entity", "deceased"):
                 if let b = value as? Bool { g.entities[target]?.deceased = b }
             case ("entity", "merged_into"):

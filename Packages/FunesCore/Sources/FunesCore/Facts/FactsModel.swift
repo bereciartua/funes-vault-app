@@ -207,6 +207,8 @@ public struct FactsGraph: Sendable {
     }
     /// The entity each fact of the last `apply` landed on (by its index), so the store records aliases against it.
     public var landed: [Int: String] = [:]
+    /// Pairs the user said aren't the same entity (Not the Same): never matched to each other, never suggested.
+    public var notSame: Set<Set<String>> = []
     /// Two entities a memory says are the same ("also called"): for To check, never merged automatically.
     public var mergeSuggestions: [MergeSuggestion] = []
     public struct MergeSuggestion: Sendable, Equatable { public var entity: String; public var other: String }
@@ -282,7 +284,12 @@ public struct FactsGraph: Sendable {
     public func byName(_ name: String, kind: String = "person", onlyTrusted: Bool = false) -> [FactsEntity] {
         let f = FactsText.normName(name, kind: kind, registry: registry)
         let rule = registry.kinds[kind]?.match ?? "exact"
-        return orderedEntities.filter { $0.name != nil && $0.kind == kind }.filter { e in
+        func exact(_ e: FactsEntity) -> Bool {
+            (onlyTrusted ? e.trustedAliases : e.aliases).contains { FactsText.normName($0, kind: kind, registry: registry) == f }
+        }
+        // An exact (normalised) match comes before a looser one ("Acme Labs" is Acme Labs, not Acme).
+        let all = orderedEntities.filter { $0.name != nil && $0.kind == kind }
+        return (all.filter(exact) + all.filter { !exact($0) }).filter { e in
             let al = (onlyTrusted ? e.trustedAliases : e.aliases).map { FactsText.normName($0, kind: kind, registry: registry) }
             if al.contains(f) { return true }
             if rule == "first_name", f.count >= 3,
@@ -300,16 +307,29 @@ public struct FactsGraph: Sendable {
     /// entity has it; two entities it would join become a merge suggestion in To check, never a merge
     /// (memory processing §11.4).
     public mutating func entityFor(_ name: String, kind: String, also: String? = nil, trusted: Bool = true) -> String {
-        let hits = byName(name, kind: kind, onlyTrusted: trusted)
-        let id = hits.first?.id ?? also.flatMap { byName($0, kind: kind, onlyTrusted: trusted).first?.id }
+        // Attached only by a normalised match (case, accents, legal suffixes); a looser one (one name inside the other)
+        // is a merge suggestion, never a merge (memory processing §11.4).
+        func exactly(_ n: String) -> [FactsEntity] {
+            let f = FactsText.normName(n, kind: kind, registry: registry)
+            return byName(n, kind: kind, onlyTrusted: trusted).filter { e in
+                (trusted ? e.trustedAliases : e.aliases).contains { FactsText.normName($0, kind: kind, registry: registry) == f }
+            }
+        }
+        let loose = byName(name, kind: kind, onlyTrusted: trusted)
+        let id = exactly(name).first?.id ?? also.flatMap { exactly($0).first?.id }
             ?? newEntity(name: name, kind: kind, trusted: trusted)
+        for o in loose where o.id != id && !notSame.contains([id, o.id])
+            && !mergeSuggestions.contains(where: { $0.entity == id && $0.other == o.id }) {
+            mergeSuggestions.append(MergeSuggestion(entity: id, other: o.id))
+        }
         addAlias(id, name, trusted: trusted)          // an untrusted memory's names never match a trusted memory's
         if let also {
             let others = byName(also, kind: kind).filter { $0.id != id }
             if others.isEmpty {
                 addAlias(id, also, trusted: trusted)
             } else {
-                for o in others where !mergeSuggestions.contains(where: { $0.entity == id && $0.other == o.id }) {
+                for o in others where !mergeSuggestions.contains(where: { $0.entity == id && $0.other == o.id })
+                    && !notSame.contains([id, o.id]) {
                     mergeSuggestions.append(MergeSuggestion(entity: id, other: o.id))
                 }
             }

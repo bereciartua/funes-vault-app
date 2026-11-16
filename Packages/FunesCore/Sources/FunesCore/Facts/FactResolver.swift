@@ -224,6 +224,12 @@ extension FactsGraph {
                 let held = mine.reversed().filter { holds($0, ph, d, deceased: entities[e]?.deceased ?? false, written: written) }
                 let chosen = held.first(where: { d != nil && $0.mayHold(d!) }) ?? held.first ?? mine.last
                 if let chosen, !(chosen.trusted && chosen.startTrusted) { return (e, .untrusted) }
+                // As weak as its weakest step: a "former" resting on an inferred end, or a rival ruled out by one.
+                if (chosen?.inferredEnd == true && ph.former) || episodes(ph.predicate).contains(where: { o in
+                    o.entity != e && o.inferredEnd && (d == nil || (o.tstart.map { $0.lo <= d!.hi } ?? true))
+                }) {
+                    return (e, .inferred)
+                }
             }
             return (dec.entity, dec.basis)
         }
