@@ -193,6 +193,8 @@ public struct FactsGraph: Sendable {
     public var decisions: [DecisionKey: MentionDecision] = [:]
     public var names: [NameKey: NameLink] = [:]
     public var memories: [String: FactsMemory] = [:]
+    /// The entity each fact of the last `apply` landed on (by its index), so the store records aliases against it.
+    public var landed: [Int: String] = [:]
     /// Two entities a memory says are the same ("also called"): for To check, never merged automatically.
     public var mergeSuggestions: [MergeSuggestion] = []
     public struct MergeSuggestion: Sendable, Equatable { public var entity: String; public var other: String }
@@ -313,17 +315,18 @@ public struct FactsGraph: Sendable {
     }
 
     /// Entities holding a fact of this predicate that a name could mean.
-    public func entityMatches(_ predicate: String, _ name: String) -> [String] {
+    /// `onlyTrusted`: through aliases trusted memories gave (a trusted memory's order edge, the user's question).
+    public func entityMatches(_ predicate: String, _ name: String, onlyTrusted: Bool = false) -> [String] {
         let kind = registry.kindOf(predicate)
         let holders = Set(facts.filter { $0.predicate == predicate && !$0.negated }.map(\.entity))
-        return byName(placeholder(predicate, name) ?? name, kind: kind).map(\.id).filter { holders.contains($0) }
+        return byName(placeholder(predicate, name) ?? name, kind: kind, onlyTrusted: onlyTrusted).map(\.id).filter { holders.contains($0) }
     }
 
     /// A fact's label: the user's, else the first trusted statement's; an untrusted label only for a fact with no
     /// trusted evidence (it could otherwise classify, or drop, a trusted holder).
     func effectiveLabel(_ f: LearnedFact) -> String? {
         f.assertions.last(where: { $0.fromUser && $0.label != nil })?.label
-            ?? f.assertions.first(where: { $0.trusted && $0.label != nil })?.label
+            ?? f.assertions.last(where: { $0.trusted && $0.label != nil })?.label     // a later trusted correction wins
             ?? (f.trusted ? nil : f.assertions.first(where: { $0.label != nil })?.label)
     }
 
@@ -373,6 +376,7 @@ public struct FactsGraph: Sendable {
                                roster: Set<String> = []) {
         memories[mem.id] = mem
         let mid = mem.id, trusted = mem.trusted
+        landed = [:]
         var here: [String: String] = [:], regroup: [String: String] = [:]
         for p in people {
             let f = FactsText.fold(p.name)
@@ -397,7 +401,7 @@ public struct FactsGraph: Sendable {
             names[NameKey(memoryID: mid, surface: p.name)] = NameLink(entity: pid, basis: trusted ? .named : .untrusted,
                                                                       candidates: [])
         }
-        for r in newFacts {
+        for (ri, r) in newFacts.enumerated() {
             let pred = r.predicate
             let kind = registry.kindOf(pred)
             let cls = labelClass(pred, r.label)
@@ -421,6 +425,7 @@ public struct FactsGraph: Sendable {
                 pid = entityFor(r.name, kind: kind, also: r.alsoCalled, trusted: trusted)
             }
             guard let pid, let ent = entities[pid] else { continue }
+            landed[ri] = pid
             let states = statesFact(r, aliases: ent.aliases, phrases: phrases)
             if ent.group != nil, ent.name == nil {
                 if trusted, let c = r.count { entities[pid]?.count = c }
@@ -476,7 +481,7 @@ public struct FactsGraph: Sendable {
                     decisions[key] = MentionDecision(entity: pid, basis: named)
                 }
             } else if roster.contains(ref), let e = entities[ref], let paired = ph.paired, e.name != nil,
-                      e.aliases.map({ FactsText.fold($0) }).contains(FactsText.fold(paired)) {
+                      (trusted ? e.trustedAliases : e.aliases).map({ FactsText.fold($0) }).contains(FactsText.fold(paired)) {
                 decisions[key] = MentionDecision(entity: ref, basis: named)   // the text pairs them, the model agrees
             } else if roster.contains(ref), let e = entities[ref], e.group != nil, e.name == nil, several {
                 decisions[key] = MentionDecision(entity: ref, basis: .group)

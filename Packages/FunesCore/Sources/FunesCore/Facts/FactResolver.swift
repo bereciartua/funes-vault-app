@@ -220,9 +220,10 @@ extension FactsGraph {
             if dec.basis == .context, let e = dec.entity {
                 let (d, written) = asOf(mem, ph)
                 let mine = episodes(ph.predicate).filter { $0.entity == e }
-                let held = mine.filter { holds($0, ph, d, deceased: entities[e]?.deceased ?? false, written: written) }
-                let support = held.isEmpty ? mine : held
-                if !support.isEmpty, !support.contains(where: { $0.trusted && $0.startTrusted }) { return (e, .untrusted) }
+                // The episode `holders` would pick: the one that may hold then, latest first.
+                let held = mine.reversed().filter { holds($0, ph, d, deceased: entities[e]?.deceased ?? false, written: written) }
+                let chosen = held.first(where: { d != nil && $0.mayHold(d!) }) ?? held.first ?? mine.last
+                if let chosen, !(chosen.trusted && chosen.startTrusted) { return (e, .untrusted) }
             }
             return (dec.entity, dec.basis)
         }

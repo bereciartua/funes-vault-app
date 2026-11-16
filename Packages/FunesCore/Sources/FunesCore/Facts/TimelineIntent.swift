@@ -114,7 +114,11 @@ extension FactsGraph {
                         let raw = FactsText.matchAt(FactsText.regex(FactsText.escape(FactsText.fold(n)) + "(?!\\w)"), in: q, from: m.start)
                         let end = raw?.end ?? m.end      // "Kiteworks Ltd", not just "Kiteworks"
                         let prior = ops.filter { $0.end <= m.start }
-                        let hits = entityMatches(pred, n)
+                        // Trusted aliases first; an alias only untrusted memories gave anchors only an entity with no
+                        // trusted name at all.
+                        let trustedHits = entityMatches(pred, n, onlyTrusted: true)
+                        let hits = trustedHits.isEmpty
+                            ? entityMatches(pred, n).filter { entities[$0]?.trustedAliases.isEmpty ?? true } : trustedHits
                         if let op = prior.max(by: later), let hit = hits.first, tailOK(q, end) {
                             let rest = FactsText.substring(q, 0, m.start) + " " + FactsText.substring(q, end, FactsText.length(q))
                             if personNamed(rest) { return nil }   // "Who was Ada dating before Bea?": someone else

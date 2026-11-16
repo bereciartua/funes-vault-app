@@ -203,8 +203,9 @@ extension FactsGraph {
             let counts: (Row) -> Bool = { r in
                 (r.a.trusted || !trusted) && (!userStatus || r.a.fromUser)
             }
-            // An untrusted start counts (at `inferred`) when no trusted memory states one (memory processing §11.5).
-            var (start, cs, stTr) = Self.combine(ep.starts)
+            // Inside an episode with trusted evidence, untrusted boundaries never count: an untrusted start could
+            // otherwise rule out a rival or narrow a bound (memory processing §11.5).
+            var (start, cs, stTr) = Self.combine(ep.starts.filter { $0.assertion.trusted || !trusted })
             if start == nil {            // only a hand-over's assumed start (role resolution; the timeline ignores it)
                 start = ep.rows.filter { $0.a.trusted || !trusted }.compactMap(\.hand).firstMin { $0.lo }
             }
@@ -262,8 +263,11 @@ extension FactsGraph {
             guard let y = later.firstMin(by: { $0.tstart!.lo }), let ys = y.tstart else { continue }
             if !(y.trusted && y.startTrusted) || later.contains(where: { $0 !== y && $0.tstart!.overlaps(ys) }) { continue }
             if heldAt >= ys.lo { continue }
+            // Concurrent: another episode in the slot that may still have been open when y started (judged at that
+            // date, not by whether it's over today).
             let concurrent = eps.contains { o in
-                o !== e && o !== y && o.slot == e.slot && (o.tstart.map { $0.hi < ys.lo } ?? false) && o.ongoing
+                o !== e && o !== y && o.slot == e.slot && (o.tstart.map { $0.hi < ys.lo } ?? false)
+                    && (o.end.map { $0.hi >= ys.lo } ?? true)
             }
             if concurrent { continue }
             e.end = DateRange(lo: ys.lo, hi: ys.hi, precision: .inferred)

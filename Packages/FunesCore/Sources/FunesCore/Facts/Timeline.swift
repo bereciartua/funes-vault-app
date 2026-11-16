@@ -63,7 +63,7 @@ extension FactsGraph {
         for e in eps {
             for a in e.assertions where a.trusted {
                 for (value, byID, isBefore) in [(a.precededBy, a.precededByEntity, true), (a.followedBy, a.followedByEntity, false)] {
-                    let targets = byID.map { [$0] } ?? value.map { entityMatches(predicate, $0) } ?? []
+                    let targets = byID.map { [$0] } ?? value.map { entityMatches(predicate, $0, onlyTrusted: true) } ?? []
                     for t in targets where t != e.entity {
                         let fits = (byEntity[t] ?? []).filter { o in
                             if byID != nil, let sel = a.otherSelector {     // the user picked the other episode

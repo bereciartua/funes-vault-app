@@ -354,6 +354,10 @@ enum FactStore {
         // Overrides win: names, deceased, labels, merges.
         for o in overrides {
             let kind: String = o["target_kind"], field: String = o["field"], target: String = o["target_id"]
+            // A correction made from a memory holds while that memory and its quoted span do.
+            if let mid: String = o["memory_id"] {
+                guard let c = counted[mid], locate(o["quote"], in: c.memory.text, near: nil) != nil else { continue }
+            }
             let value = decoded(o["value"])
             switch (kind, field) {
             case ("entity", "name"):
@@ -549,8 +553,8 @@ enum FactStore {
 
         var g = before
         let phrases = g.rolePhrases(text, predicates: preds)
-        g.apply(fm, phrases: phrases, people: x.people, facts: x.facts.filter { preds.contains($0.predicate) },
-                roles: x.roles, roster: Set(x.roster.keys))
+        let groupFacts = x.facts.filter { preds.contains($0.predicate) }
+        g.apply(fm, phrases: phrases, people: x.people, facts: groupFacts, roles: x.roles, roster: Set(x.roster.keys))
         var result = ApplyResult(mergeSuggestions: g.mergeSuggestions.count)
         var touchedEntities = Set<String>(), newAliases = Set<String>()
         var pendingDependencies: [(String, String, Set<String>)] = []
@@ -630,11 +634,12 @@ enum FactStore {
         for (i, f) in g.facts.enumerated() where preds.contains(f.predicate) {
             let oldCount = i < before.facts.count ? before.facts[i].assertions.count : 0
             let added = Array(f.assertions.dropFirst(oldCount))
-            let newlyNegated = i < before.facts.count && !before.facts[i].negated && f.negated
+            // Denied in this apply: an existing incarnation, or one this same apply created and then denied.
+            let newlyNegated = f.negated && (i >= before.facts.count || !before.facts[i].negated)
             guard !added.isEmpty || newlyNegated else { continue }
             if let e = g.entities[f.entity], e.kind != "person" {
-                for r in x.facts where r.predicate == f.predicate
-                    && g.byName(g.placeholder(f.predicate, r.name) ?? r.name, kind: e.kind).contains(where: { $0.id == f.entity }) {
+                // Aliases go to the entity each statement landed on, never one rediscovered by name.
+                for (idx, r) in groupFacts.enumerated() where g.landed[idx] == f.entity {
                     try addAlias(f.entity, r.name, quote: r.quote)
                     if let also = r.alsoCalled, g.entities[f.entity]?.aliases.contains(also) == true {
                         try addAlias(f.entity, also, quote: r.quote)
@@ -749,10 +754,13 @@ enum FactStore {
     /// Marks facts and entities changed (a new `updated_at`), and the model decisions that depended on them stale
     /// (memory processing §11.4): their memories are queued again (13a.2).
     static func touch(_ db: Database, facts: Set<String>, entities: Set<String>, except memoryID: String? = nil, now: Date) throws {
-        var predicates = Set<String>()
+        var predicates = Set<String>(), entities = entities
         for f in facts {
             try db.execute(sql: "UPDATE fact SET updated_at = ? WHERE id = ?", arguments: [now, f])
-            if let p = try String.fetchOne(db, sql: "SELECT predicate FROM fact WHERE id = ?", arguments: [f]) { predicates.insert(p) }
+            if let row = try Row.fetchOne(db, sql: "SELECT predicate, entity_id FROM fact WHERE id = ?", arguments: [f]) {
+                predicates.insert(row["predicate"])
+                entities.insert(row["entity_id"])        // a roster entry is its entity and its facts: its token moves
+            }
         }
         for e in entities { try db.execute(sql: "UPDATE entity SET updated_at = ? WHERE id = ?", arguments: [now, e]) }
         var refs = facts.map { ("fact", $0) } + entities.map { ("entity", $0) }
