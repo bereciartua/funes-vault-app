@@ -28,7 +28,10 @@ public final class Episode {
         self.end = end
     }
 
-    var sortKey: Int { start?.lo ?? end?.lo ?? DateRange.maxDay }
+    /// The latest day its memories were written: orders an undated episode (an undated return) among the others.
+    var writtenKey: Int?
+
+    var sortKey: Int { start?.lo ?? end?.lo ?? writtenKey ?? DateRange.maxDay }
 
     public var handover: Bool { start?.precision == .handover }
 
@@ -90,6 +93,7 @@ extension FactsGraph {
     }
 
     private struct Row {
+        var order: Int            // position among the fact's assertions: their chronology
         var a: FactAssertion
         var s: DateRange?
         var e: DateRange?
@@ -103,12 +107,12 @@ extension FactsGraph {
     /// are disjoint, or a memory says it's a return.
     func factEpisodes(_ f: LearnedFact) -> [Episode] {
         let p = parser
-        let rows: [Row] = f.assertions.map { a in
+        let rows: [Row] = f.assertions.enumerated().map { order, a in
             let s = p.parse(a.start), e = p.parse(a.end), w = p.day(a.written)
             let hand = a.handover && s == nil && w != nil ? DateRange(lo: w!, hi: w!, precision: .handover) : nil
             let bound = a.status == .former && e == nil ? w : nil   // "time" (held in 2019) is never an end
             let held = a.status == .current ? w : nil
-            return Row(a: a, s: s, e: e, bound: bound, held: held, w: w, hand: hand)
+            return Row(order: order, a: a, s: s, e: e, bound: bound, held: held, w: w, hand: hand)
         }
         var eps: [Building] = []
         // Trusted (and the user's) rows are placed first, dated then undated; untrusted rows only afterwards. An
@@ -138,12 +142,25 @@ extension FactsGraph {
                 if let e = r.e { t.ends.append((e, r.a)) }
                 t.rows.append(r)
             }
-            for var r in mine.filter({ $0.s == nil && $0.e == nil }) {
+            // Undated rows in the order they were written: a "no longer" ends the stint that came before it.
+            for var r in mine.filter({ $0.s == nil && $0.e == nil }).stableSorted(by: { $0.w ?? DateRange.maxDay }) {
                 var target: Building?
                 let candidates = eps.filter { !(r.a.trusted && untrustedOnly.contains(ObjectIdentifier($0))) }
                 // The user's status with no dates and no selector is about the latest episode.
                 if r.a.fromUser, r.a.status != .unknown, !candidates.isEmpty {
-                    target = candidates.firstMax { ($0.startRange ?? $0.endRange)?.lo ?? DateRange.minDay }
+                    // latest by its dates, else by when its memories were written (an undated return)
+                    target = candidates.firstMax { ($0.startRange ?? $0.endRange)?.lo ?? $0.rows.compactMap(\.w).max() ?? DateRange.minDay }
+                }
+                // An undated return ("I rejoined Acme") is a new episode when every one so far has ended.
+                if target == nil, isRejoin(r.a), r.bound == nil, let w = r.w, !candidates.isEmpty,
+                   candidates.allSatisfy({ ep in
+                       let end = ep.endRange(for: r.a.trusted)?.hi ?? ep.rows.compactMap(\.bound).min()
+                       return end.map { $0 <= w } ?? false            // every stint so far had ended by then
+                   }) {
+                    let b = Building()
+                    eps.append(b)
+                    if !pass { untrustedOnly.append(ObjectIdentifier(b)) }
+                    target = b
                 }
                 if target == nil, let w = r.w {
                     if r.bound != nil {      // "no longer there": which episode it ended is decided only if just one fits
@@ -183,9 +200,15 @@ extension FactsGraph {
         // episodes end up with (a bound counts as an end); the store sends the others to To check before they get here.
         for r in rows.filter({ $0.a.selector != nil }) {
             let sel = r.a.selector!
+            // Matched against the boundaries the episode ends up with: trusted-only when it has a trusted row, a bound
+            // as an end, a hand-over as a start.
             let hits = eps.filter { ep in
-                let lo = ep.startRange?.lo ?? DateRange.minDay
-                let hi = ep.endRange?.hi ?? ep.rows.compactMap(\.bound).min() ?? DateRange.maxDay
+                let tr = ep.rows.contains { $0.a.trusted }
+                let counts: (Row) -> Bool = { $0.a.trusted || !tr }
+                let lo = FactsGraph.combine(ep.starts.filter { counts(Row(order: 0, a: $0.assertion)) }).0?.lo
+                    ?? ep.rows.filter(counts).compactMap(\.hand).map(\.lo).min() ?? DateRange.minDay
+                let hi = FactsGraph.combine(ep.ends.filter { counts(Row(order: 0, a: $0.assertion)) }).0?.hi
+                    ?? ep.rows.filter(counts).compactMap(\.bound).min() ?? DateRange.maxDay
                 return lo <= sel.hi && sel.lo <= hi
             }
             let t = hits.count == 1 ? hits[0] : { let b = Building(); eps.append(b); return b }()
@@ -198,8 +221,10 @@ extension FactsGraph {
         for ep in eps {
             let trusted = ep.rows.contains { $0.a.trusted }
             // The user's own status wins: with one, only the user's rows say whether and when it held or ended.
-            // The user's latest status wins, over memories and over the user's own earlier ones.
-            let lastUserStatus = ep.rows.lastIndex { $0.a.fromUser && $0.a.status != .unknown }
+            // The user's latest status (in the order the user entered them) wins, over memories and the user's own
+            // earlier ones.
+            let lastUserOrder = ep.rows.filter { $0.a.fromUser && $0.a.status != .unknown }.map(\.order).max()
+            let lastUserStatus = lastUserOrder.flatMap { o in ep.rows.firstIndex { $0.order == o } }
             let userStatus = lastUserStatus != nil
             let userCurrent = lastUserStatus.map { ep.rows[$0].a.status == .current } ?? false
             let counts: (Row) -> Bool = { r in
@@ -211,8 +236,13 @@ extension FactsGraph {
             if start == nil {            // only a hand-over's assumed start (role resolution; the timeline ignores it)
                 start = ep.rows.filter { $0.a.trusted || !trusted }.compactMap(\.hand).firstMin { $0.lo }
             }
-            // When the user says it's current, only the user's own end counts.
-            var (end, ce, enTr) = Self.combine(ep.ends.filter { ($0.assertion.trusted || !trusted) && (!userCurrent || $0.assertion.fromUser) })
+            // When the user says it's current, only an end the user gave with that status, or after it, counts.
+            let lastOrder = lastUserOrder ?? 0
+            var (end, ce, enTr) = Self.combine(ep.ends.filter { pair in
+                guard pair.assertion.trusted || !trusted else { return false }
+                guard userCurrent else { return true }
+                return ep.rows.contains { $0.a.fromUser && $0.order >= lastOrder && $0.e != nil && $0.a == pair.assertion }
+            })
             // With a user status, only that latest row says whether and when it held or ended.
             let statusRows = ep.rows.indices.filter { i in counts(ep.rows[i]) && (lastUserStatus == nil || i == lastUserStatus) }
                 .map { ep.rows[$0] }
@@ -242,6 +272,7 @@ extension FactsGraph {
             e.former = former
             e.slot = vals.mostCommon() ?? "_"
             e.assertions = ep.rows.map(\.a)
+            e.writtenKey = ep.rows.compactMap(\.w).max()
             e.uncertain = ep.uncertain != nil && end == nil && !userStatus
             e.uncertainFrom = e.uncertain ? ep.uncertain : nil
             out.append(e)
@@ -286,7 +317,8 @@ extension FactsGraph {
 
     /// "former" if the fact's latest episode ended, else "current".
     public func status(of f: LearnedFact) -> FactAssertion.Status {
-        factEpisodes(f).last?.former == true ? .former : .current
+        let eps = factEpisodes(f)
+        return (eps.last(where: \.trusted) ?? eps.last)?.former == true ? .former : .current   // trusted evidence first
     }
 }
 

@@ -268,6 +268,8 @@ extension FactStore {
                                 selector: DateRange? = nil, otherSelector: DateRange? = nil, sensitivity: Int,
                                 now: Date) throws -> String {
         let id = UUID().db
+        var asserted = asserted
+        asserted["written"] = writtenDay(now)        // the day the user said it, kept with it
         try db.execute(sql: """
             INSERT INTO fact_evidence (id, target_kind, fact_id, qualifier, other_fact_id, direction, episode_selector,
               other_episode_selector, source, asserted, states, polarity, sensitivity, trust)

@@ -30,8 +30,7 @@ enum FactStore {
     static func source(_ s: String) -> FactsMemory.Source {
         switch MemorySource(rawValue: s) {
         case .agentWrite, .agentSuggestion: return .agent
-        case .importChatGPT, .importClaude, .importMarkdown: return .import
-        case .importFunes: return .capture        // a Funes restore keeps the memory's own date
+        case .importChatGPT, .importClaude, .importMarkdown, .importFunes: return .import   // the original date is unknown
         case .tidyUp: return .rewritten
         case .manual: return .manual
         default: return .capture
@@ -280,8 +279,10 @@ enum FactStore {
                 let key = c.map { "m:" + $0.memory.id + ":" + String(n) } ?? "u:" + (r["id"] as String)
                 if pending[key] == nil {
                     order.append(key)
+                    // A user row keeps the day the user entered it, never the day it's read.
+                    let userDay = object(r["asserted"])["written"] as? String ?? "1970-01-01"
                     pending[key] = Pending(a: FactAssertion(memoryID: c?.memory.id ?? "user", trusted: c?.memory.trusted ?? true,
-                                                            written: c?.memory.written ?? writtenDay(Date()), status: .unknown,
+                                                            written: c?.memory.written ?? userDay, status: .unknown,
                                                             qualifiers: [:], states: true, quote: r["quote"] ?? "", handover: false),
                                            denied: false, only: false)
                 }
@@ -294,7 +295,7 @@ enum FactStore {
                     p.a.start = asserted["start"] as? String
                     p.a.end = asserted["end"] as? String
                     p.a.time = asserted["time"] as? String
-                    p.a.handover = asserted["handover"] as? Bool ?? false
+                    p.a.handover = false            // derived below, from what was known when it was written
                     p.only = asserted["only"] as? Bool ?? false
                     p.a.only = p.only
                     p.a.states = (r["states"] as Int) == 1
@@ -351,6 +352,22 @@ enum FactStore {
             g.facts += incarnations
         }
         for e in deceasedByEvidence { g.entities[e]?.deceased = true }
+        // Hand-overs, derived rather than stored: a fact's first statement, undated and not former, of an exclusive or
+        // succession predicate, when another holder's (trusted, for a trusted statement) evidence was written before.
+        let seqOf: [String: Int] = counted.mapValues(\.seq)
+        func before(_ a: FactAssertion, _ b: FactAssertion) -> Bool {     // written order; memory order on the same day
+            a.written != b.written ? a.written < b.written : (seqOf[a.memoryID] ?? 0) < (seqOf[b.memoryID] ?? 0)
+        }
+        for i in g.facts.indices {
+            guard let p = registry.predicate(g.facts[i].predicate), p.exclusive || p.succession,
+                  let first = g.facts[i].assertions.first, !first.fromUser,
+                  first.start == nil, first.end == nil, first.time == nil, first.status != .former else { continue }
+            let earlier = g.facts.contains { o in
+                o.predicate == g.facts[i].predicate && o.entity != g.facts[i].entity && !o.negated
+                    && o.assertions.contains { a in (a.trusted || !first.trusted) && !a.fromUser && before(a, first) }
+            }
+            if earlier { g.facts[i].assertions[0].handover = true }
+        }
 
         // Overrides win: names, deceased, labels, merges.
         for o in overrides {
@@ -394,10 +411,16 @@ enum FactStore {
                     g.entities[target] = nil
                 }
             case ("order", "rejected"):
-                // The edge itself is in the value (its endpoints' fact ids), so it outlives the evidence that stated it.
+                // The edge itself is in the value (its endpoints' fact ids and episode selectors), so it outlives the
+                // evidence that stated it.
                 if let v = value as? [String: Any], let b = v["before"] as? String, let a = v["after"] as? String,
                    let be = factKeys[b]?.entity ?? entityOfFact[b], let ae = factKeys[a]?.entity ?? entityOfFact[a] {
-                    g.rejectedEdges.insert(FactsGraph.EdgeRejection(from: be, to: ae))
+                    func sel(_ k: String) -> DateRange? {
+                        guard let o = v[k] as? [String: Any], let lo = o["lo"] as? Int, let hi = o["hi"] as? Int else { return nil }
+                        return DateRange(lo: lo, hi: hi)
+                    }
+                    g.rejectedEdges.append(FactsGraph.EdgeRejection(from: be, to: ae, fromSelector: sel("before_selector"),
+                                                                    toSelector: sel("after_selector")))
                 }
             case ("qualifier", "label"):
                 if let (pred, ent) = factKeys[target], let l = value as? String {

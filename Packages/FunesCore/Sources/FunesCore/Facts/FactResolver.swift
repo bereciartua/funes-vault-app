@@ -254,6 +254,12 @@ extension FactsGraph {
         if let e, let d, e.statedStart, e.start!.lo > d.hi {
             return (p.id, .soleKnown)        // a reference before a stated start: probably, not certainly
         }
+        // A link resting on succession (the holder ended by inference, or a rival ruled out because its end was inferred)
+        // is inferred at best.
+        let rivalsInferred = episodes(ph.predicate).contains { o in
+            o.entity != p.id && o.inferredEnd && (d == nil || (o.tstart.map { $0.lo <= d!.hi } ?? true))
+        }
+        if (e?.inferredEnd == true && ph.former) || rivalsInferred { return (p.id, .inferred) }
         let exclusive = registry.predicate(ph.predicate)?.exclusive ?? false
         let group = groups[FactsEntity.RoleGroup(predicate: ph.predicate, cls: ph.cls)].flatMap { entities[$0] }
         var unique = ph.mods.contains { registry.language.onlyWords.contains($0) } || r.only || exclusive

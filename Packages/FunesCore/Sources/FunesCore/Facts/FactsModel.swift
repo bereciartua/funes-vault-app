@@ -194,8 +194,17 @@ public struct FactsGraph: Sendable {
     public var names: [NameKey: NameLink] = [:]
     public var memories: [String: FactsMemory] = [:]
     /// Order edges the user rejected ("Not this" on an order): before → after, by entity.
-    public var rejectedEdges: Set<EdgeRejection> = []
-    public struct EdgeRejection: Sendable, Hashable { public var from: String; public var to: String }
+    public var rejectedEdges: [EdgeRejection] = []
+    /// A rejected edge, optionally for one episode of each endpoint (its date range when the user acted).
+    public struct EdgeRejection: Sendable, Hashable {
+        public var from: String
+        public var to: String
+        public var fromSelector: DateRange?
+        public var toSelector: DateRange?
+        public init(from: String, to: String, fromSelector: DateRange? = nil, toSelector: DateRange? = nil) {
+            self.from = from; self.to = to; self.fromSelector = fromSelector; self.toSelector = toSelector
+        }
+    }
     /// The entity each fact of the last `apply` landed on (by its index), so the store records aliases against it.
     public var landed: [Int: String] = [:]
     /// Two entities a memory says are the same ("also called"): for To check, never merged automatically.
@@ -450,7 +459,7 @@ public struct FactsGraph: Sendable {
             let p = registry.predicate(pred)
             let handover = existing.isEmpty && r.start == nil && r.end == nil && r.time == nil && status != .former
                 && ((p?.exclusive ?? false) || (p?.succession ?? false))
-                && facts.contains { $0.predicate == pred && $0.entity != pid && !$0.negated }
+                && facts.contains { $0.predicate == pred && $0.entity != pid && !$0.negated && ($0.trusted || !trusted) }
             var a = FactAssertion(memoryID: mid, trusted: trusted, written: mem.written, start: r.start, end: r.end,
                                   time: r.time, status: status, precededBy: r.precededBy, followedBy: r.followedBy,
                                   qualifiers: r.qualifiers.filter { !$0.value.isEmpty }, states: states, label: r.label,

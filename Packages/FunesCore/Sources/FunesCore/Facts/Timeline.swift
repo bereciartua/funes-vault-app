@@ -54,6 +54,17 @@ extension FactsGraph {
         let to: ObjectIdentifier
     }
 
+    /// Whether the user rejected the edge from one episode to the next (for those episodes, if the rejection says).
+    private func isRejected(_ from: Episode, _ to: Episode) -> Bool {
+        func covers(_ sel: DateRange?, _ e: Episode) -> Bool {
+            guard let sel else { return true }
+            return (e.start?.lo ?? DateRange.minDay) <= sel.hi && sel.lo <= (e.end?.hi ?? DateRange.maxDay)
+        }
+        return rejectedEdges.contains { r in
+            r.from == from.entity && r.to == to.entity && covers(r.fromSelector, from) && covers(r.toSelector, to)
+        }
+    }
+
     /// Trusted order edges between episodes ("A preceded_by B"), resolved only to one fitting episode of the entity;
     /// edges on a cycle are dropped.
     private func statedEdges(_ predicate: String, _ eps: [Episode]) -> Set<Edge> {
@@ -66,8 +77,7 @@ extension FactsGraph {
             for a in e.assertions where a.trusted {
                 for (value, byID, isBefore) in [(a.precededBy, a.precededByEntity, true), (a.followedBy, a.followedByEntity, false)] {
                     let targets = byID.map { [$0] } ?? value.map { entityMatches(predicate, $0, onlyTrusted: true) } ?? []
-                    for t in targets where t != e.entity
-                        && !rejectedEdges.contains(isBefore ? EdgeRejection(from: t, to: e.entity ?? "") : EdgeRejection(from: e.entity ?? "", to: t)) {
+                    for t in targets where t != e.entity {
                         let fits = (byEntity[t] ?? []).filter { o in
                             if byID != nil, let sel = a.otherSelector {     // the user picked the other episode
                                 let lo = o.start?.lo ?? DateRange.minDay, hi = o.end?.hi ?? DateRange.maxDay
@@ -76,6 +86,8 @@ extension FactsGraph {
                             return isBefore ? couldNeighbour(o, e) : couldNeighbour(e, o)
                         }
                         guard fits.count == 1 else { continue }        // which of its episodes is meant isn't decidable
+                        let (from, to) = isBefore ? (fits[0], e) : (e, fits[0])
+                        if isRejected(from, to) { continue }
                         let other = ObjectIdentifier(fits[0]), me = ObjectIdentifier(e)
                         edges.insert(isBefore ? Edge(from: other, to: me) : Edge(from: me, to: other))
                     }
