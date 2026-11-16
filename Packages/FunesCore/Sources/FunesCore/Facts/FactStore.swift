@@ -54,7 +54,7 @@ enum FactStore {
     static func countedMemories(_ db: Database, ids: Set<String>? = nil) throws -> [String: Counted] {
         var out: [String: Counted] = [:]
         let rows = try Row.fetchAll(db, sql: """
-            SELECT id, seq, title, body, created_at, source, trust, status, version, sensitivity FROM memory
+            SELECT id, seq, title, body, created_at, COALESCE(original_source, source) AS source, trust, status, version, sensitivity FROM memory
             WHERE status IN ('active','archived') AND id IN (
               SELECT memory_id FROM fact_evidence WHERE memory_id IS NOT NULL
               UNION SELECT memory_id FROM alias_evidence UNION SELECT memory_id FROM mention_decision
@@ -589,7 +589,8 @@ enum FactStore {
         let text = text(title: m["title"], body: m["body"])
         let trusted = (m["trust"] as String) == "trusted"
         let sensitivity: Int = m["sensitivity"]
-        let fm = FactsMemory(id: memoryID, text: text, written: writtenDay(created), source: source(m["source"]), trusted: trusted)
+        let fm = FactsMemory(id: memoryID, text: text, written: writtenDay(created),
+                             source: source((m["original_source"] as String?) ?? m["source"]), trusted: trusted)
         let trust = trusted ? "trusted" : "untrusted"
 
         var g = before

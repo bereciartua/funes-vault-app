@@ -27,10 +27,14 @@ public struct ImportItem: Sendable, Hashable {
     /// From a Funes export: the memory's trust there; nil when the export predates it, which a
     /// restore as memories takes as untrusted (fail closed).
     public var trust: MemoryTrust?
+    /// From a Funes export (v0.10): where the memory came from, which a restore as memories keeps.
+    public var source: MemorySource?
 
     public init(title: String, body: String, categoryKeys: [String] = [], unmatchedHeading: String? = nil,
                 kind: MemoryKind? = nil, sensitivity: Sensitivity? = nil, expiresAt: Date? = nil, createdAt: Date? = nil,
-                exportID: UUID? = nil, status: MemoryStatus? = nil, links: [FunesExport.Link] = [], trust: MemoryTrust? = nil) {
+                exportID: UUID? = nil, status: MemoryStatus? = nil, links: [FunesExport.Link] = [], trust: MemoryTrust? = nil,
+                source: MemorySource? = nil) {
+        self.source = source
         self.exportID = exportID
         self.status = status
         self.links = links
@@ -196,6 +200,9 @@ public struct FunesExport: Codable, Sendable, Hashable {
         /// Whether the user wrote or vouched for it (memory processing §5.7); absent in older
         /// exports, and then restored as untrusted.
         public var trust: MemoryTrust?
+        /// Where it came from (v0.10); absent in older exports. A restore as memories keeps it, so learned facts
+        /// still know whether its date is when it was written (an import's isn't).
+        public var source: MemorySource?
     }
 
     /// One side of a split or merge: the provenance event and the other memory's id.
@@ -347,7 +354,7 @@ public final class ImportService: Sendable {
         let items = export.memories.filter { $0.status != .deleted }.map {
             ImportItem(title: $0.title, body: $0.body, categoryKeys: $0.categories, kind: $0.kind, sensitivity: $0.sensitivity,
                        expiresAt: $0.expiresAt, createdAt: $0.createdAt, exportID: $0.id, status: $0.status, links: $0.links ?? [],
-                       trust: $0.trust)
+                       trust: $0.trust, source: $0.source)
         }
         var preview = try await preview(items, source: .funes, newCategories: export.categories)
         preview.profile = export.profile
@@ -415,6 +422,10 @@ public final class ImportService: Sendable {
                     // was written; storage §5.2).
                     if let created = item.createdAt, created < now {
                         try db.execute(sql: "UPDATE memory SET created_at = ? WHERE id = ?", arguments: [created, m.id.db])
+                    }
+                    // …and the source it had there (learned facts read an import as undated, a capture as dated).
+                    if let original = item.source, original != .importFunes {
+                        try db.execute(sql: "UPDATE memory SET original_source = ? WHERE id = ?", arguments: [original.rawValue, m.id.db])
                     }
                     if item.status == .archived {
                         m = try MemoryStore.setStatus(db, id: m.id, to: .archived, actor: .importRun(runID), now: now)
@@ -498,7 +509,9 @@ public final class ImportService: Sendable {
                 return FunesExport.Memory(id: m.id, title: m.title, body: m.body, kind: m.kind, categories: m.categoryKeys,
                                           sensitivity: m.sensitivity, status: m.status, expiresAt: m.expiresAt,
                                           createdAt: m.createdAt, updatedAt: m.updatedAt, links: links.isEmpty ? nil : links,
-                                          trust: try MemoryStore.trust(db, id: m.id) ?? .untrusted)
+                                          trust: try MemoryStore.trust(db, id: m.id) ?? .untrusted,
+                                          source: try String.fetchOne(db, sql: "SELECT original_source FROM memory WHERE id = ?",
+                                                                      arguments: [m.id.db]).flatMap(MemorySource.init) ?? m.source)
             }, profile: profile.isEmpty ? nil : profile,
                facts: try FactsExport.section(db, exporting: Set(exported.map(\.db)), now: now))
         }

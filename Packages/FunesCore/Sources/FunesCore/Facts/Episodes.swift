@@ -270,7 +270,8 @@ extension FactsGraph {
                 enTr = boundRows.contains { $0.a.trusted }
             }
             // A trusted memory saying it still held after that end: the memories disagree (no return was stated).
-            if let e = end, !userStatus, let late = held.max(), late > e.hi {
+            let userEnd = ep.ends.contains { $0.assertion.fromUser }
+            if let e = end, !userStatus, !userEnd, let late = held.max(), late > e.hi {     // the user's end wins
                 end = DateRange(lo: e.lo, hi: late, precision: .conflict)
                 ce = true
             }
@@ -317,6 +318,8 @@ extension FactsGraph {
             let later = trustedEps.filter { y in y.entity != e.entity && y.slot == e.slot && (y.tstart.map { $0.lo > es.hi } ?? false) }
             guard let y = later.firstMin(by: { $0.tstart!.lo }), let ys = y.tstart else { continue }
             if later.contains(where: { $0 !== y && $0.tstart!.overlaps(ys) }) { continue }
+            // A successor whose start the memories disagree on, or an order the user rejected, ends nothing.
+            if y.conflictStart || isRejected(e, y) { continue }
             if heldAt >= ys.lo { continue }
             // Concurrent: another trusted episode in the slot that may still have been open when y started (judged at
             // that date; an unknown start may be before it).

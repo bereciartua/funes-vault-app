@@ -56,8 +56,11 @@ extension FactsGraph {
         let lex = registry.lexicon
         let preps = lang.timePrepositions.map(FactsText.escape).joined(separator: "|")
         let joiners = lang.dateJoiners.map(FactsText.escape).joined(separator: "|")
-        let dateRE = "(?:" + preps + ")\\s+((?:(?:" + parser.monthPattern + ")\\.?\\s+(?:(?:" + joiners
-            + ")\\s+)?)?(?:19|20)\\d{2})"
+        // A date as the parser reads it: a year, a month and year, or a day ("15 March 2019", "March 15, 2019",
+        // "2019-03-15").
+        let ords = lang.ordinalSuffixes.map(FactsText.escape).joined(separator: "|")
+        let dateRE = "(?:" + preps + ")\\s+((?:19|20)\\d{2}-\\d{1,2}-\\d{1,2}|(?:(?:\\d{1,2}\\s+(?:(?:" + joiners + ")\\s+)?)?(?:"
+            + parser.monthPattern + ")\\.?,?\\s+(?:\\d{1,2}(?:" + ords + ")?,?\\s+)?(?:(?:" + joiners + ")\\s+)?)?(?:19|20)\\d{2})"
         let cueAfter = FactsText.regex("\\s+" + dateRE + "\\b", caseInsensitive: true)
         let cueBefore = FactsText.regex("\\b" + dateRE + ",?\\s*$", caseInsensitive: true)
         var out: [RolePhrase] = []

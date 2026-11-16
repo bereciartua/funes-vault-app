@@ -358,7 +358,9 @@ public struct FactsGraph: Sendable {
         let exact = hits.filter { e in
             (onlyTrusted ? e.trustedAliases : e.aliases).contains { FactsText.normName($0, kind: kind, registry: registry) == f }
         }
-        return (exact.isEmpty ? hits : exact).map(\.id)
+        // Only where names match by containment: a shared first name still matches everyone who has it (§11.4).
+        let containment = registry.kinds[kind]?.match == "contains"
+        return (exact.isEmpty || !containment ? hits : exact).map(\.id)
     }
 
     /// A fact's label: the user's, else the first trusted statement's; an untrusted label only for a fact with no

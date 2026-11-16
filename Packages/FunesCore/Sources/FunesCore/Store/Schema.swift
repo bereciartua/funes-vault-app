@@ -72,6 +72,7 @@ enum Schema {
     /// Learned facts (storage §2, v9_facts). Owner side only: agent retrieval never reads these tables. No start or
     /// end dates are stored: episodes are derived from `fact_evidence`.
     static let v9 = """
+        ALTER TABLE memory ADD COLUMN original_source TEXT;
         CREATE TABLE processing_job_v9 (
           id             TEXT PRIMARY KEY,
           subject        TEXT NOT NULL,

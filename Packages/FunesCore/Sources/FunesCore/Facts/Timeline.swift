@@ -58,7 +58,7 @@ extension FactsGraph {
     }
 
     /// Whether the user rejected the edge from one episode to the next (for those episodes, if the rejection says).
-    private func isRejected(_ from: Episode, _ to: Episode) -> Bool {
+    func isRejected(_ from: Episode, _ to: Episode) -> Bool {
         func covers(_ sel: DateRange?, _ e: Episode) -> Bool {
             guard let sel else { return true }
             return (e.start?.lo ?? DateRange.minDay) <= sel.hi && sel.lo <= (e.end?.hi ?? DateRange.maxDay)
@@ -80,6 +80,8 @@ extension FactsGraph {
             for a in e.assertions where a.trusted {
                 for (value, byID, isBefore) in [(a.precededBy, a.precededByEntity, true), (a.followedBy, a.followedByEntity, false)] {
                     let targets = byID.map { [$0] } ?? value.map { entityMatches(predicate, $0, onlyTrusted: true) } ?? []
+                    // A name that could mean several entities doesn't identify the other end.
+                    guard targets.filter({ $0 != e.entity }).count <= 1 else { continue }
                     for t in targets where t != e.entity {
                         let fits = (byEntity[t] ?? []).filter { o in
                             if byID != nil, let sel = a.otherSelector {     // the user picked the other episode
