@@ -159,6 +159,8 @@ extension FactsGraph {
             } else {
                 clash = false
             }
+            // An ongoing predecessor can't come before anything, dates or not.
+            if before ? (w.ongoing && !w.inferredEnd) : (sx.ongoing && !sx.inferredEnd) { clash = true }
             // The memories disagree on the boundary the edge rests on, or the dates rule the order out.
             if before ? w.conflictEnd : w.conflictStart { clash = true }
             if !(before ? couldNeighbour(w, sx) : couldNeighbour(sx, w)) { clash = true }

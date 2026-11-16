@@ -45,12 +45,13 @@ public final class Episode {
 
     /// Whether it may hold at some day of `d`.
     func mayHold(_ d: DateRange) -> Bool {
-        !(end.map { $0.hi < d.lo } ?? false) && !(tstart.map { $0.lo > d.hi } ?? false)
+        // A conflicting end never says it had stopped.
+        !(!conflictEnd && (end.map { $0.hi < d.lo } ?? false)) && !(tstart.map { $0.lo > d.hi } ?? false)
     }
 
     /// Whether it certainly holds through all of `d`.
     func certainlyHolds(_ d: DateRange) -> Bool {
-        guard let s = tstart, s.hi <= d.lo else { return false }
+        guard let s = tstart, s.hi <= d.lo, !conflictStart, !conflictEnd else { return false }
         return ongoing || (end.map { $0.lo >= d.hi } ?? false)
     }
 }

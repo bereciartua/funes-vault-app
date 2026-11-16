@@ -47,6 +47,9 @@ public struct FactAssertion: Sendable, Equatable {
     public var followedByEntity: String?
     /// For a user's order edge: the date range of the other endpoint's episode when the user acted.
     public var otherSelector: DateRange?
+    /// Where it sits in the order facts are read (memories by written date, then the user's rows by entry): kept so a
+    /// merge can restore it.
+    public var readOrder = ""
     /// What this statement itself said: "only" one, and that the entity has died (kept per statement, so each goes
     /// with its own memory).
     public var only = false

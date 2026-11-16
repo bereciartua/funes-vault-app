@@ -281,10 +281,12 @@ enum FactStore {
                     order.append(key)
                     // A user row keeps the day the user entered it, never the day it's read.
                     let userDay = object(r["asserted"])["written"] as? String ?? "1970-01-01"
-                    pending[key] = Pending(a: FactAssertion(memoryID: c?.memory.id ?? "user", trusted: c?.memory.trusted ?? true,
-                                                            written: c?.memory.written ?? userDay, status: .unknown,
-                                                            qualifiers: [:], states: true, quote: r["quote"] ?? "", handover: false),
-                                           denied: false, only: false)
+                    var a = FactAssertion(memoryID: c?.memory.id ?? "user", trusted: c?.memory.trusted ?? true,
+                                          written: c?.memory.written ?? userDay, status: .unknown,
+                                          qualifiers: [:], states: true, quote: r["quote"] ?? "", handover: false)
+                    a.readOrder = c.map { "0" + $0.memory.written + String(format: "%012d", $0.seq) + String(format: "%06d", n) }
+                        ?? "1" + String(format: "%015lld", r["rid"] as Int64)
+                    pending[key] = Pending(a: a, denied: false, only: false)
                 }
                 var p = pending[key]!
                 let asserted = object(r["asserted"])
@@ -403,7 +405,9 @@ enum FactStore {
                     for i in g.facts.indices where g.facts[i].entity == target {
                         if let j = g.facts.indices.last(where: { g.facts[$0].entity == into && g.facts[$0].predicate == g.facts[i].predicate
                                                                 && !g.facts[$0].negated }), !g.facts[i].negated {
-                            g.facts[j].assertions += g.facts[i].assertions
+                            // Fused in the order facts are read, so the latest statement (and the user's latest row)
+                            // stays the latest.
+                            g.facts[j].assertions = (g.facts[j].assertions + g.facts[i].assertions).stableSorted { $0.readOrder }
                             g.facts[j].only = g.facts[j].only || g.facts[i].only
                             if g.facts[j].label == nil { g.facts[j].label = g.facts[i].label; g.facts[j].cls = g.facts[i].cls }
                             g.facts[i].negated = true          // folded into the survivor's fact
@@ -443,6 +447,26 @@ enum FactStore {
             }
         }
 
+        // Order endpoints follow merges too: rejected edges and the user's edges name the surviving entity.
+        func canonical(_ id: String) -> String {
+            var id = id, hops = 0
+            while let next = mergedInto[id], hops < 16 { id = next; hops += 1 }
+            return id
+        }
+        if !mergedInto.isEmpty {
+            g.rejectedEdges = g.rejectedEdges.map { r in
+                var r = r
+                r.from = canonical(r.from)
+                r.to = canonical(r.to)
+                return r
+            }
+            for i in g.facts.indices {
+                for k in g.facts[i].assertions.indices {
+                    if let p = g.facts[i].assertions[k].precededByEntity { g.facts[i].assertions[k].precededByEntity = canonical(p) }
+                    if let f = g.facts[i].assertions[k].followedByEntity { g.facts[i].assertions[k].followedByEntity = canonical(f) }
+                }
+            }
+        }
         // User rows whose selector matches no episode, or several, go to To check and don't apply; so do user order
         // edges whose other endpoint's selector doesn't pick exactly one episode.
         func overlapping(_ eps: [Episode], _ sel: DateRange) -> Int {
