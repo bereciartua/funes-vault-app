@@ -9,11 +9,6 @@ enum FactsText {
             .lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Like `fold`, but keeps the string's length and spacing so match offsets stay meaningful.
-    static func foldKeepingLength(_ s: String) -> String {
-        s.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
-    }
-
     static func escape(_ s: String) -> String { NSRegularExpression.escapedPattern(for: s) }
 
     private static let cacheLock = NSLock()
@@ -75,6 +70,14 @@ enum FactsText {
     static func length(_ s: String) -> Int { (s as NSString).length }
 
     /// Whether a whole word or phrase occurs in already-folded text.
+    /// A registry cue: a whole word, or a stem when written with a trailing `*` ("regres*" matches "regresé").
+    static func cue(_ folded: String, _ word: String) -> Bool {
+        let stem = word.hasSuffix("*")
+        let w = fold(stem ? String(word.dropLast()) : word)
+        guard !w.isEmpty else { return false }
+        return first(regex("(?<!\\w)" + escape(w) + (stem ? "" : "(?!\\w)")), in: folded) != nil
+    }
+
     static func has(_ folded: String, _ word: String) -> Bool {
         let w = fold(word)
         guard !w.isEmpty else { return false }

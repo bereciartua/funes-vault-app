@@ -58,11 +58,13 @@ struct DateParser: Sendable {
     let months: [String: Int]
     let joiners: [String]
     private let monthAlternation: String
+    private let ordinals: String
 
     init(registry: FactsRegistry) {
         months = registry.monthWords
         joiners = registry.language.dateJoiners
         monthAlternation = months.keys.sorted { $0.count > $1.count }.map(FactsText.escape).joined(separator: "|")
+        ordinals = registry.language.ordinalSuffixes.map(FactsText.escape).joined(separator: "|")
     }
 
     var monthPattern: String { monthAlternation }
@@ -92,7 +94,7 @@ struct DateParser: Sendable {
                                                    + ")\\.?\\s+(?:(?:" + j + ")\\s+)?((?:19|20)\\d{2})\\b"), in: t) {
             dd = m.group(1); mon = m.group(2); yy = m.group(3)
         } else if let m = FactsText.first(FactsText.regex("\\b(" + monthAlternation
-                                                          + ")\\.?,?\\s+(?:(\\d{1,2})(?:st|nd|rd|th)?,?\\s+)?(?:(?:" + j
+                                                          + ")\\.?,?\\s+(?:(\\d{1,2})(?:" + ordinals + ")?,?\\s+)?(?:(?:" + j
                                                           + ")\\s+)?((?:19|20)\\d{2})\\b"), in: t) {
             mon = m.group(1); dd = m.group(2); yy = m.group(3)
         }
@@ -115,7 +117,7 @@ struct DateParser: Sendable {
         let j = joiners.map(FactsText.escape).joined(separator: "|")
         let prefix = FactsText.substring(q, 0, end)
         let re = FactsText.regex("(?:(?:\\d{1,2}\\s+(?:(?:" + j + ")\\s+)?)?(?:" + monthAlternation
-                                 + ")\\.?,?\\s+(?:\\d{1,2}(?:st|nd|rd|th)?,?\\s+)?(?:(?:" + j + ")\\s+)?)?(?:19|20)\\d{2}$")
+                                 + ")\\.?,?\\s+(?:\\d{1,2}(?:" + ordinals + ")?,?\\s+)?(?:(?:" + j + ")\\s+)?)?(?:19|20)\\d{2}$")
         if let m = FactsText.first(re, in: prefix) { return parse(m.group(0)) }
         return parse(FactsText.substring(q, end - 4, end))
     }

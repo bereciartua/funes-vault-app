@@ -36,6 +36,7 @@ public struct FactsRegistry: Sendable, Decodable {
         public let months: [String: [String]]
         public let functionWords: [String]
         public let dateJoiners: [String]
+        public let ordinalSuffixes: [String]
         public let legalSuffixes: [String]
         public let userPlaceholder: String
         public let promptExamples: [String: String]

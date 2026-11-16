@@ -122,6 +122,19 @@ enum FactsExport {
             if let versionColumn, r[versionColumn] != nil, r[versionColumn] != .null { r[versionColumn] = .int(Int64(new.version)) }
             return r
         }
+        /// A correction keeps its ids; it follows its memory if that came back, else it loses its text (as a purge
+        /// leaves it), so no quote outlives the memory it came from.
+        func correction(_ row: [String: ExportCell]) -> [String: ExportCell] {
+            guard let old = row["memory_id"]?.string else { return row }
+            var r = row
+            if let new = memories?[old] {
+                r["memory_id"] = .string(new.id)
+            } else {
+                if r["mention"] != nil { r["mention"] = .null }
+                r["quote"] = .null
+            }
+            return r
+        }
         let asMemories = memories != nil
         let modelDecisions = Set(facts.decisions.filter { $0["source"]?.string == "model" }.compactMap { $0["id"]?.string })
         for t in tables {
@@ -142,8 +155,8 @@ enum FactsExport {
                     if row["source"]?.string == "model" {
                         guard asMemories, let r = remap(row) else { continue }
                         row = r
-                    } else if let r = remap(row, versionColumn: nil) {
-                        row = r        // a correction's memory, if it came back; otherwise it keeps its id, inert
+                    } else {
+                        row = correction(row)
                     }
                 case "decision_dependency":
                     guard asMemories || !modelDecisions.contains(row["decision_id"]?.string ?? "") else { continue }
@@ -153,7 +166,7 @@ enum FactsExport {
                         row["ref_version"] = .string(String(new.version))
                     }
                 case "manual_override":
-                    if let r = remap(row, versionColumn: nil) { row = r }
+                    row = correction(row)
                 default:
                     break
                 }

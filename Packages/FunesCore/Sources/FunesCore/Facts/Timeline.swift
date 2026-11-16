@@ -36,9 +36,7 @@ extension FactsGraph {
     func pickEpisode(_ eps: [Episode], query: String) -> Episode? {
         if eps.count == 1 { return eps[0] }
         let q = FactsText.fold(query)
-        func cue(_ words: [String]) -> Bool {
-            words.contains { FactsText.first(FactsText.regex("\\b" + FactsText.escape(FactsText.fold($0))), in: q) != nil }
-        }
+        func cue(_ words: [String]) -> Bool { words.contains { FactsText.cue(q, $0) } }
         if cue(registry.language.episodeFirst) { return eps.first }
         if cue(registry.language.episodeLast) { return eps.last }
         return nil
@@ -67,7 +65,13 @@ extension FactsGraph {
                 for (value, byID, isBefore) in [(a.precededBy, a.precededByEntity, true), (a.followedBy, a.followedByEntity, false)] {
                     let targets = byID.map { [$0] } ?? value.map { entityMatches(predicate, $0) } ?? []
                     for t in targets where t != e.entity {
-                        let fits = (byEntity[t] ?? []).filter { isBefore ? couldNeighbour($0, e) : couldNeighbour(e, $0) }
+                        let fits = (byEntity[t] ?? []).filter { o in
+                            if byID != nil, let sel = a.otherSelector {     // the user picked the other episode
+                                let lo = o.start?.lo ?? DateRange.minDay, hi = o.end?.hi ?? DateRange.maxDay
+                                return lo <= sel.hi && sel.lo <= hi
+                            }
+                            return isBefore ? couldNeighbour(o, e) : couldNeighbour(e, o)
+                        }
                         guard fits.count == 1 else { continue }        // which of its episodes is meant isn't decidable
                         let other = ObjectIdentifier(fits[0]), me = ObjectIdentifier(e)
                         edges.insert(isBefore ? Edge(from: other, to: me) : Edge(from: me, to: other))
@@ -107,7 +111,7 @@ extension FactsGraph {
         /// Another episode certainly sits between w and the anchor.
         func between(_ w: Episode) -> Bool {
             guard let a = anchor else { return false }
-            for o in eps where o !== w && o !== sx {
+            for o in eps where o !== w && o !== sx && o.trusted && o.startTrusted && o.endTrusted {
                 guard let os = o.tstart, let oe = o.end else { continue }
                 if before, let we = w.end, os.lo >= we.hi, oe.hi <= a.lo { return true }
                 if !before, let ws = w.tstart, os.lo >= a.hi, oe.hi <= ws.lo { return true }
@@ -135,7 +139,10 @@ extension FactsGraph {
             } else {
                 clash = false
             }
-            if !clash, !between(w) { return (w.entity, isGap(gapOf(w)) ? .gap : .stated) }
+            if !clash, !between(w) {
+                if isGap(gapOf(w)) { return (w.entity, .gap) }
+                return (w.entity, w.trusted && sx.trusted ? .stated : .inferred)   // an untrusted-only endpoint
+            }
         }
         guard let a = anchor, !conflict else { return (nil, .ambiguous) }
 
@@ -196,7 +203,8 @@ extension FactsGraph {
             if before ? b.hi >= wb.lo : b.lo <= wb.hi { return (nil, .ambiguous) }   // it could sit as close, or closer
         }
         if isGap(gapOf(w)) { return (w.entity, .gap) }
-        let untrusted = before ? (!w.endTrusted || !sx.startTrusted) : (!sx.endTrusted || !w.startTrusted)
+        let untrusted = (before ? (!w.endTrusted || !sx.startTrusted) : (!sx.endTrusted || !w.startTrusted))
+            || !w.trusted || !sx.trusted
         let inferred = basisInferred || untrusted || (before ? w.inferredEnd : sx.inferredEnd)
         return (w.entity, inferred ? .inferred : .ordered)
     }
@@ -236,12 +244,19 @@ extension FactsGraph {
 
     /// The fact before the one that held at a memory's date, by the same rule as "before X".
     public func previousAsOf(_ predicate: String, written: String) -> String? {
+        previousLink(predicate, written: written)?.entity
+    }
+
+    /// The fact before the one that held at a date, and whether every step to it rests on trusted evidence.
+    func previousLink(_ predicate: String, written: String) -> (entity: String, trusted: Bool)? {
         guard let d = parser.day(written) else { return nil }
         let eps = episodes(predicate)
         let now = eps.filter { $0.certainlyHolds(.day(d)) }
         guard now.count == 1 else { return nil }
         let (got, basis) = order(predicate, eps, now[0], .before)
-        return [.ordered, .stated, .inferred].contains(basis) ? got : nil
+        guard let got, [.ordered, .stated, .inferred].contains(basis) else { return nil }
+        let chain = eps.filter { $0.entity == got } + [now[0]]
+        return (got, chain.allSatisfy { $0.trusted && $0.startTrusted && $0.endTrusted })
     }
 
     /// Entities whose episodes cover a range (a year, a month, a day): every possible one must be certain.
@@ -259,7 +274,7 @@ extension FactsGraph {
             }
             if sure {
                 certain.insert(id)
-                untrusted = untrusted || !(e.startTrusted && e.endTrusted)
+                untrusted = untrusted || !(e.startTrusted && e.endTrusted) || !e.trusted || e.inferredEnd
             } else if maybe {
                 possible.insert(id)
             }
@@ -287,7 +302,7 @@ extension FactsGraph {
                 return .one(got, basis)
             }
             if now.isEmpty || eps.contains(where: \.uncertain) { return .none(.ambiguous) }
-            let basis: TimelineBasis = now.allSatisfy { $0.heldAt != nil } ? .ordered : .inferred
+            let basis: TimelineBasis = now.allSatisfy { $0.heldAt != nil && $0.trusted && $0.startTrusted } ? .ordered : .inferred
             var ids: [String] = []
             for e in now { if let id = e.entity, !ids.contains(id) { ids.append(id) } }
             if ids.count > 1 { ids.sort { (entities[$0]?.seq ?? 0) < (entities[$1]?.seq ?? 0) } }

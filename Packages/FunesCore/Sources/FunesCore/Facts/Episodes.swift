@@ -73,9 +73,7 @@ extension FactsGraph {
 
     func isRejoin(_ a: FactAssertion) -> Bool {
         let q = FactsText.fold(a.quote)
-        return registry.language.episodeLast.contains { w in
-            FactsText.first(FactsText.regex("(?<!\\w)" + FactsText.escape(FactsText.fold(w))), in: q) != nil
-        }
+        return registry.language.episodeLast.contains { FactsText.cue(q, $0) }
     }
 
     private final class Building {
@@ -85,6 +83,10 @@ extension FactsGraph {
         var uncertain: Int?
         var startRange: DateRange? { FactsGraph.combine(starts).0 }
         var endRange: DateRange? { FactsGraph.combine(ends).0 }
+        /// The boundaries a row may be placed by: a trusted row sees only trusted boundaries, so untrusted text can
+        /// never split a trusted episode or make one disjoint.
+        func startRange(for trusted: Bool) -> DateRange? { FactsGraph.combine(trusted ? starts.filter(\.assertion.trusted) : starts).0 }
+        func endRange(for trusted: Bool) -> DateRange? { FactsGraph.combine(trusted ? ends.filter(\.assertion.trusted) : ends).0 }
     }
 
     private struct Row {
@@ -109,11 +111,10 @@ extension FactsGraph {
             return Row(a: a, s: s, e: e, bound: bound, held: held, w: w, hand: hand)
         }
         var eps: [Building] = []
-        let selected = rows.filter { $0.a.selector != nil }
         for r in rows.filter({ ($0.s != nil || $0.e != nil) && $0.a.selector == nil }).stableSorted(by: { ($0.s ?? $0.e)!.lo }) {
             var target: Building?
             for ep in eps.reversed() {
-                let es = ep.startRange, ee = ep.endRange
+                let es = ep.startRange(for: r.a.trusted), ee = ep.endRange(for: r.a.trusted)
                 var disjoint = false
                 if let ee, let s = r.s, ee.hi < s.lo { disjoint = true }
                 if let e = r.e, let es, e.hi < es.lo { disjoint = true }
@@ -127,25 +128,14 @@ extension FactsGraph {
             if let e = r.e { t.ends.append((e, r.a)) }
             t.rows.append(r)
         }
-        // A user's row with an episode selector goes to the one episode overlapping it (the store sends the others to
-        // To check before they get here); with no episode yet, it makes one.
-        for r in selected {
-            let sel = r.a.selector!
-            let hits = eps.filter { ep in
-                let lo = ep.startRange?.lo ?? DateRange.minDay, hi = ep.endRange?.hi ?? DateRange.maxDay
-                return lo <= sel.hi && sel.lo <= hi
-            }
-            let t = hits.count == 1 ? hits[0] : { let b = Building(); eps.append(b); return b }()
-            if let s = r.s { t.starts.append((s, r.a)) }
-            if let e = r.e { t.ends.append((e, r.a)) }
-            t.rows.append(r)
-        }
         for var r in rows.filter({ $0.s == nil && $0.e == nil && $0.a.selector == nil }) {
             var target: Building?
             if let w = r.w {
                 if r.bound != nil {      // "no longer there": which episode it ended is decided only if just one fits
-                    let ended = eps.filter { ep in ep.endRange.map { $0.hi <= w } ?? false }
-                    let open = eps.filter { ep in ep.endRange == nil && (ep.startRange.map { $0.lo <= w } ?? true) }
+                    let ended = eps.filter { ep in ep.endRange(for: r.a.trusted).map { $0.hi <= w } ?? false }
+                    let open = eps.filter { ep in
+                        ep.endRange(for: r.a.trusted) == nil && (ep.startRange(for: r.a.trusted).map { $0.lo <= w } ?? true)
+                    }
                     if !open.isEmpty, !ended.isEmpty, r.a.trusted {
                         for ep in open { ep.uncertain = min(ep.uncertain ?? w, w) }   // it may have ended by then
                         target = ended.last
@@ -156,7 +146,7 @@ extension FactsGraph {
                 }
                 if target == nil {
                     for ep in eps.reversed() {
-                        let es = ep.startRange, ee = ep.endRange
+                        let es = ep.startRange(for: r.a.trusted), ee = ep.endRange(for: r.a.trusted)
                         if (es.map { $0.lo <= w } ?? true), r.held == nil || ee == nil || ee!.hi >= w {
                             target = ep
                             break
@@ -168,17 +158,36 @@ extension FactsGraph {
             let t = target ?? { let b = Building(); eps.append(b); return b }()
             t.rows.append(r)
         }
+        // A user's row with an episode selector goes to the one episode overlapping it, by the same boundaries the
+        // episodes end up with (a bound counts as an end); the store sends the others to To check before they get here.
+        for r in rows.filter({ $0.a.selector != nil }) {
+            let sel = r.a.selector!
+            let hits = eps.filter { ep in
+                let lo = ep.startRange?.lo ?? DateRange.minDay
+                let hi = ep.endRange?.hi ?? ep.rows.compactMap(\.bound).min() ?? DateRange.maxDay
+                return lo <= sel.hi && sel.lo <= hi
+            }
+            let t = hits.count == 1 ? hits[0] : { let b = Building(); eps.append(b); return b }()
+            if let s = r.s { t.starts.append((s, r.a)) }
+            if let e = r.e { t.ends.append((e, r.a)) }
+            t.rows.append(r)
+        }
         let slotKey = registry.predicate(f.predicate)?.slot
         var out: [Episode] = []
         for ep in eps {
             let trusted = ep.rows.contains { $0.a.trusted }
-            let counts: (Row) -> Bool = { $0.a.trusted || !trusted }
-            var (start, cs, stTr) = Self.combine(ep.starts)
+            // The user's own status wins: with one, only the user's rows say whether and when it held or ended.
+            let userStatus = ep.rows.contains { $0.a.fromUser && $0.a.status != .unknown }
+            let counts: (Row) -> Bool = { r in
+                (r.a.trusted || !trusted) && (!userStatus || r.a.fromUser)
+            }
+            var (start, cs, stTr) = Self.combine(ep.starts.filter { $0.assertion.trusted || !trusted })
             if start == nil {            // only a hand-over's assumed start (role resolution; the timeline ignores it)
                 start = ep.rows.compactMap(\.hand).firstMin { $0.lo }
             }
             var (end, ce, enTr) = Self.combine(ep.ends.filter { $0.assertion.trusted || !trusted })
-            let bounds = ep.rows.filter(counts).compactMap(\.bound)
+            let boundRows = ep.rows.filter(counts).filter { $0.bound != nil }
+            let bounds = boundRows.compactMap(\.bound)
             let former = end != nil || !bounds.isEmpty
             let held = ep.rows.filter(counts).compactMap(\.held)
             if end == nil, let minBound = bounds.min() {
@@ -186,9 +195,13 @@ extension FactsGraph {
                 let lo = ([stated?.lo ?? DateRange.minDay] + held.filter { $0 <= minBound }).max()!
                 end = DateRange(lo: lo, hi: minBound, precision: .bound)   // ended after the last day it held
                 ce = false
-                enTr = true
+                enTr = boundRows.contains { $0.a.trusted }
             }
-            let vals = slotKey.map { k in ep.rows.compactMap { $0.a.qualifiers[k] } } ?? []
+            // The slot: the user's values first; in a trusted episode untrusted values never count (they could start
+            // succession across slots).
+            func values(_ rs: [Row]) -> [String] { slotKey.map { k in rs.compactMap { $0.a.qualifiers[k] } } ?? [] }
+            var vals = values(ep.rows.filter(\.a.fromUser))
+            if vals.isEmpty { vals = values(ep.rows.filter { $0.a.trusted || !trusted }) }
             let e = Episode(entity: f.entity, predicate: f.predicate, start: start, end: end)
             e.conflictStart = cs
             e.conflictEnd = ce
@@ -199,8 +212,8 @@ extension FactsGraph {
             e.former = former
             e.slot = vals.mostCommon() ?? "_"
             e.assertions = ep.rows.map(\.a)
-            e.uncertain = ep.uncertain != nil && end == nil
-            e.uncertainFrom = ep.uncertain
+            e.uncertain = ep.uncertain != nil && end == nil && !userStatus
+            e.uncertainFrom = e.uncertain ? ep.uncertain : nil
             out.append(e)
         }
         if out.isEmpty {

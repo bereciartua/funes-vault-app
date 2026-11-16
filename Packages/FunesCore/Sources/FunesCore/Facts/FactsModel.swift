@@ -45,6 +45,8 @@ public struct FactAssertion: Sendable, Equatable {
     /// Order edges to a fact's entity by id (the user's), rather than by a name as written.
     public var precededByEntity: String?
     public var followedByEntity: String?
+    /// For a user's order edge: the date range of the other endpoint's episode when the user acted.
+    public var otherSelector: DateRange?
 }
 
 /// Someone or something memories mention. *You* is never in the graph.
@@ -184,6 +186,9 @@ public struct FactsGraph: Sendable {
     public var decisions: [DecisionKey: MentionDecision] = [:]
     public var names: [NameKey: NameLink] = [:]
     public var memories: [String: FactsMemory] = [:]
+    /// Two entities a memory says are the same ("also called"): for To check, never merged automatically.
+    public var mergeSuggestions: [MergeSuggestion] = []
+    public struct MergeSuggestion: Sendable, Equatable { public var entity: String; public var other: String }
     /// "Not <name>" on a mention: entities a role phrase in a memory doesn't refer to.
     public var rejections: [DecisionKey: Set<String>] = [:]
     /// Ids for new entities: counters ("p1") in tests and spikes, UUIDs in the vault.
@@ -261,18 +266,22 @@ public struct FactsGraph: Sendable {
         }
     }
 
-    /// A non-person entity by its kind's rule; "also called" joins two names.
+    /// A non-person entity by its kind's rule. "Also called" adds the other name as an alias only when no other
+    /// entity has it; two entities it would join become a merge suggestion in To check, never a merge
+    /// (memory processing §11.4).
     public mutating func entityFor(_ name: String, kind: String, also: String? = nil) -> String {
         let hits = byName(name, kind: kind)
         let id = hits.first?.id ?? also.flatMap { byName($0, kind: kind).first?.id } ?? newEntity(name: name, kind: kind)
         entities[id]?.aliases.insert(name)
         if let also {
-            for o in byName(also, kind: kind) where o.id != id {
-                entities[id]?.aliases.formUnion(o.aliases)
-                for i in facts.indices where facts[i].entity == o.id { facts[i].entity = id }
-                entities[o.id] = nil
+            let others = byName(also, kind: kind).filter { $0.id != id }
+            if others.isEmpty {
+                entities[id]?.aliases.insert(also)
+            } else {
+                for o in others where !mergeSuggestions.contains(where: { $0.entity == id && $0.other == o.id }) {
+                    mergeSuggestions.append(MergeSuggestion(entity: id, other: o.id))
+                }
             }
-            entities[id]?.aliases.insert(also)
         }
         return id
     }

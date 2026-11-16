@@ -421,6 +421,10 @@ enum MemoryStore {
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """, arguments: [memoryID.db, at, event.rawValue, actor.description, fields.isEmpty ? nil : JSON.encode(fields),
                              relatedMemoryID?.db, engine])
+        // A merge or split: the user's fact corrections move to the memory that inherits their quoted span (§11.8).
+        if let related = relatedMemoryID, event == .mergedFrom || event == .splitFrom {
+            try FactStore.moveCorrections(db, from: [related.db], to: memoryID.db, now: at)
+        }
     }
 
     /// Lowercased with whitespace collapsed: the duplicate hint's exact match (memory processing §8).

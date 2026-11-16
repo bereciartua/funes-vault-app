@@ -58,7 +58,7 @@ import Testing
         let lang = reg.language
         let ids = Set(reg.predicates.map(\.id))
         var words = Set(reg.lexicon.keys).union(reg.predicates.flatMap(\.queryCues)).union(lang.personNouns)
-            .union(reg.monthWords.keys).union(lang.legalSuffixes)
+            .union(reg.monthWords.keys).union(lang.legalSuffixes).union(lang.ordinalSuffixes)
         // Function words of three letters or more: shorter ones collide with regex escapes ("\\s", "[a-z]").
         words.formUnion(lang.functionWords.filter { $0.count >= 3 })
         words.insert(lang.userPlaceholder)

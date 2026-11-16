@@ -28,11 +28,12 @@ extension FactStore {
                                now: Date) throws {
         guard try hasLearnedFacts(db, memoryID: memoryID) else { return }
         if textChanged {
+            let affected = try supportedBy(db, memoryIDs: [memoryID])
             try db.execute(sql: "DELETE FROM fact_evidence WHERE memory_id = ? AND memory_version = ?", arguments: [memoryID, old])
             try db.execute(sql: "DELETE FROM alias_evidence WHERE memory_id = ? AND memory_version = ?", arguments: [memoryID, old])
             try db.execute(sql: "DELETE FROM mention_decision WHERE memory_id = ? AND memory_version = ? AND source = 'model'",
                            arguments: [memoryID, old])
-            try collectGarbage(db, now: now)
+            try collectGarbage(db, now: now, touching: affected)
         } else {
             try db.execute(sql: "UPDATE fact_evidence SET memory_version = ? WHERE memory_id = ? AND memory_version = ?",
                            arguments: [new, memoryID, old])
@@ -55,6 +56,7 @@ extension FactStore {
 
     /// An archive's effect on learned facts depends on why (memory processing §11.8). Call after `setStatus`.
     static func archived(_ db: Database, memoryID: String, reason: FactsArchiveReason, now: Date) throws {
+        let affected = try supportedBy(db, memoryIDs: [memoryID])
         switch reason {
         case .superseded:
             return                       // `load` keeps its former and dated facts, not a current status
@@ -65,7 +67,7 @@ extension FactStore {
         case .expired:
             try db.execute(sql: "DELETE FROM fact_evidence WHERE memory_id = ?", arguments: [memoryID])
         }
-        try collectGarbage(db, now: now)
+        try collectGarbage(db, now: now, touching: affected)
         try bumpRevision(db)
     }
 
@@ -73,6 +75,7 @@ extension FactStore {
     /// them lose their text (keeping their ids). Then what nothing supports any more goes, or becomes a tombstone.
     static func purge(_ db: Database, memoryIDs: [String], now: Date) throws {
         guard !memoryIDs.isEmpty else { return }
+        let affected = try supportedBy(db, memoryIDs: memoryIDs)
         for chunk in stride(from: 0, to: memoryIDs.count, by: 500).map({ Array(memoryIDs[$0..<min($0 + 500, memoryIDs.count)]) }) {
             let marks = databaseQuestionMarks(count: chunk.count)
             let args = StatementArguments(chunk)
@@ -82,14 +85,15 @@ extension FactStore {
             try db.execute(sql: "UPDATE mention_decision SET mention = NULL, quote = NULL WHERE memory_id IN (\(marks))", arguments: args)
             try db.execute(sql: "UPDATE manual_override SET quote = NULL WHERE memory_id IN (\(marks))", arguments: args)
         }
-        try collectGarbage(db, now: now)
+        try collectGarbage(db, now: now, touching: affected)
         try bumpRevision(db)
     }
 
     /// What nothing supports any more goes, names included; what the user made, or a correction references, stays as
     /// a tombstone (its id, predicate, the user's own values and the alias the user typed or confirmed).
-    static func collectGarbage(_ db: Database, now: Date) throws {
-        var touchedEntities = Set<String>(), touchedFacts = Set<String>()
+    static func collectGarbage(_ db: Database, now: Date,
+                               touching affected: (facts: Set<String>, entities: Set<String>) = ([], [])) throws {
+        var touchedEntities = affected.entities, touchedFacts = affected.facts
         // Inferred aliases with no evidence.
         try db.execute(sql: """
             DELETE FROM entity_alias WHERE manual = 0 AND confirmed = 0
@@ -125,7 +129,7 @@ extension FactStore {
         let referencedEntities = """
             SELECT target_id FROM manual_override WHERE target_kind IN ('entity','alias')
             UNION SELECT entity_id FROM mention_decision WHERE source = 'user' AND entity_id IS NOT NULL
-            UNION SELECT value FROM manual_override WHERE field IN ('merged_into','not_same') AND value IS NOT NULL
+            UNION SELECT json_extract(value, '$') FROM manual_override WHERE field IN ('merged_into','not_same') AND value IS NOT NULL
             UNION SELECT entity_id FROM fact
             """
         for e in try Row.fetchAll(db, sql: "SELECT id, name, manual, tombstone, group_predicate FROM entity WHERE is_you = 0") {
@@ -152,7 +156,10 @@ extension FactStore {
             }
             let isGroup = (e["group_predicate"] as String?) != nil && (e["name"] as String?) == nil
             let referenced = try Bool.fetchOne(db, sql: "SELECT ? IN (\(referencedEntities))", arguments: [id]) ?? false
-            if (e["manual"] as Int) == 1 || referenced || isGroup {
+            if (e["manual"] as Int) == 1 || referenced {
+                if isGroup {   // a group's label and count were inferred: they go too
+                    try db.execute(sql: "UPDATE entity SET group_label = NULL, group_count = NULL WHERE id = ?", arguments: [id])
+                }
                 // A tombstone keeps only what the user typed, and the normalised alias the user confirmed.
                 try db.execute(sql: "UPDATE entity_alias SET alias = NULL WHERE entity_id = ? AND manual = 0", arguments: [id])
                 let typedAlias = try String.fetchOne(db, sql: """
@@ -160,7 +167,7 @@ extension FactStore {
                     """, arguments: [id])
                 let name: String? = e["name"]
                 let keepName = typedName ?? typedAlias
-                let tomb = isGroup && !referenced && (e["manual"] as Int) == 0 ? 0 : 1
+                let tomb = 1
                 if (e["tombstone"] as Int) != tomb || name != keepName {
                     try db.execute(sql: "UPDATE entity SET tombstone = ?, name = ?, updated_at = ? WHERE id = ?",
                                    arguments: [tomb, keepName, now, id])
@@ -171,7 +178,15 @@ extension FactStore {
                 touchedEntities.insert(id)
             }
         }
-        try invalidateDependents(db, entities: touchedEntities, facts: touchedFacts, now: now)
+        try touch(db, facts: touchedFacts.filter { id in (try? Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM fact WHERE id = ?)", arguments: [id])) == true },
+                  entities: touchedEntities.filter { id in (try? Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM entity WHERE id = ?)", arguments: [id])) == true },
+                  now: now)
+        // Decisions that pointed at what's gone are stale too.
+        try db.execute(sql: """
+            UPDATE mention_decision SET invalidated_at = ? WHERE invalidated_at IS NULL AND source = 'model' AND id IN (
+              SELECT decision_id FROM decision_dependency d WHERE (d.kind = 'entity' AND d.ref_id NOT IN (SELECT id FROM entity))
+                 OR (d.kind = 'fact' AND d.ref_id NOT LIKE 'predicate:%' AND d.ref_id NOT IN (SELECT id FROM fact)))
+            """, arguments: [now])
     }
 
     /// Remove learned facts: every inferred row goes; manual entries, the user's rows, corrections, the tombstones
@@ -188,12 +203,6 @@ extension FactStore {
         try db.execute(sql: "DELETE FROM mention_decision WHERE source = 'model'")
         try db.execute(sql: "DELETE FROM facts_run")
         try db.execute(sql: "DELETE FROM meta WHERE key = 'facts_backfill'")
-        // Role groups come from memories too.
-        try db.execute(sql: """
-            DELETE FROM entity WHERE is_you = 0 AND manual = 0 AND group_predicate IS NOT NULL AND name IS NULL
-              AND id NOT IN (SELECT entity_id FROM fact) AND id NOT IN (SELECT target_id FROM manual_override)
-              AND id NOT IN (SELECT entity_id FROM mention_decision WHERE entity_id IS NOT NULL)
-            """)
         try collectGarbage(db, now: now)
         out.entities = entitiesBefore - (try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM entity WHERE is_you = 0 AND tombstone = 0") ?? 0)
         out.facts = factsBefore - (try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM fact WHERE tombstone = 0") ?? 0)
@@ -235,6 +244,12 @@ extension FactStore {
               created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, arguments: [id, targetKind, targetID, field, encoded, selectorJSON(selector), sensitivity, memoryID, quote, now, now])
+        // What it corrects changed: decisions resting on it are stale.
+        if ["entity", "alias"].contains(targetKind) {
+            try touch(db, facts: [], entities: try String.fetchAll(db, sql: "SELECT id FROM entity WHERE id = ?", arguments: [targetID]).reduce(into: Set()) { $0.insert($1) }, now: now)
+        } else {
+            try touch(db, facts: try String.fetchAll(db, sql: "SELECT id FROM fact WHERE id = ?", arguments: [targetID]).reduce(into: Set()) { $0.insert($1) }, entities: [], now: now)
+        }
         try bumpRevision(db)
         return id
     }
@@ -244,15 +259,17 @@ extension FactStore {
     @discardableResult
     static func addUserEvidence(_ db: Database, factID: String, kind: String = "fact", asserted: [String: Any],
                                 qualifier: String? = nil, otherFactID: String? = nil, direction: String? = nil,
-                                selector: DateRange? = nil, sensitivity: Int, now: Date) throws -> String {
+                                selector: DateRange? = nil, otherSelector: DateRange? = nil, sensitivity: Int,
+                                now: Date) throws -> String {
         let id = UUID().db
         try db.execute(sql: """
-            INSERT INTO fact_evidence (id, target_kind, fact_id, qualifier, other_fact_id, direction, episode_selector, source,
-              asserted, states, polarity, sensitivity, trust)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'user', ?, 1, 'affirmed', ?, 'trusted')
-            """, arguments: [id, kind, factID, qualifier, otherFactID, direction, selectorJSON(selector), json(asserted), sensitivity])
-        try db.execute(sql: "UPDATE fact SET tombstone = 0, updated_at = ? WHERE id = ?", arguments: [now, factID])
-        try invalidateDependents(db, entities: [], facts: [factID], now: now)
+            INSERT INTO fact_evidence (id, target_kind, fact_id, qualifier, other_fact_id, direction, episode_selector,
+              other_episode_selector, source, asserted, states, polarity, sensitivity, trust)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'user', ?, 1, 'affirmed', ?, 'trusted')
+            """, arguments: [id, kind, factID, qualifier, otherFactID, direction, selectorJSON(selector), selectorJSON(otherSelector),
+                             json(asserted), sensitivity])
+        try db.execute(sql: "UPDATE fact SET tombstone = 0 WHERE id = ?", arguments: [factID])
+        try touch(db, facts: [factID], entities: [], now: now)
         try bumpRevision(db)
         return id
     }
@@ -292,16 +309,18 @@ extension FactStore {
     static func moveCorrections(_ db: Database, from sources: [String], to target: String, now: Date) throws {
         guard let row = try Row.fetchOne(db, sql: "SELECT title, body FROM memory WHERE id = ?", arguments: [target]) else { return }
         let text = FactStore.text(title: row["title"], body: row["body"])
+        var moved = false
         for table in ["mention_decision", "manual_override"] {
             let extra = table == "mention_decision" ? " AND source = 'user'" : ""
             for src in sources {
                 for r in try Row.fetchAll(db, sql: "SELECT id, quote FROM \(table) WHERE memory_id = ?\(extra)", arguments: [src]) {
                     guard let quote: String = r["quote"], locate(quote, in: text, near: nil) != nil else { continue }
                     try db.execute(sql: "UPDATE \(table) SET memory_id = ? WHERE id = ?", arguments: [target, r["id"] as String])
+                    moved = true
                 }
             }
         }
-        try bumpRevision(db)
+        if moved { try bumpRevision(db) }
     }
 
     /// The user confirmed an entity's alias (To check, Merge With…): a tombstone keeps it, normalised.

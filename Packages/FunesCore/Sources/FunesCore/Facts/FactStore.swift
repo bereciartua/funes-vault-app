@@ -143,7 +143,7 @@ enum FactStore {
 
     struct Loaded {
         var graph: FactsGraph
-        /// User rows whose episode selector matches no episode, or several: To check.
+        /// User rows whose episode selector (theirs or the other endpoint's) matches no episode, or several: To check.
         var toCheck: [String]
         /// fact row id by (predicate, entity id), and back.
         var factIDs: [String: String]
@@ -152,10 +152,32 @@ enum FactStore {
         static func key(_ predicate: String, _ entity: String) -> String { predicate + "\u{1F}" + entity }
     }
 
+    /// A dependency on how many facts a predicate has, so a new candidate holder invalidates a decision.
+    static func predicateRef(_ predicate: String) -> String { "predicate:" + predicate }
+
+    static func predicateVersion(_ db: Database, _ predicate: String) throws -> String {
+        String(try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM fact WHERE predicate = ? AND tombstone = 0", arguments: [predicate]) ?? 0)
+    }
+
+    /// The version a decision dependency is checked against: a memory's version, an entity's or fact's `updated_at`.
+    static func currentVersion(_ db: Database, kind: String, ref: String) throws -> String? {
+        switch kind {
+        case "memory": return try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [ref]).map(String.init)
+        case "entity": return try String.fetchOne(db, sql: "SELECT updated_at FROM entity WHERE id = ?", arguments: [ref])
+        default:
+            if ref.hasPrefix("predicate:") { return try predicateVersion(db, String(ref.dropFirst("predicate:".count))) }
+            return try String.fetchOne(db, sql: "SELECT updated_at FROM fact WHERE id = ?", arguments: [ref])
+        }
+    }
+
     /// The learned facts as the graph reads them. Counts memory evidence only from active and archived memories at
     /// their current version (an archived memory keeps its former and dated facts, not a current status), plus the
     /// user's own rows; applies manual overrides and corrections on top, so they win over inference.
-    static func load(_ db: Database, registry: FactsRegistry = .bundled, userAliases: [String] = []) throws -> Loaded {
+    /// One memory version's rows in one call group, left out while that group is re-read.
+    struct Exclusion { var memoryID: String; var version: Int; var callGroup: String }
+
+    static func load(_ db: Database, registry: FactsRegistry = .bundled, userAliases: [String] = [],
+                     excluding: Exclusion? = nil) throws -> Loaded {
         var g = FactsGraph(registry: registry, userAliases: userAliases)
         g.idStyle = .uuid
         let counted = try countedMemories(db)
@@ -164,6 +186,10 @@ enum FactStore {
             return c
         }
         let overrides = try Row.fetchAll(db, sql: "SELECT * FROM manual_override ORDER BY created_at, rowid")
+        func decoded(_ s: String?) -> Any? {
+            guard let s, let data = s.data(using: .utf8) else { return nil }
+            return try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+        }
 
         // Entities and their aliases.
         var aliasRows: [String: [Row]] = [:]
@@ -175,6 +201,7 @@ enum FactStore {
         where counts(e["memory_id"], e["memory_version"]) != nil {
             supported.insert(e["alias_id"])
         }
+        var groupEntities = Set<String>()
         for e in try Row.fetchAll(db, sql: "SELECT * FROM entity WHERE is_you = 0 ORDER BY rowid") {
             let id: String = e["id"]
             // A tombstone's confirmed alias has no text, only its normalised form: enough to re-attach by.
@@ -186,18 +213,22 @@ enum FactStore {
             if name == nil, !aliases.isEmpty { name = aliases.first }
             let gp: String? = e["group_predicate"]
             let group = gp.map { FactsEntity.RoleGroup(predicate: $0, cls: e["group_label"]) }
+            if group != nil, name == nil { groupEntities.insert(id) }
+            // A group's count and an entity's death come from evidence below; the columns hold the user's values.
             g.insert(FactsEntity(id: id, seq: 0, kind: e["kind"], name: name, aliases: Set(aliases), group: group,
-                                 count: e["group_count"], deceased: (e["deceased"] as Int) == 1))
+                                 count: nil, deceased: (e["deceased"] as Int) == 1))
         }
 
-        // Facts from their evidence, replayed in the order it was written (incarnations: a denial ends one, a later
-        // affirmation starts the next, as `FactsGraph.apply` does).
+        // Facts from their evidence, replayed in the order the memories were written (incarnations: a denial ends one,
+        // a later affirmation starts the next, as `FactsGraph.apply` does). The user's rows come last and win.
         var factIDs: [String: String] = [:], factKeys: [String: (predicate: String, entity: String)] = [:]
         let factRows = try Row.fetchAll(db, sql: "SELECT * FROM fact ORDER BY rowid")
         var entityOfFact: [String: String] = [:]
         for f in factRows { entityOfFact[f["id"]] = f["entity_id"] }
         var evidence: [String: [Row]] = [:]
         for r in try Row.fetchAll(db, sql: "SELECT rowid AS rid, * FROM fact_evidence ORDER BY rowid") {
+            if let x = excluding, (r["memory_id"] as String?) == x.memoryID, (r["memory_version"] as Int?) == x.version,
+               (r["call_group"] as String?) == x.callGroup { continue }
             evidence[r["fact_id"], default: []].append(r)
         }
         let rejectedEverywhere = Set(overrides.filter {
@@ -210,35 +241,42 @@ enum FactStore {
             rejectedFromMemory[o["target_id"], default: []].insert(mid)
         }
         var toCheck: [String] = []
+        var deceasedByEvidence = Set<String>()
         for f in factRows {
             let fid: String = f["id"], pred: String = f["predicate"], ent: String = f["entity_id"]
             guard g.entities[ent] != nil, !rejectedEverywhere.contains(fid) else { continue }
+            let manual = (f["manual"] as Int) == 1
+            // Counting rows in the order their memories were written; the user's rows after them.
+            let rows = (evidence[fid] ?? []).compactMap { r -> (Row, Counted?)? in
+                if (r["source"] as String) == "user" { return (r, nil) }
+                guard let c = counts(r["memory_id"], r["memory_version"]),
+                      rejectedFromMemory[fid]?.contains(c.memory.id) != true else { return nil }
+                return (r, c)
+            }.stableSorted { pair -> String in
+                guard let c = pair.1 else { return "~" }
+                return c.memory.written + String(format: "%012d", c.seq)
+            }
+            // A role group: its count is the latest counting memory's, and it's not a fact the timeline reads.
+            if groupEntities.contains(ent) {
+                for (r, _) in rows where (r["target_kind"] as String) == "fact" {
+                    if let n = object(r["asserted"])["count"] as? Int { g.entities[ent]?.count = n }
+                }
+                continue
+            }
             factIDs[Loaded.key(pred, ent)] = fid
             factKeys[fid] = (pred, ent)
-            let rows = evidence[fid] ?? []
             // One assertion per memory (or user row): its fact row, with its qualifiers and order edges.
             struct Pending { var a: FactAssertion; var denied: Bool; var only: Bool }
             var order: [String] = [], pending: [String: Pending] = [:]
-            for r in rows {
+            for (r, c) in rows {
                 let src: String = r["source"]
-                let key: String
-                var trusted = true
-                let written: String
-                if src == "memory" {
-                    guard let c = counts(r["memory_id"], r["memory_version"]) else { continue }
-                    if rejectedFromMemory[fid]?.contains(c.memory.id) == true { continue }
-                    key = "m:" + c.memory.id
-                    trusted = c.memory.trusted
-                    written = c.memory.written
-                } else {
-                    key = "u:" + (r["id"] as String)
-                    written = writtenDay(Date())
-                }
+                let key = c.map { "m:" + $0.memory.id } ?? "u:" + (r["id"] as String)
                 if pending[key] == nil {
                     order.append(key)
-                    pending[key] = Pending(a: FactAssertion(memoryID: src == "memory" ? r["memory_id"] : "user", trusted: trusted,
-                                                            written: written, status: .unknown, qualifiers: [:], states: true,
-                                                            quote: r["quote"] ?? "", handover: false), denied: false, only: false)
+                    pending[key] = Pending(a: FactAssertion(memoryID: c?.memory.id ?? "user", trusted: c?.memory.trusted ?? true,
+                                                            written: c?.memory.written ?? writtenDay(Date()), status: .unknown,
+                                                            qualifiers: [:], states: true, quote: r["quote"] ?? "", handover: false),
+                                           denied: false, only: false)
                 }
                 var p = pending[key]!
                 let asserted = object(r["asserted"])
@@ -252,18 +290,21 @@ enum FactStore {
                     p.a.handover = asserted["handover"] as? Bool ?? false
                     p.only = asserted["only"] as? Bool ?? false
                     p.a.states = (r["states"] as Int) == 1
-                    if src == "memory", let c = counted[p.a.memoryID], c.status == "archived", p.a.status == .current {
+                    if let c, c.status == "archived", p.a.status == .current {
                         p.a.status = .unknown        // an archived memory keeps its former and dated facts only
                     }
                 case "qualifier":
                     if let q: String = r["qualifier"], let v = asserted["value"] as? String {
-                        if q == "label" { p.a.label = v } else { p.a.qualifiers[q] = v }
+                        if q == "label" { p.a.label = v }
+                        else if q == "deceased" { if v == "true", c != nil { deceasedByEvidence.insert(ent) } }
+                        else { p.a.qualifiers[q] = v }
                     }
                 case "order":
                     let before = (r["direction"] as String?) == "preceded_by"
                     let other = (r["other_fact_id"] as String?).flatMap { entityOfFact[$0] }
                     let name = asserted["value"] as? String
                     if before { p.a.precededBy = name; p.a.precededByEntity = other } else { p.a.followedBy = name; p.a.followedByEntity = other }
+                    if src == "user" { p.a.otherSelector = selector(r["other_episode_selector"]) }
                 default: break
                 }
                 if src == "user" {
@@ -276,7 +317,9 @@ enum FactStore {
             for key in order {
                 let p = pending[key]!
                 if p.denied {
-                    if let last = incarnations.indices.last, !incarnations[last].negated,
+                    // A denial from a memory never negates what the user entered (manual entries win over inference).
+                    if let last = incarnations.indices.last, !incarnations[last].negated, !manual,
+                       !incarnations[last].assertions.contains(where: \.fromUser),
                        p.a.trusted || !incarnations[last].trusted {
                         incarnations[last].negated = true
                     }
@@ -296,14 +339,12 @@ enum FactStore {
             }
             g.facts += incarnations
         }
+        for e in deceasedByEvidence { g.entities[e]?.deceased = true }
 
         // Overrides win: names, deceased, labels, merges.
         for o in overrides {
             let kind: String = o["target_kind"], field: String = o["field"], target: String = o["target_id"]
-            let value = (o["value"] as String?).flatMap { s -> Any? in
-                guard let data = s.data(using: .utf8) else { return nil }
-                return try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
-            }
+            let value = decoded(o["value"])
             switch (kind, field) {
             case ("entity", "name"):
                 if let n = value as? String, g.entities[target] != nil {
@@ -313,9 +354,27 @@ enum FactStore {
             case ("entity", "deceased"):
                 if let b = value as? Bool { g.entities[target]?.deceased = b }
             case ("entity", "merged_into"):
+                // Merge With…: one entity, and one fact per predicate, its evidence fused.
                 if let into = value as? String, let from = g.entities[target], g.entities[into] != nil, into != target {
                     g.entities[into]?.aliases.formUnion(from.aliases)
-                    for i in g.facts.indices where g.facts[i].entity == target { g.facts[i].entity = into }
+                    let dead = (g.entities[into]?.deceased ?? false) || from.deceased
+                    g.entities[into]?.deceased = dead
+                    for i in g.facts.indices where g.facts[i].entity == target {
+                        if let j = g.facts.indices.last(where: { g.facts[$0].entity == into && g.facts[$0].predicate == g.facts[i].predicate
+                                                                && !g.facts[$0].negated }), !g.facts[i].negated {
+                            g.facts[j].assertions += g.facts[i].assertions
+                            g.facts[j].only = g.facts[j].only || g.facts[i].only
+                            if g.facts[j].label == nil { g.facts[j].label = g.facts[i].label; g.facts[j].cls = g.facts[i].cls }
+                            g.facts[i].negated = true          // folded into the survivor's fact
+                            g.facts[i].assertions = []
+                        }
+                        g.facts[i].entity = into
+                    }
+                    g.facts.removeAll { $0.entity == into && $0.negated && $0.assertions.isEmpty }
+                    for (fid, key) in factKeys where key.entity == target {
+                        factKeys[fid] = (key.predicate, into)
+                        factIDs[Loaded.key(key.predicate, into)] = factIDs[Loaded.key(key.predicate, into)] ?? fid
+                    }
                     g.entities[target] = nil
                 }
             case ("qualifier", "label"):
@@ -329,29 +388,51 @@ enum FactStore {
             }
         }
 
-        // User rows whose selector matches no episode or several go to To check, and don't apply.
+        // User rows whose selector matches no episode, or several, go to To check and don't apply; so do user order
+        // edges whose other endpoint's selector doesn't pick exactly one episode.
+        func overlapping(_ eps: [Episode], _ sel: DateRange) -> Int {
+            eps.filter { e in (e.start?.lo ?? DateRange.minDay) <= sel.hi && sel.lo <= (e.end?.hi ?? DateRange.maxDay) }.count
+        }
+        let plainEpisodes: [String: [Episode]] = {
+            var out: [String: [Episode]] = [:]
+            for f in g.facts where !f.negated {
+                var plain = f
+                plain.assertions.removeAll { $0.fromUser && $0.selector != nil }
+                out[FactStore.Loaded.key(f.predicate, f.entity), default: []] += g.factEpisodes(plain)
+            }
+            return out
+        }()
         for i in g.facts.indices {
-            let userRows = g.facts[i].assertions.filter { $0.fromUser && $0.selector != nil }
-            guard !userRows.isEmpty else { continue }
-            var plain = g.facts[i]
-            plain.assertions.removeAll { $0.fromUser && $0.selector != nil }
-            let eps = g.factEpisodes(plain)
+            let eps = plainEpisodes[Loaded.key(g.facts[i].predicate, g.facts[i].entity)] ?? []
+            let pred = g.facts[i].predicate
             g.facts[i].assertions.removeAll { a in
-                guard a.fromUser, let sel = a.selector else { return false }
-                let hits = eps.filter { e in
-                    let lo = e.start?.lo ?? DateRange.minDay, hi = e.end?.hi ?? DateRange.maxDay
-                    return lo <= sel.hi && sel.lo <= hi
+                guard a.fromUser else { return false }
+                if let sel = a.selector, overlapping(eps, sel) != 1 { toCheck.append(a.quote); return true }
+                for other in [a.precededByEntity, a.followedByEntity].compactMap({ $0 }) {
+                    if let sel = a.otherSelector, overlapping(plainEpisodes[Loaded.key(pred, other)] ?? [], sel) != 1 {
+                        toCheck.append(a.quote)
+                        return true
+                    }
                 }
-                if hits.count != 1 { toCheck.append(a.quote); return true }
                 return false
             }
         }
 
-        // Decisions: the model's at the memory's current version, and the user's keyed to the quote.
+        // Decisions: the model's at the memory's current version whose dependencies are unchanged, and the user's,
+        // keyed to the quote.
+        var dependencies: [String: [Row]] = [:]
+        for r in try Row.fetchAll(db, sql: "SELECT * FROM decision_dependency") { dependencies[r["decision_id"], default: []].append(r) }
         for d in try Row.fetchAll(db, sql: "SELECT * FROM mention_decision ORDER BY created_at, rowid") {
             let mid: String = d["memory_id"], src: String = d["source"], outcome: String = d["outcome"]
             guard let c = counted[mid] else { continue }
-            if src == "model", (d["memory_version"] as Int?) != c.version || (d["invalidated_at"] as Date?) != nil { continue }
+            if src == "model" {
+                if let x = excluding, mid == x.memoryID, (d["call_group"] as String?) == x.callGroup { continue }
+                if (d["memory_version"] as Int?) != c.version || (d["invalidated_at"] as Date?) != nil { continue }
+                let stale = try (dependencies[d["id"]] ?? []).contains { dep in
+                    try currentVersion(db, kind: dep["kind"], ref: dep["ref_id"]) != (dep["ref_version"] as String)
+                }
+                if stale { continue }
+            }
             guard let span = locate(d["quote"], in: c.memory.text, near: d["span_start"]) else { continue }
             let key = FactsGraph.DecisionKey(memoryID: mid, start: span.start)
             let entity: String? = d["entity_id"]
@@ -383,10 +464,28 @@ enum FactStore {
         var facts = 0
         var evidence = 0
         var decisions = 0
+        /// "Also called" naming two entities: merge suggestions for To check.
+        var mergeSuggestions = 0
+    }
+
+    /// A fact's evidence for one memory version and call group, as a comparable set.
+    private static func signatures(_ db: Database, memoryID: String, version: Int, callGroup: String) throws -> [String: Set<String>] {
+        var out: [String: Set<String>] = [:]
+        for r in try Row.fetchAll(db, sql: """
+            SELECT fact_id, target_kind, qualifier, direction, asserted, polarity, states FROM fact_evidence
+            WHERE memory_id = ? AND memory_version = ? AND call_group = ?
+            """, arguments: [memoryID, version, callGroup]) {
+            let kind: String = r["target_kind"], qualifier: String = r["qualifier"] ?? "", direction: String = r["direction"] ?? ""
+            let asserted: String = r["asserted"], polarity: String = r["polarity"], states: Int = r["states"]
+            let sig = [kind, qualifier, direction, asserted, polarity, String(states)].joined(separator: "\u{1F}")
+            out[r["fact_id"], default: []].insert(sig)
+        }
+        return out
     }
 
     /// Writes one memory version's extraction for one call group, in the caller's transaction: earlier evidence of
-    /// that version and group is replaced, so a re-read is idempotent. Fails if the memory or a roster entry changed.
+    /// that version and group is replaced, so a re-read is idempotent, and one that changes nothing touches nothing.
+    /// Fails if the memory or a roster entry changed.
     @discardableResult
     static func apply(_ db: Database, memoryID: String, version: Int, extraction x: FactsExtraction, callGroup: String,
                       runID: String? = nil, registry: FactsRegistry = .bundled, userAliases: [String] = [],
@@ -399,6 +498,32 @@ enum FactStore {
             let now = try String.fetchOne(db, sql: "SELECT updated_at FROM entity WHERE id = ?", arguments: [id])
             if now != updated { throw ApplyError.rosterChanged }
         }
+        let preds = Set(registry.groupPredicates(callGroup))
+        let kinds = Set(preds.map { registry.kindOf($0) })
+        // What this version and group said before, to replace it and to tell what changed.
+        let oldSignatures = try signatures(db, memoryID: memoryID, version: version, callGroup: callGroup)
+        // A hand-over is decided when a memory is first read: a re-read keeps it (holders learned since don't make
+        // this one "new").
+        var oldHandover: [String: Bool] = [:]
+        for r in try Row.fetchAll(db, sql: """
+            SELECT fact_id, asserted FROM fact_evidence WHERE memory_id = ? AND memory_version = ? AND call_group = ?
+              AND target_kind = 'fact' AND polarity = 'affirmed'
+            """, arguments: [memoryID, version, callGroup]) {
+            oldHandover[r["fact_id"]] = object(r["asserted"])["handover"] as? Bool ?? false
+        }
+        let oldAliasRows = try Row.fetchAll(db, sql: """
+            SELECT ev.alias_id, a.entity_id FROM alias_evidence ev JOIN entity_alias a ON a.id = ev.alias_id JOIN entity e ON e.id = a.entity_id
+            WHERE ev.memory_id = ? AND ev.memory_version = ? AND e.kind IN (\(databaseQuestionMarks(count: kinds.count)))
+            """, arguments: StatementArguments([memoryID, String(version)] + Array(kinds)))
+        let oldAliases = Set(oldAliasRows.map { $0["alias_id"] as String })
+        let affected = try supportedBy(db, memoryIDs: [memoryID])
+        // The graph without this version's rows in this group (its names stay matchable, so a re-read finds them).
+        let before = try load(db, registry: registry, userAliases: userAliases,
+                              excluding: Exclusion(memoryID: memoryID, version: version, callGroup: callGroup)).graph
+        for r in oldAliasRows {
+            try db.execute(sql: "DELETE FROM alias_evidence WHERE alias_id = ? AND memory_id = ? AND memory_version = ?",
+                           arguments: [r["alias_id"] as String, memoryID, version])
+        }
         try db.execute(sql: "DELETE FROM fact_evidence WHERE memory_id = ? AND memory_version = ? AND call_group = ?",
                        arguments: [memoryID, version, callGroup])
         try db.execute(sql: "DELETE FROM mention_decision WHERE memory_id = ? AND memory_version = ? AND call_group = ? AND source = 'model'",
@@ -410,44 +535,26 @@ enum FactStore {
         let fm = FactsMemory(id: memoryID, text: text, written: writtenDay(created), source: source(m["source"]), trusted: trusted)
         let trust = trusted ? "trusted" : "untrusted"
 
-        let before = try load(db, registry: registry, userAliases: userAliases).graph
         var g = before
-        let preds = Set(registry.groupPredicates(callGroup))
         let phrases = g.rolePhrases(text, predicates: preds)
         g.apply(fm, phrases: phrases, people: x.people, facts: x.facts.filter { preds.contains($0.predicate) },
                 roles: x.roles, roster: Set(x.roster.keys))
-        var result = ApplyResult()
-        var touchedEntities = Set<String>(), touchedFacts = Set<String>()
+        var result = ApplyResult(mergeSuggestions: g.mergeSuggestions.count)
+        var touchedEntities = Set<String>(), newAliases = Set<String>()
+        var pendingDependencies: [(String, String, Set<String>)] = []
 
-        // Entities: new, merged away, changed.
+        // New entities, and names learned for unnamed ones.
         for e in g.orderedEntities where before.entities[e.id] == nil {
             try db.execute(sql: """
-                INSERT INTO entity (id, kind, name, group_predicate, group_label, group_count, deceased, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, arguments: [e.id, e.kind, e.name, e.group?.predicate, e.group?.cls, e.count, e.deceased, now, now])
+                INSERT INTO entity (id, kind, name, group_predicate, group_label, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, arguments: [e.id, e.kind, e.name, e.group?.predicate, e.group?.cls, now, now])
             result.entities += 1
         }
-        for (id, _) in before.entities where g.entities[id] == nil {
-            // merged by "also called": the survivor took its aliases and facts
-            guard let into = g.facts.first(where: { f in before.facts.contains { $0.entity == id && $0.predicate == f.predicate } })?.entity
-                    ?? g.entities.values.first(where: { $0.aliases.isSuperset(of: before.entities[id]!.aliases) })?.id else { continue }
-            try mergeEntity(db, from: id, into: into, now: now)
-            touchedEntities.insert(into)
-        }
         for e in g.entities.values {
-            guard let old = before.entities[e.id] else { continue }
-            if old.name == nil, let n = e.name {
-                try db.execute(sql: "UPDATE entity SET name = ?, tombstone = 0, updated_at = ? WHERE id = ?", arguments: [n, now, e.id])
-                touchedEntities.insert(e.id)
-            }
-            if !old.deceased, e.deceased {
-                try db.execute(sql: "UPDATE entity SET deceased = 1, updated_at = ? WHERE id = ?", arguments: [now, e.id])
-                touchedEntities.insert(e.id)
-            }
-            if old.count != e.count {
-                try db.execute(sql: "UPDATE entity SET group_count = ?, updated_at = ? WHERE id = ?", arguments: [e.count, now, e.id])
-                touchedEntities.insert(e.id)
-            }
+            guard let old = before.entities[e.id], old.name == nil, let n = e.name else { continue }
+            try db.execute(sql: "UPDATE entity SET name = ?, tombstone = 0 WHERE id = ?", arguments: [n, e.id])
+            touchedEntities.insert(e.id)
         }
 
         // Aliases with this memory's evidence: names the memory used, and non-person objects' names.
@@ -468,8 +575,12 @@ enum FactStore {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, arguments: [aid, memoryID, version, scalarOffset(text, utf16: span.start), scalarOffset(text, utf16: span.end),
                                  quote, sensitivity, trust, runID])
-            try db.execute(sql: "UPDATE entity SET tombstone = 0 WHERE id = ?", arguments: [entity])
-            touchedEntities.insert(entity)
+            if try Int.fetchOne(db, sql: "SELECT tombstone FROM entity WHERE id = ?", arguments: [entity]) == 1 {
+                try db.execute(sql: "UPDATE entity SET tombstone = 0 WHERE id = ?", arguments: [entity])
+                touchedEntities.insert(entity)
+            }
+            newAliases.insert(aid)
+            if !oldAliases.contains(aid) { touchedEntities.insert(entity) }
         }
         for p in x.people {
             if let link = g.names[FactsGraph.NameKey(memoryID: memoryID, surface: p.name)], let e = link.entity {
@@ -477,16 +588,18 @@ enum FactStore {
             }
         }
 
-        // Facts: this memory's assertions, and the denials it made.
+        // Facts: only the assertions this apply added, and the denials it made.
+        var newFacts = Set<String>()
         func factID(_ pred: String, _ entity: String) throws -> String {
             if let id = try String.fetchOne(db, sql: "SELECT id FROM fact WHERE predicate = ? AND entity_id = ?", arguments: [pred, entity]) {
-                try db.execute(sql: "UPDATE fact SET tombstone = 0, updated_at = ? WHERE id = ?", arguments: [now, id])
+                try db.execute(sql: "UPDATE fact SET tombstone = 0 WHERE id = ?", arguments: [id])
                 return id
             }
             let id = UUID().db
             try db.execute(sql: "INSERT INTO fact (id, predicate, entity_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
                            arguments: [id, pred, entity, now, now])
             result.facts += 1
+            newFacts.insert(id)
             return id
         }
         func evidenceRow(_ fid: String, kind: String, qualifier: String? = nil, direction: String? = nil,
@@ -500,26 +613,29 @@ enum FactStore {
                                  scalarOffset(text, utf16: span.start), scalarOffset(text, utf16: span.end), quote, json(asserted),
                                  states, polarity, sensitivity, trust, callGroup, runID])
             result.evidence += 1
-            touchedFacts.insert(fid)
         }
-        for (i, f) in g.facts.enumerated() {
-            let mine = f.assertions.filter { $0.memoryID == memoryID }
+        for (i, f) in g.facts.enumerated() where preds.contains(f.predicate) {
+            let oldCount = i < before.facts.count ? before.facts[i].assertions.count : 0
+            let added = Array(f.assertions.dropFirst(oldCount))
             let newlyNegated = i < before.facts.count && !before.facts[i].negated && f.negated
-            guard !mine.isEmpty || newlyNegated else { continue }
-            if g.registry.kindOf(f.predicate) != "person", let e = g.entities[f.entity] {
+            guard !added.isEmpty || newlyNegated else { continue }
+            if let e = g.entities[f.entity], e.kind != "person" {
                 for r in x.facts where r.predicate == f.predicate
                     && g.byName(g.placeholder(f.predicate, r.name) ?? r.name, kind: e.kind).contains(where: { $0.id == f.entity }) {
                     try addAlias(f.entity, r.name, quote: r.quote)
-                    if let also = r.alsoCalled { try addAlias(f.entity, also, quote: r.quote) }
+                    if let also = r.alsoCalled, g.entities[f.entity]?.aliases.contains(also) == true {
+                        try addAlias(f.entity, also, quote: r.quote)
+                    }
                 }
             }
             let fid = try factID(f.predicate, f.entity)
-            for a in mine {
+            let died = g.entities[f.entity]?.deceased == true && before.entities[f.entity]?.deceased != true
+            for a in added {
                 var asserted: [String: Any] = ["status": a.status.rawValue]
                 if let v = a.start { asserted["start"] = v }
                 if let v = a.end { asserted["end"] = v }
                 if let v = a.time { asserted["time"] = v }
-                if a.handover { asserted["handover"] = true }
+                if oldHandover[fid] ?? a.handover { asserted["handover"] = true }
                 if f.only { asserted["only"] = true }
                 try evidenceRow(fid, kind: "fact", asserted: asserted, states: a.states, polarity: "affirmed", quote: a.quote)
                 if let l = a.label {
@@ -528,6 +644,10 @@ enum FactStore {
                 }
                 for (q, v) in a.qualifiers.sorted(by: { $0.key < $1.key }) {
                     try evidenceRow(fid, kind: "qualifier", qualifier: q, asserted: ["value": v], states: a.states,
+                                    polarity: "affirmed", quote: a.quote)
+                }
+                if died {
+                    try evidenceRow(fid, kind: "qualifier", qualifier: "deceased", asserted: ["value": "true"], states: a.states,
                                     polarity: "affirmed", quote: a.quote)
                 }
                 if let v = a.precededBy {
@@ -544,6 +664,32 @@ enum FactStore {
                 try evidenceRow(fid, kind: "fact", asserted: [:], states: true, polarity: "denied", quote: quote)
             }
         }
+        // Role groups' counts this memory states, as evidence on the group's fact (so they go with their memory).
+        var counted: [String: String] = [:]          // group id → quote
+        for r in x.facts where preds.contains(r.predicate) {
+            let cls = g.labelClass(r.predicate, r.label)
+            let gid: String? = {
+                if let e = g.entities[r.entity], e.group != nil, e.name == nil { return r.entity }
+                if r.entity == "none" || r.entity == "group" || r.count != nil || r.only {
+                    return g.groups[FactsEntity.RoleGroup(predicate: r.predicate, cls: cls)]
+                }
+                return nil
+            }()
+            if let gid, g.entities[gid]?.count != nil { counted[gid] = r.quote }
+        }
+        for (gid, quote) in counted.sorted(by: { $0.key < $1.key }) {
+            guard let e = g.entities[gid], let group = e.group, let n = e.count else { continue }
+            let fid = try factID(group.predicate, gid)
+            try evidenceRow(fid, kind: "fact", asserted: ["count": n], states: true, polarity: "affirmed", quote: quote)
+        }
+
+        // What changed: facts whose evidence from this version and group differs, and their entities.
+        let newSignatures = try signatures(db, memoryID: memoryID, version: version, callGroup: callGroup)
+        var touchedFacts = newFacts
+        for fid in Set(oldSignatures.keys).union(newSignatures.keys) where oldSignatures[fid] != newSignatures[fid] {
+            touchedFacts.insert(fid)
+        }
+        for r in oldAliasRows where !newAliases.contains(r["alias_id"] as String) { touchedEntities.insert(r["entity_id"]) }
 
         // The model's decisions, with what they depend on.
         for (key, d) in g.decisions where key.memoryID == memoryID && before.decisions[key] == nil {
@@ -556,57 +702,66 @@ enum FactStore {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'model', ?, ?, ?)
                 """, arguments: [did, memoryID, version, ph.surface, ph.surface, scalarOffset(text, utf16: ph.start),
                                  scalarOffset(text, utf16: ph.end), outcome, d.entity, d.basis.rawValue, callGroup, runID, now])
+            result.decisions += 1
+            pendingDependencies.append((did, ph.predicate, Set(x.roster.keys).union(d.entity.map { [$0] } ?? [])))
+        }
+
+        try touch(db, facts: touchedFacts, entities: touchedEntities, except: memoryID, now: now)
+        // What this version no longer supports goes (or becomes a tombstone).
+        if !affected.facts.isEmpty || !affected.entities.isEmpty { try collectGarbage(db, now: now) }
+        // Dependencies are recorded after the touch, at the versions this apply leaves.
+        for (did, predicate, entities) in pendingDependencies {
             try db.execute(sql: "INSERT INTO decision_dependency (decision_id, kind, ref_id, ref_version) VALUES (?, 'memory', ?, ?)",
                            arguments: [did, memoryID, String(version)])
-            let entities = Set(x.roster.keys).union(d.entity.map { [$0] } ?? [])
             for e in entities {
                 let v = try String.fetchOne(db, sql: "SELECT updated_at FROM entity WHERE id = ?", arguments: [e]) ?? ""
                 try db.execute(sql: "INSERT OR IGNORE INTO decision_dependency (decision_id, kind, ref_id, ref_version) VALUES (?, 'entity', ?, ?)",
                                arguments: [did, e, v])
             }
-            for f in try Row.fetchAll(db, sql: "SELECT id, updated_at FROM fact WHERE predicate = ?", arguments: [ph.predicate]) {
+            for f in try Row.fetchAll(db, sql: "SELECT id, updated_at FROM fact WHERE predicate = ?", arguments: [predicate]) {
                 try db.execute(sql: "INSERT OR IGNORE INTO decision_dependency (decision_id, kind, ref_id, ref_version) VALUES (?, 'fact', ?, ?)",
                                arguments: [did, f["id"] as String, f["updated_at"] as String])
             }
-            result.decisions += 1
+            try db.execute(sql: "INSERT OR IGNORE INTO decision_dependency (decision_id, kind, ref_id, ref_version) VALUES (?, 'fact', ?, ?)",
+                           arguments: [did, predicateRef(predicate), try predicateVersion(db, predicate)])
         }
-
-        for e in touchedEntities { try db.execute(sql: "UPDATE entity SET updated_at = ? WHERE id = ?", arguments: [now, e]) }
-        try invalidateDependents(db, entities: touchedEntities, facts: touchedFacts, except: memoryID, now: now)
-        if result != ApplyResult() || !touchedEntities.isEmpty { try bumpRevision(db) }
+        if result.evidence > 0 || result.decisions > 0 || !touchedFacts.isEmpty || !touchedEntities.isEmpty { try bumpRevision(db) }
         return result
     }
 
-    /// Moves an entity's aliases and facts into another, then deletes it.
-    static func mergeEntity(_ db: Database, from: String, into: String, now: Date) throws {
-        try db.execute(sql: "UPDATE entity_alias SET entity_id = ? WHERE entity_id = ?", arguments: [into, from])
-        for f in try Row.fetchAll(db, sql: "SELECT id, predicate FROM fact WHERE entity_id = ?", arguments: [from]) {
-            let fid: String = f["id"], pred: String = f["predicate"]
-            if let keep = try String.fetchOne(db, sql: "SELECT id FROM fact WHERE predicate = ? AND entity_id = ?", arguments: [pred, into]) {
-                try db.execute(sql: "UPDATE fact_evidence SET fact_id = ? WHERE fact_id = ?", arguments: [keep, fid])
-                try db.execute(sql: "UPDATE fact_evidence SET other_fact_id = ? WHERE other_fact_id = ?", arguments: [keep, fid])
-                try db.execute(sql: "DELETE FROM fact WHERE id = ?", arguments: [fid])
-            } else {
-                try db.execute(sql: "UPDATE fact SET entity_id = ?, updated_at = ? WHERE id = ?", arguments: [into, now, fid])
-            }
+    /// Marks facts and entities changed (a new `updated_at`), and the model decisions that depended on them stale
+    /// (memory processing §11.4): their memories are queued again (13a.2).
+    static func touch(_ db: Database, facts: Set<String>, entities: Set<String>, except memoryID: String? = nil, now: Date) throws {
+        var predicates = Set<String>()
+        for f in facts {
+            try db.execute(sql: "UPDATE fact SET updated_at = ? WHERE id = ?", arguments: [now, f])
+            if let p = try String.fetchOne(db, sql: "SELECT predicate FROM fact WHERE id = ?", arguments: [f]) { predicates.insert(p) }
         }
-        try db.execute(sql: "UPDATE mention_decision SET entity_id = ? WHERE entity_id = ?", arguments: [into, from])
-        try db.execute(sql: "DELETE FROM entity WHERE id = ?", arguments: [from])
+        for e in entities { try db.execute(sql: "UPDATE entity SET updated_at = ? WHERE id = ?", arguments: [now, e]) }
+        var refs = facts.map { ("fact", $0) } + entities.map { ("entity", $0) }
+        refs += predicates.map { ("fact", predicateRef($0)) }
+        for (kind, id) in refs {
+            let current = try currentVersion(db, kind: kind, ref: id)
+            try db.execute(sql: """
+                UPDATE mention_decision SET invalidated_at = ?
+                WHERE invalidated_at IS NULL AND source = 'model' AND memory_id IS NOT ?
+                  AND id IN (SELECT decision_id FROM decision_dependency WHERE kind = ? AND ref_id = ? AND ref_version IS NOT ?)
+                """, arguments: [now, memoryID, kind, id, current])
+        }
     }
 
-    /// Marks decisions stale when a fact or entity they depend on changed (memory processing §11.4): the memory is
-    /// queued again (13a.2).
-    static func invalidateDependents(_ db: Database, entities: Set<String>, facts: Set<String>, except memoryID: String? = nil,
-                                     now: Date) throws {
-        for (kind, ids) in [("entity", entities), ("fact", facts)] {
-            for id in ids {
-                let current = try String.fetchOne(db, sql: "SELECT updated_at FROM \(kind) WHERE id = ?", arguments: [id])
-                try db.execute(sql: """
-                    UPDATE mention_decision SET invalidated_at = ?
-                    WHERE invalidated_at IS NULL AND source = 'model' AND memory_id IS NOT ?
-                      AND id IN (SELECT decision_id FROM decision_dependency WHERE kind = ? AND ref_id = ? AND ref_version IS NOT ?)
-                    """, arguments: [now, memoryID, kind, id, current])
-            }
+    /// The facts and entities a memory's evidence supports (before it's removed, to touch them after).
+    static func supportedBy(_ db: Database, memoryIDs: [String]) throws -> (facts: Set<String>, entities: Set<String>) {
+        guard !memoryIDs.isEmpty else { return ([], []) }
+        let marks = databaseQuestionMarks(count: memoryIDs.count)
+        let args = StatementArguments(memoryIDs)
+        let facts = Set(try String.fetchAll(db, sql: "SELECT DISTINCT fact_id FROM fact_evidence WHERE memory_id IN (\(marks))", arguments: args))
+        var entities = Set(try String.fetchAll(db, sql: """
+            SELECT DISTINCT a.entity_id FROM alias_evidence ev JOIN entity_alias a ON a.id = ev.alias_id WHERE ev.memory_id IN (\(marks))
+            """, arguments: args))
+        for f in facts {
+            if let e = try String.fetchOne(db, sql: "SELECT entity_id FROM fact WHERE id = ?", arguments: [f]) { entities.insert(e) }
         }
+        return (facts, entities)
     }
 }

@@ -24,7 +24,7 @@ extension FactsGraph {
     private func tailOK(_ q: String, _ pos: Int) -> Bool {
         let end = FactsText.first(Self.tailStop, in: q, from: pos)?.start ?? FactsText.length(q)
         let lang = registry.language
-        let allowed = Set((lang.anchorTailWords + lang.episodeFirst + lang.episodeLast).map { FactsText.fold($0) })
+        let allowed = Set((lang.anchorTailWords + lang.episodeFirst + lang.episodeLast).map { FactsText.fold($0.replacingOccurrences(of: "*", with: "")) })
         return FactsText.matches(Self.wordRE, in: q, from: pos, to: end).allSatisfy { allowed.contains($0.group(0)!) }
     }
 

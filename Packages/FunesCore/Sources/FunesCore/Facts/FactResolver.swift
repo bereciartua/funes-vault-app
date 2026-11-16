@@ -86,7 +86,7 @@ extension FactsGraph {
                        ?? FactsText.first(cueBefore, in: text, from: a, to: s))?.group(1)
             }
             let paired = registry.kindOf(meaning.predicate) == "person" ? pairedName(text, s, e) : nil
-            let former = meaning.status == "former" || mt.group(4) != nil || mods.contains { registry.formerCues.contains($0) }
+            let former = meaning.status == "former" || !(mt.group(4) ?? "").isEmpty || mods.contains { registry.formerCues.contains($0) }
             let current = mods.contains { registry.currentCues.contains($0) }
             out.append(RolePhrase(start: s, end: e, surface: ns.substring(with: mt.range), word: word,
                                   predicate: meaning.predicate, cls: meaning.cls, generic: meaning.generic, mods: mods,
@@ -189,7 +189,11 @@ extension FactsGraph {
             holdEps[r.entity] = e
             out.append((ent, r))
         }
-        if let d, out.contains(where: { holdEps[$0.entity.id]!.certainlyHolds(d) }) {
+        // Only trusted evidence may say someone certainly held it, and so rule other holders out.
+        if let d, out.contains(where: { h in
+            let e = holdEps[h.entity.id]!
+            return e.certainlyHolds(d) && e.trusted && e.startTrusted && (e.end == nil || e.endTrusted)
+        }) {
             // someone certainly held it then: a holder whose stated start comes later isn't a candidate
             out = out.filter { h in
                 let e = holdEps[h.entity.id]!
@@ -211,18 +215,24 @@ extension FactsGraph {
            !(dec.entity.map { rejections[key]?.contains($0) ?? false } ?? false) {     // a correction beats a decision
             return dec.basis == .someoneElse ? (nil, .someoneElse) : (dec.entity, dec.basis)
         }
-        if ph.plural { return (groupFor(ph.predicate, nil), .group) }
+        let rejected = rejections[key] ?? []
+        if ph.plural {
+            let g = groupFor(ph.predicate, nil)
+            return rejected.contains(g) ? (nil, .candidates) : (g, .group)
+        }
         if ph.mods.contains(where: { registry.language.dateCueWords.contains($0) }), registry.uses(ph.predicate, "timeline") {
             if mem.source == .import { return (nil, .candidates) }   // an imported note's "previous" has no date
-            if let got = previousAsOf(ph.predicate, written: mem.written) {
-                return (got, mem.trusted ? .inferred : .untrusted)   // a link is as weak as the weakest step in it
+            if let got = previousLink(ph.predicate, written: mem.written) {
+                if rejected.contains(got.entity) { return (nil, .candidates) }      // "Not <name>" holds on every path
+                return (got.entity, mem.trusted && got.trusted ? .inferred : .untrusted)   // as weak as its weakest step
             }
             return (nil, .candidates)
         }
         let (d, written) = asOf(mem, ph)
-        let h = holders(ph, asOf: d, written: written, rejected: rejections[key] ?? [])
+        let h = holders(ph, asOf: d, written: written, rejected: rejected)
         guard let (p, r) = h.holders.first else {
-            return (groupFor(ph.predicate, ph.generic ? nil : ph.cls), .group)
+            let g = groupFor(ph.predicate, ph.generic ? nil : ph.cls)
+            return rejected.contains(g) ? (nil, .candidates) : (g, .group)
         }
         if h.holders.count + h.extra > 1 { return (nil, .candidates) }
         let e = h.episodes[p.id]

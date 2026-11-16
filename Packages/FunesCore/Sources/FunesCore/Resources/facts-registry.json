@@ -99,7 +99,7 @@
       "volver",
       "volvi",
       "segunda",
-      "regres"
+      "regres*"
     ],
     "pair_before": [
       "is",
@@ -399,7 +399,13 @@
       "corp",
       "co"
     ],
-    "user_placeholder": "the user"
+    "user_placeholder": "the user",
+    "ordinal_suffixes": [
+      "st",
+      "nd",
+      "rd",
+      "th"
+    ]
   },
   "kinds": {
     "person": {
