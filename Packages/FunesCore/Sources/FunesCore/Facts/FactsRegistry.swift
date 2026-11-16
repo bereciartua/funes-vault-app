@@ -29,7 +29,7 @@ public struct FactsRegistry: Sendable, Decodable {
         public let formerPrefixes: [String]
         public let formerWords: [String]
         public let anchorTailWords: [String]
-        public let anchorLeadWords: [String]
+        public let anchorDeterminers: [String]
         public let timePrepositions: [String]
         public let dayPrepositions: [String]
         public let returnCues: [String]

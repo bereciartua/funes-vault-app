@@ -28,6 +28,13 @@ extension FactsGraph {
         return FactsText.matches(Self.wordRE, in: q, from: pos, to: end).allSatisfy { allowed.contains($0.group(0)!) }
     }
 
+    /// The operator leads to the anchor itself, not to another noun phrase: a determiner between them ("my title before
+    /// the promotion at Initech", "before the promotion in 2020") means the question is about something else.
+    private func leadOK(_ q: String, _ from: Int, _ to: Int) -> Bool {
+        let determiners = Set(registry.language.anchorDeterminers.map { FactsText.fold($0) })
+        return !FactsText.matches(Self.wordRE, in: q, from: from, to: to).contains { determiners.contains($0.group(0)!) }
+    }
+
     /// Whether a known person's name appears in folded text.
     private func personNamed(_ q: String) -> Bool {
         let stop = Set(registry.language.stopNames)
@@ -119,13 +126,7 @@ extension FactsGraph {
                         let trustedHits = entityMatches(pred, n, onlyTrusted: true)
                         let hits = trustedHits.isEmpty
                             ? entityMatches(pred, n).filter { entities[$0]?.trustedAliases.isEmpty ?? true } : trustedHits
-                        // The operator leads straight to the anchor: only words like "joining", "leaving" between ("my title
-                        // before the promotion at Initech" isn't about the job before Initech).
-                        let lead = Set(lang.anchorLeadWords.map { FactsText.fold($0) })
-                        let leadOK = prior.max(by: later).map { op in
-                            FactsText.matches(Self.wordRE, in: q, from: op.end, to: m.start).allSatisfy { lead.contains($0.group(0)!) }
-                        } ?? false
-                        if let op = prior.max(by: later), let hit = hits.first, tailOK(q, end), leadOK {
+                        if let op = prior.max(by: later), let hit = hits.first, tailOK(q, end), leadOK(q, op.end, m.start) {
                             let rest = FactsText.substring(q, 0, m.start) + " " + FactsText.substring(q, end, FactsText.length(q))
                             if personNamed(rest) { return nil }   // "Who was Ada dating before Bea?": someone else
                             // A name two entities share doesn't say which: no anchor, so the answer is told, not guessed.
@@ -135,7 +136,8 @@ extension FactsGraph {
                 }
                 for m in FactsText.matches(Self.yearRE, in: q) {
                     let prior = ops.filter { $0.end <= m.start }
-                    if let op = prior.max(by: later), tailOK(q, m.end), let d = parser.dateEnding(at: m.end, in: q) {
+                    if let op = prior.max(by: later), tailOK(q, m.end), leadOK(q, op.end, m.start),
+                       let d = parser.dateEnding(at: m.end, in: q) {
                         return TimelineIntent(predicate: pred, op: op.name, anchor: .date(d))
                     }
                 }

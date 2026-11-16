@@ -575,7 +575,7 @@ For a predicate with the *timeline* use, from a query intent (§11.7), with no m
   - a predicate's query cue or lexicon word ("job", "worked", "leaving", "trabajo");
   - an operator (before, after, previous, current, a year or span);
   - for before / after, a named anchor that holds a fact of the same predicate, or a date.
-- **The anchor ends the operator's phrase.** What follows it up to punctuation may only be words like "the first time"; "before the Acme demo" isn't a timeline query. The operator is the nearest one before the anchor, and only words like "joining" or "leaving" may sit between them: "my title before the promotion at Acme" isn't about the job before Acme.
+- **The anchor ends the operator's phrase.** What follows it up to punctuation may only be words like "the first time"; "before the Acme demo" isn't a timeline query. The operator is the nearest one before the anchor, and no determiner may sit between them (the registry's list): "my title before the promotion at Acme" and "before the promotion in 2020" aren't about the job before Acme or 2020; "before I was at Acme" is.
 - **Someone else's question isn't the user's timeline:**
   - a known person named outside the anchor;
   - a third-person pronoun;

@@ -396,7 +396,8 @@ enum FactStore {
             switch (kind, field) {
             case ("entity", "name"):
                 if let n = value as? String, g.entities[target] != nil {
-                    g.entities[target]?.name = n
+                    // A merged-away entity's name is one more alias of the survivor, not its new name.
+                    if target == (o["target_id"] as String) { g.entities[target]?.name = n }
                     g.addAlias(target, n, trusted: true)
                 }
             case ("entity", "not_same"):
@@ -857,10 +858,19 @@ enum FactStore {
         guard !memoryIDs.isEmpty else { return ([], []) }
         let marks = databaseQuestionMarks(count: memoryIDs.count)
         let args = StatementArguments(memoryIDs)
-        let facts = Set(try String.fetchAll(db, sql: "SELECT DISTINCT fact_id FROM fact_evidence WHERE memory_id IN (\(marks))", arguments: args))
+        var facts = Set(try String.fetchAll(db, sql: "SELECT DISTINCT fact_id FROM fact_evidence WHERE memory_id IN (\(marks))", arguments: args))
         var entities = Set(try String.fetchAll(db, sql: """
             SELECT DISTINCT a.entity_id FROM alias_evidence ev JOIN entity_alias a ON a.id = ev.alias_id WHERE ev.memory_id IN (\(marks))
             """, arguments: args))
+        // Corrections made from these memories (their quoted span may go with them) change what they correct.
+        for r in try Row.fetchAll(db, sql: "SELECT target_kind, target_id FROM manual_override WHERE memory_id IN (\(marks))", arguments: args) {
+            let kind: String = r["target_kind"], id: String = r["target_id"]
+            if kind == "entity" || kind == "alias" {
+                entities.insert(id)
+            } else if try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM fact WHERE id = ?)", arguments: [id]) == true {
+                facts.insert(id)
+            }
+        }
         for f in facts {
             if let e = try String.fetchOne(db, sql: "SELECT entity_id FROM fact WHERE id = ?", arguments: [f]) { entities.insert(e) }
         }
