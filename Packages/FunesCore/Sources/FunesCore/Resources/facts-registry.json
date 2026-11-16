@@ -227,9 +227,7 @@
       "hasta",
       "from",
       "between",
-      "de",
-      "on",
-      "el"
+      "de"
     ],
     "owner_words": [
       "our",
@@ -407,6 +405,25 @@
       "nd",
       "rd",
       "th"
+    ],
+    "day_prepositions": [
+      "on",
+      "el"
+    ],
+    "return_cues": [
+      "rejoined",
+      "rejoin",
+      "rejoining",
+      "returned to",
+      "return to",
+      "went back to",
+      "came back to",
+      "back at",
+      "volví a",
+      "volvi a",
+      "regresé a",
+      "regrese a",
+      "de vuelta en"
     ]
   },
   "kinds": {

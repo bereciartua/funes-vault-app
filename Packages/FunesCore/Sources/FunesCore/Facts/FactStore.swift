@@ -412,6 +412,8 @@ enum FactStore {
                         g.facts[i].entity = into
                     }
                     g.facts.removeAll { $0.entity == into && $0.negated && $0.assertions.isEmpty }
+                    // The merged fact's label from all its evidence, the user's first.
+                    for j in g.facts.indices where g.facts[j].entity == into { g.refreshLabel(j) }
                     for (fid, key) in factKeys where key.entity == target {
                         factKeys[fid] = (key.predicate, into)
                         factIDs[Loaded.key(key.predicate, into)] = factIDs[Loaded.key(key.predicate, into)] ?? fid

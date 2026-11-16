@@ -74,9 +74,11 @@ extension FactsGraph {
         return (DateRange(lo: lo, hi: hi, precision: narrow.precision), false, !tr.isEmpty)
     }
 
+    /// The statement says the fact resumed ("rejoined Acme"): the registry's return cues, not the words a question uses
+    /// to pick an episode ("again", "second").
     func isRejoin(_ a: FactAssertion) -> Bool {
         let q = FactsText.fold(a.quote)
-        return registry.language.episodeLast.contains { FactsText.cue(q, $0) }
+        return registry.language.returnCues.contains { FactsText.cue(q, $0) }
     }
 
     private final class Building {

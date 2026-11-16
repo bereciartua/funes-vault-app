@@ -90,7 +90,7 @@ struct DateParser: Sendable {
             return monthRange(y, mo)
         }
         var mon: String?, dd: String?, yy: String?
-        if let m = FactsText.first(FactsText.regex("\\b(\\d{1,2})\\s+(?:(?:" + j + ")\\s+)?(" + monthAlternation
+        if let m = FactsText.first(FactsText.regex("\\b(\\d{1,2})(?:" + ordinals + ")?\\s+(?:(?:" + j + ")\\s+)?(" + monthAlternation
                                                    + ")\\.?\\s+(?:(?:" + j + ")\\s+)?((?:19|20)\\d{2})\\b"), in: t) {
             dd = m.group(1); mon = m.group(2); yy = m.group(3)
         } else if let m = FactsText.first(FactsText.regex("\\b(" + monthAlternation
@@ -116,7 +116,7 @@ struct DateParser: Sendable {
     func dateEnding(at end: Int, in q: String) -> DateRange? {
         let j = joiners.map(FactsText.escape).joined(separator: "|")
         let prefix = FactsText.substring(q, 0, end)
-        let re = FactsText.regex("(?:(?:\\d{1,2}\\s+(?:(?:" + j + ")\\s+)?)?(?:" + monthAlternation
+        let re = FactsText.regex("(?:(?:\\d{1,2}(?:" + ordinals + ")?\\s+(?:(?:" + j + ")\\s+)?)?(?:" + monthAlternation
                                  + ")\\.?,?\\s+(?:\\d{1,2}(?:" + ordinals + ")?,?\\s+)?(?:(?:" + j + ")\\s+)?)?(?:19|20)\\d{2}$")
         if let m = FactsText.first(re, in: prefix) { return parse(m.group(0)) }
         return parse(FactsText.substring(q, end - 4, end))

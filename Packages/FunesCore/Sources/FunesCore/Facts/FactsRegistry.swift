@@ -30,6 +30,8 @@ public struct FactsRegistry: Sendable, Decodable {
         public let formerWords: [String]
         public let anchorTailWords: [String]
         public let timePrepositions: [String]
+        public let dayPrepositions: [String]
+        public let returnCues: [String]
         public let timeNouns: [String]
         public let thirdPerson: [String]
         public let firstPerson: [String]

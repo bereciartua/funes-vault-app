@@ -59,10 +59,24 @@ extension FactsGraph {
         // A date as the parser reads it: a year, a month and year, or a day ("15 March 2019", "March 15, 2019",
         // "2019-03-15").
         let ords = lang.ordinalSuffixes.map(FactsText.escape).joined(separator: "|")
-        let dateRE = "(?:" + preps + ")\\s+((?:19|20)\\d{2}-\\d{1,2}-\\d{1,2}|(?:(?:\\d{1,2}\\s+(?:(?:" + joiners + ")\\s+)?)?(?:"
-            + parser.monthPattern + ")\\.?,?\\s+(?:\\d{1,2}(?:" + ords + ")?,?\\s+)?(?:(?:" + joiners + ")\\s+)?)?(?:19|20)\\d{2})"
+        let month = "(?:" + parser.monthPattern + ")\\.?"
+        let day = "\\d{1,2}(?:" + ords + ")?"
+        // Day forms: "15 March 2019", "15th March 2019", "March 15, 2019", "2019-03-15".
+        let dayDate = "(?:19|20)\\d{2}-\\d{1,2}-\\d{1,2}|" + day + "\\s+(?:(?:" + joiners + ")\\s+)?" + month + "\\s+(?:(?:" + joiners
+            + ")\\s+)?(?:19|20)\\d{2}|" + month + ",?\\s+" + day + ",?\\s+(?:(?:" + joiners + ")\\s+)?(?:19|20)\\d{2}"
+        // Any precision after a time preposition ("in 2019", "in March 2019"); only a day after a day preposition
+        // ("on 15 March 2019"; "on 2019 numbers" isn't a date).
+        let anyDate = dayDate + "|(?:" + month + ",?\\s+(?:(?:" + joiners + ")\\s+)?)?(?:19|20)\\d{2}"
+        let dayPreps = lang.dayPrepositions.map(FactsText.escape).joined(separator: "|")
+        let dateRE = "(?:(?:" + preps + ")\\s+(" + anyDate + ")" + (dayPreps.isEmpty ? "" : "|(?:" + dayPreps + ")\\s+(" + dayDate + ")") + ")"
         let cueAfter = FactsText.regex("\\s+" + dateRE + "\\b", caseInsensitive: true)
         let cueBefore = FactsText.regex("\\b" + dateRE + ",?\\s*$", caseInsensitive: true)
+        let abbrevPeriods = Set(FactsText.matches(FactsText.regex("\\b(?:" + parser.monthPattern + ")(\\.)", caseInsensitive: true), in: text)
+            .map { $0.groups[0].location })
+        let sentenceBreaks = (0..<ns.length).filter { i in
+            let c = ns.character(at: i)
+            return (c == 46 && !abbrevPeriods.contains(i)) || c == 33 || c == 63 || c == 10   // . ! ? newline
+        }
         var out: [RolePhrase] = []
         for mt in FactsText.matches(rolePattern(), in: text) {
             let s = mt.start, e = mt.end
@@ -78,15 +92,15 @@ extension FactsGraph {
             if let predicates, !predicates.contains(meaning.predicate) { continue }
             let mods = mt.group(2)!.lowercased().split(whereSeparator: \.isWhitespace).map(String.init)
             let free = mt.group(3)!.trimmingCharacters(in: .whitespaces).lowercased()
-            let a = [".", "!", "?", "\n"].map { ns.range(of: $0, options: .backwards, range: NSRange(location: 0, length: s)).location }
-                .filter { $0 != NSNotFound }.max().map { $0 + 1 } ?? 0
-            let b = [".", "!", "?", "\n"].map { ns.range(of: $0, range: NSRange(location: e, length: ns.length - e)).location }
-                .filter { $0 != NSNotFound }.min() ?? ns.length
+            // Sentence bounds, where a month abbreviation's period ("Mar. 2019") doesn't end a sentence.
+            let bounds = sentenceBreaks
+            let a = (bounds.filter { $0 < s }.max().map { $0 + 1 }) ?? 0
+            let b = bounds.filter { $0 >= e }.min() ?? ns.length
             var cue: String?
             if !preps.isEmpty {
                 // a time cue only next to the phrase: "my boss in 2019", "In 2019, my boss" (not "…sales dropped in 2019")
-                cue = (FactsText.matchAt(cueAfter, in: text, from: e, to: max(e, b))
-                       ?? FactsText.first(cueBefore, in: text, from: a, to: s))?.group(1)
+                let m = FactsText.matchAt(cueAfter, in: text, from: e, to: max(e, b)) ?? FactsText.first(cueBefore, in: text, from: a, to: s)
+                cue = m?.group(1) ?? m?.group(2)
             }
             let paired = registry.kindOf(meaning.predicate) == "person" ? pairedName(text, s, e) : nil
             let former = meaning.status == "former" || !(mt.group(4) ?? "").isEmpty || mods.contains { registry.formerCues.contains($0) }
