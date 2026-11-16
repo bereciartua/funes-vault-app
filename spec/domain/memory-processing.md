@@ -555,8 +555,8 @@ For a predicate with the *timeline* use, from a query intent (§11.7), with no m
 - **Date anchors:** the answer is the episode that held just before or after the date, if that's certain. Otherwise the ordering rule applies, but only if nothing else may have held at that date.
 - **Other operators:**
   - **"In 2021"** (or a span, "from 2015 to 2019") means the episodes covering it; every possible one must be certain;
-  - **"current"** means every ongoing episode, or none if an uncertain one exists;
-  - **"previous"** means before the one current episode, again none if an uncertain one exists.
+  - **"current"** means every ongoing episode, or none if one may still hold without being ongoing (an uncertain episode, or an end that's a conflict nothing bounds);
+  - **"previous"** means before the one current episode, again none in that case.
 - **Told, never guessed.** The answer is plain search plus a note ("Funes can't tell which job came before Acme"), with no bridges, when there is:
   - a possible tie at the written precision;
   - conflicting dates, or contradictory or cyclic order edges (those edges are dropped first, and the dates may still decide);
@@ -575,7 +575,7 @@ For a predicate with the *timeline* use, from a query intent (§11.7), with no m
   - a predicate's query cue or lexicon word ("job", "worked", "leaving", "trabajo");
   - an operator (before, after, previous, current, a year or span);
   - for before / after, a named anchor that holds a fact of the same predicate, or a date.
-- **The anchor ends the operator's phrase.** What follows it up to punctuation may only be words like "the first time"; "before the Acme demo" isn't a timeline query. The operator is the nearest one before the anchor.
+- **The anchor ends the operator's phrase.** What follows it up to punctuation may only be words like "the first time"; "before the Acme demo" isn't a timeline query. The operator is the nearest one before the anchor, and only words like "joining" or "leaving" may sit between them: "my title before the promotion at Acme" isn't about the job before Acme.
 - **Someone else's question isn't the user's timeline:**
   - a known person named outside the anchor;
   - a third-person pronoun;

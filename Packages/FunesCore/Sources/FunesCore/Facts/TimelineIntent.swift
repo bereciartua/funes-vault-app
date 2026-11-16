@@ -119,7 +119,13 @@ extension FactsGraph {
                         let trustedHits = entityMatches(pred, n, onlyTrusted: true)
                         let hits = trustedHits.isEmpty
                             ? entityMatches(pred, n).filter { entities[$0]?.trustedAliases.isEmpty ?? true } : trustedHits
-                        if let op = prior.max(by: later), let hit = hits.first, tailOK(q, end) {
+                        // The operator leads straight to the anchor: only words like "joining", "leaving" between ("my title
+                        // before the promotion at Initech" isn't about the job before Initech).
+                        let lead = Set(lang.anchorLeadWords.map { FactsText.fold($0) })
+                        let leadOK = prior.max(by: later).map { op in
+                            FactsText.matches(Self.wordRE, in: q, from: op.end, to: m.start).allSatisfy { lead.contains($0.group(0)!) }
+                        } ?? false
+                        if let op = prior.max(by: later), let hit = hits.first, tailOK(q, end), leadOK {
                             let rest = FactsText.substring(q, 0, m.start) + " " + FactsText.substring(q, end, FactsText.length(q))
                             if personNamed(rest) { return nil }   // "Who was Ada dating before Bea?": someone else
                             // A name two entities share doesn't say which: no anchor, so the answer is told, not guessed.

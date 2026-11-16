@@ -344,11 +344,11 @@ extension FactsGraph {
             let now = eps.filter { $0.ongoing && !$0.inferredEnd }
             if it.op == .previous {
                 // As for "current": an episode that may have ended (or not) leaves the anchor unknown.
-                guard now.count == 1, !eps.contains(where: \.uncertain) else { return .none(.ambiguous) }
+                guard now.count == 1, !eps.contains(where: \.mayBeOpen) else { return .none(.ambiguous) }
                 let (got, basis) = order(it.predicate, eps, now[0], .before)
                 return .one(got, basis)
             }
-            if now.isEmpty || eps.contains(where: \.uncertain) { return .none(.ambiguous) }
+            if now.isEmpty || eps.contains(where: \.mayBeOpen) { return .none(.ambiguous) }
             let basis: TimelineBasis = now.allSatisfy { $0.heldAt != nil && $0.trusted && $0.startTrusted } ? .ordered : .inferred
             var ids: [String] = []
             for e in now { if let id = e.entity, !ids.contains(id) { ids.append(id) } }

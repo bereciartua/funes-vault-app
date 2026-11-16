@@ -379,8 +379,15 @@ enum FactStore {
         var mergedInto: [String: String] = [:]
         // Merges first, so every other correction (a label, a rejection) applies to the merged entity and fact.
         let ordered = overrides.filter { ($0["field"] as String) == "merged_into" } + overrides.filter { ($0["field"] as String) != "merged_into" }
+        func canonicalEntity(_ id: String) -> String {
+            var id = id, hops = 0
+            while let next = mergedInto[id], hops < 16 { id = next; hops += 1 }
+            return id
+        }
         for o in ordered {
-            let kind: String = o["target_kind"], field: String = o["field"], target: String = o["target_id"]
+            let kind: String = o["target_kind"], field: String = o["field"]
+            // An entity's correction follows its merge (applied first) to the surviving entity.
+            let target: String = kind == "entity" && field != "merged_into" ? canonicalEntity(o["target_id"]) : o["target_id"]
             // A correction made from a memory holds while that memory and its quoted span do.
             if let mid: String = o["memory_id"] {
                 guard let c = counted[mid], locate(o["quote"], in: c.memory.text, near: nil) != nil else { continue }
@@ -393,7 +400,7 @@ enum FactStore {
                     g.addAlias(target, n, trusted: true)
                 }
             case ("entity", "not_same"):
-                if let other = value as? String { g.notSame.insert([target, other]) }
+                if let other = value as? String { g.notSame.insert([target, canonicalEntity(other)]) }
             case ("entity", "deceased"):
                 if let b = value as? Bool { g.entities[target]?.deceased = b }
             case ("entity", "merged_into"):

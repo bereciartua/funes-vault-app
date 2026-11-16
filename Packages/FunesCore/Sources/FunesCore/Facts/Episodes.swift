@@ -43,6 +43,10 @@ public final class Episode {
     /// No end known and not stated as ended: as far as Funes knows, it holds.
     public var ongoing: Bool { end == nil && !former && !uncertain }
 
+    /// It may still hold, though it isn't ongoing: an undated "no longer" may or may not have ended it, or its end is a
+    /// conflict nothing bounds. "Current" and "previous" are told while one exists.
+    public var mayBeOpen: Bool { uncertain || (conflictEnd && end?.hi == DateRange.maxDay) }
+
     /// Whether it may hold at some day of `d`.
     func mayHold(_ d: DateRange) -> Bool {
         // A conflicting end is still bounded by its latest possible day (open when nothing bounds it).
