@@ -38,8 +38,10 @@ extension FactsGraph {
             + words.map(FactsText.escape).joined(separator: "|") + ")(?![\\w-])", caseInsensitive: true)
     }
 
-    private static let quoteRE = FactsText.regex("(?:^|(?<=[\\s:,]))['\"“‘]([^'\"”’]+)['\"”’](?=[\\s.,;:!?]|$)")
-    private static let chainRE = FactsText.regex("['’]s\\s+(\\w[\\w-]*)(?:\\s+(\\w[\\w-]*))?")
+    /// Quoted speech, each kind by its own delimiters: a contraction inside double quotes doesn't end them.
+    private static let quoteRE = FactsText.regex("\"([^\"\\n]+)\"|“([^”\\n]+)”|(?:^|(?<=[\\s:,]))['‘]([^'’\\n]+)['’](?=[\\s.,;:!?]|$)")
+    /// What follows a possessive ("my sister's very kind husband"): up to four words.
+    private static let chainRE = FactsText.regex("['’]s((?:\\s+\\w[\\w-]*){1,4})")
 
     var personNouns: Set<String> {
         Set(registry.lexicon.filter { registry.kindOf($0.value.predicate) == "person" }.map(\.key))
@@ -51,7 +53,7 @@ extension FactsGraph {
     public func rolePhrases(_ text: String, predicates: Set<String>? = nil) -> [RolePhrase] {
         let lang = registry.language
         let ns = text as NSString
-        let quoted = FactsText.matches(Self.quoteRE, in: text).map { $0.groups[0] }
+        let quoted = FactsText.matches(Self.quoteRE, in: text).compactMap { m in m.groups.first { $0.location != NSNotFound } }
         let nouns = personNouns
         let lex = registry.lexicon
         let preps = lang.timePrepositions.map(FactsText.escape).joined(separator: "|")
@@ -83,8 +85,8 @@ extension FactsGraph {
             if quoted.contains(where: { $0.location != NSNotFound && $0.location <= s && s < $0.location + $0.length }) {
                 continue
             }
-            if let chain = FactsText.matchAt(Self.chainRE, in: text, from: e, to: min(e + 40, ns.length)),
-               [chain.group(1), chain.group(2)].contains(where: { $0.map { nouns.contains($0.lowercased()) } ?? false }) {
+            if let chain = FactsText.matchAt(Self.chainRE, in: text, from: e, to: min(e + 60, ns.length)),
+               (chain.group(1) ?? "").split(whereSeparator: \.isWhitespace).contains(where: { nouns.contains($0.lowercased()) }) {
                 continue
             }
             let word = mt.group(5)!.lowercased()

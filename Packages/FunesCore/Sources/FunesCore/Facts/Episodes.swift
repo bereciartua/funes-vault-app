@@ -286,7 +286,8 @@ extension FactsGraph {
             // The slot: the user's values first; in a trusted episode untrusted values never count (they could start
             // succession across slots).
             func values(_ rs: [Row]) -> [String] { slotKey.map { k in rs.compactMap { $0.a.qualifiers[k] } } ?? [] }
-            var vals = values(ep.rows.filter(\.a.fromUser))
+            // The user's latest value (a single-valued qualifier: a new value ends the old one), else the memories' vote.
+            var vals = values(ep.rows.filter(\.a.fromUser).stableSorted { $0.order }).suffix(1).map { $0 }
             if vals.isEmpty { vals = values(ep.rows.filter { $0.a.trusted || !trusted }) }
             let e = Episode(entity: f.entity, predicate: f.predicate, start: start, end: end)
             e.conflictStart = cs

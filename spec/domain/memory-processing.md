@@ -575,7 +575,7 @@ For a predicate with the *timeline* use, from a query intent (§11.7), with no m
   - a predicate's query cue or lexicon word ("job", "worked", "leaving", "trabajo");
   - an operator (before, after, previous, current, a year or span);
   - for before / after, a named anchor that holds a fact of the same predicate, or a date.
-- **The anchor ends the operator's phrase.** What follows it up to punctuation may only be words like "the first time"; "before the Acme demo" isn't a timeline query. The operator is the nearest one before the anchor, and no determiner may sit between them (the registry's list): "my title before the promotion at Acme" and "before the promotion in 2020" aren't about the job before Acme or 2020; "before I was at Acme" is.
+- **The anchor ends the operator's phrase.** What follows it up to punctuation may only be words like "the first time"; "before the Acme demo" isn't a timeline query. The operator is the nearest one before the anchor, and no determiner may head another phrase between them (one right before the anchor or its date is the anchor's own: "before the BBC", "antes del 15 de marzo"): "my title before the promotion at Acme" and "before the promotion in 2020" aren't about the job before Acme or 2020; "before I was at Acme" is.
 - **Someone else's question isn't the user's timeline:**
   - a known person named outside the anchor;
   - a third-person pronoun;
@@ -583,7 +583,7 @@ For a predicate with the *timeline* use, from a query intent (§11.7), with no m
   - an unknown capitalised name that doesn't start a sentence.
 - **Questions about one fact:**
   - "current", "previous" or a year with a named entity of the predicate ("my current role at Acme") asks about that fact, not the timeline;
-  - so does a qualifier question ("my title before the promotion").
+  - so does a qualifier question ("my title before the promotion", "before being promoted"), by the predicate's qualifier cues in the registry.
 - **Not operators:** "last year" and "last summer" aren't "previous".
 - **Date expressions** keep their month and day, ordinals included ("15th March 2019").
 - **A name two entities share** gives no anchor, so the answer is told; an exact name picks its own entity ("Acme", not "Acme Labs").

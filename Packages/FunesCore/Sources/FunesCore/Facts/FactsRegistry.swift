@@ -83,6 +83,8 @@ public struct FactsRegistry: Sendable, Decodable {
         public let lexicon: [LexiconEntry]
         public let queryCues: [String]
         public let phrases: [String: String]
+        /// Words that make a question about one of its qualifiers ("my title before…"), not the timeline.
+        public let qualifierCues: [String]?
     }
 
     public struct Qualifier: Sendable, Decodable {

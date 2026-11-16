@@ -462,7 +462,9 @@
       "este",
       "esta",
       "ese",
-      "esa"
+      "esa",
+      "del",
+      "al"
     ]
   },
   "kinds": {
@@ -1224,7 +1226,20 @@
       "phrases": {
         "attribute": "where you worked",
         "note_noun": "job"
-      }
+      },
+      "qualifier_cues": [
+        "title",
+        "job title",
+        "position",
+        "promoted",
+        "promotion",
+        "cargo",
+        "puesto",
+        "ascenso",
+        "ascendido",
+        "ascendida",
+        "me ascendieron"
+      ]
     },
     {
       "id": "client",

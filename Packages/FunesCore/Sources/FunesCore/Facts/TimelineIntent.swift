@@ -30,9 +30,12 @@ extension FactsGraph {
 
     /// The operator leads to the anchor itself, not to another noun phrase: a determiner between them ("my title before
     /// the promotion at Initech", "before the promotion in 2020") means the question is about something else.
+    /// A determiner right before the anchor is its own article ("before the BBC", "antes del 15 de marzo"); one with a
+    /// word between it and the anchor heads another noun phrase.
     private func leadOK(_ q: String, _ from: Int, _ to: Int) -> Bool {
         let determiners = Set(registry.language.anchorDeterminers.map { FactsText.fold($0) })
-        return !FactsText.matches(Self.wordRE, in: q, from: from, to: to).contains { determiners.contains($0.group(0)!) }
+        let words = FactsText.matches(Self.wordRE, in: q, from: from, to: to).map { $0.group(0)! }
+        return !words.dropLast().contains { determiners.contains($0) }
     }
 
     /// Whether a known person's name appears in folded text.
@@ -60,7 +63,11 @@ extension FactsGraph {
                 }
             }
         }
-        if lang.thirdPerson.contains(where: { FactsText.has(q, $0) }) { return true }
+        // Accent-sensitive: "él" is a pronoun, "el" an article.
+        let lower = query.lowercased()
+        if lang.thirdPerson.contains(where: { w in
+            FactsText.first(FactsText.regex("(?<!\\w)" + FactsText.escape(w.lowercased()) + "(?!\\w)"), in: lower) != nil
+        }) { return true }
         let lex = registry.lexicon
         for m in FactsText.matches(rolePattern(), in: query) {
             if let p = lex[m.group(5)!.lowercased()]?.predicate, p != predicate, registry.kindOf(p) == "person" { return true }
@@ -96,6 +103,8 @@ extension FactsGraph {
             guard let p = registry.predicate(pred) else { continue }
             let cues = p.queryCues + lex.filter { $0.value.predicate == pred }.map(\.key)
             if !cues.contains(where: { FactsText.has(q, $0) }) { continue }
+            // A question about one of its qualifiers ("my title before being promoted") is about a fact, not the timeline.
+            if (p.qualifierCues ?? []).contains(where: { FactsText.has(q, $0) }) { continue }
             var ops: [(end: Int, name: TimelineIntent.Operator)] = []
             for (name, words) in [(TimelineIntent.Operator.before, lang.operators.before), (.after, lang.operators.after)] {
                 for w in words { ops += FactsText.matches(word(w), in: q).map { ($0.end, name) } }
@@ -136,7 +145,7 @@ extension FactsGraph {
                 }
                 for m in FactsText.matches(Self.yearRE, in: q) {
                     let prior = ops.filter { $0.end <= m.start }
-                    if let op = prior.max(by: later), tailOK(q, m.end), leadOK(q, op.end, m.start),
+                    if let op = prior.max(by: later), tailOK(q, m.end), leadOK(q, op.end, parser.dateStart(at: m.end, in: q)),
                        let d = parser.dateEnding(at: m.end, in: q) {
                         return TimelineIntent(predicate: pred, op: op.name, anchor: .date(d))
                     }

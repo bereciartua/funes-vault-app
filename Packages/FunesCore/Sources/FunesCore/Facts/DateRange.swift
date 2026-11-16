@@ -112,6 +112,15 @@ struct DateParser: Sendable {
     /// A memory's written date (ISO) → a day.
     func day(_ s: String?) -> Int? { parse(s)?.lo }
 
+    /// Where the date expression that ends at a year starts (the day or month before it, if any).
+    func dateStart(at end: Int, in q: String) -> Int {
+        let j = joiners.map(FactsText.escape).joined(separator: "|")
+        let prefix = FactsText.substring(q, 0, end)
+        let re = FactsText.regex("(?:(?:\\d{1,2}(?:" + ordinals + ")?\\s+(?:(?:" + j + ")\\s+)?)?(?:" + monthAlternation
+                                 + ")\\.?,?\\s+(?:\\d{1,2}(?:" + ordinals + ")?,?\\s+)?(?:(?:" + j + ")\\s+)?)?(?:19|20)\\d{2}$")
+        return FactsText.first(re, in: prefix)?.start ?? max(0, end - 4)
+    }
+
     /// The whole date expression that ends at a year in folded text: "march 2019", "15 de marzo de 2019", or the year.
     func dateEnding(at end: Int, in q: String) -> DateRange? {
         let j = joiners.map(FactsText.escape).joined(separator: "|")
