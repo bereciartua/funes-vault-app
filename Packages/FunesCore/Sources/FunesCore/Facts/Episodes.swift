@@ -149,7 +149,11 @@ extension FactsGraph {
                 // The user's status with no dates and no selector is about the latest episode.
                 if r.a.fromUser, r.a.status != .unknown, !candidates.isEmpty {
                     // latest by its dates, else by when its memories were written (an undated return)
-                    target = candidates.firstMax { ($0.startRange ?? $0.endRange)?.lo ?? $0.rows.compactMap(\.w).max() ?? DateRange.minDay }
+                    target = candidates.firstMax { ep in
+                        let tr = ep.rows.contains { $0.a.trusted }
+                        return (ep.startRange ?? ep.endRange)?.lo
+                            ?? ep.rows.filter { $0.a.trusted || !tr }.compactMap(\.w).max() ?? DateRange.minDay
+                    }
                 }
                 // An undated return ("I rejoined Acme") is a new episode when every one so far has ended.
                 // Only a return that says it holds now; a look back at one ("when I rejoined…") joins the latest stint.
@@ -265,6 +269,11 @@ extension FactsGraph {
                 }
                 enTr = boundRows.contains { $0.a.trusted }
             }
+            // A trusted memory saying it still held after that end: the memories disagree (no return was stated).
+            if let e = end, !userStatus, let late = held.max(), late > e.hi {
+                end = DateRange(lo: e.lo, hi: late, precision: .conflict)
+                ce = true
+            }
             // The slot: the user's values first; in a trusted episode untrusted values never count (they could start
             // succession across slots).
             func values(_ rs: [Row]) -> [String] { slotKey.map { k in rs.compactMap { $0.a.qualifiers[k] } } ?? [] }
@@ -280,7 +289,7 @@ extension FactsGraph {
             e.former = former
             e.slot = vals.mostCommon() ?? "_"
             e.assertions = ep.rows.map(\.a)
-            e.writtenKey = ep.rows.compactMap(\.w).max()
+            e.writtenKey = ep.rows.filter { $0.a.trusted || !trusted }.compactMap(\.w).max()   // trusted chronology only
             e.uncertain = ep.uncertain != nil && end == nil && !userStatus
             e.uncertainFrom = e.uncertain ? ep.uncertain : nil
             out.append(e)

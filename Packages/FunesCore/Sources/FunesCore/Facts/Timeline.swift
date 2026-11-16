@@ -43,9 +43,12 @@ extension FactsGraph {
     }
 
     /// Episode a could come just before episode b: nothing in their dates says a ended after b started.
-    private func couldNeighbour(_ a: Episode, _ b: Episode) -> Bool {
+    func couldNeighbour(_ a: Episode, _ b: Episode) -> Bool {
         if let end = a.end, let bs = b.tstart, end.lo > bs.hi { return false }
         if let s = a.tstart, let bs = b.tstart, s.lo > bs.hi { return false }
+        // b's end bounds it too: a can't come before something that ended before a ended, or before a began.
+        if let end = a.end, let be = b.end, end.lo > be.hi { return false }
+        if let s = a.tstart, let be = b.end, s.lo > be.hi { return false }
         return true
     }
 
@@ -154,8 +157,9 @@ extension FactsGraph {
             } else {
                 clash = false
             }
-            // The memories disagree on the boundary the edge rests on: the edge can't be checked against it.
+            // The memories disagree on the boundary the edge rests on, or the dates rule the order out.
             if before ? w.conflictEnd : w.conflictStart { clash = true }
+            if !(before ? couldNeighbour(w, sx) : couldNeighbour(sx, w)) { clash = true }
             if !clash, !between(w) {
                 let trustedEnds = w.trusted && sx.trusted
                 if isGap(gapOf(w)) { return trustedEnds ? (w.entity, .gap) : (nil, .ambiguous) }

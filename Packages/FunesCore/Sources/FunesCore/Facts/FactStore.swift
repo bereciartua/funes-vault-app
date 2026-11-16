@@ -374,6 +374,7 @@ enum FactStore {
         }
 
         // Overrides win: names, deceased, labels, merges.
+        var mergedInto: [String: String] = [:]
         for o in overrides {
             let kind: String = o["target_kind"], field: String = o["field"], target: String = o["target_id"]
             // A correction made from a memory holds while that memory and its quoted span do.
@@ -393,6 +394,7 @@ enum FactStore {
                 if let b = value as? Bool { g.entities[target]?.deceased = b }
             case ("entity", "merged_into"):
                 // Merge With…: one entity, and one fact per predicate, its evidence fused.
+                if let into = value as? String { mergedInto[target] = into }
                 if let into = value as? String, let from = g.entities[target], g.entities[into] != nil, into != target {
                     g.entities[into]?.aliases.formUnion(from.aliases)
                     g.entities[into]?.trustedAliases.formUnion(from.trustedAliases)
@@ -486,7 +488,10 @@ enum FactStore {
             }
             guard let span = locate(d["quote"], in: c.memory.text, near: d["span_start"]) else { continue }
             let key = FactsGraph.DecisionKey(memoryID: mid, start: span.start)
-            let entity: String? = d["entity_id"]
+            // A correction about an entity merged away is about the one it was merged into (following the chain).
+            var entity: String? = d["entity_id"]
+            var hops = 0
+            while let e = entity, let next = mergedInto[e], hops < 16 { entity = next; hops += 1 }
             switch outcome {
             case "rejected":
                 if let entity { g.rejections[key, default: []].insert(entity) }

@@ -348,10 +348,17 @@ public struct FactsGraph: Sendable {
 
     /// Entities holding a fact of this predicate that a name could mean.
     /// `onlyTrusted`: through aliases trusted memories gave (a trusted memory's order edge, the user's question).
+    /// When a normalised-exact match exists, only exact matches count ("Acme" isn't also "Acme Labs").
     public func entityMatches(_ predicate: String, _ name: String, onlyTrusted: Bool = false) -> [String] {
         let kind = registry.kindOf(predicate)
         let holders = Set(facts.filter { $0.predicate == predicate && !$0.negated }.map(\.entity))
-        return byName(placeholder(predicate, name) ?? name, kind: kind, onlyTrusted: onlyTrusted).map(\.id).filter { holders.contains($0) }
+        let n = placeholder(predicate, name) ?? name
+        let f = FactsText.normName(n, kind: kind, registry: registry)
+        let hits = byName(n, kind: kind, onlyTrusted: onlyTrusted).filter { holders.contains($0.id) }
+        let exact = hits.filter { e in
+            (onlyTrusted ? e.trustedAliases : e.aliases).contains { FactsText.normName($0, kind: kind, registry: registry) == f }
+        }
+        return (exact.isEmpty ? hits : exact).map(\.id)
     }
 
     /// A fact's label: the user's, else the first trusted statement's; an untrusted label only for a fact with no
