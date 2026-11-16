@@ -89,9 +89,9 @@
 - [x] **Trust rule tests:** untrusted evidence never resolves a trusted memory, never ends an episode that has trusted evidence or triggers succession, never orders anything at full basis, and never changes a trusted decision; an episode with only untrusted evidence gives its dates at `inferred` at most and its links at `untrusted`; a link's basis is the weakest in its chain.
 - [ ] **Gates:** `test_temporal.py`'s 44 and `test_facts.py`'s 16, ported as table-driven Swift tests. Then an adversarial review of the Swift time model by GPT-6-Astra and Fable 5.2, round after round, until one finds no wrong answer or link; every case becomes a test. Budget: H3b took three rounds.
   - **Status (16 November 2026):**
-    - The 60 spike tests pass, and so do every review case (rounds 1–15) and five differential fuzzes at full size (one or two untrusted rows, user rows, store round trips and purges, reading order, contained names).
-    - The rounds aren't clean yet. Round 15: GPT-6-Astra found four issues; Fable 5.2 found missed answers only.
-    - Late rounds find mostly language edge cases in role phrases and timeline intent, plus a few inherited from the spike.
+    - The 60 spike tests pass, and so do every review case (rounds 1–17) and five differential fuzzes at full size (one or two untrusted rows, user rows, store round trips and purges, reading order, contained names).
+    - Findings per round fell from 29 to 4–7 and stayed there. The core model (trust, episodes, ordering, storage) converged: Fable 5.2 found no wrong answer or link in rounds 15 and 17. The language layer (role-phrase quotes and chains, timeline intent) didn't: each fix exposed a neighbouring phrasing, which an adversarial review of open text will always find.
+    - **The gate, narrowed after round 17:** the language layer now fails closed (memory processing §11.3, §11.7: a question outside the grammar gets plain search; a phrase that may be quoted is skipped). Round 18 is the last: a wrong answer or link from the core model fails it, and so does a confident wrong answer from the language layer; a missed answer doesn't. A core failure in round 18 means revisiting the design. The language layer's coverage is measured by 13a.2's fixture gates (decidable wordings, recall).
     - The `facts-qualification.json` records ship with 13a.2's gates.
 
 ## 13a.2 Extraction, qualification and the backfill · 3–3½ weekends

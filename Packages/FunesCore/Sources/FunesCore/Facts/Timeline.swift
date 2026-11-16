@@ -351,7 +351,8 @@ extension FactsGraph {
         switch it.op {
         case .before, .after:
             guard let anchor = it.anchor else { return .none(.ambiguous) }
-            return before(it.predicate, anchor, query: query, direction: it.op == .before ? .before : .after)
+            // Episode cues come from the operator phrase alone ("before Acme the second time").
+            return before(it.predicate, anchor, query: it.phrase ?? query, direction: it.op == .before ? .before : .after)
         case .year:
             guard case .date(let rng) = it.anchor else { return .none(.ambiguous) }
             return inRange(it.predicate, rng)

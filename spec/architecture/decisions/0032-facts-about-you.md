@@ -164,6 +164,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
    - **Gaps are told, with the answer.** A gap longer than the predicate's `gap_months`, measured over the possible ranges, gives a `gap` answer: it names the entity and tells the gap ("there's a gap of about 6 months"), and may carry bridges. A stated order still tells a gap that the dates show.
    - **Intent:** a timeline query needs a predicate's cue word or role phrase, with an operator and a named anchor or date.
      - The anchor is what follows the operator.
+     - The grammar fails closed: a question outside it gets plain search, never a guessed intent, and its words are registry data (memory processing §11.7). Adopted after 13a.1's review rounds showed hand-written rules over open text can't be made exhaustive; coverage is measured on fixtures instead.
      - The question must be about the user: a query whose subject is another person, named or by role ("Where did Ada work before Acme?", "Where did my wife work before Acme?"), isn't the user's timeline, for every operator.
      - In v0.10 the anchor must be of the same predicate. A cross-predicate anchor ("where did I live before I joined Acme") fits the same rule and waits for its own gate.
      - A question about one fact's qualifiers ("my title at Acme before the promotion") isn't a timeline query in v0.10, and neither is "what did we use before Acme moved to Slack".

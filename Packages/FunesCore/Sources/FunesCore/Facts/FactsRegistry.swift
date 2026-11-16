@@ -31,6 +31,9 @@ public struct FactsRegistry: Sendable, Decodable {
         public let formerWords: [String]
         public let anchorTailWords: [String]
         public let anchorDeterminers: [String]
+        /// Words that may stand between an operator and its anchor ("before I joined Acme"); anything else means no
+        /// timeline intent (memory processing §11.7: a question outside the grammar fails closed).
+        public let anchorLeadWords: [String]
         /// Contracted function words, expanded before a question is read ("del" is "de el").
         public let contractions: [String: String]
         public let timePrepositions: [String]

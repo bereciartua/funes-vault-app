@@ -38,12 +38,41 @@ extension FactsGraph {
             + words.map(FactsText.escape).joined(separator: "|") + ")(?![\\w-])", caseInsensitive: true)
     }
 
-    /// Quoted speech, each kind by its own delimiters: a contraction or a plural possessive ("the kids' teacher")
-    /// inside the quotes doesn't end them (when a closing quote follows, the longer reading wins), and a
-    /// straight quote opens only at the start or after a space or opening punctuation (not an inch mark: 27").
-    private static let quoteRE = FactsText.regex(
-        "(?:^|(?<=[\\s:,(\\[]))\"([^\"\\n]+)\"(?=[\\s.,;:!?)\\]]|$)|“([^”\\n]+)”"
-        + "|(?:^|(?<=[\\s:,(\\[]))['‘]((?:[^'’\\n]|(?<=\\w)['’](?=\\w)|(?<=s)['’](?=\\s+\\w))+)['’](?=[\\s.,;:!?)\\]]|$)")
+    /// Whether a position may be inside quoted speech, failing closed (memory processing §11.3): reading its line up
+    /// to there, a quote opens at the line's start or after a space or opening punctuation (“, ‘ always open), and
+    /// closes only where it surely does: ” always; " before a space, punctuation or the end; ' or ’ the same, but not
+    /// after an s ("the kids' teacher" may be a possessive) or between letters ("doesn't"). A quote still open, or
+    /// one whose end is uncertain, means the position may be quoted. An inch mark (27") or an apostrophe doesn't open.
+    static func mayBeQuoted(_ text: String, at pos: Int) -> Bool {
+        let ns = text as NSString
+        var lineStart = pos
+        while lineStart > 0, ns.character(at: lineStart - 1) != 10 { lineStart -= 1 }
+        func ch(_ i: Int) -> unichar? { i >= 0 && i < ns.length ? ns.character(at: i) : nil }
+        func isSpace(_ c: unichar?) -> Bool { c.map { $0 == 32 || $0 == 9 || $0 == 10 || $0 == 0xA0 } ?? true }
+        func opensAfter(_ c: unichar?) -> Bool { c == nil || isSpace(c) || [40, 91, 58, 44, 0x2014, 0x2013].contains(c!) }
+        func closesBefore(_ c: unichar?) -> Bool { c == nil || isSpace(c) || [46, 44, 59, 58, 33, 63, 41, 93].contains(c!) }
+        func isLetter(_ c: unichar?) -> Bool { c.map { CharacterSet.alphanumerics.contains(Unicode.Scalar($0) ?? " ") } ?? false }
+        enum Kind { case double, curlyDouble, single }
+        var open: Kind?
+        var i = lineStart
+        while i < pos {
+            let c = ns.character(at: i), prev = ch(i - 1), next = ch(i + 1)
+            switch (open, c) {
+            case (nil, 0x201C): open = .curlyDouble
+            case (nil, 0x2018): open = .single
+            case (nil, 34) where opensAfter(prev): open = .double
+            case (nil, 39) where opensAfter(prev), (nil, 0x2019) where opensAfter(prev): open = .single
+            case (.curlyDouble?, 0x201D): open = nil
+            case (.double?, 34) where closesBefore(next): open = nil
+            case (.single?, 39), (.single?, 0x2019):
+                if closesBefore(next), !(isLetter(prev) && isLetter(next)), prev != 115, prev != 83 { open = nil }
+            default: break
+            }
+            i += 1
+        }
+        return open != nil
+    }
+
     /// What follows a possessive ("my sister's very kind husband"): up to four words, read up to a function word or
     /// an owner ("my boss's note to my sister" is the boss's note).
     private static let chainRE = FactsText.regex("['’]s((?:\\s+\\w[\\w-]*){1,4})")
@@ -58,7 +87,6 @@ extension FactsGraph {
     public func rolePhrases(_ text: String, predicates: Set<String>? = nil) -> [RolePhrase] {
         let lang = registry.language
         let ns = text as NSString
-        let quoted = FactsText.matches(Self.quoteRE, in: text).compactMap { m in m.groups.first { $0.location != NSNotFound } }
         let nouns = personNouns
         // A person noun with a former prefix is still one ("my partner's ex-wife").
         let attached = lang.formerPrefixes.filter { !$0.hasSuffix(" ") }.map { $0.lowercased() }
@@ -94,9 +122,7 @@ extension FactsGraph {
         var out: [RolePhrase] = []
         for mt in FactsText.matches(rolePattern(), in: text) {
             let s = mt.start, e = mt.end
-            if quoted.contains(where: { $0.location != NSNotFound && $0.location <= s && s < $0.location + $0.length }) {
-                continue
-            }
+            if Self.mayBeQuoted(text, at: s) { continue }
             if let chain = FactsText.matchAt(Self.chainRE, in: text, from: e, to: min(e + 60, ns.length)),
                (chain.group(1) ?? "").split(whereSeparator: \.isWhitespace).map({ $0.lowercased() })
                    .prefix(while: { !chainStops.contains(FactsText.fold($0)) }).contains(where: { nouns.contains(unprefixed($0)) }) {
