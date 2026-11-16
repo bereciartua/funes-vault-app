@@ -196,10 +196,11 @@ enum FactStore {
         for a in try Row.fetchAll(db, sql: "SELECT * FROM entity_alias ORDER BY rowid") {
             aliasRows[a["entity_id"], default: []].append(a)
         }
-        var supported = Set<String>()     // alias ids with counting evidence
-        for e in try Row.fetchAll(db, sql: "SELECT alias_id, memory_id, memory_version FROM alias_evidence")
-        where counts(e["memory_id"], e["memory_version"]) != nil {
+        var supported = Set<String>(), trustedSupport = Set<String>()     // alias ids with counting evidence
+        for e in try Row.fetchAll(db, sql: "SELECT alias_id, memory_id, memory_version FROM alias_evidence") {
+            guard let c = counts(e["memory_id"], e["memory_version"]) else { continue }
             supported.insert(e["alias_id"])
+            if c.memory.trusted { trustedSupport.insert(e["alias_id"]) }
         }
         var groupEntities = Set<String>()
         for e in try Row.fetchAll(db, sql: "SELECT * FROM entity WHERE is_you = 0 ORDER BY rowid") {
@@ -207,6 +208,9 @@ enum FactStore {
             // A tombstone's confirmed alias has no text, only its normalised form: enough to re-attach by.
             let aliases = (aliasRows[id] ?? []).filter { a in
                 supported.contains(a["id"] as String) || (a["manual"] as Int) == 1 || (a["confirmed"] as Int) == 1
+            }.map { ($0["alias"] as String?) ?? ($0["normalized"] as String) }
+            let trustedAliases = (aliasRows[id] ?? []).filter { a in
+                trustedSupport.contains(a["id"] as String) || (a["manual"] as Int) == 1 || (a["confirmed"] as Int) == 1
             }.map { ($0["alias"] as String?) ?? ($0["normalized"] as String) }
             var name: String? = e["name"]
             if let n = name, !aliases.contains(n) { name = aliases.first }
@@ -216,7 +220,7 @@ enum FactStore {
             if group != nil, name == nil { groupEntities.insert(id) }
             // A group's count and an entity's death come from evidence below; the columns hold the user's values.
             g.insert(FactsEntity(id: id, seq: 0, kind: e["kind"], name: name, aliases: Set(aliases), group: group,
-                                 count: nil, deceased: (e["deceased"] as Int) == 1))
+                                 count: nil, deceased: (e["deceased"] as Int) == 1, trustedAliases: Set(trustedAliases)))
         }
 
         // Facts from their evidence, replayed in the order the memories were written (incarnations: a denial ends one,
@@ -335,12 +339,13 @@ enum FactStore {
                                                     negated: false, assertions: []))
                 }
                 let i = incarnations.count - 1
-                if let l = p.a.label, incarnations[i].label == nil || p.a.fromUser {   // the user's label wins
-                    incarnations[i].label = l
-                    incarnations[i].cls = g.labelClass(pred, l)
-                }
                 incarnations[i].only = incarnations[i].only || (p.only && p.a.trusted)
                 incarnations[i].assertions.append(p.a)
+            }
+            for i in incarnations.indices {          // the user's label, else a trusted one (as `FactsGraph.apply`)
+                let l = g.effectiveLabel(incarnations[i])
+                incarnations[i].label = l
+                incarnations[i].cls = g.labelClass(pred, l)
             }
             g.facts += incarnations
         }
@@ -354,7 +359,7 @@ enum FactStore {
             case ("entity", "name"):
                 if let n = value as? String, g.entities[target] != nil {
                     g.entities[target]?.name = n
-                    g.entities[target]?.aliases.insert(n)
+                    g.addAlias(target, n, trusted: true)
                 }
             case ("entity", "deceased"):
                 if let b = value as? Bool { g.entities[target]?.deceased = b }
@@ -362,6 +367,7 @@ enum FactStore {
                 // Merge With…: one entity, and one fact per predicate, its evidence fused.
                 if let into = value as? String, let from = g.entities[target], g.entities[into] != nil, into != target {
                     g.entities[into]?.aliases.formUnion(from.aliases)
+                    g.entities[into]?.trustedAliases.formUnion(from.trustedAliases)
                     let dead = (g.entities[into]?.deceased ?? false) || from.deceased
                     g.entities[into]?.deceased = dead
                     for i in g.facts.indices where g.facts[i].entity == target {
@@ -509,12 +515,13 @@ enum FactStore {
         let oldSignatures = try signatures(db, memoryID: memoryID, version: version, callGroup: callGroup)
         // A hand-over is decided when a memory is first read: a re-read keeps it (holders learned since don't make
         // this one "new").
-        var oldHandover: [String: Bool] = [:]
+        var oldHandover: [String: Bool] = [:]        // by fact id and statement ordinal
         for r in try Row.fetchAll(db, sql: """
             SELECT fact_id, asserted FROM fact_evidence WHERE memory_id = ? AND memory_version = ? AND call_group = ?
               AND target_kind = 'fact' AND polarity = 'affirmed'
             """, arguments: [memoryID, version, callGroup]) {
-            oldHandover[r["fact_id"]] = object(r["asserted"])["handover"] as? Bool ?? false
+            let o = object(r["asserted"])
+            oldHandover[(r["fact_id"] as String) + ":" + String(o["n"] as? Int ?? 0)] = o["handover"] as? Bool ?? false
         }
         let oldAliasRows = try Row.fetchAll(db, sql: """
             SELECT ev.alias_id, a.entity_id FROM alias_evidence ev JOIN entity_alias a ON a.id = ev.alias_id JOIN entity e ON e.id = a.entity_id
@@ -642,7 +649,7 @@ enum FactStore {
                 if let v = a.start { asserted["start"] = v }
                 if let v = a.end { asserted["end"] = v }
                 if let v = a.time { asserted["time"] = v }
-                if oldHandover[fid] ?? a.handover { asserted["handover"] = true }
+                if oldHandover[fid + ":" + String(n)] ?? a.handover { asserted["handover"] = true }
                 if a.only { asserted["only"] = true }      // this statement's own, never the fact's aggregate
                 try evidenceRow(fid, kind: "fact", asserted: asserted, states: a.states, polarity: "affirmed", quote: a.quote)
                 if let l = a.label {
@@ -666,9 +673,11 @@ enum FactStore {
                                     polarity: "affirmed", quote: a.quote)
                 }
             }
-            if newlyNegated {
+            if newlyNegated {         // a denial is a statement too: its ordinal keeps it apart from a later affirmation
                 let quote = x.facts.first { !$0.positive && $0.predicate == f.predicate }?.quote ?? ""
-                try evidenceRow(fid, kind: "fact", asserted: [:], states: true, polarity: "denied", quote: quote)
+                let n = ordinal[fid, default: 0]
+                ordinal[fid] = n + 1
+                try evidenceRow(fid, kind: "fact", asserted: ["n": n], states: true, polarity: "denied", quote: quote)
             }
         }
         // Role groups' counts this memory states, as evidence on the group's fact (so they go with their memory).

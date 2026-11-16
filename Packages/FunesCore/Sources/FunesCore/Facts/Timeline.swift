@@ -257,10 +257,11 @@ extension FactsGraph {
         let now = eps.filter { $0.certainlyHolds(day) }
         guard now.count == 1 else { return nil }
         // Another job that may also be the current one then makes the anchor, and so "previous", unknown.
+        // Judged at that date: a former job whose dates may cover it counts too.
         let rivals = eps.filter { e in
-            e !== now[0] && e.entity != now[0].entity && !e.former && !e.inferredEnd
-                && !(e.start.map { $0.lo > day.hi } ?? false) && !(e.uncertain && (e.uncertainFrom ?? Int.max) < day.lo)
-                && (e.ongoing || e.heldAt != nil)
+            e !== now[0] && e.entity != now[0].entity
+                && !(e.start.map { $0.lo > day.hi } ?? false) && !(e.end.map { $0.hi < day.lo } ?? false)
+                && !(e.uncertain && (e.uncertainFrom ?? Int.max) < day.lo)
         }
         guard rivals.isEmpty else { return nil }
         let (got, basis) = order(predicate, eps, now[0], .before)

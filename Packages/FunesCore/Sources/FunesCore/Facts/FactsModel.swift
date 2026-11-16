@@ -68,6 +68,9 @@ public struct FactsEntity: Sendable, Equatable {
     public var group: RoleGroup?
     public var count: Int?
     public var deceased: Bool
+    /// Aliases a trusted memory (or the user) gave: the only ones a trusted memory's names match, so an untrusted
+    /// memory can never re-route trusted evidence (memory processing §11.8).
+    public var trustedAliases: Set<String> = []
 
     /// Every alias and every alias's first word.
     var nameForms: Set<String> {
@@ -226,12 +229,20 @@ public struct FactsGraph: Sendable {
     // MARK: Entities
 
     @discardableResult
-    public mutating func newEntity(name: String? = nil, group: FactsEntity.RoleGroup? = nil, kind: String = "person") -> String {
+    public mutating func newEntity(name: String? = nil, group: FactsEntity.RoleGroup? = nil, kind: String = "person",
+                                   trusted: Bool = true) -> String {
         counter += 1
         let id = idStyle == .uuid ? UUID().uuidString.lowercased() : "p\(counter)"
         entities[id] = FactsEntity(id: id, seq: counter, kind: kind, name: name, aliases: name.map { [$0] } ?? [],
-                                   group: group, count: nil, deceased: false)
+                                   group: group, count: nil, deceased: false,
+                                   trustedAliases: trusted ? (name.map { [$0] } ?? []) : [])
         return id
+    }
+
+    /// Gives an entity an alias; a trusted memory's alias is also matchable by trusted memories.
+    mutating func addAlias(_ id: String, _ alias: String, trusted: Bool) {
+        entities[id]?.aliases.insert(alias)
+        if trusted { entities[id]?.trustedAliases.insert(alias) }
     }
 
     /// Adds an entity loaded from storage, keeping its id; creation order follows load order.
@@ -253,11 +264,12 @@ public struct FactsGraph: Sendable {
     }
 
     /// Entities a name could mean, by the kind's match rule (exact, first name, or containment), in creation order.
-    public func byName(_ name: String, kind: String = "person") -> [FactsEntity] {
+    /// `onlyTrusted`: match only the aliases trusted memories gave (when a trusted memory names someone).
+    public func byName(_ name: String, kind: String = "person", onlyTrusted: Bool = false) -> [FactsEntity] {
         let f = FactsText.normName(name, kind: kind, registry: registry)
         let rule = registry.kinds[kind]?.match ?? "exact"
         return orderedEntities.filter { $0.name != nil && $0.kind == kind }.filter { e in
-            let al = e.aliases.map { FactsText.normName($0, kind: kind, registry: registry) }
+            let al = (onlyTrusted ? e.trustedAliases : e.aliases).map { FactsText.normName($0, kind: kind, registry: registry) }
             if al.contains(f) { return true }
             if rule == "first_name", f.count >= 3,
                al.contains(where: { $0.split(separator: " ").first.map(String.init) == f }) {
@@ -274,13 +286,14 @@ public struct FactsGraph: Sendable {
     /// entity has it; two entities it would join become a merge suggestion in To check, never a merge
     /// (memory processing §11.4).
     public mutating func entityFor(_ name: String, kind: String, also: String? = nil, trusted: Bool = true) -> String {
-        let hits = byName(name, kind: kind)
-        let id = hits.first?.id ?? also.flatMap { byName($0, kind: kind).first?.id } ?? newEntity(name: name, kind: kind)
-        entities[id]?.aliases.insert(name)
+        let hits = byName(name, kind: kind, onlyTrusted: trusted)
+        let id = hits.first?.id ?? also.flatMap { byName($0, kind: kind, onlyTrusted: trusted).first?.id }
+            ?? newEntity(name: name, kind: kind, trusted: trusted)
+        addAlias(id, name, trusted: trusted)          // an untrusted memory's names never match a trusted memory's
         if let also {
             let others = byName(also, kind: kind).filter { $0.id != id }
-            if others.isEmpty, trusted {      // an untrusted memory's alias would re-route trusted evidence
-                entities[id]?.aliases.insert(also)
+            if others.isEmpty {
+                addAlias(id, also, trusted: trusted)
             } else {
                 for o in others where !mergeSuggestions.contains(where: { $0.entity == id && $0.other == o.id }) {
                     mergeSuggestions.append(MergeSuggestion(entity: id, other: o.id))
@@ -304,6 +317,20 @@ public struct FactsGraph: Sendable {
         let kind = registry.kindOf(predicate)
         let holders = Set(facts.filter { $0.predicate == predicate && !$0.negated }.map(\.entity))
         return byName(placeholder(predicate, name) ?? name, kind: kind).map(\.id).filter { holders.contains($0) }
+    }
+
+    /// A fact's label: the user's, else the first trusted statement's; an untrusted label only for a fact with no
+    /// trusted evidence (it could otherwise classify, or drop, a trusted holder).
+    func effectiveLabel(_ f: LearnedFact) -> String? {
+        f.assertions.last(where: { $0.fromUser && $0.label != nil })?.label
+            ?? f.assertions.first(where: { $0.trusted && $0.label != nil })?.label
+            ?? (f.trusted ? nil : f.assertions.first(where: { $0.label != nil })?.label)
+    }
+
+    mutating func refreshLabel(_ i: Int) {
+        let l = effectiveLabel(facts[i])
+        facts[i].label = l
+        facts[i].cls = labelClass(facts[i].predicate, l)
     }
 
     func labelClass(_ predicate: String, _ label: String?) -> String? {
@@ -352,19 +379,19 @@ public struct FactsGraph: Sendable {
             let pid: String
             if roster.contains(p.person), let e = entities[p.person], e.group != nil, e.name == nil,
                e.group?.cls == nil || (e.count ?? 1) > 1 {
-                pid = byName(p.name).first?.id ?? newEntity(name: p.name)
+                pid = byName(p.name, onlyTrusted: trusted).first?.id ?? newEntity(name: p.name, trusted: trusted)
                 regroup[p.person] = pid
             } else if roster.contains(p.person), entities[p.person] != nil {
                 pid = p.person
-                entities[pid]?.aliases.insert(p.name)
+                addAlias(pid, p.name, trusted: trusted)
                 if entities[pid]?.name == nil { entities[pid]?.name = p.name }
             } else if p.person == "ambiguous" {
                 names[NameKey(memoryID: mid, surface: p.name)] =
-                    NameLink(entity: nil, basis: .ambiguous, candidates: byName(p.name).map(\.id))
+                    NameLink(entity: nil, basis: .ambiguous, candidates: byName(p.name, onlyTrusted: trusted).map(\.id))
                 continue
             } else {
-                let same = p.person == "new" ? byName(p.name) : []
-                pid = same.count == 1 ? same[0].id : newEntity(name: p.name)
+                let same = p.person == "new" ? byName(p.name, onlyTrusted: trusted) : []
+                pid = same.count == 1 ? same[0].id : newEntity(name: p.name, trusted: trusted)
             }
             here[f] = pid
             names[NameKey(memoryID: mid, surface: p.name)] = NameLink(entity: pid, basis: trusted ? .named : .untrusted,
@@ -423,15 +450,13 @@ public struct FactsGraph: Sendable {
             a.only = r.only
             a.deceased = r.deceased
             if let i = existing.first {
-                if r.label != nil, facts[i].label == nil {
-                    facts[i].label = r.label
-                    facts[i].cls = cls
-                }
                 facts[i].only = facts[i].only || (r.only && trusted)
                 facts[i].assertions.append(a)
+                refreshLabel(i)
             } else {
                 facts.append(LearnedFact(entity: pid, predicate: pred, label: r.label, cls: cls, only: r.only && trusted,
                                          negated: false, assertions: [a]))
+                refreshLabel(facts.count - 1)
             }
             if trusted, let c = r.count { entities[groupFor(pred, cls)]?.count = c }
             if trusted, r.only { entities[groupFor(pred, cls)]?.count = 1 }

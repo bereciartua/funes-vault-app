@@ -141,7 +141,11 @@ extension FactsGraph {
             for var r in mine.filter({ $0.s == nil && $0.e == nil }) {
                 var target: Building?
                 let candidates = eps.filter { !(r.a.trusted && untrustedOnly.contains(ObjectIdentifier($0))) }
-                if let w = r.w {
+                // The user's status with no dates and no selector is about the latest episode.
+                if r.a.fromUser, r.a.status != .unknown, !candidates.isEmpty {
+                    target = candidates.firstMax { ($0.startRange ?? $0.endRange)?.lo ?? DateRange.minDay }
+                }
+                if target == nil, let w = r.w {
                     if r.bound != nil {      // "no longer there": which episode it ended is decided only if just one fits
                         let ended = candidates.filter { ep in ep.endRange(for: r.a.trusted).map { $0.hi <= w } ?? false }
                         let open = candidates.filter { ep in
@@ -199,7 +203,8 @@ extension FactsGraph {
             let counts: (Row) -> Bool = { r in
                 (r.a.trusted || !trusted) && (!userStatus || r.a.fromUser)
             }
-            var (start, cs, stTr) = Self.combine(ep.starts.filter { $0.assertion.trusted || !trusted })
+            // An untrusted start counts (at `inferred`) when no trusted memory states one (memory processing §11.5).
+            var (start, cs, stTr) = Self.combine(ep.starts)
             if start == nil {            // only a hand-over's assumed start (role resolution; the timeline ignores it)
                 start = ep.rows.filter { $0.a.trusted || !trusted }.compactMap(\.hand).firstMin { $0.lo }
             }

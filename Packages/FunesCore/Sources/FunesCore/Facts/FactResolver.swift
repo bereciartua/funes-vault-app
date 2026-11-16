@@ -197,7 +197,7 @@ extension FactsGraph {
             // someone certainly held it then: a holder whose stated start comes later isn't a candidate
             out = out.filter { h in
                 let e = holdEps[h.entity.id]!
-                return !(e.statedStart && e.start!.lo > d.hi)
+                return !(e.statedStart && e.startTrusted && e.start!.lo > d.hi)   // an untrusted start rules no one out
             }
         }
         var extra = 0
@@ -215,10 +215,14 @@ extension FactsGraph {
            !(dec.entity.map { rejections[key]?.contains($0) ?? false } ?? false) {     // a correction beats a decision
             if dec.basis == .someoneElse { return (nil, .someoneElse) }
             // A decision can't lift what it chose above that entity's evidence: untrusted facts give an untrusted link.
-            if dec.basis == .context, let e = dec.entity,
-               facts.contains(where: { $0.entity == e && $0.predicate == ph.predicate && !$0.negated }),
-               !facts.contains(where: { $0.entity == e && $0.predicate == ph.predicate && !$0.negated && $0.trusted }) {
-                return (e, .untrusted)
+            // Judged by the episodes that may hold then, not the fact as a whole: an old trusted stint doesn't vouch for
+            // an untrusted new one.
+            if dec.basis == .context, let e = dec.entity {
+                let (d, written) = asOf(mem, ph)
+                let mine = episodes(ph.predicate).filter { $0.entity == e }
+                let held = mine.filter { holds($0, ph, d, deceased: entities[e]?.deceased ?? false, written: written) }
+                let support = held.isEmpty ? mine : held
+                if !support.isEmpty, !support.contains(where: { $0.trusted && $0.startTrusted }) { return (e, .untrusted) }
             }
             return (dec.entity, dec.basis)
         }
