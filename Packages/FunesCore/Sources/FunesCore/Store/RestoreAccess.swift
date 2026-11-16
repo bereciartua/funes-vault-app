@@ -119,6 +119,8 @@ enum RestoreAccess {
                     UPDATE disclosure SET status = 'denied', reason = ?, decided_at = COALESCE(decided_at, ?)
                     WHERE status IN ('needs_approval', 'approved')
                     """, arguments: [ReasonCode.approvalExpired.rawValue, now])
+                // A new facts epoch, so the facts revision changes even if the backup's counter matches (storage §5.1).
+                try db.execute(sql: "INSERT OR REPLACE INTO meta (key, value) VALUES ('facts_epoch', ?)", arguments: [UUID().db])
                 return .commit
             }
             if current != nil { try db.execute(sql: "DETACH DATABASE live") }

@@ -309,6 +309,10 @@ enum MemoryStore {
             """, arguments: [m.title, m.body, m.kind.rawValue, m.sensitivity.rawValue, m.expiresAt, m.confidence,
                              m.updatedAt, m.version, id.db])
         if changed.contains("categories") { try setCategories(db, memoryID: id, keys: m.categoryKeys) }
+        if !changed.isEmpty {
+            try FactStore.versionChanged(db, memoryID: id.db, from: old.version, to: m.version,
+                                         textChanged: changed.contains("title") || changed.contains("body"), now: now)
+        }
         if !changed.isEmpty, actor.isOwner {
             try db.execute(sql: "UPDATE memory SET trust = 'trusted' WHERE id = ?", arguments: [id.db])
         }
@@ -335,6 +339,7 @@ enum MemoryStore {
         m.deletedAt = status == .deleted ? now : nil
         try db.execute(sql: "UPDATE memory SET status = ?, deleted_at = ?, updated_at = ?, version = ? WHERE id = ?",
                        arguments: [status.rawValue, m.deletedAt, now, m.version, id.db])
+        try FactStore.versionChanged(db, memoryID: id.db, from: m.version - 1, to: m.version, textChanged: false, now: now)
         try appendProvenance(db, memoryID: id, event: event, actor: actor, at: now, fields: ["status"])
         return m
     }
@@ -354,6 +359,7 @@ enum MemoryStore {
             throw VaultError.notFound
         }
         guard status == MemoryStatus.deleted.rawValue else { throw VaultError.invalidState }
+        try FactStore.purge(db, memoryIDs: [id.db], now: now)
         try UndoLog.purge(db, memoryIDs: [id.db])
         try dropGroupText(db, memoryIDs: [id.db], now: now)
         try db.execute(sql: "DELETE FROM memory WHERE id = ?", arguments: [id.db])
@@ -363,6 +369,7 @@ enum MemoryStore {
     static func purgeDeleted(_ db: Database, now: Date) throws -> Int {
         let cutoff = now.addingTimeInterval(-deletedRetention)
         let ids = try String.fetchAll(db, sql: "SELECT id FROM memory WHERE status = 'deleted' AND deleted_at <= ?", arguments: [cutoff])
+        try FactStore.purge(db, memoryIDs: ids, now: now)
         try UndoLog.purge(db, memoryIDs: ids)
         try dropGroupText(db, memoryIDs: ids, now: now)
         try db.execute(sql: "DELETE FROM memory WHERE status = 'deleted' AND deleted_at <= ?", arguments: [cutoff])
