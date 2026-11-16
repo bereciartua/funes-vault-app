@@ -2,6 +2,8 @@
 
 **Status:** Accepted · 2026-10-23 · Implemented in Phase 6c (2026-10-24; benchmark in [spike results](../../plans/spike-results.md#phase-6c1-provider-embeddings-as-a-second-index): Qwen3-Embedding-0.6B and OpenAI `text-embedding-3-small` / `-large` passed; decision 2's per-index min-max kept over z-scores) · **Amends** [ADR-0014](0014-user-selectable-models.md) decision 5 ("one embedding model at a time") and [ADR-0016](0016-bundled-bge-small-embeddings.md) (choosing another embedding model, "later")
 
+**Amended by [ADR-0032](0032-facts-about-you.md) (2026-11-15):** with learned facts in use, a search that matches an entity also scores its memories against the rest of the query (the query without the matched names). With the provider index that's a second embedding request for that search, no longer one embedding per search, but only when every matched name comes from sendable facts; otherwise the rest is embedded on the Mac only ([memory processing §4](../../domain/memory-processing.md#4-ranking)).
+
 **Context.**
 - **Choosing another embedding model is specified but deferred:** switching re-embeds the vault, search uses one model's vectors, and memories above the cloud limit get no vector, so they're found by keyword only ([model providers §7–8](../model-providers.md#7-choosing-a-provider-embedding-model)).
 - **That makes search worse for sensitive memories** at the recommended limit (Internal): "peanut allergy" is Health, so Sensitive, and would lose semantic search, which the bundled bge-small gives it today.

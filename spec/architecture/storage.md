@@ -5,7 +5,7 @@ Everything lives under `~/Library/Application Support/FunesVault/`, in a 0700 fo
 
 | Path | Contents | Notes |
 |---|---|---|
-| `vault.sqlite` (+ `-wal`, `-shm`) | Memories, categories, suggestions, agents, access, disclosures, devices, receipts, provenance, embeddings, FTS, the profile (v0.5) | GRDB `DatabasePool`, WAL mode |
+| `vault.sqlite` (+ `-wal`, `-shm`) | Memories, categories, suggestions, agents, access, disclosures, devices, receipts, provenance, embeddings, FTS, the profile (v0.5), learned facts (v0.10) | GRDB `DatabasePool`, WAL mode |
 | `agent-keys/<agentId>.key` | The agent's MCP key, bare with no newline | Written once, never read back except by **Copy key**. Deleted on removal |
 | `agent-keys/<agentId>.remote.key` | The agent's Remote Access token (`fns_mcpr_v1_`), bare | Only with Allow cloud access. Read back only by **Copy Remote Token…**. Replaced by **Reset Remote Token…**; deleted when cloud access is turned off or the agent is removed ([ADR-0018](decisions/0018-remote-access-in-v0.1.md)) |
 | `remote-connections.json` | Remote Access OAuth state: connected cloud apps (agent id, app name, OAuth client id, MCP URL, SHA-256 digests of the access, refresh and recently rotated refresh tokens, expiry and use times) and registered OAuth clients (`dcr_`, and `cfg_` with the digest of its `fns_ocs_v1_` secret) | BridgeKitRemote's `OAuthStore`: written atomically with fsync, fails closed (a wrong owner, mode, size or content makes OAuth unavailable and the file is never overwritten). No token in the clear. Never exported |
@@ -271,6 +271,174 @@ CREATE TABLE memory_revision (
 );
 CREATE INDEX memory_revision_replaced ON memory_revision(replaced_at);
 
+-- v9_facts (v0.10, ADR-0032; memory processing §11): learned facts. Owner side only: agent retrieval never reads
+-- these tables. No start or end dates are stored: episodes are derived from fact_evidence when needed.
+CREATE TABLE entity (
+  id          TEXT PRIMARY KEY,
+  kind        TEXT NOT NULL CHECK (kind IN ('person','organization','place','thing')),
+  is_you      INTEGER NOT NULL DEFAULT 0,                -- exactly one row; never has a name or alias
+  name        TEXT,                                      -- shown name; inferred ones go with their last supporting memory
+  group_predicate TEXT, group_label TEXT, group_count INTEGER,  -- a role group ("your sisters") until members are named
+  deceased    INTEGER NOT NULL DEFAULT 0,                -- learned from memories ("my late grandmother") or set by the user
+  hidden      INTEGER NOT NULL DEFAULT 0,
+  manual      INTEGER NOT NULL DEFAULT 0,                -- created by the user: never purged with memories
+  tombstone   INTEGER NOT NULL DEFAULT 0,                -- 1: no memory supports it, but a manual entry, override or
+                                                         -- correction references it (§4); name is NULL unless the user typed it
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+CREATE UNIQUE INDEX entity_you ON entity(is_you) WHERE is_you = 1;
+
+CREATE TABLE entity_alias (
+  id          TEXT PRIMARY KEY,
+  entity_id   TEXT NOT NULL REFERENCES entity(id) ON DELETE CASCADE,
+  alias       TEXT,                                      -- as written; NULL in a tombstone unless the user typed it
+  normalized  TEXT NOT NULL,                             -- case and accents folded; legal suffixes for organizations
+  manual      INTEGER NOT NULL DEFAULT 0,                -- typed by the user
+  confirmed   INTEGER NOT NULL DEFAULT 0                 -- confirmed by the user (To check, Merge With…): kept in a tombstone
+);
+CREATE INDEX entity_alias_normalized ON entity_alias(normalized);
+
+CREATE TABLE alias_evidence (
+  alias_id       TEXT NOT NULL REFERENCES entity_alias(id) ON DELETE CASCADE,
+  memory_id      TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
+  memory_version INTEGER NOT NULL,
+  span_start     INTEGER NOT NULL, span_end INTEGER NOT NULL,   -- Unicode scalar offsets into the memory's text at that version
+  quote          TEXT NOT NULL,
+  sensitivity    INTEGER NOT NULL,                       -- the memory's at that version
+  trust          TEXT NOT NULL CHECK (trust IN ('trusted','untrusted')),
+  run_id         TEXT REFERENCES facts_run(id) ON DELETE SET NULL,
+  PRIMARY KEY (alias_id, memory_id, memory_version, span_start)
+);
+CREATE INDEX alias_evidence_memory ON alias_evidence(memory_id);
+
+CREATE TABLE fact (
+  id          TEXT PRIMARY KEY,
+  predicate   TEXT NOT NULL,                             -- a registry key; the subject is always "you" in v0.10
+  entity_id   TEXT NOT NULL REFERENCES entity(id) ON DELETE RESTRICT,  -- never cascades: inferred facts are deleted
+                                                         -- first, and an entity a manual fact needs is kept as a tombstone
+  manual      INTEGER NOT NULL DEFAULT 0,                -- entered by the user; its sensitivity is in manual_override
+  tombstone   INTEGER NOT NULL DEFAULT 0,                -- 1: kept only because a manual entry, override or correction
+                                                         -- references it; holds its id, predicate and the user's own values
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL,
+  UNIQUE (predicate, entity_id)                          -- episodes, qualifiers and status come from evidence
+);
+
+-- One evidence table for facts, qualifiers and order edges, from memories and from the user.
+CREATE TABLE fact_evidence (
+  id             TEXT PRIMARY KEY,
+  target_kind    TEXT NOT NULL CHECK (target_kind IN ('fact','qualifier','order')),
+  fact_id        TEXT NOT NULL REFERENCES fact(id) ON DELETE CASCADE,
+  qualifier      TEXT,                                   -- 'label', 'title', 'kind'… (target_kind 'qualifier')
+  other_fact_id  TEXT REFERENCES fact(id) ON DELETE CASCADE,  -- target_kind 'order'
+  direction      TEXT CHECK (direction IN ('preceded_by','followed_by')),
+  episode_selector       TEXT,                           -- user rows: JSON {lo, hi}, the date range of the episode the
+  other_episode_selector TEXT,                           -- user acted on (fact_id's, other_fact_id's); NULL: the fact
+  source         TEXT NOT NULL CHECK (source IN ('memory','user')),  -- 'user': a date, order or qualifier the user
+                                                         -- entered; it wins over inference
+  memory_id      TEXT REFERENCES memory(id) ON DELETE CASCADE,       -- NULL for 'user'
+  memory_version INTEGER,
+  span_start     INTEGER, span_end INTEGER,              -- NULL for 'user'
+  quote          TEXT,                                   -- NULL for 'user'
+  asserted       TEXT NOT NULL DEFAULT '{}',  -- JSON as written: {status?, start?, end?, time?, value?, episodeCue?},
+                                              -- each date with its text, range (lo, hi) and precision (day·month·year)
+  states         INTEGER NOT NULL,                       -- 1: the memory states it; 0: it only mentions it (1 for 'user')
+  polarity       TEXT NOT NULL CHECK (polarity IN ('affirmed','denied')),
+  sensitivity    INTEGER NOT NULL,                       -- the memory's at that version, or the user's choice
+  trust          TEXT NOT NULL CHECK (trust IN ('trusted','untrusted')),  -- 'trusted' for 'user'
+  call_group     TEXT,                                   -- NULL for 'user'
+  run_id         TEXT REFERENCES facts_run(id) ON DELETE SET NULL,
+  CHECK ((source = 'memory') = (memory_id IS NOT NULL AND memory_version IS NOT NULL AND quote IS NOT NULL))
+);
+CREATE INDEX fact_evidence_fact ON fact_evidence(fact_id, target_kind);
+CREATE INDEX fact_evidence_memory ON fact_evidence(memory_id, memory_version);
+
+CREATE TABLE mention_decision (
+  id             TEXT PRIMARY KEY,
+  memory_id      TEXT NOT NULL,                          -- no FK: a user's decision keeps the id after a purge
+  memory_version INTEGER,                                -- the model's decisions; NULL for the user's (keyed to the quote)
+  mention        TEXT,                                   -- "my sister", "Alex"; NULL once purged
+  quote          TEXT,                                   -- the quoted span's text; NULL once purged
+  span_start     INTEGER, span_end INTEGER,
+  outcome        TEXT NOT NULL CHECK (outcome IN ('entity','group','someone_else','unknown','rejected')),
+  entity_id      TEXT,                                   -- no FK: a correction outlives an inferred entity
+  basis          TEXT NOT NULL,                          -- memory processing §11.4
+  source         TEXT NOT NULL CHECK (source IN ('model','user')),
+  call_group     TEXT,
+  run_id         TEXT REFERENCES facts_run(id) ON DELETE SET NULL,
+  created_at     TEXT NOT NULL,
+  invalidated_at TEXT                                    -- a dependency changed; the memory is queued again
+);
+CREATE INDEX mention_decision_memory ON mention_decision(memory_id);
+
+CREATE TABLE decision_dependency (
+  decision_id TEXT NOT NULL REFERENCES mention_decision(id) ON DELETE CASCADE,
+  kind        TEXT NOT NULL CHECK (kind IN ('memory','fact','entity')),
+  ref_id      TEXT NOT NULL,
+  ref_version TEXT NOT NULL,                             -- a memory version, or a fact's or entity's updated_at
+  PRIMARY KEY (decision_id, kind, ref_id)
+);
+CREATE INDEX decision_dependency_ref ON decision_dependency(kind, ref_id);
+
+CREATE TABLE manual_override (
+  id          TEXT PRIMARY KEY,
+  target_kind TEXT NOT NULL CHECK (target_kind IN ('entity','alias','fact','qualifier','date','status','order')),
+  target_id   TEXT NOT NULL,                             -- no FK: it outlives what it corrects
+  field       TEXT NOT NULL,                             -- 'name', 'kind', 'predicate', 'label', 'deceased', 'rejected',
+                                                         -- 'merged_into', 'not_same' (Merge With…, Not the Same)…
+  value       TEXT,                                      -- JSON (for 'merged_into' and 'not_same': the other entity's id)
+  episode_selector TEXT,                                 -- JSON {lo, hi}: the target episode's date range when the user
+                                                         -- acted; NULL when it targets the whole fact
+  sensitivity INTEGER NOT NULL,                          -- the user's choice; decides whether it may be sent
+  memory_id   TEXT,                                      -- a correction made from a memory ("Not this")…
+  quote       TEXT,                                      -- …keyed to its quoted span; NULL once purged. NULL memory_id:
+                                                         -- it applies everywhere
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+CREATE INDEX manual_override_target ON manual_override(target_kind, target_id);
+-- An override on an order edge carries the edge itself (both endpoints' fact ids and episode selectors) in `value`,
+-- so it survives when the memory evidence that stated the edge is removed: a correction-owned order, with no quote.
+
+-- Local rows only: the qualification records ship with the app as Resources/facts-qualification.json, with the
+-- same fields. A row here is the two-week review's off-switch (passed = 0) for one of them. Neither is exported,
+-- and Remove learned facts doesn't touch them.
+CREATE TABLE fact_qualification (
+  predicate        TEXT NOT NULL,
+  use              TEXT NOT NULL CHECK (use IN ('recorded','linked','timeline','attributes','bridges')),
+  basis            TEXT NOT NULL DEFAULT '',             -- 'sole_known' for that attribute gate; '' for every other
+  model            TEXT NOT NULL,                        -- "<provider>/<model>"
+  prompt_version   TEXT NOT NULL,                        -- the call group's
+  registry_version TEXT NOT NULL,
+  adapter          TEXT NOT NULL,
+  batching         TEXT NOT NULL,
+  gate             TEXT NOT NULL,                        -- the gate measured, and its result
+  passed           INTEGER NOT NULL,                     -- 0: turned off (a failed gate, or the two-week review)
+  recorded_at      TEXT NOT NULL,
+  PRIMARY KEY (predicate, use, basis, model, prompt_version, registry_version, adapter, batching)
+);
+
+CREATE TABLE facts_run (
+  id               TEXT PRIMARY KEY,
+  kind             TEXT NOT NULL CHECK (kind IN ('backfill','incremental','reread','reconciliation')),
+  call_group       TEXT NOT NULL,
+  registry_version TEXT NOT NULL,
+  prompt_version   TEXT NOT NULL,
+  engine           TEXT NOT NULL,
+  cap_exempt       INTEGER NOT NULL DEFAULT 0,           -- the first backfill only
+  resume_after     INTEGER,                              -- memory.seq last finished, so a backfill resumes
+  counts           TEXT NOT NULL DEFAULT '{}',           -- JSON: memories, calls, entities, facts, decisions
+  started_at       TEXT NOT NULL,
+  finished_at      TEXT,
+  error            TEXT
+);
+-- meta('facts_revision') = a counter, +1 whenever learned facts, decisions or corrections change what search or
+-- answers would show (the held-answer key, companion protocol status.get). meta('facts_epoch') = a UUID, set by the
+-- migration and again on every restore, so a restore can't repeat a revision: status.get's factsRevision is
+-- "<epoch>.<counter>". meta('facts_backfill') = the run ids of the first backfill, once started: one exemption in
+-- total, covering both call groups, not one per group.
+
 CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema version, vault id, etc.
 -- v0.5: meta('keep_revisions') = '0' once the user turned earlier versions off; absent means on.
 -- v0.3: meta('tidy_up_split_prompt') = the extraction prompt version whose one-time clearing of older split
@@ -286,6 +454,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - `v6_profile` (v0.5, [ADR-0026](decisions/0026-about-you-profile.md)): the `profile` table (no row until the user first saves About You), `access_profile_field` with `name` for every agent not removed, and `disclosure.profile_fields_sent` (`[]` for every existing request).
 - `v7_memory_revisions` (v0.5, [ADR-0027](decisions/0027-memory-revisions.md)): the `memory_revision` table and its index. Nothing to backfill.
 - `v8_tidy_up_scope` (v0.5.1, [memory processing §9.7](../domain/memory-processing.md#97-tidy-up-on-one-memory)): `tidy_up_run.scope`, `all` (every existing run) or `memory` for Tidy Up on one memory.
+- `v9_facts` (v0.10, Phase 13a.1; [ADR-0032](decisions/0032-facts-about-you.md), [memory processing §11](../domain/memory-processing.md#11-facts-about-you)): the tables `entity` (with the one *you* row), `entity_alias`, `alias_evidence`, `fact`, `fact_evidence` (one evidence table for facts, qualifiers and order edges), `mention_decision`, `decision_dependency`, `manual_override`, `fact_qualification` and `facts_run`, and their indexes; `processing_job` gains kind `facts`, `memory_version` and `call_group` (null for other kinds), so a job is one committed memory version in one call group; `meta('facts_epoch')` gets a new UUID. Fields as in the [domain model](../domain/domain-model.md#learned-facts-v010). Nothing to backfill: the tables stay empty, apart from *you*, until the user starts the first backfill.
 - Before running pending migrations: make an online backup to `Backups/pre-<migration>-<date>.sqlite`.
 - Each migration has a test: open a fixture database created by the previous version, migrate it, and check the data and invariants.
 - Downgrades aren't supported. An older app version that finds a newer schema refuses to open the vault, shows "Update Funes", and never writes to it.
@@ -298,6 +467,15 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - **Purging** a deleted memory removes its FTS rows, embedding and provenance (cascade). `disclosure_item` rows keep the memory id for Activity labelling, shown as "(deleted memory)".
 - **Purging (v0.3)** also removes the memory's `undo_entry` rows, the text (title, body, evidence) of every suggestion it was saved from or that names it as a target or source, grouped or not and whatever its status (a pending one is closed as rejected, since it can no longer be applied), and the source text of the `suggestion_group` a saved piece belongs to (with the original row's title and body), so no copy of its text outlives it (FR-V-04). The text goes before the row does, since the delete nulls `result_memory_id` and `target_memory_id`. Delete Now does the same at once.
 - **Purging (v0.5)** also removes the memory's earlier versions (cascade).
+- **Purging (v0.10, learned facts;** [memory processing §11.8](../domain/memory-processing.md#118-keeping-it-right)**)** also removes, in the same transaction, every copy of a name, label, qualifier or quote that only that memory supported, so none outlives its last supporting memory (FR-V-04):
+  - its `alias_evidence` and memory `fact_evidence` rows (cascade) and its model decisions;
+  - then every inferred alias, fact and entity left with no supporting memory, names and labels included;
+  - any undo data holding them;
+  - **what the user made stays:** an entity or fact the user created (`manual`), or that a manual entry, a user evidence row, an override or a correction references, is never deleted (`fact` → `entity` doesn't cascade). With no memory left supporting it, it becomes a **tombstone** (`tombstone` = 1) holding its id, its predicate, the user's own values, and the normalised alias the user confirmed or typed; inferred names, aliases and quotes go. A tombstone re-attaches when a memory again supports the same predicate and normalised alias;
+  - a user's `mention_decision` or a `manual_override` made from that memory loses its `mention` and `quote` and keeps its memory, entity and fact ids. It holds again only through an identity-preserving restore (a Funes export restored as active memories, §5.2), never because the same text comes back another way.
+
+  Delete Now does the same at once. **Remove learned facts** deletes every inferred row (memory evidence, aliases, model decisions and their dependencies, inferred entities and facts, runs) and keeps manual entries, user evidence, corrections, the tombstones they need (made as a purge makes them) and the *you* entity. It doesn't touch qualification records or off-switches. It writes a `facts_removed` Activity row with counts only.
+- **Learned facts (v0.10):** the Facts task applies a memory's results in one transaction, only if the memory's version and every roster entry the call used are unchanged; `meta('facts_revision')` is incremented in that transaction, and in any correction's or purge's that changes what search or answers would show.
 - **Auto-apply (v0.3):** each automatic change, its `undo_entry`, its provenance and the watermark update are written in one transaction, after re-checking every involved memory's version.
 
 ## 5. Maintenance jobs
@@ -310,6 +488,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 | Processing jobs (v0.3) | after every vault change and every minute, one at a time; `running` ones requeued at launch | New memories processing of queued inputs ([memory processing §5.2](../domain/memory-processing.md#52-which-inputs-phase-6)): until 6a, classification of Mac and iPhone captures. Retries after 30 s, 2, 8 and 32 min, then `failed`. Finished jobs deleted after 30 days (daily) |
 | Daily tidy-up (v0.3) | daily at the user's time (`NSBackgroundActivityScheduler`), on demand, or on the next launch or wake after a missed run; only while on | [Memory processing §9](../domain/memory-processing.md#9-daily-tidy-up) |
 | Undo log cleanup (v0.3) | daily | Delete `undo_entry` rows past 30 days; drop source text of fully decided suggestion groups; v0.5: delete earlier versions past 90 days, and each memory's oldest beyond 50 |
+| Facts jobs (v0.10) | with processing jobs, in their low-priority lane: paused while New memories or tidy-up jobs wait | [Memory processing §11.3](../domain/memory-processing.md#113-the-facts-task): one `facts` job per committed memory version and call group, only while *Learn from memories* is on. The first backfill is a resumable `facts_run` (`resume_after`) |
 | Backup | daily, and before migrations | Keep the last 7 |
 | Activity compaction | launch, every 6 h, above 8 MB | Retention per FR-L-03 |
 | Receipt cleanup | daily | Delete capture receipts older than 90 days |
@@ -336,9 +515,20 @@ If steps 1–5 fail, the copy is deleted and the vault is unchanged; the app log
 
 **What a restore still brings back:** everything about the memories themselves, including their sensitivity and categories. A memory whose sensitivity was raised, or that was moved into a denied category, after the backup comes back with its old labels, and agents' access applies to those. The same goes for earlier versions, the Inbox and settings kept in the database, such as `meta('keep_revisions')`.
 
+**Learned facts (v0.10)** come back as the backup holds them, like the memories they were learned from. A memory's evidence is still keyed to its versions, so nothing is re-learned. The restore sets a new `meta('facts_epoch')`, so the facts revision changes even if the backup's counter matches, and the iPhone drops its held answer.
+
 Not carried forward: Remote Access's connected cloud apps live in `remote-connections.json`, which a restore doesn't touch. Each call is checked against the agent's cloud access and removal (`FunesRemoteServer`), which come from the current vault.
 
+### 5.2 Learned facts in exports (v0.10)
+`funesvault.export.v1` gains an optional `facts` object, so an export round-trips the learned facts: `entities`, `aliases`, `aliasEvidence`, `facts`, `evidence`, `decisions` (with their dependencies), `manualOverrides` and `runs`, each row as stored, tombstones included. An export without it (older, or with no learned facts) restores as before.
+- **Written** whenever the vault has learned facts or manual entries, with the memories it exports; evidence and decisions for memories left out of the export (archived ones, when they aren't included) are left out too, and so are names and labels only those memories support, as purge would (what the user made stays, as tombstones where needed).
+- **Restored** only into a vault with no learned facts and no manual entries (otherwise the preview says "Learned facts in this file aren't restored: this vault already has its own."). One rule per restore choice:
+  - **Restore as active memories:** the `facts` object restores as it is, each memory id mapped to the memory it was restored as, at its new version. This is the identity-preserving restore under which a rejection keyed to a memory holds again (§4).
+  - **Restore as suggestions:** inferred rows are dropped (they're learned again once the memories are applied), while manual entries, user evidence, corrections and their tombstones restore with their sensitivity.
+- **Never** in it: the Facts task's settings (user defaults), qualification records and off-switches (`fact_qualification`), or anything a provider holds. The profile's names aren't added: *you* has none.
+
 ## 6. iPhone storage
+
 - **App Group container:** `capture-queue.sqlite` (the capture queue), with file protection `completeUntilFirstUserAuthentication`.
 - **Keychain:** device signing and HPKE keys, and the pairing record (Mac public keys, ids, addresses).
 - **App Group container (v0.4):** `overview.json`, the last `overview.get` answer for each range (counts, dates and agent names; no memory text or titles), with the same file protection, for Home and the widgets ([ADR-0025](decisions/0025-vault-overview-and-iphone-cache.md); [companion protocol §6.1](companion-protocol.md#61-overview-cache-phone-v04)).

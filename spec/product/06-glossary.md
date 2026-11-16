@@ -94,6 +94,27 @@ New words for [memory processing §5 and §9](../domain/memory-processing.md#5-n
 | **Applied automatically** | "auto-applied", "auto-apply", "Applied by Funes" | The Inbox list of changes Funes made without asking, each with **Undo** for 30 days ("Undo This and 2 Later Changes"). The setting is "Apply changes automatically". | Inbox, Features, Activity |
 | **Tidy up**, **daily tidy-up** (6b) | "consolidation", "cleanup", "reconcile" | The daily pass that proposes updates, merges, splits and archives. "Tidy Up Now". | Inbox, Features ▸ Daily tidy-up |
 
+## Facts about you (v0.10)
+New words for [memory processing §11](../domain/memory-processing.md#11-facts-about-you) and [ADR-0032](../architecture/decisions/0032-facts-about-you.md), added before the Phase 13 UI. The [domain glossary](../domain/glossary.md) defines the model; several of these are words for the spec only, and the UI says something plainer.
+
+| Use | Stop using | Means | Where |
+|---|---|---|---|
+| **learned facts**, **facts about you** | "knowledge graph", "graph", "memory graph", "profile" (for these), "insights" | What Funes learns from your memories about the people in your life and where you've worked, for your own search and answers. Never given to agents in v0.10. "Remove Learned Facts…" removes what was inferred, never what you entered. | Settings ▸ AI ▸ Features ▸ Facts, People & history, the backfill sheet |
+| **Facts** (the task; working name) | "Facts about you" as the row's title, "entity extraction", "People" (for the task) | The AI feature that reads memories to learn them, off by default, with *Learn from memories* and *Use in search and answers*. Offers only models that qualified for it. | Settings ▸ AI ▸ Features, Privacy & Limits |
+| **People & history** (working name) | "Entities", "Graph", "Contacts" | The Mac's section under Vault: the list of people and names, your timeline, To check. | Sidebar, People & history |
+| **entity** (spec only) | n/a | A person, organization, place or thing your memories mention, with its aliases. The UI names the kind instead: "person", "organization", "place", "thing", or "name" when they're counted together ("41 other names"). | Spec, code |
+| **role group** (spec only) | "group entity" in the UI | An entity for several people under one role, until they're named. The UI says "Your sisters (2)", "Your parents", never a name. | People & history list |
+| **fact** | "relationship" (that's a memory kind), "triple", "edge" | You → predicate → entity: "Maria is your sister", "you worked at Acme". The UI shows it in the registry's words ("your sister", "where you worked until 2021"), never as a predicate id. | Entity pages, your timeline, why lines |
+| **predicate** (spec only) | "relation type" in the UI | A kind of fact (partner, sibling, works at, client…), defined in the registry. The UI says **Relation…** for setting one on a person, and uses the registry's phrase for a job. | Spec, code; the entity page's Relation… |
+| **registry** (spec only) | "schema", "ontology" | The versioned predicate registry, `Resources/facts-registry.json`, shipped with the app and not user-editable. Never shown in the UI. | Spec, code |
+| **episode** (spec only) | "stint" | One interval of a fact, derived from what memories assert. The UI shows its dates ("2019 – March 2021"), never the word. | Your timeline (as dates) |
+| **why line** | "explanation", "reason", "because" | The line under a search result a learned fact admitted: "my sister → Maria (only sister Funes knows)". It carries **Not \<name>** and **Not this**. | Vault results, iPhone Search |
+| **from your history** | "bridge" in the UI, "extra results" | Memories added to a timeline answer on top of the 10 results ("bridges" in the spec): "Read 10 results and 2 from your history". | Answer card footer (Mac and iPhone) |
+| **Inferred** | "Guessed", "AI-inferred", "Unverified" | The tag on an answer claim that rests on something its quote doesn't say (an **inferred claim** in the spec). Code marks it, never the model. | Answer card (Mac and iPhone) |
+| **Not \<name>**, **Not this** | "Wrong person", "Reject", "Delete fact" | The two corrections. **Not Maria**: this memory isn't about Maria. **Not this**: the fact is wrong ("Maria isn't your sister"), for every memory. | Why lines, inferred claims, entity pages |
+| **basis**, in words (spec: `confirmed`, `sole_known`…) | the basis codes, "confidence", percentages | How Funes knows a link or a date: "You said so", "Named in the memory", "Probably: the only sister Funes knows", "Funes isn't sure which", "From the dates", "Funes can't tell". Never a score. The table is in [UX: Mac ▸ People & history](04-ux-mac.md#people--history-v010). | Why lines, entity pages, your timeline |
+| **To check** | "Review", "Questions", "Needs attention" | Links the model couldn't settle and suggested merges. Optional: no badge, no notification. | People & history |
+
 ## Activity (F23)
 Activity explains what happened in the user's words, and never leads with internals.
 

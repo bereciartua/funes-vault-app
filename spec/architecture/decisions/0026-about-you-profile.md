@@ -2,6 +2,10 @@
 
 **Status:** Accepted · 2026-10-26 · **Amends** [access policy](../../domain/access-policy.md) (principle 3, a new §3.10, test vectors T36–T46), [MCP server §5–6.2](../mcp-server.md#5-server-instructions-serverinstructions) (the instructions and `request_memory`'s output), [companion protocol §4](../companion-protocol.md#4-methods) (`status.get`), [storage](../storage.md) (`v6_profile`)
 
+**Amended by [ADR-0032](0032-facts-about-you.md) (2026-11-15):**
+- **What changes:** memory processing now reads the profile's names, for one owner-only purpose. The Facts task matches them locally to identify *you* in memories ("Dani prefers…"), and any memory text sent to a model (a Facts call or a search answer) has them replaced by "the user", with a map back for quotes.
+- **What stays:** they're never sent: replaced in any memory text before it's sent, never added to a call and never in a roster. Another person sharing the name keeps it, and agent retrieval and access policy §3.10 are unchanged. Consequence "Not sent to AI model providers" still holds ([memory processing §11.9](../../domain/memory-processing.md#119-privacy-and-trust)).
+
 **Context.**
 - **Funes doesn't know who you are.** Home greets you with the first word of the macOS account's full name ([UX: Mac ▸ Home](../../product/04-ux-mac.md#home)). That name is often a username: the author's Mac says "Good afternoon, mib." The iPhone's Home shows no name at all.
 - **Agents don't either.** An agent learns your name only if a memory happens to contain it and its task happens to retrieve it. Your name, the languages you write in and where you are come up in nearly every task, and they're the first thing each assistant builds its own profile from. Funes exists so you don't have to tell each assistant again ([vision](../../product/01-vision.md)).

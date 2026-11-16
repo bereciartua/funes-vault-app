@@ -18,6 +18,7 @@ This is the core of Funes. It defines exactly how agent requests to **read** (`r
 ## 2. Inputs
 - **Agent state:** `paused`, `removedAt`, `revision`, `Access` (operations, maxSensitivity, allowed and denied categories, askBeforeSharing, askBeforeSaving, expiresAt, profileFields).
 - **The profile** ([domain model](domain-model.md#profile)): read only to fill §3.10's `profile`, never to decide anything.
+- **Not an input: learned facts** (v0.10). Entities, facts, links and the timeline ([memory processing §11](memory-processing.md#11-facts-about-you)) never reach this spec: not retrieval, eligibility, the decision, the snapshot or the bundle (§3.11).
 - **Global state:** Funes paused (`pausedUntil`).
 - **Request** (see the [MCP server spec](../architecture/mcp-server.md)):
   - `task` (1–1,000 characters);
@@ -138,6 +139,22 @@ A request still in `needs_approval` 15 minutes after creation becomes `denied` w
 9. **Size.** The profile isn't counted against `max_tokens` (at most about 700 characters). Its encoded size, counted as an item's is (§4), is kept back from the result-size limit before items are added, so it never pushes a bundle over 200,000 bytes.
 10. **The same on every channel**, local or Remote Access (§2).
 
+### 3.11 Learned facts and the profile (v0.10)
+*[ADR-0032](../architecture/decisions/0032-facts-about-you.md) decisions 8 and 10.* Funes learns facts about the user from their memories ([memory processing §11](memory-processing.md#11-facts-about-you)) for the owner's own search and answers. None of it reaches an agent.
+1. **Who reads the profile.** Besides §3.10's `profile`, the profile's names are read on the Mac by two owner-side steps, and nothing else:
+   - the Facts task matches them locally to *you* in memories ("Martin prefers…");
+   - before any memory text is sent to a model, a Facts call or a search answer, they're replaced by "the user", with a map back for quotes ([memory processing §11.3](memory-processing.md#113-the-facts-task), [§10.3](memory-processing.md#103-the-answer-call)).
+
+   Both are owner-only, and the names are never sent: replaced in every memory text, never added to a call, never in a roster, to any provider. This is the separate decision [ADR-0026](../architecture/decisions/0026-about-you-profile.md) called for. §3.10 is unchanged: an agent gets exactly the fields the user shares with it, decided exactly as before.
+2. **Learned facts never reach agent retrieval in v0.10.** Agent retrieval (§3.2), eligibility (§3.3), the decision, the snapshot and the bundle are computed without entities, facts, links, why lines or the timeline, whatever the Facts task's switches say. So:
+   - a `request_memory` answer is the same with learned facts on or off, for the same memories and access;
+   - no entity name, label, fact or attribute is ever added to a bundle item;
+   - the related-memories finder and the tidy-up don't use links either ([memory processing §4](memory-processing.md#4-ranking)).
+
+   Regression tests prove it (T47–T49).
+3. **Owner devices** see learned facts, as the owner does (§6): why lines on results, inferred claims and corrections on a paired iPhone.
+4. **Agents' use is a later, separate decision.** It would be an amendment to ADR-0032 with its own rules, never a side effect of turning the Facts task on.
+
 ## 4. Bundle compilation
 - **Item text:** `"<title>: <body>"`. **Estimated tokens:** `ceil(characters / 4)`, counting Unicode scalars as every input limit does (SQLite's `length()`).
 - **Order:** retrieval score order.
@@ -195,6 +212,7 @@ A correction (`target_memory_id`) takes its target's categories and the higher o
   - input validation;
   - rate limits;
   - Activity logging (`actor = device:<id>`).
+- **Learned facts** (v0.10): a paired iPhone gets why lines on its search results, answers with inferred claims marked, and the corrections Not <name> and Not this, as the user does on the Mac (§3.11; [companion protocol §4](../architecture/companion-protocol.md#4-methods)).
 - A capture from a device becomes a **suggestion** (`origin = capture_iphone`), never an active memory directly, unless the user turned on auto-apply (Phase 6), in which case its pieces follow [memory processing §5.7](memory-processing.md#57-auto-apply-for-new-memories) like a capture on the Mac. Direct create and edit from the phone's memory screens are allowed, because the user is acting.
 
 ## 7. Let it ask for more access (optional per agent)
@@ -304,3 +322,11 @@ The default fixture:
 | T44 | T36 times out (T18), then the user approves {m2} and the agent calls `get_memory_request` | delivered bundle = m2; no `profile` in that response |
 | T45 | T36 | the Activity row and `profileFieldsSent` are `["name"]`, with no name text anywhere in Activity |
 | T46 | the user saves an occupation containing `sk-abc…` (20+ characters) | refused (`secret_like_content`); the profile is unchanged |
+
+**Learned facts vectors** (§3.11, v0.10). The default fixture, plus T36's profile, the Facts task on with both switches, and m1 "My sister drinks her mate bitter" linked to the entity Lucía (`sibling`, basis `sole_known`).
+
+| # | Setup change | Expected |
+|---|---|---|
+| T47 | task "What does Lucía drink?", ask = off, with real retrieval (not the fixture's assumption) | identical to the same request with learned facts off: candidate scores, `withheld`, the decision and the bundle; the link to Lucía admits nothing |
+| T48 | T2 | each bundle item is `"<title>: <body>"` only: no entity name, label, attribute or why line anywhere in the response |
+| T49 | T36 | `profile` as T36; "Martin" appears only there, and no other response field or Activity row carries a profile name or a learned name |

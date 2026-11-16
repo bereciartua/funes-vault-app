@@ -42,19 +42,20 @@
 - *Done (15 Nov 2026): attributes held up on Terra; decision 7 stands, with a marking case added for claims that cite an attributed memory without naming anyone. See [Spike H4](spike-results.md).*
 
 ## 13.1 Spec · 1 weekend
-- [ ] **Amend every document in ADR-0032's Amends table:**
+- [x] **Amend every document in ADR-0032's Amends table:**
   - **product:** the vision's non-goal, FR-AI-05, FR-AI-08, FR-AI-15 (the one-time backfill exemption), FR-AI-17, FR-V-10, FR-iOS-07, FR-U-01, new FRs for learned facts, and both UX documents;
   - **domain:** the domain model (Entity, Fact, Predicate; Profile), memory processing (§4, §10, a new §11 for facts and the time model), access policy, the glossaries;
   - **architecture:** storage (the migration, purge §4, backups and exports), security and privacy (§3 the trust threat, §5 the Facts row, the Search answers row, the rest-of-query embedding), model providers §1 and §7, companion protocol §3, §4 and §9;
   - **ADRs 0022, 0023, 0026, 0028, 0030,** as notes; and `PRIVACY.md`.
-- [ ] **Memory processing §11** carries the time model as H3b settled it ([`spikes/people/RESULTS.md`](../../spikes/people/RESULTS.md)):
+- [x] **Memory processing §11** carries the time model as H3b settled it ([`spikes/people/RESULTS.md`](../../spikes/people/RESULTS.md)):
   - dates as ranges;
   - episodes from assertion intervals;
   - trust per date, order edge and status;
   - one resolver;
   - the intent rules;
   - the matching cases: shared names, stop names, common-word names, possessive chains.
-- [ ] Reviewed by GPT-6-Astra and Fable 5.2.
+- [x] Reviewed by GPT-6-Astra and Fable 5.2.
+- *Done (15 Nov 2026): every document in the Amends table amended, with memory processing §11 as the core. GPT-6-Astra and Fable 5.2 reviewed the change; the fixes include the user's names replaced in the Facts call, cloud selection from sendable facts only, tombstones for corrections, correction targets with tokens, five gated uses, gap answers and the 12-memory limit with bridges. ADR-0032 records the substantive changes as an amendment.*
 
 ## 13a.1 Storage, registry, lifecycle and the time model (no model calls) · 3 weekends
 - [ ] **The registry:** `Resources/facts-registry.json`, ported from `spikes/people/registry.json`: v0.10's 12 predicates, call groups and uses. The language data includes month names and function words, which H3b still had in code. `FactsRegistry` loads and validates it.
@@ -63,28 +64,29 @@
 - [ ] **Storage:** `v9_facts`. Tables:
   - entities and aliases, with alias evidence;
   - facts;
-  - one evidence table for facts, qualifiers and order edges, with the value each memory asserts, its precision, whether it states the fact, its sensitivity and trust;
+  - one evidence table for facts, qualifiers and order edges, with the value each memory asserts, its precision, whether it states the fact, its sensitivity and trust; the user's own dates, orders and qualifiers are rows there too (`source` = user), with episode selectors;
   - mention decisions and their dependencies;
   - manual overrides;
-  - qualification records (model, call-group prompt, registry version, adapter, batching, and the gate each use passed);
+  - the two-week review's off-switches, as local qualification rows (the records themselves ship as `Resources/facts-qualification.json`: model, call-group prompt, registry version, adapter, batching, an optional basis, and the gate each use passed);
   - facts runs.
 
-  No stored start or end dates: episodes are derived. Backups and `funesvault.export.v1` (optional sections) round-trip every table.
+  No stored start or end dates: episodes are derived. Backups and `funesvault.export.v1` (optional sections) round-trip the learned facts; qualification rows aren't exported.
 - [ ] **Lifecycle, with a test each:**
   - a memory edit drops its evidence and decisions at the old version, and a status-only change carries them forward;
   - an archive's effect depends on why it was archived;
-  - **purge:** an inferred name, label or qualifier goes with its last supporting memory, in every table and in undo snapshots; a correction with nothing left keeps only ids;
+  - **purge:** an inferred name, label or qualifier goes with its last supporting memory, in every table and in undo snapshots; what a manual entry, an override or a correction references stays as a tombstone (its id, predicate, the user's own values and the normalised alias the user confirmed or typed), and re-attaches when a memory again supports the same predicate and alias;
   - a decision is invalidated when a fact or memory it depends on changes;
   - a correction keyed to the memory and the quoted span survives an edit that keeps the span, and tidy-up merges and splits;
   - manual overrides win over inference;
-  - Remove learned facts keeps manual entries and corrections.
+  - Remove learned facts keeps manual entries, corrections and their tombstones, and leaves qualification rows alone;
+  - a user's date or order on one episode follows the episode overlapping its selector, or goes to To check.
 - [ ] **The time model** in FunesCore `Facts/`, ported from H3b:
   - `DateRange` (the parser: month and day words next to a year only);
   - `Episodes` (intervals; combining with trust; bounds after the last held day; uncertain departures; succession for trusted stale currents only, within a slot);
   - `FactResolver` (holders as of a range; time cues next to the phrase; "former" against the written date; paired decisions);
   - `Timeline` (one ordering rule both ways; stated edges checked against dates; same-year hand-overs; date anchors; years, current, previous);
   - `TimelineIntent` (the anchor ends the operator phrase; someone else's subject; questions about one fact).
-- [ ] **Trust rule tests:** untrusted evidence never resolves a trusted memory, never ends a fact or triggers succession, never changes a trusted decision; a link's basis is the weakest in its chain.
+- [ ] **Trust rule tests:** untrusted evidence never resolves a trusted memory, never ends an episode that has trusted evidence or triggers succession, never orders anything at full basis, and never changes a trusted decision; an episode with only untrusted evidence gives its dates at `inferred` at most and its links at `untrusted`; a link's basis is the weakest in its chain.
 - [ ] **Gates:** `test_temporal.py`'s 44 and `test_facts.py`'s 16, ported as table-driven Swift tests. Then an adversarial review of the Swift time model by GPT-6-Astra and Fable 5.2, round after round, until one finds no wrong answer or link; every case becomes a test. Budget: H3b took three rounds.
 
 ## 13a.2 Extraction, qualification and the backfill · 3–3½ weekends
@@ -99,12 +101,12 @@
   - a roster or decision is sent only if every memory behind it, decision dependencies included, is within the cloud limit;
   - *recorded* facts too;
   - manual entries use the sensitivity the user picked;
-  - the profile's names are matched locally to *you*, never sent in a roster, and another person sharing the name keeps it.
+  - the profile's names are matched locally to *you*, replaced by "the user" in the memory text sent (with an offset map for quotes), never added and never in a roster; another person sharing the name keeps it.
 
   **Payload tests** with sentinel strings at each sensitivity.
 - [ ] **`ProcessingQueue`:** a low-priority lane that pauses while New memories or the tidy-up wait. Today it runs one job at a time and dedupes by subject and kind, so it gains revision- and call-group-aware scheduling. It also runs reconciliation (a new holder, a new fact about a candidate, a name shared).
 - [ ] **Qualification and gating:**
-  - each use of each predicate (recorded, linked, timeline) is on only with a qualification record for the current model, call-group prompt, registry version, adapter and batching;
+  - each use of each predicate (recorded, linked, timeline, attributes, bridges) is on only with a qualification record for the current model, call-group prompt, registry version, adapter and batching;
   - turning a use off turns off everything downstream of it, with no code change. A test turns linking off and checks that attributes and bridges go too.
   - Opus 5.5 is offered for the people group; the work group is qualified separately (Haiku only so far).
 - [ ] **Settings ▸ AI ▸ Features ▸ Facts** (working name):
@@ -114,7 +116,7 @@
   - Remove learned facts;
   - the disclosure line.
 - [ ] **Backfill and cost:**
-  - **The first backfill** is the one-time exemption from the daily cap: started by the user, with its call count and cost shown first, resumable. For the author's vault that's about 800 calls.
+  - **The first backfill** is the one-time exemption from the daily cap: started by the user, with its call count and cost shown first, resumable; one exemption in total, for both call groups. For the author's vault that's about 800 calls, about $0.25 API-equivalent, under an hour.
   - **After it,** new and changed memories count against the cap, in the agents' 40% share when an agent wrote them.
   - **A registry change:** language-only changes apply at once with no re-read. An extraction change re-reads only the affected call group, in the low-priority lane under the cap, batched per release.
 - [ ] **Gates** (the acceptance rows assigned to 13a.2): links, `sole_known` on fixtures, recall, client, mixed, the fresh blind work fixture, the canary, port fidelity, privacy payloads.
@@ -128,7 +130,7 @@
   - a query that names no known entity is unchanged.
 
   Each result records how it was admitted, for 13d's privacy selection.
-- [ ] **The rest of the query** is embedded locally with bge-small; with the provider index (ADR-0023), it's a second embedding request.
+- [ ] **The rest of the query** is embedded locally with bge-small; with the provider index (ADR-0023), it's a second embedding request, only when every matched name comes from sendable facts.
 - [ ] **Why lines** on results ("my sister → Maria (only sister Funes knows)", "worked at Acme until 2023"), with **Not <name>** and **Not this** on the Mac. A correction recomputes dependent links at once (13a.1's lifecycle).
 - [ ] **Older phones:** link-admitted results reach the phone as ordinary results until 13d's protocol fields; nothing inferred is shown there before then.
 - [ ] **Owner side only:** agent retrieval, the related-memories finder and the tidy-up never use links, with regression tests that prove it.
@@ -138,18 +140,18 @@
 - [ ] **Vault sidebar ▸ People & history** (working name): entities by how many memories mention them, role groups, filters by kind.
 - [ ] **An entity's page:** name, aliases, kind, the facts about you that involve it with their basis, every memory that mentions it with its why line. *Recorded* facts (clients) are shown and can be removed. Actions: rename, change kind, set predicate and label, mark deceased or former, merge, hide, Not <name>.
 - [ ] **Your timeline:** dated facts with title history, stating memories and basis ("probably former"). Conflicting dates and undecidable orders are shown as such. Actions: set or clear dates, mark current or former, add an order, add a fact yourself.
-- [ ] **To check:** only candidates the model couldn't settle, and suggested merges.
+- [ ] **To check:** only candidates the model couldn't settle, suggested merges, and corrections or manual dates whose episode no longer matches one episode.
 - [ ] After the backfill: "Funes found N people, N employers and N other names".
 - [ ] VoiceOver; the string catalog; UI snapshots `people-list`, `people-entity`, `people-timeline`, `people-to-check` (light and dark).
 
 ## 13d Answers and the iPhone · 2 weekends
 - [ ] **`SearchAnswerer`:**
   - **Attributes** from the registry's phrases, as 13.0 decided: "Lucía, your sister"; "probably…" for `sole_known` when its fixture gate passed; "your sister; Funes isn't sure which" for `candidates`, without names. Attributes are never quotable text.
-  - **Bridges** for timeline answers: up to 2 on top of the 10 results ("Read 10 results and 2 from your history"). None on Apple on-device. An undecidable order gets plain search and a note, with no bridges.
+  - **Bridges** for timeline answers: up to 2 on top of the 10 results ("Read 10 results and 2 from your history"), as `m11` and `m12`, within 15,000 + 3,000 characters. None on Apple on-device. An undecidable order gets plain search and a note, with no bridges; a `gap` answer may carry them.
   - **Your own names** become "the user", with an offset map so `QuoteLocator` still highlights the original; a namesake isn't replaced.
 - [ ] **Privacy selection:**
-  - admission, the demotion, the timeline's choice and bridges use only sendable facts and edges;
-  - a result admitted only through an unsendable link stays in your list, isn't sent, is counted as not read on the card, and its slot isn't refilled;
+  - a cloud answer reads the search re-ranked as if only sendable facts existed (admission, the demotions, the rest-of-query score, the timeline's choice and bridges), restricted to the results shown;
+  - a shown result outside that set stays in your list, isn't sent, is counted as not read on the card, and its slot isn't refilled;
   - an answer fact decided only above the limit gets plain search.
 
   Tests cover which memories are selected and the card's counts.
@@ -158,13 +160,15 @@
   - states a predicate, label, qualifier or date that text doesn't state;
   - cites a bridge;
   - or cites a memory carrying an attribute, when the search names the attributed entity (by name or role phrase) and the cited text doesn't (Spike H4: it marked all 5 wrong-person claims).
-- [ ] **The Mac's answer card:** inferred claims marked, with **Not <name>** and **Not this**. The held answer is dropped when the facts revision changes.
+
+  Each marked claim carries its correction targets.
+- [ ] **The Mac's answer card:** inferred claims marked, with their corrections (**Not <name>**, **Not this**). An answer in flight is dropped when the facts revision changes (only the iPhone holds one).
 - [ ] **The companion protocol:**
   - the why line on results;
-  - an inferred flag, ids and basis on claims;
-  - `facts.reject`;
-  - a capability flag: an older phone gets neither attributes nor bridges, tested;
-  - a facts revision in `status.get`, which drops the phone's held or in-flight answer.
+  - an inferred flag, ids, basis and correction targets on claims;
+  - `facts.reject`, taking one correction target;
+  - a capability flag: for an older phone the Mac sends neither attributes nor bridges and drops every claim it would mark inferred, tested; `memories.answer` recomputes admission from the query, never trusting ids alone;
+  - a facts revision in `status.get`, with an epoch that a restore renews, which drops the phone's held or in-flight answer.
 - [ ] **iPhone:** why lines and corrections on results; inferred claims marked, with Not <name> and Not this.
 - [ ] **Gates:** answers on Haiku and Terra; Spike G's gates with the feature on; 0 unmarked inferred claims; privacy payloads, including selection.
 

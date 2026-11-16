@@ -2,6 +2,10 @@
 
 **Status:** Accepted · 2026-10-23 · **Amends** [ADR-0014](0014-user-selectable-models.md) (guardrails) and FR-AI-07
 
+**Amended by [ADR-0032](0032-facts-about-you.md) (2026-11-15):**
+- **The cloud limit extends to derived facts:** a learned fact, date, order or decision may be sent, or may shape which memories a cloud answer gets, only if every memory behind it is within the limit ([memory processing §11.9](../../domain/memory-processing.md#119-privacy-and-trust)).
+- **The cap:** the Facts task's calls count against the daily cap, in the agents' 40% share for agent-written memories, except its first backfill, which is exempt once, started by the user (FR-AI-15, FR-F-03).
+
 **Context.**
 - **Today's cloud limit** stops at Sensitive ("Public · Low · Internal · Sensitive · Never send captures") and only captures go to a provider.
 - **With [ADR-0020](0020-atomic-extraction-for-every-source.md) and [ADR-0021](0021-daily-tidy-up.md)** far more goes out: agent suggestions, imports, existing memories, and later embeddings ([ADR-0023](0023-provider-embeddings-second-index.md)).
