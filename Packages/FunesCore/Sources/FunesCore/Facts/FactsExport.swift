@@ -138,6 +138,13 @@ enum FactsExport {
         let asMemories = memories != nil
         // Dependencies follow only the decisions restored: one whose memory was skipped (a duplicate) takes them along.
         var restoredDecisions = Set<String>()
+        // What a skipped memory supported (its evidence, or a correction made from it that loses its text): touched
+        // after the restore, so the decisions that depend on it are re-validated (memory processing §11.8).
+        var droppedFacts = Set<String>(), droppedAliases = Set<String>(), droppedTargets: [(kind: String, id: String)] = []
+        func skippedMemory(_ row: [String: ExportCell]) -> Bool {
+            guard asMemories, let old = row["memory_id"]?.string else { return false }
+            return memories?[old] == nil
+        }
         for t in tables {
             let columns = Set(try Row.fetchAll(db, sql: "PRAGMA table_info(\(t.table))").map { $0["name"] as String })
             for var row in facts[keyPath: t.key] {
@@ -145,11 +152,17 @@ enum FactsExport {
                 case "facts_run":
                     guard asMemories else { continue }
                 case "alias_evidence":
-                    guard asMemories, let r = remap(row) else { continue }
+                    guard asMemories, let r = remap(row) else {
+                        if asMemories, let a = row["alias_id"]?.string { droppedAliases.insert(a) }
+                        continue
+                    }
                     row = r
                 case "fact_evidence":
                     if row["source"]?.string == "memory" {
-                        guard asMemories, let r = remap(row) else { continue }
+                        guard asMemories, let r = remap(row) else {
+                            if asMemories, let f = row["fact_id"]?.string { droppedFacts.insert(f) }
+                            continue
+                        }
                         row = r
                     }
                 case "mention_decision":
@@ -167,6 +180,9 @@ enum FactsExport {
                         row["ref_version"] = .string(String(new.version))
                     }
                 case "manual_override":
+                    if skippedMemory(row), let k = row["target_kind"]?.string, let id = row["target_id"]?.string {
+                        droppedTargets.append((k, id))
+                    }
                     row = correction(row)
                 default:
                     break
@@ -178,7 +194,21 @@ enum FactsExport {
                 if t.table == "mention_decision", db.changesCount > 0, let id = row["id"]?.string { restoredDecisions.insert(id) }
             }
         }
-        try FactStore.collectGarbage(db, now: now)
+        var touchFacts = droppedFacts, touchEntities = Set<String>()
+        for a in droppedAliases {
+            if let e = try String.fetchOne(db, sql: "SELECT entity_id FROM entity_alias WHERE id = ?", arguments: [a]) { touchEntities.insert(e) }
+        }
+        for t in droppedTargets {
+            if t.kind == "entity" || t.kind == "alias" {
+                touchEntities.insert(try String.fetchOne(db, sql: "SELECT entity_id FROM entity_alias WHERE id = ?", arguments: [t.id]) ?? t.id)
+            } else {
+                touchFacts.insert(t.id)
+            }
+        }
+        for f in touchFacts {
+            if let e = try String.fetchOne(db, sql: "SELECT entity_id FROM fact WHERE id = ?", arguments: [f]) { touchEntities.insert(e) }
+        }
+        try FactStore.collectGarbage(db, now: now, touching: (touchFacts, touchEntities))
         try FactStore.bumpRevision(db)
         return true
     }

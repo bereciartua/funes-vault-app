@@ -34,6 +34,16 @@ public struct FactsRegistry: Sendable, Decodable {
         /// Words that may stand between an operator and its anchor ("before I joined Acme"); anything else means no
         /// timeline intent (memory processing §11.7: a question outside the grammar fails closed).
         public let anchorLeadWords: [String]
+        /// Words naming a fact's start or end ("joined", "left"): "before leaving Acme" and "after joining Acme" name an
+        /// event the anchor can't stand for (it means the stint), so they get no intent.
+        public let startEvents: [String]
+        public let endEvents: [String]
+        /// Words a user's own question may open with, before its operator ("Where did I work…", "¿Dónde trabajaba…").
+        public let questionWords: [String]
+        /// What may open a question's year with no operator: "in 2016" (`yearPrepositions`), or a span of two dates,
+        /// "between 2014 and 2016" (`rangePrepositions` too). "Since 2016" and "until 2016" aren't the year itself.
+        public let yearPrepositions: [String]
+        public let rangePrepositions: [String]
         /// Contracted function words, expanded before a question is read ("del" is "de el").
         public let contractions: [String: String]
         public let timePrepositions: [String]

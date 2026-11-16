@@ -38,26 +38,34 @@ extension FactsGraph {
             + words.map(FactsText.escape).joined(separator: "|") + ")(?![\\w-])", caseInsensitive: true)
     }
 
-    /// Whether a position may be inside quoted speech, failing closed (memory processing §11.3): reading its line up
-    /// to there, a quote opens at the line's start or after a space or opening punctuation (“, ‘ always open), and
-    /// closes only where it surely does: ” always; " before a space, punctuation or the end; ' or ’ the same, but not
+    /// Whether a position may be inside quoted speech, failing closed (memory processing §11.3): reading the text up
+    /// to there (a quote may run across lines), a quote opens at the line's start or after a space or opening punctuation (“, ‘, «, ‹ and „ always
+    /// open), and closes only where it surely does: ”, », › always (“ or ” after „); " before a space, punctuation or the end; ' or ’ the same, but not
     /// after an s ("the kids' teacher" may be a possessive) or between letters ("doesn't"). A quote still open, or
     /// one whose end is uncertain, means the position may be quoted. An inch mark (27") or an apostrophe doesn't open.
     static func mayBeQuoted(_ text: String, at pos: Int) -> Bool {
         let ns = text as NSString
-        var lineStart = pos
-        while lineStart > 0, ns.character(at: lineStart - 1) != 10 { lineStart -= 1 }
         func ch(_ i: Int) -> unichar? { i >= 0 && i < ns.length ? ns.character(at: i) : nil }
         func isSpace(_ c: unichar?) -> Bool { c.map { $0 == 32 || $0 == 9 || $0 == 10 || $0 == 0xA0 } ?? true }
         func opensAfter(_ c: unichar?) -> Bool { c == nil || isSpace(c) || [40, 91, 58, 44, 0x2014, 0x2013].contains(c!) }
         func closesBefore(_ c: unichar?) -> Bool { c == nil || isSpace(c) || [46, 44, 59, 58, 33, 63, 41, 93].contains(c!) }
         func isLetter(_ c: unichar?) -> Bool { c.map { CharacterSet.alphanumerics.contains(Unicode.Scalar($0) ?? " ") } ?? false }
-        enum Kind { case double, curlyDouble, single }
+        // A dialogue dash at the start of the phrase's line ("—Mi jefe llega tarde —dijo Ana") is someone speaking.
+        var lineStart = pos
+        while lineStart > 0, ns.character(at: lineStart - 1) != 10 { lineStart -= 1 }
+        var k = lineStart
+        while let c = ch(k), c == 32 || c == 9 { k += 1 }
+        if let c = ch(k), c == 0x2014 || c == 0x2013 || c == 0x2015 { return true }
+        enum Kind { case double, curlyDouble, single, guillemet, singleGuillemet, low }
         var open: Kind?
-        var i = lineStart
+        var i = 0                  // a quote may run across lines: read the text from its start
         while i < pos {
             let c = ns.character(at: i), prev = ch(i - 1), next = ch(i + 1)
             switch (open, c) {
+            case (nil, 0x00AB): open = .guillemet
+            case (nil, 0x2039): open = .singleGuillemet
+            case (nil, 0x201E): open = .low
+            case (.guillemet?, 0x00BB), (.singleGuillemet?, 0x203A), (.low?, 0x201C), (.low?, 0x201D): open = nil
             case (nil, 0x201C): open = .curlyDouble
             case (nil, 0x2018): open = .single
             case (nil, 34) where opensAfter(prev): open = .double

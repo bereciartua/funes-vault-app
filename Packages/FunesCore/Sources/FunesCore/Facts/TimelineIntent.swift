@@ -63,7 +63,7 @@ extension FactsGraph {
     /// Acme"), episode cues ("before I returned to Acme"), first-person words, owners and time nouns ("before my time at Acme"), and one determiner right
     /// before the anchor or its date ("before the BBC", "antes del 15 de marzo"), or before a time noun and the date
     /// ("before the year 2019"). Anything else ("before the promotion at Acme") means no timeline intent.
-    private func leadOK(_ q: String, _ from: Int, _ to: Int, predicate: String) -> Bool {
+    private func leadOK(_ q: String, _ from: Int, _ to: Int, predicate: String, op: TimelineIntent.Operator) -> Bool {
         let lang = registry.language
         let determiners = Set(lang.anchorDeterminers.map { FactsText.fold($0) })
         let timeNouns = Set(lang.timeNouns.map { FactsText.fold($0) })
@@ -73,7 +73,22 @@ extension FactsGraph {
         let p = registry.predicate(predicate)
         let allowed = lang.anchorLeadWords + episodeWords + lang.firstPerson + lang.owners + lang.timeNouns
             + (p?.queryCues ?? []) + registry.lexicon.filter { $0.value.predicate == predicate }.map(\.key)
+        // "Before leaving Acme" is before Acme's end, "after joining Acme" after its start: not what the anchor means.
+        if words.contains(where: { listed($0, op == .before ? lang.endEvents : lang.startEvents) }) { return false }
         return words.allSatisfy { listed($0, allowed) }
+    }
+
+    /// The question is the user's own, failing closed: the words of its clause before the operator (or the date) are
+    /// only question words, lead words, first-person words, owners and the predicate's own words ("Where did I work",
+    /// "What was my job", "¿Dónde trabajaba"). Anything else ("Where did sam work", "Sam's job") means no intent.
+    private func subjectOK(_ q: String, _ pos: Int, predicate: String) -> Bool {
+        let lang = registry.language
+        let clause = FactsText.matches(Self.tailStop, in: q, from: 0, to: pos).last?.end ?? 0
+        let p = registry.predicate(predicate)
+        let allowed = lang.questionWords + lang.anchorLeadWords + episodeWords + lang.firstPerson + lang.owners
+            + lang.timeNouns + lang.timePrepositions + (p?.queryCues ?? [])
+            + registry.lexicon.filter { $0.value.predicate == predicate }.map(\.key)
+        return FactsText.matches(Self.wordRE, in: q, from: clause, to: pos).allSatisfy { listed($0.group(0)!, allowed) }
     }
 
     /// Whether a known person's name appears in folded text.
@@ -188,7 +203,7 @@ extension FactsGraph {
                         let trustedHits = entityMatches(pred, n, onlyTrusted: true)
                         let hits = trustedHits.isEmpty
                             ? entityMatches(pred, n).filter { entities[$0]?.trustedAliases.isEmpty ?? true } : trustedHits
-                        if let op = prior.max(by: later), let hit = hits.first, tailOK(q, end), leadOK(q, op.end, m.start, predicate: pred) {
+                        if let op = prior.max(by: later), let hit = hits.first, tailOK(q, end), leadOK(q, op.end, m.start, predicate: pred, op: op.name) && subjectOK(q, op.start, predicate: pred) {
                             let rest = FactsText.substring(q, 0, m.start) + " " + FactsText.substring(q, end, FactsText.length(q))
                             if personNamed(rest) { return nil }   // "Who was Ada dating before Bea?": someone else
                             // A name two entities share doesn't say which: no anchor, so the answer is told, not guessed.
@@ -200,7 +215,7 @@ extension FactsGraph {
                 }
                 for m in FactsText.matches(Self.yearRE, in: q) {
                     let prior = ops.filter { $0.end <= m.start }
-                    if let op = prior.max(by: later), tailOK(q, m.end), leadOK(q, op.end, parser.dateStart(at: m.end, in: q), predicate: pred),
+                    if let op = prior.max(by: later), tailOK(q, m.end), leadOK(q, op.end, parser.dateStart(at: m.end, in: q), predicate: pred, op: op.name) && subjectOK(q, op.start, predicate: pred),
                        let d = parser.dateEnding(at: m.end, in: q) {
                         let opStart = ops.filter { $0.end == op.end && $0.name == op.name }.map(\.start).min() ?? op.end
                         return TimelineIntent(predicate: pred, op: op.name, anchor: .date(d),
@@ -213,13 +228,15 @@ extension FactsGraph {
                 return nil                   // "my current role at Acme": a question about one fact, not the timeline
             }
             let years = FactsText.matches(Self.yearRE, in: q)
-            // Fails closed: the date follows a time preposition ("in 2016", "en marzo de 2016", "between 2014 and
-            // 2016") and ends its phrase.
+            // Fails closed: the date follows a year preposition ("in 2016", "en marzo de 2016"), or a span opens with a
+            // range one ("between 2014 and 2016"), and ends its phrase; "since 2016" and "until 2016" get no intent.
             if let y = years.first {
-                let preps = lang.timePrepositions.map { FactsText.escape(FactsText.fold($0)).replacingOccurrences(of: " ", with: "\\s+") }
+                let opening = lang.yearPrepositions + (years.count > 1 ? lang.rangePrepositions : [])
+                let preps = opening.map { FactsText.escape(FactsText.fold($0)).replacingOccurrences(of: " ", with: "\\s+") }
                 let lead = FactsText.substring(q, 0, parser.dateStart(at: y.end, in: q))
                 let prepRE = FactsText.regex("(?<!\\w)(?:" + preps.joined(separator: "|") + ")\\s+$")
-                guard FactsText.first(prepRE, in: lead) != nil, tailOK(q, years[years.count - 1].end) else { continue }
+                guard let prep = FactsText.first(prepRE, in: lead), tailOK(q, years[years.count - 1].end),
+                      subjectOK(q, prep.start, predicate: pred) else { continue }
             }
             if years.count > 1, let a = parser.dateEnding(at: years[0].end, in: q),
                let b = parser.dateEnding(at: years[years.count - 1].end, in: q) {
@@ -232,7 +249,8 @@ extension FactsGraph {
             for (name, words) in [(TimelineIntent.Operator.previous, lang.operators.previous), (.current, lang.operators.current)] {
                 for w in words {
                     let re = FactsText.regex("(?<!\\w)" + FactsText.escape(FactsText.fold(w)) + "(?!\\w)\\s*(\\w+)?")
-                    if let m = FactsText.first(re, in: q), !timeNouns.contains(FactsText.fold(m.group(1) ?? "")) {
+                    if let m = FactsText.first(re, in: q), !timeNouns.contains(FactsText.fold(m.group(1) ?? "")),
+                       subjectOK(q, m.start, predicate: pred) {
                         return TimelineIntent(predicate: pred, op: name, anchor: nil)   // "my last job", not "last year"
                     }
                 }
