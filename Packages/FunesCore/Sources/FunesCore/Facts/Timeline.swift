@@ -57,14 +57,17 @@ extension FactsGraph {
     /// Trusted order edges between episodes ("A preceded_by B"), resolved only to one fitting episode of the entity;
     /// edges on a cycle are dropped.
     private func statedEdges(_ predicate: String, _ eps: [Episode]) -> Set<Edge> {
+        // Edges resolve to trusted episodes; an entity's untrusted-only episodes count only if it has no trusted one.
         var byEntity: [String?: [Episode]] = [:]
-        for e in eps { byEntity[e.entity, default: []].append(e) }
+        let withTrusted = Set(eps.filter(\.trusted).map(\.entity))
+        for e in eps where e.trusted || !withTrusted.contains(e.entity) { byEntity[e.entity, default: []].append(e) }
         var edges = Set<Edge>()
         for e in eps {
             for a in e.assertions where a.trusted {
                 for (value, byID, isBefore) in [(a.precededBy, a.precededByEntity, true), (a.followedBy, a.followedByEntity, false)] {
                     let targets = byID.map { [$0] } ?? value.map { entityMatches(predicate, $0, onlyTrusted: true) } ?? []
-                    for t in targets where t != e.entity {
+                    for t in targets where t != e.entity
+                        && !rejectedEdges.contains(isBefore ? EdgeRejection(from: t, to: e.entity ?? "") : EdgeRejection(from: e.entity ?? "", to: t)) {
                         let fits = (byEntity[t] ?? []).filter { o in
                             if byID != nil, let sel = a.otherSelector {     // the user picked the other episode
                                 let lo = o.start?.lo ?? DateRange.minDay, hi = o.end?.hi ?? DateRange.maxDay
@@ -285,7 +288,9 @@ extension FactsGraph {
             }
             if sure {
                 certain.insert(id)
-                untrusted = untrusted || !(e.startTrusted && e.endTrusted) || !e.trusted || e.inferredEnd
+                // An inferred end matters only when the range reaches past the last day a memory said it held.
+                untrusted = untrusted || !(e.startTrusted && e.endTrusted) || !e.trusted
+                    || (e.inferredEnd && (e.heldAt.map { $0 < rng.hi } ?? true))
             } else if maybe {
                 possible.insert(id)
             }
@@ -308,7 +313,8 @@ extension FactsGraph {
             let eps = episodes(it.predicate)
             let now = eps.filter { $0.ongoing && !$0.inferredEnd }
             if it.op == .previous {
-                guard now.count == 1 else { return .none(.ambiguous) }
+                // As for "current": an episode that may have ended (or not) leaves the anchor unknown.
+                guard now.count == 1, !eps.contains(where: \.uncertain) else { return .none(.ambiguous) }
                 let (got, basis) = order(it.predicate, eps, now[0], .before)
                 return .one(got, basis)
             }

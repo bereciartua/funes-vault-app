@@ -198,8 +198,10 @@ extension FactsGraph {
         for ep in eps {
             let trusted = ep.rows.contains { $0.a.trusted }
             // The user's own status wins: with one, only the user's rows say whether and when it held or ended.
-            let userStatus = ep.rows.contains { $0.a.fromUser && $0.a.status != .unknown }
-            let userCurrent = ep.rows.contains { $0.a.fromUser && $0.a.status == .current }
+            // The user's latest status wins, over memories and over the user's own earlier ones.
+            let lastUserStatus = ep.rows.lastIndex { $0.a.fromUser && $0.a.status != .unknown }
+            let userStatus = lastUserStatus != nil
+            let userCurrent = lastUserStatus.map { ep.rows[$0].a.status == .current } ?? false
             let counts: (Row) -> Bool = { r in
                 (r.a.trusted || !trusted) && (!userStatus || r.a.fromUser)
             }
@@ -211,10 +213,13 @@ extension FactsGraph {
             }
             // When the user says it's current, only the user's own end counts.
             var (end, ce, enTr) = Self.combine(ep.ends.filter { ($0.assertion.trusted || !trusted) && (!userCurrent || $0.assertion.fromUser) })
-            let boundRows = ep.rows.filter(counts).filter { $0.bound != nil }
+            // With a user status, only that latest row says whether and when it held or ended.
+            let statusRows = ep.rows.indices.filter { i in counts(ep.rows[i]) && (lastUserStatus == nil || i == lastUserStatus) }
+                .map { ep.rows[$0] }
+            let boundRows = statusRows.filter { $0.bound != nil }
             let bounds = boundRows.compactMap(\.bound)
             let former = end != nil || !bounds.isEmpty
-            let held = ep.rows.filter(counts).compactMap(\.held)
+            let held = statusRows.compactMap(\.held)
             if end == nil, let minBound = bounds.min() {
                 let stated = start?.precision != .handover ? start : nil
                 let lo = ([stated?.lo ?? DateRange.minDay] + held.filter { $0 <= minBound }).max()!
@@ -255,18 +260,20 @@ extension FactsGraph {
     public func episodes(_ predicate: String) -> [Episode] {
         let eps = facts.filter { $0.predicate == predicate && !$0.negated }.flatMap { factEpisodes($0) }
         guard registry.predicate(predicate)?.succession == true else { return eps }
+        // Succession runs over trusted episodes only: an untrusted one neither triggers nor blocks it.
+        let trustedEps = eps.filter { $0.trusted && $0.startTrusted }
         for e in eps.stableSorted(by: { $0.sortKey }) {
             guard e.ongoing, let heldAt = e.heldAt, let es = e.tstart, e.trusted, e.startTrusted, !e.conflictStart else {
                 continue                 // only a stale current: otherwise its end is just unknown
             }
-            let later = eps.filter { y in y.entity != e.entity && y.slot == e.slot && (y.tstart.map { $0.lo > es.hi } ?? false) }
+            let later = trustedEps.filter { y in y.entity != e.entity && y.slot == e.slot && (y.tstart.map { $0.lo > es.hi } ?? false) }
             guard let y = later.firstMin(by: { $0.tstart!.lo }), let ys = y.tstart else { continue }
-            if !(y.trusted && y.startTrusted) || later.contains(where: { $0 !== y && $0.tstart!.overlaps(ys) }) { continue }
+            if later.contains(where: { $0 !== y && $0.tstart!.overlaps(ys) }) { continue }
             if heldAt >= ys.lo { continue }
-            // Concurrent: another episode in the slot that may still have been open when y started (judged at that
-            // date, not by whether it's over today).
-            let concurrent = eps.contains { o in
-                o !== e && o !== y && o.slot == e.slot && (o.tstart.map { $0.hi < ys.lo } ?? false)
+            // Concurrent: another trusted episode in the slot that may still have been open when y started (judged at
+            // that date; an unknown start may be before it).
+            let concurrent = trustedEps.contains { o in
+                o !== e && o !== y && o.slot == e.slot && (o.tstart.map { $0.lo < ys.lo } ?? true)
                     && (o.end.map { $0.hi >= ys.lo } ?? true)
             }
             if concurrent { continue }

@@ -30,7 +30,8 @@ enum FactStore {
     static func source(_ s: String) -> FactsMemory.Source {
         switch MemorySource(rawValue: s) {
         case .agentWrite, .agentSuggestion: return .agent
-        case .importChatGPT, .importClaude, .importMarkdown, .importFunes: return .import
+        case .importChatGPT, .importClaude, .importMarkdown: return .import
+        case .importFunes: return .capture        // a Funes restore keeps the memory's own date
         case .tidyUp: return .rewritten
         case .manual: return .manual
         default: return .capture
@@ -391,6 +392,12 @@ enum FactStore {
                         factIDs[Loaded.key(key.predicate, into)] = factIDs[Loaded.key(key.predicate, into)] ?? fid
                     }
                     g.entities[target] = nil
+                }
+            case ("order", "rejected"):
+                // The edge itself is in the value (its endpoints' fact ids), so it outlives the evidence that stated it.
+                if let v = value as? [String: Any], let b = v["before"] as? String, let a = v["after"] as? String,
+                   let be = factKeys[b]?.entity ?? entityOfFact[b], let ae = factKeys[a]?.entity ?? entityOfFact[a] {
+                    g.rejectedEdges.insert(FactsGraph.EdgeRejection(from: be, to: ae))
                 }
             case ("qualifier", "label"):
                 if let (pred, ent) = factKeys[target], let l = value as? String {

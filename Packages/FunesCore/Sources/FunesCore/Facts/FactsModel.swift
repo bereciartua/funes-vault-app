@@ -193,6 +193,9 @@ public struct FactsGraph: Sendable {
     public var decisions: [DecisionKey: MentionDecision] = [:]
     public var names: [NameKey: NameLink] = [:]
     public var memories: [String: FactsMemory] = [:]
+    /// Order edges the user rejected ("Not this" on an order): before → after, by entity.
+    public var rejectedEdges: Set<EdgeRejection> = []
+    public struct EdgeRejection: Sendable, Hashable { public var from: String; public var to: String }
     /// The entity each fact of the last `apply` landed on (by its index), so the store records aliases against it.
     public var landed: [Int: String] = [:]
     /// Two entities a memory says are the same ("also called"): for To check, never merged automatically.

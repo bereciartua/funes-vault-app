@@ -108,6 +108,8 @@ extension FactStore {
             SELECT target_id FROM manual_override WHERE target_kind IN ('fact','qualifier','date','status','order')
             UNION SELECT fact_id FROM fact_evidence WHERE source = 'user'
             UNION SELECT other_fact_id FROM fact_evidence WHERE source = 'user' AND other_fact_id IS NOT NULL
+            UNION SELECT json_extract(value, '$.before') FROM manual_override WHERE target_kind = 'order' AND value IS NOT NULL
+            UNION SELECT json_extract(value, '$.after') FROM manual_override WHERE target_kind = 'order' AND value IS NOT NULL
             """
         for f in try Row.fetchAll(db, sql: """
             SELECT id, manual, tombstone, entity_id FROM fact

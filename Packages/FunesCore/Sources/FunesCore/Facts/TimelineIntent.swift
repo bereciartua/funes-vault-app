@@ -122,7 +122,8 @@ extension FactsGraph {
                         if let op = prior.max(by: later), let hit = hits.first, tailOK(q, end) {
                             let rest = FactsText.substring(q, 0, m.start) + " " + FactsText.substring(q, end, FactsText.length(q))
                             if personNamed(rest) { return nil }   // "Who was Ada dating before Bea?": someone else
-                            return TimelineIntent(predicate: pred, op: op.name, anchor: .entity(hit))
+                            // A name two entities share doesn't say which: no anchor, so the answer is told, not guessed.
+                            return TimelineIntent(predicate: pred, op: op.name, anchor: hits.count == 1 ? .entity(hit) : nil)
                         }
                     }
                 }

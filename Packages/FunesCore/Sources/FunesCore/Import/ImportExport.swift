@@ -411,6 +411,11 @@ public final class ImportService: Sendable {
                         // An export without trust can't say the user wrote it (fail closed).
                         trust: item.trust ?? .untrusted), actor: .importRun(runID), now: now,
                         id: free ? item.exportID! : UUID())
+                    // An identity-preserving restore keeps the memory's own date (learned facts read it as when it
+                    // was written; storage §5.2).
+                    if let created = item.createdAt, created < now {
+                        try db.execute(sql: "UPDATE memory SET created_at = ? WHERE id = ?", arguments: [created, m.id.db])
+                    }
                     if item.status == .archived {
                         m = try MemoryStore.setStatus(db, id: m.id, to: .archived, actor: .importRun(runID), now: now)
                     }
