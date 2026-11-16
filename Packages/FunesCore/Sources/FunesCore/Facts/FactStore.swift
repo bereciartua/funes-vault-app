@@ -377,7 +377,9 @@ enum FactStore {
 
         // Overrides win: names, deceased, labels, merges.
         var mergedInto: [String: String] = [:]
-        for o in overrides {
+        // Merges first, so every other correction (a label, a rejection) applies to the merged entity and fact.
+        let ordered = overrides.filter { ($0["field"] as String) == "merged_into" } + overrides.filter { ($0["field"] as String) != "merged_into" }
+        for o in ordered {
             let kind: String = o["target_kind"], field: String = o["field"], target: String = o["target_id"]
             // A correction made from a memory holds while that memory and its quoted span do.
             if let mid: String = o["memory_id"] {

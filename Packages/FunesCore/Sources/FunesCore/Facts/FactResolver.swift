@@ -177,7 +177,7 @@ extension FactsGraph {
         guard let d else { return (e.ongoing && !e.inferredEnd) || (deceased && !e.former) }
         if e.handover, let s = e.start, s.lo > d.hi { return false }   // a new holder announced later
         if e.uncertain, let from = e.uncertainFrom, d.lo > from { return false }   // after a memory that may have ended it
-        if let end = e.end, end.hi < d.lo, !e.conflictEnd { return false }   // a conflicting end rules no one out
+        if let end = e.end, end.hi < d.lo { return false }   // a conflicting end's latest day still bounds it
         return true
     }
 

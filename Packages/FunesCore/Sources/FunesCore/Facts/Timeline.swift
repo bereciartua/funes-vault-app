@@ -186,7 +186,8 @@ extension FactsGraph {
                 }
                 if b.lo > a.hi { continue }                               // certainly still going then
                 certain = b.hi <= a.lo || e.endedBy === sx
-                near = !certain && (e.tstart.map { $0.hi < a.lo } ?? false)
+                // A same-year (or month) hand-over: a stated end of that precision, not a wide "ended by" bound.
+                near = !certain && (e.tstart.map { $0.hi < a.lo } ?? false) && Self.handoverPrecision(b) && Self.handoverPrecision(a)
             } else {
                 if let end = e.end, end.hi < a.lo { continue }            // it ended before the anchor did
                 guard let b else {
@@ -196,7 +197,7 @@ extension FactsGraph {
                 if b.hi < a.lo { continue }                               // it certainly started before the anchor ended
                 certain = b.lo >= a.hi || sx.endedBy === e
                 near = !certain && (sx.tstart.map { $0.hi < b.lo } ?? false)
-                    && (e.ongoing || (e.end.map { $0.lo > a.hi } ?? false))
+                    && (e.ongoing || (e.end.map { $0.lo > a.hi } ?? false)) && Self.handoverPrecision(b) && Self.handoverPrecision(a)
             }
             if before ? e.conflictEnd : e.conflictStart {
                 certain = false
@@ -236,6 +237,11 @@ extension FactsGraph {
         if isGap(gapOf(w)) { return untrusted ? (nil, .ambiguous) : (w.entity, .gap) }
         let inferred = basisInferred || untrusted || (before ? w.inferredEnd : sx.inferredEnd)
         return (w.entity, inferred ? .inferred : .ordered)
+    }
+
+    /// A boundary precise enough for a same-year hand-over: stated at year, month or day precision, within a year.
+    static func handoverPrecision(_ b: DateRange) -> Bool {
+        [.year, .month, .day].contains(b.precision) && b.hi - b.lo <= 366
     }
 
     /// The fact just before (or after) an anchor: an entity, or a date (the one held just before or after that date,

@@ -45,8 +45,8 @@ public final class Episode {
 
     /// Whether it may hold at some day of `d`.
     func mayHold(_ d: DateRange) -> Bool {
-        // A conflicting end never says it had stopped.
-        !(!conflictEnd && (end.map { $0.hi < d.lo } ?? false)) && !(tstart.map { $0.lo > d.hi } ?? false)
+        // A conflicting end is still bounded by its latest possible day (open when nothing bounds it).
+        !(end.map { $0.hi < d.lo } ?? false) && !(tstart.map { $0.lo > d.hi } ?? false)
     }
 
     /// Whether it certainly holds through all of `d`.
@@ -263,8 +263,8 @@ extension FactsGraph {
             if end == nil, let minBound = bounds.min() {
                 let stated = start?.precision != .handover ? start : nil
                 let lo = ([stated?.lo ?? DateRange.minDay] + held.filter { $0 <= minBound }).max()!
-                if lo > minBound {         // "no longer" written before the stated start: the memories disagree
-                    end = DateRange(lo: minBound, hi: lo, precision: .conflict)
+                if lo > minBound {         // "no longer" written before the stated start: the memories disagree, and
+                    end = DateRange(lo: minBound, hi: DateRange.maxDay, precision: .conflict)   // nothing bounds the end
                     ce = true
                 } else {
                     end = DateRange(lo: lo, hi: minBound, precision: .bound)   // ended after the last day it held
@@ -275,7 +275,8 @@ extension FactsGraph {
             // A trusted memory saying it still held after that end: the memories disagree (no return was stated).
             let userEnd = ep.ends.contains { $0.assertion.fromUser }
             if let e = end, !userStatus, !userEnd, let late = held.max(), late > e.hi {     // the user's end wins
-                end = DateRange(lo: e.lo, hi: late, precision: .conflict)
+                // Nothing ends it after that "still current": the conflicting end is open (it may hold today).
+                end = DateRange(lo: e.lo, hi: DateRange.maxDay, precision: .conflict)
                 ce = true
             }
             // The slot: the user's values first; in a trusted episode untrusted values never count (they could start
