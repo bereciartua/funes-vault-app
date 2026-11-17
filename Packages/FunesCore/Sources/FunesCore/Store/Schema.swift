@@ -66,8 +66,41 @@ enum Schema {
             try db.execute(sql: "INSERT INTO meta (key, value) VALUES ('facts_epoch', ?)", arguments: [UUID().db])
             try db.execute(sql: "INSERT INTO meta (key, value) VALUES ('facts_revision', '0')")
         }
+        // Which call of a memory gave each alias (Phase 13a.2, storage §2): a re-read of one call group replaces only
+        // that group's alias evidence, names code found without a model (`source` = code) never reach a roster, and
+        // `read_at` says when the reading was made and `first_read_at` when this memory version first gave the alias (a
+        // one-word name read before a namesake was known by it reads as ambiguous); `entity_alias.confirmed_at` dates a
+        // confirmed or typed alias the same way.
+        // The key gains the call group, so the table is rebuilt; it holds no rows before the first backfill.
+        migrator.registerMigration("v10_alias_provenance") { db in
+            try db.execute(sql: v10)
+        }
         return migrator
     }
+
+    static let v10 = """
+        CREATE TABLE alias_evidence_v10 (
+          alias_id       TEXT NOT NULL REFERENCES entity_alias(id) ON DELETE CASCADE,
+          memory_id      TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
+          memory_version INTEGER NOT NULL,
+          span_start     INTEGER NOT NULL, span_end INTEGER NOT NULL,
+          quote          TEXT NOT NULL,
+          sensitivity    INTEGER NOT NULL,
+          trust          TEXT NOT NULL CHECK (trust IN ('trusted','untrusted')),
+          run_id         TEXT REFERENCES facts_run(id) ON DELETE SET NULL,
+          call_group     TEXT NOT NULL DEFAULT '',
+          source         TEXT NOT NULL DEFAULT 'model' CHECK (source IN ('model','code')),
+          read_at        TEXT,
+          first_read_at  TEXT,
+          PRIMARY KEY (alias_id, memory_id, memory_version, span_start, call_group)
+        );
+        INSERT INTO alias_evidence_v10 (alias_id, memory_id, memory_version, span_start, span_end, quote, sensitivity, trust, run_id)
+          SELECT alias_id, memory_id, memory_version, span_start, span_end, quote, sensitivity, trust, run_id FROM alias_evidence;
+        DROP TABLE alias_evidence;
+        ALTER TABLE alias_evidence_v10 RENAME TO alias_evidence;
+        CREATE INDEX alias_evidence_memory ON alias_evidence(memory_id);
+        ALTER TABLE entity_alias ADD COLUMN confirmed_at TEXT;
+        """
 
     /// Learned facts (storage §2, v9_facts). Owner side only: agent retrieval never reads these tables. No start or
     /// end dates are stored: episodes are derived from `fact_evidence`.

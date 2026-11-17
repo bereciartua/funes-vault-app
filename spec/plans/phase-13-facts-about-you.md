@@ -96,13 +96,22 @@
     - The `facts-qualification.json` records ship with 13a.2's gates.
 
 ## 13a.2 Extraction, qualification and the backfill · 3–3½ weekends
-- [ ] **A fixture harness** that runs the spike fixtures through the Swift pipeline and `ModelRouter`, and writes `score.py`- and `score_facts.py`-compatible output (port fidelity needs it).
-- [ ] **Extraction:**
+- [x] **A fixture harness** that runs the spike fixtures through the Swift pipeline and `ModelRouter`, and writes `score.py`- and `score_facts.py`-compatible output (port fidelity needs it).
+- [x] **Extraction:**
   - **The task:** a `facts` task in `ModelRouter`, with two call groups, people and work, as separate calls (H3: one merged call lost 7–9 points of relation recall). The prompt and schema are generated per group from the registry.
   - **Validation:** quotes; names; times only from the text; the predicate's object kind; roles from the lexicon; code-applied pairs and denials; the secret scanner.
   - **Apply** in one transaction, only if the memory and the roster entries it used are unchanged.
   - **Memories the model can't read** (above the limit, no model, cap reached) get code-only links after the model calls, and never appear in a roster.
   - **Activity** records ids and counts only.
+- *Status (16 November 2026), harness and extraction:*
+  - The `facts` task is `FactsExtractor` with `ModelRouter`'s Facts model. The prompt wording is `Resources/facts-prompt.json` (the vocabulary test keeps it out of Swift); its instructions and schema equal the spike's for both groups, with roster ids as `e…`. Migration `v10_alias_provenance` records which call gave each alias.
+  - Nothing in the app calls it yet. A cloud Facts model is refused (code-only links instead) until the privacy step builds rosters from sendable items only; the harness opts in.
+  - **Replay** of the spike's recorded Haiku calls (`spikes/people/export_replay.py`) through the Swift pipeline: validation equals the spike's `validate` on all 437 calls. `score.py` gives the same numbers on the astra and mixed sets. On the main set there are two more misses, no wrong links:
+    - a stale decision is replaced by the re-read's answer ("unknown"), where the spike kept its earlier one;
+    - an agent's memory named the partner first, so the trusted memories' partner is another entity (§11.4's alias trust), and "my partner" has two holders.
+  - With Swift's time model on the mixed set: 0 wrong answers, 0 negative triggers, 16 right; 11 questions get no intent, which is 13a.1's grammar failing closed (coverage for the gates).
+  - Reviewed by GPT-6-Astra and Fable 5.2: the plan, and the diff in three rounds (the last found nothing high).
+  - No live run yet: one needs the author's go-ahead (`FUNES_FACTS_HARNESS_LIVE=1`).
 - [ ] **Privacy:**
   - a roster or decision is sent only if every memory behind it, decision dependencies included, is within the cloud limit;
   - *recorded* facts too;

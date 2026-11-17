@@ -309,7 +309,11 @@ CREATE TABLE alias_evidence (
   sensitivity    INTEGER NOT NULL,                       -- the memory's at that version
   trust          TEXT NOT NULL CHECK (trust IN ('trusted','untrusted')),
   run_id         TEXT REFERENCES facts_run(id) ON DELETE SET NULL,
-  PRIMARY KEY (alias_id, memory_id, memory_version, span_start)
+  call_group     TEXT NOT NULL DEFAULT '',               -- v10: the call that gave it; a re-read replaces only its own group's
+  source         TEXT NOT NULL DEFAULT 'model' CHECK (source IN ('model','code')),   -- v10: code = a name found without a model; never in a roster
+  read_at        TEXT,                                   -- v10: when this reading was made
+  first_read_at  TEXT,                                   -- v10: when this memory version first gave the alias (kept by a re-read)
+  PRIMARY KEY (alias_id, memory_id, memory_version, span_start, call_group)
 );
 CREATE INDEX alias_evidence_memory ON alias_evidence(memory_id);
 
@@ -471,6 +475,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - `v7_memory_revisions` (v0.5, [ADR-0027](decisions/0027-memory-revisions.md)): the `memory_revision` table and its index. Nothing to backfill.
 - `v8_tidy_up_scope` (v0.5.1, [memory processing §9.7](../domain/memory-processing.md#97-tidy-up-on-one-memory)): `tidy_up_run.scope`, `all` (every existing run) or `memory` for Tidy Up on one memory.
 - `v9_facts` (v0.10, Phase 13a.1; [ADR-0032](decisions/0032-facts-about-you.md), [memory processing §11](../domain/memory-processing.md#11-facts-about-you)): the tables `entity` (with the one *you* row), `entity_alias`, `alias_evidence`, `fact`, `fact_evidence` (one evidence table for facts, qualifiers and order edges), `mention_decision`, `decision_dependency`, `manual_override`, `fact_qualification` and `facts_run`, and their indexes; `processing_job` gains kind `facts`, `memory_version` and `call_group` (null for other kinds), so a job is one committed memory version in one call group (the table is rebuilt for its CHECK, and its unique index becomes `(subject, kind, COALESCE(call_group, ''))`); `memory.original_source`; the *you* entity; `meta('facts_epoch')` gets a new UUID. Fields as in the [domain model](../domain/domain-model.md#learned-facts-v010). Nothing to backfill: the tables stay empty, apart from *you*, until the user starts the first backfill.
+- `v10_alias_provenance` (v0.10, Phase 13a.2; [memory processing §11.3](../domain/memory-processing.md#113-the-facts-task)): `alias_evidence` gains `call_group` (which call gave the alias, so re-reading one call group replaces only that group's evidence: the people call's named things and the work call's employers can be the same organization), `source` (`model` · `code`: names found without a model, which never reach a roster), and `read_at` and `first_read_at` (when a reading was made, and when the memory version first gave the alias: a one-word name read before a namesake was known by it reads as ambiguous). The key gains `call_group`, so the table is rebuilt. `entity_alias` gains `confirmed_at`: when the user confirmed or typed the alias, which dates it the same way. Nothing to backfill: it has no rows before the first backfill.
 - Before running pending migrations: make an online backup to `Backups/pre-<migration>-<date>.sqlite`.
 - Each migration has a test: open a fixture database created by the previous version, migrate it, and check the data and invariants.
 - Downgrades aren't supported. An older app version that finds a newer schema refuses to open the vault, shows "Update Funes", and never writes to it.

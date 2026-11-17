@@ -15,6 +15,9 @@ public indirect enum JSONSchema: Sendable, Hashable {
     case array(of: JSONSchema, description: String? = nil, minItems: Int? = nil, maxItems: Int? = nil)
     /// Properties in order; all required.
     case object(name: String, description: String? = nil, properties: [(String, JSONSchema)])
+    /// The schema or null (`"type": [t, "null"]`; `null` joins an enum). The Facts task's fields that a memory may not
+    /// state (memory processing §11.3) are required but nullable, as strict structured output wants.
+    case nullable(JSONSchema)
 
     public static func == (a: JSONSchema, b: JSONSchema) -> Bool { a.json == b.json }
     public func hash(into hasher: inout Hasher) { hasher.combine(json) }
@@ -43,6 +46,11 @@ public indirect enum JSONSchema: Sendable, Hashable {
                 "properties": OrderedJSONObject(properties.map { ($0.0, $0.1.wire) }),
             ]
             if let description { o["description"] = description }
+            return o
+        case let .nullable(inner):
+            var o = inner.wire
+            if let t = o["type"] as? String { o["type"] = [t, "null"] }
+            if let values = o["enum"] as? [Any] { o["enum"] = values + [NSNull()] }
             return o
         }
     }
