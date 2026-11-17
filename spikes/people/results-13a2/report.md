@@ -27,7 +27,7 @@ One run each, so differences within a few references are run-to-run variation as
 | Relations: precision · recall | 41/45 = 91% · 41/44 = 93% | 42/45 = 93% · 42/44 = 95% |
 | Relations kept though denied | 0 | 0 |
 | Labels not in the text | 0 | 0 |
-| Calls (failed) · mean seconds · tokens in/out | 177 (0) · 5.3 · 610,885/123,347 | 230 (0) · 2.0 · 746,626/167,712 |
+| Calls (failed) · mean seconds · tokens in/out | 177 (0) · 5.3 · 610,885/123,347 | 230 (0) · not measured (the harness clock is a test clock) · 746,626/167,712 |
 
 Swift errors:
 
