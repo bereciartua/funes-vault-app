@@ -33,6 +33,7 @@ extension FactStore {
             try db.execute(sql: "DELETE FROM alias_evidence WHERE memory_id = ? AND memory_version = ?", arguments: [memoryID, old])
             try db.execute(sql: "DELETE FROM mention_decision WHERE memory_id = ? AND memory_version = ? AND source = 'model'",
                            arguments: [memoryID, old])
+            try db.execute(sql: "DELETE FROM facts_asked WHERE memory_id = ? AND memory_version = ?", arguments: [memoryID, old])
             try collectGarbage(db, now: now, touching: affected)
         } else {
             // Status or trust may have changed what counts (a delete, an archive, an owner's edit): what this memory
@@ -46,6 +47,8 @@ extension FactStore {
                            arguments: [new, memoryID, old])
             try db.execute(sql: "UPDATE decision_dependency SET ref_version = ? WHERE kind = 'memory' AND ref_id = ? AND ref_version = ?",
                            arguments: [String(new), memoryID, String(old)])
+            try db.execute(sql: "UPDATE OR REPLACE facts_asked SET memory_version = ? WHERE memory_id = ? AND memory_version = ?",
+                           arguments: [new, memoryID, old])
             try touch(db, facts: affected.facts, entities: affected.entities, except: memoryID, now: now)
         }
         try bumpRevision(db)
@@ -55,6 +58,7 @@ extension FactStore {
         try Bool.fetchOne(db, sql: """
             SELECT EXISTS (SELECT 1 FROM fact_evidence WHERE memory_id = ?1) OR EXISTS (SELECT 1 FROM alias_evidence WHERE memory_id = ?1)
               OR EXISTS (SELECT 1 FROM mention_decision WHERE memory_id = ?1) OR EXISTS (SELECT 1 FROM manual_override WHERE memory_id = ?1)
+              OR EXISTS (SELECT 1 FROM facts_asked WHERE memory_id = ?1)
             """, arguments: [memoryID]) ?? false
     }
 
@@ -86,6 +90,7 @@ extension FactStore {
             try db.execute(sql: "DELETE FROM fact_evidence WHERE memory_id IN (\(marks))", arguments: args)
             try db.execute(sql: "DELETE FROM alias_evidence WHERE memory_id IN (\(marks))", arguments: args)
             try db.execute(sql: "DELETE FROM mention_decision WHERE source = 'model' AND memory_id IN (\(marks))", arguments: args)
+            try db.execute(sql: "DELETE FROM facts_asked WHERE memory_id IN (\(marks))", arguments: args)
             try db.execute(sql: "UPDATE mention_decision SET mention = NULL, quote = NULL WHERE memory_id IN (\(marks))", arguments: args)
             try db.execute(sql: "UPDATE manual_override SET quote = NULL WHERE memory_id IN (\(marks))", arguments: args)
         }
@@ -208,6 +213,7 @@ extension FactStore {
         try db.execute(sql: "DELETE FROM fact_evidence WHERE source = 'memory'")
         try db.execute(sql: "DELETE FROM alias_evidence")
         try db.execute(sql: "DELETE FROM mention_decision WHERE source = 'model'")
+        try db.execute(sql: "DELETE FROM facts_asked")
         try db.execute(sql: "DELETE FROM facts_run")
         try db.execute(sql: "DELETE FROM meta WHERE key = 'facts_backfill'")
         try collectGarbage(db, now: now)

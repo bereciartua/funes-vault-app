@@ -430,7 +430,7 @@ public struct FactsGraph: Sendable {
 
     public mutating func apply(_ mem: FactsMemory, phrases: [RolePhrase] = [], people: [ExtractedPerson] = [],
                                facts newFacts: [ExtractedFact] = [], roles: [ExtractedRole] = [],
-                               roster: Set<String> = []) {
+                               roster: Set<String> = [], knownNames: [String: String] = [:]) {
         memories[mem.id] = mem
         let mid = mem.id, trusted = mem.trusted
         landed = [:]
@@ -537,7 +537,9 @@ public struct FactsGraph: Sendable {
             if ref == "someone_else" {
                 decisions[key] = MentionDecision(entity: nil, basis: .someoneElse)
             } else if ref.hasPrefix("name:") {
-                if let pid = here[FactsText.fold(String(ref.dropFirst(5)))] {
+                // A scoped re-read (roles only) names the person through the memory's standing name links.
+                let f = FactsText.fold(String(ref.dropFirst(5)))
+                if let pid = here[f] ?? knownNames[f] {
                     decisions[key] = MentionDecision(entity: pid, basis: named)
                 }
             } else if roster.contains(ref), let e = entities[ref], let paired = ph.paired, e.name != nil,

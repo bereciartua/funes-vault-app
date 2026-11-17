@@ -400,6 +400,22 @@ CREATE TABLE decision_dependency (
 );
 CREATE INDEX decision_dependency_ref ON decision_dependency(kind, ref_id);
 
+CREATE TABLE facts_asked (                               -- v11: what each model reading was asked knowing
+  memory_id      TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
+  memory_version INTEGER NOT NULL,                       -- follows a status-only bump; dropped with a text edit
+  call_group     TEXT NOT NULL,
+  mention_kind   TEXT NOT NULL CHECK (mention_kind IN ('read','phrase','name','decision')),
+                                                         -- read: the model read this version in this group;
+                                                         -- phrase: a role phrase; name: a name;
+                                                         -- decision: the knowledge a model decision was made with
+  mention_key    TEXT NOT NULL,                          -- '' · the phrase's scalar start · the folded name · the decision id
+  knowledge      TEXT NOT NULL,                          -- holders or candidates as the call saw them; no timestamps, no quotes
+  asked_at       TEXT NOT NULL,
+  PRIMARY KEY (memory_id, memory_version, call_group, mention_kind, mention_key)
+);
+-- processing_job gains generation INTEGER NOT NULL DEFAULT 0 (v11): bumped by every enqueue of a facts job, so one
+-- asked for while it runs goes back to the queue when it finishes, whatever its outcome.
+
 CREATE TABLE manual_override (
   id          TEXT PRIMARY KEY,
   target_kind TEXT NOT NULL CHECK (target_kind IN ('entity','alias','fact','qualifier','date','status','order')),
@@ -476,6 +492,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - `v8_tidy_up_scope` (v0.5.1, [memory processing §9.7](../domain/memory-processing.md#97-tidy-up-on-one-memory)): `tidy_up_run.scope`, `all` (every existing run) or `memory` for Tidy Up on one memory.
 - `v9_facts` (v0.10, Phase 13a.1; [ADR-0032](decisions/0032-facts-about-you.md), [memory processing §11](../domain/memory-processing.md#11-facts-about-you)): the tables `entity` (with the one *you* row), `entity_alias`, `alias_evidence`, `fact`, `fact_evidence` (one evidence table for facts, qualifiers and order edges), `mention_decision`, `decision_dependency`, `manual_override`, `fact_qualification` and `facts_run`, and their indexes; `processing_job` gains kind `facts`, `memory_version` and `call_group` (null for other kinds), so a job is one committed memory version in one call group (the table is rebuilt for its CHECK, and its unique index becomes `(subject, kind, COALESCE(call_group, ''))`); `memory.original_source`; the *you* entity; `meta('facts_epoch')` gets a new UUID. Fields as in the [domain model](../domain/domain-model.md#learned-facts-v010). Nothing to backfill: the tables stay empty, apart from *you*, until the user starts the first backfill.
 - `v10_alias_provenance` (v0.10, Phase 13a.2; [memory processing §11.3](../domain/memory-processing.md#113-the-facts-task)): `alias_evidence` gains `call_group` (which call gave the alias, so re-reading one call group replaces only that group's evidence: the people call's named things and the work call's employers can be the same organization), `source` (`model` · `code`: names found without a model, which never reach a roster), and `read_at` and `first_read_at` (when a reading was made, and when the memory version first gave the alias: a one-word name read before a namesake was known by it reads as ambiguous). The key gains `call_group`, so the table is rebuilt. `entity_alias` gains `confirmed_at`: when the user confirmed or typed the alias, which dates it the same way. Nothing to backfill: it has no rows before the first backfill.
+- `v11_facts_asked` (v0.10, Phase 13a.2; [memory processing §11.3](../domain/memory-processing.md#113-the-facts-task)): the table `facts_asked`, what each model reading was asked knowing, so reconciliation asks again only what changed and revalidates the rest in code; `processing_job.generation`. Neither is exported: a restored vault's memories are reconciled again only once a model reads them. Nothing to backfill.
 - Before running pending migrations: make an online backup to `Backups/pre-<migration>-<date>.sqlite`.
 - Each migration has a test: open a fixture database created by the previous version, migrate it, and check the data and invariants.
 - Downgrades aren't supported. An older app version that finds a newer schema refuses to open the vault, shows "Update Funes", and never writes to it.
@@ -509,7 +526,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 | Processing jobs (v0.3) | after every vault change and every minute, one at a time; `running` ones requeued at launch | New memories processing of queued inputs ([memory processing §5.2](../domain/memory-processing.md#52-which-inputs-phase-6)): until 6a, classification of Mac and iPhone captures. Retries after 30 s, 2, 8 and 32 min, then `failed`. Finished jobs deleted after 30 days (daily) |
 | Daily tidy-up (v0.3) | daily at the user's time (`NSBackgroundActivityScheduler`), on demand, or on the next launch or wake after a missed run; only while on | [Memory processing §9](../domain/memory-processing.md#9-daily-tidy-up) |
 | Undo log cleanup (v0.3) | daily | Delete `undo_entry` rows past 30 days; drop source text of fully decided suggestion groups; v0.5: delete earlier versions past 90 days, and each memory's oldest beyond 50 |
-| Facts jobs (v0.10) | with processing jobs, in their low-priority lane: paused while New memories or tidy-up jobs wait | [Memory processing §11.3](../domain/memory-processing.md#113-the-facts-task): one `facts` job per committed memory version and call group, only while *Learn from memories* is on. The first backfill is a resumable `facts_run` (`resume_after`) |
+| Facts jobs (v0.10) | with processing jobs, in their low-priority lane: paused while New memories or tidy-up jobs wait (queued, waiting for a retry, or running) or a tidy-up run is open | [Memory processing §11.3](../domain/memory-processing.md#113-the-facts-task): one `facts` job per memory and call group (`memory_version` is the newest asked for), only while *Learn from memories* is on, and one reconciliation sweep (no call group), queued by any change to learned facts once a model reading exists and run after the memories' jobs. Not counted in the Inbox's waiting figure. The first backfill is a resumable `facts_run` (`resume_after`) |
 | Backup | daily, and before migrations | Keep the last 7 |
 | Activity compaction | launch, every 6 h, above 8 MB | Retention per FR-L-03 |
 | Receipt cleanup | daily | Delete capture receipts older than 90 days |
