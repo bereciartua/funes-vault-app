@@ -468,7 +468,8 @@ public final class ImportService: Sendable {
                         }
                     }
                 }
-                out.restoredFacts = try FactsExport.restore(db, facts, memories: map, now: now)
+                out.restoredFacts = try FactsExport.restore(db, facts, memories: map,
+                                                             exported: Set(preview.entries.compactMap { $0.item.exportID?.db }), now: now)
             }
             // The export's profile, only into an empty one, and only if it would save (FR-X-06).
             if let profile = preview.profile?.normalized(), !profile.isEmpty, try ProfileStore.fetch(db).isEmpty,

@@ -107,109 +107,89 @@ enum FactsExport {
 
     /// Restores an export's facts into a vault with none (storage §5.2). `memories` maps each exported memory id to
     /// the memory it was restored as and its version (restore as active memories); nil means the memories became
-    /// suggestions, so only manual entries, the user's rows, corrections and their tombstones come back.
+    /// suggestions, so only manual entries, the user's rows, corrections and their tombstones come back. `exported` is
+    /// the export's own memory ids (nil: every id the section names).
+    ///
+    /// A memory the export carries that didn't come back (a skipped duplicate, a blocked one, or every memory when they
+    /// became suggestions) is handled as if it came back and was then purged: its rows restore under a staging id that
+    /// no memory has, then `FactStore.purge` runs on those ids, exactly as when a memory is removed, so what its
+    /// evidence, decisions and corrections supported goes, becomes a tombstone or is re-validated by the purge's own
+    /// rules. A correction whose memory was purged before the export restores as it is: purging it again would touch
+    /// what it corrects and make valid decisions stale. Staging evidence names no memory, so foreign keys are deferred
+    /// inside a savepoint; the explicit check before it's released is the only guard (turning deferral off clears what
+    /// SQLite would have checked at commit), and any throw rolls the whole restore back.
     @discardableResult
     static func restore(_ db: Database, _ facts: FunesExportFacts, memories: [String: (id: String, version: Int)]?,
-                        now: Date) throws -> Bool {
+                        exported: Set<String>? = nil, now: Date) throws -> Bool {
         guard try !hasAny(db) else { return false }
-        func remap(_ row: [String: ExportCell], memoryColumn: String = "memory_id",
-                   versionColumn: String? = "memory_version") -> [String: ExportCell]? {
-            guard let old = row[memoryColumn]?.string else { return row }
-            guard let memories else { return row }
-            guard let new = memories[old] else { return nil }
-            var r = row
-            r[memoryColumn] = .string(new.id)
-            if let versionColumn, r[versionColumn] != nil, r[versionColumn] != .null { r[versionColumn] = .int(Int64(new.version)) }
-            return r
+        // Ids with rows a purge would still change: evidence, model decisions, corrections that keep their text.
+        var live = Set<String>()
+        for r in facts.aliasEvidence + facts.evidence { if let m = r["memory_id"]?.string { live.insert(m) } }
+        for r in facts.decisions + facts.manualOverrides {
+            guard let m = r["memory_id"]?.string else { continue }
+            let text = [r["quote"], r["mention"]].contains { $0 != nil && $0 != .null }
+            if r["source"]?.string == "model" || text { live.insert(m) }
         }
-        /// A correction keeps its ids; it follows its memory if that came back, else it loses its text (as a purge
-        /// leaves it), so no quote outlives the memory it came from.
-        func correction(_ row: [String: ExportCell]) -> [String: ExportCell] {
-            guard let old = row["memory_id"]?.string else { return row }
-            var r = row
-            if let new = memories?[old] {
-                r["memory_id"] = .string(new.id)
-            } else {
-                if r["mention"] != nil { r["mention"] = .null }
-                r["quote"] = .null
-            }
-            return r
+        func purged(_ old: String) -> Bool { memories?[old] == nil && ((exported?.contains(old) ?? true) || live.contains(old)) }
+        var staged: [String: String] = [:]                   // memory id → staging id
+        // A memory dependency that names no restored memory is staged too (never purged), so garbage collection sees it
+        // pointing at no memory and the decision goes stale, whatever memory the target has under that id.
+        func target(_ old: String, dependency: Bool = false) -> (id: String, version: Int?) {
+            if let new = memories?[old] { return (new.id, new.version) }
+            guard dependency || purged(old) else { return (old, nil) }
+            if let s = staged[old] { return (s, nil) }
+            let s = UUID().db
+            staged[old] = s
+            return (s, nil)
         }
-        let asMemories = memories != nil
-        // Dependencies follow only the decisions restored: one whose memory was skipped (a duplicate) takes them along.
-        var restoredDecisions = Set<String>()
-        // What a skipped memory supported (its evidence, or a correction made from it that loses its text): touched
-        // after the restore, so the decisions that depend on it are re-validated (memory processing §11.8).
-        var droppedFacts = Set<String>(), droppedAliases = Set<String>(), droppedTargets: [(kind: String, id: String)] = []
-        func skippedMemory(_ row: [String: ExportCell]) -> Bool {
-            guard asMemories, let old = row["memory_id"]?.string else { return false }
-            return memories?[old] == nil
-        }
-        for t in tables {
-            let columns = Set(try Row.fetchAll(db, sql: "PRAGMA table_info(\(t.table))").map { $0["name"] as String })
-            for var row in facts[keyPath: t.key] {
-                switch t.table {
-                case "facts_run":
-                    guard asMemories else { continue }
-                case "alias_evidence":
-                    guard asMemories, let r = remap(row) else {
-                        if asMemories, let a = row["alias_id"]?.string { droppedAliases.insert(a) }
-                        continue
-                    }
-                    row = r
-                case "fact_evidence":
-                    if row["source"]?.string == "memory" {
-                        guard asMemories, let r = remap(row) else {
-                            if asMemories, let f = row["fact_id"]?.string { droppedFacts.insert(f) }
-                            continue
+        let deferred = try Int.fetchOne(db, sql: "PRAGMA defer_foreign_keys") ?? 0
+        defer { try? db.execute(sql: "PRAGMA defer_foreign_keys = \(deferred)") }
+        try db.inSavepoint {
+            try db.execute(sql: "PRAGMA defer_foreign_keys = ON")
+            for t in tables {
+                // Runs describe how memories were read: they don't come back with suggestions.
+                if t.table == "facts_run", memories == nil { continue }
+                let columns = Set(try Row.fetchAll(db, sql: "PRAGMA table_info(\(t.table))").map { $0["name"] as String })
+                for var row in facts[keyPath: t.key] {
+                    if t.table == "decision_dependency" {
+                        if row["kind"]?.string == "memory", let old = row["ref_id"]?.string {
+                            let m = target(old, dependency: true)
+                            row["ref_id"] = .string(m.id)
+                            if let v = m.version { row["ref_version"] = .string(String(v)) }
                         }
-                        row = r
+                    } else if let old = row["memory_id"]?.string {
+                        let m = target(old)
+                        row["memory_id"] = .string(m.id)
+                        if let v = m.version, let c = row["memory_version"], c != .null { row["memory_version"] = .int(Int64(v)) }
                     }
-                case "mention_decision":
-                    if row["source"]?.string == "model" {
-                        guard asMemories, let r = remap(row) else { continue }
-                        row = r
-                    } else {
-                        row = correction(row)
-                    }
-                case "decision_dependency":
-                    guard restoredDecisions.contains(row["decision_id"]?.string ?? "") else { continue }
-                    if row["kind"]?.string == "memory", let old = row["ref_id"]?.string {
-                        guard let new = memories?[old] else { continue }
-                        row["ref_id"] = .string(new.id)
-                        row["ref_version"] = .string(String(new.version))
-                    }
-                case "manual_override":
-                    if skippedMemory(row), let k = row["target_kind"]?.string, let id = row["target_id"]?.string {
-                        droppedTargets.append((k, id))
-                    }
-                    row = correction(row)
-                default:
-                    break
+                    let keys = row.keys.filter(columns.contains).sorted()
+                    guard !keys.isEmpty else { continue }
+                    try db.execute(sql: "INSERT OR IGNORE INTO \(t.table) (\(keys.joined(separator: ", "))) VALUES (\(databaseQuestionMarks(count: keys.count)))",
+                                   arguments: StatementArguments(keys.map { row[$0]!.databaseValue }))
                 }
-                let keys = row.keys.filter(columns.contains).sorted()
-                guard !keys.isEmpty else { continue }
-                try db.execute(sql: "INSERT OR IGNORE INTO \(t.table) (\(keys.joined(separator: ", "))) VALUES (\(databaseQuestionMarks(count: keys.count)))",
-                               arguments: StatementArguments(keys.map { row[$0]!.databaseValue }))
-                if t.table == "mention_decision", db.changesCount > 0, let id = row["id"]?.string { restoredDecisions.insert(id) }
             }
-        }
-        var touchFacts = droppedFacts, touchEntities = Set<String>()
-        for a in droppedAliases {
-            if let e = try String.fetchOne(db, sql: "SELECT entity_id FROM entity_alias WHERE id = ?", arguments: [a]) { touchEntities.insert(e) }
-        }
-        for t in droppedTargets {
-            if t.kind == "entity" || t.kind == "alias" {
-                touchEntities.insert(try String.fetchOne(db, sql: "SELECT entity_id FROM entity_alias WHERE id = ?", arguments: [t.id]) ?? t.id)
+            let skipped = staged.filter { purged($0.key) }.map(\.value).sorted()
+            if skipped.isEmpty {
+                try FactStore.collectGarbage(db, now: now)
             } else {
-                touchFacts.insert(t.id)
+                try FactStore.purge(db, memoryIDs: skipped, now: now)
             }
+            // What the purge kept (corrections, without their text; dependencies of stale decisions) carries its
+            // exported id again.
+            let exportedID = Dictionary(uniqueKeysWithValues: staged.map { ($0.value, $0.key) })
+            for (table, column, filter) in [("mention_decision", "memory_id", ""), ("manual_override", "memory_id", ""),
+                                            ("decision_dependency", "ref_id", "AND kind = 'memory'")] {
+                for s in try String.fetchAll(db, sql: "SELECT DISTINCT \(column) FROM \(table) WHERE \(column) IS NOT NULL \(filter)") {
+                    guard let old = exportedID[s] else { continue }
+                    try db.execute(sql: "UPDATE \(table) SET \(column) = ? WHERE \(column) = ? \(filter)", arguments: [old, s])
+                }
+            }
+            for t in tables where try Row.fetchOne(db, sql: "PRAGMA foreign_key_check(\(t.table))") != nil {
+                throw DatabaseError(resultCode: .SQLITE_CONSTRAINT_FOREIGNKEY, message: "dangling \(t.table) row after a learned facts restore")
+            }
+            try FactStore.bumpRevision(db)
+            return .commit
         }
-        for f in touchFacts {
-            if let e = try String.fetchOne(db, sql: "SELECT entity_id FROM fact WHERE id = ?", arguments: [f]) { touchEntities.insert(e) }
-        }
-        try FactStore.collectGarbage(db, now: now, touching: (touchFacts, touchEntities))
-        try FactStore.bumpRevision(db)
         return true
     }
 }
