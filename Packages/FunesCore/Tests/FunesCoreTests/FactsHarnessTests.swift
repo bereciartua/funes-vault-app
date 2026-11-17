@@ -10,7 +10,7 @@ import Testing
 /// `replay=` takes `spikes/people/export_replay.py`'s output (the spike's recorded Haiku calls); `live=claude:<model>` or
 /// `live=codex:<model>` calls a real model through the subscription CLIs and also needs `FUNES_FACTS_HARNESS_LIVE=1`,
 /// set only with the author's go-ahead (Phase 13 plan: cloud runs on fixtures need it). `orders=natural` plays each
-/// story once. Lines go to `<out>/<label>/<set>.jsonl`, which `RESULTS_DIR=<out> python3 spikes/people/score.py --set
+/// story once; `only=x01,x02` plays those stories. Lines go to `<out>/<label>/<set>.jsonl`, which `RESULTS_DIR=<out> python3 spikes/people/score.py --set
 /// <set>` and `score_facts.py stories` read. `scripts/facts_harness.sh` does all three.
 @Suite(.serialized) struct FactsHarnessTests {
     static var options: [String: String]? {
@@ -128,7 +128,8 @@ import Testing
         let dir = out.appending(path: label)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         var lines: [String] = [], judged: [String: Int] = [:], unmapped = 0, reasks = 0, plays = 0, calls = 0, failed = 0
-        for story in fixture.stories {
+        let only = Set((o["only"] ?? "").split(separator: ",").map(String.init))
+        for story in fixture.stories where only.isEmpty || only.contains(story.id) {
             let orders = [story.memories.map(\.id)] + (o["orders"] == "natural" ? [] : story.orders ?? [])
             for (i, order) in orders.enumerated() {
                 let rec = recorded.filter { $0.story == story.id && $0.orderIndex == i }

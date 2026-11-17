@@ -111,7 +111,7 @@
     - an agent's memory named the partner first, so the trusted memories' partner is another entity (§11.4's alias trust), and "my partner" has two holders.
   - With Swift's time model on the mixed set: 0 wrong answers, 0 negative triggers, 16 right; 11 questions get no intent, which is 13a.1's grammar failing closed (coverage for the gates).
   - Reviewed by GPT-6-Astra and Fable 5.2: the plan, and the diff in three rounds (the last found nothing high).
-  - No live run yet: one needs the author's go-ahead (`FUNES_FACTS_HARNESS_LIVE=1`).
+  - **Live run** (16 November 2026, the author's go-ahead): the mixed fixture with Claude Haiku, all orders, both groups ([`spikes/people/results-13a2/report.md`](../../spikes/people/results-13a2/report.md)). Full-basis links 31/31 right; relation recall 95% (the spike's fresh run: 93%); 0 wrong timeline answers on the Swift time model. But two wrong `sole_known` links in one play: a reconciliation re-read whose quotes didn't validate replaced a good first reading, which erased the manager it had found. And 230 calls against the spike's 177, since 13a.1 invalidates decisions on any change to their predicate. The queue step must scope a reconciliation call to what it re-asks (roles or names), as the spike did, before the gates run.
 - [ ] **Privacy:**
   - a roster or decision is sent only if every memory behind it, decision dependencies included, is within the cloud limit;
   - *recorded* facts too;
