@@ -100,6 +100,25 @@ enum FactsHarness {
         var reasks: Int { state.withLock { $0.reasks } }
 
         func expect(_ r: Recorded) { state.withLock { $0.next = r; $0.reask = nil } }
+        /// Swift's own schedule served from a recording: every call is a re-ask, answered with what the recording's
+        /// calls for that memory and group add up to (the spike applied only the roles of a roles re-ask, and only the
+        /// names of a names re-ask). For counting calls; the answers were made knowing other rosters.
+        func preload(_ recs: [Recorded]) {
+            state.withLock { s in
+                for r in recs { s.sources[r.memory + "\u{1F}" + r.group] = Self.merged(s.sources[r.memory + "\u{1F}" + r.group], r) }
+            }
+        }
+
+        static func merged(_ old: Sources?, _ r: Recorded) -> Sources {
+            let part = Part(raw: r.raw, roster: r.roster)
+            var src = old ?? Sources(people: part, facts: part, roles: part, things: part)
+            switch r.mode {
+            case "roles": src.roles = part
+            case "names": src.people = part
+            default: src = Sources(people: part, facts: part, roles: part, things: part)
+            }
+            return src
+        }
         /// A Swift-only re-ask of a fixture memory in a group: served with its latest recorded output.
         func reask(_ memory: String, _ group: String) { state.withLock { $0.next = nil; $0.reask = memory + "\u{1F}" + group } }
 
@@ -109,14 +128,7 @@ enum FactsHarness {
                 let key: String
                 if let r = s.next {
                     key = r.memory + "\u{1F}" + r.group
-                    let part = Part(raw: r.raw, roster: r.roster)
-                    var src = s.sources[key] ?? Sources(people: part, facts: part, roles: part, things: part)
-                    switch r.mode {
-                    case "roles": src.roles = part              // the spike applied only the roles of a roles re-ask
-                    case "names": src.people = part             // and only the names of a names re-ask
-                    default: src = Sources(people: part, facts: part, roles: part, things: part)
-                    }
-                    s.sources[key] = src
+                    s.sources[key] = Self.merged(s.sources[key], r)
                     s.next = nil
                     s.served += 1
                 } else {
@@ -192,6 +204,8 @@ enum FactsHarness {
         var judged: [(id: String, outcome: String)]
         var unmapped: Int
         var reasks: Int
+        /// Memory versions reconciliation still found due after a drain (a loop if not 0).
+        var unsettled = 0
     }
 
     /// A monotonic clock: roster tokens are `updated_at` values compared as text.
@@ -217,9 +231,11 @@ enum FactsHarness {
         return Calendar.current.date(from: DateComponents(year: p[0], month: p[1], day: p[2], hour: 12))!
     }
 
-    /// Plays one story in one order. With `replay`, the recorded calls drive the schedule (as `replay.py`); then
-    /// memories whose model decisions went stale are asked again, served from the recording. Otherwise each memory
-    /// is read in every group, then reconciled.
+    /// Plays one story in one order, through the facts lane: each memory's jobs are queued and the queue drained (with
+    /// the reconciliation sweep and the partial re-reads it queues) before the next memory is added, as the spike's
+    /// `play` reconciled after each memory. With `replay`, the recorded calls drive the schedule instead (as
+    /// `replay.py`), each applied in its recorded scope; then the queue's sweep asks again whatever is still due, served
+    /// from the recording.
     static func play(_ story: Fixture.Story, order: [String], orderIndex: Int, user: [String], provider: any GenerationProvider,
                      replay: [Recorded]?, groups: [String], label: String) async throws -> Play {
         let v = try TestVault()
@@ -228,6 +244,8 @@ enum FactsHarness {
         var x = FactsExtractor(store: v.store, router: router, activity: InMemoryActivityLog(), userAliases: user)
         x.unfilteredRostersAllowed = true
         x.clock = { clock.now() }
+        let queue = ProcessingQueue(store: v.store, activity: InMemoryActivityLog(), launchedAt: .distantPast)
+        let worker = FactsQueueWorker(extractor: x)
         let mems = Dictionary(uniqueKeysWithValues: story.memories.map { ($0.id, $0) })
         var vaultID: [String: String] = [:], fixtureID: [String: String] = [:]
         func add(_ mid: String) throws -> String {
@@ -244,43 +262,76 @@ enum FactsHarness {
             fixtureID[mem.id.db] = mid
             return mem.id.db
         }
-        var calls: [[String: Any]] = []
-        func record(_ r: FactsLearnReport, mode: String) {
-            for c in r.calls {
-                calls.append(["memory": fixtureID[c.memoryID] ?? c.memoryID, "group": c.group, "mode": mode, "reconcile": mode != "full",
-                              "ok": c.outcome == .applied, "ms": c.milliseconds, "promptTokens": c.usage.inputTokens,
-                              "outputTokens": c.usage.outputTokens, "dropped": c.dropped])
+        let log = Mutex<[[String: Any]]>([])
+        let fixtureIDs = Mutex<[String: String]>([:])
+        @Sendable func record(_ r: FactsLearnReport, mode: String) {
+            let ids = fixtureIDs.withLock { $0 }
+            log.withLock { calls in
+                for c in r.calls where c.outcome != .codeOnly {
+                    calls.append(["memory": ids[c.memoryID] ?? c.memoryID, "group": c.group, "mode": mode, "reconcile": mode != "full",
+                                  "ok": c.outcome == .applied, "ms": c.milliseconds, "promptTokens": c.usage.inputTokens,
+                                  "outputTokens": c.usage.outputTokens, "dropped": c.dropped])
+                }
             }
         }
         let rp = provider as? Replay
+        /// Drains the facts lane; a replayed re-ask is served the recording's answers for that memory and group.
+        var unsettled = 0
+        func drain() async throws {
+            let ids = fixtureIDs.withLock { $0 }
+            _ = try await queue.drain(now: { clock.now() }) { job in
+                if let g = job.callGroup { rp?.reask(ids[job.subject.db] ?? job.subject.db, g) }
+                return try await worker.process(job) { r, mode in record(r, mode: mode) }
+            }
+            // A fixpoint: once the lane is drained, reconciliation finds nothing left to ask.
+            unsettled += try await v.store.writer.write { db in try FactsReconciler.reconcile(db, userAliases: user).count }
+        }
         if let replay {
             for r in replay {
                 let id = try add(r.memory)
+                fixtureIDs.withLock { $0 = fixtureID }
                 rp?.expect(r)
-                record(try await x.learn([id], groups: [r.group], kind: r.mode == "full" ? "incremental" : "reconciliation"), mode: r.mode)
+                // The spike's re-asks were scoped: a roles re-ask applied every role answer, a names re-ask every name.
+                var scope = FactsScope.full
+                if r.mode != "full" {
+                    scope = try await v.store.writer.read { db in
+                        let g = try FactStore.load(db, userAliases: user).graph
+                        guard let mem = try FactStore.countedMemories(db, ids: [id])[id]?.memory
+                            ?? Row.fetchOne(db, sql: "SELECT title, body FROM memory WHERE id = ?", arguments: [id]).map({
+                                FactsMemory(id: id, text: FactStore.text(title: $0["title"], body: $0["body"]), written: "", source: .capture, trusted: true)
+                            }) else { return .full }
+                        if r.mode == "roles" {
+                            let starts = g.rolePhrases(mem.text, predicates: Set(FactsRegistry.bundled.groupPredicates(r.group)))
+                                .map { FactStore.scalarOffset(mem.text, utf16: $0.start) }
+                            return .partial(roles: Set(starts), names: [])
+                        }
+                        let said = (r.raw["people"] as? [[String: Any]] ?? []).compactMap { $0["name"] as? String }
+                        let had = g.names.keys.filter { $0.memoryID == id }.map(\.surface)
+                        return .partial(roles: [], names: Set((said + had).map { FactsText.fold($0) }))
+                    }
+                }
+                record(try await x.learn([id], groups: [r.group], kind: r.mode == "full" ? "incremental" : "reconciliation", scope: scope),
+                       mode: r.mode)
             }
             // Order memories the recording never read (none expected) are added so their role links resolve.
             for mid in order where vaultID[mid] == nil { _ = try add(mid) }
-            for _ in 0..<3 {
-                let stale = try await v.store.writer.read { db in try FactStore.staleDecisions(db) }
-                if stale.isEmpty { break }
-                for s in stale {
-                    rp?.reask(fixtureID[s.memoryID] ?? s.memoryID, s.callGroup)
-                    record(try await x.learn([s.memoryID], groups: [s.callGroup], kind: "reconciliation"), mode: "stale")
-                }
-            }
+            fixtureIDs.withLock { $0 = fixtureID }
+            try await drain()
         } else {
-            var reconcile = Reconciler()
             for mid in order {
                 let id = try add(mid)
-                record(try await x.learn([id], groups: groups), mode: "full")
-                for _ in 0..<3 {
-                    let due = try reconcile.due(v.store, user: user, asking: id)
-                    if due.isEmpty { break }
-                    for (m, g) in due { record(try await x.learn([m], groups: [g], kind: "reconciliation"), mode: "reconcile") }
+                fixtureIDs.withLock { $0 = fixtureID }
+                let now = clock.now()
+                try await v.store.writer.write { db in
+                    let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [id]) ?? 1
+                    for g in groups {
+                        try ProcessingQueue.enqueueFacts(db, memoryID: UUID(uuidString: id)!, version: version, group: g, reason: .version, now: now)
+                    }
                 }
+                try await drain()
             }
         }
+        let calls = log.withLock { $0 }
         // The final state, as the spike dumps it.
         var g = try await v.store.writer.read { db in try FactStore.load(db, userAliases: user).graph }
         for mid in order {
@@ -304,53 +355,7 @@ enum FactsHarness {
         var judged: [(String, String)] = []
         for q in story.queries ?? [] { judged.append((q.id, judge(g, q, timeline: story.timeline ?? []))) }
         line["swift_judged"] = Dictionary(judged, uniquingKeysWith: { a, _ in a })
-        return Play(line: line, judged: judged, unmapped: rp?.unmapped ?? 0, reasks: rp?.reasks ?? 0)
-    }
-
-    // MARK: Reconciliation (the spike's `needs_reconcile`, until the queue persists it)
-
-    /// Names whose sharing set changed since the memory was read, role phrases whose holders changed since they were
-    /// asked, and memories whose model decisions went stale.
-    struct Reconciler {
-        var askedNames: [String: Set<String>] = [:]      // memory + surface → the entities sharing it when read
-        var askedRoles: [String: [String]] = [:]         // memory + phrase start → holders (and extra) when asked
-
-        mutating func due(_ store: VaultStore, user: [String], asking: String) throws -> [(String, String)] {
-            let (g, stale) = try store.writer.read { db in
-                (try FactStore.load(db, userAliases: user).graph, try FactStore.staleDecisions(db))
-            }
-            let people = FactsRegistry.bundled.groupPredicates(FactsRegistry.bundled.callGroups.keys.sorted().first {
-                FactsPrompt.hasPeople($0, .bundled)
-            }!)
-            let peopleGroup = FactsRegistry.bundled.predicate(people[0])!.callGroup
-            var out: [(String, String)] = []
-            func add(_ m: String, _ grp: String) { if !out.contains(where: { $0 == (m, grp) }) { out.append((m, grp)) } }
-            for s in stale { add(s.memoryID, s.callGroup) }
-            // The memory just read sets its own baseline: what it was read knowing.
-            for (key, link) in g.names where FactsText.fold(key.surface).split(separator: " ").count == 1 {
-                let k = key.memoryID + "\u{1F}" + key.surface
-                let now = Set(g.byName(key.surface).map(\.id))
-                if key.memoryID != asking, let was = askedNames[k], was != now, now.count > 1 || link.basis == .ambiguous {
-                    add(key.memoryID, peopleGroup)
-                }
-                askedNames[k] = now
-            }
-            for mem in g.memories.values {
-                for ph in g.rolePhrases(mem.text) {
-                    let key = FactsGraph.DecisionKey(memoryID: mem.id, start: ph.start)
-                    if let d = g.decisions[key], d.basis != .group { continue }
-                    let (d, w) = g.asOf(mem, ph)
-                    let h = g.holders(ph, asOf: d, written: w)
-                    let now = h.holders.map(\.entity.id).sorted() + (h.extra > 0 ? ["+\(h.extra)"] : [])
-                    let k = mem.id + "\u{1F}\(ph.start)"
-                    if mem.id != asking, h.holders.count + h.extra > 1, askedRoles[k] != now {
-                        add(mem.id, FactsRegistry.bundled.predicate(ph.predicate)!.callGroup)
-                    }
-                    askedRoles[k] = now
-                }
-            }
-            return out
-        }
+        return Play(line: line, judged: judged, unmapped: rp?.unmapped ?? 0, reasks: rp?.reasks ?? 0, unsettled: unsettled)
     }
 
     // MARK: Judging timeline questions in Swift (score_facts.judge)

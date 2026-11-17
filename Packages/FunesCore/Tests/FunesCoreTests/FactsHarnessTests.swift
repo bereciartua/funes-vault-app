@@ -10,7 +10,8 @@ import Testing
 /// `replay=` takes `spikes/people/export_replay.py`'s output (the spike's recorded Haiku calls); `live=claude:<model>` or
 /// `live=codex:<model>` calls a real model through the subscription CLIs and also needs `FUNES_FACTS_HARNESS_LIVE=1`,
 /// set only with the author's go-ahead (Phase 13 plan: cloud runs on fixtures need it). `orders=natural` plays each
-/// story once; `only=x01,x02` plays those stories. Lines go to `<out>/<label>/<set>.jsonl`, which `RESULTS_DIR=<out> python3 spikes/people/score.py --set
+/// story once; `only=x01,x02` plays those stories; `schedule=1` with `replay=` plays Swift's own schedule (the facts lane,
+/// reconciling after each memory) answered from the recording, to count calls. Lines go to `<out>/<label>/<set>.jsonl`, which `RESULTS_DIR=<out> python3 spikes/people/score.py --set
 /// <set>` and `score_facts.py stories` read. `scripts/facts_harness.sh` does all three.
 @Suite(.serialized) struct FactsHarnessTests {
     static var options: [String: String]? {
@@ -83,6 +84,7 @@ import Testing
                     #expect(play.unmapped == 0 || hiddenByTrust.contains(at), "\(at): roster ids the replay couldn't map")
                     let calls = play.line["calls"] as! [[String: Any]]
                     #expect(calls.allSatisfy { $0["ok"] as? Bool == true }, "\(at): a call wasn't applied")
+                    #expect(play.unsettled == 0, "\(at): reconciliation still found something due after the lane drained")
                     for key in ["links", "people", "relations", "decisions", "things", "calls", "state"] {
                         #expect(play.line[key] != nil, "\(at): \(key) missing")
                     }
@@ -108,10 +110,11 @@ import Testing
         var provider: any GenerationProvider
         var recorded: [FactsHarness.Recorded] = []
         let label: String
+        let schedule = o["schedule"] == "1"
         if let path = o["replay"] {
             recorded = try FactsHarness.recorded(URL(fileURLWithPath: path))
             provider = FactsHarness.Replay()
-            label = "swift-replay-" + (o["tag"] ?? set)
+            label = (schedule ? "swift-schedule-" : "swift-replay-") + (o["tag"] ?? set)
         } else if let live = o["live"] {
             try #require(ProcessInfo.processInfo.environment["FUNES_FACTS_HARNESS_LIVE"] == "1",
                          "a live run on fixtures needs the author's go-ahead: set FUNES_FACTS_HARNESS_LIVE=1")
@@ -127,20 +130,25 @@ import Testing
         }
         let dir = out.appending(path: label)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        var lines: [String] = [], judged: [String: Int] = [:], unmapped = 0, reasks = 0, plays = 0, calls = 0, failed = 0
+        var lines: [String] = [], judged: [String: Int] = [:], unmapped = 0, unsettled = 0, reasks = 0, plays = 0, calls = 0, failed = 0
         let only = Set((o["only"] ?? "").split(separator: ",").map(String.init))
         for story in fixture.stories where only.isEmpty || only.contains(story.id) {
             let orders = [story.memories.map(\.id)] + (o["orders"] == "natural" ? [] : story.orders ?? [])
             for (i, order) in orders.enumerated() {
                 let rec = recorded.filter { $0.story == story.id && $0.orderIndex == i }
                 if o["replay"] != nil, rec.isEmpty { continue }
-                if let r = provider as? FactsHarness.Replay { _ = r; provider = FactsHarness.Replay() }
+                if provider is FactsHarness.Replay {
+                    let r = FactsHarness.Replay()
+                    if schedule { r.preload(rec) }
+                    provider = r
+                }
                 let play = try await FactsHarness.play(story, order: order, orderIndex: i, user: fixture.user.aliases, provider: provider,
-                                                       replay: o["replay"] != nil ? rec : nil, groups: groups, label: label)
+                                                       replay: o["replay"] != nil && !schedule ? rec : nil, groups: groups, label: label)
                 let data = try JSONSerialization.data(withJSONObject: play.line, options: [.sortedKeys])
                 lines.append(String(decoding: data, as: UTF8.self))
                 for (_, outcome) in play.judged { judged[outcome, default: 0] += 1 }
                 unmapped += play.unmapped
+                unsettled += play.unsettled
                 reasks += play.reasks
                 plays += 1
                 let c = play.line["calls"] as? [[String: Any]] ?? []
@@ -149,7 +157,7 @@ import Testing
             }
         }
         try (lines.joined(separator: "\n") + "\n").write(to: dir.appending(path: "\(set).jsonl"), atomically: true, encoding: .utf8)
-        let summary = "plays \(plays); calls \(calls) (not applied \(failed)); unmapped roster ids \(unmapped); Swift-only re-asks \(reasks); "
+        let summary = "plays \(plays); calls \(calls) (not applied \(failed)); unmapped roster ids \(unmapped); Swift-only re-asks \(reasks); unsettled \(unsettled); "
             + "Swift timeline: " + judged.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value)" }.joined(separator: ", ")
         try summary.write(to: dir.appending(path: "\(set)-summary.txt"), atomically: true, encoding: .utf8)
         print("facts harness: " + summary)

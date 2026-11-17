@@ -13,7 +13,7 @@ import Testing
         }
         #expect(tables == ["access", "access_category", "access_profile_field", "agent", "alias_evidence", "capture_receipt",
                            "category", "decision_dependency", "device", "disclosure", "disclosure_item", "embedding", "entity",
-                           "entity_alias", "fact", "fact_evidence", "fact_qualification", "facts_run", "import_run",
+                           "entity_alias", "fact", "fact_evidence", "fact_qualification", "facts_asked", "facts_run", "import_run",
                            "manual_override", "memory", "memory_category", "memory_fts", "memory_revision", "mention_decision",
                            "meta", "processing_job", "profile", "provenance", "suggestion", "suggestion_group",
                            "suggestion_target", "tidy_up_dismissal", "tidy_up_run", "undo_entry"])

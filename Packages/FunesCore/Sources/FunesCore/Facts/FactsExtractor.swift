@@ -58,7 +58,8 @@ public struct FactsExtractor: Sendable {
 
     /// Reads these memories, each in every call group (or the ones given), in order.
     @discardableResult
-    public func learn(_ memoryIDs: [String], groups only: [String]? = nil, kind: String = "incremental") async throws -> FactsLearnReport {
+    public func learn(_ memoryIDs: [String], groups only: [String]? = nil, kind: String = "incremental",
+                      scope: FactsScope = .full) async throws -> FactsLearnReport {
         var report = FactsLearnReport()
         let groups = only ?? self.groups
         let engine = router.factsModel.map(ModelRouter.engine) ?? codeEngine
@@ -72,7 +73,9 @@ public struct FactsExtractor: Sendable {
             do {
                 for id in memoryIDs {
                     try Task.checkCancellation()
-                    if let call = try await learnOne(id, group: group, runID: runID, into: &report.applied) { report.calls.append(call) }
+                    if let call = try await learnOne(id, group: group, runID: runID, scope: scope, into: &report.applied) {
+                        report.calls.append(call)
+                    }
                 }
             } catch {
                 // The run ends with its error's kind (never text); the job stays for the queue to run again.
@@ -105,6 +108,12 @@ public struct FactsExtractor: Sendable {
 
     /// The engine a run records when no model reads.
     let codeEngine = "code"
+
+    /// A code-only outcome whose cause passes (the daily cap, a model that's unavailable): the model should read later.
+    static let transient = "model_unavailable"
+
+    /// Validation notes that record what code added, not something the model said that was dropped.
+    static let codeAdditions: Set<String> = ["paired_applied", "paired_relation_added", "denial"]
 
     struct Asked {
         var memory: FactsMemory
@@ -164,14 +173,17 @@ public struct FactsExtractor: Sendable {
     }
 
     /// One memory in one call group. Nil when the memory is gone.
-    func learnOne(_ memoryID: String, group: String, runID: String, into total: inout FactStore.ApplyResult) async throws -> FactsLearnReport.Call? {
+    func learnOne(_ memoryID: String, group: String, runID: String, scope: FactsScope = .full,
+                  into total: inout FactStore.ApplyResult) async throws -> FactsLearnReport.Call? {
         for attempt in 0..<2 {
             guard let a = try prepare(memoryID, group: group) else { return nil }
             func call(_ outcome: FactsLearnReport.Call.Outcome, dropped: [String] = [], ms: Int = 0, usage: ProviderUsage = .init()) -> FactsLearnReport.Call {
                 .init(memoryID: memoryID, group: group, outcome: outcome, dropped: dropped, milliseconds: ms, usage: usage)
             }
+            // A partial re-read is of a version the model has read: it never falls back to code-only links.
+            let partial = scope != .full
             guard modelAllowed else {
-                try codeOnly(a, group: group, runID: runID)
+                if !partial { try codeOnly(a, group: group, runID: runID) }
                 return call(.codeOnly)
             }
             let items = [ModelItem(a.sent.sent, sensitivity: a.sensitivity)]
@@ -191,8 +203,9 @@ public struct FactsExtractor: Sendable {
                 } catch ProviderError.invalidOutput {
                     continue
                 } catch let e as ProviderError where [.blocked, .capReached, .unavailable].contains(e) {
-                    try codeOnly(a, group: group, runID: runID)
-                    return call(.codeOnly)
+                    if !partial { try codeOnly(a, group: group, runID: runID) }
+                    // The cap and an unavailable model pass: the queue asks again later (`transient`).
+                    return call(.codeOnly, dropped: e == .blocked ? [] : [Self.transient])
                 } catch is ProviderError {
                     break
                 }
@@ -220,6 +233,8 @@ public struct FactsExtractor: Sendable {
                 var extraction = FactsExtraction(people: v.people, facts: v.facts, roles: v.roles, things: v.things,
                                                  roster: a.tokens.filter { used.contains($0.key) })
                 extraction.predicateVersions = a.predicateVersions
+                extraction.scope = scope
+                extraction.clean = v.dropped.allSatisfy { Self.codeAdditions.contains($0.reason) }
                 let x = extraction
                 let result = try await store.writer.write { db in
                     try FactStore.apply(db, memoryID: memoryID, version: a.version, extraction: x, callGroup: group,

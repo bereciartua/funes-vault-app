@@ -1,0 +1,1 @@
+plays 16; calls 178 (not applied 0); unmapped roster ids 0; Swift-only re-asks 0; unsettled 0; Swift timeline: miss 11, quiet 16, right 13, right_gap 2, told 2, told_decidable 2, told_no_intent 2

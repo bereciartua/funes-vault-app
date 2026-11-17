@@ -75,8 +75,27 @@ enum Schema {
         migrator.registerMigration("v10_alias_provenance") { db in
             try db.execute(sql: v10)
         }
+        // The facts lane (Phase 13a.2, storage §2): what each model reading was asked knowing, so reconciliation re-asks
+        // only what changed, and a job's generation, so work queued while it ran isn't lost. Nothing to backfill.
+        migrator.registerMigration("v11_facts_asked") { db in
+            try db.execute(sql: v11)
+        }
         return migrator
     }
+
+    static let v11 = """
+        CREATE TABLE facts_asked (
+          memory_id      TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
+          memory_version INTEGER NOT NULL,
+          call_group     TEXT NOT NULL,
+          mention_kind   TEXT NOT NULL CHECK (mention_kind IN ('read','phrase','name','decision')),
+          mention_key    TEXT NOT NULL,
+          knowledge      TEXT NOT NULL,
+          asked_at       TEXT NOT NULL,
+          PRIMARY KEY (memory_id, memory_version, call_group, mention_kind, mention_key)
+        );
+        ALTER TABLE processing_job ADD COLUMN generation INTEGER NOT NULL DEFAULT 0;
+        """
 
     static let v10 = """
         CREATE TABLE alias_evidence_v10 (

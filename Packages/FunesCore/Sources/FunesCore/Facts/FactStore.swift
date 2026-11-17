@@ -14,6 +14,11 @@ public struct FactsExtraction: Sendable {
     /// The holder count of each predicate whose role phrases the call was asked about, when it was read: a holder
     /// added since (one that had no roster token) also means the call's view changed.
     public var predicateVersions: [String: String] = [:]
+    /// What a reconciliation re-read replaces (memory processing §11.3); `.full` is a whole reading.
+    public var scope: FactsScope = .full
+    /// Validation dropped nothing the model said (only the code's own additions are noted): a re-read that moves a
+    /// name to someone else replaces the earlier reading only then.
+    public var clean = true
 
     public init(people: [ExtractedPerson] = [], facts: [ExtractedFact] = [], roles: [ExtractedRole] = [],
                 things: [ExtractedThing] = [], roster: [String: String] = [:]) {
@@ -22,6 +27,21 @@ public struct FactsExtraction: Sendable {
         self.roles = roles
         self.things = things
         self.roster = roster
+    }
+}
+
+/// What a Facts call's answer replaces (memory processing §11.3). A first reading of a memory version in a call group is
+/// `.full`. A reconciliation re-read re-asks only some role phrases (by scalar start) and one-word names (folded), as the
+/// spike did: the call is the same, but only what it was about is applied, so an answer that fails validation can't
+/// erase what an earlier reading found.
+public enum FactsScope: Sendable, Equatable {
+    case full
+    case partial(roles: Set<Int>, names: Set<String>)
+
+    /// What a partial apply leaves out of the graph it starts from, and replaces.
+    struct Replaced: Equatable {
+        var roles: Set<Int>
+        var names: Set<String>
     }
 }
 
@@ -131,8 +151,14 @@ enum FactStore {
 
     // MARK: The facts revision (companion protocol status.get's factsRevision)
 
-    static func bumpRevision(_ db: Database) throws {
+    /// Bumps the facts revision. Whatever changed may make an earlier reading worth asking again, so the facts lane's
+    /// reconciliation sweep is queued in the same transaction (memory processing §11.3), once any model reading exists.
+    /// The sweep's own revalidations pass `reconcile: false`.
+    static func bumpRevision(_ db: Database, reconcile: Bool = true, now: Date = Date()) throws {
         try db.execute(sql: "UPDATE meta SET value = CAST(CAST(value AS INTEGER) + 1 AS TEXT) WHERE key = 'facts_revision'")
+        if reconcile, try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM facts_asked WHERE mention_kind = 'read')") == true {
+            try ProcessingQueue.enqueueFactsSweep(db, now: now)
+        }
     }
 
     static func revision(_ db: Database) throws -> String {
@@ -180,7 +206,32 @@ enum FactStore {
     /// their current version (an archived memory keeps its former and dated facts, not a current status), plus the
     /// user's own rows; applies manual overrides and corrections on top, so they win over inference.
     /// One memory version's rows in one call group, left out while that group is re-read.
-    struct Exclusion { var memoryID: String; var version: Int; var callGroup: String }
+    struct Exclusion {
+        var memoryID: String
+        var version: Int
+        var callGroup: String
+        /// What a scoped re-read replaces; nil is the whole reading.
+        var scope: FactsScope.Replaced? = nil
+
+        /// Whether a fact evidence row of this version and group is left out.
+        var factEvidence: Bool { scope == nil }
+        /// Whether a model decision of this version and group (outcome, scalar start, mention) is left out.
+        func decision(outcome: String, start: Int?, mention: String?) -> Bool {
+            switch scope {
+            case nil: return true
+            case let r?:
+                return outcome == "unknown" ? mention.map { r.names.contains(FactsText.fold($0)) } == true
+                    : start.map(r.roles.contains) == true
+            }
+        }
+        /// Whether an alias evidence row of this version and group, at this surface, is left out.
+        func alias(surface: String) -> Bool {
+            switch scope {
+            case nil: return true
+            case let r?: return r.names.contains(FactsText.fold(surface))
+            }
+        }
+    }
 
     static func load(_ db: Database, registry: FactsRegistry = .bundled, userAliases: [String] = [],
                      excluding: Exclusion? = nil) throws -> Loaded {
@@ -237,7 +288,7 @@ enum FactStore {
         for f in factRows { entityOfFact[f["id"]] = f["entity_id"] }
         var evidence: [String: [Row]] = [:]
         for r in try Row.fetchAll(db, sql: "SELECT rowid AS rid, * FROM fact_evidence ORDER BY rowid") {
-            if let x = excluding, (r["memory_id"] as String?) == x.memoryID, (r["memory_version"] as Int?) == x.version,
+            if let x = excluding, x.factEvidence, (r["memory_id"] as String?) == x.memoryID, (r["memory_version"] as Int?) == x.version,
                (r["call_group"] as String?) == x.callGroup { continue }
             evidence[r["fact_id"], default: []].append(r)
         }
@@ -521,7 +572,8 @@ enum FactStore {
             let mid: String = d["memory_id"], src: String = d["source"], outcome: String = d["outcome"]
             guard let c = counted[mid] else { continue }
             if src == "model" {
-                if let x = excluding, mid == x.memoryID, (d["call_group"] as String?) == x.callGroup { continue }
+                if let x = excluding, mid == x.memoryID, (d["call_group"] as String?) == x.callGroup,
+                   x.decision(outcome: outcome, start: d["span_start"], mention: d["mention"]) { continue }
                 if (d["memory_version"] as Int?) != c.version || (d["invalidated_at"] as Date?) != nil { continue }
                 let stale = try (dependencies[d["id"]] ?? []).contains { dep in
                     try currentVersion(db, kind: dep["kind"], ref: dep["ref_id"]) != (dep["ref_version"] as String)
@@ -565,7 +617,8 @@ enum FactStore {
                 knownSince[k] = min(knownSince[k] ?? at, at)
             }
             let a = utf16Offset(c.memory.text, scalar: r["span_start"]), b = utf16Offset(c.memory.text, scalar: r["span_end"])
-            if let x = excluding, c.memory.id == x.memoryID, (r["call_group"] as String) == x.callGroup {
+            if let x = excluding, c.memory.id == x.memoryID, (r["call_group"] as String) == x.callGroup,
+               x.alias(surface: b > a ? FactsText.substring(c.memory.text, a, b) : "") {
                 if b > a, (r["source"] as String) == "model" {
                     g.reread[FactsText.fold(FactsText.substring(c.memory.text, a, b))] = canonicalEntity(r["entity_id"])
                 }
@@ -590,7 +643,8 @@ enum FactStore {
             WHERE source = 'model' AND outcome = 'unknown' AND basis = ? ORDER BY created_at, rowid
             """, arguments: [LinkBasis.ambiguous.rawValue]) {
             guard let c = counts(d["memory_id"], d["memory_version"]), let name: String = d["mention"] else { continue }
-            if let x = excluding, c.memory.id == x.memoryID, (d["call_group"] as String?) == x.callGroup { continue }
+            if let x = excluding, c.memory.id == x.memoryID, (d["call_group"] as String?) == x.callGroup,
+               x.decision(outcome: "unknown", start: nil, mention: name) { continue }
             g.names[FactsGraph.NameKey(memoryID: c.memory.id, surface: name)] =
                 NameLink(entity: nil, basis: .ambiguous, candidates: g.byName(name, onlyTrusted: c.memory.trusted).map(\.id))
         }
@@ -665,23 +719,83 @@ enum FactStore {
 
     /// Writes one memory version's extraction for one call group, in the caller's transaction: earlier evidence of
     /// that version and group is replaced, so a re-read is idempotent, and one that changes nothing touches nothing.
+    /// A partial scope (reconciliation) replaces only the role phrases the answer decided and the names it re-asked;
+    /// everything else the earlier reading found stays. Records what the reading was asked knowing (`facts_asked`).
     /// Fails if the memory or a roster entry changed.
     @discardableResult
-    static func apply(_ db: Database, memoryID: String, version: Int, extraction x: FactsExtraction, callGroup: String,
+    static func apply(_ db: Database, memoryID: String, version: Int, extraction original: FactsExtraction, callGroup: String,
                       runID: String? = nil, registry: FactsRegistry = .bundled, userAliases: [String] = [],
                       now: Date = Date(), readAt: Date? = nil) throws -> ApplyResult {
         guard let m = try Row.fetchOne(db, sql: "SELECT * FROM memory WHERE id = ?", arguments: [memoryID]),
               (m["version"] as Int) == version, (m["status"] as String) != "deleted" else {
             throw ApplyError.memoryChanged
         }
-        for (id, updated) in x.roster {
+        for (id, updated) in original.roster {
             let now = try String.fetchOne(db, sql: "SELECT updated_at FROM entity WHERE id = ?", arguments: [id])
             if now != updated { throw ApplyError.rosterChanged }
         }
-        for (predicate, version) in x.predicateVersions where try predicateVersion(db, predicate) != version {
+        for (predicate, version) in original.predicateVersions where try predicateVersion(db, predicate) != version {
             throw ApplyError.rosterChanged
         }
+        // A partial answer for a version the model hasn't read in this group (it was edited since the job planned) is
+        // applied whole: the call asked everything, as every Facts call does.
+        var original = original
+        if case .partial = original.scope, try Bool.fetchOne(db, sql: """
+            SELECT NOT EXISTS (SELECT 1 FROM facts_asked WHERE memory_id = ? AND memory_version = ? AND call_group = ? AND mention_kind = 'read')
+            """, arguments: [memoryID, version, callGroup]) == true {
+            original.scope = .full
+        }
         let preds = Set(registry.groupPredicates(callGroup))
+        let text = text(title: m["title"], body: m["body"])
+        let created: Date = m["created_at"]
+        let trusted = (m["trust"] as String) == "trusted"
+        let sensitivity: Int = m["sensitivity"]
+        let fm = FactsMemory(id: memoryID, text: text, written: writtenDay(created),
+                             source: source((m["original_source"] as String?) ?? m["source"]), trusted: trusted)
+        let trust = trusted ? "trusted" : "untrusted"
+        let phrases = FactsGraph(registry: registry, userAliases: userAliases).rolePhrases(text, predicates: preds)
+
+        // A partial re-read keeps only what it re-asked: the role phrases it asked about that the answer decided (an
+        // answer validation dropped leaves the earlier decision), and the names it re-asked.
+        var x = original
+        var replaced: FactsScope.Replaced?
+        if case let .partial(roles, names) = original.scope {
+            func scalarStart(_ i: Int) -> Int? { phrases.indices.contains(i) ? scalarOffset(text, utf16: phrases[i].start) : nil }
+            x.facts = []
+            x.things = []
+            x.roles = original.roles.filter { scalarStart($0.phrase).map(roles.contains) ?? false }
+            x.people = original.people.filter { names.contains(FactsText.fold($0.name)) }
+            replaced = .init(roles: Set(x.roles.compactMap { scalarStart($0.phrase) }), names: Set(x.people.map { FactsText.fold($0.name) }))
+        }
+        var exclusion = Exclusion(memoryID: memoryID, version: version, callGroup: callGroup, scope: replaced)
+        // The graph without the rows being replaced (its names stay matchable, so a re-read finds them).
+        var before = try load(db, registry: registry, userAliases: userAliases, excluding: exclusion).graph
+        if let r = replaced, !r.names.isEmpty {
+            // A re-asked name the answer resolves differently from the earlier reading (someone else, or ambiguous where
+            // it named someone, or someone where it was ambiguous): the facts this memory states about that name rest on
+            // who it is, so the reading is replaced whole, and only if validation dropped nothing; otherwise that name
+            // keeps its earlier rows.
+            var probe = before
+            probe.apply(fm, people: x.people, roster: Set(x.roster.keys))
+            let moved = Set(x.people.compactMap { p -> String? in
+                let f = FactsText.fold(p.name)
+                guard let link = probe.names[FactsGraph.NameKey(memoryID: memoryID, surface: p.name)] else { return nil }
+                return link.entity == before.reread[f] ? nil : f
+            })
+            if !moved.isEmpty {
+                if original.clean {
+                    var whole = original
+                    whole.scope = .full
+                    return try apply(db, memoryID: memoryID, version: version, extraction: whole, callGroup: callGroup, runID: runID,
+                                     registry: registry, userAliases: userAliases, now: now, readAt: readAt)
+                }
+                x.people.removeAll { moved.contains(FactsText.fold($0.name)) }
+                replaced?.names.subtract(moved)
+                exclusion.scope = replaced
+                before = try load(db, registry: registry, userAliases: userAliases, excluding: exclusion).graph
+            }
+        }
+
         // What this version and group said before, to replace it and to tell what changed.
         let oldSignatures = try signatures(db, memoryID: memoryID, version: version, callGroup: callGroup)
         // A hand-over is decided when a memory is first read: a re-read keeps it (holders learned since don't make
@@ -694,45 +808,50 @@ enum FactStore {
             let o = object(r["asserted"])
             oldHandover[(r["fact_id"] as String) + ":" + String(o["n"] as? Int ?? 0)] = o["handover"] as? Bool ?? false
         }
-        // This group's alias evidence for this version (another group's, or code's, is its own).
-        // A model's reading also retires code-only links of this version and group.
+        // This group's alias evidence for this version that is being replaced (another group's, or code's, is its own).
+        // A model's whole reading also retires code-only links of this version and group.
         let oldAliasRows = try Row.fetchAll(db, sql: """
-            SELECT ev.alias_id, a.entity_id, ev.first_read_at FROM alias_evidence ev JOIN entity_alias a ON a.id = ev.alias_id
+            SELECT ev.alias_id, a.entity_id, ev.first_read_at, ev.span_start, ev.span_end FROM alias_evidence ev
+            JOIN entity_alias a ON a.id = ev.alias_id
             WHERE ev.memory_id = ? AND ev.memory_version = ? AND ev.call_group = ?
-            """, arguments: [memoryID, version, callGroup])
+            """, arguments: [memoryID, version, callGroup]).filter { r in
+            let a = utf16Offset(text, scalar: r["span_start"]), b = utf16Offset(text, scalar: r["span_end"])
+            return exclusion.alias(surface: b > a ? FactsText.substring(text, a, b) : "")
+        }
         // When this version first gave each alias: a re-read doesn't make a name newer than it is.
         var firstRead: [String: Date] = [:]
         for r in oldAliasRows { if let d: Date = r["first_read_at"] { firstRead[r["alias_id"]] = min(firstRead[r["alias_id"]] ?? d, d) } }
         let oldAliases = Set(oldAliasRows.map { $0["alias_id"] as String })
         let affected = try supportedBy(db, memoryIDs: [memoryID])
-        // The graph without this version's rows in this group (its names stay matchable, so a re-read finds them).
-        let before = try load(db, registry: registry, userAliases: userAliases,
-                              excluding: Exclusion(memoryID: memoryID, version: version, callGroup: callGroup)).graph
         for r in oldAliasRows {
             try db.execute(sql: """
-                DELETE FROM alias_evidence WHERE alias_id = ? AND memory_id = ? AND memory_version = ? AND call_group = ?
-                """, arguments: [r["alias_id"] as String, memoryID, version, callGroup])
+                DELETE FROM alias_evidence WHERE alias_id = ? AND memory_id = ? AND memory_version = ? AND call_group = ? AND span_start = ?
+                """, arguments: [r["alias_id"] as String, memoryID, version, callGroup, r["span_start"] as Int])
         }
-        try db.execute(sql: "DELETE FROM fact_evidence WHERE memory_id = ? AND memory_version = ? AND call_group = ?",
-                       arguments: [memoryID, version, callGroup])
-        let oldAmbiguous = Set(try String.fetchAll(db, sql: """
-            SELECT mention FROM mention_decision WHERE memory_id = ? AND memory_version = ? AND call_group = ? AND source = 'model'
-              AND outcome = 'unknown' AND basis = ? AND mention IS NOT NULL
-            """, arguments: [memoryID, version, callGroup, LinkBasis.ambiguous.rawValue]))
-        try db.execute(sql: "DELETE FROM mention_decision WHERE memory_id = ? AND memory_version = ? AND call_group = ? AND source = 'model'",
-                       arguments: [memoryID, version, callGroup])
-        let created: Date = m["created_at"]
-        let text = text(title: m["title"], body: m["body"])
-        let trusted = (m["trust"] as String) == "trusted"
-        let sensitivity: Int = m["sensitivity"]
-        let fm = FactsMemory(id: memoryID, text: text, written: writtenDay(created),
-                             source: source((m["original_source"] as String?) ?? m["source"]), trusted: trusted)
-        let trust = trusted ? "trusted" : "untrusted"
+        if exclusion.factEvidence {
+            try db.execute(sql: "DELETE FROM fact_evidence WHERE memory_id = ? AND memory_version = ? AND call_group = ?",
+                           arguments: [memoryID, version, callGroup])
+        }
+        let oldDecisions = try Row.fetchAll(db, sql: """
+            SELECT id, mention, outcome, basis, span_start FROM mention_decision
+            WHERE memory_id = ? AND memory_version = ? AND call_group = ? AND source = 'model'
+            """, arguments: [memoryID, version, callGroup]).filter {
+            exclusion.decision(outcome: $0["outcome"], start: $0["span_start"], mention: $0["mention"])
+        }
+        let oldAmbiguous = Set(oldDecisions.compactMap { d -> String? in
+            (d["outcome"] as String) == "unknown" && (d["basis"] as String) == LinkBasis.ambiguous.rawValue ? d["mention"] : nil
+        })
+        for d in oldDecisions { try db.execute(sql: "DELETE FROM mention_decision WHERE id = ?", arguments: [d["id"] as String]) }
 
         var g = before
-        let phrases = g.rolePhrases(text, predicates: preds)
         let groupFacts = x.facts.filter { preds.contains($0.predicate) }
-        g.apply(fm, phrases: phrases, people: x.people, facts: groupFacts, roles: x.roles, roster: Set(x.roster.keys))
+        // A partial re-read's `name:` answers resolve through the names this memory's reading already has.
+        var knownNames: [String: String] = [:]
+        if replaced != nil {
+            for (key, link) in before.names where key.memoryID == memoryID { if let e = link.entity { knownNames[FactsText.fold(key.surface)] = e } }
+        }
+        g.apply(fm, phrases: phrases, people: x.people, facts: groupFacts, roles: x.roles, roster: Set(x.roster.keys),
+                knownNames: knownNames)
         // Named things: entities of their kind, matched by its rule (an organization the work call also names is one).
         let thingIDs = x.things.map { g.entityFor($0.name, kind: $0.kind, trusted: trusted) }
         var result = ApplyResult(mergeSuggestions: g.mergeSuggestions.count)
@@ -952,23 +1071,33 @@ enum FactStore {
         if !affected.facts.isEmpty || !affected.entities.isEmpty { try collectGarbage(db, now: now) }
         // Dependencies are recorded after the touch, at the versions this apply leaves.
         for (did, predicate, entities) in pendingDependencies {
-            try db.execute(sql: "INSERT INTO decision_dependency (decision_id, kind, ref_id, ref_version) VALUES (?, 'memory', ?, ?)",
-                           arguments: [did, memoryID, String(version)])
-            for e in entities {
-                let v = try String.fetchOne(db, sql: "SELECT updated_at FROM entity WHERE id = ?", arguments: [e]) ?? ""
-                try db.execute(sql: "INSERT OR IGNORE INTO decision_dependency (decision_id, kind, ref_id, ref_version) VALUES (?, 'entity', ?, ?)",
-                               arguments: [did, e, v])
-            }
-            for f in try Row.fetchAll(db, sql: "SELECT id, updated_at FROM fact WHERE predicate = ?", arguments: [predicate]) {
-                try db.execute(sql: "INSERT OR IGNORE INTO decision_dependency (decision_id, kind, ref_id, ref_version) VALUES (?, 'fact', ?, ?)",
-                               arguments: [did, f["id"] as String, f["updated_at"] as String])
-            }
-            try db.execute(sql: "INSERT OR IGNORE INTO decision_dependency (decision_id, kind, ref_id, ref_version) VALUES (?, 'fact', ?, ?)",
-                           arguments: [did, predicateRef(predicate), try predicateVersion(db, predicate)])
+            try recordDependencies(db, decisionID: did, memoryID: memoryID, version: version, predicate: predicate, entities: entities)
         }
+        // What the reading was asked knowing, on the graph it leaves: reconciliation re-asks only what changed since.
+        try FactsReconciler.recordAsked(db, graph: g, memory: fm, version: version, group: callGroup, phrases: phrases,
+                                        scope: original.scope, decisions: pendingDependencies.map(\.0), now: now)
         if result.evidence > 0 || result.decisions > 0 || newAmbiguous != oldAmbiguous || !newAliases.isEmpty || !oldAliasRows.isEmpty
             || !touchedFacts.isEmpty || !touchedEntities.isEmpty { try bumpRevision(db) }
         return result
+    }
+
+    /// A model decision's dependencies, at their current versions: its memory version, the roster entries and the
+    /// entity it rested on, and its predicate's facts and count (a new candidate holder).
+    static func recordDependencies(_ db: Database, decisionID did: String, memoryID: String, version: Int, predicate: String,
+                                   entities: Set<String>) throws {
+        try db.execute(sql: "INSERT OR IGNORE INTO decision_dependency (decision_id, kind, ref_id, ref_version) VALUES (?, 'memory', ?, ?)",
+                       arguments: [did, memoryID, String(version)])
+        for e in entities.sorted() {
+            guard let v = try String.fetchOne(db, sql: "SELECT updated_at FROM entity WHERE id = ?", arguments: [e]) else { continue }
+            try db.execute(sql: "INSERT OR IGNORE INTO decision_dependency (decision_id, kind, ref_id, ref_version) VALUES (?, 'entity', ?, ?)",
+                           arguments: [did, e, v])
+        }
+        for f in try Row.fetchAll(db, sql: "SELECT id, updated_at FROM fact WHERE predicate = ?", arguments: [predicate]) {
+            try db.execute(sql: "INSERT OR IGNORE INTO decision_dependency (decision_id, kind, ref_id, ref_version) VALUES (?, 'fact', ?, ?)",
+                           arguments: [did, f["id"] as String, f["updated_at"] as String])
+        }
+        try db.execute(sql: "INSERT OR IGNORE INTO decision_dependency (decision_id, kind, ref_id, ref_version) VALUES (?, 'fact', ?, ?)",
+                       arguments: [did, predicateRef(predicate), try predicateVersion(db, predicate)])
     }
 
     /// Memory versions and call groups whose model decisions no longer count (invalidated, or a dependency changed):
