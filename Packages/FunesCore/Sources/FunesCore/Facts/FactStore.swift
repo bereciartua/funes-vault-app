@@ -855,20 +855,23 @@ enum FactStore {
 
     /// The facts and entities a memory's evidence supports (before it's removed, to touch them after).
     static func supportedBy(_ db: Database, memoryIDs: [String]) throws -> (facts: Set<String>, entities: Set<String>) {
-        guard !memoryIDs.isEmpty else { return ([], []) }
-        let marks = databaseQuestionMarks(count: memoryIDs.count)
-        let args = StatementArguments(memoryIDs)
-        var facts = Set(try String.fetchAll(db, sql: "SELECT DISTINCT fact_id FROM fact_evidence WHERE memory_id IN (\(marks))", arguments: args))
-        var entities = Set(try String.fetchAll(db, sql: """
-            SELECT DISTINCT a.entity_id FROM alias_evidence ev JOIN entity_alias a ON a.id = ev.alias_id WHERE ev.memory_id IN (\(marks))
-            """, arguments: args))
-        // Corrections made from these memories (their quoted span may go with them) change what they correct.
-        for r in try Row.fetchAll(db, sql: "SELECT target_kind, target_id FROM manual_override WHERE memory_id IN (\(marks))", arguments: args) {
-            let kind: String = r["target_kind"], id: String = r["target_id"]
-            if kind == "entity" || kind == "alias" {
-                entities.insert(id)
-            } else if try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM fact WHERE id = ?)", arguments: [id]) == true {
-                facts.insert(id)
+        var facts = Set<String>(), entities = Set<String>()
+        for start in stride(from: 0, to: memoryIDs.count, by: 500) {
+            let chunk = Array(memoryIDs[start..<min(start + 500, memoryIDs.count)])
+            let marks = databaseQuestionMarks(count: chunk.count)
+            let args = StatementArguments(chunk)
+            facts.formUnion(try String.fetchAll(db, sql: "SELECT DISTINCT fact_id FROM fact_evidence WHERE memory_id IN (\(marks))", arguments: args))
+            entities.formUnion(try String.fetchAll(db, sql: """
+                SELECT DISTINCT a.entity_id FROM alias_evidence ev JOIN entity_alias a ON a.id = ev.alias_id WHERE ev.memory_id IN (\(marks))
+                """, arguments: args))
+            // Corrections made from these memories (their quoted span may go with them) change what they correct.
+            for r in try Row.fetchAll(db, sql: "SELECT target_kind, target_id FROM manual_override WHERE memory_id IN (\(marks))", arguments: args) {
+                let kind: String = r["target_kind"], id: String = r["target_id"]
+                if kind == "entity" || kind == "alias" {
+                    entities.insert(id)
+                } else if try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM fact WHERE id = ?)", arguments: [id]) == true {
+                    facts.insert(id)
+                }
             }
         }
         for f in facts {

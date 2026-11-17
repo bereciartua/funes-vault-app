@@ -187,11 +187,12 @@ extension FactStore {
         try touch(db, facts: touchedFacts.filter { id in (try? Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM fact WHERE id = ?)", arguments: [id])) == true },
                   entities: touchedEntities.filter { id in (try? Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM entity WHERE id = ?)", arguments: [id])) == true },
                   now: now)
-        // Decisions that pointed at what's gone are stale too.
+        // Decisions that pointed at what's gone (a memory included) are stale too.
         try db.execute(sql: """
             UPDATE mention_decision SET invalidated_at = ? WHERE invalidated_at IS NULL AND source = 'model' AND id IN (
               SELECT decision_id FROM decision_dependency d WHERE (d.kind = 'entity' AND d.ref_id NOT IN (SELECT id FROM entity))
-                 OR (d.kind = 'fact' AND d.ref_id NOT LIKE 'predicate:%' AND d.ref_id NOT IN (SELECT id FROM fact)))
+                 OR (d.kind = 'fact' AND d.ref_id NOT LIKE 'predicate:%' AND d.ref_id NOT IN (SELECT id FROM fact))
+                 OR (d.kind = 'memory' AND d.ref_id NOT IN (SELECT id FROM memory)))
             """, arguments: [now])
     }
 
