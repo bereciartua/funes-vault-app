@@ -8,6 +8,10 @@ public struct FactsRegistry: Sendable, Decodable {
     public let kinds: [String: Kind]
     public let callGroups: [String: CallGroup]
     public let predicates: [Predicate]
+    /// Each predicate's qualifier keys in the order the JSON gives them (the prompt and schema list them in it).
+    public internal(set) var qualifierOrder: [String: [String]] = [:]
+
+    enum CodingKeys: String, CodingKey { case version, language, kinds, callGroups, predicates }
 
     /// Language data shared by every predicate.
     public struct Language: Sendable, Decodable {
@@ -188,9 +192,17 @@ public struct FactsRegistry: Sendable, Decodable {
         let d = JSONDecoder()
         // Snake-case keys throughout; note the strategy also applies to dictionary keys ("note_noun" → "noteNoun").
         d.keyDecodingStrategy = .convertFromSnakeCase
-        let registry = try d.decode(FactsRegistry.self, from: data)
+        var registry = try d.decode(FactsRegistry.self, from: data)
+        registry.qualifierOrder = OrderedJSON.qualifierOrder(data)
         try registry.validate()
         return registry
+    }
+
+    /// A predicate's qualifiers in their JSON order (unknown ones last, sorted).
+    public func qualifierKeys(_ id: String) -> [String] {
+        guard let p = predicate(id) else { return [] }
+        let known = (qualifierOrder[id] ?? []).filter { p.qualifiers[$0] != nil }
+        return known + p.qualifiers.keys.filter { !known.contains($0) }.sorted()
     }
 
     public enum ValidationError: Error, Equatable {
@@ -215,6 +227,95 @@ public struct FactsRegistry: Sendable, Decodable {
                 }
             }
             if let slot = p.slot, p.qualifiers[slot] == nil { throw ValidationError.slotNotAQualifier(p.id) }
+        }
+    }
+}
+
+/// Just enough of a JSON reader to keep object key order, which `JSONDecoder` doesn't.
+enum OrderedJSON {
+    indirect enum Value {
+        case object([(String, Value)])
+        case array([Value])
+        case string(String)
+        case other
+    }
+
+    /// `predicates[i].id` → the keys of `predicates[i].qualifiers`, in order.
+    static func qualifierOrder(_ data: Data) -> [String: [String]] {
+        var r = Reader(bytes: Array(data))
+        guard case let .object(top)? = r.value(),
+              case let .array(preds)? = top.first(where: { $0.0 == "predicates" })?.1 else { return [:] }
+        var out: [String: [String]] = [:]
+        for case let .object(fields) in preds {
+            guard case let .string(id)? = fields.first(where: { $0.0 == "id" })?.1,
+                  case let .object(q)? = fields.first(where: { $0.0 == "qualifiers" })?.1 else { continue }
+            out[id] = q.map { camel($0.0) }      // as `convertFromSnakeCase` decodes the dictionary's keys
+        }
+        return out
+    }
+
+    /// The keys of the top-level object `key`, in order.
+    static func objectKeys(_ data: Data, at key: String) -> [String] {
+        var r = Reader(bytes: Array(data))
+        guard case let .object(top)? = r.value(), case let .object(fields)? = top.first(where: { $0.0 == key })?.1 else { return [] }
+        return fields.map(\.0)
+    }
+
+    static func camel(_ key: String) -> String {
+        let parts = key.split(separator: "_", omittingEmptySubsequences: true)
+        guard let first = parts.first, parts.count > 1 else { return key }
+        return String(first) + parts.dropFirst().map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined()
+    }
+
+    struct Reader {
+        let bytes: [UInt8]
+        var i = 0
+
+        mutating func skipSpace() { while i < bytes.count, [9, 10, 13, 32].contains(bytes[i]) { i += 1 } }
+
+        mutating func value() -> Value? {
+            skipSpace()
+            guard i < bytes.count else { return nil }
+            switch bytes[i] {
+            case UInt8(ascii: "{"):
+                i += 1
+                var fields: [(String, Value)] = []
+                while true {
+                    skipSpace()
+                    if i < bytes.count, bytes[i] == UInt8(ascii: "}") { i += 1; return .object(fields) }
+                    guard case let .string(key)? = value() else { return nil }
+                    skipSpace()
+                    guard i < bytes.count, bytes[i] == UInt8(ascii: ":") else { return nil }
+                    i += 1
+                    guard let v = value() else { return nil }
+                    fields.append((key, v))
+                    skipSpace()
+                    if i < bytes.count, bytes[i] == UInt8(ascii: ",") { i += 1 }
+                }
+            case UInt8(ascii: "["):
+                i += 1
+                var items: [Value] = []
+                while true {
+                    skipSpace()
+                    if i < bytes.count, bytes[i] == UInt8(ascii: "]") { i += 1; return .array(items) }
+                    guard let v = value() else { return nil }
+                    items.append(v)
+                    skipSpace()
+                    if i < bytes.count, bytes[i] == UInt8(ascii: ",") { i += 1 }
+                }
+            case UInt8(ascii: "\""):
+                let start = i
+                i += 1
+                while i < bytes.count, bytes[i] != UInt8(ascii: "\"") { i += bytes[i] == UInt8(ascii: "\\") ? 2 : 1 }
+                i += 1
+                guard i <= bytes.count,
+                      let s = try? JSONSerialization.jsonObject(with: Data(bytes[start..<i]), options: [.fragmentsAllowed]) as? String
+                else { return nil }
+                return .string(s)
+            default:
+                while i < bytes.count, ![UInt8(ascii: ","), UInt8(ascii: "}"), UInt8(ascii: "]")].contains(bytes[i]) { i += 1 }
+                return .other
+            }
         }
     }
 }

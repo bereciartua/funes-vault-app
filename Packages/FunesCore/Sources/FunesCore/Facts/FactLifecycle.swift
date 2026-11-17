@@ -297,8 +297,8 @@ extension FactStore {
             try db.execute(sql: "INSERT INTO entity (id, kind, name, manual, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)",
                            arguments: [eid, kind, name, now, now])
             if let name {
-                try db.execute(sql: "INSERT INTO entity_alias (id, entity_id, alias, normalized, manual) VALUES (?, ?, ?, ?, 1)",
-                               arguments: [UUID().db, eid, name, FactsText.normName(name, kind: kind, registry: registry)])
+                try db.execute(sql: "INSERT INTO entity_alias (id, entity_id, alias, normalized, manual, confirmed_at) VALUES (?, ?, ?, ?, 1, ?)",
+                               arguments: [UUID().db, eid, name, FactsText.normName(name, kind: kind, registry: registry), now])
             }
         }
         let fid = try String.fetchOne(db, sql: "SELECT id FROM fact WHERE predicate = ? AND entity_id = ?", arguments: [predicate, eid])
@@ -337,10 +337,12 @@ extension FactStore {
                              now: Date) throws {
         let kind = try String.fetchOne(db, sql: "SELECT kind FROM entity WHERE id = ?", arguments: [entityID]) ?? "person"
         let norm = FactsText.normName(alias, kind: kind, registry: registry)
-        try db.execute(sql: "UPDATE entity_alias SET confirmed = 1 WHERE entity_id = ? AND normalized = ?", arguments: [entityID, norm])
+        try db.execute(sql: """
+            UPDATE entity_alias SET confirmed = 1, confirmed_at = COALESCE(confirmed_at, ?) WHERE entity_id = ? AND normalized = ?
+            """, arguments: [now, entityID, norm])
         if db.changesCount == 0 {
-            try db.execute(sql: "INSERT INTO entity_alias (id, entity_id, alias, normalized, confirmed) VALUES (?, ?, ?, ?, 1)",
-                           arguments: [UUID().db, entityID, alias, norm])
+            try db.execute(sql: "INSERT INTO entity_alias (id, entity_id, alias, normalized, confirmed, confirmed_at) VALUES (?, ?, ?, ?, 1, ?)",
+                           arguments: [UUID().db, entityID, alias, norm, now])
         }
         try bumpRevision(db)
     }

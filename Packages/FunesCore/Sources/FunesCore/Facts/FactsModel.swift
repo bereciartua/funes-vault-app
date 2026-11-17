@@ -54,6 +54,8 @@ public struct FactAssertion: Sendable, Equatable {
     /// with its own memory).
     public var only = false
     public var deceased = false
+    /// Where the quote is in the memory's text (UTF-16), when the extraction knew it.
+    public var span: NSRange?
 }
 
 /// Someone or something memories mention. *You* is never in the graph.
@@ -121,6 +123,8 @@ public struct ExtractedPerson: Sendable {
     public var name: String
     public var quote: String
     public var person: String           // an entity id from the roster, "new" or "ambiguous"
+    /// Where the quote is in the memory's text (UTF-16), when validation found it; else it's located by its text.
+    public var span: NSRange?
 
     public init(name: String, quote: String? = nil, person: String = "new") {
         self.name = name
@@ -147,6 +151,8 @@ public struct ExtractedFact: Sendable {
     public var followedBy: String?
     public var alsoCalled: String?
     public var qualifiers: [String: String]
+    /// Where the quote is in the memory's text (UTF-16), when validation found it; else it's located by its text.
+    public var span: NSRange?
 
     public init(predicate: String, name: String, entity: String = "name", label: String? = nil, quote: String? = nil,
                 positive: Bool = true, status: FactAssertion.Status = .unknown, deceased: Bool = false,
@@ -217,6 +223,13 @@ public struct FactsGraph: Sendable {
     public struct MergeSuggestion: Sendable, Equatable { public var entity: String; public var other: String }
     /// "Not <name>" on a mention: entities a role phrase in a memory doesn't refer to.
     public var rejections: [DecisionKey: Set<String>] = [:]
+    /// While a memory is read again: the people its earlier model reading named (folded name → entity), so a "new"
+    /// answer finds the same person rather than making another (a re-read is idempotent).
+    public var reread: [String: String] = [:]
+    /// Name links code found without a model (memory processing §11.3): they never reach a roster.
+    public var codeNames: Set<NameKey> = []
+    /// The order memories were added to the vault, for those written the same day.
+    public var memoryOrder: [String: Int] = [:]
     /// Ids for new entities: counters ("p1") in tests and spikes, UUIDs in the vault.
     public var idStyle: IDStyle = .counter
     private var counter = 0
@@ -439,7 +452,9 @@ public struct FactsGraph: Sendable {
                 continue
             } else {
                 let same = p.person == "new" ? byName(p.name, onlyTrusted: trusted) : []
-                pid = same.count == 1 ? same[0].id : newEntity(name: p.name, trusted: trusted)
+                // Only a "new" answer finds its earlier reading's person: "different" means someone else.
+                let before = p.person == "new" ? reread[f].flatMap { id in same.contains { $0.id == id } ? id : nil } : nil
+                pid = same.count == 1 ? same[0].id : before ?? newEntity(name: p.name, trusted: trusted)
             }
             here[f] = pid
             names[NameKey(memoryID: mid, surface: p.name)] = NameLink(entity: pid, basis: trusted ? .named : .untrusted,
@@ -498,6 +513,7 @@ public struct FactsGraph: Sendable {
                                   quote: r.quote, handover: handover)
             a.only = r.only
             a.deceased = r.deceased
+            a.span = r.span
             if let i = existing.first {
                 facts[i].only = facts[i].only || (r.only && trusted)
                 facts[i].assertions.append(a)

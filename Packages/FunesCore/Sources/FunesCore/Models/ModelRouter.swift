@@ -66,6 +66,8 @@ public struct AppleFoundationGenerator: GenerationProvider {
             return DynamicGenerationSchema(name: objectName, description: description, properties: properties.map { key, value in
                 DynamicGenerationSchema.Property(name: key, description: value.description, schema: dynamic(value, name: key))
             })
+        case let .nullable(inner):
+            return dynamic(inner, name: name)       // Facts isn't offered on-device (memory processing §11.10)
         }
     }
     #endif
@@ -75,6 +77,7 @@ extension JSONSchema {
     var description: String? {
         switch self {
         case let .string(d, _), let .boolean(d), let .number(d), let .integer(d), let .array(_, d, _, _), let .object(_, d, _): d
+        case let .nullable(inner): inner.description
         }
     }
 }
@@ -237,6 +240,10 @@ public final class ModelRouter: Sendable {
     /// call on a cloud model, minutes on a small local one).
     public let splitTimeout: Duration
 
+    /// The Facts model (memory processing §11.3, §11.10): a qualified model the user picked for learning facts; nil
+    /// means none, and memories get code-only links. Never falls back to another provider.
+    public let factsModel: (any GenerationProvider)?
+
     private let usage = Mutex<[ProviderID: ProviderUsage]>([:])
     /// Shared with the app's other routers, so a rate limit outlives this one.
     public let backoff: ProviderBackoff
@@ -246,8 +253,10 @@ public final class ModelRouter: Sendable {
     /// Apple model when available.
     public init(classifier: (any GenerationProvider)?, onDevice: (any GenerationProvider)? = AppleFoundationGenerator(),
                 cloudLimit: CloudLimit = .upTo(.internal), generationTimeout: Duration = .seconds(20),
-                splitTimeout: Duration = .seconds(180), cap: CloudRequestCap? = nil, backoff: ProviderBackoff = ProviderBackoff()) {
+                splitTimeout: Duration = .seconds(180), cap: CloudRequestCap? = nil, backoff: ProviderBackoff = ProviderBackoff(),
+                factsModel: (any GenerationProvider)? = nil) {
         self.classifier = classifier
+        self.factsModel = factsModel
         self.backoff = backoff
         self.onDevice = onDevice
         self.cloudLimit = cloudLimit
@@ -335,6 +344,17 @@ public final class ModelRouter: Sendable {
     func answer<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem], now: Date) async throws -> T {
         guard let provider = answerer else { throw ProviderError.unavailable }
         return try await call(request, items: items, with: provider, requester: .user, timeout: Self.searchAnswerTimeout, now: now)
+    }
+
+    /// One Facts call (memory processing §11.3), per memory and call group.
+    public static let factsTimeout: Duration = .seconds(60)
+
+    /// One Facts call through the guardrails (`send`): the Facts model only, counted against the daily cap in the
+    /// share of whoever wrote the memory, within 60 s. `ProviderError.unavailable` when there's no Facts model.
+    func facts<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem], requester: CloudRequestCap.Requester,
+                                        now: Date) async throws -> T {
+        guard let provider = factsModel else { throw ProviderError.unavailable }
+        return try await call(request, items: items, with: provider, requester: requester, timeout: Self.factsTimeout, now: now)
     }
 
     /// How a proposal names its engine: `apple.foundation`, or `<provider>/<model>`.
