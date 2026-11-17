@@ -653,7 +653,7 @@
   - A gap longer than the predicate's `gap_months` gives a `gap` answer: it names the entity and tells the gap ("there's a gap of about 6 months"), and may carry bridges.
   - Succession ends only a stale current, within its slot, never from untrusted evidence, and gives "probably former".
   - A shared name matches everyone who has it; a second person sharing a bare name makes earlier `named` mentions `ambiguous`. Merges are suggested in To check, never made automatically.
-  - Spike H3's and H3b's counterexamples pass as tests; an adversarial review of the Swift time model by two independent reviewers finds no wrong answer or link in a final round; works at meets ADR-0032's timeline gate.
+  - Spike H3's and H3b's counterexamples pass as tests; an adversarial review of the Swift time model by two independent reviewers finds, in a final round, no wrong answer or link from the core model and no confident misread from the language layer, which fails closed (for 13a.1, waived by the author after round 18: ADR-0032's amendment of 2026-11-16); works at meets ADR-0032's timeline gate.
 
 **FR-F-05 Search with learned facts** · M · v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md))
 - With *Use in search and answers* on, Vault search and iPhone search use learned facts ([memory processing §4](../domain/memory-processing.md#4-ranking)):
