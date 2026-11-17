@@ -58,10 +58,10 @@
 - *Done (15 Nov 2026): every document in the Amends table amended, with memory processing §11 as the core. GPT-6-Astra and Fable 5.2 reviewed the change; the fixes include the user's names replaced in the Facts call, cloud selection from sendable facts only, tombstones for corrections, correction targets with tokens, five gated uses, gap answers and the 12-memory limit with bridges. ADR-0032 records the substantive changes as an amendment.*
 
 ## 13a.1 Storage, registry, lifecycle and the time model (no model calls) · 3 weekends
-- [ ] **The registry:** `Resources/facts-registry.json`, ported from `spikes/people/registry.json`: v0.10's 12 predicates, call groups and uses. The language data includes month names and function words, which H3b still had in code. `FactsRegistry` loads and validates it.
+- [x] **The registry:** `Resources/facts-registry.json`, ported from `spikes/people/registry.json`: v0.10's 12 predicates, call groups and uses. The language data includes month names and function words, which H3b still had in code. `FactsRegistry` loads and validates it.
   - Each run records the registry and prompt versions it used.
   - **Tests:** no Swift source names a predicate or carries registry vocabulary (the spike's test, extended to month words and function words); a test-only predicate added through the registry alone works end to end.
-- [ ] **Storage:** `v9_facts`. Tables:
+- [x] **Storage:** `v9_facts`. Tables:
   - entities and aliases, with alias evidence;
   - facts;
   - one evidence table for facts, qualifiers and order edges, with the value each memory asserts, its precision, whether it states the fact, its sensitivity and trust; the user's own dates, orders and qualifiers are rows there too (`source` = user), with episode selectors;
@@ -71,7 +71,7 @@
   - facts runs.
 
   No stored start or end dates: episodes are derived. Backups and `funesvault.export.v1` (optional sections) round-trip the learned facts; qualification rows aren't exported.
-- [ ] **Lifecycle, with a test each:**
+- [x] **Lifecycle, with a test each:**
   - a memory edit drops its evidence and decisions at the old version, and a status-only change carries them forward;
   - an archive's effect depends on why it was archived;
   - **purge:** an inferred name, label or qualifier goes with its last supporting memory, in every table and in undo snapshots; what a manual entry, an override or a correction references stays as a tombstone (its id, predicate, the user's own values and the normalised alias the user confirmed or typed), and re-attaches when a memory again supports the same predicate and alias;
@@ -80,14 +80,20 @@
   - manual overrides win over inference;
   - Remove learned facts keeps manual entries, corrections and their tombstones, and leaves qualification rows alone;
   - a user's date or order on one episode follows the episode overlapping its selector, or goes to To check.
-- [ ] **The time model** in FunesCore `Facts/`, ported from H3b:
+- [x] **The time model** in FunesCore `Facts/`, ported from H3b:
   - `DateRange` (the parser: month and day words next to a year only);
   - `Episodes` (intervals; combining with trust; bounds after the last held day; uncertain departures; succession for trusted stale currents only, within a slot);
   - `FactResolver` (holders as of a range; time cues next to the phrase; "former" against the written date; paired decisions);
   - `Timeline` (one ordering rule both ways; stated edges checked against dates; same-year hand-overs; date anchors; years, current, previous);
   - `TimelineIntent` (the anchor ends the operator phrase; someone else's subject; questions about one fact).
-- [ ] **Trust rule tests:** untrusted evidence never resolves a trusted memory, never ends an episode that has trusted evidence or triggers succession, never orders anything at full basis, and never changes a trusted decision; an episode with only untrusted evidence gives its dates at `inferred` at most and its links at `untrusted`; a link's basis is the weakest in its chain.
+- [x] **Trust rule tests:** untrusted evidence never resolves a trusted memory, never ends an episode that has trusted evidence or triggers succession, never orders anything at full basis, and never changes a trusted decision; an episode with only untrusted evidence gives its dates at `inferred` at most and its links at `untrusted`; a link's basis is the weakest in its chain.
 - [ ] **Gates:** `test_temporal.py`'s 44 and `test_facts.py`'s 16, ported as table-driven Swift tests. Then an adversarial review of the Swift time model by GPT-6-Astra and Fable 5.2, round after round, until one finds no wrong answer or link; every case becomes a test. Budget: H3b took three rounds.
+  - **Status (16 November 2026):**
+    - The 60 spike tests pass, and so do every review case (rounds 1–17) and five differential fuzzes at full size (one or two untrusted rows, user rows, store round trips and purges, reading order, contained names).
+    - Findings per round fell from 29 to 4–7 and stayed there. The core model (trust, episodes, ordering, storage) converged: Fable 5.2 found no wrong answer or link in rounds 15 and 17. The language layer (role-phrase quotes and chains, timeline intent) didn't: each fix exposed a neighbouring phrasing, which an adversarial review of open text will always find.
+    - **The gate, narrowed after round 17:** the language layer now fails closed (memory processing §11.3, §11.7: a question outside the grammar gets plain search; a phrase that may be quoted is skipped). Round 18 is the last: a wrong answer or link from the core model fails it, and so does a confident wrong answer from the language layer; a missed answer doesn't. A core failure in round 18 means revisiting the design. The language layer's coverage is measured by 13a.2's fixture gates (decidable wordings, recall).
+    - **Round 18 wasn't clean.** Core model: Fable 5.2 found nothing (with two new core fuzzes, clean at 6,000 iterations and 100 vaults); GPT-6-Astra found one restore bug: a restore that skips a duplicate memory didn't re-validate the decisions resting on what that memory supported. It was the second bug in two rounds in that one path. Language layer: five confident misreads of wordings the grammar still accepted ("before leaving Acme", a lowercase or sentence-initial unknown subject, "since 2016", guillemets and quotes across lines). All six are fixed, the language ones by refusing more.
+    - The `facts-qualification.json` records ship with 13a.2's gates.
 
 ## 13a.2 Extraction, qualification and the backfill · 3–3½ weekends
 - [ ] **A fixture harness** that runs the spike fixtures through the Swift pipeline and `ModelRouter`, and writes `score.py`- and `score_facts.py`-compatible output (port fidelity needs it).
@@ -104,7 +110,7 @@
   - the profile's names are matched locally to *you*, replaced by "the user" in the memory text sent (with an offset map for quotes), never added and never in a roster; another person sharing the name keeps it.
 
   **Payload tests** with sentinel strings at each sensitivity.
-- [ ] **`ProcessingQueue`:** a low-priority lane that pauses while New memories or the tidy-up wait. Today it runs one job at a time and dedupes by subject and kind, so it gains revision- and call-group-aware scheduling. It also runs reconciliation (a new holder, a new fact about a candidate, a name shared).
+- [ ] **`ProcessingQueue`:** a low-priority lane that pauses while New memories or the tidy-up wait. Today it runs one job at a time and dedupes by subject and kind, so it gains revision- and call-group-aware scheduling. It also runs reconciliation (a new holder, a new fact about a candidate, a name shared). 13a.1's graph reopens an earlier bare-name mention as `ambiguous` when a second trusted entity shares the name (`reopenSharedNames`); through the store, the queue finds these from alias evidence (a one-word alias whose normalised form now matches several trusted entities) and re-reads that memory, and its link reads as ambiguous until then.
 - [ ] **Qualification and gating:**
   - each use of each predicate (recorded, linked, timeline, attributes, bridges) is on only with a qualification record for the current model, call-group prompt, registry version, adapter and batching;
   - turning a use off turns off everything downstream of it, with no code change. A test turns linking off and checks that attributes and bridges go too.

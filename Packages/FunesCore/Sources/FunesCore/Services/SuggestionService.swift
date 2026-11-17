@@ -565,6 +565,11 @@ public final class SuggestionService: Sendable {
             _ = try checked(db, refs)
             let survivor = refs.first { $0.role == .survivor }?.memoryID
             try MemoryStore.setStatus(db, id: target.memoryID, to: .archived, actor: actor, now: now)
+            // Learned facts (memory processing §11.8): an expired memory stops supporting what it stated; a superseded
+            // or duplicate one keeps its former and dated facts.
+            if TidyUpRecord.decode(s)?.archiveReason == .expired {
+                try FactStore.archived(db, memoryID: target.memoryID.db, reason: .expired, now: now)
+            }
             try applied(target.memoryID, related: survivor)
             return ApplyResult(memoryID: target.memoryID, memoryIDs: [target.memoryID], similarMemoryIDs: [])
 

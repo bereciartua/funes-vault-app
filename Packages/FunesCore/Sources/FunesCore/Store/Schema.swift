@@ -55,8 +55,195 @@ enum Schema {
         migrator.registerMigration("v8_tidy_up_scope") { db in
             try db.execute(sql: v8)
         }
+        // Facts about you (v0.10, Phase 13a.1; ADR-0032, storage §3): learned entities, facts, their evidence,
+        // decisions, corrections, qualification off-switches and runs; `facts` jobs per memory version and call
+        // group. Nothing to backfill: the tables stay empty, apart from *you*, until the first backfill.
+        migrator.registerMigration("v9_facts") { db in
+            try db.execute(sql: v9)
+            let now = Date()
+            try db.execute(sql: "INSERT INTO entity (id, kind, is_you, created_at, updated_at) VALUES (?, 'person', 1, ?, ?)",
+                           arguments: [UUID().db, now, now])
+            try db.execute(sql: "INSERT INTO meta (key, value) VALUES ('facts_epoch', ?)", arguments: [UUID().db])
+            try db.execute(sql: "INSERT INTO meta (key, value) VALUES ('facts_revision', '0')")
+        }
         return migrator
     }
+
+    /// Learned facts (storage §2, v9_facts). Owner side only: agent retrieval never reads these tables. No start or
+    /// end dates are stored: episodes are derived from `fact_evidence`.
+    static let v9 = """
+        ALTER TABLE memory ADD COLUMN original_source TEXT;
+        CREATE TABLE processing_job_v9 (
+          id             TEXT PRIMARY KEY,
+          subject        TEXT NOT NULL,
+          kind           TEXT NOT NULL CHECK (kind IN ('new_memory','tidy_up','facts')),
+          state          TEXT NOT NULL DEFAULT 'queued' CHECK (state IN ('queued','running','done','failed')),
+          attempts       INTEGER NOT NULL DEFAULT 0,
+          engine         TEXT,
+          not_before     TEXT,
+          error          TEXT,
+          created_at     TEXT NOT NULL,
+          updated_at     TEXT NOT NULL,
+          memory_version INTEGER,
+          call_group     TEXT
+        );
+        INSERT INTO processing_job_v9 (id, subject, kind, state, attempts, engine, not_before, error, created_at, updated_at)
+          SELECT id, subject, kind, state, attempts, engine, not_before, error, created_at, updated_at FROM processing_job;
+        DROP TABLE processing_job;
+        ALTER TABLE processing_job_v9 RENAME TO processing_job;
+        CREATE UNIQUE INDEX processing_job_subject ON processing_job(subject, kind, COALESCE(call_group, ''));
+        CREATE INDEX processing_job_queue ON processing_job(state, created_at);
+
+        CREATE TABLE facts_run (
+          id               TEXT PRIMARY KEY,
+          kind             TEXT NOT NULL CHECK (kind IN ('backfill','incremental','reread','reconciliation')),
+          call_group       TEXT NOT NULL,
+          registry_version TEXT NOT NULL,
+          prompt_version   TEXT NOT NULL,
+          engine           TEXT NOT NULL,
+          cap_exempt       INTEGER NOT NULL DEFAULT 0,
+          resume_after     INTEGER,
+          counts           TEXT NOT NULL DEFAULT '{}',
+          started_at       TEXT NOT NULL,
+          finished_at      TEXT,
+          error            TEXT
+        );
+
+        CREATE TABLE entity (
+          id              TEXT PRIMARY KEY,
+          kind            TEXT NOT NULL CHECK (kind IN ('person','organization','place','thing')),
+          is_you          INTEGER NOT NULL DEFAULT 0,
+          name            TEXT,
+          group_predicate TEXT, group_label TEXT, group_count INTEGER,
+          deceased        INTEGER NOT NULL DEFAULT 0,
+          hidden          INTEGER NOT NULL DEFAULT 0,
+          manual          INTEGER NOT NULL DEFAULT 0,
+          tombstone       INTEGER NOT NULL DEFAULT 0,
+          created_at      TEXT NOT NULL,
+          updated_at      TEXT NOT NULL
+        );
+        CREATE UNIQUE INDEX entity_you ON entity(is_you) WHERE is_you = 1;
+
+        CREATE TABLE entity_alias (
+          id          TEXT PRIMARY KEY,
+          entity_id   TEXT NOT NULL REFERENCES entity(id) ON DELETE CASCADE,
+          alias       TEXT,
+          normalized  TEXT NOT NULL,
+          manual      INTEGER NOT NULL DEFAULT 0,
+          confirmed   INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX entity_alias_normalized ON entity_alias(normalized);
+        CREATE INDEX entity_alias_entity ON entity_alias(entity_id);
+
+        CREATE TABLE alias_evidence (
+          alias_id       TEXT NOT NULL REFERENCES entity_alias(id) ON DELETE CASCADE,
+          memory_id      TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
+          memory_version INTEGER NOT NULL,
+          span_start     INTEGER NOT NULL, span_end INTEGER NOT NULL,
+          quote          TEXT NOT NULL,
+          sensitivity    INTEGER NOT NULL,
+          trust          TEXT NOT NULL CHECK (trust IN ('trusted','untrusted')),
+          run_id         TEXT REFERENCES facts_run(id) ON DELETE SET NULL,
+          PRIMARY KEY (alias_id, memory_id, memory_version, span_start)
+        );
+        CREATE INDEX alias_evidence_memory ON alias_evidence(memory_id);
+
+        CREATE TABLE fact (
+          id          TEXT PRIMARY KEY,
+          predicate   TEXT NOT NULL,
+          entity_id   TEXT NOT NULL REFERENCES entity(id) ON DELETE RESTRICT,
+          manual      INTEGER NOT NULL DEFAULT 0,
+          tombstone   INTEGER NOT NULL DEFAULT 0,
+          created_at  TEXT NOT NULL,
+          updated_at  TEXT NOT NULL,
+          UNIQUE (predicate, entity_id)
+        );
+        CREATE INDEX fact_entity ON fact(entity_id);
+
+        CREATE TABLE fact_evidence (
+          id             TEXT PRIMARY KEY,
+          target_kind    TEXT NOT NULL CHECK (target_kind IN ('fact','qualifier','order')),
+          fact_id        TEXT NOT NULL REFERENCES fact(id) ON DELETE CASCADE,
+          qualifier      TEXT,
+          other_fact_id  TEXT REFERENCES fact(id) ON DELETE CASCADE,
+          direction      TEXT CHECK (direction IN ('preceded_by','followed_by')),
+          episode_selector       TEXT,
+          other_episode_selector TEXT,
+          source         TEXT NOT NULL CHECK (source IN ('memory','user')),
+          memory_id      TEXT REFERENCES memory(id) ON DELETE CASCADE,
+          memory_version INTEGER,
+          span_start     INTEGER, span_end INTEGER,
+          quote          TEXT,
+          asserted       TEXT NOT NULL DEFAULT '{}',
+          states         INTEGER NOT NULL,
+          polarity       TEXT NOT NULL CHECK (polarity IN ('affirmed','denied')),
+          sensitivity    INTEGER NOT NULL,
+          trust          TEXT NOT NULL CHECK (trust IN ('trusted','untrusted')),
+          call_group     TEXT,
+          run_id         TEXT REFERENCES facts_run(id) ON DELETE SET NULL,
+          CHECK ((source = 'memory') = (memory_id IS NOT NULL AND memory_version IS NOT NULL AND quote IS NOT NULL))
+        );
+        CREATE INDEX fact_evidence_fact ON fact_evidence(fact_id, target_kind);
+        CREATE INDEX fact_evidence_memory ON fact_evidence(memory_id, memory_version);
+        CREATE INDEX fact_evidence_other ON fact_evidence(other_fact_id) WHERE other_fact_id IS NOT NULL;
+
+        CREATE TABLE mention_decision (
+          id             TEXT PRIMARY KEY,
+          memory_id      TEXT NOT NULL,
+          memory_version INTEGER,
+          mention        TEXT,
+          quote          TEXT,
+          span_start     INTEGER, span_end INTEGER,
+          outcome        TEXT NOT NULL CHECK (outcome IN ('entity','group','someone_else','unknown','rejected')),
+          entity_id      TEXT,
+          basis          TEXT NOT NULL,
+          source         TEXT NOT NULL CHECK (source IN ('model','user')),
+          call_group     TEXT,
+          run_id         TEXT REFERENCES facts_run(id) ON DELETE SET NULL,
+          created_at     TEXT NOT NULL,
+          invalidated_at TEXT
+        );
+        CREATE INDEX mention_decision_memory ON mention_decision(memory_id);
+
+        CREATE TABLE decision_dependency (
+          decision_id TEXT NOT NULL REFERENCES mention_decision(id) ON DELETE CASCADE,
+          kind        TEXT NOT NULL CHECK (kind IN ('memory','fact','entity')),
+          ref_id      TEXT NOT NULL,
+          ref_version TEXT NOT NULL,
+          PRIMARY KEY (decision_id, kind, ref_id)
+        );
+        CREATE INDEX decision_dependency_ref ON decision_dependency(kind, ref_id);
+
+        CREATE TABLE manual_override (
+          id               TEXT PRIMARY KEY,
+          target_kind      TEXT NOT NULL CHECK (target_kind IN ('entity','alias','fact','qualifier','date','status','order')),
+          target_id        TEXT NOT NULL,
+          field            TEXT NOT NULL,
+          value            TEXT,
+          episode_selector TEXT,
+          sensitivity      INTEGER NOT NULL,
+          memory_id        TEXT,
+          quote            TEXT,
+          created_at       TEXT NOT NULL,
+          updated_at       TEXT NOT NULL
+        );
+        CREATE INDEX manual_override_target ON manual_override(target_kind, target_id);
+
+        CREATE TABLE fact_qualification (
+          predicate        TEXT NOT NULL,
+          use              TEXT NOT NULL CHECK (use IN ('recorded','linked','timeline','attributes','bridges')),
+          basis            TEXT NOT NULL DEFAULT '',
+          model            TEXT NOT NULL,
+          prompt_version   TEXT NOT NULL,
+          registry_version TEXT NOT NULL,
+          adapter          TEXT NOT NULL,
+          batching         TEXT NOT NULL,
+          gate             TEXT NOT NULL,
+          passed           INTEGER NOT NULL,
+          recorded_at      TEXT NOT NULL,
+          PRIMARY KEY (predicate, use, basis, model, prompt_version, registry_version, adapter, batching)
+        );
+        """
 
     /// `all` for the daily run and Tidy Up Now, `memory` for Tidy Up on one memory.
     static let v8 = """

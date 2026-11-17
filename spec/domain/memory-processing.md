@@ -442,7 +442,7 @@ v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), FR-F-01 to
   - **statement templates** with a first-person subject; **query cues;**
   - **phrases** (the attribute, the why line, the ambiguity note's noun);
   - **its call group** and **uses** (§11.10).
-- **Shared language data:** owners, modifiers, operators ("before", "antes de"…), month names, time prepositions, time nouns, third-person pronouns, function words, episode cues ("first", "rejoined"), the prompt's examples.
+- **Shared language data:** owners, modifiers, operators ("before", "antes de"…), month names, date joiners and ordinal suffixes, time prepositions (any precision: "in 2019") and day prepositions (a day only: "on 15 March 2019"), time nouns, first- and third-person pronouns, function words, pair verbs and non-names, legal suffixes, episode cues for questions ("first", "again"), return cues for statements ("rejoined", "went back to"), the user placeholder ("the user"), the prompt's examples.
 - **v0.10's entries:**
   - ten person predicates, *linked*: partner (exclusive), parent, child, sibling, other_family, friend, manager (with succession, not exclusive), colleague, care, other;
   - **works_at**, *linked* and *timeline*, with `kind` as its slot and a two-month gap;
@@ -454,7 +454,7 @@ v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), FR-F-01 to
 - **When:** a durable job per committed memory version (never a pending suggestion), in the queue's low-priority lane: it pauses while New memories or the tidy-up wait, and is batched per applied group. A status-only change (archive, restore) carries evidence and decisions forward; a text edit drops them at the old version and runs again.
 - **Call groups:** one model call per group per memory: **people** and **work**, separately. One merged call lost 7–9 points of relation recall in Spike H3. Each group's prompt and strict schema are generated from the registry.
 - **Code proposes, the model decides:**
-  - **code finds** aliases of known entities (word boundaries, at least 3 letters, the stop list), role phrases from the lexicon (owners, up to two free modifiers, the ex- and step- prefixes), and template pairs ("Maria is my sister", "I joined Acme"). It skips possessive chains and quoted speech;
+  - **code finds** aliases of known entities (word boundaries, at least 3 letters, the stop list), role phrases from the lexicon (owners, up to two free modifiers, the ex- and step- prefixes), and template pairs ("Maria is my sister", "I joined Acme"). It skips possessive chains (the possessive, then up to four words read up to a function word or an owner, ending in a person noun, with a former prefix or not: "my sister's husband", "my partner's ex-wife", not "my boss's note to my sister") and anything that may be quoted speech, failing closed: reading the text up to the phrase (a quote may run across lines), a quote opens at the start or after a space or opening punctuation, and “ ‘ « ‹ „ always open (an inch mark or an apostrophe doesn't open one); it closes only where it surely does (not inside "doesn't", not after an s, as in "the kids' teacher"); a phrase while a quote is open or uncertain is skipped, so "'Yes' and my boss agreed" loses its phrase rather than risk a quoted one. A line that opens with a dialogue dash ("—Mi jefe llega tarde —dijo Ana") is someone speaking too;
   - **the model gets** the memory (within the cloud limit for a cloud engine), the candidates, a roster of known entities as `e1…` (never the memory being asked about, never *you*), and the group's predicates;
   - **your own names:** in the memory text sent, the names from About you, matched locally, become "the user", with a map of offsets so quotes are validated against the text sent and mapped back to the original. A namesake in the same memory isn't replaced (as §10.3 does for answers). The names are never added to the call and never in a roster (§11.9);
   - **the model returns,** each item with a quote: the entities mentioned (new, a roster id, or a different one with the same name), and whether a person has died ("my late grandmother"); the facts (predicate, entity, label, polarity, status as of the memory's date, start, end, time, order edges, also-called, qualifiers); for each role phrase, who it refers to (a roster id, a name in the memory, the group, someone else, or unknown); counts; and named things.
@@ -480,14 +480,14 @@ v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), FR-F-01 to
 
 ### 11.4 Resolving role phrases and names
 - **Holders:** for a role phrase, code takes the entities with a fact of that predicate (and label, unless the phrase is generic) that may hold the role during the time the phrase talks about:
-  - a time cue next to the phrase ("my boss in 2019", "In February 2019, my boss…"), as a range (§11.5);
-  - otherwise the memory's written date (an import has none).
+  - a time cue next to the phrase ("my boss in 2019", "In February 2019, my boss…", "my boss on 15 March 2019"), as a range (§11.5);
+  - otherwise the memory's written date (an import has none, and a Funes restore keeps whether it had one: `memory.original_source`).
 
-  A year elsewhere in the sentence isn't a cue ("my boss said sales dropped in 2019").
+  A year elsewhere in the sentence isn't a cue ("my boss said sales dropped in 2019"), and neither is a day preposition before anything but a day ("my boss on 2019 numbers"). A month abbreviation's period ("Mar. 2019") doesn't end the sentence.
   - **"Current" and plain phrases** are evaluated at that time, not today.
   - **"Former" phrases** ("my ex", "my old boss") need an episode that may have ended by the written date, and that held during the time cue if there is one ("my former therapist taught me … in May 2024").
   - **An entity holds through any of its episodes** that may cover the time; the one that does is preferred over its latest.
-  - **When someone certainly held the role then,** a holder whose stated start comes later drops out.
+  - **When someone certainly held the role then,** a holder whose stated start comes later drops out. Only trusted evidence does either: an untrusted start or holder rules no one out.
   - **An uncertain episode** (§11.5) doesn't hold after the memory that made it uncertain.
 - **Resolution bases, strongest first:**
 
@@ -500,59 +500,73 @@ v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), FR-F-01 to
 | `sole_known` | exactly one holder, nothing saying it's the only one; or a reference before that holder's stated start ("since 2022") |
 | `candidates` | several fit and nothing decides; or the model answered with the group: linked to the role group, never named |
 | `ambiguous` | a bare name two known people share |
-| `untrusted` | any of the above, where the episode it rests on has only untrusted evidence |
+| `inferred` | a link resting on succession: a "former" phrase whose holder's end was inferred, a rival ruled out by an inferred end, or a date cue (below) |
+| `untrusted` | any of the above, where the episode it rests on (the one that may hold then) has only untrusted evidence; a stored decision is judged the same way, and never lifts what it chose above that |
 | `rejected` | you said Not <name> |
 
 - **Plain role words:** "I have a sister, Maria" isn't `stated_unique`, and neither is a manager by default.
-- **Date cues** ("my previous job") resolve on the predicate's timeline as of the memory's date (§11.6's "previous"), only with the timeline use, at `inferred` at most. An import's date cue has no date and resolves to `candidates`.
-- **Groups:** one per predicate and label. "I have two sisters" sets the count. Naming a group's member makes them a person in it; earlier references to the group resolve to them at `sole_known` at most. A name given for one member of a plural group makes a new person, and the group stays.
-- **Names:** a shared name matches every entity that has it; a second entity sharing a bare name makes earlier `named` mentions `ambiguous` and queues them again. Names are normalised per kind: case and accents for all, legal suffixes for organizations. Anything else is a merge suggestion in To check, never merged automatically.
+- **Date cues** ("my previous job") resolve on the predicate's timeline as of the memory's date (§11.6's "previous"), only with the timeline use, at `inferred` at most (`untrusted` when any step rests on untrusted evidence). They need one certain current episode then, with no other that may also be current. An import's date cue has no date and resolves to `candidates`. A rejection holds on this path too.
+- **Corrections beat decisions:** a Not <name> on a mention outranks the model's stored decision, and follows Merge With… to the surviving entity.
+- **Groups:** one per predicate and label. "I have two sisters" sets the count. Counts, "only" and a death ("my late father") come from trusted memories only, and are kept per statement, so each goes with its own memory. Naming a group's member makes them a person in it; earlier references to the group resolve to them at `sole_known` at most. A name given for one member of a plural group makes a new person, and the group stays.
+- **Names:** a shared name matches every entity that has it; a second entity sharing a bare name makes earlier `named` mentions `ambiguous` and queues them again. Names are normalised per kind: case and accents for all, legal suffixes for organizations. Anything else is a merge suggestion in To check, never merged automatically:
+  - **organizations** attach only on a normalised match; one name inside another ("Acme", "Acme Labs") is a suggestion;
+  - **"also called"** adds an alias only when no other entity has that name; naming two known entities makes a suggestion;
+  - **Not the Same** suppresses the suggestion.
+
+  Where a name must pick one entity (a timeline anchor, an order edge), an exact normalised match means exact matches only, for kinds matched by containment; a first name still matches everyone who has it, and a name that still matches several identifies none.
+- **Alias trust:** an alias carries the trust of the memories that gave it. A trusted memory's names match only aliases that trusted memories, or the user, gave, so an untrusted memory can never re-route trusted evidence.
+- **Labels:** a fact's label is the user's, else the latest trusted statement's; an untrusted label counts only for a fact with no trusted evidence, so it can't classify or drop a trusted holder.
 
 ### 11.5 The time model
 - **Dates are ranges** at the precision written: "2019" is 1 January to 31 December, "March 2019" that month, "15 March 2019" that day.
   - A month counts only as a month word or number next to a year, so "married in 2015" is the year.
   - An order holds only if it holds for every possible date.
 - **Episodes come from what memories assert, interval by interval:** each start with the end it was stated with.
-  - **New episodes:** a new episode starts only when the dates are disjoint, or a memory says it's a return ("rejoined", "back together"). A start after an open episode, with no return, is a conflicting start.
+  - **New episodes:** a new episode starts only when the dates are disjoint, or a memory says it's a return (the registry's return cues, for partners as well as jobs: "rejoined", "went back to", "back together"; not a question's "again"). A start after an open episode, with no return, is a conflicting start. An undated return opens a new stint only when it says it holds and every stint begun by then had ended; a look back at one ("when I rejoined…") joins the latest stint. Undated rows are placed in the order they were written.
   - **An end before the first start** is an episode of its own.
-- **Per boundary,** the dates memories assert are combined: trusted ones only, when any trusted memory states that boundary. Ranges that don't overlap are a conflict, and that boundary never decides an answer.
+- **Per boundary,** the dates memories assert are combined. Inside an episode with trusted evidence, untrusted boundaries never count (an untrusted start could rule out a rival or narrow a bound); an episode with only untrusted evidence uses its own. Trusted rows are placed before untrusted ones, so an untrusted row never splits, captures or hides a trusted episode. Ranges that don't overlap are a conflict, and that boundary never decides an answer: two stated ends that disagree still mean it ended by the later one; a conflict nothing bounds (a "still current" after the end, a "no longer" before the start) leaves the end open; so is a trusted "still current" after a stated end, with no return stated, and a "no longer" written before the stated start.
   - **Trust** (§11.9): untrusted evidence never resolves a trusted memory, never ends an episode that has trusted evidence or triggers succession, never orders anything at full basis, and never changes a trusted decision; an episode with only untrusted evidence gives its dates at `inferred` at most and its links at `untrusted`.
   - **"No longer there" with no date** ends the episode by the memory's date: a bound that starts after the last day a memory said it held.
   - **An episode with no assertion of its own takes its slot** from its qualifiers.
 - **Status per episode:**
   - **"Current" holds as of the memory's date,** so an episode is ongoing while no end is known and it isn't stated as ended.
   - **An undated "no longer" that fits two episodes,** one ended and one open, makes the open one *uncertain*: neither ongoing nor ended. Only trusted memories do this.
-- **Succession** ends a stale current, and only that. Within a slot, an episode a trusted memory once called current, with no end, that was the only open one there when the next one started, ends at the next one's start, at `inferred`. Never when:
+  - **The user's rows win:** the user's latest status (in the order entered) decides, over memories and the user's earlier ones; with "current", only an end the user gave counts; the user's end wins over a memory's later "current". A status with no dates is about the latest episode. User rows keep the day they were entered.
+  - **A fact's status** reads its trusted episodes when it has any.
+- **Succession** ends a stale current, and only that. It runs over trusted episodes only: an untrusted one neither triggers nor blocks it. Within a slot, an episode a trusted memory once called current, with no end, that was the only open one there when the next one started, ends at the next one's start, at `inferred`. Never when:
   - a later memory says it still held after the next began;
   - it's stated as ended at an unknown time;
   - the evidence is untrusted;
-  - the next one is the same entity's return.
+  - the next one is the same entity's return, or its start is a conflict;
+  - another trusted episode in the slot may still have been open when the next one started (an unknown start may have been before it);
+  - the user rejected that order (§11.8).
 
   On the author's vault, without these rules the timeline picked the wrong job twice (Spikes H3 and H3b).
-- **One resolver:** role resolution (§11.4), "previous", "current", years and before / after all read these episodes. Nothing else holds a fact's dates, with one exception: the hand-over start (§11.3) serves role resolution only, and the timeline ignores it.
+- **One resolver:** role resolution (§11.4), "previous", "current", years and before / after all read these episodes. Nothing else holds a fact's dates, with one exception: the hand-over start (§11.3) serves role resolution only, and the timeline ignores it. It's derived when facts are read, never stored: a fact's first trusted statement, undated and not former, when another holder's trusted evidence was written before it (memory order breaks a same-day tie), so a purge or a trust change recomputes it.
 
 ### 11.6 Timeline answers
 For a predicate with the *timeline* use, from a query intent (§11.7), with no model call.
 - **"Before X":** X is an anchor, either a named entity's episode ("before Acme") or a date.
   - **The answer** is an episode of the predicate asked about that certainly ended at or before X started, while no other episode could have ended as late or later. A current episode, or one that may overlap X, never qualifies.
-  - **A stated order edge** wins if the dates allow it and no other episode certainly sits between.
+  - **A stated order edge** wins if the dates allow it (every boundary of both episodes, neither a conflict, the earlier one not ongoing) and no other trusted episode certainly sits between. It resolves to the other entity's trusted episodes, through trusted aliases; a name that matches several entities gives no edge.
+  - **A rejected order** (§11.8) isn't brought back by the dates: the answer is told instead.
   - **"After X"** mirrors it with starts.
 - **Same-year hand-overs:** a hand-over in the same year or month ("left Acme in 2019, joined Initech in 2019") is answered at `inferred` when the earlier one certainly started before X and nothing else could fit in the window; with anything that could fit, it's told.
 - **Date anchors:** the answer is the episode that held just before or after the date, if that's certain. Otherwise the ordering rule applies, but only if nothing else may have held at that date.
 - **Other operators:**
   - **"In 2021"** (or a span, "from 2015 to 2019") means the episodes covering it; every possible one must be certain;
-  - **"current"** means every ongoing episode, or none if an uncertain one exists;
-  - **"previous"** means before the one current episode.
+  - **"current"** means every ongoing episode, or none if one may still hold without being ongoing (an uncertain episode, or an end that's a conflict nothing bounds);
+  - **"previous"** means before the one current episode, again none in that case.
 - **Told, never guessed.** The answer is plain search plus a note ("Funes can't tell which job came before Acme"), with no bridges, when there is:
   - a possible tie at the written precision;
   - conflicting dates, or contradictory or cyclic order edges (those edges are dropped first, and the dates may still decide);
   - an undated or half-dated episode that could sit in a gap wider than the predicate's `gap_months`;
-  - an anchor with several episodes and no cue ("the first time", "after I returned").
-- **Gaps:** a gap longer than `gap_months`, measured as the smallest possible gap, gives a `gap` answer. It names the entity and tells the gap ("there's a gap of about 6 months"), and may carry bridges (§10.3). A stated order still tells a gap the dates show.
+  - an anchor with several episodes and no cue ("the first time", "the second time", "after I returned"), cues that disagree, or an ordinal past the episodes known. Episodes are counted among the entity's trusted ones when it has any, and words of its own names aren't cues ("First National Bank").
+- **Gaps:** a gap longer than `gap_months`, measured as the smallest possible gap, on trusted dates, gives a `gap` answer (on untrusted dates it's told). It names the entity and tells the gap ("there's a gap of about 6 months"), and may carry bridges (§10.3). A stated order still tells a gap the dates show.
 - **Bases:**
   - `stated` (an order edge);
   - `ordered` (dates);
-  - `inferred` (succession, a same-year hand-over, or an untrusted date);
+  - `inferred` (succession, a same-year hand-over, or an untrusted date; a year is inferred only when an inferred end reaches into it);
   - `gap`;
   - `ambiguous`.
 
@@ -561,7 +575,14 @@ For a predicate with the *timeline* use, from a query intent (§11.7), with no m
   - a predicate's query cue or lexicon word ("job", "worked", "leaving", "trabajo");
   - an operator (before, after, previous, current, a year or span);
   - for before / after, a named anchor that holds a fact of the same predicate, or a date.
-- **The anchor ends the operator's phrase.** What follows it up to punctuation may only be words like "the first time"; "before the Acme demo" isn't a timeline query. The operator is the nearest one before the anchor.
+- **The grammar fails closed.** Code reads only a narrow grammar; a question outside it gets no timeline intent and falls back to plain search (no bridges), so a misread costs an answer and never gives a wrong one. The words it accepts are registry data, so a missed wording is fixed by data:
+  - **after the anchor,** up to punctuation, only the registry's tail words and episode cues ("the first time"); "before the Acme demo" isn't a timeline query;
+  - **between the operator and the anchor,** only the registry's lead words ("before I joined Acme", "antes de entrar en Acme"), the predicate's own cues and lexicon words ("before my job at Acme"), episode cues ("before I returned to Acme"), first-person words, owners and time nouns ("before my time at Acme"), plus one determiner right before the anchor or its date, or before a time noun and the date ("before the BBC", "before the year 2019", "antes del 15 de marzo"). "My title before the promotion at Acme", "before the promotion in 2020" and "before he joined Acme" aren't timeline queries. The operator is the nearest one before the anchor;
+  - **an event word that moves the anchor** gets no intent: "before leaving Acme" means before Acme's end and "after joining Acme" after its start, which the anchor (the stint) can't stand for; "before joining Acme" and "after leaving Acme" are fine. The start and end words are registry data;
+  - **the question is the user's own:** the words of its clause before the operator (or the date) are only question words, lead words, first-person words, owners and the predicate's own words ("Where did I work", "What was my job", "¿Dónde trabajaba"); "Where did sam work" and "Sam's job before Acme" get no intent, whatever their capitals;
+  - **a contraction that completes an operator** is expanded first, so "antes del" is the operator "antes de" and the article "el", while "Banco del Sur" keeps its name;
+  - **a year or span with no operator** follows a year preposition ("in 2016", "during 2016", "en marzo de 2016"), or for two dates a range one ("between 2014 and 2016", "from 2015 to 2019"), and ends its phrase. "Since 2016" and "until 2016" aren't the year itself and get no intent until an open-ended range operator exists;
+  - **episode cues** ("the second time", "when I returned") are read only in the operator's phrase, never elsewhere in the question or in the anchor's own name.
 - **Someone else's question isn't the user's timeline:**
   - a known person named outside the anchor;
   - a third-person pronoun;
@@ -569,9 +590,10 @@ For a predicate with the *timeline* use, from a query intent (§11.7), with no m
   - an unknown capitalised name that doesn't start a sentence.
 - **Questions about one fact:**
   - "current", "previous" or a year with a named entity of the predicate ("my current role at Acme") asks about that fact, not the timeline;
-  - so does a qualifier question ("my title before the promotion").
+  - so does a qualifier question ("my title before the promotion", "before being promoted"), by the predicate's qualifier cues in the registry.
 - **Not operators:** "last year" and "last summer" aren't "previous".
-- **Date expressions** keep their month and day.
+- **Date expressions** keep their month and day, ordinals included ("15th March 2019").
+- **A name two entities share** gives no anchor, so the answer is told; an exact name picks its own entity ("Acme", not "Acme Labs").
 
 ### 11.8 Keeping it right
 | Event | Effect |
@@ -589,7 +611,9 @@ For a predicate with the *timeline* use, from a query intent (§11.7), with no m
 - **Tombstones:** an entity or fact that a manual entry, an override or a correction references is never deleted, by a purge or by Remove learned facts. When nothing else supports it, it's kept as a tombstone holding its id, its predicate, your own values, and the normalised alias you confirmed or typed, never an inferred name or a quote. A tombstone re-attaches when a memory again supports the same predicate and normalised alias.
 - **A rejection holds** for its memory and quoted span while they exist. After a purge it holds again only through an identity-preserving restore (a Funes export restored as active memories, [storage §5.2](../architecture/storage.md#52-learned-facts-in-exports-v010)); the same text arriving another way (an import, a capture) is a new memory.
 - **Your dates, orders and qualifiers** are evidence rows from you, with no memory (`source` = user). They win over inference.
-- **Episode selectors:** an override, or an order endpoint, that targets one episode carries an episode selector: that episode's date range when you acted. On recomputation it applies to the episode overlapping that range; if none or several overlap, it goes to To check. Order edges keep fact ids plus optional episode selectors.
+- **Episode selectors:** an override, or an order endpoint, that targets one episode carries an episode selector: that episode's date range when you acted. On recomputation it applies to the episode overlapping that range (by the boundaries the episode ends up with); if none or several overlap, it goes to To check. Order edges keep fact ids plus optional episode selectors, for both endpoints.
+- **Rejecting an order** (Not this on an order) carries the edge itself, both endpoints' fact ids and optional selectors, so it outlives the evidence that stated it. It stops the stated edge, the dates bringing the same order back, and the succession that would rest on it.
+- **A correction made from a memory** holds while that memory and its quoted span do; one made without a memory holds everywhere.
 
 ### 11.9 Privacy and trust
 - **The cloud limit covers derived facts, conservatively.** A fact, qualifier, date, order edge or decision may be sent, or may shape which memories a cloud answer gets, only if every memory behind it, decision dependencies included, is within the limit. Manual entries use the sensitivity the user picked.

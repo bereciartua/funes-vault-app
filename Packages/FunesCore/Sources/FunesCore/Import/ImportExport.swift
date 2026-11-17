@@ -27,10 +27,14 @@ public struct ImportItem: Sendable, Hashable {
     /// From a Funes export: the memory's trust there; nil when the export predates it, which a
     /// restore as memories takes as untrusted (fail closed).
     public var trust: MemoryTrust?
+    /// From a Funes export (v0.10): where the memory came from, which a restore as memories keeps.
+    public var source: MemorySource?
 
     public init(title: String, body: String, categoryKeys: [String] = [], unmatchedHeading: String? = nil,
                 kind: MemoryKind? = nil, sensitivity: Sensitivity? = nil, expiresAt: Date? = nil, createdAt: Date? = nil,
-                exportID: UUID? = nil, status: MemoryStatus? = nil, links: [FunesExport.Link] = [], trust: MemoryTrust? = nil) {
+                exportID: UUID? = nil, status: MemoryStatus? = nil, links: [FunesExport.Link] = [], trust: MemoryTrust? = nil,
+                source: MemorySource? = nil) {
+        self.source = source
         self.exportID = exportID
         self.status = status
         self.links = links
@@ -196,6 +200,9 @@ public struct FunesExport: Codable, Sendable, Hashable {
         /// Whether the user wrote or vouched for it (memory processing §5.7); absent in older
         /// exports, and then restored as untrusted.
         public var trust: MemoryTrust?
+        /// Where it came from (v0.10); absent in older exports. A restore as memories keeps it, so learned facts
+        /// still know whether its date is when it was written (an import's isn't).
+        public var source: MemorySource?
     }
 
     /// One side of a split or merge: the provenance event and the other memory's id.
@@ -217,6 +224,8 @@ public struct FunesExport: Codable, Sendable, Hashable {
     public var memories: [Memory]
     /// About you (v0.5); absent when it's empty, and in older exports.
     public var profile: Profile?
+    /// Learned facts (v0.10, storage §5.2); absent when the vault has none, and in older exports.
+    public var facts: FunesExportFacts?
 }
 
 /// What an import would do, shown before anything is stored (FR-X-04).
@@ -241,6 +250,11 @@ public struct ImportPreview: Sendable, Hashable {
     public var newCategories: [FunesExport.Category]
     /// A Funes export's profile, restored only into an empty one (FR-X-06).
     public var profile: Profile?
+    /// A Funes export's learned facts, restored only into a vault with none (storage §5.2).
+    public var facts: FunesExportFacts?
+    /// The export has learned facts, but this vault already has its own: "Learned facts in this file aren't restored:
+    /// this vault already has its own."
+    public var factsNotRestored = false
 
     public var total: Int { entries.count }
     public var duplicates: Int { entries.filter { if case .duplicate = $0.status { true } else { false } }.count }
@@ -292,6 +306,8 @@ public struct ImportResult: Sendable, Hashable {
     public var skipped: Int
     /// The export's profile went into the vault's empty one.
     public var restoredProfile = false
+    /// The export's learned facts went into the vault (storage §5.2).
+    public var restoredFacts = false
 }
 
 /// Import preview and commit, and export (FR-X-01..06). Imports create suggestions (or, for a
@@ -338,10 +354,12 @@ public final class ImportService: Sendable {
         let items = export.memories.filter { $0.status != .deleted }.map {
             ImportItem(title: $0.title, body: $0.body, categoryKeys: $0.categories, kind: $0.kind, sensitivity: $0.sensitivity,
                        expiresAt: $0.expiresAt, createdAt: $0.createdAt, exportID: $0.id, status: $0.status, links: $0.links ?? [],
-                       trust: $0.trust)
+                       trust: $0.trust, source: $0.source)
         }
         var preview = try await preview(items, source: .funes, newCategories: export.categories)
         preview.profile = export.profile
+        preview.facts = export.facts
+        if export.facts != nil { preview.factsNotRestored = try await store.writer.read { db in try FactsExport.hasAny(db) } }
         return preview
     }
 
@@ -400,6 +418,15 @@ public final class ImportService: Sendable {
                         // An export without trust can't say the user wrote it (fail closed).
                         trust: item.trust ?? .untrusted), actor: .importRun(runID), now: now,
                         id: free ? item.exportID! : UUID())
+                    // An identity-preserving restore keeps the memory's own date (learned facts read it as when it
+                    // was written; storage §5.2).
+                    if let created = item.createdAt, created < now {
+                        try db.execute(sql: "UPDATE memory SET created_at = ? WHERE id = ?", arguments: [created, m.id.db])
+                    }
+                    // …and the source it had there (learned facts read an import as undated, a capture as dated).
+                    if let original = item.source, original != .importFunes {
+                        try db.execute(sql: "UPDATE memory SET original_source = ? WHERE id = ?", arguments: [original.rawValue, m.id.db])
+                    }
                     if item.status == .archived {
                         m = try MemoryStore.setStatus(db, id: m.id, to: .archived, actor: .importRun(runID), now: now)
                     }
@@ -429,6 +456,20 @@ public final class ImportService: Sendable {
                 }
             }
             try db.execute(sql: "UPDATE import_run SET blocked = ? WHERE id = ?", arguments: [blocked, runID.db])
+            // The export's learned facts, only into a vault with none: as stored for restored memories, else only what
+            // the user made (inferred rows are learned again once the suggestions are applied).
+            if let facts = preview.facts {
+                var map: [String: (id: String, version: Int)]?
+                if asMemories {
+                    map = [:]
+                    for (exportID, id) in restored {
+                        if let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [id.db]) {
+                            map?[exportID.db] = (id.db, version)
+                        }
+                    }
+                }
+                out.restoredFacts = try FactsExport.restore(db, facts, memories: map, now: now)
+            }
             // The export's profile, only into an empty one, and only if it would save (FR-X-06).
             if let profile = preview.profile?.normalized(), !profile.isEmpty, try ProfileStore.fetch(db).isEmpty,
                (try? ProfileStore.validate(profile)) != nil {
@@ -442,13 +483,15 @@ public final class ImportService: Sendable {
         activity.record(ActivityEvent(time: now, phase: .event, actor: .importRun(runID), via: .app, event: "import",
                                       outcome: "committed", counts: ["suggestions": result.suggestionIDs.count,
                                                                      "memories": result.memoryIDs.count, "skipped": result.skipped,
-                                                                     "profile": result.restoredProfile ? 1 : 0]))
+                                                                     "profile": result.restoredProfile ? 1 : 0,
+                                                                     "facts": result.restoredFacts ? 1 : 0]))
         return result
     }
 
     /// `funesvault.export.v1` JSON of the categories and the active (optionally archived) memories.
     public func export(includeArchived: Bool = false, now: Date) async throws -> Data {
-        let export = try await store.writer.read { db -> FunesExport in
+        // The write transaction only hosts the facts section's rolled-back savepoint; nothing is written.
+        let export = try await store.writer.write { db -> FunesExport in
             let categories = try CategoryStore.all(db).map {
                 FunesExport.Category(key: $0.key, name: $0.name, description: $0.description, defaultSensitivity: $0.defaultSensitivity)
             }
@@ -466,8 +509,11 @@ public final class ImportService: Sendable {
                 return FunesExport.Memory(id: m.id, title: m.title, body: m.body, kind: m.kind, categories: m.categoryKeys,
                                           sensitivity: m.sensitivity, status: m.status, expiresAt: m.expiresAt,
                                           createdAt: m.createdAt, updatedAt: m.updatedAt, links: links.isEmpty ? nil : links,
-                                          trust: try MemoryStore.trust(db, id: m.id) ?? .untrusted)
-            }, profile: profile.isEmpty ? nil : profile)
+                                          trust: try MemoryStore.trust(db, id: m.id) ?? .untrusted,
+                                          source: try String.fetchOne(db, sql: "SELECT original_source FROM memory WHERE id = ?",
+                                                                      arguments: [m.id.db]).flatMap(MemorySource.init) ?? m.source)
+            }, profile: profile.isEmpty ? nil : profile,
+               facts: try FactsExport.section(db, exporting: Set(exported.map(\.db)), now: now))
         }
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
