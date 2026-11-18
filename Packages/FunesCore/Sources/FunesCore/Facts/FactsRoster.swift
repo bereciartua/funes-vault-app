@@ -27,7 +27,7 @@ extension FactsGraph {
         // Every name and label as a call sends it: the user's names replaced (a label learned before a name was in
         // About you, a thing called after the user), a known person's full name kept.
         func inline(_ s: String) -> String { Self.inline(sentText(s).sent) }
-        let people = Set(registry.groupPredicates(group).filter { registry.kindOf($0) == FactsValidator.personKind })
+        let people = Set(uses.predicates(.recorded, group: group).filter { registry.kindOf($0) == FactsValidator.personKind })
         var lines: [String] = [], ids: [String: String] = [:], quoted: [String] = []
         var shownBy: [[String]] = []
         let users = Set(userAliases.map { FactsText.fold($0) })

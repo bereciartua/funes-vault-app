@@ -195,6 +195,8 @@ public struct ExtractedRole: Sendable {
 /// takes its vocabulary and predicate behaviour from `registry`, so a test can swap registries.
 public struct FactsGraph: Sendable {
     public let registry: FactsRegistry
+    /// What's on (memory processing §11.10). There's no default: every graph says which uses it reads with.
+    public internal(set) var uses: FactsUses
     public var userAliases: [String]
     public var entities: [String: FactsEntity] = [:]
     public var facts: [LearnedFact] = []
@@ -246,9 +248,10 @@ public struct FactsGraph: Sendable {
         public var surface: String
     }
 
-    public init(registry: FactsRegistry = .bundled, userAliases: [String] = []) {
+    public init(registry: FactsRegistry, userAliases: [String] = [], uses: FactsUses) {
         self.registry = registry
         self.userAliases = userAliases
+        self.uses = uses
     }
 
     var parser: DateParser { DateParser(registry: registry) }

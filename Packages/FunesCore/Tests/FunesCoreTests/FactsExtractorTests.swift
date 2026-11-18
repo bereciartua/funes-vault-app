@@ -62,7 +62,7 @@ import Testing
         let clock = FactsHarness.Clock()
         var x = FactsExtractor(store: v.store, router: ModelRouter(classifier: nil, onDevice: nil, cloudLimit: limit, cap: cap,
                                                                    factsModel: provider),
-                               activity: activity, userAliases: user)
+                               activity: activity, userAliases: user, qualification: .unchecked)
         x.clock = { clock.now() }
         return x
     }
@@ -322,7 +322,7 @@ import Testing
         let versions = try await v.store.writer.read { db in
             try String.fetchOne(db, sql: "SELECT registry_version || ' ' || prompt_version FROM facts_run")
         }
-        #expect(versions == FactsRegistry.bundled.version + " " + FactsPrompt.version(people))
+        #expect(versions == FactsRegistry.bundled.fingerprint + " " + FactsPrompt.version(people))
     }
 
     @Test func aPersonARestrictedMemoryIntroducedIsLeftOutOfACloudRoster() async throws {

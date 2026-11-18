@@ -167,7 +167,8 @@ extension FactsGraph {
             }
         }
         let lex = registry.lexicon
-        for pred in registry.timelinePredicates {
+        // Only predicates whose timeline use is on (§11.10).
+        for pred in uses.predicates(.timeline) {
             guard let p = registry.predicate(pred) else { continue }
             let cues = p.queryCues + lex.filter { $0.value.predicate == pred }.map(\.key)
             if !cues.contains(where: { FactsText.has(q, $0) }) { continue }

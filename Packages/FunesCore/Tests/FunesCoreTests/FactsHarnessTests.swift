@@ -119,10 +119,11 @@ import Testing
             try #require(ProcessInfo.processInfo.environment["FUNES_FACTS_HARNESS_LIVE"] == "1",
                          "a live run on fixtures needs the author's go-ahead: set FUNES_FACTS_HARNESS_LIVE=1")
             let parts = live.split(separator: ":", maxSplits: 1).map(String.init)
-            let model = parts.count > 1 ? parts[1] : "haiku"
-            provider = parts[0] == "codex"
+            // A full model id: a qualification record never matches an alias.
+            let model = parts.count > 1 ? parts[1] : "claude-haiku-5-5"
+            provider = FactsHarness.ModelsSeen(parts[0] == "codex"
                 ? CodexClient(executable: o["executable"] ?? "codex", model: model)
-                : ClaudeCodeClient(executable: o["executable"] ?? "claude", model: model)
+                : ClaudeCodeClient(executable: o["executable"] ?? "claude", model: model))
             label = "swift-\(parts[0])-\(model)" + (o["tag"].map { "-" + $0 } ?? "")
         } else {
             Issue.record("FUNES_FACTS_HARNESS needs replay= or live=")
@@ -160,6 +161,21 @@ import Testing
         let summary = "plays \(plays); calls \(calls) (not applied \(failed)); unmapped roster ids \(unmapped); Swift-only re-asks \(reasks); unsettled \(unsettled); "
             + "Swift timeline: " + judged.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value)" }.joined(separator: ", ")
         try summary.write(to: dir.appending(path: "\(set)-summary.txt"), atomically: true, encoding: .utf8)
+        // What a qualification record's key needs (memory processing §11.10): the engine, each group's prompt version,
+        // the registry version, the models the provider said answered, and the commit and fixture measured.
+        let reg = FactsRegistry.bundled
+        let measured = (provider as? FactsHarness.ModelsSeen).map { $0.inner } ?? provider
+        var manifest: [String: Any] = [
+            "set": set, "label": label, "mode": o["live"] != nil ? "live" : (schedule ? "schedule" : "replay"),
+            "groups": groups, "plays": plays, "calls": calls, "not_applied": failed,
+            "engine": ["model": ModelRouter.engine(measured), "adapter": measured.factsAdapter, "batching": FactsExtractor.batching],
+            "prompt_versions": FactsQualification.promptVersions(reg), "registry_version": reg.fingerprint,
+            "fixture_sha256": try FactsHarness.sha256(FactsHarness.fixtureURL(set)),
+            "commit": FactsHarness.commit(), "date": ISO8601DateFormatter().string(from: Date()),
+        ]
+        if let seen = provider as? FactsHarness.ModelsSeen { manifest["models_reported"] = seen.models.withLock { $0.sorted() } }
+        try JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys])
+            .write(to: dir.appending(path: "\(set)-manifest.json"))
         print("facts harness: " + summary)
     }
 }

@@ -620,10 +620,10 @@
 **FR-F-02 The predicate registry and gating** · M · v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md))
 - **What Funes can learn is data:** a versioned predicate registry, shipped with the app and not user-editable, defines each predicate's object kind, `exclusive`, `succession` and its slot, `gap_months`, typed qualifiers, English and Spanish language data, call group and uses. One implementation serves every predicate ([memory processing §11.2](../domain/memory-processing.md#112-the-predicate-registry)).
 - **Uses, per predicate** (ADR-0032 decision 9's five paths): *recorded* (stored, shown and correctable), *linked* (search admission, why lines), *timeline* (before / after answers, date cues), *attributes* (on answer inputs) and *bridges* (on timeline answers). Each is on only with a qualification record naming the model, the call group's prompt version, the registry version, the adapter, the batching and the gate passed, and optionally a basis (the `sole_known` attribute gate). Changing any of them re-runs the gates ([§11.10](../domain/memory-processing.md#1110-gating)).
-- **Qualification records** ship with the app as `Resources/facts-qualification.json`; the two-week review's off-switches are local rows. Neither is exported, and Remove learned facts doesn't touch them.
+- **Qualification records** ship with the app as `Resources/facts-qualification.json`, from gate runs on the fixtures; the two-week review's off-switches are local rows. Neither is exported, and Remove learned facts doesn't touch them. What each use needs is registry data. Until 13a.2's gates pass, none ships and Facts offers no model.
 - **v0.10's 12 predicates:**
-  - ten person predicates, *linked*: partner (exclusive), parent, child, sibling, other family, friend, manager, colleague, care, other;
-  - **works at**, *linked* and *timeline*, with `kind` (employee, self-employed) as its slot and `title` as a qualifier;
+  - ten person predicates, *linked* with *attributes*: partner (exclusive), parent, child, sibling, other family, friend, manager, colleague, care, other;
+  - **works at**, *linked*, *timeline*, *attributes* and *bridges*, with `kind` (employee, self-employed) as its slot and `title` as a qualifier;
   - **client**, *recorded* only, so a client is never read as an employer.
 - Acceptance:
   - A use can't be on without the uses it depends on (*linked* needs *recorded*; *timeline* and *attributes* need *linked*; *bridges* need *timeline*). Turning a use off (a failed gate, or a wrong one in the two-week review) turns off everything downstream with no code change: a test turns linking off and checks that attributes and bridges go too.

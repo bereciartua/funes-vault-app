@@ -1,0 +1,4 @@
+{
+  "note": "Memory processing §11.10: the qualification records. Each turns some uses of some predicates on for one engine (model, adapter, batching), one call group's prompt version and one registry version (FactsRegistry.fingerprint). Records come only from gate runs (the Phase 13 plan's acceptance table, on fixtures); the two-week review's off-switches are local rows. Empty until 13a.2's Gates step: every use is off and no model is offered.",
+  "records": []
+}

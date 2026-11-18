@@ -27,7 +27,8 @@ import Testing
     func extractor(_ provider: (any GenerationProvider)?, limit: CloudLimit = .upTo(.low)) -> FactsExtractor {
         let clock = FactsHarness.Clock()
         var x = FactsExtractor(store: v.store, router: ModelRouter(classifier: nil, onDevice: nil, cloudLimit: limit, factsModel: provider),
-                               activity: InMemoryActivityLog(), userAliases: user)
+                               activity: InMemoryActivityLog(), userAliases: user,
+                               qualification: .unchecked)
         x.clock = { clock.now() }
         return x
     }
@@ -150,7 +151,7 @@ import Testing
         let request = StructuredRequest<FactsJSON>(instructions: "i", prompt: "p", schema: FactsPrompt.schema(people))
         for line in [ModelItem("- e1: Somebody", sensitivity: nil), ModelItem("- e1: Somebody", sensitivity: .sensitive)] {
             await #expect(throws: ProviderError.blocked) {
-                _ = try await router.facts(request, items: [ModelItem("text", sensitivity: .low), line], requester: .user, now: t0)
+                _ = try await router.facts(request, group: people, items: [ModelItem("text", sensitivity: .low), line], requester: .user, now: t0)
             }
         }
     }

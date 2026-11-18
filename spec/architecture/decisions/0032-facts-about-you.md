@@ -15,6 +15,10 @@
   - **The narrowing (after round 17):** the language layer fails closed. A question outside the grammar gets plain search, and a phrase that may be quoted is skipped. The final round counts a wrong answer or link from the core model, and a confident misread from the language layer; a missed answer doesn't count there. The language layer's coverage is measured by 13a.2's fixture gates instead.
   - **The closure (after round 18):** the narrowed criterion wasn't met. Round 18 found one core bug, in restoring part of a backup, and five confident misreads; all six were fixed, the misreads by refusing more. The design revisit that a core failure called for was limited to that path. The author waived the criterion and closed the review rather than run more rounds. A follow-up, bereciartua/funes-vault-app#108, rewrites that restore path to restore everything and then purge the skipped memories. The timeline and recall gates in 13a.2 still apply.
 - **Clarified on 2026-11-15:** cloud selection uses sendable facts only, the five gated uses, correction targets, and older phones.
+- **Clarified on 2026-11-17** with 13a.2's qualification step, after GPT-6-Astra and Fable 5.2 reviewed its plan:
+  - the registry declares *attributes* for the person predicates and works at, and *bridges* for works at (decision 7). Declared isn't on;
+  - a record's registry version covers the whole registry except each predicate's uses list. Every group's validation and parsing read the shared language and the whole lexicon, so a new predicate re-reads only its own group (decision 3) but re-runs every group's gates;
+  - the batching in a record's key carries the pipeline's revision, so a code change that could move a gate's result re-runs it.
 
 **Amends** (the documents change with Phase 13a, after acceptance):
 
@@ -97,8 +101,8 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
    **What it can't add:** an object class within a kind ("which *phone*"), an implicit anchor ("before *this one*"), scope to another fact, or a new sentence pattern. Each needs a generic capability first, built and tested once for every predicate.
 
    **v0.10's registry:**
-   - ten person predicates, *linked*: partner (exclusive), parent, child, sibling, other family, friend, manager, colleague, care, other;
-   - **works at**, *linked* and *timeline*, with `kind` as its slot and `title` as a qualifier;
+   - ten person predicates, *linked* with *attributes*: partner (exclusive), parent, child, sibling, other family, friend, manager, colleague, care, other;
+   - **works at**, *linked*, *timeline*, *attributes* and *bridges*, with `kind` as its slot and `title` as a qualifier;
    - **client**, *recorded*, so a client is never read as an employer (Spike H2 found 4).
 
    The partner timeline is the registry canary (acceptance). Lives in waits for its fixture.
@@ -109,7 +113,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 
    **What it reads:** each committed memory version within the cloud limit, in its own low-priority lane.
 
-   **Call groups:** the registry assigns predicates to call groups, and each group has its own prompt version and its own gates. A new group re-reads memories in that group only, and never invalidates another group's gates. People and jobs are separate groups. On Spike H3's blind mixed fixture, one merged call lost 7 to 9 points of relation recall (91% and 89% against 98% and 98%), with links and the timeline otherwise equal. That confirms Spike E's finding that combined work does worse.
+   **Call groups:** the registry assigns predicates to call groups, and each group has its own prompt version and its own gates. A new group re-reads memories in that group only. It still re-runs every group's gates, since every group reads the whole lexicon and the shared language (clarified on 2026-11-17). People and jobs are separate groups. On Spike H3's blind mixed fixture, one merged call lost 7 to 9 points of relation recall (91% and 89% against 98% and 98%), with links and the timeline otherwise equal. That confirms Spike E's finding that combined work does worse.
 
    **Which models:**
    - Only models that qualified on the fixtures are offered: Claude Haiku 5.5 (the default) and Opus 5.5 for person predicates. Works-at extraction was tried on Haiku only.

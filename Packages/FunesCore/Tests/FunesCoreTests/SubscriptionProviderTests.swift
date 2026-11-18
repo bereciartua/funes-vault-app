@@ -80,6 +80,8 @@ import Testing
         let (answer, usage) = try await client.generate(Self.request)
         #expect(answer.title == "Green tea")
         #expect(usage.requests == 1 && usage.inputTokens == 1_500 && usage.outputTokens == 40)
+        // The alias asked for ("haiku") and the model that answered, which a Facts qualification names.
+        #expect(usage.model == "claude-haiku-5-5")
         let run = try #require(cli.invocations.first)
         let args = run.arguments
         for flag in ["-p", "--safe-mode", "--strict-mcp-config", "--no-session-persistence", "--verbose"] { #expect(args.contains(flag)) }

@@ -134,11 +134,15 @@ public struct ProviderUsage: Sendable, Hashable, Codable {
     public var requests: Int
     public var inputTokens: Int
     public var outputTokens: Int
+    /// The model the provider says answered, where it says (Claude Code's `modelUsage`): an alias resolves to it. Not
+    /// counted; the fixture harness records it so a qualification names the model that was measured.
+    public var model: String?
 
-    public init(requests: Int = 0, inputTokens: Int = 0, outputTokens: Int = 0) {
+    public init(requests: Int = 0, inputTokens: Int = 0, outputTokens: Int = 0, model: String? = nil) {
         self.requests = requests
         self.inputTokens = inputTokens
         self.outputTokens = outputTokens
+        self.model = model
     }
 }
 
@@ -174,7 +178,14 @@ public protocol GenerationProvider: Sendable {
     var locality: Locality { get }
     /// The model id, recorded with each proposal ("anthropic/<model>").
     var modelID: String { get }
+    /// The adapter a Facts qualification record names (memory processing §11.10): the provider and what changes its
+    /// behaviour beyond the model, with a revision bumped when the way it calls the model changes.
+    var factsAdapter: String { get }
     func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage)
+}
+
+public extension GenerationProvider {
+    var factsAdapter: String { id.rawValue }
 }
 
 /// Runs `operation`, failing with `ProviderError.timeout` after `limit`.

@@ -439,17 +439,18 @@ CREATE INDEX manual_override_target ON manual_override(target_kind, target_id);
 -- removed: a correction-owned order, with no quote. `not_same` and `merged_into` hold the other entity's id.
 
 -- Local rows only: the qualification records ship with the app as Resources/facts-qualification.json, with the
--- same fields. A row here is the two-week review's off-switch (passed = 0) for one of them. Neither is exported,
--- and Remove learned facts doesn't touch them.
+-- same fields (a record there pools predicates and uses). A row here is the two-week review's off-switch (passed = 0)
+-- for one predicate and use of one record; a local row never turns anything on. Neither is exported, and Remove
+-- learned facts doesn't touch them.
 CREATE TABLE fact_qualification (
   predicate        TEXT NOT NULL,
   use              TEXT NOT NULL CHECK (use IN ('recorded','linked','timeline','attributes','bridges')),
   basis            TEXT NOT NULL DEFAULT '',             -- 'sole_known' for that attribute gate; '' for every other
-  model            TEXT NOT NULL,                        -- "<provider>/<model>"
+  model            TEXT NOT NULL,                        -- "<provider>/<model id>", the full id (never an alias)
   prompt_version   TEXT NOT NULL,                        -- the call group's
-  registry_version TEXT NOT NULL,
-  adapter          TEXT NOT NULL,
-  batching         TEXT NOT NULL,
+  registry_version TEXT NOT NULL,                        -- "<label>-<digest>": the registry but uses lists and notes
+  adapter          TEXT NOT NULL,                        -- "claude-code/1;effort=low": provider, revision, settings
+  batching         TEXT NOT NULL,                        -- "one-memory;pipeline=1": the pipeline's revision
   gate             TEXT NOT NULL,                        -- the gate measured, and its result
   passed           INTEGER NOT NULL,                     -- 0: turned off (a failed gate, or the two-week review)
   recorded_at      TEXT NOT NULL,
@@ -460,7 +461,7 @@ CREATE TABLE facts_run (
   id               TEXT PRIMARY KEY,
   kind             TEXT NOT NULL CHECK (kind IN ('backfill','incremental','reread','reconciliation')),
   call_group       TEXT NOT NULL,
-  registry_version TEXT NOT NULL,
+  registry_version TEXT NOT NULL,                        -- the fingerprint, as a qualification record names it
   prompt_version   TEXT NOT NULL,
   engine           TEXT NOT NULL,
   cap_exempt       INTEGER NOT NULL DEFAULT 0,           -- the first backfill only

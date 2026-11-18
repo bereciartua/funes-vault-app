@@ -90,9 +90,11 @@ extension FactsGraph {
             .union(registry.language.personNouns)
     }
 
-    /// Role phrases in a text, optionally only of some predicates. Quoted text and chains ("my sister's husband") are
-    /// skipped.
+    /// Role phrases in a text, optionally only of some predicates, and only of predicates whose `recorded` is on
+    /// (§11.10: one that's off isn't read, asked or resolved). Quoted text and chains ("my sister's husband") are skipped.
     public func rolePhrases(_ text: String, predicates: Set<String>? = nil) -> [RolePhrase] {
+        let recorded = Set(uses.predicates(.recorded))
+        let predicates = predicates.map { $0.intersection(recorded) } ?? recorded
         let lang = registry.language
         let ns = text as NSString
         let nouns = personNouns
@@ -138,7 +140,7 @@ extension FactsGraph {
             }
             let word = mt.group(5)!.lowercased()
             guard let meaning = lex[word] else { continue }
-            if let predicates, !predicates.contains(meaning.predicate) { continue }
+            if !predicates.contains(meaning.predicate) { continue }
             let mods = mt.group(2)!.lowercased().split(whereSeparator: \.isWhitespace).map(String.init)
             let free = mt.group(3)!.trimmingCharacters(in: .whitespaces).lowercased()
             // Sentence bounds, where a month abbreviation's period ("Mar. 2019") doesn't end a sentence.
@@ -277,6 +279,11 @@ extension FactsGraph {
     /// Who a role phrase in a memory refers to, and why (memory processing §11.6).
     public mutating func resolve(_ mem: FactsMemory, _ ph: RolePhrase) -> (entity: String?, basis: LinkBasis) {
         let key = DecisionKey(memoryID: mem.id, start: ph.start)
+        // §11.10, before any stored decision: a predicate that isn't recorded resolves nothing, and a time cue ("my
+        // previous job") of a predicate whose timeline is declared but off resolves nothing either.
+        if !uses.isOn(ph.predicate, .recorded) { return (nil, .candidates) }
+        let dateCue = ph.mods.contains(where: { registry.language.dateCueWords.contains($0) })
+        if dateCue, registry.declares(ph.predicate, .timeline), !uses.isOn(ph.predicate, .timeline) { return (nil, .candidates) }
         if let dec = decisions[key], !(dec.basis == .group && entity(dec.entity)?.name != nil),
            !(dec.entity.map { rejections[key]?.contains($0) ?? false } ?? false) {     // a correction beats a decision
             if dec.basis == .someoneElse { return (nil, .someoneElse) }
@@ -304,7 +311,7 @@ extension FactsGraph {
             let g = groupFor(ph.predicate, nil)
             return rejected.contains(g) ? (nil, .candidates) : (g, .group)
         }
-        if ph.mods.contains(where: { registry.language.dateCueWords.contains($0) }), registry.uses(ph.predicate, "timeline") {
+        if dateCue, uses.isOn(ph.predicate, .timeline) {
             if mem.source == .import { return (nil, .candidates) }   // an imported note's "previous" has no date
             if let got = previousLink(ph.predicate, written: mem.written) {
                 if rejected.contains(got.entity) { return (nil, .candidates) }      // "Not <name>" holds on every path

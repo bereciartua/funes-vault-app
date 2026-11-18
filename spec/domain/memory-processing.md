@@ -441,11 +441,12 @@ v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), FR-F-01 to
   - **the lexicon:** role phrases with labels, status cues ("my ex": former) and date cues ("my previous job");
   - **statement templates** with a first-person subject; **query cues;**
   - **phrases** (the attribute, the why line, the ambiguity note's noun);
-  - **its call group** and **uses** (§11.10).
+  - **its call group** and the **uses** it declares (§11.10). Declared isn't on: a use is on only with a qualification record.
+- **The uses** and what each needs on first (`uses`, §11.10): data, so turning one off turns off what needs it with no code change.
 - **Shared language data:** owners, modifiers, operators ("before", "antes de"…), month names, date joiners and ordinal suffixes, time prepositions (any precision: "in 2019") and day prepositions (a day only: "on 15 March 2019"), time nouns, first- and third-person pronouns, function words, pair verbs and non-names, legal suffixes, episode cues for questions ("first", "again"), return cues for statements ("rejoined", "went back to"), the user placeholder ("the user"), the prompt's examples.
 - **v0.10's entries:**
-  - ten person predicates, *linked*: partner (exclusive), parent, child, sibling, other_family, friend, manager (with succession, not exclusive), colleague, care, other;
-  - **works_at**, *linked* and *timeline*, with `kind` as its slot and a two-month gap;
+  - ten person predicates, *linked* with *attributes*: partner (exclusive), parent, child, sibling, other_family, friend, manager (with succession, not exclusive), colleague, care, other;
+  - **works_at**, *linked*, *timeline*, *attributes* and *bridges*, with `kind` as its slot and a two-month gap;
   - **client**, *recorded* only, so a client is never read as an employer. Companies the user only buys from stay entities, not facts.
 - **What an entry can add:** a predicate whose facts are you → entity, found by a supported template, anchored by a named entity or a date, decidable on the timeline (lives in, studied at, the partner timeline).
 - **What needs a generic capability first:** an object class within a kind ("which *phone*"), an implicit anchor ("before *this one*"), scope to another fact, a value object, a new sentence pattern.
@@ -649,12 +650,40 @@ For a predicate with the *timeline* use, from a query intent (§11.7), with no m
 
 ### 11.10 Gating
 - **Each use of each predicate is on only with a qualification record** (ADR-0032 decision 9's five paths): *recorded* (extracted and stored), *linked* (search admission, why lines), *timeline* (before / after answers, date cues), *attributes* (on answer inputs, §10.3) and *bridges* (on timeline answers).
-  - The record names the model, the call group's prompt version, the registry version, the adapter and the batching the gate was measured with, and the gate passed. An optional `basis` scopes a record to one basis: the `sole_known` attribute gate is its own record. Any change re-runs the gates.
-  - A use can't be on without the uses it depends on: *linked* needs *recorded*; *timeline* and *attributes* need *linked*; *bridges* need *timeline*.
-  - **Where they live:** qualification records ship with the app as `Resources/facts-qualification.json`. The two-week review's off-switches are local rows ([storage](../architecture/storage.md#2-schema-v1), `fact_qualification`). Neither is exported, and Remove learned facts doesn't touch them.
+  - The record names the model, the call group's prompt version, the registry version, the adapter and the batching the gate was measured with, and the gate passed. An optional `basis` scopes a record to one basis: the `sole_known` attribute gate is its own record. Any change re-runs the gates. A record pools predicates gated as one (the person predicates) and may list several uses.
+  - **The key's parts:**
+    - the model is `<provider>/<model id>` with the full model id: an alias ("haiku") never matches, so an alias that moves to a newer model can't inherit a record;
+    - the adapter is the provider and what changes its behaviour, with a revision bumped when the call changes (`claude-code/1;effort=low`);
+    - the batching is one memory per call per group, with the pipeline's revision (`one-memory;pipeline=1`), bumped when validation, the apply, rosters, reconciliation or scheduling change in a way that could move a gate's result. The recorded-call replays in CI guard it;
+    - the registry version is the version label plus a digest of the whole registry except each predicate's `uses` list and the `note` comments. Runs record it too (`facts_run.registry_version`). Every group's validation and parsing read the shared language and the whole lexicon, so in practice a new predicate re-reads only its own group but re-runs every group's gates. A `uses` list is left out, so shipping a predicate *linked* only, or declaring a use later, leaves its other records valid.
+  - A use can't be on without the uses it depends on: *linked* needs *recorded*; *timeline* and *attributes* need *linked*; *bridges* need *timeline*. That's registry data (`uses`), not code. A basis-scoped use also needs the unscoped one.
+  - **Where they live:** qualification records ship with the app as `Resources/facts-qualification.json`. The two-week review's off-switches are local rows ([storage](../architecture/storage.md#2-schema-v1), `fact_qualification`, `passed = 0`); a local row never turns anything on. Neither is exported, and Remove learned facts doesn't touch them. An off-switch is keyed to its record, so a change to any key field lapses it; that change needs a passing record of its own anyway.
+  - **A test** checks that every shipped record matches the current prompt versions, registry version and pipeline revision, and that its evidence exists. So a change that isn't re-qualified fails CI instead of silently turning Facts off.
+- **What's on is read with the graph, in one transaction**, for each group's current model (the off-switches included), so a use turned off stops at the next call or read:
+  - **recorded:** a group's model is asked only while some predicate of the group is recorded with it, checked again before a retry (a change between the two starts the job over). An answer's facts of a predicate that isn't recorded are dropped (not the model's error). Earlier ones, with the role groups, counts and deaths learned for it alone, are hidden from every path (rosters, code-only links, resolution, reconciliation, readers), the user's own entries excepted. They stay stored: a re-read of the memory replaces only what it was asked, so it keeps the hidden predicate's rows and role decisions. A person stays known by name, which isn't a predicate's. Its role phrases aren't detected, so they're neither sent nor due. Turning *recorded* off changes what earlier readings knew, so reconciliation re-asks what that touches, once. The prompt and schema stay the declared group's, so the prompt version never depends on the gate;
+  - **timeline:** answered only for predicates whose use is on, at every entry (the intent, the answer, before / after / in range, "previous as of"). A time cue ("my previous job") of a predicate that declares the timeline but has it off resolves to nothing, whatever a stored decision says;
+  - **linked, attributes (and its `sole_known` basis), bridges:** checked by search and answers where they use them (13b, 13d);
+  - linked, timeline, attributes and bridges change nothing that's read, asked or stored: turning them off needs no re-read.
 - **Turning a use off** (a failed gate, or a wrong answer in the two-week review) turns off everything downstream, with no code change. The predicate stays recorded, or off.
+- **What a pass covers, and what it doesn't:**
+  - readings made under an earlier qualified key (an older prompt, another qualified model) are used until the group is re-read. An unqualified model is never called, so every reading had a record when it was made;
+  - when a group's qualified coverage grows (a model, or a predicate's *recorded*, turned on), that group is re-read like an extraction change (§11.3's registry rule: the low-priority lane, under the cap; the backfill step builds it). Until then, memories read without that predicate don't have it.
+- **What counts as passing** (the Phase 13 plan's acceptance table, run on fixtures through `ModelRouter` with that engine; records are fixture-only, and the author's-vault rows stay 13e's acceptance):
+
+  | Use | Predicates | Passes when |
+  |---|---|---|
+  | recorded, linked | the person pool | full-basis links ≥ 98% (≥ 20 per predicate, two reads) and recall of resolvable references ≥ 90%, on the main, astra and mixed sets; still met on the mixed set |
+  | recorded | client | 0 clients as employers, 0 vendors as clients |
+  | recorded, linked | works at | full-basis links ≥ 98% (not pooled with the persons'), two reads; 0 clients or vendors as employers; still met on the mixed set |
+  | timeline | works at | the fresh blind work fixture: every fact right, ≤ 1 wrong date; on decidable wordings the right entity ≥ 90% (right with a gap told counted apart), ambiguous on the others; 0 wrong answers, gap answers included; 0 negative triggers; 0 succession from untrusted text or across slots; still met on the mixed set |
+  | timeline | the canary predicate | the registry canary's row, when it's added |
+  | attributes (`sole_known`) | the person pool | `sole_known` links ≥ 90% on fixtures, with the unscoped attributes record |
+  | attributes, bridges | all | 13d's answer gates |
+
+  Every 13a.2 record also needs port fidelity (within 1 point of the Python harness) and the privacy payload tests green. A record names its evidence: the harness runs' manifests (engine, prompt versions, registry version, the model the provider said answered, the fixture's digest, the commit) and reports.
 - **`sole_known` attributes** ship when their fixture gate is met: always "probably", always marked inferred.
-- **Models:** only models that qualified on the fixtures are offered, per call group: Claude Haiku 5.5 (the default) and Opus 5.5 for people, Haiku for work. Apple on-device and local servers aren't offered until one qualifies.
+- **Models:** only models that qualified on the fixtures are offered, per call group: Claude Haiku 5.5 (the default) and Opus 5.5 for people, Haiku for work. Apple on-device and local servers aren't offered until one qualifies. Each group uses the chosen model where it qualified for that group, else Haiku where that did, else none (that group's memories get code-only links). A roster, and reconciliation, are built under the cloud limit when any group's model is a cloud one, and then a memory above it gets code-only links in every group.
+- **What's qualified now:** nothing (13a.2's Gates step writes the first records), so every use is off and no model is offered.
 
 ### 11.11 Evidence and limits
 - **The gates** are ADR-0032's acceptance table, run in Phase 13 on the Swift implementation.
