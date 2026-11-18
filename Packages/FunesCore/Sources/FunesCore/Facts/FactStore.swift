@@ -180,6 +180,8 @@ enum FactStore {
         /// fact row id by (predicate, entity id), and back.
         var factIDs: [String: String]
         var factKeys: [String: (predicate: String, entity: String)]
+        /// A sendable graph's: the highest sensitivity behind what each entity shows (its roster line, as a typed item).
+        var sensitivity: [String: Int] = [:]
 
         static func key(_ predicate: String, _ entity: String) -> String { predicate + "\u{1F}" + entity }
     }
@@ -233,11 +235,17 @@ enum FactStore {
         }
     }
 
+    /// `sendable`: the graph a cloud call may see under that limit (`FactStore.withheld`): memories above it, and what
+    /// rests on them, as if they didn't exist.
     static func load(_ db: Database, registry: FactsRegistry = .bundled, userAliases: [String] = [],
-                     excluding: Exclusion? = nil) throws -> Loaded {
+                     excluding: Exclusion? = nil, sendable: CloudLimit? = nil) throws -> Loaded {
         var g = FactsGraph(registry: registry, userAliases: userAliases)
         g.idStyle = .uuid
-        let counted = try countedMemories(db)
+        let all = try countedMemories(db)
+        let hidden = try sendable.map { try withheld(db, counted: all, limit: $0) }
+        let counted = sendable.map { limit in
+            all.filter { Sensitivity(rawValue: $0.value.sensitivity).map(limit.allows) ?? false }
+        } ?? all
         func counts(_ memoryID: String?, _ version: Int?) -> Counted? {
             guard let memoryID, let c = counted[memoryID], c.version == version else { return nil }
             return c
@@ -254,20 +262,26 @@ enum FactStore {
             aliasRows[a["entity_id"], default: []].append(a)
         }
         var supported = Set<String>(), trustedSupport = Set<String>()     // alias ids with counting evidence
-        for e in try Row.fetchAll(db, sql: "SELECT alias_id, memory_id, memory_version FROM alias_evidence") {
+        for e in try Row.fetchAll(db, sql: "SELECT alias_id, memory_id, memory_version, span_start FROM alias_evidence") {
             guard let c = counts(e["memory_id"], e["memory_version"]) else { continue }
+            if let hidden, hidden.names.contains(Withheld.nameKey(e["alias_id"], e["memory_id"], e["memory_version"], e["span_start"])) {
+                continue
+            }
             supported.insert(e["alias_id"])
             if c.memory.trusted { trustedSupport.insert(e["alias_id"]) }
         }
         var groupEntities = Set<String>()
+        // A confirmed alias carries no sensitivity: a cloud call sees it only with sendable evidence.
+        let confirmedCounts = hidden == nil
         for e in try Row.fetchAll(db, sql: "SELECT * FROM entity WHERE is_you = 0 ORDER BY rowid") {
             let id: String = e["id"]
+            if let hidden, hidden.entities.contains(id) { continue }
             // A tombstone's confirmed alias has no text, only its normalised form: enough to re-attach by.
             let aliases = (aliasRows[id] ?? []).filter { a in
-                supported.contains(a["id"] as String) || (a["manual"] as Int) == 1 || (a["confirmed"] as Int) == 1
+                supported.contains(a["id"] as String) || (a["manual"] as Int) == 1 || ((a["confirmed"] as Int) == 1 && confirmedCounts)
             }.map { ($0["alias"] as String?) ?? ($0["normalized"] as String) }
             let trustedAliases = (aliasRows[id] ?? []).filter { a in
-                trustedSupport.contains(a["id"] as String) || (a["manual"] as Int) == 1 || (a["confirmed"] as Int) == 1
+                trustedSupport.contains(a["id"] as String) || (a["manual"] as Int) == 1 || ((a["confirmed"] as Int) == 1 && confirmedCounts)
             }.map { ($0["alias"] as String?) ?? ($0["normalized"] as String) }
             var name: String? = e["name"]
             if let n = name, !aliases.contains(n) { name = aliases.first }
@@ -290,6 +304,10 @@ enum FactStore {
         for r in try Row.fetchAll(db, sql: "SELECT rowid AS rid, * FROM fact_evidence ORDER BY rowid") {
             if let x = excluding, x.factEvidence, (r["memory_id"] as String?) == x.memoryID, (r["memory_version"] as Int?) == x.version,
                (r["call_group"] as String?) == x.callGroup { continue }
+            if let hidden {
+                if hidden.userRows.contains(r["id"]) { continue }
+                if let mid: String = r["memory_id"], hidden.statements.contains(mid + "|" + (r["fact_id"] as String)) { continue }
+            }
             evidence[r["fact_id"], default: []].append(r)
         }
         let rejectedEverywhere = Set(overrides.filter {
@@ -305,7 +323,7 @@ enum FactStore {
         var deceasedByEvidence = Set<String>()
         for f in factRows {
             let fid: String = f["id"], pred: String = f["predicate"], ent: String = f["entity_id"]
-            guard g.entities[ent] != nil, !rejectedEverywhere.contains(fid) else { continue }
+            guard g.entities[ent] != nil, !rejectedEverywhere.contains(fid), hidden?.facts.contains(fid) != true else { continue }
             let manual = (f["manual"] as Int) == 1
             // Counting rows in the order their memories were written; the user's rows after them.
             let rows = (evidence[fid] ?? []).compactMap { r -> (Row, Counted?)? in
@@ -570,7 +588,7 @@ enum FactStore {
         for r in try Row.fetchAll(db, sql: "SELECT * FROM decision_dependency") { dependencies[r["decision_id"], default: []].append(r) }
         for d in try Row.fetchAll(db, sql: "SELECT * FROM mention_decision ORDER BY created_at, rowid") {
             let mid: String = d["memory_id"], src: String = d["source"], outcome: String = d["outcome"]
-            guard let c = counted[mid] else { continue }
+            guard let c = counted[mid], hidden?.decisions.contains(d["id"]) != true else { continue }
             if src == "model" {
                 if let x = excluding, mid == x.memoryID, (d["call_group"] as String?) == x.callGroup,
                    x.decision(outcome: outcome, start: d["span_start"], mention: d["mention"]) { continue }
@@ -606,11 +624,14 @@ enum FactStore {
         var knownSince: [String: Date] = [:]           // entity + normalised alias → its first trusted reading
         for r in try Row.fetchAll(db, sql: """
             SELECT ev.memory_id, ev.memory_version, ev.span_start, ev.span_end, ev.call_group, ev.source, ev.read_at, ev.first_read_at, ev.trust,
-              a.entity_id, a.normalized
+              a.entity_id, a.normalized, ev.alias_id
             FROM alias_evidence ev JOIN entity_alias a ON a.id = ev.alias_id JOIN entity e ON e.id = a.entity_id
             WHERE e.kind = ? AND e.is_you = 0 ORDER BY ev.rowid
             """, arguments: [FactsValidator.personKind]) {
             guard let c = counts(r["memory_id"], r["memory_version"]) else { continue }
+            if let hidden, hidden.names.contains(Withheld.nameKey(r["alias_id"], r["memory_id"], r["memory_version"], r["span_start"])) {
+                continue
+            }
             // When each person first had each name from trusted text: a reading before that didn't know them by it.
             if (r["trust"] as String) == "trusted", let at: Date = r["first_read_at"] ?? r["read_at"] {
                 let k = canonicalEntity(r["entity_id"]) + "\u{1F}" + (r["normalized"] as String)
@@ -639,10 +660,11 @@ enum FactStore {
             readAt[key] = r["read_at"]
         }
         for d in try Row.fetchAll(db, sql: """
-            SELECT memory_id, memory_version, mention, call_group FROM mention_decision
+            SELECT id, memory_id, memory_version, mention, call_group FROM mention_decision
             WHERE source = 'model' AND outcome = 'unknown' AND basis = ? ORDER BY created_at, rowid
             """, arguments: [LinkBasis.ambiguous.rawValue]) {
-            guard let c = counts(d["memory_id"], d["memory_version"]), let name: String = d["mention"] else { continue }
+            guard let c = counts(d["memory_id"], d["memory_version"]), let name: String = d["mention"],
+                  hidden?.decisions.contains(d["id"]) != true else { continue }
             if let x = excluding, c.memory.id == x.memoryID, (d["call_group"] as String?) == x.callGroup,
                x.decision(outcome: "unknown", start: nil, mention: name) { continue }
             g.names[FactsGraph.NameKey(memoryID: c.memory.id, surface: name)] =
@@ -681,7 +703,7 @@ enum FactStore {
             g.memories[c.memory.id] = c.memory
             g.memoryOrder[c.memory.id] = c.seq
         }
-        return Loaded(graph: g, toCheck: toCheck, factIDs: factIDs, factKeys: factKeys)
+        return Loaded(graph: g, toCheck: toCheck, factIDs: factIDs, factKeys: factKeys, sensitivity: hidden?.sensitivity ?? [:])
     }
 
     // MARK: Apply one memory's extraction
@@ -725,7 +747,7 @@ enum FactStore {
     @discardableResult
     static func apply(_ db: Database, memoryID: String, version: Int, extraction original: FactsExtraction, callGroup: String,
                       runID: String? = nil, registry: FactsRegistry = .bundled, userAliases: [String] = [],
-                      now: Date = Date(), readAt: Date? = nil) throws -> ApplyResult {
+                      now: Date = Date(), readAt: Date? = nil, sendable: CloudLimit? = nil) throws -> ApplyResult {
         guard let m = try Row.fetchOne(db, sql: "SELECT * FROM memory WHERE id = ?", arguments: [memoryID]),
               (m["version"] as Int) == version, (m["status"] as String) != "deleted" else {
             throw ApplyError.memoryChanged
@@ -787,7 +809,7 @@ enum FactStore {
                     var whole = original
                     whole.scope = .full
                     return try apply(db, memoryID: memoryID, version: version, extraction: whole, callGroup: callGroup, runID: runID,
-                                     registry: registry, userAliases: userAliases, now: now, readAt: readAt)
+                                     registry: registry, userAliases: userAliases, now: now, readAt: readAt, sendable: sendable)
                 }
                 x.people.removeAll { moved.contains(FactsText.fold($0.name)) }
                 replaced?.names.subtract(moved)
@@ -992,9 +1014,10 @@ enum FactStore {
                                 span: denial?.span)
             }
         }
-        // Role groups' counts this memory states, as evidence on the group's fact (so they go with their memory).
-        var counted: [String: (Int, String)] = [:]          // group id → (the count this statement gives, its quote)
-        for r in x.facts where preds.contains(r.predicate) && (r.count != nil || r.only || r.entity == "none") {
+        // Role groups this memory states, with their counts, as evidence on the group's fact: so a group goes with its
+        // memory, and a cloud roster shows it only when a sendable memory is behind it (memory processing §11.9).
+        var counted: [String: (Int?, String)] = [:]         // group id → (the count this statement gives, its quote)
+        for r in x.facts where preds.contains(r.predicate) && (r.positive || r.count != nil || r.only || r.entity == "none") {
             let cls = g.labelClass(r.predicate, r.label)
             let gid: String? = {
                 if let e = g.entities[r.entity], e.group != nil, e.name == nil { return r.entity }
@@ -1003,13 +1026,13 @@ enum FactStore {
                 }
                 return nil
             }()
-            let n = r.entity == "none" ? 0 : r.only ? 1 : r.count ?? 0
-            if let gid { counted[gid] = (n, r.quote) }
+            let n: Int? = r.entity == "none" ? 0 : r.only ? 1 : r.count
+            if let gid, n != nil || counted[gid]?.0 == nil { counted[gid] = (n, r.quote) }
         }
         for (gid, (n, quote)) in counted.sorted(by: { $0.key < $1.key }) {
             guard let group = g.entities[gid]?.group else { continue }
             let fid = try factID(group.predicate, gid)
-            try evidenceRow(fid, kind: "fact", asserted: ["count": n], states: true, polarity: "affirmed", quote: quote)
+            try evidenceRow(fid, kind: "fact", asserted: n.map { ["count": $0] } ?? [:], states: true, polarity: "affirmed", quote: quote)
         }
 
         // What changed: facts whose evidence from this version and group differs, and their entities.
@@ -1074,7 +1097,9 @@ enum FactStore {
             try recordDependencies(db, decisionID: did, memoryID: memoryID, version: version, predicate: predicate, entities: entities)
         }
         // What the reading was asked knowing, on the graph it leaves: reconciliation re-asks only what changed since.
-        try FactsReconciler.recordAsked(db, graph: g, memory: fm, version: version, group: callGroup, phrases: phrases,
+        // A cloud reading knew only what's sendable: its knowledge is recorded on that graph.
+        let knew = try sendable.map { try load(db, registry: registry, userAliases: userAliases, sendable: $0).graph } ?? g
+        try FactsReconciler.recordAsked(db, graph: knew, memory: fm, version: version, group: callGroup, phrases: phrases,
                                         scope: original.scope, decisions: pendingDependencies.map(\.0), now: now)
         if result.evidence > 0 || result.decisions > 0 || newAmbiguous != oldAmbiguous || !newAliases.isEmpty || !oldAliasRows.isEmpty
             || !touchedFacts.isEmpty || !touchedEntities.isEmpty { try bumpRevision(db) }

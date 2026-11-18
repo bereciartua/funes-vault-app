@@ -1,4 +1,5 @@
 import Foundation
+import FunesProtocol
 import GRDB
 
 /// Reconciliation (memory processing §11.3): which earlier readings to ask again, found from the store. A reading
@@ -106,18 +107,21 @@ enum FactsReconciler {
 
     /// Revalidates in code what can be, and returns what's due to be asked again, for every memory version a model has
     /// read (or only `memoryID`'s). In the caller's write transaction.
+    /// `sendable`: the limit the model that will read works under (a cloud model's): knowledge is compared on the graph
+    /// it may see, so what's above the limit selects no memory for a call, and a memory above it isn't reconciled.
     static func reconcile(_ db: Database, only memoryID: String? = nil, registry: FactsRegistry = .bundled,
-                          userAliases: [String] = []) throws -> [(key: Key, due: Due)] {
-        var g = try FactStore.load(db, registry: registry, userAliases: userAliases).graph
+                          userAliases: [String] = [], sendable: CloudLimit? = nil) throws -> [(key: Key, due: Due)] {
+        var g = try FactStore.load(db, registry: registry, userAliases: userAliases, sendable: sendable).graph
         // Memory versions a model read, per group (a memory the model couldn't read is never reconciled).
         var reads: [String: [String]] = [:]                 // memory → groups
         var order: [String] = []                            // memories in the order they were added
         for r in try Row.fetchAll(db, sql: """
-            SELECT a.memory_id, a.call_group FROM facts_asked a JOIN memory m ON m.id = a.memory_id
+            SELECT a.memory_id, a.call_group, m.sensitivity FROM facts_asked a JOIN memory m ON m.id = a.memory_id
             WHERE a.mention_kind = 'read' AND a.memory_version = m.version AND m.status IN ('active','archived')
               AND (?1 IS NULL OR a.memory_id = ?1)
             ORDER BY m.seq, a.call_group
             """, arguments: [memoryID]) {
+            if let sendable, !(Sensitivity(rawValue: r["sensitivity"]).map(sendable.allows) ?? false) { continue }
             if reads[r["memory_id"]] == nil { order.append(r["memory_id"]) }
             reads[r["memory_id"], default: []].append(r["call_group"])
         }
@@ -143,6 +147,17 @@ enum FactsReconciler {
         try withReadMemories(&g)
         var due: [Key: Due] = [:]
         var revalidated = false
+        // Under a limit, a decision is revalidated only if the graph it was compared on has every holder the whole
+        // graph has: otherwise the whole graph would get a firm link made without someone (it stays invalidated, and
+        // code resolves the phrase).
+        let whole = try sendable.map { _ in try FactStore.load(db, registry: registry, userAliases: userAliases).graph }
+        func sawEveryHolder(_ mem: FactsMemory, _ ph: RolePhrase) -> Bool {
+            guard let whole else { return true }
+            let (d, w) = whole.asOf(mem, ph), (sd, sw) = g.asOf(mem, ph)
+            let all = whole.holders(ph, asOf: d, written: w), seen = g.holders(ph, asOf: sd, written: sw)
+            // Named holders, and those a count says exist ("my three sisters").
+            return Set(all.holders.map(\.entity.id)).isSubset(of: Set(seen.holders.map(\.entity.id))) && all.extra <= seen.extra
+        }
 
         // Decisions 13a.1 invalidated (a dependency changed): revalidated in code when what they rest on stands.
         var dependencies: [String: [Row]] = [:]
@@ -168,18 +183,19 @@ enum FactsReconciler {
                 g.names.contains { $0.key.memoryID == mid && $0.value.entity == e && $0.value.basis == .named }
             } == true
             let knowledge = roleKnowledge(g, mem, ph)
-            if named || asked[k(mid, group, "decision", did)] == knowledge {
+            if named || (asked[k(mid, group, "decision", did)] == knowledge && sawEveryHolder(mem, ph)) {
                 try revalidate(db, decision: d, predicate: ph.predicate, roster: (dependencies[did] ?? []).compactMap { dep in
                     (dep["kind"] as String) == "entity" ? dep["ref_id"] as String : nil
                 })
                 revalidated = true
             } else if asked[k(mid, group, "phrase", String(d["span_start"] as Int))] != knowledge {
+                // (Knowledge unchanged but a holder the reading couldn't see: it stays invalidated, not asked again.)
                 // Asked again unless it already was, knowing what's known now (an answer validation dropped).
                 due[Key(memoryID: mid, group: group), default: Due()].roles.insert(d["span_start"])
             }
         }
         if revalidated {
-            g = try FactStore.load(db, registry: registry, userAliases: userAliases).graph
+            g = try FactStore.load(db, registry: registry, userAliases: userAliases, sendable: sendable).graph
             try withReadMemories(&g)
         }
 
@@ -230,8 +246,9 @@ enum FactsReconciler {
     /// The sweep: revalidates what it can and queues a job for each memory version and group with something due.
     /// Returns how many it queued.
     @discardableResult
-    static func sweep(_ db: Database, registry: FactsRegistry = .bundled, userAliases: [String] = [], now: Date) throws -> Int {
-        let due = try reconcile(db, registry: registry, userAliases: userAliases)
+    static func sweep(_ db: Database, registry: FactsRegistry = .bundled, userAliases: [String] = [], sendable: CloudLimit? = nil,
+                      now: Date) throws -> Int {
+        let due = try reconcile(db, registry: registry, userAliases: userAliases, sendable: sendable)
         for (key, _) in due {
             guard let id = UUID(uuidString: key.memoryID),
                   let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [key.memoryID]) else { continue }

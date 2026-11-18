@@ -128,6 +128,8 @@ struct FactsValidator {
             let special = [Ref.new, .different, .ambiguous].map(\.rawValue)
             guard roster[ref] != nil || special.contains(ref) else { drop("person_id", i); continue }
             if FactsSentText.norm(name) == placeholder { continue }
+            // The user's own names are never added (§11.9): a namesake keeps a longer name ("Dani Ortiz").
+            if graph.userAliases.contains(where: { FactsText.fold($0) == FactsText.fold(name) }) { drop("user_name", i); continue }
             let trimmed = name.trimmingCharacters(in: .whitespaces)
             if registry.lexicon[trimmed.lowercased()] != nil || (name.first.map { $0.isLowercase } ?? true) || graph.isRoleName(name) {
                 drop("not_a_name", i); continue

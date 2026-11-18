@@ -1,9 +1,35 @@
 import Foundation
 
+/// What this Mac knows about other people who share the user's names (memory processing §11.3, §11.9): known people's
+/// names of two or more words, from the graph the call's roster comes from, so the profile matcher keeps such a name.
+public struct FactsNamesakes: Sendable, Equatable {
+    /// Names of known people (never *you*) of two or more words, as their aliases write them ("Dani Ortiz").
+    public var fullNames: [String] = []
+    /// Folded words of known things' names ("amazon"): never the start of a surname.
+    public var thingWords: Set<String> = []
+
+    public init(fullNames: [String] = [], thingWords: Set<String> = []) {
+        self.fullNames = fullNames
+        self.thingWords = thingWords
+    }
+
+    public static let none = FactsNamesakes()
+}
+
 /// A memory's text as the Facts call sends it (memory processing §11.3, §11.9): the user's own names replaced by the
 /// registry's placeholder, with a map of offsets, so quotes are validated against the text sent and mapped back to the
-/// original. Offsets are UTF-16, as `NSString` and the graph use. (A namesake in the same memory keeping its name is the
-/// privacy step's profile matcher; until then every whole-word match is replaced, as the spike did.)
+/// original. Offsets are UTF-16, as `NSString` and the graph use.
+///
+/// The profile matcher: a profile name is matched as written or in capitals (a one-word name: so a user called Will
+/// keeps "I will call"), or in any case (a name of two or more words), as a whole word, longest first. Each occurrence
+/// is the user unless it's a namesake's, which keeps its name:
+/// - it's inside a known person's full name written here ("Dani Ortiz" for a user whose profile has "Dani");
+/// - or, written as the profile writes it, it's followed by a word written in title case (two letters or more, not all
+///   capitals) that isn't a stop name, a not-name, a month, a weekday or a word of a known thing's name, on an ordinary
+///   line (some other word not capitalised, and most of them not, as a title can have): the start of someone else's
+///   full name.
+/// Anything else is the user: a bare name that could be either is replaced (privacy fails closed), so a namesake known
+/// by one word alone can't be learned through a cloud model.
 public struct FactsSentText: Sendable, Equatable {
     public let original: String
     public let sent: String
@@ -12,17 +38,21 @@ public struct FactsSentText: Sendable, Equatable {
 
     public static func == (a: FactsSentText, b: FactsSentText) -> Bool { a.original == b.original && a.sent == b.sent }
 
-    public init(_ text: String, userAliases: [String], registry: FactsRegistry) {
+    public init(_ text: String, userAliases: [String], registry: FactsRegistry, namesakes: FactsNamesakes = .none) {
         original = text
         let ns = text as NSString
-        var spans: [NSRange] = []
+        var spans: [NSRange] = [], kept: [NSRange] = []
         // As written, or in capitals ("DANI"): not in any case, so a user called Will keeps "I will call".
         let forms = userAliases.flatMap { [$0, $0.uppercased()] }
-        for a in Array(Set(forms)).sorted(by: { $0.count != $1.count ? $0.count > $1.count : $0 < $1 }) where !a.isEmpty {
-            let re = FactsText.regex("\\b" + FactsText.escape(a) + "\\b")
+        let longest = Array(Set(forms)).sorted(by: { $0.count != $1.count ? $0.count > $1.count : $0 < $1 })
+        let matcher = Matcher(text: text, userAliases: userAliases, registry: registry, namesakes: namesakes)
+        for a in longest where !a.isEmpty {
+            let multiWord = a.split(separator: " ").count >= 2
+            let re = FactsText.regex("\\b" + FactsText.escape(a) + "\\b", caseInsensitive: multiWord)
             for m in re.matches(in: text, range: NSRange(location: 0, length: ns.length))
-            where !spans.contains(where: { NSIntersectionRange($0, m.range).length > 0 }) {
-                spans.append(m.range)
+            where !(spans + kept).contains(where: { NSIntersectionRange($0, m.range).length > 0 }) {
+                let asWritten = ns.substring(with: m.range) == a && userAliases.contains(a)
+                if matcher.isNamesake(m.range, asWritten: asWritten) { kept.append(m.range) } else { spans.append(m.range) }
             }
         }
         spans.sort { $0.location < $1.location }
@@ -39,6 +69,80 @@ public struct FactsSentText: Sendable, Equatable {
         out += ns.substring(from: cursor)
         sent = FactsPrompt.disarm(out)      // one UTF-16 unit for another: the offsets hold
         replaced = map
+    }
+
+    /// The profile matcher's rules for one text.
+    struct Matcher {
+        let ns: NSString
+        let stop: Set<String>
+        let userForms: Set<String>
+        let thingWords: Set<String>
+        /// Ranges of known people's full names written in the text.
+        let fullNameRanges: [NSRange]
+
+        init(text: String, userAliases: [String], registry: FactsRegistry, namesakes: FactsNamesakes) {
+            ns = text as NSString
+            let lang = registry.language
+            stop = Set((lang.stopNames + lang.notNames + lang.months.values.flatMap { $0 } + (lang.weekdays ?? []))
+                .map { FactsText.fold($0) })
+            userForms = Set(userAliases.map { FactsText.fold($0) })
+            thingWords = namesakes.thingWords
+            var ranges: [NSRange] = []
+            for full in namesakes.fullNames where full.split(separator: " ").count >= 2 && !userForms.contains(FactsText.fold(full)) {
+                var from = 0
+                while let r = FactsText.wholeWord(full, in: text, from: from) {
+                    ranges.append(r)
+                    from = r.location + max(r.length, 1)
+                }
+            }
+            fullNameRanges = ranges
+        }
+
+        func isSpace(_ c: unichar) -> Bool { c == 0x20 || c == 0xA0 }
+
+        /// The word right after `end` on the same line (spaces between), if any.
+        func word(after end: Int) -> String? {
+            var i = end, spaces = 0
+            while i < ns.length, isSpace(ns.character(at: i)) { i += 1; spaces += 1 }
+            guard spaces > 0 else { return nil }
+            let start = i
+            while i < ns.length, let u = Unicode.Scalar(ns.character(at: i)), CharacterSet.letters.contains(u) { i += 1 }
+            return i > start ? ns.substring(with: NSRange(location: start, length: i - start)) : nil
+        }
+
+        /// Whether the line holding `at` reads as prose: of its words that don't open a sentence, aren't the user's names
+        /// and aren't `skip` (the word that would be a surname), at least one isn't capitalised, and most aren't (as a
+        /// title or a heading can have).
+        func ordinaryLine(_ at: Int, skip: NSRange) -> Bool {
+            var a = at, b = at
+            while a > 0, ns.character(at: a - 1) != 0x0A, ns.character(at: a - 1) != 0x0D { a -= 1 }
+            while b < ns.length, ns.character(at: b) != 0x0A, ns.character(at: b) != 0x0D { b += 1 }
+            var words: [String] = [], opens = true, i = a
+            while i < b {
+                guard let u = Unicode.Scalar(ns.character(at: i)), CharacterSet.letters.contains(u) else {
+                    if let u = Unicode.Scalar(ns.character(at: i)), ".!?:…¿¡•-–—*#".unicodeScalars.contains(u) { opens = true }
+                    i += 1
+                    continue
+                }
+                let start = i
+                while i < b, let u = Unicode.Scalar(ns.character(at: i)), CharacterSet.letters.contains(u) { i += 1 }
+                let word = ns.substring(with: NSRange(location: start, length: i - start))
+                if !opens, start != skip.location, !userForms.contains(FactsText.fold(word)) { words.append(word) }
+                opens = false
+            }
+            let capitalised = words.filter { $0.first?.isUppercase == true }.count
+            return capitalised < words.count && capitalised * 2 < words.count
+        }
+
+        func isNamesake(_ r: NSRange, asWritten: Bool) -> Bool {
+            if fullNameRanges.contains(where: { NSIntersectionRange($0, r).length == r.length }) { return true }
+            guard asWritten, let w = word(after: r.location + r.length), w.count >= 2, w.first?.isUppercase == true,
+                  w.dropFirst().contains(where: { $0.isLowercase }), !w.dropFirst().contains(where: { $0.isUppercase }) else { return false }
+            let f = FactsText.fold(w)
+            guard !stop.contains(f), !userForms.contains(f), !thingWords.contains(f) else { return false }
+            let start = (ns.range(of: w, range: NSRange(location: r.location + r.length, length: ns.length - r.location - r.length))).location
+            return ordinaryLine(r.location, skip: NSRange(location: start, length: (w as NSString).length))
+        }
     }
 
     /// An offset in the sent text, in the original: inside a placeholder, the start (or end) of the name it replaced.
@@ -59,6 +163,23 @@ public struct FactsSentText: Sendable, Equatable {
         for (s, o) in replaced {
             if k < o.location { break }
             if k < o.location + o.length { return s.location }
+            delta = (s.location + s.length) - (o.location + o.length)
+        }
+        return k + delta
+    }
+
+    /// The sent text for a range of the original (a name the range only partly covers becomes the whole placeholder).
+    func sentSlice(_ r: NSRange) -> String {
+        let a = toSent(r.location), b = max(a, toSentEnd(r.location + r.length))
+        return (sent as NSString).substring(with: NSRange(location: a, length: b - a))
+    }
+
+    /// An end offset in the original text, in the sent one: inside a replaced name, the end of its placeholder.
+    func toSentEnd(_ k: Int) -> Int {
+        var delta = 0
+        for (s, o) in replaced {
+            if k <= o.location { break }
+            if k <= o.location + o.length { return s.location + s.length }
             delta = (s.location + s.length) - (o.location + o.length)
         }
         return k + delta

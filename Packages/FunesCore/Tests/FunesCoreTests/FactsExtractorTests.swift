@@ -57,13 +57,12 @@ import Testing
          "end": NSNull(), "preceded_by": NSNull(), "followed_by": NSNull(), "also_called": NSNull(), "qualifiers": qualifiers]
     }
 
-    func extractor(_ provider: (any GenerationProvider)?, cap: CloudRequestCap? = nil, allowed: Bool = true,
+    func extractor(_ provider: (any GenerationProvider)?, cap: CloudRequestCap? = nil,
                    limit: CloudLimit = .upTo(.internal), activity: InMemoryActivityLog = InMemoryActivityLog()) -> FactsExtractor {
         let clock = FactsHarness.Clock()
         var x = FactsExtractor(store: v.store, router: ModelRouter(classifier: nil, onDevice: nil, cloudLimit: limit, cap: cap,
                                                                    factsModel: provider),
                                activity: activity, userAliases: user)
-        x.unfilteredRostersAllowed = allowed
         x.clock = { clock.now() }
         return x
     }
@@ -284,14 +283,14 @@ import Testing
         #expect(!a.roster.text.contains("diagnosis"))
     }
 
-    @Test func aCloudFactsModelIsRefusedUntilRostersAreFiltered() async throws {
+    @Test func aCloudFactsModelReadsWithASendableRoster() async throws {
         let id = try memory("My sister Maria Lopez lives in Lisbon.")
         let p = Scripted { _ in [:] }
-        let report = try await extractor(p, allowed: false).learn([id], groups: [people])
-        #expect(report.calls.first?.outcome == .codeOnly && p.seen.withLock { $0.isEmpty })
-        // A local model may read it.
+        let report = try await extractor(p).learn([id], groups: [people])
+        #expect(report.calls.first?.outcome == .applied && p.seen.withLock { $0.count } == 1)
+        // A local model reads too.
         let local = Scripted(locality: .localServer) { _ in [:] }
-        #expect(try await extractor(local, allowed: false).learn([id], groups: [people]).calls.first?.outcome == .applied)
+        #expect(try await extractor(local).learn([id], groups: [people]).calls.first?.outcome == .applied)
     }
 
     @Test func noFactsModelMeansCodeOnly() async throws {
@@ -326,7 +325,7 @@ import Testing
         #expect(versions == FactsRegistry.bundled.version + " " + FactsPrompt.version(people))
     }
 
-    @Test func aRosterQuotingAMemoryAboveTheLimitIsBlocked() async throws {
+    @Test func aPersonARestrictedMemoryIntroducedIsLeftOutOfACloudRoster() async throws {
         let sib = sibling
         let first = try memory("My sister Maria Lopez moved; the biopsy was clear.", sensitivity: .restricted)
         // A local model reads the restricted memory; then a cloud call's roster would quote it.
@@ -336,10 +335,15 @@ import Testing
         }
         try await extractor(local, limit: .upTo(.secret)).learn([first], groups: [people])
         let second = try memory("Maria Lopez phoned.", days: 1)
-        let cloud = Scripted { _ in [:] }
+        let cloud = Scripted { _ in ["people": [["name": "Maria Lopez", "quote": "Maria Lopez phoned", "person": "new"]]] }
         let report = try await extractor(cloud).learn([second], groups: [people])
-        #expect(report.calls.first?.outcome == .codeOnly)
-        #expect(cloud.seen.withLock { $0.isEmpty })
+        #expect(report.calls.first?.outcome == .applied)
+        let sent = cloud.seen.withLock { $0.map { $0.instructions + $0.prompt }.joined() }
+        let roster = cloud.seen.withLock { $0.map { $0.prompt.components(separatedBy: "</roster>")[0] }.joined() }
+        #expect(!sent.contains("biopsy") && !roster.contains("- e"))
+        // The call couldn't see her, so its "new" Maria Lopez is kept as ambiguous rather than decided.
+        #expect(report.calls.first?.dropped.contains("unseen_namesake") == true)
+        #expect(try load().names[FactsGraph.NameKey(memoryID: second, surface: "Maria Lopez")]?.basis == .ambiguous)
     }
 
     // MARK: Review round 1
