@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import FunesProtocol
 import GRDB
@@ -47,9 +48,49 @@ enum FactsHarness {
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
     }
 
+    static func fixtureURL(_ set: String) -> URL {
+        repo.appending(path: "spikes/people/fixtures/\(set == "main" ? "stories" : "stories-\(set)").json")
+    }
+
     static func fixture(_ set: String) throws -> Fixture {
-        let name = set == "main" ? "stories" : "stories-\(set)"
-        return try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: repo.appending(path: "spikes/people/fixtures/\(name).json")))
+        try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: fixtureURL(set)))
+    }
+
+    static func sha256(_ url: URL) throws -> String {
+        SHA256.hash(data: try Data(contentsOf: url)).map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// The commit measured, with "+dirty" when the tree has changes (a run's manifest records it).
+    static func commit() -> String {
+        func git(_ args: [String]) -> String {
+            let p = Process(), out = Pipe()
+            p.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+            p.arguments = ["-C", repo.path] + args
+            p.standardOutput = out
+            p.standardError = Pipe()
+            guard (try? p.run()) != nil else { return "" }
+            p.waitUntilExit()
+            return String(decoding: out.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        let head = git(["rev-parse", "HEAD"])
+        return git(["status", "--porcelain"]).isEmpty ? head : head + "+dirty"
+    }
+
+    /// A live provider that remembers which models it said answered (an alias resolves to one).
+    final class ModelsSeen: GenerationProvider, @unchecked Sendable {
+        let inner: any GenerationProvider
+        let models = Mutex<Set<String>>([])
+        init(_ inner: any GenerationProvider) { self.inner = inner }
+        var id: ProviderID { inner.id }
+        var locality: Locality { inner.locality }
+        var modelID: String { inner.modelID }
+        var factsAdapter: String { inner.factsAdapter }
+        func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage) {
+            let (out, usage) = try await inner.generate(request)
+            if let m = usage.model { models.withLock { _ = $0.insert(m) } }
+            return (out, usage)
+        }
     }
 
     // MARK: Recorded calls (export_replay.py)
@@ -241,7 +282,8 @@ enum FactsHarness {
         let v = try TestVault()
         let clock = Clock()
         let router = ModelRouter(classifier: nil, onDevice: nil, cloudLimit: .upTo(.secret), factsModel: provider)
-        var x = FactsExtractor(store: v.store, router: router, activity: InMemoryActivityLog(), userAliases: user)
+        var x = FactsExtractor(store: v.store, router: router, activity: InMemoryActivityLog(), userAliases: user,
+                               qualification: .unchecked)
         x.clock = { clock.now() }
         let queue = ProcessingQueue(store: v.store, activity: InMemoryActivityLog(), launchedAt: .distantPast)
         let worker = FactsQueueWorker(extractor: x)

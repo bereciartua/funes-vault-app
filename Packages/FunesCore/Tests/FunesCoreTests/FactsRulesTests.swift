@@ -133,7 +133,8 @@ import Testing
         let got = s.resolve(mem, s.rolePhrases(text)[0])
         #expect(s.name(got.entity) == "Acme" && got.basis == .inferred)
         let reg = try FX.registry { json in
-            FX.editPredicate(&json, d) { p in p["uses"] = (p["uses"] as! [String]).filter { $0 != "timeline" } }
+            // Bridges need the timeline (the registry's `uses`), so they go with it.
+            FX.editPredicate(&json, d) { p in p["uses"] = (p["uses"] as! [String]).filter { !["timeline", "bridges"].contains($0) } }
         }
         var s2 = stateWith(rows, registry: reg)
         #expect(s2.resolve(mem, s2.rolePhrases(text)[0]).basis != .inferred)   // without the use, only a status cue

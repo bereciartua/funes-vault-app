@@ -261,6 +261,7 @@ extension FactsGraph {
     /// else the one that ended or started nearest it).
     public func before(_ predicate: String, _ anchor: TimelineAnchor, query: String = "",
                        direction: TimelineDirection = .before) -> TimelineAnswer {
+        guard uses.isOn(predicate, .timeline) else { return .none(.unknown) }      // §11.10
         let eps = episodes(predicate)
         switch anchor {
         case .date(let x):
@@ -300,7 +301,7 @@ extension FactsGraph {
 
     /// The fact before the one that held at a date, and whether every step to it rests on trusted evidence.
     func previousLink(_ predicate: String, written: String) -> (entity: String, trusted: Bool)? {
-        guard let d = parser.day(written) else { return nil }
+        guard uses.isOn(predicate, .timeline), let d = parser.day(written) else { return nil }
         let eps = episodes(predicate)
         let day = DateRange.day(d)
         let now = eps.filter { $0.certainlyHolds(day) }
@@ -321,6 +322,7 @@ extension FactsGraph {
 
     /// Entities whose episodes cover a range (a year, a month, a day): every possible one must be certain.
     public func inRange(_ predicate: String, _ rng: DateRange, episodes given: [Episode]? = nil) -> TimelineAnswer {
+        guard uses.isOn(predicate, .timeline) else { return .none(.unknown) }      // §11.10
         var certain = Set<String>(), possible = Set<String>(), untrusted = false
         for e in given ?? episodes(predicate) {
             guard let id = e.entity else { continue }
@@ -348,6 +350,7 @@ extension FactsGraph {
 
     /// The answer to a timeline intent.
     public func answer(_ it: TimelineIntent, query: String = "") -> TimelineAnswer {
+        guard uses.isOn(it.predicate, .timeline) else { return .none(.unknown) }   // §11.10
         switch it.op {
         case .before, .after:
             guard let anchor = it.anchor else { return .none(.ambiguous) }

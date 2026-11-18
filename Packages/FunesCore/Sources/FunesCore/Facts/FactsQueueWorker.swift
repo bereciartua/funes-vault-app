@@ -33,7 +33,8 @@ public struct FactsQueueWorker: Sendable {
                 SELECT EXISTS (SELECT 1 FROM facts_asked WHERE memory_id = ? AND memory_version = ? AND call_group = ? AND mention_kind = 'read')
                 """, arguments: [memoryID, m["version"] as Int, group]) ?? false
             guard read else { return .full }
-            let due = try FactsReconciler.reconcile(db, only: memoryID, registry: registry, userAliases: users, sendable: limit)
+            let due = try FactsReconciler.reconcile(db, only: memoryID, registry: registry, userAliases: users,
+                                                    uses: try extractor.currentUses(db), sendable: limit)
                 .first { $0.key.group == group }?.due
             return due.map { .partial($0) } ?? .nothing
         }
@@ -43,11 +44,11 @@ public struct FactsQueueWorker: Sendable {
     public func process(_ job: ProcessingJob, report: @Sendable (FactsLearnReport, String) async -> Void = { _, _ in })
         async throws -> ProcessingQueue.Outcome {
         guard job.kind == .facts else { return .done(engine: nil) }
-        let engine = extractor.router.factsModel.map(ModelRouter.engine) ?? extractor.codeEngine
         guard let group = job.callGroup else {
             let registry = extractor.registry, users = extractor.userAliases, now = clock(), limit = extractor.rosterLimit
-            try await extractor.store.writer.write { db in
-                try FactsReconciler.sweep(db, registry: registry, userAliases: users, sendable: limit, now: now)
+            try await extractor.store.writer.write { [extractor] db in
+                try FactsReconciler.sweep(db, registry: registry, userAliases: users, uses: try extractor.currentUses(db),
+                                          sendable: limit, now: now)
             }
             return .done(engine: nil)
         }
@@ -59,6 +60,11 @@ public struct FactsQueueWorker: Sendable {
         case let .partial(due): (scope, kind) = (.partial(roles: due.roles, names: due.names), "reconciliation")
         }
         let r = try await extractor.learn([memoryID], groups: [group], kind: kind, scope: scope)
+        let engine: String? = switch r.calls.first?.outcome {
+        case nil: nil
+        case .codeOnly?: extractor.codeEngine
+        default: extractor.router.factsModels[group].map(ModelRouter.engine) ?? extractor.codeEngine
+        }
         await report(r, scope == .full ? "full" : "reconcile")
         if let c = r.calls.first, c.outcome == .codeOnly, c.dropped.contains(FactsExtractor.transient) {
             // Read by the model later: an hour on, not counted as an attempt (the cap lasts the day).

@@ -20,7 +20,8 @@ let package = Package(
                 .product(name: "GRDB", package: "GRDB.swift"),
             ],
             // The bundled benchmark Calibrate runs (synthetic; model providers §8).
-            resources: [.copy("Resources/calibration"), .copy("Resources/facts-registry.json"), .copy("Resources/facts-prompt.json")]
+            resources: [.copy("Resources/calibration"), .copy("Resources/facts-registry.json"), .copy("Resources/facts-prompt.json"),
+                        .copy("Resources/facts-qualification.json")]
         ),
         .testTarget(
             name: "FunesCoreTests",

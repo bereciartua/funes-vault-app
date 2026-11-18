@@ -29,35 +29,62 @@ public struct FactsLearnReport: Sendable {
 /// the memory text with the user's names replaced by the profile matcher (`FactsSentText`). A local model gets the whole
 /// roster. Validation and the apply use the whole graph: that's local work.
 ///
-/// Nothing in the app calls this yet: memory commits queueing facts jobs, and qualification, come in later steps.
+/// **Gating** (memory processing §11.10): a group's model is asked only while some predicate of the group is recorded
+/// with it (a qualification record for that model, adapter, batching, the group's prompt version and the registry
+/// version, and no off-switch), read in the same transaction as the call's graph. Facts the answer gives for a
+/// predicate that isn't recorded are dropped, and earlier ones are hidden (`FactStore.load`). The prompt and schema stay
+/// the declared group's, so the prompt version never depends on the gate.
+///
+/// Nothing in the app calls this yet: memory commits queueing facts jobs come with the Settings step.
 public struct FactsExtractor: Sendable {
     public let store: VaultStore
     public let router: ModelRouter
     public let activity: any ActivityRecorder
     public let registry: FactsRegistry
     public let userAliases: [String]
+    /// The records the calls are checked against (the shipped ones; `.unchecked` only to measure a model).
+    public let qualification: FactsQualification
+    /// Each group's prompt version, as records name it.
+    let promptVersions: [String: String]
     /// The clock, monotonic per write in tests (roster tokens are `updated_at` values compared as text).
     public var clock: @Sendable () -> Date = { Date() }
 
+    /// How calls are batched, and the pipeline's revision (a qualification record names it, memory processing §11.10):
+    /// one memory per call per group, full or partial. Bump the revision when validation, the apply, rosters,
+    /// reconciliation or scheduling change in a way that could move a gate's result; the recorded-call replays guard it.
+    public static let batching = "one-memory;pipeline=1"
+
     public init(store: VaultStore, router: ModelRouter, activity: any ActivityRecorder, registry: FactsRegistry = .bundled,
-                userAliases: [String] = []) {
+                userAliases: [String] = [], qualification: FactsQualification = .bundled) {
         self.store = store
         self.router = router
         self.activity = activity
         self.registry = registry
         self.userAliases = userAliases
+        self.qualification = qualification
+        promptVersions = FactsQualification.promptVersions(registry)
     }
 
     /// The groups in a stable order.
     public var groups: [String] { registry.callGroups.keys.sorted() }
 
-    /// Whether a model may be asked at all.
-    var modelAllowed: Bool { router.factsModel != nil }
+    /// Each group's engine, from the router.
+    var engines: [String: FactsEngine] { router.factsModels.mapValues { FactsEngine($0) } }
 
-    /// The limit a call's roster is built under: the cloud limit for a Facts model that isn't on this Mac, nil (the
-    /// whole graph) for a local one. Reconciliation records and compares what readings knew under the same limit.
+    /// What's on now: the records for the router's engines, with the local off-switches read in this transaction.
+    func currentUses(_ db: Database) throws -> FactsUses {
+        try qualification.withOffSwitches(db).uses(engines: engines, registry: registry, promptVersions: promptVersions)
+    }
+
+    /// Whether a group's model may be asked: there is one, and some predicate of the group is recorded with it.
+    func modelAllowed(_ group: String, _ uses: FactsUses) -> Bool {
+        router.factsModels[group] != nil && !uses.predicates(.recorded, group: group).isEmpty
+    }
+
+    /// The limit a call's roster is built under: the cloud limit when any group's Facts model isn't on this Mac (the
+    /// strictest, so reconciliation compares every group on one graph), nil (the whole graph) when all are local.
     var rosterLimit: CloudLimit? {
-        guard let m = router.factsModel, !m.locality.isLocal else { return nil }
+        guard router.factsModels.values.contains(where: { !$0.locality.isLocal }) else { return nil }
         return router.cloudLimit
     }
 
@@ -67,10 +94,11 @@ public struct FactsExtractor: Sendable {
                       scope: FactsScope = .full) async throws -> FactsLearnReport {
         var report = FactsLearnReport()
         let groups = only ?? self.groups
-        let engine = router.factsModel.map(ModelRouter.engine) ?? codeEngine
         for group in groups {
+            let allowed = try await store.writer.read { db in modelAllowed(group, try currentUses(db)) }
+            let engine = allowed ? router.factsModels[group].map(ModelRouter.engine) ?? codeEngine : codeEngine
             let runID = try await store.writer.write { db in
-                try FactStore.startRun(db, kind: kind, callGroup: group, registryVersion: registry.version,
+                try FactStore.startRun(db, kind: kind, callGroup: group, registryVersion: registry.fingerprint,
                                        promptVersion: FactsPrompt.version(group, registry: registry), engine: engine, now: clock())
             }
             report.runs[group] = runID
@@ -120,6 +148,13 @@ public struct FactsExtractor: Sendable {
     /// Validation notes that record what code added, not something the model said that was dropped.
     static let codeAdditions: Set<String> = ["paired_applied", "paired_relation_added", "denial"]
 
+    /// A code-only outcome because no qualified model reads the group (§11.10): not transient.
+    static let unqualified = "unqualified"
+    /// What's recorded changed between a call and its retry: the job reads again from the start.
+    static let qualificationChanged = "qualification_changed"
+    /// A fact the answer gave for a predicate that isn't recorded: dropped, and not the model's error.
+    static let unqualifiedPredicate = "unqualified_predicate"
+
     struct Asked {
         var memory: FactsMemory
         var version: Int
@@ -132,6 +167,8 @@ public struct FactsExtractor: Sendable {
         /// Known things by the whole graph, for validation (a thing the roster doesn't show still isn't a person).
         var things: Set<String>
         var phrases: [RolePhrase]
+        /// What's on, read with the graph.
+        var uses: FactsUses
         var sent: FactsSentText
         var roster: FactsRoster
         var quotedSensitivity: [String: Sensitivity]
@@ -154,10 +191,11 @@ public struct FactsExtractor: Sendable {
                                  written: FactStore.writtenDay(created),
                                  source: FactStore.source((m["original_source"] as String?) ?? m["source"]),
                                  trusted: (m["trust"] as String) == "trusted")
-            let g = try FactStore.load(db, registry: registry, userAliases: userAliases).graph
-            let preds = Set(registry.groupPredicates(group))
+            let uses = try currentUses(db)
+            let g = try FactStore.load(db, registry: registry, userAliases: userAliases, uses: uses).graph
+            let preds = Set(uses.predicates(.recorded, group: group))
             let limit = rosterLimit
-            let sendable = try limit.map { try FactStore.load(db, registry: registry, userAliases: userAliases, sendable: $0) }
+            let sendable = try limit.map { try FactStore.load(db, registry: registry, userAliases: userAliases, uses: uses, sendable: $0) }
             let rg = sendable?.graph ?? g
             let roster = rg.roster(group, asking: fm)
             let lineSensitivity: [Sensitivity?] = roster.lines.map { line in
@@ -178,7 +216,7 @@ public struct FactsExtractor: Sendable {
             return Asked(memory: fm, version: version, sensitivity: Sensitivity(rawValue: m["sensitivity"]) ?? .secret, graph: g,
                          rosterGraph: rg, lineSensitivity: lineSensitivity,
                          things: sendable == nil ? roster.things : g.roster(group, asking: fm).things,
-                         phrases: phrases,
+                         phrases: phrases, uses: uses,
                          sent: rg.sentText(fm.text), roster: roster,
                          quotedSensitivity: quoted, tokens: tokens, predicateVersions: versions,
                          readAt: clock())
@@ -207,10 +245,12 @@ public struct FactsExtractor: Sendable {
             }
             // A partial re-read is of a version the model has read: it never falls back to code-only links.
             let partial = scope != .full
-            // No model, or a cloud model and a memory above its limit: code-only links, with no request built.
-            guard modelAllowed, rosterLimit.map({ $0.allows(a.sensitivity) }) ?? true else {
+            // No qualified model, or a cloud model and a memory above its limit: code-only links, with no request built.
+            guard modelAllowed(group, a.uses), let model = router.factsModels[group],
+                  rosterLimit.map({ $0.allows(a.sensitivity) }) ?? true else {
                 if !partial { try codeOnly(a, group: group, runID: runID) }
-                return call(.codeOnly)
+                let unqualified = router.factsModels[group] != nil && !modelAllowed(group, a.uses)
+                return call(.codeOnly, dropped: unqualified ? [Self.unqualified] : [])
             }
             // Typed items (memory processing §11.9): the memory, the memories the roster quotes and every roster line,
             // each with its sensitivity, so `ModelRouter.send` refuses a cloud call if anything is above the limit.
@@ -220,14 +260,22 @@ public struct FactsExtractor: Sendable {
                 }
                 + (rosterLimit == nil ? [] : zip(a.roster.lines, a.lineSensitivity).map { ModelItem($0.0.text, sensitivity: $0.1) })
             let requester: CloudRequestCap.Requester = a.memory.source == .agent ? .agent : .user
-            let before = router.usageCounters()[router.factsModel!.id] ?? ProviderUsage()
+            let before = router.usageCounters()[model.id] ?? ProviderUsage()
             let started = clock()
             var output: FactsJSON?
             var tries = 0
             while output == nil, tries < 2 {          // one retry on an answer that isn't the schema's (§9.6)
+                // §11.10, at every call: a retry with a use turned off since the graph was read starts over instead.
+                if tries > 0 {
+                    let now = try await store.writer.read { db in try currentUses(db) }
+                    if now.predicates(.recorded, group: group) != a.uses.predicates(.recorded, group: group) {
+                        return call(.changed, dropped: [Self.qualificationChanged])
+                    }
+                }
                 tries += 1
                 do {
-                    output = try await router.facts(request(a, group: group), items: items, requester: requester, now: clock())
+                    output = try await router.facts(request(a, group: group), group: group, items: items, requester: requester,
+                                                    now: clock())
                 } catch ProviderError.invalidOutput {
                     continue
                 } catch let e as ProviderError where [.blocked, .capReached, .unavailable].contains(e) {
@@ -239,13 +287,19 @@ public struct FactsExtractor: Sendable {
                 }
             }
             let ms = Int(clock().timeIntervalSince(started) * 1_000)
-            let after = router.usageCounters()[router.factsModel!.id] ?? ProviderUsage()
+            let after = router.usageCounters()[model.id] ?? ProviderUsage()
             let usage = ProviderUsage(requests: after.requests - before.requests, inputTokens: after.inputTokens - before.inputTokens,
                                       outputTokens: after.outputTokens - before.outputTokens)
             guard let output else { return call(.failed, ms: ms, usage: usage) }
             var v = FactsValidator(graph: a.graph, sent: a.sent, roster: a.roster.ids, phrases: a.phrases,
                                    predicates: registry.groupPredicates(group), knownThings: a.things,
                                    trusted: a.memory.trusted).validate(output)
+            // A predicate that isn't recorded with this model (§11.10): what the answer says of it isn't kept.
+            v.facts = v.facts.enumerated().compactMap { i, f in
+                if a.uses.isOn(f.predicate, .recorded) { return f }
+                v.dropped.append(.init(reason: Self.unqualifiedPredicate, index: i))
+                return nil
+            }
             if rosterLimit != nil { unseen(&v, a) }
             // The roster entries the answer used: those it names, and the holders of the phrases it was asked about.
             var used = v.referenced
@@ -263,12 +317,14 @@ public struct FactsExtractor: Sendable {
                                                  roster: a.tokens.filter { used.contains($0.key) })
                 extraction.predicateVersions = a.predicateVersions
                 extraction.scope = scope
-                extraction.clean = v.dropped.allSatisfy { Self.codeAdditions.contains($0.reason) || Self.unseenNotes.contains($0.reason) }
-                let x = extraction, limit = rosterLimit
+                extraction.clean = v.dropped.allSatisfy {
+                    Self.codeAdditions.contains($0.reason) || Self.unseenNotes.contains($0.reason) || $0.reason == Self.unqualifiedPredicate
+                }
+                let x = extraction, limit = rosterLimit, uses = a.uses
                 let result = try await store.writer.write { db in
                     try FactStore.apply(db, memoryID: memoryID, version: a.version, extraction: x, callGroup: group,
-                                        runID: runID, registry: registry, userAliases: userAliases, now: clock(), readAt: a.readAt,
-                                        sendable: limit)
+                                        runID: runID, registry: registry, userAliases: userAliases, uses: uses, now: clock(),
+                                        readAt: a.readAt, sendable: limit)
                 }
                 total.add(result)
                 return call(.applied, dropped: v.dropped.map(\.reason), ms: ms, usage: usage)
@@ -343,7 +399,7 @@ public struct FactsExtractor: Sendable {
     /// that alias. Role phrases need nothing stored: they resolve through known facts when read. A memory version the
     /// model already read in this group keeps that reading.
     func codeOnly(_ a: Asked, group: String, runID: String) throws {
-        guard registry.groupPredicates(group).contains(where: { registry.kindOf($0) == FactsValidator.personKind }) else { return }
+        guard a.uses.predicates(.recorded, group: group).contains(where: { registry.kindOf($0) == FactsValidator.personKind }) else { return }
         try store.writer.write { db in
             // Only for the version the snapshot read, if it's still current and the model hasn't read it since.
             guard let m = try Row.fetchOne(db, sql: "SELECT version, status FROM memory WHERE id = ?", arguments: [a.memory.id]),
@@ -358,7 +414,7 @@ public struct FactsExtractor: Sendable {
             let removed = db.changesCount > 0
             let stop = Set(registry.language.stopNames.map { FactsText.fold($0) })
             // Who has which name now, not when the call was prepared.
-            let g = try FactStore.load(db, registry: registry, userAliases: userAliases).graph
+            let g = try FactStore.load(db, registry: registry, userAliases: userAliases, uses: try currentUses(db)).graph
             var byAlias: [String: [(aliasID: String, entity: String, text: String, usable: Bool)]] = [:]
             for r in try Row.fetchAll(db, sql: """
                 SELECT a.id, a.entity_id, a.alias, a.normalized, a.confirmed, a.manual FROM entity_alias a JOIN entity e ON e.id = a.entity_id

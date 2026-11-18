@@ -240,9 +240,11 @@ public final class ModelRouter: Sendable {
     /// call on a cloud model, minutes on a small local one).
     public let splitTimeout: Duration
 
-    /// The Facts model (memory processing §11.3, §11.10): a qualified model the user picked for learning facts; nil
-    /// means none, and memories get code-only links. Never falls back to another provider.
-    public let factsModel: (any GenerationProvider)?
+    /// The Facts model of each call group (memory processing §11.3, §11.10, model providers §Facts): the chosen model
+    /// where it qualified for that group, else Claude Haiku 5.5 where that did (`FactsQualification.resolve`). A group
+    /// with none gets code-only links. Never falls back to another provider. `FactsExtractor` still checks every call
+    /// against the qualification records, whatever is set here.
+    public let factsModels: [String: any GenerationProvider]
 
     private let usage = Mutex<[ProviderID: ProviderUsage]>([:])
     /// Shared with the app's other routers, so a rate limit outlives this one.
@@ -254,9 +256,12 @@ public final class ModelRouter: Sendable {
     public init(classifier: (any GenerationProvider)?, onDevice: (any GenerationProvider)? = AppleFoundationGenerator(),
                 cloudLimit: CloudLimit = .upTo(.internal), generationTimeout: Duration = .seconds(20),
                 splitTimeout: Duration = .seconds(180), cap: CloudRequestCap? = nil, backoff: ProviderBackoff = ProviderBackoff(),
-                factsModel: (any GenerationProvider)? = nil) {
+                factsModel: (any GenerationProvider)? = nil, factsModels: [String: any GenerationProvider] = [:]) {
         self.classifier = classifier
-        self.factsModel = factsModel
+        // `factsModel` is every group's, where `factsModels` names none.
+        var models = factsModels
+        if let factsModel { for g in FactsRegistry.bundled.callGroups.keys where models[g] == nil { models[g] = factsModel } }
+        self.factsModels = models
         self.backoff = backoff
         self.onDevice = onDevice
         self.cloudLimit = cloudLimit
@@ -351,9 +356,9 @@ public final class ModelRouter: Sendable {
 
     /// One Facts call through the guardrails (`send`): the Facts model only, counted against the daily cap in the
     /// share of whoever wrote the memory, within 60 s. `ProviderError.unavailable` when there's no Facts model.
-    func facts<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem], requester: CloudRequestCap.Requester,
-                                        now: Date) async throws -> T {
-        guard let provider = factsModel else { throw ProviderError.unavailable }
+    func facts<T: Decodable & Sendable>(_ request: StructuredRequest<T>, group: String, items: [ModelItem],
+                                        requester: CloudRequestCap.Requester, now: Date) async throws -> T {
+        guard let provider = factsModels[group] else { throw ProviderError.unavailable }
         return try await call(request, items: items, with: provider, requester: requester, timeout: Self.factsTimeout, now: now)
     }
 

@@ -109,9 +109,11 @@ enum FactsReconciler {
     /// read (or only `memoryID`'s). In the caller's write transaction.
     /// `sendable`: the limit the model that will read works under (a cloud model's): knowledge is compared on the graph
     /// it may see, so what's above the limit selects no memory for a call, and a memory above it isn't reconciled.
-    static func reconcile(_ db: Database, only memoryID: String? = nil, registry: FactsRegistry = .bundled,
-                          userAliases: [String] = [], sendable: CloudLimit? = nil) throws -> [(key: Key, due: Due)] {
-        var g = try FactStore.load(db, registry: registry, userAliases: userAliases, sendable: sendable).graph
+    /// `uses`: what's on (§11.10). A group with no recorded predicate (no qualified model reads it) has nothing due, and
+    /// a predicate that isn't recorded has no phrase to ask about.
+    static func reconcile(_ db: Database, only memoryID: String? = nil, registry: FactsRegistry,
+                          userAliases: [String] = [], uses: FactsUses, sendable: CloudLimit? = nil) throws -> [(key: Key, due: Due)] {
+        var g = try FactStore.load(db, registry: registry, userAliases: userAliases, uses: uses, sendable: sendable).graph
         // Memory versions a model read, per group (a memory the model couldn't read is never reconciled).
         var reads: [String: [String]] = [:]                 // memory → groups
         var order: [String] = []                            // memories in the order they were added
@@ -122,6 +124,7 @@ enum FactsReconciler {
             ORDER BY m.seq, a.call_group
             """, arguments: [memoryID]) {
             if let sendable, !(Sensitivity(rawValue: r["sensitivity"]).map(sendable.allows) ?? false) { continue }
+            if uses.predicates(.recorded, group: r["call_group"]).isEmpty { continue }
             if reads[r["memory_id"]] == nil { order.append(r["memory_id"]) }
             reads[r["memory_id"], default: []].append(r["call_group"])
         }
@@ -150,7 +153,7 @@ enum FactsReconciler {
         // Under a limit, a decision is revalidated only if the graph it was compared on has every holder the whole
         // graph has: otherwise the whole graph would get a firm link made without someone (it stays invalidated, and
         // code resolves the phrase).
-        let whole = try sendable.map { _ in try FactStore.load(db, registry: registry, userAliases: userAliases).graph }
+        let whole = try sendable.map { _ in try FactStore.load(db, registry: registry, userAliases: userAliases, uses: uses).graph }
         func sawEveryHolder(_ mem: FactsMemory, _ ph: RolePhrase) -> Bool {
             guard let whole else { return true }
             let (d, w) = whole.asOf(mem, ph), (sd, sw) = g.asOf(mem, ph)
@@ -195,7 +198,7 @@ enum FactsReconciler {
             }
         }
         if revalidated {
-            g = try FactStore.load(db, registry: registry, userAliases: userAliases, sendable: sendable).graph
+            g = try FactStore.load(db, registry: registry, userAliases: userAliases, uses: uses, sendable: sendable).graph
             try withReadMemories(&g)
         }
 
@@ -246,9 +249,9 @@ enum FactsReconciler {
     /// The sweep: revalidates what it can and queues a job for each memory version and group with something due.
     /// Returns how many it queued.
     @discardableResult
-    static func sweep(_ db: Database, registry: FactsRegistry = .bundled, userAliases: [String] = [], sendable: CloudLimit? = nil,
-                      now: Date) throws -> Int {
-        let due = try reconcile(db, registry: registry, userAliases: userAliases, sendable: sendable)
+    static func sweep(_ db: Database, registry: FactsRegistry, userAliases: [String] = [], uses: FactsUses,
+                      sendable: CloudLimit? = nil, now: Date) throws -> Int {
+        let due = try reconcile(db, registry: registry, userAliases: userAliases, uses: uses, sendable: sendable)
         for (key, _) in due {
             guard let id = UUID(uuidString: key.memoryID),
                   let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [key.memoryID]) else { continue }

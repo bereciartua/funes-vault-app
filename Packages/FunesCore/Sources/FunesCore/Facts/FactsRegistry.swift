@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// The predicate registry (ADR-0032 decision 2, memory processing §11.2): what each kind of fact about you means and
@@ -8,10 +9,21 @@ public struct FactsRegistry: Sendable, Decodable {
     public let kinds: [String: Kind]
     public let callGroups: [String: CallGroup]
     public let predicates: [Predicate]
+    /// The uses a predicate can have and what each needs on first (memory processing §11.10): turning a use off turns
+    /// off everything that needs it, with no code change.
+    public let useRules: [String: UseRule]
     /// Each predicate's qualifier keys in the order the JSON gives them (the prompt and schema list them in it).
     public internal(set) var qualifierOrder: [String: [String]] = [:]
+    /// The registry version a qualification record names (§11.10): the version label and a digest of the whole
+    /// registry except each predicate's `uses` list. Every group's validation and parsing read the shared language and
+    /// the whole lexicon, so any other change re-runs every gate; a `uses` list is in the record's key already.
+    public internal(set) var fingerprint: String = ""
 
-    enum CodingKeys: String, CodingKey { case version, language, kinds, callGroups, predicates }
+    enum CodingKeys: String, CodingKey { case version, language, kinds, callGroups, predicates, useRules = "uses" }
+
+    public struct UseRule: Sendable, Decodable {
+        public let requires: [String]
+    }
 
     /// Language data shared by every predicate.
     public struct Language: Sendable, Decodable {
@@ -138,14 +150,30 @@ public struct FactsRegistry: Sendable, Decodable {
 
     public func predicate(_ id: String) -> Predicate? { predicates.first { $0.id == id } }
 
-    public func uses(_ id: String, _ use: String) -> Bool { predicate(id)?.uses.contains(use) ?? false }
+    /// Whether the registry declares a use for a predicate. Declared isn't on: a use is on only with a qualification
+    /// record (`FactsUses`).
+    public func declares(_ id: String, _ use: FactsUse) -> Bool { predicate(id)?.uses.contains(use.rawValue) ?? false }
 
     public func kindOf(_ id: String) -> String { predicate(id)?.objectKind ?? "thing" }
 
-    public var timelinePredicates: [String] { predicates.filter { $0.uses.contains("timeline") }.map(\.id) }
+    /// The predicates that declare the timeline use (on or not).
+    public var timelinePredicates: [String] { predicates.filter { $0.uses.contains(FactsUse.timeline.rawValue) }.map(\.id) }
 
+    /// A group's declared predicates: what its prompt and schema ask for, whatever is on (so the prompt version, part
+    /// of a qualification record's key, never depends on the gate).
     public func groupPredicates(_ group: String) -> [String] {
-        predicates.filter { $0.uses.contains("recorded") && $0.callGroup == group }.map(\.id)
+        predicates.filter { $0.uses.contains(FactsUse.recorded.rawValue) && $0.callGroup == group }.map(\.id)
+    }
+
+    /// Every use a use needs on first, directly or through another (from `uses`).
+    public func prerequisites(_ use: String) -> [String] {
+        var out: [String] = [], stack = useRules[use]?.requires ?? []
+        while let u = stack.popLast() {
+            if out.contains(u) { continue }
+            out.append(u)
+            stack += useRules[u]?.requires ?? []
+        }
+        return out
     }
 
     /// Every lexicon word, lowercased, with its meaning (a word listed twice keeps its last meaning, as the spike did).
@@ -196,8 +224,25 @@ public struct FactsRegistry: Sendable, Decodable {
         d.keyDecodingStrategy = .convertFromSnakeCase
         var registry = try d.decode(FactsRegistry.self, from: data)
         registry.qualifierOrder = OrderedJSON.qualifierOrder(data)
+        registry.fingerprint = try fingerprint(data, version: registry.version)
         try registry.validate()
         return registry
+    }
+
+    /// `version-<12 hex>`: SHA-256 of the registry as canonical JSON (sorted keys), with each predicate's `uses` and
+    /// every `note` (comments for people) removed.
+    static func fingerprint(_ data: Data, version: String) throws -> String {
+        func strip(_ v: Any) -> Any {
+            if let o = v as? [String: Any] { return o.filter { $0.key != "note" }.mapValues(strip) }
+            if let a = v as? [Any] { return a.map(strip) }
+            return v
+        }
+        guard var top = strip(try JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return version }
+        if let preds = top["predicates"] as? [[String: Any]] {
+            top["predicates"] = preds.map { var p = $0; p.removeValue(forKey: "uses"); return p }
+        }
+        let canonical = try JSONSerialization.data(withJSONObject: top, options: [.sortedKeys, .withoutEscapingSlashes])
+        return version + "-" + SHA256.hash(data: canonical).prefix(6).map { String(format: "%02x", $0) }.joined()
     }
 
     /// A predicate's qualifiers in their JSON order (unknown ones last, sorted).
@@ -213,18 +258,26 @@ public struct FactsRegistry: Sendable, Decodable {
         case useWithoutPrerequisite(predicate: String, use: String)
         case slotNotAQualifier(String)
         case duplicatePredicate(String)
+        case unknownUse(String)
+        case useCycle(String)
     }
 
-    /// Structural checks: kinds and call groups exist, a use has the ones before it, a slot names a qualifier.
+    /// Structural checks: kinds and call groups exist, the uses are known and acyclic, a predicate declares what each of
+    /// its uses needs, a slot names a qualifier.
     public func validate() throws {
+        for (use, rule) in useRules {
+            guard FactsUse(rawValue: use) != nil else { throw ValidationError.unknownUse(use) }
+            for r in rule.requires where useRules[r] == nil { throw ValidationError.unknownUse(r) }
+            if prerequisites(use).contains(use) { throw ValidationError.useCycle(use) }
+        }
         var seen = Set<String>()
-        let order = ["recorded", "linked", "timeline"]
         for p in predicates {
             guard seen.insert(p.id).inserted else { throw ValidationError.duplicatePredicate(p.id) }
             guard kinds[p.objectKind] != nil else { throw ValidationError.unknownKind(p.objectKind) }
             guard callGroups[p.callGroup] != nil else { throw ValidationError.unknownCallGroup(p.callGroup) }
-            for (i, use) in order.enumerated() where p.uses.contains(use) {
-                for prior in order.prefix(i) where !p.uses.contains(prior) {
+            for use in p.uses {
+                guard useRules[use] != nil else { throw ValidationError.unknownUse(use) }
+                for prior in prerequisites(use) where !p.uses.contains(prior) {
                     throw ValidationError.useWithoutPrerequisite(predicate: p.id, use: use)
                 }
             }

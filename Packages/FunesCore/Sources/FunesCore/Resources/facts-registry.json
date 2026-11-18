@@ -731,6 +731,36 @@
       }
     }
   },
+  "uses": {
+    "recorded": {
+      "requires": [],
+      "note": "extracted and stored, shown and correctable"
+    },
+    "linked": {
+      "requires": [
+        "recorded"
+      ],
+      "note": "search admission and why lines"
+    },
+    "timeline": {
+      "requires": [
+        "linked"
+      ],
+      "note": "before and after answers, and time cues as of a memory date"
+    },
+    "attributes": {
+      "requires": [
+        "linked"
+      ],
+      "note": "the inference carried on an answer memories"
+    },
+    "bridges": {
+      "requires": [
+        "timeline"
+      ],
+      "note": "memories added to a timeline answer"
+    }
+  },
   "predicates": [
     {
       "id": "partner",
@@ -738,7 +768,8 @@
       "call_group": "people",
       "uses": [
         "recorded",
-        "linked"
+        "linked",
+        "attributes"
       ],
       "definition": "partner (wife, husband, girlfriend, boyfriend, spouse, pareja)",
       "exclusive": true,
@@ -803,7 +834,8 @@
       "call_group": "people",
       "uses": [
         "recorded",
-        "linked"
+        "linked",
+        "attributes"
       ],
       "definition": "parent (mom, dad, stepparents)",
       "exclusive": false,
@@ -864,7 +896,8 @@
       "call_group": "people",
       "uses": [
         "recorded",
-        "linked"
+        "linked",
+        "attributes"
       ],
       "definition": "child (son, daughter)",
       "exclusive": false,
@@ -922,7 +955,8 @@
       "call_group": "people",
       "uses": [
         "recorded",
-        "linked"
+        "linked",
+        "attributes"
       ],
       "definition": "sibling (sister, brother, half-siblings)",
       "exclusive": false,
@@ -991,7 +1025,8 @@
       "call_group": "people",
       "uses": [
         "recorded",
-        "linked"
+        "linked",
+        "attributes"
       ],
       "definition": "other_family (grandparents, aunts, uncles, cousins, in-laws…)",
       "exclusive": false,
@@ -1130,7 +1165,8 @@
       "call_group": "people",
       "uses": [
         "recorded",
-        "linked"
+        "linked",
+        "attributes"
       ],
       "definition": "friend",
       "exclusive": false,
@@ -1165,7 +1201,8 @@
       "call_group": "people",
       "uses": [
         "recorded",
-        "linked"
+        "linked",
+        "attributes"
       ],
       "definition": "manager (boss)",
       "exclusive": false,
@@ -1201,7 +1238,8 @@
       "call_group": "people",
       "uses": [
         "recorded",
-        "linked"
+        "linked",
+        "attributes"
       ],
       "definition": "colleague",
       "exclusive": false,
@@ -1237,7 +1275,8 @@
       "call_group": "people",
       "uses": [
         "recorded",
-        "linked"
+        "linked",
+        "attributes"
       ],
       "definition": "care (doctor, dentist, therapist, vet, lawyer…)",
       "exclusive": false,
@@ -1313,7 +1352,8 @@
       "call_group": "people",
       "uses": [
         "recorded",
-        "linked"
+        "linked",
+        "attributes"
       ],
       "definition": "other (neighbour, landlord…)",
       "exclusive": false,
@@ -1355,7 +1395,9 @@
       "uses": [
         "recorded",
         "linked",
-        "timeline"
+        "timeline",
+        "attributes",
+        "bridges"
       ],
       "definition": "works_at: an organization the user works or worked for as an employee, or the user's own company or self-employment (name it \"Self-employed\" when freelancing without a company name). Not other people's jobs, not clients, not organizations the user only mentions or buys from",
       "placeholders": {

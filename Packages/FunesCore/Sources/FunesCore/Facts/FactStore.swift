@@ -214,11 +214,16 @@ enum FactStore {
         var callGroup: String
         /// What a scoped re-read replaces; nil is the whole reading.
         var scope: FactsScope.Replaced? = nil
+        /// What a re-read doesn't replace because the reading wasn't asked it (§11.10): facts of predicates that aren't
+        /// recorded now, and the role phrases of those predicates (scalar starts). They keep their earlier rows.
+        var keptFacts: Set<String> = []
+        var keptStarts: Set<Int> = []
 
-        /// Whether a fact evidence row of this version and group is left out.
+        /// Whether the fact evidence rows of this version and group are left out (but for `keptFacts`').
         var factEvidence: Bool { scope == nil }
         /// Whether a model decision of this version and group (outcome, scalar start, mention) is left out.
         func decision(outcome: String, start: Int?, mention: String?) -> Bool {
+            if outcome != "unknown", let start, keptStarts.contains(start) { return false }
             switch scope {
             case nil: return true
             case let r?:
@@ -237,9 +242,12 @@ enum FactStore {
 
     /// `sendable`: the graph a cloud call may see under that limit (`FactStore.withheld`): memories above it, and what
     /// rests on them, as if they didn't exist.
-    static func load(_ db: Database, registry: FactsRegistry = .bundled, userAliases: [String] = [],
+    /// `uses`: what's on (§11.10). A predicate whose `recorded` is off has its learned facts left out (the user's own
+    /// entries stay), so no roster, code-only link, resolution, reconciliation or reader sees them. Only `apply` reads
+    /// every stored row (`.everyDeclared`), so nothing hidden is lost when it writes.
+    static func load(_ db: Database, registry: FactsRegistry, userAliases: [String] = [], uses: FactsUses,
                      excluding: Exclusion? = nil, sendable: CloudLimit? = nil) throws -> Loaded {
-        var g = FactsGraph(registry: registry, userAliases: userAliases)
+        var g = FactsGraph(registry: registry, userAliases: userAliases, uses: uses)
         g.idStyle = .uuid
         let all = try countedMemories(db)
         let hidden = try sendable.map { try withheld(db, counted: all, limit: $0) }
@@ -303,7 +311,7 @@ enum FactStore {
         var evidence: [String: [Row]] = [:]
         for r in try Row.fetchAll(db, sql: "SELECT rowid AS rid, * FROM fact_evidence ORDER BY rowid") {
             if let x = excluding, x.factEvidence, (r["memory_id"] as String?) == x.memoryID, (r["memory_version"] as Int?) == x.version,
-               (r["call_group"] as String?) == x.callGroup { continue }
+               (r["call_group"] as String?) == x.callGroup, !x.keptFacts.contains(r["fact_id"]) { continue }
             if let hidden {
                 if hidden.userRows.contains(r["id"]) { continue }
                 if let mid: String = r["memory_id"], hidden.statements.contains(mid + "|" + (r["fact_id"] as String)) { continue }
@@ -337,6 +345,7 @@ enum FactStore {
             }
             // A role group: its count is the latest counting memory's, and it's not a fact the timeline reads.
             if groupEntities.contains(ent) {        // only trusted memories set a count
+                guard uses.isOn(pred, .recorded) else { continue }      // §11.10: hidden with its predicate
                 for (r, c) in rows where (r["target_kind"] as String) == "fact" && (c?.memory.trusted ?? true) {
                     if let n = object(r["asserted"])["count"] as? Int { g.entities[ent]?.count = n }
                 }
@@ -384,7 +393,8 @@ enum FactStore {
                         if q == "label" { p.a.label = v }
                         else if q == "deceased" {
                             p.a.deceased = v == "true"
-                            if v == "true", c?.memory.trusted == true { deceasedByEvidence.insert(ent) }
+                            // Only what a recorded predicate's evidence says (§11.10).
+                            if v == "true", c?.memory.trusted == true, uses.isOn(pred, .recorded) { deceasedByEvidence.insert(ent) }
                         }
                         else { p.a.qualifiers[q] = v }
                     }
@@ -703,6 +713,7 @@ enum FactStore {
             g.memories[c.memory.id] = c.memory
             g.memoryOrder[c.memory.id] = c.seq
         }
+        if uses.hidesRecorded { g.hideUnrecorded() }
         return Loaded(graph: g, toCheck: toCheck, factIDs: factIDs, factKeys: factKeys, sensitivity: hidden?.sensitivity ?? [:])
     }
 
@@ -746,7 +757,7 @@ enum FactStore {
     /// Fails if the memory or a roster entry changed.
     @discardableResult
     static func apply(_ db: Database, memoryID: String, version: Int, extraction original: FactsExtraction, callGroup: String,
-                      runID: String? = nil, registry: FactsRegistry = .bundled, userAliases: [String] = [],
+                      runID: String? = nil, registry: FactsRegistry, userAliases: [String] = [], uses: FactsUses,
                       now: Date = Date(), readAt: Date? = nil, sendable: CloudLimit? = nil) throws -> ApplyResult {
         guard let m = try Row.fetchOne(db, sql: "SELECT * FROM memory WHERE id = ?", arguments: [memoryID]),
               (m["version"] as Int) == version, (m["status"] as String) != "deleted" else {
@@ -767,7 +778,8 @@ enum FactStore {
             """, arguments: [memoryID, version, callGroup]) == true {
             original.scope = .full
         }
-        let preds = Set(registry.groupPredicates(callGroup))
+        // The phrases the call was asked about: those of the group's recorded predicates (its answer's indices).
+        let preds = Set(uses.predicates(.recorded, group: callGroup))
         let text = text(title: m["title"], body: m["body"])
         let created: Date = m["created_at"]
         let trusted = (m["trust"] as String) == "trusted"
@@ -775,7 +787,7 @@ enum FactStore {
         let fm = FactsMemory(id: memoryID, text: text, written: writtenDay(created),
                              source: source((m["original_source"] as String?) ?? m["source"]), trusted: trusted)
         let trust = trusted ? "trusted" : "untrusted"
-        let phrases = FactsGraph(registry: registry, userAliases: userAliases).rolePhrases(text, predicates: preds)
+        let phrases = FactsGraph(registry: registry, userAliases: userAliases, uses: uses).rolePhrases(text, predicates: preds)
 
         // A partial re-read keeps only what it re-asked: the role phrases it asked about that the answer decided (an
         // answer validation dropped leaves the earlier decision), and the names it re-asked.
@@ -790,8 +802,19 @@ enum FactStore {
             replaced = .init(roles: Set(x.roles.compactMap { scalarStart($0.phrase) }), names: Set(x.people.map { FactsText.fold($0.name) }))
         }
         var exclusion = Exclusion(memoryID: memoryID, version: version, callGroup: callGroup, scope: replaced)
+        // What this reading wasn't asked (§11.10): the group's predicates that aren't recorded keep their earlier rows,
+        // facts and role decisions, so turning *recorded* off hides them without a re-read losing them.
+        let unasked = Set(registry.groupPredicates(callGroup)).subtracting(preds)
+        if !unasked.isEmpty {
+            let marks = Array(repeating: "?", count: unasked.count).joined(separator: ",")
+            exclusion.keptFacts = Set(try String.fetchAll(db, sql: "SELECT id FROM fact WHERE predicate IN (\(marks))",
+                                                          arguments: StatementArguments(Array(unasked))))
+            exclusion.keptStarts = Set(FactsGraph(registry: registry, userAliases: userAliases, uses: .everyDeclared(registry))
+                .rolePhrases(text, predicates: unasked).map { scalarOffset(text, utf16: $0.start) })
+        }
         // The graph without the rows being replaced (its names stay matchable, so a re-read finds them).
-        var before = try load(db, registry: registry, userAliases: userAliases, excluding: exclusion).graph
+        let stored = FactsUses.everyDeclared(registry)
+        var before = try load(db, registry: registry, userAliases: userAliases, uses: stored, excluding: exclusion).graph
         if let r = replaced, !r.names.isEmpty {
             // A re-asked name the answer resolves differently from the earlier reading (someone else, or ambiguous where
             // it named someone, or someone where it was ambiguous): the facts this memory states about that name rest on
@@ -809,12 +832,13 @@ enum FactStore {
                     var whole = original
                     whole.scope = .full
                     return try apply(db, memoryID: memoryID, version: version, extraction: whole, callGroup: callGroup, runID: runID,
-                                     registry: registry, userAliases: userAliases, now: now, readAt: readAt, sendable: sendable)
+                                     registry: registry, userAliases: userAliases, uses: uses, now: now, readAt: readAt,
+                                     sendable: sendable)
                 }
                 x.people.removeAll { moved.contains(FactsText.fold($0.name)) }
                 replaced?.names.subtract(moved)
                 exclusion.scope = replaced
-                before = try load(db, registry: registry, userAliases: userAliases, excluding: exclusion).graph
+                before = try load(db, registry: registry, userAliases: userAliases, uses: stored, excluding: exclusion).graph
             }
         }
 
@@ -851,8 +875,12 @@ enum FactStore {
                 """, arguments: [r["alias_id"] as String, memoryID, version, callGroup, r["span_start"] as Int])
         }
         if exclusion.factEvidence {
-            try db.execute(sql: "DELETE FROM fact_evidence WHERE memory_id = ? AND memory_version = ? AND call_group = ?",
-                           arguments: [memoryID, version, callGroup])
+            let kept = exclusion.keptFacts.sorted()
+            let marks = Array(repeating: "?", count: kept.count).joined(separator: ",")
+            let args: [any DatabaseValueConvertible] = [memoryID, version, callGroup] + kept.map { $0 as any DatabaseValueConvertible }
+            try db.execute(sql: "DELETE FROM fact_evidence WHERE memory_id = ? AND memory_version = ? AND call_group = ?"
+                               + (kept.isEmpty ? "" : " AND fact_id NOT IN (\(marks))"),
+                           arguments: StatementArguments(args))
         }
         let oldDecisions = try Row.fetchAll(db, sql: """
             SELECT id, mention, outcome, basis, span_start FROM mention_decision
@@ -1097,8 +1125,10 @@ enum FactStore {
             try recordDependencies(db, decisionID: did, memoryID: memoryID, version: version, predicate: predicate, entities: entities)
         }
         // What the reading was asked knowing, on the graph it leaves: reconciliation re-asks only what changed since.
-        // A cloud reading knew only what's sendable: its knowledge is recorded on that graph.
-        let knew = try sendable.map { try load(db, registry: registry, userAliases: userAliases, sendable: $0).graph } ?? g
+        // A cloud reading knew only what's sendable, and every reading only what's recorded: its knowledge is recorded on
+        // the graph it saw.
+        let knew = sendable != nil || uses.hidesRecorded
+            ? try load(db, registry: registry, userAliases: userAliases, uses: uses, sendable: sendable).graph : g
         try FactsReconciler.recordAsked(db, graph: knew, memory: fm, version: version, group: callGroup, phrases: phrases,
                                         scope: original.scope, decisions: pendingDependencies.map(\.0), now: now)
         if result.evidence > 0 || result.decisions > 0 || newAmbiguous != oldAmbiguous || !newAliases.isEmpty || !oldAliasRows.isEmpty

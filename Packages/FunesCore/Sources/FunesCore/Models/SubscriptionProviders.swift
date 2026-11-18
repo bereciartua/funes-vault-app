@@ -88,6 +88,10 @@ public struct ClaudeCodeClient: SubscriptionClient {
 
     var environment: [String: String] { CLIRunner.environment(baseEnvironment, executable: executable, extra: Self.quiet) }
 
+    /// Bumped when `arguments` changes how the model is asked (a Facts qualification names it).
+    static let adapterRevision = 1
+    public var factsAdapter: String { "\(id)/\(Self.adapterRevision);effort=\(effort ?? "default")" }
+
     /// The call's arguments (model providers §5.8).
     func arguments(instructions: String, schema: JSONSchema) -> [String] {
         var args = ["-p", "--safe-mode", "--tools", "", "--disallowedTools", "mcp__*", "--strict-mcp-config",
@@ -200,6 +204,8 @@ final class ClaudeStream: @unchecked Sendable {
             if let output = event["structured_output"] as? [String: Any] {
                 if verifiedStart { structured = output } else { unverified = true }
             }
+            // Every model that answered, "+"-joined when there's more than one (a qualification needs exactly one).
+            if let models = event["modelUsage"] as? [String: Any], !models.isEmpty { usage.model = models.keys.sorted().joined(separator: "+") }
             if let model = (event["modelUsage"] as? [String: Any])?.values.first as? [String: Any] {
                 usage.inputTokens = ["inputTokens", "cacheReadInputTokens", "cacheCreationInputTokens"].reduce(0) {
                     $0 + (model[$1] as? Int ?? 0)
@@ -319,6 +325,10 @@ public struct CodexClient: SubscriptionClient {
     }
 
     var environment: [String: String] { CLIRunner.environment(baseEnvironment, executable: executable) }
+
+    /// Bumped when the invocation changes how the model is asked (a Facts qualification names it).
+    static let adapterRevision = 1
+    public var factsAdapter: String { "\(id)/\(Self.adapterRevision);effort=\(effort)" }
 
     var disableArguments: [String] { Self.disabledFeatures.flatMap { ["--disable", $0] } }
 
