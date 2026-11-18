@@ -57,6 +57,8 @@ public struct FactsRegistry: Sendable, Decodable {
         public let thirdPerson: [String]
         public let firstPerson: [String]
         public let months: [String: [String]]
+        /// Day names: never the start of a surname after a profile name (the profile matcher, memory processing §11.3).
+        public let weekdays: [String]?
         public let functionWords: [String]
         public let dateJoiners: [String]
         public let ordinalSuffixes: [String]

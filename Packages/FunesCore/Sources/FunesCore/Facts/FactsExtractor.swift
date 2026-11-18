@@ -24,17 +24,18 @@ public struct FactsLearnReport: Sendable {
 /// roster entries the answer used are unchanged. Memories the model can't read (no Facts model, above the cloud limit,
 /// a secret, the cap reached) get code-only links instead. Activity gets ids and counts, never names, labels or quotes.
 ///
-/// Nothing in the app calls this yet: the queue, the privacy step that builds rosters from sendable items only, and
-/// qualification come in later steps of Phase 13a.2.
+/// A Facts model that isn't on this Mac gets a roster built from what's sendable under the cloud limit only
+/// (`FactStore.withheld`, memory processing §11.9), each line a typed item with the highest sensitivity behind it, and
+/// the memory text with the user's names replaced by the profile matcher (`FactsSentText`). A local model gets the whole
+/// roster. Validation and the apply use the whole graph: that's local work.
+///
+/// Nothing in the app calls this yet: memory commits queueing facts jobs, and qualification, come in later steps.
 public struct FactsExtractor: Sendable {
     public let store: VaultStore
     public let router: ModelRouter
     public let activity: any ActivityRecorder
     public let registry: FactsRegistry
     public let userAliases: [String]
-    /// Until rosters are built from sendable items only (the privacy step), a Facts model that isn't on this Mac is
-    /// refused, and memories get code-only links, unless this is set: the fixture harness only.
-    public var unfilteredRostersAllowed = false
     /// The clock, monotonic per write in tests (roster tokens are `updated_at` values compared as text).
     public var clock: @Sendable () -> Date = { Date() }
 
@@ -51,9 +52,13 @@ public struct FactsExtractor: Sendable {
     public var groups: [String] { registry.callGroups.keys.sorted() }
 
     /// Whether a model may be asked at all.
-    var modelAllowed: Bool {
-        guard let m = router.factsModel else { return false }
-        return m.locality.isLocal || unfilteredRostersAllowed
+    var modelAllowed: Bool { router.factsModel != nil }
+
+    /// The limit a call's roster is built under: the cloud limit for a Facts model that isn't on this Mac, nil (the
+    /// whole graph) for a local one. Reconciliation records and compares what readings knew under the same limit.
+    var rosterLimit: CloudLimit? {
+        guard let m = router.factsModel, !m.locality.isLocal else { return nil }
+        return router.cloudLimit
     }
 
     /// Reads these memories, each in every call group (or the ones given), in order.
@@ -120,6 +125,12 @@ public struct FactsExtractor: Sendable {
         var version: Int
         var sensitivity: Sensitivity
         var graph: FactsGraph
+        /// The graph the roster comes from: the sendable one for a cloud model, else `graph`.
+        var rosterGraph: FactsGraph
+        /// The highest sensitivity behind each roster line (a sendable graph's).
+        var lineSensitivity: [Sensitivity?]
+        /// Known things by the whole graph, for validation (a thing the roster doesn't show still isn't a person).
+        var things: Set<String>
         var phrases: [RolePhrase]
         var sent: FactsSentText
         var roster: FactsRoster
@@ -145,7 +156,16 @@ public struct FactsExtractor: Sendable {
                                  trusted: (m["trust"] as String) == "trusted")
             let g = try FactStore.load(db, registry: registry, userAliases: userAliases).graph
             let preds = Set(registry.groupPredicates(group))
-            let roster = g.roster(group, asking: fm)
+            let limit = rosterLimit
+            let sendable = try limit.map { try FactStore.load(db, registry: registry, userAliases: userAliases, sendable: $0) }
+            let rg = sendable?.graph ?? g
+            let roster = rg.roster(group, asking: fm)
+            let lineSensitivity: [Sensitivity?] = roster.lines.map { line in
+                guard let sendable else { return nil }
+                let levels = line.entities.map { sendable.sensitivity[$0] }
+                // Unknown sensitivity never goes to a cloud provider (`ModelRouter.send`).
+                return levels.contains(where: { $0 == nil }) ? nil : Sensitivity(rawValue: levels.compactMap { $0 }.max() ?? 0)
+            }
             var quoted: [String: Sensitivity] = [:]
             for q in roster.quoted {
                 quoted[q] = try Int.fetchOne(db, sql: "SELECT sensitivity FROM memory WHERE id = ?", arguments: [q]).flatMap(Sensitivity.init)
@@ -156,8 +176,10 @@ public struct FactsExtractor: Sendable {
             var versions: [String: String] = [:]
             for p in Set(phrases.map(\.predicate)) { versions[p] = try FactStore.predicateVersion(db, p) }
             return Asked(memory: fm, version: version, sensitivity: Sensitivity(rawValue: m["sensitivity"]) ?? .secret, graph: g,
+                         rosterGraph: rg, lineSensitivity: lineSensitivity,
+                         things: sendable == nil ? roster.things : g.roster(group, asking: fm).things,
                          phrases: phrases,
-                         sent: FactsSentText(fm.text, userAliases: userAliases, registry: registry), roster: roster,
+                         sent: rg.sentText(fm.text), roster: roster,
                          quotedSensitivity: quoted, tokens: tokens, predicateVersions: versions,
                          readAt: clock())
         }
@@ -167,7 +189,10 @@ public struct FactsExtractor: Sendable {
         StructuredRequest(instructions: FactsPrompt.instructions(group, perspective: a.memory.source, registry: registry),
                           prompt: FactsPrompt.message(roster: a.roster.text, written: a.memory.written, sent: a.sent.sent,
                                                       phrases: a.phrases.map { ph in
-                                                          (FactsSentText(ph.surface, userAliases: userAliases, registry: registry).sent, ph.paired)
+                                                          // The phrase as the text sent writes it; a pair only as the
+                                                          // text sent has it (a user's name replaced there isn't sent).
+                                                          (a.sent.sentSlice(NSRange(location: ph.start, length: ph.end - ph.start)),
+                                                           ph.paired.flatMap { p in FactsSentText.findWord(p, in: a.sent.sent) != nil ? p : nil })
                                                       }),
                           schema: FactsPrompt.schema(group, registry: registry), maxOutputTokens: 4_096)
     }
@@ -182,15 +207,18 @@ public struct FactsExtractor: Sendable {
             }
             // A partial re-read is of a version the model has read: it never falls back to code-only links.
             let partial = scope != .full
-            guard modelAllowed else {
+            // No model, or a cloud model and a memory above its limit: code-only links, with no request built.
+            guard modelAllowed, rosterLimit.map({ $0.allows(a.sensitivity) }) ?? true else {
                 if !partial { try codeOnly(a, group: group, runID: runID) }
                 return call(.codeOnly)
             }
+            // Typed items (memory processing §11.9): the memory, the memories the roster quotes and every roster line,
+            // each with its sensitivity, so `ModelRouter.send` refuses a cloud call if anything is above the limit.
             let items = [ModelItem(a.sent.sent, sensitivity: a.sensitivity)]
                 + a.roster.quoted.map { q in
-                    ModelItem(FactsSentText(a.graph.memories[q]?.text ?? "", userAliases: userAliases, registry: registry).sent,
-                              sensitivity: a.quotedSensitivity[q] ?? nil)
+                    ModelItem(a.rosterGraph.sentText(a.rosterGraph.memories[q]?.text ?? "").sent, sensitivity: a.quotedSensitivity[q] ?? nil)
                 }
+                + (rosterLimit == nil ? [] : zip(a.roster.lines, a.lineSensitivity).map { ModelItem($0.0.text, sensitivity: $0.1) })
             let requester: CloudRequestCap.Requester = a.memory.source == .agent ? .agent : .user
             let before = router.usageCounters()[router.factsModel!.id] ?? ProviderUsage()
             let started = clock()
@@ -215,9 +243,10 @@ public struct FactsExtractor: Sendable {
             let usage = ProviderUsage(requests: after.requests - before.requests, inputTokens: after.inputTokens - before.inputTokens,
                                       outputTokens: after.outputTokens - before.outputTokens)
             guard let output else { return call(.failed, ms: ms, usage: usage) }
-            let v = FactsValidator(graph: a.graph, sent: a.sent, roster: a.roster.ids, phrases: a.phrases,
-                                   predicates: registry.groupPredicates(group), knownThings: a.roster.things,
+            var v = FactsValidator(graph: a.graph, sent: a.sent, roster: a.roster.ids, phrases: a.phrases,
+                                   predicates: registry.groupPredicates(group), knownThings: a.things,
                                    trusted: a.memory.trusted).validate(output)
+            if rosterLimit != nil { unseen(&v, a) }
             // The roster entries the answer used: those it names, and the holders of the phrases it was asked about.
             var used = v.referenced
             // A name left ambiguous rests on who shared it when the graph was read.
@@ -234,11 +263,12 @@ public struct FactsExtractor: Sendable {
                                                  roster: a.tokens.filter { used.contains($0.key) })
                 extraction.predicateVersions = a.predicateVersions
                 extraction.scope = scope
-                extraction.clean = v.dropped.allSatisfy { Self.codeAdditions.contains($0.reason) }
-                let x = extraction
+                extraction.clean = v.dropped.allSatisfy { Self.codeAdditions.contains($0.reason) || Self.unseenNotes.contains($0.reason) }
+                let x = extraction, limit = rosterLimit
                 let result = try await store.writer.write { db in
                     try FactStore.apply(db, memoryID: memoryID, version: a.version, extraction: x, callGroup: group,
-                                        runID: runID, registry: registry, userAliases: userAliases, now: clock(), readAt: a.readAt)
+                                        runID: runID, registry: registry, userAliases: userAliases, now: clock(), readAt: a.readAt,
+                                        sendable: limit)
                 }
                 total.add(result)
                 return call(.applied, dropped: v.dropped.map(\.reason), ms: ms, usage: usage)
@@ -247,6 +277,65 @@ public struct FactsExtractor: Sendable {
             }
         }
         return nil
+    }
+
+    /// Notes for answers about what a cloud call couldn't see: not something the model got wrong.
+    static let unseenNotes: Set<String> = ["unseen_namesake", "unseen_holder"]
+
+    /// A cloud call saw only what's sendable. A name that could also mean someone it couldn't see is kept as ambiguous
+    /// (asked again when its candidates change), with nothing the answer attached to that person; a role answer, or a
+    /// fact about someone the memory doesn't name, is dropped when the predicate has a holder the call couldn't see (code
+    /// resolves the phrase when it's read). Rather than decided without them.
+    func unseen(_ v: inout FactsValidated, _ a: Asked) {
+        let shown = Set(a.rosterGraph.entities.keys)
+        var converted = Set<String>(), convertedNames = Set<String>()
+        for i in v.people.indices where v.people[i].person != "ambiguous" {
+            let candidates = a.graph.byName(v.people[i].name, onlyTrusted: a.memory.trusted).map(\.id)
+            if candidates.contains(where: { !shown.contains($0) }) {
+                if a.graph.entities[v.people[i].person] != nil { converted.insert(v.people[i].person) }
+                convertedNames.insert(FactsText.fold(v.people[i].name))
+                v.people[i].person = "ambiguous"
+                v.dropped.append(.init(reason: "unseen_namesake", index: i))
+            }
+        }
+        /// Holders of a predicate the whole graph knows that the call didn't see holding it: named, or a group's count.
+        func unseenHolders(_ predicate: String) -> Bool {
+            let all = Set(a.graph.facts.filter { $0.predicate == predicate && !$0.negated }.map(\.entity))
+            let seen = Set(a.rosterGraph.facts.filter { $0.predicate == predicate && !$0.negated }.map(\.entity))
+            let counts = a.graph.entities.values.filter { $0.group?.predicate == predicate && $0.name == nil }
+            return !all.isSubset(of: seen) || counts.contains { a.rosterGraph.entities[$0.id]?.count != $0.count }
+        }
+        let named = Set(v.people.map(\.person))
+        v.facts = v.facts.enumerated().compactMap { i, f in
+            if converted.contains(f.entity) {
+                v.dropped.append(.init(reason: "unseen_namesake", index: i))
+                return nil
+            }
+            if a.graph.entities[f.entity]?.kind == FactsValidator.personKind, !named.contains(f.entity), unseenHolders(f.predicate) {
+                v.dropped.append(.init(reason: "unseen_holder", index: i))
+                return nil
+            }
+            return f
+        }
+        v.roles.removeAll { r in
+            guard a.phrases.indices.contains(r.phrase) else { return false }
+            // A role answer through a name kept as ambiguous rests on it too.
+            if converted.contains(r.refersTo)
+                || (r.refersTo.hasPrefix("name:") && convertedNames.contains(FactsText.fold(String(r.refersTo.dropFirst(5))))) {
+                v.dropped.append(.init(reason: "unseen_namesake", index: r.phrase))
+                return true
+            }
+            let ph = a.phrases[r.phrase]
+            let (d, w) = a.graph.asOf(a.memory, ph)
+            let all = a.graph.holders(ph, asOf: d, written: w)
+            let (rd, rw) = a.rosterGraph.asOf(a.memory, ph)
+            let seen = a.rosterGraph.holders(ph, asOf: rd, written: rw)
+            // Named holders, and those a count says exist.
+            guard !Set(all.holders.map(\.entity.id)).isSubset(of: Set(seen.holders.map(\.entity.id))) || all.extra > seen.extra
+            else { return false }
+            v.dropped.append(.init(reason: "unseen_holder", index: r.phrase))
+            return true
+        }
     }
 
     /// Code-only links for a memory the model can't read (memory processing §11.3): names only for known people's
@@ -321,9 +410,9 @@ extension FactStore.ApplyResult {
 
 extension FactsText {
     /// The first whole-word, case- and accent-insensitive occurrence of a name in a text (UTF-16 range).
-    static func wholeWord(_ name: String, in text: String) -> NSRange? {
+    static func wholeWord(_ name: String, in text: String, from start: Int = 0) -> NSRange? {
         let ns = text as NSString
-        var from = 0
+        var from = start
         while from < ns.length {
             let r = ns.range(of: name, options: [.caseInsensitive, .diacriticInsensitive],
                              range: NSRange(location: from, length: ns.length - from))

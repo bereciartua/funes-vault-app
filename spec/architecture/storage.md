@@ -365,8 +365,9 @@ CREATE TABLE fact_evidence (
 );
 CREATE INDEX fact_evidence_fact ON fact_evidence(fact_id, target_kind);
 CREATE INDEX fact_evidence_other ON fact_evidence(other_fact_id) WHERE other_fact_id IS NOT NULL;
--- A role group's count is evidence on the group's own fact row; a death is a `qualifier` row ('deceased'). Both come
--- from trusted memories only and go with them.
+-- A role group a memory states, with its count when it gives one, is evidence on the group's own fact row, so the
+-- group goes with its memory (and a cloud roster shows it only with a sendable memory behind it); a death is a
+-- `qualifier` row ('deceased'). A count and a death count from trusted memories only.
 CREATE INDEX fact_evidence_memory ON fact_evidence(memory_id, memory_version);
 
 CREATE TABLE mention_decision (

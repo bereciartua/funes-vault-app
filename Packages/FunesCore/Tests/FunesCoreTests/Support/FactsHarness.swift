@@ -242,7 +242,6 @@ enum FactsHarness {
         let clock = Clock()
         let router = ModelRouter(classifier: nil, onDevice: nil, cloudLimit: .upTo(.secret), factsModel: provider)
         var x = FactsExtractor(store: v.store, router: router, activity: InMemoryActivityLog(), userAliases: user)
-        x.unfilteredRostersAllowed = true
         x.clock = { clock.now() }
         let queue = ProcessingQueue(store: v.store, activity: InMemoryActivityLog(), launchedAt: .distantPast)
         let worker = FactsQueueWorker(extractor: x)

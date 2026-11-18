@@ -288,6 +288,24 @@
       "I’ve",
       "I’ll"
     ],
+    "weekdays": [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+      "lunes",
+      "martes",
+      "miércoles",
+      "miercoles",
+      "jueves",
+      "viernes",
+      "sábado",
+      "sabado",
+      "domingo"
+    ],
     "months": {
       "1": [
         "january",

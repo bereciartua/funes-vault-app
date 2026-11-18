@@ -25,7 +25,7 @@ public struct FactsQueueWorker: Sendable {
     }
 
     func plan(_ memoryID: String, group: String) async throws -> Plan {
-        let registry = extractor.registry, users = extractor.userAliases
+        let registry = extractor.registry, users = extractor.userAliases, limit = extractor.rosterLimit
         return try await extractor.store.writer.write { db in
             guard let m = try Row.fetchOne(db, sql: "SELECT version, status FROM memory WHERE id = ?", arguments: [memoryID]),
                   ["active", "archived"].contains(m["status"] as String) else { return .gone }
@@ -33,7 +33,7 @@ public struct FactsQueueWorker: Sendable {
                 SELECT EXISTS (SELECT 1 FROM facts_asked WHERE memory_id = ? AND memory_version = ? AND call_group = ? AND mention_kind = 'read')
                 """, arguments: [memoryID, m["version"] as Int, group]) ?? false
             guard read else { return .full }
-            let due = try FactsReconciler.reconcile(db, only: memoryID, registry: registry, userAliases: users)
+            let due = try FactsReconciler.reconcile(db, only: memoryID, registry: registry, userAliases: users, sendable: limit)
                 .first { $0.key.group == group }?.due
             return due.map { .partial($0) } ?? .nothing
         }
@@ -45,9 +45,9 @@ public struct FactsQueueWorker: Sendable {
         guard job.kind == .facts else { return .done(engine: nil) }
         let engine = extractor.router.factsModel.map(ModelRouter.engine) ?? extractor.codeEngine
         guard let group = job.callGroup else {
-            let registry = extractor.registry, users = extractor.userAliases, now = clock()
+            let registry = extractor.registry, users = extractor.userAliases, now = clock(), limit = extractor.rosterLimit
             try await extractor.store.writer.write { db in
-                try FactsReconciler.sweep(db, registry: registry, userAliases: users, now: now)
+                try FactsReconciler.sweep(db, registry: registry, userAliases: users, sendable: limit, now: now)
             }
             return .done(engine: nil)
         }
