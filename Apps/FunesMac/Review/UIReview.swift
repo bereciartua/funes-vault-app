@@ -3,7 +3,7 @@ import AppKit
 import BridgeKitCore
 import BridgeKitRemote
 import BridgeUI
-import FunesCore
+@_spi(FactsReview) import FunesCore
 import FunesMCP
 import FunesProtocol
 import SwiftUI
@@ -442,7 +442,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 await snapshot("settings-\(name ?? destination.safeName)-\(suffix)", settings.window)
             }
             for pane in SettingsPane.allCases { await show(SettingsDestination(pane)) }
-            for page in [SettingsPage.newMemories, .tidyUp, .searchAnswers, .searchIndex, .account("anthropic"),
+            for page in [SettingsPage.newMemories, .tidyUp, .searchAnswers, .facts, .searchIndex, .account("anthropic"),
                          .account("ollama"), .account("claude-code"), .account("codex")] {
                 await show(SettingsDestination(page))
             }
@@ -475,6 +475,21 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await show(.searchIndex, "ai-features-search-index-second-index")
             await show(SettingsDestination(.privacy), "ai-privacy-second-index")
             ai.setEmbedding(nil)
+            // Facts once models have qualified: review-only records, never measured and never shipped (the app and its
+            // runner use the bundled file, which is empty until 13a.2's Gates step). This build starts no runner.
+            ai.factsQualification = Self.reviewFactsQualification()
+            await show(.facts, "ai-features-facts-qualified")
+            ai.factsLearn = true
+            ai.factsUse = true
+            await show(.facts, "ai-features-facts-learning")
+            await show(SettingsDestination(.features), "ai-features-with-facts")
+            await show(SettingsDestination(.privacy), "ai-privacy-facts")
+            ai.setFactsChoice(ModelChoice(account: "claude-code", model: "claude-opus-5-5"))
+            await show(.facts, "ai-features-facts-opus")
+            ai.setFactsChoice(nil)
+            ai.factsLearn = false
+            ai.factsUse = false
+            ai.factsQualification = .bundled
             settings.close()
         }
         main.close()
@@ -737,4 +752,32 @@ extension SearchAnswer {
         ], read: 3, withheld: 0, dropped: 1, engine: "claude-code/haiku", locality: .cloud, duration: .seconds(5))
     }
 }
+extension UIReview {
+    /// The Facts page's qualified scenes only: Claude Haiku 5.5 for every call group through the Claude plan and an
+    /// Anthropic key, and Claude Opus 5.5 for the people group through the plan. Made up for the review build; not
+    /// evidence of anything, and never in `Resources/facts-qualification.json`.
+    static func reviewFactsQualification() -> FactsQualification {
+        let registry = FactsRegistry.bundled, versions = FactsQualification.promptVersions(registry)
+        func record(_ group: String, _ engine: FactsEngine) -> FactsQualification.Record {
+            let predicates = registry.predicates.filter { $0.callGroup == group }
+            return FactsQualification.Record(predicates: predicates.map(\.id), uses: ["recorded"], callGroup: group, engine: engine,
+                                             promptVersion: versions[group] ?? "", registryVersion: registry.fingerprint,
+                                             gate: "UI review only", recordedAt: "2026-11-18")
+        }
+        let plan = { (model: String) in
+            FactsEngine(ClaudeCodeClient(executable: "/usr/bin/false", model: model))
+        }
+        let key = FactsEngine(model: "anthropic/\(FactsClients.defaultModel)", adapter: "anthropic")
+        var records: [FactsQualification.Record] = []
+        for group in registry.callGroups.keys.sorted() {
+            records.append(record(group, plan(FactsClients.defaultModel)))
+            records.append(record(group, key))
+        }
+        if let people = registry.callGroups.keys.sorted().first {
+            records.append(record(people, plan("claude-opus-5-5")))
+        }
+        return FactsQualification(reviewRecords: records)
+    }
+}
+
 #endif

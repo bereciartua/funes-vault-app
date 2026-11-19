@@ -35,7 +35,9 @@ public struct FactsLearnReport: Sendable {
 /// predicate that isn't recorded are dropped, and earlier ones are hidden (`FactStore.load`). The prompt and schema stay
 /// the declared group's, so the prompt version never depends on the gate.
 ///
-/// Nothing in the app calls this yet: memory commits queueing facts jobs come with the Settings step.
+/// The app runs it through the facts lane (`FactsQueueWorker`, from the Mac's processing runner) while *Learn from
+/// memories* is on; `permit` is checked before every request, so turning learning off, closing the lane or changing
+/// the configuration stops a running job at its next send.
 public struct FactsExtractor: Sendable {
     public let store: VaultStore
     public let router: ModelRouter
@@ -48,6 +50,9 @@ public struct FactsExtractor: Sendable {
     let promptVersions: [String: String]
     /// The clock, monotonic per write in tests (roster tokens are `updated_at` values compared as text).
     public var clock: @Sendable () -> Date = { Date() }
+    /// Checked before every request, retries included: false stops the job there, with nothing sent or written, and the
+    /// queue runs it again later (`FactsLane.permits`, in the app).
+    public var permit: @Sendable () -> Bool = { true }
 
     /// How calls are batched, and the pipeline's revision (a qualification record names it, memory processing §11.10):
     /// one memory per call per group, full or partial. Bump the revision when validation, the apply, rosters,
@@ -154,6 +159,8 @@ public struct FactsExtractor: Sendable {
     static let qualificationChanged = "qualification_changed"
     /// A fact the answer gave for a predicate that isn't recorded: dropped, and not the model's error.
     static let unqualifiedPredicate = "unqualified_predicate"
+    /// `permit` said no before a request: learning turned off, the lane closed or the configuration changed.
+    static let notPermitted = "not_permitted"
 
     struct Asked {
         var memory: FactsMemory
@@ -273,9 +280,12 @@ public struct FactsExtractor: Sendable {
                     }
                 }
                 tries += 1
+                guard permit() else { return call(.changed, dropped: [Self.notPermitted]) }
                 do {
                     output = try await router.facts(request(a, group: group), group: group, items: items, requester: requester,
-                                                    now: clock())
+                                                    permit: permit, now: clock())
+                } catch is SendNotPermitted {
+                    return call(.changed, dropped: [Self.notPermitted])
                 } catch ProviderError.invalidOutput {
                     continue
                 } catch let e as ProviderError where [.blocked, .capReached, .unavailable].contains(e) {

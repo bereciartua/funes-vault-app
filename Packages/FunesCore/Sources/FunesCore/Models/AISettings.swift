@@ -239,6 +239,8 @@ public enum JobProblem: Hashable, Sendable {
 public enum AccountUse: Hashable, Sendable {
     case job(AIJob, model: String?, follows: Bool)
     case secondIndex(model: String)
+    /// The Facts task (v0.10), while *Learn from memories* is on: its chosen model.
+    case facts(model: String)
 }
 
 /// One account's models in a job's picker, with why it can't run now.
@@ -286,12 +288,14 @@ public struct AISettings: Codable, Hashable, Sendable {
     public var searchAnswersOn = false
     /// When they're on, when a search is answered.
     public var searchAnswersTrigger: AnswerTrigger = .ask
+    /// The Facts task (v0.10): off by default.
+    public var facts = FactsSettings()
 
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
         case version, accounts, plans, newMemories, tidyUp, searchAnswers, embedding, cloudLimit, dailyCap
-        case codexAllowsFileReads, usage, calibrations, searchAnswersOn, searchAnswersTrigger
+        case codexAllowsFileReads, usage, calibrations, searchAnswersOn, searchAnswersTrigger, facts
     }
 
     /// Every field but the version may be missing, so a field added later reads as its default.
@@ -311,6 +315,7 @@ public struct AISettings: Codable, Hashable, Sendable {
         calibrations = try c.decodeIfPresent([String: CalibratedThresholds].self, forKey: .calibrations) ?? [:]
         searchAnswersOn = try c.decodeIfPresent(Bool.self, forKey: .searchAnswersOn) ?? false
         searchAnswersTrigger = try c.decodeIfPresent(AnswerTrigger.self, forKey: .searchAnswersTrigger) ?? .ask
+        facts = try c.decodeIfPresent(FactsSettings.self, forKey: .facts) ?? FactsSettings()
     }
 
     // MARK: Accounts and plans
@@ -524,6 +529,8 @@ public struct AISettings: Codable, Hashable, Sendable {
         accounts.removeAll { $0.id == id }
         usage[id] = nil
         if effect.secondIndex { embedding = nil }
+        // Facts' choice is kept, dangling, so it reads "Choose a model" and nothing is sent: falling back to the default
+        // would move learning to another account without the user choosing it.
         return effect
     }
 
@@ -562,6 +569,8 @@ public struct SendFact: Hashable, Sendable {
         /// The second index: memory text unless the cloud limit is Nothing (for a cloud model), and
         /// agents' task descriptions when its switch is on.
         case searchIndex(memoryText: Bool, agentTasks: Bool)
+        /// The Facts task (v0.10), while *Learn from memories* is on with a model.
+        case facts
     }
 
     public var job: Job
@@ -606,6 +615,36 @@ public extension AISettings {
                                   destination: .account(account.id, model: embedding.model, locality: locality)))
         }
         return facts
+    }
+}
+
+public extension AISettings {
+    /// Everything stored that a facts call depends on: the Facts settings, the cloud limit, the accounts and plans (and
+    /// Codex's file-read switch). Usage counters and other tasks' choices aren't in it, so collecting another task's
+    /// usage never stops a running facts job.
+    struct FactsInputs: Hashable, Sendable {
+        var facts: FactsSettings
+        var cloudLimit: CloudLimit
+        var accounts: [AIAccount]
+        var plans: [AIPlan]
+        var codexAllowsFileReads: Bool
+    }
+
+    var factsInputs: FactsInputs {
+        FactsInputs(facts: facts, cloudLimit: cloudLimit, accounts: accounts, plans: plans, codexAllowsFileReads: codexAllowsFileReads)
+    }
+
+    /// Facts' line in "Used by" for an account, while learning is on.
+    func factsUse(_ id: String, resolution: FactsResolution) -> AccountUse? {
+        guard facts.learn, let chosen = resolution.chosen, chosen.account == id else { return nil }
+        return .facts(model: chosen.model)
+    }
+
+    /// Facts' line in "What AI features send", while learning is on with a model.
+    func factsSendFact(resolution: FactsResolution, localities: [String: Locality]) -> SendFact? {
+        guard facts.learn, let chosen = resolution.chosen else { return nil }
+        let locality = PlanKind(rawValue: chosen.account) != nil ? .cloud : localities[chosen.account] ?? .cloud
+        return SendFact(job: .facts, destination: .account(chosen.account, model: chosen.model, locality: locality))
     }
 }
 

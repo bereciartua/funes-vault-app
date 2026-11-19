@@ -256,6 +256,72 @@ struct AIJobText {
         }
     }
 
+    // MARK: Facts (v0.10, FR-F-01)
+
+    /// The Features row's summary: "Not available yet" while no model qualified; otherwise the switches.
+    var factsSummary: String {
+        if case .nothingQualified? = settings.factsProblem, !settings.factsLearn, !settings.factsUse {
+            return String(localized: "Not available yet")
+        }
+        switch (settings.factsLearn, settings.factsUse) {
+        case (true, true): return String(localized: "Learning from memories") + " · " + String(localized: "Used in search and answers")
+        case (true, false): return String(localized: "Learning from memories")
+        case (false, true): return String(localized: "Used in search and answers")
+        case (false, false): return String(localized: "Off")
+        }
+    }
+
+    /// The page's status: ready, what's missing, or that nothing has qualified yet; and, when the chosen model reads only
+    /// part of what Facts learns, who reads the rest.
+    var factsStatus: String {
+        switch settings.factsProblem {
+        case .nothingQualified?:
+            return String(localized: "No model has passed Funes's tests for Facts yet, so Facts can't be turned on.")
+        case let .needsAccount(models)?:
+            return String(localized: "Facts needs a model that passed Funes's tests: \(models.formatted(.list(type: .or))). Add one in Models & Accounts.")
+        case .chooseModel?:
+            return String(localized: "Choose a model to learn facts.")
+        case let .account(id, problem)?:
+            if let kind = PlanKind(rawValue: id) {
+                if let status = settings.subscriptionStatus[kind] {
+                    let text = ProviderText.planState(status, kind)
+                    return text.hasSuffix(".") ? text : text + "."
+                }
+                return problem == .paused ? ProviderText.reason(problem) + "." : String(localized: "Checking…")
+            }
+            return problem == .noKey ? String(localized: "Add \(settings.name(id))'s API key in Models & Accounts.")
+                                     : ProviderText.reason(problem) + "."
+        case nil:
+            break
+        }
+        var lines = [settings.factsLearn ? String(localized: "Ready. Funes learns from new and changed memories.")
+                                         : String(localized: "Ready. Turn on Learn from memories to start.")]
+        let resolution = settings.factsResolution
+        let all = Set(FactsRegistry.bundled.callGroups.keys)
+        if let chosen = resolution.chosen, chosen.groups != all {
+            if let fallback = resolution.fallback, resolution.groups == all {
+                lines.append(String(localized: "\(chosen.model) reads part of what Facts learns; \(fallback.model) reads the rest."))
+            } else {
+                lines.append(String(localized: "\(chosen.model) reads only part of what Facts learns; no other model here has passed Funes's tests for the rest, so it isn't learned."))
+            }
+        }
+        return lines.joined(separator: " ")
+    }
+
+    /// FR-F-01's disclosure, for a cloud model: what Facts sends and to whom.
+    var factsDisclosure: String? {
+        guard settings.factsProblem == nil || { if case .account = settings.factsProblem { true } else { false } }(),
+              let account = settings.factsResolution.account, settings.factsLocality?.isLocal == false else { return nil }
+        let name = PlanKind(rawValue: account)?.plan ?? settings.name(account)
+        guard let limit else {
+            return String(localized: "Facts sends nothing to \(name): the cloud limit is Nothing, so it links memories only from what it already knows.")
+        }
+        if let kind = PlanKind(rawValue: account) {
+            return String(localized: "Facts sends new and changed memories (up to \(limit)) to \(kind.plan) through your \(kind.tool) sign-in, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's \(settings.dailyCap) cloud requests, and your \(kind.plan) account's training setting applies.")
+        }
+        return String(localized: "Facts sends new and changed memories (up to \(limit)) to \(name), with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward today's \(settings.dailyCap) cloud requests.")
+    }
+
     // MARK: Apply changes automatically
 
     /// The highest level either job's engine reached: New memories' (none yet) or the tidy-up's.
@@ -331,6 +397,11 @@ struct AIJobText {
                 case .everySearch: String(localized: "Search answers: your search and its top results\(level), to \(to), each time you pause on a search.")
                 }
                 return (line, !local)
+            case .facts:
+                guard local || limit != nil else {
+                    return (String(localized: "Facts: nothing to \(to); the cloud limit is Nothing."), false)
+                }
+                return (String(localized: "Facts: new and changed memories\(upTo(local)), with the names and facts about you they mention, including other people's names, to \(to)."), !local)
             case let .searchIndex(memoryText, agentTasks):
                 if !memoryText {
                     return (agentTasks
@@ -351,8 +422,14 @@ struct AIJobText {
 
     /// The summary's facts, with the switches the app keeps.
     var sendFacts: [SendFact] {
-        settings.stored.sendFacts(proposals: model.preferences.classifyCaptures, split: model.preferences.splitNewMemories,
-                                  tidyUpScheduled: model.preferences.tidyUpDaily,
-                                  localities: Dictionary(uniqueKeysWithValues: settings.accounts.map { ($0.id, settings.locality(account: $0.id)) }))
+        let localities = Dictionary(uniqueKeysWithValues: settings.accounts.map { ($0.id, settings.locality(account: $0.id)) })
+        var facts = settings.stored.sendFacts(proposals: model.preferences.classifyCaptures, split: model.preferences.splitNewMemories,
+                                              tidyUpScheduled: model.preferences.tidyUpDaily, localities: localities)
+        // Facts (v0.10), while Learn from memories is on with a model, before the search index as Features lists them.
+        if let fact = settings.stored.factsSendFact(resolution: settings.factsResolution, localities: localities) {
+            let index = facts.firstIndex { if case .searchIndex = $0.job { true } else { false } } ?? facts.endIndex
+            facts.insert(fact, at: index)
+        }
+        return facts
     }
 }

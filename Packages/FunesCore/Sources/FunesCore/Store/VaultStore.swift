@@ -8,6 +8,8 @@ import GRDB
 public final class VaultStore: Sendable {
     public let writer: DatabasePool
     public let path: URL
+    /// The facts lane's switches for this vault (memory processing §11.3): learning, closures, admission.
+    public let factsLane: FactsLane
 
     public static let fileName = "vault.sqlite"
 
@@ -25,8 +27,10 @@ public final class VaultStore: Sendable {
     public init(path: URL, backupsDirectory: URL? = nil) throws {
         var config = Configuration()
         config.foreignKeysEnabled = true
+        let lane = FactsLane()
         config.prepareDatabase { db in
             try db.execute(sql: "PRAGMA synchronous = NORMAL")
+            lane.register(db)
         }
         let pool = try DatabasePool(path: path.path, configuration: config)
         let migrator = Schema.migrator
@@ -44,6 +48,7 @@ public final class VaultStore: Sendable {
         try migrator.migrate(pool)
         writer = pool
         self.path = path
+        factsLane = lane
     }
 
     // MARK: - Backups

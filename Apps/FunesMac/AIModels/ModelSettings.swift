@@ -63,6 +63,9 @@ final class ModelSettings {
     /// Called when anything the second index depends on changes: the choice, the cloud limit, a
     /// calibration, or its account's address, cloud flag or key.
     @ObservationIgnored var embeddingInputsChanged: () -> Void = {}
+    /// Called after any stored change, so the facts lane learns of anything a facts call depends on (the switches, the
+    /// choice, the cloud limit, an account): the app's `FactsLane` wiring.
+    @ObservationIgnored var factsInputsChanged: () -> Void = {}
     let keys: any ProviderKeyStore
     private(set) var stored: AISettings
     /// Bumped when a key is saved or removed, so views reading `hasKey` refresh.
@@ -88,10 +91,11 @@ final class ModelSettings {
     /// Changes the stored settings, saves, and tells the second index when its inputs changed.
     @discardableResult
     private func change<T>(_ body: (inout AISettings) -> T) -> T {
-        let before = stored.embeddingInputs
+        let before = stored.embeddingInputs, factsBefore = stored.factsInputs
         let result = body(&stored)
         save()
         if stored.embeddingInputs != before { embeddingInputsChanged() }
+        if stored.factsInputs != factsBefore { factsInputsChanged() }
         return result
     }
 
@@ -155,6 +159,7 @@ final class ModelSettings {
         if let key, !key.isEmpty { try keys.setKey(key, for: provider) } else { try keys.deleteKey(for: provider) }
         keyGeneration += 1
         if stored.embedding?.provider == id { embeddingInputsChanged() }
+        factsInputsChanged()
     }
 
     func hasKey(_ id: String) -> Bool {
@@ -225,8 +230,16 @@ final class ModelSettings {
         }
     }
 
-    /// The jobs and second index that use an account.
-    func usedBy(_ id: String) -> [AccountUse] { stored.usedBy(id) }
+    /// Where Facts' problem is fixed: its account's page when the account is why, otherwise the Facts page.
+    var factsDestination: SettingsDestination {
+        if case let .account(id, _)? = factsProblem { return .account(id) }
+        return .facts
+    }
+
+    /// The jobs, the second index and Facts that use an account.
+    func usedBy(_ id: String) -> [AccountUse] {
+        stored.usedBy(id) + [stored.factsUse(id, resolution: factsResolution)].compactMap { $0 }
+    }
 
     // MARK: Plans (ADR-0024)
 
@@ -274,7 +287,9 @@ final class ModelSettings {
                 ExecutableLocator.live.locate(kind.command, home: home).map { (kind, $0) }
             })
         }.value
+        let changed = found != executables
         executables = found
+        if changed { factsInputsChanged() }
     }
 
     /// Checks each CLI found (version, flags, sign-in) for Settings.
@@ -283,11 +298,11 @@ final class ModelSettings {
         if plansFixed { return }
         #endif
         for kind in PlanKind.allCases {
-            if let client = subscriptionClient(kind) {
-                subscriptionStatus[kind] = await client.status()
-            } else {
-                subscriptionStatus[kind] = .notInstalled
-            }
+            let status = if let client = subscriptionClient(kind) { await client.status() } else { SubscriptionStatus.notInstalled }
+            let changed = subscriptionStatus[kind] != status
+            subscriptionStatus[kind] = status
+            // Signing in (or out) changes whether Facts' plan can run: told at once, before the next plan's check.
+            if changed { factsInputsChanged() }
         }
     }
 
@@ -449,6 +464,101 @@ final class ModelSettings {
             return { ModelRouter(classifier: try Self.client(for: account, model: model, key: key), onDevice: nil, cloudLimit: limit,
                                  cap: cap, backoff: backoff) }
         }
+    }
+
+    // MARK: Facts (v0.10, FR-F-01, model providers §4)
+
+    /// The qualification records the page offers models from: the shipped ones. The runner reads them again with the
+    /// local off-switches for every job (`factsConfiguration`).
+    var factsQualification: FactsQualification = .bundled
+
+    /// Remove Learned Facts is running: learning can't be turned on until it ends (shared, so leaving the page and
+    /// coming back doesn't lose it).
+    private(set) var factsRemoving = false
+
+    /// Remove Learned Facts (FR-F-01): learning off in the settings and the lane, then, once no facts job is running,
+    /// everything inferred and every facts job go (`facts_removed` in Activity, counts only). False when it failed.
+    func removeLearnedFacts(store: VaultStore, activity: any ActivityRecorder) async -> Bool {
+        guard !factsRemoving else { return false }
+        factsLearn = false
+        factsRemoving = true
+        defer { factsRemoving = false }
+        do {
+            try await store.removeLearnedFactsStoppingLearning(activity: activity)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    /// Turning learning on pins the default as the explicit choice, so a later account change never moves learning
+    /// elsewhere without the user choosing it. Ignored while Remove Learned Facts runs.
+    var factsLearn: Bool {
+        get { stored.facts.learn }
+        set {
+            if newValue && factsRemoving { return }
+            let pinned = newValue && stored.facts.choice == nil ? factsResolution.chosen?.choice : nil
+            change {
+                $0.facts.learn = newValue
+                if let pinned { $0.facts.choice = pinned }
+            }
+        }
+    }
+
+    var factsUse: Bool {
+        get { stored.facts.use }
+        set { change { $0.facts.use = newValue } }
+    }
+
+    var factsChoice: ModelChoice? { stored.facts.choice }
+
+    func setFactsChoice(_ choice: ModelChoice?) {
+        guard choice != stored.facts.choice else { return }
+        change { $0.facts.choice = choice }
+    }
+
+    /// The plans the Facts picker lists: found on this Mac, or the current choice.
+    private var factsPlans: [PlanKind] {
+        PlanKind.allCases.filter { executables[$0] != nil || stored.facts.choice?.account == $0.rawValue }
+    }
+
+    /// The models the Facts picker offers: only ones that qualified, from accounts and plans that can run them.
+    var factsOffers: [FactsOffer] { stored.factsOffers(qualification: factsQualification, plans: factsPlans) }
+
+    /// What Facts runs on.
+    var factsResolution: FactsResolution {
+        stored.factsResolution(offers: factsOffers, runnable: { self.problem(account: $0) == nil })
+    }
+
+    /// Why Facts can't learn as chosen.
+    var factsProblem: FactsProblem? {
+        let offers = factsOffers
+        return stored.factsProblem(qualification: factsQualification, offers: offers,
+                                   resolution: stored.factsResolution(offers: offers, runnable: { self.problem(account: $0) == nil }),
+                                   accountProblem: { self.problem(account: $0) })
+    }
+
+    /// Whether any model is offered, for any group: without one, both switches stay off (unless already on).
+    var factsAvailable: Bool { !factsOffers.isEmpty }
+
+    /// Where the chosen model runs (a plan is cloud; an account is cloud until resolved).
+    var factsLocality: Locality? { factsResolution.account.map { locality(account: $0) } }
+
+    /// What a facts job needs, read now on the main actor: the clients (built off it, in `make`) for the chosen offer
+    /// and its fallback, and the cloud limit. Nil while learning is off or no model resolves.
+    func factsConfiguration(cap: CloudRequestCap?) -> FactsConfiguration? {
+        let resolution = factsResolution
+        // A known problem with the account (not signed in, no key, paused) waits like no model, rather than failing the
+        // job's attempts; fixing it changes the settings or the plan's state, which wakes the job.
+        guard stored.facts.learn, let chosen = resolution.chosen, problem(account: chosen.account) == nil else { return nil }
+        let settings = stored, limit = cloudLimit, backoff = backoff
+        func recipe(_ offer: FactsOffer) -> FactsConfiguration.Recipe {
+            let kind = PlanKind(rawValue: offer.account)
+            let key = kind == nil ? settings.account(offer.account).flatMap { (try? keys.key(for: $0.endpoint.id)) ?? nil } : nil
+            return .init(offer: offer, executable: kind.flatMap { executables[$0] }, key: key)
+        }
+        return FactsConfiguration(settings: settings, chosen: recipe(chosen), fallback: resolution.fallback.map(recipe),
+                                  cloudLimit: limit, cap: cap, backoff: backoff)
     }
 
     // MARK: Limits (ADR-0022)

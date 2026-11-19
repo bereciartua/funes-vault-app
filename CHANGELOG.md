@@ -4,6 +4,10 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 
 ## [Unreleased]
 
+### Added
+
+- **Settings ▸ AI ▸ Features ▸ Facts** (in progress, Phase 13): the page for learning facts about you from your memories, with *Learn from memories*, *Use in search and answers*, the model, what it sends, and Remove Learned Facts…. No model has passed Funes's tests for it yet, so it says so and can't be turned on.
+
 ## [0.5.2] - 2026-11-11
 
 Fixes from a full code review of the Mac app, the iPhone app and the release pipeline. **Update the Mac first, then the iPhone:** the iPhone now trusts only refusals your Mac has signed, so a new iPhone app with an older Mac can't correct its clock or learn it was removed (it shows the Mac as unreachable instead). Right after the Mac updates, the iPhone may see "vault not available" for up to four minutes while replay protection starts; it recovers by itself.

@@ -113,6 +113,12 @@ public struct FactsQualification: Sendable {
         unchecked = false
     }
 
+    /// The UI review build's qualified scene only (`FUNES_UI_REVIEW`): records that were never measured, to show the
+    /// Facts page as it will look once the Gates step ships real ones. The runner and the extractor use `bundled`.
+    @_spi(FactsReview) public init(reviewRecords: [Record]) {
+        self.init(records: reviewRecords)
+    }
+
     private init(unchecked: Bool) {
         records = []
         off = []

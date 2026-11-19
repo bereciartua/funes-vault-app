@@ -1,6 +1,7 @@
 import Foundation
 import FunesProtocol
 import GRDB
+import Synchronization
 
 /// One durable piece of model work (spec/domain/domain-model.md, ProcessingJob): about a
 /// suggestion or a memory, never holding text.
@@ -77,15 +78,22 @@ public final class ProcessingQueue: Sendable {
     public let activity: any ActivityRecorder
     /// When this process started: a tidy-up run left open before it was interrupted, not running.
     public let launchedAt: Date
-    /// An in-process pause for the facts lane (the Mac's tidy-up while it runs, before it writes its run row).
+    /// An in-process pause for the facts lane, read inside the claim's transaction.
     public let factsPaused: @Sendable () -> Bool
+    /// The vault's lane switches (`VaultStore.factsLane`): a facts job is admitted only while learning is on and nothing
+    /// closes the lane, atomically with the claim, and leaves it when its outcome is recorded. Nil only for a queue made
+    /// `ungatedFacts` (the fixture harness, and tests of the lane's ordering alone).
+    public let factsLane: FactsLane?
 
+    /// `ungatedFacts`: facts jobs run whatever *Learn from memories* says. Only to measure the lane (the harness, tests);
+    /// every queue in the app is gated.
     public init(store: VaultStore, activity: any ActivityRecorder, launchedAt: Date = Date(),
-                factsPaused: @escaping @Sendable () -> Bool = { false }) {
+                factsPaused: @escaping @Sendable () -> Bool = { false }, ungatedFacts: Bool = false) {
         self.store = store
         self.activity = activity
         self.launchedAt = launchedAt
         self.factsPaused = factsPaused
+        factsLane = ungatedFacts ? nil : store.factsLane
     }
 
     /// The subject of the facts lane's one reconciliation sweep.
@@ -104,6 +112,17 @@ public final class ProcessingQueue: Sendable {
     /// gets a new generation, so it runs again when it finishes, whatever its outcome.
     static func enqueueFacts(_ db: Database, memoryID: UUID, version: Int, group: String, reason: FactsReason, now: Date) throws {
         try upsertFacts(db, subject: memoryID, version: version, group: group, reason: reason, now: now)
+    }
+
+    /// A memory version was committed (an insert, or a versioned change leaving it active or archived): while learning is
+    /// on (`FactsLane`, read in this transaction), asks for it in every call group (memory processing §11.3). The job
+    /// makes no call when that version's reading carried forward.
+    static func enqueueFactsForCommit(_ db: Database, memoryID: UUID, version: Int, now: Date,
+                                      registry: FactsRegistry = .bundled) throws {
+        guard FactsLane.learning(db) else { return }
+        for group in registry.callGroups.keys.sorted() {
+            try enqueueFacts(db, memoryID: memoryID, version: version, group: group, reason: .version, now: now)
+        }
     }
 
     /// Asks for the reconciliation sweep, in the caller's transaction. Deduped like any facts job.
@@ -159,28 +178,47 @@ public final class ProcessingQueue: Sendable {
     /// Takes the oldest job that is due, marking it running and counting the attempt. New memories and tidy-up jobs
     /// come first; a `facts` job only while the facts lane is open, memories before the sweep.
     public func claim(now: Date) async throws -> ProcessingJob? {
-        let paused = factsPaused()
-        return try await store.writer.write { [launchedAt] db in
-            guard try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM processing_job WHERE state = 'running'") == 0 else { return nil }
-            var found = try Row.fetchOne(db, sql: """
-                SELECT * FROM processing_job WHERE state = 'queued' AND kind != 'facts' AND (not_before IS NULL OR not_before <= ?)
-                ORDER BY created_at, rowid LIMIT 1
-                """, arguments: [now])
-            if found == nil, !paused, try Self.factsLaneOpen(db, launchedAt: launchedAt) {
-                found = try Row.fetchOne(db, sql: """
-                    SELECT * FROM processing_job WHERE state = 'queued' AND kind = 'facts' AND (not_before IS NULL OR not_before <= ?)
-                    ORDER BY call_group IS NULL, created_at, rowid LIMIT 1
+        // Whether this claim holds the lane: released here if the write fails anywhere, its commit included, since no
+        // job then reaches `finish`.
+        let entered = Mutex(false)
+        do {
+            let job = try await store.writer.write { [launchedAt, factsPaused, factsLane] db -> ProcessingJob? in
+                guard try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM processing_job WHERE state = 'running'") == 0 else { return nil }
+                var found = try Row.fetchOne(db, sql: """
+                    SELECT * FROM processing_job WHERE state = 'queued' AND kind != 'facts' AND (not_before IS NULL OR not_before <= ?)
+                    ORDER BY created_at, rowid LIMIT 1
                     """, arguments: [now])
+                // The pause and the lane are read here, in the claim's transaction, so a tidy-up or a removal that closed
+                // the lane and found nothing running can't be followed by a facts job starting.
+                if found == nil, !factsPaused(), try Self.factsLaneOpen(db, launchedAt: launchedAt) {
+                    if let factsLane {
+                        if !entered.withLock({ $0 }), factsLane.tryEnter() { entered.withLock { $0 = true } }
+                    }
+                    if factsLane == nil || entered.withLock({ $0 }) {
+                        found = try Row.fetchOne(db, sql: """
+                            SELECT * FROM processing_job WHERE state = 'queued' AND kind = 'facts' AND (not_before IS NULL OR not_before <= ?)
+                            ORDER BY call_group IS NULL, created_at, rowid LIMIT 1
+                            """, arguments: [now])
+                    }
+                }
+                guard let row = found else { return nil }
+                var job = try ProcessingJob.from(row: row)
+                job.state = .running
+                job.attempts += 1
+                try db.execute(sql: "UPDATE processing_job SET state = 'running', attempts = ?, updated_at = ? WHERE id = ?",
+                               arguments: [job.attempts, now, job.id.db])
+                return job
             }
-            guard let row = found else { return nil }
-            var job = try ProcessingJob.from(row: row)
-            job.state = .running
-            job.attempts += 1
-            try db.execute(sql: "UPDATE processing_job SET state = 'running', attempts = ?, updated_at = ? WHERE id = ?",
-                           arguments: [job.attempts, now, job.id.db])
+            // Admitted but nothing to run, or the job taken isn't a facts job: the lane isn't held.
+            if entered.withLock({ $0 }), job?.kind != .facts { factsLane?.leave() }
             return job
+        } catch {
+            if entered.withLock({ $0 }) { factsLane?.leave() }
+            throw error
         }
     }
+
+
 
     /// The facts lane waits while New memories or the tidy-up wait (memory processing §11.3): any other job queued
     /// (due or waiting for a retry) or running, or a tidy-up run this process opened and hasn't finished.
@@ -195,6 +233,8 @@ public final class ProcessingQueue: Sendable {
     /// `maxAttempts`. A job that threw is retried like `.retry`. A `facts` job asked for again while it ran goes
     /// straight back to the queue, whatever its outcome.
     public func finish(_ job: ProcessingJob, _ outcome: Outcome, now: Date) async throws {
+        // The admitted facts job leaves the lane once its outcome is recorded (or recording it failed).
+        defer { if job.kind == .facts { factsLane?.leave() } }
         let id = job.id.db
         let state: ProcessingJob.State? = try await store.writer.write { db in
             // Checked in the same transaction as the outcome is written, so an enqueue can't fall between them.
@@ -228,6 +268,18 @@ public final class ProcessingQueue: Sendable {
         if let state, state != .queued {
             activity.record(ActivityEvent(time: now, phase: .event, actor: .system, via: .app, event: "processing_job",
                                           outcome: state.rawValue, ids: [job.subject], counts: ["attempts": job.attempts]))
+        }
+    }
+
+    /// Facts jobs waiting with `code` (`no_model`: no model resolved for their group) are due again now: the Facts
+    /// settings changed. Returns how many.
+    @discardableResult
+    public func wakeFacts(code: String, now: Date) async throws -> Int {
+        try await store.writer.write { db in
+            try db.execute(sql: """
+                UPDATE processing_job SET not_before = NULL, updated_at = ? WHERE kind = 'facts' AND state = 'queued' AND error = ?
+                """, arguments: [now, code])
+            return db.changesCount
         }
     }
 
