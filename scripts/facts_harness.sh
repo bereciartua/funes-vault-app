@@ -4,8 +4,11 @@
 #
 #   sh scripts/facts_harness.sh mixed                          replay results-h3b's recorded calls for the set
 #   sh scripts/facts_harness.sh mixed schedule                 Swift's own schedule answered from them (counts calls)
+#   sh scripts/facts_harness.sh persons gold                   scripted answers from the set's own labels (gold_answers.py),
+#                                                              for a set with no recording yet; no model is called
 #   FUNES_FACTS_HARNESS_LIVE=1 sh scripts/facts_harness.sh mixed live=claude:haiku
-#                                                              a live run (only with the author's go-ahead)
+#                                                              a live run (only with the author's go-ahead); the
+#                                                              persons set is people-only: add ";groups=people"
 #
 # Output goes to build/facts-harness/<label>/<set>.jsonl, with score.py's report.md and score_facts.py's output.
 set -eu
@@ -20,9 +23,15 @@ case "$SET" in
     astra) FIXTURE=stories-astra.json; RESULTS=claude-haiku-people/astra.jsonl ;;
     mixed) FIXTURE=stories-mixed.json; RESULTS=claude-haiku-separate/mixed.jsonl ;;
     canary) FIXTURE=stories-canary.json; RESULTS=../results-h3b/fresh/claude-haiku-people-h3b-canary/canary.jsonl ;;
+    persons) FIXTURE=stories-persons.json; RESULTS= ;;      # no recording until the Gates step's live runs
     *) echo "facts_harness.sh: unknown set $SET" >&2; exit 2 ;;
 esac
-if [ "$MODE" = replay ] || [ "$MODE" = schedule ]; then
+if [ "$MODE" = gold ]; then
+    (cd spikes/people && python3 gold_answers.py --set "$SET" "$OUT/gold-$SET.jsonl" &&
+        python3 export_replay.py "$OUT/gold-$SET.jsonl" "fixtures/$FIXTURE" "$OUT/export-gold-$SET.jsonl")
+    SPEC="set=$SET;replay=$OUT/export-gold-$SET.jsonl;out=$OUT;tag=gold-$SET;groups=people"
+elif [ "$MODE" = replay ] || [ "$MODE" = schedule ]; then
+    if [ -z "$RESULTS" ]; then echo "facts_harness.sh: no recorded calls for $SET yet (try: gold)" >&2; exit 2; fi
     (cd spikes/people && python3 export_replay.py "results-h3b/$RESULTS" "fixtures/$FIXTURE" "$OUT/export-$SET.jsonl")
     SPEC="set=$SET;replay=$OUT/export-$SET.jsonl;out=$OUT;tag=$SET"
     [ "$MODE" = schedule ] && SPEC="$SPEC;schedule=1"

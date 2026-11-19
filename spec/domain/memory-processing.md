@@ -676,7 +676,7 @@ For a predicate with the *timeline* use, from a query intent (§11.7), with no m
 
   | Use | Predicates | Passes when |
   |---|---|---|
-  | recorded, linked | the person pool | full-basis links ≥ 98% (≥ 20 per predicate, two reads) and recall of resolvable references ≥ 90%, on the main, astra and mixed sets; still met on the mixed set |
+  | recorded, linked | the person pool | full-basis links ≥ 98% (≥ 20 per predicate, two reads) and recall of resolvable references ≥ 90%, on the main, astra, mixed and person sets; still met on the mixed set |
   | recorded | client | 0 clients as employers, 0 vendors as clients |
   | recorded, linked | works at | full-basis links ≥ 98% (not pooled with the persons'), two reads; 0 clients or vendors as employers; still met on the mixed set |
   | timeline | works at | the fresh blind work fixture: every fact right, ≤ 1 wrong date; on decidable wordings the right entity ≥ 90% (right with a gap told counted apart), ambiguous on the others; 0 wrong answers, gap answers included; 0 negative triggers; 0 succession from untrusted text or across slots; still met on the mixed set |
