@@ -1,6 +1,7 @@
 import Foundation
 import FunesProtocol
 import GRDB
+import Synchronization
 
 /// What one `learn` did, for the caller (the queue, the fixture harness): counts and ids only.
 public struct FactsLearnReport: Sendable {
@@ -12,6 +13,10 @@ public struct FactsLearnReport: Sendable {
         public var dropped: [String]                // validation's reasons
         public var milliseconds: Int
         public var usage: ProviderUsage
+        /// Requests sent under the first backfill's exemption (at most one: `FactsExtractor.exemptVersion`).
+        public var exempt = 0
+        /// `ModelRouter.send` refused the call (a secret, an item above the cloud limit): code-only links, no request.
+        public var refused = false
     }
 
     public var runs: [String: String] = [:]          // call group → facts_run id
@@ -53,6 +58,12 @@ public struct FactsExtractor: Sendable {
     /// Checked before every request, retries included: false stops the job there, with nothing sent or written, and the
     /// queue runs it again later (`FactsLane.permits`, in the app).
     public var permit: @Sendable () -> Bool = { true }
+    /// The first backfill (FR-F-03): a full read of the memory at exactly this version skips the daily cap. Set by
+    /// `FactsQueueWorker` for a marked job while the backfill runs; every other request counts.
+    public var exemptVersion: Int?
+    /// Called the moment the exempt request is sent, before the provider answers: the worker records it as spent in the
+    /// store, so a quit or crash after sending can't grant it again.
+    public var exemptSpent: @Sendable () throws -> Void = {}
 
     /// How calls are batched, and the pipeline's revision (a qualification record names it, memory processing §11.10):
     /// one memory per call per group, full or partial. Bump the revision when validation, the apply, rosters,
@@ -67,7 +78,37 @@ public struct FactsExtractor: Sendable {
         self.registry = registry
         self.userAliases = userAliases
         self.qualification = qualification
-        promptVersions = FactsQualification.promptVersions(registry)
+        let versions = FactsQualification.promptVersions(registry)
+        promptVersions = versions
+        extractionKeys = Dictionary(uniqueKeysWithValues: registry.callGroups.keys.map { g in
+            (g, (versions[g] ?? "") + "." + (registry.extractionDigests[g] ?? ""))
+        })
+    }
+
+    /// Each group's extraction key: its prompt version (the prompt resource, instructions and schema) and the
+    /// registry's extraction digest for it. A language-only change leaves it as is.
+    let extractionKeys: [String: String]
+
+    /// The key a model reading in `group` is made under (its `read` record keeps it): the extraction key and the
+    /// predicates recorded now. `FactsExtractor.isStale` compares it with a later one.
+    func readKey(_ group: String, _ uses: FactsUses) -> String {
+        "x=\(extractionKeys[group] ?? "");r=" + uses.predicates(.recorded, group: group).sorted().joined(separator: ",")
+    }
+
+    /// Whether a reading made under `stored` should be read again under `current` (memory processing §11.3, §11.10):
+    /// the group's extraction changed, or a predicate is recorded now that wasn't then (coverage grew). Fewer recorded
+    /// predicates hide rows at load and need no re-read. A record with no key (made before keys were kept) is current.
+    static func isStale(_ stored: String, current: String) -> Bool {
+        func parts(_ k: String) -> (x: String, r: Set<String>)? {
+            var x: String?, r = Set<String>()
+            for part in k.split(separator: ";", omittingEmptySubsequences: false) {
+                if part.hasPrefix("x=") { x = String(part.dropFirst(2)) }
+                if part.hasPrefix("r=") { r = Set(part.dropFirst(2).split(separator: ",").map(String.init)) }
+            }
+            return x.map { ($0, r) }
+        }
+        guard let old = parts(stored), let now = parts(current) else { return false }
+        return old.x != now.x || !now.r.isSubset(of: old.r)
     }
 
     /// The groups in a stable order.
@@ -104,7 +145,8 @@ public struct FactsExtractor: Sendable {
             let engine = allowed ? router.factsModels[group].map(ModelRouter.engine) ?? codeEngine : codeEngine
             let runID = try await store.writer.write { db in
                 try FactStore.startRun(db, kind: kind, callGroup: group, registryVersion: registry.fingerprint,
-                                       promptVersion: FactsPrompt.version(group, registry: registry), engine: engine, now: clock())
+                                       promptVersion: FactsPrompt.version(group, registry: registry), engine: engine,
+                                       capExempt: kind == Self.backfillKind, now: clock())
             }
             report.runs[group] = runID
             let first = report.calls.count
@@ -131,6 +173,8 @@ public struct FactsExtractor: Sendable {
             counts["changed"] = n(.changed)
             counts["code_only"] = n(.codeOnly)
             counts["dropped"] = calls.reduce(0) { $0 + $1.dropped.count }
+            let exempt = calls.reduce(0) { $0 + $1.exempt }
+            if exempt > 0 { counts["exempt"] = exempt }
             counts["input_tokens"] = calls.reduce(0) { $0 + $1.usage.inputTokens }
             counts["output_tokens"] = calls.reduce(0) { $0 + $1.usage.outputTokens }
             let now = clock(), countsJSON = FactStore.json(counts)
@@ -138,8 +182,11 @@ public struct FactsExtractor: Sendable {
                 try db.execute(sql: "UPDATE facts_run SET counts = ?, finished_at = ? WHERE id = ?",
                                arguments: [countsJSON, now, runID])
             }
-            activity.record(ActivityEvent(time: now, phase: .event, actor: .system, via: .app, event: "facts_learned",
-                                          ids: UUID(uuidString: runID).map { [$0] } ?? [], counts: counts, engine: engine))
+            // The backfill's reads are told once, when it ends (`facts_backfill`), rather than one row per memory.
+            if kind != Self.backfillKind {
+                activity.record(ActivityEvent(time: now, phase: .event, actor: .system, via: .app, event: "facts_learned",
+                                              ids: UUID(uuidString: runID).map { [$0] } ?? [], counts: counts, engine: engine))
+            }
         }
         return report
     }
@@ -147,8 +194,14 @@ public struct FactsExtractor: Sendable {
     /// The engine a run records when no model reads.
     let codeEngine = "code"
 
-    /// A code-only outcome whose cause passes (the daily cap, a model that's unavailable): the model should read later.
+    /// A code-only outcome whose cause passes (a model that's unavailable): the model should read later.
     static let transient = "model_unavailable"
+    /// A code-only outcome at the daily cap (or the agents' share of it): the model reads once the cap resets.
+    static let capReached = "cap_reached"
+    /// No answer because the provider failed (a rate limit, the network, a timeout), not because the answer was invalid.
+    static let providerFailed = "provider_failed"
+    /// A run of the first backfill's exempt full reads (`facts_run.kind`).
+    static let backfillKind = "backfill"
 
     /// Validation notes that record what code added, not something the model said that was dropped.
     static let codeAdditions: Set<String> = ["paired_applied", "paired_relation_added", "denial"]
@@ -245,10 +298,13 @@ public struct FactsExtractor: Sendable {
     /// One memory in one call group. Nil when the memory is gone.
     func learnOne(_ memoryID: String, group: String, runID: String, scope: FactsScope = .full,
                   into total: inout FactStore.ApplyResult) async throws -> FactsLearnReport.Call? {
+        // Whether the backfill's exempt request was sent, across both attempts: one per marked read.
+        let spent = Mutex(0)
         for attempt in 0..<2 {
             guard let a = try prepare(memoryID, group: group) else { return nil }
             func call(_ outcome: FactsLearnReport.Call.Outcome, dropped: [String] = [], ms: Int = 0, usage: ProviderUsage = .init()) -> FactsLearnReport.Call {
-                .init(memoryID: memoryID, group: group, outcome: outcome, dropped: dropped, milliseconds: ms, usage: usage)
+                .init(memoryID: memoryID, group: group, outcome: outcome, dropped: dropped, milliseconds: ms, usage: usage,
+                      exempt: spent.withLock { $0 })
             }
             // A partial re-read is of a version the model has read: it never falls back to code-only links.
             let partial = scope != .full
@@ -270,7 +326,10 @@ public struct FactsExtractor: Sendable {
             let before = router.usageCounters()[model.id] ?? ProviderUsage()
             let started = clock()
             var output: FactsJSON?
-            var tries = 0
+            var tries = 0, providerFailure = false
+            // The first backfill's one exemption (FR-F-03): one request of a full read of the version it marked. It's
+            // spent once a request is sent, whatever comes back; a retry, or an attempt after it, counts against the cap.
+            let exemptRead = !partial && exemptVersion == a.version
             while output == nil, tries < 2 {          // one retry on an answer that isn't the schema's (§9.6)
                 // §11.10, at every call: a retry with a use turned off since the graph was read starts over instead.
                 if tries > 0 {
@@ -282,17 +341,26 @@ public struct FactsExtractor: Sendable {
                 tries += 1
                 guard permit() else { return call(.changed, dropped: [Self.notPermitted]) }
                 do {
+                    let exempt = exemptRead && spent.withLock { $0 } == 0
                     output = try await router.facts(request(a, group: group), group: group, items: items, requester: requester,
-                                                    permit: permit, now: clock())
+                                                    exempt: exempt, permit: permit,
+                                                    willSend: {
+                                                        guard exempt else { return }
+                                                        try exemptSpent()           // fails closed: unrecorded, unsent
+                                                        spent.withLock { $0 = 1 }
+                                                    }, now: clock())
                 } catch is SendNotPermitted {
                     return call(.changed, dropped: [Self.notPermitted])
                 } catch ProviderError.invalidOutput {
                     continue
                 } catch let e as ProviderError where [.blocked, .capReached, .unavailable].contains(e) {
                     if !partial { try codeOnly(a, group: group, runID: runID) }
-                    // The cap and an unavailable model pass: the queue asks again later (`transient`).
-                    return call(.codeOnly, dropped: e == .blocked ? [] : [Self.transient])
+                    // The cap and an unavailable model pass: the queue asks again later.
+                    var c = call(.codeOnly, dropped: e == .blocked ? [] : [e == .capReached ? Self.capReached : Self.transient])
+                    c.refused = e == .blocked
+                    return c
                 } catch is ProviderError {
+                    providerFailure = true
                     break
                 }
             }
@@ -300,7 +368,7 @@ public struct FactsExtractor: Sendable {
             let after = router.usageCounters()[model.id] ?? ProviderUsage()
             let usage = ProviderUsage(requests: after.requests - before.requests, inputTokens: after.inputTokens - before.inputTokens,
                                       outputTokens: after.outputTokens - before.outputTokens)
-            guard let output else { return call(.failed, ms: ms, usage: usage) }
+            guard let output else { return call(.failed, dropped: providerFailure ? [Self.providerFailed] : [], ms: ms, usage: usage) }
             var v = FactsValidator(graph: a.graph, sent: a.sent, roster: a.roster.ids, phrases: a.phrases,
                                    predicates: registry.groupPredicates(group), knownThings: a.things,
                                    trusted: a.memory.trusted).validate(output)
@@ -327,6 +395,7 @@ public struct FactsExtractor: Sendable {
                                                  roster: a.tokens.filter { used.contains($0.key) })
                 extraction.predicateVersions = a.predicateVersions
                 extraction.scope = scope
+                extraction.readKey = readKey(group, a.uses)
                 extraction.clean = v.dropped.allSatisfy {
                     Self.codeAdditions.contains($0.reason) || Self.unseenNotes.contains($0.reason) || $0.reason == Self.unqualifiedPredicate
                 }

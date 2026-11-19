@@ -484,6 +484,32 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await show(.facts, "ai-features-facts-learning")
             await show(SettingsDestination(.features), "ai-features-with-facts")
             await show(SettingsDestination(.privacy), "ai-privacy-facts")
+            // The first backfill (FR-F-03): its sheet with a sample count, then its progress, paused, paused by a change,
+            // and a wait for tomorrow's cap. Sample states only: this build reads no vault for them.
+            let groups = FactsRegistry.bundled.callGroups.keys.sorted()
+            await sheet("facts-backfill-sheet-\(suffix)", FactsBackfillSheet(
+                model: model, mode: .start,
+                preset: FactsBackfill.Estimate(memories: 407, calls: 730, kept: 42, groups: groups, limit: .upTo(.internal), cost: 0.22),
+                shown: .constant(true)))
+            var running = FactsBackfill.State(startedAt: Date(), memories: 365, calls: 730, engines: [:], limit: .upTo(.internal))
+            model.factsBackfill = FactsBackfill.Progress(state: running, done: 120)
+            await show(.facts, "ai-features-facts-backfill")
+            await show(SettingsDestination(.features), "ai-features-with-facts-backfill")
+            running.paused = true
+            model.factsBackfill = FactsBackfill.Progress(state: running, done: 120)
+            await show(.facts, "ai-features-facts-backfill-paused")
+            running.paused = false
+            running.changed = true
+            model.factsBackfill = FactsBackfill.Progress(state: running, done: 120)
+            await show(.facts, "ai-features-facts-backfill-changed")
+            running.changed = false
+            running.finishedAt = Date()
+            running.ended = "done"
+            model.factsBackfill = FactsBackfill.Progress(state: running, done: 365)
+            model.factsCapWait = .total
+            await show(.facts, "ai-features-facts-cap")
+            model.factsCapWait = nil
+            model.factsBackfill = nil
             ai.setFactsChoice(ModelChoice(account: "claude-code", model: "claude-opus-5-5"))
             await show(.facts, "ai-features-facts-opus")
             ai.setFactsChoice(nil)

@@ -60,9 +60,16 @@ public struct FunesExportFacts: Codable, Sendable, Hashable {
     public var decisionDependencies: Rows
     public var manualOverrides: Rows
     public var runs: Rows
+    /// What each model reading of an exported memory was asked knowing (`facts_asked`, at the memory's current version),
+    /// so a restored memory isn't read again in full and reconciliation can compare it. Absent in older exports.
+    public var asked: Rows? = nil
 }
 
 enum FactsExport {
+    /// `facts_asked`'s columns: a row restores only whole.
+    static let askedColumns: Set<String> = ["memory_id", "memory_version", "call_group", "mention_kind", "mention_key",
+                                            "knowledge", "asked_at"]
+
     static var tables: [(key: WritableKeyPath<FunesExportFacts, FunesExportFacts.Rows>, table: String, filter: String)] { [
         (\.runs, "facts_run", ""), (\.entities, "entity", "WHERE is_you = 0"), (\.aliases, "entity_alias", ""),
         (\.aliasEvidence, "alias_evidence", ""), (\.facts, "fact", ""), (\.evidence, "fact_evidence", ""),
@@ -70,11 +77,11 @@ enum FactsExport {
         (\.manualOverrides, "manual_override", ""),
     ] }
 
-    /// Whether the vault has learned facts or manual entries.
+    /// Whether the vault has learned facts or manual entries, or model readings (one that found nothing still counts).
     static func hasAny(_ db: Database) throws -> Bool {
         try Bool.fetchOne(db, sql: """
             SELECT EXISTS (SELECT 1 FROM entity WHERE is_you = 0) OR EXISTS (SELECT 1 FROM fact)
-              OR EXISTS (SELECT 1 FROM manual_override)
+              OR EXISTS (SELECT 1 FROM manual_override) OR EXISTS (SELECT 1 FROM facts_asked)
             """) ?? false
     }
 
@@ -95,11 +102,19 @@ enum FactsExport {
             try db.execute(sql: """
                 DELETE FROM alias_evidence WHERE memory_version != (SELECT version FROM memory WHERE memory.id = alias_evidence.memory_id)
                 """)
-            for t in tables {
-                out[keyPath: t.key] = try Row.fetchAll(db, sql: "SELECT * FROM \(t.table) \(t.filter) ORDER BY rowid").map { row in
+            func rows(_ sql: String) throws -> FunesExportFacts.Rows {
+                try Row.fetchAll(db, sql: sql).map { row in
                     Dictionary(uniqueKeysWithValues: row.columnNames.map { ($0, ExportCell(row[$0] as DatabaseValue)) })
                 }
             }
+            for t in tables {
+                out[keyPath: t.key] = try rows("SELECT * FROM \(t.table) \(t.filter) ORDER BY rowid")
+            }
+            // The purge took the other memories' records; only a memory's current version is compared after a restore.
+            out.asked = try rows("""
+                SELECT a.* FROM facts_asked a JOIN memory m ON m.id = a.memory_id AND m.version = a.memory_version
+                ORDER BY a.rowid
+                """)
             return .rollback
         }
         return out
@@ -168,6 +183,19 @@ enum FactsExport {
                                    arguments: StatementArguments(keys.map { row[$0]!.databaseValue }))
                 }
             }
+            // What each reading was asked knowing, for the memories that came back as active memories, at their new
+            // version. One that didn't come back has no reading to compare; restored suggestions are read when applied.
+            if let memories {
+                for var row in facts.asked ?? [] {
+                    guard let old = row["memory_id"]?.string, let new = memories[old] else { continue }
+                    row["memory_id"] = .string(new.id)
+                    row["memory_version"] = .int(Int64(new.version))
+                    let keys = row.keys.filter(Self.askedColumns.contains).sorted()
+                    guard Set(keys) == Self.askedColumns else { continue }
+                    try db.execute(sql: "INSERT OR IGNORE INTO facts_asked (\(keys.joined(separator: ", "))) VALUES (\(databaseQuestionMarks(count: keys.count)))",
+                                   arguments: StatementArguments(keys.map { row[$0]!.databaseValue }))
+                }
+            }
             let skipped = staged.filter { purged($0.key) }.map(\.value).sorted()
             if skipped.isEmpty {
                 try FactStore.collectGarbage(db, now: now)
@@ -184,8 +212,10 @@ enum FactsExport {
                     try db.execute(sql: "UPDATE \(table) SET \(column) = ? WHERE \(column) = ? \(filter)", arguments: [old, s])
                 }
             }
-            for t in tables where try Row.fetchOne(db, sql: "PRAGMA foreign_key_check(\(t.table))") != nil {
-                throw DatabaseError(resultCode: .SQLITE_CONSTRAINT_FOREIGNKEY, message: "dangling \(t.table) row after a learned facts restore")
+            // A decision's record whose decision didn't come back, or that the purge took, goes too.
+            try db.execute(sql: "DELETE FROM facts_asked WHERE mention_kind = 'decision' AND mention_key NOT IN (SELECT id FROM mention_decision)")
+            for t in tables.map(\.table) + ["facts_asked"] where try Row.fetchOne(db, sql: "PRAGMA foreign_key_check(\(t))") != nil {
+                throw DatabaseError(resultCode: .SQLITE_CONSTRAINT_FOREIGNKEY, message: "dangling \(t) row after a learned facts restore")
             }
             try FactStore.bumpRevision(db)
             return .commit

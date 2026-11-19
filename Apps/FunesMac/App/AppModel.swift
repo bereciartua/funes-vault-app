@@ -80,6 +80,10 @@ final class AppModel {
     var profile = Profile()
     /// Whether the vault has any active memory (the checklist and empty states).
     var hasMemories = false
+    /// The first Facts backfill (FR-F-03): its state and progress, nil before it started.
+    var factsBackfill: FactsBackfill.Progress?
+    /// Facts jobs wait for the daily cap to reset: the whole cap is used, or only the agents' share of it.
+    var factsCapWait: FactsCapWait?
     /// The Inbox is waiting on a decision; drives the menu bar's "needs you" state with `pending`.
     var inboxCount: Int { inbox.count }
     /// Updated once a minute, for "2 min ago" and countdowns.
@@ -296,6 +300,10 @@ final class AppModel {
             lane.reconfigured()
             if self.processingStarted { self.processing.factsSettingsChanged() }
         }
+        self.modelSettings.dailyCapChanged = { [weak self] in
+            guard let self, self.processingStarted else { return }
+            self.processing.capChanged()
+        }
         tidyUp.factsLaneReopened = { [weak self] in
             guard let self, self.processingStarted else { return }
             self.processing.kick()
@@ -383,6 +391,13 @@ final class AppModel {
         categories = (try? services.store.categories()) ?? []
         profile = (try? services.store.profile()) ?? Profile()
         hasMemories = !((try? services.store.memories(MemoryFilter(status: .activeIncludingExpired), now: now, limit: 1)) ?? []).isEmpty
+        factsBackfill = try? services.store.factsBackfill()
+        factsCapWait = nil
+        if (try? services.store.factsWaitingForCap(now: now)) == true {
+            let cap = modelSettings.cap(store: services.store, activity: services.activity)
+            let day = try? await cap.today(now: now)
+            factsCapWait = (day?.total ?? cap.limit) >= cap.limit ? .total : .agents
+        }
         dataGeneration += 1
         if storeDidChange {
             memoriesGeneration += 1
@@ -608,4 +623,11 @@ enum ActivityFocus: Equatable {
     case request(UUID)
     /// A day, week or month of Home's chart, or an hour of the menu bar panel's.
     case period(DateInterval)
+}
+
+
+/// Why Facts jobs wait for tomorrow (FR-F-03): today's cloud requests are used up, or only the agents' share of them
+/// (memories agents wrote wait; yours are still read).
+enum FactsCapWait: Equatable {
+    case total, agents
 }

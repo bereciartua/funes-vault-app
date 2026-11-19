@@ -15,6 +15,11 @@ private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category:
 /// chosen model and its fallback, the cloud limit, your names from About you, and the shipped
 /// qualification records with the local off-switches. A group no model resolves for waits
 /// (`no_model`) until the Facts settings change.
+///
+/// The first Facts backfill (FR-F-03) is started from the Facts page with an extractor built the same way
+/// (`factsExtractor`); its marked jobs run here like any other. At launch an ended backfill is settled, and at launch and
+/// on every Facts settings change the facts lane's catch-up queues what the model should read and hasn't (a raised
+/// limit, a model back, grown coverage, a registry extraction change), under the cap.
 @MainActor
 final class ProcessingRunner {
     private let queue: ProcessingQueue
@@ -32,6 +37,10 @@ final class ProcessingRunner {
     /// Facts jobs that ended waiting for a model, with the generation that was decided under: a settings change since
     /// (which woke only the jobs already waiting) wakes them once their outcome is recorded.
     private var noModelAt: [UUID: Int] = [:]
+    /// Bumped when the daily cap changes: a job that decided "wait for tomorrow's cap" under an older cap is due now.
+    private var capGeneration = 0
+    /// Facts jobs that ended waiting for tomorrow's cap, with the cap generation they decided under.
+    private var capWaitAt: [UUID: Int] = [:]
 
     init(environment: VaultEnvironment, preferences: Preferences, settings: ModelSettings) {
         queue = ProcessingQueue(store: environment.store, activity: environment.activity)
@@ -67,6 +76,10 @@ final class ProcessingRunner {
             do { try await queue.resume(now: Date()) } catch { logger.error("Resuming the processing queue failed") }
             // The plans' CLIs are found now: a facts job that waited for a model may have one.
             _ = try? await queue.wakeFacts(code: Self.noModel, now: Date())
+            do { try await environment.store.settleFactsBackfill(activity: environment.activity) } catch {
+                logger.error("Settling the facts backfill failed")
+            }
+            await catchUpFacts()
             kick()
         }
         let timer = Timer(timeInterval: 60, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.kick() } }
@@ -115,12 +128,45 @@ final class ProcessingRunner {
         let queue = self.queue
         Task {
             _ = try? await queue.wakeFacts(code: Self.noModel, now: Date())
+            await catchUpFacts()
             kick()
         }
     }
 
+    /// The daily cap changed: Facts jobs that waited for tomorrow's cap may run now (they wait again if it's still used up).
+    func capChanged() {
+        capGeneration += 1
+        let queue = self.queue
+        Task {
+            _ = try? await queue.wakeFacts(code: "cap", now: Date())
+            kick()
+        }
+    }
+
+    /// The facts lane's catch-up (`FactsQueueWorker.scheduleCatchUp`), while learning is on with a model.
+    private func catchUpFacts() async {
+        guard settings.factsLearn, let extractor = await factsExtractor() else { return }
+        do { try await FactsQueueWorker(extractor: extractor).scheduleCatchUp() } catch { logger.error("The facts catch-up failed") }
+    }
+
+    /// A Facts extractor as a job would get it now (the configuration, your names, the records with the local
+    /// off-switches), for the backfill's estimate and start and the catch-up; nil when no model resolves.
+    func factsExtractor() async -> FactsExtractor? {
+        let store = environment.store, activity = environment.activity, profiles = environment.profiles
+        guard let configuration = settings.factsConfiguration(cap: settings.cap(store: store, activity: activity)) else { return nil }
+        return await Task.detached(priority: .utility) { () async -> FactsExtractor? in
+            guard let aliases = try? await profiles.profile().factsAliases,
+                  let qualification = try? await store.writer.read({ db in try FactsQualification.bundled.withOffSwitches(db) })
+            else { return nil }
+            return FactsExtractor(store: store, router: configuration.router(qualification: qualification), activity: activity,
+                                  userAliases: aliases)
+        }.value
+    }
+
     /// A facts job's outcome is recorded: if it was "no model" and the settings changed since that was decided, wake it.
     private func factsJobEnded(_ job: ProcessingJob) {
+        // Decided "tomorrow's cap" under a cap that changed before its outcome was recorded: it's due now.
+        if let at = capWaitAt.removeValue(forKey: job.id), capGeneration != at { capChanged() }
         guard let decided = noModelAt.removeValue(forKey: job.id) else { return }
         if environment.store.factsLane.generation != decided { factsSettingsChanged() }
     }
@@ -132,10 +178,12 @@ final class ProcessingRunner {
     /// configuration, so any change after it stops the job at its next send (`FactsExtractor.permit`).
     private func runFacts(_ job: ProcessingJob) async throws -> ProcessingQueue.Outcome {
         let lane = environment.store.factsLane, store = environment.store, activity = environment.activity
-        let generation = lane.generation
+        let generation = lane.generation, capAt = capGeneration
         let cap = settings.cap(store: store, activity: activity)
         guard let configuration = settings.factsConfiguration(cap: cap) else {
             noModelAt[job.id] = generation
+            // A backfill job with no model: the backfill pauses for a review rather than waiting unseen.
+            if job.exemptVersion != nil { try? await store.pauseFactsBackfillForChange() }
             return .later(until: Date().addingTimeInterval(86_400), code: Self.noModel)
         }
         let profiles = environment.profiles
@@ -159,7 +207,16 @@ final class ProcessingRunner {
         // Requests made before a failure count too.
         if let router { settings.collectUsage(from: router) }
         let outcome = try result.get()
-        if case let .later(_, code) = outcome, code == Self.noModel { noModelAt[job.id] = generation }
+        if case let .later(_, code) = outcome, code == Self.noModel {
+            noModelAt[job.id] = generation
+            if job.exemptVersion != nil { try? await store.pauseFactsBackfillForChange() }
+        }
+        // The cap changed while it ran: its wait for tomorrow is over (it waits again if the cap is still used up). One
+        // changing after this, before the outcome is recorded, wakes it from `factsJobEnded`.
+        if case let .later(_, code) = outcome, code == "cap" {
+            if capGeneration != capAt { return .later(until: Date(), code: code) }
+            capWaitAt[job.id] = capAt
+        }
         return outcome
     }
 }

@@ -263,6 +263,12 @@ struct AIJobText {
         if case .nothingQualified? = settings.factsProblem, !settings.factsLearn, !settings.factsUse {
             return String(localized: "Not available yet")
         }
+        // The first backfill's progress stands for "Learning from memories" while it runs.
+        if settings.factsLearn, let p = model.factsBackfill, p.state.isRunning {
+            let reading = p.state.isPaused ? String(localized: "Paused: \(p.done) of \(p.total) memories read.")
+                                           : String(localized: "Reading your memories: \(p.done) of \(p.total)")
+            return settings.factsUse ? reading + " · " + String(localized: "Used in search and answers") : reading
+        }
         switch (settings.factsLearn, settings.factsUse) {
         case (true, true): return String(localized: "Learning from memories") + " · " + String(localized: "Used in search and answers")
         case (true, false): return String(localized: "Learning from memories")

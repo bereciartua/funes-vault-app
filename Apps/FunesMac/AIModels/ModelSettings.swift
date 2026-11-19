@@ -571,8 +571,14 @@ final class ModelSettings {
     /// Cloud requests per day, shared by every job that uses a cloud model.
     var dailyCap: Int {
         get { stored.dailyCap ?? CloudRequestCap.defaultLimit }
-        set { change { $0.dailyCap = max(10, min(10_000, newValue)) } }
+        set {
+            change { $0.dailyCap = max(10, min(10_000, newValue)) }
+            dailyCapChanged()
+        }
     }
+
+    /// The daily cap changed: Facts jobs waiting for tomorrow's cap may run today (the app's runner).
+    @ObservationIgnored var dailyCapChanged: () -> Void = {}
 
     /// Today's cloud request cap on this vault.
     func cap(store: VaultStore, activity: any ActivityRecorder) -> CloudRequestCap {

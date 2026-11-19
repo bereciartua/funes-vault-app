@@ -108,6 +108,25 @@ enum RestoreAccess {
                     try db.execute(sql: "DELETE FROM meta WHERE key = ?", arguments: [AgentService.neverShareKey])
                     try db.execute(sql: "INSERT INTO meta (key, value) SELECT key, value FROM live.meta WHERE key = ?",
                                    arguments: [AgentService.neverShareKey])
+                    // The first Facts backfill's one exemption (FR-F-03): a backup from before it, or from while it
+                    // ran, can't grant it again. The live vault's state wins; marks stay only while it still runs.
+                    if try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM live.meta WHERE key = ?)", arguments: [FactsBackfill.metaKey]) == true {
+                        try db.execute(sql: "DELETE FROM meta WHERE key = ?", arguments: [FactsBackfill.metaKey])
+                        try db.execute(sql: "INSERT INTO meta (key, value) SELECT key, value FROM live.meta WHERE key = ?",
+                                       arguments: [FactsBackfill.metaKey])
+                    }
+                    if try FactsBackfill.state(db)?.isRunning != true {
+                        try db.execute(sql: "UPDATE processing_job SET exempt_version = NULL WHERE exempt_version IS NOT NULL")
+                    } else {
+                        // Running: a mark the live vault has spent or ended since the backup is gone; only the reads
+                        // still owed keep theirs.
+                        try db.execute(sql: """
+                            UPDATE processing_job SET exempt_version = NULL WHERE exempt_version IS NOT NULL AND NOT EXISTS (
+                              SELECT 1 FROM live.processing_job l WHERE l.kind = 'facts' AND l.subject = processing_job.subject
+                                AND COALESCE(l.call_group, '') = COALESCE(processing_job.call_group, '')
+                                AND l.exempt_version = processing_job.exempt_version)
+                            """)
+                    }
                 } else {
                     try db.execute(sql: "DELETE FROM access_category")
                 }

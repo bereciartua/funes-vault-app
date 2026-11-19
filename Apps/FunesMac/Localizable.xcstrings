@@ -119,6 +119,19 @@
         }
       }
     },
+    "%@ at API prices." : {
+
+    },
+    "%@ at API prices. With your %@ plan, it counts toward the plan's limits instead." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ at API prices. With your %2$@ plan, it counts toward the plan's limits instead."
+          }
+        }
+      }
+    },
     "%@ can be offered personal memories. Keep Ask before sharing on." : {
 
     },
@@ -944,6 +957,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "%lld memories above %@ stay on this Mac: Funes links them from what it already knows." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld memories above %2$@ stay on this Mac: Funes links them from what it already knows."
           }
         }
       }
@@ -2654,6 +2677,9 @@
     "Captures, your answers, agents' suggestions and imports become one suggestion per claim, each marked new, an update, already saved or a removal. You review every piece in the Inbox." : {
 
     },
+    "Carry on reading your memories?" : {
+
+    },
     "Categories" : {
 
     },
@@ -3049,6 +3075,9 @@
     "Continue" : {
 
     },
+    "Continue Reading" : {
+
+    },
     "Continue as %@" : {
 
     },
@@ -3120,6 +3149,9 @@
 
     },
     "Couldn't undo: the memory changed since." : {
+
+    },
+    "Counting your memories…" : {
 
     },
     "Counts only: Funes never logs what agents send or receive." : {
@@ -3950,6 +3982,9 @@
     "Funes can't use the microphone. Allow it in System Settings ▸ Privacy & Security ▸ Microphone." : {
 
     },
+    "Funes couldn't count your memories. Try again." : {
+
+    },
     "Funes couldn't read which categories agents never see, so that step is off. Your answers can still be sent." : {
 
     },
@@ -4053,6 +4088,46 @@
     },
     "Funes was quitting" : {
 
+    },
+    "Funes will read %lld memories with %@, in about %@ requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funes will read %1$lld memories with %2$@, in about %3$@ requests."
+          }
+        }
+      }
+    },
+    "Funes will read %lld memories with %@, in about %@ requests: %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funes will read %1$lld memories with %2$@, in about %3$@ requests: %4$@."
+          }
+        }
+      }
+    },
+    "Funes will send %lld memories (up to %@) to %@, in about %@ requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funes will send %1$lld memories (up to %2$@) to %3$@, in about %4$@ requests."
+          }
+        }
+      }
+    },
+    "Funes will send %lld memories (up to %@) to %@, in about %@ requests: %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funes will send %1$lld memories (up to %2$@) to %3$@, in about %4$@ requests: %5$@."
+          }
+        }
+      }
     },
     "Funnel forwards all but one of the Remote Access paths, so cloud agents can't sign in. Add it in Terminal." : {
 
@@ -4460,6 +4535,12 @@
     "It stops working now. To use it again, connect it again." : {
 
     },
+    "It takes a few hours, while Funes isn't busy, and doesn't count toward today's %lld cloud requests." : {
+
+    },
+    "It takes under an hour, while Funes isn't busy, and doesn't count toward today's %lld cloud requests." : {
+
+    },
     "It waited because you have unsaved changes. Installing relaunches Funes Vault." : {
 
     },
@@ -4759,6 +4840,9 @@
 
     },
     "Leaves this Mac" : {
+
+    },
+    "Less than $0.01" : {
 
     },
     "Let %@ use every category?" : {
@@ -5749,6 +5833,19 @@
     "Paused until you resume" : {
 
     },
+    "Paused: %lld of %lld memories read." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Paused: %1$lld of %2$lld memories read."
+          }
+        }
+      }
+    },
+    "Paused: Facts' model or the cloud limit changed since you started. Review the new count to carry on." : {
+
+    },
     "Pauses all agents" : {
 
     },
@@ -5941,6 +6038,9 @@
         }
       }
     },
+    "Read Existing Memories…" : {
+
+    },
     "Read and suggest, ask first" : {
 
     },
@@ -5951,6 +6051,9 @@
 
     },
     "Read the vault's counts" : {
+
+    },
+    "Read your existing memories?" : {
 
     },
     "Read, up to Low, in all categories. Funes asks before sharing." : {
@@ -5974,6 +6077,26 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Reading your memories waits while Learn from memories is off: %lld of %lld read." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reading your memories waits while Learn from memories is off: %1$lld of %2$lld read."
+          }
+        }
+      }
+    },
+    "Reading your memories: %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reading your memories: %1$lld of %2$lld"
           }
         }
       }
@@ -7424,6 +7547,9 @@
     "Start %@ when VS Code asks." : {
 
     },
+    "Start Reading" : {
+
+    },
     "Start it" : {
 
     },
@@ -7765,6 +7891,9 @@
     "The facts and corrections you entered yourself stay. Learning turns off; turning it on again learns from new and changed memories." : {
 
     },
+    "The facts and corrections you entered yourself stay. Learning turns off; turning it on again reads your memories again, within today's cloud requests." : {
+
+    },
     "The file couldn't be read." : {
 
     },
@@ -7978,6 +8107,9 @@
     "There's no text to remember." : {
 
     },
+    "There's nothing to send: Funes has read every memory it may send, and the rest stay on this Mac." : {
+
+    },
     "These cloud apps are disconnected and have to connect again: %@." : {
 
     },
@@ -8022,6 +8154,9 @@
 
     },
     "This example allows only the read tools, without approval in the API. To let it suggest memories too, remove allowed_tools and handle approval requests in your code." : {
+
+    },
+    "This happens once. After it, new and changed memories count as usual." : {
 
     },
     "This looks like %@. Funes never stores secrets." : {
@@ -8302,6 +8437,9 @@
 
     },
     "Turn on Funnel in Terminal:" : {
+
+    },
+    "Turn on Learn from memories first." : {
 
     },
     "Turn on Remote Access to test the address." : {
@@ -8587,6 +8725,12 @@
 
     },
     "Waiting to try again" : {
+
+    },
+    "Waiting: agents' share of today's cloud requests is used up. Memories agents wrote are read tomorrow." : {
+
+    },
+    "Waiting: today's %lld cloud requests are used up. Funes carries on tomorrow." : {
 
     },
     "Waiting: today's model limit reached" : {
@@ -9137,6 +9281,9 @@
     "on your local network" : {
 
     },
+    "one for each memory" : {
+
+    },
     "or press %@ in any app" : {
 
     },
@@ -9254,6 +9401,9 @@
 
     },
     "today %@" : {
+
+    },
+    "two for each memory" : {
 
     },
     "until %@" : {

@@ -80,6 +80,14 @@ enum Schema {
         migrator.registerMigration("v11_facts_asked") { db in
             try db.execute(sql: v11)
         }
+        // The first Facts backfill (Phase 13a.2, storage §2): each of its jobs carries the memory version whose full read
+        // skips the daily cap, once (FR-F-03). Nothing to backfill.
+        migrator.registerMigration("v12_facts_backfill") { db in
+            try db.execute(sql: "ALTER TABLE processing_job ADD COLUMN exempt_version INTEGER")
+            // What readings knew is kept as digests from now on: earlier rows held names and labels, so they go (a
+            // phrase or name with no record is asked again when due, under the cap).
+            try db.execute(sql: "DELETE FROM facts_asked WHERE mention_kind != 'read'")
+        }
         return migrator
     }
 

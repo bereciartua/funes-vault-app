@@ -7,6 +7,7 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 ### Added
 
 - **Settings ▸ AI ▸ Features ▸ Facts** (in progress, Phase 13): the page for learning facts about you from your memories, with *Learn from memories*, *Use in search and answers*, the model, what it sends, and Remove Learned Facts…. No model has passed Funes's tests for it yet, so it says so and can't be turned on.
+- **Facts: reading your existing memories** (in progress, Phase 13): once a model qualifies, Funes offers to read the memories already in your vault, showing how many requests and roughly what it costs first. That first read doesn't count toward the day's cloud requests, happens once, can be paused, and carries on after a quit or an outage. After it, every Facts request counts, agents' memories in their share; at the limit Facts waits for the next day. Exports now keep what each memory was read with, so a restore doesn't read everything again.
 
 ## [0.5.2] - 2026-11-11
 

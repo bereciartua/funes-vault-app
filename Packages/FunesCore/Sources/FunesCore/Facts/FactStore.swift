@@ -19,6 +19,9 @@ public struct FactsExtraction: Sendable {
     /// Validation dropped nothing the model said (only the code's own additions are noted): a re-read that moves a
     /// name to someone else replaces the earlier reading only then.
     public var clean = true
+    /// The key the reading was made under (`FactsExtractor.readKey`: the group's extraction key and what was recorded),
+    /// kept on its `read` record so a registry change or grown coverage re-reads it (memory processing §11.3).
+    public var readKey = ""
 
     public init(people: [ExtractedPerson] = [], facts: [ExtractedFact] = [], roles: [ExtractedRole] = [],
                 things: [ExtractedThing] = [], roster: [String: String] = [:]) {
@@ -1130,7 +1133,8 @@ enum FactStore {
         let knew = sendable != nil || uses.hidesRecorded
             ? try load(db, registry: registry, userAliases: userAliases, uses: uses, sendable: sendable).graph : g
         try FactsReconciler.recordAsked(db, graph: knew, memory: fm, version: version, group: callGroup, phrases: phrases,
-                                        scope: original.scope, decisions: pendingDependencies.map(\.0), now: now)
+                                        scope: original.scope, decisions: pendingDependencies.map(\.0), readKey: original.readKey,
+                                        now: now)
         if result.evidence > 0 || result.decisions > 0 || newAmbiguous != oldAmbiguous || !newAliases.isEmpty || !oldAliasRows.isEmpty
             || !touchedFacts.isEmpty || !touchedEntities.isEmpty { try bumpRevision(db) }
         return result

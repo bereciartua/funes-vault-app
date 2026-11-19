@@ -50,6 +50,46 @@ import Testing
         }
     }
 
+    /// The first Facts backfill's one exemption (FR-F-03): a backup taken while it ran (its marks in it), restored after
+    /// it finished, keeps the live vault's state, and the marks go, so nothing is read exempt again.
+    @Test func aBackupFromMidBackfillCantGrantTheExemptionAgain() throws {
+        let f = try Folder()
+        let running = FactsBackfill.State(startedAt: t0, memories: 1, calls: 2, engines: [:], limit: .upTo(.internal))
+        try f.execute("INSERT INTO meta (key, value) VALUES ('facts_backfill', ?)", [JSON.encode(running)])
+        try f.execute("""
+            INSERT INTO processing_job (id, subject, kind, state, attempts, created_at, updated_at, memory_version, call_group, exempt_version)
+            VALUES (?, ?, 'facts', 'queued', 0, ?, ?, 1, 'g', 1)
+            """, [UUID().db, UUID().db, t0, t0])
+        let backup = try f.backUp()
+        var done = running
+        done.finishedAt = t0.plus(minutes: 5)
+        done.ended = "done"
+        try f.execute("UPDATE meta SET value = ? WHERE key = 'facts_backfill'", [JSON.encode(done)])
+        try f.execute("UPDATE processing_job SET exempt_version = NULL")
+        try f.restore(backup)
+        #expect(try f.store.writer.read { db in try FactsBackfill.state(db) }?.ended == "done")
+        #expect(try f.value("SELECT COUNT(*) FROM processing_job WHERE exempt_version IS NOT NULL") as Int? == 0)
+    }
+
+    /// Restored while the live backfill still runs: a mark the live vault spent since the backup doesn't come back.
+    @Test func aBackupFromEarlierInARunningBackfillKeepsOnlyTheReadsStillOwed() throws {
+        let f = try Folder()
+        let running = FactsBackfill.State(startedAt: t0, memories: 2, calls: 2, engines: [:], limit: .upTo(.internal))
+        try f.execute("INSERT INTO meta (key, value) VALUES ('facts_backfill', ?)", [JSON.encode(running)])
+        let (read, owed) = (UUID(), UUID())
+        for subject in [read, owed] {
+            try f.execute("""
+                INSERT INTO processing_job (id, subject, kind, state, attempts, created_at, updated_at, memory_version, call_group, exempt_version)
+                VALUES (?, ?, 'facts', 'queued', 0, ?, ?, 1, 'g', 1)
+                """, [UUID().db, subject.db, t0, t0])
+        }
+        let backup = try f.backUp()
+        try f.execute("UPDATE processing_job SET exempt_version = NULL, state = 'done' WHERE subject = ?", [read.db])
+        try f.restore(backup)
+        #expect(try f.value("SELECT COUNT(*) FROM processing_job WHERE exempt_version IS NOT NULL AND subject = ?", [read.db]) as Int? == 0)
+        #expect(try f.value("SELECT COUNT(*) FROM processing_job WHERE exempt_version IS NOT NULL AND subject = ?", [owed.db]) as Int? == 1)
+    }
+
     @Test func removedAgentsAndReplacedKeysStayOut() async throws {
         let f = try Folder()
         let (removed, removedKey) = try await f.agents.create(name: "Removed", kind: .claudeCode, now: t0)

@@ -9,10 +9,17 @@ private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category:
 /// memories*, *Use in search and answers*, the model (only models that qualified), its status and disclosure, and Remove
 /// Learned Facts…. Off by default. While no model has qualified (what ships until 13a.2's Gates step), both switches stay
 /// off and the page says why.
+///
+/// The first backfill (FR-F-03): turning Learn from memories on the first time, with a model and memories, opens its
+/// sheet (count and cost first); **Read Existing Memories…** opens it later, until it starts. While it runs the page shows
+/// its progress with **Pause** / **Resume** (or **Review…** after a change of model or limit), and a wait for tomorrow's
+/// cap when Facts jobs wait for it.
 struct FactsPage: View {
     let model: AppModel
     @State private var confirmingRemoval = false
     @State private var removalFailed = false
+    @State private var backfillSheet: FactsBackfillSheet.Mode?
+    @State private var automaticSheet = false
 
     private var settings: ModelSettings { model.modelSettings }
     private var text: AIJobText { AIJobText(model: model) }
@@ -24,7 +31,7 @@ struct FactsPage: View {
         Form {
             Section {
                 Toggle(String(localized: "Learn from memories"), isOn: Binding(get: { settings.factsLearn },
-                                                                              set: { settings.factsLearn = $0 }))
+                                                                              set: { learn($0) }))
                     .disabled(removing || (!available && !settings.factsLearn))
                 Text(String(localized: "Funes reads each new or changed memory to learn who the people in it are to you, and where you've worked and when."))
                     .font(.callout).foregroundStyle(.secondary)
@@ -37,10 +44,29 @@ struct FactsPage: View {
             Section {
                 FactsModelRow(model: model)
                 Text(text.factsStatus).font(.callout).foregroundStyle(.secondary)
+                if let status = text.backfillStatus, let state = model.factsBackfill?.state {
+                    HStack {
+                        Text(status).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        Spacer()
+                        if !settings.factsLearn {
+                            EmptyView()
+                        } else if state.changed {
+                            Button(String(localized: "Review…")) { open(.review) }
+                        } else {
+                            Button(state.paused ? String(localized: "Resume") : String(localized: "Pause")) { pause(!state.paused) }
+                        }
+                    }
+                }
+                if let wait = text.factsCapStatus { Text(wait).font(.callout).foregroundStyle(.secondary) }
                 if let disclosure = text.factsDisclosure { WarningLabel(text: disclosure, symbol: "arrow.up.forward.app") }
             }
             Section {
                 HStack {
+                    if model.factsBackfill == nil {
+                        Button(String(localized: "Read Existing Memories…")) { open(.start) }
+                            .disabled(removing || text.backfillUnavailable != nil)
+                            .help(text.backfillUnavailable ?? "")
+                    }
                     if removalFailed {
                         Text(String(localized: "Couldn't remove learned facts. Try again."))
                             .font(.callout).foregroundStyle(.secondary)
@@ -59,7 +85,34 @@ struct FactsPage: View {
             Button(String(localized: "Remove"), role: .destructive) { remove() }
             Button(String(localized: "Cancel"), role: .cancel) {}
         } message: {
-            Text(String(localized: "The facts and corrections you entered yourself stay. Learning turns off; turning it on again learns from new and changed memories."))
+            Text(text.removeMessage)
+        }
+        .sheet(item: $backfillSheet) { mode in
+            FactsBackfillSheet(model: model, mode: mode, automatic: automaticSheet,
+                               shown: Binding(get: { backfillSheet != nil }, set: { if !$0 { backfillSheet = nil } }))
+        }
+    }
+
+    /// Learn from memories: turned on the first time (no backfill yet) with a model, it offers the backfill (not when
+    /// there's nothing to send).
+    private func learn(_ on: Bool) {
+        let first = on && !settings.factsLearn && model.factsBackfill == nil
+        settings.factsLearn = on
+        // The sheet counts archived memories too, and closes itself when there's nothing to send.
+        if first, settings.factsProblem == nil { open(.start, automatic: true) }
+    }
+
+    private func open(_ mode: FactsBackfillSheet.Mode, automatic: Bool = false) {
+        automaticSheet = automatic
+        backfillSheet = mode
+    }
+
+    private func pause(_ paused: Bool) {
+        let store = model.services.store
+        Task {
+            do { try await store.setFactsBackfillPaused(paused) } catch { logger.error("Pausing the facts backfill failed") }
+            if !paused { model.processing.kick() }
+            model.scheduleRefresh()
         }
     }
 
@@ -160,4 +213,8 @@ struct FactsModelPicker: View {
         case .none, .footer: break
         }
     }
+}
+
+extension FactsBackfillSheet.Mode: Identifiable {
+    var id: Self { self }
 }

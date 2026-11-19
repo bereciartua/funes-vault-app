@@ -24,6 +24,7 @@ public final class FactsLane: Sendable {
         var closures: [Closure: Int] = [:]
         var running = false
         var generation = 0
+        var backfillPaused = false
         var waiting: [CheckedContinuation<Void, Never>] = []
     }
 
@@ -58,6 +59,14 @@ public final class FactsLane: Sendable {
     /// job stops at its next send and starts again with the new configuration.
     public func reconfigured() {
         state.withLock { $0.generation += 1 }
+    }
+
+    /// The first backfill is paused (`meta('facts_backfill')`, mirrored here by `FactsBackfill.setPaused` and at open):
+    /// a running backfill job checks it before every request, so Pause sends nothing more, retries included.
+    public var backfillPaused: Bool { state.withLock { $0.backfillPaused } }
+
+    func setBackfillPaused(_ paused: Bool) {
+        state.withLock { $0.backfillPaused = paused }
     }
 
     /// Admits one facts job when the lane is open, marking it running. Called inside the claim's write transaction.

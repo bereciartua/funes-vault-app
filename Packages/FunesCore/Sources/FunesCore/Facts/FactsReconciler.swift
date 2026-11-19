@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import FunesProtocol
 import GRDB
@@ -48,6 +49,11 @@ enum FactsReconciler {
             .joined(separator: "\u{1E}")
     }
 
+    /// What `facts_asked` keeps of a knowledge string: a digest, since reconciliation only compares them.
+    static func digest(_ knowledge: String) -> String {
+        SHA256.hash(data: Data(knowledge.utf8)).prefix(12).map { String(format: "%02x", $0) }.joined()
+    }
+
     static func peopleGroup(_ group: String, _ registry: FactsRegistry) -> Bool {
         registry.groupPredicates(group).contains { registry.kindOf($0) == FactsValidator.personKind }
     }
@@ -57,14 +63,16 @@ enum FactsReconciler {
     /// Called by `FactStore.apply` on the graph it leaves. A whole reading replaces this version and group's records;
     /// a partial one updates the phrases and names it re-asked. Decisions made now record the knowledge they rest on.
     static func recordAsked(_ db: Database, graph g: FactsGraph, memory fm: FactsMemory, version: Int, group: String,
-                            phrases: [RolePhrase], scope: FactsScope, decisions: [String], now: Date) throws {
+                            phrases: [RolePhrase], scope: FactsScope, decisions: [String], readKey: String = "",
+                            now: Date) throws {
+        // Knowledge is stored as its digest (it's only compared): no name or label of anyone outlives a purge here.
         func put(_ kind: String, _ key: String, _ knowledge: String) throws {
             try db.execute(sql: """
                 INSERT OR REPLACE INTO facts_asked (memory_id, memory_version, call_group, mention_kind, mention_key, knowledge, asked_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, arguments: [fm.id, version, group, kind, key, knowledge, now])
+                """, arguments: [fm.id, version, group, kind, key, kind == "read" ? knowledge : digest(knowledge), now])
         }
-        try put("read", "", "")
+        try put("read", "", readKey)
         let roles: Set<Int>?, names: Set<String>?
         switch scope {
         case .full:
@@ -185,7 +193,7 @@ enum FactsReconciler {
             let named = (d["basis"] as String) == LinkBasis.named.rawValue && entity.map { e in
                 g.names.contains { $0.key.memoryID == mid && $0.value.entity == e && $0.value.basis == .named }
             } == true
-            let knowledge = roleKnowledge(g, mem, ph)
+            let knowledge = digest(roleKnowledge(g, mem, ph))
             if named || (asked[k(mid, group, "decision", did)] == knowledge && sawEveryHolder(mem, ph)) {
                 try revalidate(db, decision: d, predicate: ph.predicate, roster: (dependencies[did] ?? []).compactMap { dep in
                     (dep["kind"] as String) == "entity" ? dep["ref_id"] as String : nil
@@ -214,7 +222,7 @@ enum FactsReconciler {
                     let (d, w) = g.asOf(mem, ph)
                     let h = g.holders(ph, asOf: d, written: w, rejected: g.rejections[FactsGraph.DecisionKey(memoryID: mid, start: ph.start)] ?? [])
                     guard h.holders.count + h.extra > 1 else { continue }
-                    if asked[k(mid, group, "phrase", String(start))] != roleKnowledge(g, mem, ph) {
+                    if asked[k(mid, group, "phrase", String(start))] != digest(roleKnowledge(g, mem, ph)) {
                         due[key, default: Due()].roles.insert(start)
                     }
                 }
@@ -223,7 +231,7 @@ enum FactsReconciler {
                 guard peopleGroup(group, registry) else { continue }
                 for (nk, link) in g.names where nk.memoryID == mid && link.basis == .ambiguous {
                     let f = FactsText.fold(nk.surface)
-                    if asked[k(mid, group, "name", f)] != nameKnowledge(g, mem, nk.surface) {
+                    if asked[k(mid, group, "name", f)] != digest(nameKnowledge(g, mem, nk.surface)) {
                         due[key, default: Due()].names.insert(f)
                     }
                 }
