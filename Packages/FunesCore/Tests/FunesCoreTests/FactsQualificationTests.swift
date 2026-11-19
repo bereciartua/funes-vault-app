@@ -220,9 +220,9 @@ import Testing
         for p in persons { q.off.insert(opusPeople.key(p, FactsUse.recorded.rawValue)) }
         got = q.resolve(chosen: providers.opus, fallback: providers.haiku, registry: reg, promptVersions: versions)
         #expect(got[people]?.modelID == "claude-haiku-5-5")
-        // Nothing qualified (what ships until the Gates step): no model at all.
-        #expect(FactsQualification.bundled.resolve(chosen: providers.opus, fallback: providers.haiku, registry: reg,
-                                                   promptVersions: versions).isEmpty)
+        // What ships (13a.2's Gates step): Haiku qualified for both groups, Opus for neither, so both fall back to Haiku.
+        got = FactsQualification.bundled.resolve(chosen: providers.opus, fallback: providers.haiku, registry: reg, promptVersions: versions)
+        #expect(got[people]?.modelID == "claude-haiku-5-5" && got[work]?.modelID == "claude-haiku-5-5")
     }
 
     struct Fake: GenerationProvider {
@@ -403,11 +403,17 @@ import Testing
         #expect(FactsGateEvidence.gate(for: record([wa], [.timeline], group: work), registry: reg) == nil)   // measured only
     }
 
-    @Test func nothingIsQualifiedYet() {
-        // 13a.2's Gates step writes the first records (the plan's status note says what evidence they need).
-        #expect(FactsQualification.bundled.records.isEmpty)
+    @Test func whatShipsIsHaikusPersonPoolAndClient() {
+        // 13a.2's Gates step: the person pool {recorded, linked} and client {recorded}, both Haiku. Works at missed its
+        // linked gate; the timeline and bridges stay unqualified (the author's decision); attributes wait for 13d.
+        #expect(FactsQualification.bundled.records.count == 2)
         let on = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions)
-        #expect(FactsUse.allCases.allSatisfy { on.predicates($0).isEmpty })
+        #expect(Set(on.predicates(.linked)) == Set(persons))
+        #expect(Set(on.predicates(.recorded)) == Set(persons + ["client"]))
+        #expect([FactsUse.timeline, .bridges, .attributes].allSatisfy { on.predicates($0).isEmpty })
+        // Another engine gets nothing.
+        let opus = FactsQualification.bundled.uses(engines: [people: Self.opus, work: Self.opus], registry: reg, promptVersions: versions)
+        #expect(FactsUse.allCases.allSatisfy { opus.predicates($0).isEmpty })
     }
 
     // MARK: The write side

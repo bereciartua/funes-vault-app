@@ -1,0 +1,75 @@
+{
+  "above_limit_in_payload" : 0,
+  "calls" : 134,
+  "commit" : "0b3e3adecbf92de78dab57c80d963aebd7880248",
+  "date" : "2026-11-19T19:31:06Z",
+  "engine" : {
+    "adapter" : "claude-code\/1;effort=low",
+    "batching" : "one-memory;pipeline=1",
+    "model" : "claude-code\/claude-haiku-5-5"
+  },
+  "fixture_sha256" : "f0d5fc813ebfb428a2308a04a5b4a61edfd797a9057eab26d66545eb19bb17fa",
+  "groups" : [
+    "people"
+  ],
+  "label" : "swift-claude-claude-haiku-5-5-gates-r2",
+  "limit" : "internal",
+  "lines_sha256" : "6d907ddc3bc28141ee51b1f51f0295cb3a9b1fbf75a90a5e34d25ea38f2e7dab",
+  "mode" : "live",
+  "models_reported" : [
+    "claude-haiku-5-5"
+  ],
+  "not_applied" : 0,
+  "options" : {
+    "groups" : "people",
+    "limit" : "internal",
+    "live" : "claude:claude-haiku-5-5",
+    "set" : "astra",
+    "tag" : "gates-r2"
+  },
+  "plays" : 28,
+  "plays_expected" : 28,
+  "plays_list" : [
+    "a01#0",
+    "a01#1",
+    "a02#0",
+    "a03#0",
+    "a03#1",
+    "a04#0",
+    "a04#1",
+    "a05#0",
+    "a06#0",
+    "a07#0",
+    "a08#0",
+    "a09#0",
+    "a10#0",
+    "a11#0",
+    "a11#1",
+    "a12#0",
+    "a13#0",
+    "a13#1",
+    "a14#0",
+    "a15#0",
+    "a15#1",
+    "a16#0",
+    "a17#0",
+    "a18#0",
+    "a18#1",
+    "a19#0",
+    "a19#1",
+    "a20#0"
+  ],
+  "prompt_versions" : {
+    "people" : "a3a15bf93aa2",
+    "work" : "1ce3eb9fc51a"
+  },
+  "reasks" : 0,
+  "registry_file" : "bundled",
+  "registry_version" : "v1-4f14a1e53524",
+  "responses" : 134,
+  "responses_without_model" : 0,
+  "run_id" : "0c2953f7-8a48-47bb-a52c-273ac9a954a3",
+  "set" : "astra",
+  "unmapped" : 0,
+  "unsettled" : 0
+}

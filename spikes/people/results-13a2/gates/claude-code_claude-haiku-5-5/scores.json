@@ -1,0 +1,555 @@
+{
+ "format": "funes.facts-gates.v1",
+ "gates": {
+  "canary": {
+   "problems": [
+    "r1: no canary13",
+    "r2: no canary13"
+   ],
+   "record": null,
+   "sets": [
+    "canary13"
+   ]
+  },
+  "client": {
+   "problems": [],
+   "record": true,
+   "sets": [
+    "mixed",
+    "work13"
+   ]
+  },
+  "persons": {
+   "problems": [],
+   "record": true,
+   "sets": [
+    "main",
+    "astra",
+    "mixed",
+    "persons"
+   ]
+  },
+  "sole_known": {
+   "problems": [],
+   "record": null,
+   "sets": [
+    "main",
+    "astra",
+    "mixed",
+    "persons"
+   ]
+  },
+  "timeline": {
+   "problems": [
+    "r1 work13: 5 wrong facts",
+    "r1 work13: 9 wrong dates",
+    "r1 work13: decidable right 14 + 0 with a gap told, of 51",
+    "r1 mixed: decidable right 13 + 2 with a gap told, of 28",
+    "r2 work13: 5 wrong facts",
+    "r2 work13: 7 wrong dates",
+    "r2 work13: decidable right 15 + 0 with a gap told, of 51",
+    "r2 mixed: 2 wrong dates",
+    "r2 mixed: decidable right 13 + 2 with a gap told, of 28"
+   ],
+   "record": null,
+   "sets": [
+    "work13",
+    "mixed"
+   ]
+  },
+  "works_at": {
+   "problems": [
+    "r1: works at 202/208",
+    "r2: works at 203/209"
+   ],
+   "record": false,
+   "sets": [
+    "mixed",
+    "work13"
+   ]
+  }
+ },
+ "inputs": {
+  "swift-claude-claude-haiku-5-5-gates-r1/astra-manifest.json": "590ec79e5805b734a5bc5dae7ed80a48c9e547806fc1b17b60a640da851de96a",
+  "swift-claude-claude-haiku-5-5-gates-r1/astra.jsonl": "23440c120304f1d572a2940807f5de4684f5639ad0ce02c99d15fb476b6dabb0",
+  "swift-claude-claude-haiku-5-5-gates-r1/main-manifest.json": "3d91e6708eb02dd4b40c7e4e08ee6313f295a83d76f0714d879fc65ccdd1d6de",
+  "swift-claude-claude-haiku-5-5-gates-r1/main.jsonl": "de9c16c82f524a7cb41ae5aa0a500f0245340ae32e871286c3996aa1f77652af",
+  "swift-claude-claude-haiku-5-5-gates-r1/mixed-manifest.json": "e2a3dac9b4e65ecc3cc1a4a897c56561076f2b8ffde66a77ac87ccf459f0746f",
+  "swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl": "a2badd0b472fe85b987d402aa514ec65b917bc2450b1da95ad84d564d8416cdc",
+  "swift-claude-claude-haiku-5-5-gates-r1/persons-manifest.json": "64eb15ac893ef773255e0b640d1d3359ca7cb9ff12234ce7824e38d197da90ed",
+  "swift-claude-claude-haiku-5-5-gates-r1/persons.jsonl": "e7a198029ea8a887f58723c2dbe6be4b7375ea12568efc387cf97f16b5cdc1cf",
+  "swift-claude-claude-haiku-5-5-gates-r1/work13-manifest.json": "f5b385cd8934141ae4b40adbfdd9e6f98e9840ba7cd522addce6fe7bc2933851",
+  "swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl": "0439ec9757050d6071a406cdbd1e9a6f4af2d3327766b509e8587e7892395125",
+  "swift-claude-claude-haiku-5-5-gates-r2/astra-manifest.json": "cd1856029c3bab8ffa4ed9e9c5406e3f010392cec8039ed21caa75f8a84ee416",
+  "swift-claude-claude-haiku-5-5-gates-r2/astra.jsonl": "6d907ddc3bc28141ee51b1f51f0295cb3a9b1fbf75a90a5e34d25ea38f2e7dab",
+  "swift-claude-claude-haiku-5-5-gates-r2/main-manifest.json": "314fa46d0393dbe5c8e3c823a0ffa173d3aa11661208beea4f31f29bfeca7add",
+  "swift-claude-claude-haiku-5-5-gates-r2/main.jsonl": "d7f6206c83351f883f653fce7d4af3de1008f5165caee33d77ffa30325caf234",
+  "swift-claude-claude-haiku-5-5-gates-r2/mixed-manifest.json": "93d9c0fadfdfab588c8e8ae87776f98fbc13b8e6457db99e229c2f06010d3d10",
+  "swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl": "1f6350876a45e45170102be6b88fe50bb4ffd6c5fb7e62f7a385b9301725175d",
+  "swift-claude-claude-haiku-5-5-gates-r2/persons-manifest.json": "e54dbd55a1c176e390c6e964421c866703f66f9d0a67ed028212fb2003281011",
+  "swift-claude-claude-haiku-5-5-gates-r2/persons.jsonl": "aaea2ec3fd63aaa74036a5f22c4ad113e93ca173a87473b6e49a4285b3c7411f",
+  "swift-claude-claude-haiku-5-5-gates-r2/work13-manifest.json": "accbacfdd95cb019e518b95624fc950f88791cc585c7b64190e65b75109fb44f",
+  "swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl": "98918520046fa1088bfa3a3a808b820ea6a33d9c116cf3a8c51915c53d4d4f86"
+ },
+ "measures": {
+  "r1": {
+   "astra": {
+    "people": {
+     "forbidden": 0,
+     "full_by_predicate": {
+      "care": 7,
+      "child": 1,
+      "colleague": 10,
+      "friend": 14,
+      "manager": 7,
+      "other_family": 4,
+      "parent": 9,
+      "partner": 11,
+      "sibling": 15
+     },
+     "full_right": 78,
+     "full_wrong": 0,
+     "outside_lexicon": 1,
+     "recall_right": 91,
+     "recall_truth": 98,
+     "sole_known_right": 11,
+     "sole_known_wrong": 0
+    },
+    "plays": {
+     "expected": 28,
+     "extra": 0,
+     "missing": 0
+    }
+   },
+   "main": {
+    "people": {
+     "forbidden": 0,
+     "full_by_predicate": {
+      "care": 2,
+      "child": 1,
+      "colleague": 3,
+      "friend": 4,
+      "manager": 6,
+      "other": 1,
+      "other_family": 6,
+      "parent": 4,
+      "partner": 8,
+      "sibling": 23
+     },
+     "full_right": 58,
+     "full_wrong": 0,
+     "outside_lexicon": 0,
+     "recall_right": 77,
+     "recall_truth": 79,
+     "sole_known_right": 12,
+     "sole_known_wrong": 0
+    },
+    "plays": {
+     "expected": 30,
+     "extra": 0,
+     "missing": 0
+    }
+   },
+   "mixed": {
+    "orgs": {
+     "clients": 5,
+     "clients_as_employer": 0,
+     "clients_recorded": 4,
+     "vendors": 5,
+     "vendors_as_client": 0,
+     "vendors_as_employer": 0,
+     "works_at_right": 89
+    },
+    "people": {
+     "forbidden": 0,
+     "full_by_predicate": {
+      "care": 3,
+      "colleague": 6,
+      "friend": 2,
+      "manager": 22,
+      "other": 5,
+      "parent": 3,
+      "partner": 2,
+      "sibling": 2
+     },
+     "full_right": 45,
+     "full_wrong": 0,
+     "outside_lexicon": 0,
+     "recall_right": 57,
+     "recall_truth": 58,
+     "sole_known_right": 4,
+     "sole_known_wrong": 0
+    },
+    "plays": {
+     "expected": 16,
+     "extra": 0,
+     "missing": 0
+    },
+    "timeline": {
+     "decidable": 28,
+     "details": {
+      "triggered": [],
+      "wrong_answers": [],
+      "wrong_dates": [
+       "('x03', 'Small Current Studio', '2019-02', 'end')"
+      ],
+      "wrong_facts": []
+     },
+     "inferred_ends": 0,
+     "malformed": 0,
+     "negatives": 16,
+     "right": 13,
+     "right_gap": 2,
+     "succession_cross_slot": 0,
+     "succession_unexplained": 0,
+     "succession_untrusted": 0,
+     "triggered": 0,
+     "wrong_answers": 0,
+     "wrong_dates": 1,
+     "wrong_facts": 0
+    }
+   },
+   "persons": {
+    "people": {
+     "forbidden": 6,
+     "full_by_predicate": {
+      "care": 55,
+      "child": 37,
+      "colleague": 21,
+      "friend": 10,
+      "manager": 16,
+      "other": 43,
+      "other_family": 42,
+      "parent": 38,
+      "partner": 23,
+      "sibling": 13
+     },
+     "full_right": 296,
+     "full_wrong": 2,
+     "outside_lexicon": 0,
+     "recall_right": 375,
+     "recall_truth": 394,
+     "sole_known_right": 37,
+     "sole_known_wrong": 4
+    },
+    "plays": {
+     "expected": 66,
+     "extra": 0,
+     "missing": 0
+    }
+   },
+   "work13": {
+    "orgs": {
+     "clients": 4,
+     "clients_as_employer": 0,
+     "clients_recorded": 3,
+     "vendors": 6,
+     "vendors_as_client": 0,
+     "vendors_as_employer": 0,
+     "works_at_right": 113,
+     "works_at_wrong": 6
+    },
+    "people": {
+     "forbidden": 0,
+     "full_by_predicate": {
+      "colleague": 3,
+      "friend": 1,
+      "manager": 3,
+      "other_family": 2,
+      "sibling": 1
+     },
+     "full_right": 10,
+     "full_wrong": 0,
+     "outside_lexicon": 0,
+     "recall_right": 13,
+     "recall_truth": 17,
+     "sole_known_right": 0,
+     "sole_known_wrong": 0
+    },
+    "plays": {
+     "expected": 17,
+     "extra": 0,
+     "missing": 0
+    },
+    "timeline": {
+     "decidable": 51,
+     "details": {
+      "triggered": [],
+      "wrong_answers": [],
+      "wrong_dates": [
+       "('w01', 'Brindle Systems', '2015-02-02', 'end')",
+       "('w02', 'Copper Finch Studio', '2019-03', 'end')",
+       "('w03', 'Fenwick Audio', '2014-01', 'end')",
+       "('w03', 'Fenwick Audio', '2014-01', 'start')",
+       "('w04', 'Lattice Harbor Labs', '2017', 'end')",
+       "('w05', 'Nudo Estudio', '2018', 'end')",
+       "('w09', 'Holloway Maps', '2014', 'end')",
+       "('w09', 'Holloway Maps', '2014', 'start')",
+       "('w11', 'Mossline Translation', '2017-09', 'end')"
+      ],
+      "wrong_facts": [
+       "('w01', 'Orlin Labs')",
+       "('w04', 'Silver Shoal')",
+       "('w05', 'Self-employed')",
+       "('w07', 'Bellwether Optics')",
+       "('w10', 'Nácar Digital')"
+      ]
+     },
+     "inferred_ends": 1,
+     "malformed": 0,
+     "negatives": 8,
+     "right": 14,
+     "right_gap": 0,
+     "succession_cross_slot": 0,
+     "succession_unexplained": 0,
+     "succession_untrusted": 0,
+     "triggered": 0,
+     "wrong_answers": 0,
+     "wrong_dates": 9,
+     "wrong_facts": 5
+    }
+   }
+  },
+  "r2": {
+   "astra": {
+    "people": {
+     "forbidden": 0,
+     "full_by_predicate": {
+      "care": 7,
+      "child": 1,
+      "colleague": 10,
+      "friend": 14,
+      "manager": 7,
+      "other_family": 4,
+      "parent": 9,
+      "partner": 11,
+      "sibling": 12
+     },
+     "full_right": 75,
+     "full_wrong": 0,
+     "outside_lexicon": 1,
+     "recall_right": 88,
+     "recall_truth": 98,
+     "sole_known_right": 11,
+     "sole_known_wrong": 0
+    },
+    "plays": {
+     "expected": 28,
+     "extra": 0,
+     "missing": 0
+    }
+   },
+   "main": {
+    "people": {
+     "forbidden": 0,
+     "full_by_predicate": {
+      "care": 2,
+      "child": 1,
+      "colleague": 3,
+      "friend": 4,
+      "manager": 6,
+      "other": 1,
+      "other_family": 6,
+      "parent": 4,
+      "partner": 8,
+      "sibling": 21
+     },
+     "full_right": 56,
+     "full_wrong": 0,
+     "outside_lexicon": 0,
+     "recall_right": 76,
+     "recall_truth": 79,
+     "sole_known_right": 13,
+     "sole_known_wrong": 0
+    },
+    "plays": {
+     "expected": 30,
+     "extra": 0,
+     "missing": 0
+    }
+   },
+   "mixed": {
+    "orgs": {
+     "clients": 5,
+     "clients_as_employer": 0,
+     "clients_recorded": 5,
+     "vendors": 5,
+     "vendors_as_client": 0,
+     "vendors_as_employer": 0,
+     "works_at_right": 88
+    },
+    "people": {
+     "forbidden": 0,
+     "full_by_predicate": {
+      "care": 3,
+      "colleague": 6,
+      "friend": 2,
+      "manager": 22,
+      "other": 5,
+      "parent": 3,
+      "partner": 2,
+      "sibling": 2
+     },
+     "full_right": 45,
+     "full_wrong": 0,
+     "outside_lexicon": 0,
+     "recall_right": 57,
+     "recall_truth": 58,
+     "sole_known_right": 4,
+     "sole_known_wrong": 0
+    },
+    "plays": {
+     "expected": 16,
+     "extra": 0,
+     "missing": 0
+    },
+    "timeline": {
+     "decidable": 28,
+     "details": {
+      "triggered": [],
+      "wrong_answers": [],
+      "wrong_dates": [
+       "('x03', 'Small Current Studio', '2019-02', 'end')",
+       "('x03', 'Small Current Studio', '2019-02', 'start')"
+      ],
+      "wrong_facts": []
+     },
+     "inferred_ends": 0,
+     "malformed": 0,
+     "negatives": 16,
+     "right": 13,
+     "right_gap": 2,
+     "succession_cross_slot": 0,
+     "succession_unexplained": 0,
+     "succession_untrusted": 0,
+     "triggered": 0,
+     "wrong_answers": 0,
+     "wrong_dates": 2,
+     "wrong_facts": 0
+    }
+   },
+   "persons": {
+    "people": {
+     "forbidden": 5,
+     "full_by_predicate": {
+      "care": 54,
+      "child": 37,
+      "colleague": 20,
+      "friend": 10,
+      "manager": 16,
+      "other": 43,
+      "other_family": 42,
+      "parent": 38,
+      "partner": 23,
+      "sibling": 14
+     },
+     "full_right": 295,
+     "full_wrong": 2,
+     "outside_lexicon": 0,
+     "recall_right": 374,
+     "recall_truth": 394,
+     "sole_known_right": 37,
+     "sole_known_wrong": 3
+    },
+    "plays": {
+     "expected": 66,
+     "extra": 0,
+     "missing": 0
+    }
+   },
+   "work13": {
+    "orgs": {
+     "clients": 4,
+     "clients_as_employer": 0,
+     "clients_recorded": 3,
+     "vendors": 6,
+     "vendors_as_client": 0,
+     "vendors_as_employer": 0,
+     "works_at_right": 115,
+     "works_at_wrong": 6
+    },
+    "people": {
+     "forbidden": 0,
+     "full_by_predicate": {
+      "colleague": 3,
+      "friend": 1,
+      "manager": 3,
+      "other_family": 2,
+      "sibling": 1
+     },
+     "full_right": 10,
+     "full_wrong": 0,
+     "outside_lexicon": 0,
+     "recall_right": 13,
+     "recall_truth": 17,
+     "sole_known_right": 0,
+     "sole_known_wrong": 0
+    },
+    "plays": {
+     "expected": 17,
+     "extra": 0,
+     "missing": 0
+    },
+    "timeline": {
+     "decidable": 51,
+     "details": {
+      "triggered": [],
+      "wrong_answers": [],
+      "wrong_dates": [
+       "('w01', 'Brindle Systems', '2015-02-02', 'end')",
+       "('w02', 'Copper Finch Studio', '2019-03', 'end')",
+       "('w05', 'Nudo Estudio', '2018', 'end')",
+       "('w09', 'Holloway Maps', '2014', 'end')",
+       "('w09', 'Holloway Maps', '2014', 'start')",
+       "('w10', 'Prisma Analítica', '2016', 'end')",
+       "('w11', 'Mossline Translation', '2017-09', 'end')"
+      ],
+      "wrong_facts": [
+       "('w01', 'Orlin Labs')",
+       "('w04', 'Silver Shoal')",
+       "('w05', 'Self-employed')",
+       "('w07', 'Bellwether Optics')",
+       "('w10', 'Nácar Digital')"
+      ]
+     },
+     "inferred_ends": 1,
+     "malformed": 0,
+     "negatives": 8,
+     "right": 15,
+     "right_gap": 0,
+     "succession_cross_slot": 0,
+     "succession_unexplained": 0,
+     "succession_untrusted": 0,
+     "triggered": 0,
+     "wrong_answers": 0,
+     "wrong_dates": 7,
+     "wrong_facts": 5
+    }
+   }
+  }
+ },
+ "model": "claude-code/claude-haiku-5-5",
+ "port_fidelity": {
+  "pass": true,
+  "sha256": "6a11e34fa15c00ad655cdf2c3f570f11a2e4b5f0eb725e0e06e867b52ad2281d"
+ },
+ "reads": [
+  "r1",
+  "r2"
+ ],
+ "thresholds": {
+  "clients_min": 3,
+  "decidable": 0.9,
+  "decidable_min": 30,
+  "full": 0.98,
+  "negatives_min": 5,
+  "per_predicate": 20,
+  "reads": 2,
+  "recall": 0.9,
+  "sole_known": 0.9,
+  "vendors_min": 3,
+  "works_at": 0.98,
+  "works_at_units": 20,
+  "wrong_dates": 1
+ }
+}

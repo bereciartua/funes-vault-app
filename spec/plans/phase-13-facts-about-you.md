@@ -398,6 +398,9 @@
     | H6, informative | `canary13 "live=claude:claude-haiku-5-5;groups=people;limit=internal;tag=canary-r1"` | canary13 (people; its registry) · one read | about 80 |
     | O1–O4, later | H1–H4 with `live=claude:claude-opus-5-5`, and `groups=people` on mixed too | main, astra, mixed, persons (people) · two reads | 1,590 |
 
+    - **Every live spec also takes `executable=$(which claude)`.** Without it the harness passes a bare `claude`, which the
+      CLI runner opens as a file path relative to the test process; every request fails as unavailable and falls back to
+      code-only links (the first H0 made 0 calls). The manifest doesn't record the path.
     - **H0** checks the model id the CLI reports (`models_reported` in its manifest). A record needs exactly `claude-haiku-5-5`; if the CLI reports a dated id, stop and decide the record's model id before H1.
     - **After H1–H5,** with no model:
       - the port-fidelity inputs: `sh scripts/facts_harness.sh main`, `astra`, `mixed`, then `main gold`, `astra gold`, `mixed gold`, `persons gold`, and `swift test --package-path Packages/FunesCore --filter FactsPortFidelityTests`;
@@ -409,13 +412,43 @@
     - **The timeline is informative in this release** (the author's decision): H5's timeline measures and H6 are reported, never recorded; the timeline and bridges stay off. H6 can be skipped. The canary's record couldn't match the bundled registry anyway: shipping the partner timeline changes the registry's fingerprint, which re-runs every gate.
     - A gate that misses gets no record, and the uses it covers stay off.
   - **Not yet:**
-    - The live runs above, and with them the records: the person pool's ≥ 98% and recall, and the client and works-at *linked* gates.
+    - ~~The live runs above, and with them the records~~ **Done** (the Gates run, below): the person pool and client qualified; works at *linked* missed.
     - ~~The author's decisions~~ **Taken** (19 November): fix the time model so it tells, with fresh blind sets; works at *linked* only, the timeline and bridges unqualified; accept port fidelity's aggregates; fix the privacy finding; add mixed's missing words. See the fix round.
     - **Timeline coverage, later work:** the grammar's refused wordings above, the H2 and mixed coverage (H2 2 of 22 right, mixed 16 of 28), and the told answers the fix round added. Qualifying the timeline (and bridges) needs a later round, then a fresh blind work set and canary.
 
       A code or registry change after the blind sets exist voids them: a fresh blind work set and a new canary.
     - The authoring audit reads the commands from Codex's `--json` events; if their shape changes, it sees none and passes. Check the kept command lists after each round.
     - Codex runs aren't measured (its adapter has no file-read switch yet, as the Settings step noted).
+- *Status (19 November 2026), the Gates run* (Claude Haiku 5.5 on the subscription runner, `claude-code/1;effort=low`, at
+  0b3e3ad, every batch on the author's go-ahead):
+  - **The §11.9 fix, reviewed again** by GPT-6-Astra and Fable 5.2 (static, before any live run). Both found the same P1:
+    a model's `named` decision that the exception declines (a phrase the text doesn't pair with a name, or a paired name
+    two people share) is still withheld by roster dependencies in the vault with a restricted note only, and a later
+    sendable change to the role's holders makes reconciliation re-ask that memory there alone (`FactsReconciler`'s
+    `named` revalidation doesn't need the pairing). Fable added a P2: `namePattern` takes two words, so "my sister Maria
+    Lopez Garcia" pairs with "Maria Lopez". **The author accepted both as known**, like the hidden first-name sharer's
+    link drop; no code changed, so `openFindings` stays 0. A possible direction for later: reconciliation doesn't ask about
+    a phrase whose model decision is valid but withheld.
+  - **Runs:** H0 5 calls, H1 431, H2 432, H3 420, H4 412, H5 333: 2,033 in all, every story and order played, 0 failed, 0
+    unsettled, nothing above the limit in a payload, `claude-haiku-5-5` on every response. H6 (informative) wasn't run.
+  - **The person pool qualifies** {recorded, linked}: full basis 477/479 and 471/473 (99.6%), recall 95.4% and 94.6%,
+    mixed alone 45/45 and 57/58 both reads, every predicate ≥ 30 links. Wrong links that recur: p10's "My father" (stated,
+    2 links a read) and p06's landlord in its second order (`sole_known`, 3 links a read; measured only).
+  - **Client qualifies** {recorded}: work13 4 clients and 6 vendors (3 clients recorded as clients), mixed 5 and 5; 0
+    vendors as clients, 0 clients or vendors as employers.
+  - **Works at *linked* misses:** organization mentions right 202/208 and 203/209 (97.1%, gate 98%); mixed 89/89 and
+    88/88, work13 113/119 and 115/121 (6 wrong a read). No record: works at stays off, and with it the timeline and bridges.
+  - **The timeline, measured:** work13 decidable right 14 and 15 of 51, 0 wrong answers, 0 negatives triggered, 5 wrong
+    facts and 9 and 7 wrong dates; mixed 13 + 2 told of 28, 0 wrong answers.
+  - **Port fidelity:** pass (0 unexplained). `qualify.py records --write` wrote two records and their evidence
+    (`spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/`); `verify` passes.
+  - **Five tripwire tests** asserted that nothing ships (`test_qualify.py`; `FactsQualificationTests`'
+    `nothingIsQualifiedYet` and the Opus fallback's last check; `FactsSettingsTests`' offers and router checks). With the
+    author's go-ahead they now assert what ships (Haiku through Claude Code for both groups; Opus falls back to it), and
+    the freeze was rewritten with `--force` for those three test files only (still 651 files); no source, prompt,
+    registry or fixture changed.
+  - **Not yet:** works at *linked* (a fix to the work extraction or the works-at reading means fresh blind sets), H6, the
+    Opus runs O1–O4, and the Gates box (the canary and works-at rows aren't met).
 
 ## 13b Mac search · 1–2 weekends
 - [ ] **Matching:** names, aliases and role phrases in the query map to entities, with no model call. A shared name matches everyone who has it; stop names, common-word names and possessive chains follow §11's cases.
