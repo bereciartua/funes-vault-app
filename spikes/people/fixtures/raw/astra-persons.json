@@ -1400,7 +1400,7 @@
     },
     {
      "id": "m3",
-     "text": "Notebook entry dated 2023-06-09: My landlord brought paint samples. My landlord preferred the pale green.",
+     "text": "My landlord on 9 June 2023 brought paint samples. My landlord in June 2023 preferred the pale green.",
      "written": "2025-11-17",
      "source": "import",
      "names": [],
@@ -3300,7 +3300,7 @@
     },
     {
      "id": "m4",
-     "text": "Journal dated 2023-05-12: My therapist asked whether writing by hand felt easier.",
+     "text": "My therapist in May 2023 asked whether writing by hand felt easier.",
      "written": "2026-01-13",
      "source": "import",
      "names": [],
@@ -5408,9 +5408,11 @@
    "people": [
     {
      "id": "older",
-     "names": [],
-     "group_type": "sibling",
-     "group_label": "sister"
+     "names": [
+      "Lena"
+     ],
+     "group_type": null,
+     "group_label": null
     },
     {
      "id": "may",
@@ -5499,10 +5501,16 @@
     },
     {
      "id": "m3",
-     "text": "My older sister is visiting in May.",
+     "text": "My older sister Lena is visiting in May; we celebrated her fortieth birthday in June 2023.",
      "written": "2025-04-04",
      "source": "capture",
-     "names": [],
+     "names": [
+      {
+       "surface": "Lena",
+       "person": "older",
+       "of": []
+      }
+     ],
      "roles": [
       {
        "surface": "My older sister",
@@ -5528,13 +5536,18 @@
     },
     {
      "id": "m4",
-     "text": "Ari's younger sister asked for a copy of the holiday photo.",
+     "text": "Ari's younger sister May asked for a copy of the holiday photo.",
      "written": "2026-06-20",
      "source": "agent",
      "names": [
       {
        "surface": "Ari",
        "person": "user",
+       "of": []
+      },
+      {
+       "surface": "May",
+       "person": "may",
        "of": []
       }
      ],

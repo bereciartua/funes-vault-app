@@ -1,0 +1,210 @@
+{
+ "intents": {
+  "w01": [
+   "works_at",
+   "before",
+   {
+    "entity": "Bracken Systems"
+   }
+  ],
+  "w02": [
+   "works_at",
+   "before",
+   {
+    "entity": "Bracken Systems"
+   }
+  ],
+  "w03": [
+   "works_at",
+   "before",
+   {
+    "entity": "Blue Kite"
+   }
+  ],
+  "w04": [
+   "works_at",
+   "before",
+   {
+    "entity": "Blue Kite"
+   }
+  ],
+  "w05": [
+   "works_at",
+   "after",
+   {
+    "entity": "Pampa Digital"
+   }
+  ],
+  "w06": [
+   "works_at",
+   "after",
+   {
+    "entity": "Bracken Systems"
+   }
+  ],
+  "w07": [
+   "works_at",
+   "after",
+   {
+    "entity": "Blue Kite"
+   }
+  ],
+  "w08": [
+   "works_at",
+   "after",
+   {
+    "entity": "Blue Kite"
+   }
+  ],
+  "w09": [
+   "works_at",
+   "before",
+   {
+    "entity": "Mosaic Labs"
+   }
+  ],
+  "w10": [
+   "works_at",
+   "before",
+   {
+    "entity": "Bracken Systems"
+   }
+  ],
+  "w11": [
+   "works_at",
+   "before",
+   {
+    "entity": "Bracken Systems"
+   }
+  ],
+  "w12": [
+   "works_at",
+   "after",
+   {
+    "entity": "Bracken Systems"
+   }
+  ],
+  "w13": [
+   "works_at",
+   "after",
+   {
+    "entity": "Self-employed"
+   }
+  ],
+  "w14": [
+   "works_at",
+   "before",
+   {
+    "entity": "Self-employed"
+   }
+  ],
+  "w15": [
+   "works_at",
+   "previous",
+   null
+  ],
+  "w17": [
+   "works_at",
+   "year",
+   {
+    "date": [
+     736330,
+     736694,
+     "year"
+    ]
+   }
+  ],
+  "w19": [
+   "works_at",
+   "year",
+   {
+    "date": [
+     737364,
+     737393,
+     "month"
+    ]
+   }
+  ],
+  "w20": [
+   "works_at",
+   "year",
+   {
+    "date": [
+     739917,
+     739917,
+     "day"
+    ]
+   }
+  ],
+  "w30": [
+   "works_at",
+   "before",
+   {
+    "entity": "Pampa Digital"
+   }
+  ],
+  "w31": [
+   "works_at",
+   "year",
+   {
+    "date": [
+     740041,
+     740071,
+     "month"
+    ]
+   }
+  ],
+  "w32": [
+   "works_at",
+   "before",
+   {
+    "entity": "Bracken Systems"
+   }
+  ],
+  "w33": [
+   "works_at",
+   "before",
+   {
+    "entity": "Nightjar"
+   }
+  ]
+ },
+ "judged": {
+  "w01": "right",
+  "w02": "right",
+  "w03": "right",
+  "w04": "right",
+  "w05": "right",
+  "w06": "right",
+  "w07": "told_decidable",
+  "w08": "told_decidable",
+  "w09": "told_gap",
+  "w10": "told_decidable",
+  "w11": "told_decidable",
+  "w12": "right",
+  "w13": "told_decidable",
+  "w14": "told_decidable",
+  "w15": "told_decidable",
+  "w16": "miss",
+  "w17": "told_decidable",
+  "w18": "miss",
+  "w19": "told_decidable",
+  "w20": "told_decidable",
+  "w21": "miss",
+  "w22": "quiet",
+  "w23": "quiet",
+  "w24": "quiet",
+  "w25": "quiet",
+  "w26": "quiet",
+  "w27": "quiet",
+  "w28": "quiet",
+  "w29": "quiet",
+  "w30": "told",
+  "w31": "told",
+  "w32": "told",
+  "w33": "told_decidable",
+  "w34": "quiet",
+  "w35": "told_no_intent"
+ },
+ "note": "Spike H2's extraction (results-search/work-extract-fixture.jsonl) through facts.py (score_facts.convert), each work-queries.json question judged by score_facts.judge. port_fidelity.py --h2 writes it."
+}

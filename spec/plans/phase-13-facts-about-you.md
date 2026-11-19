@@ -160,7 +160,7 @@
   - **Replays** (`facts_harness.sh` mixed, main, astra, and mixed's schedule; every declared use on): score.py reports and score_facts.py output identical to main; calls 181, 122 and 143, Swift's schedule on mixed 180; every line identical up to list order. Gating changes no replay, since what's read, asked and stored doesn't depend on the read-side uses.
   - Reviewed by GPT-6-Astra and Fable 5.2: the plan, then the diff (nothing high from Fable; one high from Astra, fixed). Taken from the plan reviews: fail closed with no default uses; *recorded* off hides earlier rows at load, not just new answers; the timeline checked before stored decisions; the registry version as a whole-registry digest without uses lists (the lexicon is read globally, so per-predicate scoping was unsound); the pipeline and adapter revisions in the key; per-group models with the strictest roster limit; qualification read per call; a pass table that doesn't pool works at with persons or invent criteria.
   - **Not yet:**
-    - **Records.** The Gates step runs the gates and writes them, each needing the author's go-ahead for its live runs:
+    - **Records.** The Gates step runs the gates and writes them, each needing the author's go-ahead for its live runs (the batches are in the Gates step's run plan):
       - Haiku, both groups: main, astra and mixed, two reads, about 2 × (122 + 143 + 180) ≈ 900 calls;
       - Haiku, people group: the person fixture, two reads, about 2 × 430 ≈ 860 calls (about 2 × 260 ≈ 520 on the natural order alone, `orders=natural`);
       - the fresh blind work fixture, once GPT-6-Astra writes it, about 100–150 calls;
@@ -170,7 +170,7 @@
     - ~~Settings uses `resolve` and `ModelRouter.factsModels` (the next step).~~ Done in the Settings step.
     - ~~Re-reading a group when its qualified coverage grows (the backfill step's registry rule).~~ Done in the backfill step.
     - Search and answers check *linked*, *attributes* and *bridges* (13b, 13d).
-    - The Gates step makes the harness's manifest part of each record's evidence check (today the CI check only sees that the evidence exists).
+    - ~~The Gates step makes the harness's manifest part of each record's evidence check (today the CI check only sees that the evidence exists).~~ Done in the Gates step's preparation (`qualify.py`, `FactsGateEvidence`).
 - [x] **Settings ▸ AI ▸ Features ▸ Facts** (working name):
   - off by default;
   - a qualified model (Claude Haiku 5.5 by default);
@@ -246,7 +246,7 @@
   - **Scripted answers** (`gold_answers.py`; `sh scripts/facts_harness.sh persons gold`): every call is answered from the story's labels and played through the Swift harness, with no model. It answers "group" for a decidable reference to someone not yet known. The set plays end to end: 66 plays, 437 calls (421 in Python), none failed.
     - Full basis 302/302, decidable references 387/396 and relations 211/211 · 211/216.
     - `sole_known` is 37/46: p06 and p14 (an import dated only in a header, so the time cue isn't next to the phrase) and p24 (an unnamed older sister beside a named younger one) are rule limits kept on purpose.
-    - So a perfect reader can't pass the 90% `sole_known` gate on this set. In the Python play it's 40/49; pooled with main, astra and mixed (25/25 by the same play), 65/74 ≈ 88%. The fixture ships with the three stories as they are. **Open for the Gates step:** either the `sole_known` row leaves the person set out (main, astra and mixed only), or GPT-6-Astra rewrites p06, p14 and p24 first.
+    - So a perfect reader can't pass the 90% `sole_known` gate on this set. In the Python play it's 40/49; pooled with main, astra and mixed (25/25 by the same play), 65/74 ≈ 88%. The fixture shipped with the three stories as they were. ~~**Open for the Gates step:** either the `sole_known` row leaves the person set out, or GPT-6-Astra rewrites p06, p14 and p24 first.~~ **Done in the Gates step's preparation:** the author chose the rewrite (see its status note).
     - `facts_harness.sh persons` (replay) refuses until the Gates step records calls.
     - The same scripted play on main gives full basis 61/61 and no wrong link, which checks the script itself.
   - Reviewed twice by Fable 5.2 and a fresh GPT-6-Astra (read-only, ephemeral), and corrected by GPT-6-Astra in four rounds:
@@ -260,6 +260,162 @@
     - cloned succession stories reworked so the time cue sits next to the phrase.
 
     Not taken: deleting plural facts with no person ("my kids"), and adding a chain's first part to not_linked.
+
+- *Status (19 November 2026), the Gates step's preparation (no live run):*
+  - **Port fidelity** (`spikes/people/port_fidelity.py --standard build/facts-harness --json build/port-fidelity.json`):
+    - **The two missed names** in #114's gold play (p20 "Nico", p38 "Ellis") weren't a port bug. Both people were first named only in an agent's memory, and a trusted memory's roster leaves such people out on purpose (§11.4's alias trust; facts.py has none). `gold_answers.py` answers against facts.py's roster, so the harness couldn't map the answer and validation dropped the name. The harness's gold mode now has a reader (`reader=1`). It acts only when the asking memory is trusted and every earlier memory naming that person was untrusted (the fixture's labels), and answers as a reader of the Swift prompt would. Persons: 25 substitutions, 0 unexplained; names 303/303 in both pipelines. Recorded replays don't use the reader.
+    - **What it compares,** per play, on the same answers through both pipelines: every link (basis and person by name), relation and timeline judgment. That's the spike's recorded Haiku calls (main, astra, mixed), the gold plays (main, astra, mixed, persons), and Spike H2's own extraction of its work fixture (`FactsPortFidelityTests`, with facts.py's intent supplied so the time model is compared apart from the grammar).
+    - **How it passes:** every difference must match an entry of `port_fidelity_known.json` with the exact value on each side; an entry that no longer occurs fails. Every aggregate must be within 1 point, unless the author accepts it there (`accepted_points`, with its value, reason and who accepted it). The report records its commit, every pair's plays against the fixture, input digests and the gold reader's counts; the record writer and the CI check require it at the runs' commit.
+    - **Today: 35 explained differences under ten rules, 0 unexplained,** and the time model agrees with facts.py on H2 wherever facts.py had an intent, except two "immediately before Blue Kite" questions. There Swift keeps "Bracken" and "Bracken Systems" apart (§11.4: one name inside another is only a suggestion), so it tells rather than answers. The rules: alias trust; untrusted basis; untrusted text never rules a holder out; the latest trusted statement's label; a stale decision replaced by its re-read; a possibly quoted phrase skipped; the timeline grammar failing closed; day cues ("my landlord on 9 June 2023": Swift is right, facts.py links the wrong holder); when a phrase is sent rather than resolved in code (basis only); organization names by containment.
+    - **Four aggregates over 1 point, accepted by the author** (19 November) as known, explained differences, in `accepted_points`:
+      - main's decidable references −1.25 points (the stale-decision rule: two misses, no wrong link);
+      - persons' `sole_known` +4.76 (Swift better: the day cue);
+      - mixed's timeline coverage −32.14 (16 of 28 decidable questions against facts.py's 25);
+      - H2's timeline coverage −18 then, −22.73 after the fix round (below). Neither pipeline is ever wrong.
+    - A harness dump bug fixed: a role group that resolving makes had no id in the dump (two gold plays of main change; no recorded replay does).
+  - **The timeline grammar round** (the author's choice, before the freeze; memory processing §11.7):
+    - An adverb right before the operator is part of it. It must be one of the registry's `operator_adverbs` (immediately, right, straight, just, inmediatamente, justo), right next to the operator and after a word of its own clause that isn't another adverb. Its clause needs a wh-word (the new `wh_words`), and it can't be a known name of the predicate's. A date anchor takes no adverb. Both lists are read-side, so they move no extraction digest; the registry's fingerprint moves.
+    - Reviewed by Fable 5.2 and GPT-6-Astra (no P1). Taken from them: the wh-word (so "Did I start work immediately after leaving Acme?" and "Was I straight after leaving Acme?" get no intent), no adverb after a comma, a name isn't an adverb, one adverb only, no adverb before a date anchor, "directly" dropped, and the tests (`FactsTimelineAdverbTests`).
+    - **Coverage on Spike H2's decidable questions (22)** (wrong 0 in every column):
+
+      | | right | told | no intent |
+      |---|---|---|---|
+      | Swift before | 0 | 2 | 20 |
+      | Swift after | 3 | 7 | 12 |
+      | facts.py | 7 | 12 | 3 |
+
+      "told" includes one gap told (w09).
+    - **On mixed's (28) it's unchanged:** 14 right and 2 with a gap told, 11 no intent, 0 wrong (facts.py 25). Mixed's refusals use no adverb.
+    - **Still refused,** H2: "justo antes de entrar por primera vez en …", "Who employed me … the stint at …, also called …", "my next paid job after leaving …, allowing for the study gap", "Which employee job followed my first freelance period?", "my last salaried job before this current freelance stretch", "¿Cuál fue mi último trabajo como empleado?", "Where was I working in 2017, and what was my title?", "What was my work situation in November 2019?", "What is my current work setup as of 28 October 2026?", "What's my current role with Nordwind?", "Had I left Mosaic Labs before starting my Nightjar School job?". Mixed: "my next employer / my next job after leaving …", "my full-time employer before …", "What business did I start after leaving …", "before rejoining … in January 2021".
+    - **This is far short of the works-at timeline gate's 90%** on decidable wordings, even with perfect extraction (the canned play on mixed's labels gets 17 of 28). Unless another round widens the grammar, works at is likely to ship *linked* only. The author decides between that and another round, before the blind work fixture exists.
+  - **The `sole_known` stories** (the author's choice: GPT-6-Astra rewrote p06, p14 and p24 through `author_astra_persons.py --extend`):
+    - p06's and p14's imports now carry their time cue next to the phrase ("My landlord on 9 June 2023 …", "My therapist in May 2023 …"), and p24 names the older sister in a later capture.
+    - `fixture_counts.py --check persons`: 0 problems. Counts per predicate are unchanged (pooled: partner 52, parent 62, child 61, sibling 91, other family 84, friend 53, manager 91, colleague 53, care 110, other 66; every one ≥ 20).
+    - A perfect reader's `sole_known`, before → after: persons 37/46 → 37/37 in Swift (Python 40/49 → 40/42: it doesn't read the day cue). Pooled with main, astra and mixed: Swift 61/61 = 100% (Python 65/67 = 97%), over the 90% gate.
+    - Persons' gold play: full basis 310/310, 0 forbidden links; 66 plays, 441 Swift calls.
+  - **Records from runs** (`spikes/people/qualify.py`):
+    - **`scores`** takes every `*-gates-rN` directory of a model: r1 to rN, none missing or twice, all of them. It computes each pass-table measure per read and records each input's sha256:
+      - full basis, pooled and per person predicate (score.py gains per-predicate counters; its report is unchanged);
+      - recall against every resolvable truth reference, undetected ones included (references whose phrase has no registry word are also counted apart);
+      - works-at mentions, one per play, memory and organization, against the truth's stints and organizations; clients and vendors;
+      - the timeline's wrong facts and wrong dates. An episode is matched to its truth stint by its own memories first, so a rehire's dates can't borrow another stint's. A bound outside the truth's at its precision is wrong; unknown and hand-over starts aren't.
+      - Swift's own judgments, counted from the truth: a missing judgment is a miss, and a gap answer naming someone on an undecidable question is wrong;
+      - the succession checks: each inferred end's successor started on trusted evidence in the same slot, and the end survives removing every untrusted row;
+      - every play of the fixture exactly once.
+    - Floors keep a zero from passing on nothing: ≥ 20 full-basis links per person predicate, ≥ 20 works-at mentions, ≥ 30 decidable and ≥ 5 negative questions on work13, ≥ 3 clients and vendors, at least one client recorded as one.
+    - **`records --write`** writes one record per gate that passes (the person pool {recorded, linked}; client {recorded}; works at {recorded, linked}; works at {timeline}) and copies the evidence to `results-13a2/gates/<model>/`. Its fields come from the gate's own manifests, which must agree. It writes nothing unless:
+      - every run is live, from one clean commit, of exactly the record's key (engine, the group's prompt version, the bundled registry's version);
+      - the provider named the exact model id on every response;
+      - every run is complete, with lines matching the digest the run wrote, and of the current fixture;
+      - the record's group was read, the queue settled, the cloud limit was the app's (not `secret`), and nothing above it reached a payload;
+      - there are at least two reads, with distinct run ids;
+      - port fidelity's report passes at the runs' commit, the freeze holds, and no privacy finding is open.
+    - `sole_known` and the canary are measured but get no record: the first needs 13d's attributes record, the second a registry that isn't the bundled one.
+    - **The CI check** (`FactsQualificationTests` with `Support/FactsGateEvidence.swift`, and `qualify.py verify` in `scripts/test.sh`) checks each shipped record:
+      - its key against the code that runs now;
+      - what it turns on within the whole bundle (a timeline record rests on the linked one);
+      - a 13a.2 gate for its predicates, uses and basis (attributes, bridges, a basis or the canary fail);
+      - every manifest and its lines in the evidence, against the record's key, model, completeness, fixture digest, commit, limit and reads;
+      - the pass table on its scores, and port fidelity's report.
+
+      `verify` recomputes every measure from the evidence lines and checks the record's manifests are the scored ones. While the privacy gate has an open finding, no record may ship.
+    - Tested on synthetic manifests in Swift (20 cases) and in Python (`test_qualify.py`, 13 tests). **No record ships.**
+    - The harness's manifest now records its options, a run id, the limit, the registry file, the plays it played and should have, the lines' digest, unsettled and unmapped counts, the gold reader's counts, and every response's model. A gate run's output is never overwritten.
+  - **Privacy payloads:**
+    - **`FactsPrivacyGateTests`,** differential. Two vaults are alike but for what's above the limit: restricted memories a local model read earlier (a restatement of a sendable fact with a new label, a new holder of a role, an order edge between jobs), a restricted manual entry, and a restricted correction (the user's own start date).
+    - The same new memories go through the lane with each call group on one cloud model, two cloud models, or a local model beside a cloud one (the roster limit is the cloud's for both), with a schema retry. Every request is the same byte for byte (ids aside) in all four shapes, and none carries what's above the limit. A control shows that a local model in every group does see it.
+    - **A finding, fixed in the fix round (below):** a restricted restatement of a fact invalidated a sendable memory's `named` decision. Code revalidated it with its dependencies recorded again at the current versions, a restricted holder of the role among them, so the sendable graph withheld it. When a later sendable change made that phrase's holders change (a new sister), reconciliation re-asked that memory of the cloud model in that vault only: one extra request, with nothing above the limit in it, but which memory is re-read depended on what's above the limit, against §11.9.
+    - **`FactsAgentIsolationTests`,** access policy T47–T49 with real retrieval (`SearchService`): the same `request_memory` answers, candidates and scores with learned facts on or off; bundle items `"<title>: <body>"` only; no learned name, basis or label in any response field or Activity row; the profile's name only in `profile`. Agent retrieval reads no facts today, so T47 guards 13b's change rather than catching anything now.
+    - The harness keeps each fixture memory's sensitivity and takes `limit=`. Its payload guard counts requests carrying a memory above the limit, or a sentence of one (must be 0).
+  - **The blind sets' plumbing,** written before the freeze so nothing changes after:
+    - the harness sets `work13` (`fixtures/stories-work13.json`) and `canary13` (`fixtures/canary-13a2/`, with its own `registry.json`); `registry=` reaches every load, reconciliation, role phrase, judgment and the manifest; the story's corrections apply in harness plays;
+    - gold answers for the work group, from each memory's `jobs` (dates as written);
+    - **`FactsCannedPlayTests`:** each blind set on its own per-memory labels through the store, with sensitivities and the user's corrections. Its expectations: 0 wrong answers, 0 triggered negatives, some decidable question right, nothing from a restricted memory in the sendable graph. It discovers the sets, and always plays a hand-written partner-timeline sample;
+    - `fixture_counts.py --check work13|canary13`: jobs, dates and facts' dates written in the text, stints, question kinds and answers, corrections, the coverage tags and the floors. It exits non-zero on any problem;
+    - **`author_astra_work13.py` and `author_astra_canary13.py`:**
+      - Astra gets a schema and the feature's rules (the canary: the shipped registry, §11.2 and REGISTRY.md), with no example questions; never another set, the code, a prompt or a result;
+      - each runs only while the freeze holds, keeps every round's prompt, raw output and the commands Codex ran, and fails a round whose commands reach outside its work directory;
+      - each fails on structural or label problems, and `--fix` sends only the checks' problems to a fresh Astra;
+      - the canary's conversion refuses a registry that changes anything but the partner predicate;
+    - **`scripts/facts_freeze.sh write|check`:** the sha256 of every code file (Packages, Apps, scripts, the Xcode project, `spikes/people/*.py` and `swift/`, the registry and prompt) and of the data the gates read (the spike's registry, `port_fidelity_known.json`). It doesn't replace an existing freeze without `--force`.
+  - Reviewed by GPT-6-Astra and Fable 5.2: the plan, then the diff, then the language change.
+    - **Taken from the plan reviews:** runs from one approved commit; truth-based recall; floors; completeness; exact model ids; value-matched port-fidelity entries; H2 kept; differential privacy tests; and a canned play from per-memory labels.
+    - **Taken from the diff reviews:** the port-fidelity threshold and provenance enforced; entries matched by value, stale ones failing; reads never overwritten and r1 to rN only; lines bound to their manifest; missing judgments as misses; rehires matched by memories; gap answers naming someone as wrong; units deduplicated; the canary scored on its own predicate; record fields from the gate's own manifests; the privacy finding blocking records; the freeze enforced and widened; distinct doc names; no example questions; the authoring audit.
+    - **Not taken:** the "≥ 20" floors count every play, as the person fixture's counting rule does.
+  - **The code freeze and the blind sets** (after everything above was reviewed and `test.sh` was green: `sh scripts/facts_freeze.sh write`, 649 files):
+    - GPT-6-Astra wrote both blind; I read neither, beyond the scripts' counts and their problem lists, which went to Astra's `--fix` rounds.
+      - **work13:** 12 stories, 60 memories, 22 plays, 45 questions (33 distinct decidable, 60 across plays; 16 negative plays), 10 extra orders, every coverage tag present.
+      - **canary13:** 8 stories, 42 memories, 15 plays, 40 questions (25 distinct decidable), 3 corrections; its registry changes only the partner predicate (9 changes).
+    - **Fix rounds:**
+      - work13: one round for three label problems; one to bring 12 memories under the app's 180-character title (the harness keeps a memory's text in one piece; no code changed).
+      - canary13: two rounds for `not_linked` labels; one for a question Astra itself judged mislabelled.
+      - Every round kept its prompt, raw output and commands; Codex ran no command outside its work directory, and the freeze held throughout.
+    - **They play** end to end with no model:
+      - work13's gold play through the harness: both groups, 22 plays, 270 calls, all applied, settled, nothing above the limit in any payload;
+      - both sets' canned plays on their own labels;
+      - `fixture_counts.py --check work13|canary13`: 0 problems.
+    - **But on their own labels Swift gives wrong timeline answers:** work13 6 (4 distinct questions) and canary13 2 (1), so `FactsCannedPlayTests` fails. A fresh GPT-6-Astra, given each set and Swift's answers, judged every one of these labels right. The kinds:
+      - a "current" question where the user's own notes deny a job or partner and an agent's notes claim a change, answered by succession (basis inferred) with the wrong one (work13 w01, w09; canary c06). If the agent's text drives the inference, that's against §11.9's trust rule;
+      - a year question about the day job answered from a concurrent self-employment (w03);
+      - the right organization under another name that stayed a separate entity (w02, so the judge counts it wrong).
+    - Coverage on their own labels: work13 14 of 60 decidable right; canary13 31 of 48.
+    - **So the works-at timeline gate (0 wrong answers, ≥ 90% right) can't pass on this code, nor can the canary's deterministic part.** Fixing either changes the code after the blind sets exist, so it means a fresh work set and canary after the fix. The live runs H5 and H6 would only measure the extraction on top. The person and work *linked* gates (H1–H4, and works at's linked record) don't depend on it.
+  - **The fix round** (the author's decisions of 19 November, on all four open items):
+    - **The time model tells instead of answering wrongly** (memory processing §11.6, `FactsTimelineRefusalTests`):
+      - for "in 2021" and "current", an untrusted-only episode beside trusted ones (an agent's claimed change the user's notes don't make; untrusted evidence never triggers succession). With only untrusted episodes the answer is still `inferred`;
+      - for those operators, episodes of different slots at once (a day job and self-employment);
+      - holders that may be one organization under two names: a trusted `also_called` statement naming another holder (now kept with the statement, `asserted.also_called`, since that's a merge suggestion and never a merge), or names whose words begin the other's ("Fenwick Lab", "Fenwick Laboratories"; not "Ola" in "Solano Datos"), trusted holders only; Not the Same settles a pair. An answer naming one of them is told, and so is "previous as of" a memory's date. For before / after with only the anchor or another candidate in such a pair, the answer stands only if reading each pair as one entity (rejected orders and order edges pointed at it) gives the same entity on the same basis;
+      - for before, after and previous, an answer the trusted memories alone don't give: an agent's note slotting a job between two of the user's own changes "before" (with only untrusted neighbours it's still answered, `inferred`).
+      - Each test fails with the rules switched off (11 expectations). The retired sets, played as a check only, now have no wrong answer.
+    - **The timeline isn't qualified in this release** (nor bridges, which need it): works at ships *linked* only, and the partner timeline not at all. `qualify.py` measures the timeline but writes no record for it, and the CI check has no 13a.2 gate for one, so a timeline record fails. Timeline coverage is later work (below).
+    - **Port fidelity's aggregates, accepted** (above). The fix round adds explained differences and two values that follow from it, confirmed by the author (19 November; `port_fidelity_known.json` still says "to confirm", since the freeze covers it, until the next refreeze): H2's timeline −22.73 (w05, "straight after leaving Pampa Digital": the answer, "Bracken Systems", is one of a pair that may be one organization, so it's told; facts.py merges them), and mixed's recorded decidable references −3.17 (the new lexicon words: Swift's denominator gains the eight references, which facts.py's older recording never detected; six linked right, two left as candidates). The new rule `lexicon_recording` explains eight link differences on mixed's recorded calls; the gold plays, rerun through facts.py with the new registry, agree exactly. Report: pass.
+    - **The privacy finding, fixed** (§11.9): a model's `named` decision whose phrase the memory's own text pairs with the name ("my sister Maria Lopez"), a name nobody else in the vault shares, rests on that text and its sendable name link, so the role's other holders (recorded again when code revalidates it) no longer withhold it from the sendable graph, as long as that link wasn't dropped. A name merely elsewhere in the memory isn't enough (`FactsNamedDecisionSendableTests`, from Astra's follow-up review). `FactsPrivacyGateTests` asserts byte-identical requests in all four shapes (it recorded the extra request as a known issue before the fix); `openFindings` is 0, so records aren't blocked.
+    - **Mixed's lexicon** (both registries): "supervisor" and "supervisora" (manager), singular "parent", and the class "client contact" (other). Recall on mixed: 49/58 → 55/58 = 95% on the recorded Haiku calls (the new phrases resolved in code, one more call), 57/58 on gold; full basis 37/37 → 42/42; 0 forbidden links. Every other replay and gold play is unchanged.
+    - Two tests pinned to the spike's recordings list the new phrases explicitly (the recording predates the words).
+    - **The fresh blind sets** (after `test.sh` was green and `sh scripts/facts_freeze.sh write --force`: 651 files, merged with origin/main first). The first ones moved to `fixtures/retired-13a2-r1/`. GPT-6-Astra wrote both from scratch with the same scripts, seeing neither the old sets nor the fix; I read neither beyond the scripts' counts and problem lists, and Swift's answer to the one question a fresh Astra adjudicated.
+      - **work13:** 12 stories, 60 memories, 17 plays, 44 questions. Fix rounds: one for four structural problems (a user's name, a role word not in the registry, 4 negatives for the floor of 5), one to bring 12 memories under the 180-character title.
+      - **canary13:** 8 stories, 37 memories, 14 plays, 40 questions, 3 corrections; its registry changes only the partner predicate (7 changes). Fix rounds: two for `not_linked` and role labels in one story; one for a question a fresh Astra judged mislabelled (c04q2: both partners held that year, so Swift's two names were right and the label's "undecidable" wrong; the format takes one answer, so Astra reworded it).
+      - The freeze held throughout. `fixture_counts.py --check`: 0 problems for both.
+    - **On their own labels, Swift gives no wrong answer:** work13 16 right, 12 told, 23 missed (no intent), 8 negatives quiet; canary13 27 right, 2 with a gap told, 17 told, 9 missed, 14 quiet. `FactsCannedPlayTests` passes. work13's gold play through the harness: 17 plays, 183 calls, all applied, settled, nothing above the limit in a payload; Swift's own judgments the same as the canned play's (0 wrong); employers 49/49, 0 clients or vendors misfiled. Port check on that gold play: links, names and relations identical (0 differences). (score_facts.py's per-play line for it runs facts.py's time model on Swift's state, which has none of the fix round's refusals: 5 wrong there, not Swift's.)
+    - **Reviewed** by GPT-6-Astra and Fable 5.2 (the fix diff, `13a2-gates-fix-round.diff` in the session notes). Taken: the merged reading's rejected orders and order edges, and its basis (Astra, two P1s); a multi-word class inside a modified label ("main client contact", Astra P2; both pipelines); "previous as of" and the trusted-only reading for before / after / previous, and word-start names instead of substrings (Fable). Also from Fable's lexicon check: "my parent company" read as the role "my parent", so a singular role word right before one of the registry's new `compound_heads` (company, firm, group, process…) isn't a role phrase, in both pipelines. Astra's follow-up on that delta: its three findings fixed; a new P1 (dropping the "person not hidden" condition let a decision whose name was merely elsewhere in the memory carry a reader's choice made from a restricted note), fixed by requiring the text's own pairing; and a P2 (compound heads after a plural word are verbs), fixed. Its second follow-up: both fixed; one more P1 (a paired name two people share, "my sister Maria", where the reader's pick rested on a restricted note about someone else), fixed by requiring the paired name to mean nobody else; tested, not reviewed again.
+    - **Not taken, for later:** a named person's link dropped because a first-name sharer was partly hidden when it was read still withholds that memory's `named` decision in that vault only, so a later holder change re-asks it there (the request carries nothing above the limit). That's §11.9's link-dropping rule itself, not the revalidation finding; fixing it means judging links against what the vault would have been without the hidden namesake. "My thesis supervisor" reads as a manager. An unknown slot counts as a kind of its own (refuses rather than naming both). `also_called` isn't backfilled: existing evidence gains it when a memory is read again.
+  - **The run plan.**
+    - **Preconditions:**
+      - **one commit** holding this preparation, the fix round, the rewritten person stories and the fresh blind sets, merged with origin/main;
+      - a clean tree (`git status` empty), with `sh scripts/facts_freeze.sh check` passing;
+      - `scripts/test.sh` green.
+    - Each batch needs the author's go-ahead, one at a time, from the repo root. Each writes `build/facts-harness/<label>/<set>.jsonl`, `-manifest.json` and `-summary.txt`, plus score.py's `report.md`; `<label>` is `swift-claude-<model>-<tag>`. A gate run's output is never overwritten: a rerun takes the next read's tag.
+    - Haiku first; its records are enough to ship Facts. `limit=internal` is the app's default cloud limit for these runs; restricted fixture memories get code-only links, as in the app.
+
+    | Batch | Command (`FUNES_FACTS_HARNESS_LIVE=1 sh scripts/facts_harness.sh …`) | Sets · groups · reads | Calls (about) |
+    |---|---|---|---|
+    | H0 smoke | `mixed "live=claude:claude-haiku-5-5;only=x01;orders=natural;groups=people;tag=smoke"` | x01, natural order; not evidence | 5 |
+    | H1 | `main "live=claude:claude-haiku-5-5;groups=people;limit=internal;tag=gates-r1"`, the same for `astra`, then `mixed "live=claude:claude-haiku-5-5;limit=internal;tag=gates-r1"` | main, astra (people) · mixed (both) · read 1 | 445 |
+    | H2 | H1 with `tag=gates-r2` | read 2 | 445 |
+    | H3 | `persons "live=claude:claude-haiku-5-5;groups=people;limit=internal;tag=gates-r1"` | persons (people) · read 1 | 440 |
+    | H4 | H3 with `tag=gates-r2` | read 2 | 440 |
+    | H5 | `work13 "live=claude:claude-haiku-5-5;limit=internal;tag=gates-r1"`, then `tag=gates-r2` | work13 (both) · two reads: the client and works-at *linked* gates; its timeline part is informative | 366 (183 a read: the fresh set's gold play) |
+    | H6, informative | `canary13 "live=claude:claude-haiku-5-5;groups=people;limit=internal;tag=canary-r1"` | canary13 (people; its registry) · one read | about 80 |
+    | O1–O4, later | H1–H4 with `live=claude:claude-opus-5-5`, and `groups=people` on mixed too | main, astra, mixed, persons (people) · two reads | 1,590 |
+
+    - **H0** checks the model id the CLI reports (`models_reported` in its manifest). A record needs exactly `claude-haiku-5-5`; if the CLI reports a dated id, stop and decide the record's model id before H1.
+    - **After H1–H5,** with no model:
+      - the port-fidelity inputs: `sh scripts/facts_harness.sh main`, `astra`, `mixed`, then `main gold`, `astra gold`, `mixed gold`, `persons gold`, and `swift test --package-path Packages/FunesCore --filter FactsPortFidelityTests`;
+      - then from `spikes/people`:
+        - `python3 port_fidelity.py --standard ../../build/facts-harness --json ../../build/port-fidelity.json`;
+        - `python3 qualify.py scores ../../build/facts-harness --model claude-code/claude-haiku-5-5 --port-fidelity ../../build/port-fidelity.json --out ../../build/facts-harness/scores.json`;
+        - `python3 qualify.py records ../../build/facts-harness/scores.json --harness-out ../../build/facts-harness --port-fidelity ../../build/port-fidelity.json --write`;
+      - then `scripts/test.sh` alone, and the records PR.
+    - **The timeline is informative in this release** (the author's decision): H5's timeline measures and H6 are reported, never recorded; the timeline and bridges stay off. H6 can be skipped. The canary's record couldn't match the bundled registry anyway: shipping the partner timeline changes the registry's fingerprint, which re-runs every gate.
+    - A gate that misses gets no record, and the uses it covers stay off.
+  - **Not yet:**
+    - The live runs above, and with them the records: the person pool's ≥ 98% and recall, and the client and works-at *linked* gates.
+    - ~~The author's decisions~~ **Taken** (19 November): fix the time model so it tells, with fresh blind sets; works at *linked* only, the timeline and bridges unqualified; accept port fidelity's aggregates; fix the privacy finding; add mixed's missing words. See the fix round.
+    - **Timeline coverage, later work:** the grammar's refused wordings above, the H2 and mixed coverage (H2 2 of 22 right, mixed 16 of 28), and the told answers the fix round added. Qualifying the timeline (and bridges) needs a later round, then a fresh blind work set and canary.
+
+      A code or registry change after the blind sets exist voids them: a fresh blind work set and a new canary.
+    - The authoring audit reads the commands from Codex's `--json` events; if their shape changes, it sees none and passes. Check the kept command lists after each round.
+    - Codex runs aren't measured (its adapter has no file-read switch yet, as the Settings step noted).
 
 ## 13b Mac search · 1–2 weekends
 - [ ] **Matching:** names, aliases and role phrases in the query map to entities, with no model call. A shared name matches everyone who has it; stop names, common-word names and possessive chains follow §11's cases.

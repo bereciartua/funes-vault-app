@@ -30,6 +30,10 @@ if grep -nE '\.(withdraw|withdrawAll|answerSignIn|answerPairing|approve|deny|lat
     echo "test.sh: the menu bar panel must not answer requests, suggestions or sign-ins" >&2
     exit 1
 fi
+# Facts qualification records (Phase 13a.2 Gates): every shipped record's measures recomputed from its evidence, and the
+# record writer's fail-closed checks on synthetic runs.
+(cd spikes/people && PYTHONPYCACHEPREFIX="$PWD/../../build/pycache" python3 -m unittest -q test_qualify.py \
+    && PYTHONPYCACHEPREFIX="$PWD/../../build/pycache" python3 qualify.py verify)
 swift test --package-path Packages/FunesProtocol
 swift test --package-path Packages/FunesCore
 # The overview's 50 ms budget on a 10,000-memory vault (FR-H-01), alone so no other test shares

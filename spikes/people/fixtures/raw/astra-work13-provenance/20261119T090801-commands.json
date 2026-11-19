@@ -1,0 +1,16 @@
+[
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat stories.json'",
+ "/bin/zsh -lc 'cat stories.json'",
+ "/bin/zsh -lc \"python3 -c 'import json;s=json.load(open(\\\"stories.json\\\"));print(json.dumps(s[\\\"stories\\\"][2:6],ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json;s=json.load(open(\\\"stories.json\\\"));print(json.dumps(s[\\\"stories\\\"][6:10],ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")));print(\\\"COUNTS\\\",sum(len(x[\\\"queries\\\"]) for x in s[\\\"stories\\\"]),sum(bool(q[\\\"answer_org\\\"]) for x in s[\\\"stories\\\"] for q in x[\\\"queries\\\"]))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json;s=json.load(open(\\\"stories.json\\\"));print(json.dumps(s[\\\"stories\\\"][2:6],ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json;s=json.load(open(\\\"stories.json\\\"));print(json.dumps(s[\\\"stories\\\"][6:10],ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")));print(\\\"COUNTS\\\",sum(len(x[\\\"queries\\\"]) for x in s[\\\"stories\\\"]),sum(bool(q[\\\"answer_org\\\"]) for x in s[\\\"stories\\\"] for q in x[\\\"queries\\\"]))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json;s=json.load(open(\\\"stories.json\\\"));print(json.dumps(s[\\\"stories\\\"][5:7],ensure_ascii=False,indent=2))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json;s=json.load(open(\\\"stories.json\\\"));print(json.dumps(s[\\\"stories\\\"][5:7],ensure_ascii=False,indent=2))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json,collections;s=json.load(open(\\\"stories.json\\\"));print(collections.Counter(q[\\\"kind\\\"] for x in s[\\\"stories\\\"] for q in x[\\\"queries\\\"]));print([(x[\\\"id\\\"],q) for x in s[\\\"stories\\\"] for q in x[\\\"queries\\\"] if q[\\\"kind\\\"] in [\\\"negative\\\",\\\"role_in_stint\\\"]])'\"",
+ "/bin/zsh -lc \"python3 -c 'import json,collections;s=json.load(open(\\\"stories.json\\\"));print(collections.Counter(q[\\\"kind\\\"] for x in s[\\\"stories\\\"] for q in x[\\\"queries\\\"]));print([(x[\\\"id\\\"],q) for x in s[\\\"stories\\\"] for q in x[\\\"queries\\\"] if q[\\\"kind\\\"] in [\\\"negative\\\",\\\"role_in_stint\\\"]])'\"",
+ "/bin/zsh -lc 'cat stories.json'",
+ "/bin/zsh -lc 'cat stories.json'"
+]

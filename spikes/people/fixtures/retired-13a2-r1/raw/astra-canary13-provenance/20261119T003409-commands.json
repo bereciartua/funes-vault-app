@@ -1,0 +1,20 @@
+[
+ "/bin/zsh -lc 'cat notes.md registry-spec.md registry-prototype.md registry.json output.json'",
+ "/bin/zsh -lc 'cat notes.md registry-spec.md registry-prototype.md registry.json output.json'",
+ "/bin/zsh -lc 'cat output.json'",
+ "/bin/zsh -lc 'cat output.json'",
+ "/bin/zsh -lc \"sed -n '780,1510p' registry.json\"",
+ "/bin/zsh -lc \"sed -n '780,1510p' registry.json\"",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in d.items() if k \"'!= \"stories\"},ensure_ascii=False))'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"output.json\\\")); print(json.dumps(d[\\\"stories\\\"][:5],ensure_ascii=False))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in d.items() if k \"'!= \"stories\"},ensure_ascii=False))'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"output.json\\\")); print(json.dumps(d[\\\"stories\\\"][:5],ensure_ascii=False))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"output.json\\\")); print(json.dumps(d[\\\"stories\\\"][:5],ensure_ascii=False,indent=2))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"output.json\\\")); print(json.dumps(d[\\\"stories\\\"][:5],ensure_ascii=False,indent=2))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in d.items() if k \"'!= \"stories\"},ensure_ascii=False))'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in d.items() if k \"'!= \"stories\"},ensure_ascii=False))'\"'\"",
+ "/bin/zsh -lc \"sed -n '1511,1600p' registry.json\"",
+ "/bin/zsh -lc \"sed -n '1511,1600p' registry.json\"",
+ "/bin/zsh -lc \"python3 -c 'import json,copy\noriginal=json.load(open(\\\"output.json\\\"))\nfixed=copy.deepcopy(original)\nchanges={\\\"c05m3\\\":\\\"omar\\\",\\\"c05m4\\\":\\\"paz\\\",\\\"c05m5\\\":\\\"sam\\\",\\\"c06m5\\\":\\\"otto\\\"}\nfor story in fixed[\\\"stories\\\"]:\n    ids={p[\\\"id\\\"] for p in story[\\\"people\\\"]}\n    for memory in story[\\\"memories\\\"]:\n        if memory[\\\"id\\\"] in changes: memory[\\\"not_linked\\\"]=[changes[memory[\\\"id\\\"]]]\n        if memory[\\\"id\\\"]==\\\"c05m5\\\": memory[\\\"roles\\\"]=[]\n        assert all(p in ids for p in memory[\\\"not_linked\\\"])\ndef diff(a,b,path=\\\"\\\"):\n    if a==b: return []\n    if isinstance(a,dict): return sum((diff(a[k],b[k],path+\\\"/\\\"+k) for k in a),[])\n    if isinstance(a,list) and len(a)==len(b): return sum((diff(x,y,path+\\\"/\\\"+str(i)) for i,(x,y) in enumerate(zip(a,b))),[])\n    return [(path,a,b)]\nfor entry in diff(original,fixed): print(entry)\nassert len(diff(original,fixed))==5\nassert json.loads(json.dumps(fixed,ensure_ascii=False))==fixed\nprint(\\\"Verified exactly five targeted field changes; JSON round-trip passed.\\\")\n'\"",
+ "/bin/zsh -lc \"python3 -c 'import json,copy\noriginal=json.load(open(\\\"output.json\\\"))\nfixed=copy.deepcopy(original)\nchanges={\\\"c05m3\\\":\\\"omar\\\",\\\"c05m4\\\":\\\"paz\\\",\\\"c05m5\\\":\\\"sam\\\",\\\"c06m5\\\":\\\"otto\\\"}\nfor story in fixed[\\\"stories\\\"]:\n    ids={p[\\\"id\\\"] for p in story[\\\"people\\\"]}\n    for memory in story[\\\"memories\\\"]:\n        if memory[\\\"id\\\"] in changes: memory[\\\"not_linked\\\"]=[changes[memory[\\\"id\\\"]]]\n        if memory[\\\"id\\\"]==\\\"c05m5\\\": memory[\\\"roles\\\"]=[]\n        assert all(p in ids for p in memory[\\\"not_linked\\\"])\ndef diff(a,b,path=\\\"\\\"):\n    if a==b: return []\n    if isinstance(a,dict): return sum((diff(a[k],b[k],path+\\\"/\\\"+k) for k in a),[])\n    if isinstance(a,list) and len(a)==len(b): return sum((diff(x,y,path+\\\"/\\\"+str(i)) for i,(x,y) in enumerate(zip(a,b))),[])\n    return [(path,a,b)]\nfor entry in diff(original,fixed): print(entry)\nassert len(diff(original,fixed))==5\nassert json.loads(json.dumps(fixed,ensure_ascii=False))==fixed\nprint(\\\"Verified exactly five targeted field changes; JSON round-trip passed.\\\")\n'\""
+]

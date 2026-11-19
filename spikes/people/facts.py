@@ -229,6 +229,10 @@ def role_phrases(text, user_aliases=(), preds=None):
         s, e = mt.start(), mt.end()
         if any(a <= s < b for a, b in quoted):
             continue
+        nxt = re.match(r"\s+([\w'’-]+)", text[e:e + 40])          # a compound ("my parent company") isn't a role,
+        if (nxt and not R.lex[mt.group("word").lower()][3]        # after a singular word only ("my parents group…": a verb)
+                and fold(nxt.group(1)) in {fold(h) for h in R.lang.get("compound_heads", [])}):
+            continue
         chain = re.match(r"['’]s\s+(\w[\w-]*)(?:\s+(\w[\w-]*))?", text[e:e + 40])
         if chain and any((g or "").lower() in nouns for g in chain.groups()):
             continue
@@ -275,7 +279,9 @@ def label_class(pred, label):
     if not label:
         return None
     w = label.lower().strip()
-    parts = [w] + w.split()
+    words = w.split()
+    # the whole label, its runs of three then two words ("main client contact" → "client contact"), then single words
+    parts = [w] + [" ".join(words[i:i + n]) for n in (3, 2) if n < len(words) for i in range(len(words) - n + 1)] + words
     parts += [x[:-1] for x in parts if x.endswith("s") and x[:-1] in R.lex]
     for part in parts:
         if part in R.lex and R.lex[part][0] == pred:

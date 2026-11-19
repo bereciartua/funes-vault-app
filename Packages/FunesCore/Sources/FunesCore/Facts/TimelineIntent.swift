@@ -47,6 +47,25 @@ extension FactsGraph {
             + lang.returnCues.flatMap { $0.split(separator: " ").map(String.init) }
     }
 
+    /// An adverb right before an operator ("immediately before", "justo antes de") belongs to the operator: where it
+    /// starts, or nil. Only one of the registry's adverbs, right next to the operator, after a word of its own clause
+    /// that isn't another adverb, in a clause with a question word ("where", "qué"; a yes/no question about a gap isn't
+    /// one), and not a known name of the predicate's ("Straight", an employer). Anything else stays in the clause, which
+    /// then fails closed as before.
+    private func adverbStart(_ q: String, _ opStart: Int, names: Set<String>) -> Int? {
+        let lang = registry.language
+        let adverbs = Set((lang.operatorAdverbs ?? []).map { FactsText.fold($0) })
+        guard !adverbs.isEmpty else { return nil }
+        let clause = FactsText.matches(Self.tailStop, in: q, from: 0, to: opStart).last?.end ?? 0
+        let words = FactsText.matches(Self.wordRE, in: q, from: clause, to: opStart)
+        guard let m = words.last, adverbs.contains(m.group(0)!), !names.contains(m.group(0)!),
+              FactsText.substring(q, m.end, opStart).allSatisfy({ $0 == " " }), words.count >= 2,
+              !adverbs.contains(words[words.count - 2].group(0)!) else { return nil }
+        let wh = Set((lang.whWords ?? []).map { FactsText.fold($0) })
+        guard words.dropLast().contains(where: { wh.contains($0.group(0)!) }) else { return nil }
+        return m.start
+    }
+
     /// Where the operator phrase's tail ends: the next punctuation, or the end.
     private func tailEnd(_ q: String, _ pos: Int) -> Int {
         FactsText.first(Self.tailStop, in: q, from: pos)?.start ?? FactsText.length(q)
@@ -174,20 +193,23 @@ extension FactsGraph {
             if !cues.contains(where: { FactsText.has(q, $0) }) { continue }
             // A question about one of its qualifiers ("my title before being promoted") is about a fact, not the timeline.
             if (p.qualifierCues ?? []).contains(where: { FactsText.has(q, $0) }) { continue }
+            var nameSet = Set(facts.filter { $0.predicate == pred }.compactMap { entities[$0.entity]?.aliases }.flatMap { $0 })
+            for (ph, syn) in p.placeholders ?? [:] {
+                nameSet.insert(ph)
+                nameSet.formUnion(syn)
+            }
+            let nameWords = Set(nameSet.flatMap { FactsText.fold($0).split(separator: " ").map(String.init) })
             var ops: [(start: Int, end: Int, name: TimelineIntent.Operator)] = []
             for (name, words) in [(TimelineIntent.Operator.before, lang.operators.before), (.after, lang.operators.after)] {
-                for w in words { ops += FactsText.matches(word(w), in: q).map { ($0.start, $0.end, name) } }
+                for w in words {
+                    ops += FactsText.matches(word(w), in: q).map { (adverbStart(q, $0.start, names: nameWords) ?? $0.start, $0.end, name) }
+                }
             }
             func later(_ a: (start: Int, end: Int, name: TimelineIntent.Operator), _ b: (start: Int, end: Int, name: TimelineIntent.Operator)) -> Bool {
                 a.end != b.end ? a.end < b.end : a.name.rawValue < b.name.rawValue
             }
             ops.sort(by: later)
             let kind = registry.kindOf(pred)
-            var nameSet = Set(facts.filter { $0.predicate == pred }.compactMap { entities[$0.entity]?.aliases }.flatMap { $0 })
-            for (ph, syn) in p.placeholders ?? [:] {
-                nameSet.insert(ph)
-                nameSet.formUnion(syn)
-            }
             let names = nameSet.sorted { $0.count != $1.count ? $0.count > $1.count : $0 < $1 }
             let anchorNames = Set(names.map { FactsText.normName($0, kind: kind, registry: registry) })
             if someoneElse(query, q, pred, anchorNames) { return nil }
@@ -214,9 +236,15 @@ extension FactsGraph {
                         }
                     }
                 }
+                // A date anchor takes no adverb: "immediately before 1 February 2019" would need the boundary itself held,
+                // which the nearest-episode rule doesn't establish.
+                let adverbs = Set((lang.operatorAdverbs ?? []).map { FactsText.fold($0) })
+                func modified(_ op: (start: Int, end: Int, name: TimelineIntent.Operator)) -> Bool {
+                    FactsText.matches(Self.wordRE, in: q, from: op.start, to: op.end).first.map { adverbs.contains($0.group(0)!) } ?? false
+                }
                 for m in FactsText.matches(Self.yearRE, in: q) {
                     let prior = ops.filter { $0.end <= m.start }
-                    if let op = prior.max(by: later), tailOK(q, m.end), leadOK(q, op.end, parser.dateStart(at: m.end, in: q), predicate: pred, op: op.name) && subjectOK(q, op.start, predicate: pred),
+                    if let op = prior.max(by: later), !modified(op), tailOK(q, m.end), leadOK(q, op.end, parser.dateStart(at: m.end, in: q), predicate: pred, op: op.name) && subjectOK(q, op.start, predicate: pred),
                        let d = parser.dateEnding(at: m.end, in: q) {
                         let opStart = ops.filter { $0.end == op.end && $0.name == op.name }.map(\.start).min() ?? op.end
                         return TimelineIntent(predicate: pred, op: op.name, anchor: .date(d),

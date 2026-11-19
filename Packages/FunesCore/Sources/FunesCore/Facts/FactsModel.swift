@@ -56,6 +56,10 @@ public struct FactAssertion: Sendable, Equatable {
     public var deceased = false
     /// Where the quote is in the memory's text (UTF-16), when the extraction knew it.
     public var span: NSRange?
+    /// Another name this statement gave the entity ("Fenwick Lab, also called Fenwick Laboratories"). Kept per statement,
+    /// so when that name is already another entity's (a merge suggestion, never a merge, §11.4) the timeline can see
+    /// the two may be one organization and refuse (§11.7).
+    public var alsoCalled: String?
 }
 
 /// Someone or something memories mention. *You* is never in the graph.
@@ -400,7 +404,14 @@ public struct FactsGraph: Sendable {
         guard let label else { return nil }
         let lex = registry.lexicon
         let w = label.lowercased().trimmingCharacters(in: .whitespaces)
-        var parts = [w] + w.split(separator: " ").map(String.init)
+        // The whole label, then its runs of two or three words, longest first ("main client contact" → "client
+        // contact"), then single words.
+        let words = w.split(separator: " ").map(String.init)
+        var parts = [w]
+        for n in stride(from: min(3, words.count - 1), through: 2, by: -1) {
+            for i in 0...(words.count - n) { parts.append(words[i..<(i + n)].joined(separator: " ")) }
+        }
+        parts += words
         parts += parts.filter { $0.hasSuffix("s") && lex[String($0.dropLast())] != nil }.map { String($0.dropLast()) }
         for part in parts {
             if let word = lex[part], word.predicate == predicate { return word.cls }
@@ -517,6 +528,7 @@ public struct FactsGraph: Sendable {
             a.only = r.only
             a.deceased = r.deceased
             a.span = r.span
+            a.alsoCalled = r.alsoCalled
             if let i = existing.first {
                 facts[i].only = facts[i].only || (r.only && trusted)
                 facts[i].assertions.append(a)

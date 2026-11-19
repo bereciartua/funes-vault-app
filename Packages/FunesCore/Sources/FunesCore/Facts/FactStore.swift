@@ -253,7 +253,7 @@ enum FactStore {
         var g = FactsGraph(registry: registry, userAliases: userAliases, uses: uses)
         g.idStyle = .uuid
         let all = try countedMemories(db)
-        let hidden = try sendable.map { try withheld(db, counted: all, limit: $0) }
+        let hidden = try sendable.map { try withheld(db, counted: all, limit: $0, reader: g) }
         let counted = sendable.map { limit in
             all.filter { Sensitivity(rawValue: $0.value.sensitivity).map(limit.allows) ?? false }
         } ?? all
@@ -384,6 +384,7 @@ enum FactStore {
                     p.a.start = asserted["start"] as? String
                     p.a.end = asserted["end"] as? String
                     p.a.time = asserted["time"] as? String
+                    p.a.alsoCalled = asserted["also_called"] as? String
                     p.a.handover = false            // derived below, from what was known when it was written
                     p.only = asserted["only"] as? Bool ?? false
                     p.a.only = p.only
@@ -1015,6 +1016,7 @@ enum FactStore {
                 if let v = a.time { asserted["time"] = v }
                 if oldHandover[fid + ":" + String(n)] ?? a.handover { asserted["handover"] = true }
                 if a.only { asserted["only"] = true }      // this statement's own, never the fact's aggregate
+                if let v = a.alsoCalled { asserted["also_called"] = v }
                 try evidenceRow(fid, kind: "fact", asserted: asserted, states: a.states, polarity: "affirmed", quote: a.quote, span: a.span)
                 if let l = a.label {
                     try evidenceRow(fid, kind: "qualifier", qualifier: "label", asserted: ["value": l, "n": n], states: a.states,

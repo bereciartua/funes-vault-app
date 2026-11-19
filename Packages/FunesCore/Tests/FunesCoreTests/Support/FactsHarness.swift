@@ -18,12 +18,18 @@ enum FactsHarness {
 
     struct Fixture: Decodable {
         struct User: Decodable { let name: String; let aliases: [String] }
+        struct Name: Decodable { let surface: String; let person: String }
         struct Memory: Decodable {
             let id: String
             let text: String
             let written: String
             let source: String
             let trust: String?
+            let names: [Name]?
+            /// The memory's sensitivity (canary and work sets may set it); `low` when absent.
+            let sensitivity: String?
+
+            var trusted: Bool { (trust ?? (source == "agent" ? "untrusted" : "trusted")) == "trusted" }
         }
         struct Query: Decodable {
             let id: String
@@ -32,12 +38,26 @@ enum FactsHarness {
             let answer_org: String?
         }
         struct TimelineEntry: Decodable { let org: String?; let kind: String? }
+        struct Person: Decodable { let names: [String] }
+        /// The user's own operations in a story (the canary's): "reject" a role phrase's person in a memory, or give a
+        /// person's "start" or "end".
+        struct Correction: Decodable {
+            let after: String
+            let op: String
+            let person: String
+            let memory: String?
+            let surface: String?
+            let predicate: String?
+            let value: String?
+        }
         struct Story: Decodable {
             let id: String
             let memories: [Memory]
             let orders: [[String]]?
             let queries: [Query]?
             let timeline: [TimelineEntry]?
+            let people: [String: Person]?
+            let corrections: [Correction]?
         }
         let user: User
         let stories: [Story]
@@ -48,9 +68,16 @@ enum FactsHarness {
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
     }
 
+    /// The 13a.2 canary (written blind by GPT-6-Astra after the code freeze) keeps its registry beside its stories.
+    static let canaryDirectory = "spikes/people/fixtures/canary-13a2"
+
     static func fixtureURL(_ set: String) -> URL {
-        repo.appending(path: "spikes/people/fixtures/\(set == "main" ? "stories" : "stories-\(set)").json")
+        if set == "canary13" { return repo.appending(path: canaryDirectory + "/stories.json") }
+        return repo.appending(path: "spikes/people/fixtures/\(set == "main" ? "stories" : "stories-\(set)").json")
     }
+
+    /// A set's own registry, if it has one (repo-relative).
+    static func defaultRegistry(_ set: String) -> String? { set == "canary13" ? canaryDirectory + "/registry.json" : nil }
 
     static func fixture(_ set: String) throws -> Fixture {
         try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: fixtureURL(set)))
@@ -81,6 +108,8 @@ enum FactsHarness {
     final class ModelsSeen: GenerationProvider, @unchecked Sendable {
         let inner: any GenerationProvider
         let models = Mutex<Set<String>>([])
+        /// Every response, and those the provider gave no model id for (a record needs every one identified).
+        let responses = Mutex<(all: Int, unidentified: Int)>((0, 0))
         init(_ inner: any GenerationProvider) { self.inner = inner }
         var id: ProviderID { inner.id }
         var locality: Locality { inner.locality }
@@ -89,8 +118,50 @@ enum FactsHarness {
         func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage) {
             let (out, usage) = try await inner.generate(request)
             if let m = usage.model { models.withLock { _ = $0.insert(m) } }
+            responses.withLock { $0.all += 1; if usage.model == nil { $0.unidentified += 1 } }
             return (out, usage)
         }
+    }
+
+    /// Counts requests whose payload carries a fixture memory above the run's cloud limit (the sentinel is the memory's
+    /// text as it would be sent). A gate run must have none: the router refuses them before any provider sees them.
+    final class PayloadGuard: GenerationProvider, @unchecked Sendable {
+        let inner: any GenerationProvider
+        let forbidden = Mutex<[String]>([])
+        let leaks = Mutex<Int>(0)
+        init(_ inner: any GenerationProvider) { self.inner = inner }
+        var id: ProviderID { inner.id }
+        var locality: Locality { inner.locality }
+        var modelID: String { inner.modelID }
+        var factsAdapter: String { inner.factsAdapter }
+        func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage) {
+            let payload = request.instructions + "\n" + request.prompt
+            // The memory's text as sent, and each of its sentences of 20 characters or more: part of it is a leak too.
+            let bad = forbidden.withLock { $0 }.filter { text in
+                guard !text.isEmpty else { return false }
+                let parts = [text] + text.split(whereSeparator: { ".!?\n".contains($0) })
+                    .map { $0.trimmingCharacters(in: .whitespaces) }.filter { $0.count >= 20 }
+                return parts.contains { payload.contains($0) }
+            }
+            if !bad.isEmpty { leaks.withLock { $0 += bad.count } }
+            return try await inner.generate(request)
+        }
+    }
+
+    static func sensitivity(_ name: String?) -> Sensitivity {
+        Sensitivity.allCases.first { $0.name == name } ?? .low
+    }
+
+    static func cloudLimit(_ name: String?) -> CloudLimit {
+        guard let name, name != "secret" else { return .upTo(.secret) }
+        return name == "never" ? .never : .upTo(sensitivity(name))
+    }
+
+    /// A registry file (`registry=`, the canary's), or the bundled one.
+    static func registry(_ path: String?) throws -> FactsRegistry {
+        guard let path else { return .bundled }
+        let url = path.hasPrefix("/") ? URL(fileURLWithPath: path) : repo.appending(path: path)
+        return try FactsRegistry.decode(Data(contentsOf: url))
     }
 
     // MARK: Recorded calls (export_replay.py)
@@ -131,6 +202,21 @@ enum FactsHarness {
         let id: ProviderID = "anthropic"
         let locality: Locality = .cloud
         let modelID = "claude-haiku-replay"
+        /// Gold answers (`gold_answers.py`) were written against the spike's roster; with `reader`, an answer about
+        /// someone the Swift roster doesn't show is translated as a reader of the Swift prompt would answer.
+        let reader: Bool
+        init(reader: Bool = false) { self.reader = reader }
+
+        /// What the gold reader may assume about a fixture memory: its text, and the folded names of people who, so far
+        /// in the play, were named only by untrusted memories (so a trusted memory's roster leaves them out, §11.4).
+        struct Context { var text: String; var trusted: Bool; var untrustedOnly: Set<String> }
+        private let contexts = Mutex<[String: Context]>([:])
+        private let counts = Mutex<(substituted: Int, unexplained: Int)>((0, 0))
+        func context(_ memory: String, _ c: Context) { contexts.withLock { $0[memory] = c } }
+        /// Answers about someone the Swift roster left out, translated by the reader (alias trust).
+        var substituted: Int { counts.withLock { $0.substituted } }
+        /// Unmapped roster ids the alias-trust rule doesn't explain (a gold play must have none).
+        var unexplained: Int { counts.withLock { $0.unexplained } }
 
         struct Part { var raw: [String: Any]; var roster: [String: [String: Any]] }
         struct Sources { var people, facts, roles, things: Part }
@@ -179,17 +265,48 @@ enum FactsHarness {
                 }
                 let src = s.sources[key]!
                 var unmapped = 0
-                func tr(_ v: Any?, _ part: Part) -> Any? {
-                    guard let id = v as? String, id.range(of: "^p\\d+$", options: .regularExpression) != nil else { return v }
-                    guard let e = part.roster[id] else { return id }     // not in the spike's roster either: dropped by both
-                    if let mapped = Self.translate(e, swift) { return mapped }
+                /// The Swift roster's id for a Python roster id, or the Python entity when the Swift roster doesn't show it.
+                func tr(_ v: Any?, _ part: Part) -> (value: Any?, hidden: [String: Any]?) {
+                    guard let id = v as? String, id.range(of: "^p\\d+$", options: .regularExpression) != nil else { return (v, nil) }
+                    guard let e = part.roster[id] else { return (id, nil) }     // not in the spike's roster either: dropped by both
+                    if let mapped = Self.translate(e, swift) { return (mapped, nil) }
                     unmapped += 1
-                    return id
+                    return (id, e)
+                }
+                /// A gold reader of Swift's prompt (`reader`): someone the Swift roster leaves out because, so far,
+                /// only untrusted memories named them (§11.4: a trusted memory's roster doesn't show them) is answered
+                /// as the gold script answers someone not yet known: by the name this memory gives them, else the group
+                /// (roles) or nothing (facts). Any other unmapped id stays unmapped and counts as unexplained.
+                let ctx = contexts.withLock { $0[String(key.split(separator: "\u{1F}")[0])] }
+                var substituted = 0, unexplained = 0
+                func explained(_ e: [String: Any]) -> Bool {
+                    guard reader, let ctx, ctx.trusted else { return false }
+                    let aliases = ((e["aliases"] as? [String]) ?? []).map(FactsText.fold)
+                    return !aliases.isEmpty && aliases.allSatisfy { ctx.untrustedOnly.contains($0) }
+                }
+                func named(_ e: [String: Any]) -> String? {
+                    let aliases = ((e["aliases"] as? [String]) ?? []).sorted { $0.count > $1.count }
+                    return aliases.first { ctx?.text.contains($0) ?? false }
                 }
                 func list(_ k: String, _ part: Part, _ field: String) -> [[String: Any]] {
-                    (part.raw[k] as? [[String: Any]] ?? []).map { item in
+                    (part.raw[k] as? [[String: Any]] ?? []).compactMap { item in
                         var item = item
-                        item[field] = tr(item[field], part)
+                        let (value, hidden) = tr(item[field], part)
+                        item[field] = value
+                        guard let hidden else { return item }
+                        guard explained(hidden) else { unexplained += 1; return item }
+                        substituted += 1
+                        switch field {
+                        case "person":
+                            let shown = Set(swift.flatMap { $0.aliases ?? [] }.map(FactsText.fold))
+                            item[field] = shown.contains(FactsText.fold(item["name"] as? String ?? "")) ? "different" : "new"
+                        case "entity":
+                            guard let name = named(hidden) else { return nil }
+                            item[field] = "name"
+                            item["name"] = name
+                        default:
+                            item[field] = named(hidden).map { "name:" + $0 } ?? "group"
+                        }
                         return item
                     }
                 }
@@ -199,6 +316,7 @@ enum FactsHarness {
                 ]
                 if request.schema.json.contains("\"people\"") { out["people"] = list("people", src.people, "person") }
                 s.unmapped += unmapped
+                if reader { counts.withLock { $0.substituted += substituted; $0.unexplained += unexplained } }
                 return try JSONSerialization.data(withJSONObject: out)
             }
             return (try HTTPClient.decode(String(decoding: data, as: UTF8.self), as: T.self), ProviderUsage(requests: 1))
@@ -247,6 +365,9 @@ enum FactsHarness {
         var reasks: Int
         /// Memory versions reconciliation still found due after a drain (a loop if not 0).
         var unsettled = 0
+        /// The gold reader's alias-trust substitutions, and unmapped ids it couldn't explain.
+        var substituted = 0
+        var unexplained = 0
     }
 
     /// A monotonic clock: roster tokens are `updated_at` values compared as text.
@@ -278,11 +399,12 @@ enum FactsHarness {
     /// `replay.py`), each applied in its recorded scope; then the queue's sweep asks again whatever is still due, served
     /// from the recording.
     static func play(_ story: Fixture.Story, order: [String], orderIndex: Int, user: [String], provider: any GenerationProvider,
-                     replay: [Recorded]?, groups: [String], label: String) async throws -> Play {
+                     replay: [Recorded]?, groups: [String], label: String, registry: FactsRegistry = .bundled,
+                     limit: CloudLimit = .upTo(.secret)) async throws -> Play {
         let v = try TestVault()
         let clock = Clock()
-        let router = ModelRouter(classifier: nil, onDevice: nil, cloudLimit: .upTo(.secret), factsModel: provider)
-        var x = FactsExtractor(store: v.store, router: router, activity: InMemoryActivityLog(), userAliases: user,
+        let router = ModelRouter(classifier: nil, onDevice: nil, cloudLimit: limit, factsModel: provider)
+        var x = FactsExtractor(store: v.store, router: router, activity: InMemoryActivityLog(), registry: registry, userAliases: user,
                                qualification: .unchecked)
         x.clock = { clock.now() }
         let queue = ProcessingQueue(store: v.store, activity: InMemoryActivityLog(), launchedAt: .distantPast, ungatedFacts: true)
@@ -293,7 +415,7 @@ enum FactsHarness {
             if let id = vaultID[mid] { return id }
             let m = mems[mid]!
             let (title, body) = split(m.text)
-            let mem = try v.memory(title, body, sensitivity: .low, now: day(m.written))
+            let mem = try v.memory(title, body, sensitivity: sensitivity(m.sensitivity), now: day(m.written))
             let source = ["agent": MemorySource.agentWrite, "import": .importMarkdown][m.source] ?? .captureMac
             let trust = m.trust ?? (m.source == "agent" ? "untrusted" : "trusted")
             try v.store.writer.write { db in
@@ -315,7 +437,7 @@ enum FactsHarness {
                 }
             }
         }
-        let rp = provider as? Replay
+        let rp = (provider as? Replay) ?? ((provider as? PayloadGuard)?.inner as? Replay)
         /// Drains the facts lane; a replayed re-ask is served the recording's answers for that memory and group.
         var unsettled = 0
         func drain() async throws {
@@ -325,7 +447,22 @@ enum FactsHarness {
                 return try await worker.process(job) { r, mode in record(r, mode: mode) }
             }
             // A fixpoint: once the lane is drained, reconciliation finds nothing left to ask.
-            unsettled += try await v.store.writer.write { db in try FactsReconciler.reconcile(db, userAliases: user).count }
+            unsettled += try await v.store.writer.write { db in try FactsReconciler.reconcile(db, registry: registry, userAliases: user).count }
+        }
+        // For the gold reader: who, before each memory, was named only by untrusted memories (fixture labels).
+        if let rp, rp.reader {
+            var named: [String: (surfaces: Set<String>, trusted: Bool)] = [:]
+            for mid in order {
+                let m = mems[mid]!
+                let only = Set(named.values.filter { !$0.trusted }.flatMap(\.surfaces))
+                rp.context(mid, .init(text: m.text, trusted: m.trusted, untrustedOnly: only))
+                for n in m.names ?? [] where !["user", "?"].contains(n.person) {
+                    var e = named[n.person] ?? ([], false)
+                    e.surfaces.insert(FactsText.fold(n.surface))
+                    e.trusted = e.trusted || m.trusted
+                    named[n.person] = e
+                }
+            }
         }
         if let replay {
             for r in replay {
@@ -336,13 +473,13 @@ enum FactsHarness {
                 var scope = FactsScope.full
                 if r.mode != "full" {
                     scope = try await v.store.writer.read { db in
-                        let g = try FactStore.load(db, userAliases: user).graph
+                        let g = try FactStore.load(db, registry: registry, userAliases: user).graph
                         guard let mem = try FactStore.countedMemories(db, ids: [id])[id]?.memory
                             ?? Row.fetchOne(db, sql: "SELECT title, body FROM memory WHERE id = ?", arguments: [id]).map({
                                 FactsMemory(id: id, text: FactStore.text(title: $0["title"], body: $0["body"]), written: "", source: .capture, trusted: true)
                             }) else { return .full }
                         if r.mode == "roles" {
-                            let starts = g.rolePhrases(mem.text, predicates: Set(FactsRegistry.bundled.groupPredicates(r.group)))
+                            let starts = g.rolePhrases(mem.text, predicates: Set(registry.groupPredicates(r.group)))
                                 .map { FactStore.scalarOffset(mem.text, utf16: $0.start) }
                             return .partial(roles: Set(starts), names: [])
                         }
@@ -370,11 +507,14 @@ enum FactsHarness {
                     }
                 }
                 try await drain()
+                if try applyCorrections(story, after: mid, store: v.store, registry: registry, user: user, vaultID: vaultID, now: clock.now()) {
+                    try await drain()
+                }
             }
         }
         let calls = log.withLock { $0 }
         // The final state, as the spike dumps it.
-        var g = try await v.store.writer.read { db in try FactStore.load(db, userAliases: user).graph }
+        var g = try await v.store.writer.read { db in try FactStore.load(db, registry: registry, userAliases: user).graph }
         for mid in order {
             guard let id = vaultID[mid], g.memories[id] == nil else { continue }
             let m = mems[mid]!
@@ -391,12 +531,47 @@ enum FactsHarness {
         line["provider"] = label
         line["run"] = 1
         line["groups"] = groups.count > 1 ? "separate" : groups.first ?? ""
-        line["registry"] = FactsRegistry.bundled.version
+        line["registry"] = registry.version
         line["state"] = dump.state(user: user)
         var judged: [(String, String)] = []
-        for q in story.queries ?? [] { judged.append((q.id, judge(g, q, timeline: story.timeline ?? []))) }
+        var answers: [String: Any] = [:]
+        for q in story.queries ?? [] {
+            judged.append((q.id, judge(g, q, timeline: story.timeline ?? [])))
+            // What the answer named, for the gates' scorer (a gap answer that names someone on an undecidable question).
+            if let it = g.intent(q.query) {
+                let a = g.answer(it, query: q.query)
+                answers[q.id] = ["entities": a.entities.compactMap { g.entities[$0]?.name }, "basis": "\(a.basis)"]
+            }
+        }
         line["swift_judged"] = Dictionary(judged, uniquingKeysWith: { a, _ in a })
-        return Play(line: line, judged: judged, unmapped: rp?.unmapped ?? 0, reasks: rp?.reasks ?? 0, unsettled: unsettled)
+        line["swift_answers"] = answers
+        return Play(line: line, judged: judged, unmapped: rp?.unmapped ?? 0, reasks: rp?.reasks ?? 0, unsettled: unsettled,
+                    substituted: rp?.substituted ?? 0, unexplained: rp?.unexplained ?? 0)
+    }
+
+    /// A story's corrections after a memory, as the user's own operations in the store. True if any was applied.
+    static func applyCorrections(_ story: Fixture.Story, after mid: String, store: VaultStore, registry: FactsRegistry,
+                                 user: [String], vaultID: [String: String], now: Date) throws -> Bool {
+        var applied = false
+        for c in story.corrections ?? [] where c.after == mid {
+            try store.writer.write { db in
+                let g = try FactStore.load(db, registry: registry, userAliases: user).graph
+                let names = Set((story.people?[c.person]?.names ?? []).map(FactsText.fold))
+                guard let e = g.orderedEntities.first(where: { !Set($0.aliases.map(FactsText.fold)).isDisjoint(with: names) })?.id else { return }
+                switch c.op {
+                case "reject":
+                    guard let target = c.memory.flatMap({ vaultID[$0] }), let surface = c.surface else { return }
+                    _ = try FactStore.decideMention(db, memoryID: target, quote: surface, entityID: e, outcome: "rejected", now: now)
+                default:
+                    guard let pred = c.predicate ?? g.facts.first(where: { $0.entity == e })?.predicate, let value = c.value,
+                          let fact = try String.fetchOne(db, sql: "SELECT id FROM fact WHERE entity_id = ? AND predicate = ? AND tombstone = 0",
+                                                         arguments: [e, pred]) else { return }
+                    _ = try FactStore.addUserEvidence(db, factID: fact, asserted: [c.op: value], sensitivity: Sensitivity.low.rawValue, now: now)
+                }
+                applied = true
+            }
+        }
+        return applied
     }
 
     // MARK: Judging timeline questions in Swift (score_facts.judge)
@@ -405,8 +580,12 @@ enum FactsHarness {
     static let modelledKinds: Set<String> = ["employee", "self_employed", "partner"]
 
     static func judge(_ g: FactsGraph, _ q: Fixture.Query, timeline: [Fixture.TimelineEntry]) -> String {
+        judge(g, q, timeline: timeline, intent: g.intent(q.query))
+    }
+
+    /// The same judgment with the intent supplied (port fidelity: the time model compared with the grammar set aside).
+    static func judge(_ g: FactsGraph, _ q: Fixture.Query, timeline: [Fixture.TimelineEntry], intent it: TimelineIntent?) -> String {
         guard timelineKinds.contains(q.kind) || ["negative", "role_in_stint"].contains(q.kind) else { return "not_timeline" }
-        let it = g.intent(q.query)
         if ["negative", "role_in_stint"].contains(q.kind) { return it == nil ? "quiet" : "triggered" }
         let decidable = !(q.answer_org ?? "").isEmpty
         guard let it else { return decidable ? "miss" : "told_no_intent" }
@@ -438,6 +617,15 @@ extension FactsHarness {
         let pid: [String: String]
 
         init(graph: FactsGraph, fixtureID: [String: String], texts: [String: String], order: [String]) {
+            // Resolving can make a role group no stored fact has yet (a decision for the group); make them first, so
+            // every link's person has an id in this dump.
+            var graph = graph
+            for id in order {
+                guard let mem = graph.memories[id] else { continue }
+                for ph in graph.rolePhrases(mem.text) where graph.registry.kindOf(ph.predicate) == FactsValidator.personKind {
+                    _ = graph.resolve(mem, ph)
+                }
+            }
             self.graph = graph
             self.fixtureID = fixtureID
             self.texts = texts
@@ -501,6 +689,44 @@ extension FactsHarness {
             ]
         }
 
+        /// Each timeline predicate's episodes as the Swift time model derives them (days are proleptic ordinals, Python's
+        /// `date.toordinal`), with who ended each by succession: the timeline gate's facts and dates are scored from these.
+        func episodes() -> [[String: Any]] {
+            func range(_ r: DateRange?) -> Any { r.map { [$0.lo, $0.hi, "\($0.precision)"] as [Any] } ?? NSNull() }
+            return graph.registry.timelinePredicates.flatMap { pred in
+                graph.episodes(pred).filter { $0.entity != nil }.map { e in
+                    ["entity": p(e.entity), "predicate": pred, "start": range(e.start), "end": range(e.end), "slot": e.slot,
+                     "inferred_end": e.inferredEnd, "former": e.former, "uncertain": e.uncertain, "trusted": e.trusted,
+                     "start_trusted": e.startTrusted, "end_trusted": e.endTrusted,
+                     "memories": Array(Set(e.assertions.filter { !$0.fromUser }.map { mid($0.memoryID) })).sorted(),
+                     "ended_by": e.endedBy.map { p($0.entity) } ?? NSNull()] as [String: Any]
+                }
+            }
+        }
+
+        /// The timeline gate's "0 succession from untrusted text or across slots", checked two ways: every inferred end's
+        /// successor started on trusted evidence in the same slot; and with every untrusted assertion removed, every
+        /// inferred end of an episode with trusted evidence is still inferred (so no untrusted row caused it).
+        func succession() -> [String: Any] {
+            var untrusted: [String] = [], crossSlot: [String] = [], unexplained: [String] = []
+            var trustedOnly = graph
+            for i in trustedOnly.facts.indices { trustedOnly.facts[i].assertions.removeAll { !$0.trusted } }
+            for pred in graph.registry.timelinePredicates {
+                let kept = trustedOnly.episodes(pred)
+                for e in graph.episodes(pred) where e.inferredEnd {
+                    let at = "\(p(e.entity)) \(pred) \(e.start.map { "\($0.lo)" } ?? "-")"
+                    guard let by = e.endedBy else { unexplained.append(at); continue }
+                    if !by.startTrusted || !by.trusted { untrusted.append(at) }
+                    if by.slot != e.slot { crossSlot.append(at) }
+                    if e.assertions.contains(where: { $0.trusted }),
+                       !kept.contains(where: { $0.entity == e.entity && $0.inferredEnd && $0.start?.lo == e.start?.lo }) {
+                        untrusted.append(at + " (gone without untrusted rows)")
+                    }
+                }
+            }
+            return ["from_untrusted": untrusted, "across_slots": crossSlot, "without_successor": unexplained]
+        }
+
         var things: [(String, String)] {
             graph.orderedEntities.filter { $0.kind != FactsValidator.personKind && $0.name != nil }.map { ($0.name!, $0.kind) }
         }
@@ -537,6 +763,8 @@ extension FactsHarness {
                      d.basis.rawValue] as [Any]
                 },
                 "things": things.map { [$0.0, $0.1] },
+                "episodes": episodes(),
+                "succession": succession(),
                 "user_aliases": user,
                 "memories": Dictionary(uniqueKeysWithValues: order.compactMap { id -> (String, Any)? in
                     guard let m = g.memories[id] else { return nil }
@@ -547,5 +775,19 @@ extension FactsHarness {
                 "calls": [] as [Any],
             ]
         }
+    }
+}
+
+extension FactsHarness {
+    /// Port fidelity's investigated differences (`spikes/people/port_fidelity_known.json`): key → (rule, facts.py's value,
+    /// Swift's value). An entry excuses only exactly that difference.
+    static func knownPortDifferences() throws -> [String: (rule: String, python: String?, swift: String?)] {
+        let url = repo.appending(path: "spikes/people/port_fidelity_known.json")
+        let d = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any]
+        var out: [String: (rule: String, python: String?, swift: String?)] = [:]
+        for e in d?["differences"] as? [[String: Any]] ?? [] {
+            if let at = e["at"] as? String, let rule = e["rule"] as? String { out[at] = (rule, e["python"] as? String, e["swift"] as? String) }
+        }
+        return out
     }
 }

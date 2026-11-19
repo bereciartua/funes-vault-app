@@ -12,6 +12,10 @@ scorers. It measures nothing about a model: a perfect reader still leaves refere
 groups until a later memory names the person.
 
     python3 gold_answers.py --set persons <out.jsonl>
+
+Sets whose memories list `jobs` (the 13a.2 blind work fixture) are played with both call groups: the work group is
+answered from each memory's jobs as written (organization, status, dates, before / after, title, kind), and a fact's
+dates as written are passed on where the set gives them (the canary's partner facts). Without them, dates are null.
 """
 import argparse
 import json
@@ -27,7 +31,7 @@ _build_prompt = F.build_prompt
 
 
 def _capture(state, mem, phrases, group):
-    CTX.update(state=state, mem=mem, phrases=phrases)
+    CTX.update(state=state, mem=mem, phrases=phrases, group=group)
     ins, prompt, ids = _build_prompt(state, mem, phrases, group)
     CTX["ids"] = ids
     return ins, prompt, ids
@@ -56,11 +60,30 @@ class Gold:
                 if d and d[0] and tp.get("group") and not tp.get("names"):
                     self.emap.setdefault(r["person"], d[0])
 
+    def work(self, m, sent):
+        """The work group's answer: each job the memory states, as written."""
+        facts = []
+        for j in m.get("jobs", []):
+            pred = "client" if j.get("kind") == "client" else next(p for p in F.R.timeline_preds())
+            quals = {k: None for k in F.group_qualifiers([pred])}
+            if "kind" in quals and j.get("kind") in ("employee", "self_employed"):
+                quals["kind"] = j["kind"]
+            if "title" in quals:
+                quals["title"] = j.get("title")
+            facts.append({"quote": j["org"] if j["org"] in sent else sent, "predicate": pred, "entity": "name", "name": j["org"],
+                          "label": None, "polarity": j.get("polarity") or "positive", "status": j.get("status") or "unknown",
+                          "deceased": False, "only": False, "count": None, "time": j.get("time"), "start": j.get("start"),
+                          "end": j.get("end"), "preceded_by": j.get("preceded_by"), "followed_by": j.get("followed_by"),
+                          "also_called": j.get("also_called"), "qualifiers": quals})
+        return {"ok": True, "content": {"facts": facts, "roles": [], "things": []}, "ms": 0}
+
     def generate(self, instructions, prompt, schema):
         state, mem, phrases, ids = CTX["state"], CTX["mem"], CTX["phrases"], CTX["ids"]
         self.learn(state)
         m = self.mems[mem["id"]]
         sent = mem["sent"]
+        if "people" not in schema.get("properties", {}) and CTX.get("group") != "people":
+            return self.work(m, sent)
         rid = {e.id: k for k, e in ids.items()}
         roster = lambda g: rid.get(self.emap.get(g))
         named_here = {n["person"]: n["surface"] for n in m["names"] if n["person"] not in ("user", "?") and n["surface"] in sent}
@@ -94,8 +117,8 @@ class Gold:
             label = f["label"] if f["label"] and F._norm(f["label"]) in F._norm(sent) else None
             facts.append({"quote": sent, "predicate": f["type"], "entity": entity, "name": name, "label": label,
                           "polarity": f["polarity"], "status": f["status"], "deceased": f["deceased"], "only": f["only"],
-                          "count": f["count"], "time": None, "start": None, "end": None, "preceded_by": None,
-                          "followed_by": None, "also_called": None,
+                          "count": f.get("count"), "time": f.get("time"), "start": f.get("start"), "end": f.get("end"),
+                          "preceded_by": f.get("preceded_by"), "followed_by": f.get("followed_by"), "also_called": None,
                           "qualifiers": {k: None for k in F.group_qualifiers([f["type"]])}})
         truth = dict(zip(role_starts(m), m["roles"]))
         roles = []
@@ -124,16 +147,19 @@ def main():
     ap.add_argument("out")
     a = ap.parse_args()
     suffix = "" if a.set == "main" else f"-{a.set}"
-    data = json.loads((HERE / f"fixtures/stories{suffix}.json").read_text())
+    path = HERE / "fixtures/canary-13a2/stories.json" if a.set == "canary13" else HERE / f"fixtures/stories{suffix}.json"
+    data = json.loads(path.read_text())
+    groups = ["people", "work"] if any(m.get("jobs") for s in data["stories"] for m in s["memories"]) else ["people"]
     ua = data["user"]["aliases"]
     lines, calls_n = [], 0
     for s in data["stories"]:
         mems = {m["id"]: m for m in s["memories"]}
         for i, order in enumerate([[m["id"] for m in s["memories"]]] + s.get("orders", [])):
             gold = Gold(s, ua)
-            state, calls = run_facts.play(gold, [mems[x] for x in order], ua, ["people"])
+            state, calls = run_facts.play(gold, [mems[x] for x in order], ua, groups)
             res = run_facts.dump_people(state, calls)
-            res.update(story=s["id"], orderIndex=i, order=order, provider="gold", run=1, groups="people", registry=F.R.version)
+            res.update(story=s["id"], orderIndex=i, order=order, provider="gold", run=1, groups="separate" if len(groups) > 1 else "people",
+                       registry=F.R.version)
             lines.append(json.dumps(res, ensure_ascii=False))
             calls_n += len(calls)
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)

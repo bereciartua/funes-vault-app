@@ -1,0 +1,14 @@
+[
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat output.json'",
+ "/bin/zsh -lc 'cat output.json'",
+ "/bin/zsh -lc 'cat registry.json registry-spec.md registry-prototype.md'",
+ "/bin/zsh -lc 'cat registry.json registry-spec.md registry-prototype.md'",
+ "/bin/zsh -lc \"python3 -c 'import json; x=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in x.items() if k\"'!=\"stories\"},ensure_ascii=False)); print(json.dumps(x[\"stories\"][:3],ensure_ascii=False))'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; x=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in x.items() if k\"'!=\"stories\"},ensure_ascii=False)); print(json.dumps(x[\"stories\"][:3],ensure_ascii=False))'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; x=json.load(open(\\\"output.json\\\")); print(json.dumps(x[\\\"stories\\\"][3:],ensure_ascii=False))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; x=json.load(open(\\\"output.json\\\")); print(json.dumps(x[\\\"stories\\\"][3:],ensure_ascii=False))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json,copy; x=json.load(open(\\\"output.json\\\")); y=copy.deepcopy(x); q=next(q for s in y[\\\"stories\\\"] if s[\\\"id\\\"]==\\\"c03\\\" for q in s[\\\"queries\\\"] if q[\\\"id\\\"]==\\\"c03q2\\\"); q[\\\"query\\\"]=\\\"Who was I dating in 2017?\\\"; changes=[]\ndef diff(a,b,p=\\\"\\\"):\n if isinstance(a,dict):\n  for k in a: diff(a[k],b[k],p+\\\"/\\\"+k)\n elif isinstance(a,list):\n  for i,(u,v) in enumerate(zip(a,b)): diff(u,v,p+\\\"/\\\"+str(i))\n elif a\"'!=b: changes.append((p,a,b))\ndiff(x,y); print(json.dumps(changes)); print(\"JSON round-trip:\",json.loads(json.dumps(y))==y)'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json,copy; x=json.load(open(\\\"output.json\\\")); y=copy.deepcopy(x); q=next(q for s in y[\\\"stories\\\"] if s[\\\"id\\\"]==\\\"c03\\\" for q in s[\\\"queries\\\"] if q[\\\"id\\\"]==\\\"c03q2\\\"); q[\\\"query\\\"]=\\\"Who was I dating in 2017?\\\"; changes=[]\ndef diff(a,b,p=\\\"\\\"):\n if isinstance(a,dict):\n  for k in a: diff(a[k],b[k],p+\\\"/\\\"+k)\n elif isinstance(a,list):\n  for i,(u,v) in enumerate(zip(a,b)): diff(u,v,p+\\\"/\\\"+str(i))\n elif a\"'!=b: changes.append((p,a,b))\ndiff(x,y); print(json.dumps(changes)); print(\"JSON round-trip:\",json.loads(json.dumps(y))==y)'\"'\""
+]

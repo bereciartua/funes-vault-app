@@ -1,0 +1,8 @@
+[
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat stories.json'",
+ "/bin/zsh -lc 'cat stories.json'",
+ "/bin/zsh -lc 'cat stories.json'",
+ "/bin/zsh -lc 'cat stories.json'"
+]

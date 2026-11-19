@@ -130,9 +130,18 @@ extension FactsGraph {
             return (c == 46 && !abbrevPeriods.contains(i)) || c == 33 || c == 63 || c == 10   // . ! ? newline
         }
         var out: [RolePhrase] = []
+        let heads = Set((lang.compoundHeads ?? []).map { FactsText.fold($0) })
+        let nextWord = FactsText.regex("^\\s+([\\w'’-]+)")
         for mt in FactsText.matches(rolePattern(), in: text) {
             let s = mt.start, e = mt.end
             if Self.mayBeQuoted(text, at: s) { continue }
+            // A compound ("my parent company"): the role word names something else. Only after a singular role word:
+            // after a plural one the word is a verb ("my parents group the photos").
+            if !heads.isEmpty, lex[mt.group(5)!.lowercased()]?.plural != true,
+               let n = FactsText.matchAt(nextWord, in: text, from: e, to: min(e + 40, ns.length))?.group(1),
+               heads.contains(FactsText.fold(n)) {
+                continue
+            }
             if let chain = FactsText.matchAt(Self.chainRE, in: text, from: e, to: min(e + 60, ns.length)),
                (chain.group(1) ?? "").split(whereSeparator: \.isWhitespace).map({ $0.lowercased() })
                    .prefix(while: { !chainStops.contains(FactsText.fold($0)) }).contains(where: { nouns.contains(unprefixed($0)) }) {
