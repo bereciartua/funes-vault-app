@@ -316,6 +316,9 @@ extension FactsGraph {
         guard rivals.isEmpty else { return nil }
         let (got, basis) = order(predicate, eps, now[0], .before)
         guard let got, [.ordered, .stated, .inferred].contains(basis) else { return nil }
+        // Either end may be one organization with another holder under another name: unknown, as for "previous".
+        let split = maybeSplit(predicate)
+        if split.contains(got) || now[0].entity.map(split.contains) == true { return nil }
         let chain = eps.filter { $0.entity == got } + [now[0]]
         return (got, chain.allSatisfy { $0.trusted && $0.startTrusted && $0.endTrusted })
     }
@@ -323,7 +326,7 @@ extension FactsGraph {
     /// Entities whose episodes cover a range (a year, a month, a day): every possible one must be certain.
     public func inRange(_ predicate: String, _ rng: DateRange, episodes given: [Episode]? = nil) -> TimelineAnswer {
         guard uses.isOn(predicate, .timeline) else { return .none(.unknown) }      // §11.10
-        var certain = Set<String>(), possible = Set<String>(), untrusted = false
+        var certain = Set<String>(), possible = Set<String>(), untrusted = false, held: [Episode] = []
         for e in given ?? episodes(predicate) {
             guard let id = e.entity else { continue }
             let maybe = (e.tstart.map { $0.lo <= rng.hi } ?? true) && (e.end.map { $0.hi >= rng.lo } ?? true)
@@ -336,6 +339,7 @@ extension FactsGraph {
             }
             if sure {
                 certain.insert(id)
+                held.append(e)
                 // An inferred end matters only when the range reaches past the last day a memory said it held.
                 untrusted = untrusted || !(e.startTrusted && e.endTrusted) || !e.trusted
                     || (e.inferredEnd && (e.heldAt.map { $0 < rng.hi } ?? true))
@@ -344,18 +348,162 @@ extension FactsGraph {
             }
         }
         if !possible.subtracting(certain).isEmpty || certain.isEmpty { return .none(.ambiguous) }
+        if refusesTogether(predicate, held) { return .none(.ambiguous) }
         let ids = certain.sorted { (entities[$0]?.seq ?? 0) < (entities[$1]?.seq ?? 0) }
         return TimelineAnswer(entities: ids, basis: untrusted ? .inferred : .ordered)
     }
 
+    /// Episodes that can't be one answer, so the question is told rather than answered (memory processing §11.7):
+    /// - an untrusted-only episode beside trusted ones: it may be a change an agent's note claims and the trusted
+    ///   memories don't make (untrusted evidence never triggers succession, so it can't end the trusted one either);
+    /// - episodes of different kinds at once (an employee job and self-employment, the predicate's slot): the question
+    ///   may mean one kind ("my employer", "my day job");
+    /// - an entity that may be another holder under another name (`maybeSplit`).
+    func refusesTogether(_ predicate: String, _ eps: [Episode]) -> Bool {
+        let named = eps.filter { $0.entity != nil }
+        if named.contains(where: \.trusted), named.contains(where: { !$0.trusted }) { return true }
+        if Set(named.map(\.slot)).count > 1 { return true }
+        let split = maybeSplit(predicate)
+        return named.contains { split.contains($0.entity!) }
+    }
+
+    /// Holders of a predicate that may be one entity with another holder: a trusted statement gave one another name
+    /// that is the other's ("Fenwick Lab, also called Fenwick Laboratories" when both exist: a merge suggestion, never a
+    /// merge, §11.4), or their names match loosely by the kind's rule ("Fenwick Lab" in "Fenwick Laboratories"). Only
+    /// holders with trusted evidence count: one name kept apart by alias trust (an agent's note named it first) is
+    /// §11.4's separation, not a second name, and the untrusted-only episode rule covers it. The user's "not the same"
+    /// settles a pair.
+    func maybeSplit(_ predicate: String) -> Set<String> { Set(splitGroups(predicate).flatMap { $0 }) }
+
+    /// `maybeSplit`'s holders in groups: each group may be one entity.
+    func splitGroups(_ predicate: String) -> [Set<String>] {
+        let kind = registry.kindOf(predicate)
+        let holderFacts = facts.filter { $0.predicate == predicate && !$0.negated && $0.trusted }
+        let holders = Set(holderFacts.map(\.entity))
+        var parent: [String: String] = [:]
+        func root(_ x: String) -> String {
+            var x = x
+            while let p = parent[x], p != x { x = p }
+            return x
+        }
+        func pair(_ a: String, _ b: String) {
+            guard a != b, !notSame.contains([a, b]) else { return }
+            for x in [a, b] where parent[x] == nil { parent[x] = x }
+            let (ra, rb) = (root(a), root(b))
+            if ra != rb { parent[max(ra, rb)] = min(ra, rb) }
+        }
+        // Loosely: one name's words begin a run of the other's words ("Fenwick Lab" and "Fenwick Laboratories", "Acme"
+        // and "Acme Labs", a person's first name); never a piece inside a word ("Ola" isn't "Solano Datos").
+        func words(_ n: String) -> [String] { FactsText.normName(n, kind: kind, registry: registry).split(separator: " ").map(String.init) }
+        func inside(_ a: [String], _ b: [String]) -> Bool {
+            guard !a.isEmpty, a.count <= b.count else { return false }
+            return (0...(b.count - a.count)).contains { i in a.indices.allSatisfy { b[i + $0].hasPrefix(a[$0]) } }
+        }
+        let names = Dictionary(uniqueKeysWithValues: holders.map { id in (id, (entities[id]?.trustedAliases ?? []).map(words)) })
+        let ids = holders.sorted()
+        for (i, a) in ids.enumerated() {
+            for b in ids[(i + 1)...] {
+                let na = names[a] ?? [], nb = names[b] ?? []
+                if na.contains(where: { x in nb.contains { y in inside(x, y) || inside(y, x) } }) { pair(a, b) }
+            }
+        }
+        for f in holderFacts {
+            for also in Set(f.assertions.filter(\.trusted).compactMap(\.alsoCalled)) {
+                for o in byName(also, kind: kind, onlyTrusted: true) where holders.contains(o.id) { pair(f.entity, o.id) }
+            }
+        }
+        var groups: [String: Set<String>] = [:]
+        for x in parent.keys { groups[root(x), default: []].insert(x) }
+        return groups.keys.sorted().map { groups[$0]! }
+    }
+
+    /// This graph with each group's facts of the predicate read as one entity's (the earliest made stands for it), and
+    /// the stand-in for each merged entity. Only to check an answer holds either way; never stored.
+    func merging(_ predicate: String, _ groups: [Set<String>]) -> (FactsGraph, [String: String]) {
+        var g = self
+        var rep: [String: String] = [:]
+        for grp in groups {
+            guard let r = grp.min(by: { (entities[$0]?.seq ?? 0, $0) < (entities[$1]?.seq ?? 0, $1) }) else { continue }
+            for e in grp { rep[e] = r }
+            for e in grp where e != r {
+                g.entities[r]?.aliases.formUnion(entities[e]?.aliases ?? [])
+                g.entities[r]?.trustedAliases.formUnion(entities[e]?.trustedAliases ?? [])
+            }
+        }
+        var out: [LearnedFact] = [], at: [String: Int] = [:]
+        // Order edges by id, and the user's rejected orders, point at the stand-in too.
+        let facts = facts.map { f -> LearnedFact in
+            var f = f
+            for i in f.assertions.indices {
+                f.assertions[i].precededByEntity = f.assertions[i].precededByEntity.map { rep[$0] ?? $0 }
+                f.assertions[i].followedByEntity = f.assertions[i].followedByEntity.map { rep[$0] ?? $0 }
+            }
+            return f
+        }
+        g.rejectedEdges = rejectedEdges.map { r in
+            var r = r
+            r.from = rep[r.from] ?? r.from
+            r.to = rep[r.to] ?? r.to
+            return r
+        }
+        for f in facts {
+            guard f.predicate == predicate, !f.negated, let r = rep[f.entity] else { out.append(f); continue }
+            if let i = at[r] {
+                out[i].assertions = (out[i].assertions + f.assertions).stableSorted { $0.readOrder }
+            } else {
+                var m = f
+                m.entity = r
+                at[r] = out.count
+                out.append(m)
+            }
+        }
+        g.facts = out
+        return (g, rep)
+    }
+
     /// The answer to a timeline intent.
     public func answer(_ it: TimelineIntent, query: String = "") -> TimelineAnswer {
+        let got = answerCore(it, query: query)
+        // Before, after and previous: an agent's note never reorders the user's own jobs. When the trusted memories
+        // alone answer someone else, an untrusted-only episode changed the answer, so it's told (memory processing §11.6).
+        guard [.before, .after, .previous].contains(it.op), !got.entities.isEmpty,
+              facts.contains(where: { $0.predicate == it.predicate && !$0.negated && $0.assertions.contains { !$0.trusted } }) else { return got }
+        let alt = trustedOnly(it.predicate).answerCore(it, query: query)
+        return alt.entities.isEmpty || alt.entities == got.entities ? got : .none(.ambiguous)
+    }
+
+    /// This graph with only trusted evidence for the predicate (the user's rows included).
+    func trustedOnly(_ predicate: String) -> FactsGraph {
+        var g = self
+        g.facts = facts.compactMap { f in
+            guard f.predicate == predicate else { return f }
+            var f = f
+            f.assertions = f.assertions.filter(\.trusted)
+            return f.assertions.isEmpty ? nil : f
+        }
+        return g
+    }
+
+    func answerCore(_ it: TimelineIntent, query: String) -> TimelineAnswer {
         guard uses.isOn(it.predicate, .timeline) else { return .none(.unknown) }   // §11.10
         switch it.op {
         case .before, .after:
             guard let anchor = it.anchor else { return .none(.ambiguous) }
             // Episode cues come from the operator phrase alone ("before Acme the second time").
-            return before(it.predicate, anchor, query: it.phrase ?? query, direction: it.op == .before ? .before : .after)
+            let direction: TimelineDirection = it.op == .before ? .before : .after
+            let got = before(it.predicate, anchor, query: it.phrase ?? query, direction: direction)
+            // Holders that may be one entity under two names: an answer naming one of them is told (it would name half
+            // of it); otherwise the answer stands only if it's the same with each group read as one entity.
+            let groups = splitGroups(it.predicate)
+            if groups.isEmpty || got.entities.isEmpty { return got }
+            let split = Set(groups.flatMap { $0 })
+            if got.entities.contains(where: split.contains) { return .none(.ambiguous) }
+            let (m, rep) = merging(it.predicate, groups)
+            var mAnchor = anchor
+            if case .entity(let x) = anchor { mAnchor = .entity(rep[x] ?? x) }
+            let alt = m.before(it.predicate, mAnchor, query: it.phrase ?? query, direction: direction)
+            // The same entity on the same basis (a gap or an inference the merged reading tells is a different answer).
+            return alt.entities == got.entities.map { rep[$0] ?? $0 } && alt.basis == got.basis ? got : .none(.ambiguous)
         case .year:
             guard case .date(let rng) = it.anchor else { return .none(.ambiguous) }
             return inRange(it.predicate, rng)
@@ -366,9 +514,12 @@ extension FactsGraph {
                 // As for "current": an episode that may have ended (or not) leaves the anchor unknown.
                 guard now.count == 1, !eps.contains(where: \.mayBeOpen) else { return .none(.ambiguous) }
                 let (got, basis) = order(it.predicate, eps, now[0], .before)
+                let split = maybeSplit(it.predicate)
+                if [now[0].entity, got].contains(where: { $0.map(split.contains) ?? false }) { return .none(.ambiguous) }
                 return .one(got, basis)
             }
             if now.isEmpty || eps.contains(where: \.mayBeOpen) { return .none(.ambiguous) }
+            if refusesTogether(it.predicate, now) { return .none(.ambiguous) }
             let basis: TimelineBasis = now.allSatisfy { $0.heldAt != nil && $0.trusted && $0.startTrusted } ? .ordered : .inferred
             var ids: [String] = []
             for e in now { if let id = e.entity, !ids.contains(id) { ids.append(id) } }

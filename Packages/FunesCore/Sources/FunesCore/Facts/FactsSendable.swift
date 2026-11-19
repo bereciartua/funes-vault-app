@@ -49,7 +49,9 @@ extension FactStore {
         }
     }
 
-    static func withheld(_ db: Database, counted: [String: Counted], limit: CloudLimit) throws -> Withheld {
+    /// `reader`: an empty graph of the vault's registry, user and uses, to find the role phrases a memory's text pairs
+    /// with a name (a `named` decision's grounding, below).
+    static func withheld(_ db: Database, counted: [String: Counted], limit: CloudLimit, reader: FactsGraph? = nil) throws -> Withheld {
         var out = Withheld()
         func allows(_ s: Int?) -> Bool { s.flatMap(Sensitivity.init(rawValue:)).map(limit.allows) ?? false }
         /// A memory at its current version, active or archived: nil when it doesn't count (so it's behind nothing).
@@ -286,11 +288,39 @@ extension FactStore {
         // Model decisions and what they rest on, when they were made; the user's, on their memory and entity.
         var deps: [String: [Row]] = [:]
         for r in try Row.fetchAll(db, sql: "SELECT decision_id, kind, ref_id FROM decision_dependency") { deps[r["decision_id"], default: []].append(r) }
-        for d in try Row.fetchAll(db, sql: "SELECT id, memory_id, memory_version, entity_id, source, created_at FROM mention_decision") {
+        // Classes each memory names through a sendable link that wasn't dropped, with those names.
+        var namedSendably: [String: [String: Set<String>]] = [:]          // memory → class → folded names
+        for n in nameRows where !out.names.contains(n.key) {
+            namedSendably[n.memory, default: [:]][root(n.entity), default: []].insert(n.normalized)
+        }
+        /// Whether the memory's own text pairs the phrase at this scalar offset with one of these names ("my sister
+        /// Maria Lopez", "Maria is my sister"), and that name could mean nobody else in the vault (no namesake, no one
+        /// sharing it as a first name): then any reader of the sendable text decides it the same way.
+        func pairedInText(_ memory: String, _ start: Int?, _ names: Set<String>, _ cls: String) -> Bool {
+            guard let reader, let start, !names.isEmpty,
+                  let r = try? Row.fetchOne(db, sql: "SELECT title, body FROM memory WHERE id = ?", arguments: [memory]) else { return false }
+            let text = FactStore.text(title: r["title"], body: r["body"])
+            let at = FactStore.utf16Offset(text, scalar: start)
+            guard let ph = reader.rolePhrases(text).first(where: { $0.start == at }), let paired = ph.paired else { return false }
+            let norm = FactsText.normName(paired, kind: "person", registry: reader.registry), folded = FactsText.fold(paired)
+            guard names.contains(norm) || names.contains(where: { FactsText.fold($0) == folded }) else { return false }
+            return sharing(norm).allSatisfy { root($0) == cls }
+        }
+        for d in try Row.fetchAll(db, sql: "SELECT id, memory_id, memory_version, entity_id, basis, source, span_start, created_at FROM mention_decision") {
             let id: String = d["id"], at: Date = (d["created_at"] as Date?) ?? .distantFuture
             if let e: String = d["entity_id"], entities.contains(e) { out.decisions.insert(id); continue }
             if memoryAllowed(d["memory_id"], (d["source"] as String) == "model" ? d["memory_version"] : nil) == false {
                 out.decisions.insert(id)
+                continue
+            }
+            // A model's `named` decision whose phrase its own (sendable) memory's text pairs with that person's name ("my
+            // sister Maria Lopez"): it rests on the text and that name link alone, which the rules above already judged
+            // (dropped when a namesake was hidden), not on who else holds the role or what else is known about the
+            // person. So its roster dependencies (recorded again when code revalidates it) don't withhold it, and
+            // reconciliation's choice of what to ask again doesn't depend on them (§11.9). A name merely elsewhere in the
+            // memory isn't enough: which of its people the reader picked may rest on what's above the limit.
+            if (d["source"] as String) == "model", (d["basis"] as String?) == LinkBasis.named.rawValue, let e: String = d["entity_id"],
+               let names = namedSendably[d["memory_id"] as String]?[root(e)], pairedInText(d["memory_id"], d["span_start"], names, root(e)) {
                 continue
             }
             let hiddenDependency = (deps[id] ?? []).contains { dep in

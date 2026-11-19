@@ -1,0 +1,14 @@
+[
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat output.json'",
+ "/bin/zsh -lc 'cat output.json'",
+ "/bin/zsh -lc 'cat registry.json registry-spec.md registry-prototype.md'",
+ "/bin/zsh -lc 'cat registry.json registry-spec.md registry-prototype.md'",
+ "/bin/zsh -lc \"python3 -c 'import json; x=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in x.items() if k not in (\\\"registry_json\\\",\\\"stories\\\")},ensure_ascii=False)); [print(json.dumps(s,ensure_ascii=False,separators=(\\\",\\\",\\\":\\\"))) for s in x[\\\"stories\\\"]]'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; x=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in x.items() if k not in (\\\"registry_json\\\",\\\"stories\\\")},ensure_ascii=False)); [print(json.dumps(s,ensure_ascii=False,separators=(\\\",\\\",\\\":\\\"))) for s in x[\\\"stories\\\"]]'\"",
+ "/bin/zsh -lc 'cat registry-spec.md registry-prototype.md'",
+ "/bin/zsh -lc 'cat registry-spec.md registry-prototype.md'",
+ "/bin/zsh -lc \"python3 -c 'import json; x=json.load(open(\\\"output.json\\\")); r=json.load(open(\\\"registry.json\\\")); n=json.loads(x[\\\"registry_json\\\"]); print(x[\\\"registry_json\\\"]); print(\\\"Registry differences:\\\", [k for k in r if r[k]\"'!=n[k]]); print(\"Changed predicates:\",[a[\"id\"] for a,b in zip(r[\"predicates\"],n[\"predicates\"]) if a!=b]); s=next(s for s in x[\"stories\"] if s[\"id\"]==\"c07\"); [m.update(not_linked=[]) for m in s[\"memories\"] if m[\"id\"] in (\"c07m2\",\"c07m3\",\"c07m4\")]; s[\"memories\"][3][\"roles\"]=[]; print(\"Corrected c07:\",json.dumps(s,ensure_ascii=False,separators=(\",\",\":\")))'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; x=json.load(open(\\\"output.json\\\")); r=json.load(open(\\\"registry.json\\\")); n=json.loads(x[\\\"registry_json\\\"]); print(x[\\\"registry_json\\\"]); print(\\\"Registry differences:\\\", [k for k in r if r[k]\"'!=n[k]]); print(\"Changed predicates:\",[a[\"id\"] for a,b in zip(r[\"predicates\"],n[\"predicates\"]) if a!=b]); s=next(s for s in x[\"stories\"] if s[\"id\"]==\"c07\"); [m.update(not_linked=[]) for m in s[\"memories\"] if m[\"id\"] in (\"c07m2\",\"c07m3\",\"c07m4\")]; s[\"memories\"][3][\"roles\"]=[]; print(\"Corrected c07:\",json.dumps(s,ensure_ascii=False,separators=(\",\",\":\")))'\"'\""
+]

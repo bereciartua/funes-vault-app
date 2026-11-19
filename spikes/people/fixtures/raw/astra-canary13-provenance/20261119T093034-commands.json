@@ -1,0 +1,18 @@
+[
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat registry-spec.md'",
+ "/bin/zsh -lc 'cat registry.json'",
+ "/bin/zsh -lc 'cat registry-prototype.md'",
+ "/bin/zsh -lc 'cat output.json'",
+ "/bin/zsh -lc 'cat registry-spec.md'",
+ "/bin/zsh -lc 'cat registry-prototype.md'",
+ "/bin/zsh -lc 'cat registry.json'",
+ "/bin/zsh -lc 'cat output.json'",
+ "/bin/zsh -lc \"python3 -c 'import json; x=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in x.items() if k\"'!=\"registry_json\"},ensure_ascii=False,separators=(\",\",\":\")))'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; x=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in x.items() if k\"'!=\"registry_json\"},ensure_ascii=False,separators=(\",\",\":\")))'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; x=json.load(open(\\\"output.json\\\")); print(x[\\\"registry_json\\\"]); r=json.load(open(\\\"registry.json\\\")); s=json.loads(x[\\\"registry_json\\\"]); print(\\\"UNCHANGED_REGISTRY_FIELDS:\\\", all(r[k]==s[k] for k in r if k not in (\\\"version\\\",\\\"predicates\\\"))); print(\\\"UNCHANGED_OTHER_PREDICATES:\\\", r[\\\"predicates\\\"][1:]==s[\\\"predicates\\\"][1:]); print(\\\"ORIGINAL_PARTNER:\\\",json.dumps(r[\\\"predicates\\\"][0]))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; x=json.load(open(\\\"output.json\\\")); print(x[\\\"registry_json\\\"]); r=json.load(open(\\\"registry.json\\\")); s=json.loads(x[\\\"registry_json\\\"]); print(\\\"UNCHANGED_REGISTRY_FIELDS:\\\", all(r[k]==s[k] for k in r if k not in (\\\"version\\\",\\\"predicates\\\"))); print(\\\"UNCHANGED_OTHER_PREDICATES:\\\", r[\\\"predicates\\\"][1:]==s[\\\"predicates\\\"][1:]); print(\\\"ORIGINAL_PARTNER:\\\",json.dumps(r[\\\"predicates\\\"][0]))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json,copy; original=json.load(open(\\\"output.json\\\")); fixed=copy.deepcopy(original); story=next(s for s in fixed[\\\"stories\\\"] if s[\\\"id\\\"]==\\\"c04\\\"); q=next(q for q in story[\\\"queries\\\"] if q[\\\"id\\\"]==\\\"c04q2\\\"); q[\\\"query\\\"]=\\\"Who was my partner in 2018?\\\"; q[\\\"answer_person\\\"]=\\\"c04a\\\"; diffs=[]\ndef diff(a,b,path=\\\"\\\"):\n if isinstance(a,dict):\n  assert a.keys()==b.keys()\n  for k in a: diff(a[k],b[k],path+\\\"/\\\"+k)\n elif isinstance(a,list):\n  assert len(a)==len(b)\n  for i,(x,y) in enumerate(zip(a,b)): diff(x,y,path+\\\"/\\\"+str(i))\n elif a\"'!=b: diffs.append((path,a,b))\ndiff(original,fixed); assert len(diffs)==2; print(json.dumps(diffs)); print(\"2018 partners:\",[t[\"person\"] for t in story[\"timeline\"] if t[\"start\"][:4]<= \"2018\" and (not t[\"end\"] or t[\"end\"][:4]>= \"2018\")])'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json,copy; original=json.load(open(\\\"output.json\\\")); fixed=copy.deepcopy(original); story=next(s for s in fixed[\\\"stories\\\"] if s[\\\"id\\\"]==\\\"c04\\\"); q=next(q for q in story[\\\"queries\\\"] if q[\\\"id\\\"]==\\\"c04q2\\\"); q[\\\"query\\\"]=\\\"Who was my partner in 2018?\\\"; q[\\\"answer_person\\\"]=\\\"c04a\\\"; diffs=[]\ndef diff(a,b,path=\\\"\\\"):\n if isinstance(a,dict):\n  assert a.keys()==b.keys()\n  for k in a: diff(a[k],b[k],path+\\\"/\\\"+k)\n elif isinstance(a,list):\n  assert len(a)==len(b)\n  for i,(x,y) in enumerate(zip(a,b)): diff(x,y,path+\\\"/\\\"+str(i))\n elif a\"'!=b: diffs.append((path,a,b))\ndiff(original,fixed); assert len(diffs)==2; print(json.dumps(diffs)); print(\"2018 partners:\",[t[\"person\"] for t in story[\"timeline\"] if t[\"start\"][:4]<= \"2018\" and (not t[\"end\"] or t[\"end\"][:4]>= \"2018\")])'\"'\""
+]

@@ -75,6 +75,15 @@ public struct FactsRegistry: Sendable, Decodable {
         public let months: [String: [String]]
         /// Day names: never the start of a surname after a profile name (the profile matcher, memory processing §11.3).
         public let weekdays: [String]?
+        /// Adverbs a timeline question may put right before its operator ("immediately before", "justo antes de"); they
+        /// leave its meaning as it is. Optional: a registry without them reads such a question as no intent.
+        public let operatorAdverbs: [String]?
+        /// The question words an operator adverb needs in its clause ("Where did I work immediately before Acme?"): without
+        /// one, "Did I start work immediately after Acme?" asks about a gap, not for the next job.
+        public let whWords: [String]?
+        /// Nouns that make a role word part of a compound, not a role ("my parent company", "my sister company", "my
+        /// friend group"): a lexicon word right before one isn't a role phrase. Optional (13a.2's fix round).
+        public let compoundHeads: [String]?
         public let functionWords: [String]
         public let dateJoiners: [String]
         public let ordinalSuffixes: [String]
@@ -252,8 +261,8 @@ public struct FactsRegistry: Sendable, Decodable {
 
     /// What only questions read (`TimelineIntent`; a predicate's attribute phrases are for answers, 13d): a change to
     /// them is language-only and re-reads nothing. Anything not listed counts as extraction, so a doubt costs a re-read.
-    static let readSideLanguage: Set<String> = ["operators", "time_nouns", "anchor_tail_words", "anchor_lead_words",
-                                                "question_words", "year_prepositions"]
+    static let readSideLanguage: Set<String> = ["operators", "operator_adverbs", "wh_words", "time_nouns", "anchor_tail_words",
+                                                "anchor_lead_words", "question_words", "year_prepositions"]
     static let readSidePredicate: Set<String> = ["query_cues", "qualifier_cues", "phrases", "uses", "note"]
 
     /// Per call group: SHA-256 of the canonical JSON of the shared language and kinds (without the read-side fields),

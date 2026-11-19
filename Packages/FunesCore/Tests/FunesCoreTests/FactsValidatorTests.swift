@@ -38,6 +38,10 @@ import Testing
 
     static func s(_ v: Any?) -> String? { v as? String }
 
+    /// Registry words 13a.2's fix round added (mixed's references outside the lexicon); the spike's recorded calls
+    /// predate them, so a phrase with one of them is Swift's only.
+    static let wordsAddedAfterTheRecording = ["client contact", "supervisor", "supervisora", "parent"]
+
     @Test func swiftValidationMatchesTheSpikeOnRecordedCalls() throws {
         let stories = try Self.stories()
         var checked = 0, phraseMismatch = 0
@@ -55,12 +59,15 @@ import Testing
             let pyPhrases = (r["phrases"] as! [[String: Any]]).map { ($0["start"] as! Int, $0["surface"] as! String) }
             let swPhrases = phrases.map { (FactStore.scalarOffset(text, utf16: $0.start), $0.surface) }
             // 13a.1's language layer skips a phrase that may be quoted speech, which the spike read (memory processing
-            // §11.3): those calls are compared without their roles. Any other difference is a failure.
+            // §11.3), and 13a.2's fix round added registry words the recording predates (a phrase only Swift finds): those
+            // calls are compared without their roles. Any other difference is a failure.
             var compareRoles = true
             if pyPhrases.map(\.0) != swPhrases.map(\.0) || pyPhrases.map(\.1) != swPhrases.map(\.1) {
                 let missing = pyPhrases.filter { p in !swPhrases.contains { $0 == p } }
                 let quoted = missing.allSatisfy { p in FactsGraph.mayBeQuoted(text, at: FactStore.utf16Offset(text, scalar: p.0)) }
-                if quoted, swPhrases.allSatisfy({ s in pyPhrases.contains { $0 == s } }) {
+                let added = swPhrases.filter { s in !pyPhrases.contains { $0 == s } }
+                let newWords = added.allSatisfy { s in Self.wordsAddedAfterTheRecording.contains { FactsText.cue(FactsText.fold(s.1), $0) } }
+                if quoted, newWords {
                     compareRoles = false
                 } else {
                     phraseMismatch += 1

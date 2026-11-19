@@ -102,6 +102,10 @@ def score_run(story, res):
             ok = aligned == t["person"]
             bucket = "full" if l["basis"] in FULL else l["basis"]
             c[f"{bucket}_{'right' if ok else 'wrong'}"] += 1
+            if l.get("predicate"):                 # per predicate (the Gates' "≥ 20 per predicate"); not in the report
+                c[f"{bucket}_{'right' if ok else 'wrong'}@{l['predicate']}"] += 1
+            if t["resolvable"] and ok:             # recall against the truth (the Gates' denominator below)
+                c["resolvable_right"] += 1
             if not t["resolvable"] and not ok:
                 c["undecidable_guessed_wrong"] += 1
             if not ok:
@@ -133,6 +137,10 @@ def score_run(story, res):
         if m["id"] not in res["order"]:
             continue
         for r, st in zip(m["roles"], role_starts(m)):
+            c["resolvable_truth"] += 1 if r["resolvable"] else 0
+            if r["resolvable"]:                    # a phrase with no registry word isn't a role phrase Funes reads
+                from fixture_counts import predicate_of
+                c["resolvable_truth_lexicon" if predicate_of(r["surface"]) else "resolvable_outside_lexicon"] += 1
             if (m["id"], st) not in linked_starts:
                 c["role_not_found"] += 1
         names_linked = [l for l in res["links"] if l["kind"] == "name" and l["memory"] == m["id"]]

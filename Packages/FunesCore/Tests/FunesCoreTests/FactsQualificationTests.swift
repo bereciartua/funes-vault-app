@@ -245,8 +245,15 @@ import Testing
 
     // MARK: The shipped records
 
-    /// Why a record can't turn anything on now, or [] when it can.
-    static func problems(_ r: FactsQualification.Record, registry: FactsRegistry, versions: [String: String]) -> [String] {
+    /// Why a record can't turn anything on now, or [] when it can: its key against the code that runs now, what it turns
+    /// on within the whole shipped bundle (a timeline record rests on the linked record beside it), and its evidence.
+    static func problems(_ r: FactsQualification.Record, bundle: [FactsQualification.Record]? = nil, registry: FactsRegistry,
+                         versions: [String: String]) -> [String] {
+        keyProblems(r, bundle: bundle ?? [r], registry: registry, versions: versions) + FactsGateEvidence.problems(r, registry: registry)
+    }
+
+    static func keyProblems(_ r: FactsQualification.Record, bundle: [FactsQualification.Record], registry: FactsRegistry,
+                            versions: [String: String]) -> [String] {
         var out: [String] = []
         if versions[r.callGroup] != r.promptVersion { out.append("prompt version") }
         if registry.fingerprint != r.registryVersion { out.append("registry version") }
@@ -254,40 +261,146 @@ import Testing
         // The adapters' current revisions.
         for (id, rev) in [(ClaudeCodeClient.providerID.rawValue, ClaudeCodeClient.adapterRevision), (CodexClient.providerID.rawValue, CodexClient.adapterRevision)]
         where r.adapter.hasPrefix(id + "/") && !r.adapter.hasPrefix("\(id)/\(rev);") { out.append("adapter revision") }
-        // And it turns on what it lists, for its own engine (its uses' prerequisites included).
-        let on = FactsQualification(records: [r]).uses(engines: [r.callGroup: r.engine], registry: registry, promptVersions: versions)
+        // And it turns on what it lists, for its own engine, with the bundle's other records (its uses' prerequisites).
+        let mine = bundle.filter { $0.engine == r.engine && $0.callGroup == r.callGroup }
+        let on = FactsQualification(records: mine).uses(engines: [r.callGroup: r.engine], registry: registry, promptVersions: versions)
         for p in r.predicates { for u in r.uses where !on.isOn(p, FactsUse(rawValue: u) ?? .recorded, basis: r.basis) { out.append("\(p) \(u) stays off") } }
         for p in r.predicates {
             guard let pred = registry.predicate(p), pred.callGroup == r.callGroup else { out.append("\(p) isn't in \(r.callGroup)"); continue }
             for u in r.uses where !pred.uses.contains(u) { out.append("\(p) doesn't declare \(u)") }
         }
-        let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-            .deletingLastPathComponent().deletingLastPathComponent()
-        for e in r.evidence where !FileManager.default.fileExists(atPath: repo.appending(path: e).path) { out.append("missing \(e)") }
-        if r.evidence.isEmpty { out.append("no evidence") }
         return out
     }
 
     /// A prompt, registry or pipeline change without re-running the gates fails here, rather than silently turning Facts
-    /// off in the app.
+    /// off in the app; so does a record whose evidence doesn't show its gate passed on live runs of exactly its key.
     @Test func everyShippedRecordMatchesWhatRunsNow() {
-        for r in FactsQualification.bundled.records {
-            #expect(Self.problems(r, registry: reg, versions: versions).isEmpty, "\(r.callGroup) \(r.uses): \(Self.problems(r, registry: reg, versions: versions))")
+        let bundle = FactsQualification.bundled.records
+        // An open privacy finding (a known issue in the privacy gate) blocks every record until it's fixed or accepted.
+        if FactsPrivacyGateTests.openFindings > 0 { #expect(bundle.isEmpty, "a record ships with an open privacy finding") }
+        for r in bundle {
+            let p = Self.problems(r, bundle: bundle, registry: reg, versions: versions)
+            #expect(p.isEmpty, "\(r.callGroup) \(r.uses): \(p)")
         }
-        // The check isn't vacuous: a record from before a registry change, or without evidence, fails it.
+        // The key check isn't vacuous: a record from before a registry change, or an old adapter, fails it.
         var stale = record(persons, [.recorded], group: people)
-        stale.evidence = ["spikes/people/results-13a2/report.md"]
-        #expect(Self.problems(stale, registry: reg, versions: versions).isEmpty)
+        #expect(Self.keyProblems(stale, bundle: [stale], registry: reg, versions: versions).isEmpty)
         stale.registryVersion = "v1-000000000000"
-        #expect(Self.problems(stale, registry: reg, versions: versions).first == "registry version")
-        var linkedOnly = record(persons, [.linked], group: people)
-        linkedOnly.evidence = ["spikes/people/results-13a2/report.md"]
-        #expect(Self.problems(linkedOnly, registry: reg, versions: versions).contains { $0.hasSuffix("stays off") })
-        var oldAdapter = record(persons, [.recorded], group: people, engine: FactsEngine(model: Self.haiku.model, adapter: "claude-code/0;effort=low"))
-        oldAdapter.evidence = ["spikes/people/results-13a2/report.md"]
-        #expect(Self.problems(oldAdapter, registry: reg, versions: versions) == ["adapter revision"])
-        stale = record(persons, [.recorded], group: people)
-        #expect(Self.problems(stale, registry: reg, versions: versions) == ["no evidence"])
+        #expect(Self.keyProblems(stale, bundle: [stale], registry: reg, versions: versions).first == "registry version")
+        let linkedOnly = record(persons, [.linked], group: people)
+        #expect(Self.keyProblems(linkedOnly, bundle: [linkedOnly], registry: reg, versions: versions).contains { $0.hasSuffix("stays off") })
+        let oldAdapter = record(persons, [.recorded], group: people, engine: FactsEngine(model: Self.haiku.model, adapter: "claude-code/0;effort=low"))
+        #expect(Self.keyProblems(oldAdapter, bundle: [oldAdapter], registry: reg, versions: versions) == ["adapter revision"])
+        // The bundle, not the record alone: a timeline record rests on the linked record beside it.
+        let wa = reg.timelinePredicates[0]
+        let timeline = record([wa], [.timeline], group: work), linked = record([wa], [.recorded, .linked], group: work)
+        #expect(Self.keyProblems(timeline, bundle: [timeline], registry: reg, versions: versions).contains { $0.hasSuffix("stays off") })
+        #expect(Self.keyProblems(timeline, bundle: [timeline, linked], registry: reg, versions: versions).isEmpty)
+        // Without evidence, nothing qualifies.
+        #expect(Self.problems(record(persons, [.recorded, .linked], group: people), registry: reg, versions: versions) == ["no scores.json in the evidence"])
+    }
+
+    // MARK: Evidence (synthetic gate runs; no record ships)
+
+    /// A synthetic gate run of the person pool: manifests of both reads for every set, scores that pass, port fidelity.
+    func syntheticEvidence(_ dir: URL, change: (inout [String: Any], String, String) -> Void = { _, _, _ in },
+                           scores: (inout [String: Any]) -> Void = { _ in }) throws -> FactsQualification.Record {
+        let r = record(persons, [.recorded, .linked], group: people)
+        let fm = FileManager.default
+        var evidence: [String] = []
+        try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        let pf = dir.appending(path: "port-fidelity.json")
+        let pairs = FactsGateEvidence.standardPairs.map { n -> [String: Any] in
+            let p = n.split(separator: " ").map(String.init)
+            return ["set": p[0], "mode": p[1], "plays": 3, "expected_plays": 3]
+        }
+        try JSONSerialization.data(withJSONObject: ["pass": true, "commit": String(repeating: "a", count: 40), "pairs": pairs]).write(to: pf)
+        var measures: [String: Any] = [:]
+        for rd in ["r1", "r2"] {
+            let d = dir.appending(path: "swift-claude-claude-haiku-5-5-gates-\(rd)")
+            try fm.createDirectory(at: d, withIntermediateDirectories: true)
+            var sets: [String: Any] = [:]
+            for set in ["main", "astra", "mixed", "persons"] {
+                var m: [String: Any] = [
+                    "set": set, "label": "swift-claude-claude-haiku-5-5-gates-\(rd)", "mode": "live", "commit": String(repeating: "a", count: 40),
+                    "run_id": "\(set)-\(rd)", "engine": ["model": r.model, "adapter": r.adapter, "batching": r.batching],
+                    "prompt_versions": versions, "registry_version": reg.fingerprint, "registry_file": "bundled",
+                    "models_reported": ["claude-haiku-5-5"], "responses": 10, "responses_without_model": 0, "options": ["set": set],
+                    "plays": 2, "plays_expected": 2, "plays_list": ["a#0", "a#1"],
+                    "fixture_sha256": FactsGateEvidence.sha256(FactsHarness.fixtureURL(set))!,
+                    "groups": set == "mixed" ? [people, work] : [people], "unsettled": 0, "above_limit_in_payload": 0,
+                    "limit": "internal",
+                ]
+                let lines = d.appending(path: "\(set).jsonl")
+                try Data("{}\n".utf8).write(to: lines)
+                m["lines_sha256"] = FactsGateEvidence.sha256(lines)!
+                change(&m, set, rd)
+                let f = d.appending(path: "\(set)-manifest.json")
+                try JSONSerialization.data(withJSONObject: m).write(to: f)
+                evidence += [f.path, lines.path]
+                sets[set] = ["people": ["full_right": 99, "full_wrong": 1, "recall_right": 95, "recall_truth": 100,
+                                        "full_by_predicate": Dictionary(uniqueKeysWithValues: persons.map { ($0, 6) })]]
+            }
+            measures[rd] = sets
+        }
+        var sc: [String: Any] = ["measures": measures, "port_fidelity": ["pass": true, "sha256": FactsGateEvidence.sha256(pf)!]]
+        scores(&sc)
+        let sf = dir.appending(path: "scores.json")
+        try JSONSerialization.data(withJSONObject: sc).write(to: sf)
+        var out = r
+        out.evidence = evidence + [sf.path, pf.path]
+        return out
+    }
+
+    @Test func aRecordsEvidenceIsCheckedAgainstItsKeyItsRunsAndThePassTable() throws {
+        func check(change: @escaping (inout [String: Any], String, String) -> Void = { _, _, _ in },
+                   scores: @escaping (inout [String: Any]) -> Void = { _ in }) throws -> [String] {
+            let dir = FileManager.default.temporaryDirectory.appending(path: "facts-gates-\(UUID().uuidString)")
+            defer { try? FileManager.default.removeItem(at: dir) }
+            let r = try syntheticEvidence(dir, change: change, scores: scores)
+            return Self.problems(r, registry: reg, versions: versions)
+        }
+        #expect(try check() == [])
+        // Each run check fails on its own.
+        let runCases: [(String, (inout [String: Any], String, String) -> Void)] = [
+            ("dirty", { m, _, _ in m["commit"] = String(repeating: "a", count: 40) + "+dirty" }),
+            ("two commits", { m, _, rd in if rd == "r2" { m["commit"] = String(repeating: "b", count: 40) } }),
+            ("replay", { m, s, _ in if s == "main" { m["mode"] = "replay" } }),
+            ("alias reply", { m, s, _ in if s == "astra" { m["models_reported"] = ["claude-haiku-5-5-20261101"] } }),
+            ("unidentified", { m, s, _ in if s == "astra" { m["responses_without_model"] = 3 } }),
+            ("partial", { m, s, _ in if s == "persons" { m["options"] = ["only": "p01"] } }),
+            ("incomplete", { m, s, _ in if s == "persons" { m["plays"] = 1 } }),
+            ("fixture changed", { m, s, _ in if s == "mixed" { m["fixture_sha256"] = String(repeating: "0", count: 64) } }),
+            ("prompt", { m, _, _ in m["prompt_versions"] = [self.people: "000000000000"] }),
+            ("registry", { m, _, _ in m["registry_file"] = "spikes/people/fixtures/canary-13a2/registry.json" }),
+            ("adapter", { m, _, _ in m["engine"] = ["model": Self.haiku.model, "adapter": "claude-code/1;effort=high", "batching": FactsExtractor.batching] }),
+            ("group", { m, s, _ in if s == "main" { m["groups"] = [self.work] } }),
+            ("repeated run", { m, s, _ in if s == "main" { m["run_id"] = "same" } }),
+            ("one read", { m, _, rd in if rd == "r2" { m["label"] = "swift-claude-claude-haiku-5-5-gates-r1" } }),
+            ("leak", { m, s, _ in if s == "persons" { m["above_limit_in_payload"] = 1 } }),
+            ("secret limit", { m, _, _ in m["limit"] = "secret" }),
+            ("lines changed", { m, s, _ in if s == "astra" { m["lines_sha256"] = String(repeating: "0", count: 64) } }),
+        ]
+        for (name, change) in runCases { #expect(try !check(change: change).isEmpty, "\(name)") }
+        // And the pass table: a threshold missed, a read missing, port fidelity not the scored report.
+        #expect(try !check(scores: { s in
+            var m = s["measures"] as! [String: Any]; var r1 = m["r1"] as! [String: Any]
+            r1["persons"] = ["people": ["full_right": 90, "full_wrong": 10, "recall_right": 95, "recall_truth": 100, "full_by_predicate": [:]]]
+            m["r1"] = r1; s["measures"] = m
+        }).isEmpty)
+        #expect(try !check(scores: { s in var m = s["measures"] as! [String: Any]; m["r2"] = nil; s["measures"] = m }).isEmpty)
+        #expect(try !check(scores: { s in s["port_fidelity"] = ["pass": true, "sha256": "x"] }).isEmpty)
+    }
+
+    @Test func aRecordWithNoThirteenATwoGateFails() {
+        let wa = reg.timelinePredicates[0]
+        for r in [record(persons, [.recorded, .linked, .attributes], group: people), record(persons, [.attributes], group: people, basis: "sole_known"),
+                  record([wa], [.recorded, .linked, .timeline, .bridges], group: work), record(Array(persons.prefix(3)), [.recorded, .linked], group: people)] {
+            #expect(FactsGateEvidence.gate(for: r, registry: reg) == nil, "\(r.uses) \(r.basis)")
+            #expect(FactsGateEvidence.problems(r, registry: reg).first?.hasPrefix("no 13a.2 gate") == true)
+        }
+        #expect(FactsGateEvidence.gate(for: record(persons, [.recorded, .linked], group: people), registry: reg)?.id == "persons")
+        #expect(FactsGateEvidence.gate(for: record([wa], [.timeline], group: work), registry: reg) == nil)   // measured only
     }
 
     @Test func nothingIsQualifiedYet() {

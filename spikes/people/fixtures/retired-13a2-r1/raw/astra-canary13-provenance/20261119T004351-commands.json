@@ -1,0 +1,16 @@
+[
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat registry-spec.md registry-prototype.md registry.json'",
+ "/bin/zsh -lc 'cat registry-spec.md registry-prototype.md registry.json'",
+ "/bin/zsh -lc 'cat output.json'",
+ "/bin/zsh -lc 'cat output.json'",
+ "/bin/zsh -lc \"python3 -c 'import json; p=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in p.items() if k\"'!=\"stories\"},ensure_ascii=False)); [print(json.dumps(s,ensure_ascii=False)) for s in p[\"stories\"][:4]]'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; p=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in p.items() if k\"'!=\"stories\"},ensure_ascii=False)); [print(json.dumps(s,ensure_ascii=False)) for s in p[\"stories\"][:4]]'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; p=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in p.items() if k\"'!=\"stories\"},ensure_ascii=False))'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; p=json.load(open(\\\"output.json\\\")); print(json.dumps({k:v for k,v in p.items() if k\"'!=\"stories\"},ensure_ascii=False))'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; p=json.load(open(\\\"output.json\\\")); [print(json.dumps(s,ensure_ascii=False)) for s in p[\\\"stories\\\"][4:]]'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; p=json.load(open(\\\"output.json\\\")); [print(json.dumps(s,ensure_ascii=False)) for s in p[\\\"stories\\\"][4:]]'\"",
+ "/bin/zsh -lc \"python3 -c 'import json,copy; p=json.load(open(\\\"output.json\\\")); q=copy.deepcopy(p); fixes={\\\"c05m3\\\":\\\"omar\\\",\\\"c05m4\\\":\\\"paz\\\",\\\"c05m5\\\":\\\"sam\\\",\\\"c06m5\\\":\\\"otto\\\"}; changed=[]\nfor s in q[\\\"stories\\\"]:\n for m in s[\\\"memories\\\"]:\n  if m[\\\"id\\\"] in fixes:\n   person=fixes[m[\\\"id\\\"]]; assert person in m[\\\"not_linked\\\"]; assert person in [n[\\\"person\\\"] for n in m[\\\"names\\\"]]; m[\\\"not_linked\\\"].remove(person); changed.append(m[\\\"id\\\"])\nassert len(changed)==4\nfor a,b in zip(p[\\\"stories\\\"],q[\\\"stories\\\"]):\n for x,y in zip(a[\\\"memories\\\"],b[\\\"memories\\\"]):\n  if x\"'!=y: assert x[\"id\"] in fixes and {k:v for k,v in x.items() if k!=\"not_linked\"}=={k:v for k,v in y.items() if k!=\"not_linked\"}\nprint(\"Verified exactly four not_linked removals: \"+\", \".join(changed))'\"'\"",
+ "/bin/zsh -lc \"python3 -c 'import json,copy; p=json.load(open(\\\"output.json\\\")); q=copy.deepcopy(p); fixes={\\\"c05m3\\\":\\\"omar\\\",\\\"c05m4\\\":\\\"paz\\\",\\\"c05m5\\\":\\\"sam\\\",\\\"c06m5\\\":\\\"otto\\\"}; changed=[]\nfor s in q[\\\"stories\\\"]:\n for m in s[\\\"memories\\\"]:\n  if m[\\\"id\\\"] in fixes:\n   person=fixes[m[\\\"id\\\"]]; assert person in m[\\\"not_linked\\\"]; assert person in [n[\\\"person\\\"] for n in m[\\\"names\\\"]]; m[\\\"not_linked\\\"].remove(person); changed.append(m[\\\"id\\\"])\nassert len(changed)==4\nfor a,b in zip(p[\\\"stories\\\"],q[\\\"stories\\\"]):\n for x,y in zip(a[\\\"memories\\\"],b[\\\"memories\\\"]):\n  if x\"'!=y: assert x[\"id\"] in fixes and {k:v for k,v in x.items() if k!=\"not_linked\"}=={k:v for k,v in y.items() if k!=\"not_linked\"}\nprint(\"Verified exactly four not_linked removals: \"+\", \".join(changed))'\"'\""
+]

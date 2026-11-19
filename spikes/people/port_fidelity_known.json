@@ -1,0 +1,363 @@
+{
+ "note": "Port fidelity (port_fidelity.py): each difference between the Swift pipeline and facts.py on the same answers, investigated, with the rule that makes Swift decide differently on purpose. Keyed '<set> <mode> <story>#<order> <item>' (or 'h2 time-model - <question>'), with the exact value on each side: an entry excuses only that difference, and one that no longer occurs fails the gate. Phase 13a.2 Gates step. accepted_points: aggregate differences over 1 point the author accepted (each with its reason and who accepted it); the author accepted the four of the Gates step's preparation on 19 November 2026; two follow from the fix round they asked for.",
+ "rules": {
+  "alias": "\u00a711.4 alias trust: a trusted memory's roster leaves out people named so far only in untrusted memories, so the trusted memories' person is another entity and the phrase has more holders (facts.py has no alias trust). Same person.",
+  "untrusted_episode": "\u00a711.4: the only episode the link rests on has only untrusted evidence, so the basis is untrusted (facts.py says sole_known). Same person.",
+  "untrusted_rules_out": "\u00a711.4/\u00a711.9 trust: an untrusted memory never resolves a trusted memory's phrase nor rules a holder out ('only trusted evidence does either'), so an earlier reference stays undecided where facts.py used an agent's note. A miss, never a wrong link.",
+  "label": "\u00a711.4 labels: a fact's label is the latest trusted statement's (facts.py keeps the first), which changes the phrase's label class and so its holders or uniqueness. Same person.",
+  "stale": "13a.1: a decision is invalidated when its holders change, and the re-read's answer replaces it (facts.py kept its earlier group decision). Both are misses, not wrong links.",
+  "quote": "13a.1 language layer, failing closed: a role phrase that may be quoted speech is skipped (facts.py linked it to someone else, also not a link to a person).",
+  "intent": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer.",
+  "daycue": "\u00a711.4: a day preposition next to the phrase is a time cue ('my landlord on 9 June 2023'); facts.py doesn't read it and links the current holder, which the story forbids. Swift is right.",
+  "schedule": "When a phrase is sent to the reader and when code resolves it depends on the holders at reading time and on reconciliation's schedule (13a.2's queue); a stored decision keeps its basis (context) where code alone would say sole_known, in the other order for each pipeline. Same person.",
+  "org_containment": "\u00a711.4 organizations: one name inside another ('Bracken', 'Bracken Systems') is a merge suggestion, never merged, so Swift keeps two entities whose episodes overlap and tells the answer; facts.py merges them by containment and answers. Never a wrong answer.",
+  "lexicon_recording": "13a.2's fix round added 'supervisor', singular 'parent' and the class 'client contact' to both registries. The spike's recorded facts.py lines (results-h3b) predate them, so facts.py never detected these phrases there; the Swift replay of the same recorded answers detects them and resolves them in code (named, sole_known, or candidates when it can't tell). Never a wrong link. The mixed gold play, rerun through facts.py with the new registry, agrees with Swift exactly."
+ },
+ "differences": [
+  {
+   "at": "astra gold a06#0 link m4 role 0",
+   "rule": "label",
+   "python": "sole_known Quinn Patel",
+   "swift": "context Quinn Patel",
+   "reason": "\u00a711.4 labels: a fact's label is the latest trusted statement's (facts.py keeps the first), which changes the phrase's label class and so its holders or uniqueness. Same person."
+  },
+  {
+   "at": "astra gold a19#0 link m2 role 57",
+   "rule": "quote",
+   "python": "someone_else -",
+   "swift": null,
+   "reason": "13a.1 language layer, failing closed: a role phrase that may be quoted speech is skipped (facts.py linked it to someone else, also not a link to a person)."
+  },
+  {
+   "at": "astra gold a19#1 link m2 role 57",
+   "rule": "quote",
+   "python": "someone_else -",
+   "swift": null,
+   "reason": "13a.1 language layer, failing closed: a role phrase that may be quoted speech is skipped (facts.py linked it to someone else, also not a link to a person)."
+  },
+  {
+   "at": "astra recorded a19#0 link m2 role 57",
+   "rule": "quote",
+   "python": "someone_else -",
+   "swift": null,
+   "reason": "13a.1 language layer, failing closed: a role phrase that may be quoted speech is skipped (facts.py linked it to someone else, also not a link to a person)."
+  },
+  {
+   "at": "astra recorded a19#1 link m2 role 57",
+   "rule": "quote",
+   "python": "someone_else -",
+   "swift": null,
+   "reason": "13a.1 language layer, failing closed: a role phrase that may be quoted speech is skipped (facts.py linked it to someone else, also not a link to a person)."
+  },
+  {
+   "at": "h2 time-model - w03",
+   "rule": "org_containment",
+   "python": "right",
+   "swift": "told_decidable",
+   "reason": "\u00a711.4 organizations: one name inside another ('Bracken', 'Bracken Systems') is a merge suggestion, never merged, so Swift keeps two entities whose episodes overlap and tells the answer; facts.py merges them by containment and answers. Never a wrong answer."
+  },
+  {
+   "at": "h2 time-model - w04",
+   "rule": "org_containment",
+   "python": "right",
+   "swift": "told_decidable",
+   "reason": "\u00a711.4 organizations: one name inside another ('Bracken', 'Bracken Systems') is a merge suggestion, never merged, so Swift keeps two entities whose episodes overlap and tells the answer; facts.py merges them by containment and answers. Never a wrong answer."
+  },
+  {
+   "at": "main gold s14#0 link m2 role 0",
+   "rule": "alias",
+   "python": "stated_unique Joana",
+   "swift": "context Joana",
+   "reason": "\u00a711.4 alias trust: a trusted memory's roster leaves out people named so far only in untrusted memories, so the trusted memories' person is another entity and the phrase has more holders (facts.py has no alias trust). Same person."
+  },
+  {
+   "at": "main recorded s02#0 link m2 role 0",
+   "rule": "stale",
+   "python": "group group:sibling:sister",
+   "swift": "candidates -",
+   "reason": "13a.1: a decision is invalidated when its holders change, and the re-read's answer replaces it (facts.py kept its earlier group decision). Both are misses, not wrong links."
+  },
+  {
+   "at": "main recorded s09#0 link m3 role 0",
+   "rule": "label",
+   "python": "sole_known Clara",
+   "swift": "stated_unique Clara",
+   "reason": "\u00a711.4 labels: a fact's label is the latest trusted statement's (facts.py keeps the first), which changes the phrase's label class and so its holders or uniqueness. Same person."
+  },
+  {
+   "at": "main recorded s14#0 link m2 role 0",
+   "rule": "alias",
+   "python": "stated_unique Joana",
+   "swift": "context Joana",
+   "reason": "\u00a711.4 alias trust: a trusted memory's roster leaves out people named so far only in untrusted memories, so the trusted memories' person is another entity and the phrase has more holders (facts.py has no alias trust). Same person."
+  },
+  {
+   "at": "main recorded s15#0 link m2 role 0",
+   "rule": "untrusted_episode",
+   "python": "sole_known Marco",
+   "swift": "untrusted Marco",
+   "reason": "\u00a711.4: the only episode the link rests on has only untrusted evidence, so the basis is untrusted (facts.py says sole_known). Same person."
+  },
+  {
+   "at": "main recorded s16#0 link m3 role 0",
+   "rule": "stale",
+   "python": "group group:sibling:sister",
+   "swift": "candidates -",
+   "reason": "13a.1: a decision is invalidated when its holders change, and the re-read's answer replaces it (facts.py kept its earlier group decision). Both are misses, not wrong links."
+  },
+  {
+   "at": "mixed recorded x03#0 timeline q2",
+   "rule": "intent",
+   "python": "told_decidable",
+   "swift": "miss",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "mixed recorded x03#1 timeline q2",
+   "rule": "intent",
+   "python": "right_gap",
+   "swift": "miss",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "mixed recorded x05#0 timeline q1",
+   "rule": "intent",
+   "python": "right",
+   "swift": "miss",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "mixed recorded x05#1 timeline q1",
+   "rule": "intent",
+   "python": "right",
+   "swift": "miss",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "mixed recorded x06#0 timeline q1",
+   "rule": "intent",
+   "python": "right",
+   "swift": "miss",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "mixed recorded x06#0 timeline q2",
+   "rule": "intent",
+   "python": "right",
+   "swift": "miss",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "mixed recorded x07#0 timeline q2",
+   "rule": "intent",
+   "python": "told_decidable",
+   "swift": "miss",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "mixed recorded x07#1 timeline q2",
+   "rule": "intent",
+   "python": "right_gap",
+   "swift": "miss",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "mixed recorded x09#0 timeline q1",
+   "rule": "intent",
+   "python": "told",
+   "swift": "told_no_intent",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "mixed recorded x09#0 timeline q2",
+   "rule": "intent",
+   "python": "right",
+   "swift": "miss",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "mixed recorded x09#1 timeline q1",
+   "rule": "intent",
+   "python": "told",
+   "swift": "told_no_intent",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "mixed recorded x09#1 timeline q2",
+   "rule": "intent",
+   "python": "right",
+   "swift": "miss",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "mixed recorded x10#0 timeline q2",
+   "rule": "intent",
+   "python": "right",
+   "swift": "miss",
+   "reason": "\u00a711.7: the timeline intent grammar fails closed (narrowed after 13a.1 round 17), so the question gets no intent: a miss, never a wrong answer."
+  },
+  {
+   "at": "persons gold p06#0 link m3 role 0",
+   "rule": "daycue",
+   "python": "sole_known Ivo",
+   "swift": "context Hana",
+   "reason": "\u00a711.4: a day preposition next to the phrase is a time cue ('my landlord on 9 June 2023'); facts.py doesn't read it and links the current holder, which the story forbids. Swift is right."
+  },
+  {
+   "at": "persons gold p06#1 link m3 role 0",
+   "rule": "daycue",
+   "python": "sole_known Ivo",
+   "swift": "context Hana",
+   "reason": "\u00a711.4: a day preposition next to the phrase is a time cue ('my landlord on 9 June 2023'); facts.py doesn't read it and links the current holder, which the story forbids. Swift is right."
+  },
+  {
+   "at": "persons gold p13#1 link m3 role 0",
+   "rule": "alias",
+   "python": "sole_known Quinn",
+   "swift": "context Quinn",
+   "reason": "\u00a711.4 alias trust: a trusted memory's roster leaves out people named so far only in untrusted memories, so the trusted memories' person is another entity and the phrase has more holders (facts.py has no alias trust). Same person."
+  },
+  {
+   "at": "persons gold p28#0 link m5 role 0",
+   "rule": "schedule",
+   "python": "sole_known Pia",
+   "swift": "context Pia",
+   "reason": "When a phrase is sent to the reader and when code resolves it depends on the holders at reading time and on reconciliation's schedule (13a.2's queue); a stored decision keeps its basis (context) where code alone would say sole_known, in the other order for each pipeline. Same person."
+  },
+  {
+   "at": "persons gold p28#1 link m5 role 0",
+   "rule": "schedule",
+   "python": "context Pia",
+   "swift": "sole_known Pia",
+   "reason": "When a phrase is sent to the reader and when code resolves it depends on the holders at reading time and on reconciliation's schedule (13a.2's queue); a stored decision keeps its basis (context) where code alone would say sole_known, in the other order for each pipeline. Same person."
+  },
+  {
+   "at": "persons gold p42#0 link m1 role 0",
+   "rule": "untrusted_rules_out",
+   "python": "sole_known Nadia",
+   "swift": "candidates -",
+   "reason": "\u00a711.4/\u00a711.9 trust: an untrusted memory never resolves a trusted memory's phrase nor rules a holder out ('only trusted evidence does either'), so an earlier reference stays undecided where facts.py used an agent's note. A miss, never a wrong link."
+  },
+  {
+   "at": "persons gold p42#0 link m5 role 9",
+   "rule": "schedule",
+   "python": "sole_known Nadia",
+   "swift": "context Nadia",
+   "reason": "When a phrase is sent to the reader and when code resolves it depends on the holders at reading time and on reconciliation's schedule (13a.2's queue); a stored decision keeps its basis (context) where code alone would say sole_known, in the other order for each pipeline. Same person."
+  },
+  {
+   "at": "persons gold p42#0 link m6 role 26",
+   "rule": "untrusted_rules_out",
+   "python": "sole_known Owen",
+   "swift": "candidates -",
+   "reason": "\u00a711.4/\u00a711.9 trust: an untrusted memory never resolves a trusted memory's phrase nor rules a holder out ('only trusted evidence does either'), so an earlier reference stays undecided where facts.py used an agent's note. A miss, never a wrong link."
+  },
+  {
+   "at": "persons gold p42#1 link m5 role 9",
+   "rule": "schedule",
+   "python": "context Nadia",
+   "swift": "sole_known Nadia",
+   "reason": "When a phrase is sent to the reader and when code resolves it depends on the holders at reading time and on reconciliation's schedule (13a.2's queue); a stored decision keeps its basis (context) where code alone would say sole_known, in the other order for each pipeline. Same person."
+  },
+  {
+   "at": "h2 time-model - w05",
+   "rule": "org_containment",
+   "python": "right",
+   "swift": "told_decidable",
+   "reason": "\u00a711.4 organizations: one name inside another ('Bracken', 'Bracken Systems') is a merge suggestion, never merged, so Swift keeps two entities whose episodes overlap and tells the answer; facts.py merges them by containment and answers. Never a wrong answer. Since 13a.2's fix round an answer that names one of two holders that may be one organization is told (\u00a711.6), even where the other reading agrees."
+  },
+  {
+   "at": "mixed recorded x03#0 link m3 role 94",
+   "rule": "lexicon_recording",
+   "python": null,
+   "swift": "named Lina Moss",
+   "reason": "13a.2's fix round added 'supervisor', singular 'parent' and the class 'client contact' to both registries. The spike's recorded facts.py lines (results-h3b) predate them, so facts.py never detected these phrases there; the Swift replay of the same recorded answers detects them and resolves them in code (named, sole_known, or candidates when it can't tell). Never a wrong link. The mixed gold play, rerun through facts.py with the new registry, agrees with Swift exactly."
+  },
+  {
+   "at": "mixed recorded x03#0 link m4 role 101",
+   "rule": "lexicon_recording",
+   "python": null,
+   "swift": "candidates -",
+   "reason": "13a.2's fix round added 'supervisor', singular 'parent' and the class 'client contact' to both registries. The spike's recorded facts.py lines (results-h3b) predate them, so facts.py never detected these phrases there; the Swift replay of the same recorded answers detects them and resolves them in code (named, sole_known, or candidates when it can't tell). Never a wrong link. The mixed gold play, rerun through facts.py with the new registry, agrees with Swift exactly."
+  },
+  {
+   "at": "mixed recorded x03#1 link m3 role 94",
+   "rule": "lexicon_recording",
+   "python": null,
+   "swift": "named Lina Moss",
+   "reason": "13a.2's fix round added 'supervisor', singular 'parent' and the class 'client contact' to both registries. The spike's recorded facts.py lines (results-h3b) predate them, so facts.py never detected these phrases there; the Swift replay of the same recorded answers detects them and resolves them in code (named, sole_known, or candidates when it can't tell). Never a wrong link. The mixed gold play, rerun through facts.py with the new registry, agrees with Swift exactly."
+  },
+  {
+   "at": "mixed recorded x03#1 link m4 role 101",
+   "rule": "lexicon_recording",
+   "python": null,
+   "swift": "candidates -",
+   "reason": "13a.2's fix round added 'supervisor', singular 'parent' and the class 'client contact' to both registries. The spike's recorded facts.py lines (results-h3b) predate them, so facts.py never detected these phrases there; the Swift replay of the same recorded answers detects them and resolves them in code (named, sole_known, or candidates when it can't tell). Never a wrong link. The mixed gold play, rerun through facts.py with the new registry, agrees with Swift exactly."
+  },
+  {
+   "at": "mixed recorded x06#0 link m4 role 111",
+   "rule": "lexicon_recording",
+   "python": null,
+   "swift": "sole_known Cora Finch",
+   "reason": "13a.2's fix round added 'supervisor', singular 'parent' and the class 'client contact' to both registries. The spike's recorded facts.py lines (results-h3b) predate them, so facts.py never detected these phrases there; the Swift replay of the same recorded answers detects them and resolves them in code (named, sole_known, or candidates when it can't tell). Never a wrong link. The mixed gold play, rerun through facts.py with the new registry, agrees with Swift exactly."
+  },
+  {
+   "at": "mixed recorded x09#0 link m4 role 0",
+   "rule": "lexicon_recording",
+   "python": null,
+   "swift": "named Nell Vale",
+   "reason": "13a.2's fix round added 'supervisor', singular 'parent' and the class 'client contact' to both registries. The spike's recorded facts.py lines (results-h3b) predate them, so facts.py never detected these phrases there; the Swift replay of the same recorded answers detects them and resolves them in code (named, sole_known, or candidates when it can't tell). Never a wrong link. The mixed gold play, rerun through facts.py with the new registry, agrees with Swift exactly."
+  },
+  {
+   "at": "mixed recorded x09#1 link m4 role 0",
+   "rule": "lexicon_recording",
+   "python": null,
+   "swift": "named Nell Vale",
+   "reason": "13a.2's fix round added 'supervisor', singular 'parent' and the class 'client contact' to both registries. The spike's recorded facts.py lines (results-h3b) predate them, so facts.py never detected these phrases there; the Swift replay of the same recorded answers detects them and resolves them in code (named, sole_known, or candidates when it can't tell). Never a wrong link. The mixed gold play, rerun through facts.py with the new registry, agrees with Swift exactly."
+  },
+  {
+   "at": "mixed recorded x10#0 link m3 role 91",
+   "rule": "lexicon_recording",
+   "python": null,
+   "swift": "named Rowan Pike",
+   "reason": "13a.2's fix round added 'supervisor', singular 'parent' and the class 'client contact' to both registries. The spike's recorded facts.py lines (results-h3b) predate them, so facts.py never detected these phrases there; the Swift replay of the same recorded answers detects them and resolves them in code (named, sole_known, or candidates when it can't tell). Never a wrong link. The mixed gold play, rerun through facts.py with the new registry, agrees with Swift exactly."
+  }
+ ],
+ "accepted_points": [
+  {
+   "pair": "main recorded",
+   "metric": "decidable linked right",
+   "points": -1.25,
+   "reason": "The stale-decision rule (13a.1): a decision invalidated when its holders change is replaced by its re-read's answer; two misses, no wrong link.",
+   "accepted_by": "the author, 19 November 2026"
+  },
+  {
+   "pair": "persons gold",
+   "metric": "sole_known right",
+   "points": 4.761904761904759,
+   "reason": "Swift better: the day cue (\u00a711.4) keeps 'my landlord on 9 June 2023' off the current holder, which facts.py links wrongly.",
+   "accepted_by": "the author, 19 November 2026"
+  },
+  {
+   "pair": "mixed recorded",
+   "metric": "timeline decidable right",
+   "points": -32.142857142857146,
+   "reason": "The timeline grammar fails closed (\u00a711.7) and the fix round's refusals (\u00a711.6): misses and told answers, never a wrong one. The timeline is measured, not qualified, in 13a.2.",
+   "accepted_by": "the author, 19 November 2026"
+  },
+  {
+   "pair": "h2 convert",
+   "metric": "timeline decidable right",
+   "points": -22.727272727272727,
+   "reason": "The grammar failing closed, organization containment (\u00a711.4) and the fix round's alias refusal (w05): misses and told answers, never a wrong one. Accepted at -18 points; the fix round the author asked for moved it (w05 is now told). The timeline is measured, not qualified, in 13a.2.",
+   "accepted_by": "the author, 19 November 2026 (at -18; the new value follows from the fix round they approved, to confirm)"
+  },
+  {
+   "pair": "mixed recorded",
+   "metric": "decidable linked right",
+   "points": -3.172413793103445,
+   "reason": "The lexicon words the author asked for: Swift's denominator now has mixed's eight references with the new words (six linked right, two left as candidates), which facts.py's older recording never detected. The gold play agrees exactly.",
+   "accepted_by": "follows from the author's lexicon decision of 19 November 2026, to confirm"
+  }
+ ]
+}

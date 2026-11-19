@@ -150,6 +150,25 @@
    "boyfriend",
    "girlfriend"
   ],
+  "compound_heads": [
+   "company",
+   "companies",
+   "firm",
+   "organization",
+   "organisation",
+   "group",
+   "account",
+   "process",
+   "node",
+   "class",
+   "element",
+   "directory",
+   "folder",
+   "app",
+   "empresa",
+   "compañía",
+   "compania"
+  ],
   "former_prefixes": [
    "ex-",
    "ex "
@@ -418,6 +437,13 @@
       "padre",
       "stepdad",
       "stepfather"
+     ]
+    },
+    {
+     "cls": null,
+     "generic": true,
+     "words": [
+      "parent"
      ]
     },
     {
@@ -762,7 +788,9 @@
       "boss",
       "manager",
       "jefe",
-      "jefa"
+      "jefa",
+      "supervisor",
+      "supervisora"
      ]
     }
    ],
@@ -916,6 +944,12 @@
      "cls": "landlord",
      "words": [
       "landlord"
+     ]
+    },
+    {
+     "cls": "client contact",
+     "words": [
+      "client contact"
      ]
     }
    ],

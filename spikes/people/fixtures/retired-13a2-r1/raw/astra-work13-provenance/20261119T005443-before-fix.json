@@ -1,0 +1,1405 @@
+{
+  "user_name": "Avery Quill",
+  "user_aliases": ["A. Quill"],
+  "stories": [
+    {
+      "id": "w01",
+      "title": "A promotion, a side business, and an invented departure",
+      "traps": ["untrusted_end", "concurrent_slots", "promotion", "freelance_clients", "vendor", "precision"],
+      "people": [
+        {"id": "p1", "names": ["Robin Shah"], "group_type": null, "group_label": null}
+      ],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I worked at Harbor Works as an operations assistant from 2016 to 2018. I started my full-time job as an analyst at Alder Systems in March 2019.",
+          "written": "2019-04-02",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Harbor Works", "org": "Harbor Works", "relation": "employer"},
+            {"surface": "Alder Systems", "org": "Alder Systems", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Harbor Works", "kind": "employee", "title": "operations assistant", "status": "former", "polarity": "positive", "start": "2016", "end": "2018", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Alder Systems", "kind": "employee", "title": "analyst", "status": "current", "polarity": "positive", "start": "March 2019", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m2",
+          "text": "In 2020 I started my freelance business, Kite Desk, alongside my day job. I am its owner and designer. My first client, Cedar Theatre, hired the business in 2020 and is still a client. I rent a desk from Loom Rooms; it is only my coworking provider.",
+          "written": "2020-11-18",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Kite Desk", "org": "Kite Desk", "relation": "self_employed"},
+            {"surface": "Cedar Theatre", "org": "Cedar Theatre", "relation": "client"},
+            {"surface": "Loom Rooms", "org": "Loom Rooms", "relation": "vendor"}
+          ],
+          "jobs": [
+            {"org": "Kite Desk", "kind": "self_employed", "title": "owner and designer", "status": "current", "polarity": "positive", "start": "2020", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Cedar Theatre", "kind": "client", "title": null, "status": "current", "polarity": "positive", "start": "2020", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m3",
+          "text": "At Alder Systems I was promoted to senior analyst in January 2021. My employment still dates from March 2019. My manager, Robin Shah, approved the promotion.",
+          "written": "2021-02-03",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Robin Shah", "person": "p1", "of": []}],
+          "roles": [{"surface": "My manager", "person": "p1", "resolvable": true}],
+          "facts": [
+            {"person": "p1", "type": "manager", "label": "manager", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null}
+          ],
+          "organizations": [{"surface": "Alder Systems", "org": "Alder Systems", "relation": "employer"}],
+          "jobs": [
+            {"org": "Alder Systems", "kind": "employee", "title": "senior analyst", "status": "current", "polarity": "positive", "start": "March 2019", "end": null, "time": "January 2021", "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m4",
+          "text": "A. Quill left Alder Systems in December 2022 and started as a strategist at Vela Metrics in January 2023.",
+          "written": "2023-02-10",
+          "source": "agent",
+          "sensitivity": "internal",
+          "names": [{"surface": "A. Quill", "person": "user", "of": []}],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Alder Systems", "org": "Alder Systems", "relation": "employer"},
+            {"surface": "Vela Metrics", "org": "Vela Metrics", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Alder Systems", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "December 2022", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Vela Metrics", "kind": "employee", "title": "strategist", "status": "current", "polarity": "positive", "start": "January 2023", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m5",
+          "text": "I am still continuously employed at Alder Systems as senior analyst, and Kite Desk remains my active side business. I have never worked at Vela Metrics. My Cedar Theatre client engagement ended on 30 June 2024.",
+          "written": "2024-07-05",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Alder Systems", "org": "Alder Systems", "relation": "employer"},
+            {"surface": "Kite Desk", "org": "Kite Desk", "relation": "self_employed"},
+            {"surface": "Vela Metrics", "org": "Vela Metrics", "relation": "other"},
+            {"surface": "Cedar Theatre", "org": "Cedar Theatre", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Alder Systems", "kind": "employee", "title": "senior analyst", "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Kite Desk", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Vela Metrics", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Cedar Theatre", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "30 June 2024", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        }
+      ],
+      "orders": [["m4", "m2", "m5", "m1", "m3"]],
+      "timeline": [
+        {"org": "Harbor Works", "role": "operations assistant", "start": "2016", "end": "2018", "kind": "employee", "memories": ["m1"]},
+        {"org": "Alder Systems", "role": "analyst; senior analyst from 2021-01", "start": "2019-03", "end": "", "kind": "employee", "memories": ["m1", "m3", "m5"]},
+        {"org": "Kite Desk", "role": "owner and designer", "start": "2020", "end": "", "kind": "self_employed", "memories": ["m2", "m5"]},
+        {"org": "Cedar Theatre", "role": "freelance client engagement", "start": "2020", "end": "2024-06-30", "kind": "client", "memories": ["m2", "m5"]},
+        {"org": "Loom Rooms", "role": "coworking provider", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "queries": [
+        {"id": "q1", "kind": "year", "query": "Who was my employer in November 2019?", "answer_org": "Alder Systems"},
+        {"id": "q2", "kind": "current", "query": "What's my current day-job employer?", "answer_org": "Alder Systems"},
+        {"id": "q3", "kind": "current", "query": "Which freelance business am I still running?", "answer_org": "Kite Desk"},
+        {"id": "q4", "kind": "role_in_stint", "query": "What title did I get in my January 2021 promotion at Alder?", "answer_org": ""}
+      ]
+    },
+    {
+      "id": "w02",
+      "title": "Returning to a laboratory after study and another employer",
+      "traps": ["rehire", "promotion", "gap", "import", "renamed", "precision", "vendor"],
+      "people": [
+        {"id": "p1", "names": ["Ellis Park"], "group_type": null, "group_label": null}
+      ],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I spent all of 2017 studying full time without a job. In January 2018 I joined Morrow Health as a reporting analyst, my first job after that study year.",
+          "written": "2018-02-11",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [{"surface": "Morrow Health", "org": "Morrow Health", "relation": "employer"}],
+          "jobs": [
+            {"org": "Morrow Health", "kind": "employee", "title": "reporting analyst", "status": "current", "polarity": "positive", "start": "January 2018", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m2",
+          "text": "I left Morrow Health in December 2020. My next job was a return to Fenwick Laboratories, also called Fenwick Lab, on 1 February 2021 as a research coordinator.",
+          "written": "2021-02-09",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Morrow Health", "org": "Morrow Health", "relation": "employer"},
+            {"surface": "Fenwick Laboratories", "org": "Fenwick Laboratories", "relation": "employer"},
+            {"surface": "Fenwick Lab", "org": "Fenwick Laboratories", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Morrow Health", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "December 2020", "time": null, "preceded_by": null, "followed_by": "Fenwick Laboratories", "also_called": null},
+            {"org": "Fenwick Laboratories", "kind": "employee", "title": "research coordinator", "status": "current", "polarity": "positive", "start": "1 February 2021", "end": null, "time": null, "preceded_by": "Morrow Health", "followed_by": null, "also_called": "Fenwick Lab"}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m3",
+          "text": "Imported journal entry dated 2017-01-04: My first stint at Fenwick Lab was as a lab assistant from 2014 to 2016. I left that job to study, and have not had another job since.",
+          "written": "2024-06-15",
+          "source": "import",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [{"surface": "Fenwick Lab", "org": "Fenwick Laboratories", "relation": "employer"}],
+          "jobs": [
+            {"org": "Fenwick Lab", "kind": "employee", "title": "lab assistant", "status": "former", "polarity": "positive", "start": "2014", "end": "2016", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m4",
+          "text": "I bought a conference flight from Cinder Air. My colleague Ellis Park booked the same route. The airline is just a travel vendor.",
+          "written": "2025-03-12",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [{"surface": "Ellis Park", "person": "p1", "of": []}],
+          "roles": [{"surface": "My colleague", "person": "p1", "resolvable": true}],
+          "facts": [
+            {"person": "p1", "type": "colleague", "label": "colleague", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null}
+          ],
+          "organizations": [{"surface": "Cinder Air", "org": "Cinder Air", "relation": "vendor"}],
+          "jobs": [],
+          "not_linked": []
+        },
+        {
+          "id": "m5",
+          "text": "I am still in my second stint at Fenwick Laboratories. I was promoted from research coordinator to research lead in September 2023, without leaving or being rehired again.",
+          "written": "2025-09-20",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [{"surface": "Fenwick Laboratories", "org": "Fenwick Laboratories", "relation": "employer"}],
+          "jobs": [
+            {"org": "Fenwick Laboratories", "kind": "employee", "title": "research coordinator", "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Fenwick Laboratories", "kind": "employee", "title": "research lead", "status": "current", "polarity": "positive", "start": null, "end": null, "time": "September 2023", "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        }
+      ],
+      "orders": [["m3", "m5", "m1", "m4", "m2"]],
+      "timeline": [
+        {"org": "Fenwick Laboratories", "role": "lab assistant", "start": "2014", "end": "2016", "kind": "employee", "memories": ["m3"]},
+        {"org": "Full-time study", "role": "student; no employment", "start": "2017", "end": "2017", "kind": "study", "memories": ["m1", "m3"]},
+        {"org": "Morrow Health", "role": "reporting analyst", "start": "2018-01", "end": "2020-12", "kind": "employee", "memories": ["m1", "m2"]},
+        {"org": "Fenwick Laboratories", "role": "research coordinator; research lead from 2023-09", "start": "2021-02-01", "end": "", "kind": "employee", "memories": ["m2", "m5"]},
+        {"org": "Cinder Air", "role": "travel vendor", "start": "", "end": "", "kind": "vendor", "memories": ["m4"]}
+      ],
+      "queries": [
+        {"id": "q1", "kind": "before", "query": "Where did I work just before returning to Fenwick Lab?", "answer_org": "Morrow Health"},
+        {"id": "q2", "kind": "after", "query": "What was my first job after my original Fenwick stint and the study break?", "answer_org": "Morrow Health"},
+        {"id": "q3", "kind": "year", "query": "Where was I employed in 2015?", "answer_org": "Fenwick Laboratories"},
+        {"id": "q4", "kind": "role_in_stint", "query": "What was my title when I first joined Fenwick, before the later return?", "answer_org": ""}
+      ]
+    },
+    {
+      "id": "w03",
+      "title": "Un empleo y un negocio independiente",
+      "traps": ["spanish", "concurrent_slots", "freelance_clients", "vendor", "untrusted_end", "negative_wording"],
+      "people": [
+        {"id": "p1", "names": ["Noa Quill"], "group_type": null, "group_label": null}
+      ],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "Desde 2018 trabajo en Solano Datos. Mi puesto es especialista de soporte y este es mi empleo de jornada completa.",
+          "written": "2019-01-14",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [{"surface": "Solano Datos", "org": "Solano Datos", "relation": "employer"}],
+          "jobs": [
+            {"org": "Solano Datos", "kind": "employee", "title": "especialista de soporte", "status": "current", "polarity": "positive", "start": "2018", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m2",
+          "text": "En 2020 abrí mi negocio freelance Tinta Norte, donde hago diseño editorial. Lo llevo por las tardes, además de mi empleo. Faro Teatro es cliente desde 2020; me contrata a través del negocio.",
+          "written": "2020-10-08",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Tinta Norte", "org": "Tinta Norte", "relation": "self_employed"},
+            {"surface": "Faro Teatro", "org": "Faro Teatro", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Tinta Norte", "kind": "self_employed", "title": "diseño editorial", "status": "current", "polarity": "positive", "start": "2020", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Faro Teatro", "kind": "client", "title": null, "status": "current", "polarity": "positive", "start": "2020", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m3",
+          "text": "Lumbre Museo es otro cliente de mi negocio desde 2021. Mi hermana Noa Quill me recomendó Mesa Común, el coworking al que pago por una mesa; allí no tengo empleo.",
+          "written": "2021-08-21",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [{"surface": "Noa Quill", "person": "p1", "of": []}],
+          "roles": [{"surface": "Mi hermana", "person": "p1", "resolvable": true}],
+          "facts": [
+            {"person": "p1", "type": "sibling", "label": "hermana", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null}
+          ],
+          "organizations": [
+            {"surface": "Lumbre Museo", "org": "Lumbre Museo", "relation": "client"},
+            {"surface": "Mesa Común", "org": "Mesa Común", "relation": "vendor"}
+          ],
+          "jobs": [
+            {"org": "Lumbre Museo", "kind": "client", "title": null, "status": "current", "polarity": "positive", "start": "2021", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Mesa Común", "kind": "employee", "title": null, "status": "current", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m4",
+          "text": "The user closed Tinta Norte in 2022 and became a full-time employee of Faro Teatro in 2023.",
+          "written": "2023-09-01",
+          "source": "agent",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Tinta Norte", "org": "Tinta Norte", "relation": "self_employed"},
+            {"surface": "Faro Teatro", "org": "Faro Teatro", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Tinta Norte", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2022", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Faro Teatro", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2023", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m5",
+          "text": "Sigo en Solano Datos sin interrupciones y Tinta Norte sigue activo como negocio paralelo. Faro Teatro fue únicamente cliente: el encargo terminó en 2022 y nunca tuve empleo allí. El trabajo freelance para Lumbre Museo terminó en 2023.",
+          "written": "2024-04-19",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Solano Datos", "org": "Solano Datos", "relation": "employer"},
+            {"surface": "Tinta Norte", "org": "Tinta Norte", "relation": "self_employed"},
+            {"surface": "Faro Teatro", "org": "Faro Teatro", "relation": "client"},
+            {"surface": "Lumbre Museo", "org": "Lumbre Museo", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Solano Datos", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Tinta Norte", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Faro Teatro", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2022", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Faro Teatro", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Lumbre Museo", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2023", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        }
+      ],
+      "orders": [["m4", "m5", "m1", "m3", "m2"]],
+      "timeline": [
+        {"org": "Solano Datos", "role": "especialista de soporte", "start": "2018", "end": "", "kind": "employee", "memories": ["m1", "m5"]},
+        {"org": "Tinta Norte", "role": "diseño editorial", "start": "2020", "end": "", "kind": "self_employed", "memories": ["m2", "m5"]},
+        {"org": "Faro Teatro", "role": "encargo freelance", "start": "2020", "end": "2022", "kind": "client", "memories": ["m2", "m5"]},
+        {"org": "Lumbre Museo", "role": "encargo freelance", "start": "2021", "end": "2023", "kind": "client", "memories": ["m3", "m5"]},
+        {"org": "Mesa Común", "role": "coworking", "start": "", "end": "", "kind": "vendor", "memories": ["m3"]}
+      ],
+      "queries": [
+        {"id": "q1", "kind": "current", "query": "¿Cuál es mi empleador de jornada completa ahora?", "answer_org": "Solano Datos"},
+        {"id": "q2", "kind": "current", "query": "¿Qué negocio freelance sigo llevando?", "answer_org": "Tinta Norte"},
+        {"id": "q3", "kind": "year", "query": "In June 2022, who employed me for my day job?", "answer_org": "Solano Datos"},
+        {"id": "q4", "kind": "negative", "query": "¿Quién me recomendó Mesa Común?", "answer_org": ""}
+      ]
+    },
+    {
+      "id": "w04",
+      "title": "Relative order survives a late import and an agent reversal",
+      "traps": ["undated_order", "import", "gap", "freelance_clients", "untrusted_end"],
+      "people": [],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "My current and only job is records editor at Delta Records. It was my next job after closing my freelance business, Ink Loom. I do not remember the calendar dates.",
+          "written": "2024-01-10",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Delta Records", "org": "Delta Records", "relation": "employer"},
+            {"surface": "Ink Loom", "org": "Ink Loom", "relation": "self_employed"}
+          ],
+          "jobs": [
+            {"org": "Delta Records", "kind": "employee", "title": "records editor", "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Ink Loom", "followed_by": null, "also_called": null},
+            {"org": "Ink Loom", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Delta Records", "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m2",
+          "text": "Imported undated notebook page: Before Ink Loom, I worked as a copy assistant at Birch Press. I left that employer before starting the business.",
+          "written": "2024-03-02",
+          "source": "import",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Ink Loom", "org": "Ink Loom", "relation": "self_employed"},
+            {"surface": "Birch Press", "org": "Birch Press", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Birch Press", "kind": "employee", "title": "copy assistant", "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Ink Loom", "also_called": null},
+            {"org": "Ink Loom", "kind": "self_employed", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Birch Press", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m3",
+          "text": "Ink Loom was my own editing business, my next work after leaving Birch Press and my last work before Delta Records. During that business period I completed one freelance engagement for Mica Review; it was a client, never my employer.",
+          "written": "2024-05-17",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Ink Loom", "org": "Ink Loom", "relation": "self_employed"},
+            {"surface": "Birch Press", "org": "Birch Press", "relation": "employer"},
+            {"surface": "Delta Records", "org": "Delta Records", "relation": "employer"},
+            {"surface": "Mica Review", "org": "Mica Review", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Ink Loom", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Birch Press", "followed_by": "Delta Records", "also_called": null},
+            {"org": "Birch Press", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Ink Loom", "also_called": null},
+            {"org": "Delta Records", "kind": "employee", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Ink Loom", "followed_by": null, "also_called": null},
+            {"org": "Mica Review", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": "During that business period", "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Mica Review", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m4",
+          "text": "The user left Delta Records and then returned to Birch Press as an editor. Birch Press is the user's current employer.",
+          "written": "2025-02-12",
+          "source": "agent",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Delta Records", "org": "Delta Records", "relation": "employer"},
+            {"surface": "Birch Press", "org": "Birch Press", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Delta Records", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Birch Press", "also_called": null},
+            {"org": "Birch Press", "kind": "employee", "title": "editor", "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Delta Records", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m5",
+          "text": "I have never returned to Birch Press after my single stint there. Between leaving it and opening Ink Loom, I took a study break with no paid work. Delta Records remains my only current job. None of those transitions has a date in my notes.",
+          "written": "2025-04-08",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Birch Press", "org": "Birch Press", "relation": "employer"},
+            {"surface": "Ink Loom", "org": "Ink Loom", "relation": "self_employed"},
+            {"surface": "Delta Records", "org": "Delta Records", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Birch Press", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Ink Loom", "also_called": null},
+            {"org": "Ink Loom", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Birch Press", "followed_by": null, "also_called": null},
+            {"org": "Delta Records", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        }
+      ],
+      "orders": [["m4", "m3", "m5", "m2", "m1"]],
+      "timeline": [
+        {"org": "Birch Press", "role": "copy assistant", "start": "", "end": "", "kind": "employee", "memories": ["m2", "m3", "m5"]},
+        {"org": "Study break", "role": "study without paid work", "start": "", "end": "", "kind": "study", "memories": ["m5"]},
+        {"org": "Ink Loom", "role": "owner of editing business", "start": "", "end": "", "kind": "self_employed", "memories": ["m1", "m2", "m3", "m5"]},
+        {"org": "Mica Review", "role": "freelance client engagement", "start": "", "end": "", "kind": "client", "memories": ["m3"]},
+        {"org": "Delta Records", "role": "records editor", "start": "", "end": "", "kind": "employee", "memories": ["m1", "m3", "m5"]}
+      ],
+      "queries": [
+        {"id": "q1", "kind": "before", "query": "What work did I do immediately before Delta Records?", "answer_org": "Ink Loom"},
+        {"id": "q2", "kind": "after", "query": "What was my next paid work after leaving Birch Press?", "answer_org": "Ink Loom"},
+        {"id": "q3", "kind": "previous", "query": "What was my previous job, counting my own business as a job?", "answer_org": "Ink Loom"},
+        {"id": "q4", "kind": "no_answer", "query": "Where was I working in 2017?", "answer_org": ""}
+      ]
+    },
+    {
+      "id": "w05",
+      "title": "A renamed employer is one continuous job",
+      "traps": ["renamed", "promotion", "precision", "vendor", "negative_wording"],
+      "people": [
+        {"id": "p1", "names": ["Morgan Lee"], "group_type": null, "group_label": null}
+      ],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I started at Vale Analytics in 2015 as a data technician. This is my only job.",
+          "written": "2015-11-09",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [{"surface": "Vale Analytics", "org": "Vale Data Ltd.", "relation": "employer"}],
+          "jobs": [
+            {"org": "Vale Analytics", "kind": "employee", "title": "data technician", "status": "current", "polarity": "positive", "start": "2015", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m2",
+          "text": "Vale Analytics renamed itself Vale Data Ltd. in March 2017. My employment continued unchanged through the rename. In October 2017 I was promoted to data engineer at that same company.",
+          "written": "2017-11-03",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Vale Analytics", "org": "Vale Data Ltd.", "relation": "employer"},
+            {"surface": "Vale Data Ltd.", "org": "Vale Data Ltd.", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Vale Analytics", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": "March 2017", "preceded_by": null, "followed_by": null, "also_called": "Vale Data Ltd."},
+            {"org": "Vale Data Ltd.", "kind": "employee", "title": "data engineer", "status": "current", "polarity": "positive", "start": null, "end": null, "time": "October 2017", "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m3",
+          "text": "My last day at Vale Data Ltd. was 18 December 2020. I had stayed continuously since joining under the old name.",
+          "written": "2020-12-20",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [{"surface": "Vale Data Ltd.", "org": "Vale Data Ltd.", "relation": "employer"}],
+          "jobs": [
+            {"org": "Vale Data Ltd.", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "18 December 2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m4",
+          "text": "My next job after Vale Data Ltd. began at Westmere Tools in January 2021 as a platform engineer. My colleague Morgan Lee helped me buy a monitor from Quartz Supply.",
+          "written": "2021-02-16",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Morgan Lee", "person": "p1", "of": []}],
+          "roles": [{"surface": "My colleague", "person": "p1", "resolvable": true}],
+          "facts": [
+            {"person": "p1", "type": "colleague", "label": "colleague", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null}
+          ],
+          "organizations": [
+            {"surface": "Vale Data Ltd.", "org": "Vale Data Ltd.", "relation": "employer"},
+            {"surface": "Westmere Tools", "org": "Westmere Tools", "relation": "employer"},
+            {"surface": "Quartz Supply", "org": "Quartz Supply", "relation": "vendor"}
+          ],
+          "jobs": [
+            {"org": "Vale Data Ltd.", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Westmere Tools", "also_called": null},
+            {"org": "Westmere Tools", "kind": "employee", "title": "platform engineer", "status": "current", "polarity": "positive", "start": "January 2021", "end": null, "time": null, "preceded_by": "Vale Data Ltd.", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m5",
+          "text": "I still work at Westmere Tools. Quartz Supply has only ever sold me equipment; I have never worked there. Before my latest call with the shop, I found the monitor receipt.",
+          "written": "2024-09-07",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Westmere Tools", "org": "Westmere Tools", "relation": "employer"},
+            {"surface": "Quartz Supply", "org": "Quartz Supply", "relation": "vendor"}
+          ],
+          "jobs": [
+            {"org": "Westmere Tools", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Quartz Supply", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        }
+      ],
+      "orders": [],
+      "timeline": [
+        {"org": "Vale Data Ltd.", "role": "data technician; data engineer from 2017-10", "start": "2015", "end": "2020-12-18", "kind": "employee", "memories": ["m1", "m2", "m3", "m4"]},
+        {"org": "Westmere Tools", "role": "platform engineer", "start": "2021-01", "end": "", "kind": "employee", "memories": ["m4", "m5"]},
+        {"org": "Quartz Supply", "role": "equipment retailer", "start": "", "end": "", "kind": "vendor", "memories": ["m4", "m5"]}
+      ],
+      "queries": [
+        {"id": "q1", "kind": "before", "query": "Which employer came before Westmere Tools?", "answer_org": "Vale Data Ltd."},
+        {"id": "q2", "kind": "after", "query": "Where did I go after leaving Vale Analytics?", "answer_org": "Westmere Tools"},
+        {"id": "q3", "kind": "year", "query": "Where did I work during 2018?", "answer_org": "Vale Data Ltd."},
+        {"id": "q4", "kind": "negative", "query": "What did I find before my latest call with Quartz Supply?", "answer_org": ""}
+      ]
+    },
+    {
+      "id": "w06",
+      "title": "A return to games while the freelance business keeps running",
+      "traps": ["rehire", "concurrent_slots", "gap", "import", "freelance_clients"],
+      "people": [],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I left my salaried job at Juniper Games in June 2016. In July 2016 I started Pixel Ferry, my own freelance illustration business, and I am its illustrator.",
+          "written": "2016-08-03",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Juniper Games", "org": "Juniper Games", "relation": "employer"},
+            {"surface": "Pixel Ferry", "org": "Pixel Ferry", "relation": "self_employed"}
+          ],
+          "jobs": [
+            {"org": "Juniper Games", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "June 2016", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Pixel Ferry", "kind": "self_employed", "title": "illustrator", "status": "current", "polarity": "positive", "start": "July 2016", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m2",
+          "text": "I joined Lakefront Learning as a production artist in February 2018, my next salaried employer after Juniper Games. Pixel Ferry continues on evenings and weekends. Orchard Books has been a client of that business since 2017.",
+          "written": "2018-03-05",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Lakefront Learning", "org": "Lakefront Learning", "relation": "employer"},
+            {"surface": "Juniper Games", "org": "Juniper Games", "relation": "employer"},
+            {"surface": "Pixel Ferry", "org": "Pixel Ferry", "relation": "self_employed"},
+            {"surface": "Orchard Books", "org": "Orchard Books", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Lakefront Learning", "kind": "employee", "title": "production artist", "status": "current", "polarity": "positive", "start": "February 2018", "end": null, "time": null, "preceded_by": "Juniper Games", "followed_by": null, "also_called": null},
+            {"org": "Juniper Games", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Lakefront Learning", "also_called": null},
+            {"org": "Pixel Ferry", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Orchard Books", "kind": "client", "title": null, "status": "current", "polarity": "positive", "start": "2017", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m3",
+          "text": "I finished at Lakefront Learning in December 2020. The Orchard Books client engagement had ended in 2019. Pixel Ferry itself is still operating.",
+          "written": "2020-12-31",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Lakefront Learning", "org": "Lakefront Learning", "relation": "employer"},
+            {"surface": "Orchard Books", "org": "Orchard Books", "relation": "client"},
+            {"surface": "Pixel Ferry", "org": "Pixel Ferry", "relation": "self_employed"}
+          ],
+          "jobs": [
+            {"org": "Lakefront Learning", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "December 2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Orchard Books", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2019", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Pixel Ferry", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m4",
+          "text": "I took all of 2021 off from salaried employment to study animation, while continuing Pixel Ferry. In January 2022 I rejoined Juniper Games as an environment artist, my next salaried job after Lakefront Learning. Both the day job and my business are active now.",
+          "written": "2022-02-13",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Pixel Ferry", "org": "Pixel Ferry", "relation": "self_employed"},
+            {"surface": "Juniper Games", "org": "Juniper Games", "relation": "employer"},
+            {"surface": "Lakefront Learning", "org": "Lakefront Learning", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Pixel Ferry", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": "2021", "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Juniper Games", "kind": "employee", "title": "environment artist", "status": "current", "polarity": "positive", "start": "January 2022", "end": null, "time": null, "preceded_by": "Lakefront Learning", "followed_by": null, "also_called": null},
+            {"org": "Lakefront Learning", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Juniper Games", "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m5",
+          "text": "Imported diary entry dated 2015-09-10: I joined Juniper Games in 2014 as a junior texture artist and still hold that job.",
+          "written": "2025-01-21",
+          "source": "import",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [{"surface": "Juniper Games", "org": "Juniper Games", "relation": "employer"}],
+          "jobs": [
+            {"org": "Juniper Games", "kind": "employee", "title": "junior texture artist", "status": "current", "polarity": "positive", "start": "2014", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        }
+      ],
+      "orders": [["m5", "m4", "m3", "m1", "m2"]],
+      "timeline": [
+        {"org": "Juniper Games", "role": "junior texture artist", "start": "2014", "end": "2016-06", "kind": "employee", "memories": ["m1", "m2", "m5"]},
+        {"org": "Pixel Ferry", "role": "illustrator", "start": "2016-07", "end": "", "kind": "self_employed", "memories": ["m1", "m2", "m3", "m4"]},
+        {"org": "Orchard Books", "role": "freelance client engagement", "start": "2017", "end": "2019", "kind": "client", "memories": ["m2", "m3"]},
+        {"org": "Lakefront Learning", "role": "production artist", "start": "2018-02", "end": "2020-12", "kind": "employee", "memories": ["m2", "m3", "m4"]},
+        {"org": "Animation study", "role": "study break from salaried employment; freelance work continued", "start": "2021", "end": "2021", "kind": "study", "memories": ["m4"]},
+        {"org": "Juniper Games", "role": "environment artist", "start": "2022-01", "end": "", "kind": "employee", "memories": ["m4"]}
+      ],
+      "queries": [
+        {"id": "q1", "kind": "before", "query": "What was my salaried employer before my second stint at Juniper Games?", "answer_org": "Lakefront Learning"},
+        {"id": "q2", "kind": "year", "query": "Who employed me in 2015?", "answer_org": "Juniper Games"},
+        {"id": "q3", "kind": "current", "query": "What is the name of my ongoing freelance business?", "answer_org": "Pixel Ferry"},
+        {"id": "q4", "kind": "role_in_stint", "query": "What role did I return to Juniper Games for in 2022?", "answer_org": ""}
+      ]
+    },
+    {
+      "id": "w07",
+      "title": "Estudios entre dos empleadores",
+      "traps": ["spanish", "gap", "precision", "promotion", "renamed", "vendor", "negative_wording"],
+      "people": [
+        {"id": "p1", "names": ["Mar Soler"], "group_type": null, "group_label": null}
+      ],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "Trabajé en Nube Servicios, también llamada Nube, de 2014 a 2017. Mi puesto era auxiliar de operaciones y ya dejé ese empleo.",
+          "written": "2018-01-08",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Nube Servicios", "org": "Nube Servicios", "relation": "employer"},
+            {"surface": "Nube", "org": "Nube Servicios", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Nube Servicios", "kind": "employee", "title": "auxiliar de operaciones", "status": "former", "polarity": "positive", "start": "2014", "end": "2017", "time": null, "preceded_by": null, "followed_by": null, "also_called": "Nube"}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m2",
+          "text": "Durante todo 2018 estudié a tiempo completo. No tuve empleo ni actividad freelance ese año.",
+          "written": "2019-01-06",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [],
+          "jobs": [],
+          "not_linked": []
+        },
+        {
+          "id": "m3",
+          "text": "Empecé en Campo Salud el 15 de marzo de 2019 como analista de procesos. Fue mi siguiente empleo después de Nube Servicios y del año de estudios.",
+          "written": "2019-03-20",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Campo Salud", "org": "Campo Salud", "relation": "employer"},
+            {"surface": "Nube Servicios", "org": "Nube Servicios", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Campo Salud", "kind": "employee", "title": "analista de procesos", "status": "current", "polarity": "positive", "start": "15 de marzo de 2019", "end": null, "time": null, "preceded_by": "Nube Servicios", "followed_by": null, "also_called": null},
+            {"org": "Nube Servicios", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Campo Salud", "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m4",
+          "text": "Sigo en Campo Salud. En mayo de 2022 pasé a especialista de procesos por promoción interna, sin terminar mi contrato. Mi jefa Mar Soler me dio la noticia.",
+          "written": "2022-06-02",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Mar Soler", "person": "p1", "of": []}],
+          "roles": [{"surface": "Mi jefa", "person": "p1", "resolvable": true}],
+          "facts": [
+            {"person": "p1", "type": "manager", "label": "jefa", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null}
+          ],
+          "organizations": [{"surface": "Campo Salud", "org": "Campo Salud", "relation": "employer"}],
+          "jobs": [
+            {"org": "Campo Salud", "kind": "employee", "title": "especialista de procesos", "status": "current", "polarity": "positive", "start": null, "end": null, "time": "mayo de 2022", "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m5",
+          "text": "Para una conferencia de mi trabajo actual en Campo Salud, compré un vuelo de Alba Vuelos. Antes del vuelo guardé el recibo en la carpeta de gastos. La aerolínea solo es un proveedor.",
+          "written": "2025-02-14",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Campo Salud", "org": "Campo Salud", "relation": "employer"},
+            {"surface": "Alba Vuelos", "org": "Alba Vuelos", "relation": "vendor"}
+          ],
+          "jobs": [
+            {"org": "Campo Salud", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        }
+      ],
+      "orders": [],
+      "timeline": [
+        {"org": "Nube Servicios", "role": "auxiliar de operaciones", "start": "2014", "end": "2017", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Estudios a tiempo completo", "role": "estudios sin trabajo", "start": "2018", "end": "2018", "kind": "study", "memories": ["m2"]},
+        {"org": "Campo Salud", "role": "analista de procesos; especialista de procesos desde 2022-05", "start": "2019-03-15", "end": "", "kind": "employee", "memories": ["m3", "m4", "m5"]},
+        {"org": "Alba Vuelos", "role": "proveedor de vuelos", "start": "", "end": "", "kind": "vendor", "memories": ["m5"]}
+      ],
+      "queries": [
+        {"id": "q1", "kind": "before", "query": "¿Dónde trabajaba antes de Campo Salud?", "answer_org": "Nube Servicios"},
+        {"id": "q2", "kind": "after", "query": "¿Cuál fue mi siguiente empleo después de Nube?", "answer_org": "Campo Salud"},
+        {"id": "q3", "kind": "year", "query": "Where was my job in 2016?", "answer_org": "Nube Servicios"},
+        {"id": "q4", "kind": "negative", "query": "¿Dónde guardé el recibo antes del vuelo de Alba Vuelos?", "answer_org": ""}
+      ]
+    },
+    {
+      "id": "w08",
+      "title": "A studio with two spellings and no calendar dates",
+      "traps": ["undated_order", "freelance_clients", "import", "renamed", "vendor"],
+      "people": [
+        {"id": "p1", "names": ["Dev Rowan"], "group_type": null, "group_label": null}
+      ],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I currently work at Rivet Maps as a documentation specialist. My immediately previous job was running Narrow Path Studio, my freelance business. I have no dates for that transition.",
+          "written": "2023-05-08",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Rivet Maps", "org": "Rivet Maps", "relation": "employer"},
+            {"surface": "Narrow Path Studio", "org": "Narrow Path Studio", "relation": "self_employed"}
+          ],
+          "jobs": [
+            {"org": "Rivet Maps", "kind": "employee", "title": "documentation specialist", "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Narrow Path Studio", "followed_by": null, "also_called": null},
+            {"org": "Narrow Path Studio", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Rivet Maps", "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m2",
+          "text": "Imported undated career sketch: I was an archive assistant at Stone Archive before starting NarrowPath. That business was my next job after leaving the archive.",
+          "written": "2024-02-03",
+          "source": "import",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Stone Archive", "org": "Stone Archive", "relation": "employer"},
+            {"surface": "NarrowPath", "org": "Narrow Path Studio", "relation": "self_employed"}
+          ],
+          "jobs": [
+            {"org": "Stone Archive", "kind": "employee", "title": "archive assistant", "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "NarrowPath", "also_called": null},
+            {"org": "NarrowPath", "kind": "self_employed", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Stone Archive", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m3",
+          "text": "NarrowPath was also called Narrow Path Studio. It was one business, not two jobs. I was its owner and copywriter. I closed it before joining Rivet Maps.",
+          "written": "2024-03-16",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "NarrowPath", "org": "Narrow Path Studio", "relation": "self_employed"},
+            {"surface": "Narrow Path Studio", "org": "Narrow Path Studio", "relation": "self_employed"},
+            {"surface": "Rivet Maps", "org": "Rivet Maps", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "NarrowPath", "kind": "self_employed", "title": "owner and copywriter", "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Rivet Maps", "also_called": "Narrow Path Studio"},
+            {"org": "Rivet Maps", "kind": "employee", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "NarrowPath", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m4",
+          "text": "While running Narrow Path Studio, I completed freelance copywriting engagements for Hush Opera and Echo Museum. Those were clients of my business, not employers. I cannot place either engagement in a calendar year.",
+          "written": "2024-07-20",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Narrow Path Studio", "org": "Narrow Path Studio", "relation": "self_employed"},
+            {"surface": "Hush Opera", "org": "Hush Opera", "relation": "client"},
+            {"surface": "Echo Museum", "org": "Echo Museum", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Narrow Path Studio", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Hush Opera", "kind": "client", "title": "copywriting", "status": "former", "polarity": "positive", "start": null, "end": null, "time": "While running Narrow Path Studio", "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Echo Museum", "kind": "client", "title": "copywriting", "status": "former", "polarity": "positive", "start": null, "end": null, "time": "While running Narrow Path Studio", "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Hush Opera", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Echo Museum", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m5",
+          "text": "Rivet Maps is still my sole job. My friend Dev Rowan recommended Pine Accounts for my tax return, and I paid the firm for that service.",
+          "written": "2025-04-11",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [{"surface": "Dev Rowan", "person": "p1", "of": []}],
+          "roles": [{"surface": "My friend", "person": "p1", "resolvable": true}],
+          "facts": [
+            {"person": "p1", "type": "friend", "label": "friend", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null}
+          ],
+          "organizations": [
+            {"surface": "Rivet Maps", "org": "Rivet Maps", "relation": "employer"},
+            {"surface": "Pine Accounts", "org": "Pine Accounts", "relation": "vendor"}
+          ],
+          "jobs": [
+            {"org": "Rivet Maps", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        }
+      ],
+      "orders": [["m4", "m2", "m5", "m3", "m1"]],
+      "timeline": [
+        {"org": "Stone Archive", "role": "archive assistant", "start": "", "end": "", "kind": "employee", "memories": ["m2"]},
+        {"org": "Narrow Path Studio", "role": "owner and copywriter", "start": "", "end": "", "kind": "self_employed", "memories": ["m1", "m2", "m3", "m4"]},
+        {"org": "Hush Opera", "role": "copywriting", "start": "", "end": "", "kind": "client", "memories": ["m4"]},
+        {"org": "Echo Museum", "role": "copywriting", "start": "", "end": "", "kind": "client", "memories": ["m4"]},
+        {"org": "Rivet Maps", "role": "documentation specialist", "start": "", "end": "", "kind": "employee", "memories": ["m1", "m3", "m5"]},
+        {"org": "Pine Accounts", "role": "tax preparation provider", "start": "", "end": "", "kind": "vendor", "memories": ["m5"]}
+      ],
+      "queries": [
+        {"id": "q1", "kind": "before", "query": "What was I doing for work before Rivet Maps?", "answer_org": "Narrow Path Studio"},
+        {"id": "q2", "kind": "after", "query": "What job came next after Stone Archive?", "answer_org": "Narrow Path Studio"},
+        {"id": "q3", "kind": "current", "query": "Where do I work these days?", "answer_org": "Rivet Maps"},
+        {"id": "q4", "kind": "no_answer", "query": "Was I working at Stone Archive or running the studio in 2019?", "answer_org": ""}
+      ]
+    },
+    {
+      "id": "w09",
+      "title": "The second energy-company stint is still active",
+      "traps": ["rehire", "untrusted_end", "precision", "negative_wording"],
+      "people": [
+        {"id": "p1", "names": ["Sam Vale"], "group_type": null, "group_label": null}
+      ],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I joined Kestrel Energy in 2015 as a scheduling assistant. This is my first job.",
+          "written": "2015-10-12",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [{"surface": "Kestrel Energy", "org": "Kestrel Energy", "relation": "employer"}],
+          "jobs": [
+            {"org": "Kestrel Energy", "kind": "employee", "title": "scheduling assistant", "status": "current", "polarity": "positive", "start": "2015", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m2",
+          "text": "I left Kestrel Energy in December 2018. My next job started at Amber Rail in January 2019 as a logistics analyst.",
+          "written": "2019-02-07",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Kestrel Energy", "org": "Kestrel Energy", "relation": "employer"},
+            {"surface": "Amber Rail", "org": "Amber Rail", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Kestrel Energy", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "December 2018", "time": null, "preceded_by": null, "followed_by": "Amber Rail", "also_called": null},
+            {"org": "Amber Rail", "kind": "employee", "title": "logistics analyst", "status": "current", "polarity": "positive", "start": "January 2019", "end": null, "time": null, "preceded_by": "Kestrel Energy", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m3",
+          "text": "My Amber Rail employment ended in December 2021. I returned to Kestrel Energy on 10 January 2022 as a resource planner; that was my next job.",
+          "written": "2022-01-18",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Amber Rail", "org": "Amber Rail", "relation": "employer"},
+            {"surface": "Kestrel Energy", "org": "Kestrel Energy", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Amber Rail", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "December 2021", "time": null, "preceded_by": null, "followed_by": "Kestrel Energy", "also_called": null},
+            {"org": "Kestrel Energy", "kind": "employee", "title": "resource planner", "status": "current", "polarity": "positive", "start": "10 January 2022", "end": null, "time": null, "preceded_by": "Amber Rail", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m4",
+          "text": "The user ended the second Kestrel Energy stint in 2023 and joined Talon Grid as a planning manager in 2024.",
+          "written": "2024-05-16",
+          "source": "agent",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Kestrel Energy", "org": "Kestrel Energy", "relation": "employer"},
+            {"surface": "Talon Grid", "org": "Talon Grid", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Kestrel Energy", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2023", "time": null, "preceded_by": null, "followed_by": "Talon Grid", "also_called": null},
+            {"org": "Talon Grid", "kind": "employee", "title": "planning manager", "status": "current", "polarity": "positive", "start": "2024", "end": null, "time": null, "preceded_by": "Kestrel Energy", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m5",
+          "text": "Private salary negotiation: I remain a resource planner at Kestrel Energy, continuously employed since my return. My manager Sam Vale offered $94,500; I requested $102,000. After the salary talk I wrote the figures in my paper notebook. I have never worked at Talon Grid.",
+          "written": "2025-08-22",
+          "source": "capture",
+          "sensitivity": "restricted",
+          "names": [{"surface": "Sam Vale", "person": "p1", "of": []}],
+          "roles": [{"surface": "My manager", "person": "p1", "resolvable": true}],
+          "facts": [
+            {"person": "p1", "type": "manager", "label": "manager", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null}
+          ],
+          "organizations": [
+            {"surface": "Kestrel Energy", "org": "Kestrel Energy", "relation": "employer"},
+            {"surface": "Talon Grid", "org": "Talon Grid", "relation": "other"}
+          ],
+          "jobs": [
+            {"org": "Kestrel Energy", "kind": "employee", "title": "resource planner", "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Talon Grid", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        }
+      ],
+      "orders": [["m5", "m4", "m3", "m2", "m1"]],
+      "timeline": [
+        {"org": "Kestrel Energy", "role": "scheduling assistant", "start": "2015", "end": "2018-12", "kind": "employee", "memories": ["m1", "m2"]},
+        {"org": "Amber Rail", "role": "logistics analyst", "start": "2019-01", "end": "2021-12", "kind": "employee", "memories": ["m2", "m3"]},
+        {"org": "Kestrel Energy", "role": "resource planner", "start": "2022-01-10", "end": "", "kind": "employee", "memories": ["m3", "m5"]}
+      ],
+      "queries": [
+        {"id": "q1", "kind": "before", "query": "Where was I right before I rejoined Kestrel?", "answer_org": "Amber Rail"},
+        {"id": "q2", "kind": "after", "query": "What employer followed my first Kestrel Energy stint?", "answer_org": "Amber Rail"},
+        {"id": "q3", "kind": "current", "query": "Who is my current employer?", "answer_org": "Kestrel Energy"},
+        {"id": "q4", "kind": "negative", "query": "Where did I write the figures after my salary talk at Kestrel Energy?", "answer_org": ""}
+      ]
+    },
+    {
+      "id": "w10",
+      "title": "The business closes, but the salaried job does not",
+      "traps": ["concurrent_slots", "freelance_clients", "vendor", "import", "untrusted_end", "negative_wording"],
+      "people": [],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I left Crown Library in December 2020 and started my next salaried job at Elm Civic in January 2021 as a service coordinator. That is my current day job.",
+          "written": "2021-02-01",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Crown Library", "org": "Crown Library", "relation": "employer"},
+            {"surface": "Elm Civic", "org": "Elm Civic", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Crown Library", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "December 2020", "time": null, "preceded_by": null, "followed_by": "Elm Civic", "also_called": null},
+            {"org": "Elm Civic", "kind": "employee", "title": "service coordinator", "status": "current", "polarity": "positive", "start": "January 2021", "end": null, "time": null, "preceded_by": "Crown Library", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m2",
+          "text": "Wave Ledger is my own bookkeeping business, started in 2017 and still active alongside my salaried work. I am its bookkeeper. Bridge Arts was a freelance client from 2018 to September 2021; that engagement is now finished.",
+          "written": "2021-10-14",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Wave Ledger", "org": "Wave Ledger", "relation": "self_employed"},
+            {"surface": "Bridge Arts", "org": "Bridge Arts", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Wave Ledger", "kind": "self_employed", "title": "bookkeeper", "status": "current", "polarity": "positive", "start": "2017", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Bridge Arts", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": "2018", "end": "September 2021", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m3",
+          "text": "The user's Wave Ledger business closed in 2020. The user also left Elm Civic in December 2021 and no longer has a day job.",
+          "written": "2022-07-09",
+          "source": "agent",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Wave Ledger", "org": "Wave Ledger", "relation": "self_employed"},
+            {"surface": "Elm Civic", "org": "Elm Civic", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Wave Ledger", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Elm Civic", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "December 2021", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m4",
+          "text": "I closed Wave Ledger in November 2022. My employment at Elm Civic has continued without interruption and is still my day job. I bought tax-return preparation from Cobalt Tax; after receiving the return, I filed the receipt in my blue folder.",
+          "written": "2023-04-25",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Wave Ledger", "org": "Wave Ledger", "relation": "self_employed"},
+            {"surface": "Elm Civic", "org": "Elm Civic", "relation": "employer"},
+            {"surface": "Cobalt Tax", "org": "Cobalt Tax", "relation": "vendor"}
+          ],
+          "jobs": [
+            {"org": "Wave Ledger", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "November 2022", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Elm Civic", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m5",
+          "text": "Imported diary entry dated 2016-05-04: I started at Crown Library in 2014 as a circulation assistant. I still work there.",
+          "written": "2025-07-12",
+          "source": "import",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [{"surface": "Crown Library", "org": "Crown Library", "relation": "employer"}],
+          "jobs": [
+            {"org": "Crown Library", "kind": "employee", "title": "circulation assistant", "status": "current", "polarity": "positive", "start": "2014", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        }
+      ],
+      "orders": [["m5", "m3", "m1", "m4", "m2"]],
+      "timeline": [
+        {"org": "Crown Library", "role": "circulation assistant", "start": "2014", "end": "2020-12", "kind": "employee", "memories": ["m1", "m5"]},
+        {"org": "Wave Ledger", "role": "bookkeeper", "start": "2017", "end": "2022-11", "kind": "self_employed", "memories": ["m2", "m4"]},
+        {"org": "Bridge Arts", "role": "freelance client engagement", "start": "2018", "end": "2021-09", "kind": "client", "memories": ["m2"]},
+        {"org": "Elm Civic", "role": "service coordinator", "start": "2021-01", "end": "", "kind": "employee", "memories": ["m1", "m4"]},
+        {"org": "Cobalt Tax", "role": "tax-return preparation provider", "start": "", "end": "", "kind": "vendor", "memories": ["m4"]}
+      ],
+      "queries": [
+        {"id": "q1", "kind": "previous", "query": "What was my previous salaried employer?", "answer_org": "Crown Library"},
+        {"id": "q2", "kind": "year", "query": "Where was my day job in July 2022?", "answer_org": "Elm Civic"},
+        {"id": "q3", "kind": "negative", "query": "Where did I put the Cobalt Tax receipt after receiving the return?", "answer_org": ""}
+      ]
+    },
+    {
+      "id": "w11",
+      "title": "Un ascenso y un cambio de nombre",
+      "traps": ["spanish", "promotion", "renamed", "precision", "import", "vendor"],
+      "people": [
+        {"id": "p1", "names": ["Cris Alba"], "group_type": null, "group_label": null}
+      ],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "Dejé Brisa Digital en 2018. Mi siguiente empleo comenzó en Mirador Sistemas en marzo de 2019, como analista de calidad.",
+          "written": "2019-04-10",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Brisa Digital", "org": "Brisa Digital", "relation": "employer"},
+            {"surface": "Mirador Sistemas", "org": "Mirador Tech", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Brisa Digital", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2018", "time": null, "preceded_by": null, "followed_by": "Mirador Sistemas", "also_called": null},
+            {"org": "Mirador Sistemas", "kind": "employee", "title": "analista de calidad", "status": "current", "polarity": "positive", "start": "marzo de 2019", "end": null, "time": null, "preceded_by": "Brisa Digital", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m2",
+          "text": "En Mirador Sistemas recibí una promoción a responsable de calidad el 15 de junio de 2021. Sigo en el mismo empleo, sin interrupción. My colleague Cris Alba celebrated with me.",
+          "written": "2021-06-20",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [{"surface": "Cris Alba", "person": "p1", "of": []}],
+          "roles": [{"surface": "My colleague", "person": "p1", "resolvable": true}],
+          "facts": [
+            {"person": "p1", "type": "colleague", "label": "colleague", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null}
+          ],
+          "organizations": [{"surface": "Mirador Sistemas", "org": "Mirador Tech", "relation": "employer"}],
+          "jobs": [
+            {"org": "Mirador Sistemas", "kind": "employee", "title": "responsable de calidad", "status": "current", "polarity": "positive", "start": null, "end": null, "time": "15 de junio de 2021", "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m3",
+          "text": "Mirador Sistemas ahora se llama Mirador Tech. El cambio de nombre ocurrió en 2022; sigo trabajando en la misma empresa y no hubo nueva contratación.",
+          "written": "2022-11-05",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Mirador Sistemas", "org": "Mirador Tech", "relation": "employer"},
+            {"surface": "Mirador Tech", "org": "Mirador Tech", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Mirador Sistemas", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": "2022", "preceded_by": null, "followed_by": null, "also_called": "Mirador Tech"}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m4",
+          "text": "Nota importada, escrita el 2016-08-09 y firmada A. Quill: Trabajo en Brisa Digital desde 2014 como asistente de pruebas.",
+          "written": "2024-10-06",
+          "source": "import",
+          "sensitivity": "internal",
+          "names": [{"surface": "A. Quill", "person": "user", "of": []}],
+          "roles": [],
+          "facts": [],
+          "organizations": [{"surface": "Brisa Digital", "org": "Brisa Digital", "relation": "employer"}],
+          "jobs": [
+            {"org": "Brisa Digital", "kind": "employee", "title": "asistente de pruebas", "status": "current", "polarity": "positive", "start": "2014", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m5",
+          "text": "Mi único empleo sigue siendo Mirador Tech, como responsable de calidad. Para trabajar desde casa compré una silla a Silla Clara; esa tienda es solamente un proveedor.",
+          "written": "2025-08-14",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Mirador Tech", "org": "Mirador Tech", "relation": "employer"},
+            {"surface": "Silla Clara", "org": "Silla Clara", "relation": "vendor"}
+          ],
+          "jobs": [
+            {"org": "Mirador Tech", "kind": "employee", "title": "responsable de calidad", "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        }
+      ],
+      "orders": [["m4", "m5", "m3", "m2", "m1"]],
+      "timeline": [
+        {"org": "Brisa Digital", "role": "asistente de pruebas", "start": "2014", "end": "2018", "kind": "employee", "memories": ["m1", "m4"]},
+        {"org": "Mirador Tech", "role": "analista de calidad; responsable de calidad desde 2021-06-15", "start": "2019-03", "end": "", "kind": "employee", "memories": ["m1", "m2", "m3", "m5"]},
+        {"org": "Silla Clara", "role": "tienda de sillas", "start": "", "end": "", "kind": "vendor", "memories": ["m5"]}
+      ],
+      "queries": [
+        {"id": "q1", "kind": "before", "query": "¿Qué empleo tuve antes de Mirador Tech?", "answer_org": "Brisa Digital"},
+        {"id": "q2", "kind": "current", "query": "¿En qué empresa sigo trabajando?", "answer_org": "Mirador Tech"},
+        {"id": "q3", "kind": "role_in_stint", "query": "What was my title at Mirador before the June 2021 promotion?", "answer_org": ""}
+      ]
+    },
+    {
+      "id": "w12",
+      "title": "An undated career sequence and a grocery-store false positive",
+      "traps": ["undated_order", "gap", "import", "untrusted_end", "vendor"],
+      "people": [
+        {"id": "p1", "names": ["Jules Quill"], "group_type": null, "group_label": null}
+      ],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "My current job is inventory specialist at Orchard Lab. It is my first job after leaving Willow Bank. I do not have dates for either job.",
+          "written": "2023-08-14",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Orchard Lab", "org": "Orchard Lab", "relation": "employer"},
+            {"surface": "Willow Bank", "org": "Willow Bank", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Orchard Lab", "kind": "employee", "title": "inventory specialist", "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Willow Bank", "followed_by": null, "also_called": null},
+            {"org": "Willow Bank", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Orchard Lab", "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m2",
+          "text": "Imported undated note: Before Willow Bank, I worked at Copper School as an office assistant. I left the school to take the bank job, with no other job between them.",
+          "written": "2024-02-18",
+          "source": "import",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Willow Bank", "org": "Willow Bank", "relation": "employer"},
+            {"surface": "Copper School", "org": "Copper School", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Copper School", "kind": "employee", "title": "office assistant", "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Willow Bank", "also_called": null},
+            {"org": "Willow Bank", "kind": "employee", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Copper School", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m3",
+          "text": "At Willow Bank my title was branch administrator. That job came after Copper School and before Orchard Lab. Between leaving the bank and joining the lab I took a sabbatical with no paid work. I cannot date the sabbatical either.",
+          "written": "2024-09-03",
+          "source": "capture",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Willow Bank", "org": "Willow Bank", "relation": "employer"},
+            {"surface": "Copper School", "org": "Copper School", "relation": "employer"},
+            {"surface": "Orchard Lab", "org": "Orchard Lab", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Willow Bank", "kind": "employee", "title": "branch administrator", "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Copper School", "followed_by": "Orchard Lab", "also_called": null},
+            {"org": "Copper School", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Willow Bank", "also_called": null},
+            {"org": "Orchard Lab", "kind": "employee", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Willow Bank", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m4",
+          "text": "The user left Orchard Lab in 2025 and now works at Maple Foods as a stock supervisor.",
+          "written": "2025-11-06",
+          "source": "agent",
+          "sensitivity": "internal",
+          "names": [],
+          "roles": [],
+          "facts": [],
+          "organizations": [
+            {"surface": "Orchard Lab", "org": "Orchard Lab", "relation": "employer"},
+            {"surface": "Maple Foods", "org": "Maple Foods", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Orchard Lab", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2025", "time": null, "preceded_by": null, "followed_by": "Maple Foods", "also_called": null},
+            {"org": "Maple Foods", "kind": "employee", "title": "stock supervisor", "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Orchard Lab", "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        },
+        {
+          "id": "m5",
+          "text": "Orchard Lab is still my only job, with no break since I joined. Maple Foods is the shop where I buy lunch for work; I have never worked there. My mother Jules Quill likes its bread too.",
+          "written": "2026-10-20",
+          "source": "capture",
+          "sensitivity": "low",
+          "names": [{"surface": "Jules Quill", "person": "p1", "of": []}],
+          "roles": [{"surface": "My mother", "person": "p1", "resolvable": true}],
+          "facts": [
+            {"person": "p1", "type": "parent", "label": "mother", "status": "current", "polarity": "positive", "deceased": false, "only": false, "count": null}
+          ],
+          "organizations": [
+            {"surface": "Orchard Lab", "org": "Orchard Lab", "relation": "employer"},
+            {"surface": "Maple Foods", "org": "Maple Foods", "relation": "vendor"}
+          ],
+          "jobs": [
+            {"org": "Orchard Lab", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Maple Foods", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ],
+          "not_linked": []
+        }
+      ],
+      "orders": [["m4", "m5", "m3", "m1", "m2"]],
+      "timeline": [
+        {"org": "Copper School", "role": "office assistant", "start": "", "end": "", "kind": "employee", "memories": ["m2", "m3"]},
+        {"org": "Willow Bank", "role": "branch administrator", "start": "", "end": "", "kind": "employee", "memories": ["m1", "m2", "m3"]},
+        {"org": "Sabbatical", "role": "break without paid work", "start": "", "end": "", "kind": "study", "memories": ["m3"]},
+        {"org": "Orchard Lab", "role": "inventory specialist", "start": "", "end": "", "kind": "employee", "memories": ["m1", "m3", "m5"]},
+        {"org": "Maple Foods", "role": "lunch retailer", "start": "", "end": "", "kind": "vendor", "memories": ["m5"]}
+      ],
+      "queries": [
+        {"id": "q1", "kind": "previous", "query": "Where was my previous job, before the lab?", "answer_org": "Willow Bank"},
+        {"id": "q2", "kind": "after", "query": "Which job did I take after Copper School?", "answer_org": "Willow Bank"},
+        {"id": "q3", "kind": "no_answer", "query": "Who was my employer in 2019?", "answer_org": ""}
+      ]
+    }
+  ]
+}

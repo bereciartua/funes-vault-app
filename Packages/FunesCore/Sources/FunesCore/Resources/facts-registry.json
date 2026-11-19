@@ -83,6 +83,27 @@
         "hoy"
       ]
     },
+    "operator_adverbs": [
+      "immediately",
+      "right",
+      "straight",
+      "just",
+      "inmediatamente",
+      "justo"
+    ],
+    "wh_words": [
+      "where",
+      "what",
+      "which",
+      "who",
+      "whom",
+      "donde",
+      "que",
+      "cual",
+      "cuales",
+      "quien",
+      "quienes"
+    ],
     "episode_first": [
       "first",
       "primera",
@@ -172,6 +193,25 @@
       "friends",
       "boyfriend",
       "girlfriend"
+    ],
+    "compound_heads": [
+      "company",
+      "companies",
+      "firm",
+      "organization",
+      "organisation",
+      "group",
+      "account",
+      "process",
+      "node",
+      "class",
+      "element",
+      "directory",
+      "folder",
+      "app",
+      "empresa",
+      "compañía",
+      "compania"
     ],
     "former_prefixes": [
       "ex-",
@@ -878,6 +918,13 @@
         {
           "cls": null,
           "generic": true,
+          "words": [
+            "parent"
+          ]
+        },
+        {
+          "cls": null,
+          "generic": true,
           "plural": true,
           "words": [
             "parents"
@@ -1222,7 +1269,9 @@
             "boss",
             "manager",
             "jefe",
-            "jefa"
+            "jefa",
+            "supervisor",
+            "supervisora"
           ]
         }
       ],
@@ -1379,6 +1428,12 @@
           "cls": "landlord",
           "words": [
             "landlord"
+          ]
+        },
+        {
+          "cls": "client contact",
+          "words": [
+            "client contact"
           ]
         }
       ],
