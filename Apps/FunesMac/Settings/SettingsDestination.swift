@@ -71,12 +71,12 @@ enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
 /// A page inside a pane (ADR-0030 §1): a job's page in Features, or an account's in Models &
 /// Accounts (an API or local-server account's id, or a plan's: `claude-code`, `codex`).
 enum SettingsPage: Hashable {
-    case newMemories, tidyUp, searchAnswers, searchIndex
+    case newMemories, tidyUp, searchAnswers, facts, searchIndex
     case account(String)
 
     var pane: SettingsPane {
         switch self {
-        case .newMemories, .tidyUp, .searchAnswers, .searchIndex: .features
+        case .newMemories, .tidyUp, .searchAnswers, .facts, .searchIndex: .features
         case .account: .accounts
         }
     }
@@ -87,6 +87,7 @@ enum SettingsPage: Hashable {
         case .newMemories: "new-memories"
         case .tidyUp: "tidy-up"
         case .searchAnswers: "search-answers"
+        case .facts: "facts"
         case .searchIndex: "search-index"
         case let .account(id): id
         }
@@ -113,6 +114,7 @@ struct SettingsDestination: Hashable {
     static let newMemories = SettingsDestination(.newMemories)
     static let tidyUp = SettingsDestination(.tidyUp)
     static let searchAnswers = SettingsDestination(.searchAnswers)
+    static let facts = SettingsDestination(.facts)
     static let searchIndex = SettingsDestination(.searchIndex)
     static func account(_ id: String) -> SettingsDestination { SettingsDestination(.account(id)) }
 
@@ -125,6 +127,7 @@ struct SettingsDestination: Hashable {
         case (.features, "new-memories"): page = .newMemories
         case (.features, "tidy-up"): page = .tidyUp
         case (.features, "search-answers"): page = .searchAnswers
+        case (.features, "facts"): page = .facts
         case (.features, "search-index"): page = .searchIndex
         case (.accounts, let id) where !id.isEmpty: page = .account(id)
         default: return nil

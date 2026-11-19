@@ -146,6 +146,7 @@ enum UsedByText {
             switch use {
             case let .job(job, _, _): job == .searchAnswers && !searchAnswersOn ? nil : self.job(job)
             case .secondIndex: String(localized: "Search index")
+            case .facts: String(localized: "Facts")
             }
         }
         return names.isEmpty ? String(localized: "Used by: none") : String(localized: "Used by: \(names.formatted(.list(type: .and)))")
@@ -360,6 +361,7 @@ struct UsedBySection: View {
             let name = model.map { "\(UsedByText.job(job)) · \($0)" } ?? String(localized: "\(UsedByText.job(job)) · Choose a model")
             return follows ? String(localized: "\(name) (same as New memories)") : name
         case let .secondIndex(model): return String(localized: "Search index · \(model)")
+        case let .facts(model): return String(localized: "Facts · \(model)")
         }
     }
 
@@ -369,6 +371,7 @@ struct UsedBySection: View {
         case .job(.tidyUp, _, _): .tidyUp
         case .job(.searchAnswers, _, _): .searchAnswers
         case .secondIndex: .searchIndex
+        case .facts: .facts
         }
     }
 }

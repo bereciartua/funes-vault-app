@@ -9,6 +9,12 @@ private let logger = Logger(subsystem: Identifiers.macLoggerSubsystem, category:
 /// what a quit left; after every vault change, since every ingest path queues its job with its
 /// input; and once a minute, for retries that came due. One job at a time. With splitting on,
 /// each job splits its input (task 6a), and its card waits ("Processing…") until it's done.
+///
+/// Facts jobs (memory processing §11.3) run in the low-priority lane while *Learn from memories* is on
+/// (`FactsLane`, admitted atomically with the claim), each with a configuration built for it: the
+/// chosen model and its fallback, the cloud limit, your names from About you, and the shipped
+/// qualification records with the local off-switches. A group no model resolves for waits
+/// (`no_model`) until the Facts settings change.
 @MainActor
 final class ProcessingRunner {
     private let queue: ProcessingQueue
@@ -16,15 +22,20 @@ final class ProcessingRunner {
     private let preferences: Preferences
     private let settings: ModelSettings
     private let splitting: SplittingSwitch
+    private let environment: VaultEnvironment
     /// A job's outcome is recorded: an agent's Save panels waiting for it can show (FunesApprovals).
     private let ended: @MainActor @Sendable (UUID) async -> Void
     private var task: Task<Void, Never>?
     /// A change arrived while a drain was running: drain again when it ends.
     private var again = false
     private var timer: Timer?
+    /// Facts jobs that ended waiting for a model, with the generation that was decided under: a settings change since
+    /// (which woke only the jobs already waiting) wakes them once their outcome is recorded.
+    private var noModelAt: [UUID: Int] = [:]
 
     init(environment: VaultEnvironment, preferences: Preferences, settings: ModelSettings) {
         queue = ProcessingQueue(store: environment.store, activity: environment.activity)
+        self.environment = environment
         self.preferences = preferences
         self.settings = settings
         splitting = environment.splitting
@@ -54,6 +65,8 @@ final class ProcessingRunner {
         let queue = self.queue
         Task {
             do { try await queue.resume(now: Date()) } catch { logger.error("Resuming the processing queue failed") }
+            // The plans' CLIs are found now: a facts job that waited for a model may have one.
+            _ = try? await queue.wakeFacts(code: Self.noModel, now: Date())
             kick()
         }
         let timer = Timer(timeInterval: 60, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.kick() } }
@@ -74,16 +87,79 @@ final class ProcessingRunner {
             return
         }
         let queue = self.queue, processor = self.processor, ended = self.ended
+        let facts: @Sendable (ProcessingJob) async throws -> ProcessingQueue.Outcome = { [weak self] job in
+            guard let self else { return .later(until: Date(), code: "quit") }
+            return try await self.runFacts(job)
+        }
+        let factsEnded: @Sendable (ProcessingJob) async -> Void = { [weak self] job in await self?.factsJobEnded(job) }
         task = Task { [weak self] in
             repeat {
                 self?.again = false
                 do {
-                    try await queue.drain(finished: { job in await ended(job.subject) }, processor.process)
+                    try await queue.drain(finished: { job in
+                        await ended(job.subject)
+                        if job.kind == .facts { await factsEnded(job) }
+                    }) { job in
+                        job.kind == .facts ? try await facts(job) : try await processor.process(job)
+                    }
                 } catch {
                     logger.error("The processing queue failed")
                 }
             } while self?.again == true
             self?.task = nil
         }
+    }
+
+    /// The Facts settings changed: jobs that waited for a model may run now.
+    func factsSettingsChanged() {
+        let queue = self.queue
+        Task {
+            _ = try? await queue.wakeFacts(code: Self.noModel, now: Date())
+            kick()
+        }
+    }
+
+    /// A facts job's outcome is recorded: if it was "no model" and the settings changed since that was decided, wake it.
+    private func factsJobEnded(_ job: ProcessingJob) {
+        guard let decided = noModelAt.removeValue(forKey: job.id) else { return }
+        if environment.store.factsLane.generation != decided { factsSettingsChanged() }
+    }
+
+    /// Why a facts job waits: no model resolves for its call group.
+    nonisolated static let noModel = "no_model"
+
+    /// One facts job with a configuration built now (model providers §4). The generation is read before the
+    /// configuration, so any change after it stops the job at its next send (`FactsExtractor.permit`).
+    private func runFacts(_ job: ProcessingJob) async throws -> ProcessingQueue.Outcome {
+        let lane = environment.store.factsLane, store = environment.store, activity = environment.activity
+        let generation = lane.generation
+        let cap = settings.cap(store: store, activity: activity)
+        guard let configuration = settings.factsConfiguration(cap: cap) else {
+            noModelAt[job.id] = generation
+            return .later(until: Date().addingTimeInterval(86_400), code: Self.noModel)
+        }
+        let profiles = environment.profiles
+        let (result, router) = await Task.detached(priority: .utility) { () async -> (Result<ProcessingQueue.Outcome, any Error>, ModelRouter?) in
+            var router: ModelRouter?
+            do {
+                let aliases = try await profiles.profile().factsAliases
+                let qualification = try await store.writer.read { db in try FactsQualification.bundled.withOffSwitches(db) }
+                let built = configuration.router(qualification: qualification)
+                router = built
+                if let group = job.callGroup, built.factsModels[group] == nil {
+                    return (.success(.later(until: Date().addingTimeInterval(86_400), code: Self.noModel)), router)
+                }
+                var extractor = FactsExtractor(store: store, router: built, activity: activity, userAliases: aliases)
+                extractor.permit = { lane.permits(generation) }
+                return (.success(try await FactsQueueWorker(extractor: extractor).process(job)), router)
+            } catch {
+                return (.failure(error), router)
+            }
+        }.value
+        // Requests made before a failure count too.
+        if let router { settings.collectUsage(from: router) }
+        let outcome = try result.get()
+        if case let .later(_, code) = outcome, code == Self.noModel { noModelAt[job.id] = generation }
+        return outcome
     }
 }

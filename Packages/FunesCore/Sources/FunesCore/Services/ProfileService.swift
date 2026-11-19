@@ -90,6 +90,9 @@ public final class ProfileService: Sendable {
             activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "profile_edited",
                                           profileFields: changed))
         }
+        // Your names are what Facts replaces with "the user" (memory processing §11.3): a running facts job sends
+        // nothing more under the old ones.
+        if changed.contains(.name) { store.factsLane.reconfigured() }
         return saved
     }
 

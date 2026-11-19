@@ -42,6 +42,8 @@ final class TidyUpController {
 
     /// After a run with results: applied and left for review. Never memory text.
     @ObservationIgnored var finished: (TidyUpRun) -> Void = { _ in }
+    /// The facts lane reopened after a run: the queue can take a facts job again.
+    @ObservationIgnored var factsLaneReopened: () -> Void = {}
 
     @ObservationIgnored private let environment: VaultEnvironment
     @ObservationIgnored private let preferences: Preferences
@@ -104,6 +106,14 @@ final class TidyUpController {
         guard !running, tidying == nil else { return }
         running = true
         defer { running = false }
+        // The facts lane waits while the tidy-up runs (memory processing §11.3): closed first, then a running facts
+        // job is waited for; reopened (and the queue kicked) when it ends.
+        let lane = environment.store.factsLane
+        await lane.close(.tidyUp)
+        defer {
+            lane.open(.tidyUp)
+            factsLaneReopened()
+        }
         let cap = settings.cap(store: environment.store, activity: environment.activity)
         let build = settings.tidyUpRouterBuilder(cap: cap)
         let router = await Task.detached(priority: .utility) { build() }.value
@@ -126,6 +136,12 @@ final class TidyUpController {
         tidying = memoryID
         memoryResults[memoryID] = nil
         defer { tidying = nil }
+        let lane = environment.store.factsLane
+        await lane.close(.tidyUp)
+        defer {
+            lane.open(.tidyUp)
+            factsLaneReopened()
+        }
         let cap = settings.cap(store: environment.store, activity: environment.activity)
         let build = settings.tidyUpRouterBuilder(cap: cap)
         let router = await Task.detached(priority: .utility) { build() }.value

@@ -627,7 +627,7 @@ FROM OTHER APPS
 │   Daily at 03:00 · Last run today, 4 suggestions             │
 ├ Search answers                   Apple on-device [On this Mac] › ┤
 │   Only when you ask (⌘⏎)                                     │
-├ Facts                            Claude · haiku  [Cloud]   › ┤   (v0.10)
+├ Facts                Claude · claude-haiku-5-5  [Cloud]   › ┤   (v0.10)
 │   Learning from memories · Used in search and answers        │
 ├ Search index                                    [On this Mac] › ┤
 │   Built in (bge-small) · Ready                               │
@@ -644,7 +644,7 @@ What leaves this Mac ›            (opens Privacy & Limits)
   - New memories: "Proposes a title, kind and categories", then "· Splits notes" when split is on; with proposals off, "Splits notes" when split is on, or "Simple rules on this Mac".
   - Daily tidy-up: "Off", or "Daily at 03:00", then "· Last run today, 4 suggestions" or "· Not run yet".
   - Search answers: "Off", "Only when you ask (⌘⏎)", "Automatically for questions", "Automatically for every search".
-  - Facts (v0.10): "Off", "Learning from memories", "Reading your memories: 120 of 365", then "· Used in search and answers" when that's on, or "Used in search and answers" alone while learning is off.
+  - Facts (v0.10): "Not available yet" while no model has qualified (and both switches are off); otherwise "Off", "Learning from memories", "Reading your memories: 120 of 365" (the backfill step), then "· Used in search and answers" when that's on, or "Used in search and answers" alone while learning is off. Its trailing model is the chosen one, "Claude · claude-haiku-5-5", and its problem label is "Choose a model" or the account's ("Needs a key", "Not signed in").
   - Search index: "Built in (bge-small) · Ready", plus " · qwen3-embedding:0.6b (Ollama): Embedding 1,240 of 3,000" or "…: Ready".
 - **Row trailing:** the effective model ("Claude · haiku", "Same model" when it follows New memories, "Apple on-device", "Rules only" for a tidy-up with no model) and its locality badge. When the job can't run as chosen, an orange label replaces both, from configuration only ([ADR-0030 §6](../architecture/decisions/0030-settings-window.md)): "Choose a model" (unresolved), "Needs a key", "Not signed in", "Needs your OK" (Codex), "Paused after a tool use", "Not available on this Mac" (Apple Intelligence).
 - Search answers' row shows no model while Answer is Off, and Facts' row while *Learn from memories* is off.
@@ -687,19 +687,20 @@ Model             [Same as New memories ▾] [Cloud]        (hidden while Off)
 v0.10, working name (FR-F-01, FR-F-03, [ADR-0032](../architecture/decisions/0032-facts-about-you.md)). Off by default.
 ```
 Learn from memories             [ ]
-  Funes reads each memory to learn who the people in it are to you, and where you've worked and when.
+  Funes reads each new or changed memory to learn who the people in it are to you, and where you've worked and when.
 Use in search and answers       [ ]
-  Your searches find "my sister" when you ask about Maria, and answers say what they inferred.
-Model             [Claude · haiku ▾] [Cloud]
+  Your searches find "my sister" when you ask about her by name, and answers say what they inferred.
+Model             [Claude (Claude Code) · claude-haiku-5-5 ▾] [Cloud]
   Ready. Funes learns from new and changed memories.
-  ↗ Facts sends new and changed memories (up to Internal) to Claude through your Claude Code sign-in, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents.
+  ↗ Facts sends new and changed memories (up to Internal) to Claude through your Claude Code sign-in, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's 300 cloud requests, and your Claude account's training setting applies.
 [Read Existing Memories…]       [Remove Learned Facts…]
 ```
-- **Model:** only models that qualified on Funes's fixtures, per call group: Claude Haiku 5.5 (the default) and Claude Opus 5.5, from any account that offers them (an Anthropic key or your Claude plan). Opus reads the people group only and says so ("opus · people; work uses haiku"). Apple on-device, local servers and other models aren't listed; the menu's footer says "Only models that passed Funes's tests for Facts are listed." With no account offering one: "Facts needs Claude Haiku 5.5 or Opus 5.5. Add a Model…".
-- **Status:** "Ready. Funes learns from new and changed memories."; "Reading your memories: 120 of 365 · Pause" (or **Resume**); "Waiting: today's 300 cloud requests are used up. Funes carries on tomorrow."; "Choose a model to learn facts.".
-- **Disclosure:** the line above, following FR-AI-08 and the plan's training setting as for any task; with *Use in search and answers* on and Search answers on, the Search answers page's line adds "…and what Funes learned about them, plus up to 2 memories from your history".
-- **Turning Learn from memories on** the first time, with memories in the vault, opens the backfill sheet. **Read Existing Memories…** opens it later, until the first backfill has finished.
-- **The backfill sheet** (FR-F-03), with the count and cost first:
+- **Model:** only models that qualified on Funes's fixtures (memory processing §11.10), each its full model id under the account or plan that runs it ("claude-haiku-5-5", "claude-opus-5-5"), with why an account can't run now after its name, as the other pickers do. An offer is an engine a record names exactly as this app builds it (the model's full id, the adapter with its settings, the batching), so the Claude plan's "haiku" alias and an Anthropic account at another address (a proxy) are never offered. One that qualified for only part of what Facts learns says "(part of what Facts learns)", and the status line says who reads the rest: "claude-opus-5-5 reads part of what Facts learns; claude-haiku-5-5 reads the rest." (Haiku on the same account, so the calls go to one place) or "…; no other model here has passed Funes's tests for the rest, so it isn't learned." No call-group names are shown. The default, until you choose, is Claude Haiku 5.5 on the first account that can run it; turning Learn from memories on stores it as your choice, so adding or removing an account never moves learning elsewhere. Removing the chosen account leaves "Choose a model" (nothing is sent until you pick one). The menu's footer says "Only models that passed Funes's tests for Facts are listed.", then **Add a Model…**.
+- **Status:** "Ready. Funes learns from new and changed memories." (or, while learning is off, "Ready. Turn on Learn from memories to start."); "Choose a model to learn facts."; the plan's state or "Add Anthropic's API key in Models & Accounts."; "Facts needs a model that passed Funes's tests: claude-haiku-5-5. Add one in Models & Accounts." (records exist, but no account here runs one); "Reading your memories: 120 of 365 · Pause" (or **Resume**) and "Waiting: today's 300 cloud requests are used up. Funes carries on tomorrow." come with the backfill step.
+- **No model qualified** (what ships until 13a.2's Gates step writes the first records): the Model row says "None available", the status "No model has passed Funes's tests for Facts yet, so Facts can't be turned on.", both switches are off and disabled (a switch already on stays enabled, so it can be turned off), there's no disclosure, and Privacy & Limits lists no Facts line. Remove Learned Facts… stays available.
+- **Disclosure:** the line above for a cloud model, following FR-AI-08 and the plan's training setting as for any task (an API account's: "…to Anthropic, with the names… Nothing it learns goes to agents. It counts toward today's 300 cloud requests."; the cloud limit Nothing: "Facts sends nothing to Claude: the cloud limit is Nothing, so it links memories only from what it already knows."); with *Use in search and answers* on and Search answers on, the Search answers page's line adds "…and what Funes learned about them, plus up to 2 memories from your history" (13d).
+- **Turning Learn from memories on** learns from new and changed memories (memory processing §11.3). From the backfill step, the first time, with memories in the vault, it opens the backfill sheet, and **Read Existing Memories…** opens it later, until the first backfill has finished.
+- **The backfill sheet** (FR-F-03, the backfill step), with the count and cost first:
   ```
   Read your existing memories?
   Funes will send 365 memories (up to Internal) to Claude, in about 800 requests: two for each memory.
@@ -712,7 +713,7 @@ Model             [Claude · haiku ▾] [Cloud]
   - **Start Reading** runs it in the background, in the low-priority lane; progress shows on the page, the Features row and People & history. **Pause** stops after the current request. A quit, sleep, a network loss or a provider failure pauses it too, and it resumes where it stopped at the next launch or when the provider is back, sending no memory twice.
   - **Not Now** leaves learning on for new and changed memories, under the cap, and keeps **Read Existing Memories…** on the page.
   - When it finishes: a notification, if Funes's notifications are on, and the People & history summary ("Funes found 23 people, 9 employers and 41 other names.").
-- **Remove Learned Facts…** asks first: "Remove everything Funes learned about you? The facts and corrections you entered yourself stay. Learning turns off; turning it on again reads your memories again, within today's cloud requests." The button inside is **Remove**. Activity logs it as `facts_removed`, with counts only.
+- **Remove Learned Facts…** asks first: "Remove everything Funes learned about you?", with "The facts and corrections you entered yourself stay. Learning turns off; turning it on again learns from new and changed memories." The button inside is **Remove**. Learning turns off at once (no job starts and a running one sends nothing more); once no facts job is running, everything inferred and every queued facts job go in one transaction. Activity logs it as `facts_removed`, with counts only. From the backfill step, the message ends "…turning it on again reads your memories again, within today's cloud requests."
 
 ##### Page: Search index
 Today's Embeddings rows (FR-AI-09, FR-AI-11): the built-in bge-small and its status; **Second index**: account (OpenAI-compatible accounts only) and model, Load Models, Use… with its confirmation; once chosen, its status, Cancel or Retry, Calibrate…, "Embed agent requests with the cloud model" and the disclosure line for a cloud model, and Stop Using…. "Provider model" is renamed **Second index**. **Use…** checks the model and asks to confirm with the memory and token counts; the status reads "Embedding 1,240 of 3,000. Search uses bge-small until it's done.", "Ready: …" or an error with **Retry**. A memory above the cloud limit says "Searched on this Mac only (above cloud limit)." on its page.

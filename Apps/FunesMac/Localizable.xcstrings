@@ -32,6 +32,9 @@
     "%@ (connected cloud app)" : {
 
     },
+    "%@ (part of what Facts learns)" : {
+
+    },
     "%@ (remote token)" : {
 
     },
@@ -258,6 +261,19 @@
     },
     "%@ on this Mac. It may send what it reads to its AI service." : {
 
+    },
+    "%@ reads only part of what Facts learns; no other model here has passed Funes's tests for the rest, so it isn't learned." : {
+
+    },
+    "%@ reads part of what Facts learns; %@ reads the rest." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ reads part of what Facts learns; %2$@ reads the rest."
+          }
+        }
+      }
     },
     "%@ reported an error (exit code %d)." : {
       "localizations" : {
@@ -2773,6 +2789,9 @@
     "Choose a model to answer searches." : {
 
     },
+    "Choose a model to learn facts." : {
+
+    },
     "Choose a model to tidy up with." : {
 
     },
@@ -3089,6 +3108,9 @@
 
     },
     "Couldn't reach the server." : {
+
+    },
+    "Couldn't remove learned facts. Try again." : {
 
     },
     "Couldn't split" : {
@@ -3542,6 +3564,51 @@
     "Fact" : {
 
     },
+    "Facts" : {
+
+    },
+    "Facts needs a model that passed Funes's tests: %@. Add one in Models & Accounts." : {
+
+    },
+    "Facts sends new and changed memories (up to %@) to %@ through your %@ sign-in, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's %lld cloud requests, and your %@ account's training setting applies." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Facts sends new and changed memories (up to %1$@) to %2$@ through your %3$@ sign-in, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward your plan's limits and today's %4$lld cloud requests, and your %5$@ account's training setting applies."
+          }
+        }
+      }
+    },
+    "Facts sends new and changed memories (up to %@) to %@, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Facts sends new and changed memories (up to %1$@) to %2$@, with the names and facts about you they mention, including other people's names. Nothing it learns goes to agents. It counts toward today's %3$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Facts sends nothing to %@: the cloud limit is Nothing, so it links memories only from what it already knows." : {
+
+    },
+    "Facts · %@" : {
+
+    },
+    "Facts: new and changed memories%@, with the names and facts about you they mention, including other people's names, to %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Facts: new and changed memories%1$@, with the names and facts about you they mention, including other people's names, to %2$@."
+          }
+        }
+      }
+    },
+    "Facts: nothing to %@; the cloud limit is Nothing." : {
+
+    },
     "Failed" : {
 
     },
@@ -3958,6 +4025,9 @@
 
     },
     "Funes quit during the run" : {
+
+    },
+    "Funes reads each new or changed memory to learn who the people in it are to you, and where you've worked and when." : {
 
     },
     "Funes relaunches with the vault as it was then, except that agents, their access and paired iPhones stay as they are now. The current vault is kept in Backups first." : {
@@ -4682,6 +4752,12 @@
     "Launcher" : {
 
     },
+    "Learn from memories" : {
+
+    },
+    "Learning from memories" : {
+
+    },
     "Leaves this Mac" : {
 
     },
@@ -5196,6 +5272,9 @@
     "No memory selected" : {
 
     },
+    "No model has passed Funes's tests for Facts yet, so Facts can't be turned on." : {
+
+    },
     "No models" : {
 
     },
@@ -5215,6 +5294,9 @@
 
     },
     "None" : {
+
+    },
+    "None available" : {
 
     },
     "None new this week" : {
@@ -5239,6 +5321,9 @@
 
     },
     "Not available on this Mac" : {
+
+    },
+    "Not available yet" : {
 
     },
     "Not found" : {
@@ -5485,6 +5570,9 @@
 
     },
     "Only allowed categories can be shared. Deny always wins." : {
+
+    },
+    "Only models that passed Funes's tests for Facts are listed." : {
 
     },
     "Only when I ask" : {
@@ -5912,10 +6000,16 @@
     "Ready. Every search is answered after a short pause, on this Mac and your iPhone." : {
 
     },
+    "Ready. Funes learns from new and changed memories." : {
+
+    },
     "Ready. If it fails, Funes uses the on-device model, then rules." : {
 
     },
     "Ready. Press ⌘⏎ in a search, or tap Ask on your iPhone." : {
+
+    },
+    "Ready. Turn on Learn from memories to start." : {
 
     },
     "Ready: %lld memories use %@." : {
@@ -6133,7 +6227,13 @@
     "Remove Key" : {
 
     },
+    "Remove Learned Facts…" : {
+
+    },
     "Remove Link" : {
+
+    },
+    "Remove everything Funes learned about you?" : {
 
     },
     "Remove “%@”?" : {
@@ -6155,6 +6255,9 @@
 
     },
     "Remove…" : {
+
+    },
+    "Removing…" : {
 
     },
     "Rename" : {
@@ -7659,6 +7762,9 @@
     "The export couldn't be written." : {
 
     },
+    "The facts and corrections you entered yourself stay. Learning turns off; turning it on again learns from new and changed memories." : {
+
+    },
     "The file couldn't be read." : {
 
     },
@@ -8379,6 +8485,9 @@
     "Use a number from 1024 to 65535." : {
 
     },
+    "Use in search and answers" : {
+
+    },
     "Use one agent per cloud app, with only the access it needs." : {
 
     },
@@ -8410,6 +8519,9 @@
 
     },
     "Used by: none" : {
+
+    },
+    "Used in search and answers" : {
 
     },
     "Uses your plan's limits, through the Claude Code you installed and signed in to. Funes never sees your sign-in. Your account's training setting applies." : {
@@ -8684,6 +8796,9 @@
 
     },
     "Your search looks like it contains a secret, so it wasn't sent." : {
+
+    },
+    "Your searches find \"my sister\" when you ask about her by name, and answers say what they inferred." : {
 
     },
     "Your tailnet policy doesn't allow Funnel for this Mac. Add the funnel node attribute in the Tailscale admin console." : {

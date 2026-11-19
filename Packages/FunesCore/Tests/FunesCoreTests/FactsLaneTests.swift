@@ -13,7 +13,7 @@ import Testing
 
     init() throws {
         v = try TestVault()
-        queue = ProcessingQueue(store: v.store, activity: InMemoryActivityLog(), launchedAt: t0)
+        queue = ProcessingQueue(store: v.store, activity: InMemoryActivityLog(), launchedAt: t0, ungatedFacts: true)
     }
 
     func enqueueFacts(_ memory: UUID, version: Int = 1, group: String = "people", reason: ProcessingQueue.FactsReason = .version,
@@ -55,7 +55,7 @@ import Testing
         #expect(try await queue.claim(now: t0.plus(minutes: 120)) == nil)
         try await v.store.writer.write { db in try db.execute(sql: "UPDATE tidy_up_run SET finished_at = ? WHERE id = 'now'", arguments: [t0.plus(minutes: 120)]) }
         // The in-process pause (the tidy-up before it writes its run).
-        let paused = ProcessingQueue(store: v.store, activity: InMemoryActivityLog(), launchedAt: t0, factsPaused: { true })
+        let paused = ProcessingQueue(store: v.store, activity: InMemoryActivityLog(), launchedAt: t0, factsPaused: { true }, ungatedFacts: true)
         #expect(try await paused.claim(now: t0.plus(minutes: 120)) == nil)
         let facts = try #require(try await queue.claim(now: t0.plus(minutes: 120)))
         #expect(facts.kind == .facts && facts.subject == memory && facts.callGroup == "people" && facts.memoryVersion == 1)
@@ -149,7 +149,7 @@ import Testing
         let modes = Mutex<[(memory: String, mode: String, outcome: String)]>([])
 
         init(_ x: FactsExtractor, store: VaultStore) {
-            queue = ProcessingQueue(store: store, activity: InMemoryActivityLog(), launchedAt: .distantPast)
+            queue = ProcessingQueue(store: store, activity: InMemoryActivityLog(), launchedAt: .distantPast, ungatedFacts: true)
             worker = FactsQueueWorker(extractor: x)
         }
 

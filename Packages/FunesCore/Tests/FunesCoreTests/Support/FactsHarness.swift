@@ -285,7 +285,7 @@ enum FactsHarness {
         var x = FactsExtractor(store: v.store, router: router, activity: InMemoryActivityLog(), userAliases: user,
                                qualification: .unchecked)
         x.clock = { clock.now() }
-        let queue = ProcessingQueue(store: v.store, activity: InMemoryActivityLog(), launchedAt: .distantPast)
+        let queue = ProcessingQueue(store: v.store, activity: InMemoryActivityLog(), launchedAt: .distantPast, ungatedFacts: true)
         let worker = FactsQueueWorker(extractor: x)
         let mems = Dictionary(uniqueKeysWithValues: story.memories.map { ($0.id, $0) })
         var vaultID: [String: String] = [:], fixtureID: [String: String] = [:]

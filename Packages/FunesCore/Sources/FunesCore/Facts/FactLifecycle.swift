@@ -220,6 +220,9 @@ extension FactStore {
         out.entities = entitiesBefore - (try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM entity WHERE is_you = 0 AND tombstone = 0") ?? 0)
         out.facts = factsBefore - (try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM fact WHERE tombstone = 0") ?? 0)
         try bumpRevision(db)
+        // Learning turns off with it: no job is left to read anything again, the sweep `bumpRevision` just queued
+        // included. Any job still running was waited for first (`VaultStore.removeLearnedFactsStoppingLearning`).
+        try db.execute(sql: "DELETE FROM processing_job WHERE kind = 'facts'")
         return out
     }
 
@@ -367,14 +370,26 @@ extension FactStore {
 }
 
 extension VaultStore {
-    /// Remove learned facts (Settings ▸ AI ▸ Features ▸ Facts): writes a `facts_removed` Activity row with counts only.
+    /// Remove learned facts without the lane's barrier: writes a `facts_removed` Activity row with counts only. Internal:
+    /// the app uses `removeLearnedFactsStoppingLearning`, which waits for a running facts job first.
     @discardableResult
-    public func removeLearnedFacts(activity: any ActivityRecorder, now: Date = Date()) throws -> FactsRemoval {
+    func removeLearnedFacts(activity: any ActivityRecorder, now: Date = Date()) throws -> FactsRemoval {
         let out = try writer.write { db in try FactStore.removeLearnedFacts(db, now: now) }
         activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "facts_removed",
                                       counts: ["entities": out.entities, "facts": out.facts, "evidence": out.evidence,
                                                "decisions": out.decisions]))
         return out
+    }
+
+    /// Remove learned facts from Settings: learning off first (no commit queues a job, no job starts, a running one
+    /// sends nothing more), then once no facts job is running, everything inferred and every facts job go in one
+    /// transaction (FR-F-01, memory processing §11.8). The caller turns *Learn from memories* off in the settings too.
+    @discardableResult
+    public func removeLearnedFactsStoppingLearning(activity: any ActivityRecorder, now: Date = Date()) async throws -> FactsRemoval {
+        factsLane.setLearning(false)
+        await factsLane.close(.removing)
+        defer { factsLane.open(.removing) }
+        return try removeLearnedFacts(activity: activity, now: now)
     }
 
     /// `status.get`'s factsRevision: "<epoch>.<counter>".
