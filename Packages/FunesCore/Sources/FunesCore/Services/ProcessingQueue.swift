@@ -34,6 +34,8 @@ public struct ProcessingJob: Sendable, Hashable, Identifiable {
     public var callGroup: String?
     /// Bumped by every enqueue: work asked for while the job ran isn't lost when it finishes.
     public var generation: Int = 0
+    /// A job of the first Facts backfill: the memory version whose full read skips the daily cap (`FactsBackfill`).
+    public var exemptVersion: Int?
 
     /// The facts lane's reconciliation sweep, rather than one memory.
     public var isFactsSweep: Bool { kind == .facts && callGroup == nil }
@@ -42,7 +44,7 @@ public struct ProcessingJob: Sendable, Hashable, Identifiable {
         ProcessingJob(id: try row.requiredUUID("id"), subject: try row.requiredUUID("subject"), kind: try row.required("kind"),
                       state: try row.required("state"), attempts: row["attempts"], engine: row["engine"],
                       notBefore: row["not_before"], createdAt: row["created_at"], memoryVersion: row["memory_version"],
-                      callGroup: row["call_group"], generation: row["generation"] ?? 0)
+                      callGroup: row["call_group"], generation: row["generation"] ?? 0, exemptVersion: row["exempt_version"])
     }
 }
 
@@ -144,8 +146,11 @@ public final class ProcessingQueue: Sendable {
         let newer = version.map { v in old.map { v > $0 } ?? true } ?? false
         switch state {
         case "queued", "running":
+            // A newer version can't be the first backfill's exempt read: its mark goes, so it runs as an ordinary job
+            // (and isn't held by a paused backfill).
             try db.execute(sql: """
-                UPDATE processing_job SET generation = generation + 1, memory_version = MAX(COALESCE(memory_version, ?1), ?1), updated_at = ?2
+                UPDATE processing_job SET generation = generation + 1, memory_version = MAX(COALESCE(memory_version, ?1), ?1), updated_at = ?2,
+                  exempt_version = CASE WHEN ?1 > exempt_version THEN NULL ELSE exempt_version END
                 WHERE id = ?3
                 """, arguments: [version, now, id])
         default:
@@ -195,10 +200,14 @@ public final class ProcessingQueue: Sendable {
                         if !entered.withLock({ $0 }), factsLane.tryEnter() { entered.withLock { $0 = true } }
                     }
                     if factsLane == nil || entered.withLock({ $0 }) {
+                        // Memories before the sweep; new and changed memories before the first backfill's marked jobs,
+                        // which wait while it's paused (`FactsBackfill`).
+                        let paused = try FactsBackfill.state(db)?.isPaused ?? false
                         found = try Row.fetchOne(db, sql: """
                             SELECT * FROM processing_job WHERE state = 'queued' AND kind = 'facts' AND (not_before IS NULL OR not_before <= ?)
-                            ORDER BY call_group IS NULL, created_at, rowid LIMIT 1
-                            """, arguments: [now])
+                              AND (exempt_version IS NULL OR ? = 0)
+                            ORDER BY call_group IS NULL, exempt_version IS NOT NULL, created_at, rowid LIMIT 1
+                            """, arguments: [now, paused])
                     }
                 }
                 guard let row = found else { return nil }
@@ -236,6 +245,7 @@ public final class ProcessingQueue: Sendable {
         // The admitted facts job leaves the lane once its outcome is recorded (or recording it failed).
         defer { if job.kind == .facts { factsLane?.leave() } }
         let id = job.id.db
+        let finished = Mutex<(FactsBackfill.State, [String: Int])?>(nil)
         let state: ProcessingJob.State? = try await store.writer.write { db in
             // Checked in the same transaction as the outcome is written, so an enqueue can't fall between them.
             if job.kind == .facts {
@@ -245,10 +255,23 @@ public final class ProcessingQueue: Sendable {
                     """, arguments: [now, id, job.generation])
                 if db.changesCount > 0 { return nil }
             }
+            // A backfill job that ended (done or failed) gives up its mark; after any facts job, the backfill ends once no
+            // mark is left (a mark can also go when its exemption is spent, or its memory changes).
+            func ended() throws {
+                guard job.kind == .facts, job.exemptVersion != nil else { return }
+                try db.execute(sql: "UPDATE processing_job SET exempt_version = NULL WHERE id = ?", arguments: [id])
+            }
+            func settle() throws {
+                guard job.kind == .facts, let s = try FactsBackfill.settle(db, now: now) else { return }
+                let counts = try FactsBackfill.finishedCounts(db, s)
+                finished.withLock { $0 = (s, counts) }
+            }
+            defer { try? settle() }
             switch outcome {
             case let .done(engine):
                 try db.execute(sql: "UPDATE processing_job SET state = 'done', engine = ?, error = NULL, not_before = NULL, updated_at = ? WHERE id = ?",
                                arguments: [engine, now, id])
+                try ended()
                 return .done
             case let .later(until, code):
                 try db.execute(sql: "UPDATE processing_job SET state = 'queued', attempts = MAX(0, attempts - 1), error = ?, not_before = ?, updated_at = ? WHERE id = ?",
@@ -257,13 +280,18 @@ public final class ProcessingQueue: Sendable {
             case let .failed(code):
                 try db.execute(sql: "UPDATE processing_job SET state = 'failed', error = ?, not_before = NULL, updated_at = ? WHERE id = ?",
                                arguments: [code, now, id])
+                try ended()
                 return .failed
             case let .retry(code):
                 let state: ProcessingJob.State = job.attempts >= Self.maxAttempts ? .failed : .queued
                 try db.execute(sql: "UPDATE processing_job SET state = ?, error = ?, not_before = ?, updated_at = ? WHERE id = ?",
                                arguments: [state.rawValue, code, state == .queued ? now + Self.backoff(job.attempts) : nil, now, id])
+                if state == .failed { try ended() }
                 return state
             }
+        }
+        if let (s, counts) = finished.withLock({ $0 }) {
+            activity.record(FactsBackfill.activity("finished", time: s.finishedAt ?? now, counts: counts))
         }
         if let state, state != .queued {
             activity.record(ActivityEvent(time: now, phase: .event, actor: .system, via: .app, event: "processing_job",
@@ -325,8 +353,12 @@ public final class ProcessingQueue: Sendable {
     @discardableResult
     public func cleanup(now: Date) async throws -> Int {
         try await store.writer.write { db in
-            try db.execute(sql: "DELETE FROM processing_job WHERE state IN ('done','failed') AND updated_at <= ?",
-                           arguments: [now - Self.retention])
+            // Facts jobs stay while their memory does (one row per memory and call group): that a memory had one is
+            // what puts it in the facts lane's catch-up (`FactsBackfill.catchUp`).
+            try db.execute(sql: """
+                DELETE FROM processing_job WHERE state IN ('done','failed') AND updated_at <= ?
+                  AND (kind != 'facts' OR (call_group IS NOT NULL AND subject NOT IN (SELECT id FROM memory WHERE status IN ('active','archived'))))
+                """, arguments: [now - Self.retention])
             return db.changesCount
         }
     }

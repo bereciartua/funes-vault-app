@@ -8,6 +8,11 @@ import GRDB
 ///
 /// Memory commits queue the jobs while *Learn from memories* is on (`ProcessingQueue.enqueueFactsForCommit`), and the
 /// Mac's processing runner runs them here, with a configuration built for each job.
+///
+/// The first backfill's jobs are marked (`FactsBackfill`): while it runs, a marked job's full read of the version it
+/// was marked for skips the daily cap; it stops before any request once the backfill is paused, and pauses it when the
+/// engine or the cloud limit isn't the one its estimate showed. Every other call counts against the cap; at the cap a
+/// job waits for the cap's next day.
 public struct FactsQueueWorker: Sendable {
     public let extractor: FactsExtractor
     public var clock: @Sendable () -> Date
@@ -26,19 +31,77 @@ public struct FactsQueueWorker: Sendable {
     }
 
     func plan(_ memoryID: String, group: String) async throws -> Plan {
+        try await planned(memoryID, group: group).plan
+    }
+
+    /// The plan, and the version a full read would read. A reading made under another extraction key, or before a
+    /// predicate recorded now was, is read again in full (a re-read, under the cap).
+    func planned(_ memoryID: String, group: String) async throws -> (plan: Plan, version: Int?, reread: Bool) {
         let registry = extractor.registry, users = extractor.userAliases, limit = extractor.rosterLimit
-        return try await extractor.store.writer.write { db in
+        return try await extractor.store.writer.write { [extractor] db in
             guard let m = try Row.fetchOne(db, sql: "SELECT version, status FROM memory WHERE id = ?", arguments: [memoryID]),
-                  ["active", "archived"].contains(m["status"] as String) else { return .gone }
-            let read = try Bool.fetchOne(db, sql: """
-                SELECT EXISTS (SELECT 1 FROM facts_asked WHERE memory_id = ? AND memory_version = ? AND call_group = ? AND mention_kind = 'read')
-                """, arguments: [memoryID, m["version"] as Int, group]) ?? false
-            guard read else { return .full }
+                  ["active", "archived"].contains(m["status"] as String) else { return (.gone, nil, false) }
+            let version: Int = m["version"]
+            guard let stored = try String.fetchOne(db, sql: """
+                SELECT knowledge FROM facts_asked WHERE memory_id = ? AND memory_version = ? AND call_group = ? AND mention_kind = 'read'
+                """, arguments: [memoryID, version, group]) else { return (.full, version, false) }
+            let uses = try extractor.currentUses(db)
+            if extractor.modelAllowed(group, uses), FactsExtractor.isStale(stored, current: extractor.readKey(group, uses)) {
+                return (.full, version, true)
+            }
             let due = try FactsReconciler.reconcile(db, only: memoryID, registry: registry, userAliases: users,
                                                     uses: try extractor.currentUses(db), sendable: limit)
                 .first { $0.key.group == group }?.due
-            return due.map { .partial($0) } ?? .nothing
+            return (due.map { .partial($0) } ?? .nothing, version, false)
         }
+    }
+
+    /// A done job whose read the guardrails refused (`processing_job.engine`).
+    static let refusedEngine = "code:refused"
+
+    /// Why a marked job doesn't run now: the backfill is paused (by the user, or by a change since its estimate).
+    static let backfillPaused = "backfill_paused"
+    /// A marked job's provider failed (a rate limit, the network): it waits, without spending an attempt.
+    static let providerWait: TimeInterval = 300
+
+    /// For a marked job: whether the backfill lets it read exempt now, or why it waits. A backfill that isn't running
+    /// (ended, or removed) leaves the job an ordinary one.
+    func backfill(_ job: ProcessingJob, group: String) async throws -> (exempt: Int?, wait: Bool) {
+        guard let version = job.exemptVersion else { return (nil, false) }
+        let engine = extractor.router.factsModels[group].map(ModelRouter.engine), limit = extractor.rosterLimit
+        let (exempt, wait, changed) = try await extractor.store.writer.write { [extractor] db -> (Int?, Bool, Bool) in
+            guard let s = try FactsBackfill.state(db), s.isRunning else { return (nil, false, false) }
+            if s.isPaused { return (nil, true, false) }
+            // Another engine, a wider limit, or the group's model no longer allowed (a use turned off): not what the
+            // user agreed to, so it waits for a review rather than reading, or giving up the read, without one.
+            let allowed = extractor.modelAllowed(group, try extractor.currentUses(db))
+            if engine != s.engines[group] || Self.widens(limit, s.limit) || !allowed {
+                try FactsBackfill.pauseForChange(db)
+                return (nil, true, true)
+            }
+            return (version, false, false)
+        }
+        if changed { extractor.store.factsLane.setBackfillPaused(true) }      // once the pause is committed
+        return (exempt, wait)
+    }
+
+    /// Whether `now` lets a call send more than `then` did: a cloud limit above the one the estimate showed.
+    static func widens(_ now: CloudLimit?, _ then: CloudLimit?) -> Bool {
+        switch (now, then) {
+        case (nil, _): false                                  // every model on this Mac: the engine check covers a switch
+        case (_?, nil): true
+        case let (.upTo(a)?, .upTo(b)?): a > b
+        case (.upTo?, .never?): true
+        case (.never?, _?): false
+        }
+    }
+
+    /// The facts lane's catch-up and re-reads (`FactsBackfill.catchUp`), under the cap. The runner calls it at launch and
+    /// on every Facts settings change while learning is on. Returns how many jobs it queued.
+    @discardableResult
+    public func scheduleCatchUp() async throws -> Int {
+        let now = clock()
+        return try await extractor.store.writer.write { [extractor] db in try FactsBackfill.catchUp(db, extractor: extractor, now: now) }
     }
 
     /// Runs one `facts` job and says how it went. `report` hears each learn's report (the harness records its calls).
@@ -54,11 +117,30 @@ public struct FactsQueueWorker: Sendable {
             return .done(engine: nil)
         }
         let memoryID = job.subject.db
+        let (exemptVersion, wait) = try await backfill(job, group: group)
+        if wait { return .later(until: clock(), code: Self.backfillPaused) }
         let scope: FactsScope, kind: String
-        switch try await plan(memoryID, group: group) {
+        let planned = try await planned(memoryID, group: group)
+        switch planned.plan {
         case .gone, .nothing: return .done(engine: nil)
-        case .full: (scope, kind) = (.full, "incremental")
+        case .full:
+            let exempt = exemptVersion != nil && planned.version == exemptVersion && !planned.reread
+            (scope, kind) = (.full, exempt ? FactsExtractor.backfillKind : planned.reread ? "reread" : "incremental")
         case let .partial(due): (scope, kind) = (.partial(roles: due.roles, names: due.names), "reconciliation")
+        }
+        var extractor = self.extractor
+        if let exemptVersion, !planned.reread {
+            // Pause stops a backfill job before its next request, retries included.
+            let permit = extractor.permit, lane = extractor.store.factsLane
+            extractor.exemptVersion = exemptVersion
+            extractor.permit = { permit() && !lane.backfillPaused }
+            // Spent once sent: the mark goes in the store before the provider answers (durable across a quit).
+            let store = extractor.store, id = job.id.db
+            extractor.exemptSpent = {
+                try store.writer.write { db in
+                    try db.execute(sql: "UPDATE processing_job SET exempt_version = NULL WHERE id = ?", arguments: [id])
+                }
+            }
         }
         let r = try await extractor.learn([memoryID], groups: [group], kind: kind, scope: scope)
         let engine: String? = switch r.calls.first?.outcome {
@@ -67,10 +149,32 @@ public struct FactsQueueWorker: Sendable {
         default: extractor.router.factsModels[group].map(ModelRouter.engine) ?? extractor.codeEngine
         }
         await report(r, scope == .full ? "full" : "reconcile")
+        if exemptVersion != nil, let c = r.calls.first {
+            let waits = c.dropped.contains(FactsExtractor.capReached) || c.dropped.contains(FactsExtractor.transient)
+            let ends = c.outcome == .applied || (c.outcome == .codeOnly && !waits)
+            if c.exempt > 0, !ends {
+                // Its exempt request was sent and the read didn't end (an invalid answer, a provider failure after
+                // sending, a change under it): the exemption is spent, and the job carries on as an ordinary one.
+                try await extractor.store.writer.write { db in
+                    try db.execute(sql: "UPDATE processing_job SET exempt_version = NULL WHERE id = ?", arguments: [job.id.db])
+                }
+            } else if c.outcome == .failed, c.dropped.contains(FactsExtractor.providerFailed) {
+                // Nothing was sent (a provider still backing off): the job waits, keeping its exemption (FR-F-03).
+                return .later(until: clock().addingTimeInterval(Self.providerWait), code: "provider")
+            }
+        }
+        if let c = r.calls.first, c.outcome == .codeOnly, c.dropped.contains(FactsExtractor.capReached) {
+            // At the daily cap (or the agents' share of it): read when the cap resets (FR-F-03), not counted as an attempt.
+            let now = clock()
+            return .later(until: extractor.router.cap?.nextDay(after: now) ?? now.addingTimeInterval(3_600), code: "cap")
+        }
         if let c = r.calls.first, c.outcome == .codeOnly, c.dropped.contains(FactsExtractor.transient) {
-            // Read by the model later: an hour on, not counted as an attempt (the cap lasts the day).
+            // Read by the model later: an hour on, not counted as an attempt.
             return .later(until: clock().addingTimeInterval(3_600), code: "unavailable")
         }
+        // Refused by the guardrails (a secret, an item above the limit): recorded, so the catch-up doesn't ask again
+        // until the memory changes.
+        if let c = r.calls.first, c.outcome == .codeOnly, c.refused { return .done(engine: Self.refusedEngine) }
         switch r.calls.first?.outcome {
         case nil, .applied?, .codeOnly?: return .done(engine: engine)
         case .changed?: return .later(until: clock(), code: "changed")       // read again at once (§11.3)

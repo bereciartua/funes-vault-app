@@ -637,10 +637,12 @@
 - **A registry change:** a language-only change (query cues, attribute phrases) applies at once, with no re-read. A change to a call group's extraction (a new predicate, template or definition) re-reads only that group, in the low-priority lane under the cap. Registry changes are batched per release.
 - Searches and the timeline make no model call.
 - Acceptance:
-  - The exemption applies once, to the first backfill, and only when the user starts it; nothing is sent before the count and cost are shown.
+  - The exemption applies once, to the first backfill, and only when the user starts it; nothing is sent before the count and cost are shown. It covers one request of a full read of each memory and call group counted, at the version counted, so exempt calls never exceed the count shown; a change of model or a wider cloud limit pauses it until the count of what's still owed is shown.
   - An interrupted backfill (quit, sleep, offline, provider failure) resumes where it stopped, without sending a finished memory again.
   - The cloud limit and the secret scanner apply to every backfill call.
   - At the cap, Facts jobs wait for the next day, and their memories keep code-only links meanwhile.
+  - A provider that's backing off doesn't spend the exemption; Pause stops the backfill before its next request.
+  - Starting refuses when there's nothing to send, so the exemption isn't used for no read.
   - `facts_backfill` Activity rows carry ids and counts only.
 
 **FR-F-04 Resolution and the timeline** · L · v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md))

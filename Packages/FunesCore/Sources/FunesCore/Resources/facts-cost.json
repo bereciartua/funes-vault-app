@@ -1,0 +1,6 @@
+{
+  "note": "Measured API-equivalent dollars per Facts call (ADR-0032, The cap): Claude Haiku 5.5 over the author's 365 memories, $0.13 for the people call and $0.09 for the work call. Only measured models have a figure; the backfill sheet shows none otherwise.",
+  "per_call": {
+    "claude-haiku-5-5": { "people": 0.000356164, "work": 0.000246575 }
+  }
+}

@@ -215,7 +215,8 @@ extension FactStore {
         try db.execute(sql: "DELETE FROM mention_decision WHERE source = 'model'")
         try db.execute(sql: "DELETE FROM facts_asked")
         try db.execute(sql: "DELETE FROM facts_run")
-        try db.execute(sql: "DELETE FROM meta WHERE key = 'facts_backfill'")
+        // The first backfill's state stays: the exemption was used. An unfinished one ends here, with its jobs.
+        try FactsBackfill.endForRemoval(db, now: now)
         try collectGarbage(db, now: now)
         out.entities = entitiesBefore - (try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM entity WHERE is_you = 0 AND tombstone = 0") ?? 0)
         out.facts = factsBefore - (try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM fact WHERE tombstone = 0") ?? 0)
@@ -389,7 +390,9 @@ extension VaultStore {
         factsLane.setLearning(false)
         await factsLane.close(.removing)
         defer { factsLane.open(.removing) }
-        return try removeLearnedFacts(activity: activity, now: now)
+        let out = try removeLearnedFacts(activity: activity, now: now)
+        factsLane.setBackfillPaused(false)
+        return out
     }
 
     /// `status.get`'s factsRevision: "<epoch>.<counter>".

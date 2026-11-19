@@ -49,6 +49,7 @@ public final class VaultStore: Sendable {
         writer = pool
         self.path = path
         factsLane = lane
+        lane.setBackfillPaused(try pool.read { db in try FactsBackfill.state(db)?.isPaused ?? false })
     }
 
     // MARK: - Backups

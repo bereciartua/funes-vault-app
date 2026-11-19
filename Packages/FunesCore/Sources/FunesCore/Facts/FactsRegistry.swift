@@ -18,6 +18,10 @@ public struct FactsRegistry: Sendable, Decodable {
     /// registry except each predicate's `uses` list. Every group's validation and parsing read the shared language and
     /// the whole lexicon, so any other change re-runs every gate; a `uses` list is in the record's key already.
     public internal(set) var fingerprint: String = ""
+    /// Each call group's extraction digest (memory processing §11.3's registry rule): the registry as that group's
+    /// readings depend on it, without what only questions read. With the group's prompt version it makes the key a
+    /// model reading records (`FactsExtractor.readKey`), so a language-only change re-reads nothing.
+    public internal(set) var extractionDigests: [String: String] = [:]
 
     enum CodingKeys: String, CodingKey { case version, language, kinds, callGroups, predicates, useRules = "uses" }
 
@@ -225,6 +229,7 @@ public struct FactsRegistry: Sendable, Decodable {
         var registry = try d.decode(FactsRegistry.self, from: data)
         registry.qualifierOrder = OrderedJSON.qualifierOrder(data)
         registry.fingerprint = try fingerprint(data, version: registry.version)
+        registry.extractionDigests = try extractionDigests(data)
         try registry.validate()
         return registry
     }
@@ -243,6 +248,35 @@ public struct FactsRegistry: Sendable, Decodable {
         }
         let canonical = try JSONSerialization.data(withJSONObject: top, options: [.sortedKeys, .withoutEscapingSlashes])
         return version + "-" + SHA256.hash(data: canonical).prefix(6).map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// What only questions read (`TimelineIntent`; a predicate's attribute phrases are for answers, 13d): a change to
+    /// them is language-only and re-reads nothing. Anything not listed counts as extraction, so a doubt costs a re-read.
+    static let readSideLanguage: Set<String> = ["operators", "time_nouns", "anchor_tail_words", "anchor_lead_words",
+                                                "question_words", "year_prepositions"]
+    static let readSidePredicate: Set<String> = ["query_cues", "qualifier_cues", "phrases", "uses", "note"]
+
+    /// Per call group: SHA-256 of the canonical JSON of the shared language and kinds (without the read-side fields),
+    /// the group's own entry and its predicates (without theirs). Another group's predicate isn't in it: a new
+    /// predicate re-reads only its own group (ADR-0032 decision 3).
+    static func extractionDigests(_ data: Data) throws -> [String: String] {
+        func strip(_ v: Any) -> Any {
+            if let o = v as? [String: Any] { return o.filter { $0.key != "note" }.mapValues(strip) }
+            if let a = v as? [Any] { return a.map(strip) }
+            return v
+        }
+        guard let top = strip(try JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return [:] }
+        let language = (top["language"] as? [String: Any] ?? [:]).filter { !readSideLanguage.contains($0.key) }
+        let predicates = top["predicates"] as? [[String: Any]] ?? []
+        var out: [String: String] = [:]
+        for (group, entry) in top["call_groups"] as? [String: Any] ?? [:] {
+            let own = predicates.filter { $0["call_group"] as? String == group }
+                .map { $0.filter { !readSidePredicate.contains($0.key) } }
+            let projection: [String: Any] = ["language": language, "kinds": top["kinds"] ?? [:], "group": entry, "predicates": own]
+            let canonical = try JSONSerialization.data(withJSONObject: projection, options: [.sortedKeys, .withoutEscapingSlashes])
+            out[group] = SHA256.hash(data: canonical).prefix(6).map { String(format: "%02x", $0) }.joined()
+        }
+        return out
     }
 
     /// A predicate's qualifiers in their JSON order (unknown ones last, sorted).
