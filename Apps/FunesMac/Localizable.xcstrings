@@ -6956,6 +6956,9 @@
     "Searched on this Mac only (above cloud limit)." : {
 
     },
+    "Searching for someone's name also finds memories that only say \"my sister\", and answers say what Funes inferred." : {
+
+    },
     "Searching…" : {
 
     },
@@ -8940,9 +8943,6 @@
 
     },
     "Your search looks like it contains a secret, so it wasn't sent." : {
-
-    },
-    "Your searches find \"my sister\" when you ask about her by name, and answers say what they inferred." : {
 
     },
     "Your tailnet policy doesn't allow Funnel for this Mac. Add the funnel node attribute in the Tailscale admin console." : {

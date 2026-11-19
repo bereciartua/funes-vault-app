@@ -179,8 +179,9 @@ struct FactsRow: View {
                     ProblemLabel(text: ProviderText.label(.account("", problem)))
                 case nil:
                     if let chosen = settings.factsResolution.chosen {
-                        Text(verbatim: "\(PlanKind(rawValue: chosen.account)?.plan ?? settings.name(chosen.account)) · \(chosen.model)")
+                        Text(verbatim: "\(PlanKind(rawValue: chosen.account)?.plan ?? settings.name(chosen.account)) · \(FactsModelName.display(chosen.model))")
                             .foregroundStyle(.secondary).lineLimit(1)
+                            .help(chosen.model)
                         LocalityPill(locality: settings.locality(account: chosen.account))
                     }
                 }
