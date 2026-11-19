@@ -278,13 +278,33 @@ struct AIJobText {
     }
 
     /// The page's status: ready, what's missing, or that nothing has qualified yet; and, when the chosen model reads only
-    /// part of what Facts learns, who reads the rest.
+    /// part of what Facts learns, who reads the rest. While the first backfill runs, or Facts waits for tomorrow's cap,
+    /// that says where it is instead of "Ready." (the two would contradict each other).
     var factsStatus: String {
+        func sentence(_ s: String) -> String { s.hasSuffix(".") ? s : s + "." }
+        // With a model problem nothing runs, so only a paused backfill is told after it, never "Reading…".
+        if settings.factsProblem != nil {
+            let paused = model.factsBackfill.map { $0.state.isRunning && $0.state.isPaused } == true ? backfillStatus : nil
+            return ([problemStatus] + [paused].compactMap { $0 }).map(sentence).joined(separator: " ")
+        }
+        let underway = [backfillStatus, settings.factsLearn ? factsCapStatus : nil].compactMap { $0 }
+        return (underway.isEmpty ? [readyStatus] : underway + partStatus).map(sentence).joined(separator: " ")
+    }
+
+    /// The status when Facts has no problem: ready, and who reads what when the model reads only part of it.
+    private var readyStatus: String {
+        ([settings.factsLearn ? String(localized: "Ready. Funes learns from new and changed memories.")
+                              : String(localized: "Ready. Turn on Learn from memories to start.")] + partStatus).joined(separator: " ")
+    }
+
+    /// Why Facts can't learn as chosen ("" when it can).
+    var problemStatus: String {
         switch settings.factsProblem {
         case .nothingQualified?:
             return String(localized: "No model has passed Funes's tests for Facts yet, so Facts can't be turned on.")
         case let .needsAccount(models)?:
-            return String(localized: "Facts needs a model that passed Funes's tests: \(models.formatted(.list(type: .or))). Add one in Models & Accounts.")
+            let names = models.map(FactsModelName.display)
+            return String(localized: "Facts needs a model that passed Funes's tests: \(names.formatted(.list(type: .or))). Add one in Models & Accounts.")
         case .chooseModel?:
             return String(localized: "Choose a model to learn facts.")
         case let .account(id, problem)?:
@@ -298,20 +318,20 @@ struct AIJobText {
             return problem == .noKey ? String(localized: "Add \(settings.name(id))'s API key in Models & Accounts.")
                                      : ProviderText.reason(problem) + "."
         case nil:
-            break
+            return ""
         }
-        var lines = [settings.factsLearn ? String(localized: "Ready. Funes learns from new and changed memories.")
-                                         : String(localized: "Ready. Turn on Learn from memories to start.")]
+    }
+
+    /// When the chosen model reads only part of what Facts learns: who reads the rest.
+    private var partStatus: [String] {
         let resolution = settings.factsResolution
         let all = Set(FactsRegistry.bundled.callGroups.keys)
-        if let chosen = resolution.chosen, chosen.groups != all {
-            if let fallback = resolution.fallback, resolution.groups == all {
-                lines.append(String(localized: "\(chosen.model) reads part of what Facts learns; \(fallback.model) reads the rest."))
-            } else {
-                lines.append(String(localized: "\(chosen.model) reads only part of what Facts learns; no other model here has passed Funes's tests for the rest, so it isn't learned."))
-            }
+        guard let chosen = resolution.chosen, chosen.groups != all else { return [] }
+        let name = FactsModelName.display(chosen.model)
+        if let fallback = resolution.fallback, resolution.groups == all {
+            return [String(localized: "\(name) reads part of what Facts learns; \(FactsModelName.display(fallback.model)) reads the rest.")]
         }
-        return lines.joined(separator: " ")
+        return [String(localized: "\(name) reads only part of what Facts learns; no other model here has passed Funes's tests for the rest, so it isn't learned.")]
     }
 
     /// FR-F-01's disclosure, for a cloud model: what Facts sends and to whom.

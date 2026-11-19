@@ -257,3 +257,21 @@ public struct FactsConfiguration: Sendable {
         return ModelRouter(classifier: nil, onDevice: nil, cloudLimit: cloudLimit, cap: cap, backoff: backoff, factsModels: models)
     }
 }
+
+/// How a model's full id reads in Facts' settings: "claude-haiku-5-5" → "Claude Haiku 5.5". Derived from the id's own
+/// parts (family, version) for Claude ids, the only ones Facts offers, so a new Claude model needs no table; any other
+/// id reads as written. Records, offers and the stored choice keep the full id; this is for display only.
+public enum FactsModelName {
+    public static func display(_ id: String) -> String {
+        let parts = id.split(separator: "-", omittingEmptySubsequences: false).map(String.init)
+        guard parts.count >= 3, parts[0] == "claude", parts.allSatisfy({ !$0.isEmpty }) else { return id }
+        func digits(_ s: String) -> Bool { s.allSatisfy { $0.isASCII && $0.isNumber } }
+        let version = parts.drop { !digits($0) }
+        let words = parts.prefix { !digits($0) }
+        // A version is one or two short numbers ("5-5"); a date suffix or anything else keeps the id as written.
+        guard words.count >= 2, !version.isEmpty, version.count <= 2,
+              version.allSatisfy({ $0.count <= 2 && digits($0) }),
+              words.allSatisfy({ $0.allSatisfy { $0.isASCII && $0.isLetter } }) else { return id }
+        return (words.map { $0.prefix(1).uppercased() + $0.dropFirst() } + [version.joined(separator: ".")]).joined(separator: " ")
+    }
+}

@@ -35,7 +35,7 @@ struct FactsBackfillSheet: View {
                     Text(line).font(.callout).fixedSize(horizontal: false, vertical: true)
                 }
             } else if noModel {
-                Text(text.factsStatus).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(text.problemStatus).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             } else if failed {
                 Text(String(localized: "Funes couldn't count your memories. Try again.")).font(.callout).foregroundStyle(.secondary)
             } else {
@@ -180,7 +180,7 @@ extension AIJobText {
     /// Why Read Existing Memories… can't open now (its help), or nil when it can.
     var backfillUnavailable: String? {
         let settings = model.modelSettings
-        if settings.factsProblem != nil { return factsStatus }
+        if settings.factsProblem != nil { return problemStatus }
         if !settings.factsLearn { return String(localized: "Turn on Learn from memories first.") }
         return nil
     }

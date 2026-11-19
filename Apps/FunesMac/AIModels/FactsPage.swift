@@ -38,26 +38,25 @@ struct FactsPage: View {
                 Toggle(String(localized: "Use in search and answers"), isOn: Binding(get: { settings.factsUse },
                                                                                     set: { settings.factsUse = $0 }))
                     .disabled(removing || (!available && !settings.factsUse))
-                Text(String(localized: "Your searches find \"my sister\" when you ask about her by name, and answers say what they inferred."))
+                Text(String(localized: "Searching for someone's name also finds memories that only say \"my sister\", and answers say what Funes inferred."))
                     .font(.callout).foregroundStyle(.secondary)
             }
             Section {
                 FactsModelRow(model: model)
-                Text(text.factsStatus).font(.callout).foregroundStyle(.secondary)
-                if let status = text.backfillStatus, let state = model.factsBackfill?.state {
-                    HStack {
-                        Text(status).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                // One status line: while the backfill runs or Facts waits for the cap, it says so instead of "Ready.".
+                HStack(alignment: .firstTextBaseline) {
+                    Text(text.factsStatus).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        .layoutPriority(1)
+                    if text.backfillStatus != nil, let state = model.factsBackfill?.state, settings.factsLearn,
+                       settings.factsProblem == nil {
                         Spacer()
-                        if !settings.factsLearn {
-                            EmptyView()
-                        } else if state.changed {
+                        if state.changed {
                             Button(String(localized: "Review…")) { open(.review) }
                         } else {
                             Button(state.paused ? String(localized: "Resume") : String(localized: "Pause")) { pause(!state.paused) }
                         }
                     }
                 }
-                if let wait = text.factsCapStatus { Text(wait).font(.callout).foregroundStyle(.secondary) }
                 if let disclosure = text.factsDisclosure { WarningLabel(text: disclosure, symbol: "arrow.up.forward.app") }
             }
             Section {
@@ -149,8 +148,8 @@ struct FactsModelRow: View {
     }
 }
 
-/// Facts' model pop-up (model providers §4): only offers, each a full model id under its account or plan, with why the
-/// account can't run now; a model that qualified for part of what Facts learns says so; then the footer and Add a Model….
+/// Facts' model pop-up (model providers §4): only offers, each a model's display name under its account or plan (the
+/// chosen one's full id, which records name, is the pop-up's help tag), with why the account can't run now; a model that qualified for part of what Facts learns says so; then the footer and Add a Model….
 struct FactsModelPicker: View {
     let model: AppModel
 
@@ -174,7 +173,8 @@ struct FactsModelPicker: View {
                 ForEach(accounts, id: \.self) { account in
                     Section(header(account)) {
                         ForEach(offers.filter { $0.account == account }, id: \.self) { offer in
-                            Text(offer.groups == all ? offer.model : String(localized: "\(offer.model) (part of what Facts learns)"))
+                            let name = FactsModelName.display(offer.model)
+                            Text(offer.groups == all ? name : String(localized: "\(name) (part of what Facts learns)"))
                                 .tag(Tag.offer(offer.choice))
                         }
                     }
@@ -194,6 +194,7 @@ struct FactsModelPicker: View {
             Text(current.map(label) ?? String(localized: "Choose a model"))
         }
         .fixedSize()
+        .help(current?.model ?? "")
         .accessibilityLabel(String(localized: "Model: \(current.map(label) ?? String(localized: "Choose a model"))"))
     }
 
@@ -202,8 +203,9 @@ struct FactsModelPicker: View {
         return settings.problem(account: account).map { "\(name) — \(ProviderText.reason($0))" } ?? name
     }
 
+    /// "Claude (Claude Code) · Claude Haiku 5.5": the model's display name; its full id is the help and VoiceOver value.
     private func label(_ choice: ModelChoice) -> String {
-        "\(settings.name(choice.account)) · \(choice.model ?? "")"
+        "\(settings.name(choice.account)) · \(FactsModelName.display(choice.model ?? ""))"
     }
 
     private func choose(_ tag: Tag) {

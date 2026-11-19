@@ -221,4 +221,15 @@ import Testing
         #expect(p.factsAliases == ["daniela", "daniela Ortiz"])
         #expect(Profile().factsAliases.isEmpty)
     }
+
+    /// Facts' settings show a model's display name, derived from its full id; records keep the id.
+    @Test func modelIdsReadAsDisplayNames() {
+        #expect(FactsModelName.display("claude-haiku-5-5") == "Claude Haiku 5.5")
+        #expect(FactsModelName.display("claude-opus-5-5") == "Claude Opus 5.5")
+        #expect(FactsModelName.display("claude-sonnet-4") == "Claude Sonnet 4")
+        // Other shapes read as written: an alias, a dated id, a local model's tag.
+        for id in ["haiku", "gpt-5.6-terra", "gpt-oss-5", "qwen3:8b", "claude-haiku-5-5-20261101", "", "claude--5", "claude--haiku--5", "claude-haiku-五"] {
+            #expect(FactsModelName.display(id) == id)
+        }
+    }
 }
