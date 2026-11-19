@@ -286,6 +286,20 @@ final class AppModel {
                                                                  : String(localized: "Discard and Install")) ?? true
         }
         self.modelSettings.embeddingInputsChanged = { [weak self] in self?.embeddings.apply() }
+        // The facts lane follows *Learn from memories* (user defaults) from launch on, and anything a facts call depends
+        // on stops a running job at its next send and wakes the jobs that waited for a model (memory processing §11.3).
+        let lane = services.store.factsLane
+        lane.setLearning(self.modelSettings.factsLearn)
+        self.modelSettings.factsInputsChanged = { [weak self] in
+            guard let self else { return }
+            lane.setLearning(self.modelSettings.factsLearn)
+            lane.reconfigured()
+            if self.processingStarted { self.processing.factsSettingsChanged() }
+        }
+        tidyUp.factsLaneReopened = { [weak self] in
+            guard let self, self.processingStarted else { return }
+            self.processing.kick()
+        }
         composer.save = { [weak self, composer] _ in self?.saveCapture(composer) ?? false }
         composer.search = { [weak self] text in self?.showVault(query: text.trimmingCharacters(in: .whitespacesAndNewlines)) }
         observation = services.store.observeChanges { [weak self] in

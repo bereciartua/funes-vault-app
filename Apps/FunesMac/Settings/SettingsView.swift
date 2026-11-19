@@ -78,6 +78,7 @@ struct SettingsPageView: View {
         case .newMemories: NewMemoriesPage(model: model).navigationTitle(String(localized: "New memories"))
         case .tidyUp: TidyUpPage(model: model).navigationTitle(String(localized: "Daily tidy-up"))
         case .searchAnswers: SearchAnswersPage(model: model).navigationTitle(String(localized: "Search answers"))
+        case .facts: FactsPage(model: model).navigationTitle(String(localized: "Facts"))
         case .searchIndex: SearchIndexPage(model: model).navigationTitle(String(localized: "Search index"))
         case let .account(id): AccountPage(model: model, id: id)
         }

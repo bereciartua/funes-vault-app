@@ -6,7 +6,8 @@ import GRDB
 /// re-read), or nothing, with no call. The sweep revalidates in code what it can and queues the memories with something
 /// due. Every applied change queues the sweep again (`FactStore.bumpRevision`), in the same transaction.
 ///
-/// Nothing in the app queues facts jobs yet: memory commits will, while *Learn from memories* is on (the Settings step).
+/// Memory commits queue the jobs while *Learn from memories* is on (`ProcessingQueue.enqueueFactsForCommit`), and the
+/// Mac's processing runner runs them here, with a configuration built for each job.
 public struct FactsQueueWorker: Sendable {
     public let extractor: FactsExtractor
     public var clock: @Sendable () -> Date

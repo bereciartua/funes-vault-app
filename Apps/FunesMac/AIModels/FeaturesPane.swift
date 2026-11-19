@@ -17,6 +17,7 @@ struct FeaturesPane: View {
                 NavigationLink(value: SettingsPage.newMemories) { newMemoriesRow }
                 NavigationLink(value: SettingsPage.tidyUp) { tidyUpRow }
                 NavigationLink(value: SettingsPage.searchAnswers) { searchAnswersRow }
+                NavigationLink(value: SettingsPage.facts) { FactsRow(model: model) }
                 NavigationLink(value: SettingsPage.searchIndex) { searchIndexRow }
             } footer: {
                 Text(String(localized: "Each feature uses a model from Models & Accounts."))
@@ -153,6 +154,39 @@ struct JobRow: View {
         case let .model(account, model): return "\(PlanKind(rawValue: account)?.plan ?? settings.name(account)) · \(model)"
         case let .unresolved(account): return settings.name(account)
         }
+    }
+}
+
+/// The Facts row (v0.10): its summary, and while *Learn from memories* is on, the chosen model and badge or what's
+/// missing in orange.
+struct FactsRow: View {
+    let model: AppModel
+
+    private var settings: ModelSettings { model.modelSettings }
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(String(localized: "Facts"))
+                Text(AIJobText(model: model).factsSummary).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if settings.factsLearn {
+                switch settings.factsProblem {
+                case .nothingQualified?, .needsAccount?, .chooseModel?:
+                    ProblemLabel(text: String(localized: "Choose a model"))
+                case let .account(_, problem)?:
+                    ProblemLabel(text: ProviderText.label(.account("", problem)))
+                case nil:
+                    if let chosen = settings.factsResolution.chosen {
+                        Text(verbatim: "\(PlanKind(rawValue: chosen.account)?.plan ?? settings.name(chosen.account)) · \(chosen.model)")
+                            .foregroundStyle(.secondary).lineLimit(1)
+                        LocalityPill(locality: settings.locality(account: chosen.account))
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
