@@ -162,10 +162,48 @@
   - **Not yet:**
     - **Records.** The Gates step runs the gates and writes them, each needing the author's go-ahead for its live runs:
       - Haiku, both groups: main, astra and mixed, two reads, about 2 × (122 + 143 + 180) ≈ 900 calls;
+      - Haiku, people group: the person fixture, two reads, about 2 × 430 ≈ 860 calls (about 2 × 260 ≈ 520 on the natural order alone, `orders=natural`);
       - the fresh blind work fixture, once GPT-6-Astra writes it, about 100–150 calls;
       - the canary, one read;
-      - Opus 5.5, people group only: main, astra and mixed, two reads, about 2 × (120 + 140 + 95) ≈ 700 calls.
-    - **A person fixture first:** across main, astra and mixed, child has 3 role references, other 1, parent 15, care 17 and other family 17, every order counted. That's short of "≥ 20 per predicate" before any read, so the Gates step needs a fixture with more of them, or the threshold revisited with the author.
+      - Opus 5.5, people group only: main, astra, mixed and the person fixture, two reads, about 2 × (120 + 140 + 95 + 430) ≈ 1,570 calls.
+    - ~~A person fixture first~~ **Addressed** (the person fixture, `persons`): main, astra and mixed had too few role references for "≥ 20 per predicate" (child 3, other 1, parent 15, care 17, other family 17). The new set fills them. See the status note below.
+- *Status (18 November 2026), the person fixture:*
+  - **The counting rule** (`spikes/people/fixture_counts.py`): a role reference is one listed role in a story's truth, counted under the predicate whose registry word its phrase uses ("my late grandmother" is other family), once per play (the natural order and each extra order). It reproduces the numbers above, except manager, at 53 rather than 52.
+  - **The set** (`fixtures/stories-persons.json`): 42 stories, 219 memories (186 captures, 19 agent notes, 14 imports) and 301 role references, 43 of them undecidable; 24 extra orders, 66 plays. GPT-6-Astra wrote it blind (`author_astra_persons.py`, raw output in `fixtures/raw/astra-persons.json`). It got the feature's rules, the registry's relation words and the traps, never another set, a prompt or a model's output. The traps: quoted speech, possessive chains, shared names, former and deceased people, denials, plurals, hypotheticals, owner-less role words, injections, imports and Spanish.
+  - **Role references per predicate, every order counted** (natural order in brackets):
+
+    | | partner | parent | child | sibling | other family | friend | manager | colleague | care | other |
+    |---|---|---|---|---|---|---|---|---|---|---|
+    | main + astra + mixed | 24 | 15 | 3 | 70 | 17 | 34 | 53 | 25 | 17 | 1 |
+    | person fixture | 28 (18) | 47 (32) | 58 (41) | 21 (16) | 67 (50) | 19 (13) | 38 (20) | 28 (18) | 93 (53) | 65 (40) |
+    | pooled | 52 | 62 | 61 | 91 | 84 | 53 | 91 | 53 | 110 | 66 |
+
+    Each predicate is at least 80% resolvable in the person fixture. The gate counts full-basis links, which come from the resolvable references, so the margin holds.
+  - **Validation is by script.** `fixture_counts.py --check` checks the structure and that the labels hang together, with 0 problems. It checks:
+    - ids, surfaces and orders;
+    - dates;
+    - each role phrase's word against the person's relation in the story;
+    - labels in the text;
+    - that no one is both linked and in not_linked.
+
+    It also flags a few old inconsistencies in astra and mixed, left as they are.
+  - **Scripted answers** (`gold_answers.py`; `sh scripts/facts_harness.sh persons gold`): every call is answered from the story's labels and played through the Swift harness, with no model. It answers "group" for a decidable reference to someone not yet known. The set plays end to end: 66 plays, 437 calls (421 in Python), none failed.
+    - Full basis 302/302, decidable references 387/396 and relations 211/211 · 211/216.
+    - `sole_known` is 37/46: p06 and p14 (an import dated only in a header, so the time cue isn't next to the phrase) and p24 (an unnamed older sister beside a named younger one) are rule limits kept on purpose.
+    - So a perfect reader can't pass the 90% `sole_known` gate on this set. In the Python play it's 40/49; pooled with main, astra and mixed (25/25 by the same play), 65/74 ≈ 88%. The fixture ships with the three stories as they are. **Open for the Gates step:** either the `sole_known` row leaves the person set out (main, astra and mixed only), or GPT-6-Astra rewrites p06, p14 and p24 first.
+    - `facts_harness.sh persons` (replay) refuses until the Gates step records calls.
+    - The same scripted play on main gives full basis 61/61 and no wrong link, which checks the script itself.
+  - Reviewed twice by Fable 5.2 and a fresh GPT-6-Astra (read-only, ephemeral), and corrected by GPT-6-Astra in four rounds:
+    - the first version's own scripted play was 95% on full basis: four stories told an unnamed holder from a named one only by "older" / "younger" on a shared word, so a perfect reader was scored wrong. Three were rewritten with names, and p24 kept;
+    - self-labelling text removed;
+    - shared names established as two people;
+    - an undecidable "my X" no longer sits beside a named X that it isn't;
+    - not_linked entries that contradicted a genuinely mentioned person removed;
+    - facts listed per memory;
+    - ten mixed stories added, with 5–7 memories, mixed relation types and more varied traps and wording;
+    - cloned succession stories reworked so the time cue sits next to the phrase.
+
+    Not taken: deleting plural facts with no person ("my kids"), and adding a chain's first part to not_linked.
     - Settings uses `resolve` and `ModelRouter.factsModels` (the next step).
     - Re-reading a group when its qualified coverage grows (the backfill step's registry rule).
     - Search and answers check *linked*, *attributes* and *bridges* (13b, 13d).
