@@ -50,12 +50,13 @@ import Testing
         try (0..<n).map { try v.memory("Note \($0)", "Plain note number \($0).") }
     }
 
-    /// As after Remove learned facts once the first backfill was used: every memory is the lane's, none read.
-    func afterRemove() async throws {
+    /// As once the first backfill was used and nothing is read now (a backup restored from before its reads): every
+    /// memory is the lane's, none read.
+    func usedBackfillNothingRead() async throws {
         try await v.store.writer.write { db in
             var s = FactsBackfill.State(startedAt: t0.plus(days: -30), memories: 0, calls: 0, engines: [:], limit: .upTo(.internal))
             s.finishedAt = t0.plus(days: -30)
-            s.ended = "removed"
+            s.ended = "done"
             try FactsBackfill.write(db, s)
         }
         lane.setLearning(true)
@@ -141,7 +142,7 @@ import Testing
         let model = Model()
         let x = extractor(model, cap: cap)
         _ = try memories(365)
-        try await afterRemove()
+        try await usedBackfillNothingRead()
         #expect(try await FactsQueueWorker(extractor: x).scheduleCatchUp() == 365 * groups.count)
         #expect(365 * groups.count == 730)
         try await drain(x)
@@ -182,7 +183,7 @@ import Testing
     @Test func aRaisedCapWakesJobsWaitingOnTheShare() async throws {
         let model = Model()
         _ = try memories(10)
-        try await afterRemove()
+        try await usedBackfillNothingRead()
         let small = cap(20)                                             // low priority 6
         let x = extractor(model, cap: small)
         try await FactsQueueWorker(extractor: x).scheduleCatchUp()
@@ -199,7 +200,7 @@ import Testing
 
     @Test func catchUpRereadsAndReconciliationAreLowANewOrChangedTextIsNot() async throws {
         let m = try v.memory("Older", "An older note.")
-        try await afterRemove()
+        try await usedBackfillNothingRead()
         let x = extractor(Model(), cap: cap(100))
         try await FactsQueueWorker(extractor: x).scheduleCatchUp()
         let g = groups[0]
@@ -228,7 +229,7 @@ import Testing
         let cap = cap(10)                                               // low priority 3
         let model = Model()
         let m = try v.memory("Older", "Never read.")
-        try await afterRemove()
+        try await usedBackfillNothingRead()
         let x = extractor(model, cap: cap)
         try await FactsQueueWorker(extractor: x).scheduleCatchUp()
         // While the catch-up job's first request is with the model, the user edits the memory: that answer can't apply,
@@ -250,7 +251,7 @@ import Testing
 
     @Test func anArchiveOrCategoryChangeKeepsWhatAJobAlreadyWas() async throws {
         let older = try v.memory("Older", "Never read.")
-        try await afterRemove()
+        try await usedBackfillNothingRead()
         let x = extractor(Model(), cap: cap(100))
         try await FactsQueueWorker(extractor: x).scheduleCatchUp()
         // A never-read memory archived during a catch-up stays low-priority…
@@ -265,7 +266,7 @@ import Testing
     @Test func anEditUnparksAJobWaitingOnTheShareAndTheReadCountsAsNormal() async throws {
         let model = Model()
         let m = try v.memory("Older", "Never read.")
-        try await afterRemove()
+        try await usedBackfillNothingRead()
         let none = cap(3)                                               // low priority 0: every low call is refused
         let x = extractor(model, cap: none)
         try await FactsQueueWorker(extractor: x).scheduleCatchUp()
@@ -281,7 +282,7 @@ import Testing
 
     @Test func newAndChangedMemoriesAreClaimedFirstThenTheBackfillThenLowPriorityWork() async throws {
         let older = try v.memory("Older", "Caught up.")
-        try await afterRemove()
+        try await usedBackfillNothingRead()
         try await FactsQueueWorker(extractor: extractor(Model(), cap: nil)).scheduleCatchUp()
         let marked = try v.memory("Marked", "A backfill read.", now: t0.plus(minutes: 1))
         try await v.store.writer.write { db in
@@ -331,7 +332,7 @@ import Testing
         try await v.store.writer.write { db in
             try db.execute(sql: "UPDATE memory SET source = 'agent_write', trust = 'untrusted' WHERE id = ?", arguments: [agent.id.db])
         }
-        try await afterRemove()
+        try await usedBackfillNothingRead()
         for _ in 0..<4 { try await cap.consume(.agent, now: t0) }       // the agents' share used up
         // The agent's memory caught up with both shares used: the low-priority share is named.
         for _ in 0..<3 { try await cap.consume(.user, priority: .low, now: t0) }
@@ -355,7 +356,7 @@ import Testing
         let model = Model()
         let x = extractor(model, cap: cap)
         _ = try memories(5)
-        try await afterRemove()
+        try await usedBackfillNothingRead()
         try await FactsQueueWorker(extractor: x).scheduleCatchUp()
         try await drain(x)
         #expect(try model.calls.withLock { $0 } == 3 && waiting("cap_share") == 5 * groups.count - 3)

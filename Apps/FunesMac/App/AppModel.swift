@@ -428,7 +428,7 @@ final class AppModel {
 
     /// After the first backfill: its finish time, until the summary is dismissed.
     var peopleSummary: Date? {
-        guard let state = factsBackfill?.state, let done = state.finishedAt, state.ended == nil else { return nil }
+        guard let done = factsBackfill?.state.finishedAt else { return nil }
         let dismissed = preferences.defaults.double(forKey: Self.peopleSummaryKey)
         return dismissed >= done.timeIntervalSince1970 ? nil : done
     }
@@ -502,7 +502,7 @@ final class AppModel {
         let wasRunning = factsBackfill?.state.isRunning == true
         factsBackfill = try? services.store.factsBackfill()
         hasUserFactEntries = (try? services.store.hasUserFactEntries()) ?? false
-        if wasRunning, let state = factsBackfill?.state, state.finishedAt != nil, state.ended == nil {
+        if wasRunning, factsBackfill?.state.finishedAt != nil {
             factsBackfillFinished()
         }
         if !factsLearning && !hasUserFactEntries { people.clear() }

@@ -8646,10 +8646,7 @@
     "The export couldn't be written." : {
 
     },
-    "The facts and corrections you entered yourself stay. Learning turns off; turning it on again learns from new and changed memories." : {
-
-    },
-    "The facts and corrections you entered yourself stay. Learning turns off; turning it on again reads your memories again over the following days, with a share of each day's cloud requests." : {
+    "The facts and corrections you entered yourself stay. Learning turns off; turning it on again offers to read your memories again." : {
 
     },
     "The file couldn't be read." : {

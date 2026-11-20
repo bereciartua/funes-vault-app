@@ -468,17 +468,100 @@ import Testing
         #expect(try state()?.changed == true && marked() == groups.count && model.calls.withLock { $0 } == 0)
     }
 
-    @Test func removeEndsItAndNeverGrantsASecondExemption() async throws {
-        let x = extractor(Model())
+    /// Exempt reads the latest backfill made: its runs since it started (Remove deletes earlier runs with the facts).
+    func exemptRuns() throws -> Int { try v.count("SELECT COUNT(*) FROM facts_run WHERE kind = 'backfill' AND cap_exempt = 1") }
+
+    /// Remove learned facts starts Facts over: the backfill's state goes with what it read, so the next turn-on offers it
+    /// again with a fresh count, and its exempt reads stay within that count, at the cap as the first time.
+    @Test func removeStartsOverAndTheNextBackfillReadsExemptWithinItsCount() async throws {
+        let cap = CloudRequestCap(store: v.store, limit: 0)            // every counted request is refused
+        let model = Model()
+        let x = extractor(model, cap: cap)
+        _ = try memories(2)
+        let first = try await start(x)
+        try await drain(x)
+        #expect(try state()?.ended == "done" && model.calls.withLock { $0 } == first.calls)
+        _ = try await v.store.removeLearnedFactsStoppingLearning(activity: activity, now: t0.plus(minutes: 60))
+        #expect(try state() == nil && marked() == 0 && !lane.learning)
+        #expect(try await v.store.factsBackfill() == nil)
+        // Turning learning on again: the sheet's count is every memory again, nothing read.
+        lane.setLearning(true)
+        #expect(try await v.store.factsBackfill() == nil)
+        let again = try await v.store.factsBackfillEstimate(extractor: x)
+        #expect(again.memories == 2 && again.calls == 2 * groups.count)
+        let s = try await v.store.startFactsBackfill(extractor: x, shown: again, activity: activity, now: t0.plus(minutes: 120))
+        #expect(try s.isRunning && s.calls == again.calls && marked() == again.calls)
+        try await drain(x)
+        #expect(try state()?.ended == "done" && marked() == 0)
+        #expect(model.calls.withLock { $0 } == first.calls + again.calls)
+        #expect(try exemptRuns() == again.calls)
+        let day = try await cap.today(now: t0)
+        #expect(day.total == 0 && day.lowPriority == 0)
+        // Done again: no third exemption without another Remove.
+        await #expect(throws: FactsBackfill.StartError.used) {
+            try await v.store.startFactsBackfill(extractor: x, shown: again, activity: activity, now: t0.plus(minutes: 180))
+        }
+        #expect(activity.events.filter { $0.event == "facts_backfill" && $0.outcome == "started" }.count == 2)
+    }
+
+    /// Remove during an unfinished, paused backfill ends it with its marks; the next turn-on offers it again, unpaused.
+    @Test func removeMidBackfillEndsItAndTheNextTurnOnOffersItAgain() async throws {
+        let cap = CloudRequestCap(store: v.store, limit: 0)
+        let model = Model()
+        let x = extractor(model, cap: cap)
+        _ = try memories(3)
+        try await start(x)
+        // One memory read, then paused with the rest still owed.
+        let job = try #require(try await queue.claim(now: t0))
+        try await queue.finish(job, try await FactsQueueWorker(extractor: x).process(job), now: t0)
+        try await v.store.setFactsBackfillPaused(true)
+        #expect(try state()?.isPaused == true && marked() == 3 * groups.count - 1 && lane.backfillPaused)
+        _ = try await v.store.removeLearnedFactsStoppingLearning(activity: activity, now: t0.plus(minutes: 5))
+        #expect(try state() == nil && marked() == 0 && !lane.backfillPaused)
+        #expect(try v.count("SELECT COUNT(*) FROM processing_job WHERE kind = 'facts'") == 0)
+        #expect(activity.events.filter { $0.event == "facts_backfill" && $0.outcome == "finished" }.isEmpty)
+        lane.setLearning(true)
+        let again = try await v.store.factsBackfillEstimate(extractor: x)
+        #expect(again.memories == 3 && again.calls == 3 * groups.count)    // the read one is unread again
+        try await v.store.startFactsBackfill(extractor: x, shown: again, activity: activity, now: t0.plus(minutes: 6))
+        #expect(try state()?.isPaused == false && !lane.backfillPaused)
+        try await drain(x)
+        #expect(try state()?.ended == "done" && exemptRuns() == again.calls)
+        #expect(model.calls.withLock { $0 } == 1 + again.calls)
+        #expect(try await cap.today(now: t0).total == 0)
+    }
+
+    /// Not Now after a Remove: learning goes on for new and changed memories only, as the first time; nothing reads the
+    /// older memories until Read Existing Memories….
+    @Test func notNowAfterARemoveReadsOnlyNewMemories() async throws {
+        let model = Model()
+        let x = extractor(model)
         _ = try memories(2)
         try await start(x)
+        try await drain(x)
         _ = try await v.store.removeLearnedFactsStoppingLearning(activity: activity, now: t0)
-        #expect(try state()?.ended == "removed" && marked() == 0)
+        let before = model.calls.withLock { $0 }
         lane.setLearning(true)
-        let e = try await v.store.factsBackfillEstimate(extractor: x)
-        await #expect(throws: FactsBackfill.StartError.used) {
-            try await v.store.startFactsBackfill(extractor: x, shown: e, activity: activity, now: t0)
+        #expect(try await v.store.writer.write { db in try FactsBackfill.catchUp(db, extractor: x, now: t0) } == 0)
+        _ = try v.memory("New", "Captured after the Remove.")
+        try await drain(x)
+        #expect(model.calls.withLock { $0 } == before + groups.count)
+        #expect(try state() == nil)
+    }
+
+    /// A state a Remove left ended `removed`, before Remove reset it: read as no backfill, so the sheet is offered.
+    @Test func aStateEndedRemovedReadsAsNoBackfill() async throws {
+        let x = extractor(Model())
+        _ = try memories(1)
+        try await v.store.writer.write { db in
+            var s = FactsBackfill.State(startedAt: t0, memories: 1, calls: groups.count, engines: [:], limit: .upTo(.internal))
+            s.finishedAt = t0
+            s.ended = "removed"
+            try FactsBackfill.write(db, s)
         }
+        #expect(try state() == nil)
+        try await start(x)
+        #expect(try state()?.isRunning == true)
     }
 
     @Test func aBackfillWithNoMarkLeftEndsAtLaunch() async throws {
