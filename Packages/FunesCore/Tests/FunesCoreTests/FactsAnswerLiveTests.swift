@@ -116,9 +116,12 @@ import Testing
                            : "Live: \(c.calls) calls sent, \(c.reused) answers from the cache.")
         let text = summary.joined(separator: "\n")
         FileHandle.standardError.write(Data((text + "\n").utf8))
-        let dir = Self.out.appending(path: "answers-\(engine)")
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        try text.write(to: dir.appending(path: "calls-\(o["gate"] ?? "answers")\(dry ? "-dry" : "").md"), atomically: true, encoding: .utf8)
+        // Beside the records (a dry run without `out=` writes none, and no summary either).
+        if let root = Self.records {
+            let dir = root.appending(path: "answers-\(engine)")
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            try text.write(to: dir.appending(path: "calls-\(o["gate"] ?? "answers")\(dry ? "-dry" : "").md"), atomically: true, encoding: .utf8)
+        }
         if let first = written.first {
             try Self.manifest(gate: o["gate"] ?? "answers", options: o, model: model, dry: dry, written: written)
                 .write(to: first.deletingLastPathComponent().appending(path: "manifest-\(o["gate"] ?? "answers").json"), options: .atomic)

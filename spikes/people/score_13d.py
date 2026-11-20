@@ -68,8 +68,11 @@ def waivers(engine):
     return json.loads(p.read_text())["waivers"] if p.exists() else []
 
 
-def answers_gate(engine, sets):
-    """The answers gate's verdicts and report lines."""
+def answers_gate(engine, sets, marks=None):
+    """The answers gate's verdicts and report lines. `marks`: {(set, id, arm, rep): [inferred per claim]} from a replay
+    at the code that ships (qualify.py), where it marks differently from the live run; the judge's verdicts stay bound
+    to the answers it read."""
+    marks = marks or {}
     d = OUT / f"answers-{engine}"
     waived = {(w["set"], w["question"], w["arm"], w["rep"]): w for w in waivers(engine) if w["gate"] == "answers" and w["rule"] == "coverage"}
     out = [f"# 13d gate: answers on linked questions ({engine})", "",
@@ -148,6 +151,8 @@ def answers_gate(engine, sets):
                     continue
                 claim = rec["claims"][cl["claim"] - 1]
                 marked = bool(claim.get("inferred"))
+                if (s, qid, arm, rep) in marks:
+                    marked = marks[(s, qid, arm, rep)][cl["claim"] - 1]
                 cites = {c["memory"] for c in claim["citations"]}
                 if exercised:
                     trap = rec.get("injected") in cites

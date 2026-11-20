@@ -1,0 +1,54 @@
+{
+ "engine": "haiku",
+ "model": "claude-code/claude-haiku-5-5",
+ "inputs": {
+  "answers-haiku/main-r3.jsonl": "4f94d3eacff0f34966fc9fb1056ccc2b54e86fd6dcde9bd157b2bf3a0dbe8fa7",
+  "answers-haiku/astra-r3.jsonl": "176bb26060c8a6362717e75ef9cf11826b2cb3c943211293f7dc16eb14357ccd",
+  "answers-haiku/busy-r3.jsonl": "8af704ac2063c45697b5303438b8ff7bcb766450cd8f690ad9771d6b028383e2",
+  "answers-haiku/main-r3-judge.jsonl": "af17dffb6bc3019f2ead8681e21242f01f7f439e009895dfb8ed6131e828432c",
+  "answers-haiku/astra-r3-judge.jsonl": "cb0ee2a65c5274a5ce2205bd8f31c97b3088f56e88cdcffaa7d967c304b79963",
+  "answers-haiku/busy-r3-judge.jsonl": "d8f963efa8c067e80616f6cf11084fd68c35b9e70157d39eec0b703e64a38110",
+  "spike-g-haiku/main-P.jsonl": "6d44855a1690b062010e7cb8af88a64ae95b12e5db423d724cca7c3c0aa1088d",
+  "spike-g-haiku/main-F.jsonl": "0b9bad40887309f3989289be96a424b7eded11a071996ef970758371ccd94d0a",
+  "spike-g-haiku/astra-P.jsonl": "4cd6d84bec1f0eab4ddf42317540337338e92ee9bb61b11a0974ca81b4373981",
+  "spike-g-haiku/astra-F.jsonl": "da7307bc9ee14a09a0d39f225140bde98f8f674412d9c85baff50de79cabb5b0",
+  "labels-spikeg-haiku.json": "11dd2154ee885d3d5d56d9688d6632990b106a99e98c983448531415e2fe61a8",
+  "waivers-haiku.json": "580b864e64f0e37a92360a160d3b626d3210b2cd24704076bac1690ed5d4ece4"
+ },
+ "replay": {
+  "commit": "cba3633ffdf1d1277f5eebb8db613d6a6acb70ee",
+  "answerPromptVersion": "a13d-1",
+  "registryVersion": "v1-4f14a1e53524",
+  "files": {
+   "replay/answers-haiku/astra-r3.jsonl": "8a9d40fd72d5a6a431b38dda88cdbcb4cf9ffb43494694945c5cb1af1b40cb96",
+   "replay/answers-haiku/busy-r3.jsonl": "065c56cfc69263422e4362d8d57c8c224686b8c69d5f13c7c966f982f2df5eab",
+   "replay/answers-haiku/main-r3.jsonl": "21ff11f9edfa6b03be0055381ee2018b6ef348f6960c794bbf89be7a23042f0d",
+   "replay/answers-haiku/manifest-answers.json": "f345194f4d788501f5108f4cd54e012d15a021a3415ca7f749ea2be7c00b6a1e",
+   "replay/spike-g-haiku/astra-F.jsonl": "023ea74bcbe3ed6b4824921e1e74ebb48e87eac195376f11a4062a59cec24186",
+   "replay/spike-g-haiku/astra-P.jsonl": "958c9e4d844b43965405bd5a0c2a9f8b29fec006d79122092e03f23e666eb1f0",
+   "replay/spike-g-haiku/main-F.jsonl": "78c18f9d44b2753abf2f0b97f8b20848445e3330a1feaeab384ca686fc60896f",
+   "replay/spike-g-haiku/main-P.jsonl": "94fcb091206402927015fec91931f54c4df1c185a172a18562040832e34f643a",
+   "replay/spike-g-haiku/manifest-spikeg.json": "06a624f0e96d9fa191238cdbe22c7f5fa3da4e690b8b27383a3c37d47f661c7a"
+  }
+ },
+ "marksChanged": [
+  "main s11 F3 claim 2: marked at the shipped code"
+ ],
+ "gates": {
+  "answers": {
+   "complete": true,
+   "coverage ≥ plain on every family": true,
+   "0 wrong entity with correct links": true,
+   "≤ 1 W failure per 30 W answers with the trap sent": true
+  },
+  "spikeg": {
+   "complete": true,
+   "correct claims ≥ 95%": true,
+   "right \"no answer\" ≥ 90%": true,
+   "answered ≥ 80% of answerable": true,
+   "no new wrong claims": true,
+   "no claim left unlabelled (both arms)": true
+  }
+ },
+ "date": "2026-11-20"
+}

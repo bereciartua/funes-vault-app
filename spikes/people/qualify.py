@@ -618,17 +618,41 @@ def replay_files(engine):
             "spikeg": (f"spike-g-{engine}", [f"{s}-{arm}.jsonl" for s in ("main", "astra") for arm in ("P", "F")])}
 
 
-def normalized(path):
+MARK_FIELDS = ("inferred", "basis", "factIds", "corrections")
+
+
+def normalized(path, marks=True):
     """A record file without what differs between two fixture vaults (the facts revision's epoch, fact row ids) and
-    whether an answer came from the cache."""
+    whether an answer came from the cache; without each claim's marking too unless `marks`."""
     out = []
     for line in Path(path).read_text().splitlines():
         r = {k: v for k, v in json.loads(line).items() if k != "reused"}
         if r.get("factsRevision"):
             r["factsRevision"] = r["factsRevision"].split(".", 1)[1]
         r["claims"] = [{**c, "factIds": len(c["factIds"])} if "factIds" in c else c for c in r.get("claims", [])]
+        if not marks:
+            r["claims"] = [{k: v for k, v in c.items() if k not in MARK_FIELDS} for c in r["claims"]]
         out.append(r)
     return out
+
+
+def replay_marks(engine, replay):
+    """Where the code that ships marks a claim differently from the live run (the same answer, marked again): the
+    replay's marks by (set, id, arm, rep), and each change in words."""
+    marks, changes = {}, []
+    sub = f"answers-{engine}"
+    for s in ANSWER_SETS:
+        live = [json.loads(l) for l in (R13D / sub / f"{s}-r3.jsonl").read_text().splitlines()]
+        again = [json.loads(l) for l in (replay / sub / f"{s}-r3.jsonl").read_text().splitlines()]
+        for a, b in zip(live, again):
+            la = [bool(c.get("inferred")) for c in a["claims"]]
+            lb = [bool(c.get("inferred")) for c in b["claims"]]
+            if la != lb:
+                marks[(s, a["id"], a["arm"], a["rep"])] = lb
+                for i, (x, y) in enumerate(zip(la, lb)):
+                    if x != y:
+                        changes.append(f"{s} {a['id']} {a['arm']}{a['rep']} claim {i + 1}: {'marked' if y else 'unmarked'} at the shipped code")
+    return marks, changes
 
 
 def replay_problems(engine, model, replay):
@@ -655,18 +679,21 @@ def replay_problems(engine, model, replay):
             f = replay / sub / name
             if not f.exists() or sha(f) != m.get("records", {}).get(name):
                 probs.append(f"{sub}/{name}: the replay's file isn't the one it wrote")
-            elif normalized(f) != normalized(R13D / sub / name):
+            elif normalized(f, marks=False) != normalized(R13D / sub / name, marks=False):
                 probs.append(f"{sub}/{name}: the replay's records differ from the live ones")
+            elif gate == "spikeg" and normalized(f) != normalized(R13D / sub / name):
+                probs.append(f"{sub}/{name}: the replay marks Spike G's answers differently")
     if len({m.get("commit") for m in manifests.values()}) > 1 or len({m.get("answerPromptVersion") for m in manifests.values()}) > 1:
         probs.append("the two replays disagree on the commit or the answer prompt version")
     return probs, manifests
 
 
-def answer_gates(engine):
-    """Both 13d gates recomputed from the evidence in results-13d/ (score_13d.py), with the author's waivers."""
+def answer_gates(engine, marks=None):
+    """Both 13d gates recomputed from the evidence in results-13d/ (score_13d.py), with the author's waivers and the
+    shipped code's marks (`replay_marks`)."""
     import score_13d
     score_13d.OUT = R13D
-    ok_a, _ = score_13d.answers_gate(engine, ANSWER_SETS)
+    ok_a, _ = score_13d.answers_gate(engine, ANSWER_SETS, marks)
     ok_g, _ = score_13d.spikeg_gate(engine)
     return {"answers": ok_a, "spikeg": ok_g}
 
@@ -695,12 +722,13 @@ def cmd_answer_scores(a):
     missing = [p for p in answer_inputs(engine) if not (R13D / p).exists()]
     if missing:
         raise SystemExit("qualify.py: missing " + ", ".join(missing))
-    gates = answer_gates(engine)
+    marks, changes = replay_marks(engine, dest / "replay")
+    gates = answer_gates(engine, marks)
     m0 = manifests["answers"]
     out = {"engine": engine, "model": model, "inputs": {p: sha(R13D / p) for p in answer_inputs(engine)},
            "replay": {"commit": m0["commit"], "answerPromptVersion": m0["answerPromptVersion"], "registryVersion": m0["registryVersion"],
                       "files": {str(f.relative_to(dest)): sha(f) for f in sorted((dest / "replay").rglob("*")) if f.is_file()}},
-           "gates": gates, "date": m0["date"][:10]}
+           "marksChanged": changes, "gates": gates, "date": m0["date"][:10]}
     Path(a.out).write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n")
     print(json.dumps(gates, indent=1, ensure_ascii=False))
 
@@ -770,7 +798,10 @@ def verify_answer_record(r, reg):
         probs.append("answer prompt version isn't the replay's")
     if r.get("answerModels") != [sc["model"]]:
         probs.append(f"answer models {r.get('answerModels')}")
-    gates = answer_gates(sc["engine"])
+    marks, changes = replay_marks(sc["engine"], scores.parent / "replay")
+    if changes != sc.get("marksChanged"):
+        probs.append("the replay's mark changes aren't the scored ones")
+    gates = answer_gates(sc["engine"], marks)
     for gate, ok in gates.items():
         bad = [k for k, v in ok.items() if not v]
         if bad:
