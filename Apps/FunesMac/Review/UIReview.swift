@@ -211,7 +211,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
                 ("My sister drinks her mate bitter", "Every morning, with no sugar, from the gourd she brought back.", nil, "", ""),
                 ("Ana and the climbing gym", "Ana is my friend from the climbing gym; she drinks matcha.", "Ana", "friend", "Ana is my friend"),
             ]
-            for (title, body, person, word, quote) in learned {
+            for (title, body, person, word, quote) in learned where suffix == "light" {      // once: they're kept
                 if let m = try? store.createMemory(MemoryDraft(title: title, body: body, kind: .fact, categoryKeys: ["personal_preferences"],
                                                                sensitivity: .low), now: Date().addingTimeInterval(-86_400)) {
                     try? store.reviewLearn(memoryID: m.id, person: person, word: word, quote: quote)
@@ -237,6 +237,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
             model.applySearchFacts()
             model.vault.query = ""
             await model.vault.load()
+            await peopleScenes(model: model, suffix: suffix, main: main)
             // A tidy-up's automatic change in a memory's History, opened (FR-V-12).
             HistoryList.reviewExpandsChanges = true
             model.vault.status = .archived
@@ -835,6 +836,116 @@ extension UIReview {
     /// The Facts page's qualified scenes only: Claude Haiku 5.5 for every call group through the Claude plan and an
     /// Anthropic key, and Claude Opus 5.5 for the people group through the plan. Made up for the review build; not
     /// evidence of anything, and never in `Resources/facts-qualification.json`.
+    // MARK: People & history (Phase 13c)
+
+    /// People & history with sample facts (never the real vault): the list, Maria's page, your timeline, To check, the
+    /// timeline as it ships (unqualified), and the empty state with Facts off.
+    private func peopleScenes(model: AppModel, suffix: String, main: MainWindowController) async {
+        func scene(_ name: String, _ prepare: () -> Void) async {
+            prepare()
+            main.show()
+            await snapshot("\(name)-\(suffix)", main.window)
+        }
+        let store = model.services.store
+        let ai = model.modelSettings
+        // Facts off, nothing of yours: the empty state.
+        model.peopleConfigOverride = .review()
+        await model.refresh()
+        // The light pass's seed leaves entries of yours; the empty state is what you'd see with none.
+        model.hasUserFactEntries = false
+        await scene("people-empty-off") { model.section = .people }
+        if suffix == "light" { Self.seedPeople(store: store) }
+        ai.factsQualification = Self.reviewFactsQualification()
+        ai.factsLearn = true
+        await model.refresh()
+        let people = model.people
+        people.tab = .people
+        people.selection = nil
+        await people.load()
+        await scene("people-list") { model.section = .people }
+        people.selection = people.directory?.entries.first { $0.name == "Maria" }?.id
+        await people.load()
+        await scene("people-entity") {}
+        people.tab = .timeline
+        await scene("people-timeline") {}
+        people.tab = .toCheck
+        await scene("people-to-check") {}
+        model.peopleConfigOverride = .reviewShipped()
+        people.tab = .timeline
+        await people.load()
+        await scene("people-timeline-off") {}
+        model.peopleConfigOverride = nil
+        people.clear()
+        people.tab = .people
+        ai.factsLearn = false
+        ai.factsQualification = .bundled
+        await model.refresh()
+    }
+
+    /// Sample people, organizations and jobs: Maria and Elena (sisters, so a later "my sister" is unsettled), Maria
+    /// Lopez (a merge suggestion), Ana, your parents, Globex (a client, recorded only), and a work history with a title
+    /// change, a conflicting start, an undated job and a date of yours whose episode split.
+    private static func seedPeople(store: VaultStore) {
+        let reg = FactsRegistry.bundled
+        func pred(_ word: String) -> FactsRegistry.Predicate? { reg.predicates.first { p in p.lexicon.contains { $0.words.contains(word) } } }
+        guard let sib = pred("sister"), let colleague = pred("colleague") ?? pred("coworker"), let parent = pred("parents"),
+              let client = reg.predicates.first(where: { $0.uses == ["recorded"] }),
+              let work = reg.predicates.first(where: { $0.uses.contains("timeline") }) else { return }
+        let slot = work.slot ?? "kind"
+        let employee = work.qualifiers[slot]?.values?.first ?? "employee"
+        let day: Double = 86_400
+        func memory(_ title: String, _ body: String, daysAgo: Double) -> UUID? {
+            try? store.createMemory(MemoryDraft(title: title, body: body, kind: .fact, categoryKeys: ["personal_preferences"],
+                                                sensitivity: .low), now: Date().addingTimeInterval(-daysAgo * day)).id
+        }
+        func apply(_ id: UUID?, _ x: FactsExtraction, _ group: String, daysAgo: Double) {
+            guard let id else { return }
+            try? store.reviewApply(memoryID: id, extraction: x, callGroup: group, now: Date().addingTimeInterval(-daysAgo * day))
+        }
+        func person(_ name: String, _ p: FactsRegistry.Predicate, _ label: String?, _ quote: String) -> FactsExtraction {
+            FactsExtraction(people: [ExtractedPerson(name: name, quote: quote)],
+                            facts: [ExtractedFact(predicate: p.id, name: name, label: label, quote: quote)])
+        }
+        func job(_ name: String, _ start: String?, _ end: String?, title: String?, _ quote: String) -> FactsExtraction {
+            var q = [slot: employee]
+            if let title { q["title"] = title }
+            return FactsExtraction(facts: [ExtractedFact(predicate: work.id, name: name, quote: quote, start: start, end: end, qualifiers: q)])
+        }
+        apply(memory("Elena is my sister too", "Elena moved to Lyon last spring.", daysAgo: 6),
+              person("Elena", sib, "sister", "Elena is my sister"), sib.callGroup, daysAgo: 6)
+        apply(memory("Call my sister", "About the trip to Porto in May.", daysAgo: 2), FactsExtraction(), sib.callGroup, daysAgo: 2)
+        apply(memory("Maria Lopez on the design review", "Maria Lopez is my colleague on the platform team.", daysAgo: 9),
+              person("Maria Lopez", colleague, "colleague", "Maria Lopez is my colleague"), sib.callGroup, daysAgo: 9)
+        apply(memory("Sunday lunch", "My parents are cooking paella this Sunday.", daysAgo: 4),
+              FactsExtraction(facts: [ExtractedFact(predicate: parent.id, name: "", entity: "group", label: "parents", quote: "My parents", count: 2)]),
+              parent.callGroup, daysAgo: 4)
+        apply(memory("Globex renewal", "Globex is our client; the renewal is due in March.", daysAgo: 12),
+              FactsExtraction(facts: [ExtractedFact(predicate: client.id, name: "Globex", quote: "Globex is our client")]), client.callGroup, daysAgo: 12)
+        apply(memory("First job", "I joined Acme as an engineer in 2015 and left in 2017.", daysAgo: 40),
+              job("Acme", "2015", "2017", title: "Engineer", "I joined Acme as an engineer in 2015"), work.callGroup, daysAgo: 40)
+        apply(memory("Promotion at Acme", "In 2016 I became a senior engineer at Acme.", daysAgo: 39),
+              job("Acme", "2016", nil, title: "Senior engineer", "In 2016 I became a senior engineer at Acme"), work.callGroup, daysAgo: 39)
+        apply(memory("Initech", "I started at Initech in 2017 and stayed until 2021.", daysAgo: 30),
+              job("Initech", "2017", "2021", title: nil, "I started at Initech in 2017"), work.callGroup, daysAgo: 30)
+        apply(memory("Initech start", "My first day at Initech was in 2018.", daysAgo: 29),
+              job("Initech", "2018", nil, title: nil, "My first day at Initech was in 2018"), work.callGroup, daysAgo: 29)
+        apply(memory("Back at Acme", "I rejoined Acme in 2021 as a staff engineer.", daysAgo: 10),
+              job("Acme", "2021", nil, title: "Staff engineer", "I rejoined Acme in 2021"), work.callGroup, daysAgo: 10)
+        apply(memory("Hooli contract", "I did a contract at Hooli at some point.", daysAgo: 8),
+              job("Hooli", nil, nil, title: nil, "I did a contract at Hooli"), work.callGroup, daysAgo: 8)
+        // A job of yours: it shows on the timeline even while the timeline is unqualified.
+        _ = try? store.addManualEntry(PeopleManualEntry(kind: work.objectKind, name: "Freelance studio", predicate: work.id,
+                                                        start: "2012-09", end: "2014", status: .former),
+                                      activity: InMemoryActivityLog(), now: Date().addingTimeInterval(-3 * day))
+        // A status of yours set on "Acme" before its two stints were known apart: To check asks which one.
+        let config = FactsSearchConfig.review()
+        if let d = try? store.peopleDirectory(config: config), let acme = d.entries.first(where: { $0.name == "Acme" }),
+           let fid = try? store.peopleEntity(acme.id, config: config)?.facts.first?.factID,
+           let lo = DayNumber.from(year: 2015, month: 1, day: 1), let hi = DayNumber.from(year: 2022, month: 12, day: 31) {
+            try? store.setFactStatus(fid, .current, selector: DateRange(lo: lo, hi: hi), activity: InMemoryActivityLog())
+        }
+    }
+
     static func reviewFactsQualification() -> FactsQualification {
         let registry = FactsRegistry.bundled, versions = FactsQualification.promptVersions(registry)
         func record(_ group: String, _ engine: FactsEngine) -> FactsQualification.Record {

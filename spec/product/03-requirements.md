@@ -698,6 +698,8 @@
   - A correction made from a memory is keyed to the memory and the quoted span's text: it survives an edit that keeps the span, and moves with the span through tidy-up merges and splits. After a purge it holds again only through an identity-preserving restore (a Funes export restored as active memories). One made without a memory applies everywhere.
   - `facts_corrected` Activity rows carry ids and counts only.
   - VoiceOver, the string catalog, and UI snapshots of the list, an entity's page, the timeline and To check, in light and dark.
+  - Each action in People & history is one Undo in Corrections; a manual entry undone leaves nothing behind (tested).
+  - While a use is unqualified, the section shows only what that use allows: a predicate whose *recorded* is off, only your own entries; *linked* off, its facts as recorded only, with no why line; *timeline* off, only your own dated entries, with nothing derived ([UX ▸ As built in 13c](04-ux-mac.md#people--history-v010)).
 
 **FR-F-08 Privacy and trust for learned facts** · M · v0.10 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md))
 - **The cloud limit covers derived facts, conservatively:** a fact, qualifier, date, order edge or decision may be sent, or may shape which memories a cloud answer gets, only if every memory behind it, decision dependencies included, is within the limit. Manual entries use the sensitivity you picked. *Recorded* facts enter the model's roster under the same rule ([memory processing §11.9](../domain/memory-processing.md#119-privacy-and-trust)).

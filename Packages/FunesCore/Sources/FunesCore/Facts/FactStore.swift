@@ -180,6 +180,8 @@ enum FactStore {
         var graph: FactsGraph
         /// User rows whose episode selector (theirs or the other endpoint's) matches no episode, or several: To check.
         var toCheck: [String]
+        /// The same, structured for People & history's To check: which row, which endpoint, the episodes it could mean.
+        var lost: [LostRow] = []
         /// fact row id by (predicate, entity id), and back.
         var factIDs: [String: String]
         var factKeys: [String: (predicate: String, entity: String)]
@@ -187,6 +189,37 @@ enum FactStore {
         var sensitivity: [String: Int] = [:]
 
         static func key(_ predicate: String, _ entity: String) -> String { predicate + "\u{1F}" + entity }
+    }
+
+    /// Your later rows supersede your earlier ones for the same episode selector: the latest start, end and status win
+    /// (an older row keeps its other fields), so a corrected date replaces the one it corrects, and undoing the
+    /// correction brings the earlier one back. Only your rows are touched; their order is read order.
+    static func supersedeYourRows(_ assertions: inout [FactAssertion]) {
+        var seenFields: [String: Set<String>] = [:]
+        let order = assertions.indices.filter { assertions[$0].fromUser }.sorted { assertions[$0].readOrder > assertions[$1].readOrder }
+        for i in order {
+            let sk = assertions[i].selector.map { String($0.lo) + "-" + String($0.hi) } ?? "-"
+            var seen = seenFields[sk] ?? []
+            if assertions[i].clearsDates { seen.formUnion(["start", "end"]) }       // Clear Dates: nothing earlier counts
+            if assertions[i].start != nil { if seen.contains("start") { assertions[i].start = nil } else { seen.insert("start") } }
+            if assertions[i].end != nil { if seen.contains("end") { assertions[i].end = nil } else { seen.insert("end") } }
+            if assertions[i].status != .unknown {
+                if seen.contains("status") { assertions[i].status = .unknown } else { seen.insert("status") }
+            }
+            seenFields[sk] = seen
+        }
+    }
+
+    /// One of your rows whose episode selector no longer matches exactly one episode (memory processing §11.8).
+    struct LostRow: Sendable, Hashable {
+        var rowID: String
+        /// The fact the row is about, and its predicate.
+        var factID: String
+        var predicate: String
+        /// The order's other endpoint lost its episode (its fact), rather than this fact.
+        var otherFactID: String?
+        /// The episodes it could mean: the overlapping ones when several do, else every episode of that fact.
+        var choices: [DateRange]
     }
 
     /// A dependency on how many facts a predicate has, so a new candidate holder invalidates a decision.
@@ -315,15 +348,26 @@ enum FactStore {
         for r in try Row.fetchAll(db, sql: "SELECT rowid AS rid, * FROM fact_evidence ORDER BY rowid") {
             if let x = excluding, x.factEvidence, (r["memory_id"] as String?) == x.memoryID, (r["memory_version"] as Int?) == x.version,
                (r["call_group"] as String?) == x.callGroup, !x.keptFacts.contains(r["fact_id"]) { continue }
+            // A row of yours that To check retired (moved to another episode, or removed) no longer counts.
+            if (r["source"] as String) == "user", object(r["asserted"])["retired_at"] != nil { continue }
             if let hidden {
                 if hidden.userRows.contains(r["id"]) { continue }
                 if let mid: String = r["memory_id"], hidden.statements.contains(mid + "|" + (r["fact_id"] as String)) { continue }
             }
             evidence[r["fact_id"], default: []].append(r)
         }
-        let rejectedEverywhere = Set(overrides.filter {
-            ($0["target_kind"] as String) == "fact" && ($0["field"] as String) == "rejected" && ($0["memory_id"] as String?) == nil
-        }.map { $0["target_id"] as String })
+        // Not this with no memory rejects a fact everywhere, until you say it again: a row of yours made after the
+        // rejection (Relation…, a manual entry) lifts it, and undoing that row brings the rejection back.
+        var rejectedAt: [String: String] = [:]
+        for o in overrides where (o["target_kind"] as String) == "fact" && (o["field"] as String) == "rejected" && (o["memory_id"] as String?) == nil {
+            let at: String = o["created_at"]
+            rejectedAt[o["target_id"]] = max(rejectedAt[o["target_id"]] ?? at, at)
+        }
+        let rejectedEverywhere = Set(rejectedAt.filter { fid, at in
+            !(evidence[fid] ?? []).contains { r in
+                (r["source"] as String) == "user" && ((object(r["asserted"])["at"] as? String) ?? "") > at
+            }
+        }.keys)
         var rejectedFromMemory: [String: Set<String>] = [:]      // fact id → memories whose evidence for it is rejected
         for o in overrides where (o["target_kind"] as String) == "fact" && (o["field"] as String) == "rejected" {
             guard let mid: String = o["memory_id"], let c = counted[mid],
@@ -385,6 +429,7 @@ enum FactStore {
                     p.a.end = asserted["end"] as? String
                     p.a.time = asserted["time"] as? String
                     p.a.alsoCalled = asserted["also_called"] as? String
+                    p.a.clearsDates = src == "user" && (asserted["clears_dates"] as? Bool ?? false)
                     p.a.handover = false            // derived below, from what was known when it was written
                     p.only = asserted["only"] as? Bool ?? false
                     p.a.only = p.only
@@ -413,9 +458,16 @@ enum FactStore {
                 if src == "user" {
                     p.a.fromUser = true
                     p.a.selector = selector(r["episode_selector"])
+                    p.a.userRowID = r["id"]
                 }
                 pending[key] = p
             }
+            // Your later rows supersede your earlier ones for the same episode: the latest start, end and status win
+            // (an older row keeps its other fields), so a corrected date replaces the one it corrects, and undoing the
+            // correction brings the earlier one back.
+            var mine = order.filter { $0.hasPrefix("u:") }.map { pending[$0]!.a }
+            FactStore.supersedeYourRows(&mine)
+            for (key, a) in zip(order.filter { $0.hasPrefix("u:") }, mine) { pending[key]!.a = a }
             var incarnations: [LearnedFact] = []
             for key in order {
                 let p = pending[key]!
@@ -537,6 +589,7 @@ enum FactStore {
                 }
             case ("qualifier", "label"):
                 if let (pred, ent) = factKeys[target], let l = value as? String {
+                    g.userLabels[Loaded.key(pred, ent)] = l
                     for i in g.facts.indices where g.facts[i].predicate == pred && g.facts[i].entity == ent {
                         g.facts[i].label = l
                         g.facts[i].cls = g.labelClass(pred, l)
@@ -566,8 +619,13 @@ enum FactStore {
                 }
             }
         }
+        // A merge fuses two facts' rows: your later rows win across both.
+        if !mergedInto.isEmpty {
+            for i in g.facts.indices { FactStore.supersedeYourRows(&g.facts[i].assertions) }
+        }
         // User rows whose selector matches no episode, or several, go to To check and don't apply; so do user order
-        // edges whose other endpoint's selector doesn't pick exactly one episode.
+        // edges whose other endpoint's selector doesn't pick exactly one episode. Only on the timeline: with its use
+        // off nothing is derived to match against, and your rows apply as you entered them.
         func overlapping(_ eps: [Episode], _ sel: DateRange) -> Int {
             eps.filter { e in (e.start?.lo ?? DateRange.minDay) <= sel.hi && sel.lo <= (e.end?.hi ?? DateRange.maxDay) }.count
         }
@@ -580,15 +638,32 @@ enum FactStore {
             }
             return out
         }()
+        func span(_ e: Episode) -> DateRange { DateRange(lo: e.start?.lo ?? DateRange.minDay, hi: e.end?.hi ?? DateRange.maxDay) }
+        func choices(_ eps: [Episode], _ sel: DateRange) -> [DateRange] {
+            let over = eps.filter { e in (e.start?.lo ?? DateRange.minDay) <= sel.hi && sel.lo <= (e.end?.hi ?? DateRange.maxDay) }
+            return (over.count > 1 ? over : eps).filter { $0.start != nil || $0.end != nil }.map(span)    // an undated one can't be picked
+        }
+        var lost: [LostRow] = []
         for i in g.facts.indices {
             let eps = plainEpisodes[Loaded.key(g.facts[i].predicate, g.facts[i].entity)] ?? []
             let pred = g.facts[i].predicate
+            let fid = factIDs[Loaded.key(pred, g.facts[i].entity)] ?? ""
+            let onTimeline = uses.isOn(pred, .timeline)
             g.facts[i].assertions.removeAll { a in
-                guard a.fromUser else { return false }
-                if let sel = a.selector, overlapping(eps, sel) != 1 { toCheck.append(a.quote); return true }
+                guard a.fromUser, onTimeline else { return false }
+                if let sel = a.selector, overlapping(eps, sel) != 1 {
+                    toCheck.append(a.quote)
+                    if let row = a.userRowID { lost.append(LostRow(rowID: row, factID: fid, predicate: pred, otherFactID: nil, choices: choices(eps, sel))) }
+                    return true
+                }
                 for other in [a.precededByEntity, a.followedByEntity].compactMap({ $0 }) {
-                    if let sel = a.otherSelector, overlapping(plainEpisodes[Loaded.key(pred, other)] ?? [], sel) != 1 {
+                    let others = plainEpisodes[Loaded.key(pred, other)] ?? []
+                    if let sel = a.otherSelector, overlapping(others, sel) != 1 {
                         toCheck.append(a.quote)
+                        if let row = a.userRowID {
+                            lost.append(LostRow(rowID: row, factID: fid, predicate: pred, otherFactID: factIDs[Loaded.key(pred, other)],
+                                                choices: choices(others, sel)))
+                        }
                         return true
                     }
                 }
@@ -600,6 +675,9 @@ enum FactStore {
         // keyed to the quote.
         var dependencies: [String: [Row]] = [:]
         for r in try Row.fetchAll(db, sql: "SELECT * FROM decision_dependency") { dependencies[r["decision_id"], default: []].append(r) }
+        // Your decision at a span wins over the model's, whichever came later (a re-read writes later model rows):
+        // manual entries win over inference.
+        var userDecided = Set<FactsGraph.DecisionKey>()
         for d in try Row.fetchAll(db, sql: "SELECT * FROM mention_decision ORDER BY created_at, rowid") {
             let mid: String = d["memory_id"], src: String = d["source"], outcome: String = d["outcome"]
             guard let c = counted[mid], hidden?.decisions.contains(d["id"]) != true else { continue }
@@ -614,6 +692,8 @@ enum FactStore {
             }
             guard let span = locate(d["quote"], in: c.memory.text, near: d["span_start"]) else { continue }
             let key = FactsGraph.DecisionKey(memoryID: mid, start: span.start)
+            if src == "model", userDecided.contains(key), outcome != "rejected" { continue }
+            if src == "user", ["entity", "group", "someone_else"].contains(outcome) { userDecided.insert(key) }
             // A correction about an entity merged away is about the one it was merged into (following the chain).
             var entity: String? = d["entity_id"]
             var hops = 0
@@ -738,7 +818,7 @@ enum FactStore {
             g.memoryOrder[c.memory.id] = c.seq
         }
         if uses.hidesRecorded { g.hideUnrecorded() }
-        return Loaded(graph: g, toCheck: toCheck, factIDs: factIDs, factKeys: factKeys, sensitivity: hidden?.sensitivity ?? [:])
+        return Loaded(graph: g, toCheck: toCheck, lost: lost, factIDs: factIDs, factKeys: factKeys, sensitivity: hidden?.sensitivity ?? [:])
     }
 
     // MARK: Apply one memory's extraction

@@ -535,12 +535,44 @@
 
 
 ## 13c The People & history section · 2 weekends
-- [ ] **Vault sidebar ▸ People & history** (working name): entities by how many memories mention them, role groups, filters by kind.
-- [ ] **An entity's page:** name, aliases, kind, the facts about you that involve it with their basis, every memory that mentions it with its why line. *Recorded* facts (clients) are shown and can be removed. Actions: rename, change kind, set predicate and label, mark deceased or former, merge, hide, Not <name>.
-- [ ] **Your timeline:** dated facts with title history, stating memories and basis ("probably former"). Conflicting dates and undecidable orders are shown as such. Actions: set or clear dates, mark current or former, add an order, add a fact yourself.
-- [ ] **To check:** only candidates the model couldn't settle, suggested merges, and corrections or manual dates whose episode no longer matches one episode.
-- [ ] After the backfill: "Funes found N people, N employers and N other names".
-- [ ] VoiceOver; the string catalog; UI snapshots `people-list`, `people-entity`, `people-timeline`, `people-to-check` (light and dark).
+- [x] **Vault sidebar ▸ People & history** (working name): entities by how many memories mention them, role groups, filters by kind.
+- [x] **An entity's page:** name, aliases, kind, the facts about you that involve it with their basis, every memory that mentions it with its why line. *Recorded* facts (clients) are shown and can be removed. Actions: rename, change kind, set predicate and label, mark deceased or former, merge, hide, Not <name>.
+- [x] **Your timeline:** dated facts with title history, stating memories and basis ("probably former"). Conflicting dates and undecidable orders are shown as such. Actions: set or clear dates, mark current or former, add an order, add a fact yourself. *Built for when the timeline use is on; while it's unqualified (every timeline predicate today) the tab shows only your own entries, with nothing derived (below).*
+- [x] **To check:** only candidates the model couldn't settle, suggested merges, and corrections or manual dates whose episode no longer matches one episode.
+- [x] After the backfill: "Funes found N people, N employers and N other names".
+- [x] VoiceOver; the string catalog; UI snapshots `people-list`, `people-entity`, `people-timeline`, `people-to-check` (light and dark).
+- *Status (20 Nov 2026): built and reviewed.* As 04-ux-mac.md's "As built in 13c" and memory processing §11.8's say:
+  - **What an unqualified use shows** (today: the person pool recorded and linked, client recorded, works at and every
+    timeline use unqualified). The section reads with the uses search would use, whether or not *Use in search and
+    answers* is on:
+    - *recorded* off: only your own entries (names stay: they aren't a predicate's);
+    - *linked* off (client): facts shown "recorded only, not used in search" with Remove, no why line, no role link,
+      nothing asked;
+    - *timeline* off: **Your timeline lists only your own entries, as you entered them** (dates, status), newest
+      first, with the line that no model has passed Funes's tests for it. Nothing is derived (no basis, gap, order,
+      succession or "probably former"), selectors aren't matched against learned episodes, About you shows only a
+      stated status, and Add Order… is hidden. So today the tab is empty until you add a job yourself.
+  - **To check asks role phrases only,** not a name two people share (confirming a name durably needs apply-side
+    precedence; Not <name> corrects it), and not a phrase the memory settles itself ("Maria is my sister").
+  - **Store changes the actions needed** (13a code): your decision beats a later model one at the same span; your later
+    rows supersede your earlier ones per episode selector (also across a merge); a fact kept for your rows keeps only
+    your label; a later row of yours lifts a Not this (Undo restores it; nothing deleted); a user row above the cloud
+    limit withholds its fact and both order endpoints; Hide is ignored by the withholding rule; Not this on a merged
+    fact rejects every folded row (this also fixes 13b's Not this on merged entities); Not <name> covers an
+    organization's, place's or thing's name; purge deletes To check skips; selectors are matched only on the timeline.
+  - **Undo:** every action's rows share one stamp; Undo deletes them together (Clear Dates and To check's Remove are
+    actions too: rows that take back or retire, not deletions), clears manual flags nothing of yours holds, repairs and
+    recomputes a kind, and refuses to leave a fact on an entity of another kind.
+  - **Reviews:** plan by GPT-6-Astra (15 findings) and Fable 5.2 (15), revision 2; diff round 1 by both (14 and 15),
+    round 2 by Astra (8); every finding that held up is fixed, with a test (`PeopleDirectoryTests`, 37).
+  - **Gates:** `sh scripts/test.sh`'s steps all green (FunesCore 1,066 tests; the snippet benchmark passes run alone,
+    it failed twice while other sessions loaded the Mac, as on main); the UI-review build compiles.
+  - **Snapshots:** `FUNES_UI_ONLY=people sh scripts/ui_snapshots.sh` (12, light and dark), captured after the review
+    fixes; checking them by eye found two more, fixed: an undated job (a hand-over start only) now says Funes can't
+    place it, and a status of yours with no dates shows "current" or "former" and "You said so". The author kept the four defaults on 20 November (the unqualified timeline tab lists only your entries, Hide is
+    list-only, the summary drops a zero clause, To check asks role phrases, not shared names); `people-timeline` and `people-to-check` snapshots use the UI-review build's
+    every-declared uses, `people-timeline-off` shows what ships; Relation… across predicates is two corrections in one
+    action (Not this + yours).
 
 ## 13d Answers and the iPhone · 2 weekends
 - [ ] **`SearchAnswerer`:**

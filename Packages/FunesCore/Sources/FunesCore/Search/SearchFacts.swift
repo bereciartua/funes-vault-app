@@ -36,6 +36,24 @@ public struct FactsSearchConfig: Sendable {
         return c
     }
 
+    /// The UI-review build's picture of what ships in v0.10: people recorded and linked, a recorded-only predicate
+    /// recorded, nothing else (no timeline).
+    @_spi(FactsReview) public static func reviewShipped(userAliases: [String] = []) -> FactsSearchConfig {
+        let reg = FactsRegistry.bundled
+        var on = Set<FactsUses.Key>()
+        for p in reg.predicates {
+            if p.objectKind == FactsValidator.personKind {
+                on.insert(.init(predicate: p.id, use: .recorded, basis: ""))
+                on.insert(.init(predicate: p.id, use: .linked, basis: ""))
+            } else if p.uses == [FactsUse.recorded.rawValue] {
+                on.insert(.init(predicate: p.id, use: .recorded, basis: ""))
+            }
+        }
+        var c = FactsSearchConfig(engines: [:], userAliases: userAliases, cloudLimit: .upTo(.internal))
+        c.measuredUses = FactsUses(registry: reg, on: on)
+        return c
+    }
+
     /// What's on now, read in `db` (the off-switches are local rows).
     func uses(_ db: Database) throws -> FactsUses {
         if let measuredUses { return measuredUses }

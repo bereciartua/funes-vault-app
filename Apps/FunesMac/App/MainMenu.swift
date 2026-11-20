@@ -41,7 +41,8 @@ enum MainMenu {
         add(edit, to: main)
 
         let view = NSMenu(title: String(localized: "View"))
-        for (index, section) in AppSection.allCases.enumerated() {
+        // People & history has no shortcut (it's shown only sometimes, under Vault): the others keep ⌘1–⌘6.
+        for (index, section) in AppSection.allCases.filter({ $0 != .people }).enumerated() {
             let entry = item(section.title, #selector(AppDelegate.showSection(_:)), "\(index + 1)", target)
             entry.representedObject = section.rawValue
             view.addItem(entry)

@@ -306,7 +306,13 @@ extension FactsGraph {
             if uses.isOn(f.predicate, .recorded) { return f }
             var mine = f
             mine.assertions = f.assertions.filter(\.fromUser)
-            return mine.assertions.isEmpty ? nil : mine
+            guard !mine.assertions.isEmpty else { return nil }
+            // Only what you gave: no learned label, class or "only" survives with your rows.
+            mine.only = mine.assertions.contains(where: \.only)
+            let label = userLabels[FactStore.Loaded.key(f.predicate, f.entity)] ?? effectiveLabel(mine)
+            mine.label = label
+            mine.cls = labelClass(f.predicate, label)
+            return mine
         }
         groups = groups.filter { uses.isOn($0.key.predicate, .recorded) }
         // Its role groups ("my sisters", a count) go too: they're learned for that predicate alone.

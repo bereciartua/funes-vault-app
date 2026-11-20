@@ -200,7 +200,9 @@ extension FactsText {
 
 /// Role phrases by text, kept across index builds: they depend only on the text, the registry, your names and the
 /// predicates read, so a facts change re-resolves them without finding them again.
-final class RolePhraseCache: @unchecked Sendable {
+public final class RolePhraseCache: @unchecked Sendable {
+    public init() {}
+
     private let lock = NSLock()
     private var key = ""
     private var byText: [String: [RolePhrase]] = [:]
@@ -223,5 +225,5 @@ final class RolePhraseCache: @unchecked Sendable {
     }
 
     /// Learned facts turned off: no memory's text stays here either.
-    func clear() { lock.withLock { byText.removeAll(); generation += 1 } }
+    public func clear() { lock.withLock { byText.removeAll(); generation += 1 } }
 }

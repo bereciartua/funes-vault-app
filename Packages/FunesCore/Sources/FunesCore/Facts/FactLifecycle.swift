@@ -92,6 +92,9 @@ extension FactStore {
             try db.execute(sql: "DELETE FROM alias_evidence WHERE memory_id IN (\(marks))", arguments: args)
             try db.execute(sql: "DELETE FROM mention_decision WHERE source = 'model' AND memory_id IN (\(marks))", arguments: args)
             try db.execute(sql: "DELETE FROM facts_asked WHERE memory_id IN (\(marks))", arguments: args)
+            // A skip (To check) holds nothing once its memory is gone.
+            try db.execute(sql: "DELETE FROM mention_decision WHERE source = 'user' AND outcome = 'unknown' AND memory_id IN (\(marks))",
+                           arguments: args)
             try db.execute(sql: "UPDATE mention_decision SET mention = NULL, quote = NULL WHERE memory_id IN (\(marks))", arguments: args)
             try db.execute(sql: "UPDATE manual_override SET quote = NULL WHERE memory_id IN (\(marks))", arguments: args)
         }
@@ -282,6 +285,7 @@ extension FactStore {
         let id = UUID().db
         var asserted = asserted
         asserted["written"] = writtenDay(now)        // the day the user said it, kept with it
+        asserted["at"] = actionStamp(now)            // the action it belongs to (People & history's Undo)
         try db.execute(sql: """
             INSERT INTO fact_evidence (id, target_kind, fact_id, qualifier, other_fact_id, direction, episode_selector,
               other_episode_selector, source, asserted, states, polarity, sensitivity, trust)
@@ -342,6 +346,50 @@ extension FactStore {
         }
         if moved { try bumpRevision(db) }
     }
+
+    /// **Not this** with no memory: every fact row that folds into this one (a merge joins two entities' rows of one
+    /// predicate) is rejected, at the highest sensitivity behind any of them, so the fact can't come back through the
+    /// other row.
+    @discardableResult
+    static func rejectFactEverywhere(_ db: Database, factID: String, now: Date) throws -> [String] {
+        let rows = try foldedFactRows(db, factID: factID)
+        guard !rows.isEmpty else { return [] }
+        let marks = databaseQuestionMarks(count: rows.count)
+        let level = try Int.fetchOne(db, sql: "SELECT MAX(sensitivity) FROM fact_evidence WHERE fact_id IN (\(marks))",
+                                     arguments: StatementArguments(rows)) ?? Sensitivity.internal.rawValue
+        for fid in rows {
+            try override(db, targetKind: "fact", targetID: fid, field: "rejected", value: true, sensitivity: level, now: now)
+        }
+        return rows
+    }
+
+    /// The fact rows that read as one fact with `factID`: the same predicate, on entities merged together.
+    static func foldedFactRows(_ db: Database, factID: String) throws -> [String] {
+        guard let f = try Row.fetchOne(db, sql: "SELECT predicate, entity_id FROM fact WHERE id = ?", arguments: [factID]) else { return [] }
+        let merged = try mergedInto(db)
+        let target = canonical(f["entity_id"], merged)
+        return try Row.fetchAll(db, sql: "SELECT id, entity_id FROM fact WHERE predicate = ? ORDER BY rowid", arguments: [f["predicate"] as String])
+            .filter { canonical($0["entity_id"], merged) == target }.map { $0["id"] }
+    }
+
+    /// Merge With…: each entity merged away → the one it was merged into.
+    static func mergedInto(_ db: Database) throws -> [String: String] {
+        var out: [String: String] = [:]
+        for r in try Row.fetchAll(db, sql: "SELECT target_id, value FROM manual_override WHERE target_kind = 'entity' AND field = 'merged_into' ORDER BY created_at, rowid") {
+            if let into = decodedString(r["value"]) { out[r["target_id"]] = into }
+        }
+        return out
+    }
+
+    static func canonical(_ id: String, _ merged: [String: String]) -> String {
+        var id = id, hops = 0
+        while let next = merged[id], hops < 16 { id = next; hops += 1 }
+        return id
+    }
+
+    /// The stamp every row of one People & history action carries (`created_at`, and `asserted.at` on your evidence
+    /// rows), so Undo takes back the whole action.
+    static func actionStamp(_ d: Date) -> String { String.fromDatabaseValue(d.databaseValue) ?? "" }
 
     /// The user confirmed an entity's alias (To check, Merge With…): a tombstone keeps it, normalised.
     static func confirmAlias(_ db: Database, entityID: String, alias: String, registry: FactsRegistry = .bundled,
@@ -441,8 +489,28 @@ extension VaultStore {
             count += 1
         }
         for f in g.facts where f.entity == entity {
-            guard let fid = loaded.factIDs[FactStore.Loaded.key(f.predicate, f.entity)] else { continue }
-            count += try rejectStatements(db, factID: fid, fact: f, memoryID: mid, sensitivity: row["sensitivity"], now: now)
+            // Every fact row folded into this one (a merge), each where this memory's evidence is.
+            let rows = loaded.factKeys.filter { $0.value.predicate == f.predicate && $0.value.entity == f.entity }.map(\.key)
+            for fid in rows.sorted() {
+                let has = try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM fact_evidence WHERE fact_id = ? AND memory_id = ?)",
+                                            arguments: [fid, mid]) ?? false
+                if has { _ = try rejectStatements(db, factID: fid, fact: f, memoryID: mid, sensitivity: row["sensitivity"], now: now) }
+            }
+            count += f.assertions.filter { $0.memoryID == mid && !$0.fromUser }.count
+        }
+        // The names of an organization, place or thing (people's are above): each occurrence in this memory.
+        let merged = try FactStore.mergedInto(db)
+        for r in try Row.fetchAll(db, sql: """
+            SELECT ev.span_start, ev.span_end, a.entity_id FROM alias_evidence ev JOIN entity_alias a ON a.id = ev.alias_id
+            JOIN entity e ON e.id = a.entity_id JOIN memory m ON m.id = ev.memory_id AND m.version = ev.memory_version
+            WHERE ev.memory_id = ? AND e.kind != ?
+            """, arguments: [mid, FactsValidator.personKind]) {
+            guard FactStore.canonical(r["entity_id"], merged) == entity else { continue }
+            let a = FactStore.utf16Offset(text, scalar: r["span_start"]), b = FactStore.utf16Offset(text, scalar: r["span_end"])
+            guard b > a else { continue }
+            try FactStore.decideMention(db, memoryID: mid, quote: FactsText.substring(text, a, b), near: r["span_start"],
+                                        entityID: entity, outcome: "rejected", now: now)
+            count += 1
         }
         return count
     }
@@ -474,10 +542,8 @@ extension VaultStore {
     static func rejectFact(_ db: Database, factID: String, now: Date) throws -> Bool {
         guard try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM fact WHERE id = ?)", arguments: [factID]) == true,
               try !factRejected(db, factID: factID, memoryID: nil) else { return false }
-        let level = try Int.fetchOne(db, sql: "SELECT MAX(sensitivity) FROM fact_evidence WHERE fact_id = ?", arguments: [factID])
-            ?? Sensitivity.internal.rawValue
-        try FactStore.override(db, targetKind: "fact", targetID: factID, field: "rejected", value: true, sensitivity: level, now: now)
-        return true
+        // Every row that reads as this fact (entities merged together), at the highest sensitivity behind them.
+        return try !FactStore.rejectFactEverywhere(db, factID: factID, now: now).isEmpty
     }
 
     /// Whether the fact is already rejected everywhere (`memoryID` nil), or for that memory since its last edit.
@@ -582,6 +648,17 @@ extension VaultStore {
             let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [memoryID.db]) ?? 1
             try FactStore.apply(db, memoryID: memoryID.db, version: version, extraction: x, callGroup: p.callGroup, registry: registry,
                                 uses: .everyDeclared(registry), now: now)
+        }
+    }
+
+    /// The UI-review build's sample facts (never the real vault): one memory's extraction, applied as its call group
+    /// would, every declared use on.
+    @_spi(FactsReview) public func reviewApply(memoryID: UUID, extraction: FactsExtraction, callGroup: String,
+                                               registry: FactsRegistry = .bundled, now: Date = Date()) throws {
+        try writer.write { db in
+            let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [memoryID.db]) ?? 1
+            try FactStore.apply(db, memoryID: memoryID.db, version: version, extraction: extraction, callGroup: callGroup,
+                                registry: registry, uses: .everyDeclared(registry), now: now)
         }
     }
 

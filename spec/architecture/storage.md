@@ -355,6 +355,13 @@ CREATE TABLE fact_evidence (
                                               -- memory's rows for one statement share it, denials included); `only`
                                               -- the statement's own; `count` on a role group's fact; `written` the day
                                               -- a user row was entered. Hand-overs are derived when read, never stored.
+                                              -- On your rows (13c): `at`, the People & history action's stamp
+                                              -- (Undo takes the action's rows together); `created` on a manual
+                                              -- fact's founding row; `clears_dates` (Clear Dates: your earlier dates
+                                              -- on that selector stop counting); `retired_at`, the To check answer
+                                              -- that moved or removed the row (it then counts nowhere; Undo clears
+                                              -- it). Your later rows supersede your earlier start, end and status
+                                              -- for the same episode selector.
   states         INTEGER NOT NULL,                       -- 1: the memory states it; 0: it only mentions it (1 for 'user')
   polarity       TEXT NOT NULL CHECK (polarity IN ('affirmed','denied')),
   sensitivity    INTEGER NOT NULL,                       -- the memory's at that version, or the user's choice
@@ -378,6 +385,7 @@ CREATE TABLE mention_decision (
   quote          TEXT,                                   -- the quoted span's text; NULL once purged
   span_start     INTEGER, span_end INTEGER,
   outcome        TEXT NOT NULL CHECK (outcome IN ('entity','group','someone_else','unknown','rejected')),
+                                                         -- a user's 'unknown' is To check's Skip (deleted with a purge)
   entity_id      TEXT,                                   -- no FK: a correction outlives an inferred entity
   basis          TEXT NOT NULL,                          -- memory processing §11.4
   source         TEXT NOT NULL CHECK (source IN ('model','user')),
@@ -426,7 +434,9 @@ CREATE TABLE manual_override (
   target_kind TEXT NOT NULL CHECK (target_kind IN ('entity','alias','fact','qualifier','date','status','order')),
   target_id   TEXT NOT NULL,                             -- no FK: it outlives what it corrects
   field       TEXT NOT NULL,                             -- 'name', 'kind', 'predicate', 'label', 'deceased', 'rejected',
-                                                         -- 'merged_into', 'not_same' (Merge With…, Not the Same)…
+                                                         -- 'merged_into', 'not_same' (Merge With…, Not the Same),
+                                                         -- 'hidden' (People & history's list only)…
+                                                         -- 'kind': {kind, previous_kind}; entity.kind changes with it
   value       TEXT,                                      -- JSON (for 'merged_into' and 'not_same': the other entity's id)
   episode_selector TEXT,                                 -- JSON {lo, hi}: the target episode's date range when the user
                                                          -- acted; NULL when it targets the whole fact

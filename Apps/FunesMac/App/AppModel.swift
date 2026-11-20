@@ -33,13 +33,14 @@ struct PendingRequest: Identifiable, Equatable {
 /// The main window's sections (04-ux-mac.md), in the View menu's order (⌘1–⌘6). Agents shows
 /// the agent selected in the sidebar's Agents list.
 enum AppSection: String, CaseIterable, Identifiable, Hashable {
-    case home, vault, inbox, activity, agents, remoteAccess
+    case home, vault, people, inbox, activity, agents, remoteAccess
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .home: String(localized: "Home")
         case .vault: String(localized: "Vault")
+        case .people: String(localized: "People & History")
         case .inbox: String(localized: "Inbox")
         case .agents: String(localized: "Agents")
         case .remoteAccess: String(localized: "Remote Access")
@@ -51,6 +52,7 @@ enum AppSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .home: "house"
         case .vault: "archivebox"
+        case .people: "person.crop.circle"
         case .inbox: "tray"
         case .agents: "person.2"
         case .remoteAccess: "globe"
@@ -82,6 +84,8 @@ final class AppModel {
     var hasMemories = false
     /// The first Facts backfill (FR-F-03): its state and progress, nil before it started.
     var factsBackfill: FactsBackfill.Progress?
+    /// Something you entered or corrected in People & history is kept: the section shows even with Facts off.
+    var hasUserFactEntries = false
     /// Facts jobs wait for the daily cap to reset: the whole cap is used, or only the agents' share of it.
     var factsCapWait: FactsCapWait?
     /// The Inbox is waiting on a decision; drives the menu bar's "needs you" state with `pending`.
@@ -102,6 +106,8 @@ final class AppModel {
     let searchAnswers: SearchAnswersController
     /// Home's pulse and cards (FR-H-02).
     let home: HomeModel
+    /// Vault ▸ People & history (FR-F-07).
+    let people: PeopleModel
     /// Home's composer: the capture box's model, saved the same way.
     let composer = CaptureBoxModel()
     let inboxState: InboxModel
@@ -260,6 +266,7 @@ final class AppModel {
         self.services = services
         self.preferences = preferences
         vault = VaultModel(services: services)
+        people = PeopleModel(services: services)
         home = HomeModel(services: services, defaults: preferences.defaults)
         inboxState = InboxModel(services: services)
         activity = ActivityModel(services: services)
@@ -281,6 +288,7 @@ final class AppModel {
         inboxState.categories = { [weak self] in self?.categories ?? [] }
         inboxState.decided = { [weak self] in self?.checklist.markReviewed() }
         vault.answers = searchAnswers
+        people.config = { [weak self] in await self?.peopleConfig() }
         updates.drafts = { [weak self] in
             guard let vault = self?.vault else { return [:] }
             return Dictionary(uniqueKeysWithValues: vault.draftIDs.compactMap { id in vault.draft(id).map { (id, $0) } })
@@ -393,6 +401,56 @@ final class AppModel {
         }
     }
 
+    // MARK: People & history
+
+    /// *Learn from memories* is on (People & history shows while it is, or while you've kept entries or corrections).
+    var factsLearning: Bool { modelSettings.factsLearn }
+
+    /// People & history's sidebar row (04-ux-mac.md Sidebar).
+    var peopleVisible: Bool { factsLearning || hasUserFactEntries || peopleConfigOverride != nil }
+
+    /// How People & history reads: the uses search would use (each call group's Facts engine as the Facts task would
+    /// use it now), whether or not *Use in search and answers* is on; nil while your names can't be read.
+    func peopleConfig() async -> FactsSearchConfig? {
+        if let override = peopleConfigOverride { return override }
+        let resolution = modelSettings.factsResolution
+        var engines: [String: FactsEngine] = [:]
+        for offer in [resolution.fallback, resolution.chosen].compactMap({ $0 }) {
+            for group in offer.groups { engines[group] = offer.engine }
+        }
+        guard let aliases = try? await services.profiles.profile().factsAliases else { return nil }
+        return FactsSearchConfig(engines: engines, userAliases: aliases, cloudLimit: modelSettings.cloudLimit)
+    }
+
+    /// The UI-review build's: every declared use on.
+    @ObservationIgnored var peopleConfigOverride: FactsSearchConfig?
+
+    /// After the first backfill: its finish time, until the summary is dismissed.
+    var peopleSummary: Date? {
+        guard let state = factsBackfill?.state, let done = state.finishedAt, state.ended == nil else { return nil }
+        let dismissed = preferences.defaults.double(forKey: Self.peopleSummaryKey)
+        return dismissed >= done.timeIntervalSince1970 ? nil : done
+    }
+
+    func dismissPeopleSummary(_ finished: Date) {
+        preferences.defaults.set(finished.timeIntervalSince1970, forKey: Self.peopleSummaryKey)
+        changed()
+    }
+
+    static let peopleSummaryKey = "peopleSummaryDismissed"
+
+    /// The backfill finished: the notification (wired by the app) with the summary.
+    @ObservationIgnored var onFactsBackfillFinished: (PeopleDirectory.Summary) -> Void = { _ in }
+
+    private func factsBackfillFinished() {
+        Task {
+            guard let config = await peopleConfig() else { return }
+            let store = services.store
+            let d = try? await Task.detached(priority: .utility, operation: { try store.peopleDirectory(config: config) }).value
+            if let d { onFactsBackfillFinished(d.summary) }
+        }
+    }
+
     /// Bumped by each `applySearchFacts`, so an older call's late completion changes nothing.
     @ObservationIgnored private var searchFactsGeneration = 0
     /// The UI-review build's learned facts in search, whatever the settings say.
@@ -440,7 +498,13 @@ final class AppModel {
         categories = (try? services.store.categories()) ?? []
         profile = (try? services.store.profile()) ?? Profile()
         hasMemories = !((try? services.store.memories(MemoryFilter(status: .activeIncludingExpired), now: now, limit: 1)) ?? []).isEmpty
+        let wasRunning = factsBackfill?.state.isRunning == true
         factsBackfill = try? services.store.factsBackfill()
+        hasUserFactEntries = (try? services.store.hasUserFactEntries()) ?? false
+        if wasRunning, let state = factsBackfill?.state, state.finishedAt != nil, state.ended == nil {
+            factsBackfillFinished()
+        }
+        if !factsLearning && !hasUserFactEntries { people.clear() }
         factsCapWait = nil
         if (try? services.store.factsWaitingForCap(now: now)) == true {
             let cap = modelSettings.cap(store: services.store, activity: services.activity)
