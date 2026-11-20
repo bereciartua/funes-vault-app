@@ -56,7 +56,7 @@ Debug builds of the app and `funes-mcp` honour `FUNES_DATA_DIR`, so a developmen
 ```bash
 sh scripts/check_log_privacy.sh
 ```
-User-facing text lives in `Apps/FunesMac/Localizable.xcstrings` (the app's and BridgeUI's strings) and, for the iPhone, in each target's `Localizable.xcstrings` under `Apps/FunesiOS`, `Apps/FunesShareExtension`, `Apps/FunesIntents` and `Apps/FunesNotifications` (the app's and the notification extension's also hold FunesPhone's approval words). After changing UI text, build the app (test.sh does) and update the catalog; test.sh fails while it's out of date:
+User-facing text lives in `Apps/FunesMac/Localizable.xcstrings` (the app's and BridgeUI's strings, and FunesCore's `FactsActivityWords`) and, for the iPhone, in each target's `Localizable.xcstrings` under `Apps/FunesiOS`, `Apps/FunesShareExtension`, `Apps/FunesIntents` and `Apps/FunesNotifications` (the app's and the notification extension's also hold FunesPhone's approval words). After changing UI text, build the app (test.sh does) and update the catalog; test.sh fails while it's out of date:
 ```bash
 sh scripts/sync_strings.sh
 ```

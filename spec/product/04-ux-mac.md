@@ -487,7 +487,11 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
   - "Shared 3 memories" · Approved by you
   - "Refused" · Category not allowed
   - "Suggested *Prefers Vitest*" · Waiting in Inbox. The title is looked up live; if the memory was deleted, the row shows "(deleted memory)".
-  - (v0.10) "Learned facts from 3 memories" · 2 people, 1 employer; "Read existing memories" · 365 of 365; "Corrected a fact"; "Removed learned facts" · 23 people, 9 employers. Counts only, never names, labels or quotes (`facts_learned`, `facts_backfill`, `facts_corrected`, `facts_removed`).
+  - (v0.10) The facts rows, from their counts and engine only: never names, labels or quotes, and nothing is looked up to add them (a learned row's id is its run's, not a memory's, so its title isn't looked up):
+    - `facts_learned`, one per call group's run: "Learned facts from 3 memories" (those the model or rules read) · "anthropic/claude-haiku-5-5 · 1 by rules only" (the model only when it read one; "Rules only" otherwise), with "1 to read later" for a memory that changed or a stop before the request · Done, or "2 failed". With none read, "Learned no facts" · Read later, or Nothing to read;
+    - `facts_backfill`: "Started reading existing memories" · "365 memories · about 730 model calls" (the sheet's count) · Started; "Finished reading existing memories" · "365 memories · 720 cloud requests outside the daily count · 10 by rules only" (the memories marked at the start, the requests the exemption covered) · Finished, or "2 failed". "Nothing to read" when nothing was marked;
+    - `facts_corrected`: "Corrected a fact" · "1 name, 1 fact", "1 mention" or "1 timeline order" · Done, from the Mac (From: You) or a paired iPhone's `facts.reject` (From: the device); an Undo is "Undid a correction";
+    - `facts_removed`: "Removed learned facts" · "23 names, 41 facts" · Removed.
 - **Filters:** All, Shared, Suggestions, Problems, Remote Access; Agent ▾; Device ▾; Today / 7 days / 30 days / All.
 - Rows from cloud agents carry a cloud icon and "via Remote Access". The detail pane shows the tunnel and forwarded address for the last 50 remote requests, kept in memory only.
 - **Detail pane:**
@@ -495,6 +499,7 @@ Adapted from EK Bridge's Remote Access page. Cloud agents can't reach `127.0.0.1
   - the task, for requests whose Share panel this session showed (the vault stores only a hash, so otherwise, and after relaunch, it shows "Task text not stored");
   - withheld counts by reason;
   - the profile fields that went ("Also sent: name, pronouns"; v0.5), names only;
+  - a facts row's counts in full (v0.10), which the Detail column cuts short;
   - fix links ("Allow Project Context for Cursor…");
   - what a change did (v0.5): for an automatic change and its undo, each memory it touched with a **New**, **Changed**, **Archived**, **Restored**, **Removed** or **Kept** (a duplicate's survivor) badge and a link to it, the old text struck through above the new, and kind, categories, sensitivity and expiry as "Low → Internal"; for a tidy-up run, its changes, each in a disclosure, and **Review Suggestions in the Inbox**; for an edit, an Inbox apply, an archive or a restore, its before and after from the memory's earlier versions, or "Changed: text, title" when none is kept. Automatic changes come from the undo log, so for 30 days; earlier versions for 90.
   - **×** at the top right closes the pane (clears the selection).

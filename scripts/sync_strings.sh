@@ -2,8 +2,8 @@
 # Updates the String Catalogs with every user-facing string (NFR-L10N-01), as the compiler
 # extracted them in the last Debug builds (SWIFT_EMIT_LOC_STRINGS=YES, which scripts/test.sh
 # passes):
-#   - Apps/FunesMac/Localizable.xcstrings: the Mac app's, and BridgeUI's, whose
-#     String(localized:) calls resolve in the app's bundle;
+#   - Apps/FunesMac/Localizable.xcstrings: the Mac app's, BridgeUI's and FunesCore's (Activity's
+#     words for the facts rows), whose String(localized:) calls resolve in the app's bundle;
 #   - Apps/FunesiOS, Apps/FunesShareExtension, Apps/FunesIntents and Apps/FunesNotifications: the
 #     iPhone app's and each extension's own (Apps/FunesShared is compiled into the app and the
 #     Intents extension). The app and the notification service extension also get FunesPhone's,
@@ -52,8 +52,9 @@ trap 'rm -rf "$work"' EXIT
 
 app=$(first_dir "*/FunesVault.build/Debug/FunesMac.build/Objects-normal/*" "*.stringsdata")
 bridgeui=$(first_dir "*/BridgeUI.build/Debug/*/Objects-normal/*" "ApprovalPanel.stringsdata")
-[ -n "$app" ] && [ -n "$bridgeui" ] || missing "Mac app build"
-sync Apps/FunesMac/Localizable.xcstrings "$app" "$bridgeui"
+core=$(first_dir "*/FunesCore.build/Debug/*/Objects-normal/*" "FactsActivityWords.stringsdata")
+[ -n "$app" ] && [ -n "$bridgeui" ] && [ -n "$core" ] || missing "Mac app build"
+sync Apps/FunesMac/Localizable.xcstrings "$app" "$bridgeui" "$core"
 
 phone=$(first_dir "*/FunesPhone.build/Debug-iphoneos/*/Objects-normal/*" "ApprovalWording.stringsdata")
 [ -n "$phone" ] || missing "FunesPhone build for iOS"

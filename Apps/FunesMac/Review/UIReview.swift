@@ -66,6 +66,7 @@ final class UIReview: NSObject, NSApplicationDelegate {
         preferences.splitNewMemories = true
         let environment = try VaultEnvironment(dataFolder: scratch.appendingPathComponent("vault"))
         let agents = try await SampleData.fill(environment)
+        Self.recordFactsActivity(environment.activity)
         let (claudeDesktop, _) = try await environment.agents.create(name: "Claude Desktop", kind: .claudeDesktop,
                                                                      access: agents.claudeCode.access, now: Date())
         // A cloud agent with cloud access and a remote token (Remote Access, ADR-0018).
@@ -319,6 +320,15 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await mainScene("activity-tidy-up") {
                 model.activity.selection = model.activity.entries.first(where: { $0.event.event == "tidy_up_run" })?.id
             }
+            // The facts rows' words (Phase 13): counts only, narrowed to the sample rows' span.
+            await mainScene("activity-facts") {
+                let facts = model.activity.entries.filter { FactsActivityWords.events.contains($0.event.event) }
+                if let first = facts.last?.time, let last = facts.first?.time {
+                    model.showActivity(.period(DateInterval(start: first, end: last.addingTimeInterval(60))))
+                }
+                model.activity.selection = facts.first(where: { $0.event.event == "facts_backfill" })?.id
+            }
+            model.activityFocus = nil
 
             // Remote Access: before setup, the guide, set up, and an agent's Cloud tab.
             let remote = model.remoteAccess
@@ -839,6 +849,27 @@ extension UIReview {
     /// Anthropic key, and Claude Opus 5.5 for the people group through the plan. Made up for the review build; not
     /// evidence of anything, and never in `Resources/facts-qualification.json`.
     // MARK: People & history (Phase 13c)
+
+    /// Activity's facts rows, yesterday (sample counts, never the real vault): a backfill's start and end, a learned run,
+    /// corrections from the Mac and a paired iPhone, an Undo, and Remove Learned Facts.
+    private static func recordFactsActivity(_ activity: any ActivityRecorder) {
+        let day = Calendar.current.startOfDay(for: Date()).addingTimeInterval(-14 * 3_600)
+        func row(_ minutes: Double, _ actor: Actor, via: ActivityEvent.Via = .app, _ event: String, outcome: String? = nil,
+                 ids: [UUID] = [], counts: [String: Int], engine: String? = nil) {
+            activity.record(ActivityEvent(time: day.addingTimeInterval(minutes * 60), phase: .event, actor: actor, via: via,
+                                          event: event, outcome: outcome, ids: ids, counts: counts, engine: engine))
+        }
+        row(0, .user, "facts_backfill", outcome: "started", counts: ["memories": 365, "calls": 730])
+        row(95, .system, "facts_backfill", outcome: "finished", counts: ["memories": 365, "calls": 720, "code_only": 10, "failed": 0])
+        row(120, .system, "facts_learned", ids: [UUID()], counts: ["memories": 3, "calls": 2, "applied": 2, "code_only": 1, "failed": 0],
+            engine: "anthropic/\(AnthropicClient.suggestedModel)")
+        row(125, .system, "facts_learned", ids: [UUID()], counts: ["memories": 2, "calls": 2, "applied": 1, "failed": 1],
+            engine: "anthropic/\(AnthropicClient.suggestedModel)")
+        row(130, .user, "facts_corrected", counts: ["entities": 1, "facts": 1])
+        row(140, .device(UUID()), via: .companion, "facts_corrected", counts: ["links": 1])
+        row(150, .user, "facts_corrected", counts: ["undone": 2])
+        row(200, .user, "facts_removed", counts: ["entities": 23, "facts": 41, "evidence": 120, "decisions": 7])
+    }
 
     /// People & history with sample facts (never the real vault): the list, Maria's page, your timeline, To check, the
     /// timeline as it ships (unqualified), and the empty state with Facts off.
