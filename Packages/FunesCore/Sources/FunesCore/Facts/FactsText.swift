@@ -110,4 +110,20 @@ enum FactsText {
         }
         return out
     }
+
+    /// UTF-16 starts of a name's whole-word occurrences in a text, case and accents folded.
+    static func wholeWordStarts(_ name: String, in text: String) -> [Int] { wholeWordRanges(name, in: text).map(\.location) }
+
+    /// The same occurrences as ranges of the original text (UTF-16).
+    static func wholeWordRanges(_ name: String, in text: String) -> [NSRange] {
+        let folded = foldedWithMap(text)
+        let n = fold(name)
+        guard !n.isEmpty else { return [] }
+        return matches(regex("(?<![\\w])" + escape(n) + "(?![\\w])"), in: folded.text).map { m in
+            // Folded per character, so the next folded offset's original is where the next character starts: the
+            // match keeps its last character whole (an accent written apart, a surrogate pair).
+            let a = folded.original(m.start)
+            return NSRange(location: a, length: folded.original(m.end) - a)
+        }
+    }
 }

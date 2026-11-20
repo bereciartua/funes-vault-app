@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 /// A first-person role phrase in a memory ("my sister", "my old boss", "at my previous job").
 public struct RolePhrase: Sendable, Equatable {
@@ -23,7 +24,24 @@ public struct RolePhrase: Sendable, Equatable {
 extension FactsGraph {
     // MARK: Role phrases
 
-    func rolePattern() -> NSRegularExpression {
+    func rolePattern() -> NSRegularExpression { rolePatterns().role }
+
+    /// The patterns role phrases are found with, built once per registry and set of your names (search reads every
+    /// memory with them): the phrase itself, a time cue after or before it, and a month abbreviation's period.
+    struct RolePatterns: @unchecked Sendable {
+        let role: NSRegularExpression
+        let cueAfter: NSRegularExpression?
+        let cueBefore: NSRegularExpression?
+        let abbreviation: NSRegularExpression
+        /// An owner word ("my", your name's possessive): a text without one has no role phrase.
+        let owner: NSRegularExpression
+    }
+
+    private static let patternCache = Mutex<[String: RolePatterns]>([:])
+
+    func rolePatterns() -> RolePatterns {
+        let key = registry.fingerprint.isEmpty ? nil : registry.fingerprint + "\u{1F}" + userAliases.joined(separator: "\u{1F}")
+        if let key, let hit = Self.patternCache.withLock({ $0[key] }) { return hit }
         let lang = registry.language
         let words = registry.lexicon.keys.sorted { $0.count != $1.count ? $0.count > $1.count : $0 < $1 }
         let owners = lang.owners.map(FactsText.escape)
@@ -32,10 +50,37 @@ extension FactsGraph {
         let prefixes = lang.formerPrefixes.map { FactsText.escape($0).replacingOccurrences(of: " ", with: "\\s+") }
             .joined(separator: "|")
         let fw = lang.functionWords.map(FactsText.escape).joined(separator: "|")
-        return FactsText.regex(
+        let role = FactsText.regex(
             "\\b(" + owners.joined(separator: "|") + ")\\s+((?:" + mods + "\\s+)*)"
             + "((?:(?!(?:" + fw + ")\\b)[^\\W\\d_][\\w-]*\\s+){0,2}?)(" + prefixes + ")?("
             + words.map(FactsText.escape).joined(separator: "|") + ")(?![\\w-])", caseInsensitive: true)
+        let preps = lang.timePrepositions.map(FactsText.escape).joined(separator: "|")
+        let joiners = lang.dateJoiners.map(FactsText.escape).joined(separator: "|")
+        // A date as the parser reads it: a year, a month and year, or a day ("15 March 2019", "March 15, 2019",
+        // "2019-03-15").
+        let ords = lang.ordinalSuffixes.map(FactsText.escape).joined(separator: "|")
+        let month = "(?:" + parser.monthPattern + ")\\.?"
+        let day = "\\d{1,2}(?:" + ords + ")?"
+        // Day forms: "15 March 2019", "15th March 2019", "March 15, 2019", "2019-03-15".
+        let dayDate = "(?:19|20)\\d{2}-\\d{1,2}-\\d{1,2}|" + day + "\\s+(?:(?:" + joiners + ")\\s+)?" + month + "\\s+(?:(?:" + joiners
+            + ")\\s+)?(?:19|20)\\d{2}|" + month + ",?\\s+" + day + ",?\\s+(?:(?:" + joiners + ")\\s+)?(?:19|20)\\d{2}"
+        // Any precision after a time preposition ("in 2019", "in March 2019"); only a day after a day preposition
+        // ("on 15 March 2019"; "on 2019 numbers" isn't a date).
+        let anyDate = dayDate + "|(?:" + month + ",?\\s+(?:(?:" + joiners + ")\\s+)?)?(?:19|20)\\d{2}"
+        let dayPreps = lang.dayPrepositions.map(FactsText.escape).joined(separator: "|")
+        let dateRE = "(?:(?:" + preps + ")\\s+(" + anyDate + ")" + (dayPreps.isEmpty ? "" : "|(?:" + dayPreps + ")\\s+(" + dayDate + ")") + ")"
+        let cueAfter = preps.isEmpty ? nil : FactsText.regex("\\s+" + dateRE + "\\b", caseInsensitive: true)
+        let cueBefore = preps.isEmpty ? nil : FactsText.regex("\\b" + dateRE + ",?\\s*$", caseInsensitive: true)
+        let out = RolePatterns(role: role, cueAfter: cueAfter, cueBefore: cueBefore,
+                               abbreviation: FactsText.regex("\\b(?:" + parser.monthPattern + ")(\\.)", caseInsensitive: true),
+                               owner: FactsText.regex("\\b(?:" + owners.joined(separator: "|") + ")\\s", caseInsensitive: true))
+        if let key {
+            Self.patternCache.withLock { cache in
+                if cache.count > 64 { cache.removeAll() }
+                cache[key] = out
+            }
+        }
+        return out
     }
 
     /// Whether a position may be inside quoted speech, failing closed (memory processing §11.3): reading the text up
@@ -106,25 +151,9 @@ extension FactsGraph {
         }
         let chainStops = Set((lang.functionWords + lang.owners.map { String($0.split(separator: " ")[0]) }).map { FactsText.fold($0) })
         let lex = registry.lexicon
-        let preps = lang.timePrepositions.map(FactsText.escape).joined(separator: "|")
-        let joiners = lang.dateJoiners.map(FactsText.escape).joined(separator: "|")
-        // A date as the parser reads it: a year, a month and year, or a day ("15 March 2019", "March 15, 2019",
-        // "2019-03-15").
-        let ords = lang.ordinalSuffixes.map(FactsText.escape).joined(separator: "|")
-        let month = "(?:" + parser.monthPattern + ")\\.?"
-        let day = "\\d{1,2}(?:" + ords + ")?"
-        // Day forms: "15 March 2019", "15th March 2019", "March 15, 2019", "2019-03-15".
-        let dayDate = "(?:19|20)\\d{2}-\\d{1,2}-\\d{1,2}|" + day + "\\s+(?:(?:" + joiners + ")\\s+)?" + month + "\\s+(?:(?:" + joiners
-            + ")\\s+)?(?:19|20)\\d{2}|" + month + ",?\\s+" + day + ",?\\s+(?:(?:" + joiners + ")\\s+)?(?:19|20)\\d{2}"
-        // Any precision after a time preposition ("in 2019", "in March 2019"); only a day after a day preposition
-        // ("on 15 March 2019"; "on 2019 numbers" isn't a date).
-        let anyDate = dayDate + "|(?:" + month + ",?\\s+(?:(?:" + joiners + ")\\s+)?)?(?:19|20)\\d{2}"
-        let dayPreps = lang.dayPrepositions.map(FactsText.escape).joined(separator: "|")
-        let dateRE = "(?:(?:" + preps + ")\\s+(" + anyDate + ")" + (dayPreps.isEmpty ? "" : "|(?:" + dayPreps + ")\\s+(" + dayDate + ")") + ")"
-        let cueAfter = FactsText.regex("\\s+" + dateRE + "\\b", caseInsensitive: true)
-        let cueBefore = FactsText.regex("\\b" + dateRE + ",?\\s*$", caseInsensitive: true)
-        let abbrevPeriods = Set(FactsText.matches(FactsText.regex("\\b(?:" + parser.monthPattern + ")(\\.)", caseInsensitive: true), in: text)
-            .map { $0.groups[0].location })
+        let patterns = rolePatterns()
+        guard FactsText.first(patterns.owner, in: text) != nil else { return [] }   // what the phrase pattern starts with
+        let abbrevPeriods = Set(FactsText.matches(patterns.abbreviation, in: text).map { $0.groups[0].location })
         let sentenceBreaks = (0..<ns.length).filter { i in
             let c = ns.character(at: i)
             return (c == 46 && !abbrevPeriods.contains(i)) || c == 33 || c == 63 || c == 10   // . ! ? newline
@@ -132,7 +161,7 @@ extension FactsGraph {
         var out: [RolePhrase] = []
         let heads = Set((lang.compoundHeads ?? []).map { FactsText.fold($0) })
         let nextWord = FactsText.regex("^\\s+([\\w'’-]+)")
-        for mt in FactsText.matches(rolePattern(), in: text) {
+        for mt in FactsText.matches(patterns.role, in: text) {
             let s = mt.start, e = mt.end
             if Self.mayBeQuoted(text, at: s) { continue }
             // A compound ("my parent company"): the role word names something else. Only after a singular role word:
@@ -157,7 +186,7 @@ extension FactsGraph {
             let a = (bounds.filter { $0 < s }.max().map { $0 + 1 }) ?? 0
             let b = bounds.filter { $0 >= e }.min() ?? ns.length
             var cue: String?
-            if !preps.isEmpty {
+            if let cueAfter = patterns.cueAfter, let cueBefore = patterns.cueBefore {
                 // a time cue only next to the phrase: "my boss in 2019", "In 2019, my boss" (not "…sales dropped in 2019")
                 let m = FactsText.matchAt(cueAfter, in: text, from: e, to: max(e, b)) ?? FactsText.first(cueBefore, in: text, from: a, to: s)
                 cue = m?.group(1) ?? m?.group(2)
@@ -287,15 +316,23 @@ extension FactsGraph {
 
     /// Who a role phrase in a memory refers to, and why (memory processing §11.6).
     public mutating func resolve(_ mem: FactsMemory, _ ph: RolePhrase) -> (entity: String?, basis: LinkBasis) {
+        let r = resolution(mem, ph)
+        return (r.entity, r.basis)
+    }
+
+    /// A role phrase's resolution, with the holders when several fit and nothing decides (`candidates`): search admits
+    /// such a link for a candidate the query names (memory processing §4). Every other `candidates` result (a predicate
+    /// that isn't recorded, a date cue that can't resolve, a rejected group) has none, so nothing it refused comes back.
+    mutating func resolution(_ mem: FactsMemory, _ ph: RolePhrase) -> (entity: String?, basis: LinkBasis, candidates: [String]) {
         let key = DecisionKey(memoryID: mem.id, start: ph.start)
         // §11.10, before any stored decision: a predicate that isn't recorded resolves nothing, and a time cue ("my
         // previous job") of a predicate whose timeline is declared but off resolves nothing either.
-        if !uses.isOn(ph.predicate, .recorded) { return (nil, .candidates) }
+        if !uses.isOn(ph.predicate, .recorded) { return (nil, .candidates, []) }
         let dateCue = ph.mods.contains(where: { registry.language.dateCueWords.contains($0) })
-        if dateCue, registry.declares(ph.predicate, .timeline), !uses.isOn(ph.predicate, .timeline) { return (nil, .candidates) }
+        if dateCue, registry.declares(ph.predicate, .timeline), !uses.isOn(ph.predicate, .timeline) { return (nil, .candidates, []) }
         if let dec = decisions[key], !(dec.basis == .group && entity(dec.entity)?.name != nil),
            !(dec.entity.map { rejections[key]?.contains($0) ?? false } ?? false) {     // a correction beats a decision
-            if dec.basis == .someoneElse { return (nil, .someoneElse) }
+            if dec.basis == .someoneElse { return (nil, .someoneElse, []) }
             // A decision can't lift what it chose above that entity's evidence: untrusted facts give an untrusted link.
             // Judged by the episodes that may hold then, not the fact as a whole: an old trusted stint doesn't vouch for
             // an untrusted new one.
@@ -305,54 +342,54 @@ extension FactsGraph {
                 // The episode `holders` would pick: the one that may hold then, latest first.
                 let held = mine.reversed().filter { holds($0, ph, d, deceased: entities[e]?.deceased ?? false, written: written) }
                 let chosen = held.first(where: { d != nil && $0.mayHold(d!) }) ?? held.first ?? mine.last
-                if let chosen, !(chosen.trusted && chosen.startTrusted) { return (e, .untrusted) }
+                if let chosen, !(chosen.trusted && chosen.startTrusted) { return (e, .untrusted, []) }
                 // As weak as its weakest step: a "former" resting on an inferred end, or a rival ruled out by one.
                 if (chosen?.inferredEnd == true && ph.former) || episodes(ph.predicate).contains(where: { o in
                     o.entity != e && o.inferredEnd && (d == nil || (o.tstart.map { $0.lo <= d!.hi } ?? true))
                 }) {
-                    return (e, .inferred)
+                    return (e, .inferred, [])
                 }
             }
-            return (dec.entity, dec.basis)
+            return (dec.entity, dec.basis, [])
         }
         let rejected = rejections[key] ?? []
         if ph.plural {
             let g = groupFor(ph.predicate, nil)
-            return rejected.contains(g) ? (nil, .candidates) : (g, .group)
+            return rejected.contains(g) ? (nil, .candidates, []) : (g, .group, [])
         }
         if dateCue, uses.isOn(ph.predicate, .timeline) {
-            if mem.source == .import { return (nil, .candidates) }   // an imported note's "previous" has no date
+            if mem.source == .import { return (nil, .candidates, []) }   // an imported note's "previous" has no date
             if let got = previousLink(ph.predicate, written: mem.written) {
-                if rejected.contains(got.entity) { return (nil, .candidates) }      // "Not <name>" holds on every path
-                return (got.entity, mem.trusted && got.trusted ? .inferred : .untrusted)   // as weak as its weakest step
+                if rejected.contains(got.entity) { return (nil, .candidates, []) }      // "Not <name>" holds on every path
+                return (got.entity, mem.trusted && got.trusted ? .inferred : .untrusted, [])   // as weak as its weakest step
             }
-            return (nil, .candidates)
+            return (nil, .candidates, [])
         }
         let (d, written) = asOf(mem, ph)
         let h = holders(ph, asOf: d, written: written, rejected: rejected)
         guard let (p, r) = h.holders.first else {
             let g = groupFor(ph.predicate, ph.generic ? nil : ph.cls)
-            return rejected.contains(g) ? (nil, .candidates) : (g, .group)
+            return rejected.contains(g) ? (nil, .candidates, []) : (g, .group, [])
         }
-        if h.holders.count + h.extra > 1 { return (nil, .candidates) }
+        if h.holders.count + h.extra > 1 { return (nil, .candidates, h.holders.map(\.entity.id)) }
         let e = h.episodes[p.id]
         if !mem.trusted || !(e?.trusted ?? r.trusted) {
-            return (p.id, .untrusted)        // the episode it rests on has only untrusted evidence
+            return (p.id, .untrusted, [])        // the episode it rests on has only untrusted evidence
         }
         if let e, let d, e.statedStart, e.start!.lo > d.hi {
-            return (p.id, .soleKnown)        // a reference before a stated start: probably, not certainly
+            return (p.id, .soleKnown, [])        // a reference before a stated start: probably, not certainly
         }
         // A link resting on succession (the holder ended by inference, or a rival ruled out because its end was inferred)
         // is inferred at best.
         let rivalsInferred = episodes(ph.predicate).contains { o in
             o.entity != p.id && o.inferredEnd && (d == nil || (o.tstart.map { $0.lo <= d!.hi } ?? true))
         }
-        if (e?.inferredEnd == true && ph.former) || rivalsInferred { return (p.id, .inferred) }
+        if (e?.inferredEnd == true && ph.former) || rivalsInferred { return (p.id, .inferred, []) }
         let exclusive = registry.predicate(ph.predicate)?.exclusive ?? false
         let group = groups[FactsEntity.RoleGroup(predicate: ph.predicate, cls: ph.cls)].flatMap { entities[$0] }
         var unique = ph.mods.contains { registry.language.onlyWords.contains($0) } || r.only || exclusive
             || ph.exclusiveLabel || group?.count == 1
         if r.cls == nil, !ph.generic { unique = false }
-        return (p.id, unique ? .statedUnique : .soleKnown)
+        return (p.id, unique ? .statedUnique : .soleKnown, [])
     }
 }

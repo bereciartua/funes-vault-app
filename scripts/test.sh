@@ -40,10 +40,11 @@ swift test --package-path Packages/FunesCore
 # the CPU. Not on CI, whose shared runners' timings say little.
 if [ -z "${CI:-}" ]; then
     FUNES_OVERVIEW_BENCHMARK=1 swift test --package-path Packages/FunesCore --filter OverviewBenchmarkTests
-    # Search with snippets within FR-V-10's 150 ms on 10,000 memories (FR-V-17), alone likewise,
-    # and in release: the budget is the shipped app's.
+    # Search with snippets within FR-V-10's 150 ms on 10,000 memories (FR-V-17), and search with
+    # learned facts' links within it (Phase 13b), alone likewise, and in release: the budget is the
+    # shipped app's.
     FUNES_SEARCH_BENCHMARK=1 swift test -c release -Xswiftc -enable-testing --package-path Packages/FunesCore \
-        --filter SnippetBenchmarkTests
+        --filter 'SnippetBenchmarkTests|FactsSearchBenchmarkTests'
 fi
 swift test --package-path Packages/FunesMCP
 swift test --package-path Packages/BridgeUI

@@ -1,4 +1,5 @@
 import Foundation
+import FunesProtocol
 import GRDB
 
 /// Why a memory was archived, for learned facts (memory processing §11.8).
@@ -393,6 +394,91 @@ extension VaultStore {
         let out = try removeLearnedFacts(activity: activity, now: now)
         factsLane.setBackfillPaused(false)
         return out
+    }
+
+    /// **Not <name>** (a why line, 13b): this memory isn't about that entity. Every link of the memory to it is rejected
+    /// for this memory only, keyed to the memory and each quoted span (memory processing §11.8): each role phrase that
+    /// resolves to it, the name where the memory uses it, and the facts the memory states about it. Dependent links
+    /// recompute at once (the facts revision moves). Activity: `facts_corrected`, counts only. Returns how many links.
+    @discardableResult
+    public func rejectLink(memoryID: UUID, entity: String, config: FactsSearchConfig, activity: any ActivityRecorder,
+                           now: Date = Date()) throws -> Int {
+        let n = try writer.write { db -> Int in
+            let uses = try config.uses(db)
+            let loaded = try FactStore.load(db, registry: config.registry, userAliases: config.userAliases, uses: uses)
+            var g = loaded.graph
+            let mid = memoryID.db
+            guard let row = try Row.fetchOne(db, sql: """
+                SELECT title, body, created_at, COALESCE(original_source, source) AS source, trust, sensitivity FROM memory WHERE id = ?
+                """, arguments: [mid]) else { return 0 }
+            let text = FactStore.text(title: row["title"], body: row["body"])
+            let created: Date = row["created_at"]
+            let mem = g.memories[mid] ?? FactsMemory(id: mid, text: text, written: FactStore.writtenDay(created),
+                                                     source: FactStore.source(row["source"]), trusted: (row["trust"] as String) == "trusted")
+            var count = 0
+            let linked = Set(uses.predicates(.linked)).intersection(uses.predicates(.recorded))
+            // Each role phrase that resolves to them, or leaves them among its candidates.
+            for ph in g.rolePhrases(text, predicates: linked) {
+                let r = g.resolution(mem, ph)
+                guard r.entity == entity || (r.entity == nil && r.candidates.contains(entity)) else { continue }
+                try FactStore.decideMention(db, memoryID: mid, quote: ph.surface, near: FactStore.scalarOffset(text, utf16: ph.start),
+                                            entityID: entity, outcome: "rejected", now: now)
+                count += 1
+            }
+            for (key, link) in g.names where key.memoryID == mid && (link.entity == entity || link.candidates.contains(entity)) {
+                // The text's own words at the name ("Lucía", "MARIA"), so the span is found again exactly.
+                guard let r = FactsText.wholeWordRanges(key.surface, in: text).first else { continue }
+                let written = FactsText.substring(text, r.location, r.location + r.length)
+                try FactStore.decideMention(db, memoryID: mid, quote: written, near: FactStore.scalarOffset(text, utf16: r.location),
+                                            entityID: entity, outcome: "rejected", now: now)
+                count += 1
+            }
+            for f in g.facts where f.entity == entity {
+                guard let fid = loaded.factIDs[FactStore.Loaded.key(f.predicate, f.entity)] else { continue }
+                for a in f.assertions where a.memoryID == mid && !a.fromUser {
+                    try FactStore.override(db, targetKind: "fact", targetID: fid, field: "rejected", value: true,
+                                           sensitivity: row["sensitivity"], memoryID: mid, quote: a.quote, now: now)
+                    count += 1
+                }
+            }
+            return count
+        }
+        if n > 0 {
+            activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "facts_corrected",
+                                          counts: ["links": n]))
+        }
+        return n
+    }
+
+    /// **Not this** (a why line, 13b): the fact is wrong ("Maria isn't your sister"), for every memory: a rejection with
+    /// no memory, at the highest sensitivity behind the fact. Dependent links and the timeline recompute at once.
+    /// Activity: `facts_corrected`, counts only.
+    public func rejectFact(factID: String, activity: any ActivityRecorder, now: Date = Date()) throws {
+        try writer.write { db in
+            guard try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM fact WHERE id = ?)", arguments: [factID]) == true else { return }
+            let level = try Int.fetchOne(db, sql: "SELECT MAX(sensitivity) FROM fact_evidence WHERE fact_id = ?", arguments: [factID])
+                ?? Sensitivity.internal.rawValue
+            try FactStore.override(db, targetKind: "fact", targetID: factID, field: "rejected", value: true, sensitivity: level, now: now)
+        }
+        activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "facts_corrected",
+                                      counts: ["facts": 1]))
+    }
+
+    /// The UI-review build's sample facts (never the real vault): a memory read by the people call, naming `person` with
+    /// a fact whose lexicon word is `word` ("sister"), or read with nothing found when `person` is nil.
+    @_spi(FactsReview) public func reviewLearn(memoryID: UUID, person: String?, word: String = "", quote: String = "",
+                                               registry: FactsRegistry = .bundled, now: Date = Date()) throws {
+        guard let p = registry.predicates.first(where: { $0.lexicon.contains { $0.words.contains(word) } })
+            ?? registry.predicates.first(where: { $0.objectKind == FactsValidator.personKind }) else { return }
+        let x = person.map { n in
+            FactsExtraction(people: [ExtractedPerson(name: n, quote: quote)],
+                            facts: [ExtractedFact(predicate: p.id, name: n, label: word, quote: quote)])
+        } ?? FactsExtraction()
+        try writer.write { db in
+            let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [memoryID.db]) ?? 1
+            try FactStore.apply(db, memoryID: memoryID.db, version: version, extraction: x, callGroup: p.callGroup, registry: registry,
+                                uses: .everyDeclared(registry), now: now)
+        }
     }
 
     /// `status.get`'s factsRevision: "<epoch>.<counter>".

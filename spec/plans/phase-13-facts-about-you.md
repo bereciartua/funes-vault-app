@@ -491,19 +491,48 @@
     - The recurring wrong person links: p10's "My father" (stated) and p06's landlord in its second order (`sole_known`).
 
 ## 13b Mac search · 1–2 weekends
-- [ ] **Matching:** names, aliases and role phrases in the query map to entities, with no model call. A shared name matches everyone who has it; stop names, common-word names and possessive chains follow §11's cases.
-- [ ] **Admission without a boost:**
+- [x] **Matching:** names, aliases and role phrases in the query map to entities, with no model call. A shared name matches everyone who has it; stop names, common-word names and possessive chains follow §11's cases.
+- [x] **Admission without a boost:**
   - a matched entity admits its memories, each scored by the better of the query and the rest of the query (the query without the matched names);
   - a memory linked only to entities the query doesn't name drops 0.1;
   - a timeline query admits the answer fact's stating memories, and the anchor's own memories drop 0.1;
   - a query that names no known entity is unchanged.
 
   Each result records how it was admitted, for 13d's privacy selection.
-- [ ] **The rest of the query** is embedded locally with bge-small; with the provider index (ADR-0023), it's a second embedding request, only when every matched name comes from sendable facts.
-- [ ] **Why lines** on results ("my sister → Maria (only sister Funes knows)", "worked at Acme until 2023"), with **Not <name>** and **Not this** on the Mac. A correction recomputes dependent links at once (13a.1's lifecycle).
-- [ ] **Older phones:** link-admitted results reach the phone as ordinary results until 13d's protocol fields; nothing inferred is shown there before then.
-- [ ] **Owner side only:** agent retrieval, the related-memories finder and the tidy-up never use links, with regression tests that prove it.
-- [ ] **Gates:** search with links (both indexes) and latency.
+- [x] **The rest of the query** is embedded locally with bge-small; with the provider index (ADR-0023), it's a second embedding request, only when every matched name comes from sendable facts.
+- [x] **Why lines** on results ("my sister → Maria (only sister Funes knows)", "worked at Acme until 2023"), with **Not <name>** and **Not this** on the Mac. A correction recomputes dependent links at once (13a.1's lifecycle).
+- [x] **Older phones:** link-admitted results reach the phone as ordinary results until 13d's protocol fields; nothing inferred is shown there before then.
+- [x] **Owner side only:** agent retrieval, the related-memories finder and the tidy-up never use links, with regression tests that prove it.
+- [x] **Gates:** search with links (both indexes) and latency. *Ticked with the author's waiver of one second-index rank
+  (below); the latency row on the author's vault is the author's own run.*
+- *Status (19 Nov 2026): built and reviewed; the Gates met on fixtures, one rank waived by the author.* Built as memory processing §4's "As built in 13b"
+  says: matching, admission and the −0.1 as search.py's locked rule; why lines from the registry's existing phrases
+  (adding a why phrase would change the registry version and lapse every record); Not <name> and Not This; answers
+  reading only what plain search would put in their top results until 13d; agent retrieval, the duplicate hint and the
+  related-memories finder untouched, with tests. Reviewed by GPT-6-Astra and Fable 5.2 (plan, diff, a fix round).
+  - **Search with links, on fixtures** (`FactsSearchGateTests`, `FUNES_FACTS_GATES=1`; `spikes/people/results-13b/`):
+    the spike's main, Astra and busy search sets (people, Spike G, the benchmark) and the work set, with the r3 reads
+    applied through `FactStore.apply`, no model calls.
+    - bge-small, the shipped uses: **0 targets worse, out of the top 3 or out of the top 10** on every set (main 126
+      targets, Astra 15, busy 39, work 69); the same with every declared use on the people sets.
+    - With a second index (Ollama's `qwen3-embedding:0.6b` on this Mac, calibrated, uncalibrated, and as a cloud model):
+      main and Astra pass; **busy loses one rank on one target** ("When is Lucía's birthday?": 2 → 3, still in the top
+      3), because a memory saying only "my sister … her next birthday" is now admitted above it. That's the specified
+      behaviour, and it isn't tuned on the gate set. **Waived by the author** (19 Nov 2026).
+    - The work set passes only because works at isn't linked. With every declared use on it fails (6–13 targets worse,
+      one or two out of the top 3): **works at's linked and timeline uses in search must not be qualified until this
+      set passes** (most losses are the −0.1 on memories of the jobs a query doesn't name).
+  - **Latency, on fixtures** (`FactsSearchBenchmarkTests`, release): the busy set's 368 memories with bge-small, 50
+    queries, p95 over every run: 14–16 ms with links (7–8 ms plain), and 65–77 ms for a first search with a cold index;
+    10,000 memories, keyword-only: 55–56 ms. A cold index build at 10,000 takes 2.5–6 s (the app builds it in the background
+    after a change, so a search rarely waits). **The author's-vault row (50 queries) is the author's to run**, not an
+    agent's: `sh scripts/facts_search_latency.sh <queries.txt>` copies the vault to a temporary folder, runs
+    `FactsSearchPrivateLatencyTests` in release on the copy, deletes it, and prints timings only (p50, p95 and max
+    with and without links, and the cold first search), never a query, a memory, a title or a name.
+  - **Open:** the dated why phrase ("worked at Acme until 2023") waits for the next registry change; organisation names
+    aren't name links yet (inert while works at isn't linked). A live Haiku read of the search sets, to replace the
+    converter from the spike's recorded reads, is **skipped** (the author's decision).
+
 
 ## 13c The People & history section · 2 weekends
 - [ ] **Vault sidebar ▸ People & history** (working name): entities by how many memories mention them, role groups, filters by kind.

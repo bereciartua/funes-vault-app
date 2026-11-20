@@ -316,6 +316,16 @@ extension FactsGraph {
     /// one when the next started ends at the next one's start (`inferred`). Never on untrusted evidence, never for an
     /// episode stated as ended, never when a memory says it still held once the next had started.
     public func episodes(_ predicate: String) -> [Episode] {
+        if let memo = episodeMemo {
+            if let kept = memo.get(predicate) { return kept }
+            let eps = derivedEpisodes(predicate)
+            memo.set(predicate, eps)
+            return eps
+        }
+        return derivedEpisodes(predicate)
+    }
+
+    private func derivedEpisodes(_ predicate: String) -> [Episode] {
         let eps = facts.filter { $0.predicate == predicate && !$0.negated }.flatMap { factEpisodes($0) }
         guard registry.predicate(predicate)?.succession == true else { return eps }
         // Succession runs over trusted episodes only: an untrusted one neither triggers nor blocks it.

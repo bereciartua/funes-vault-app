@@ -713,6 +713,26 @@ enum FactStore {
             g.names[key] = NameLink(entity: nil, basis: .ambiguous, candidates: Array(Set(sharing + [e])).sorted())
         }
 
+        // "Not <name>" on a name (13b): the user's rejection at one of the name's occurrences in that memory drops the
+        // link, or that candidate of an ambiguous name, for every reader. Two occurrences of one name go together.
+        if !g.rejections.isEmpty {
+            var byMemory: [String: [(start: Int, entities: Set<String>)]] = [:]
+            for (k, s) in g.rejections { byMemory[k.memoryID, default: []].append((k.start, s)) }
+            for (key, link) in g.names {
+                guard let rejected = byMemory[key.memoryID], let text = counted[key.memoryID]?.memory.text else { continue }
+                let starts = Set(FactsText.wholeWordStarts(key.surface, in: text))
+                let out = rejected.filter { starts.contains($0.start) }.reduce(into: Set<String>()) { $0.formUnion($1.entities) }
+                guard !out.isEmpty else { continue }
+                if let e = link.entity {
+                    if out.contains(e) { g.names[key] = nil; g.codeNames.remove(key) }
+                } else {
+                    var l = link
+                    l.candidates.removeAll(where: out.contains)
+                    g.names[key] = l.candidates.isEmpty ? nil : l
+                }
+            }
+        }
+
         for c in counted.values {
             g.memories[c.memory.id] = c.memory
             g.memoryOrder[c.memory.id] = c.seq

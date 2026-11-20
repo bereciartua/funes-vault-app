@@ -12,6 +12,14 @@ public struct SearchHit: Sendable, Hashable {
     public let keyword: Float
     public let semantic: Float
     public let cosine: Float?
+    /// With learned facts in use (vault search only): how a link or a timeline answer admitted it, nil when plain search
+    /// kept it on its own.
+    public var admission: SearchAdmission? = nil
+    /// It lost 0.10: linked only to entities the search doesn't name, or to a timeline's anchor.
+    public var demoted = false
+    /// Its place in the facts-free ranking (plain search's own order), nil when plain search wouldn't keep it. Answers
+    /// read by it until 13d's selection (memory processing §11.9).
+    public var plainRank: Int? = nil
 }
 
 /// FTS5 query building and BM25 (memory processing §3).
@@ -100,6 +108,13 @@ public final class SearchService: Sendable {
     public let indexer: EmbeddingIndexer?
     public let keywordFloor: Float
     private let second = Mutex<SecondIndex?>(nil)
+    private let factsConfig = Mutex<FactsSearchConfig?>(nil)
+    /// Learned facts have shaped a search since launch (set once, never cleared): answers check what they read from then on.
+    private let factsUsed = Mutex(false)
+    /// The facts index, and the one as a cloud call may see it (for the second index's rule), by what they were built from.
+    private let factsIndexes = Mutex<[FactsIndexKey: FactsSearchIndex]>([:])
+    private let rolePhrases = RolePhraseCache()
+    private let builds = SerialRunner()
     private let logger = Logger(subsystem: "com.funesvault.mac", category: "search")
 
     public init(store: VaultStore, indexer: EmbeddingIndexer?, keywordFloor: Float = SearchService.defaultKeywordFloor) {
@@ -114,6 +129,26 @@ public final class SearchService: Sendable {
         set { second.withLock { $0 = newValue } }
     }
 
+    /// Learned facts in vault search (memory processing §4): set while *Use in search and answers* is on, nil otherwise.
+    /// Agent retrieval, the duplicate hint and the related-memories finder never read it.
+    public var facts: FactsSearchConfig? {
+        get { factsConfig.withLock { $0 } }
+        set {
+            factsConfig.withLock { $0 = newValue }
+            if newValue != nil, !factsUsed.withLock({ $0 }) {
+                factsUsed.withLock { $0 = true }
+                // Kept in the vault too, so answers check what they read after a relaunch (a phone's results kept since).
+                try? store.writer.write { db in
+                    try db.execute(sql: "INSERT OR REPLACE INTO meta (key, value) VALUES ('facts_search_used', '1')")
+                }
+            }
+            if newValue == nil {                  // nothing learned stays in memory
+                factsIndexes.withLock { $0.removeAll() }
+                rolePhrases.clear()
+            }
+        }
+    }
+
     /// Vault search (FR-V-10): filters apply before ranking; the vault threshold; prefix matching
     /// on the last word. An empty query lists the filtered memories in the filter's order.
     public func vaultSearch(_ query: String, filter: MemoryFilter = MemoryFilter(), now: Date) async throws -> [SearchHit] {
@@ -123,7 +158,46 @@ public final class SearchService: Sendable {
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return pool.map { SearchHit(memoryID: $0.id, score: 0, keyword: 0, semantic: 0, cosine: nil) }
         }
-        return try await rank(text: query, pool: pool, prefix: true, threshold: \.vaultThreshold, agentTask: false, limit: nil)
+        let pairs = pool.map { (id: $0.id, updatedAt: $0.updatedAt) }
+        // One second index for the whole search: what authorizes the rest of the query is what embeds and scores it.
+        let second = secondIndex
+        if let config = facts, let planned = await factsPlan(query, config: config, second: second, now: now),
+           facts.map({ Self.same($0, config) }) == true {      // still the configuration it was planned under
+            do {
+                return try await rankWithFacts(query, pool: pairs, planned: planned, second: second)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                logger.error("Learned facts failed; plain search for this query")   // fails closed to plain search
+            }
+        }
+        return try await rank(text: query, pool: pairs, prefix: true, threshold: \.vaultThreshold, agentTask: false, limit: nil,
+                              second: second)
+    }
+
+    /// What an answer may read of `ids` (the results as shown, in order) until 13d's selection. Once learned facts have
+    /// been in use since launch (on now, or on when the list was made: a list not reloaded, a phone's cached results),
+    /// only those in plain search's top `count` under the same filter, in shown order, with no refill: plain search
+    /// never reads learned facts, so no fact decides which memories go to a model (memory processing §11.9). An error
+    /// refuses rather than reading the ids as given. Never used since launch: `ids` as given, as before Phase 13.
+    public func answerSelection(_ query: String, ids: [UUID], filter: MemoryFilter, count: Int, now: Date) async throws -> [UUID] {
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return ids }
+        let (used, pool) = try await store.writer.read { db in
+            (try String.fetchOne(db, sql: "SELECT value FROM meta WHERE key = 'facts_search_used'") == "1",
+             try MemoryStore.listed(db, filter: filter, now: now))
+        }
+        guard used || factsUsed.withLock({ $0 }) else { return ids }
+        let plain = try await rank(text: query, pool: pool.map { (id: $0.id, updatedAt: $0.updatedAt) }, prefix: true,
+                                   threshold: \.vaultThreshold, agentTask: false, limit: count)
+        // In plain search's order, so not even the order a prompt lists them in is the facts'.
+        let shown = Set(ids)
+        return plain.map(\.memoryID).filter(shown.contains)
+    }
+
+    /// Whether a configuration is still the one a search was planned under (the app replaces it on every change).
+    static func same(_ a: FactsSearchConfig, _ b: FactsSearchConfig) -> Bool {
+        a.engines == b.engines && a.userAliases == b.userAliases && a.cloudLimit == b.cloudLimit
+            && a.registry.fingerprint == b.registry.fingerprint
     }
 
     /// Where each of `ids` matches `query` in its body, for snippets and answers (memory processing
@@ -171,24 +245,85 @@ public final class SearchService: Sendable {
             .sorted { $0.value > $1.value }.map(\.key)
     }
 
+    /// Plain search (memory processing §4): every kept memory, ranked. Agent retrieval, the duplicate hint's callers and
+    /// vault search without learned facts all come here; nothing in it reads learned facts.
     private func rank(text: String, pool: [(id: UUID, updatedAt: Date)], prefix: Bool,
-                      threshold: KeyPath<EmbeddingModelInfo, Float>, agentTask: Bool, limit: Int?) async throws -> [SearchHit] {
+                      threshold: KeyPath<EmbeddingModelInfo, Float>, agentTask: Bool, limit: Int?,
+                      second given: SecondIndex?? = nil) async throws -> [SearchHit] {
         guard !pool.isEmpty else { return [] }
         let poolIDs = Set(pool.map(\.id))
-        let keyword = try await store.writer.read { db in try KeywordSearch.scores(db, text: text, prefix: prefix, pool: poolIDs) }
+        let second = given ?? secondIndex
+        let vectors = await embed([text], agentTask: agentTask, second: second)
+        let scored = try await score(text: text, poolIDs: poolIDs, prefix: prefix, threshold: threshold,
+                                     bge: vectors.bge.first ?? nil, provider: vectors.provider.first ?? nil, second: vectors.second)
+        let ranked = Self.finish(scored, pool: pool)
+        return limit.map { Array(ranked.prefix($0)) } ?? ranked
+    }
 
-        // Semantic: skipped for secret-like queries, and when the model is unavailable.
-        var cosines: [UUID: Float] = [:]
-        var cut: Float = .infinity
-        if let indexer, SecretScanner.scan(text).isEmpty {
-            do {
-                if let q = try await indexer.provider.embed([text], as: .query).first {
-                    cosines = indexer.index.cosines(q).filter { poolIDs.contains($0.key) }
-                    cut = indexer.provider.model[keyPath: threshold]
+    /// Kept memories by score; ties: the most recently updated, then the id. Each hit's `plainRank` is its place.
+    static func finish(_ scored: [UUID: Scored], pool: [(id: UUID, updatedAt: Date)]) -> [SearchHit] {
+        var hits: [(SearchHit, Date)] = []
+        for (id, updatedAt) in pool {
+            guard let s = scored[id], s.kept else { continue }
+            hits.append((SearchHit(memoryID: id, score: s.score, keyword: s.keyword, semantic: s.semantic, cosine: s.cosine), updatedAt))
+        }
+        hits.sort { a, b in
+            if a.0.score != b.0.score { return a.0.score > b.0.score }
+            if a.1 != b.1 { return a.1 > b.1 }  // ties: most recently updated
+            return a.0.memoryID.db < b.0.memoryID.db
+        }
+        return hits.enumerated().map { i, h in
+            var hit = h.0
+            hit.plainRank = i
+            return hit
+        }
+    }
+
+    /// The query vectors for some texts: bge's in one call, the second index's (once its set is complete, for agent
+    /// text only when it may) one request each, concurrently. Secret-looking text, and any text when the model failed,
+    /// gets none (keyword-only for it). `provider: false` keeps a text off the second index.
+    private func embed(_ texts: [String], agentTask: Bool, second given: SecondIndex?, provider allowed: [Bool]? = nil) async
+        -> (bge: [[Float]?], provider: [[Float]?], second: SecondIndex?) {
+        let clean = texts.map { SecretScanner.scan($0).isEmpty }
+        var bge = [[Float]?](repeating: nil, count: texts.count)
+        let wanted = texts.indices.filter { clean[$0] }
+        var provider = [[Float]?](repeating: nil, count: texts.count)
+        let second = given.flatMap { s in s.indexer.isComplete && (!agentTask || s.embedsAgentTasks) ? s : nil }
+        async let fromProvider: [[Float]?] = {
+            guard let second else { return [[Float]?](repeating: nil, count: texts.count) }
+            return await withTaskGroup(of: (Int, [Float]?).self) { group in
+                for i in texts.indices where clean[i] && (allowed?[i] ?? true) {
+                    group.addTask { (i, await second.indexer.queryVector(texts[i])) }
                 }
+                var out = [[Float]?](repeating: nil, count: texts.count)
+                for await (i, v) in group { out[i] = v }
+                return out
+            }
+        }()
+        if let indexer, !wanted.isEmpty {
+            do {
+                let vs = try await indexer.provider.embed(wanted.map { texts[$0] }, as: .query)
+                for (k, i) in wanted.enumerated() where k < vs.count { bge[i] = vs[k] }
             } catch {
                 logger.error("Query embedding failed; keyword-only for this search")
             }
+        }
+        provider = await fromProvider
+        return (bge, provider, second)
+    }
+
+    /// Every pool memory's scores for a text (memory processing §4), and whether it's kept: `keyword ≥ floor` or its raw
+    /// cosine at the model's threshold (a memory with a provider vector: the provider's cosine and threshold, or its
+    /// top K uncalibrated).
+    private func score(text: String, poolIDs: Set<UUID>, prefix: Bool, threshold: KeyPath<EmbeddingModelInfo, Float>,
+                       bge q: [Float]?, provider pq: [Float]?, second: SecondIndex?) async throws -> [UUID: Scored] {
+        let keyword = try await store.writer.read { db in try KeywordSearch.scores(db, text: text, prefix: prefix, pool: poolIDs) }
+
+        var cosines: [UUID: Float] = [:]
+        var cut: Float = .infinity
+        if let indexer, let q {
+            cosines = indexer.index.cosines(q).filter { poolIDs.contains($0.key) }
+            cut = indexer.provider.model[keyPath: threshold]
         }
         let lo = cosines.values.min() ?? 0, hi = cosines.values.max() ?? 0
         let span = hi - lo
@@ -197,9 +332,8 @@ public final class SearchService: Sendable {
         var provider: [UUID: Float] = [:]
         var providerCut: Float = .infinity
         var providerTop: Set<UUID>?
-        if let second = secondIndex, second.indexer.isComplete, !agentTask || second.embedsAgentTasks,
-           SecretScanner.scan(text).isEmpty, let q = await second.indexer.queryVector(text) {
-            provider = second.indexer.index.cosines(q).filter { poolIDs.contains($0.key) }
+        if let second, let pq, pq.count == second.indexer.provider.model.dimensions {
+            provider = second.indexer.index.cosines(pq).filter { poolIDs.contains($0.key) }
             let model = second.indexer.provider.model
             if model.isCalibrated {
                 providerCut = model[keyPath: threshold]
@@ -210,8 +344,8 @@ public final class SearchService: Sendable {
         let plo = provider.values.min() ?? 0, phi = provider.values.max() ?? 0
         let pspan = phi - plo
 
-        var hits: [(SearchHit, Date)] = []
-        for (id, updatedAt) in pool {
+        var out: [UUID: Scored] = [:]
+        for id in poolIDs {
             let k = keyword[id] ?? 0
             let c: Float?, s: Float, semanticKeep: Bool
             if let pc = provider[id] {
@@ -223,16 +357,168 @@ public final class SearchService: Sendable {
                 s = if let c, span > 0 { (c - lo) / span } else { 0 }
                 semanticKeep = (c ?? -1) >= cut
             }
-            guard k >= keywordFloor && k > 0 || semanticKeep else { continue }
-            hits.append((SearchHit(memoryID: id, score: Self.keywordWeight * k + Self.semanticWeight * s,
-                                   keyword: k, semantic: s, cosine: c), updatedAt))
+            out[id] = Scored(score: Self.keywordWeight * k + Self.semanticWeight * s, keyword: k, semantic: s, cosine: c,
+                             kept: k >= keywordFloor && k > 0 || semanticKeep)
         }
-        hits.sort { a, b in
-            if a.0.score != b.0.score { return a.0.score > b.0.score }
-            if a.1 != b.1 { return a.1 > b.1 }  // ties: most recently updated
-            return a.0.memoryID.db < b.0.memoryID.db
+        return out
+    }
+
+    // MARK: Learned facts (memory processing §4, owner side only)
+
+    /// Vault search with learned facts: the query's and the rest's scores, then admission without a boost.
+    private func rankWithFacts(_ query: String, pool: [(id: UUID, updatedAt: Date)], planned: PlannedFacts,
+                               second: SecondIndex?) async throws -> [SearchHit] {
+        guard !pool.isEmpty else { return [] }
+        let poolIDs = Set(pool.map(\.id))
+        let rest = planned.plan.rest
+        let texts = rest.isEmpty ? [query] : [query, rest]
+        let vectors = await embed(texts, agentTask: false, second: second,
+                                  provider: rest.isEmpty ? [true] : [true, planned.restMayUseProvider])
+        // bge failed on the query (and its rest): plain search, which tries the query alone.
+        if indexer != nil, SecretScanner.scan(query).isEmpty, vectors.bge[0] == nil { throw FactsSearchFallback.embedding }
+        let plain = try await score(text: query, poolIDs: poolIDs, prefix: true, threshold: \.vaultThreshold,
+                                    bge: vectors.bge[0], provider: vectors.provider[0], second: vectors.second)
+        var restScores: [UUID: Scored]?
+        if !rest.isEmpty {
+            restScores = try await score(text: rest, poolIDs: poolIDs, prefix: true, threshold: \.vaultThreshold,
+                                         bge: vectors.bge[1], provider: vectors.provider[1], second: vectors.second)
         }
-        let ranked = hits.map(\.0)
-        return limit.map { Array(ranked.prefix($0)) } ?? ranked
+        return SearchFacts.rank(pool: pool, plain: plain, rest: restScores, plan: planned.plan, index: planned.index)
+    }
+
+    /// Builds the facts index ahead of the next search when the vault or learned facts changed (the app calls it after
+    /// a change), so a search rarely waits for it. Nothing happens while learned facts aren't in use.
+    public func prepareFacts(now: Date = Date()) async {
+        guard let config = facts else { return }
+        _ = try? await factsIndex(config)
+    }
+
+    /// A plan worth searching with: the index it came from, and whether the rest of the query may go to the second index.
+    struct PlannedFacts {
+        var index: FactsSearchIndex
+        var plan: FactsQueryPlan
+        var restMayUseProvider: Bool
+    }
+
+    /// The query's plan, or nil when learned facts change nothing: no use on, nothing the query names, or any error (search
+    /// then fails closed to plain search).
+    func factsPlan(_ query: String, config: FactsSearchConfig, second: SecondIndex?, now: Date) async -> PlannedFacts? {
+        let today = FactStore.writtenDay(now)
+        do {
+            guard let (index, uses, key) = try await factsIndex(config) else { return nil }
+            let plan = index.plan(query, today: today)
+            guard !plan.isEmpty else { return nil }
+            let may = try await restMayUseProvider(plan, query: query, config: config, uses: uses, key: key, today: today, second: second)
+            return PlannedFacts(index: index, plan: plan, restMayUseProvider: may)
+        } catch {
+            logger.error("Learned facts unavailable; plain search for this query")
+            return nil
+        }
+    }
+
+    /// The facts index for what's on now (read in one transaction with it), built when the vault or learned facts
+    /// changed. Builds run one at a time, so a burst of changes builds once more, not once each.
+    private func factsIndex(_ config: FactsSearchConfig) async throws -> (FactsSearchIndex, FactsUses, FactsIndexKey)? {
+        let current: (FactsUses, FactsIndexKey, FactsSearchIndex?)? = try await store.writer.read { db in
+            let uses = try config.uses(db)
+            guard !uses.predicates(.linked).isEmpty else { return nil }
+            let key = try FactsIndexKey(db, config: config, uses: uses, sendable: nil)
+            return (uses, key, self.factsIndexes.withLock { $0[key] })
+        }
+        guard let (uses, key, cached) = current else { return nil }
+        if let cached { return (cached, uses, key) }
+        return try await builds.run {
+            try await self.store.writer.read { db in
+                let uses = try config.uses(db)
+                guard !uses.predicates(.linked).isEmpty else { return nil }
+                let key = try FactsIndexKey(db, config: config, uses: uses, sendable: nil)
+                if let cached = self.factsIndexes.withLock({ $0[key] }) { return (cached, uses, key) }
+                let built = try FactsSearchIndex.build(db, registry: config.registry, userAliases: config.userAliases, uses: uses,
+                                                       phrases: self.rolePhrases)
+                self.factsIndexes.withLock { cache in
+                    cache = cache.filter { $0.key.sendable != nil && $0.key.sameState(key) }
+                    if self.facts != nil { cache[key] = built }     // turned off meanwhile: keep nothing learned
+                }
+                return (built, uses, key)
+            }
+        }
+    }
+
+    /// The rest of the query goes to the second index only when it's local, or every match comes from sendable facts
+    /// (memory processing §11.9): the plan, made again on the graph a cloud call may see under the cloud limit, matches
+    /// the same entities over the same words. `second` is the index the search embeds and scores with.
+    private func restMayUseProvider(_ plan: FactsQueryPlan, query: String, config: FactsSearchConfig, uses: FactsUses,
+                                    key: FactsIndexKey, today: String, second: SecondIndex?) async throws -> Bool {
+        guard !plan.rest.isEmpty, let second, second.indexer.isComplete else { return false }
+        if second.indexer.provider.locality.isLocal { return true }
+        let limit = config.cloudLimit
+        let sendable: FactsSearchIndex = try await builds.run {
+            try await self.store.writer.read { db in
+                var k = key
+                k.sendable = String(describing: limit)
+                if let cached = self.factsIndexes.withLock({ $0[k] }) { return cached }
+                let built = try FactsSearchIndex.build(db, registry: config.registry, userAliases: config.userAliases, uses: uses,
+                                                       sendable: limit)
+                self.factsIndexes.withLock { if self.facts != nil { $0[k] = built } }
+                return built
+            }
+        }
+        let other = sendable.plan(query, today: today)
+        func shape(_ p: FactsQueryPlan) -> Set<String> { Set(p.matches.map { "\($0.entity)|\($0.start)|\($0.end)" }) }
+        return shape(other) == shape(plan)
     }
 }
+
+/// Runs async work one piece at a time, in the order asked.
+final class SerialRunner: Sendable {
+    private let last = Mutex<Task<Void, Never>?>(nil)
+
+    func run<T: Sendable>(_ work: @escaping @Sendable () async throws -> T) async throws -> T {
+        let task: Task<T, any Error> = last.withLock { tail in
+            let previous = tail
+            let t = Task { () async throws -> T in
+                await previous?.value
+                return try await work()
+            }
+            tail = Task { _ = try? await t.value }
+            return t
+        }
+        return try await task.value
+    }
+}
+
+/// What a facts index was built from: the facts revision (with its epoch), the vault's memories and the Facts task's
+/// dealings with them, what's on, your names, the registry, and the cloud limit for a sendable one.
+struct FactsIndexKey: Hashable, Sendable {
+    var revision: String
+    var vault: String
+    var uses: String
+    var aliases: [String]
+    var registry: String
+    var sendable: String?
+
+    init(_ db: Database, config: FactsSearchConfig, uses: FactsUses, sendable: String?) throws {
+        revision = try FactStore.revision(db)
+        let row = try Row.fetchOne(db, sql: """
+            SELECT COUNT(*) AS n, COALESCE(SUM(version), 0) AS v, COALESCE(MAX(seq), 0) AS s, COALESCE(MAX(updated_at), '') AS u,
+              (SELECT COUNT(*) FROM facts_asked) AS a,
+              (SELECT COUNT(*) FROM processing_job WHERE kind = 'facts' AND state IN ('done','failed')) AS j
+            FROM memory
+            """)
+        vault = row.map { "\($0["n"] as Int).\($0["v"] as Int).\($0["s"] as Int).\($0["u"] as String).\($0["a"] as Int).\($0["j"] as Int)" } ?? ""
+        self.uses = config.registry.predicates.map { p in
+            p.id + ":" + [FactsUse.recorded, .linked, .timeline].filter { uses.isOn(p.id, $0) }.map(\.rawValue).joined(separator: ",")
+        }.joined(separator: ";")
+        aliases = config.userAliases
+        registry = config.registry.fingerprint
+        self.sendable = sendable
+    }
+
+    /// The same state, whatever the limit.
+    func sameState(_ o: FactsIndexKey) -> Bool {
+        revision == o.revision && vault == o.vault && uses == o.uses && aliases == o.aliases && registry == o.registry
+    }
+}
+
+/// Why a search with learned facts gave way to plain search.
+enum FactsSearchFallback: Error { case embedding }

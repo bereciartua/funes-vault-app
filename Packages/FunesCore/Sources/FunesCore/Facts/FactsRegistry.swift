@@ -22,6 +22,8 @@ public struct FactsRegistry: Sendable, Decodable {
     /// readings depend on it, without what only questions read. With the group's prompt version it makes the key a
     /// model reading records (`FactsExtractor.readKey`), so a language-only change re-reads nothing.
     public internal(set) var extractionDigests: [String: String] = [:]
+    /// `lexicon`, built once when the registry is decoded (search reads it for every memory).
+    var lexiconTable: [String: Word]?
 
     enum CodingKeys: String, CodingKey { case version, language, kinds, callGroups, predicates, useRules = "uses" }
 
@@ -190,7 +192,9 @@ public struct FactsRegistry: Sendable, Decodable {
     }
 
     /// Every lexicon word, lowercased, with its meaning (a word listed twice keeps its last meaning, as the spike did).
-    public var lexicon: [String: Word] {
+    public var lexicon: [String: Word] { lexiconTable ?? buildLexicon() }
+
+    func buildLexicon() -> [String: Word] {
         var out: [String: Word] = [:]
         for p in predicates {
             for e in p.lexicon {
@@ -239,6 +243,7 @@ public struct FactsRegistry: Sendable, Decodable {
         registry.qualifierOrder = OrderedJSON.qualifierOrder(data)
         registry.fingerprint = try fingerprint(data, version: registry.version)
         registry.extractionDigests = try extractionDigests(data)
+        registry.lexiconTable = registry.buildLexicon()
         try registry.validate()
         return registry
     }

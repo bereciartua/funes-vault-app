@@ -80,6 +80,13 @@ final class SearchAnswersController: SearchAnswering {
 
     func answer(_ query: String, ids: [UUID], actor: Actor = .user, via: ActivityEvent.Via = .app,
                 automatic: Bool = false) async throws -> SearchAnswer {
+        try await answer(query, ids: ids, filter: nil, actor: actor, via: via, automatic: automatic)
+    }
+
+    /// `filter`: what the results were searched with; with learned facts in use, the answer reads only the shown
+    /// results plain search puts in its top results under it (until 13d).
+    func answer(_ query: String, ids: [UUID], filter: MemoryFilter?, actor: Actor = .user, via: ActivityEvent.Via = .app,
+                automatic: Bool = false) async throws -> SearchAnswer {
         // Checked with the same settings the router is built from, on the main actor (§10.6).
         if automatic, !(isOn && trigger.fires(for: query)) { throw SearchAnswerError.askRequired }
         let build = settings.searchAnswerRouterBuilder(cap: settings.cap(store: environment.store, activity: environment.activity))
@@ -94,7 +101,7 @@ final class SearchAnswersController: SearchAnswering {
         }
         defer { settings.collectUsage(from: router) }
         do {
-            return try await answerer.answer(query, ids: ids, router: router, actor: actor, via: via)
+            return try await answerer.answer(query, ids: ids, filter: filter, router: router, actor: actor, via: via)
         } catch SearchAnswerError.provider(.unavailable) {
             // A plan's CLI says why it's unavailable: paused after a tool event, or too old.
             if let plan = settings.searchAnswersPlan, let client = settings.subscriptionClient(plan) {

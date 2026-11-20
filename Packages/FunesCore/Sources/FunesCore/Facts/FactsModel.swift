@@ -203,7 +203,11 @@ public struct FactsGraph: Sendable {
     public internal(set) var uses: FactsUses
     public var userAliases: [String]
     public var entities: [String: FactsEntity] = [:]
-    public var facts: [LearnedFact] = []
+    public var facts: [LearnedFact] = [] {
+        didSet { episodeMemo = nil }         // episodes come from the facts: any change drops what was kept
+    }
+    /// Episodes kept per predicate while the facts don't change (search's index sets it; `facts` changing drops it).
+    var episodeMemo: EpisodeMemo?
     public var groups: [FactsEntity.RoleGroup: String] = [:]
     public var decisions: [DecisionKey: MentionDecision] = [:]
     public var names: [NameKey: NameLink] = [:]
@@ -583,4 +587,13 @@ public struct FactsGraph: Sendable {
             if ids.count > 1, ids.contains(e) { names[key] = NameLink(entity: nil, basis: .ambiguous, candidates: ids) }
         }
     }
+}
+
+/// Episodes per predicate, kept for a graph whose facts don't change (search reads them for every memory).
+final class EpisodeMemo: @unchecked Sendable {
+    private let lock = NSLock()
+    private var byPredicate: [String: [Episode]] = [:]
+
+    func get(_ predicate: String) -> [Episode]? { lock.withLock { byPredicate[predicate] } }
+    func set(_ predicate: String, _ eps: [Episode]) { lock.withLock { byPredicate[predicate] = eps } }
 }
