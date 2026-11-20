@@ -151,8 +151,13 @@ enum FactsGateEvidence {
             if m["registryVersion"] as? String != r.registryVersion { out.append("\(p): registry") }
             if (m["factsPromptVersions"] as? [String: String])?[r.callGroup] != r.promptVersion { out.append("\(p): Facts prompt version") }
             if m["answerPromptVersion"] as? String != r.answerPromptVersion { out.append("\(p): answer prompt version") }
-            let model = String((sc["model"] as? String ?? "").split(separator: "/", maxSplits: 1).last ?? "")
-            if m["modelsReported"] as? [String] != [model] || m["responsesWithoutModel"] as? Int != 0 { out.append("\(p): models reported") }
+            // Every answer by exactly the record's model: named by the provider on every response (Claude Code), or, for
+            // a provider that names none (Codex), asked for by its full id rather than an alias.
+            let parts = (sc["model"] as? String ?? "").split(separator: "/", maxSplits: 1).map(String.init)
+            let reported = m["modelsReported"] as? [String], engine = m["engine"] as? [String: String]
+            let named = reported == [parts.last ?? ""] && m["responsesWithoutModel"] as? Int == 0
+            let asked = reported == [] && parts.count == 2 && engine == ["provider": parts[0], "model": parts[1]]
+            if !named && !asked { out.append("\(p): models reported") }
         }
         if commits.count != 1 || commits.contains("") { out.append("replay commits \(commits.sorted())") }
         if files.keys.filter({ $0.contains("manifest-") }).count != 2 { out.append("the replay of both gates") }

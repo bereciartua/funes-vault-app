@@ -1,0 +1,53 @@
+{
+ "engine": "terra",
+ "model": "codex/gpt-5.6-terra",
+ "factsModel": "claude-code/claude-haiku-5-5",
+ "inputs": {
+  "answers-terra/main-r3.jsonl": "ba1bb8cf2dcb893cc377981b925ec5e601a887a1c4e4ee05b27047651c5b3f9c",
+  "answers-terra/astra-r3.jsonl": "64ff13154f7c1404c2db1d00d9a2c0a6f403d0f27c214448c5c49ae397715ef7",
+  "answers-terra/busy-r3.jsonl": "f4acd6c426947ad5b1ff71196083078af33b82de33ebc88f47c0778e1a2e86cb",
+  "answers-terra/main-r3-judge.jsonl": "606a2028a9b2526c5787edde7408fb14fc26fd62d8106fd58aab5f925cdda8e6",
+  "answers-terra/astra-r3-judge.jsonl": "fb5a36ee7564832d9948cf5964d229d7735d5cc3ff8e4755a20a66955b323abe",
+  "answers-terra/busy-r3-judge.jsonl": "8f87df4a699a8ae1e328ce05e501165383359bd3be501bcbca92329a526ba4f6",
+  "spike-g-terra/main-P.jsonl": "41af2a04332c098fdb77945307d3c1ab8a00b6fff8310efacec71533011d03ad",
+  "spike-g-terra/main-F.jsonl": "b81c1dd13a677a0329e3bb8685d5bea425f4bf61f2ab9402bd3e46ada16375c3",
+  "spike-g-terra/astra-P.jsonl": "c9bd64ac16095059934aeee2fadc54017d3eb379e5cd797bd3622972a1a48fb7",
+  "spike-g-terra/astra-F.jsonl": "9becaed2c2247b6f34fa05c710abd8049ba2fd785dfe16a0f445aa79c825756b",
+  "labels-spikeg-terra.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+  "waivers-terra.json": "4ca3ba7582e7fa7cb40324eb043e78e0053b4ceec199c0b41641c798d48fed54"
+ },
+ "replay": {
+  "commit": "2295a4b81660ec29e93dad218dd7eaa128fe31c8",
+  "answerPromptVersion": "a13d-1",
+  "registryVersion": "v1-4f14a1e53524",
+  "files": {
+   "replay/answers-terra/astra-r3.jsonl": "51695ae6af4736a9a002c76adf0c178613f1dce3304abf7b4b5d1081445eb7bb",
+   "replay/answers-terra/busy-r3.jsonl": "abb4286aa5f933cb3e8f76d8c38643a8d94e5d377e126af7975c8e2350841ef5",
+   "replay/answers-terra/main-r3.jsonl": "9d1e59e45a2053a337cfad724e71ea2c680b078f44ee3b3aaa0195bc87c7ab6b",
+   "replay/answers-terra/manifest-answers.json": "e55e6b825d04402dc8082793d42607e1e51244835a56e247d60bfaa20504680d",
+   "replay/spike-g-terra/astra-F.jsonl": "f9dbddaeb94506d194e5b01266289ead6d23dbd6ea734ecad81289fed9643df5",
+   "replay/spike-g-terra/astra-P.jsonl": "412e89557bcedacaa0d6281f72281c79ee3d678e916f0ec8a377f1432433a7fc",
+   "replay/spike-g-terra/main-F.jsonl": "b71c78020c5795581b848c621ff0888e04663ebb5f8f08134084672ffe99d1e2",
+   "replay/spike-g-terra/main-P.jsonl": "8f1f72a7c2b0ad07db2921ac9181a3d6ff0f73df1597ae3afecdca1bfd39ee3e",
+   "replay/spike-g-terra/manifest-spikeg.json": "9ab7d3e7046296d2e0e841a259641c362bce8f6e469e5ac174283b6a17371929"
+  }
+ },
+ "marksChanged": [],
+ "gates": {
+  "answers": {
+   "complete": true,
+   "coverage ≥ plain on every family": true,
+   "0 wrong entity with correct links": true,
+   "≤ 1 W failure per 30 W answers with the trap sent": true
+  },
+  "spikeg": {
+   "complete": true,
+   "correct claims ≥ 95%": true,
+   "right \"no answer\" ≥ 90%": true,
+   "answered ≥ 80% of answerable": true,
+   "no new wrong claims": true,
+   "no claim left unlabelled (both arms)": true
+  }
+ },
+ "date": "2026-11-20"
+}

@@ -658,6 +658,15 @@ def replay_marks(engine, replay):
     return marks, changes
 
 
+def model_identified(m, model):
+    """Every answer by exactly `model` ("<provider>/<id>"): the provider named that id on every response (Claude Code), or
+    it names none (Codex's events carry no model) and the run asked for that full id itself, not an alias."""
+    provider, mid = model.split("/", 1)
+    if m.get("modelsReported") == [mid] and not m.get("responsesWithoutModel"):
+        return True
+    return m.get("modelsReported") == [] and m.get("engine") == {"provider": provider, "model": mid}
+
+
 def replay_problems(engine, model, replay):
     """Why the replay doesn't tie the live records to one clean commit's code ([] = it does); and its manifests."""
     probs, manifests = [], {}
@@ -671,8 +680,8 @@ def replay_problems(engine, model, replay):
             probs.append(f"{gate}: not a full replay ({m.get('mode')}, {m.get('uncached')} uncached)")
         if m.get("dirty") or not m.get("commit"):
             probs.append(f"{gate}: replayed on a dirty tree")
-        if m.get("modelsReported") != [model.split("/", 1)[1]] or m.get("responsesWithoutModel"):
-            probs.append(f"{gate}: the provider reported {m.get('modelsReported')}")
+        if not model_identified(m, model):
+            probs.append(f"{gate}: the provider reported {m.get('modelsReported')}, asked for {m.get('engine')}")
         opts = m.get("options", {})
         if opts.get("only") or opts.get("sets") or opts.get("arms") or opts.get("index") == "keyword" or opts.get("engine") != engine:
             probs.append(f"{gate}: a partial replay ({opts})")
