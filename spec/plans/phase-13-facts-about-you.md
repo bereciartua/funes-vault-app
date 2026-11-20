@@ -222,7 +222,7 @@
     - A pipeline revision bump (validation, the apply) doesn't re-read: readings under an earlier qualified key are used until their group is re-read (§11.10).
     - Activity's wording for the facts events (`facts_learned`, `facts_backfill`, `facts_removed`, `facts_corrected`): they show their raw names today ("Facts Backfill"), with their counts.
     - The UI review screenshots weren't captured in this environment (window capture fails); `FUNES_UI_ONLY=facts sh scripts/ui_snapshots.sh` makes them.
-- [ ] **Gates** (the acceptance rows assigned to 13a.2): links, `sole_known` on fixtures, recall, client, mixed, the fresh blind work fixture, the canary, port fidelity, privacy payloads.
+- [x] **Gates** (the acceptance rows assigned to 13a.2): links, `sole_known` on fixtures, recall, client, mixed, the fresh blind work fixture, the canary, port fidelity, privacy payloads. **Closed on 19 November 2026 by the author's decision: the person pool and client qualified; works at, the timeline and bridges didn't, and ship with no record (see the closing status).**
 - *Status (18 November 2026), the person fixture:*
   - **The counting rule** (`spikes/people/fixture_counts.py`): a role reference is one listed role in a story's truth, counted under the predicate whose registry word its phrase uses ("my late grandmother" is other family), once per play (the natural order and each extra order). It reproduces the numbers above, except manager, at 53 rather than 52.
   - **The set** (`fixtures/stories-persons.json`): 42 stories, 219 memories (186 captures, 19 agent notes, 14 imports) and 301 role references, 43 of them undecidable; 24 extra orders, 66 plays. GPT-6-Astra wrote it blind (`author_astra_persons.py`, raw output in `fixtures/raw/astra-persons.json`). It got the feature's rules, the registry's relation words and the traps, never another set, a prompt or a model's output. The traps: quoted speech, possessive chains, shared names, former and deceased people, denials, plurals, hypotheticals, owner-less role words, injections, imports and Spanish.
@@ -447,8 +447,48 @@
     author's go-ahead they now assert what ships (Haiku through Claude Code for both groups; Opus falls back to it), and
     the freeze was rewritten with `--force` for those three test files only (still 651 files); no source, prompt,
     registry or fixture changed.
-  - **Not yet:** works at *linked* (a fix to the work extraction or the works-at reading means fresh blind sets), H6, the
-    Opus runs O1–O4, and the Gates box (the canary and works-at rows aren't met).
+  - **Not yet:** see the closing status below.
+- *Status (19 November 2026), closing 13a.2* (the author: "close 13a.2"):
+  - **What ships:** two records, both Claude Haiku 5.5 through Claude Code at low effort
+    (bereciartua/funes-vault-app#119):
+    - the person pool, {recorded, linked}, in the people group;
+    - client, {recorded}, in the work group.
+    The Claude plan is the only offer; an API account and Opus get no model.
+  - **What doesn't, with no record:** works at, every use. Its *linked* gate missed: 97.1% against 98%, on work13's
+    organization mentions (about 95%, 6 wrong a read); mixed's were 100%. So works at isn't recorded, linked or on the
+    timeline, and bridges and the timeline stay off as decided. That is one step further than "*linked* only" above, and
+    still needs no registry change. The records turn it off.
+  - **Works at is later work, together with timeline coverage** (H2 2 of 22 right, mixed 16 of 28, work13 14 and 15 of
+    51, the told answers). Any code, prompt or registry change voids this round's blind sets, so qualifying works at
+    needs:
+    - the fix;
+    - a fresh blind work set and canary written after a new freeze;
+    - new gate runs.
+  - **H6, the canary, informative only** (19 November, the author's go-ahead; 223e11d; its own registry; people group;
+    `limit=internal`):
+    - 14 of 14 plays, 2 calls, both applied, `claude-haiku-5-5` on both, nothing above the limit in a payload.
+    - The canary's partner stories are labelled `sensitive` (35 of 37 memories), which is above the app's default cloud
+      limit. As in the app, they got code-only links. The one model-read memory was an internal agent note.
+    - Swift's timeline judgments, per play: wrong 2, told 4 decidable 23, told no intent 8, miss 18, quiet 14. score_facts
+      per distinct question: miss 24, quiet 8, told no intent 8, of 40.
+    - The two wrong answers are one "current" question (c07q1) in both orders. In that story the only memory a model read
+      is the untrusted agent note, and the trusted memories have code-only role links.
+    - Neither is a gate this release, but a wrong answer is what the timeline gate forbids. It goes with the timeline
+      work above.
+    - `score.py` has no canary13 set, so the harness script exits non-zero after the Swift run. The Swift summary and
+      `score_facts.py` are the canary's measures.
+  - **Deferred:** the Opus runs O1–O4 (about 1,590 calls). Opus has no record and isn't offered. When they run, they need
+    the freeze to hold (`facts_freeze.sh check`). Otherwise they need fresh blind sets.
+  - **Carried forward:**
+    - **A Facts share of the cap**, the backfill step's open decision. A catch-up after Remove takes the whole cap for
+      about three days.
+    - **Activity's wording for the facts events**, which show their raw names today.
+    - **Two accepted privacy residuals (§11.9), both the author's decision:**
+      - a link dropped for a hidden first-name sharer withholds a `named` decision in that vault only;
+      - a `named` decision that the exception declines can be re-asked in the vault with a restricted note only. That
+        covers an unpaired phrase, a paired name two people share, and a paired name of three words cut to two. A possible
+        direction: reconciliation doesn't ask about a phrase whose model decision is valid but withheld.
+    - The recurring wrong person links: p10's "My father" (stated) and p06's landlord in its second order (`sole_known`).
 
 ## 13b Mac search · 1–2 weekends
 - [ ] **Matching:** names, aliases and role phrases in the query map to entities, with no model call. A shared name matches everyone who has it; stop names, common-word names and possessive chains follow §11's cases.
