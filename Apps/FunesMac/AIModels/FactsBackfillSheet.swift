@@ -194,11 +194,8 @@ extension AIJobText {
         return nil
     }
 
-    /// Remove's message: before the first backfill, turning learning on again learns from new and changed memories (and
-    /// offers the backfill); once it was used, it reads them all again, within the cap.
+    /// Remove's message. Remove starts Facts over: turning learning on again offers the backfill sheet, as the first time.
     var removeMessage: String {
-        model.factsBackfill == nil
-            ? String(localized: "The facts and corrections you entered yourself stay. Learning turns off; turning it on again learns from new and changed memories.")
-            : String(localized: "The facts and corrections you entered yourself stay. Learning turns off; turning it on again reads your memories again over the following days, with a share of each day's cloud requests.")
+        String(localized: "The facts and corrections you entered yourself stay. Learning turns off; turning it on again offers to read your memories again.")
     }
 }

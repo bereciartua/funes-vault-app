@@ -4,7 +4,7 @@ import GRDB
 
 /// The first Facts backfill (FR-F-03, memory processing §11.3 "Cost and the cap"): the memories already in the vault,
 /// read once outside the daily cap, started by the user after seeing the call count and cost. One exemption in total,
-/// covering both call groups.
+/// covering both call groups, until Remove learned facts starts Facts over.
 ///
 /// - **The exemption** is one full read per marked job: a `facts` job carries `exempt_version`, the memory version it was
 ///   marked for, and only a full read of exactly that version skips the cap (`FactsExtractor.exemptVersion`). Reconciliation,
@@ -16,8 +16,9 @@ import GRDB
 ///   finding another pauses the backfill (`changed`) until the user reviews the new estimate.
 /// - **The end:** when the last mark goes (in that transaction), the state is finished and Activity gets one
 ///   `facts_backfill` row; also checked at launch (`settle`).
-/// - **State** in `meta('facts_backfill')`, kept by Remove learned facts (ended there), so a Remove never grants a second
-///   exemption.
+/// - **State** in `meta('facts_backfill')`. Remove learned facts deletes it with everything the model read, ending an
+///   unfinished one (`reset`): the next time learning is turned on, the sheet offers a fresh backfill, as the first time.
+///   A backup restore keeps the live vault's state, or its absence, so a restore never grants an exemption.
 public enum FactsBackfill {
     static let metaKey = "facts_backfill"
 
@@ -37,7 +38,7 @@ public enum FactsBackfill {
         /// Paused because Facts' model or the cloud limit changed since the estimate.
         public var changed = false
         public var finishedAt: Date?
-        /// How it ended: `done`, or `removed` (Remove learned facts while it ran).
+        /// How it ended: `done` (`removed`, from before Remove reset the state, reads as no state).
         public var ended: String?
 
         public init(startedAt: Date, memories: Int, calls: Int, engines: [String: String], limit: CloudLimit?) {
@@ -94,8 +95,11 @@ public enum FactsBackfill {
 
     // MARK: State
 
+    /// The state, nil before a backfill started or since Remove learned facts (a state ended `removed`, left by a Remove
+    /// before Remove reset it, reads as none too).
     public static func state(_ db: Database) throws -> State? {
-        JSON.decode(State.self, try String.fetchOne(db, sql: "SELECT value FROM meta WHERE key = ?", arguments: [metaKey]))
+        let s = JSON.decode(State.self, try String.fetchOne(db, sql: "SELECT value FROM meta WHERE key = ?", arguments: [metaKey]))
+        return s?.ended == "removed" ? nil : s
     }
 
     static func write(_ db: Database, _ state: State) throws {
@@ -177,7 +181,7 @@ public enum FactsBackfill {
     public enum StartError: Error, Equatable {
         /// *Learn from memories* is off.
         case notLearning
-        /// The one exemption was used already.
+        /// The exemption was used already (and no Remove learned facts since).
         case used
         /// The vault or Facts' configuration changed since the estimate: show the sheet again.
         case changed
@@ -186,7 +190,7 @@ public enum FactsBackfill {
     }
 
     /// Starts the backfill the user agreed to after seeing `shown`, in one transaction: refuses unless learning is on,
-    /// no backfill ever started, and the estimate made now is the one shown (so nothing beyond what was shown is sent).
+    /// no backfill started (or none since Remove learned facts), and the estimate made now is the one shown (so nothing beyond what was shown is sent).
     /// Marks every (memory, group) a model hasn't read at its current version, in the groups shown, and wakes them.
     static func start(_ db: Database, extractor x: FactsExtractor, shown: Estimate, now: Date) throws -> State {
         guard FactsLane.learning(db) else { throw StartError.notLearning }
@@ -288,14 +292,10 @@ public enum FactsBackfill {
         return s
     }
 
-    /// Remove learned facts: every facts job goes, so an unfinished backfill ends as `removed`. The state stays.
-    static func endForRemoval(_ db: Database, now: Date) throws {
-        guard var s = try state(db), s.isRunning else { return }
-        s.finishedAt = now
-        s.ended = "removed"
-        s.paused = false
-        s.changed = false
-        try write(db, s)
+    /// Remove learned facts: what the backfill read is gone, and so is every facts job, so the state goes too (an
+    /// unfinished backfill ends here) and the next turn-on offers the backfill as the first time.
+    static func reset(_ db: Database) throws {
+        try db.execute(sql: "DELETE FROM meta WHERE key = ?", arguments: [metaKey])
     }
 
     /// The finished backfill's Activity counts: memories and the calls its runs made (ids and counts only).
@@ -386,7 +386,7 @@ public enum FactsCost {
 }
 
 extension VaultStore {
-    /// The first backfill's progress, nil before it started.
+    /// The first backfill's progress, nil before it started or since Remove learned facts.
     public func factsBackfill() throws -> FactsBackfill.Progress? {
         try writer.read { db in try FactsBackfill.progress(db) }
     }

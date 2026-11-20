@@ -108,12 +108,20 @@ enum RestoreAccess {
                     try db.execute(sql: "DELETE FROM meta WHERE key = ?", arguments: [AgentService.neverShareKey])
                     try db.execute(sql: "INSERT INTO meta (key, value) SELECT key, value FROM live.meta WHERE key = ?",
                                    arguments: [AgentService.neverShareKey])
-                    // The first Facts backfill's one exemption (FR-F-03): a backup from before it, or from while it
-                    // ran, can't grant it again. The live vault's state wins; marks stay only while it still runs.
-                    if try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM live.meta WHERE key = ?)", arguments: [FactsBackfill.metaKey]) == true {
-                        try db.execute(sql: "DELETE FROM meta WHERE key = ?", arguments: [FactsBackfill.metaKey])
-                        try db.execute(sql: "INSERT INTO meta (key, value) SELECT key, value FROM live.meta WHERE key = ?",
-                                       arguments: [FactsBackfill.metaKey])
+                    // The first Facts backfill's exemption (FR-F-03): a backup from before it, or from while it ran,
+                    // can't grant it again. The live vault's state wins, and so does its absence (Remove learned facts
+                    // since the backup: a backup's running backfill doesn't resume; the next turn-on offers the sheet,
+                    // counted then). Marks stay only while the live one still runs.
+                    try db.execute(sql: "DELETE FROM meta WHERE key = ?", arguments: [FactsBackfill.metaKey])
+                    try db.execute(sql: "INSERT INTO meta (key, value) SELECT key, value FROM live.meta WHERE key = ?",
+                                   arguments: [FactsBackfill.metaKey])
+                    if try FactsBackfill.state(db) == nil {
+                        // No backfill (a Remove since the backup): the backup's owed reads aren't ordinary work either,
+                        // so Not Now reads only new and changed memories. A pending first read of new text stays.
+                        try db.execute(sql: """
+                            DELETE FROM processing_job WHERE kind = 'facts' AND exempt_version IS NOT NULL
+                              AND COALESCE(normal_version, -1) != COALESCE(memory_version, -2)
+                            """)
                     }
                     if try FactsBackfill.state(db)?.isRunning != true {
                         try db.execute(sql: "UPDATE processing_job SET exempt_version = NULL WHERE exempt_version IS NOT NULL")

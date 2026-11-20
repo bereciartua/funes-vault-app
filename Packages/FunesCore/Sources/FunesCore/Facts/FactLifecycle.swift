@@ -219,8 +219,9 @@ extension FactStore {
         try db.execute(sql: "DELETE FROM mention_decision WHERE source = 'model'")
         try db.execute(sql: "DELETE FROM facts_asked")
         try db.execute(sql: "DELETE FROM facts_run")
-        // The first backfill's state stays: the exemption was used. An unfinished one ends here, with its jobs.
-        try FactsBackfill.endForRemoval(db, now: now)
+        // Facts starts over: the first backfill's state goes with what it read (an unfinished one ends here, with its
+        // jobs), so turning learning on again offers it as the first time.
+        try FactsBackfill.reset(db)
         try collectGarbage(db, now: now)
         out.entities = entitiesBefore - (try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM entity WHERE is_you = 0 AND tombstone = 0") ?? 0)
         out.facts = factsBefore - (try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM fact WHERE tombstone = 0") ?? 0)

@@ -61,7 +61,7 @@ struct FactsPage: View {
             }
             Section {
                 HStack {
-                    if model.factsBackfill?.state.finishedAt != nil, model.factsBackfill?.state.ended == nil {
+                    if model.factsBackfill?.state.finishedAt != nil {
                         Button(String(localized: "Show People & History")) { model.show(.people) }
                     }
                     if model.factsBackfill == nil {
@@ -95,10 +95,12 @@ struct FactsPage: View {
         }
     }
 
-    /// Learn from memories: turned on the first time (no backfill yet) with a model, it offers the backfill (not when
-    /// there's nothing to send).
+    /// Learn from memories: turned on the first time (no backfill yet, or none since Remove Learned Facts) with a model,
+    /// it offers the backfill (not when there's nothing to send). Read from the store, so a Remove just made counts.
     private func learn(_ on: Bool) {
-        let first = on && !settings.factsLearn && model.factsBackfill == nil
+        var none = false
+        do { none = try model.services.store.factsBackfill() == nil } catch { logger.error("Reading the facts backfill failed") }
+        let first = on && !settings.factsLearn && none
         settings.factsLearn = on
         // The sheet counts archived memories too, and closes itself when there's nothing to send.
         if first, settings.factsProblem == nil { open(.start, automatic: true) }
@@ -127,6 +129,8 @@ struct FactsPage: View {
                 logger.error("Removing learned facts failed")
                 removalFailed = true
             }
+            // The backfill's state went with it: Read Existing Memories… comes back.
+            model.scheduleRefresh()
         }
     }
 }
