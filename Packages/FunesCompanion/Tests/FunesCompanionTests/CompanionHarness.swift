@@ -108,15 +108,15 @@ final class CompanionHarness: @unchecked Sendable {
 
     /// A sealed call; returns the HTTP response and, on 200, the decoded reply.
     func call<Call: CompanionCall>(_ call: Call.Type, _ params: Call.Params, phone: Phone, at: Date? = nil,
-                                   transport: DeviceTransport = .lan) async throws -> (HTTPResponse, CompanionResponse<Call.Result>?) {
-        let (response, json) = try await reply(call, params, phone: phone, at: at, transport: transport)
+                                   transport: DeviceTransport = .lan, caps: [String]? = nil) async throws -> (HTTPResponse, CompanionResponse<Call.Result>?) {
+        let (response, json) = try await reply(call, params, phone: phone, at: at, transport: transport, caps: caps)
         return (response, try json.map(CompanionResponse<Call.Result>.decode))
     }
 
     /// A sealed call; returns the HTTP response and, on 200, the reply's JSON as the Mac wrote it.
     func reply<Call: CompanionCall>(_ call: Call.Type, _ params: Call.Params, phone: Phone, at: Date? = nil,
-                                    transport: DeviceTransport = .lan) async throws -> (HTTPResponse, Data?) {
-        let request = try CompanionRequest(call, params: params).encoded()
+                                    transport: DeviceTransport = .lan, caps: [String]? = nil) async throws -> (HTTPResponse, Data?) {
+        let request = try CompanionRequest(call, params: params, caps: caps).encoded()
         let sealed = try CompanionRequestEnvelope.seal(request, deviceID: phone.deviceID!, macHPKEKey: identity.hpkeKey.publicKey,
                                                        signer: phone.signer, now: at ?? clock.now)
         let response = await router.handle(Self.request(CompanionProtocol.rpcPath, body: sealed.envelope.body), transport: transport)
@@ -140,8 +140,8 @@ final class CompanionHarness: @unchecked Sendable {
     }
 
     /// The result, or the call's error thrown.
-    func result<Call: CompanionCall>(_ call: Call.Type, _ params: Call.Params, phone: Phone) async throws -> Call.Result {
-        let (response, reply) = try await self.call(call, params, phone: phone)
+    func result<Call: CompanionCall>(_ call: Call.Type, _ params: Call.Params, phone: Phone, caps: [String]? = nil) async throws -> Call.Result {
+        let (response, reply) = try await self.call(call, params, phone: phone, caps: caps)
         guard let reply else { throw CompanionAuthError(body: response.body) }
         return try reply.get()
     }

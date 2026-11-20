@@ -18,9 +18,12 @@ public struct CompanionServices: Sendable {
     public let activity: any ActivityRecorder
     /// Search answers with the Mac's settings (v0.6); without it `memories.answer` is `answers_off`.
     public var answers: (any SearchAnswering)?
+    /// How learned facts are worded for the phone (v0.10): the Mac's String Catalog.
+    public var factsWording: any FactsWording
 
     public init(store: VaultStore, devices: DeviceService, captures: CaptureService, suggestions: SuggestionService,
-                search: SearchService, agents: AgentService, activity: any ActivityRecorder, answers: (any SearchAnswering)? = nil) {
+                search: SearchService, agents: AgentService, activity: any ActivityRecorder, answers: (any SearchAnswering)? = nil,
+                factsWording: any FactsWording = EnglishFactsWording()) {
         self.store = store
         self.devices = devices
         self.captures = captures
@@ -29,6 +32,7 @@ public struct CompanionServices: Sendable {
         self.agents = agents
         self.activity = activity
         self.answers = answers
+        self.factsWording = factsWording
     }
 }
 
@@ -76,10 +80,12 @@ public final class CompanionHandlers: Sendable {
             return Self.errorReply(id: head.id, CompanionError(.unknownMethod))
         }
         let device = deviceID
+        // What this call can show (v0.10, §3): decided per call from its own caps, never a remembered phone version.
+        let facts = head.showsFacts
         if method == .memoriesAnswer {
             return await withTimeout(id: head.id, limit: answerLimit, error: CompanionError(.modelTimeout, message: "Deadline"),
                                      cancelsWork: true) { [self] in
-                await run(MemoriesAnswer.self, head) { try await answer($0, device: device, now: now) }
+                await run(MemoriesAnswer.self, head) { try await answer($0, device: device, facts: facts, now: now) }
             }
         }
         return await withTimeout(id: head.id, limit: callLimit) { [self] in
@@ -89,7 +95,9 @@ public final class CompanionHandlers: Sendable {
                 return await run(CapturesSubmit.self, head) { try await submit($0, device: device, limits: limits, now: now) }
             case .overviewGet: return await run(OverviewGet.self, head) { try overview($0, device: device, now: now) }
             case .categoriesList: return await run(CategoriesList.self, head) { _ in try await categories(device: device, now: now) }
-            case .memoriesSearch: return await run(MemoriesSearch.self, head) { try await search($0, device: device, now: now) }
+            case .memoriesSearch:
+                return await run(MemoriesSearch.self, head) { try await search($0, device: device, facts: facts, now: now) }
+            case .factsReject: return await run(FactsReject.self, head) { try await reject($0, device: device, facts: facts, now: now) }
             case .memoriesAnswer: return Self.errorReply(id: head.id, CompanionError(.internalError))
             case .memoriesGet: return await run(MemoriesGet.self, head) { try await memory($0.id, device: device, now: now) }
             case .memoriesCreate: return await run(MemoriesCreate.self, head) { try await create($0, device: device, now: now) }
@@ -130,13 +138,14 @@ public final class CompanionHandlers: Sendable {
         let engine = await services.answers?.engine()
         return CompanionStatus(macName: macName(), appVersion: appVersion, serverTime: now, inboxPending: pending, vaultActive: true,
                                calledName: calledName,
-                               searchAnswers: engine.map { SearchAnswersStatus(engine: $0.name, locality: AnswerLocality($0.locality), trigger: $0.trigger) })
+                               searchAnswers: engine.map { SearchAnswersStatus(engine: $0.name, locality: AnswerLocality($0.locality), trigger: $0.trigger) },
+                               factsRevision: await services.search.factsRevision())
     }
 
     /// `memories.answer` (v0.6): the Mac re-reads the ids as the owner and answers from them
     /// (memory processing §10.3–10.4). A new call from the same device cancels this one, which
     /// ends its model call; the result never carries offsets or more than the claims.
-    func answer(_ params: MemoryAnswerParams, device: UUID, now: Date) async throws -> MemoryAnswerResult {
+    func answer(_ params: MemoryAnswerParams, device: UUID, facts: Bool = false, now: Date) async throws -> MemoryAnswerResult {
         try params.validate()
         guard let answers = services.answers else { throw CompanionError(.answersOff) }
         // Registered before anything waits, so the same device's next Ask always cancels this one,
@@ -151,7 +160,9 @@ public final class CompanionHandlers: Sendable {
             try Task.checkCancellation()
             // The phone's filters: with learned facts in use, the answer reads only the shown results plain search
             // also puts in its top results under them (memory processing §11.9; 13d replaces this with its selection).
-            return (engine, try await answers.answer(params.query, ids: params.ids, filter: Self.filter(params.filters),
+            // The phone's filters; with learned facts (a call with the `facts` capability), admission is recomputed from the
+            // query and filters, never the ids alone; without it, 13b's plain selection, with nothing Funes inferred.
+            return (engine, try await answers.answer(params.query, ids: params.ids, filter: Self.filter(params.filters), facts: facts,
                                                      actor: .device(device), via: .companion, automatic: automatic))
         }
         let previous = answering.withLock { inFlight -> Task<(SearchAnswerEngine, SearchAnswer), any Error>? in
@@ -163,13 +174,27 @@ public final class CompanionHandlers: Sendable {
         defer { answering.withLock { if $0[device]?.token == token { $0[device] = nil } } }
         do {
             let (engine, answer) = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+            let wording = services.factsWording
+            // A call that can't show learned facts never gets an inferred claim: none can arise (13b's selection), and any
+            // marked one would be dropped, counted in `dropped`.
+            let shown = facts ? answer.claims : answer.claims.filter { $0.inference == nil }
             return MemoryAnswerResult(
-                outcome: answer.outcome == .answered ? .answered : .noAnswer,
-                claims: answer.claims.map { claim in
-                    MemoryAnswerResult.Claim(text: claim.text, citations: claim.citations.map { .init(id: $0.memoryID, quote: $0.quote) })
+                outcome: shown.isEmpty ? .noAnswer : .answered,
+                claims: shown.map { claim in
+                    let inf = facts ? claim.inference : nil
+                    return MemoryAnswerResult.Claim(
+                        text: claim.text, citations: claim.citations.map { .init(id: $0.memoryID, quote: $0.quote) },
+                        inferred: inf.map { _ in true }, factIDs: inf?.factIDs, basis: inf?.basis,
+                        why: inf?.why.map { Self.clip(wording.claimWhy($0)) },
+                        corrections: inf.map { $0.corrections.map { c in var t = c.target; t.label = wording.label(c); return t } })
                 },
-                read: answer.read, withheld: answer.withheld, dropped: answer.dropped, engine: engine.name,
-                locality: AnswerLocality(answer.locality ?? engine.locality), durationMs: Int(answer.duration / .milliseconds(1)))
+                read: answer.read, withheld: answer.withheld + (facts ? 0 : answer.unreadLinked),
+                dropped: answer.dropped + answer.claims.count - shown.count, engine: engine.name,
+                locality: AnswerLocality(answer.locality ?? engine.locality), durationMs: Int(answer.duration / .milliseconds(1)),
+                bridges: facts && answer.factsRevision != nil ? answer.bridges : nil,
+                unreadLinked: facts && answer.factsRevision != nil ? answer.unreadLinked : nil,
+                note: facts ? answer.note.map(wording.note) : nil,
+                factsRevision: facts ? answer.factsRevision : nil)
         } catch let error as SearchAnswerError {
             throw Self.code(for: error)
         } catch is CancellationError {
@@ -190,6 +215,7 @@ public final class CompanionHandlers: Sendable {
         case .needsUpdate: CompanionError(.modelUnavailable, reason: "needs_update")
         case .toolBlocked: CompanionError(.modelUnavailable, reason: "tool_blocked")
         case .askRequired: CompanionError(.askRequired)
+        case .factsChanged: CompanionError(.modelUnavailable, reason: "facts_changed")
         case .tooLongForOnDevice, .provider: CompanionError(.modelUnavailable, reason: "provider_error")
         }
     }
@@ -232,9 +258,11 @@ public final class CompanionHandlers: Sendable {
         return all.map(CompanionCategory.init)
     }
 
-    func search(_ params: MemorySearchParams, device: UUID, now: Date) async throws -> MemorySearchResult {
+    func search(_ params: MemorySearchParams, device: UUID, facts: Bool = false, now: Date) async throws -> MemorySearchResult {
         try params.validate()
         let filter = Self.filter(params.filters)
+        // Read before ranking: if learned facts change meanwhile, the results look older than they are, never newer.
+        let revision = facts ? await services.search.factsRevision() : nil
         let hits = try await services.search.vaultSearch(params.query, filter: filter, now: now)
         let offset = params.cursor.flatMap(Self.offset(from:)) ?? 0
         let limit = params.limit ?? 20
@@ -243,15 +271,53 @@ public final class CompanionHandlers: Sendable {
         let byID = Dictionary(uniqueKeysWithValues: memories.map { ($0.id, $0) })
         // The passage that matches the search and its matches (FR-V-17), for the page returned only.
         let matches = try await services.search.bodyMatches(params.query, ids: page.map(\.memoryID))
+        // With the `facts` capability, a result a link admitted (only those, as the Mac shows) carries its why line and
+        // its corrections (v0.10). Without it, link-admitted results come back as ordinary results.
+        var why: [UUID: (String, [FactsCorrectionTarget])] = [:]
+        if revision != nil, !params.query.isEmpty {
+            for hit in page {
+                guard let line = hit.admission?.whyLine else { continue }
+                let corrections = (try? await services.search.corrections(for: line)) ?? []
+                why[hit.memoryID] = (Self.clip(services.factsWording.whyLine(line)),
+                                     corrections.map { c in var t = c.target; t.label = services.factsWording.label(c); return t })
+            }
+        }
         let results = page.compactMap { byID[$0.memoryID] }.map { m in
             let snippet = matches[m.id]?.snippet(length: Self.snippetLength) ?? BodyMatches.plainSnippet(m.body, length: Self.snippetLength)
             return MemorySummary(id: m.id, title: m.title, snippet: snippet.text, snippetMatches: snippet.matches.isEmpty ? nil : snippet.matches,
                                  kind: m.kind, categories: m.categoryKeys, sensitivity: m.sensitivity, updatedAt: m.updatedAt,
-                                 expiresAt: m.expiresAt)
+                                 expiresAt: m.expiresAt, why: why[m.id]?.0, corrections: why[m.id].map { $0.1.isEmpty ? nil : $0.1 } ?? nil)
         }
         let next = offset + page.count < hits.count ? Self.cursor(offset + page.count) : nil
         logRead("memories_searched", device: device, now: now, counts: ["results": results.count])
-        return MemorySearchResult(results: results, nextCursor: next)
+        return MemorySearchResult(results: results, nextCursor: next, factsRevision: revision)
+    }
+
+    /// At most 160 characters (§4), cut at a word with an ellipsis.
+    static func clip(_ s: String) -> String {
+        guard s.count > snippetLength else { return s }
+        let cut = s.prefix(snippetLength - 1)
+        return String(cut[..<(cut.lastIndex(of: " ") ?? cut.endIndex)]) + "…"
+    }
+
+    /// `facts.reject` (v0.10): one correction target, applied as the Mac's own correction is (memory processing §11.8):
+    /// first whether it's already in place (a repeat changes nothing), then its token, then the correction, recomputed at
+    /// once. Needs the `facts` capability and learned facts in use.
+    func reject(_ target: FactsCorrectionTarget, device: UUID, facts: Bool, now: Date) async throws -> FactsRejectResult {
+        guard facts else { throw CompanionError(.invalidInput, message: "Needs the facts capability") }
+        try target.validate()
+        guard let config = services.search.facts else { throw CompanionError(.notFound, message: "Learned facts aren't in use") }
+        switch try services.store.applyCorrection(target, config: config, activity: services.activity, actor: .device(device),
+                                                  via: .companion, now: now) {
+        case .applied, .already:
+            await services.search.prepareFacts(now: now)
+            // Learned facts turned off meanwhile: nothing to report a revision of.
+            guard let revision = await services.search.factsRevision() else { throw CompanionError(.notFound) }
+            return FactsRejectResult(factsRevision: revision)
+        case .changed: throw CompanionError(.targetChanged)
+        case .notFound: throw CompanionError(.notFound)
+        case .invalid: throw CompanionError(.invalidInput)
+        }
     }
 
     func memory(_ id: UUID, device: UUID, now: Date) async throws -> CompanionMemory {

@@ -360,6 +360,9 @@
     "%lld refused" : {
 
     },
+    "%lld results weren't read: what links them is above your Mac's cloud limit" : {
+
+    },
     "%lld saved" : {
 
     },
@@ -410,6 +413,9 @@
     "1 memory wasn't read: it's above your Mac's cloud limit" : {
 
     },
+    "1 result wasn't read: what links it is above your Mac's cloud limit" : {
+
+    },
     "1-week streak" : {
 
     },
@@ -426,6 +432,9 @@
 
     },
     "A copy" : {
+
+    },
+    "A correction tied to a memory corrects only that memory; Not this corrects the fact everywhere." : {
 
     },
     "A memory it changes was archived or deleted. Reject it, or restore that memory first." : {
@@ -749,6 +758,9 @@
     "Couldn't archive “%@”." : {
 
     },
+    "Couldn't correct that" : {
+
+    },
     "Couldn't keep “%@” as one." : {
 
     },
@@ -969,6 +981,9 @@
     "Funes on the Mac" : {
 
     },
+    "Funes stops using it for every memory. You can undo it on your Mac." : {
+
+    },
     "Goal" : {
 
     },
@@ -1008,6 +1023,9 @@
     "Inbox" : {
 
     },
+    "Inferred" : {
+
+    },
     "Instruction" : {
 
     },
@@ -1018,6 +1036,9 @@
 
     },
     "It already got what it may read. Always Allow is for next time." : {
+
+    },
+    "It changed on your Mac. The results are up to date now; try again if it's still wrong." : {
 
     },
     "It expired %@." : {
@@ -1161,6 +1182,9 @@
 
     },
     "Make sure this iPhone is on the same Wi-Fi as your Mac." : {
+
+    },
+    "Mark this as wrong for every memory?" : {
 
     },
     "Memories" : {
@@ -1312,6 +1336,9 @@
 
     },
     "Not since Funes opened" : {
+
+    },
+    "Not this" : {
 
     },
     "Not ticked" : {
@@ -1513,6 +1540,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Read %lld results and %lld from your history · %lld s" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read %1$lld results and %2$lld from your history · %3$lld s"
           }
         }
       }
@@ -2192,6 +2229,9 @@
 
     },
     "Week of %@" : {
+
+    },
+    "What Funes inferred" : {
 
     },
     "What should Funes remember?" : {

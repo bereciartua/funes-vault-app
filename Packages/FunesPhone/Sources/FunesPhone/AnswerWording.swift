@@ -22,11 +22,17 @@ public enum AnswerWording {
 
     public static func noAnswer(_ read: Int) -> String { String(localized: "No answer in the \(read) results read.") }
 
-    /// "Read 8 of 30 results · 6 s".
+    /// "Read 8 of 30 results · 6 s"; with bridges, "Read 10 results and 2 from your history · 6 s".
     public static func footer(_ result: MemoryAnswerResult, results: Int) -> String {
         let seconds = Int((Double(result.durationMs) / 1_000).rounded())
+        if let bridges = result.bridges, bridges > 0 {
+            return String(localized: "Read \(result.read) results and \(bridges) from your history · \(seconds) s")
+        }
         return String(localized: "Read \(result.read) of \(results) results · \(seconds) s")
     }
+
+    /// The **Inferred** tag on a claim the Mac marked (v0.10).
+    public static let inferred = String(localized: "Inferred")
 
     /// "1 memory wasn't read: it's above your Mac's cloud limit", "1 claim left out: it didn't quote a memory".
     public static func notes(_ result: MemoryAnswerResult) -> [String] {
@@ -39,6 +45,11 @@ public enum AnswerWording {
         case (_, false): lines.append(String(localized: "\(result.withheld) memories weren't read: they're above your Mac's cloud limit"))
         case (1, true): lines.append(String(localized: "1 memory wasn't read: it looks like it holds a secret"))
         case (_, true): lines.append(String(localized: "\(result.withheld) memories weren't read: they look like they hold secrets"))
+        }
+        switch result.unreadLinked ?? 0 {
+        case 0: break
+        case 1: lines.append(String(localized: "1 result wasn't read: what links it is above your Mac's cloud limit"))
+        case let n: lines.append(String(localized: "\(n) results weren't read: what links them is above your Mac's cloud limit"))
         }
         switch result.dropped {
         case 0: break

@@ -247,7 +247,8 @@ public actor CompanionClient {
     /// `maxClockOffset` of ours.
     private func send<Call: CompanionCall>(_ call: Call.Type, _ params: Call.Params, to address: MacAddress, paired: Paired,
                                            timeout: TimeInterval, skewRetry: Bool = true) async throws(SendFailure) -> Call.Result {
-        let request = CompanionRequest(call, params: params)
+        // What this build can show, on every call (v0.10, §3): the Mac decides per call from it.
+        let request = CompanionRequest(call, params: params, caps: CompanionCapability.current)
         let sealed: SealedCompanionRequest
         do {
             sealed = try CompanionRequestEnvelope.seal(try request.encoded(), deviceID: paired.record.deviceID,

@@ -525,6 +525,21 @@ final class ModelSettings {
     /// The models the Facts picker offers: only ones that qualified, from accounts and plans that can run them.
     var factsOffers: [FactsOffer] { stored.factsOffers(qualification: factsQualification, plans: factsPlans) }
 
+    /// Whether learned facts reach Search answers (memory processing §10.3, 13d): *Use in search and answers* on, and an
+    /// *attributes* record covering the answer model (as `ModelRouter.engine` names it: the account, or plan, and the
+    /// model's id as chosen, so an alias never matches) at the current answer prompt, for the Facts engines search uses.
+    /// The disclosures say so only then (otherwise answers are 13b's and send nothing learned).
+    var factsInAnswers: Bool {
+        guard factsUse, case let .model(account, model) = resolve(.searchAnswers).model else { return false }
+        var engines: [String: FactsEngine] = [:]
+        for offer in [factsResolution.fallback, factsResolution.chosen].compactMap({ $0 }) {
+            for group in offer.groups { engines[group] = offer.engine }
+        }
+        let answer = FactsQualification.AnswerKey(model: "\(account)/\(model)", promptVersion: SearchAnswerer.promptVersion)
+        return !factsQualification.uses(engines: engines, registry: .bundled, promptVersions: FactsQualification.promptVersions(.bundled),
+                                        answer: answer).predicates(.attributes).isEmpty
+    }
+
     /// What Facts runs on.
     var factsResolution: FactsResolution {
         stored.factsResolution(offers: factsOffers, runnable: { self.problem(account: $0) == nil })

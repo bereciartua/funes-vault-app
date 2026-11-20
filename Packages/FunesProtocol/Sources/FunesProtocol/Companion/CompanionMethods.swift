@@ -33,6 +33,8 @@ public enum CompanionMethod: String, Codable, Sendable, CaseIterable {
     case approvalsAnswer = "approvals.answer"
     case approvalsSettingsGet = "approvals.settings.get"
     case approvalsSettingsSet = "approvals.settings.set"
+    /// **Not <name>** and **Not this** from the iPhone (v0.10, ADR-0032).
+    case factsReject = "facts.reject"
 }
 
 /// A method with its parameter and result types, so calls are typed on both ends.
@@ -47,12 +49,15 @@ public struct CompanionRequest<Params: Codable & Sendable>: Codable, Sendable {
     public var id: String
     public var method: CompanionMethod
     public var params: Params
+    /// What this phone can show (v0.10, §3; `CompanionCapability`). A Mac before it ignores the key.
+    public var caps: [String]?
 
-    public init<Call: CompanionCall>(_ call: Call.Type, id: String = UUID().uuidString.lowercased(), params: Call.Params)
-        where Call.Params == Params {
+    public init<Call: CompanionCall>(_ call: Call.Type, id: String = UUID().uuidString.lowercased(), params: Call.Params,
+                                     caps: [String]? = nil) where Call.Params == Params {
         self.id = id
         self.method = Call.method
         self.params = params
+        self.caps = caps
     }
 
     public func encoded() throws -> Data { try CompanionJSON.encoder().encode(self) }
@@ -64,6 +69,8 @@ public struct CompanionRequestHead: Sendable {
     public var id: String
     /// Nil for a method this Mac doesn't know (answer `unknown_method`).
     public var method: CompanionMethod?
+    /// The call's capabilities (v0.10, §3): unknown ones are ignored, a malformed list counts as none.
+    public var caps: Set<String>
     private let plaintext: Data
 
     public init(plaintext: Data) throws(CompanionError) {
@@ -72,6 +79,7 @@ public struct CompanionRequestHead: Sendable {
         }
         id = head.id
         method = CompanionMethod(rawValue: head.method)
+        caps = Set((try? JSONDecoder().decode(Caps.self, from: plaintext))?.caps ?? [])
         self.plaintext = plaintext
     }
 
@@ -92,6 +100,13 @@ public struct CompanionRequestHead: Sendable {
         var id: String
         var method: String
     }
+
+    private struct Caps: Decodable {
+        var caps: [String]?
+    }
+
+    /// The call shows learned facts (`CompanionCapability.facts`).
+    public var showsFacts: Bool { caps.contains(CompanionCapability.facts) }
 }
 
 /// `{"id":"…","result":{…}}` or `{"id":"…","error":{"code":"…","message":"…"}}`.
@@ -156,9 +171,13 @@ public struct CompanionStatus: Codable, Sendable, Equatable {
     /// Present only while the Mac's Search answers are on with a model that can answer (v0.6,
     /// ADR-0028): the phone shows Ask only then.
     public var searchAnswers: SearchAnswersStatus?
+    /// Present while learned facts are in use (v0.10): opaque, it changes whenever learned facts, corrections or the uses
+    /// on change what search or answers would show, and a restore renews it. A change drops the phone's held and
+    /// in-flight answer and searches again.
+    public var factsRevision: String?
 
     public init(macName: String, appVersion: String, serverTime: Date, inboxPending: Int, vaultActive: Bool,
-                calledName: String? = nil, searchAnswers: SearchAnswersStatus? = nil) {
+                calledName: String? = nil, searchAnswers: SearchAnswersStatus? = nil, factsRevision: String? = nil) {
         self.macName = macName
         self.appVersion = appVersion
         self.serverTime = serverTime
@@ -166,6 +185,7 @@ public struct CompanionStatus: Codable, Sendable, Equatable {
         self.vaultActive = vaultActive
         self.calledName = calledName
         self.searchAnswers = searchAnswers
+        self.factsRevision = factsRevision
     }
 }
 
@@ -349,10 +369,31 @@ public struct MemoryAnswerResult: Codable, Sendable, Equatable {
     public struct Claim: Codable, Sendable, Equatable, Hashable {
         public var text: String
         public var citations: [Citation]
+        /// v0.10, for a call with the `facts` capability: code marked it inferred (memory processing §10.4).
+        public var inferred: Bool?
+        /// The facts it rests on (for a bridge, also the facts the order compares).
+        public var factIDs: [String]?
+        /// The weakest basis behind it (`sole_known`, `inferred`, …).
+        public var basis: String?
+        /// What it rests on that its quote doesn't say, as the Mac words it.
+        public var why: String?
+        /// Its buttons: one target per link or fact it rests on.
+        public var corrections: [FactsCorrectionTarget]?
 
-        public init(text: String, citations: [Citation]) {
+        public init(text: String, citations: [Citation], inferred: Bool? = nil, factIDs: [String]? = nil, basis: String? = nil,
+                    why: String? = nil, corrections: [FactsCorrectionTarget]? = nil) {
             self.text = text
             self.citations = citations
+            self.inferred = inferred
+            self.factIDs = factIDs
+            self.basis = basis
+            self.why = why
+            self.corrections = corrections
+        }
+
+        enum CodingKeys: String, CodingKey {
+            case text, citations, inferred, basis, why, corrections
+            case factIDs = "factIds"
         }
     }
 
@@ -365,9 +406,18 @@ public struct MemoryAnswerResult: Codable, Sendable, Equatable {
     public var engine: String
     public var locality: AnswerLocality
     public var durationMs: Int
+    /// v0.10, `facts` capability only: bridge memories read on top of the results (up to 2).
+    public var bridges: Int?
+    /// Shown results not read because, re-ranked with sendable facts only, they aren't in what a cloud answer reads.
+    public var unreadLinked: Int?
+    /// The undecidable-timeline note, as the Mac words it ("Funes can't tell which job came before Acme").
+    public var note: String?
+    /// The facts revision the answer was made at: a held answer holds only while it's the Mac's.
+    public var factsRevision: String?
 
     public init(outcome: Outcome, claims: [Claim], read: Int, withheld: Int, dropped: Int, engine: String,
-                locality: AnswerLocality, durationMs: Int) {
+                locality: AnswerLocality, durationMs: Int, bridges: Int? = nil, unreadLinked: Int? = nil, note: String? = nil,
+                factsRevision: String? = nil) {
         self.outcome = outcome
         self.claims = claims
         self.read = read
@@ -376,6 +426,10 @@ public struct MemoryAnswerResult: Codable, Sendable, Equatable {
         self.engine = engine
         self.locality = locality
         self.durationMs = durationMs
+        self.bridges = bridges
+        self.unreadLinked = unreadLinked
+        self.note = note
+        self.factsRevision = factsRevision
     }
 
     /// The cited memories in the order the answer first cites them: the card's numbers.
@@ -444,9 +498,14 @@ public struct MemorySummary: Codable, Sendable, Equatable, Identifiable {
     public var sensitivity: Sensitivity
     public var updatedAt: Date
     public var expiresAt: Date?
+    /// v0.10, `facts` capability only: the why line of a result a link admitted, as the Mac words it (≤ 160 characters).
+    public var why: String?
+    /// Its buttons (**Not <name>**, **Not this**).
+    public var corrections: [FactsCorrectionTarget]?
 
     public init(id: UUID, title: String, snippet: String, snippetMatches: [[Int]]? = nil, kind: MemoryKind, categories: [String],
-                sensitivity: Sensitivity, updatedAt: Date, expiresAt: Date? = nil) {
+                sensitivity: Sensitivity, updatedAt: Date, expiresAt: Date? = nil, why: String? = nil,
+                corrections: [FactsCorrectionTarget]? = nil) {
         self.id = id
         self.title = title
         self.snippet = snippet
@@ -456,16 +515,21 @@ public struct MemorySummary: Codable, Sendable, Equatable, Identifiable {
         self.sensitivity = sensitivity
         self.updatedAt = updatedAt
         self.expiresAt = expiresAt
+        self.why = why
+        self.corrections = corrections
     }
 }
 
 public struct MemorySearchResult: Codable, Sendable, Equatable {
     public var results: [MemorySummary]
     public var nextCursor: String?
+    /// v0.10, `facts` capability only: the facts revision the results were ranked at.
+    public var factsRevision: String?
 
-    public init(results: [MemorySummary], nextCursor: String? = nil) {
+    public init(results: [MemorySummary], nextCursor: String? = nil, factsRevision: String? = nil) {
         self.results = results
         self.nextCursor = nextCursor
+        self.factsRevision = factsRevision
     }
 }
 

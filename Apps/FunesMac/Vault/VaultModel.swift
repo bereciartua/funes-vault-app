@@ -419,6 +419,26 @@ final class VaultModel: AnswerCardSource {
         await load()
     }
 
+    /// A correction from an inferred claim on the card (**Not <name>**, **Not this**, the latter asked first in the card):
+    /// applied at once; the card goes, since its claims rested on what changed, and the list reloads.
+    func correct(_ correction: FactsCorrection) {
+        clearAnswer()
+        Task {
+            await Self.apply(correction, services: services)
+            await load()
+        }
+    }
+
+    /// Applies a card's correction as the user's own (memory processing §11.8), off the main actor.
+    static func apply(_ correction: FactsCorrection, services: VaultEnvironment) async {
+        guard let config = services.search.facts else { return }
+        let store = services.store, activity = services.activity, search = services.search
+        _ = try? await Task.detached(priority: .userInitiated) {
+            try store.applyCorrection(correction.target, config: config, activity: activity)
+        }.value
+        await search.prepareFacts()
+    }
+
     /// **Not this** from a why line: the fact is wrong, for every memory (asked first, in the view).
     func rejectFact(_ factID: String) async {
         let store = services.store, activity = services.activity

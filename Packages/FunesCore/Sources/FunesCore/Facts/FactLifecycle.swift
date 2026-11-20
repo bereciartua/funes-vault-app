@@ -450,81 +450,188 @@ extension VaultStore {
     /// recompute at once (the facts revision moves). Activity: `facts_corrected`, counts only. Returns how many links.
     @discardableResult
     public func rejectLink(memoryID: UUID, entity: String, config: FactsSearchConfig, activity: any ActivityRecorder,
-                           now: Date = Date()) throws -> Int {
-        let n = try writer.write { db -> Int in
-            let uses = try config.uses(db)
-            let loaded = try FactStore.load(db, registry: config.registry, userAliases: config.userAliases, uses: uses)
-            var g = loaded.graph
-            let mid = memoryID.db
-            guard let row = try Row.fetchOne(db, sql: """
-                SELECT title, body, created_at, COALESCE(original_source, source) AS source, trust, sensitivity FROM memory WHERE id = ?
-                """, arguments: [mid]) else { return 0 }
-            let text = FactStore.text(title: row["title"], body: row["body"])
-            let created: Date = row["created_at"]
-            let mem = g.memories[mid] ?? FactsMemory(id: mid, text: text, written: FactStore.writtenDay(created),
-                                                     source: FactStore.source(row["source"]), trusted: (row["trust"] as String) == "trusted")
-            var count = 0
-            let linked = Set(uses.predicates(.linked)).intersection(uses.predicates(.recorded))
-            // Each role phrase that resolves to them, or leaves them among its candidates.
-            for ph in g.rolePhrases(text, predicates: linked) {
-                let r = g.resolution(mem, ph)
-                guard r.entity == entity || (r.entity == nil && r.candidates.contains(entity)) else { continue }
-                try FactStore.decideMention(db, memoryID: mid, quote: ph.surface, near: FactStore.scalarOffset(text, utf16: ph.start),
-                                            entityID: entity, outcome: "rejected", now: now)
-                count += 1
-            }
-            for (key, link) in g.names where key.memoryID == mid && (link.entity == entity || link.candidates.contains(entity)) {
-                // The text's own words at the name ("Lucía", "MARIA"), so the span is found again exactly.
-                guard let r = FactsText.wholeWordRanges(key.surface, in: text).first else { continue }
-                let written = FactsText.substring(text, r.location, r.location + r.length)
-                try FactStore.decideMention(db, memoryID: mid, quote: written, near: FactStore.scalarOffset(text, utf16: r.location),
-                                            entityID: entity, outcome: "rejected", now: now)
-                count += 1
-            }
-            for f in g.facts where f.entity == entity {
-                // Every fact row folded into this one (a merge), each where this memory's evidence is.
-                let rows = loaded.factKeys.filter { $0.value.predicate == f.predicate && $0.value.entity == f.entity }.map(\.key)
-                for a in f.assertions where a.memoryID == mid && !a.fromUser {
-                    for fid in rows.sorted() {
-                        let has = try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM fact_evidence WHERE fact_id = ? AND memory_id = ?)",
-                                                    arguments: [fid, mid]) ?? false
-                        guard has else { continue }
-                        try FactStore.override(db, targetKind: "fact", targetID: fid, field: "rejected", value: true,
-                                               sensitivity: row["sensitivity"], memoryID: mid, quote: a.quote, now: now)
-                    }
-                    count += 1
-                }
-            }
-            // The names of an organization, place or thing (people's are above): each occurrence in this memory.
-            let merged = try FactStore.mergedInto(db)
-            for r in try Row.fetchAll(db, sql: """
-                SELECT ev.span_start, ev.span_end, a.entity_id FROM alias_evidence ev JOIN entity_alias a ON a.id = ev.alias_id
-                JOIN entity e ON e.id = a.entity_id JOIN memory m ON m.id = ev.memory_id AND m.version = ev.memory_version
-                WHERE ev.memory_id = ? AND e.kind != ?
-                """, arguments: [mid, FactsValidator.personKind]) {
-                guard FactStore.canonical(r["entity_id"], merged) == entity else { continue }
-                let a = FactStore.utf16Offset(text, scalar: r["span_start"]), b = FactStore.utf16Offset(text, scalar: r["span_end"])
-                guard b > a else { continue }
-                try FactStore.decideMention(db, memoryID: mid, quote: FactsText.substring(text, a, b), near: r["span_start"],
-                                            entityID: entity, outcome: "rejected", now: now)
-                count += 1
-            }
-            return count
-        }
+                           actor: Actor = .user, via: ActivityEvent.Via = .app, now: Date = Date()) throws -> Int {
+        let n = try writer.write { db in try Self.rejectLink(db, memoryID: memoryID, entity: entity, config: config, now: now) }
         if n > 0 {
-            activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "facts_corrected",
-                                          counts: ["links": n]))
+            activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "facts_corrected", counts: ["links": n]))
         }
         return n
     }
 
+    static func rejectLink(_ db: Database, memoryID: UUID, entity: String, config: FactsSearchConfig, now: Date) throws -> Int {
+        let uses = try config.uses(db)
+        let loaded = try FactStore.load(db, registry: config.registry, userAliases: config.userAliases, uses: uses)
+        var g = loaded.graph
+        let mid = memoryID.db
+        guard let row = try Row.fetchOne(db, sql: """
+            SELECT title, body, created_at, COALESCE(original_source, source) AS source, trust, sensitivity FROM memory WHERE id = ?
+            """, arguments: [mid]) else { return 0 }
+        let text = FactStore.text(title: row["title"], body: row["body"])
+        let created: Date = row["created_at"]
+        let mem = g.memories[mid] ?? FactsMemory(id: mid, text: text, written: FactStore.writtenDay(created),
+                                                 source: FactStore.source(row["source"]), trusted: (row["trust"] as String) == "trusted")
+        var count = 0
+        let linked = Set(uses.predicates(.linked)).intersection(uses.predicates(.recorded))
+        // Each role phrase that resolves to them, or leaves them among its candidates.
+        for ph in g.rolePhrases(text, predicates: linked) {
+            let r = g.resolution(mem, ph)
+            guard r.entity == entity || (r.entity == nil && r.candidates.contains(entity)) else { continue }
+            try FactStore.decideMention(db, memoryID: mid, quote: ph.surface, near: FactStore.scalarOffset(text, utf16: ph.start),
+                                        entityID: entity, outcome: "rejected", now: now)
+            count += 1
+        }
+        for (key, link) in g.names where key.memoryID == mid && (link.entity == entity || link.candidates.contains(entity)) {
+            // The text's own words at the name ("Lucía", "MARIA"), so the span is found again exactly.
+            guard let r = FactsText.wholeWordRanges(key.surface, in: text).first else { continue }
+            let written = FactsText.substring(text, r.location, r.location + r.length)
+            try FactStore.decideMention(db, memoryID: mid, quote: written, near: FactStore.scalarOffset(text, utf16: r.location),
+                                        entityID: entity, outcome: "rejected", now: now)
+            count += 1
+        }
+        for f in g.facts where f.entity == entity {
+            // Every fact row folded into this one (a merge), each where this memory's evidence is.
+            let rows = loaded.factKeys.filter { $0.value.predicate == f.predicate && $0.value.entity == f.entity }.map(\.key)
+            for fid in rows.sorted() {
+                let has = try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM fact_evidence WHERE fact_id = ? AND memory_id = ?)",
+                                            arguments: [fid, mid]) ?? false
+                if has { _ = try rejectStatements(db, factID: fid, fact: f, memoryID: mid, sensitivity: row["sensitivity"], now: now) }
+            }
+            count += f.assertions.filter { $0.memoryID == mid && !$0.fromUser }.count
+        }
+        // The names of an organization, place or thing (people's are above): each occurrence in this memory.
+        let merged = try FactStore.mergedInto(db)
+        for r in try Row.fetchAll(db, sql: """
+            SELECT ev.span_start, ev.span_end, a.entity_id FROM alias_evidence ev JOIN entity_alias a ON a.id = ev.alias_id
+            JOIN entity e ON e.id = a.entity_id JOIN memory m ON m.id = ev.memory_id AND m.version = ev.memory_version
+            WHERE ev.memory_id = ? AND e.kind != ?
+            """, arguments: [mid, FactsValidator.personKind]) {
+            guard FactStore.canonical(r["entity_id"], merged) == entity else { continue }
+            let a = FactStore.utf16Offset(text, scalar: r["span_start"]), b = FactStore.utf16Offset(text, scalar: r["span_end"])
+            guard b > a else { continue }
+            try FactStore.decideMention(db, memoryID: mid, quote: FactsText.substring(text, a, b), near: r["span_start"],
+                                        entityID: entity, outcome: "rejected", now: now)
+            count += 1
+        }
+        return count
+    }
+
+    /// One memory's statements of a fact, rejected for that memory, keyed to each quote.
+    static func rejectStatements(_ db: Database, factID: String, fact f: LearnedFact, memoryID mid: String, sensitivity: Int,
+                                 now: Date) throws -> Int {
+        var count = 0
+        for a in f.assertions where a.memoryID == mid && !a.fromUser {
+            try FactStore.override(db, targetKind: "fact", targetID: factID, field: "rejected", value: true,
+                                   sensitivity: sensitivity, memoryID: mid, quote: a.quote, now: now)
+            count += 1
+        }
+        return count
+    }
+
     /// **Not this** (a why line, 13b): the fact is wrong ("Maria isn't your sister"), for every memory: a rejection with
     /// no memory, at the highest sensitivity behind the fact. Dependent links and the timeline recompute at once.
-    /// Activity: `facts_corrected`, counts only.
-    public func rejectFact(factID: String, activity: any ActivityRecorder, now: Date = Date()) throws {
-        _ = try writer.write { db in try FactStore.rejectFactEverywhere(db, factID: factID, now: now) }
-        activity.record(ActivityEvent(time: now, phase: .event, actor: .user, via: .app, event: "facts_corrected",
-                                      counts: ["facts": 1]))
+    /// Activity: `facts_corrected`, counts only. Repeating it changes nothing more.
+    public func rejectFact(factID: String, activity: any ActivityRecorder, actor: Actor = .user, via: ActivityEvent.Via = .app,
+                           now: Date = Date()) throws {
+        let done = try writer.write { db in try Self.rejectFact(db, factID: factID, now: now) }
+        if done {
+            activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "facts_corrected", counts: ["facts": 1]))
+        }
+    }
+
+    /// False when the fact is gone or already rejected everywhere (nothing written, the revision unmoved).
+    static func rejectFact(_ db: Database, factID: String, now: Date) throws -> Bool {
+        guard try Bool.fetchOne(db, sql: "SELECT EXISTS (SELECT 1 FROM fact WHERE id = ?)", arguments: [factID]) == true,
+              try !factRejected(db, factID: factID, memoryID: nil) else { return false }
+        // Every row that reads as this fact (entities merged together), at the highest sensitivity behind them.
+        return try !FactStore.rejectFactEverywhere(db, factID: factID, now: now).isEmpty
+    }
+
+    /// Whether the fact is already rejected everywhere (`memoryID` nil), or for that memory since its last edit.
+    static func factRejected(_ db: Database, factID: String, memoryID: String?) throws -> Bool {
+        if let memoryID {
+            return try Bool.fetchOne(db, sql: """
+                SELECT EXISTS (SELECT 1 FROM manual_override o JOIN memory m ON m.id = o.memory_id
+                  WHERE o.target_kind = 'fact' AND o.target_id = ? AND o.field = 'rejected' AND o.memory_id = ? AND o.created_at >= m.updated_at)
+                """, arguments: [factID, memoryID]) == true
+        }
+        return try Bool.fetchOne(db, sql: """
+            SELECT EXISTS (SELECT 1 FROM manual_override WHERE target_kind = 'fact' AND target_id = ? AND field = 'rejected' AND memory_id IS NULL)
+            """, arguments: [factID]) == true
+    }
+
+    /// How a correction from a target went (`facts.reject`).
+    public enum CorrectionOutcome: Sendable, Equatable {
+        case applied
+        /// Already in place: nothing written, the revision unmoved (a repeat after a lost reply).
+        case already
+        /// What the target rested on changed since it was minted: `target_changed`.
+        case changed
+        /// The link, fact or memory is gone: `not_found`.
+        case notFound
+        /// Not a target this Mac takes (an order, until bridges ship; a name target whose memory isn't its link's).
+        case invalid
+    }
+
+    /// A correction target, as a why line or an inferred claim carried it (companion protocol §4 `facts.reject`, the
+    /// Mac's card): first whether it's already in place, then its token, then the correction, in one transaction.
+    public func applyCorrection(_ t: FactsCorrectionTarget, config: FactsSearchConfig, activity: any ActivityRecorder,
+                                actor: Actor = .user, via: ActivityEvent.Via = .app, now: Date = Date()) throws -> CorrectionOutcome {
+        let (outcome, counts): (CorrectionOutcome, [String: Int]) = try writer.write { db in
+            func valid() throws -> CorrectionOutcome? {
+                guard let current = try FactsCorrections.token(db, t) else { return .notFound }
+                return current == t.token ? nil : .changed
+            }
+            switch t.what {
+            case .order, .unknown:
+                return (.invalid, [:])
+            case .name:
+                guard let id = t.linkID, let (m, e) = FactsCorrections.parseLink(id), t.memoryID == nil || t.memoryID == m else {
+                    return (.invalid, [:])
+                }
+                // A user rejection of this memory and entity since the memory's last edit: a rejected mention, or (for a
+                // memory that only states facts about them) a rejection of those statements.
+                let prior = try Bool.fetchOne(db, sql: """
+                    SELECT EXISTS (SELECT 1 FROM mention_decision d JOIN memory m ON m.id = d.memory_id
+                      WHERE d.memory_id = ? AND d.entity_id = ? AND d.outcome = 'rejected' AND d.source = 'user'
+                        AND d.invalidated_at IS NULL AND d.created_at >= m.updated_at)
+                    OR EXISTS (SELECT 1 FROM manual_override o JOIN fact f ON f.id = o.target_id JOIN memory m ON m.id = o.memory_id
+                      WHERE o.target_kind = 'fact' AND o.field = 'rejected' AND o.memory_id = ? AND f.entity_id = ?
+                        AND o.created_at >= m.updated_at)
+                    """, arguments: [m.db, e, m.db, e]) == true
+                // Rejections are per span: already in place only when nothing of this memory still links to them (a
+                // phrase that resolves to them since is a new mention, corrected as asked).
+                if prior {
+                    var left = 0
+                    try db.inSavepoint {
+                        left = try Self.rejectLink(db, memoryID: m, entity: e, config: config, now: now)
+                        return .rollback
+                    }
+                    if left == 0 { return (.already, [:]) }
+                }
+                if let bad = try valid() { return (bad, [:]) }
+                let n = try Self.rejectLink(db, memoryID: m, entity: e, config: config, now: now)
+                return n > 0 ? (.applied, ["links": n]) : (.notFound, [:])
+            case .fact:
+                guard let fid = t.factID else { return (.invalid, [:]) }
+                if try Self.factRejected(db, factID: fid, memoryID: t.memoryID?.db) { return (.already, [:]) }
+                if let bad = try valid() { return (bad, [:]) }
+                guard let m = t.memoryID else {
+                    return try Self.rejectFact(db, factID: fid, now: now) ? (.applied, ["facts": 1]) : (.notFound, [:])
+                }
+                let uses = try config.uses(db)
+                let loaded = try FactStore.load(db, registry: config.registry, userAliases: config.userAliases, uses: uses)
+                guard let f = loaded.graph.facts.first(where: { loaded.factIDs[FactStore.Loaded.key($0.predicate, $0.entity)] == fid }),
+                      let level = try Int.fetchOne(db, sql: "SELECT sensitivity FROM memory WHERE id = ?", arguments: [m.db]) else {
+                    return (.notFound, [:])
+                }
+                let n = try Self.rejectStatements(db, factID: fid, fact: f, memoryID: m.db, sensitivity: level, now: now)
+                return n > 0 ? (.applied, ["links": n]) : (.notFound, [:])
+            }
+        }
+        if outcome == .applied {
+            activity.record(ActivityEvent(time: now, phase: .event, actor: actor, via: via, event: "facts_corrected", counts: counts))
+        }
+        return outcome
     }
 
     /// The UI-review build's sample facts (never the real vault): a memory read by the people call, naming `person` with

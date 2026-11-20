@@ -309,6 +309,9 @@
     "%lld not shareable" : {
 
     },
+    "%lld results weren't read: what links them is above your Mac's cloud limit" : {
+
+    },
     "1 claim left out: it didn't quote a memory" : {
 
     },
@@ -316,6 +319,9 @@
 
     },
     "1 memory wasn't read: it's above your Mac's cloud limit" : {
+
+    },
+    "1 result wasn't read: what links it is above your Mac's cloud limit" : {
 
     },
     "Allow Once is for this request only. It shares without asking, so the matching memories go to it at once." : {
@@ -381,6 +387,9 @@
 
     },
     "In the demo, try: When does my lease renew?" : {
+
+    },
+    "Inferred" : {
 
     },
     "It already got what it may read. Always Allow is for next time." : {
@@ -473,6 +482,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Read %lld results and %lld from your history · %lld s" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read %1$lld results and %2$lld from your history · %3$lld s"
           }
         }
       }

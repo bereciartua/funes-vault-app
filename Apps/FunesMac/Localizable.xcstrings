@@ -217,6 +217,28 @@
     "%@ has no access yet. It can connect, but sees nothing until you change its access." : {
 
     },
+    "%@ is %@" : {
+      "comment" : "Inferred claim: who they are to you",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is %2$@"
+          }
+        }
+      }
+    },
+    "%@ is %@: %@" : {
+      "comment" : "Inferred claim: who they are to you, and why",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is %2$@: %3$@"
+          }
+        }
+      }
+    },
     "%@ is an embedding model, so it can't answer chat requests. Choose it in Features ▸ Search index, and test a chat model here." : {
 
     },
@@ -1617,6 +1639,16 @@
     "%lld restored" : {
 
     },
+    "%lld results weren't read: what links them is above %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld results weren't read: what links them is above %2$@"
+          }
+        }
+      }
+    },
     "%lld s" : {
 
     },
@@ -1860,6 +1892,9 @@
 
     },
     "1 request waiting for you" : {
+
+    },
+    "1 result wasn't read: what links it is above %@" : {
 
     },
     "1 suggestion waiting for you" : {
@@ -4150,6 +4185,20 @@
     "From the memory's context" : {
 
     },
+    "From your history: %@" : {
+      "comment" : "Inferred claim: a timeline answer"
+    },
+    "From your history: your %@ %@ %@ was %@" : {
+      "comment" : "Inferred claim: a timeline answer, e.g. your job before Initech was Acme",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "From your history: your %1$@ %2$@ %3$@ was %4$@"
+          }
+        }
+      }
+    },
     "From: “%@”" : {
 
     },
@@ -4258,6 +4307,20 @@
     "Funes can't read your names in Settings ▸ About You right now, so it shows nothing here." : {
 
     },
+    "Funes can't tell which %@ came %@ %@" : {
+      "comment" : "Answer card: a timeline question Funes can't decide, e.g. which job came before Acme",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funes can't tell which %1$@ came %2$@ %3$@"
+          }
+        }
+      }
+    },
+    "Funes can't tell which %@ it was" : {
+      "comment" : "Answer card: a timeline question Funes can't decide"
+    },
     "Funes can't tell which came first" : {
       "comment" : "Timeline: an undecidable order"
     },
@@ -4364,11 +4427,17 @@
     "Funes hasn't measured this model, so search keeps its 10 closest matches. Calibrate measures where its matches start with Funes's made-up benchmark." : {
 
     },
+    "Funes inferred this from what it learned about your memories." : {
+
+    },
     "Funes isn't learning from your memories. Your own entries and corrections are kept." : {
 
     },
     "Funes keeps the last 7 backups in its data folder." : {
 
+    },
+    "Funes linked this memory to %@" : {
+      "comment" : "Inferred claim: a link the memory doesn't state"
     },
     "Funes notes that you checked it today." : {
 
@@ -4398,6 +4467,9 @@
 
     },
     "Funes shows the exact change first, backs up the file and never writes the key into it." : {
+
+    },
+    "Funes stops using it for every memory. You can undo it from the person's page." : {
 
     },
     "Funes stops using it in every memory." : {
@@ -4784,6 +4856,9 @@
     },
     "Incomplete" : {
 
+    },
+    "Inferred" : {
+      "comment" : "Answer card: a claim code marked as resting on what Funes inferred"
     },
     "Install %@ and sign in to use your %@ plan." : {
       "localizations" : {
@@ -6511,6 +6586,17 @@
         }
       }
     },
+    "Read %lld results and %lld from your history · %lld s" : {
+      "comment" : "Answer card footer: results read, and bridge memories from your history",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read %1$lld results and %2$lld from your history · %3$lld s"
+          }
+        }
+      }
+    },
     "Read Existing Memories…" : {
 
     },
@@ -7169,10 +7255,71 @@
     "Search answers" : {
 
     },
+    "Search answers send %@ to %@ %@, each time you pause on a search. Each answer counts toward your plan's limits and today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send %1$@ to %2$@ %3$@, each time you pause on a search. Each answer counts toward your plan's limits and today's %4$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send %@ to %@ %@, when you ask or pause on a question. Each answer counts toward your plan's limits and today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send %1$@ to %2$@ %3$@, when you ask or pause on a question. Each answer counts toward your plan's limits and today's %4$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send %@ to %@ %@, when you ask. It counts toward your plan's limits." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send %1$@ to %2$@ %3$@, when you ask. It counts toward your plan's limits."
+          }
+        }
+      }
+    },
+    "Search answers send %@ to %@, each time you pause on a search. Each answer counts toward today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send %1$@ to %2$@, each time you pause on a search. Each answer counts toward today's %3$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send %@ to %@, when you ask or pause on a question. Each answer counts toward today's %lld cloud requests." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send %1$@ to %2$@, when you ask or pause on a question. Each answer counts toward today's %3$lld cloud requests."
+          }
+        }
+      }
+    },
+    "Search answers send %@ to %@, when you ask." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers send %1$@ to %2$@, when you ask."
+          }
+        }
+      }
+    },
     "Search answers send nothing to %@: the cloud limit is Nothing, so there's no answer." : {
 
     },
     "Search answers send your search and its top results (up to %@) to %@ %@, each time you pause on a search. Each answer counts toward your plan's limits and today's %lld cloud requests." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7205,6 +7352,7 @@
       }
     },
     "Search answers send your search and its top results (up to %@) to %@ %@, when you ask or pause on a question. Each answer counts toward your plan's limits and today's %lld cloud requests." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7236,17 +7384,8 @@
         }
       }
     },
-    "Search answers send your search and its top results (up to %@) to %@ %@, when you ask. It counts toward your plan's limits." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@ %3$@, when you ask. It counts toward your plan's limits."
-          }
-        }
-      }
-    },
     "Search answers send your search and its top results (up to %@) to %@, each time you pause on a search. Each answer counts toward today's %lld cloud requests." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7279,6 +7418,7 @@
       }
     },
     "Search answers send your search and its top results (up to %@) to %@, when you ask or pause on a question. Each answer counts toward today's %lld cloud requests." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7310,54 +7450,44 @@
         }
       }
     },
-    "Search answers send your search and its top results (up to %@) to %@, when you ask." : {
+    "Search answers will use the same model as New memories." : {
+
+    },
+    "Search answers: %@, to %@, each time you pause on a search." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Search answers send your search and its top results (up to %1$@) to %2$@, when you ask."
+            "value" : "Search answers: %1$@, to %2$@, each time you pause on a search."
           }
         }
       }
     },
-    "Search answers will use the same model as New memories." : {
-
+    "Search answers: %@, to %@, when you ask or pause on a question." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers: %1$@, to %2$@, when you ask or pause on a question."
+          }
+        }
+      }
+    },
+    "Search answers: %@, to %@, when you ask." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search answers: %1$@, to %2$@, when you ask."
+          }
+        }
+      }
     },
     "Search answers: nothing to %@; the cloud limit is Nothing." : {
 
     },
     "Search answers: nothing; Apple on-device answers on this Mac." : {
 
-    },
-    "Search answers: your search and its top results%@, to %@, each time you pause on a search." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Search answers: your search and its top results%1$@, to %2$@, each time you pause on a search."
-          }
-        }
-      }
-    },
-    "Search answers: your search and its top results%@, to %@, when you ask or pause on a question." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Search answers: your search and its top results%1$@, to %2$@, when you ask or pause on a question."
-          }
-        }
-      }
-    },
-    "Search answers: your search and its top results%@, to %@, when you ask." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Search answers: your search and its top results%1$@, to %2$@, when you ask."
-          }
-        }
-      }
     },
     "Search embeddings send memory text (up to %@) and your searches to %@. Agents' requests are matched on this Mac." : {
       "localizations" : {
@@ -9313,6 +9443,9 @@
     "What AI features send" : {
 
     },
+    "What Funes knows about your memories changed while it was answering. Try again." : {
+
+    },
     "What belongs here (agents see this)" : {
 
     },
@@ -10096,6 +10229,18 @@
     },
     "your only %@" : {
       "comment" : "Why line basis: e.g. your only sister"
+    },
+    "your search and its top results (up to %@)" : {
+
+    },
+    "your search and its top results%@" : {
+
+    },
+    "your search, its top results (up to %@) and what Funes learned about them" : {
+
+    },
+    "your search, its top results%@ and what Funes learned about them" : {
+
     },
     "· %@" : {
 

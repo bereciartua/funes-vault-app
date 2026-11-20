@@ -235,24 +235,28 @@ struct AIJobText {
         guard let limit else {
             return String(localized: "Search answers send nothing to \(name): the cloud limit is Nothing, so there's no answer.")
         }
+        // With learned facts in the answer (13d), what Funes learned about the people they mention goes too.
+        let what = settings.factsInAnswers
+            ? String(localized: "your search, its top results (up to \(limit)) and what Funes learned about them")
+            : String(localized: "your search and its top results (up to \(limit))")
         if let plan = PlanKind(rawValue: account) {
             let via = plan == .claudeCode ? String(localized: "through your Claude Code sign-in") : String(localized: "through your Codex sign-in")
             switch settings.searchAnswersTrigger {
             case .ask:
-                return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(plan.plan) \(via), when you ask. It counts toward your plan's limits.")
+                return String(localized: "Search answers send \(what) to \(plan.plan) \(via), when you ask. It counts toward your plan's limits.")
             case .questions:
-                return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(plan.plan) \(via), when you ask or pause on a question. Each answer counts toward your plan's limits and today's \(settings.dailyCap) cloud requests.")
+                return String(localized: "Search answers send \(what) to \(plan.plan) \(via), when you ask or pause on a question. Each answer counts toward your plan's limits and today's \(settings.dailyCap) cloud requests.")
             case .everySearch:
-                return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(plan.plan) \(via), each time you pause on a search. Each answer counts toward your plan's limits and today's \(settings.dailyCap) cloud requests.")
+                return String(localized: "Search answers send \(what) to \(plan.plan) \(via), each time you pause on a search. Each answer counts toward your plan's limits and today's \(settings.dailyCap) cloud requests.")
             }
         }
         switch settings.searchAnswersTrigger {
         case .ask:
-            return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(name), when you ask.")
+            return String(localized: "Search answers send \(what) to \(name), when you ask.")
         case .questions:
-            return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(name), when you ask or pause on a question. Each answer counts toward today's \(settings.dailyCap) cloud requests.")
+            return String(localized: "Search answers send \(what) to \(name), when you ask or pause on a question. Each answer counts toward today's \(settings.dailyCap) cloud requests.")
         case .everySearch:
-            return String(localized: "Search answers send your search and its top results (up to \(limit)) to \(name), each time you pause on a search. Each answer counts toward today's \(settings.dailyCap) cloud requests.")
+            return String(localized: "Search answers send \(what) to \(name), each time you pause on a search. Each answer counts toward today's \(settings.dailyCap) cloud requests.")
         }
     }
 
@@ -417,10 +421,14 @@ struct AIJobText {
                     return (String(localized: "Search answers: nothing to \(to); the cloud limit is Nothing."), false)
                 }
                 let level = upTo(local)
+                // With learned facts in the answer (13d), it adds what Funes learned about them.
+                let what = settings.factsInAnswers
+                    ? String(localized: "your search, its top results\(level) and what Funes learned about them")
+                    : String(localized: "your search and its top results\(level)")
                 let line = switch trigger {
-                case .ask: String(localized: "Search answers: your search and its top results\(level), to \(to), when you ask.")
-                case .questions: String(localized: "Search answers: your search and its top results\(level), to \(to), when you ask or pause on a question.")
-                case .everySearch: String(localized: "Search answers: your search and its top results\(level), to \(to), each time you pause on a search.")
+                case .ask: String(localized: "Search answers: \(what), to \(to), when you ask.")
+                case .questions: String(localized: "Search answers: \(what), to \(to), when you ask or pause on a question.")
+                case .everySearch: String(localized: "Search answers: \(what), to \(to), each time you pause on a search.")
                 }
                 return (line, !local)
             case .facts:

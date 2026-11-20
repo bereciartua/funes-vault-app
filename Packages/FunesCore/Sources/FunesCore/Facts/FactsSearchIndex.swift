@@ -1,4 +1,5 @@
 import Foundation
+import FunesProtocol
 import GRDB
 
 /// One link from a memory to an entity, as search reads it (memory processing §4, §11.4): a name the memory uses, one
@@ -66,7 +67,8 @@ struct FactsSearchIndex: Sendable {
     /// resolved here for every memory, read by the Facts task or not ("resolved when read, nothing stored", §11.3).
     /// `sendable`: the graph a cloud call may see under that limit (§11.9), for the second index's rule.
     static func build(_ db: Database, registry: FactsRegistry, userAliases: [String], uses: FactsUses,
-                      sendable: CloudLimit? = nil, phrases: RolePhraseCache? = nil) throws -> FactsSearchIndex {
+                      sendable: CloudLimit? = nil, phrases: RolePhraseCache? = nil,
+                      measured: [String: [MemoryLink]] = [:]) throws -> FactsSearchIndex {
         let loaded = try FactStore.load(db, registry: registry, userAliases: userAliases, uses: uses, sendable: sendable)
         var g = loaded.graph
         g.episodeMemo = EpisodeMemo()        // its facts don't change from here on
@@ -85,11 +87,13 @@ struct FactsSearchIndex: Sendable {
 
         // Memories as learned facts see them: the graph's (counted ones), and the others the Facts task has dealt with
         // at their current version (a reading that left nothing stored, a code-only pass whose job is still recorded):
-        // their role phrases resolve through known facts (§11.3). A memory it hasn't read yet gets no link.
+        // their role phrases resolve through known facts (§11.3). A memory it hasn't read yet gets no link. For the
+        // sendable graph (an answer's view, 13d), only those within the limit, resolved against that graph alone.
         var memories = g.memories
-        if sendable == nil {
+        do {
             for r in try Row.fetchAll(db, sql: """
-                SELECT m.id, m.title, m.body, m.created_at, COALESCE(m.original_source, m.source) AS source, m.trust FROM memory m
+                SELECT m.id, m.title, m.body, m.created_at, COALESCE(m.original_source, m.source) AS source, m.trust,
+                  m.sensitivity FROM memory m
                 WHERE m.status IN ('active','archived')
                   AND (EXISTS (SELECT 1 FROM facts_asked a WHERE a.memory_id = m.id AND a.memory_version = m.version)
                     OR EXISTS (SELECT 1 FROM processing_job j WHERE j.kind = 'facts' AND j.subject = m.id
@@ -97,6 +101,7 @@ struct FactsSearchIndex: Sendable {
                 """) {
                 let id: String = r["id"]
                 guard memories[id] == nil else { continue }
+                if let limit = sendable, !limit.allows(Sensitivity(rawValue: r["sensitivity"] as Int) ?? .secret) { continue }
                 let created: Date = r["created_at"]
                 memories[id] = FactsMemory(id: id, text: FactStore.text(title: r["title"], body: r["body"]),
                                            written: FactStore.writtenDay(created), source: FactStore.source(r["source"]),
@@ -160,6 +165,11 @@ struct FactsSearchIndex: Sendable {
         // plan resolves against too, so a query's "my sisters" finds the same group.
         for (key, id) in g.groups where linked.contains(key.predicate) { eligible.insert(id) }
         g.landed = [:]
+        // A measurement's links (FactsSearchConfig.measuredLinks), to entities search may use.
+        for (mid, ls) in measured {
+            let usable = ls.filter { $0.entity.map(eligible.contains) ?? false }
+            if !usable.isEmpty { out[mid, default: []] += usable }
+        }
         return FactsSearchIndex(graph: g, links: out, eligible: eligible, linked: linked, factIDs: loaded.factIDs)
     }
 }

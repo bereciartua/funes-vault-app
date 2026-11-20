@@ -346,9 +346,12 @@ public final class ModelRouter: Sendable {
 
     /// One search answer (§10.3): through the guardrails (`send`), within 45 s, counted against the
     /// daily cap as the user's for a cloud provider. No fallback to another provider (§6).
-    func answer<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem], now: Date) async throws -> T {
+    /// `willSend` runs right before the request is sent, past every check; if it throws, nothing is sent.
+    func answer<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem],
+                                         willSend: @escaping @Sendable () throws -> Void = {}, now: Date) async throws -> T {
         guard let provider = answerer else { throw ProviderError.unavailable }
-        return try await call(request, items: items, with: provider, requester: .user, timeout: Self.searchAnswerTimeout, now: now)
+        return try await call(request, items: items, with: provider, requester: .user, timeout: Self.searchAnswerTimeout,
+                              willSend: willSend, now: now)
     }
 
     /// One Facts call (memory processing §11.3), per memory and call group.

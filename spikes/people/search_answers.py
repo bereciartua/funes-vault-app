@@ -43,7 +43,7 @@ ABOUT_RULE = ("\n- An about=\"…\" attribute on a memory is Funes's own inferen
               "the memory. You may use it to connect a memory to a person; a claim that relies on it says so "
               "(\"probably\", \"Funes infers\").")
 FULL = {"named", "stated_unique", "context", "confirmed"}
-ARMS = ("A", "B", "C1", "C2", "C3", "W", "M")
+ARMS = ("A", "B", "C1", "C2", "C3", "W", "M", "P", "F")      # P, F: the 13d Swift gate (plain = 13b, facts)
 ANS = os.environ.get("ANS_DIR", "answers3")    # round 3 (round 2's answers stay in answers2/); Spike H4: answers-terra
 HEDGE = re.compile(r"\b(probabl\w*|infer\w*|likely|seems?|appears?|apparently|presumably|Funes)\b", re.I)
 
@@ -59,8 +59,9 @@ def load(set_name, engine):
     mems = {m["id"]: m for m in json.loads(vault.read_text())["memories"]}
     bf = json.loads(bf_path.read_text())
     qs = {q["id"]: q for q in json.loads(queries.read_text())["queries"]}
-    plan = {p["id"]: p for p in json.loads(plan_path.read_text())}
-    scores = json.loads(scores_path.read_text())
+    # The judge and the scorer need neither (the 13d gate's records come from Swift); `run` does.
+    plan = {p["id"]: p for p in json.loads(plan_path.read_text())} if plan_path.exists() else {}
+    scores = json.loads(scores_path.read_text()) if scores_path.exists() else {}
     return mems, bf, qs, plan, scores
 
 
@@ -270,7 +271,10 @@ JUDGE_SCHEMA = {
 
 def inferred(claim, rec):
     """Code's rule (plan §10: the app, not the model, shows "inferred"): the claim names a person that a cited memory's
-    hint names, and none of the claim's quotes names them."""
+    hint names, and none of the claim's quotes names them. Records from the Swift answer gate (13d,
+    FactsAnswerLiveTests) carry the app's own mark, which wins."""
+    if "inferred" in claim:
+        return bool(claim["inferred"])
     names = rec.get("about_names") or {}
     quotes = search.fold(" ".join(c["quote"] for c in claim["citations"]))
     text = search.fold(claim["text"])
@@ -300,7 +304,18 @@ def notes(claim, rec, mems, bf):
                 named.append(p["name"])
                 break
     out = "".join(f" [the cited memory names {n}]" for n in dict.fromkeys(named))
-    return out + (" [Funes marks this as inferred]" if inferred(claim, rec) and not named else "")
+    # The app's own mark (13d) is shown whatever else the note says; the spike's rule gave way to a name.
+    shown = inferred(claim, rec) and (not named or "inferred" in claim)
+    return out + (" [Funes marks this as inferred]" if shown else "")
+
+
+def answers_hash(rs):
+    """What a judge line judged: every answer's arm, sample, outcome and claims (with the app's mark). The 13d scorer
+    refuses a verdict whose answers changed since."""
+    key = sorted([r["arm"], r["rep"], r.get("outcome"),
+                  [[c["text"], [[x["memory"], x["quote"]] for x in c["citations"]], c.get("inferred")] for c in r["claims"]]]
+                 for r in rs)
+    return hashlib.sha256(json.dumps(key, ensure_ascii=False).encode()).hexdigest()[:16]
 
 
 def truth_text(q, mems, bf_truth=None):
@@ -329,14 +344,20 @@ def cmd_judge(a):
     mems, bf, qs, plan, scores = load(a.set, a.engine)
     recs = [json.loads(l) for l in (OUT / ANS / f"{a.set}-{a.engine}.jsonl").read_text().splitlines()]
     path = OUT / ANS / f"{a.set}-{a.engine}-judge{a.judge_tag}.jsonl"
-    done = {json.loads(l)["id"] for l in path.read_text().splitlines()} if path.exists() else set()
+    # The last line per question; it's judged again if it failed, or (13d records) if its answers changed since.
+    done = {}
+    for l in (path.read_text().splitlines() if path.exists() else []):
+        j = json.loads(l)
+        done[j["id"]] = j
     judge = _pp.PROVIDERS["claude-opus"]()
     by_q = defaultdict(list)
     for r in recs:
         by_q[r["id"]].append(r)
     with path.open("a") as f:
         for qid, rs in by_q.items():
-            if qid in done or (a.only and qid not in a.only.split(",")):
+            h = answers_hash(rs)
+            prev = done.get(qid)
+            if (prev and prev.get("ok") and prev.get("answers_hash", h) == h) or (a.only and qid not in a.only.split(",")):
                 continue
             rnd = random.Random(f"{qid}-judge")
             order = rs[:]
@@ -349,7 +370,7 @@ def cmd_judge(a):
                 blocks.append(f"Answer {i}:\n{cl}")
             prompt = "TRUTH\n" + truth_text(qs[qid], mems) + "\n\nANSWERS\n" + "\n\n".join(blocks)
             out = judge.generate(JUDGE_INS, prompt, JUDGE_SCHEMA)
-            rec = {"id": qid, "ok": out.get("ok"), "map": [(r["arm"], r["rep"]) for r in order],
+            rec = {"id": qid, "ok": out.get("ok"), "map": [(r["arm"], r["rep"]) for r in order], "answers_hash": h,
                    "verdicts": out.get("content", {}).get("answers") if out.get("ok") else None, "costUSD": out.get("costUSD")}
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
             f.flush()
@@ -410,7 +431,7 @@ def cmd_score(a):
         cov = {arm: sum(bool(v["covers"]) for _, v in per[q][arm]) for arm in ARMS if per[q][arm]}
         bad = [(arm, rep, cl) for arm in ARMS for rep, v in per[q][arm] for cl in v["claims"]
                if cl["label"] in ("denies_true", "wrong_person", "unsupported")]
-        if len({cov[x] for x in ("A", "B", "C1", "C2", "C3") if x in cov}) > 1 or bad:
+        if len({cov[x] for x in ("A", "B", "C1", "C2", "C3", "P", "F") if x in cov}) > 1 or bad:
             review.append((q, cov, bad))
     lines += ["## To read by hand", ""]
     for q, cov, bad in review:

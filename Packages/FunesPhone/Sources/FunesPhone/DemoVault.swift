@@ -140,6 +140,9 @@ public final class DemoVault: CompanionCalling, CaptureSender {
             let params = params as! MemoryAnswerParams
             try params.validate()
             return try answer(params, in: state)
+        case .factsReject:
+            // The demo vault has no learned facts to correct.
+            throw CompanionError(.notFound)
         case .memoriesGet:
             let id = (params as! MemoryID).id
             guard let memory = state.memories[id] else { throw CompanionError(.notFound) }

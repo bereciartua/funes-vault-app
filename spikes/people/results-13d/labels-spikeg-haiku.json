@@ -1,0 +1,58 @@
+{
+ "haiku-13d-P/main/q01/1": {
+  "correct": true,
+  "note": "true: m025"
+ },
+ "haiku-13d-F/main/q01/1": {
+  "correct": true,
+  "note": "true: m025"
+ },
+ "haiku-13d-P/main/q07/1": {
+  "correct": true,
+  "note": "true: a02"
+ },
+ "haiku-13d-F/main/q07/1": {
+  "correct": true,
+  "note": "true: a02"
+ },
+ "haiku-13d-P/main/q22/1": {
+  "correct": true,
+  "note": "true: m070"
+ },
+ "haiku-13d-F/main/q22/1": {
+  "correct": true,
+  "note": "true: m070"
+ },
+ "haiku-13d-P/main/q25/1": {
+  "correct": true,
+  "note": "true: m109"
+ },
+ "haiku-13d-F/main/q25/1": {
+  "correct": true,
+  "note": "true: m109"
+ },
+ "haiku-13d-P/main/q28/1": {
+  "correct": true,
+  "note": "true: m098 is dated 2025-08-17"
+ },
+ "haiku-13d-F/main/q28/1": {
+  "correct": true,
+  "note": "true: m098 is dated 2025-08-17"
+ },
+ "haiku-13d-P/astra/h05/1": {
+  "correct": true,
+  "note": "true: m040"
+ },
+ "haiku-13d-F/astra/h06/1": {
+  "correct": true,
+  "note": "true: m117 (Dec 2025); claim 0 states the confirmed start"
+ },
+ "haiku-13d-F/astra/h09/0": {
+  "correct": true,
+  "note": "true: the conflict, unresolved; the date is the prompt's local day of a UTC-midnight fixture date"
+ },
+ "haiku-13d-F/astra/h10/1": {
+  "correct": true,
+  "note": "true: b03"
+ }
+}

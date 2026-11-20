@@ -48,7 +48,7 @@ import Testing
             StatusGet.self, CapturesSubmit.self, OverviewGet.self, CategoriesList.self, MemoriesSearch.self, MemoriesAnswer.self, MemoriesGet.self, MemoriesCreate.self,
             MemoriesUpdate.self, MemoriesArchive.self, MemoriesRestore.self, MemoriesDelete.self, InboxList.self, InboxGet.self, InboxApply.self,
             InboxReject.self, InboxRetry.self, InboxKeep.self, InboxReviewAgain.self, DeviceUnpair.self, ApprovalsList.self, ApprovalsGet.self, ApprovalsAnswer.self,
-            ApprovalsSettingsGet.self, ApprovalsSettingsSet.self,
+            ApprovalsSettingsGet.self, ApprovalsSettingsSet.self, FactsReject.self,
         ]
         #expect(Set(calls.map { $0.method }) == Set(CompanionMethod.allCases))
     }

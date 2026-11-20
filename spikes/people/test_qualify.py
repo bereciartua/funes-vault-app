@@ -197,6 +197,24 @@ class Verify(unittest.TestCase):
              "evidence": ["spikes/people/qualify.py", "spikes/people/missing/scores.json"]}
         self.assertTrue(Q.verify_record(r, REG))
 
+    def test_an_attributes_record_needs_13d_evidence(self):
+        r = {"predicates": ["partner"], "uses": ["attributes"], "basis": "", "callGroup": "people", "model": MODEL,
+             "evidence": ["spikes/people/qualify.py"]}
+        self.assertEqual(Q.verify_answer_record(r, REG), ["no scores-13d.json in the evidence"])
+
+    def test_a_replay_on_a_dirty_tree_or_with_calls_fails(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            for gate, (sub, names) in Q.replay_files("haiku").items():
+                (Path(d) / sub).mkdir(parents=True)
+                (Path(d) / sub / f"manifest-{gate}.json").write_text(json.dumps(
+                    {"mode": "dry", "uncached": 3, "dirty": True, "commit": "abc", "modelsReported": ["haiku"],
+                     "responsesWithoutModel": 0, "options": {"engine": "haiku"}, "records": {}, "answerPromptVersion": "a13d-1"}))
+            probs, _ = Q.replay_problems("haiku", MODEL, Path(d))
+            self.assertTrue(any("not a full replay" in p for p in probs))
+            self.assertTrue(any("dirty" in p for p in probs))
+            self.assertTrue(any("reported" in p for p in probs))
+
 
 if __name__ == "__main__":
     unittest.main()

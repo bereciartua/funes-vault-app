@@ -9,6 +9,15 @@
         The records the scores allow, after the run checks (below). With --write: copies the evidence to
         results-13a2/gates/<model>/ and adds the records to Resources/facts-qualification.json. Writes nothing if any check
         fails.
+    python3 qualify.py answer-scores --engine haiku --model claude-code/claude-haiku-5-5 --replay <dir> --out <scores-13d.json>
+        Phase 13d's answer gates (score_13d.py) from the live records in results-13d/, with a replay of both gates from the
+        response cache at one clean commit (FactsAnswerLiveTests, `dry=1;out=<dir>`): every request answered from the
+        cache, so that commit's code sends exactly what the model answered, and the replay's records equal the live ones
+        (bar each fixture vault's random ids). Copies the replay to results-13d/gates/<model>/ and writes the digests.
+    python3 qualify.py answer-records <scores-13d.json> [--write]
+        The attributes records the answer gates allow (the person pool, unscoped and `sole_known`), on the facts key of the
+        model's persons record, for that answer model at the replay's answer prompt version. `sole_known` also needs
+        13a.2's sole_known measure. With --write: adds them to Resources/facts-qualification.json.
     python3 qualify.py verify
         For every shipped record: its evidence exists with the digests scores.json gives, the measures recomputed from the
         evidence lines equal scores.json's, and they pass. scripts/test.sh runs it. The Swift test
@@ -591,12 +600,228 @@ def verify_record(r, reg):
     return probs
 
 
+# --- Phase 13d: the answer gates (attributes) -------------------------------------------------------------------------
+R13D = HERE / "results-13d"
+ANSWER_SETS = ["main", "astra", "busy"]
+ANSWER_BASES = ["", "sole_known"]
+
+
+def answer_inputs(engine):
+    """The live records, the judge's verdicts, Spike G's records, this gate's hand labels and the author's waivers."""
+    files = [f"answers-{engine}/{s}-r3.jsonl" for s in ANSWER_SETS] + [f"answers-{engine}/{s}-r3-judge.jsonl" for s in ANSWER_SETS]
+    files += [f"spike-g-{engine}/{s}-{arm}.jsonl" for s in ("main", "astra") for arm in ("P", "F")]
+    return files + [f"labels-spikeg-{engine}.json", f"waivers-{engine}.json"]
+
+
+def replay_files(engine):
+    return {"answers": (f"answers-{engine}", [f"{s}-r3.jsonl" for s in ANSWER_SETS]),
+            "spikeg": (f"spike-g-{engine}", [f"{s}-{arm}.jsonl" for s in ("main", "astra") for arm in ("P", "F")])}
+
+
+MARK_FIELDS = ("inferred", "basis", "factIds", "corrections")
+
+
+def normalized(path, marks=True):
+    """A record file without what differs between two fixture vaults (the facts revision's epoch, fact row ids) and
+    whether an answer came from the cache; without each claim's marking too unless `marks`."""
+    out = []
+    for line in Path(path).read_text().splitlines():
+        r = {k: v for k, v in json.loads(line).items() if k != "reused"}
+        if r.get("factsRevision"):
+            r["factsRevision"] = r["factsRevision"].split(".", 1)[1]
+        r["claims"] = [{**c, "factIds": len(c["factIds"])} if "factIds" in c else c for c in r.get("claims", [])]
+        if not marks:
+            r["claims"] = [{k: v for k, v in c.items() if k not in MARK_FIELDS} for c in r["claims"]]
+        out.append(r)
+    return out
+
+
+def replay_marks(engine, replay):
+    """Where the code that ships marks a claim differently from the live run (the same answer, marked again): the
+    replay's marks by (set, id, arm, rep), and each change in words."""
+    marks, changes = {}, []
+    sub = f"answers-{engine}"
+    for s in ANSWER_SETS:
+        live = [json.loads(l) for l in (R13D / sub / f"{s}-r3.jsonl").read_text().splitlines()]
+        again = [json.loads(l) for l in (replay / sub / f"{s}-r3.jsonl").read_text().splitlines()]
+        for a, b in zip(live, again):
+            la = [bool(c.get("inferred")) for c in a["claims"]]
+            lb = [bool(c.get("inferred")) for c in b["claims"]]
+            if la != lb:
+                marks[(s, a["id"], a["arm"], a["rep"])] = lb
+                for i, (x, y) in enumerate(zip(la, lb)):
+                    if x != y:
+                        changes.append(f"{s} {a['id']} {a['arm']}{a['rep']} claim {i + 1}: {'marked' if y else 'unmarked'} at the shipped code")
+    return marks, changes
+
+
+def replay_problems(engine, model, replay):
+    """Why the replay doesn't tie the live records to one clean commit's code ([] = it does); and its manifests."""
+    probs, manifests = [], {}
+    for gate, (sub, names) in replay_files(engine).items():
+        mp = replay / sub / f"manifest-{gate}.json"
+        if not mp.exists():
+            probs.append(f"{gate}: no replay manifest")
+            continue
+        m = manifests[gate] = json.loads(mp.read_text())
+        if m.get("mode") != "replay" or m.get("uncached") != 0:
+            probs.append(f"{gate}: not a full replay ({m.get('mode')}, {m.get('uncached')} uncached)")
+        if m.get("dirty") or not m.get("commit"):
+            probs.append(f"{gate}: replayed on a dirty tree")
+        if m.get("modelsReported") != [model.split("/", 1)[1]] or m.get("responsesWithoutModel"):
+            probs.append(f"{gate}: the provider reported {m.get('modelsReported')}")
+        opts = m.get("options", {})
+        if opts.get("only") or opts.get("sets") or opts.get("arms") or opts.get("index") == "keyword" or opts.get("engine") != engine:
+            probs.append(f"{gate}: a partial replay ({opts})")
+        if sorted(m.get("records", {})) != sorted(names):
+            probs.append(f"{gate}: records {sorted(m.get('records', {}))}")
+        for name in names:
+            f = replay / sub / name
+            if not f.exists() or sha(f) != m.get("records", {}).get(name):
+                probs.append(f"{sub}/{name}: the replay's file isn't the one it wrote")
+            elif normalized(f, marks=False) != normalized(R13D / sub / name, marks=False):
+                probs.append(f"{sub}/{name}: the replay's records differ from the live ones")
+            elif gate == "spikeg" and normalized(f) != normalized(R13D / sub / name):
+                probs.append(f"{sub}/{name}: the replay marks Spike G's answers differently")
+    if len({m.get("commit") for m in manifests.values()}) > 1 or len({m.get("answerPromptVersion") for m in manifests.values()}) > 1:
+        probs.append("the two replays disagree on the commit or the answer prompt version")
+    return probs, manifests
+
+
+def answer_gates(engine, marks=None):
+    """Both 13d gates recomputed from the evidence in results-13d/ (score_13d.py), with the author's waivers and the
+    shipped code's marks (`replay_marks`)."""
+    import score_13d
+    score_13d.OUT = R13D
+    ok_a, _ = score_13d.answers_gate(engine, ANSWER_SETS, marks)
+    ok_g, _ = score_13d.spikeg_gate(engine)
+    return {"answers": ok_a, "spikeg": ok_g}
+
+
+def persons_record(model):
+    return next((r for r in json.loads(RECORDS.read_text())["records"]
+                 if r["model"] == model and r["callGroup"] == "people" and r["uses"] == ["recorded", "linked"]), None)
+
+
+def sole_known_problems(persons):
+    """13a.2's sole_known measure on the persons record's own scores (verified with that record)."""
+    sc = json.loads((REPO / next(e for e in persons["evidence"] if e.endswith("/scores.json"))).read_text())
+    return judge_gate("sole_known", sc["measures"], registry())
+
+
+def cmd_answer_scores(a):
+    model, engine = a.model, a.engine
+    dest = R13D / "gates" / model.replace("/", "_")
+    probs, manifests = replay_problems(engine, model, Path(a.replay))
+    if probs:
+        raise SystemExit("qualify.py: " + "; ".join(probs))
+    for gate, (sub, names) in replay_files(engine).items():
+        (dest / "replay" / sub).mkdir(parents=True, exist_ok=True)
+        for name in names + [f"manifest-{gate}.json"]:
+            shutil.copy(Path(a.replay) / sub / name, dest / "replay" / sub / name)
+    missing = [p for p in answer_inputs(engine) if not (R13D / p).exists()]
+    if missing:
+        raise SystemExit("qualify.py: missing " + ", ".join(missing))
+    marks, changes = replay_marks(engine, dest / "replay")
+    gates = answer_gates(engine, marks)
+    m0 = manifests["answers"]
+    out = {"engine": engine, "model": model, "inputs": {p: sha(R13D / p) for p in answer_inputs(engine)},
+           "replay": {"commit": m0["commit"], "answerPromptVersion": m0["answerPromptVersion"], "registryVersion": m0["registryVersion"],
+                      "files": {str(f.relative_to(dest)): sha(f) for f in sorted((dest / "replay").rglob("*")) if f.is_file()}},
+           "marksChanged": changes, "gates": gates, "date": m0["date"][:10]}
+    Path(a.out).write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n")
+    print(json.dumps(gates, indent=1, ensure_ascii=False))
+
+
+def answer_record_problems(sc, persons):
+    probs = []
+    if persons is None:
+        return ["no persons record for this model to rest on"]
+    for gate, ok in sc["gates"].items():
+        bad = [k for k, v in ok.items() if not v]
+        if bad:
+            probs.append(f"{gate}: {', '.join(bad)}")
+    if sc["replay"]["registryVersion"] != persons["registryVersion"]:
+        probs.append("the replay's registry isn't the persons record's")
+    return probs
+
+
+def cmd_answer_records(a):
+    path = Path(a.scores)
+    sc = json.loads(path.read_text())
+    persons = persons_record(sc["model"])
+    probs = answer_record_problems(sc, persons)
+    if probs:
+        raise SystemExit("qualify.py: no record: " + "; ".join(probs))
+    rel = lambda p: str(Path(p).resolve().relative_to(REPO))
+    dest = path.parent
+    evidence = sorted([rel(path)] + [rel(R13D / p) for p in sc["inputs"]] + [rel(dest / p) for p in sc["replay"]["files"]])
+    records = []
+    for basis in ANSWER_BASES:
+        if basis == "sole_known" and sole_known_problems(persons):
+            print("sole_known: no record (" + "; ".join(sole_known_problems(persons)) + ")")
+            continue
+        ev = evidence + ([next(e for e in persons["evidence"] if e.endswith("/scores.json"))] if basis else [])
+        records.append({"predicates": persons["predicates"], "uses": ["attributes"], "basis": basis, "callGroup": "people",
+                        "model": persons["model"], "adapter": persons["adapter"], "batching": persons["batching"],
+                        "promptVersion": persons["promptVersion"], "registryVersion": persons["registryVersion"],
+                        "gate": "13d answers on linked questions (main, astra, busy; P/F/W, 3 samples, blind Opus judge; one "
+                                "sample waived by the author) and Spike G with the feature on (main, astra)"
+                                + ("; 13a.2 sole_known ≥ 90%, reads r1, r2" if basis else ""),
+                        "evidence": sorted(ev), "recordedAt": sc["date"],
+                        "answerModels": [sc["model"]], "answerPromptVersion": sc["replay"]["answerPromptVersion"]})
+    print(json.dumps(records, indent=1, ensure_ascii=False))
+    if a.write and records:
+        f = json.loads(RECORDS.read_text())
+        f["records"] = [r for r in f["records"] if not (r["model"] == sc["model"] and r["uses"] == ["attributes"])] + records
+        RECORDS.write_text(json.dumps(f, indent=2, ensure_ascii=False) + "\n")
+        print(f"wrote {len(records)} record(s)")
+
+
+def verify_answer_record(r, reg):
+    """Why a shipped attributes record's evidence doesn't hold up ([] = it does)."""
+    scores = next((REPO / e for e in r["evidence"] if e.endswith("/scores-13d.json")), None)
+    if scores is None or not scores.exists():
+        return ["no scores-13d.json in the evidence"]
+    missing = [e for e in r["evidence"] if not (REPO / e).exists()]
+    if missing:
+        return [f"missing {m}" for m in missing]
+    sc = json.loads(scores.read_text())
+    probs = [f"{p}: digest differs from scores-13d.json" for p, d in sc["inputs"].items() if sha(R13D / p) != d]
+    probs += [f"replay {p}: digest differs" for p, d in sc["replay"]["files"].items() if sha(scores.parent / p) != d]
+    listed = {str((R13D / p).relative_to(REPO)) for p in sc["inputs"]} | {str((scores.parent / p).relative_to(REPO)) for p in sc["replay"]["files"]}
+    if not listed <= set(r["evidence"]):
+        probs.append("the record's evidence isn't what the scores were computed from")
+    rp, manifests = replay_problems(sc["engine"], sc["model"], scores.parent / "replay")
+    probs += rp
+    if manifests.get("answers", {}).get("answerPromptVersion") != r.get("answerPromptVersion"):
+        probs.append("answer prompt version isn't the replay's")
+    if r.get("answerModels") != [sc["model"]]:
+        probs.append(f"answer models {r.get('answerModels')}")
+    marks, changes = replay_marks(sc["engine"], scores.parent / "replay")
+    if changes != sc.get("marksChanged"):
+        probs.append("the replay's mark changes aren't the scored ones")
+    gates = answer_gates(sc["engine"], marks)
+    for gate, ok in gates.items():
+        bad = [k for k, v in ok.items() if not v]
+        if bad:
+            probs.append(f"{gate}: {', '.join(bad)} (recomputed)")
+    persons = persons_record(r["model"])
+    if persons is None or any(persons[k] != r[k] for k in ("model", "adapter", "batching", "promptVersion", "registryVersion", "predicates")):
+        probs.append("not on the facts key of a shipped persons record")
+    elif r.get("basis") == "sole_known":
+        probs += sole_known_problems(persons)
+    elif r.get("basis"):
+        probs.append(f"no 13d gate for basis {r['basis']}")
+    return probs
+
+
 def cmd_verify(a):
     reg = registry()
     recs = json.loads(RECORDS.read_text())["records"]
     bad = 0
     for r in recs:
-        probs = verify_record(r, reg)
+        probs = verify_answer_record(r, reg) if r["uses"] == ["attributes"] else verify_record(r, reg)
         bad += bool(probs)
         print(f"{r['callGroup']} {r['uses']} {r['model']}: " + ("ok" if not probs else "; ".join(probs)))
     print(f"qualify.py verify: {len(recs)} record(s), {bad} failing")
@@ -617,7 +842,19 @@ def main():
     r.add_argument("--port-fidelity")
     r.add_argument("--write", action="store_true")
     sub.add_parser("verify")
+    s13 = sub.add_parser("answer-scores")
+    s13.add_argument("--engine", required=True)
+    s13.add_argument("--model", required=True)
+    s13.add_argument("--replay", required=True)
+    s13.add_argument("--out", required=True)
+    r13 = sub.add_parser("answer-records")
+    r13.add_argument("scores")
+    r13.add_argument("--write", action="store_true")
     a = ap.parse_args()
+    if a.cmd == "answer-scores":
+        return cmd_answer_scores(a)
+    if a.cmd == "answer-records":
+        return cmd_answer_records(a)
     if a.cmd == "scores":
         return cmd_scores(a)
     if a.cmd == "records":

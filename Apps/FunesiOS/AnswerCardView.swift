@@ -44,6 +44,60 @@ struct SourceNumber: View {
     }
 }
 
+/// **Not <name>** and **Not this**, one button per target the Mac sent, labelled as the Mac labels them. Not this
+/// rejects the fact for every memory, and its undo is on the Mac, so it asks first; a kind this build doesn't know isn't
+/// shown.
+struct FactsCorrectionButtons: View {
+    let targets: [FactsCorrectionTarget]
+    let correct: (FactsCorrectionTarget) -> Void
+    @State private var confirming: FactsCorrectionTarget?
+
+    var body: some View {
+        ForEach(targets.filter { $0.what == .name || $0.what == .fact }, id: \.self) { t in
+            Button(t.label ?? String(localized: "Not this"), role: t.what == .name ? nil : .destructive) {
+                if t.what == .fact { confirming = t } else { correct(t) }
+            }
+        }
+        .confirmationDialog(String(localized: "Mark this as wrong for every memory?"),
+                            isPresented: Binding(get: { confirming != nil }, set: { if !$0 { confirming = nil } }),
+                            titleVisibility: .visible, presenting: confirming) { t in
+            Button(t.label ?? String(localized: "Not this"), role: .destructive) { correct(t) }
+        } message: { _ in
+            Text("Funes stops using it for every memory. You can undo it on your Mac.")
+        }
+    }
+}
+
+/// What an inferred claim rests on that its quote doesn't say, and its corrections (UX: iPhone ▸ Search, v0.10).
+struct InferredSheet: View {
+    let claim: MemoryAnswerResult.Claim
+    let correct: (FactsCorrectionTarget) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section { Text(claim.text) }
+                if let why = claim.why { Section("What Funes inferred") { Text(why) } }
+                if let targets = claim.corrections, !targets.isEmpty {
+                    Section {
+                        FactsCorrectionButtons(targets: targets) { t in
+                            dismiss()
+                            correct(t)
+                        }
+                    } footer: {
+                        Text("A correction tied to a memory corrects only that memory; Not this corrects the fact everywhere.")
+                    }
+                }
+            }
+            .navigationTitle(AnswerWording.inferred)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
+        .presentationDetents([.medium])
+    }
+}
+
 /// The answer card: Reading N results… with Cancel, the answer as on the Mac, no answer, or a
 /// failure. The results stay below.
 struct AnswerCardView: View {
@@ -51,6 +105,8 @@ struct AnswerCardView: View {
     let model: PhoneModel
     /// A number was tapped: open that memory with its quote.
     let open: (AnswerSource) -> Void
+    /// The inferred claim whose sheet is open.
+    @State private var inferred: MemoryAnswerResult.Claim?
 
     var body: some View {
         switch search.answer {
@@ -111,6 +167,15 @@ struct AnswerCardView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(claim.text).fontWeight(index == 0 ? .semibold : .regular)
                     HStack(spacing: 6) {
+                        if claim.inferred == true {
+                            // The Mac marked it: what it rests on and its corrections are a tap away.
+                            Button { inferred = claim } label: {
+                                Text(AnswerWording.inferred).font(.caption.weight(.medium)).foregroundStyle(.secondary)
+                                    .underline(pattern: .dot)
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityHint(Text(claim.why ?? ""))
+                        }
                         ForEach(claim.citations, id: \.self) { citation in
                             if let number = sources.firstIndex(of: citation.id).map({ $0 + 1 }) {
                                 // A button, not a link: a link would make the whole row one tap.
@@ -129,6 +194,7 @@ struct AnswerCardView: View {
                 .accessibilityElement(children: .contain)
             }
             VStack(alignment: .leading, spacing: 2) {
+                if let note = result.note { Text(note) }
                 Text(AnswerWording.footer(result, results: results))
                 ForEach(AnswerWording.notes(result), id: \.self) { Text($0) }
             }
@@ -136,6 +202,15 @@ struct AnswerCardView: View {
             Button("Clear") { search.clearAnswer() }.font(.subheadline).buttonStyle(.borderless)
         }
         .padding(.vertical, 4)
+        .sheet(item: Binding(get: { inferred.map(InferredClaim.init) }, set: { inferred = $0?.claim })) { item in
+            InferredSheet(claim: item.claim) { target in Task { await search.correct(target) } }
+        }
+    }
+
+    /// A claim as a sheet's item.
+    private struct InferredClaim: Identifiable {
+        let claim: MemoryAnswerResult.Claim
+        var id: Int { claim.hashValue }
     }
 
     private func title(_ id: UUID) -> String { search.results.first { $0.id == id }?.title ?? "" }
