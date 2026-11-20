@@ -539,9 +539,11 @@ final class UIReview: NSObject, NSApplicationDelegate {
             running.finishedAt = Date()
             running.ended = "done"
             model.factsBackfill = FactsBackfill.Progress(state: running, done: 365)
-            model.factsCapWait = .total
+            model.factsCapWait = [.total]
             await show(.facts, "ai-features-facts-cap")
-            model.factsCapWait = nil
+            model.factsCapWait = [.lowPriority]
+            await show(.facts, "ai-features-facts-cap-share")
+            model.factsCapWait = []
             model.factsBackfill = nil
             ai.setFactsChoice(ModelChoice(account: "claude-code", model: "claude-opus-5-5"))
             await show(.facts, "ai-features-facts-opus")

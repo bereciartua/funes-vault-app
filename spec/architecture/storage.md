@@ -427,7 +427,8 @@ CREATE TABLE facts_asked (                               -- v11: what each model
 -- processing_job gains generation INTEGER NOT NULL DEFAULT 0 (v11): bumped by every enqueue of a facts job, so one
 -- asked for while it runs goes back to the queue when it finishes, whatever its outcome. It gains exempt_version
 -- INTEGER (v12): a job of the first backfill, the memory version whose full read skips the daily cap; cleared when
--- the job ends.
+-- the job ends. It gains normal_version INTEGER (v13): the version an insert or a title or body edit asked it to read;
+-- only a first read of that version is normal work, everything else the job does is in the cap's low-priority share.
 
 CREATE TABLE manual_override (
   id          TEXT PRIMARY KEY,
@@ -511,6 +512,7 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);  -- schema versio
 - `v10_alias_provenance` (v0.10, Phase 13a.2; [memory processing §11.3](../domain/memory-processing.md#113-the-facts-task)): `alias_evidence` gains `call_group` (which call gave the alias, so re-reading one call group replaces only that group's evidence: the people call's named things and the work call's employers can be the same organization), `source` (`model` · `code`: names found without a model, which never reach a roster), and `read_at` and `first_read_at` (when a reading was made, and when the memory version first gave the alias: a one-word name read before a namesake was known by it reads as ambiguous). The key gains `call_group`, so the table is rebuilt. `entity_alias` gains `confirmed_at`: when the user confirmed or typed the alias, which dates it the same way. Nothing to backfill: it has no rows before the first backfill.
 - `v11_facts_asked` (v0.10, Phase 13a.2; [memory processing §11.3](../domain/memory-processing.md#113-the-facts-task)): the table `facts_asked`, what each model reading was asked knowing, so reconciliation asks again only what changed and revalidates the rest in code; `processing_job.generation`. Since the backfill step, `facts_asked` rows are exported with their memories (§5.2). Nothing to backfill.
 - `v12_facts_backfill` (v0.10, Phase 13a.2; [memory processing §11.3](../domain/memory-processing.md#113-the-facts-task), FR-F-03): `processing_job.exempt_version`, the first backfill's marked jobs; `facts_asked` rows other than `read` are deleted, since they held names and labels as plain text (now digests). Nothing to backfill.
+- `v13_facts_priority` (v0.10, before 13e; [memory processing §11.3](../domain/memory-processing.md#113-the-facts-task)): `processing_job.normal_version`, for low-priority work's share of the daily cap. Nothing to backfill: existing jobs are low-priority.
 - Before running pending migrations: make an online backup to `Backups/pre-<migration>-<date>.sqlite`.
 - Each migration has a test: open a fixture database created by the previous version, migrate it, and check the data and invariants.
 - Downgrades aren't supported. An older app version that finds a newer schema refuses to open the vault, shows "Update Funes", and never writes to it.

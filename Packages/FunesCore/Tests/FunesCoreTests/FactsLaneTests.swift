@@ -16,7 +16,7 @@ import Testing
         queue = ProcessingQueue(store: v.store, activity: InMemoryActivityLog(), launchedAt: t0, ungatedFacts: true)
     }
 
-    func enqueueFacts(_ memory: UUID, version: Int = 1, group: String = "people", reason: ProcessingQueue.FactsReason = .version,
+    func enqueueFacts(_ memory: UUID, version: Int = 1, group: String = "people", reason: ProcessingQueue.FactsReason = .version(text: true),
                       at: Date = t0) async throws {
         try await v.store.writer.write { db in
             try ProcessingQueue.enqueueFacts(db, memoryID: memory, version: version, group: group, reason: reason, now: at)
@@ -157,7 +157,7 @@ import Testing
             try await store.writer.write { db in
                 let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [memory]) ?? 1
                 for g in groups {
-                    try ProcessingQueue.enqueueFacts(db, memoryID: UUID(uuidString: memory)!, version: version, group: g, reason: .version, now: Date())
+                    try ProcessingQueue.enqueueFacts(db, memoryID: UUID(uuidString: memory)!, version: version, group: g, reason: .version(text: true), now: Date())
                 }
             }
             try await drain()
@@ -379,7 +379,7 @@ import Testing
         let m1 = try t.memory("My manager called.")
         let lane = Lane(extractor(Down()), store: v.store)
         try await v.store.writer.write { db in
-            try ProcessingQueue.enqueueFacts(db, memoryID: UUID(uuidString: m1)!, version: 1, group: t.people, reason: .version, now: Date())
+            try ProcessingQueue.enqueueFacts(db, memoryID: UUID(uuidString: m1)!, version: 1, group: t.people, reason: .version(text: true), now: Date())
         }
         let job = try #require(try await lane.queue.claim(now: Date()))
         let outcome = try await lane.worker.process(job)

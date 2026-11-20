@@ -70,7 +70,7 @@ import Testing
     @Test func aFactsJobIsAdmittedOnlyWhileLearningIsOnAndTheLaneIsOpen() async throws {
         let memory = UUID()
         try await v.store.writer.write { db in
-            try ProcessingQueue.enqueueFacts(db, memoryID: memory, version: 1, group: groups[0], reason: .version, now: t0)
+            try ProcessingQueue.enqueueFacts(db, memoryID: memory, version: 1, group: groups[0], reason: .version(text: true), now: t0)
         }
         #expect(try await queue.claim(now: t0) == nil)                 // learning off
         lane.setLearning(true)
@@ -81,7 +81,7 @@ import Testing
         #expect(job.kind == .facts)
         // One at a time: another facts job waits until this one's outcome is recorded.
         try await v.store.writer.write { db in
-            try ProcessingQueue.enqueueFacts(db, memoryID: UUID(), version: 1, group: groups[0], reason: .version, now: t0)
+            try ProcessingQueue.enqueueFacts(db, memoryID: UUID(), version: 1, group: groups[0], reason: .version(text: true), now: t0)
         }
         #expect(try await queue.claim(now: t0) == nil)
         try await queue.finish(job, .done(engine: nil), now: t0)
@@ -93,7 +93,7 @@ import Testing
         lane.setLearning(true)
         for g in groups {
             try await v.store.writer.write { db in
-                try ProcessingQueue.enqueueFacts(db, memoryID: UUID(), version: 1, group: g, reason: .version, now: t0)
+                try ProcessingQueue.enqueueFacts(db, memoryID: UUID(), version: 1, group: g, reason: .version(text: true), now: t0)
             }
         }
         let job = try #require(try await queue.claim(now: t0))

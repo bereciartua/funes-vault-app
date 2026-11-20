@@ -88,6 +88,12 @@ enum Schema {
             // phrase or name with no record is asked again when due, under the cap).
             try db.execute(sql: "DELETE FROM facts_asked WHERE mention_kind != 'read'")
         }
+        // The low-priority share of the cap (memory processing §11.3): a facts job carries the version a new or changed
+        // memory's text asked it to read; its first read is normal work, everything else the job does is low-priority.
+        // Nothing to backfill: existing jobs are low-priority.
+        migrator.registerMigration("v13_facts_priority") { db in
+            try db.execute(sql: "ALTER TABLE processing_job ADD COLUMN normal_version INTEGER")
+        }
         return migrator
     }
 

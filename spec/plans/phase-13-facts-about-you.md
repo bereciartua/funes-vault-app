@@ -216,7 +216,7 @@
   - **Replays** (`facts_harness.sh` mixed, main, astra, and mixed's schedule), against main with #114: score.py reports and score_facts.py output identical; calls 181, 122 and 143, Swift's schedule on mixed 180; every line identical up to list order. The harness adds memories with learning off and starts no backfill, so nothing it reads is exempt or caught up.
   - **Not yet:**
     - The finish notification and People & history's summary ("Funes found 23 people…"): 13c's section, and Settings ▸ Notifications needs a switch for it.
-    - Headroom for low-priority Facts work under the cap: a catch-up after Remove (about 730 calls) takes the whole cap for about three days, so captures fall back to on-device meanwhile. For the author to decide (a Facts share of the cap, like the agents').
+    - ~~Headroom for low-priority Facts work under the cap~~: settled before 13e (20 November 2026): see "Low-priority work's share of the cap" under 13e.
     - Cost figures for models with no measurement (only Haiku 5.5 is measured; Opus 5.5 comes with its records).
     - Accepted: turning learning off in the instant between recording the exempt request and sending it spends that exemption with nothing sent (it fails closed: the read goes on under the cap).
     - A pipeline revision bump (validation, the apply) doesn't re-read: readings under an earlier qualified key are used until their group is re-read (§11.10).
@@ -480,8 +480,7 @@
   - **Deferred:** the Opus runs O1–O4 (about 1,590 calls). Opus has no record and isn't offered. When they run, they need
     the freeze to hold (`facts_freeze.sh check`). Otherwise they need fresh blind sets.
   - **Carried forward:**
-    - **A Facts share of the cap**, the backfill step's open decision. A catch-up after Remove takes the whole cap for
-      about three days.
+    - ~~**A Facts share of the cap**~~: settled before 13e, see "Low-priority work's share of the cap" under 13e.
     - **Activity's wording for the facts events**, which show their raw names today.
     - **Two accepted privacy residuals (§11.9), both the author's decision:**
       - a link dropped for a hidden first-name sharer withholds a `named` decision in that vault only;
@@ -614,6 +613,10 @@
   - **Records:** `qualify.py answer-scores`/`answer-records` wrote Haiku's *attributes* records (the person pool, unscoped and `sole_known`, the latter also on 13a.2's sole_known measure) for answers by `claude-code/claude-haiku-5-5` at `a13d-1`, on the facts key of the persons record. Their evidence includes a replay of both gates from the response cache at the merge with 13c: every request answered from the cache on a clean tree, so the shipped code sends exactly what Haiku answered; the one difference, a claim the shipped code also marks inferred (s11, judged unsupported), is listed and scored with the shipped marks. `qualify.py verify` and `FactsGateEvidence` check them. Terra isn't run or recorded; the Search answers disclosure says what's sent while learned facts reach answers.
 
 ## 13e Two weeks of use
+- [x] **Low-priority work's share of the cap** (before the two weeks, 20 November 2026; memory processing §11.3 "Cost and the cap"): a catch-up after Remove (about 730 calls) took the whole cap for about three days, so captures fell back to on-device. Now catch-up, re-reads and reconciliation use at most 30% of the day (`CloudRequestCap.lowPriorityShare`, a constant beside the agents' 40%; not a setting), then wait for the next day (`cap_share`), while captures and new and changed memories' first reads use the rest. Only a first read of new text is normal (`processing_job.normal_version`, v13), decided at each request for the version read then. The share's refusal isn't the day's notice. Claim order: first reads, the backfill's marked jobs, low-priority work, the sweep. A parked job due again while the share is used waits without another pass. The exemption is untouched (its retry counts as normal). The Facts page's waiting line and Privacy & Limits' count read today's counts (UI review scene `ai-features-facts-cap-share`).
+  - **Tests:** `FactsCapShareTests` (17): the arithmetic (30%, the notice, both shares for an agent's low-priority call, the agents' share unchanged, concurrent requests at the boundary, a stored day without the field), a 730-call catch-up on a cap of 300 (90 sent, 640 waiting, a capture and a new memory still go to the cloud that day, 90 more the next day with no second pass), a raised cap waking them, what counts as low (catch-up, re-reads, reconciliation; an edit decided at the request, also mid-request), archive and category changes, an edit un-parking a job, a first read surviving a sensitivity change, claim order, wait codes, the cap used up after jobs park, the exempt backfill and its retry, the status, v13.
+  - **Reviews:** GPT-6-Astra and Fable 5.2 on the design (r2 taken: normal by text commit and version rather than an enqueue flag, priority per request, claim order, refusal precedence and no notice, no daily second pass, status from counts) and on the diff (taken: priority by version rather than scope, a non-text commit on a finished first read, the second-pass shortcut for every cap code and only for cloud models, the string catalog, spec wording, more tests).
+  - **Accepted:** existing jobs are low after v13 (one user; no Facts jobs before 13e). A commit made while learning is off isn't recorded on a queued job (sorted as a first read, counted low). Imports' first reads are normal work.
 - [ ] **Review a fixed sample after two weeks:** 30 links, 10 timeline answers, and every `sole_known` link on the author's vault, reviewed privately. Any wrong one turns that predicate's use, and everything downstream of it, off until fixed.
 - [ ] **Exit:** the sample passes, or the failing uses are off and a fix is planned. The default stays off (ADR-0032 decision 3); changing it would be an ADR amendment.
 

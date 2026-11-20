@@ -87,11 +87,16 @@ struct PrivacyPane: View {
         }
     }
 
-    /// "Today: 12 of 300 (agents 3 of 120)." (ADR-0022)
+    /// "Today: 12 of 300, agents 3 of 120." With Learn from memories on, also Facts' catch-up share (memory processing
+    /// §11.3): "…, Facts catch-up 0 of 90." (ADR-0022)
     private var capLine: String {
         let cap = settings.dailyCap
-        let agents = Int((Double(cap) * CloudRequestCap.agentShare).rounded(.down))
+        let agents = CloudRequestCap.agentLimit(for: cap)
         let total = today?.total ?? 0, byAgents = today?.agents ?? 0
-        return String(localized: "Today: \(total) of \(cap), agents \(byAgents) of \(agents). Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow.")
+        guard settings.factsLearn else {
+            return String(localized: "Today: \(total) of \(cap), agents \(byAgents) of \(agents). Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow.")
+        }
+        let share = CloudRequestCap.lowPriorityLimit(for: cap), byFacts = today?.lowPriority ?? 0
+        return String(localized: "Today: \(total) of \(cap), agents \(byAgents) of \(agents), Facts catch-up \(byFacts) of \(share). Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow.")
     }
 }
