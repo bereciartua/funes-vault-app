@@ -299,7 +299,9 @@ final class AppModel {
             lane.setLearning(self.modelSettings.factsLearn)
             lane.reconfigured()
             if self.processingStarted { self.processing.factsSettingsChanged() }
+            self.applySearchFacts()
         }
+        applySearchFacts()
         self.modelSettings.dailyCapChanged = { [weak self] in
             guard let self, self.processingStarted else { return }
             self.processing.capChanged()
@@ -351,6 +353,50 @@ final class AppModel {
     // MARK: Refresh
 
     /// Coalesces bursts of changes (an import, a bulk apply) into one read.
+    /// Learned facts in Vault search (memory processing §4): on while *Use in search and answers* is on, with each call
+    /// group's Facts engine as the Facts task would use it now (what's on is then read from the records and off-switches
+    /// at each search), your names, and the cloud limit. Off: search is exactly as without Facts. A settings change takes
+    /// the old configuration off at once; the new one goes on once your names are read (not at all if they can't be),
+    /// and only if nothing changed meanwhile.
+    func applySearchFacts() {
+        let search = services.search
+        searchFactsGeneration += 1
+        let generation = searchFactsGeneration
+        if let override = searchFactsOverride {
+            search.facts = override
+            return
+        }
+        guard modelSettings.factsUse else {
+            search.facts = nil
+            return
+        }
+        let resolution = modelSettings.factsResolution
+        var engines: [String: FactsEngine] = [:]
+        for offer in [resolution.fallback, resolution.chosen].compactMap({ $0 }) {
+            for group in offer.groups { engines[group] = offer.engine }      // the chosen one wins where it qualified
+        }
+        let limit = modelSettings.cloudLimit, profiles = services.profiles
+        if let current = search.facts, current.engines != engines || current.cloudLimit != limit { search.facts = nil }
+        Task {
+            let aliases = try? await profiles.profile().factsAliases
+            guard generation == self.searchFactsGeneration else { return }     // a later change decides
+            guard let aliases else {
+                search.facts = nil                  // your names unknown: someone could be matched as you
+                return
+            }
+            if search.facts.map({ $0.engines != engines || $0.userAliases != aliases || $0.cloudLimit != limit }) ?? true {
+                search.facts = FactsSearchConfig(engines: engines, userAliases: aliases, cloudLimit: limit)
+            }
+            // Ready before the next search: the index is rebuilt here, off the main actor, when anything changed.
+            await Task.detached(priority: .utility) { await search.prepareFacts() }.value
+        }
+    }
+
+    /// Bumped by each `applySearchFacts`, so an older call's late completion changes nothing.
+    @ObservationIgnored private var searchFactsGeneration = 0
+    /// The UI-review build's learned facts in search, whatever the settings say.
+    @ObservationIgnored var searchFactsOverride: FactsSearchConfig?
+
     func scheduleRefresh() {
         guard refreshTask == nil else {
             refreshPending = true
@@ -371,6 +417,8 @@ final class AppModel {
     func refresh() async {
         // Taken first: a change that arrives while this reads schedules another refresh.
         let storeDidChange = storeChanged
+        // Your names may have changed, and the facts index may need building again (debounced with the refresh).
+        if storeDidChange { applySearchFacts() }
         storeChanged = false
         let now = Date()
         self.now = now

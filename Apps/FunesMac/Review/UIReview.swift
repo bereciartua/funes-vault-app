@@ -203,6 +203,29 @@ final class UIReview: NSObject, NSApplicationDelegate {
                                              results: model.vault.memories.count)
                 }
             }
+            // Why lines (Phase 13b): with learned facts in use, a search for Maria finds the memory that only says
+            // "my sister", with its why line; Ana, a friend, and a sister Funes can't tell apart from her show the others.
+            let store = model.services.store
+            let learned: [(String, String, String?, String, String)] = [
+                ("Maria is my sister", "We grew up in Porto together.", "Maria", "sister", "Maria is my sister"),
+                ("My sister drinks her mate bitter", "Every morning, with no sugar, from the gourd she brought back.", nil, "", ""),
+                ("Ana and the climbing gym", "Ana is my friend from the climbing gym; she drinks matcha.", "Ana", "friend", "Ana is my friend"),
+            ]
+            for (title, body, person, word, quote) in learned {
+                if let m = try? store.createMemory(MemoryDraft(title: title, body: body, kind: .fact, categoryKeys: ["personal_preferences"],
+                                                               sensitivity: .low), now: Date().addingTimeInterval(-86_400)) {
+                    try? store.reviewLearn(memoryID: m.id, person: person, word: word, quote: quote)
+                }
+            }
+            model.searchFactsOverride = .review()
+            model.applySearchFacts()
+            model.vault.query = "Maria"
+            await model.vault.load()
+            await mainScene("vault-search-why") {
+                model.vault.selection = model.vault.memories.first(where: { $0.title == "My sister drinks her mate bitter" }).map { [$0.id] } ?? []
+            }
+            model.searchFactsOverride = nil
+            model.applySearchFacts()
             model.vault.query = ""
             await model.vault.load()
             // A tidy-up's automatic change in a memory's History, opened (FR-V-12).

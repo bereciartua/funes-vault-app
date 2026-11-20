@@ -66,6 +66,10 @@ final class VaultModel: AnswerCardSource {
     private(set) var memories: [Memory] = []
     /// While searching, each shown row's snippet: the passage that matches and its matches (FR-V-17).
     private(set) var snippets: [UUID: Snippet] = [:]
+    /// With learned facts in use: how a link admitted each result, and its why line (memory processing §4).
+    private(set) var admissions: [UUID: SearchAdmission] = [:]
+    /// The results in plain search's own order (without learned facts): what an answer reads until 13d.
+    @ObservationIgnored private var plainOrder: [UUID] = []
     /// Whether the last load finished; until then the list doesn't claim to be empty.
     private(set) var loaded = false
     var selection = Set<UUID>() {
@@ -174,7 +178,9 @@ final class VaultModel: AnswerCardSource {
         // Any Ask, automatic or not, is this search's one: none follows on its own after it.
         autoAsked = AutoKey(query: query, filter: filter)
         cancelAutoAsk()
-        let sent = memories.prefix(SearchAnswerer.memoryCount)
+        // Plain search's top results (the list itself when learned facts changed nothing), never a selection facts shaped.
+        let byID = Dictionary(memories.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let sent = plainOrder.compactMap { byID[$0] }.prefix(SearchAnswerer.memoryCount)
         let ids = sent.map(\.id)
         answerBasis = Dictionary(sent.map { ($0.id, $0.version) }, uniquingKeysWith: { a, _ in a })
         let total = memories.count
@@ -182,7 +188,7 @@ final class VaultModel: AnswerCardSource {
         answer = .reading(count: min(ids.count, answers.readsAtMost))
         answerTask = Task { [weak self] in
             do {
-                let result = try await answers.answer(query, ids: ids)
+                let result = try await answers.answer(query, ids: ids, filter: filter)
                 guard !Task.isCancelled, let self, self.listedQuery == query, self.listedFilter == filter else { return }
                 self.answer = .answered(result, results: total, engine: engine, limit: limit)
             } catch is CancellationError {
@@ -378,6 +384,8 @@ final class VaultModel: AnswerCardSource {
             let first = try await Self.snippets(for: found.prefix(Self.snippetPage), query: query, search: services.search)
             guard !Task.isCancelled, stamp == loadStamp, query == self.query, filter == self.filter else { return }
             memories = found
+            admissions = Dictionary(hits.compactMap { h in h.admission.map { (h.memoryID, $0) } }, uniquingKeysWith: { a, _ in a })
+            plainOrder = hits.filter { $0.plainRank != nil }.sorted { $0.plainRank! < $1.plainRank! }.map(\.memoryID)
             listedQuery = query
             listedFilter = filter
             listing += 1
@@ -395,6 +403,27 @@ final class VaultModel: AnswerCardSource {
         } catch {
             loaded = true
         }
+    }
+
+    /// A result's why line, while searching with learned facts.
+    func whyLine(_ id: UUID) -> WhyLine? { listedQuery.isEmpty ? nil : admissions[id]?.whyLine }
+
+    /// **Not <name>** from a why line: this memory isn't about them. Applies at once; the list reloads, and the result
+    /// drops out if nothing else admits it.
+    func reject(_ target: WhyLine.NotName) async {
+        guard let config = services.search.facts else { return }
+        let store = services.store, activity = services.activity
+        try? await Task.detached(priority: .userInitiated) {
+            _ = try store.rejectLink(memoryID: target.memoryID, entity: target.entity, config: config, activity: activity)
+        }.value
+        await load()
+    }
+
+    /// **Not this** from a why line: the fact is wrong, for every memory (asked first, in the view).
+    func rejectFact(_ factID: String) async {
+        let store = services.store, activity = services.activity
+        try? await Task.detached(priority: .userInitiated) { try store.rejectFact(factID: factID, activity: activity) }.value
+        await load()
     }
 
     /// A row came into view: its page's snippets, if not asked for yet.

@@ -10,6 +10,8 @@ struct VaultView: View {
     @State private var creating = false
     @State private var managingCategories = false
     @State private var deleteNow: UUID?
+    /// A why line's **Not this**, asked first: it rejects the fact for every memory.
+    @State private var notThis: WhyLine?
 
     private var vault: VaultModel { model.vault }
 
@@ -57,6 +59,15 @@ struct VaultView: View {
             Button(String(localized: "Delete Now"), role: .destructive) { Task { await vault.perform(.deleteNow, on: [id]) } }
         } message: { _ in
             Text(String(localized: "It's removed for good, with its history. This can't be undone."))
+        }
+        .confirmationDialog(notThis.map(WhyLineText.notThisQuestion) ?? "",
+                            isPresented: Binding(get: { notThis != nil }, set: { if !$0 { notThis = nil } }),
+                            presenting: notThis) { line in
+            Button(String(localized: "Not This", comment: "Why line correction: the fact is wrong")) {
+                if let id = line.notThis { Task { await vault.rejectFact(id) } }
+            }
+        } message: { _ in
+            Text(String(localized: "Funes stops using it in every memory."))
         }
     }
 
@@ -169,7 +180,10 @@ struct VaultView: View {
                     }
                     ForEach(vault.memories) { memory in
                         MemoryRow(memory: memory, model: model, now: model.now, snippet: vault.snippets[memory.id],
-                                  source: vault.sourceNumber(memory.id), unsaved: vault.draftIDs.contains(memory.id))
+                                  source: vault.sourceNumber(memory.id), unsaved: vault.draftIDs.contains(memory.id),
+                                  whyLine: vault.whyLine(memory.id),
+                                  notName: { target in Task { await vault.reject(target) } },
+                                  notThis: { notThis = vault.whyLine(memory.id) })
                             .tag(memory.id)
                             .onAppear { vault.rowAppeared(memory.id) }
                             .onDisappear { vault.rowDisappeared(memory.id) }
@@ -196,6 +210,11 @@ struct VaultView: View {
             Button(String(localized: "Restore")) { Task { await vault.perform(.restore, on: [memory.id]) } }
             Button(String(localized: "Delete"), role: .destructive) { Task { await vault.perform(.delete, on: [memory.id]) } }
         case .active:
+            if let line = vault.whyLine(memory.id) {
+                WhyLineCorrections(line: line, notName: { target in Task { await vault.reject(target) } },
+                                   notThis: { notThis = line })
+                Divider()
+            }
             Button(String(localized: "Tidy Up")) {
                 vault.selection = [memory.id]
                 Task {
@@ -270,6 +289,10 @@ struct MemoryRow: View {
     var source: Int?
     /// It has unsaved edits.
     var unsaved = false
+    /// While searching with learned facts: why a link admitted it, and its corrections.
+    var whyLine: WhyLine?
+    var notName: (WhyLine.NotName) -> Void = { _ in }
+    var notThis: () -> Void = {}
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -298,6 +321,10 @@ struct MemoryRow: View {
                 }
                 preview
                     .font(.callout).foregroundStyle(.secondary).lineLimit(1)
+                if let whyLine {
+                    WhyLineRow(line: whyLine, notName: notName, notThis: notThis)
+                        .accessibilityLabel(String(localized: "Why: \(WhyLineText.text(whyLine))", comment: "VoiceOver: a result's why line"))
+                }
                 HStack(spacing: 5) {
                     SensitivityBadge(sensitivity: memory.sensitivity)
                     ForEach(memory.categoryKeys.prefix(3), id: \.self) { key in
@@ -315,6 +342,11 @@ struct MemoryRow: View {
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
+        .accessibilityActions {
+            if let whyLine {
+                WhyLineCorrections(line: whyLine, notName: notName, notThis: notThis)
+            }
+        }
     }
 
     private var preview: Text {

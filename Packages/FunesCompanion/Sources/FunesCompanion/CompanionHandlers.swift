@@ -149,8 +149,10 @@ public final class CompanionHandlers: Sendable {
             let automatic = params.automatic == true
             if automatic, !engine.trigger.fires(for: params.query) { throw CompanionError(.askRequired) }
             try Task.checkCancellation()
-            return (engine, try await answers.answer(params.query, ids: params.ids, actor: .device(device), via: .companion,
-                                                     automatic: automatic))
+            // The phone's filters: with learned facts in use, the answer reads only the shown results plain search
+            // also puts in its top results under them (memory processing §11.9; 13d replaces this with its selection).
+            return (engine, try await answers.answer(params.query, ids: params.ids, filter: Self.filter(params.filters),
+                                                     actor: .device(device), via: .companion, automatic: automatic))
         }
         let previous = answering.withLock { inFlight -> Task<(SearchAnswerEngine, SearchAnswer), any Error>? in
             let old = inFlight[device]?.task
@@ -232,9 +234,7 @@ public final class CompanionHandlers: Sendable {
 
     func search(_ params: MemorySearchParams, device: UUID, now: Date) async throws -> MemorySearchResult {
         try params.validate()
-        let filter = MemoryFilter(status: Self.status(params.filters?.status),
-                                  categoryKeys: Set(params.filters?.categories ?? []), kinds: Set(params.filters?.kinds ?? []),
-                                  sensitivities: Set(params.filters?.sensitivities ?? []))
+        let filter = Self.filter(params.filters)
         let hits = try await services.search.vaultSearch(params.query, filter: filter, now: now)
         let offset = params.cursor.flatMap(Self.offset(from:)) ?? 0
         let limit = params.limit ?? 20
@@ -537,6 +537,12 @@ public final class CompanionHandlers: Sendable {
 
     private func agentNames() async throws -> [UUID: String] {
         Dictionary(uniqueKeysWithValues: try await services.agents.agents(includingRemoved: true).map { ($0.id, $0.name) })
+    }
+
+    /// A search's filters as the vault reads them.
+    static func filter(_ f: MemorySearchFilters?) -> MemoryFilter {
+        MemoryFilter(status: status(f?.status), categoryKeys: Set(f?.categories ?? []), kinds: Set(f?.kinds ?? []),
+                     sensitivities: Set(f?.sensitivities ?? []))
     }
 
     static func status(_ status: MemoryStatus?) -> MemoryFilter.StatusFilter {

@@ -81,6 +81,17 @@ public protocol SearchAnswering: Sendable {
     /// `automatic`: asked on its own by a phone (§10.6); the settings are checked again as the
     /// model is chosen, and `askRequired` comes back if this search is now only answered when asked.
     func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via, automatic: Bool) async throws -> SearchAnswer
+    /// The same, with the filters the results were searched with: until 13d, an answer reads only the shown results
+    /// that plain search, without learned facts, puts in its top results under those filters.
+    func answer(_ query: String, ids: [UUID], filter: MemoryFilter?, actor: Actor, via: ActivityEvent.Via,
+                automatic: Bool) async throws -> SearchAnswer
+}
+
+public extension SearchAnswering {
+    func answer(_ query: String, ids: [UUID], filter: MemoryFilter?, actor: Actor, via: ActivityEvent.Via,
+                automatic: Bool) async throws -> SearchAnswer {
+        try await answer(query, ids: ids, actor: actor, via: via, automatic: automatic)
+    }
 }
 
 /// Why an answer failed (§10.5). Each maps to the card's text and a reason code.
@@ -160,13 +171,14 @@ public final class SearchAnswerer: Sendable {
     /// One answer to `query` from the memories `ids` (the search's results as shown, in order).
     /// Cancelling the task ends the call (a subscription CLI's process, an HTTP request). Every
     /// attempt logs one Activity row, whatever ends it.
-    public func answer(_ query: String, ids: [UUID], router: ModelRouter, actor: Actor = .user,
+    /// `filter`: what the results were searched with (the Active scope when nil), for the facts-free selection.
+    public func answer(_ query: String, ids: [UUID], filter: MemoryFilter? = nil, router: ModelRouter, actor: Actor = .user,
                        via: ActivityEvent.Via = .app, now: Date = Date()) async throws -> SearchAnswer {
         let clock = ContinuousClock()
         let start = clock.now
         let progress = Progress()
         do {
-            let answer = try await attempt(query, ids: ids, router: router, now: now, progress: progress, started: start)
+            let answer = try await attempt(query, ids: ids, filter: filter, router: router, now: now, progress: progress, started: start)
             log(.done(answer), progress, actor: actor, via: via, now: now, elapsed: answer.duration)
             return answer
         } catch {
@@ -197,18 +209,23 @@ public final class SearchAnswerer: Sendable {
         var withheld = 0
     }
 
-    private func attempt(_ query: String, ids: [UUID], router: ModelRouter, now: Date, progress: Progress,
+    private func attempt(_ query: String, ids: [UUID], filter: MemoryFilter?, router: ModelRouter, now: Date, progress: Progress,
                          started: ContinuousClock.Instant) async throws -> SearchAnswer {
         guard let provider = router.answerer else { throw SearchAnswerError.provider(.unavailable) }
         progress.engine = ModelRouter.engine(provider)
         let onDevice = provider.locality == .onDevice
         if !onDevice, !SecretScanner.scan([query]).isEmpty { throw SearchAnswerError.secretInSearch }
 
-        // The top results as shown, active and unexpired, re-read as the owner.
+        // The top results as shown, active and unexpired, re-read as the owner. With learned facts in use, only those
+        // plain search would also put in its top results: until 13d's selection (sendable facts only), no fact shapes
+        // which memories an answer reads (memory processing §11.9). Slots aren't refilled.
+        let count = onDevice ? Self.onDeviceMemoryCount : Self.memoryCount
+        let ids = try await search.answerSelection(query, ids: ids, filter: filter ?? MemoryFilter(status: .active),
+                                                   count: count, now: now)
         let found = try store.memories(ids: ids)
         let byID = Dictionary(found.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         let shown = ids.compactMap { byID[$0] }.filter { $0.status == .active && !$0.isExpired(at: now) }
-        var chosen = Array(shown.prefix(onDevice ? Self.onDeviceMemoryCount : Self.memoryCount))
+        var chosen = Array(shown.prefix(count))
         if !provider.locality.isLocal {
             progress.withheld = chosen.filter { !router.cloudLimit.allows($0.sensitivity) }.count
             chosen.removeAll { !router.cloudLimit.allows($0.sensitivity) }

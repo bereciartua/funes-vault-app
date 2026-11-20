@@ -238,6 +238,17 @@
         }
       }
     },
+    "%@ isn't %@?" : {
+      "comment" : "Not this: confirm the fact is wrong",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ isn't %2$@?"
+          }
+        }
+      }
+    },
     "%@ isn't available right now." : {
 
     },
@@ -268,6 +279,17 @@
     },
     "%@ isn't signed in on your Mac." : {
 
+    },
+    "%@ isn't your %@?" : {
+      "comment" : "Not this: confirm the fact is wrong",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ isn't your %2$@?"
+          }
+        }
+      }
     },
     "%@ needs an update on your Mac." : {
 
@@ -493,11 +515,23 @@
 
     },
     "%@ → %@" : {
+      "comment" : "Why line: a timeline answer\nWhy line: the memory's role phrase and who it is",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ → %2$@"
+          }
+        }
+      }
+    },
+    "%@ → %@ (%@)" : {
+      "comment" : "Why line: a timeline answer and why\nWhy line: the memory's role phrase, who it is, and why",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ → %2$@ (%3$@)"
           }
         }
       }
@@ -510,6 +544,28 @@
     },
     "%@'s request waited 15 minutes without an answer." : {
 
+    },
+    "%@, %@" : {
+      "comment" : "Why line: a name and who they are to you",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "%@, %@ (%@)" : {
+      "comment" : "Why line: a name, who they are to you, and why",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@ (%3$@)"
+          }
+        }
+      }
     },
     "%@, %@ and %lld more" : {
       "localizations" : {
@@ -728,6 +784,12 @@
           }
         }
       }
+    },
+    "%@; Funes isn't sure which" : {
+      "comment" : "Why line: several people fit the role"
+    },
+    "%@; Funes isn't sure who" : {
+      "comment" : "Why line: two known people share the name"
     },
     "%@…" : {
 
@@ -1671,6 +1733,9 @@
       }
     },
     "(deleted memory)" : {
+
+    },
+    "(from text you didn't write)" : {
 
     },
     "+%lld" : {
@@ -3123,6 +3188,9 @@
     "Copy the remote token for “%@”?" : {
 
     },
+    "Correct this" : {
+
+    },
     "Correction from %@ · %@" : {
       "localizations" : {
         "en" : {
@@ -4083,6 +4151,9 @@
     "Funes shows the exact change first, backs up the file and never writes the key into it." : {
 
     },
+    "Funes stops using it in every memory." : {
+
+    },
     "Funes was paused" : {
 
     },
@@ -4926,6 +4997,9 @@
     "Mark that you checked this memory today" : {
 
     },
+    "Mark this as wrong?" : {
+
+    },
     "Markdown File…" : {
 
     },
@@ -5392,8 +5466,14 @@
     "None. Add one with Add Account…" : {
 
     },
+    "Not %@" : {
+      "comment" : "Why line correction: this memory isn't about them"
+    },
     "Not Now" : {
 
+    },
+    "Not This" : {
+      "comment" : "Why line correction: the fact is wrong"
     },
     "Not allowed to do this" : {
 
@@ -8815,6 +8895,9 @@
     "Why, as the model put it: “%@”" : {
 
     },
+    "Why: %@" : {
+      "comment" : "VoiceOver: a result's why line"
+    },
     "Window" : {
 
     },
@@ -8975,6 +9058,9 @@
     "a memory" : {
 
     },
+    "a memory says so" : {
+      "comment" : "Why line basis: a timeline answer"
+    },
     "a password or secret" : {
 
     },
@@ -9106,6 +9192,15 @@
     },
     "expiry" : {
 
+    },
+    "from text you didn't write" : {
+
+    },
+    "from the dates" : {
+      "comment" : "Why line basis: a timeline answer"
+    },
+    "from the memory" : {
+      "comment" : "Why line basis"
     },
     "funes-mcp" : {
 
@@ -9284,6 +9379,9 @@
     "one for each memory" : {
 
     },
+    "only %@ Funes knows" : {
+      "comment" : "Why line basis: e.g. only sister Funes knows"
+    },
     "or press %@ in any app" : {
 
     },
@@ -9312,6 +9410,9 @@
           }
         }
       }
+    },
+    "probably" : {
+      "comment" : "Why line basis"
     },
     "pronouns" : {
 
@@ -9364,6 +9465,9 @@
     "the disk image" : {
 
     },
+    "the memory says so" : {
+      "comment" : "Why line basis"
+    },
     "the model isn't available" : {
 
     },
@@ -9412,17 +9516,40 @@
     "via Remote Access" : {
 
     },
+    "with a gap" : {
+      "comment" : "Why line basis: a timeline answer"
+    },
     "yesterday" : {
 
     },
     "yesterday %@" : {
 
     },
+    "you said so" : {
+      "comment" : "Why line basis"
+    },
+    "your %@" : {
+      "comment" : "Why line: e.g. your job"
+    },
+    "your %@ %@ %@" : {
+      "comment" : "Why line: e.g. your job before Initech",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "your %1$@ %2$@ %3$@"
+          }
+        }
+      }
+    },
     "your Mac's Funnel address, such as https://my-mac.tail1234.ts.net" : {
 
     },
     "your name" : {
 
+    },
+    "your only %@" : {
+      "comment" : "Why line basis: e.g. your only sister"
     },
     "· %@" : {
 
