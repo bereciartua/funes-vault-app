@@ -13,6 +13,10 @@ import GRDB
 /// was marked for skips the daily cap; it stops before any request once the backfill is paused, and pauses it when the
 /// engine or the cloud limit isn't the one its estimate showed. Every other call counts against the cap; at the cap a
 /// job waits for the cap's next day.
+///
+/// Only a first read of the version a new or changed text asked for (`ProcessingJob.normalVersion`) is normal work.
+/// Catch-up, re-reads and reconciliation are low-priority: held to `CloudRequestCap.lowPriorityShare`, at which they wait
+/// for the next day (`cap_share`) while new and changed memories are still read under the whole cap.
 public struct FactsQueueWorker: Sendable {
     public let extractor: FactsExtractor
     public var clock: @Sendable () -> Date
@@ -96,6 +100,35 @@ public struct FactsQueueWorker: Sendable {
         }
     }
 
+    /// How urgent each of a job's requests is (memory processing §11.3), asked with the version being read: a first
+    /// read (no model reading of that version yet in the group) of the version a new or changed text asked this job for
+    /// (read from the store then) is normal; reconciliation and re-reads (a reading exists) and anything catch-up queued
+    /// are low-priority.
+    static func priority(_ job: ProcessingJob, group: String, store: VaultStore) -> @Sendable (Int) throws -> CloudRequestCap.Priority {
+        let id = job.id.db, memoryID = job.subject.db
+        return { version in
+            try store.writer.read { db in
+                guard try Int.fetchOne(db, sql: "SELECT normal_version FROM processing_job WHERE id = ?", arguments: [id]) == version
+                else { return .low }
+                let read = try Bool.fetchOne(db, sql: """
+                    SELECT EXISTS (SELECT 1 FROM facts_asked WHERE memory_id = ? AND memory_version = ? AND call_group = ? AND mention_kind = 'read')
+                    """, arguments: [memoryID, version, group]) ?? false
+                return read ? .low : .normal
+            }
+        }
+    }
+
+    /// Which limit a refused call waits on, for the status (`ProcessingQueue.factsCapCodes`): the cap, then the
+    /// low-priority share for low-priority work, then the agents' share. Read with the refusing cap's own limit, so what
+    /// refused it the same day is still used up; nil when nothing is (the day turned).
+    static func capCode(_ cap: CloudRequestCap, lowPriority: Bool, now: Date) async throws -> String? {
+        let day = try await cap.today(now: now)
+        if day.total >= cap.limit { return "cap" }
+        if lowPriority, day.lowPriority >= cap.lowPriorityLimit { return "cap_share" }
+        if day.agents >= cap.agentLimit { return "cap_agents" }
+        return nil
+    }
+
     /// The facts lane's catch-up and re-reads (`FactsBackfill.catchUp`), under the cap. The runner calls it at launch and
     /// on every Facts settings change while learning is on. Returns how many jobs it queued.
     @discardableResult
@@ -129,6 +162,19 @@ public struct FactsQueueWorker: Sendable {
         case let .partial(due): (scope, kind) = (.partial(roles: due.roles, names: due.names), "reconciliation")
         }
         var extractor = self.extractor
+        extractor.priority = Self.priority(job, group: group, store: extractor.store)
+        let exemptRead = exemptVersion != nil && planned.version == exemptVersion && !planned.reread
+        if let last = job.lastError, ProcessingQueue.factsCapCodes.contains(last), !exemptRead, let cap = extractor.router.cap,
+           let model = extractor.router.factsModels[group], !model.locality.isLocal {
+            // Waited on the cap, its code-only links already written: while the cap or the low-priority share is still used
+            // up, low-priority work waits again without another pass (each parked job would otherwise redo one every
+            // day). Coded `cap_share` either way: the status reads today's counts, so a used-up cap still says so.
+            let low = try planned.version.map { try extractor.priority($0) } == .low
+            let now = clock()
+            if low, cap.refusal(try await cap.today(now: now), .user, .low) != nil {
+                return .later(until: cap.nextDay(after: now), code: "cap_share")
+            }
+        }
         if let exemptVersion, !planned.reread {
             // Pause stops a backfill job before its next request, retries included.
             let permit = extractor.permit, lane = extractor.store.factsLane
@@ -164,9 +210,12 @@ public struct FactsQueueWorker: Sendable {
             }
         }
         if let c = r.calls.first, c.outcome == .codeOnly, c.dropped.contains(FactsExtractor.capReached) {
-            // At the daily cap (or the agents' share of it): read when the cap resets (FR-F-03), not counted as an attempt.
+            // At the daily cap, or one of its shares: read when the cap resets (FR-F-03), not counted as an attempt.
             let now = clock()
-            return .later(until: extractor.router.cap?.nextDay(after: now) ?? now.addingTimeInterval(3_600), code: "cap")
+            guard let cap = extractor.router.cap else { return .later(until: now.addingTimeInterval(3_600), code: "cap") }
+            // Nothing used up: the day turned since the refusal, so it's due again now.
+            guard let code = try await Self.capCode(cap, lowPriority: c.lowPriority, now: now) else { return .later(until: now, code: "cap") }
+            return .later(until: cap.nextDay(after: now), code: code)
         }
         if let c = r.calls.first, c.outcome == .codeOnly, c.dropped.contains(FactsExtractor.transient) {
             // Read by the model later: an hour on, not counted as an attempt.

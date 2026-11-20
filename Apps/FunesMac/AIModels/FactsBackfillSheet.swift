@@ -168,13 +168,22 @@ extension AIJobText {
         return String(localized: "Reading your memories: \(p.done) of \(p.total)")
     }
 
-    /// Facts jobs waiting for tomorrow's cap.
+    /// Facts jobs waiting for tomorrow's cap: the whole cap, or low-priority work's share and the agents' share (both
+    /// can wait at once).
     var factsCapStatus: String? {
-        switch model.factsCapWait {
-        case .total?: String(localized: "Waiting: today's \(model.modelSettings.dailyCap) cloud requests are used up. Funes carries on tomorrow.")
-        case .agents?: String(localized: "Waiting: agents' share of today's cloud requests is used up. Memories agents wrote are read tomorrow.")
-        case nil: nil
+        let wait = model.factsCapWait, cap = model.modelSettings.dailyCap
+        if wait.contains(.total) {
+            return String(localized: "Waiting: today's \(cap) cloud requests are used up. Funes carries on tomorrow.")
         }
+        var lines: [String] = []
+        if wait.contains(.lowPriority) {
+            let share = CloudRequestCap.lowPriorityLimit(for: cap)
+            lines.append(String(localized: "Waiting: catching up on older memories can use \(share) of today's \(cap) cloud requests, and it has. New and changed memories are still read; the rest carries on tomorrow."))
+        }
+        if wait.contains(.agents) {
+            lines.append(String(localized: "Waiting: agents' share of today's cloud requests is used up. Memories agents wrote are read tomorrow."))
+        }
+        return lines.isEmpty ? nil : lines.joined(separator: " ")
     }
 
     /// Why Read Existing Memories… can't open now (its help), or nil when it can.
@@ -190,6 +199,6 @@ extension AIJobText {
     var removeMessage: String {
         model.factsBackfill == nil
             ? String(localized: "The facts and corrections you entered yourself stay. Learning turns off; turning it on again learns from new and changed memories.")
-            : String(localized: "The facts and corrections you entered yourself stay. Learning turns off; turning it on again reads your memories again, within today's cloud requests.")
+            : String(localized: "The facts and corrections you entered yourself stay. Learning turns off; turning it on again reads your memories again over the following days, with a share of each day's cloud requests.")
     }
 }

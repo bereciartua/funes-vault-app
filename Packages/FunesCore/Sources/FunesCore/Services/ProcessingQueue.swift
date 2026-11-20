@@ -36,6 +36,11 @@ public struct ProcessingJob: Sendable, Hashable, Identifiable {
     public var generation: Int = 0
     /// A job of the first Facts backfill: the memory version whose full read skips the daily cap (`FactsBackfill`).
     public var exemptVersion: Int?
+    /// A `facts` job: the memory version a new or changed text asked it to read. Only a first read of that version is
+    /// normal work; catch-up, re-reads and reconciliation are low-priority, held to their share of the cap (§11.3).
+    public var normalVersion: Int?
+    /// Why the job last waited or failed (`processing_job.error`), as claimed.
+    public var lastError: String?
 
     /// The facts lane's reconciliation sweep, rather than one memory.
     public var isFactsSweep: Bool { kind == .facts && callGroup == nil }
@@ -44,7 +49,8 @@ public struct ProcessingJob: Sendable, Hashable, Identifiable {
         ProcessingJob(id: try row.requiredUUID("id"), subject: try row.requiredUUID("subject"), kind: try row.required("kind"),
                       state: try row.required("state"), attempts: row["attempts"], engine: row["engine"],
                       notBefore: row["not_before"], createdAt: row["created_at"], memoryVersion: row["memory_version"],
-                      callGroup: row["call_group"], generation: row["generation"] ?? 0, exemptVersion: row["exempt_version"])
+                      callGroup: row["call_group"], generation: row["generation"] ?? 0, exemptVersion: row["exempt_version"],
+                      normalVersion: row["normal_version"], lastError: row["error"])
     }
 }
 
@@ -102,12 +108,17 @@ public final class ProcessingQueue: Sendable {
     public static let factsSweepSubject = UUID(uuidString: "00000000-0000-0000-0000-0000000000f5")!
 
     /// Why a facts job is asked for.
-    public enum FactsReason: Sendable {
-        /// A committed memory version to read: ignored if that version (or a newer one) was already done.
-        case version
-        /// Reconciliation found something to ask again: always runs, and the job works out what.
+    public enum FactsReason: Sendable, Equatable {
+        /// A committed memory version to read: ignored if that version (or a newer one) was already done. `text`: the
+        /// commit made new text (an insert, a title or body edit), so its first read is normal work; any other commit
+        /// (an archive, a restore, categories, sensitivity) keeps a pending normal read normal and adds none.
+        case version(text: Bool)
+        /// Reconciliation or catch-up found something to ask again: always runs, and the job works out what. Low-priority.
         case reconcile
     }
+
+    /// The codes a facts job waits with at the daily cap: the cap itself, the agents' share, the low-priority share.
+    public static let factsCapCodes: Set<String> = ["cap", "cap_agents", "cap_share"]
 
     /// Asks for a memory to be read in a call group, in the caller's transaction (memory processing §11.3). One row
     /// per memory and group: a newer version or a reconciliation requeues a finished row, and one that is running
@@ -118,12 +129,12 @@ public final class ProcessingQueue: Sendable {
 
     /// A memory version was committed (an insert, or a versioned change leaving it active or archived): while learning is
     /// on (`FactsLane`, read in this transaction), asks for it in every call group (memory processing §11.3). The job
-    /// makes no call when that version's reading carried forward.
-    static func enqueueFactsForCommit(_ db: Database, memoryID: UUID, version: Int, now: Date,
+    /// makes no call when that version's reading carried forward. `textChanged`: an insert or a title or body edit.
+    static func enqueueFactsForCommit(_ db: Database, memoryID: UUID, version: Int, textChanged: Bool, now: Date,
                                       registry: FactsRegistry = .bundled) throws {
         guard FactsLane.learning(db) else { return }
         for group in registry.callGroups.keys.sorted() {
-            try enqueueFacts(db, memoryID: memoryID, version: version, group: group, reason: .version, now: now)
+            try enqueueFacts(db, memoryID: memoryID, version: version, group: group, reason: .version(text: textChanged), now: now)
         }
     }
 
@@ -137,9 +148,9 @@ public final class ProcessingQueue: Sendable {
             SELECT id, state, memory_version FROM processing_job WHERE subject = ? AND kind = 'facts' AND COALESCE(call_group, '') = ?
             """, arguments: [subject.db, group ?? ""]) else {
             try db.execute(sql: """
-                INSERT INTO processing_job (id, subject, kind, state, attempts, created_at, updated_at, memory_version, call_group)
-                VALUES (?, ?, 'facts', 'queued', 0, ?, ?, ?, ?)
-                """, arguments: [UUID().db, subject.db, now, now, version, group])
+                INSERT INTO processing_job (id, subject, kind, state, attempts, created_at, updated_at, memory_version, call_group, normal_version)
+                VALUES (?, ?, 'facts', 'queued', 0, ?, ?, ?, ?, ?)
+                """, arguments: [UUID().db, subject.db, now, now, version, group, reason == .version(text: true) ? version : nil])
             return
         }
         let id: String = row["id"], state: String = row["state"], old: Int? = row["memory_version"]
@@ -153,12 +164,47 @@ public final class ProcessingQueue: Sendable {
                   exempt_version = CASE WHEN ?1 > exempt_version THEN NULL ELSE exempt_version END
                 WHERE id = ?3
                 """, arguments: [version, now, id])
+            switch reason {
+            case .version(text: true):
+                // New text: its first read is normal work, so a job waiting on the low-priority share is due now.
+                try db.execute(sql: """
+                    UPDATE processing_job SET normal_version = ?1,
+                      not_before = CASE WHEN error = 'cap_share' THEN NULL ELSE not_before END,
+                      error = CASE WHEN error = 'cap_share' THEN NULL ELSE error END
+                    WHERE id = ?2
+                    """, arguments: [version, id])
+            case .version(text: false):
+                // A pending first read (of the version it was asked for) stays normal at the new version; nothing else
+                // becomes normal by an archive or a category change.
+                if let version, let old {
+                    try db.execute(sql: "UPDATE processing_job SET normal_version = ?1 WHERE id = ?2 AND normal_version = ?3",
+                                   arguments: [version, id, old])
+                }
+            case .reconcile: break
+            }
         default:
             guard reason == .reconcile || newer else { return }       // that version was read already
             try db.execute(sql: """
                 UPDATE processing_job SET state = 'queued', attempts = 0, error = NULL, not_before = NULL, engine = NULL,
                   generation = generation + 1, memory_version = COALESCE(?, memory_version), created_at = ?, updated_at = ? WHERE id = ?
                 """, arguments: [version, now, now, id])
+            // A finished job's first read is behind it: asked again by reconciliation or catch-up, it's low-priority work
+            // (and claimed after first reads); asked for new text, a first read again. Another commit keeps a first read
+            // that never happened (code-only above the limit, refused, failed) normal at the new version.
+            switch reason {
+            case .version(text: true):
+                try db.execute(sql: "UPDATE processing_job SET normal_version = ? WHERE id = ?", arguments: [version, id])
+            case .version(text: false):
+                if let version, let old, let group {
+                    try db.execute(sql: """
+                        UPDATE processing_job SET normal_version = ?1 WHERE id = ?2 AND normal_version = ?3
+                          AND NOT EXISTS (SELECT 1 FROM facts_asked WHERE memory_id = ?4 AND memory_version = ?1 AND call_group = ?5
+                                            AND mention_kind = 'read')
+                        """, arguments: [version, id, old, subject.db, group])
+                }
+            case .reconcile:
+                try db.execute(sql: "UPDATE processing_job SET normal_version = NULL WHERE id = ?", arguments: [id])
+            }
         }
     }
 
@@ -200,13 +246,15 @@ public final class ProcessingQueue: Sendable {
                         if !entered.withLock({ $0 }), factsLane.tryEnter() { entered.withLock { $0 = true } }
                     }
                     if factsLane == nil || entered.withLock({ $0 }) {
-                        // Memories before the sweep; new and changed memories before the first backfill's marked jobs,
-                        // which wait while it's paused (`FactsBackfill`).
+                        // Memories before the sweep; new and changed memories' first reads, then the first backfill's
+                        // marked jobs (which wait while it's paused, `FactsBackfill`), then low-priority work (§11.3).
                         let paused = try FactsBackfill.state(db)?.isPaused ?? false
                         found = try Row.fetchOne(db, sql: """
                             SELECT * FROM processing_job WHERE state = 'queued' AND kind = 'facts' AND (not_before IS NULL OR not_before <= ?)
                               AND (exempt_version IS NULL OR ? = 0)
-                            ORDER BY call_group IS NULL, exempt_version IS NOT NULL, created_at, rowid LIMIT 1
+                            ORDER BY call_group IS NULL,
+                              CASE WHEN normal_version = memory_version THEN 0 WHEN exempt_version IS NOT NULL THEN 1 ELSE 2 END,
+                              created_at, rowid LIMIT 1
                             """, arguments: [now, paused])
                     }
                 }
@@ -307,6 +355,19 @@ public final class ProcessingQueue: Sendable {
             try db.execute(sql: """
                 UPDATE processing_job SET not_before = NULL, updated_at = ? WHERE kind = 'facts' AND state = 'queued' AND error = ?
                 """, arguments: [now, code])
+            return db.changesCount
+        }
+    }
+
+    /// The daily cap changed: facts jobs waiting for it, or for either of its shares, are due again now (they wait again
+    /// if what refused them is still used up). Returns how many.
+    @discardableResult
+    public func wakeFactsWaitingForCap(now: Date) async throws -> Int {
+        try await store.writer.write { db in
+            try db.execute(sql: """
+                UPDATE processing_job SET not_before = NULL, updated_at = ? WHERE kind = 'facts' AND state = 'queued'
+                  AND error IN (\(databaseQuestionMarks(count: Self.factsCapCodes.count)))
+                """, arguments: StatementArguments([now] + Self.factsCapCodes.sorted()))
             return db.changesCount
         }
     }

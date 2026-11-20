@@ -8574,7 +8574,7 @@
     "The facts and corrections you entered yourself stay. Learning turns off; turning it on again learns from new and changed memories." : {
 
     },
-    "The facts and corrections you entered yourself stay. Learning turns off; turning it on again reads your memories again, within today's cloud requests." : {
+    "The facts and corrections you entered yourself stay. Learning turns off; turning it on again reads your memories again over the following days, with a share of each day's cloud requests." : {
 
     },
     "The file couldn't be read." : {
@@ -9064,6 +9064,16 @@
     "Today's cloud requests are used up. Try again tomorrow, or raise the limit." : {
 
     },
+    "Today: %lld of %lld, agents %lld of %lld, Facts catch-up %lld of %lld. Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Today: %1$lld of %2$lld, agents %3$lld of %4$lld, Facts catch-up %5$lld of %6$lld. Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow."
+          }
+        }
+      }
+    },
     "Today: %lld of %lld, agents %lld of %lld. Shared by every task that uses a cloud model; on-device models and embeddings don't count. At the limit, new captures are classified on this Mac until tomorrow." : {
       "localizations" : {
         "en" : {
@@ -9433,6 +9443,16 @@
     },
     "Waiting: agents' share of today's cloud requests is used up. Memories agents wrote are read tomorrow." : {
 
+    },
+    "Waiting: catching up on older memories can use %lld of today's %lld cloud requests, and it has. New and changed memories are still read; the rest carries on tomorrow." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Waiting: catching up on older memories can use %1$lld of today's %2$lld cloud requests, and it has. New and changed memories are still read; the rest carries on tomorrow."
+          }
+        }
+      }
     },
     "Waiting: today's %lld cloud requests are used up. Funes carries on tomorrow." : {
 

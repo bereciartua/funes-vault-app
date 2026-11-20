@@ -269,7 +269,7 @@ enum MemoryStore {
                              memory.sourceDeviceID?.db, now, now, trust.rawValue])
         try setCategories(db, memoryID: memory.id, keys: keys)
         try appendProvenance(db, memoryID: memory.id, event: .created, actor: actor, at: now)
-        try ProcessingQueue.enqueueFactsForCommit(db, memoryID: memory.id, version: 1, now: now)
+        try ProcessingQueue.enqueueFactsForCommit(db, memoryID: memory.id, version: 1, textChanged: true, now: now)
         return memory
     }
 
@@ -311,9 +311,9 @@ enum MemoryStore {
                              m.updatedAt, m.version, id.db])
         if changed.contains("categories") { try setCategories(db, memoryID: id, keys: m.categoryKeys) }
         if !changed.isEmpty {
-            try FactStore.versionChanged(db, memoryID: id.db, from: old.version, to: m.version,
-                                         textChanged: changed.contains("title") || changed.contains("body"), now: now)
-            try ProcessingQueue.enqueueFactsForCommit(db, memoryID: id, version: m.version, now: now)
+            let textChanged = changed.contains("title") || changed.contains("body")
+            try FactStore.versionChanged(db, memoryID: id.db, from: old.version, to: m.version, textChanged: textChanged, now: now)
+            try ProcessingQueue.enqueueFactsForCommit(db, memoryID: id, version: m.version, textChanged: textChanged, now: now)
         }
         if !changed.isEmpty, actor.isOwner {
             try db.execute(sql: "UPDATE memory SET trust = 'trusted' WHERE id = ?", arguments: [id.db])
@@ -342,7 +342,9 @@ enum MemoryStore {
         try db.execute(sql: "UPDATE memory SET status = ?, deleted_at = ?, updated_at = ?, version = ? WHERE id = ?",
                        arguments: [status.rawValue, m.deletedAt, now, m.version, id.db])
         try FactStore.versionChanged(db, memoryID: id.db, from: m.version - 1, to: m.version, textChanged: false, now: now)
-        if status != .deleted { try ProcessingQueue.enqueueFactsForCommit(db, memoryID: id, version: m.version, now: now) }
+        if status != .deleted {
+            try ProcessingQueue.enqueueFactsForCommit(db, memoryID: id, version: m.version, textChanged: false, now: now)
+        }
         try appendProvenance(db, memoryID: id, event: event, actor: actor, at: now, fields: ["status"])
         return m
     }

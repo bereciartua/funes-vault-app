@@ -3,13 +3,18 @@ import FunesProtocol
 import GRDB
 
 /// The daily cap on cloud generation requests (ADR-0022, model providers §4–§6): 300 by default,
-/// counted per local day in the vault (so it holds across restarts), shared by New memories and
-/// the tidy-up. Agents' input may use at most 40% of it, so the user's own captures aren't
-/// starved. Embeddings don't count. The first refusal of a day is an Activity row
-/// (`cap_reached`, counts only), which the Mac turns into its once-a-day notice.
+/// counted per local day in the vault (so it holds across restarts), shared by New memories,
+/// the tidy-up, Search answers and Facts. Two shares keep the user's own captures from being starved:
+/// agents' input may use at most 40% of it, and low-priority Facts work (catch-up, re-reads,
+/// reconciliation: memory processing §11.3) at most 30%. Embeddings don't count. The first refusal
+/// of a day by the cap or the agents' share is an Activity row (`cap_reached`, counts only), which
+/// the Mac turns into its once-a-day notice; a refusal by the low-priority share isn't (captures
+/// still go to the cloud then).
 public final class CloudRequestCap: Sendable {
     public static let defaultLimit = 300
     public static let agentShare = 0.4
+    /// Low-priority Facts work's share (memory processing §11.3 "Cost and the cap").
+    public static let lowPriorityShare = 0.3
     static let metaKey = "cloud_requests"
 
     /// Whose work a request is for.
@@ -20,14 +25,46 @@ public final class CloudRequestCap: Sendable {
         case agent
     }
 
+    /// How urgent a request is. Low: Facts work that isn't the first read of a new or changed memory (catch-up,
+    /// re-reads, reconciliation), held to `lowPriorityShare`.
+    public enum Priority: String, Sendable, Hashable {
+        case normal, low
+    }
+
+    /// Why a request was refused, in the order `consume` checks them.
+    public enum Refusal: String, Sendable, Hashable {
+        case total, agents, lowPriority
+    }
+
     /// Today's counts.
     public struct Day: Sendable, Hashable, Codable {
         /// `yyyy-MM-dd` in the Mac's time zone.
         public var day: String
         public var total = 0
         public var agents = 0
-        /// The day's first refusal was recorded.
+        /// Low-priority Facts requests.
+        public var lowPriority = 0
+        /// The day's first refusal by the cap or the agents' share was recorded.
         public var reached = false
+
+        public init(day: String, total: Int = 0, agents: Int = 0, lowPriority: Int = 0, reached: Bool = false) {
+            self.day = day
+            self.total = total
+            self.agents = agents
+            self.lowPriority = lowPriority
+            self.reached = reached
+        }
+
+        enum CodingKeys: String, CodingKey { case day, total, agents, lowPriority, reached }
+
+        public init(from decoder: any Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            day = try c.decode(String.self, forKey: .day)
+            total = try c.decodeIfPresent(Int.self, forKey: .total) ?? 0
+            agents = try c.decodeIfPresent(Int.self, forKey: .agents) ?? 0
+            lowPriority = try c.decodeIfPresent(Int.self, forKey: .lowPriority) ?? 0
+            reached = try c.decodeIfPresent(Bool.self, forKey: .reached) ?? false
+        }
     }
 
     public let store: VaultStore
@@ -44,15 +81,31 @@ public final class CloudRequestCap: Sendable {
     }
 
     /// The agents' share of the cap.
-    public var agentLimit: Int { Int((Double(limit) * Self.agentShare).rounded(.down)) }
+    public var agentLimit: Int { Self.agentLimit(for: limit) }
+    /// Low-priority Facts work's share of the cap.
+    public var lowPriorityLimit: Int { Self.lowPriorityLimit(for: limit) }
 
-    /// Counts one request, or refuses it with `ProviderError.capReached` when the cap, or the
-    /// agents' share for an agent's input, is used up. Atomic across callers.
-    public func consume(_ requester: Requester, now: Date) async throws {
+    public static func agentLimit(for limit: Int) -> Int { Int((Double(max(0, limit)) * agentShare).rounded(.down)) }
+    public static func lowPriorityLimit(for limit: Int) -> Int { Int((Double(max(0, limit)) * lowPriorityShare).rounded(.down)) }
+
+    /// What would refuse a request now, checked in order: the cap, the agents' share for an agent's input, the
+    /// low-priority share for low-priority work. Nil when it may go.
+    public func refusal(_ day: Day, _ requester: Requester, _ priority: Priority) -> Refusal? {
+        if day.total >= limit { return .total }
+        if requester == .agent, day.agents >= agentLimit { return .agents }
+        if priority == .low, day.lowPriority >= lowPriorityLimit { return .lowPriority }
+        return nil
+    }
+
+    /// Counts one request in the cap and each share it belongs to, or refuses it with `ProviderError.capReached` when
+    /// any of them is used up. Atomic across callers.
+    public func consume(_ requester: Requester, priority: Priority = .normal, now: Date) async throws {
         enum Result { case counted, refused(first: Bool, total: Int) }
         let result = try await store.writer.write { db -> Result in
             var day = try Self.read(db, key: self.key(now))
-            if day.total >= self.limit || (requester == .agent && day.agents >= self.agentLimit) {
+            if let refusal = self.refusal(day, requester, priority) {
+                // The low-priority share's refusal isn't the day's notice: captures still go to the cloud.
+                guard refusal != .lowPriority else { return .refused(first: false, total: day.total) }
                 let first = !day.reached
                 day.reached = true
                 try Self.write(db, day)
@@ -60,6 +113,7 @@ public final class CloudRequestCap: Sendable {
             }
             day.total += 1
             if requester == .agent { day.agents += 1 }
+            if priority == .low { day.lowPriority += 1 }
             try Self.write(db, day)
             return .counted
         }

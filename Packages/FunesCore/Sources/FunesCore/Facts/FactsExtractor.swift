@@ -17,6 +17,8 @@ public struct FactsLearnReport: Sendable {
         public var exempt = 0
         /// `ModelRouter.send` refused the call (a secret, an item above the cloud limit): code-only links, no request.
         public var refused = false
+        /// The last request asked for was low-priority Facts work (`FactsExtractor.priority`), held to its share of the cap.
+        public var lowPriority = false
     }
 
     public var runs: [String: String] = [:]          // call group → facts_run id
@@ -64,6 +66,12 @@ public struct FactsExtractor: Sendable {
     /// Called the moment the exempt request is sent, before the provider answers: the worker records it as spent in the
     /// store, so a quit or crash after sending can't grant it again.
     public var exemptSpent: @Sendable () throws -> Void = {}
+    /// How urgent each counted request is (memory processing §11.3 "Cost and the cap"): asked right before every
+    /// request, retries included, with the memory version being read (a partial read of a version the model hasn't read
+    /// in this group is applied whole, so it's judged by the version, not the scope). Low-priority work is held to
+    /// `CloudRequestCap.lowPriorityShare`. `FactsQueueWorker` sets it per job; direct `learn` calls are normal. A full
+    /// read of the version `exemptVersion` names is normal whatever it says (the backfill read's own retry).
+    public var priority: @Sendable (_ version: Int) throws -> CloudRequestCap.Priority = { _ in .normal }
 
     /// How calls are batched, and the pipeline's revision (a qualification record names it, memory processing §11.10):
     /// one memory per call per group, full or partial. Bump the revision when validation, the apply, rosters,
@@ -300,11 +308,13 @@ public struct FactsExtractor: Sendable {
                   into total: inout FactStore.ApplyResult) async throws -> FactsLearnReport.Call? {
         // Whether the backfill's exempt request was sent, across both attempts: one per marked read.
         let spent = Mutex(0)
+        // The last request's priority, for the report (the queue tells the low-priority share's wait apart).
+        let low = Mutex(false)
         for attempt in 0..<2 {
             guard let a = try prepare(memoryID, group: group) else { return nil }
             func call(_ outcome: FactsLearnReport.Call.Outcome, dropped: [String] = [], ms: Int = 0, usage: ProviderUsage = .init()) -> FactsLearnReport.Call {
                 .init(memoryID: memoryID, group: group, outcome: outcome, dropped: dropped, milliseconds: ms, usage: usage,
-                      exempt: spent.withLock { $0 })
+                      exempt: spent.withLock { $0 }, lowPriority: low.withLock { $0 })
             }
             // A partial re-read is of a version the model has read: it never falls back to code-only links.
             let partial = scope != .full
@@ -342,8 +352,12 @@ public struct FactsExtractor: Sendable {
                 guard permit() else { return call(.changed, dropped: [Self.notPermitted]) }
                 do {
                     let exempt = exemptRead && spent.withLock { $0 } == 0
+                    // Decided for the version prepared now, at each request: an edit since the job was planned counts as
+                    // what it is (§11.3).
+                    let priority: CloudRequestCap.Priority = exemptRead ? .normal : try self.priority(a.version)
+                    low.withLock { $0 = priority == .low }
                     output = try await router.facts(request(a, group: group), group: group, items: items, requester: requester,
-                                                    exempt: exempt, permit: permit,
+                                                    priority: priority, exempt: exempt, permit: permit,
                                                     willSend: {
                                                         guard exempt else { return }
                                                         try exemptSpent()           // fails closed: unrecorded, unsent

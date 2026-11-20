@@ -86,8 +86,9 @@ final class AppModel {
     var factsBackfill: FactsBackfill.Progress?
     /// Something you entered or corrected in People & history is kept: the section shows even with Facts off.
     var hasUserFactEntries = false
-    /// Facts jobs wait for the daily cap to reset: the whole cap is used, or only the agents' share of it.
-    var factsCapWait: FactsCapWait?
+    /// Facts jobs wait for the daily cap to reset: the whole cap is used, or only the agents' or low-priority work's
+    /// share of it (`FactsCapWait`). Empty when nothing waits.
+    var factsCapWait: Set<FactsCapWait> = []
     /// The Inbox is waiting on a decision; drives the menu bar's "needs you" state with `pending`.
     var inboxCount: Int { inbox.count }
     /// Updated once a minute, for "2 min ago" and countdowns.
@@ -505,11 +506,10 @@ final class AppModel {
             factsBackfillFinished()
         }
         if !factsLearning && !hasUserFactEntries { people.clear() }
-        factsCapWait = nil
-        if (try? services.store.factsWaitingForCap(now: now)) == true {
+        factsCapWait = []
+        if let codes = try? services.store.factsCapWaits(now: now), !codes.isEmpty {
             let cap = modelSettings.cap(store: services.store, activity: services.activity)
-            let day = try? await cap.today(now: now)
-            factsCapWait = (day?.total ?? cap.limit) >= cap.limit ? .total : .agents
+            factsCapWait = FactsCapWait.current(codes: codes, day: try? await cap.today(now: now), limit: cap.limit)
         }
         dataGeneration += 1
         if storeDidChange {
@@ -739,8 +739,3 @@ enum ActivityFocus: Equatable {
 }
 
 
-/// Why Facts jobs wait for tomorrow (FR-F-03): today's cloud requests are used up, or only the agents' share of them
-/// (memories agents wrote wait; yours are still read).
-enum FactsCapWait: Equatable {
-    case total, agents
-}

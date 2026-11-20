@@ -358,17 +358,18 @@ public final class ModelRouter: Sendable {
     public static let factsTimeout: Duration = .seconds(60)
 
     /// One Facts call through the guardrails (`send`): the Facts model only, counted against the daily cap in the
-    /// share of whoever wrote the memory, within 60 s. `ProviderError.unavailable` when there's no Facts model.
+    /// share of whoever wrote the memory, and in the low-priority share for `priority` low, within 60 s.
+    /// `ProviderError.unavailable` when there's no Facts model.
     /// `permit` is checked again at the send boundary, after the cap's write (`send`).
     /// `exempt`: the first backfill's one exemption (FR-F-03): not counted against the cap; every guardrail else applies.
     /// `willSend` runs right before a request is sent, past every check; if it throws, nothing is sent.
     func facts<T: Decodable & Sendable>(_ request: StructuredRequest<T>, group: String, items: [ModelItem],
-                                        requester: CloudRequestCap.Requester, exempt: Bool = false,
-                                        permit: @escaping @Sendable () -> Bool = { true },
+                                        requester: CloudRequestCap.Requester, priority: CloudRequestCap.Priority = .normal,
+                                        exempt: Bool = false, permit: @escaping @Sendable () -> Bool = { true },
                                         willSend: @escaping @Sendable () throws -> Void = {}, now: Date) async throws -> T {
         guard let provider = factsModels[group] else { throw ProviderError.unavailable }
-        return try await call(request, items: items, with: provider, requester: requester, timeout: Self.factsTimeout,
-                              counted: !exempt, permit: permit, willSend: willSend, now: now)
+        return try await call(request, items: items, with: provider, requester: requester, priority: priority,
+                              timeout: Self.factsTimeout, counted: !exempt, permit: permit, willSend: willSend, now: now)
     }
 
     /// How a proposal names its engine: `apple.foundation`, or `<provider>/<model>`.
@@ -380,13 +381,14 @@ public final class ModelRouter: Sendable {
     /// the usage counters, within `timeout` (the split timeout by default). A provider that
     /// rate-limited is skipped until its backoff ends.
     func call<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem], with provider: any GenerationProvider,
-                                       requester: CloudRequestCap.Requester, timeout: Duration? = nil, counted: Bool = true,
+                                       requester: CloudRequestCap.Requester, priority: CloudRequestCap.Priority = .normal,
+                                       timeout: Duration? = nil, counted: Bool = true,
                                        permit: @escaping @Sendable () -> Bool = { true },
                                        willSend: @escaping @Sendable () throws -> Void = {}, now: Date) async throws -> T {
         if let until = backoff.until(provider.id, now: now) { throw ProviderError.rateLimited(retryAfter: until.timeIntervalSince(now)) }
         do {
             let (output, used) = try await Self.send(request, items: items, to: provider, cloudLimit: cloudLimit, cap: counted ? cap : nil,
-                                                     requester: requester, timeout: timeout ?? splitTimeout, permit: permit,
+                                                     requester: requester, priority: priority, timeout: timeout ?? splitTimeout, permit: permit,
                                                      willSend: willSend, now: now)
             record(used, for: provider.id)
             return output
@@ -482,6 +484,7 @@ extension ModelRouter {
     public static func send<T: Decodable & Sendable>(_ request: StructuredRequest<T>, items: [ModelItem],
                                                      to provider: any GenerationProvider, cloudLimit: CloudLimit,
                                                      cap: CloudRequestCap? = nil, requester: CloudRequestCap.Requester = .user,
+                                                     priority: CloudRequestCap.Priority = .normal,
                                                      timeout: Duration, permit: @escaping @Sendable () -> Bool = { true },
                                                      willSend: @escaping @Sendable () throws -> Void = {},
                                                      now: Date = Date()) async throws -> (T, ProviderUsage) {
@@ -493,7 +496,7 @@ extension ModelRouter {
             guard !memories.isEmpty, memories.allSatisfy({ $0.sensitivity.map(cloudLimit.allows) ?? false }) else {
                 throw ProviderError.blocked
             }
-            try await cap?.consume(requester, now: now)
+            try await cap?.consume(requester, priority: priority, now: now)
         }
         guard permit() else { throw SendNotPermitted() }
         return try await withTimeout(timeout) {

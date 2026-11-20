@@ -503,7 +503,7 @@ enum FactsHarness {
                 try await v.store.writer.write { db in
                     let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ?", arguments: [id]) ?? 1
                     for g in groups {
-                        try ProcessingQueue.enqueueFacts(db, memoryID: UUID(uuidString: id)!, version: version, group: g, reason: .version, now: now)
+                        try ProcessingQueue.enqueueFacts(db, memoryID: UUID(uuidString: id)!, version: version, group: g, reason: .version(text: true), now: now)
                     }
                 }
                 try await drain()

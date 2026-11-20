@@ -138,7 +138,7 @@ final class ProcessingRunner {
         capGeneration += 1
         let queue = self.queue
         Task {
-            _ = try? await queue.wakeFacts(code: "cap", now: Date())
+            _ = try? await queue.wakeFactsWaitingForCap(now: Date())
             kick()
         }
     }
@@ -213,7 +213,7 @@ final class ProcessingRunner {
         }
         // The cap changed while it ran: its wait for tomorrow is over (it waits again if the cap is still used up). One
         // changing after this, before the outcome is recorded, wakes it from `factsJobEnded`.
-        if case let .later(_, code) = outcome, code == "cap" {
+        if case let .later(_, code) = outcome, ProcessingQueue.factsCapCodes.contains(code) {
             if capGeneration != capAt { return .later(until: Date(), code: code) }
             capWaitAt[job.id] = capAt
         }

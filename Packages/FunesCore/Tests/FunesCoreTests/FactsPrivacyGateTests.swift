@@ -155,7 +155,7 @@ import Testing
             let id = try add(text, .low, Double(10 + i))
             try await v.store.writer.write { db in
                 for g in groups {
-                    try ProcessingQueue.enqueueFacts(db, memoryID: UUID(uuidString: id)!, version: 1, group: g, reason: .version, now: clock.now())
+                    try ProcessingQueue.enqueueFacts(db, memoryID: UUID(uuidString: id)!, version: 1, group: g, reason: .version(text: true), now: clock.now())
                 }
             }
             _ = try await queue.drain(now: { clock.now() }) { job in try await worker.process(job) { _, _ in } }

@@ -318,8 +318,8 @@ public enum FactsBackfill {
 
     // MARK: Catch-up and re-reads (§11.3's registry rule, §11.10's coverage)
 
-    /// Queues, under the cap, what the model should read and hasn't, in one write transaction (only while learning is
-    /// on): for each active or archived memory and each group a model may read now,
+    /// Queues, as low-priority work (held to its share of the cap, §11.3), what the model should read and hasn't, in one
+    /// write transaction (only while learning is on): for each active or archived memory and each group a model may read now,
     /// - a reading made under another extraction key, or before a predicate recorded now was (stale), read again in full;
     /// - no model reading at the current version, within the roster limit, with no job pending or failed for that
     ///   version, and in scope: the first backfill has started (every memory is then the lane's), or the memory had a
@@ -393,10 +393,17 @@ extension VaultStore {
 
     /// Facts jobs waiting for the daily cap to reset, if any.
     public func factsWaitingForCap(now: Date) throws -> Bool {
+        try !factsCapWaits(now: now).isEmpty
+    }
+
+    /// The codes Facts jobs wait with for the daily cap's next day (`ProcessingQueue.factsCapCodes`): the cap, the
+    /// agents' share, the low-priority share. What each says may be out of date (the status reads today's counts too).
+    public func factsCapWaits(now: Date) throws -> Set<String> {
         try writer.read { db in
-            try Bool.fetchOne(db, sql: """
-                SELECT EXISTS (SELECT 1 FROM processing_job WHERE kind = 'facts' AND state = 'queued' AND error = 'cap' AND not_before > ?)
-                """, arguments: [now]) ?? false
+            Set(try String.fetchAll(db, sql: """
+                SELECT DISTINCT error FROM processing_job WHERE kind = 'facts' AND state = 'queued' AND not_before > ?
+                  AND error IN (\(databaseQuestionMarks(count: ProcessingQueue.factsCapCodes.count)))
+                """, arguments: StatementArguments([now] + ProcessingQueue.factsCapCodes.sorted())))
         }
     }
 
