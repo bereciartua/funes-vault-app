@@ -186,8 +186,10 @@ class Thresholds(unittest.TestCase):
 
 
 class Verify(unittest.TestCase):
-    def test_no_shipped_record_and_nothing_to_verify(self):
-        self.assertEqual(json.loads(Q.RECORDS.read_text())["records"], [])
+    def test_what_ships_verifies(self):
+        # 13a.2's Gates step shipped Haiku's person pool {recorded, linked} and client {recorded}; works at missed.
+        shipped = {(tuple(r["predicates"]), tuple(r["uses"])) for r in json.loads(Q.RECORDS.read_text())["records"]}
+        self.assertEqual({p for ps, _ in shipped for p in ps} & {"works_at"}, set())
         self.assertEqual(Q.cmd_verify(None), 0)
 
     def test_a_record_without_a_13a2_gate_fails(self):
