@@ -14,6 +14,7 @@
 
     },
     "%@ (%lld)" : {
+      "comment" : "A role group and how many: Your sisters (2)\nAn alias and how many memories use it",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -297,6 +298,17 @@
     "%@ on this Mac. It may send what it reads to its AI service." : {
 
     },
+    "%@ or %@" : {
+      "comment" : "Two years memories disagree on",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ or %2$@"
+          }
+        }
+      }
+    },
     "%@ reads only part of what Facts learns; no other model here has passed Funes's tests for the rest, so it isn't learned." : {
 
     },
@@ -329,6 +341,17 @@
     "%@ says to slow down. Try again later." : {
 
     },
+    "%@ since %@" : {
+      "comment" : "List row: e.g. where you worked since 2021",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ since %2$@"
+          }
+        }
+      }
+    },
     "%@ suggested a memory. Review it in the Inbox." : {
 
     },
@@ -346,6 +369,17 @@
     },
     "%@ to review" : {
 
+    },
+    "%@ until %@" : {
+      "comment" : "List row: e.g. where you worked until 2021",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ until %2$@"
+          }
+        }
+      }
     },
     "%@ use it and go back to their default." : {
 
@@ -508,11 +542,25 @@
     "%@ · approved, waiting for the agent" : {
 
     },
+    "%@ · recorded only, not used in search" : {
+
+    },
     "%@ · save" : {
 
     },
     "%@ · share" : {
 
+    },
+    "%@ – %@" : {
+      "comment" : "An episode's dates",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ – %2$@"
+          }
+        }
+      }
     },
     "%@ → %@" : {
       "comment" : "Why line: a timeline answer\nWhy line: the memory's role phrase and who it is",
@@ -690,6 +738,20 @@
     "%@, done" : {
 
     },
+    "%@, former" : {
+      "comment" : "List row: a former relation"
+    },
+    "%@, in “%@”" : {
+      "comment" : "A correction made from a memory",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, in “%2$@”"
+          }
+        }
+      }
+    },
     "%@, on this Mac" : {
 
     },
@@ -701,6 +763,28 @@
     },
     "%@, sign in" : {
 
+    },
+    "%@, then %@" : {
+      "comment" : "Title history",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, then %2$@"
+          }
+        }
+      }
+    },
+    "%@, then %@ from %@" : {
+      "comment" : "Title history",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, then %2$@ from %3$@"
+          }
+        }
+      }
     },
     "%@, through Remote Access, to %@'s servers" : {
       "localizations" : {
@@ -792,7 +876,7 @@
       "comment" : "Why line: two known people share the name"
     },
     "%@…" : {
-
+      "comment" : "+ menu: add a person, an organization…"
     },
     "%lld" : {
 
@@ -1002,6 +1086,7 @@
       }
     },
     "%lld memories" : {
+      "comment" : "VoiceOver: how many memories mention it",
       "localizations" : {
         "en" : {
           "variations" : {
@@ -1853,6 +1938,9 @@
     "<remote token from %@>" : {
 
     },
+    "A Fact About You…" : {
+
+    },
     "A Few Questions" : {
 
     },
@@ -1907,6 +1995,9 @@
     "A vault file has unsafe permissions." : {
 
     },
+    "A year, a month or a day: 2019, 2019-03 or 2019-03-15." : {
+
+    },
     "AI" : {
 
     },
@@ -1914,6 +2005,9 @@
 
     },
     "AI features send nothing off this Mac." : {
+
+    },
+    "ANSWERED" : {
 
     },
     "API key" : {
@@ -2039,6 +2133,9 @@
     "Access expires" : {
 
     },
+    "Actions" : {
+
+    },
     "Active" : {
 
     },
@@ -2081,10 +2178,28 @@
     "Add Language" : {
 
     },
+    "Add Order" : {
+
+    },
+    "Add Order…" : {
+
+    },
+    "Add Yourself" : {
+
+    },
+    "Add a Fact…" : {
+
+    },
     "Add a Model…" : {
 
     },
+    "Add a Relation…" : {
+
+    },
     "Add a category" : {
+
+    },
+    "Add a person, a place or a fact yourself" : {
 
     },
     "Add a server, choose As JSON, and paste this." : {
@@ -2148,6 +2263,9 @@
     "Added by you" : {
 
     },
+    "Added by you: %@" : {
+
+    },
     "Address" : {
 
     },
@@ -2206,6 +2324,9 @@
 
     },
     "Agents get the answer when they check again." : {
+
+    },
+    "Agents never see this. The cloud limit applies to it at this level." : {
 
     },
     "Agents on this Mac don't need it: they connect locally." : {
@@ -2287,6 +2408,12 @@
 
     },
     "Also archives “%@”" : {
+
+    },
+    "Also called %@" : {
+
+    },
+    "Also called: %@" : {
 
     },
     "Also matched, less closely" : {
@@ -2505,6 +2632,17 @@
     "Archives “%@”" : {
 
     },
+    "Are %@ and %@ the same?" : {
+      "comment" : "To check: a suggested merge",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Are %1$@ and %2$@ the same?"
+          }
+        }
+      }
+    },
     "Are there practical constraints that often shape your work or availability?" : {
 
     },
@@ -2656,6 +2794,20 @@
     "Call me" : {
 
     },
+    "Called “%@” (%@)" : {
+      "comment" : "Correction: your word",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Called “%1$@” (%2$@)"
+          }
+        }
+      }
+    },
+    "Came just before %@" : {
+
+    },
     "Can't check on this Mac" : {
 
     },
@@ -2766,6 +2918,9 @@
     "Change Port" : {
 
     },
+    "Change Relation…" : {
+
+    },
     "Change address" : {
 
     },
@@ -2782,6 +2937,9 @@
 
     },
     "Changed automatically" : {
+
+    },
+    "Changed by you" : {
 
     },
     "Changed since approval" : {
@@ -2920,6 +3078,9 @@
     "Choose the memories file from your ChatGPT data export (JSON). Each memory becomes a suggestion." : {
 
     },
+    "Choose…" : {
+
+    },
     "Claude (Claude Code)" : {
 
     },
@@ -2951,6 +3112,9 @@
 
     },
     "Clear" : {
+
+    },
+    "Clear Dates" : {
 
     },
     "Clear search" : {
@@ -3094,6 +3258,9 @@
     "Compares memories that changed with related ones and proposes updates, merges, splits and archives, and asks you about conflicts. Proposals wait in the Inbox's Tidy-up section." : {
 
     },
+    "Confirmed as the one meant" : {
+      "comment" : "Correction: a To check answer"
+    },
     "Confirmed still true %@" : {
 
     },
@@ -3204,6 +3371,9 @@
     "Correction suggested %@" : {
 
     },
+    "Corrections" : {
+
+    },
     "Couldn't reach the server." : {
 
     },
@@ -3232,6 +3402,9 @@
 
     },
     "Created a memory" : {
+
+    },
+    "Current" : {
 
     },
     "Cursor" : {
@@ -3299,7 +3472,21 @@
     "Date Created" : {
 
     },
+    "Dates set (%@): %@ – %@" : {
+      "comment" : "Correction: your dates",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dates set (%1$@): %2$@ – %3$@"
+          }
+        }
+      }
+    },
     "Day" : {
+
+    },
+    "Deceased" : {
 
     },
     "Delete" : {
@@ -3583,6 +3770,12 @@
     "Empty allow list means all categories. Deny always wins." : {
 
     },
+    "End (optional)" : {
+
+    },
+    "Ended %@: two memories disagree" : {
+      "comment" : "Timeline: conflicting dates"
+    },
     "Enter a local server by its address, like 127.0.0.1 or 192.168.1.20, or as localhost. Funes treats any other name, .local ones included, as cloud, whatever this says." : {
 
     },
@@ -3736,6 +3929,9 @@
     "Filled in from the running tunnel. Check it, then test." : {
 
     },
+    "Filter by kind" : {
+
+    },
     "Finds exact duplicates and expired memories on this Mac. Choose a local server or a cloud model to also find updates, merges, splits and conflicts; Apple's on-device model isn't used for this." : {
 
     },
@@ -3789,6 +3985,9 @@
 
     },
     "Forget this memory's earlier versions?" : {
+
+    },
+    "Former" : {
 
     },
     "Forward this URL to http://127.0.0.1:%@:" : {
@@ -3939,7 +4138,16 @@
     "From agents" : {
 
     },
+    "From an agent's or an import's text" : {
+
+    },
     "From other apps" : {
+
+    },
+    "From text you didn't write" : {
+
+    },
+    "From the memory's context" : {
 
     },
     "From: “%@”" : {
@@ -4044,6 +4252,15 @@
     "Funes backs up the file next to it first." : {
 
     },
+    "Funes can learn the people in your life and where you've worked from your memories, for your own search. Turn on Facts in Settings ▸ AI ▸ Features." : {
+
+    },
+    "Funes can't read your names in Settings ▸ About You right now, so it shows nothing here." : {
+
+    },
+    "Funes can't tell which came first" : {
+      "comment" : "Timeline: an undecidable order"
+    },
     "Funes can't use speech recognition. Allow it in System Settings ▸ Privacy & Security ▸ Speech Recognition." : {
 
     },
@@ -4064,6 +4281,32 @@
     },
     "Funes didn't send it: it looked like a secret, or was above the cloud limit." : {
 
+    },
+    "Funes doesn't learn or order this yet: no model has passed Funes's tests for it. Only what you enter shows here." : {
+
+    },
+    "Funes finished reading your memories" : {
+
+    },
+    "Funes found %lld people and %lld other names." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funes found %1$lld people and %2$lld other names."
+          }
+        }
+      }
+    },
+    "Funes found %lld people, %lld employers and %lld other names." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funes found %1$lld people, %2$lld employers and %3$lld other names."
+          }
+        }
+      }
     },
     "Funes has %lld suggestions for this memory in the Inbox." : {
       "localizations" : {
@@ -4112,10 +4355,16 @@
     "Funes has a suggestion for this memory in the Inbox." : {
 
     },
+    "Funes hasn't learned anyone from your memories yet. It reads new and changed ones as you save them." : {
+
+    },
     "Funes hasn't measured this model, so search keeps its 10 closest matches until you calibrate it." : {
 
     },
     "Funes hasn't measured this model, so search keeps its 10 closest matches. Calibrate measures where its matches start with Funes's made-up benchmark." : {
+
+    },
+    "Funes isn't learning from your memories. Your own entries and corrections are kept." : {
 
     },
     "Funes keeps the last 7 backups in its data folder." : {
@@ -4152,6 +4401,9 @@
 
     },
     "Funes stops using it in every memory." : {
+
+    },
+    "Funes stops using it in every memory. You can undo it under Corrections." : {
 
     },
     "Funes was paused" : {
@@ -4237,6 +4489,9 @@
     },
     "Funnel's ports 443, 8443 and 10000 each have a tailnet-only entry or a TCP forwarder on this Mac, which adding the Remote Access paths would make public or replace. Change one of them, or choose another tunnel." : {
 
+    },
+    "Gap of %lld months before this" : {
+      "comment" : "Timeline: a gap"
     },
     "Gemini CLI" : {
 
@@ -4603,6 +4858,9 @@
     "It expired %@." : {
 
     },
+    "It holds a fact about another kind of thing. Use Not This on that fact first." : {
+
+    },
     "It stops working now. To use it again, connect it again." : {
 
     },
@@ -4645,6 +4903,9 @@
     "It's the only category some agents may read. Choose a replacement, or change those agents first." : {
 
     },
+    "Its end: two memories disagree" : {
+      "comment" : "Timeline: conflicting dates"
+    },
     "Its key is deleted from the Keychain and its usage is cleared." : {
 
     },
@@ -4656,6 +4917,9 @@
     },
     "Its remote token and every connected cloud app stop working now. Its access on this Mac isn't affected." : {
 
+    },
+    "Its start: two memories disagree" : {
+      "comment" : "Timeline: conflicting dates"
     },
     "Its suggestions are in the Inbox" : {
 
@@ -4733,6 +4997,15 @@
 
     },
     "Kind" : {
+
+    },
+    "Kind (%lld)" : {
+
+    },
+    "Kind set to %@" : {
+
+    },
+    "Kind: %@" : {
 
     },
     "Languages" : {
@@ -4994,6 +5267,15 @@
     "Mac" : {
 
     },
+    "Mark as Current" : {
+
+    },
+    "Mark as Deceased" : {
+
+    },
+    "Mark as Former" : {
+
+    },
     "Mark that you checked this memory today" : {
 
     },
@@ -5001,6 +5283,18 @@
 
     },
     "Markdown File…" : {
+
+    },
+    "Marked as current (%@)" : {
+
+    },
+    "Marked as deceased" : {
+
+    },
+    "Marked as former (%@)" : {
+
+    },
+    "Marked as not deceased" : {
 
     },
     "Matches, none allowed" : {
@@ -5013,6 +5307,9 @@
 
     },
     "Memories" : {
+
+    },
+    "Memories (%lld)" : {
 
     },
     "Memories in it can move to another category. Agents that couldn't read it won't be able to read the replacement either." : {
@@ -5037,13 +5334,31 @@
     "Merge" : {
 
     },
+    "Merge With" : {
+
+    },
+    "Merge With…" : {
+
+    },
+    "Merge into %@" : {
+
+    },
+    "Merged" : {
+
+    },
     "Merged from another memory %@" : {
+
+    },
+    "Merged into %@" : {
 
     },
     "Merged into a new memory %@" : {
 
     },
     "Merged into “%@”" : {
+
+    },
+    "Merged with %@" : {
 
     },
     "Merges %lld memories into one:" : {
@@ -5177,6 +5492,9 @@
 
     },
     "Name" : {
+
+    },
+    "Named in the memory" : {
 
     },
     "Needs Read." : {
@@ -5427,6 +5745,12 @@
     "No memories yet" : {
 
     },
+    "No memory mentions it now." : {
+
+    },
+    "No memory mentions it now; Funes keeps what you typed or confirmed." : {
+
+    },
     "No memory selected" : {
 
     },
@@ -5467,13 +5791,19 @@
 
     },
     "Not %@" : {
-      "comment" : "Why line correction: this memory isn't about them"
+      "comment" : "Correction: Not this on a fact\nWhy line correction: this memory isn't about them"
+    },
+    "Not Deceased" : {
+
     },
     "Not Now" : {
 
     },
     "Not This" : {
       "comment" : "Why line correction: the fact is wrong"
+    },
+    "Not about them" : {
+      "comment" : "Correction: Not <name> on a memory"
     },
     "Not allowed to do this" : {
 
@@ -5536,7 +5866,19 @@
     "Not tested" : {
 
     },
+    "Not the Same" : {
+
+    },
+    "Not the same" : {
+
+    },
+    "Not the same as %@" : {
+
+    },
     "Nothing" : {
+
+    },
+    "Nothing about you yet." : {
 
     },
     "Nothing archived" : {
@@ -5552,6 +5894,9 @@
 
     },
     "Nothing here" : {
+
+    },
+    "Nothing here yet." : {
 
     },
     "Nothing in %@" : {
@@ -5578,6 +5923,9 @@
     "Nothing to change: it's already set up." : {
 
     },
+    "Nothing to check. Funes asks here only what it couldn't settle; nothing waits on it." : {
+
+    },
     "Nothing to import was found." : {
 
     },
@@ -5597,6 +5945,9 @@
 
     },
     "Notifications never include memory text." : {
+
+    },
+    "Now" : {
 
     },
     "OAuth Client" : {
@@ -5739,6 +6090,9 @@
     "Only models that passed Funes's tests for Facts are listed." : {
 
     },
+    "Only what you entered" : {
+
+    },
     "Only when I ask" : {
 
     },
@@ -5761,6 +6115,9 @@
 
     },
     "Open Inbox (%lld)" : {
+
+    },
+    "Open Settings" : {
 
     },
     "Open Settings (⌘,)" : {
@@ -5809,6 +6166,18 @@
 
     },
     "Or set it up yourself" : {
+
+    },
+    "Order added (%@)" : {
+
+    },
+    "Order rejected" : {
+
+    },
+    "Organization" : {
+
+    },
+    "Organizations" : {
 
     },
     "Original text" : {
@@ -5932,7 +6301,22 @@
     "Pending requests" : {
 
     },
+    "People" : {
+
+    },
+    "People & History" : {
+
+    },
+    "People & Names" : {
+
+    },
+    "People & names" : {
+
+    },
     "Period" : {
+
+    },
+    "Person" : {
 
     },
     "Personal: health, money, family. Share rarely, and always ask." : {
@@ -5942,6 +6326,12 @@
 
     },
     "Pieces that change other memories stay in your Inbox to review on their own." : {
+
+    },
+    "Place" : {
+
+    },
+    "Places" : {
 
     },
     "Point the tunnel at http://127.0.0.1 and the Remote Access port, never at the port local agents use." : {
@@ -5979,6 +6369,9 @@
     },
     "Privacy & Limits" : {
 
+    },
+    "Probably former" : {
+      "comment" : "Timeline basis: ended by a later job"
     },
     "Problems" : {
 
@@ -6321,6 +6714,9 @@
     "Rejected a suggestion" : {
 
     },
+    "Relation" : {
+
+    },
     "Relationship" : {
 
     },
@@ -6451,6 +6847,9 @@
     "Removed agent (%@)" : {
 
     },
+    "Removed in To Check" : {
+
+    },
     "Removed." : {
 
     },
@@ -6478,10 +6877,16 @@
     "Rename, add or delete categories" : {
 
     },
+    "Renamed to %@" : {
+
+    },
     "Rename…" : {
 
     },
     "Replace" : {
+
+    },
+    "Replaces “%@”. You can undo it under Corrections." : {
 
     },
     "Request" : {
@@ -7024,6 +7429,9 @@
     "Search memories" : {
 
     },
+    "Search names" : {
+
+    },
     "Search uses bge-small meanwhile." : {
 
     },
@@ -7061,6 +7469,9 @@
 
     },
     "Select a memory to read or edit it." : {
+
+    },
+    "Select a name" : {
 
     },
     "Select text in any app, then choose Services ▸ Remember in Funes. It goes to your Inbox." : {
@@ -7121,6 +7532,12 @@
           }
         }
       }
+    },
+    "Set Dates" : {
+
+    },
+    "Set Dates…" : {
+
     },
     "Set Network access to Custom and add %@ under Allowed domains." : {
 
@@ -7321,6 +7738,9 @@
     "Show Only Agents Found on This Mac" : {
 
     },
+    "Show People & History" : {
+
+    },
     "Show Problems" : {
 
     },
@@ -7346,6 +7766,9 @@
 
     },
     "Show in Inbox" : {
+
+    },
+    "Show in the List" : {
 
     },
     "Show less of %@" : {
@@ -7376,6 +7799,9 @@
 
     },
     "Showing “%@” only" : {
+
+    },
+    "Shown again" : {
 
     },
     "Shows the change to %@'s settings first." : {
@@ -7409,6 +7835,19 @@
     "Skip" : {
 
     },
+    "Skipped" : {
+
+    },
+    "Skipped “%@” in %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Skipped “%1$@” in %2$@"
+          }
+        }
+      }
+    },
     "Skipped: already saved “%@”" : {
 
     },
@@ -7419,6 +7858,12 @@
 
     },
     "Some memories are only in this category. Choose a replacement." : {
+
+    },
+    "Someone Else" : {
+
+    },
+    "Someone else" : {
 
     },
     "Something answered at that address, but not %@ (HTTP %@). Check that the tunnel points at port %@." : {
@@ -7449,6 +7894,16 @@
     },
     "Something went wrong. Try again." : {
 
+    },
+    "Something you set on %@ (%@) no longer matches one of its dates." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something you set on %1$@ (%2$@) no longer matches one of its dates."
+          }
+        }
+      }
     },
     "Sort by" : {
 
@@ -7630,6 +8085,9 @@
     "Start %@ when VS Code asks." : {
 
     },
+    "Start (optional)" : {
+
+    },
     "Start Reading" : {
 
     },
@@ -7645,11 +8103,20 @@
     "Start with nothing and set it up on the Access tab." : {
 
     },
+    "Started %@: two memories disagree" : {
+      "comment" : "Timeline: conflicting dates"
+    },
     "Starting access" : {
 
     },
     "Starting…" : {
 
+    },
+    "Stated" : {
+      "comment" : "Timeline basis"
+    },
+    "Stated as former" : {
+      "comment" : "Timeline basis"
     },
     "Status" : {
 
@@ -7863,6 +8330,9 @@
 
     },
     "That change couldn't be saved. %@" : {
+
+    },
+    "That didn't work. Try again." : {
 
     },
     "That file doesn't hold ChatGPT memories Funes can read." : {
@@ -8199,10 +8669,19 @@
     "These disagree. Which is true?" : {
 
     },
+    "They become one. You can undo it under Corrections." : {
+
+    },
     "They skip the Inbox. Only do this with your own export." : {
 
     },
     "They're removed for good, with their history. This can't be undone." : {
+
+    },
+    "Thing" : {
+
+    },
+    "Things" : {
 
     },
     "This %@ version isn't supported yet" : {
@@ -8396,6 +8875,12 @@
     "Title" : {
 
     },
+    "To Check" : {
+
+    },
+    "To Check %lld" : {
+
+    },
     "To notify your iPhone of waiting requests, sign in to iCloud on this Mac with the same Apple Account as the iPhone. Until then, open Funes Vault on the iPhone to see them." : {
 
     },
@@ -8558,6 +9043,9 @@
     "Unavailable: keyword search only" : {
 
     },
+    "Undated" : {
+
+    },
     "Undid %lld changes" : {
       "localizations" : {
         "en" : {
@@ -8635,6 +9123,9 @@
     },
     "Unknown category" : {
 
+    },
+    "Unnamed (%@)" : {
+      "comment" : "An entry no memory names any more, kept for your corrections"
     },
     "Unsaved changes" : {
 
@@ -8874,6 +9365,17 @@
     "Where it runs" : {
 
     },
+    "Which %@ %@ did you mean?" : {
+      "comment" : "To check: e.g. Which Acme job did you mean?",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Which %1$@ %2$@ did you mean?"
+          }
+        }
+      }
+    },
     "Which current projects should your vault remember, and why do they matter?" : {
 
     },
@@ -8882,6 +9384,17 @@
     },
     "While Remote Access is on, cloud agents reach Funes Vault through a public address. What you share with them goes to their servers." : {
 
+    },
+    "Who is “%@” in %@?" : {
+      "comment" : "To check: an unsettled role phrase",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Who is “%1$@” in %2$@?"
+          }
+        }
+      }
     },
     "Who reads your vault" : {
 
@@ -8925,6 +9438,9 @@
     "Write" : {
 
     },
+    "Write dates as a year, a month or a day: 2019, 2019-03 or 2019-03-15." : {
+
+    },
     "Wrong port" : {
 
     },
@@ -8958,10 +9474,16 @@
     "You review every proposal in the Inbox." : {
 
     },
+    "You said so" : {
+
+    },
     "You're all set" : {
 
     },
     "Your Inbox is empty" : {
+
+    },
+    "Your Timeline" : {
 
     },
     "Your answer" : {
@@ -9038,6 +9560,12 @@
 
     },
     "Your vault is empty" : {
+
+    },
+    "Your word for it (optional)" : {
+
+    },
+    "Your word for it (optional): sister, girlfriend, wife" : {
 
     },
     "Zed" : {
@@ -9145,6 +9673,9 @@
 
     },
     "current" : {
+      "comment" : "Timeline: a job of yours marked current, no dates"
+    },
+    "deceased" : {
 
     },
     "done" : {
@@ -9193,6 +9724,12 @@
     "expiry" : {
 
     },
+    "former" : {
+      "comment" : "Timeline: a job of yours marked former, no dates"
+    },
+    "from %@" : {
+      "comment" : "An episode with no known end"
+    },
     "from text you didn't write" : {
 
     },
@@ -9203,6 +9740,9 @@
       "comment" : "Why line basis"
     },
     "funes-mcp" : {
+
+    },
+    "hidden" : {
 
     },
     "https:// and your dev domain" : {
@@ -9426,6 +9966,9 @@
     "shares without asking" : {
 
     },
+    "since %@" : {
+      "comment" : "An episode that still holds"
+    },
     "status" : {
 
     },
@@ -9510,8 +10053,11 @@
     "two for each memory" : {
 
     },
-    "until %@" : {
+    "undated" : {
 
+    },
+    "until %@" : {
+      "comment" : "An episode with no known start"
     },
     "via Remote Access" : {
 
@@ -9554,7 +10100,16 @@
     "· %@" : {
 
     },
+    "· %lld memories say so" : {
+
+    },
+    "· 1 memory says so" : {
+
+    },
     "· confirmed %@" : {
+
+    },
+    "· former" : {
 
     },
     "—" : {
@@ -9565,6 +10120,16 @@
     },
     "“%@” (as reported)" : {
 
+    },
+    "“%@” in %@ is someone else" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "“%1$@” in %2$@ is someone else"
+          }
+        }
+      }
     },
     "“%@” wants to pair" : {
 

@@ -7,7 +7,7 @@ import UserNotifications
 /// permission is asked when it's turned on. Notifications name agents and counts, never memory or task text.
 @MainActor
 final class Notifier: NSObject, UNUserNotificationCenterDelegate {
-    enum Kind: String { case expired, suggestion, refused, tunnelDown, tidyUp }
+    enum Kind: String { case expired, suggestion, refused, tunnelDown, tidyUp, facts }
 
     /// A click: which kind, and the agent it's about.
     var onOpen: (Kind, UUID?) -> Void = { _, _ in }

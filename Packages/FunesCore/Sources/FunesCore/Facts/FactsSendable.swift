@@ -158,6 +158,7 @@ extension FactStore {
             guard let entity = entityOfFact[fid] else { continue }
             let others = [fid] + [(r["other_fact_id"] as String?)].compactMap { $0 }
             if (r["source"] as String) == "user" {
+                if object(r["asserted"])["retired_at"] != nil { continue }      // retired in To check: it counts nowhere
                 let level: Int = r["sensitivity"]
                 if manualEntities.contains(entity) { typedName[entity] = max(typedName[entity] ?? 0, level) }
                 if allows(level) {
@@ -167,6 +168,9 @@ extension FactStore {
                     // The day the user said it (kept with the row): from its start, to be safe.
                     let day = (object(r["asserted"])["written"] as? String).flatMap(Self.dayStart) ?? .distantPast
                     for f in others { if let e = entityOfFact[f] { touch(e, day) } }
+                    // A correction of a fact above the limit (a date, a status, a qualifier, an order) withholds that
+                    // fact whole, and both of an order's endpoints (§11.9).
+                    for f in others where entityOfFact[f] != nil { facts.insert(f) }
                 }
             } else {
                 guard let ok = memoryAllowed(r["memory_id"], r["memory_version"]) else { continue }
@@ -193,7 +197,7 @@ extension FactStore {
                 let ra = root(target), rb = root(into)
                 if ra != rb { parent[ra] = rb }
             }
-            if field == "not_same" { continue }
+            if field == "not_same" || field == "hidden" { continue }        // Hide is for People & history's list only
             let memory: String? = o["memory_id"]
             let level = max(o["sensitivity"] as Int, memory.flatMap { counted[$0]?.sensitivity } ?? 0)
             let ok = allows(level)

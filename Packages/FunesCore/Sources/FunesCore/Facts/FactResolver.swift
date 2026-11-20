@@ -331,6 +331,8 @@ extension FactsGraph {
         let dateCue = ph.mods.contains(where: { registry.language.dateCueWords.contains($0) })
         if dateCue, registry.declares(ph.predicate, .timeline), !uses.isOn(ph.predicate, .timeline) { return (nil, .candidates, []) }
         if let dec = decisions[key], !(dec.basis == .group && entity(dec.entity)?.name != nil),
+           // A decision for an entity of another kind (its kind changed since) decides nothing.
+           dec.entity.map({ entities[$0].map { $0.kind == registry.kindOf(ph.predicate) } ?? true }) ?? true,
            !(dec.entity.map { rejections[key]?.contains($0) ?? false } ?? false) {     // a correction beats a decision
             if dec.basis == .someoneElse { return (nil, .someoneElse, []) }
             // A decision can't lift what it chose above that entity's evidence: untrusted facts give an untrusted link.
