@@ -318,6 +318,10 @@ import Testing
         #expect(rows.count == 1 && rows[0].counts["applied"] == 1 && rows[0].ids.count == 1)
         let encoded = String(decoding: try JSONEncoder().encode(rows), as: UTF8.self)
         #expect(!encoded.contains("Zebulonia") && !encoded.contains("sister"))
+        // Activity's words: counts only, the run's id never read as a memory's.
+        let words = try #require(FactsActivityWords(rows[0]))
+        #expect(words.title == "Learned facts from 1 memory" && words.result == "Done")
+        #expect(![words.title, words.detail, words.result].contains { $0.contains("Zebulonia") || $0.contains("sister") })
         // The run records the registry and prompt versions.
         let versions = try await v.store.writer.read { db in
             try String.fetchOne(db, sql: "SELECT registry_version || ' ' || prompt_version FROM facts_run")

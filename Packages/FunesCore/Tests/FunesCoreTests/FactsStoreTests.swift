@@ -322,6 +322,10 @@ import Testing
         #expect(try v.count("SELECT COUNT(*) FROM fact_qualification") == 1)
         let event = try #require(activity.events.first)
         #expect(event.event == "facts_removed" && event.counts["facts"] == removed.facts)
+        let words = try #require(FactsActivityWords(event))
+        #expect(words.title == "Removed learned facts")
+        let names = removed.entities == 1 ? "1 name" : "\(removed.entities) names"
+        #expect(words.detail == names + ", " + (removed.facts == 1 ? "1 fact" : "\(removed.facts) facts"))
         #expect(try load().graph.entityMatches(d, "Globex").count == 1)
     }
 

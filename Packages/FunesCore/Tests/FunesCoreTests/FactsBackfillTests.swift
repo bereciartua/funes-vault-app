@@ -139,6 +139,8 @@ import Testing
         }
         let started = activity.events.filter { $0.event == "facts_backfill" }
         #expect(started.count == 1 && started[0].outcome == "started" && started[0].counts == ["memories": 3, "calls": 3 * groups.count])
+        let words = try #require(FactsActivityWords(started[0]))
+        #expect(words.title == "Started reading existing memories" && words.detail == "3 memories · about \(3 * groups.count) model calls")
     }
 
     @Test func startWakesJobsWaitingForTheCapAModelOrARetry() async throws {
@@ -224,6 +226,9 @@ import Testing
         // One finished row, counts only.
         let rows = activity.events.filter { $0.event == "facts_backfill" && $0.outcome == "finished" }
         #expect(rows.count == 1 && rows[0].counts["memories"] == 3 && rows[0].counts["calls"] == exempt && rows[0].ids.isEmpty)
+        let words = try #require(FactsActivityWords(rows[0]))
+        #expect(words.title == "Finished reading existing memories" && words.detail.hasPrefix("3 memories"))
+        #expect(exempt < 2 || words.detail.contains(" · \(exempt) cloud requests outside the daily count"))
         #expect(try v.count("SELECT COUNT(*) FROM facts_run WHERE kind = 'backfill'") == 3 * groups.count)
     }
 

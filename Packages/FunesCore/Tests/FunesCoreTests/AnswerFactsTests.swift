@@ -468,6 +468,7 @@ extension AnswerFactsTests {
         #expect(after != before)
         let row = try #require(log.events.last)
         #expect(row.event == "facts_corrected" && row.actor == phone.description && row.via == .companion && row.counts["links"] != nil)
+        #expect(FactsActivityWords(row)?.title == "Corrected a fact")
         // A repeat (a reply lost on the way): nothing more, the revision unmoved, no Activity row.
         let rows = log.events.count
         #expect(try store.applyCorrection(name, config: FactsSearchTests.config(), activity: log, now: t0.plus(days: 3)) == .already)

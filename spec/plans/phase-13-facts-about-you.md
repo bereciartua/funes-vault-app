@@ -220,7 +220,6 @@
     - Cost figures for models with no measurement (only Haiku 5.5 is measured; Opus 5.5 comes with its records).
     - Accepted: turning learning off in the instant between recording the exempt request and sending it spends that exemption with nothing sent (it fails closed: the read goes on under the cap).
     - A pipeline revision bump (validation, the apply) doesn't re-read: readings under an earlier qualified key are used until their group is re-read (§11.10).
-    - Activity's wording for the facts events (`facts_learned`, `facts_backfill`, `facts_removed`, `facts_corrected`): they show their raw names today ("Facts Backfill"), with their counts.
     - The UI review screenshots weren't captured in this environment (window capture fails); `FUNES_UI_ONLY=facts sh scripts/ui_snapshots.sh` makes them.
 - [x] **Gates** (the acceptance rows assigned to 13a.2): links, `sole_known` on fixtures, recall, client, mixed, the fresh blind work fixture, the canary, port fidelity, privacy payloads. **Closed on 19 November 2026 by the author's decision: the person pool and client qualified; works at, the timeline and bridges didn't, and ship with no record (see the closing status).**
 - *Status (18 November 2026), the person fixture:*
@@ -481,7 +480,6 @@
     the freeze to hold (`facts_freeze.sh check`). Otherwise they need fresh blind sets.
   - **Carried forward:**
     - ~~**A Facts share of the cap**~~: settled before 13e, see "Low-priority work's share of the cap" under 13e.
-    - **Activity's wording for the facts events**, which show their raw names today.
     - **Two accepted privacy residuals (§11.9), both the author's decision:**
       - a link dropped for a hidden first-name sharer withholds a `named` decision in that vault only;
       - a `named` decision that the exception declines can be re-asked in the vault with a restricted note only. That

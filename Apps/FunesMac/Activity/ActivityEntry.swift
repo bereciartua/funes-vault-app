@@ -72,6 +72,7 @@ struct ActivityEntry: Identifiable, Equatable {
     /// "Shared 3 memories", "Refused", "Suggested a memory".
     var label: String {
         let e = event
+        if let facts = FactsActivityWords(e) { return facts.title }
         switch e.event {
         case "request_memory":
             switch e.outcome {
@@ -155,6 +156,13 @@ struct ActivityEntry: Identifiable, Equatable {
     /// The Result column: "Approved by you", "Category not allowed", "Waiting in Inbox".
     var result: (text: String, tone: Pill.Tone) {
         let e = event
+        if let facts = FactsActivityWords(e) {
+            switch facts.tone {
+            case .neutral: return (facts.result, .neutral)
+            case .good: return (facts.result, .good)
+            case .warning: return (facts.result, .warning)
+            }
+        }
         if let reason = e.reason, isProblem || e.outcome == "denied" {
             return (Self.reasonText(reason), reason == .deniedByUser ? .neutral : .bad)
         }
