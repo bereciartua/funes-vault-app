@@ -54,19 +54,19 @@ public struct SystemCLIProcess: CLIProcessRunning {
 
     /// How long a stopped process gets to exit on SIGTERM before SIGKILL.
     static let killGrace: TimeInterval = 2
-
-    /// Where the child's input is written and its deadlines are kept. A call is someone waiting (a search answer, a
-    /// Facts read), so this work must not wait behind a busy Mac: at a background priority (`.utility`) a saturated
-    /// CPU delayed the input by seconds, and the child sat on its first read until its own timeout ended it.
-    static let queue = DispatchQueue.global(qos: .userInitiated)
+    /// How long output may still arrive once the process has exited. A read already under way
+    /// lands well within it; a helper the CLI left running with the pipes open doesn't hold the run.
+    static let drainGrace: TimeInterval = 2
 
     /// Ends a process: SIGTERM, then SIGKILL if it's still running after `killGrace` (a CLI that
-    /// ignores SIGTERM can't outlive a search answer's deadline).
+    /// ignores SIGTERM can't outlive a search answer's deadline). The kill waits on a queue of its
+    /// own: when a shared global queue's threads are all busy or blocked (a loaded Mac, a parallel
+    /// test run), it would never fire.
     static func stop(_ process: Process) {
         guard process.isRunning else { return }
         let pid = process.processIdentifier
         process.terminate()
-        queue.asyncAfter(deadline: .now() + killGrace) {
+        DispatchQueue(label: "com.funesvault.cli.kill", qos: .userInitiated).asyncAfter(deadline: .now() + killGrace) {
             if process.isRunning { kill(pid, SIGKILL) }
         }
     }
@@ -76,6 +76,8 @@ public struct SystemCLIProcess: CLIProcessRunning {
         let lock = NSLock()
         let process: Process
         let line: @Sendable (String) -> Bool
+        /// The run's time limit and output drain, on its own queue for the same reason as the kill.
+        let control = DispatchQueue(label: "com.funesvault.cli.control", qos: .userInitiated)
         var buffer = Data()
         var lines: [String] = []
         var errors = Data()
@@ -84,17 +86,42 @@ public struct SystemCLIProcess: CLIProcessRunning {
         var resumed = false
         /// The task was cancelled: a process not started yet never starts.
         var cancelled = false
+        var continuation: CheckedContinuation<CLIOutput, any Error>?
+        var timeLimit: DispatchWorkItem?
+        var exitStatus: Int32?
+        var outputEnded = false
+        var errorsEnded = false
+        /// Reads taken from a pipe and not yet handed over: the drain waits for them too.
+        var reading = 0
+        /// The read ends, to see whether output is still waiting when the drain runs out.
+        let outputFD: Int32
+        let errorsFD: Int32
 
-        init(process: Process, line: @escaping @Sendable (String) -> Bool) {
+        init(process: Process, line: @escaping @Sendable (String) -> Bool, outputFD: Int32, errorsFD: Int32) {
             self.process = process
             self.line = line
+            self.outputFD = outputFD
+            self.errorsFD = errorsFD
+        }
+
+        func beginRead() { lock.withLock { reading += 1 } }
+        func endRead() { lock.withLock { reading -= 1 } }
+
+        /// Whether output is still on its way: a read being handed over, or bytes waiting in a
+        /// stream that hasn't ended.
+        private func waiting() -> Bool {
+            if reading > 0 { return true }
+            var fds = [(outputFD, outputEnded), (errorsFD, errorsEnded)].filter { !$0.1 }
+                .map { pollfd(fd: $0.0, events: Int16(POLLIN), revents: 0) }
+            return !fds.isEmpty && poll(&fds, nfds_t(fds.count), 0) > 0
         }
 
         /// Splits output into lines and hands each to the handler; a false answer kills the process.
         func take(_ data: Data) {
             lock.lock()
             defer { lock.unlock() }
-            guard !stopped else { return }
+            // Nothing reaches the handler once the run has returned (output after the drain).
+            guard !stopped, !resumed else { return }
             buffer.append(data)
             while let newline = buffer.firstIndex(of: 0x0A) {
                 let text = String(decoding: buffer[buffer.startIndex..<newline], as: UTF8.self)
@@ -106,6 +133,83 @@ public struct SystemCLIProcess: CLIProcessRunning {
                     return
                 }
             }
+        }
+
+        func takeError(_ data: Data) {
+            lock.withLock {
+                guard !resumed else { return }
+                errors.append(data)
+                if errors.count > 8_192 { errors = errors.suffix(4_096) }
+            }
+        }
+
+        func outputEnd() {
+            lock.lock()
+            outputEnded = true
+            finish()
+        }
+
+        func errorsEnd() {
+            lock.lock()
+            errorsEnded = true
+            finish()
+        }
+
+        /// The process exited: the result once both streams have ended, or after `drainGrace` (longer
+        /// while output is still on its way, up to ten more checks). Output still on its way after
+        /// that makes the run timed out, not a success with lines missing (a tool event among them).
+        func exited(_ status: Int32, drain: @escaping @Sendable () -> Void) {
+            lock.lock()
+            exitStatus = status
+            let open = !(outputEnded && errorsEnded)
+            finish()
+            if open { scheduleDrain(after: SystemCLIProcess.drainGrace, checks: 10, drain: drain) }
+        }
+
+        private func scheduleDrain(after delay: TimeInterval, checks: Int, drain: @escaping @Sendable () -> Void) {
+            control.asyncAfter(deadline: .now() + delay) {
+                self.lock.lock()
+                guard !self.resumed else {
+                    self.lock.unlock()
+                    return
+                }
+                if self.waiting() {
+                    guard checks == 0 else {
+                        self.lock.unlock()
+                        self.scheduleDrain(after: 0.2, checks: checks - 1, drain: drain)
+                        return
+                    }
+                    self.timedOut = true
+                }
+                self.outputEnded = true
+                self.errorsEnded = true
+                self.finish()
+                drain()
+            }
+        }
+
+        /// Called with the lock held; releases it. Resumes once the process has exited and both
+        /// streams have ended, so no output still being read is missed (a stream's last read can
+        /// come after the process's exit).
+        private func finish() {
+            guard let status = exitStatus, outputEnded, errorsEnded, !resumed, let continuation else {
+                lock.unlock()
+                return
+            }
+            if !stopped, !buffer.isEmpty {
+                let rest = String(decoding: buffer, as: UTF8.self)
+                buffer.removeAll()
+                lines.append(rest)
+                if !line(rest) { stopped = true }
+            }
+            resumed = true
+            self.continuation = nil
+            timeLimit?.cancel()
+            timeLimit = nil
+            let result = CLIOutput(exitCode: status, lines: lines, errorTail: String(decoding: errors.suffix(600), as: UTF8.self),
+                                   timedOut: timedOut, stopped: stopped)
+            lock.unlock()
+            continuation.resume(returning: result)
         }
     }
 
@@ -119,73 +223,87 @@ public struct SystemCLIProcess: CLIProcessRunning {
         process.standardOutput = out
         process.standardError = err
         process.standardInput = input
-        let state = State(process: process, line: line)
-        out.fileHandleForReading.readabilityHandler = { handle in state.take(handle.availableData) }
-        err.fileHandleForReading.readabilityHandler = { handle in
+        let state = State(process: process, line: line, outputFD: out.fileHandleForReading.fileDescriptor,
+                          errorsFD: err.fileHandleForReading.fileDescriptor)
+        // An empty read is the stream's end: after every earlier read's handler has run, as a
+        // handle's reads are handled one at a time.
+        out.fileHandleForReading.readabilityHandler = { handle in
+            state.beginRead()
+            defer { state.endRead() }
             let data = handle.availableData
-            state.lock.lock()
-            state.errors.append(data)
-            if state.errors.count > 8_192 { state.errors = state.errors.suffix(4_096) }
-            state.lock.unlock()
+            if data.isEmpty {
+                handle.readabilityHandler = nil
+                state.outputEnd()
+            } else {
+                state.take(data)
+            }
+        }
+        err.fileHandleForReading.readabilityHandler = { handle in
+            state.beginRead()
+            defer { state.endRead() }
+            let data = handle.availableData
+            if data.isEmpty {
+                handle.readabilityHandler = nil
+                state.errorsEnd()
+            } else {
+                state.takeError(data)
+            }
+        }
+        // Stops reading: a process that never started, or streams a leftover helper keeps open.
+        let unhook: @Sendable () -> Void = {
+            out.fileHandleForReading.readabilityHandler = nil
+            err.fileHandleForReading.readabilityHandler = nil
         }
 
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CLIOutput, any Error>) in
-                process.terminationHandler = { p in
-                    out.fileHandleForReading.readabilityHandler = nil
-                    err.fileHandleForReading.readabilityHandler = nil
-                    state.take(out.fileHandleForReading.readDataToEndOfFile())
-                    state.lock.lock()
-                    if !state.stopped, !state.buffer.isEmpty {
-                        let rest = String(decoding: state.buffer, as: UTF8.self)
-                        state.lines.append(rest)
-                        if !line(rest) { state.stopped = true }
-                    }
-                    guard !state.resumed else {
-                        state.lock.unlock()
-                        return
-                    }
-                    state.resumed = true
-                    let result = CLIOutput(exitCode: p.terminationStatus, lines: state.lines,
-                                           errorTail: String(decoding: state.errors.suffix(600), as: UTF8.self),
-                                           timedOut: state.timedOut, stopped: state.stopped)
-                    state.lock.unlock()
-                    continuation.resume(returning: result)
-                }
+                process.terminationHandler = { p in state.exited(p.terminationStatus, drain: unhook) }
                 // Starting and cancelling are serialized, so a cancel that comes before the start
                 // (a new Ask right after the last) never leaves a process running.
                 state.lock.lock()
                 if state.cancelled {
                     state.resumed = true
                     state.lock.unlock()
+                    process.terminationHandler = nil
+                    unhook()
                     continuation.resume(throwing: CancellationError())
                     return
                 }
+                state.continuation = continuation
                 do {
                     try process.run()
-                    state.lock.unlock()
                 } catch {
                     state.resumed = true
+                    state.continuation = nil
                     state.lock.unlock()
+                    process.terminationHandler = nil
+                    unhook()
                     continuation.resume(throwing: ProviderError.unavailable)
                     return
                 }
-                let data = Data(invocation.input.utf8)
-                // A process killed before it read its input (a cancelled search answer) makes the
-                // write fail instead of raising SIGPIPE, which would end Funes.
-                _ = fcntl(input.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
-                SystemCLIProcess.queue.async {
-                    try? input.fileHandleForWriting.write(contentsOf: data)
-                    try? input.fileHandleForWriting.close()
-                }
-                let seconds = Double(invocation.timeout.components.seconds) + Double(invocation.timeout.components.attoseconds) / 1e18
-                SystemCLIProcess.queue.asyncAfter(deadline: .now() + seconds) {
+                // Weak: a cancelled work item keeps what it holds until its deadline passes.
+                let timeLimit = DispatchWorkItem { [weak state] in
+                    guard let state else { return }
                     state.lock.lock()
                     defer { state.lock.unlock() }
                     guard state.process.isRunning else { return }
                     state.timedOut = true
                     SystemCLIProcess.stop(state.process)
                 }
+                state.timeLimit = timeLimit
+                state.lock.unlock()
+                let data = Data(invocation.input.utf8)
+                // A process killed before it read its input (a cancelled search answer) makes the
+                // write fail instead of raising SIGPIPE, which would end Funes.
+                _ = fcntl(input.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
+                // Its own queue: the write blocks while the CLI isn't reading, and on a shared
+                // global queue it could wait behind other work past the time limit.
+                DispatchQueue(label: "com.funesvault.cli.input", qos: .userInitiated).async {
+                    try? input.fileHandleForWriting.write(contentsOf: data)
+                    try? input.fileHandleForWriting.close()
+                }
+                let seconds = Double(invocation.timeout.components.seconds) + Double(invocation.timeout.components.attoseconds) / 1e18
+                state.control.asyncAfter(deadline: .now() + seconds, execute: timeLimit)
             }
         } onCancel: {
             state.lock.lock()

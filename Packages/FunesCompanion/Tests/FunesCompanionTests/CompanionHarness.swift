@@ -88,9 +88,9 @@ final class CompanionHarness: @unchecked Sendable {
         return (result, client)
     }
 
-    /// Waits for the prompt (up to 2 s), then answers.
+    /// Waits for the prompt (up to about 20 s: only a hang guard), then answers.
     func answerWhenAsked(_ allow: Bool) async throws {
-        for _ in 0..<200 {
+        for _ in 0..<2_000 {
             if await pairing.isAsking { break }
             try await Task.sleep(for: .milliseconds(10))
         }

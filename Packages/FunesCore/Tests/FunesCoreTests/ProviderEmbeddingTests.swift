@@ -246,7 +246,8 @@ final class TranslatingEmbedder: EmbeddingProvider {
         cloud.script.withLock { $0.hang = [2] }
         let indexer = ProviderEmbeddingIndexer(store: v.store, provider: cloud, cloudLimit: .upTo(.internal), batchSize: 2)
         let task = Task { try await indexer.embedPending() }
-        for _ in 0..<200 where cloud.calls < 2 { try await Task.sleep(for: .milliseconds(10)) }
+        for _ in 0..<2_000 where cloud.calls < 2 { try await Task.sleep(for: .milliseconds(10)) }
+        try #require(cloud.calls >= 2)
         task.cancel()
         await #expect(throws: (any Error).self) { try await task.value }
         #expect(indexer.index.count == 2 && !indexer.isComplete)

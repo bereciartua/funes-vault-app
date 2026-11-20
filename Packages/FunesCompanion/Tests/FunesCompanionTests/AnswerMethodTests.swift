@@ -39,6 +39,8 @@ struct RealAnswers: SearchAnswering {
 final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
     let available: Bool
     let delay: Duration
+    /// The first calls' own delays, before `delay` applies.
+    let delays: [Duration]
     let failure: SearchAnswerError?
     let trigger: AnswerTrigger
     let started = Mutex(0)
@@ -46,9 +48,11 @@ final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
     /// Whether each call came marked as asked on its own.
     let automatic = Mutex<[Bool]>([])
 
-    init(available: Bool = true, delay: Duration = .zero, failure: SearchAnswerError? = nil, trigger: AnswerTrigger = .ask) {
+    init(available: Bool = true, delay: Duration = .zero, delays: [Duration] = [], failure: SearchAnswerError? = nil,
+         trigger: AnswerTrigger = .ask) {
         self.available = available
         self.delay = delay
+        self.delays = delays
         self.failure = failure
         self.trigger = trigger
     }
@@ -58,10 +62,10 @@ final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
     }
 
     func answer(_ query: String, ids: [UUID], actor: Actor, via: ActivityEvent.Via, automatic: Bool) async throws -> SearchAnswer {
-        started.withLock { $0 += 1 }
+        let call = started.withLock { $0 += 1; return $0 }
         self.automatic.withLock { $0.append(automatic) }
         do {
-            try await Task.sleep(for: delay)
+            try await Task.sleep(for: call <= delays.count ? delays[call - 1] : delay)
         } catch {
             cancelled.withLock { $0 += 1 }
             throw CancellationError()
@@ -186,7 +190,8 @@ final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
     /// Its own deadline: not cut at the usual call limit; at its own, the work is cancelled.
     @Test func itsOwnDeadline() async throws {
         let slow = ScriptedAnswers(delay: .milliseconds(400))
-        let h = try Self.harness(slow, callTimeout: .milliseconds(100), answerTimeout: .milliseconds(1_500))
+        // Far past the answer's 400 ms, which a busy runner can stretch.
+        let h = try Self.harness(slow, callTimeout: .milliseconds(100), answerTimeout: .seconds(20))
         let phone = try await h.pairedPhone()
         let result = try await h.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()]), phone: phone)
         #expect(result.outcome == .noAnswer)
@@ -197,17 +202,19 @@ final class ScriptedAnswers: SearchAnswering, @unchecked Sendable {
         await #expect(throws: CompanionError(.modelTimeout, message: "Deadline")) {
             try await late.result(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()]), phone: other)
         }
-        try await Task.sleep(for: .milliseconds(100))
+        for _ in 0..<1_000 where stuck.cancelled.withLock({ $0 }) == 0 { try await Task.sleep(for: .milliseconds(10)) }
         #expect(stuck.cancelled.withLock { $0 } == 1)
     }
 
     /// One in flight per device: the same device's next Ask cancels the previous one's work.
     @Test func aNewAskFromTheSameDeviceCancelsThePrevious() async throws {
-        let answers = ScriptedAnswers(delay: .seconds(2))
+        // Only the next Ask can end the first before its minute is up; the next answers at once.
+        let answers = ScriptedAnswers(delays: [.seconds(60)])
         let h = try Self.harness(answers)
         let phone = try await h.pairedPhone()
         async let first = h.call(MemoriesAnswer.self, MemoryAnswerParams(query: "coffee", ids: [UUID()]), phone: phone)
-        for _ in 0..<100 where answers.started.withLock({ $0 }) == 0 { try await Task.sleep(for: .milliseconds(10)) }
+        for _ in 0..<2_000 where answers.started.withLock({ $0 }) == 0 { try await Task.sleep(for: .milliseconds(10)) }
+        try #require(answers.started.withLock { $0 } == 1)
         let second = Task { try await h.call(MemoriesAnswer.self, MemoryAnswerParams(query: "tea", ids: [UUID()]), phone: phone) }
         let (_, reply) = try await first
         #expect(throws: CompanionError(.unavailable, message: "Cancelled")) { _ = try reply?.get() }
@@ -239,7 +246,8 @@ struct CLIAnswers: SearchAnswering {
         try FileManager.default.createDirectory(at: pids, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let script = dir.appending(path: "claude")
-        try "#!/bin/sh\ntouch \"\(pids.path)/$$\"\nexec sleep 30\n".write(to: script, atomically: true, encoding: .utf8)
+        // Far longer than any wait below, so only a kill ends one in time.
+        try "#!/bin/sh\ntouch \"\(pids.path)/$$\"\nexec sleep 120\n".write(to: script, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
 
         let h = try CompanionHarness()
@@ -250,9 +258,12 @@ struct CLIAnswers: SearchAnswering {
         func started() -> [pid_t] {
             ((try? FileManager.default.contentsOfDirectory(atPath: pids.path)) ?? []).compactMap { pid_t($0) }
         }
+        // Every wait below together stays inside the answers' 45 s deadline
+        // (ModelRouter.searchAnswerTimeout), after which b's process would end anyway.
         func wait(for count: Int) async throws {
-            for _ in 0..<200 where started().count < count { try await Task.sleep(for: .milliseconds(25)) }
+            for _ in 0..<400 where started().count < count { try await Task.sleep(for: .milliseconds(25)) }
         }
+        defer { for pid in started() { kill(pid, SIGKILL) } }
         let params = MemoryAnswerParams(query: "coffee", ids: [memory.id])
         let b = Task { try await harness.call(MemoriesAnswer.self, params, phone: phoneB) }
         try await wait(for: 1)
@@ -261,11 +272,13 @@ struct CLIAnswers: SearchAnswering {
         try await wait(for: 2)
         let a1PID = try #require(started().first { $0 != bPID })
         let a2 = Task { try await harness.call(MemoriesAnswer.self, params, phone: phoneA) }
-        let (_, reply) = try await a1.value
-        #expect(throws: CompanionError(.unavailable, message: "Cancelled")) { _ = try reply?.get() }
-        for _ in 0..<40 where Self.alive(a1PID) { try await Task.sleep(for: .milliseconds(25)) }
+        // Watched before awaiting a1's reply, which a broken kill would hold until the stub ends.
+        for _ in 0..<400 where Self.alive(a1PID) { try await Task.sleep(for: .milliseconds(25)) }
         #expect(!Self.alive(a1PID))
         #expect(Self.alive(bPID))
+        let (_, reply) = try await a1.value
+        #expect(throws: CompanionError(.unavailable, message: "Cancelled")) { _ = try reply?.get() }
+        try await wait(for: 3)
         b.cancel()
         a2.cancel()
         for pid in started() { kill(pid, SIGKILL) }

@@ -90,17 +90,18 @@ import Testing
 
     /// An earlier prompt's timeout never answers a later one.
     @Test func anOldTimeoutDoesntDenyANewPrompt() async throws {
-        let h = try CompanionHarness(promptTimeout: 0.5)
+        let h = try CompanionHarness(promptTimeout: 5)
         var first = CompanionHarness.Phone()
         _ = try await h.pair(&first, payload: await h.qr(), allow: true)
-        // The first prompt's timer (0.5 s) is still running when a second pairing starts at 0.3 s;
-        // at 0.65 s the first timer has fired and the second prompt must still be waiting.
-        try await Task.sleep(for: .milliseconds(300))
+        // The first prompt's timer (5 s) is still running when a second pairing starts at 3 s;
+        // at 6.5 s the first timer has fired and the second prompt must still be waiting (its own
+        // timer runs to 8 s). Seconds, not milliseconds, so a busy runner's delays fit the gaps.
+        try await Task.sleep(for: .seconds(3))
         var second = CompanionHarness.Phone()
         let (_, body) = try PairingClient.start(payload: await h.qr(), deviceName: "Ana's iPhone", model: "iPhone17,1",
                                                 signer: second.signer, deviceHPKEKey: second.hpke, now: t0)
         async let response = h.router.handle(CompanionHarness.request(CompanionProtocol.pairPath, body: body), transport: .lan)
-        try await Task.sleep(for: .milliseconds(350))
+        try await Task.sleep(for: .milliseconds(3_500))
         #expect(await h.pairing.isAsking)
         await h.pairing.answer(allow: true)
         #expect(await response.status == 200)
