@@ -47,6 +47,10 @@ public struct FactAssertion: Sendable, Equatable {
     public var followedByEntity: String?
     /// For a user's order edge: the date range of the other endpoint's episode when the user acted.
     public var otherSelector: DateRange?
+    /// Your evidence row's id (a user row only), for People & history's actions.
+    public var userRowID: String?
+    /// Clear Dates: your row that takes back the dates your earlier rows set on this episode.
+    public var clearsDates = false
     /// Where it sits in the order facts are read (memories by written date, then the user's rows by entry): kept so a
     /// merge can restore it.
     public var readOrder = ""
@@ -214,6 +218,9 @@ public struct FactsGraph: Sendable {
     public var memories: [String: FactsMemory] = [:]
     /// Order edges the user rejected ("Not this" on an order): before → after, by entity.
     public var rejectedEdges: [EdgeRejection] = []
+    /// Your label corrections, by `FactStore.Loaded.key(predicate, entity)`: kept when only your rows of a fact are
+    /// (a predicate whose recorded is off, §11.10).
+    var userLabels: [String: String] = [:]
     /// A rejected edge, optionally for one episode of each endpoint (its date range when the user acted).
     public struct EdgeRejection: Sendable, Hashable {
         public var from: String

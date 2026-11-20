@@ -22,6 +22,7 @@ struct MainView: View {
                 switch model.section {
                 case .home: HomeView(model: model)
                 case .vault: VaultView(model: model)
+                case .people: PeopleView(model: model)
                 case .inbox: InboxView(model: model)
                 case .activity: ActivityScreen(model: model)
                 case .agents: AgentsView(model: model)
@@ -77,6 +78,10 @@ struct Sidebar: View {
         List(selection: selection) {
             sectionRow(.home)
             sectionRow(.vault)
+            if model.peopleVisible {
+                // Indented under Vault, with no badge: To check never asks for attention.
+                sectionRow(.people).padding(.leading, 14)
+            }
             sectionRow(.inbox)
             sectionRow(.activity)
             Section {

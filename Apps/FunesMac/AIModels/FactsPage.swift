@@ -61,6 +61,9 @@ struct FactsPage: View {
             }
             Section {
                 HStack {
+                    if model.factsBackfill?.state.finishedAt != nil, model.factsBackfill?.state.ended == nil {
+                        Button(String(localized: "Show People & History")) { model.show(.people) }
+                    }
                     if model.factsBackfill == nil {
                         Button(String(localized: "Read Existing Memories…")) { open(.start) }
                             .disabled(removing || text.backfillUnavailable != nil)

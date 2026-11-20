@@ -174,6 +174,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.data.startJobs()
         // Find the subscription CLIs first, so the processing queue and the tidy-up can use a
         // chosen plan (ADR-0024).
+        // After the first backfill: the summary, with Show People & History (04-ux-mac.md).
+        model.onFactsBackfillFinished = { [notifier] summary in
+            notifier.post(.facts, title: String(localized: "Funes finished reading your memories"), body: PeopleText.summary(summary))
+        }
         model.tidyUp.finished = { [notifier] run in
             notifier.post(.tidyUp, title: String(localized: "Tidy-up finished"), body: TidyUpController.notice(run))
         }
@@ -362,6 +366,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             case .suggestion, .tidyUp: model.show(.inbox)
             case .expired, .refused: model.showActivity(agent.map(ActivityFocus.agent))
             case .tunnelDown: model.show(.remoteAccess)
+            case .facts: model.show(.people)
             }
         }
     }
