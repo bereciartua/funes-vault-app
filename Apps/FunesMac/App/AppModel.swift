@@ -274,6 +274,7 @@ final class AppModel {
                                               defaultPort: FunesRemoteConfiguration.defaultPort, host: .inert)
         var companionServices = services.companionServices
         companionServices.answers = searchAnswers
+        companionServices.factsWording = MacFactsWording()
         companion = CompanionController(defaults: preferences.defaults, services: companionServices,
                                         approvals: services.phoneApprovals, appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
         pausedUntil = services.pause.pausedUntil(at: Date())

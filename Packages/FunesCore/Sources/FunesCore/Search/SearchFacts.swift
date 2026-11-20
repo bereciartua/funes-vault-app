@@ -16,6 +16,9 @@ public struct FactsSearchConfig: Sendable {
     public var cloudLimit: CloudLimit
     /// A measurement's uses (the fixture gates, tests); the app never sets it.
     var measuredUses: FactsUses?
+    /// A measurement's extra links, by memory id (13d's answer gate injects a wrong one); the app never sets it. Part of
+    /// the index's cache key.
+    var measuredLinks: [String: [MemoryLink]] = [:]
 
     public init(registry: FactsRegistry = .bundled, qualification: FactsQualification = .bundled,
                 engines: [String: FactsEngine], userAliases: [String], cloudLimit: CloudLimit) {
@@ -38,6 +41,15 @@ public struct FactsSearchConfig: Sendable {
         if let measuredUses { return measuredUses }
         return try qualification.withOffSwitches(db).uses(engines: engines, registry: registry,
                                                           promptVersions: FactsQualification.promptVersions(registry))
+    }
+
+    /// What's on for an answer by `answerModel` (`ModelRouter.engine`), read in `db`: *attributes* and *bridges* only where a
+    /// record covers that model at the current answer prompt version (13d).
+    func answerUses(_ db: Database, answerModel: String) throws -> FactsUses {
+        if let measuredUses { return measuredUses }
+        return try qualification.withOffSwitches(db).uses(engines: engines, registry: registry,
+                                                          promptVersions: FactsQualification.promptVersions(registry),
+                                                          answer: .init(model: answerModel, promptVersion: SearchAnswerer.promptVersion))
     }
 }
 
@@ -86,6 +98,12 @@ public struct WhyLine: Sendable, Hashable {
         public var memoryID: UUID
         public var entity: String
         public var name: String
+
+        public init(memoryID: UUID, entity: String, name: String) {
+            self.memoryID = memoryID
+            self.entity = entity
+            self.name = name
+        }
     }
 
     public var form: Form
@@ -97,6 +115,15 @@ public struct WhyLine: Sendable, Hashable {
     public var notName: NotName?
     /// **Not this**: the fact behind the line (its row id), rejected for every memory.
     public var notThis: String?
+
+    public init(form: Form, basis: Basis, label: String, untrusted: Bool, notName: NotName?, notThis: String?) {
+        self.form = form
+        self.basis = basis
+        self.label = label
+        self.untrusted = untrusted
+        self.notName = notName
+        self.notThis = notThis
+    }
 }
 
 /// One memory's scores for a text (memory processing §4), kept or not.

@@ -247,7 +247,7 @@ public final class SearchService: Sendable {
 
     /// Plain search (memory processing §4): every kept memory, ranked. Agent retrieval, the duplicate hint's callers and
     /// vault search without learned facts all come here; nothing in it reads learned facts.
-    private func rank(text: String, pool: [(id: UUID, updatedAt: Date)], prefix: Bool,
+    func rank(text: String, pool: [(id: UUID, updatedAt: Date)], prefix: Bool,
                       threshold: KeyPath<EmbeddingModelInfo, Float>, agentTask: Bool, limit: Int?,
                       second given: SecondIndex?? = nil) async throws -> [SearchHit] {
         guard !pool.isEmpty else { return [] }
@@ -366,7 +366,7 @@ public final class SearchService: Sendable {
     // MARK: Learned facts (memory processing §4, owner side only)
 
     /// Vault search with learned facts: the query's and the rest's scores, then admission without a boost.
-    private func rankWithFacts(_ query: String, pool: [(id: UUID, updatedAt: Date)], planned: PlannedFacts,
+    func rankWithFacts(_ query: String, pool: [(id: UUID, updatedAt: Date)], planned: PlannedFacts,
                                second: SecondIndex?) async throws -> [SearchHit] {
         guard !pool.isEmpty else { return [] }
         let poolIDs = Set(pool.map(\.id))
@@ -418,7 +418,7 @@ public final class SearchService: Sendable {
 
     /// The facts index for what's on now (read in one transaction with it), built when the vault or learned facts
     /// changed. Builds run one at a time, so a burst of changes builds once more, not once each.
-    private func factsIndex(_ config: FactsSearchConfig) async throws -> (FactsSearchIndex, FactsUses, FactsIndexKey)? {
+    func factsIndex(_ config: FactsSearchConfig) async throws -> (FactsSearchIndex, FactsUses, FactsIndexKey)? {
         let current: (FactsUses, FactsIndexKey, FactsSearchIndex?)? = try await store.writer.read { db in
             let uses = try config.uses(db)
             guard !uses.predicates(.linked).isEmpty else { return nil }
@@ -434,12 +434,29 @@ public final class SearchService: Sendable {
                 let key = try FactsIndexKey(db, config: config, uses: uses, sendable: nil)
                 if let cached = self.factsIndexes.withLock({ $0[key] }) { return (cached, uses, key) }
                 let built = try FactsSearchIndex.build(db, registry: config.registry, userAliases: config.userAliases, uses: uses,
-                                                       phrases: self.rolePhrases)
+                                                       phrases: self.rolePhrases, measured: config.measuredLinks)
                 self.factsIndexes.withLock { cache in
                     cache = cache.filter { $0.key.sendable != nil && $0.key.sameState(key) }
                     if self.facts != nil { cache[key] = built }     // turned off meanwhile: keep nothing learned
                 }
                 return (built, uses, key)
+            }
+        }
+    }
+
+    /// The graph a cloud call may see under `limit` (memory processing §11.9), with its links, for the state `key` names:
+    /// cached beside the full index, built one at a time.
+    func sendableIndex(_ config: FactsSearchConfig, uses: FactsUses, key: FactsIndexKey, limit: CloudLimit) async throws
+        -> FactsSearchIndex {
+        try await builds.run {
+            try await self.store.writer.read { db in
+                var k = key
+                k.sendable = String(describing: limit)
+                if let cached = self.factsIndexes.withLock({ $0[k] }) { return cached }
+                let built = try FactsSearchIndex.build(db, registry: config.registry, userAliases: config.userAliases, uses: uses,
+                                                       sendable: limit, measured: config.measuredLinks)
+                self.factsIndexes.withLock { if self.facts != nil { $0[k] = built } }
+                return built
             }
         }
     }
@@ -451,18 +468,7 @@ public final class SearchService: Sendable {
                                     key: FactsIndexKey, today: String, second: SecondIndex?) async throws -> Bool {
         guard !plan.rest.isEmpty, let second, second.indexer.isComplete else { return false }
         if second.indexer.provider.locality.isLocal { return true }
-        let limit = config.cloudLimit
-        let sendable: FactsSearchIndex = try await builds.run {
-            try await self.store.writer.read { db in
-                var k = key
-                k.sendable = String(describing: limit)
-                if let cached = self.factsIndexes.withLock({ $0[k] }) { return cached }
-                let built = try FactsSearchIndex.build(db, registry: config.registry, userAliases: config.userAliases, uses: uses,
-                                                       sendable: limit)
-                self.factsIndexes.withLock { if self.facts != nil { $0[k] = built } }
-                return built
-            }
-        }
+        let sendable = try await sendableIndex(config, uses: uses, key: key, limit: config.cloudLimit)
         let other = sendable.plan(query, today: today)
         func shape(_ p: FactsQueryPlan) -> Set<String> { Set(p.matches.map { "\($0.entity)|\($0.start)|\($0.end)" }) }
         return shape(other) == shape(plan)
@@ -496,6 +502,8 @@ struct FactsIndexKey: Hashable, Sendable {
     var aliases: [String]
     var registry: String
     var sendable: String?
+    /// A measurement's links (`FactsSearchConfig.measuredLinks`): another set is another index.
+    var measured: [String: [MemoryLink]]
 
     init(_ db: Database, config: FactsSearchConfig, uses: FactsUses, sendable: String?) throws {
         revision = try FactStore.revision(db)
@@ -511,12 +519,14 @@ struct FactsIndexKey: Hashable, Sendable {
         }.joined(separator: ";")
         aliases = config.userAliases
         registry = config.registry.fingerprint
+        measured = config.measuredLinks
         self.sendable = sendable
     }
 
     /// The same state, whatever the limit.
     func sameState(_ o: FactsIndexKey) -> Bool {
         revision == o.revision && vault == o.vault && uses == o.uses && aliases == o.aliases && registry == o.registry
+            && measured == o.measured
     }
 }
 

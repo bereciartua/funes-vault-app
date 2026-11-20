@@ -20,6 +20,15 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
     private var details: [UUID: InboxDetail] = [:]
     private(set) var searches: [MemorySearchParams] = []
     private(set) var asks: [MemoryAnswerParams] = []
+    /// The Mac's learned facts' revision (v0.10), on results and answers; nil while not in use.
+    var revision: String? {
+        get { lock.withLock { _revision } }
+        set { lock.withLock { _revision = newValue } }
+    }
+    private var _revision: String?
+    /// The revision an answer says it was made at, when it isn't the current one.
+    var answerRevision: String?
+    private(set) var corrections: [FactsCorrectionTarget] = []
     /// How long `memories.answer` takes; cancelled meanwhile, it gets no answer.
     var answerDelay: Duration = .zero
 
@@ -128,7 +137,12 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
                 MemorySummary(id: $0.id, title: $0.title, snippet: $0.body, kind: $0.kind, categories: $0.categoryKeys,
                               sensitivity: $0.sensitivity, updatedAt: $0.updatedAt)
             }
-            return MemorySearchResult(results: summaries, nextCursor: offset + page.count < hits.count ? String(offset + page.count) : nil)
+            return MemorySearchResult(results: summaries, nextCursor: offset + page.count < hits.count ? String(offset + page.count) : nil,
+                                      factsRevision: _revision)
+        case .factsReject:
+            corrections.append(params as! FactsCorrectionTarget)
+            _revision = (_revision ?? "e.0") + "+"
+            return FactsRejectResult(factsRevision: _revision!)
         case .memoriesAnswer:
             // Quotes the first memory's first 12 characters.
             let params = params as! MemoryAnswerParams
@@ -139,7 +153,8 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
             }
             return MemoryAnswerResult(outcome: .answered,
                                       claims: [.init(text: "About \(memory.title).", citations: [.init(id: first, quote: String(memory.body.prefix(12)))])],
-                                      read: params.ids.count, withheld: 1, dropped: 0, engine: "Claude", locality: .cloud, durationMs: 3_000)
+                                      read: params.ids.count, withheld: 1, dropped: 0, engine: "Claude", locality: .cloud, durationMs: 3_000,
+                                      factsRevision: answerRevision ?? _revision)
         case .memoriesGet:
             let id = (params as! MemoryID).id
             guard let memory = memories[id] else { throw .method(CompanionError(.notFound)) }

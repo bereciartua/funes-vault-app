@@ -65,14 +65,69 @@ public final class SearchModel {
     private var macSaidOff = false
 
     /// Every successful `status.get`: what the Mac says now replaces an earlier `answers_off`,
-    /// even when it says the same as before.
-    public func statusChecked(_ answers: SearchAnswersStatus?) {
+    /// even when it says the same as before. `factsRevision`: its learned facts' revision (v0.10), from a status that
+    /// reached the Mac (`.some(nil)`: not in use); `.none` when the check didn't reach it, which says nothing about them.
+    public func statusChecked(_ answers: SearchAnswersStatus?, factsRevision: String?? = .none) {
         macAnswers = answers
         if answers != nil {
             macSaidOff = false
             scheduleAutoAsk()
         }
+        if case let .some(revision) = factsRevision { revisionSeen(revision, searchAgain: true) }
     }
+
+    // MARK: Learned facts (v0.10, ADR-0032)
+
+    /// The Mac's learned facts' revision, as last heard (`status.get`, a search, a correction); nil while they're not in use.
+    public private(set) var factsRevision: String?
+    private var revisionHeard = false
+    /// A correction (`facts.reject`) didn't go through: the Mac wasn't reachable (nothing queued), or it refused one that
+    /// changed or went (the list is searched again, so its buttons are current).
+    public private(set) var correctionFailure: CompanionClientError?
+    /// Hears that the Mac's learned facts changed under an answer (`facts_changed`): the app asks `status.get` again.
+    @ObservationIgnored public var onFactsChanged: @MainActor () -> Void = {}
+
+    /// A revision from the Mac. A change, absent to present included, drops the answer the phone holds (shown or kept for
+    /// its search: it rested on what may have changed) and, from a status, searches again; nothing is asked again on its
+    /// own for that search. An answer still on its way is the Mac's to drop: it refuses one whose learned facts changed
+    /// (`facts_changed`), while readings that change nothing it rested on (a backfill) leave it.
+    private func revisionSeen(_ revision: String?, searchAgain: Bool) {
+        defer { factsRevision = revision; revisionHeard = true }
+        guard revisionHeard, revision != factsRevision else { return }
+        lastAnswer = nil
+        if case .answered = answer {
+            let asked = autoAsked
+            clearCard()
+            autoAsked = asked ?? resultsParams
+        }
+        if searchAgain, resultsParams != nil { Task { await self.search() } }
+    }
+
+    /// **Not <name>** or **Not this** from a result's why line or an inferred claim: sent to the Mac, which applies it at
+    /// once; the list reloads, and a result nothing else admits drops out. Unreachable: nothing is queued.
+    public func correct(_ target: FactsCorrectionTarget) async {
+        correctionFailure = nil
+        do {
+            let result = try await caller.call(FactsReject.self, target)
+            revisionSeen(result.factsRevision, searchAgain: false)
+            lastAnswer = nil
+            clearCard()
+            await search()
+        } catch {
+            let failure = error as? CompanionClientError ?? .local
+            correctionFailure = failure
+            if case .method = failure {
+                // Refused (changed or gone since it was shown): the list again, with current buttons.
+                lastAnswer = nil
+                clearCard()
+                await search()
+            } else {
+                onFailure(failure)
+            }
+        }
+    }
+
+    public func dismissCorrectionFailure() { correctionFailure = nil }
     /// Settings ▸ Search answers ▸ Show Ask in Search (this iPhone only, on by default).
     public var showAsk = true { didSet { if showAsk != oldValue { showAsk ? scheduleAutoAsk() : cancelAutoAsk() } } }
     @ObservationIgnored private var answerTask: Task<Void, Never>?
@@ -81,7 +136,10 @@ public final class SearchModel {
     /// What the card answers, and the last answer that came: the search and its filters, and the
     /// memories read, unedited since (FR-iOS-13).
     private var answerKey: AnswerKey?
-    private var lastAnswer: (key: AnswerKey, result: MemoryAnswerResult, results: Int)?
+    private var lastAnswer: (key: AnswerKey, result: MemoryAnswerResult, results: Int, cited: [AnswerKey.Read])?
+    /// The memories the card's answer cites, as listed when it came: with learned facts the Mac may read a result past
+    /// the first ones shown, so an edit to one of those drops the answer too.
+    private var answerCited: [AnswerKey.Read] = []
     private struct AnswerKey: Equatable {
         struct Read: Equatable { let id: UUID; let updatedAt: Date }
         let params: MemorySearchParams
@@ -124,6 +182,7 @@ public final class SearchModel {
         do {
             let page = try await caller.call(MemoriesSearch.self, params)
             guard mine == generation else { return }
+            revisionSeen(page.factsRevision, searchAgain: false)
             results = page.results
             resultsParams = params
             nextCursor = page.nextCursor
@@ -149,6 +208,13 @@ public final class SearchModel {
         do {
             let page = try await caller.call(MemoriesSearch.self, params(cursor: cursor))
             guard mine == generation else { return }
+            // Ranked at another revision than the first page: start the list over.
+            if revisionHeard, page.factsRevision != factsRevision {
+                loadingMore = false
+                revisionSeen(page.factsRevision, searchAgain: false)
+                await search()
+                return
+            }
             let known = Set(results.map(\.id))
             results += page.results.filter { !known.contains($0.id) }
             nextCursor = page.nextCursor
@@ -181,9 +247,9 @@ public final class SearchModel {
     /// A memory an answer read was edited, left the scope or is gone: the card and the kept
     /// answer no longer answer the results.
     private func readMemoryChanged(_ id: UUID, updatedAt: Date?) {
-        func stale(_ key: AnswerKey?) -> Bool { key?.read.contains { $0.id == id && $0.updatedAt != updatedAt } == true }
-        if stale(lastAnswer?.key) { lastAnswer = nil }
-        if stale(answerKey) { clearCard() }
+        func stale(_ read: [AnswerKey.Read]?) -> Bool { read?.contains { $0.id == id && $0.updatedAt != updatedAt } == true }
+        if stale(lastAnswer?.key.read) || stale(lastAnswer?.cited) { lastAnswer = nil }
+        if stale(answerKey?.read) || stale(answerKey == nil ? nil : answerCited) { clearCard() }
     }
 
     /// The Ask pill: the Mac answers, Show Ask is on, the Active scope, a non-empty search whose
@@ -233,8 +299,14 @@ public final class SearchModel {
                 let result = try await caller.call(MemoriesAnswer.self, MemoryAnswerParams(query: params.query, filters: params.filters, ids: ids,
                                                                                   automatic: automatic ? true : nil))
                 guard let self, mine == self.answerGeneration else { return }
+                // The Mac checked it against what it rested on; its revision is the newest the phone has heard.
+                if let made = result.factsRevision { self.factsRevision = made; self.revisionHeard = true }
                 self.answer = .answered(result, results: total)
-                self.lastAnswer = (key, result, total)
+                let cited = result.sources.compactMap { id in
+                    self.results.first { $0.id == id }.map { AnswerKey.Read(id: id, updatedAt: $0.updatedAt) }
+                }
+                self.answerCited = cited
+                self.lastAnswer = (key, result, total, cited)
             } catch {
                 guard let self, mine == self.answerGeneration, !Task.isCancelled else { return }
                 self.fail(error as? CompanionClientError ?? .local)
@@ -299,9 +371,10 @@ public final class SearchModel {
         if answer != .idle {
             if answerKey != key { clearCard() }
         } else if let last = lastAnswer, last.key == key, key?.params == params(cursor: nil), macAnswers != nil, !macSaidOff, showAsk,
-                  scope == .active {
+                  scope == .active, last.result.factsRevision == nil || last.result.factsRevision == factsRevision {
             answer = .answered(last.result, results: last.results)
             answerKey = key
+            answerCited = last.cited
             autoAsked = last.key.params
         }
     }
@@ -315,6 +388,13 @@ public final class SearchModel {
                 macSaidOff = true
             case .capReached: answer = .failed(.capReached)
             case .modelTimeout: answer = .failed(.timeout)
+            case .modelUnavailable where error.reason == "facts_changed":
+                // What it rested on changed while it was on its way: no card; the Mac's status, then the list, again.
+                // Nothing is asked again on its own for this search.
+                answer = .idle
+                answerKey = nil
+                onFactsChanged()
+                Task { await self.search() }
             case .modelUnavailable: answer = .failed(.modelUnavailable(reason: error.reason))
             case .askRequired:
                 // The Mac answers this search only when asked now: show Ask, and ask on its own
@@ -345,6 +425,7 @@ public final class SearchModel {
         answerTask?.cancel()
         answerTask = nil
         answerKey = nil
+        answerCited = []
         cancelAutoAsk()
         answer = .idle
     }
@@ -353,6 +434,9 @@ public final class SearchModel {
     public func clear() {
         clearAnswer()
         lastAnswer = nil
+        factsRevision = nil
+        revisionHeard = false
+        correctionFailure = nil
         autoAsked = nil
         generation += 1
         results = []

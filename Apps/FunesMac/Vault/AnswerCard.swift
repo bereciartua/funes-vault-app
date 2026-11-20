@@ -15,6 +15,8 @@ protocol AnswerCardSource: AnyObject {
     /// A claim's number: the memory, with the quote highlighted.
     func showSource(_ id: UUID, quote: String)
     func sourceTitle(_ id: UUID) -> String
+    /// **Not <name>** or **Not this** from an inferred claim (v0.10).
+    func correct(_ correction: FactsCorrection)
 }
 
 /// The Search answers row (04-ux-mac.md ▸ Vault, ▸ Menu bar; FR-AI-17): "Ask Funes" with ⌘⏎,
@@ -22,6 +24,8 @@ protocol AnswerCardSource: AnyObject {
 /// move. The same card in the Vault and the menu bar panel.
 struct AnswerCard: View {
     let vault: any AnswerCardSource
+    /// Not this asks first ("Maria isn't your sister?"): its undo is on the entity's page.
+    @State private var confirming: FactsCorrection?
 
     var body: some View {
         Group {
@@ -41,6 +45,40 @@ struct AnswerCard: View {
             }
         }
         .padding(.vertical, 6)
+        .confirmationDialog(confirming.map(WhyLineText.notThisQuestion) ?? "", isPresented: Binding(get: { confirming != nil },
+                                                                                                set: { if !$0 { confirming = nil } })) {
+            Button(String(localized: "Not This", comment: "Why line correction: the fact is wrong"), role: .destructive) {
+                if let c = confirming { vault.correct(c) }
+                confirming = nil
+            }
+        } message: {
+            Text(String(localized: "Funes stops using it for every memory. You can undo it from the person's page."))
+        }
+    }
+
+    /// The **Inferred** tag after a claim (04-ux-mac.md ▸ Ask Funes): hover says what it rests on that its quote doesn't
+    /// say; its menu has one button per correction.
+    @ViewBuilder
+    private func inferredTag(_ inference: ClaimInference) -> some View {
+        let why = inference.why.map(WhyLineText.claimWhy) ?? String(localized: "Funes inferred this from what it learned about your memories.")
+        Menu {
+            Text(why)
+            ForEach(inference.corrections, id: \.target) { c in
+                Button(WhyLineText.label(c)) {
+                    if c.target.what == .name { vault.correct(c) } else { confirming = c }
+                }
+            }
+        } label: {
+            Text(String(localized: "Inferred", comment: "Answer card: a claim code marked as resting on what Funes inferred"))
+                .font(.caption).foregroundStyle(.secondary)
+                .underline(pattern: .dot)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(why)
+        .accessibilityLabel(String(localized: "Inferred"))
+        .accessibilityHint(why)
     }
 
     private var askRow: some View {
@@ -90,6 +128,7 @@ struct AnswerCard: View {
                         Text(claim.text).fontWeight(index == 0 ? .semibold : .regular)
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
+                        if let inference = claim.inference { inferredTag(inference) }
                         ForEach(claim.citations, id: \.self) { citation in
                             if let number = sources.firstIndex(of: citation.memoryID).map({ $0 + 1 }) {
                                 SourceChip(number: number) { vault.showSource(citation.memoryID, quote: citation.quote) }
@@ -154,7 +193,13 @@ struct AnswerCard: View {
     private func footer(_ answer: SearchAnswer, results: Int, limit: String) -> some View {
         let seconds = Int((Double(answer.duration.components.seconds) + Double(answer.duration.components.attoseconds) / 1e18).rounded())
         return VStack(alignment: .leading, spacing: 2) {
-            Text(String(localized: "Read \(answer.read) of \(results) results · \(seconds) s"))
+            if let note = answer.note { Text(WhyLineText.note(note)) }
+            if answer.bridges > 0 {
+                Text(String(localized: "Read \(answer.read) results and \(answer.bridges) from your history · \(seconds) s",
+                            comment: "Answer card footer: results read, and bridge memories from your history"))
+            } else {
+                Text(String(localized: "Read \(answer.read) of \(results) results · \(seconds) s"))
+            }
             ForEach(Self.notes(answer, limit: limit), id: \.self) { Text($0) }
         }
         .font(.caption).foregroundStyle(.secondary)
@@ -172,6 +217,11 @@ struct AnswerCard: View {
         case (_, false): lines.append(String(localized: "\(answer.withheld) memories above \(limit) weren't read"))
         case (1, true): lines.append(String(localized: "1 memory wasn't read: it looks like it holds a secret"))
         case (_, true): lines.append(String(localized: "\(answer.withheld) memories weren't read: they look like they hold secrets"))
+        }
+        switch answer.unreadLinked {
+        case 0: break
+        case 1: lines.append(String(localized: "1 result wasn't read: what links it is above \(limit)"))
+        default: lines.append(String(localized: "\(answer.unreadLinked) results weren't read: what links them is above \(limit)"))
         }
         switch answer.dropped {
         case 0: break

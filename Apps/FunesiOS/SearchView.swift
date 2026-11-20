@@ -37,6 +37,12 @@ struct SearchView: View {
                             NavigationLink(value: summary.id) {
                                 ResultRow(summary: summary, categories: model.categories, source: search.sourceNumber(summary.id))
                             }
+                            // Not <name> and Not this, with the Mac's words (v0.10): sent to the Mac, which applies them.
+                            .contextMenu {
+                                if let corrections = summary.corrections {
+                                    FactsCorrectionButtons(targets: corrections) { target in Task { await search.correct(target) } }
+                                }
+                            }
                         }
                         if search.nextCursor != nil {
                             ProgressView()
@@ -93,7 +99,17 @@ struct SearchView: View {
             }
             .onChange(of: model.macAnswers, initial: true) { _, answers in search.macAnswers = answers }
             // Each fresh status.get, even an unchanged one, lifts an earlier answers_off.
-            .onChange(of: model.lastChecked) { _, _ in search.statusChecked(model.macAnswers) }
+            .onChange(of: model.lastChecked) { _, _ in
+                // Only a status that reached the Mac says anything about its learned facts.
+                search.statusChecked(model.macAnswers, factsRevision: model.reachability.isConnected ? .some(model.factsRevision) : .none)
+            }
+            .onAppear { search.onFactsChanged = { Task { await model.refresh(fresh: true) } } }
+            .alert(Self.correctionTitle(search.correctionFailure), isPresented: Binding(get: { search.correctionFailure != nil },
+                                                                                       set: { if !$0 { search.dismissCorrectionFailure() } })) {
+                Button("OK") { search.dismissCorrectionFailure() }
+            } message: {
+                Text(Self.correctionMessage(search.correctionFailure))
+            }
             .onChange(of: showAsk, initial: true) { _, on in search.showAsk = on }
             // Opening a memory or another tab keeps the card (and an answer on its way); nothing is
             // asked on its own meanwhile.
@@ -136,6 +152,18 @@ struct SearchView: View {
         }
     }
 
+    /// A correction that didn't go through: the Mac wasn't reachable, or it refused one that changed.
+    static func correctionTitle(_ failure: CompanionClientError?) -> String {
+        if case .method = failure { return String(localized: "Couldn't correct that") }
+        return String(localized: "Mac not reachable")
+    }
+
+    static func correctionMessage(_ failure: CompanionClientError?) -> String {
+        guard let failure else { return "" }
+        if case .method = failure { return String(localized: "It changed on your Mac. The results are up to date now; try again if it's still wrong.") }
+        return PhoneModel.vaultMessage(for: failure)
+    }
+
     static func emptyTitle(_ scope: MemoryStatus) -> String {
         switch scope {
         case .active: String(localized: "No memories yet")
@@ -160,6 +188,10 @@ struct ResultRow: View {
                 if let source { SourceNumber(number: source).accessibilityLabel(Text("Source \(source)")) }
             }
             Text(SnippetHighlight.attributed(summary.snippet, matches: summary.snippetMatches)).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
+            // Why a link admitted it (v0.10), as the Mac words it.
+            if let why = summary.why {
+                Label(why, systemImage: "link").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            }
             HStack(spacing: 4) {
                 SensitivityBadge(sensitivity: summary.sensitivity)
                 CategoryChips(keys: summary.categories, categories: categories)

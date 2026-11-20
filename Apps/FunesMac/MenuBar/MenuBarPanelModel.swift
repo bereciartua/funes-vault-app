@@ -222,6 +222,13 @@ extension MenuBarPanelModel: AnswerCardSource {
     }
 
     func sourceTitle(_ id: UUID) -> String { field.page?.rows.first { $0.id == id }?.title ?? "" }
+
+    /// A correction from an inferred claim: applied at once, and the card goes (its claims rested on what changed).
+    func correct(_ correction: FactsCorrection) {
+        field.clearAnswer()
+        let services = app.services
+        Task { await VaultModel.apply(correction, services: services) }
+    }
 }
 
 // MARK: Dictation

@@ -54,6 +54,7 @@ enum FactsGateEvidence {
 
     /// Why a record's evidence doesn't qualify it now ([] = it does).
     static func problems(_ r: FactsQualification.Record, registry: FactsRegistry, fixtures: (String) -> URL = FactsHarness.fixtureURL) -> [String] {
+        if r.uses == [FactsUse.attributes.rawValue] { return answerProblems(r, registry: registry) }
         guard let gate = gate(for: r, registry: registry) else { return ["no 13a.2 gate for \(r.predicates) \(r.uses) \(r.basis)"] }
         var out: [String] = []
         let manifests = r.evidence.filter { $0.hasSuffix("-manifest.json") }
@@ -113,6 +114,52 @@ enum FactsGateEvidence {
         for set in gate.sets where (seen[set]?.count ?? 0) < reads { out.append("\(set): \(seen[set]?.count ?? 0) read(s)") }
         // The scores against the pass table.
         out += scoreProblems(gate, scores["measures"] as? [String: [String: Any]] ?? [:], registry: registry)
+        return out
+    }
+
+    /// An *attributes* record (13d's answer gates; `qualify.py answer-scores`, which `qualify.py verify` recomputes): the
+    /// person pool, unscoped or `sole_known`; for the answer model the gates ran and the answer prompt that runs now; both
+    /// gates passed (the author's waivers counted); every input and replay file unchanged; and the replay, at one clean
+    /// commit, answered every request from the response cache, at this record's registry and Facts prompt version.
+    static func answerProblems(_ r: FactsQualification.Record, registry: FactsRegistry) -> [String] {
+        var out: [String] = []
+        let person = registry.predicates.filter { registry.kindOf($0.id) == FactsValidator.personKind }.map(\.id)
+        if Set(r.predicates) != Set(person) || !["", LinkBasis.soleKnown.rawValue].contains(r.basis) {
+            return ["no 13d gate for \(r.predicates) \(r.uses) \(r.basis)"]
+        }
+        guard let path = r.evidence.first(where: { $0.hasSuffix("/scores-13d.json") }), let sc = json(url(path)) else {
+            return ["no scores-13d.json in the evidence"]
+        }
+        let dir = url(path).deletingLastPathComponent(), results = FactsHarness.repo.appending(path: "spikes/people/results-13d")
+        let replay = sc["replay"] as? [String: Any] ?? [:]
+        if r.answerModels.isEmpty || r.answerModels != [sc["model"] as? String ?? ""] { out.append("answer models \(r.answerModels)") }
+        if r.answerPromptVersion != SearchAnswerer.promptVersion { out.append("answer prompt version \(r.answerPromptVersion)") }
+        if replay["answerPromptVersion"] as? String != r.answerPromptVersion { out.append("not the replay's answer prompt version") }
+        for (gate, verdicts) in sc["gates"] as? [String: [String: Bool]] ?? [:] {
+            for (k, v) in verdicts where !v { out.append("\(gate): \(k)") }
+        }
+        if (sc["gates"] as? [String: Any])?.keys.sorted() != ["answers", "spikeg"] { out.append("gates \((sc["gates"] as? [String: Any])?.keys.sorted() ?? [])") }
+        for (p, d) in sc["inputs"] as? [String: String] ?? [:] where sha256(results.appending(path: p)) != d { out.append("\(p): changed") }
+        let files = replay["files"] as? [String: String] ?? [:]
+        for (p, d) in files where sha256(dir.appending(path: p)) != d { out.append("replay \(p): changed") }
+        var commits = Set<String>()
+        for p in files.keys where p.hasSuffix(".json") && p.contains("manifest-") {
+            guard let m = json(dir.appending(path: p)) else { out.append("missing \(p)"); continue }
+            commits.insert(m["commit"] as? String ?? "")
+            if m["mode"] as? String != "replay" || m["uncached"] as? Int != 0 { out.append("\(p): not a full replay") }
+            if m["dirty"] as? Bool != false { out.append("\(p): a dirty tree") }
+            if m["registryVersion"] as? String != r.registryVersion { out.append("\(p): registry") }
+            if (m["factsPromptVersions"] as? [String: String])?[r.callGroup] != r.promptVersion { out.append("\(p): Facts prompt version") }
+            if m["answerPromptVersion"] as? String != r.answerPromptVersion { out.append("\(p): answer prompt version") }
+            let model = String((sc["model"] as? String ?? "").split(separator: "/", maxSplits: 1).last ?? "")
+            if m["modelsReported"] as? [String] != [model] || m["responsesWithoutModel"] as? Int != 0 { out.append("\(p): models reported") }
+        }
+        if commits.count != 1 || commits.contains("") { out.append("replay commits \(commits.sorted())") }
+        if files.keys.filter({ $0.contains("manifest-") }).count != 2 { out.append("the replay of both gates") }
+        let listed = Set(r.evidence)
+        let want = (sc["inputs"] as? [String: String] ?? [:]).keys.map { "spikes/people/results-13d/" + $0 }
+            + files.keys.map { String(path.dropLast("scores-13d.json".count)) + $0 }
+        if !Set(want).isSubset(of: listed) { out.append("the record's evidence isn't what the scores were computed from") }
         return out
     }
 

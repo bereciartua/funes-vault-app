@@ -20,6 +20,11 @@ final class PhoneModel {
         if case let .connected(connection) = reachability { return connection.status.searchAnswers }
         return nil
     }
+    /// The Mac's learned facts' revision while it's connected and they're in use (v0.10).
+    var factsRevision: String? {
+        if case let .connected(connection) = reachability { return connection.status.factsRevision }
+        return nil
+    }
     /// The connection's state machine (FunesPhone's `ReachabilityTracker`).
     private(set) var tracker = ReachabilityTracker()
     var reachability: Reachability { tracker.state }

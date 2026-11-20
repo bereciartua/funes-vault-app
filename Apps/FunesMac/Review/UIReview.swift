@@ -224,6 +224,15 @@ final class UIReview: NSObject, NSApplicationDelegate {
             await mainScene("vault-search-why") {
                 model.vault.selection = model.vault.memories.first(where: { $0.title == "My sister drinks her mate bitter" }).map { [$0.id] } ?? []
             }
+            // An answer with learned facts (Phase 13d): a claim code marked inferred, with its tag, and a result whose link
+            // is above the cloud limit, not read.
+            if let mate = model.vault.memories.first(where: { $0.title == "My sister drinks her mate bitter" }),
+               let maria = model.vault.memories.first(where: { $0.title == "Maria is my sister" }) {
+                await mainScene("vault-answer-inferred") {
+                    model.vault.selection = []
+                    model.vault.reviewAnswer(SearchAnswer.reviewInferred(mate: mate.id, maria: maria.id), results: model.vault.memories.count)
+                }
+            }
             model.searchFactsOverride = nil
             model.applySearchFacts()
             model.vault.query = ""
@@ -792,6 +801,27 @@ extension UIReview {
 extension SearchAnswer {
     /// The review's answer: the newer title and the older one, each quoted (sample data's
     /// "Role at Chatham" and "Chatham job").
+    /// "Maria drinks her mate bitter", inferred from "my sister" (the only sister Funes knows), and a claim its quote states.
+    static func reviewInferred(mate: UUID, maria: UUID) -> SearchAnswer {
+        let line = WhyLine(form: .name(name: "Maria", attribute: "your sister"), basis: .link(.soleKnown), label: "sister",
+                           untrusted: false, notName: .init(memoryID: mate, entity: "e", name: "Maria"), notThis: "f")
+        let corrections = [
+            FactsCorrection(target: FactsCorrectionTarget(what: .name, linkID: "\(mate)/e", memoryID: mate, token: "t"), name: "Maria",
+                            attribute: "your sister"),
+            FactsCorrection(target: FactsCorrectionTarget(what: .fact, factID: "f", token: "t"), name: "Maria", attribute: "your sister"),
+        ]
+        var answer = SearchAnswer(outcome: .answered, claims: [
+            Claim(text: "Maria drinks her mate bitter, every morning with no sugar.",
+                  citations: [Citation(memoryID: mate, quote: "Every morning, with no sugar")],
+                  inference: ClaimInference(basis: "sole_known", factIDs: ["f"], why: line, corrections: corrections)),
+            Claim(text: "Maria is your sister; you grew up in Porto together.",
+                  citations: [Citation(memoryID: maria, quote: "We grew up in Porto together.")]),
+        ], read: 3, withheld: 0, dropped: 0, engine: "claude-code/haiku", locality: .cloud, duration: .seconds(5))
+        answer.unreadLinked = 1
+        answer.factsRevision = "review"
+        return answer
+    }
+
     static func review(role: UUID, old: UUID) -> SearchAnswer {
         SearchAnswer(outcome: .answered, claims: [
             Claim(text: "Your title at Chatham is Senior Analyst, since a promotion in March 2026.",

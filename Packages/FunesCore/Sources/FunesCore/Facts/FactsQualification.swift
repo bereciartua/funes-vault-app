@@ -50,9 +50,15 @@ public struct FactsQualification: Sendable {
         /// The run manifests and reports it rests on, repo-relative.
         public var evidence: [String]
         public var recordedAt: String
+        /// For an *attributes* or *bridges* record (13d's answer gates): the answer models it was measured with, as
+        /// `ModelRouter.engine` names them, and the answer prompt's version (`SearchAnswerer.promptVersion`). Those uses go
+        /// only to an answer model listed here, at that version; missing, they go to none.
+        public var answerModels: [String]
+        public var answerPromptVersion: String
 
         enum CodingKeys: String, CodingKey {
             case predicates, uses, basis, callGroup, model, adapter, batching, promptVersion, registryVersion, gate, evidence, recordedAt
+            case answerModels, answerPromptVersion
         }
 
         public init(from decoder: any Decoder) throws {
@@ -69,10 +75,13 @@ public struct FactsQualification: Sendable {
             gate = try c.decode(String.self, forKey: .gate)
             evidence = try c.decode([String].self, forKey: .evidence)
             recordedAt = try c.decode(String.self, forKey: .recordedAt)
+            answerModels = try c.decodeIfPresent([String].self, forKey: .answerModels) ?? []
+            answerPromptVersion = try c.decodeIfPresent(String.self, forKey: .answerPromptVersion) ?? ""
         }
 
         public init(predicates: [String], uses: [String], basis: String = "", callGroup: String, engine: FactsEngine,
-                    promptVersion: String, registryVersion: String, gate: String, evidence: [String] = [], recordedAt: String) {
+                    promptVersion: String, registryVersion: String, gate: String, evidence: [String] = [], recordedAt: String,
+                    answerModels: [String] = [], answerPromptVersion: String = "") {
             self.predicates = predicates
             self.uses = uses
             self.basis = basis
@@ -85,6 +94,13 @@ public struct FactsQualification: Sendable {
             self.gate = gate
             self.evidence = evidence
             self.recordedAt = recordedAt
+            self.answerModels = answerModels
+            self.answerPromptVersion = answerPromptVersion
+        }
+
+        /// Whether its answer-side uses (*attributes*, *bridges*) cover this answer model at this prompt version.
+        func covers(answer: AnswerKey) -> Bool {
+            answerModels.contains(answer.model) && answerPromptVersion == answer.promptVersion
         }
 
         public var engine: FactsEngine { FactsEngine(model: model, adapter: adapter, batching: batching) }
@@ -172,15 +188,33 @@ public struct FactsQualification: Sendable {
         Dictionary(uniqueKeysWithValues: registry.callGroups.keys.map { ($0, FactsPrompt.version($0, registry: registry)) })
     }
 
-    /// What's on for a configuration: each call group's engine (none: nothing of that group is on).
-    public func uses(engines: [String: FactsEngine], registry: FactsRegistry, promptVersions: [String: String]) -> FactsUses {
+    /// The answer model and prompt version an answer's *attributes* and *bridges* are checked against (13d).
+    public struct AnswerKey: Hashable, Sendable {
+        public var model: String
+        public var promptVersion: String
+
+        public init(model: String, promptVersion: String) {
+            self.model = model
+            self.promptVersion = promptVersion
+        }
+    }
+
+    /// The answer-side uses, read only by answers.
+    static let answerUses: Set<String> = [FactsUse.attributes.rawValue, FactsUse.bridges.rawValue]
+
+    /// What's on for a configuration: each call group's engine (none: nothing of that group is on). `answer`: for an
+    /// answer, the model answering; a record's *attributes* and *bridges* then count only if it covers that model at the
+    /// current answer prompt version. Without it (search, the Facts task), those uses count as recorded.
+    public func uses(engines: [String: FactsEngine], registry: FactsRegistry, promptVersions: [String: String],
+                     answer: AnswerKey? = nil) -> FactsUses {
         if unchecked { return .everyDeclared(registry) }
         var candidates = Set<FactsUses.Key>()
         for r in records {
             guard let engine = engines[r.callGroup], engine == r.engine, promptVersions[r.callGroup] == r.promptVersion,
                   registry.fingerprint == r.registryVersion else { continue }
             for p in r.predicates where registry.predicate(p)?.callGroup == r.callGroup {
-                for u in r.uses where registry.predicate(p)?.uses.contains(u) == true && !off.contains(r.key(p, u)) {
+                for u in r.uses where registry.predicate(p)?.uses.contains(u) == true && !off.contains(r.key(p, u))
+                    && (answer == nil || !Self.answerUses.contains(u) || r.covers(answer: answer!)) {
                     if let use = FactsUse(rawValue: u) { candidates.insert(.init(predicate: p, use: use, basis: r.basis)) }
                 }
             }

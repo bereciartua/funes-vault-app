@@ -216,6 +216,28 @@
     "%@ has no access yet. It can connect, but sees nothing until you change its access." : {
 
     },
+    "%@ is %@" : {
+      "comment" : "Inferred claim: who they are to you",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is %2$@"
+          }
+        }
+      }
+    },
+    "%@ is %@: %@" : {
+      "comment" : "Inferred claim: who they are to you, and why",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ is %2$@: %3$@"
+          }
+        }
+      }
+    },
     "%@ is an embedding model, so it can't answer chat requests. Choose it in Features ▸ Search index, and test a chat model here." : {
 
     },
@@ -1532,6 +1554,16 @@
     "%lld restored" : {
 
     },
+    "%lld results weren't read: what links them is above %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld results weren't read: what links them is above %2$@"
+          }
+        }
+      }
+    },
     "%lld s" : {
 
     },
@@ -1775,6 +1807,9 @@
 
     },
     "1 request waiting for you" : {
+
+    },
+    "1 result wasn't read: what links it is above %@" : {
 
     },
     "1 suggestion waiting for you" : {
@@ -3942,6 +3977,20 @@
     "From other apps" : {
 
     },
+    "From your history: %@" : {
+      "comment" : "Inferred claim: a timeline answer"
+    },
+    "From your history: your %@ %@ %@ was %@" : {
+      "comment" : "Inferred claim: a timeline answer, e.g. your job before Initech was Acme",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "From your history: your %1$@ %2$@ %3$@ was %4$@"
+          }
+        }
+      }
+    },
     "From: “%@”" : {
 
     },
@@ -4044,6 +4093,20 @@
     "Funes backs up the file next to it first." : {
 
     },
+    "Funes can't tell which %@ came %@ %@" : {
+      "comment" : "Answer card: a timeline question Funes can't decide, e.g. which job came before Acme",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Funes can't tell which %1$@ came %2$@ %3$@"
+          }
+        }
+      }
+    },
+    "Funes can't tell which %@ it was" : {
+      "comment" : "Answer card: a timeline question Funes can't decide"
+    },
     "Funes can't use speech recognition. Allow it in System Settings ▸ Privacy & Security ▸ Speech Recognition." : {
 
     },
@@ -4118,8 +4181,14 @@
     "Funes hasn't measured this model, so search keeps its 10 closest matches. Calibrate measures where its matches start with Funes's made-up benchmark." : {
 
     },
+    "Funes inferred this from what it learned about your memories." : {
+
+    },
     "Funes keeps the last 7 backups in its data folder." : {
 
+    },
+    "Funes linked this memory to %@" : {
+      "comment" : "Inferred claim: a link the memory doesn't state"
     },
     "Funes notes that you checked it today." : {
 
@@ -4149,6 +4218,9 @@
 
     },
     "Funes shows the exact change first, backs up the file and never writes the key into it." : {
+
+    },
+    "Funes stops using it for every memory. You can undo it from the person's page." : {
 
     },
     "Funes stops using it in every memory." : {
@@ -4529,6 +4601,9 @@
     },
     "Incomplete" : {
 
+    },
+    "Inferred" : {
+      "comment" : "Answer card: a claim code marked as resting on what Funes inferred"
     },
     "Install %@ and sign in to use your %@ plan." : {
       "localizations" : {
@@ -6114,6 +6189,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Read %lld results and %lld from your history · %lld s" : {
+      "comment" : "Answer card footer: results read, and bridge memories from your history",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Read %1$lld results and %2$lld from your history · %3$lld s"
           }
         }
       }
@@ -8820,6 +8906,9 @@
 
     },
     "What AI features send" : {
+
+    },
+    "What Funes knows about your memories changed while it was answering. Try again." : {
 
     },
     "What belongs here (agents see this)" : {
