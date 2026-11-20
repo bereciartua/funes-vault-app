@@ -55,13 +55,18 @@ public struct SystemCLIProcess: CLIProcessRunning {
     /// How long a stopped process gets to exit on SIGTERM before SIGKILL.
     static let killGrace: TimeInterval = 2
 
+    /// Where the child's input is written and its deadlines are kept. A call is someone waiting (a search answer, a
+    /// Facts read), so this work must not wait behind a busy Mac: at a background priority (`.utility`) a saturated
+    /// CPU delayed the input by seconds, and the child sat on its first read until its own timeout ended it.
+    static let queue = DispatchQueue.global(qos: .userInitiated)
+
     /// Ends a process: SIGTERM, then SIGKILL if it's still running after `killGrace` (a CLI that
     /// ignores SIGTERM can't outlive a search answer's deadline).
     static func stop(_ process: Process) {
         guard process.isRunning else { return }
         let pid = process.processIdentifier
         process.terminate()
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + killGrace) {
+        queue.asyncAfter(deadline: .now() + killGrace) {
             if process.isRunning { kill(pid, SIGKILL) }
         }
     }
@@ -169,12 +174,12 @@ public struct SystemCLIProcess: CLIProcessRunning {
                 // A process killed before it read its input (a cancelled search answer) makes the
                 // write fail instead of raising SIGPIPE, which would end Funes.
                 _ = fcntl(input.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
-                DispatchQueue.global(qos: .utility).async {
+                SystemCLIProcess.queue.async {
                     try? input.fileHandleForWriting.write(contentsOf: data)
                     try? input.fileHandleForWriting.close()
                 }
                 let seconds = Double(invocation.timeout.components.seconds) + Double(invocation.timeout.components.attoseconds) / 1e18
-                DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + seconds) {
+                SystemCLIProcess.queue.asyncAfter(deadline: .now() + seconds) {
                     state.lock.lock()
                     defer { state.lock.unlock() }
                     guard state.process.isRunning else { return }
