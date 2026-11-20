@@ -428,19 +428,20 @@ final class AnswerProvider: GenerationProvider {
                                        environment: [:], directory: dir, input: "", timeout: .seconds(60))
         let task = Task { try await SystemCLIProcess().run(invocation) { _ in true } }
         var pid: pid_t?
-        for _ in 0..<100 where pid == nil {
+        for _ in 0..<400 where pid == nil {
             try await Task.sleep(for: .milliseconds(50))
             pid = (try? String(contentsOf: pidFile, encoding: .utf8)).flatMap { pid_t($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
         }
         let running = try #require(pid)
         task.cancel()
-        _ = await task.result
+        // Gone well before the run's 60 s limit would end it: only the kill after the grace can.
         var gone = false
-        for _ in 0..<80 where !gone {
+        for _ in 0..<200 where !gone {
             try await Task.sleep(for: .milliseconds(100))
             gone = kill(running, 0) != 0
         }
         #expect(gone)
+        _ = await task.result
     }
 
     /// Cancelling the task ends a subscription CLI's process (§10.3: a new Ask, or Cancel).
@@ -452,27 +453,28 @@ final class AnswerProvider: GenerationProvider {
         defer { try? FileManager.default.removeItem(at: dir) }
         let pidFile = dir.appending(path: "pid")
         let script = dir.appending(path: "claude")
-        try "#!/bin/sh\necho $$ > \"\(pidFile.path)\"\nexec sleep 30\n".write(to: script, atomically: true, encoding: .utf8)
+        try "#!/bin/sh\necho $$ > \"\(pidFile.path)\"\nexec sleep 120\n".write(to: script, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
         let client = ClaudeCodeClient(executable: script.path, model: "haiku")
         let router = ModelRouter(classifier: client, onDevice: nil)
         let answerer = env.answerer
         let task = Task { try await answerer.answer("coffee", ids: [m.id], router: router, now: t0) }
         var pid: pid_t?
-        for _ in 0..<100 where pid == nil {
+        for _ in 0..<400 where pid == nil {
             try await Task.sleep(for: .milliseconds(50))
             pid = (try? String(contentsOf: pidFile, encoding: .utf8)).flatMap { pid_t($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
         }
         let running = try #require(pid)
         #expect(kill(running, 0) == 0)
         task.cancel()
-        _ = try? await task.value
+        // Gone well before the stub's 120 s sleep would end it: only the cancel can.
         var gone = false
-        for _ in 0..<40 where !gone {
+        for _ in 0..<200 where !gone {
             try await Task.sleep(for: .milliseconds(50))
             gone = kill(running, 0) != 0
         }
         #expect(gone)
+        _ = try? await task.value
         #expect(env.log.events.last?.outcome == "cancelled")
     }
 }

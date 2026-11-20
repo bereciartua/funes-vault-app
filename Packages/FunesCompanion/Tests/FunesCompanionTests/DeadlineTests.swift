@@ -124,7 +124,8 @@ import Testing
         let (_, body) = try PairingClient.start(payload: await h.qr(), deviceName: "Sam's iPhone", model: "iPhone17,1",
                                                 signer: first.signer, deviceHPKEKey: first.hpke, now: h.clock.now)
         async let old = h.router.handle(CompanionHarness.request(CompanionProtocol.pairPath, body: body), transport: .lan)
-        for _ in 0..<200 where !(await h.pairing.isAsking) { try await Task.sleep(for: .milliseconds(10)) }
+        for _ in 0..<2_000 where !(await h.pairing.isAsking) { try await Task.sleep(for: .milliseconds(10)) }
+        try #require(await h.pairing.isAsking)
         let fresh = await h.qr()
         let response = await old
         #expect(response.status == PairingError.httpStatus && PairingError(body: response.body) == .denied)

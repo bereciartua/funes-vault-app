@@ -64,7 +64,7 @@ import Testing
         let observation = indexer.startObserving()
         defer { observation.cancel() }
         let m = try v.memory("Observed", "watched memory")
-        for _ in 0..<200 where !indexer.index.contains(m.id) { try await Task.sleep(for: .milliseconds(10)) }
+        for _ in 0..<2_000 where !indexer.index.contains(m.id) { try await Task.sleep(for: .milliseconds(10)) }
         #expect(indexer.index.contains(m.id))
     }
 

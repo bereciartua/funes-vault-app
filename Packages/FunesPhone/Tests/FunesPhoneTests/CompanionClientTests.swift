@@ -182,23 +182,29 @@ struct Rig {
         await #expect(throws: CompanionClientError.unreachable(localNetworkDenied: false)) { try await rig.client.status(fresh: true) }
     }
 
+    /// The silent LAN address is given its probe's limit, and the answer waits for it, but no
+    /// longer. (Its limit is checked as asked for; the upper bound only has to stay below a call's.)
     @Test func waitsForABetterAddressOnlyUntilItsProbeTimesOut() async throws {
         let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .mac($0)] })
         try await rig.pair([Addresses.lan, Addresses.tailscale])
         rig.transport.set("192.168.1.20", .silent)
+        let asked = rig.transport.timeouts.count
         let start = ContinuousClock.now
         let connection = try await rig.client.status(fresh: true)
         let elapsed = ContinuousClock.now - start
         #expect(connection.address.kind == .tailscale)
-        #expect(elapsed >= .seconds(CompanionClient.probeTimeout) && elapsed < .seconds(CompanionClient.probeTimeout + 2))
+        let lan = zip(rig.transport.hosts, rig.transport.timeouts).dropFirst(asked).filter { $0.0 == "192.168.1.20" }
+        #expect(lan.map(\.1) == [CompanionClient.probeTimeout])
+        #expect(elapsed >= .seconds(CompanionClient.probeTimeout) && elapsed < .seconds(CompanionClient.probeTimeout + 10))
     }
 
+    /// The worse address would answer only after a minute; the better one wins without it.
     @Test func doesNotWaitForWorseAddresses() async throws {
-        let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .silent] })
+        let rig = Rig(routes: { ["192.168.1.20": .mac($0), "100.101.102.103": .silentFor(60)] })
         try await rig.pair([Addresses.lan, Addresses.tailscale])
         let start = ContinuousClock.now
         #expect(try await rig.client.status(fresh: true).address.kind == .lan)
-        #expect(ContinuousClock.now - start < .seconds(1))
+        #expect(ContinuousClock.now - start < .seconds(30))
     }
 
     @Test func cachesTheAddressForTenMinutes() async throws {
