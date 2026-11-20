@@ -81,18 +81,37 @@ final class CompanionHarness: @unchecked Sendable {
               transport: DeviceTransport = .lan) async throws -> (HTTPResponse, PairingClient) {
         let (client, body) = try PairingClient.start(payload: payload, deviceName: name, model: "iPhone17,1", signer: phone.signer,
                                                      deviceHPKEKey: phone.hpke, now: clock.now)
-        async let response = router.handle(Self.request(CompanionProtocol.pairPath, body: body), transport: transport)
-        try await answerWhenAsked(allow)
-        let result = await response
+        let request = Self.request(CompanionProtocol.pairPath, body: body), router = router
+        // A refused request (wrong secret, expired code) never shows the prompt: stop waiting once it has been answered.
+        let result = await withTaskGroup(of: HTTPResponse?.self) { group in
+            group.addTask { await router.handle(request, transport: transport) }
+            group.addTask { await self.answerIfAsked(allow); return nil }
+            var response: HTTPResponse?
+            for await finished in group where finished != nil {
+                response = finished
+                group.cancelAll()
+            }
+            return response!
+        }
         if result.status == 200 { phone.deviceID = try client.finish(responseBody: result.body).deviceID }
         return (result, client)
     }
 
-    /// Waits for the prompt (up to 2 s), then answers.
+    /// Waits for the prompt (up to about 20 s: only a hang guard), then answers.
     func answerWhenAsked(_ allow: Bool) async throws {
-        for _ in 0..<200 {
+        for _ in 0..<2_000 {
             if await pairing.isAsking { break }
             try await Task.sleep(for: .milliseconds(10))
+        }
+        await pairing.answer(allow: allow)
+    }
+
+    /// Like `answerWhenAsked`, but gives up without answering once cancelled.
+    private func answerIfAsked(_ allow: Bool) async {
+        for _ in 0..<2_000 {
+            if Task.isCancelled { return }
+            if await pairing.isAsking { break }
+            try? await Task.sleep(for: .milliseconds(10))
         }
         await pairing.answer(allow: allow)
     }

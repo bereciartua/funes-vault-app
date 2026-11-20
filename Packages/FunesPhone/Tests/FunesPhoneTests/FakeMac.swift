@@ -145,6 +145,9 @@ final class RoutedTransport: CompanionTransport, @unchecked Sendable {
         case mac(FakeMac)
         case refused
         case silent
+        /// Silent for this long whatever the caller's timeout, then times out (or at once when
+        /// cancelled).
+        case silentFor(TimeInterval)
         /// Times out at once, as if the caller's whole timeout had passed.
         case timesOut
         case status(Int)
@@ -182,6 +185,9 @@ final class RoutedTransport: CompanionTransport, @unchecked Sendable {
             throw TransportError("refused")
         case .silent:
             try? await Task.sleep(for: .seconds(timeout))
+            throw .timedOut
+        case let .silentFor(seconds):
+            try? await Task.sleep(for: .seconds(seconds))
             throw .timedOut
         case .timesOut:
             throw .timedOut

@@ -399,10 +399,10 @@ import Testing
         let (_, body) = try PairingClient.start(payload: await h.qr(), deviceName: "Sam's iPhone", model: "iPhone17,1",
                                                 signer: phone.signer, deviceHPKEKey: phone.hpke, now: h.clock.now)
         let client = await send(port: port, path: "/r/\(gate.secret)\(CompanionProtocol.pairPath)", host: "maya.tailnet.ts.net", body: body)
-        for _ in 0..<300 where !(await h.pairing.isAsking) { try await Task.sleep(for: .milliseconds(10)) }
+        for _ in 0..<2_000 where !(await h.pairing.isAsking) { try await Task.sleep(for: .milliseconds(10)) }
         #expect(await h.pairing.isAsking)
         client.cancel()
-        for _ in 0..<300 where await h.pairing.isAsking { try await Task.sleep(for: .milliseconds(10)) }
+        for _ in 0..<2_000 where await h.pairing.isAsking { try await Task.sleep(for: .milliseconds(10)) }
         #expect(await h.pairing.state == .ended(.denied))
         await h.pairing.answer(allow: true)
         try await Task.sleep(for: .milliseconds(100))
@@ -423,10 +423,10 @@ import Testing
                                                 signer: phone.signer, deviceHPKEKey: phone.hpke, now: h.clock.now)
         let client = await send(port: port, path: "/r/\(gate.secret)\(CompanionProtocol.pairPath)", host: "maya.tailnet.ts.net", body: body)
         defer { client.cancel() }
-        for _ in 0..<300 where !(await h.pairing.isAsking) { try await Task.sleep(for: .milliseconds(10)) }
+        for _ in 0..<2_000 where !(await h.pairing.isAsking) { try await Task.sleep(for: .milliseconds(10)) }
         #expect(await h.pairing.isAsking)
         listener.stop()
-        for _ in 0..<300 where await h.pairing.isAsking { try await Task.sleep(for: .milliseconds(10)) }
+        for _ in 0..<2_000 where await h.pairing.isAsking { try await Task.sleep(for: .milliseconds(10)) }
         #expect(await h.pairing.state == .ended(.denied))
         await h.pairing.answer(allow: true)
         try await Task.sleep(for: .milliseconds(100))

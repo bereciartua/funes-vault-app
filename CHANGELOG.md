@@ -15,7 +15,7 @@ Notable changes to Funes Vault, newest first, in the [Keep a Changelog](https://
 ### Fixed
 
 - **Activity's facts rows read in plain words** (Phase 13): "Learned facts from 3 memories", "Started reading existing memories" and "Finished reading existing memories", "Corrected a fact", "Undid a correction" and "Removed learned facts", each with its counts ("365 memories · 720 cloud requests outside the daily count", "23 names, 41 facts"), instead of their raw names. A learned row's detail no longer shows "(deleted memory)".
-- **Answers through your Claude or ChatGPT plan don't stall on a busy Mac.** Funes handed the question to Claude Code or Codex at a background priority, so while the Mac was busy (an import, a backup, indexing) the hand-off could wait several seconds and an answer could time out. It now goes at the priority of someone waiting for it.
+- **Answers through your Claude or ChatGPT plan don't stall on a busy Mac, or lose their end.** Funes handed the question to Claude Code or Codex at a background priority, so while the Mac was busy (an import, a backup, indexing) the hand-off could wait several seconds and an answer could time out. It now goes at the priority of someone waiting for it, on its own queue, and so do the time limit and the stop. Funes could also miss the last of what Claude Code or Codex printed as it finished, so an answer could come back empty or Codex could look signed out; it now reads everything they print, and a helper they leave running no longer holds an answer up.
 
 ## [0.5.2] - 2026-11-11
 

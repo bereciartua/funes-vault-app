@@ -159,14 +159,24 @@ import Testing
     @Test func aPlanLimitBacksOffUntilTheResetOrAnHour() async throws {
         CLIRunner.unblock(ClaudeCodeClient.providerID)
         let reset = Int(Date().timeIntervalSince1970) + 7_200
-        for (error, expected) in [("Claude AI usage limit reached", ProviderBackoff.subscriptionDefault),
-                                  ("Claude AI usage limit reached|\(reset)", 7_200.0)] {
+        // Where the backoff may end, given when the call started and ended: an hour from the call
+        // without a reset time, the reset time with one. Bracketed by the call's own times (and a
+        // second for whole-second reset times), so a slow runner can't push it out.
+        let cases: [(String, @Sendable (Date, Date) -> ClosedRange<Date>)] = [
+            ("Claude AI usage limit reached", { now, after in
+                now + ProviderBackoff.subscriptionDefault - 1...after + ProviderBackoff.subscriptionDefault + 1 }),
+            ("Claude AI usage limit reached|\(reset)", { now, after in
+                let at = Date(timeIntervalSince1970: TimeInterval(reset))
+                return at - after.timeIntervalSince(now) - 1...at + 1 }),
+        ]
+        for (error, window) in cases {
             let (client, cli) = Self.claude([Self.claudeInit, Self.claudeResult(nil, error: error)], exitCode: 1)
             let backoff = ProviderBackoff()
             let now = Date()
             _ = await ModelRouter(classifier: client, onDevice: nil, backoff: backoff).classify("Likes tea", categories: MemoryCategory.builtins, now: now)
+            let after = Date()
             let until = try #require(backoff.until(ClaudeCodeClient.providerID, now: now))
-            #expect(abs(until.timeIntervalSince(now) - expected) < 5, "\(error)")
+            #expect(window(now, after).contains(until), "\(error): \(until) not in \(window(now, after))")
             // The next job's router doesn't run the CLI again.
             _ = await ModelRouter(classifier: client, onDevice: nil, backoff: backoff).classify("Likes tea", categories: MemoryCategory.builtins, now: now + 60)
             #expect(cli.invocations.count == 1)
@@ -339,24 +349,111 @@ import Testing
 
     // MARK: The process runner
 
+    /// The time limits on the first two runs only guard against a hang: on a loaded runner a
+    /// shell can take seconds to start.
     @Test func theProcessRunnerStreamsStopsAndTimesOut() async throws {
         let runner = SystemCLIProcess()
         try await CLIRunner.inTemporaryDirectory { dir in
             let echo = try await runner.run(CLIInvocation(
                 executable: "/bin/sh", arguments: ["-c", "read line; echo \"got $line\"; pwd; echo \"key=${OPENAI_API_KEY:-none}\""],
-                environment: CLIRunner.environment(Self.environment), directory: dir, input: "hello\n", timeout: .seconds(10))) { _ in true }
-            #expect(echo.exitCode == 0 && echo.lines.first == "got hello")
+                environment: CLIRunner.environment(Self.environment), directory: dir, input: "hello\n", timeout: .seconds(60))) { _ in true }
+            #expect(echo.exitCode == 0 && !echo.timedOut && echo.lines.first == "got hello")
             #expect(echo.lines.contains { $0.hasSuffix(dir.lastPathComponent) })
             #expect(echo.lines.contains("key=none"))
-            // A false answer from the handler kills it before the rest arrives.
+            // A false answer from the handler kills it before the rest arrives: the run ends long
+            // before the shell's sleep would.
+            var start = ContinuousClock.now
             let stopped = try await runner.run(CLIInvocation(
-                executable: "/bin/sh", arguments: ["-c", "echo tool; sleep 5; echo late"], environment: [:], directory: dir,
-                timeout: .seconds(10))) { $0 != "tool" }
-            #expect(stopped.stopped && !stopped.lines.contains("late"))
+                executable: "/bin/sh", arguments: ["-c", "echo tool; sleep 30; echo late"], environment: [:], directory: dir,
+                timeout: .seconds(60))) { $0 != "tool" }
+            #expect(stopped.stopped && ContinuousClock.now - start < .seconds(15))
+            // Only the time limit can end this one before its minute is up.
+            start = ContinuousClock.now
             let slow = try await runner.run(CLIInvocation(
-                executable: "/bin/sh", arguments: ["-c", "sleep 5"], environment: [:], directory: dir, timeout: .milliseconds(300))) { _ in true }
-            #expect(slow.timedOut)
+                executable: "/bin/sh", arguments: ["-c", "sleep 60"], environment: [:], directory: dir, timeout: .milliseconds(300))) { _ in true }
+            #expect(slow.timedOut && ContinuousClock.now - start < .seconds(30))
         }
+    }
+
+    /// A helper the CLI leaves running with its output and error pipes open doesn't hold the run
+    /// once the CLI has exited, and what the CLI printed is all there.
+    @Test func aLeftoverHelperDoesNotHoldTheRun() async throws {
+        let start = ContinuousClock.now
+        let run = try await SystemCLIProcess().run(CLIInvocation(
+            executable: "/bin/sh", arguments: ["-c", "sleep 60 & echo $!; echo done; echo oops >&2"], environment: [:],
+            directory: FileManager.default.temporaryDirectory, timeout: .seconds(120))) { _ in true }
+        if let helper = run.lines.first.flatMap({ pid_t($0) }) { kill(helper, SIGKILL) }
+        #expect(run.exitCode == 0 && !run.timedOut && run.lines.dropFirst() == ["done"])
+        #expect(run.errorTail == "oops\n")
+        #expect(ContinuousClock.now - start < .seconds(30))
+    }
+
+    /// The input, the time limit and the kill don't wait on the shared global queues, whose
+    /// threads a busy Mac or a parallel test run can hold (CI: the shell sat at `read` past its time
+    /// limit). With the utility pool blocked (where they ran), a run still gets its input, a slow one
+    /// is still cut at its limit, and one that ignores SIGTERM is still killed. Blocking the pool
+    /// stalls other tests' global-queue work, so this runs alone: `scripts/test.sh` runs it in a
+    /// process of its own.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["FUNES_RUNNER_STARVATION_TEST"] == "1",
+                   "alone: FUNES_RUNNER_STARVATION_TEST=1 swift test --filter theProcessRunnerDoesNotNeedTheGlobalQueues"))
+    func theProcessRunnerDoesNotNeedTheGlobalQueues() async throws {
+        final class Flag: @unchecked Sendable {
+            private let lock = NSLock()
+            private var value = false
+            var isSet: Bool { lock.withLock { value } }
+            /// Sets it; whether this call was the first.
+            func set() -> Bool { lock.withLock { defer { value = true }; return !value } }
+        }
+        let blocked = DispatchSemaphore(value: 0), blockers = 200
+        let released = Flag(), late = Flag()
+        let release = { @Sendable (byWatchdog: Bool) in
+            guard released.set() else { return }
+            if byWatchdog { _ = late.set() }
+            for _ in 0..<blockers { blocked.signal() }
+        }
+        for _ in 0..<blockers { DispatchQueue.global(qos: .utility).async { blocked.wait() } }
+        // A hang guard, not a bound: a thread of its own (not the pool's) unblocks it eventually.
+        Thread.detachNewThread {
+            Thread.sleep(forTimeInterval: 120)
+            release(true)
+        }
+        defer { release(false) }
+        // The pool is blocked: more work sent to it doesn't run.
+        let probe = Flag()
+        DispatchQueue.global(qos: .utility).async { _ = probe.set() }
+        try await Task.sleep(for: .milliseconds(500))
+        try #require(!probe.isSet, "the global pool isn't blocked, so this run proves nothing")
+
+        let runner = SystemCLIProcess()
+        let dir = FileManager.default.temporaryDirectory
+        // The input.
+        let echo = try await runner.run(CLIInvocation(
+            executable: "/bin/sh", arguments: ["-c", "read line; echo \"got $line\""], environment: [:], directory: dir,
+            input: "hello\n", timeout: .seconds(60))) { _ in true }
+        #expect(echo.exitCode == 0 && echo.lines == ["got hello"])
+        // The time limit, on a run only it can end before ten minutes.
+        var start = ContinuousClock.now
+        let slow = try await runner.run(CLIInvocation(
+            executable: "/bin/sh", arguments: ["-c", "exec sleep 600"], environment: [:], directory: dir,
+            timeout: .milliseconds(300))) { _ in true }
+        #expect(slow.timedOut && ContinuousClock.now - start < .seconds(30))
+        // The kill after the grace, on a run that ignores SIGTERM: cancelled once its trap is set.
+        let ready = Flag()
+        let stubborn = Task {
+            try await runner.run(CLIInvocation(
+                executable: "/bin/sh", arguments: ["-c", "trap '' TERM; echo ready; exec sleep 600"], environment: [:], directory: dir,
+                timeout: .seconds(300))) { line in
+                if line == "ready" { _ = ready.set() }
+                return true
+            }
+        }
+        for _ in 0..<400 where !ready.isSet { try await Task.sleep(for: .milliseconds(50)) }
+        try #require(ready.isSet)
+        start = ContinuousClock.now
+        stubborn.cancel()
+        _ = await stubborn.result
+        #expect(ContinuousClock.now - start < .seconds(30))
+        #expect(!late.isSet, "the runner waited for the blocked pool")
     }
 
     // MARK: The guardrails apply

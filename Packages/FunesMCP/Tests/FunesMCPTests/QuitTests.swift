@@ -117,20 +117,21 @@ struct QuitDuringRetrievalTests {
                             agent: AuthenticatedAgent(id: agent.id.uuidString.lowercased(), name: "Narrow"),
                             agentName: nil, remote: false, context: CallContext())
 
-        let started = ContinuousClock.now
         let inFlight = Task { await pipeline.handle(call) }
         await retriever.waitUntilRetrieving()
+        // Timed from the quit, not from the call's setup, which a busy runner can make slow.
+        let started = ContinuousClock.now
         // The app's quit: the pipeline first, then the open panels.
         pipeline.quit()
         presenter.withdrawAll()
         retriever.release(row.asksBeforeSharing ? [inside.id, outside.id] : [outside.id])
 
-        // Promptly: well inside the 3 s the app holds its quit for. If it doesn't answer, withdraw
-        // the late panel so the test ends, and fail.
+        // Promptly: within the 3 s the app holds its quit for (FunesMacApp), timed from the quit.
+        // If it doesn't answer, withdraw the late panel so the test ends, and fail.
         let answered = await withTaskGroup(of: ToolResult?.self) { group -> ToolResult? in
             group.addTask { await inFlight.value }
             group.addTask {
-                try? await Task.sleep(for: .seconds(2))
+                try? await Task.sleep(for: .seconds(4))
                 return nil
             }
             defer { group.cancelAll() }
@@ -142,8 +143,8 @@ struct QuitDuringRetrievalTests {
 
         #expect(presenter.accessPrompts.isEmpty, "an access request was shown after the quit began")
         #expect(presenter.approvals.isEmpty, "a Share panel was shown after the quit began")
-        let result = try #require(answered, "the call didn't answer within 2 s of the quit")
-        #expect(elapsed < .seconds(2))
+        let result = try #require(answered, "the call didn't answer within 4 s of the quit")
+        #expect(elapsed < .seconds(3))
         let content = try #require(result.json["structuredContent"] as? [String: Any])
         #expect(content["status"] as? String == "denied")
         #expect(content["reason"] as? String == ReasonCode.funesQuit.rawValue)

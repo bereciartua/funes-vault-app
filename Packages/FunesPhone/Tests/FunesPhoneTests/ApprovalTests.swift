@@ -193,14 +193,16 @@ let ring = String(repeating: "ab", count: 16)
         #expect(ApprovalAlert.fallback == alert)
     }
 
+    /// The Mac would answer only after a minute: the fetch gives up at the deadline it was given
+    /// (1 s) instead. The bound sits between that and the 10 s default, with room for a busy runner.
     @Test func givesUpAtTheDeadline() async {
         let mac = FakeApprovals()
         mac.share(rows: [row("A")], ring: ring)
-        mac.getDelay = .seconds(5)
+        mac.getDelay = .seconds(60)
         let start = ContinuousClock.now
-        let outcome = await ApprovalAlert.fetch(ring: ring, caller: mac, timeout: .milliseconds(100))
+        let outcome = await ApprovalAlert.fetch(ring: ring, caller: mac, timeout: .seconds(1))
         #expect(outcome == .unreachable)
-        #expect(ContinuousClock.now - start < .seconds(2))
+        #expect(ContinuousClock.now - start < ApprovalAlert.fetchTimeout * 0.8)
     }
 
     @Test func eachFetchFailure() async {

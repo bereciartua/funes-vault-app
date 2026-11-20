@@ -137,7 +137,7 @@ struct RemoteRevocationTests {
         f.retriever.release([f.memory.id])
         // Wait until it's waiting for the user.
         var waiting: Disclosure?
-        for _ in 0..<100 where waiting == nil {
+        for _ in 0..<1_000 where waiting == nil {
             waiting = try await f.disclosures.pendingRequests(now: Date()).first
             if waiting == nil { try await Task.sleep(for: .milliseconds(20)) }
         }
