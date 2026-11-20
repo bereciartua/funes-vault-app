@@ -10,10 +10,13 @@
         results-13a2/gates/<model>/ and adds the records to Resources/facts-qualification.json. Writes nothing if any check
         fails.
     python3 qualify.py answer-scores --engine haiku --model claude-code/claude-haiku-5-5 --replay <dir> --out <scores-13d.json>
+            [--facts-model claude-code/claude-haiku-5-5]
         Phase 13d's answer gates (score_13d.py) from the live records in results-13d/, with a replay of both gates from the
         response cache at one clean commit (FactsAnswerLiveTests, `dry=1;out=<dir>`): every request answered from the
         cache, so that commit's code sends exactly what the model answered, and the replay's records equal the live ones
         (bar each fixture vault's random ids). Copies the replay to results-13d/gates/<model>/ and writes the digests.
+        `--model` is the answer model; `--facts-model` the Facts engine whose read the fixtures carry (the r3 Haiku
+        read) and whose persons record the attributes records rest on.
     python3 qualify.py answer-records <scores-13d.json> [--write]
         The attributes records the answer gates allow (the person pool, unscoped and `sole_known`), on the facts key of the
         model's persons record, for that answer model at the replay's answer prompt version. `sole_known` also needs
@@ -655,6 +658,15 @@ def replay_marks(engine, replay):
     return marks, changes
 
 
+def model_identified(m, model):
+    """Every answer by exactly `model` ("<provider>/<id>"): the provider named that id on every response (Claude Code), or
+    it names none (Codex's events carry no model) and the run asked for that full id itself, not an alias."""
+    provider, mid = model.split("/", 1)
+    if m.get("modelsReported") == [mid] and not m.get("responsesWithoutModel"):
+        return True
+    return m.get("modelsReported") == [] and m.get("engine") == {"provider": provider, "model": mid}
+
+
 def replay_problems(engine, model, replay):
     """Why the replay doesn't tie the live records to one clean commit's code ([] = it does); and its manifests."""
     probs, manifests = [], {}
@@ -668,8 +680,8 @@ def replay_problems(engine, model, replay):
             probs.append(f"{gate}: not a full replay ({m.get('mode')}, {m.get('uncached')} uncached)")
         if m.get("dirty") or not m.get("commit"):
             probs.append(f"{gate}: replayed on a dirty tree")
-        if m.get("modelsReported") != [model.split("/", 1)[1]] or m.get("responsesWithoutModel"):
-            probs.append(f"{gate}: the provider reported {m.get('modelsReported')}")
+        if not model_identified(m, model):
+            probs.append(f"{gate}: the provider reported {m.get('modelsReported')}, asked for {m.get('engine')}")
         opts = m.get("options", {})
         if opts.get("only") or opts.get("sets") or opts.get("arms") or opts.get("index") == "keyword" or opts.get("engine") != engine:
             probs.append(f"{gate}: a partial replay ({opts})")
@@ -725,7 +737,7 @@ def cmd_answer_scores(a):
     marks, changes = replay_marks(engine, dest / "replay")
     gates = answer_gates(engine, marks)
     m0 = manifests["answers"]
-    out = {"engine": engine, "model": model, "inputs": {p: sha(R13D / p) for p in answer_inputs(engine)},
+    out = {"engine": engine, "model": model, "factsModel": a.facts_model, "inputs": {p: sha(R13D / p) for p in answer_inputs(engine)},
            "replay": {"commit": m0["commit"], "answerPromptVersion": m0["answerPromptVersion"], "registryVersion": m0["registryVersion"],
                       "files": {str(f.relative_to(dest)): sha(f) for f in sorted((dest / "replay").rglob("*")) if f.is_file()}},
            "marksChanged": changes, "gates": gates, "date": m0["date"][:10]}
@@ -749,7 +761,7 @@ def answer_record_problems(sc, persons):
 def cmd_answer_records(a):
     path = Path(a.scores)
     sc = json.loads(path.read_text())
-    persons = persons_record(sc["model"])
+    persons = persons_record(sc.get("factsModel", sc["model"]))
     probs = answer_record_problems(sc, persons)
     if probs:
         raise SystemExit("qualify.py: no record: " + "; ".join(probs))
@@ -773,7 +785,7 @@ def cmd_answer_records(a):
     print(json.dumps(records, indent=1, ensure_ascii=False))
     if a.write and records:
         f = json.loads(RECORDS.read_text())
-        f["records"] = [r for r in f["records"] if not (r["model"] == sc["model"] and r["uses"] == ["attributes"])] + records
+        f["records"] = [r for r in f["records"] if not (r.get("answerModels") == [sc["model"]] and r["uses"] == ["attributes"])] + records
         RECORDS.write_text(json.dumps(f, indent=2, ensure_ascii=False) + "\n")
         print(f"wrote {len(records)} record(s)")
 
@@ -807,6 +819,8 @@ def verify_answer_record(r, reg):
         if bad:
             probs.append(f"{gate}: {', '.join(bad)} (recomputed)")
     persons = persons_record(r["model"])
+    if sc.get("factsModel", sc["model"]) != r["model"]:
+        probs.append("not the Facts engine the scores were computed with")
     if persons is None or any(persons[k] != r[k] for k in ("model", "adapter", "batching", "promptVersion", "registryVersion", "predicates")):
         probs.append("not on the facts key of a shipped persons record")
     elif r.get("basis") == "sole_known":
@@ -847,6 +861,7 @@ def main():
     s13.add_argument("--model", required=True)
     s13.add_argument("--replay", required=True)
     s13.add_argument("--out", required=True)
+    s13.add_argument("--facts-model", default="claude-code/claude-haiku-5-5")
     r13 = sub.add_parser("answer-records")
     r13.add_argument("scores")
     r13.add_argument("--write", action="store_true")

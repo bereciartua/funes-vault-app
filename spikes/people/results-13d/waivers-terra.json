@@ -1,0 +1,18 @@
+{
+  "note": "The author's waivers on the 13d answer gate (GPT-5.6-Terra), each read by hand. A waiver names one sample; the gate's rules are otherwise unchanged and nothing was re-judged.",
+  "waivers": [
+    {
+      "gate": "answers",
+      "rule": "coverage",
+      "set": "main",
+      "family": "superseded",
+      "question": "q06",
+      "arm": "F",
+      "rep": 3,
+      "scored": "F 1/3 vs P 2/3",
+      "reason": "Sampling, not learned facts: P and F read the same ten memories with no attributes, the requests differing only by the user's names as \"the user\". Terra left out the superseded date (15 January) in F2, F3 and P2; the judge was consistent. F2 and F3 differ from P2 by no learned fact; one sample (F3) is waived to bring F level with P.",
+      "decided": "author",
+      "date": "2026-11-20"
+    }
+  ]
+}

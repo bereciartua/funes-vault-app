@@ -413,19 +413,22 @@ import Testing
     @Test func whatShipsIsHaikusPersonPoolAndClient() {
         // 13a.2's Gates step: the person pool {recorded, linked} and client {recorded}, both Haiku. Works at missed its
         // linked gate; the timeline and bridges stay unqualified (the author's decision). 13d's answer gates: the person
-        // pool's attributes, unscoped and sole_known, for answers by Claude Haiku 5.5 through Claude Code only.
-        #expect(FactsQualification.bundled.records.count == 4)
+        // pool's attributes, unscoped and sole_known, for answers by Claude Haiku 5.5 through Claude Code and by
+        // GPT-5.6-Terra through Codex, each on Haiku's facts key.
+        #expect(FactsQualification.bundled.records.count == 6)
         let on = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions)
         #expect(Set(on.predicates(.linked)) == Set(persons))
         #expect(Set(on.predicates(.recorded)) == Set(persons + ["client"]))
         #expect([FactsUse.timeline, .bridges].allSatisfy { on.predicates($0).isEmpty })
         let haikuAnswers = FactsQualification.AnswerKey(model: "claude-code/claude-haiku-5-5", promptVersion: SearchAnswerer.promptVersion)
-        let answer = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions,
-                                                     answer: haikuAnswers)
-        #expect(Set(answer.predicates(.attributes)) == Set(persons))
-        #expect(persons.allSatisfy { answer.isOn($0, .attributes, basis: LinkBasis.soleKnown.rawValue) })
+        for model in [haikuAnswers.model, "codex/gpt-5.6-terra"] {
+            let answer = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions,
+                                                         answer: .init(model: model, promptVersion: SearchAnswerer.promptVersion))
+            #expect(Set(answer.predicates(.attributes)) == Set(persons), "\(model)")
+            #expect(persons.allSatisfy { answer.isOn($0, .attributes, basis: LinkBasis.soleKnown.rawValue) }, "\(model)")
+        }
         // Another answer model, an alias, or another answer prompt: no attributes.
-        for key in [FactsQualification.AnswerKey(model: "codex/gpt-5.6-terra", promptVersion: SearchAnswerer.promptVersion),
+        for key in [FactsQualification.AnswerKey(model: "codex/gpt-6-luna", promptVersion: SearchAnswerer.promptVersion),
                     FactsQualification.AnswerKey(model: "claude-code/haiku", promptVersion: SearchAnswerer.promptVersion),
                     FactsQualification.AnswerKey(model: haikuAnswers.model, promptVersion: "a13d-0")] {
             let other = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions,

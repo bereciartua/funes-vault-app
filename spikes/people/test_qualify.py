@@ -215,6 +215,15 @@ class Verify(unittest.TestCase):
             self.assertTrue(any("dirty" in p for p in probs))
             self.assertTrue(any("reported" in p for p in probs))
 
+    def test_a_model_is_identified_by_the_provider_or_by_its_full_requested_id(self):
+        named = {"modelsReported": ["claude-haiku-5-5"], "responsesWithoutModel": 0, "engine": {"provider": "claude-code", "model": "haiku"}}
+        self.assertTrue(Q.model_identified(named, MODEL))
+        self.assertFalse(Q.model_identified({**named, "responsesWithoutModel": 2}, MODEL))
+        asked = {"modelsReported": [], "responsesWithoutModel": 627, "engine": {"provider": "codex", "model": "gpt-5.6-terra"}}
+        self.assertTrue(Q.model_identified(asked, "codex/gpt-5.6-terra"))
+        # An alias that reports nothing identifies no model.
+        self.assertFalse(Q.model_identified({**asked, "engine": {"provider": "claude-code", "model": "haiku"}}, MODEL))
+
 
 if __name__ == "__main__":
     unittest.main()
