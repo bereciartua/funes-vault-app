@@ -1,21 +1,21 @@
 {
   "above_limit_in_payload" : 0,
-  "calls" : 167,
-  "commit" : "0b3e3adecbf92de78dab57c80d963aebd7880248",
-  "date" : "2026-11-19T21:50:14Z",
+  "calls" : 159,
+  "commit" : "ceb9d97060fa477ad47c870c0ac6ac43d5748f4b",
+  "date" : "2026-11-21T16:54:28Z",
   "engine" : {
     "adapter" : "claude-code\/1;effort=low",
-    "batching" : "one-memory;pipeline=1",
+    "batching" : "one-memory;pipeline=2",
     "model" : "claude-code\/claude-haiku-5-5"
   },
-  "fixture_sha256" : "fa33fe6b8981ec0efcb1b4178e30a4586ce49ecf3e24294cdf8a12ae30e7627a",
+  "fixture_sha256" : "a954ebbcc5a9d5bec61377a0342a4925a4d775cd8f36522d9ed9f1e22667c43d",
   "groups" : [
     "people",
     "work"
   ],
   "label" : "swift-claude-claude-haiku-5-5-gates-r2",
   "limit" : "internal",
-  "lines_sha256" : "98918520046fa1088bfa3a3a808b820ea6a33d9c116cf3a8c51915c53d4d4f86",
+  "lines_sha256" : "3edfb248230759228adc37522f8956ee36faf5b678e314935b33f24798f612b4",
   "mode" : "live",
   "models_reported" : [
     "claude-haiku-5-5"
@@ -27,8 +27,8 @@
     "set" : "work13",
     "tag" : "gates-r2"
   },
-  "plays" : 17,
-  "plays_expected" : 17,
+  "plays" : 16,
+  "plays_expected" : 16,
   "plays_list" : [
     "w01#0",
     "w01#1",
@@ -37,27 +37,26 @@
     "w03#1",
     "w04#0",
     "w05#0",
+    "w05#1",
     "w06#0",
-    "w06#1",
     "w07#0",
     "w08#0",
+    "w08#1",
     "w09#0",
-    "w09#1",
     "w10#0",
     "w11#0",
-    "w12#0",
-    "w12#1"
+    "w12#0"
   ],
   "prompt_versions" : {
-    "people" : "a3a15bf93aa2",
-    "work" : "1ce3eb9fc51a"
+    "people" : "b08af3894f34",
+    "work" : "22d054884a30"
   },
   "reasks" : 0,
   "registry_file" : "bundled",
-  "registry_version" : "v1-4f14a1e53524",
-  "responses" : 167,
+  "registry_version" : "v1-8338de9d268e",
+  "responses" : 159,
   "responses_without_model" : 0,
-  "run_id" : "f499b5ff-f1b4-4b57-9e90-60ec53ec9176",
+  "run_id" : "c89d1af1-7ee9-466c-8aa4-8e3f5e5924a3",
   "set" : "work13",
   "unmapped" : 0,
   "unsettled" : 0

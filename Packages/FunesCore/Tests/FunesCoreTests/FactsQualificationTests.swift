@@ -220,9 +220,10 @@ import Testing
         for p in persons { q.off.insert(opusPeople.key(p, FactsUse.recorded.rawValue)) }
         got = q.resolve(chosen: providers.opus, fallback: providers.haiku, registry: reg, promptVersions: versions)
         #expect(got[people]?.modelID == "claude-haiku-5-5")
-        // Nothing qualified (what ships until 13e.1's gate runs): no model at all.
-        #expect(FactsQualification.bundled.resolve(chosen: providers.opus, fallback: providers.haiku, registry: reg,
-                                                   promptVersions: versions).isEmpty)
+        // What ships (13e.2's records step, on 13e.1's code): Haiku qualified for both groups, Opus for neither, so both
+        // fall back to Haiku.
+        got = FactsQualification.bundled.resolve(chosen: providers.opus, fallback: providers.haiku, registry: reg, promptVersions: versions)
+        #expect(got[people]?.modelID == "claude-haiku-5-5" && got[work]?.modelID == "claude-haiku-5-5")
     }
 
     struct Fake: GenerationProvider {
@@ -411,12 +412,23 @@ import Testing
         #expect(FactsGateEvidence.gate(for: record([wa], [.timeline], group: work), registry: reg)?.id == "timeline")
     }
 
-    @Test func nothingIsQualifiedUntil13e1sGateRuns() {
-        // 13e.1 changed the pipeline (pipeline=2), the registry and the Facts prompt, so 13a.2's and 13d's records no
-        // longer match what runs: until its gate runs write new ones, nothing ships.
-        #expect(FactsQualification.bundled.records.isEmpty)
+    @Test func whatShipsIsHaikusPersonPoolClientAndWorksAt() {
+        // 13e.2's records step (Phase B on 13e.1's code, ceb9d97): the person pool {recorded, linked}, client {recorded}
+        // and works at {recorded, linked}, all Haiku. The timeline and bridges stay unqualified (13e.2's gate decides the
+        // timeline; bridges are retired). 13d's attributes records lapsed with the registry until 13e.2's answer gates.
+        #expect(FactsQualification.bundled.records.count == 3)
         let on = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions)
-        #expect(FactsUse.allCases.allSatisfy { on.predicates($0).isEmpty })
+        #expect(Set(on.predicates(.linked)) == Set(persons + ["works_at"]))
+        #expect(Set(on.predicates(.recorded)) == Set(persons + ["client", "works_at"]))
+        #expect([FactsUse.timeline, .bridges, .attributes].allSatisfy { on.predicates($0).isEmpty })
+        for model in ["claude-code/claude-haiku-5-5", "codex/gpt-5.6-terra"] {
+            let answer = FactsQualification.bundled.uses(engines: [people: Self.haiku, work: Self.haiku], registry: reg, promptVersions: versions,
+                                                         answer: .init(model: model, promptVersion: SearchAnswerer.promptVersion))
+            #expect(answer.predicates(.attributes).isEmpty, "\(model)")
+        }
+        // Another engine gets nothing.
+        let opus = FactsQualification.bundled.uses(engines: [people: Self.opus, work: Self.opus], registry: reg, promptVersions: versions)
+        #expect(FactsUse.allCases.allSatisfy { opus.predicates($0).isEmpty })
     }
 
     // MARK: The write side

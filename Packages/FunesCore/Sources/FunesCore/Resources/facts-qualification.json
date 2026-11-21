@@ -1,4 +1,111 @@
 {
   "note": "Memory processing §11.10: the qualification records. Each turns some uses of some predicates on for one engine (model, adapter, batching), one call group's prompt version and one registry version (FactsRegistry.fingerprint). Records come only from gate runs (the Phase 13 plan's acceptance table, on fixtures); the two-week review's off-switches are local rows. Empty while 13e.1's code (pipeline=2, a new registry and prompt) awaits its gate runs: every use is off and no model is offered.",
-  "records": []
+  "records": [
+    {
+      "predicates": [
+        "partner",
+        "parent",
+        "child",
+        "sibling",
+        "other_family",
+        "friend",
+        "manager",
+        "colleague",
+        "care",
+        "other"
+      ],
+      "uses": [
+        "recorded",
+        "linked"
+      ],
+      "basis": "",
+      "callGroup": "people",
+      "model": "claude-code/claude-haiku-5-5",
+      "adapter": "claude-code/1;effort=low",
+      "batching": "one-memory;pipeline=2",
+      "promptVersion": "b08af3894f34",
+      "registryVersion": "v1-8338de9d268e",
+      "gate": "13a.2 persons: main, astra, mixed, persons, reads r1, r2",
+      "evidence": [
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/port-fidelity.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/scores.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/astra-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/astra.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/main-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/main.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/persons-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/persons.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/astra-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/astra.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/main-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/main.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/persons-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/persons.jsonl"
+      ],
+      "recordedAt": "2026-11-21"
+    },
+    {
+      "predicates": [
+        "client"
+      ],
+      "uses": [
+        "recorded"
+      ],
+      "basis": "",
+      "callGroup": "work",
+      "model": "claude-code/claude-haiku-5-5",
+      "adapter": "claude-code/1;effort=low",
+      "batching": "one-memory;pipeline=2",
+      "promptVersion": "22d054884a30",
+      "registryVersion": "v1-8338de9d268e",
+      "gate": "13a.2 client: mixed, work13, reads r1, r2",
+      "evidence": [
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/port-fidelity.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/scores.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl"
+      ],
+      "recordedAt": "2026-11-21"
+    },
+    {
+      "predicates": [
+        "works_at"
+      ],
+      "uses": [
+        "recorded",
+        "linked"
+      ],
+      "basis": "",
+      "callGroup": "work",
+      "model": "claude-code/claude-haiku-5-5",
+      "adapter": "claude-code/1;effort=low",
+      "batching": "one-memory;pipeline=2",
+      "promptVersion": "22d054884a30",
+      "registryVersion": "v1-8338de9d268e",
+      "gate": "13a.2 works_at: mixed, work13, reads r1, r2",
+      "evidence": [
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/port-fidelity.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/scores.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13-manifest.json",
+        "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl"
+      ],
+      "recordedAt": "2026-11-21"
+    }
+  ]
 }

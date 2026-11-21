@@ -281,9 +281,13 @@ class LineMeasures(unittest.TestCase):
 
 
 class Verify(unittest.TestCase):
-    def test_no_shipped_record_until_13e1s_gate_runs(self):
-        # 13e.1's code (pipeline=2, a new registry and prompt) voided 13a.2's and 13d's records.
-        self.assertEqual(json.loads(Q.RECORDS.read_text())["records"], [])
+    def test_shipped_records_are_13e2s_records_step(self):
+        # 13e.2's records step on 13e.1's code: the person pool, client and works at {recorded, linked}; no timeline
+        # record and no attributes record (they lapsed with the registry until 13e.2's answer gates).
+        shipped = {(r["callGroup"], tuple(r["uses"])) for r in json.loads(Q.RECORDS.read_text())["records"]}
+        self.assertEqual(shipped, {("people", ("recorded", "linked")), ("work", ("recorded",)), ("work", ("recorded", "linked"))})
+        preds = {p for r in json.loads(Q.RECORDS.read_text())["records"] for p in r["predicates"]}
+        self.assertTrue({"client", "works_at"} <= preds)
         self.assertEqual(Q.cmd_verify(None), 0)
 
     def test_a_record_without_a_13a2_gate_fails(self):

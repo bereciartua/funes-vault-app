@@ -2,7 +2,7 @@
  "format": "funes.facts-port-fidelity.v1",
  "pass": true,
  "problems": [],
- "commit": "0b3e3adecbf92de78dab57c80d963aebd7880248",
+ "commit": "ceb9d97060fa477ad47c870c0ac6ac43d5748f4b",
  "gold_reader": {
   "main": {
    "substituted": 5,
@@ -21,7 +21,7 @@
    "unexplained": 0
   }
  },
- "known_sha256": "f147a3c208cbc6be79d6ae017b4d72e8631ac7d886b9b9877d450e04e0280fe7",
+ "known_sha256": "aa60c4d7e4b0a969e3f13b45af72308698f522eaafab1632d23454feedef63b8",
  "pairs": [
   {
    "set": "main",
@@ -29,7 +29,7 @@
    "plays": 30,
    "expected_plays": 30,
    "python_sha256": "a1de103daa6a4eb37d925e5674266f4f7c23a91751ad0ece5b19cd5b677c22a1",
-   "swift_sha256": "2d7142b67159b5574f87304ee15afd5a67f05478822aa0eb61ca21dc1e852dc2",
+   "swift_sha256": "6f53cdd2b166a1547ff9be901b786e479d40a9f27e8f32f2293abaf8a4f83f88",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 100.0,
@@ -78,7 +78,7 @@
    "plays": 28,
    "expected_plays": 28,
    "python_sha256": "4eed39a33fd5a261ce284366b81df3878301e3b147bf908bb9cd668964bbe835",
-   "swift_sha256": "1af54ab9395db21089bea5082266e227146a715570dd6fb1fdbb3347aad6a93d",
+   "swift_sha256": "6bb413465f48c068744a29d3b4fec0c7be99c1270a2b0c5aae87523bb1922938",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 100.0,
@@ -124,7 +124,7 @@
    "plays": 16,
    "expected_plays": 16,
    "python_sha256": "40821e9eb5ac51b21deb3c103a4b79c1a87ecc0b73978fc283789a1c3624e8b1",
-   "swift_sha256": "9a673db80fae604c3e9eb2478412b06237cb95c30ae16d7a11009c99ed260771",
+   "swift_sha256": "e4638afd1c6d4bb971538fbc786f9f7fe1da806febfd5b69feef704b461b824c",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 100.0,
@@ -147,7 +147,7 @@
     "relations precision": 95.55555555555556,
     "relations recall": 97.72727272727273,
     "forbidden links": 0,
-    "timeline decidable right": 57.142857142857146
+    "timeline decidable right": 85.71428571428571
    },
    "points": {
     "full basis right": 0.0,
@@ -159,7 +159,7 @@
     "relations precision": 0.0,
     "relations recall": 0.0,
     "forbidden links": 0,
-    "timeline decidable right": -32.142857142857146
+    "timeline decidable right": -3.5714285714285836
    },
    "unexplained": [],
    "explained": [
@@ -169,21 +169,12 @@
     "mixed recorded x03#1 link m3 role 94 | python: None | swift: named Lina Moss  [lexicon_recording]",
     "mixed recorded x03#1 link m4 role 101 | python: None | swift: candidates -  [lexicon_recording]",
     "mixed recorded x03#1 timeline q2 | python: right_gap | swift: miss  [intent]",
-    "mixed recorded x05#0 timeline q1 | python: right | swift: miss  [intent]",
-    "mixed recorded x05#1 timeline q1 | python: right | swift: miss  [intent]",
     "mixed recorded x06#0 link m4 role 111 | python: None | swift: sole_known Cora Finch  [lexicon_recording]",
-    "mixed recorded x06#0 timeline q1 | python: right | swift: miss  [intent]",
-    "mixed recorded x06#0 timeline q2 | python: right | swift: miss  [intent]",
-    "mixed recorded x07#0 timeline q2 | python: told_decidable | swift: miss  [intent]",
-    "mixed recorded x07#1 timeline q2 | python: right_gap | swift: miss  [intent]",
     "mixed recorded x09#0 link m4 role 0 | python: None | swift: named Nell Vale  [lexicon_recording]",
     "mixed recorded x09#0 timeline q1 | python: told | swift: told_no_intent  [intent]",
-    "mixed recorded x09#0 timeline q2 | python: right | swift: miss  [intent]",
     "mixed recorded x09#1 link m4 role 0 | python: None | swift: named Nell Vale  [lexicon_recording]",
     "mixed recorded x09#1 timeline q1 | python: told | swift: told_no_intent  [intent]",
-    "mixed recorded x09#1 timeline q2 | python: right | swift: miss  [intent]",
-    "mixed recorded x10#0 link m3 role 91 | python: None | swift: named Rowan Pike  [lexicon_recording]",
-    "mixed recorded x10#0 timeline q2 | python: right | swift: miss  [intent]"
+    "mixed recorded x10#0 link m3 role 91 | python: None | swift: named Rowan Pike  [lexicon_recording]"
    ]
   },
   {
@@ -192,7 +183,7 @@
    "plays": 30,
    "expected_plays": 30,
    "python_sha256": "46d2835000960a43e7e35901b080199768ed3ff19e8fbff8dc890d46191c6575",
-   "swift_sha256": "dbb8a21616d8a44aef9990b9ba0313d6fc79397d84e3ebbafffc380bb479af8f",
+   "swift_sha256": "b4255f6d38d379bdc795020d661491dc6a06736d10bede6216d8a43f8a3a8628",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 100.0,
@@ -237,7 +228,7 @@
    "plays": 28,
    "expected_plays": 28,
    "python_sha256": "9b6f3c0019a1e085c113a9be28eaac2f98f837ba197a3b65b9fa01ddc39c4b91",
-   "swift_sha256": "727a7ea87d5ed1f2180bc52a3387a6e3ff31bad57a528d7bcde854820214a617",
+   "swift_sha256": "48a3760bdbeeb16daa1b9b74d72d1edb5e949d42e3ee6469877c7bc5830be917",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 100.0,
@@ -284,7 +275,7 @@
    "plays": 16,
    "expected_plays": 16,
    "python_sha256": "ee9d9cd193ab739749a64be8ff83c8a3513295c60cea78427ede48cf08cc75ee",
-   "swift_sha256": "56bc5b1c8cedc080115a61543867997eca472aa7f1580436434166f374d3e08e",
+   "swift_sha256": "61f19279b41931e3929da4faceb58450643cd2e7331e37a88b613b74e84c0b17",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 100.0,
@@ -327,7 +318,7 @@
    "plays": 66,
    "expected_plays": 66,
    "python_sha256": "367e4295c77d972214423db2844bffb22c0ee7e13b74e963ea2dee473c30e578",
-   "swift_sha256": "2d09e9cf7bcd1727d9781b16e0c03038cf432a015924efd40dc91abea58b963c",
+   "swift_sha256": "1131b6d8faf043fb91ee622d241232f1717634f96a8d05df1ac056b0593b7f0a",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 95.23809523809524,
@@ -366,7 +357,6 @@
     "persons gold p06#0 link m3 role 0 | python: sole_known Ivo | swift: context Hana  [daycue]",
     "persons gold p06#1 link m3 role 0 | python: sole_known Ivo | swift: context Hana  [daycue]",
     "persons gold p13#1 link m3 role 0 | python: sole_known Quinn | swift: context Quinn  [alias]",
-    "persons gold p28#0 link m5 role 0 | python: sole_known Pia | swift: context Pia  [schedule]",
     "persons gold p28#1 link m5 role 0 | python: context Pia | swift: sole_known Pia  [schedule]",
     "persons gold p42#0 link m1 role 0 | python: sole_known Nadia | swift: candidates -  [untrusted_rules_out]",
     "persons gold p42#0 link m5 role 9 | python: sole_known Nadia | swift: context Nadia  [schedule]",
@@ -392,10 +382,9 @@
    "swift": {
     "timeline decidable right": 9.090909090909092,
     "outcomes": {
-     "miss": 12,
+     "miss": 13,
      "right": 2,
-     "told_decidable": 7,
-     "told_gap": 1
+     "told_decidable": 7
     }
    },
    "points": {
@@ -408,7 +397,7 @@
     "h2 time-model - w05 | python: right | swift: told_decidable  [org_containment]"
    ],
    "python_sha256": "a252f2334bd58c2108f87d2163427b7f9b19cfea1e1fc6ad93f4f8eec01a8583",
-   "swift_sha256": "745a2af6ecbefdec1322c45333278ce5a5185551d486e3caf5df03fdd4b32bbf"
+   "swift_sha256": "d1e9851e9a2c439f3e194c41e76de4007d8f21c414335123a845ab7f21daba87"
   }
  ]
 }
