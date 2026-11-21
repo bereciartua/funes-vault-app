@@ -35,6 +35,9 @@ public enum CompanionMethod: String, Codable, Sendable, CaseIterable {
     case approvalsSettingsSet = "approvals.settings.set"
     /// **Not <name>** and **Not this** from the iPhone (v0.10, ADR-0032).
     case factsReject = "facts.reject"
+    /// People & history, read from the Mac (13d.2, §4.3).
+    case peopleDirectory = "people.directory"
+    case peopleGet = "people.get"
 }
 
 /// A method with its parameter and result types, so calls are typed on both ends.
@@ -107,6 +110,9 @@ public struct CompanionRequestHead: Sendable {
 
     /// The call shows learned facts (`CompanionCapability.facts`).
     public var showsFacts: Bool { caps.contains(CompanionCapability.facts) }
+
+    /// The call shows People & history (`CompanionCapability.people`, 13d.2).
+    public var showsPeople: Bool { caps.contains(CompanionCapability.people) }
 }
 
 /// `{"id":"…","result":{…}}` or `{"id":"…","error":{"code":"…","message":"…"}}`.
@@ -175,9 +181,13 @@ public struct CompanionStatus: Codable, Sendable, Equatable {
     /// on change what search or answers would show, and a restore renews it. A change drops the phone's held and
     /// in-flight answer and searches again.
     public var factsRevision: String?
+    /// People & history (13d.2, §4.3), for a call with the `people` capability; absent from an older Mac, and the phone
+    /// then hides it.
+    public var people: PeopleStatus?
 
     public init(macName: String, appVersion: String, serverTime: Date, inboxPending: Int, vaultActive: Bool,
-                calledName: String? = nil, searchAnswers: SearchAnswersStatus? = nil, factsRevision: String? = nil) {
+                calledName: String? = nil, searchAnswers: SearchAnswersStatus? = nil, factsRevision: String? = nil,
+                people: PeopleStatus? = nil) {
         self.macName = macName
         self.appVersion = appVersion
         self.serverTime = serverTime
@@ -186,6 +196,7 @@ public struct CompanionStatus: Codable, Sendable, Equatable {
         self.calledName = calledName
         self.searchAnswers = searchAnswers
         self.factsRevision = factsRevision
+        self.people = people
     }
 }
 

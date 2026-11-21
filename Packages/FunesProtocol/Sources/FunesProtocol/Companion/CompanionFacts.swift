@@ -7,8 +7,11 @@ public enum CompanionCapability {
     /// and **Not <name>** and **Not this** (`facts.reject`).
     public static let facts = "facts"
 
+    /// The phone shows People & history, read from the Mac (13d.2, §4.3): `people.*`, and `status.get`'s `people`.
+    public static let people = "people"
+
     /// What this build sends on every call.
-    public static let current = [facts]
+    public static let current = [facts, people]
 }
 
 /// One correction a result's why line or an answer's inferred claim offers (§4, memory processing §11.8): **Not <name>**
@@ -77,7 +80,13 @@ public enum FactsReject: CompanionCall {
 }
 
 public struct FactsRejectResult: Codable, Sendable, Equatable {
+    /// Search's revision while *Use in search and answers* is on, else People's (13d.2).
     public var factsRevision: String
+    /// People & history's revision (13d.2), while People is open for this phone.
+    public var peopleRevision: String?
 
-    public init(factsRevision: String) { self.factsRevision = factsRevision }
+    public init(factsRevision: String, peopleRevision: String? = nil) {
+        self.factsRevision = factsRevision
+        self.peopleRevision = peopleRevision
+    }
 }

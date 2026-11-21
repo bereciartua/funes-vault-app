@@ -422,7 +422,7 @@
 **FR-iOS-07 Search and view** · M · v0.2
 - Search the vault through the Mac. Results show titles and snippets; a memory opens with full text and provenance.
 - **v0.6:** snippets show the passage that matches the search (FR-V-17), and Search answers are available on the iPhone (FR-iOS-13).
-- **v0.10** ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), FR-F-05, FR-F-06): with learned facts in use on the Mac, a result admitted through a link shows its why line, with **Not <name>** and **Not this** (sent to the Mac as `facts.reject`), and the answer card marks inferred claims, with the same corrections. There's no entity list on the phone ([UX: iPhone ▸ Search](05-ux-iphone.md#search-tab)).
+- **v0.10** ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), FR-F-05, FR-F-06): with learned facts in use on the Mac, a result admitted through a link shows its why line, with **Not <name>** and **Not this** (sent to the Mac as `facts.reject`), and the answer card marks inferred claims, with the same corrections. From 13d.2, People & history is on the phone too, read live from the Mac, with corrections only (**Not <name>**, **Not this**) ([UX: iPhone ▸ People & history](05-ux-iphone.md#people--history), FR-F-07).
   - Acceptance: the phone declares the `facts` capability; for a phone that doesn't, link-admitted results come back as ordinary results, and the Mac sends the model neither attributes nor bridges, drops every claim code would mark inferred (counted in `dropped`) and still withholds unsendable-link results, so it never shows an inferred claim unmarked. For `memories.answer` the Mac recomputes admission and the facts behind each id from the query and filters, never from the ids alone. A held or in-flight answer is dropped when `status.get`'s `factsRevision` changes.
 
 **FR-iOS-08 Edit** · M · v0.2
@@ -691,6 +691,7 @@
   - **your timeline:** dated facts with title history, stating memories and basis ("probably former"); conflicting dates and undecidable orders shown as such;
   - **To check:** only candidates the model couldn't settle, suggested merges, and corrections or manual dates whose episode no longer matches one episode. No question is ever required of you;
   - **manual entry:** add or edit an entity, a fact, a label, dates or an order yourself. Your dates, orders and qualifiers are evidence from you, and win over inference. One set on a single episode carries that episode's date range, and follows the episode that overlaps it; if none or several do, it goes to To check.
+- **On the iPhone** (13d.2, [UX: iPhone ▸ People & history](05-ux-iphone.md#people--history)): the list, an entity's page, your timeline and To check, read live from the Mac with the Mac's rules, nothing stored; **Not <name>** and **Not this** are the only changes from the phone. Its reads log `people_listed` and `people_viewed` with counts only.
 - **Corrections:** **Not <name>** and **Not this** (a fact) on every why line and inferred claim, on the Mac and the iPhone. Anything that depends on them recomputes at once. Merge With… and Not the Same are kept as corrections on the entity.
 - Acceptance:
   - Manual entries win over inference, carry the sensitivity you pick, are never purged with memories, and survive Remove learned facts.

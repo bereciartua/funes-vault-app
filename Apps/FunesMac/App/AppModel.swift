@@ -2,6 +2,7 @@ import BridgeKitCore
 import BridgeKitRemote
 import BridgeUI
 import Foundation
+import FunesCompanion
 import FunesCore
 import FunesMCP
 import FunesProtocol
@@ -283,6 +284,10 @@ final class AppModel {
         var companionServices = services.companionServices
         companionServices.answers = searchAnswers
         companionServices.factsWording = MacFactsWording()
+        // People & history on the iPhone (13d.2): read as the Mac's section reads, from this model once it's made.
+        let peopleBridge = PeopleCompanionBridge()
+        companionServices.people = CompanionPeople(learning: { await peopleBridge.learning() }, config: { await peopleBridge.config() },
+                                                   phrases: peopleBridge.phrases)
         companion = CompanionController(defaults: preferences.defaults, services: companionServices,
                                         approvals: services.phoneApprovals, appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0")
         pausedUntil = services.pause.pausedUntil(at: Date())
@@ -290,6 +295,8 @@ final class AppModel {
         inboxState.decided = { [weak self] in self?.checklist.markReviewed() }
         vault.answers = searchAnswers
         people.config = { [weak self] in await self?.peopleConfig() }
+        peopleBridge.model = self
+        peopleCompanionPhrases = peopleBridge.phrases
         updates.drafts = { [weak self] in
             guard let vault = self?.vault else { return [:] }
             return Dictionary(uniqueKeysWithValues: vault.draftIDs.compactMap { id in vault.draft(id).map { (id, $0) } })
@@ -425,6 +432,8 @@ final class AppModel {
 
     /// The UI-review build's: every declared use on.
     @ObservationIgnored var peopleConfigOverride: FactsSearchConfig?
+    /// The companion's People phrases (13d.2), cleared with the section's when Facts goes off.
+    @ObservationIgnored var peopleCompanionPhrases: RolePhraseCache?
 
     /// After the first backfill: its finish time, until the summary is dismissed.
     var peopleSummary: Date? {
@@ -505,7 +514,10 @@ final class AppModel {
         if wasRunning, let state = factsBackfill?.state, state.finishedAt != nil, state.ended == nil {
             factsBackfillFinished()
         }
-        if !factsLearning && !hasUserFactEntries { people.clear() }
+        if !factsLearning && !hasUserFactEntries {
+            people.clear()
+            peopleCompanionPhrases?.clear()         // the phone's People phrases too (13d.2)
+        }
         factsCapWait = []
         if let codes = try? services.store.factsCapWaits(now: now), !codes.isEmpty {
             let cap = modelSettings.cap(store: services.store, activity: services.activity)
@@ -739,3 +751,15 @@ enum ActivityFocus: Equatable {
 }
 
 
+
+/// The companion's way to People & history's state (13d.2, companion protocol §4.3): *Learn from memories* and the People
+/// configuration, read from the app model at each call.
+@MainActor
+final class PeopleCompanionBridge {
+    weak var model: AppModel?
+    nonisolated let phrases = RolePhraseCache()
+
+    func learning() -> Bool { model?.factsLearning ?? false }
+
+    func config() async -> FactsSearchConfig? { await model?.peopleConfig() }
+}

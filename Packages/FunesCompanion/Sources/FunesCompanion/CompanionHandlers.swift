@@ -20,10 +20,13 @@ public struct CompanionServices: Sendable {
     public var answers: (any SearchAnswering)?
     /// How learned facts are worded for the phone (v0.10): the Mac's String Catalog.
     public var factsWording: any FactsWording
+    /// People & history for the phone (13d.2, §4.3); without it `people.*` is `unknown_method` and `status.get` has no
+    /// `people`.
+    public var people: CompanionPeople?
 
     public init(store: VaultStore, devices: DeviceService, captures: CaptureService, suggestions: SuggestionService,
                 search: SearchService, agents: AgentService, activity: any ActivityRecorder, answers: (any SearchAnswering)? = nil,
-                factsWording: any FactsWording = EnglishFactsWording()) {
+                factsWording: any FactsWording = EnglishFactsWording(), people: CompanionPeople? = nil) {
         self.store = store
         self.devices = devices
         self.captures = captures
@@ -33,6 +36,7 @@ public struct CompanionServices: Sendable {
         self.activity = activity
         self.answers = answers
         self.factsWording = factsWording
+        self.people = people
     }
 }
 
@@ -82,6 +86,7 @@ public final class CompanionHandlers: Sendable {
         let device = deviceID
         // What this call can show (v0.10, §3): decided per call from its own caps, never a remembered phone version.
         let facts = head.showsFacts
+        let people = head.showsPeople
         if method == .memoriesAnswer {
             return await withTimeout(id: head.id, limit: answerLimit, error: CompanionError(.modelTimeout, message: "Deadline"),
                                      cancelsWork: true) { [self] in
@@ -90,14 +95,19 @@ public final class CompanionHandlers: Sendable {
         }
         return await withTimeout(id: head.id, limit: callLimit) { [self] in
             switch method {
-            case .statusGet: return await run(StatusGet.self, head) { _ in try await status(now: now) }
+            case .statusGet: return await run(StatusGet.self, head) { _ in try await status(now: now, people: people) }
             case .capturesSubmit:
                 return await run(CapturesSubmit.self, head) { try await submit($0, device: device, limits: limits, now: now) }
             case .overviewGet: return await run(OverviewGet.self, head) { try overview($0, device: device, now: now) }
             case .categoriesList: return await run(CategoriesList.self, head) { _ in try await categories(device: device, now: now) }
             case .memoriesSearch:
                 return await run(MemoriesSearch.self, head) { try await search($0, device: device, facts: facts, now: now) }
-            case .factsReject: return await run(FactsReject.self, head) { try await reject($0, device: device, facts: facts, now: now) }
+            case .factsReject:
+                return await run(FactsReject.self, head) { try await reject($0, device: device, facts: facts, people: people, now: now) }
+            case .peopleDirectory:
+                return await run(PeopleDirectoryGet.self, head) { _ in try await peopleDirectory(device: device, showsPeople: people, now: now) }
+            case .peopleGet:
+                return await run(PeopleGet.self, head) { try await peopleEntity($0, device: device, showsPeople: people, now: now) }
             case .memoriesAnswer: return Self.errorReply(id: head.id, CompanionError(.internalError))
             case .memoriesGet: return await run(MemoriesGet.self, head) { try await memory($0.id, device: device, now: now) }
             case .memoriesCreate: return await run(MemoriesCreate.self, head) { try await create($0, device: device, now: now) }
@@ -132,14 +142,15 @@ public final class CompanionHandlers: Sendable {
 
     // MARK: Methods
 
-    func status(now: Date) async throws -> CompanionStatus {
+    func status(now: Date, people: Bool = false) async throws -> CompanionStatus {
         let pending = try await services.suggestions.pending().count
         let calledName = try services.store.profile().normalized().calledName
         let engine = await services.answers?.engine()
         return CompanionStatus(macName: macName(), appVersion: appVersion, serverTime: now, inboxPending: pending, vaultActive: true,
                                calledName: calledName,
                                searchAnswers: engine.map { SearchAnswersStatus(engine: $0.name, locality: AnswerLocality($0.locality), trigger: $0.trigger) },
-                               factsRevision: await services.search.factsRevision())
+                               factsRevision: await services.search.factsRevision(),
+                               people: people ? await peopleStatus() : nil)
     }
 
     /// `memories.answer` (v0.6): the Mac re-reads the ids as the owner and answers from them
@@ -303,17 +314,24 @@ public final class CompanionHandlers: Sendable {
     /// `facts.reject` (v0.10): one correction target, applied as the Mac's own correction is (memory processing §11.8):
     /// first whether it's already in place (a repeat changes nothing), then its token, then the correction, recomputed at
     /// once. Needs the `facts` capability and learned facts in use.
-    func reject(_ target: FactsCorrectionTarget, device: UUID, facts: Bool, now: Date) async throws -> FactsRejectResult {
+    func reject(_ target: FactsCorrectionTarget, device: UUID, facts: Bool, people: Bool = false, now: Date) async throws -> FactsRejectResult {
         guard facts else { throw CompanionError(.invalidInput, message: "Needs the facts capability") }
         try target.validate()
-        guard let config = services.search.facts else { throw CompanionError(.notFound, message: "Learned facts aren't in use") }
+        // One configuration, resolved up front: People's whenever People is open for this phone (as the Mac's page applies
+        // its corrections; the same as search's in steady state), else search's; the reply's revisions come from it.
+        var peopleOpen: (FactsSearchConfig, Bool)?
+        if people, case let .open(config, learning)? = try? await peopleAccess() { peopleOpen = (config, learning) }
+        guard let config = peopleOpen?.0 ?? services.search.facts else {
+            throw CompanionError(.notFound, message: "Learned facts aren't in use")
+        }
         switch try services.store.applyCorrection(target, config: config, activity: services.activity, actor: .device(device),
                                                   via: .companion, now: now) {
         case .applied, .already:
             await services.search.prepareFacts(now: now)
-            // Learned facts turned off meanwhile: nothing to report a revision of.
-            guard let revision = await services.search.factsRevision() else { throw CompanionError(.notFound) }
-            return FactsRejectResult(factsRevision: revision)
+            let peopleRevision = peopleOpen.flatMap { try? services.store.peopleRevision(config: $0.0, learning: $0.1) }
+            // Search's while learned facts are in search, else People's; neither (both turned off meanwhile): not found.
+            guard let revision = await services.search.factsRevision() ?? peopleRevision else { throw CompanionError(.notFound) }
+            return FactsRejectResult(factsRevision: revision, peopleRevision: peopleRevision)
         case .changed: throw CompanionError(.targetChanged)
         case .notFound: throw CompanionError(.notFound)
         case .invalid: throw CompanionError(.invalidInput)
@@ -592,7 +610,7 @@ public final class CompanionHandlers: Sendable {
         }
     }
 
-    private func logRead(_ event: String, device: UUID, now: Date, ids: [UUID] = [], counts: [String: Int] = [:]) {
+    func logRead(_ event: String, device: UUID, now: Date, ids: [UUID] = [], counts: [String: Int] = [:]) {
         services.activity.record(ActivityEvent(time: now, phase: .event, actor: .device(device), via: .companion, event: event,
                                                outcome: "ok", ids: ids, counts: counts))
     }

@@ -128,6 +128,16 @@ public final class SearchModel {
     }
 
     public func dismissCorrectionFailure() { correctionFailure = nil }
+
+    /// A correction made elsewhere on this phone (People & history, 13d.2): the held answer and the card rested on what
+    /// changed, so they go, and the list is searched again; nothing is asked again on its own.
+    public func factsCorrectedElsewhere() {
+        lastAnswer = nil
+        let asked = autoAsked
+        clearCard()
+        autoAsked = asked ?? resultsParams
+        if resultsParams != nil { Task { await self.search() } }
+    }
     /// Settings ▸ Search answers ▸ Show Ask in Search (this iPhone only, on by default).
     public var showAsk = true { didSet { if showAsk != oldValue { showAsk ? scheduleAutoAsk() : cancelAutoAsk() } } }
     @ObservationIgnored private var answerTask: Task<Void, Never>?

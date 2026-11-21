@@ -1,4 +1,5 @@
 import Foundation
+import FunesProtocol
 import GRDB
 
 /// Vault ▸ People & history as data (04-ux-mac.md, FR-F-07; owner side only, nothing here is sent anywhere): the
@@ -21,6 +22,15 @@ public struct PeopleDirectory: Sendable {
     public var kinds: [String]
 
     public var isEmpty: Bool { entries.isEmpty && timeline.allSatisfy { $0.episodes.isEmpty } }
+
+    /// The list as filtered (the Mac's search field and Kind menu, and the phone's `people.list`): names and aliases,
+    /// case and accents ignored; any of `kinds` (none: every kind); hidden entries only with `showHidden`.
+    public func filtered(query: String, kinds: Set<String>, showHidden: Bool) -> [Entry] {
+        entries.filter { e in
+            PeopleFilter.matches(name: e.name ?? e.group?.attribute ?? "", aliases: e.aliases, kind: e.kind, hidden: e.hidden,
+                                 query: query, kinds: kinds, showHidden: showHidden)
+        }
+    }
 
     /// One row of People & names.
     public struct Entry: Sendable, Identifiable, Hashable {
@@ -186,6 +196,24 @@ public struct PeopleDirectory: Sendable {
         /// The episodes it could mean now (none: it matches none).
         public var choices: [DateRange]
     }
+}
+
+/// People & history for a phone (companion protocol §4.3): the directory and People's revision, from one read.
+public struct PeoplePhoneDirectory: Sendable {
+    public var directory: PeopleDirectory
+    public var revision: String
+}
+
+/// An entity's page with its corrections as a phone's buttons (companion protocol §4.3): **Not <name>** per memory row,
+/// **Not this** per fact, tokens minted with the page.
+public struct PeoplePhonePage: Sendable {
+    public var page: PeopleEntityPage
+    /// People's revision, read with the page (`VaultStore.peopleRevision`).
+    public var revision: String
+    /// By memory id.
+    public var notName: [UUID: FactsCorrection] = [:]
+    /// By fact id.
+    public var notThis: [String: FactsCorrection] = [:]
 }
 
 /// An entity's page in People & history.

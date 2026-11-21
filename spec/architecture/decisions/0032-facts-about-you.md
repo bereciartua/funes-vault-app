@@ -19,6 +19,7 @@
   - the registry declares *attributes* for the person predicates and works at, and *bridges* for works at (decision 7). Declared isn't on;
   - a record's registry version covers the whole registry except each predicate's uses list. Every group's validation and parsing read the shared language and the whole lexicon, so a new predicate re-reads only its own group (decision 3) but re-runs every group's gates;
   - the batching in a record's key carries the pipeline's revision, so a code change that could move a gate's result re-runs it.
+- **Amended on 2026-11-20:** People & history reaches the iPhone (Phase 13 plan, 13d.2), read live from the Mac with corrections only, for the two weeks of use. Decision 10 is unchanged (owner side only). The phone shows what the Mac's section shows, read by the same FunesCore code with the same uses, stores nothing, and corrects only through `facts.reject` (**Not <name>** on a memory, **Not this** on a fact). Every other action stays on the Mac until a later step. The companion protocol gains the `people` capability and four read methods.
 
 **Amends** (the documents change with Phase 13a, after acceptance):
 

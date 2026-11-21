@@ -1,8 +1,29 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ (%lld)" : {
+      "comment" : "A role group and how many: Your sisters (2)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$lld)"
+          }
+        }
+      }
+    },
     "%@ is paused on your Mac: test its connection in Settings ▸ AI ▸ Models & Accounts." : {
 
+    },
+    "%@ isn't %@?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ isn't %2$@?"
+          }
+        }
+      }
     },
     "%@ isn't signed in on your Mac." : {
 
@@ -13,8 +34,30 @@
     "%@ on your Mac. It may send what it reads to its AI service." : {
 
     },
+    "%@ or %@" : {
+      "comment" : "Two years memories disagree on",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ or %2$@"
+          }
+        }
+      }
+    },
     "%@ says to slow down. Try again later." : {
 
+    },
+    "%@ since %@" : {
+      "comment" : "List row: e.g. where you worked since 2021",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ since %2$@"
+          }
+        }
+      }
     },
     "%@ suggests a correction" : {
 
@@ -24,6 +67,17 @@
     },
     "%@ suggests archiving a memory" : {
 
+    },
+    "%@ until %@" : {
+      "comment" : "List row: e.g. where you worked until 2021",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ until %2$@"
+          }
+        }
+      }
     },
     "%@ wants %lld memories" : {
       "localizations" : {
@@ -98,6 +152,20 @@
     "%@ · Local server" : {
 
     },
+    "%@ · recorded only, not used in search" : {
+
+    },
+    "%@ – %@" : {
+      "comment" : "An episode's dates",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ – %2$@"
+          }
+        }
+      }
+    },
     "%@, a cloud agent, through Remote Access" : {
 
     },
@@ -107,6 +175,31 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@, a cloud agent, through your %2$@"
+          }
+        }
+      }
+    },
+    "%@, former" : {
+      "comment" : "List row: a former relation"
+    },
+    "%@, then %@" : {
+      "comment" : "Title history",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, then %2$@"
+          }
+        }
+      }
+    },
+    "%@, then %@ from %@" : {
+      "comment" : "Title history",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, then %2$@ from %3$@"
           }
         }
       }
@@ -190,6 +283,12 @@
 
     },
     "%lld in categories it can't read" : {
+
+    },
+    "%lld memories" : {
+      "comment" : "VoiceOver: how many memories mention it"
+    },
+    "%lld memories say so" : {
 
     },
     "%lld memories weren't read: they look like they hold secrets" : {
@@ -315,6 +414,9 @@
     "1 claim left out: it didn't quote a memory" : {
 
     },
+    "1 memory says so" : {
+
+    },
     "1 memory wasn't read: it looks like it holds a secret" : {
 
     },
@@ -368,8 +470,22 @@
     "Always allowed." : {
 
     },
+    "Answer these on your Mac. Nothing waits on them." : {
+
+    },
     "Answered on your Mac" : {
 
+    },
+    "Are %@ and %@ the same?" : {
+      "comment" : "To check: a suggested merge",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Are %1$@ and %2$@ the same?"
+          }
+        }
+      }
     },
     "Beyond the session" : {
 
@@ -380,11 +496,38 @@
     "Discarded." : {
 
     },
+    "Ended %@: two memories disagree" : {
+      "comment" : "Timeline: conflicting dates"
+    },
     "For the session" : {
 
     },
     "From %@. It's in your Inbox either way." : {
 
+    },
+    "From an agent's or an import's text" : {
+
+    },
+    "From the memory's context" : {
+
+    },
+    "Funes can learn the people in your life and where you've worked from your memories, for your own search. Turn on Facts on your Mac in Settings ▸ AI ▸ Features." : {
+
+    },
+    "Funes can't tell which came first" : {
+      "comment" : "Timeline: an undecidable order"
+    },
+    "Funes doesn't learn or order this yet: no model has passed Funes's tests for it. Only what you enter shows here." : {
+
+    },
+    "Funes hasn't learned anyone from your memories yet. It reads new and changed ones as you save them." : {
+
+    },
+    "Funes isn't learning from your memories. Your own entries and corrections are kept." : {
+
+    },
+    "Gap of %lld months before this" : {
+      "comment" : "Timeline: a gap"
     },
     "In the demo, try: When does my lease renew?" : {
 
@@ -395,7 +538,16 @@
     "It already got what it may read. Always Allow is for next time." : {
 
     },
+    "Its end: two memories disagree" : {
+      "comment" : "Timeline: conflicting dates"
+    },
+    "Its start: two memories disagree" : {
+      "comment" : "Timeline: conflicting dates"
+    },
     "Mac not reachable. Answer on your Mac, or open Funes when your Mac is reachable." : {
+
+    },
+    "Named in the memory" : {
 
     },
     "No answer in the %lld results read." : {
@@ -439,6 +591,9 @@
     "Not said" : {
 
     },
+    "Nothing to check. Funes asks here only what it couldn't settle; nothing waits on it." : {
+
+    },
     "On your Mac" : {
 
     },
@@ -453,6 +608,27 @@
     },
     "Open to see exactly what would be shared." : {
 
+    },
+    "Organization" : {
+
+    },
+    "Organizations" : {
+
+    },
+    "People" : {
+
+    },
+    "Person" : {
+
+    },
+    "Place" : {
+
+    },
+    "Places" : {
+
+    },
+    "Probably former" : {
+      "comment" : "Timeline basis: ended by a later job"
     },
     "Read %lld of %lld results · %lld s" : {
       "localizations" : {
@@ -528,6 +704,22 @@
         }
       }
     },
+    "Reading your memories: %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reading your memories: %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Recorded only, not used in search" : {
+
+    },
+    "Rename, merge, hide, dates and undo are on your Mac." : {
+
+    },
     "Save this correction?" : {
 
     },
@@ -575,6 +767,25 @@
     "Shared 1 memory." : {
 
     },
+    "Something you set on %@ (%@) no longer matches one of its dates." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something you set on %1$@ (%2$@) no longer matches one of its dates."
+          }
+        }
+      }
+    },
+    "Started %@: two memories disagree" : {
+      "comment" : "Timeline: conflicting dates"
+    },
+    "Stated" : {
+      "comment" : "Timeline basis"
+    },
+    "Stated as former" : {
+      "comment" : "Timeline basis"
+    },
     "The model's answer couldn't be read. Try again." : {
 
     },
@@ -582,6 +793,12 @@
 
     },
     "There's nothing to answer here." : {
+
+    },
+    "Thing" : {
+
+    },
+    "Things" : {
 
     },
     "This iPhone was removed from Funes on your Mac." : {
@@ -599,7 +816,38 @@
     "Took too long. Try again." : {
 
     },
+    "Unnamed (%@)" : {
+      "comment" : "An entry no memory names any more, kept for your corrections"
+    },
+    "Which %@ %@ did you mean?" : {
+      "comment" : "To check: e.g. Which Acme job did you mean?",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Which %1$@ %2$@ did you mean?"
+          }
+        }
+      }
+    },
+    "Who is “%@” in %@?" : {
+      "comment" : "To check: an unsettled role phrase",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Who is “%1$@” in %2$@?"
+          }
+        }
+      }
+    },
     "You have a request" : {
+
+    },
+    "You said so" : {
+
+    },
+    "Your Mac can't read your names in About You right now, so it shows nothing here." : {
 
     },
     "Your Mac's model couldn't answer. Try again." : {
@@ -607,6 +855,30 @@
     },
     "Your search looks like it contains a secret, so it wasn't sent." : {
 
+    },
+    "current" : {
+      "comment" : "Timeline: a job of yours marked current, no dates"
+    },
+    "deceased" : {
+
+    },
+    "former" : {
+      "comment" : "Timeline: a job of yours marked former, no dates"
+    },
+    "from %@" : {
+      "comment" : "An episode with no known end"
+    },
+    "hidden" : {
+
+    },
+    "since %@" : {
+      "comment" : "An episode that still holds"
+    },
+    "undated" : {
+
+    },
+    "until %@" : {
+      "comment" : "An episode with no known start"
     }
   },
   "version" : "1.0"

@@ -45,6 +45,8 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         /// The demo person's name, for Home's title (ADR-0026).
         var calledName: String?
         var calendar: Calendar = .autoupdatingCurrent
+        /// People & history (13d.2): sample entities over these memories, and the demo's corrections.
+        var people = DemoPeople.State(mode: .on, memories: [:])
     }
 
     struct Card: Sendable {
@@ -58,11 +60,14 @@ public final class DemoVault: CompanionCalling, CaptureSender {
     private let clock: @Sendable () -> Date
 
     /// The bundled demo vault. `content` replaces it in tests, and `calendar` the phone's days.
-    public init(content: DemoContent? = nil, calendar: Calendar = .autoupdatingCurrent, clock: @escaping @Sendable () -> Date = Date.init) {
+    public init(content: DemoContent? = nil, calendar: Calendar = .autoupdatingCurrent, people: DemoPeople.Mode = .on,
+                clock: @escaping @Sendable () -> Date = Date.init) {
         self.clock = clock
         let content = content ?? Self.bundled()
         var state = Self.state(from: content, now: clock())
         state.calendar = calendar
+        state.people = DemoPeople.State(mode: people, memories: Dictionary(state.memories.values.map { ($0.title, $0.id) },
+                                                                           uniquingKeysWith: { a, _ in a }))
         self.state = Mutex(state)
     }
 
@@ -117,7 +122,8 @@ public final class DemoVault: CompanionCalling, CaptureSender {
         case .statusGet:
             return CompanionStatus(macName: state.macName, appVersion: "Demo", serverTime: now, inboxPending: state.inbox.count,
                                    vaultActive: true, calledName: state.calledName,
-                                   searchAnswers: SearchAnswersStatus(engine: "Demo", locality: .onDevice))
+                                   searchAnswers: SearchAnswersStatus(engine: "Demo", locality: .onDevice),
+                                   people: DemoPeople.status(state.people))
         case .capturesSubmit:
             let params = params as! CapturesSubmitParams
             try params.validate()
@@ -141,8 +147,12 @@ public final class DemoVault: CompanionCalling, CaptureSender {
             try params.validate()
             return try answer(params, in: state)
         case .factsReject:
-            // The demo vault has no learned facts to correct.
-            throw CompanionError(.notFound)
+            // Only People & history's sample facts: the demo's search has no why lines.
+            return try DemoPeople.reject(params as! FactsCorrectionTarget, &state.people)
+        case .peopleDirectory:
+            return try DemoPeople.directory(state.people)
+        case .peopleGet:
+            return try DemoPeople.page((params as! PeopleGetParams).entityID, state.people)
         case .memoriesGet:
             let id = (params as! MemoryID).id
             guard let memory = state.memories[id] else { throw CompanionError(.notFound) }

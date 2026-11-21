@@ -31,6 +31,28 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
     private(set) var corrections: [FactsCorrectionTarget] = []
     /// How long `memories.answer` takes; cancelled meanwhile, it gets no answer.
     var answerDelay: Duration = .zero
+    /// People & history (13d.2): what `people.directory` and `people.get` answer; the revision moves with corrections.
+    var people: PeopleDirectoryResult? {
+        get { lock.withLock { _people } }
+        set { lock.withLock { _people = newValue } }
+    }
+    private var _people: PeopleDirectoryResult?
+    var pages: [String: PeopleEntityResult] {
+        get { lock.withLock { _pages } }
+        set { lock.withLock { _pages = newValue } }
+    }
+    private var _pages: [String: PeopleEntityResult] = [:]
+    /// Every `people.*` is `not_found` with this reason while it's set (the Mac's gate closed).
+    var peopleClosed: String? {
+        get { lock.withLock { _peopleClosed } }
+        set { lock.withLock { _peopleClosed = newValue } }
+    }
+    private var _peopleClosed: String?
+    /// How long the next `people.*` takes (once).
+    var peopleDelay: Duration = .zero
+    /// A `people.*` call has taken `peopleDelay` and is waiting it out.
+    var peopleDelayTaken: Bool { lock.withLock { _peopleDelayTaken } }
+    private var _peopleDelayTaken = false
 
     @discardableResult
     func add(_ title: String, body: String = "Some text", status: MemoryStatus = .active, updated: TimeInterval = 0) -> Memory {
@@ -100,6 +122,15 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
             try? await Task.sleep(for: delay)
             if Task.isCancelled { throw .unreachable(localNetworkDenied: false) }
         }
+        if Call.method == .peopleDirectory || Call.method == .peopleGet, lock.withLock({ peopleDelay }) > .zero {
+            let wait = lock.withLock { () -> Duration in
+                let d = peopleDelay
+                peopleDelay = .zero
+                _peopleDelayTaken = true
+                return d
+            }
+            try? await Task.sleep(for: wait)
+        }
         if Call.method == .memoriesAnswer, lock.withLock({ answerDelay }) > .zero {
             try? await Task.sleep(for: lock.withLock { answerDelay })
             if Task.isCancelled { throw .unreachable(localNetworkDenied: false) }
@@ -142,7 +173,20 @@ final class FakeVault: CompanionCalling, @unchecked Sendable {
         case .factsReject:
             corrections.append(params as! FactsCorrectionTarget)
             _revision = (_revision ?? "e.0") + "+"
+            if var d = _people {
+                d.factsRevision += "+"
+                _people = d
+                for (k, var page) in _pages { page.factsRevision = d.factsRevision; _pages[k] = page }
+                return FactsRejectResult(factsRevision: _revision!, peopleRevision: d.factsRevision)
+            }
             return FactsRejectResult(factsRevision: _revision!)
+        case .peopleDirectory, .peopleGet where _peopleClosed != nil:
+            if let reason = _peopleClosed { throw .method(CompanionError(.notFound, reason: reason)) }
+            guard method == .peopleDirectory, let d = _people else { throw .method(CompanionError(.notFound, reason: PeopleUnavailable.factsOff)) }
+            return d
+        case .peopleGet:
+            guard let page = _pages[(params as! PeopleGetParams).entityID] else { throw .method(CompanionError(.notFound)) }
+            return page
         case .memoriesAnswer:
             // Quotes the first memory's first 12 characters.
             let params = params as! MemoryAnswerParams

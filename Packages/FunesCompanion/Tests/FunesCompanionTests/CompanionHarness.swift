@@ -38,7 +38,7 @@ final class CompanionHarness: @unchecked Sendable {
 
     init(gate: TunnelGate? = nil, promptTimeout: TimeInterval = PairingService.defaultPromptTimeout,
          answers: (any SearchAnswering)? = nil, callTimeout: Duration = CompanionHandlers.callTimeout,
-         answerTimeout: Duration = CompanionHandlers.answerTimeout) throws {
+         answerTimeout: Duration = CompanionHandlers.answerTimeout, people: CompanionPeople? = nil) throws {
         directory = FileManager.default.temporaryDirectory.appending(path: "funes-companion-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         store = try VaultStore.open(directory: directory)
@@ -50,7 +50,7 @@ final class CompanionHarness: @unchecked Sendable {
         services = CompanionServices(store: store, devices: DeviceService(store: store, activity: activity),
                                      captures: CaptureService(store: store, activity: activity),
                                      suggestions: SuggestionService(store: store, activity: activity, pause: pause, disclosures: disclosures),
-                                     search: search, agents: agents, activity: activity, answers: answers)
+                                     search: search, agents: agents, activity: activity, answers: answers, people: people)
         pairing = PairingService(identity: identity, devices: services.devices, activity: activity, promptTimeout: promptTimeout)
         let clock = Clock()
         self.clock = clock

@@ -436,7 +436,7 @@ struct VaultUnavailableView: View {
     /// "Search" or "The Inbox", for the explanation.
     let feature: Feature
 
-    enum Feature { case search, inbox }
+    enum Feature { case search, inbox, people }
 
     var body: some View {
         switch model.banner {
@@ -444,9 +444,9 @@ struct VaultUnavailableView: View {
             ContentUnavailableView {
                 Label("Pair with your Mac to start", systemImage: "iphone.slash")
             } description: {
-                Text(feature == .search
-                     ? String(localized: "Search reads your vault on your Mac. Pair this iPhone with it first.")
-                     : String(localized: "The Inbox lives on your Mac. Pair this iPhone with it first."))
+                Text(feature == .inbox
+                     ? String(localized: "The Inbox lives on your Mac. Pair this iPhone with it first.")
+                     : String(localized: "Search reads your vault on your Mac. Pair this iPhone with it first."))
             } actions: {
                 Button("Pair with Mac") { model.presentingPairing = true }
                     .buttonStyle(.borderedProminent)
@@ -471,9 +471,11 @@ struct VaultUnavailableView: View {
             ContentUnavailableView {
                 Label("Mac not reachable", systemImage: "wifi.slash")
             } description: {
-                Text(feature == .search
-                     ? String(localized: "Search needs your Mac to be awake and reachable. Captures still work, and go to the Mac later.")
-                     : String(localized: "Review needs your Mac to be awake and reachable. Captures still work, and go to the Mac later."))
+                switch feature {
+                case .search: Text("Search needs your Mac to be awake and reachable. Captures still work, and go to the Mac later.")
+                case .inbox: Text("Review needs your Mac to be awake and reachable. Captures still work, and go to the Mac later.")
+                case .people: Text("People & History is read from your Mac, so it needs your Mac to be awake and reachable.")
+                }
             } actions: {
                 Button("Try Again") { Task { await model.refresh(fresh: true) } }
                     .buttonStyle(.borderedProminent)

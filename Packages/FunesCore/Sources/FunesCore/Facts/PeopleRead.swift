@@ -1,4 +1,5 @@
 import Foundation
+import FunesProtocol
 import GRDB
 
 /// One read of what People & history shows (`PeopleDirectory`, `PeopleEntityPage`): the graph for what's on, every
@@ -447,14 +448,97 @@ extension VaultStore {
         }
     }
 
+    // MARK: For a phone (companion protocol §4.3)
+
+    /// The directory for a phone: what the Mac's section reads, and People's revision, in one read. Throws
+    /// `PeopleError.closed` while People is closed (*Learn from memories* off and nothing of yours kept), checked in the
+    /// same read.
+    public func peoplePhoneDirectory(config: FactsSearchConfig, learning: Bool, phrases: RolePhraseCache? = nil) throws -> PeoplePhoneDirectory {
+        try writer.read { db in
+            guard try Self.peopleOpen(db, learning: learning) else { throw PeopleError.closed }
+            let r = try PeopleRead.read(db, config: config, phrases: phrases)
+            let d = PeopleDirectory(entries: r.entries, toCheck: r.toCheck, answered: [], timeline: r.timeline, summary: r.summary,
+                                    kinds: config.registry.kinds.keys.sorted())
+            return PeoplePhoneDirectory(directory: d, revision: try Self.peopleRevision(db, config: config, learning: learning))
+        }
+    }
+
+    /// An entity's page for a phone: the page as the Mac reads it, with each memory row's **Not <name>** and each fact's
+    /// **Not this** as correction targets, their tokens and People's revision from the same read, so a token stands for
+    /// exactly what the page shows. Nil when the entity isn't listed any more; `PeopleError.closed` while People is closed.
+    public func peoplePhonePage(_ id: String, config: FactsSearchConfig, learning: Bool, phrases: RolePhraseCache? = nil) throws -> PeoplePhonePage? {
+        try writer.read { db -> PeoplePhonePage? in
+            guard try Self.peopleOpen(db, learning: learning) else { throw PeopleError.closed }
+            let r = try PeopleRead.read(db, config: config, phrases: phrases)
+            guard let page = try r.page(db, id: r.canonical(id)) else { return nil }
+            let name = page.entry.name ?? page.entry.group?.attribute
+            var pending = page.memories.map { m in
+                FactsCorrection(target: FactsCorrectionTarget(what: .name, linkID: FactsCorrections.linkID(memory: m.memoryID, entity: m.notName.entity),
+                                                              memoryID: m.memoryID, token: ""), name: m.notName.name, attribute: nil)
+            }
+            pending += page.facts.filter { !$0.factID.isEmpty }.map { f in
+                FactsCorrection(target: FactsCorrectionTarget(what: .fact, factID: f.factID, token: ""), name: name, attribute: f.attribute)
+            }
+            var out = PeoplePhonePage(page: page, revision: try Self.peopleRevision(db, config: config, learning: learning))
+            for c in try FactsCorrections.minted(db, pending) {
+                if c.target.what == .name, let m = c.target.memoryID { out.notName[m] = c }
+                if c.target.what == .fact, let f = c.target.factID { out.notThis[f] = c }
+            }
+            return out
+        }
+    }
+
+    /// Whether People & history is open for a phone: *Learn from memories* on, or anything of yours kept, read now.
+    public func peopleOpen(learning: Bool) throws -> Bool {
+        try writer.read { db in try Self.peopleOpen(db, learning: learning) }
+    }
+
+    /// People's revision (companion protocol §4.3), nil while People is closed.
+    public func peopleRevision(config: FactsSearchConfig, learning: Bool) throws -> String? {
+        try writer.read { db in
+            try Self.peopleOpen(db, learning: learning) ? try Self.peopleRevision(db, config: config, learning: learning) : nil
+        }
+    }
+
+    static func peopleOpen(_ db: Database, learning: Bool) throws -> Bool {
+        try learning || userFactEntries(db)
+    }
+
+    /// Search's revision for `config`, plus what People reads that no learned-fact write counts: the vault part of the
+    /// facts index key (memory versions, titles, what the Facts task has read, so a memory read with nothing found moves
+    /// it) and *Learn from memories*. Search's own revision leaves these out, so a memory save never drops an answer.
+    static func peopleRevision(_ db: Database, config: FactsSearchConfig, learning: Bool) throws -> String {
+        let (revision, key) = try factsRevision(db, config: config)
+        return revision + "." + FactsCorrections.digest([key.vault, learning ? "1" : "0"]).prefix(8)
+    }
+
+    /// The learned facts' revision as `config` reads them (companion protocol §4): `SearchService.factsRevision`'s while
+    /// *Use in search and answers* is on.
+    public func factsRevision(config: FactsSearchConfig) throws -> String {
+        try writer.read { db in try Self.factsRevision(db, config: config).0 }
+    }
+
+    static func factsRevision(_ db: Database, config: FactsSearchConfig) throws -> (String, FactsIndexKey) {
+        let uses = try config.uses(db)
+        let key = try FactsIndexKey(db, config: config, uses: uses, sendable: nil)
+        // Every answer-side use, a basis-scoped one included (the `sole_known` attributes record).
+        let attributes = config.registry.predicates.map { p in
+            p.id + ":" + [FactsUse.attributes, .bridges].filter { uses.isOn(p.id, $0) }.map(\.rawValue).joined(separator: ",")
+                + (uses.isOn(p.id, .attributes, basis: LinkBasis.soleKnown.rawValue) ? ",sole_known" : "")
+        }.joined(separator: ";")
+        return (key.revision + "." + FactsCorrections.digest([key.uses, attributes, key.registry] + key.aliases).prefix(8), key)
+    }
+
     /// Whether you've entered or corrected anything (People & history shows while this is true, even with Facts off).
     public func hasUserFactEntries() throws -> Bool {
-        try writer.read { db in
+        try writer.read { db in try Self.userFactEntries(db) }
+    }
+
+    static func userFactEntries(_ db: Database) throws -> Bool {
             try Bool.fetchOne(db, sql: """
                 SELECT EXISTS (SELECT 1 FROM manual_override) OR EXISTS (SELECT 1 FROM fact_evidence WHERE source = 'user')
                   OR EXISTS (SELECT 1 FROM mention_decision WHERE source = 'user') OR EXISTS (SELECT 1 FROM fact WHERE manual = 1)
                   OR EXISTS (SELECT 1 FROM entity WHERE manual = 1 AND is_you = 0)
                 """) ?? false
-        }
     }
 }

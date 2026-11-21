@@ -21,7 +21,8 @@ struct SearchView: View {
 
     var body: some View {
         @Bindable var search = model.search
-        NavigationStack {
+        @Bindable var phone = model
+        NavigationStack(path: $phone.searchPath) {
             List {
                 // Search answers (FR-iOS-13): the Ask pill, then the card, as the list's first section.
                 if model.reachability.isConnected {
@@ -34,7 +35,7 @@ struct SearchView: View {
                 if model.reachability.isConnected, !search.results.isEmpty {
                     Section {
                         ForEach(search.results) { summary in
-                            NavigationLink(value: summary.id) {
+                            NavigationLink(value: SearchRoute.memory(summary.id)) {
                                 ResultRow(summary: summary, categories: model.categories, source: search.sourceNumber(summary.id))
                             }
                             // Not <name> and Not this, with the Mac's words (v0.10): sent to the Mac, which applies them.
@@ -77,6 +78,14 @@ struct SearchView: View {
                         ProgressView().accessibilityLabel("Searching")
                     }
                 }
+                // People & history (13d.2), while the Mac has it for this phone.
+                if model.people.available {
+                    ToolbarItem {
+                        Button { model.searchPath.append(.people) } label: {
+                            Label("People & History", systemImage: "person.2")
+                        }
+                    }
+                }
                 // Home's Sensitivity tile sets it; here it can be changed or cleared.
                 ToolbarItem {
                     Menu {
@@ -91,8 +100,16 @@ struct SearchView: View {
                     .accessibilityValue(search.sensitivity?.title ?? String(localized: "Any Sensitivity"))
                 }
             }
-            .navigationDestination(for: UUID.self) { id in
-                MemoryDetailView(model: model, id: id)
+            .navigationDestination(for: SearchRoute.self) { route in
+                switch route {
+                case let .memory(id): MemoryDetailView(model: model, id: id)
+                case .people: PeopleView(model: model)
+                case let .entity(id): PeopleEntityView(model: model, id: id)
+                }
+            }
+            // People & history leaves the stack: nothing it read stays.
+            .onChange(of: model.searchPath) { _, path in
+                if !path.contains(.people) { model.people.disappeared() }
             }
             .navigationDestination(item: $openSource) { source in
                 MemoryDetailView(model: model, id: source.id, quote: source.quote)
@@ -102,6 +119,11 @@ struct SearchView: View {
             .onChange(of: model.lastChecked) { _, _ in
                 // Only a status that reached the Mac says anything about its learned facts.
                 search.statusChecked(model.macAnswers, factsRevision: model.reachability.isConnected ? .some(model.factsRevision) : .none)
+            }
+            // People & history: an older Mac hides it, Facts off closes it, a new revision reloads what's open. Only a
+            // status that reached the Mac says anything about it.
+            .onChange(of: model.lastChecked, initial: true) { _, _ in
+                if model.reachability.isConnected { model.peopleStatusChecked() }
             }
             .onAppear { search.onFactsChanged = { Task { await model.refresh(fresh: true) } } }
             .alert(Self.correctionTitle(search.correctionFailure), isPresented: Binding(get: { search.correctionFailure != nil },

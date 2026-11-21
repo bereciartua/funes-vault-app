@@ -14,15 +14,19 @@ set -eu
 #   FUNES_SCENES       Only these scenes, by name (default: all six, in order). The review-only
 #                      scenes ($review_scenes, not App Store screenshots) run only when named.
 #   FUNES_SHOT_WAIT    Seconds from launch to the shot (default 8; more on a busy Mac).
+#   FUNES_APPEARANCE   light (default) or dark; a dark shot's file name ends in -dark.
 
 project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 out=${1:-$project_dir/build/app-store-screenshots}
 derived="$project_dir/build/sim"
 device_name=${FUNES_SIM_DEVICE:-Funes Screenshots}
 all_scenes="home share access search inbox save"
-review_scenes="search-answer"
+review_scenes="search-answer people-list people-entity people-timeline people-timeline-off people-to-check people-empty-off"
 scenes=${FUNES_SCENES:-$all_scenes}
 wait=${FUNES_SHOT_WAIT:-8}
+appearance=${FUNES_APPEARANCE:-light}
+suffix=""
+[ "$appearance" = dark ] && suffix="-dark"
 
 fail() { printf 'app_store_screenshots: %s\n' "$*" >&2; exit 1; }
 
@@ -35,7 +39,7 @@ if [ -z "$udid" ]; then
 fi
 xcrun simctl boot "$udid" 2>/dev/null || true
 xcrun simctl bootstatus "$udid" -b > /dev/null
-xcrun simctl ui "$udid" appearance light
+xcrun simctl ui "$udid" appearance "$appearance"
 xcrun simctl status_bar "$udid" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
 
 printf '==> Building for the simulator\n'
@@ -61,11 +65,11 @@ for scene in $scenes; do
     xcrun simctl launch "$udid" com.funesvault.ios -FunesScreenshot "$scene" > /dev/null
     # Demo mode, the first loads and a sheet's animation.
     sleep "$wait"
-    xcrun simctl io "$udid" screenshot "$out/$n-$scene.png" > /dev/null 2>&1
+    xcrun simctl io "$udid" screenshot "$out/$n-$scene$suffix.png" > /dev/null 2>&1
     # The same proportions at 6.3", the size App Store Connect's main iPhone slot takes.
     mkdir -p "$out/6.3-inch"
-    sips -z 2622 1206 "$out/$n-$scene.png" --out "$out/6.3-inch/$n-$scene.png" > /dev/null
-    printf '  %s\n' "$out/$n-$scene.png"
+    sips -z 2622 1206 "$out/$n-$scene$suffix.png" --out "$out/6.3-inch/$n-$scene$suffix.png" > /dev/null
+    printf '  %s\n' "$out/$n-$scene$suffix.png"
 done
 xcrun simctl terminate "$udid" com.funesvault.ios 2>/dev/null || true
 printf '==> %s screenshots in %s (1320 × 2868; 1206 × 2622 in 6.3-inch/)\n' "$count" "$out"

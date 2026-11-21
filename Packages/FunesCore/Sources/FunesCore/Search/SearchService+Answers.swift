@@ -8,16 +8,7 @@ extension SearchService {
     /// record lapsing) changes it too. Nil while learned facts aren't in use.
     public func factsRevision() async -> String? {
         guard let config = facts else { return nil }
-        return try? await store.writer.read { db in
-            let uses = try config.uses(db)
-            let key = try FactsIndexKey(db, config: config, uses: uses, sendable: nil)
-            // Every answer-side use, a basis-scoped one included (the `sole_known` attributes record).
-            let attributes = config.registry.predicates.map { p in
-                p.id + ":" + [FactsUse.attributes, .bridges].filter { uses.isOn(p.id, $0) }.map(\.rawValue).joined(separator: ",")
-                    + (uses.isOn(p.id, .attributes, basis: LinkBasis.soleKnown.rawValue) ? ",sole_known" : "")
-            }.joined(separator: ";")
-            return key.revision + "." + FactsCorrections.digest([key.uses, attributes, key.registry] + key.aliases).prefix(8)
-        }
+        return try? store.factsRevision(config: config)
     }
 
     /// The graph an answer model may see (memory processing §11.9): the whole graph for a model on this Mac (Apple

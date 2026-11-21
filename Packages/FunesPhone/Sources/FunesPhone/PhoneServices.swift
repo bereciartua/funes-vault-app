@@ -44,9 +44,10 @@ public struct PhoneServices: Sendable {
     /// The paired Mac's services, or, with `demo`, the demo vault's. In demo mode `live` is never
     /// evaluated: no client, Keychain read, connection, CloudKit call or App Group queue. The
     /// demo's queue is a fresh file in `demoDirectory`.
-    public init(demo: Bool, live: @autoclosure () -> Live, demoDirectory: URL, clock: @escaping @Sendable () -> Date = Date.init) {
+    public init(demo: Bool, live: @autoclosure () -> Live, demoDirectory: URL, demoPeople: DemoPeople.Mode = .on,
+                clock: @escaping @Sendable () -> Date = Date.init) {
         if demo {
-            let vault = DemoVault(clock: clock)
+            let vault = DemoVault(people: demoPeople, clock: clock)
             self.demo = vault
             client = nil
             caller = vault
