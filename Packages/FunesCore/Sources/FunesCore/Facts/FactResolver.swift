@@ -340,7 +340,7 @@ extension FactsGraph {
             // an untrusted new one.
             if dec.basis == .context, let e = dec.entity {
                 let (d, written) = asOf(mem, ph)
-                let mine = episodes(ph.predicate).filter { $0.entity == e }
+                let mine = episodes(ph.predicate).filter { $0.entity == timelineEntity(ph.predicate, e) }   // a stated rename's episodes stand under one name
                 // The episode `holders` would pick: the one that may hold then, latest first.
                 let held = mine.reversed().filter { holds($0, ph, d, deceased: entities[e]?.deceased ?? false, written: written) }
                 let chosen = held.first(where: { d != nil && $0.mayHold(d!) }) ?? held.first ?? mine.last

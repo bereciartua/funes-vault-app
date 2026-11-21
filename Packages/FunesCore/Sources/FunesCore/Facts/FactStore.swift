@@ -401,7 +401,7 @@ enum FactStore {
             factIDs[Loaded.key(pred, ent)] = fid
             factKeys[fid] = (pred, ent)
             // One assertion per memory (or user row): its fact row, with its qualifiers and order edges.
-            struct Pending { var a: FactAssertion; var denied: Bool; var only: Bool }
+            struct Pending { var a: FactAssertion; var denied: Bool; var never = false; var only: Bool }
             var order: [String] = [], pending: [String: Pending] = [:]
             for (r, c) in rows {
                 let src: String = r["source"]
@@ -423,7 +423,10 @@ enum FactStore {
                 let asserted = object(r["asserted"])
                 switch r["target_kind"] as String {
                 case "fact":
-                    if (r["polarity"] as String) == "denied" { p.denied = true }
+                    if (r["polarity"] as String) == "denied" {
+                        p.denied = true
+                        p.never = asserted["never"] as? Bool ?? false
+                    }
                     p.a.status = (asserted["status"] as? String).flatMap(FactAssertion.Status.init) ?? .unknown
                     p.a.start = asserted["start"] as? String
                     p.a.end = asserted["end"] as? String
@@ -472,11 +475,27 @@ enum FactStore {
             for key in order {
                 let p = pending[key]!
                 if p.denied {
+                    let never = p.never && p.a.trusted
                     // A denial from a memory never negates what the user entered (manual entries win over inference).
                     if let last = incarnations.indices.last, !incarnations[last].negated, !manual,
                        p.a.trusted || !incarnations[last].trusted {
                         incarnations[last].negated = true
+                        if never { incarnations[last].neverDenied = true }
+                    } else if never, !manual {
+                        // A trusted "never" with nothing to negate (it came first): it holds against what follows.
+                        if let last = incarnations.indices.last, incarnations[last].negated {
+                            incarnations[last].neverDenied = true
+                        } else if incarnations.isEmpty {
+                            incarnations.append(LearnedFact(entity: ent, predicate: pred, label: nil, cls: nil, only: false,
+                                                            negated: true, assertions: [], neverDenied: true))
+                        }
                     }
+                    continue
+                }
+                // After a trusted never-denial, an untrusted statement doesn't start a new incarnation (§11.9).
+                if !p.a.trusted, !p.a.fromUser, let last = incarnations.indices.last, incarnations[last].negated,
+                   incarnations[last].neverDenied {
+                    incarnations[last].assertions.append(p.a)
                     continue
                 }
                 if incarnations.last == nil || incarnations.last!.negated {
@@ -566,7 +585,15 @@ enum FactStore {
                         }
                         g.facts[i].entity = into
                     }
-                    g.facts.removeAll { $0.entity == into && $0.negated && $0.assertions.isEmpty }
+                    // A never-denial's negated fact stays (13e.1): it holds against an agent's claim after the merge too.
+                    g.facts.removeAll { $0.entity == into && $0.negated && $0.assertions.isEmpty && !$0.neverDenied }
+                    for pred in Set(g.facts.filter { $0.entity == into && $0.neverDenied }.map(\.predicate)) {
+                        for j in g.facts.indices where g.facts[j].entity == into && g.facts[j].predicate == pred
+                            && !g.facts[j].negated && !g.facts[j].trusted {
+                            g.facts[j].negated = true
+                            g.facts[j].neverDenied = true
+                        }
+                    }
                     // The merged fact's label from all its evidence, the user's first.
                     for j in g.facts.indices where g.facts[j].entity == into { g.refreshLabel(j) }
                     for (fid, key) in factKeys where key.entity == target {
@@ -1096,10 +1123,15 @@ enum FactStore {
             let added = Array(f.assertions.dropFirst(oldCount))
             // Denied in this apply: an existing incarnation, or one this same apply created and then denied.
             let newlyNegated = f.negated && (i >= before.facts.count || !before.facts[i].negated)
-            guard !added.isEmpty || newlyNegated else { continue }
+            let neverTarget = g.neverTargets.contains(i)
+            guard !added.isEmpty || newlyNegated || neverTarget else { continue }
             if let e = g.entities[f.entity], e.kind != "person" {
                 // Aliases go to the entity each statement landed on, never one rediscovered by name.
                 for (idx, r) in groupFacts.enumerated() where g.landed[idx] == f.entity {
+                    // A placeholder folded into a named business isn't one more name of it.
+                    if g.placeholder(r.predicate, r.name) != nil, g.entities[f.entity]?.name.map({ g.placeholder(r.predicate, $0) == nil }) == true {
+                        continue
+                    }
                     try addAlias(f.entity, r.name, quote: r.quote, span: r.span)
                     if let also = r.alsoCalled, g.entities[f.entity]?.aliases.contains(also) == true {
                         try addAlias(f.entity, also, quote: r.quote, span: r.span)
@@ -1139,11 +1171,20 @@ enum FactStore {
                                     polarity: "affirmed", quote: a.quote, span: a.span)
                 }
             }
-            if newlyNegated {         // a denial is a statement too: its ordinal keeps it apart from a later affirmation
-                let denial = x.facts.first { !$0.positive && $0.predicate == f.predicate }
+            if newlyNegated || neverTarget {   // a denial is a statement too: its ordinal keeps it apart from a later affirmation
+                // This fact's own denial: the one naming it, when this memory denies several.
+                let kind = g.registry.kindOf(f.predicate)
+                let names = Set((g.entities[f.entity]?.aliases ?? []).map { FactsText.normName($0, kind: kind, registry: g.registry) })
+                let negatives = x.facts.filter { !$0.positive && $0.predicate == f.predicate }
+                let denial = negatives.first { $0.entity == f.entity || names.contains(FactsText.normName($0.name, kind: kind, registry: g.registry)) }
+                    ?? (negatives.count == 1 ? negatives.first : nil)
                 let n = ordinal[fid, default: 0]
                 ordinal[fid] = n + 1
-                try evidenceRow(fid, kind: "fact", asserted: ["n": n], states: true, polarity: "denied", quote: denial?.quote ?? "",
+                var asserted: [String: Any] = ["n": n]
+                if f.neverDenied, let d = denial, g.isNeverDenial(d, text: text, names: Array(g.entities[f.entity]?.aliases ?? [])) {
+                    asserted["never"] = true    // "I never worked at…"
+                }
+                try evidenceRow(fid, kind: "fact", asserted: asserted, states: true, polarity: "denied", quote: denial?.quote ?? "",
                                 span: denial?.span)
             }
         }

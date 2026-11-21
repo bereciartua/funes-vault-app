@@ -79,7 +79,8 @@ import Testing
     @Test func n2_aPromotionAtAnEmployerIsNotAnEmployerAnchor() {
         let s = stateWith([fact(d, "Acme", "2010", "2019", status: .former), fact(d, "Initech", "2020", status: .current)])
         #expect(s.intent("What was my job title before the promotion at Initech?") == nil)
-        #expect(s.intent("What was I doing right before joining Initech?")?.op == .before)
+        // 13e.1: "what was I doing" doesn't ask for an organization, so it fails closed (a miss, never a wrong answer).
+        #expect(s.intent("What was my job right before joining Initech?")?.op == .before)
     }
 
     @Test func n3_aNameCorrectionFollowsAMerge() throws {

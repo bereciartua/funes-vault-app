@@ -21,9 +21,9 @@ import Testing
         #expect(s.ask("Where do I work now?")?.isAmbiguous == true)
         #expect(s.ask("Where did I work in 2024?")?.isAmbiguous == true)
         #expect(s.ask("What was my previous job?")?.isAmbiguous == true)
-        // Only untrusted episodes: answered as before, on an inferred basis.
+        // Only untrusted episodes: told too since 13e.1 (the user's own notes may say otherwise, above the cloud limit).
         let only = stateWith([fact(d, "Vela Metrics", "2023", status: .current).untrusted(at: "2024-05-01")])
-        #expect(only.ask("Where do I work now?").map { ($0.entity, $0.basis) }! == (only.ent("Vela Metrics"), .inferred))
+        #expect(only.ask("Where do I work now?")?.isAmbiguous == true)
     }
 
     // (b) A day job and self-employment at the same time: "my employer" may mean one of them, so the answer is told.
@@ -32,8 +32,16 @@ import Testing
         let base = stateWith([job])
         #expect(base.ask("Who was my employer in June 2022?")?.entity == base.ent("Solano Datos"))
         let s = stateWith([job, fact(d, "Tinta Norte", "2020", status: .current, slot: FX.own).at("2023-01-01")])
-        #expect(s.ask("Who was my employer in June 2022?")?.isAmbiguous == true)
+        #expect(s.ask("Where did I work in June 2022?")?.isAmbiguous == true)
         #expect(s.ask("Where do I work now?")?.isAmbiguous == true)
+        // Slot words ask within one kind (13e.1): "my employer", "my day job", "my freelance business".
+        #expect(s.ask("Who was my employer in June 2022?")?.entity == s.ent("Solano Datos"))
+        #expect(s.ask("What's my current day job?")?.entity == s.ent("Solano Datos"))
+        #expect(s.ask("What is my freelance business now?")?.entity == s.ent("Tinta Norte"))
+        // An episode of unknown kind may be the one asked about: told.
+        let unknown = stateWith([job, fact(d, "Tinta Norte", "2020", status: .current, slot: FX.own).at("2023-01-01"),
+                                 fact(d, "Faro Labs", "2021", status: .current).at("2023-01-01")])
+        #expect(unknown.ask("Who was my employer in June 2022?")?.isAmbiguous == true)
         // Two jobs of the same kind at once are still both told, as before.
         let two = stateWith([job, fact(d, "Faro Labs", "2020", status: .current, slot: FX.emp).at("2023-01-01")])
         #expect(Set(two.ask("Where did I work in June 2022?")?.entities ?? []) == [two.ent("Solano Datos"), two.ent("Faro Labs")])
@@ -137,10 +145,10 @@ import Testing
         let s = stateWith(rows + [fact(d, "Vela Metrics", "July 2017", "December 2017", status: .former).untrusted(at: "2019-02-01")])
         #expect(s.ask("Where did I work before Alder Systems?")?.isAmbiguous == true)
         #expect(s.ask("What was my previous job?")?.isAmbiguous == true)
-        // Only an agent's notes about the anchor's neighbours: still answered, inferred.
+        // Only an agent's notes about the anchor's neighbour: told too since 13e.1.
         let only = stateWith([fact(d, "Alder Systems", "2018", status: .current).at("2019-01-01"),
                               fact(d, "Vela Metrics", "July 2017", "December 2017", status: .former).untrusted(at: "2019-02-01")])
-        #expect(only.ask("Where did I work before Alder Systems?")?.entity == only.ent("Vela Metrics"))
+        #expect(only.ask("Where did I work before Alder Systems?")?.isAmbiguous == true)
     }
 
     // Review (Fable 5.2): loose names match by word starts, never inside a word.

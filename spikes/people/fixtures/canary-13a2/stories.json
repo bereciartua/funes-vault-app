@@ -1,68 +1,70 @@
 {
  "user": {
-  "name": "Alex Rivera",
+  "name": "Alex Morgan",
   "aliases": [
-   "Alex"
+   "Alex",
+   "the user"
   ]
  },
  "author": "gpt-6-astra",
  "registry_changes": [
-  "Set version to canary-13a2. Only partner was edited; all other predicates, shared language, and use-dependency rules are unchanged.",
-  "Added timeline and bridges to partner. Retained recorded, linked, and attributes, satisfying the declared dependencies.",
-  "Expanded the partner definition to cover the user's own dating relationships, former relationships and resumed episodes, while excluding other people's partners and preserving denials and explicit temporal evidence.",
-  "Set gap_months to 12: gaps longer than one year require a gap explanation rather than a named before/after answer.",
-  "Expanded English and Spanish query cues, including date, dated, dating, seeing, go out with, going out with, went out with, novia, novio and salir-related forms.",
-  "Retained succession=true and slot=null: one shared succession track, independent of girlfriend/boyfriend/spouse labels. Retained exclusive=true and the existing generic role lexicon and former-status ex entry. Explicit overlaps must remain ambiguous rather than be overwritten by inferred succession.",
-  "The specification requires qualification records before declared uses become active. This registry declares the capability; these blind fixtures do not establish qualification or prove that the frozen implementation passes."
+  "Set version to canary-13a2. All other changes are confined to the partner predicate; other predicates, shared language, call groups, kinds and use rules are unchanged.",
+  "Added timeline to partner.uses, retaining recorded, linked and attributes. Its declared prerequisites are present. Bridges is optional and remains undeclared.",
+  "Retained exclusive=true, succession=true and slot=null: partner labels share one succession track. Succession remains a trusted-text inference, not permission to overwrite stated ends or resolve overlapping evidence.",
+  "Set gap_months=12: a gap longer than one year must be reported rather than silently answered as an adjacent relationship.",
+  "Expanded the partner definition to specify the user's own romantic relationships, former partners, separate return episodes, date precision, denials and explicit ordering.",
+  "Expanded English and Spanish query cues, including dating, dated, seeing, going out with, novia and salir con forms. Added query_nouns using the existing works_at field convention.",
+  "Retained the role lexicon, the ex entry's former status, label qualifier and answer phrases. No undocumented statement-template structure was invented.",
+  "Activation limitation: registry-spec.md requires a qualification record before a declared use is on. The supplied files do not define that record's representation. This registry declares timeline support; runtime qualification and frozen-code success remain unverified. The stories are blind expected results, not reported test passes."
  ],
  "stories": [
   {
    "id": "c01",
-   "title": "Three successive partners at different date precision",
+   "title": "Three successive partners at mixed date precision",
    "traps": [
     "successive",
     "precision"
    ],
    "people": {
-    "c01a": {
+    "mara": {
      "names": [
-      "Maya"
+      "Mara"
      ]
     },
-    "c01b": {
-     "names": [
-      "Theo"
-     ]
-    },
-    "c01c": {
+    "jordan": {
      "names": [
       "Jordan"
+     ]
+    },
+    "casey": {
+     "names": [
+      "Casey"
      ]
     }
    },
    "memories": [
     {
-     "id": "c01m1",
-     "text": "Maya was my girlfriend from 2016 until December 2018.",
-     "written": "2018-12-30",
+     "id": "c01-m1",
+     "text": "Mara was my girlfriend from 2016 until January 2019.",
+     "written": "2019-02-10",
      "source": "capture",
-     "sensitivity": "sensitive",
+     "sensitivity": "internal",
      "names": [
       {
-       "surface": "Maya",
-       "person": "c01a"
+       "surface": "Mara",
+       "person": "mara"
       }
      ],
      "roles": [
       {
        "surface": "my girlfriend",
-       "person": "c01a",
+       "person": "mara",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c01a",
+       "person": "mara",
        "type": "partner",
        "label": "girlfriend",
        "status": "former",
@@ -71,68 +73,37 @@
        "only": false,
        "count": null,
        "start": "2016",
-       "end": "December 2018"
+       "end": "January 2019"
       }
      ],
      "not_linked": []
     },
     {
-     "id": "c01m2",
-     "text": "My next relationship was with Theo: my boyfriend from March 2019 until November 2020.",
-     "written": "2020-12-20",
+     "id": "c01-m2",
+     "text": "Jordan is my new partner; we started dating in March 2019, after Mara.",
+     "written": "2019-04-12",
      "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Theo",
-       "person": "c01b"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "my boyfriend",
-       "person": "c01b",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c01b",
-       "type": "partner",
-       "label": "boyfriend",
-       "status": "former",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "start": "March 2019",
-       "end": "November 2020"
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c01m3",
-     "text": "I started dating my partner Jordan in February 2021.",
-     "written": "2021-06-04",
-     "source": "capture",
-     "sensitivity": "sensitive",
+     "sensitivity": "internal",
      "names": [
       {
        "surface": "Jordan",
-       "person": "c01c"
+       "person": "jordan"
+      },
+      {
+       "surface": "Mara",
+       "person": "mara"
       }
      ],
      "roles": [
       {
-       "surface": "my partner",
-       "person": "c01c",
+       "surface": "my new partner",
+       "person": "jordan",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c01c",
+       "person": "jordan",
        "type": "partner",
        "label": "partner",
        "status": "current",
@@ -140,33 +111,101 @@
        "deceased": false,
        "only": false,
        "count": null,
-       "start": "February 2021"
+       "start": "March 2019",
+       "preceded_by": "Mara"
       }
      ],
      "not_linked": []
     },
     {
-     "id": "c01m4",
-     "text": "Jordan is still my partner; we booked a cabin.",
-     "written": "2026-10-01",
+     "id": "c01-m3",
+     "text": "My relationship with Jordan ended in December 2020.",
+     "written": "2020-12-30",
      "source": "capture",
      "sensitivity": "sensitive",
      "names": [
       {
        "surface": "Jordan",
-       "person": "c01c"
+       "person": "jordan"
+      }
+     ],
+     "roles": [],
+     "facts": [
+      {
+       "person": "jordan",
+       "type": "partner",
+       "label": null,
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "end": "December 2020"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c01-m4",
+     "text": "Casey is my boyfriend; we started dating in 2021, immediately after Jordan.",
+     "written": "2021-08-14",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Casey",
+       "person": "casey"
+      },
+      {
+       "surface": "Jordan",
+       "person": "jordan"
       }
      ],
      "roles": [
       {
-       "surface": "my partner",
-       "person": "c01c",
+       "surface": "my boyfriend",
+       "person": "casey",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c01c",
+       "person": "casey",
+       "type": "partner",
+       "label": "boyfriend",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "2021",
+       "preceded_by": "Jordan"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c01-m5",
+     "text": "I booked a weekend away with my partner Casey.",
+     "written": "2026-10-01",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [
+      {
+       "surface": "Casey",
+       "person": "casey"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my partner",
+       "person": "casey",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "casey",
        "type": "partner",
        "label": "partner",
        "status": "current",
@@ -181,119 +220,121 @@
    ],
    "orders": [
     [
-     "c01m4",
-     "c01m2",
-     "c01m1",
-     "c01m3"
+     "c01-m3",
+     "c01-m1",
+     "c01-m5",
+     "c01-m2",
+     "c01-m4"
     ]
    ],
    "corrections": [],
    "timeline": [
     {
-     "org": "Maya",
+     "org": "Mara",
      "kind": "partner",
      "start": "2016",
-     "end": "2018-12",
+     "end": "2019-01",
      "memories": [
-      "c01m1"
-     ]
-    },
-    {
-     "org": "Theo",
-     "kind": "partner",
-     "start": "2019-03",
-     "end": "2020-11",
-     "memories": [
-      "c01m2"
+      "c01-m1"
      ]
     },
     {
      "org": "Jordan",
      "kind": "partner",
-     "start": "2021-02",
+     "start": "2019-03",
+     "end": "2020-12",
+     "memories": [
+      "c01-m2",
+      "c01-m3"
+     ]
+    },
+    {
+     "org": "Casey",
+     "kind": "partner",
+     "start": "2021",
      "end": "",
      "memories": [
-      "c01m3",
-      "c01m4"
+      "c01-m4",
+      "c01-m5"
      ]
     }
    ],
    "queries": [
     {
-     "id": "c01q1",
+     "id": "c01-q1",
      "kind": "before",
      "query": "Who was I dating before Jordan?",
-     "answer_org": "Theo"
+     "answer_org": "Mara"
     },
     {
-     "id": "c01q2",
+     "id": "c01-q2",
      "kind": "after",
-     "query": "Who did I go out with after Maya?",
-     "answer_org": "Theo"
+     "query": "Who did I go out with after Jordan?",
+     "answer_org": "Casey"
     },
     {
-     "id": "c01q3",
+     "id": "c01-q3",
      "kind": "year",
      "query": "Who was my girlfriend in 2017?",
-     "answer_org": "Maya"
+     "answer_org": "Mara"
     },
     {
-     "id": "c01q4",
+     "id": "c01-q4",
      "kind": "current",
-     "query": "Who's my partner now?",
-     "answer_org": "Jordan"
+     "query": "Who am I seeing now?",
+     "answer_org": "Casey"
     },
     {
-     "id": "c01q5",
+     "id": "c01-q5",
      "kind": "negative",
-     "query": "Did I buy the dating book before Jordan bought it?",
+     "query": "Which train did I catch after Jordan called?",
      "answer_org": ""
     }
    ]
   },
   {
    "id": "c02",
-   "title": "An undated breakup and a later dated recollection",
+   "title": "An undated breakup gets a date only in a later memory",
    "traps": [
     "undated_breakup",
     "ex",
     "successive"
    ],
    "people": {
-    "c02a": {
+    "nico": {
      "names": [
-      "Ellis"
+      "Nico"
      ]
     },
-    "c02b": {
+    "elena": {
      "names": [
-      "Casey"
+      "Elena"
      ]
     }
    },
    "memories": [
     {
-     "id": "c02m1",
-     "text": "Ellis is my boyfriend; we started dating in 2017.",
-     "written": "2018-04-08",
+     "id": "c02-m1",
+     "text": "Nico is my boyfriend; we started dating in 2015.",
+     "written": "2015-06-20",
      "source": "capture",
-     "sensitivity": "sensitive",
+     "sensitivity": "internal",
      "names": [
       {
-       "surface": "Ellis",
-       "person": "c02a"
+       "surface": "Nico",
+       "person": "nico"
       }
      ],
      "roles": [
       {
        "surface": "my boyfriend",
-       "person": "c02a",
+       "person": "nico",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c02a",
+       "person": "nico",
        "type": "partner",
        "label": "boyfriend",
        "status": "current",
@@ -301,27 +342,27 @@
        "deceased": false,
        "only": false,
        "count": null,
-       "start": "2017"
+       "start": "2015"
       }
      ],
      "not_linked": []
     },
     {
-     "id": "c02m2",
-     "text": "Ellis and I broke up. I am putting the photos away.",
-     "written": "2019-12-18",
+     "id": "c02-m2",
+     "text": "Nico and I broke up.",
+     "written": "2020-02-03",
      "source": "capture",
      "sensitivity": "sensitive",
      "names": [
       {
-       "surface": "Ellis",
-       "person": "c02a"
+       "surface": "Nico",
+       "person": "nico"
       }
      ],
      "roles": [],
      "facts": [
       {
-       "person": "c02a",
+       "person": "nico",
        "type": "partner",
        "label": null,
        "status": "former",
@@ -334,27 +375,505 @@
      "not_linked": []
     },
     {
-     "id": "c02m3",
-     "text": "I started seeing my partner Casey in February 2020.",
-     "written": "2020-03-10",
+     "id": "c02-m3",
+     "text": "I found the scarf my ex left here.",
+     "written": "2020-03-11",
      "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Casey",
-       "person": "c02b"
-      }
-     ],
+     "sensitivity": "internal",
+     "names": [],
      "roles": [
       {
-       "surface": "my partner",
-       "person": "c02b",
+       "surface": "my ex",
+       "person": "nico",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c02b",
+       "person": "nico",
+       "type": "partner",
+       "label": "ex",
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c02-m4",
+     "text": "To date that breakup: my relationship with Nico ended in September 2018.",
+     "written": "2020-04-09",
+     "source": "capture",
+     "sensitivity": "sensitive",
+     "names": [
+      {
+       "surface": "Nico",
+       "person": "nico"
+      }
+     ],
+     "roles": [],
+     "facts": [
+      {
+       "person": "nico",
+       "type": "partner",
+       "label": null,
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "end": "September 2018"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c02-m5",
+     "text": "Elena is my girlfriend. We have been together since October 2018.",
+     "written": "2021-01-18",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Elena",
+       "person": "elena"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my girlfriend",
+       "person": "elena",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "elena",
+       "type": "partner",
+       "label": "girlfriend",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "October 2018"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [
+    [
+     "c02-m5",
+     "c02-m3",
+     "c02-m2",
+     "c02-m4",
+     "c02-m1"
+    ]
+   ],
+   "corrections": [],
+   "timeline": [
+    {
+     "org": "Nico",
+     "kind": "partner",
+     "start": "2015",
+     "end": "2018-09",
+     "memories": [
+      "c02-m1",
+      "c02-m2",
+      "c02-m3",
+      "c02-m4"
+     ]
+    },
+    {
+     "org": "Elena",
+     "kind": "partner",
+     "start": "2018-10",
+     "end": "",
+     "memories": [
+      "c02-m5"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "c02-q1",
+     "kind": "before",
+     "query": "Remind me who I was going out with before Elena?",
+     "answer_org": "Nico"
+    },
+    {
+     "id": "c02-q2",
+     "kind": "year",
+     "query": "Who was my partner back in 2017?",
+     "answer_org": "Nico"
+    },
+    {
+     "id": "c02-q3",
+     "kind": "current",
+     "query": "¿Quién es mi pareja actual?",
+     "answer_org": "Elena"
+    },
+    {
+     "id": "c02-q4",
+     "kind": "negative",
+     "query": "Did I wash the scarf before Nico collected it?",
+     "answer_org": ""
+    }
+   ]
+  },
+  {
+   "id": "c03",
+   "title": "Returning to Daria creates a second episode",
+   "traps": [
+    "second_episode",
+    "ex",
+    "successive"
+   ],
+   "people": {
+    "daria": {
+     "names": [
+      "Daria"
+     ]
+    },
+    "ben": {
+     "names": [
+      "Ben"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "c03-m1",
+     "text": "Daria was my girlfriend from 2012 until January 2015.",
+     "written": "2015-01-28",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Daria",
+       "person": "daria"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my girlfriend",
+       "person": "daria",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "daria",
+       "type": "partner",
+       "label": "girlfriend",
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "2012",
+       "end": "January 2015"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c03-m2",
+     "text": "Ben was my boyfriend from February 2015 until January 2017.",
+     "written": "2017-01-20",
+     "source": "capture",
+     "sensitivity": "sensitive",
+     "names": [
+      {
+       "surface": "Ben",
+       "person": "ben"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my boyfriend",
+       "person": "ben",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "ben",
+       "type": "partner",
+       "label": "boyfriend",
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "February 2015",
+       "end": "January 2017"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c03-m3",
+     "text": "A postcard arrived from my ex Daria.",
+     "written": "2017-01-25",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [
+      {
+       "surface": "Daria",
+       "person": "daria"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my ex",
+       "person": "daria",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "daria",
+       "type": "partner",
+       "label": "ex",
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c03-m4",
+     "text": "Daria and I got back together in February 2017. Daria is still my girlfriend.",
+     "written": "2026-09-15",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Daria",
+       "person": "daria"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my girlfriend",
+       "person": "daria",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "daria",
+       "type": "partner",
+       "label": "girlfriend",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "February 2017"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [
+    [
+     "c03-m4",
+     "c03-m2",
+     "c03-m3",
+     "c03-m1"
+    ]
+   ],
+   "corrections": [],
+   "timeline": [
+    {
+     "org": "Daria",
+     "kind": "partner",
+     "start": "2012",
+     "end": "2015-01",
+     "memories": [
+      "c03-m1",
+      "c03-m3"
+     ]
+    },
+    {
+     "org": "Ben",
+     "kind": "partner",
+     "start": "2015-02",
+     "end": "2017-01",
+     "memories": [
+      "c03-m2"
+     ]
+    },
+    {
+     "org": "Daria",
+     "kind": "partner",
+     "start": "2017-02",
+     "end": "",
+     "memories": [
+      "c03-m4"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "c03-q1",
+     "kind": "before",
+     "query": "Who was my partner before Daria?",
+     "answer_org": ""
+    },
+    {
+     "id": "c03-q2",
+     "kind": "after",
+     "query": "Who did I date after my first relationship with Daria?",
+     "answer_org": "Ben"
+    },
+    {
+     "id": "c03-q3",
+     "kind": "before",
+     "query": "Who was I seeing before my second relationship with Daria?",
+     "answer_org": "Ben"
+    },
+    {
+     "id": "c03-q4",
+     "kind": "current",
+     "query": "Who's my girlfriend now?",
+     "answer_org": "Daria"
+    },
+    {
+     "id": "c03-q5",
+     "kind": "negative",
+     "query": "What was on the postcard that arrived before Daria visited?",
+     "answer_org": ""
+    }
+   ]
+  },
+  {
+   "id": "c04",
+   "title": "A year-only breakup cannot be ordered against a March start",
+   "traps": [
+    "precision",
+    "concurrent",
+    "ex"
+   ],
+   "people": {
+    "ari": {
+     "names": [
+      "Ari"
+     ]
+    },
+    "blair": {
+     "names": [
+      "Blair"
+     ]
+    },
+    "cameron": {
+     "names": [
+      "Cameron"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "c04-m1",
+     "text": "Ari was my partner from 2018 until 2019; I do not remember the breakup month.",
+     "written": "2020-02-01",
+     "source": "capture",
+     "sensitivity": "sensitive",
+     "names": [
+      {
+       "surface": "Ari",
+       "person": "ari"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my partner",
+       "person": "ari",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "ari",
+       "type": "partner",
+       "label": "partner",
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "2018",
+       "end": "2019"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c04-m2",
+     "text": "Blair was my partner from March 2019 until January 2020. I cannot tell whether the two relationships overlapped.",
+     "written": "2020-02-02",
+     "source": "capture",
+     "sensitivity": "sensitive",
+     "names": [
+      {
+       "surface": "Blair",
+       "person": "blair"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my partner",
+       "person": "blair",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "blair",
+       "type": "partner",
+       "label": "partner",
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "March 2019",
+       "end": "January 2020"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c04-m3",
+     "text": "Cameron is my partner; we started dating in February 2020.",
+     "written": "2020-03-08",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Cameron",
+       "person": "cameron"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my partner",
+       "person": "cameron",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "cameron",
        "type": "partner",
        "label": "partner",
        "status": "current",
@@ -368,667 +887,168 @@
      "not_linked": []
     },
     {
-     "id": "c02m4",
-     "text": "Ellis is my ex. Looking back, our breakup was in November 2019.",
-     "written": "2021-08-22",
+     "id": "c04-m4",
+     "text": "I found a letter from my ex, but I cannot tell which former partner wrote it.",
+     "written": "2024-07-03",
      "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Ellis",
-       "person": "c02a"
-      }
-     ],
+     "sensitivity": "internal",
+     "names": [],
      "roles": [
       {
        "surface": "my ex",
-       "person": "c02a",
-       "resolvable": true
+       "person": "ari",
+       "resolvable": false
       }
      ],
      "facts": [
       {
-       "person": "c02a",
+       "person": null,
        "type": "partner",
        "label": "ex",
        "status": "former",
        "polarity": "positive",
        "deceased": false,
        "only": false,
-       "count": null,
-       "end": "November 2019"
+       "count": null
       }
      ],
-     "not_linked": []
+     "not_linked": [
+      "ari",
+      "blair"
+     ]
     }
    ],
    "orders": [
     [
-     "c02m3",
-     "c02m4",
-     "c02m2",
-     "c02m1"
+     "c04-m2",
+     "c04-m4",
+     "c04-m3",
+     "c04-m1"
     ]
    ],
    "corrections": [],
    "timeline": [
     {
-     "org": "Ellis",
+     "org": "Ari",
      "kind": "partner",
-     "start": "2017",
-     "end": "2019-11",
+     "start": "2018",
+     "end": "2019",
      "memories": [
-      "c02m1",
-      "c02m2",
-      "c02m4"
+      "c04-m1"
      ]
     },
     {
-     "org": "Casey",
+     "org": "Blair",
+     "kind": "partner",
+     "start": "2019-03",
+     "end": "2020-01",
+     "memories": [
+      "c04-m2"
+     ]
+    },
+    {
+     "org": "Cameron",
      "kind": "partner",
      "start": "2020-02",
      "end": "",
      "memories": [
-      "c02m3"
+      "c04-m3"
      ]
     }
    ],
    "queries": [
     {
-     "id": "c02q1",
+     "id": "c04-q1",
      "kind": "before",
-     "query": "Who was my partner before Casey?",
-     "answer_org": "Ellis"
-    },
-    {
-     "id": "c02q2",
-     "kind": "year",
-     "query": "Who was I seeing in 2018?",
-     "answer_org": "Ellis"
-    },
-    {
-     "id": "c02q3",
-     "kind": "current",
-     "query": "Who am I dating currently?",
-     "answer_org": "Casey"
-    },
-    {
-     "id": "c02q4",
-     "kind": "previous",
-     "query": "Who was my previous boyfriend?",
-     "answer_org": "Ellis"
-    },
-    {
-     "id": "c02q5",
-     "kind": "negative",
-     "query": "Was the dating documentary released after Ellis graduated?",
-     "answer_org": ""
-    }
-   ]
-  },
-  {
-   "id": "c03",
-   "title": "Returning to the same person",
-   "traps": [
-    "second_episode",
-    "ex",
-    "successive"
-   ],
-   "people": {
-    "c03a": {
-     "names": [
-      "Ari"
-     ]
-    },
-    "c03b": {
-     "names": [
-      "Devon"
-     ]
-    }
-   },
-   "memories": [
-    {
-     "id": "c03m1",
-     "text": "Ari was my partner from March 2013 until September 2015.",
-     "written": "2015-10-02",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Ari",
-       "person": "c03a"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "my partner",
-       "person": "c03a",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c03a",
-       "type": "partner",
-       "label": "partner",
-       "status": "former",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "start": "March 2013",
-       "end": "September 2015"
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c03m2",
-     "text": "Devon was my boyfriend from January 2016 until September 2018.",
-     "written": "2018-10-03",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Devon",
-       "person": "c03b"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "my boyfriend",
-       "person": "c03b",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c03b",
-       "type": "partner",
-       "label": "boyfriend",
-       "status": "former",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "start": "January 2016",
-       "end": "September 2018"
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c03m3",
-     "text": "Ari and I got back together in January 2019.",
-     "written": "2019-02-07",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Ari",
-       "person": "c03a"
-      }
-     ],
-     "roles": [],
-     "facts": [
-      {
-       "person": "c03a",
-       "type": "partner",
-       "label": null,
-       "status": "current",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "start": "January 2019"
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c03m4",
-     "text": "I returned a cookbook to my ex Devon.",
-     "written": "2020-07-09",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Devon",
-       "person": "c03b"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "my ex",
-       "person": "c03b",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c03b",
-       "type": "partner",
-       "label": "ex",
-       "status": "former",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c03m5",
-     "text": "Ari is still my partner.",
-     "written": "2026-10-10",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Ari",
-       "person": "c03a"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "my partner",
-       "person": "c03a",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c03a",
-       "type": "partner",
-       "label": "partner",
-       "status": "current",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null
-      }
-     ],
-     "not_linked": []
-    }
-   ],
-   "orders": [
-    [
-     "c03m3",
-     "c03m5",
-     "c03m2",
-     "c03m4",
-     "c03m1"
-    ]
-   ],
-   "corrections": [],
-   "timeline": [
-    {
-     "org": "Ari",
-     "kind": "partner",
-     "start": "2013-03",
-     "end": "2015-09",
-     "memories": [
-      "c03m1"
-     ]
-    },
-    {
-     "org": "Devon",
-     "kind": "partner",
-     "start": "2016-01",
-     "end": "2018-09",
-     "memories": [
-      "c03m2",
-      "c03m4"
-     ]
-    },
-    {
-     "org": "Ari",
-     "kind": "partner",
-     "start": "2019-01",
-     "end": "",
-     "memories": [
-      "c03m3",
-      "c03m5"
-     ]
-    }
-   ],
-   "queries": [
-    {
-     "id": "c03q1",
-     "kind": "before",
-     "query": "Who was I dating before Ari?",
+     "query": "Who was I dating immediately before Blair?",
      "answer_org": ""
     },
     {
-     "id": "c03q2",
+     "id": "c04-q2",
      "kind": "after",
-     "query": "Who was my partner after my first relationship with Ari?",
-     "answer_org": "Devon"
+     "query": "Which partner came after Blair?",
+     "answer_org": "Cameron"
     },
     {
-     "id": "c03q3",
+     "id": "c04-q3",
      "kind": "year",
-     "query": "Who was I going out with in 2014?",
-     "answer_org": "Ari"
+     "query": "Who was I going out with in 2019?",
+     "answer_org": ""
     },
     {
-     "id": "c03q4",
+     "id": "c04-q4",
      "kind": "current",
      "query": "Who is my current partner?",
-     "answer_org": "Ari"
+     "answer_org": "Cameron"
     },
     {
-     "id": "c03q5",
+     "id": "c04-q5",
      "kind": "negative",
-     "query": "Did Ari return the dating guide after I returned the cookbook?",
-     "answer_org": ""
-    }
-   ]
-  },
-  {
-   "id": "c04",
-   "title": "Explicit overlapping relationships",
-   "traps": [
-    "concurrent"
-   ],
-   "people": {
-    "c04a": {
-     "names": [
-      "Quinn"
-     ]
-    },
-    "c04b": {
-     "names": [
-      "Reese"
-     ]
-    },
-    "c04c": {
-     "names": [
-      "Sasha"
-     ]
-    }
-   },
-   "memories": [
-    {
-     "id": "c04m1",
-     "text": "Quinn was my partner from January 2018 until June 2022.",
-     "written": "2024-01-10",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Quinn",
-       "person": "c04a"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "my partner",
-       "person": "c04a",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c04a",
-       "type": "partner",
-       "label": "partner",
-       "status": "former",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "start": "January 2018",
-       "end": "June 2022"
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c04m2",
-     "text": "Reese was my partner from March 2019 until August 2023.",
-     "written": "2024-01-11",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Reese",
-       "person": "c04b"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "my partner",
-       "person": "c04b",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c04b",
-       "type": "partner",
-       "label": "partner",
-       "status": "former",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "start": "March 2019",
-       "end": "August 2023"
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c04m3",
-     "text": "Sasha is my partner; we started dating in May 2021.",
-     "written": "2024-01-12",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Sasha",
-       "person": "c04c"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "my partner",
-       "person": "c04c",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c04c",
-       "type": "partner",
-       "label": "partner",
-       "status": "current",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "start": "May 2021"
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c04m4",
-     "text": "I dated Quinn and Reese concurrently in 2020; those two relationships are both over.",
-     "written": "2024-01-13",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Quinn",
-       "person": "c04a"
-      },
-      {
-       "surface": "Reese",
-       "person": "c04b"
-      }
-     ],
-     "roles": [],
-     "facts": [
-      {
-       "person": "c04a",
-       "type": "partner",
-       "label": null,
-       "status": "former",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "time": "2020"
-      },
-      {
-       "person": "c04b",
-       "type": "partner",
-       "label": null,
-       "status": "former",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "time": "2020"
-      }
-     ],
-     "not_linked": []
-    }
-   ],
-   "orders": [
-    [
-     "c04m3",
-     "c04m4",
-     "c04m2",
-     "c04m1"
-    ]
-   ],
-   "corrections": [],
-   "timeline": [
-    {
-     "org": "Quinn",
-     "kind": "partner",
-     "start": "2018-01",
-     "end": "2022-06",
-     "memories": [
-      "c04m1",
-      "c04m4"
-     ]
-    },
-    {
-     "org": "Reese",
-     "kind": "partner",
-     "start": "2019-03",
-     "end": "2023-08",
-     "memories": [
-      "c04m2",
-      "c04m4"
-     ]
-    },
-    {
-     "org": "Sasha",
-     "kind": "partner",
-     "start": "2021-05",
-     "end": "",
-     "memories": [
-      "c04m3"
-     ]
-    }
-   ],
-   "queries": [
-    {
-     "id": "c04q1",
-     "kind": "before",
-     "query": "Who was I seeing immediately before Sasha?",
-     "answer_org": ""
-    },
-    {
-     "id": "c04q2",
-     "kind": "year",
-     "query": "Who was my partner in 2018?",
-     "answer_org": "Quinn"
-    },
-    {
-     "id": "c04q3",
-     "kind": "after",
-     "query": "Who did I date after Quinn?",
-     "answer_org": ""
-    },
-    {
-     "id": "c04q4",
-     "kind": "current",
-     "query": "Who am I going out with now?",
-     "answer_org": "Sasha"
-    },
-    {
-     "id": "c04q5",
-     "kind": "negative",
-     "query": "Did Sasha send the article about dating after the meeting?",
+     "query": "Did Blair post the letter before Ari moved house?",
      "answer_org": ""
     }
    ]
   },
   {
    "id": "c05",
-   "title": "Several years single",
+   "title": "A long single period in Spanish and mixed-language notes",
    "traps": [
-    "gap"
+    "gap",
+    "spanish",
+    "successive"
    ],
    "people": {
-    "c05a": {
+    "luz": {
      "names": [
-      "Leah"
+      "Luz"
      ]
     },
-    "c05b": {
+    "pilar": {
      "names": [
-      "Noor"
+      "Pilar"
      ]
     }
    },
    "memories": [
     {
-     "id": "c05m1",
-     "text": "Leah was my girlfriend from 2012 until June 2014.",
-     "written": "2014-07-20",
+     "id": "c05-m1",
+     "text": "Luz fue mi novia desde 2012 hasta enero de 2014.",
+     "written": "2014-02-10",
      "source": "capture",
-     "sensitivity": "sensitive",
+     "sensitivity": "internal",
      "names": [
       {
-       "surface": "Leah",
-       "person": "c05a"
+       "surface": "Luz",
+       "person": "luz"
       }
      ],
      "roles": [
       {
-       "surface": "my girlfriend",
-       "person": "c05a",
+       "surface": "mi novia",
+       "person": "luz",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c05a",
+       "person": "luz",
        "type": "partner",
-       "label": "girlfriend",
+       "label": "novia",
        "status": "former",
        "polarity": "positive",
        "deceased": false,
        "only": false,
        "count": null,
        "start": "2012",
-       "end": "June 2014"
+       "end": "enero de 2014"
       }
      ],
      "not_linked": []
     },
     {
-     "id": "c05m2",
-     "text": "I had no partner from 2015 through 2019; I was single throughout those years.",
-     "written": "2019-12-31",
+     "id": "c05-m2",
+     "text": "Estuve sin pareja desde febrero de 2014 hasta diciembre de 2021.",
+     "written": "2022-01-04",
      "source": "capture",
      "sensitivity": "sensitive",
      "names": [],
@@ -1037,298 +1057,74 @@
       {
        "person": null,
        "type": "partner",
-       "label": "partner",
+       "label": "pareja",
        "status": "former",
        "polarity": "negative",
        "deceased": false,
        "only": false,
-       "count": 0,
-       "time": "2015 through 2019"
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c05m3",
-     "text": "Noor is my girlfriend; we started dating in September 2020.",
-     "written": "2020-10-05",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Noor",
-       "person": "c05b"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "my girlfriend",
-       "person": "c05b",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c05b",
-       "type": "partner",
-       "label": "girlfriend",
-       "status": "current",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
        "count": null,
-       "start": "September 2020"
+       "start": "febrero de 2014",
+       "end": "diciembre de 2021"
       }
      ],
      "not_linked": []
     },
     {
-     "id": "c05m4",
-     "text": "I went hiking with my partner Noor.",
-     "written": "2026-10-11",
+     "id": "c05-m3",
+     "text": "Pilar es mi novia. We started dating in January 2022.",
+     "written": "2022-03-17",
      "source": "capture",
-     "sensitivity": "sensitive",
+     "sensitivity": "internal",
      "names": [
       {
-       "surface": "Noor",
-       "person": "c05b"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "my partner",
-       "person": "c05b",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c05b",
-       "type": "partner",
-       "label": "partner",
-       "status": "current",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null
-      }
-     ],
-     "not_linked": []
-    }
-   ],
-   "orders": [],
-   "corrections": [],
-   "timeline": [
-    {
-     "org": "Leah",
-     "kind": "partner",
-     "start": "2012",
-     "end": "2014-06",
-     "memories": [
-      "c05m1"
-     ]
-    },
-    {
-     "org": "Noor",
-     "kind": "partner",
-     "start": "2020-09",
-     "end": "",
-     "memories": [
-      "c05m3",
-      "c05m4"
-     ]
-    }
-   ],
-   "queries": [
-    {
-     "id": "c05q1",
-     "kind": "before",
-     "query": "Who was my partner right before Noor?",
-     "answer_org": ""
-    },
-    {
-     "id": "c05q2",
-     "kind": "year",
-     "query": "Who was I dating in 2017?",
-     "answer_org": ""
-    },
-    {
-     "id": "c05q3",
-     "kind": "current",
-     "query": "Who's my current girlfriend?",
-     "answer_org": "Noor"
-    },
-    {
-     "id": "c05q4",
-     "kind": "after",
-     "query": "Who was I dating immediately after Leah?",
-     "answer_org": ""
-    },
-    {
-     "id": "c05q5",
-     "kind": "negative",
-     "query": "Did I finish the book about dating before Leah finished it?",
-     "answer_org": ""
-    }
-   ]
-  },
-  {
-   "id": "c06",
-   "title": "Spanish history with a mixed-language present",
-   "traps": [
-    "spanish",
-    "precision",
-    "successive"
-   ],
-   "people": {
-    "c06a": {
-     "names": [
-      "Lucía"
-     ]
-    },
-    "c06b": {
-     "names": [
-      "Camila"
-     ]
-    },
-    "c06c": {
-     "names": [
-      "Mateo"
-     ]
-    }
-   },
-   "memories": [
-    {
-     "id": "c06m1",
-     "text": "Lucía fue mi novia desde 2015 hasta diciembre de 2018.",
-     "written": "2019-01-06",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Lucía",
-       "person": "c06a"
+       "surface": "Pilar",
+       "person": "pilar"
       }
      ],
      "roles": [
       {
        "surface": "mi novia",
-       "person": "c06a",
+       "person": "pilar",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c06a",
+       "person": "pilar",
        "type": "partner",
        "label": "novia",
-       "status": "former",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "start": "2015",
-       "end": "diciembre de 2018"
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c06m2",
-     "text": "Camila fue mi novia desde marzo de 2019 hasta mayo de 2021. Mi relación con Camila vino después de Lucía.",
-     "written": "2021-06-12",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Camila",
-       "person": "c06b"
-      },
-      {
-       "surface": "Lucía",
-       "person": "c06a"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "mi novia",
-       "person": "c06b",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c06b",
-       "type": "partner",
-       "label": "novia",
-       "status": "former",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "start": "marzo de 2019",
-       "end": "mayo de 2021",
-       "preceded_by": "Lucía"
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c06m3",
-     "text": "Mateo es mi novio. Empezamos a salir en septiembre de 2021.",
-     "written": "2021-10-09",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Mateo",
-       "person": "c06c"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "mi novio",
-       "person": "c06c",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c06c",
-       "type": "partner",
-       "label": "novio",
        "status": "current",
        "polarity": "positive",
        "deceased": false,
        "only": false,
        "count": null,
-       "start": "septiembre de 2021"
+       "start": "January 2022"
       }
      ],
      "not_linked": []
     },
     {
-     "id": "c06m4",
-     "text": "I booked the train with mi pareja Mateo; seguimos juntos.",
-     "written": "2026-10-12",
+     "id": "c05-m4",
+     "text": "Hoy fui al cine con mi pareja Pilar; seguimos juntas.",
+     "written": "2026-10-09",
      "source": "capture",
-     "sensitivity": "sensitive",
+     "sensitivity": "low",
      "names": [
       {
-       "surface": "Mateo",
-       "person": "c06c"
+       "surface": "Pilar",
+       "person": "pilar"
       }
      ],
      "roles": [
       {
        "surface": "mi pareja",
-       "person": "c06c",
+       "person": "pilar",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c06c",
+       "person": "pilar",
        "type": "partner",
        "label": "pareja",
        "status": "current",
@@ -1343,134 +1139,436 @@
    ],
    "orders": [
     [
-     "c06m4",
-     "c06m2",
-     "c06m1",
-     "c06m3"
+     "c05-m4",
+     "c05-m2",
+     "c05-m1",
+     "c05-m3"
     ]
    ],
    "corrections": [],
    "timeline": [
     {
-     "org": "Lucía",
+     "org": "Luz",
      "kind": "partner",
-     "start": "2015",
-     "end": "2018-12",
+     "start": "2012",
+     "end": "2014-01",
      "memories": [
-      "c06m1"
+      "c05-m1"
      ]
     },
     {
-     "org": "Camila",
+     "org": "Pilar",
      "kind": "partner",
-     "start": "2019-03",
-     "end": "2021-05",
-     "memories": [
-      "c06m2"
-     ]
-    },
-    {
-     "org": "Mateo",
-     "kind": "partner",
-     "start": "2021-09",
+     "start": "2022-01",
      "end": "",
      "memories": [
-      "c06m3",
-      "c06m4"
+      "c05-m3",
+      "c05-m4"
      ]
     }
    ],
    "queries": [
     {
-     "id": "c06q1",
+     "id": "c05-q1",
      "kind": "before",
-     "query": "¿Quién era mi pareja antes de Mateo?",
-     "answer_org": "Camila"
+     "query": "¿Con quién salía antes de Pilar?",
+     "answer_org": ""
     },
     {
-     "id": "c06q2",
-     "kind": "after",
-     "query": "¿Quién fue mi novia después de Lucía?",
-     "answer_org": "Camila"
-    },
-    {
-     "id": "c06q3",
+     "id": "c05-q2",
      "kind": "year",
-     "query": "¿Quién era mi pareja en 2016?",
-     "answer_org": "Lucía"
+     "query": "¿Quién era mi pareja en 2018?",
+     "answer_org": ""
     },
     {
-     "id": "c06q4",
+     "id": "c05-q3",
+     "kind": "year",
+     "query": "¿Con quién salía en 2013?",
+     "answer_org": "Luz"
+    },
+    {
+     "id": "c05-q4",
      "kind": "current",
-     "query": "¿Quién es mi pareja ahora?",
-     "answer_org": "Mateo"
+     "query": "¿Quién es mi novia ahora?",
+     "answer_org": "Pilar"
     },
     {
-     "id": "c06q5",
+     "id": "c05-q5",
      "kind": "negative",
-     "query": "¿Compré el libro sobre mi pareja ideal antes de que Mateo comprara el suyo?",
+     "query": "Did I book the cinema tickets before Pilar arrived?",
+     "answer_org": ""
+    }
+   ]
+  },
+  {
+   "id": "c06",
+   "title": "An agent's invented succession cannot displace the user's account",
+   "traps": [
+    "agent_note",
+    "denial",
+    "successive"
+   ],
+   "people": {
+    "dev": {
+     "names": [
+      "Dev"
+     ]
+    },
+    "rowan": {
+     "names": [
+      "Rowan"
+     ]
+    },
+    "toby": {
+     "names": [
+      "Toby"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "c06-m1",
+     "text": "Dev was my boyfriend from January 2016 until March 2020.",
+     "written": "2020-03-31",
+     "source": "capture",
+     "sensitivity": "sensitive",
+     "names": [
+      {
+       "surface": "Dev",
+       "person": "dev"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my boyfriend",
+       "person": "dev",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "dev",
+       "type": "partner",
+       "label": "boyfriend",
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "January 2016",
+       "end": "March 2020"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c06-m2",
+     "text": "Rowan is my partner. We started dating in April 2020.",
+     "written": "2021-04-12",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Rowan",
+       "person": "rowan"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my partner",
+       "person": "rowan",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "rowan",
+       "type": "partner",
+       "label": "partner",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "April 2020"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c06-m3",
+     "text": "Summary: Toby is the user's partner, starting in 2022. The user's relationship with Rowan ended in 2022.",
+     "written": "2023-08-01",
+     "source": "agent",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Toby",
+       "person": "toby"
+      },
+      {
+       "surface": "Rowan",
+       "person": "rowan"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "the user's partner",
+       "person": "toby",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "toby",
+       "type": "partner",
+       "label": "partner",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "2022"
+      },
+      {
+       "person": "rowan",
+       "type": "partner",
+       "label": null,
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "end": "2022"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c06-m4",
+     "text": "Rowan is still my partner; we have been together continuously since April 2020. Toby is my colleague, not a romantic partner.",
+     "written": "2025-04-15",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Rowan",
+       "person": "rowan"
+      },
+      {
+       "surface": "Toby",
+       "person": "toby"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my partner",
+       "person": "rowan",
+       "resolvable": true
+      },
+      {
+       "surface": "my colleague",
+       "person": "toby",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "rowan",
+       "type": "partner",
+       "label": "partner",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "April 2020"
+      },
+      {
+       "person": "toby",
+       "type": "colleague",
+       "label": "colleague",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      },
+      {
+       "person": "toby",
+       "type": "partner",
+       "label": "romantic partner",
+       "status": "current",
+       "polarity": "negative",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [
+    [
+     "c06-m4",
+     "c06-m1",
+     "c06-m2",
+     "c06-m3"
+    ]
+   ],
+   "corrections": [],
+   "timeline": [
+    {
+     "org": "Dev",
+     "kind": "partner",
+     "start": "2016-01",
+     "end": "2020-03",
+     "memories": [
+      "c06-m1"
+     ]
+    },
+    {
+     "org": "Rowan",
+     "kind": "partner",
+     "start": "2020-04",
+     "end": "",
+     "memories": [
+      "c06-m2",
+      "c06-m4"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "c06-q1",
+     "kind": "after",
+     "query": "Who did I start dating after Dev?",
+     "answer_org": "Rowan"
+    },
+    {
+     "id": "c06-q2",
+     "kind": "current",
+     "query": "Who am I currently in a relationship with?",
+     "answer_org": "Rowan"
+    },
+    {
+     "id": "c06-q3",
+     "kind": "year",
+     "query": "Who was my partner during 2023?",
+     "answer_org": "Rowan"
+    },
+    {
+     "id": "c06-q4",
+     "kind": "before",
+     "query": "Who was my boyfriend before Rowan?",
+     "answer_org": "Dev"
+    },
+    {
+     "id": "c06-q5",
+     "kind": "negative",
+     "query": "Did Rowan finish the report before Dev?",
      "answer_org": ""
     }
    ]
   },
   {
    "id": "c07",
-   "title": "Other people's partners and an unreliable agent summary",
+   "title": "Other people's partners and an explicit denial",
    "traps": [
     "others_partners",
     "denial",
-    "agent_note"
+    "successive"
    ],
    "people": {
-    "c07a": {
+    "finn": {
      "names": [
-      "Morgan"
+      "Finn"
      ]
     },
-    "c07b": {
+    "inez": {
      "names": [
-      "Tessa"
+      "Inez"
      ]
     },
-    "c07c": {
+    "ada": {
      "names": [
-      "Owen"
+      "Ada"
      ]
     },
-    "c07d": {
+    "sam": {
      "names": [
       "Sam"
      ]
     },
-    "c07e": {
+    "mira": {
      "names": [
-      "Blair"
+      "Mira"
+     ]
+    },
+    "zoe": {
+     "names": [
+      "Zoe"
      ]
     }
    },
    "memories": [
     {
-     "id": "c07m1",
-     "text": "Morgan is my girlfriend. We started dating in 2020.",
+     "id": "c07-m1",
+     "text": "Finn was my boyfriend from January 2017 until May 2020.",
      "written": "2020-06-01",
      "source": "capture",
-     "sensitivity": "sensitive",
+     "sensitivity": "internal",
      "names": [
       {
-       "surface": "Morgan",
-       "person": "c07a"
+       "surface": "Finn",
+       "person": "finn"
       }
      ],
      "roles": [
       {
-       "surface": "my girlfriend",
-       "person": "c07a",
+       "surface": "my boyfriend",
+       "person": "finn",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c07a",
+       "person": "finn",
+       "type": "partner",
+       "label": "boyfriend",
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "January 2017",
+       "end": "May 2020"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c07-m2",
+     "text": "Inez is my girlfriend; we started dating in June 2020.",
+     "written": "2020-07-02",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Inez",
+       "person": "inez"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my girlfriend",
+       "person": "inez",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "inez",
        "type": "partner",
        "label": "girlfriend",
        "status": "current",
@@ -1478,37 +1576,37 @@
        "deceased": false,
        "only": false,
        "count": null,
-       "start": "2020"
+       "start": "June 2020"
       }
      ],
      "not_linked": []
     },
     {
-     "id": "c07m2",
-     "text": "I met my sister Tessa and her boyfriend Owen for lunch.",
-     "written": "2022-04-02",
+     "id": "c07-m3",
+     "text": "Ada is my sister; Sam is her boyfriend.",
+     "written": "2021-05-14",
      "source": "capture",
-     "sensitivity": "sensitive",
+     "sensitivity": "low",
      "names": [
       {
-       "surface": "Tessa",
-       "person": "c07b"
+       "surface": "Ada",
+       "person": "ada"
       },
       {
-       "surface": "Owen",
-       "person": "c07c"
+       "surface": "Sam",
+       "person": "sam"
       }
      ],
      "roles": [
       {
        "surface": "my sister",
-       "person": "c07b",
+       "person": "ada",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c07b",
+       "person": "ada",
        "type": "sibling",
        "label": "sister",
        "status": "current",
@@ -1521,31 +1619,31 @@
      "not_linked": []
     },
     {
-     "id": "c07m3",
-     "text": "I saw my friend Sam and his girlfriend Blair at the cinema.",
-     "written": "2023-05-03",
+     "id": "c07-m4",
+     "text": "Mira is my friend. Zoe is Mira's girlfriend.",
+     "written": "2022-06-10",
      "source": "capture",
-     "sensitivity": "sensitive",
+     "sensitivity": "low",
      "names": [
       {
-       "surface": "Sam",
-       "person": "c07d"
+       "surface": "Mira",
+       "person": "mira"
       },
       {
-       "surface": "Blair",
-       "person": "c07e"
+       "surface": "Zoe",
+       "person": "zoe"
       }
      ],
      "roles": [
       {
        "surface": "my friend",
-       "person": "c07d",
+       "person": "mira",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c07d",
+       "person": "mira",
        "type": "friend",
        "label": "friend",
        "status": "current",
@@ -1558,21 +1656,21 @@
      "not_linked": []
     },
     {
-     "id": "c07m4",
+     "id": "c07-m5",
      "text": "Sam is not my boyfriend.",
-     "written": "2024-06-04",
+     "written": "2023-01-09",
      "source": "capture",
-     "sensitivity": "sensitive",
+     "sensitivity": "internal",
      "names": [
       {
        "surface": "Sam",
-       "person": "c07d"
+       "person": "sam"
       }
      ],
      "roles": [],
      "facts": [
       {
-       "person": "c07d",
+       "person": "sam",
        "type": "partner",
        "label": "boyfriend",
        "status": "current",
@@ -1583,184 +1681,115 @@
       }
      ],
      "not_linked": []
-    },
-    {
-     "id": "c07m5",
-     "text": "The user ended their relationship with Morgan in 2021 and started dating Blair in 2022.",
-     "written": "2025-07-05",
-     "source": "agent",
-     "sensitivity": "internal",
-     "names": [
-      {
-       "surface": "Morgan",
-       "person": "c07a"
-      },
-      {
-       "surface": "Blair",
-       "person": "c07e"
-      }
-     ],
-     "roles": [],
-     "facts": [
-      {
-       "person": "c07a",
-       "type": "partner",
-       "label": null,
-       "status": "former",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "end": "2021"
-      },
-      {
-       "person": "c07e",
-       "type": "partner",
-       "label": null,
-       "status": "current",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "start": "2022"
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c07m6",
-     "text": "Morgan is still my girlfriend. We have been together continuously since 2020, without any breakup.",
-     "written": "2026-10-13",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Morgan",
-       "person": "c07a"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "my girlfriend",
-       "person": "c07a",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c07a",
-       "type": "partner",
-       "label": "girlfriend",
-       "status": "current",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "start": "2020"
-      }
-     ],
-     "not_linked": []
     }
    ],
    "orders": [
     [
-     "c07m6",
-     "c07m1",
-     "c07m4",
-     "c07m2",
-     "c07m3",
-     "c07m5"
+     "c07-m5",
+     "c07-m3",
+     "c07-m2",
+     "c07-m4",
+     "c07-m1"
     ]
    ],
    "corrections": [],
    "timeline": [
     {
-     "org": "Morgan",
+     "org": "Finn",
      "kind": "partner",
-     "start": "2020",
+     "start": "2017-01",
+     "end": "2020-05",
+     "memories": [
+      "c07-m1"
+     ]
+    },
+    {
+     "org": "Inez",
+     "kind": "partner",
+     "start": "2020-06",
      "end": "",
      "memories": [
-      "c07m1",
-      "c07m6"
+      "c07-m2"
      ]
     }
    ],
    "queries": [
     {
-     "id": "c07q1",
-     "kind": "current",
-     "query": "Who's my girlfriend now?",
-     "answer_org": "Morgan"
+     "id": "c07-q1",
+     "kind": "previous",
+     "query": "Who was my previous partner?",
+     "answer_org": "Finn"
     },
     {
-     "id": "c07q2",
+     "id": "c07-q2",
      "kind": "year",
-     "query": "Who was I dating in 2023?",
-     "answer_org": "Morgan"
+     "query": "Who was I dating in 2022?",
+     "answer_org": "Inez"
     },
     {
-     "id": "c07q3",
+     "id": "c07-q3",
      "kind": "before",
-     "query": "Who was my partner before Morgan?",
+     "query": "Do my notes say who I dated before Finn?",
      "answer_org": ""
     },
     {
-     "id": "c07q4",
+     "id": "c07-q4",
      "kind": "negative",
-     "query": "Did Morgan meet my sister's boyfriend before lunch?",
+     "query": "Did Finn email Ada before Inez did?",
      "answer_org": ""
     }
    ]
   },
   {
    "id": "c08",
-   "title": "Private evidence and three user corrections",
+   "title": "Private evidence and three kinds of user correction",
    "traps": [
     "restricted",
     "correction",
     "ex",
-    "precision"
+    "precision",
+    "successive"
    ],
    "people": {
-    "c08a": {
+    "owen": {
      "names": [
-      "Nico"
+      "Owen"
      ]
     },
-    "c08b": {
+    "rhea": {
      "names": [
-      "Rafi"
+      "Rhea"
      ]
     },
-    "c08c": {
+    "quinn": {
      "names": [
-      "Eden"
+      "Quinn"
      ]
     }
    },
    "memories": [
     {
-     "id": "c08m1",
-     "text": "Nico was my boyfriend from 2014 until September 2016.",
-     "written": "2017-01-02",
+     "id": "c08-m1",
+     "text": "Owen was my boyfriend from 2015 until 2018.",
+     "written": "2020-01-05",
      "source": "capture",
-     "sensitivity": "sensitive",
+     "sensitivity": "internal",
      "names": [
       {
-       "surface": "Nico",
-       "person": "c08a"
+       "surface": "Owen",
+       "person": "owen"
       }
      ],
      "roles": [
       {
        "surface": "my boyfriend",
-       "person": "c08a",
+       "person": "owen",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c08a",
+       "person": "owen",
        "type": "partner",
        "label": "boyfriend",
        "status": "former",
@@ -1768,97 +1797,34 @@
        "deceased": false,
        "only": false,
        "count": null,
-       "start": "2014",
-       "end": "September 2016"
+       "start": "2015",
+       "end": "2018"
       }
      ],
      "not_linked": []
     },
     {
-     "id": "c08m2",
-     "text": "I took my boyfriend to the observatory.",
-     "written": "2018-05-19",
+     "id": "c08-m2",
+     "text": "Quinn is my girlfriend; we started dating in February 2019.",
+     "written": "2020-02-02",
      "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [],
-     "roles": [
-      {
-       "surface": "my boyfriend",
-       "person": "c08b",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c08b",
-       "type": "partner",
-       "label": "boyfriend",
-       "status": "current",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c08m3",
-     "text": "Rafi was my boyfriend from February 2017 until 2019; he was the person in my observatory note.",
-     "written": "2019-11-07",
-     "source": "capture",
-     "sensitivity": "restricted",
+     "sensitivity": "internal",
      "names": [
       {
-       "surface": "Rafi",
-       "person": "c08b"
-      }
-     ],
-     "roles": [
-      {
-       "surface": "my boyfriend",
-       "person": "c08b",
-       "resolvable": true
-      }
-     ],
-     "facts": [
-      {
-       "person": "c08b",
-       "type": "partner",
-       "label": "boyfriend",
-       "status": "former",
-       "polarity": "positive",
-       "deceased": false,
-       "only": false,
-       "count": null,
-       "start": "February 2017",
-       "end": "2019"
-      }
-     ],
-     "not_linked": []
-    },
-    {
-     "id": "c08m4",
-     "text": "Eden is my girlfriend. We started dating in 2021.",
-     "written": "2021-04-10",
-     "source": "capture",
-     "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Eden",
-       "person": "c08c"
+       "surface": "Quinn",
+       "person": "quinn"
       }
      ],
      "roles": [
       {
        "surface": "my girlfriend",
-       "person": "c08c",
+       "person": "quinn",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c08c",
+       "person": "quinn",
        "type": "partner",
        "label": "girlfriend",
        "status": "current",
@@ -1866,33 +1832,28 @@
        "deceased": false,
        "only": false,
        "count": null,
-       "start": "2021"
+       "start": "February 2019"
       }
      ],
      "not_linked": []
     },
     {
-     "id": "c08m5",
-     "text": "I returned a scarf to my ex Rafi.",
-     "written": "2023-02-14",
+     "id": "c08-m3",
+     "text": "I put my ex on the emergency-contact form.",
+     "written": "2021-03-12",
      "source": "capture",
      "sensitivity": "sensitive",
-     "names": [
-      {
-       "surface": "Rafi",
-       "person": "c08b"
-      }
-     ],
+     "names": [],
      "roles": [
       {
        "surface": "my ex",
-       "person": "c08b",
+       "person": "rhea",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c08b",
+       "person": "rhea",
        "type": "partner",
        "label": "ex",
        "status": "former",
@@ -1905,27 +1866,62 @@
      "not_linked": []
     },
     {
-     "id": "c08m6",
-     "text": "Eden is still my girlfriend.",
-     "written": "2026-10-14",
+     "id": "c08-m4",
+     "text": "Rhea was my partner from February 2018 until January 2019. Rhea is the ex I meant on the emergency-contact form. I kept that relationship private.",
+     "written": "2022-04-07",
      "source": "capture",
-     "sensitivity": "sensitive",
+     "sensitivity": "restricted",
      "names": [
       {
-       "surface": "Eden",
-       "person": "c08c"
+       "surface": "Rhea",
+       "person": "rhea"
       }
      ],
      "roles": [
       {
-       "surface": "my girlfriend",
-       "person": "c08c",
+       "surface": "my partner",
+       "person": "rhea",
        "resolvable": true
       }
      ],
      "facts": [
       {
-       "person": "c08c",
+       "person": "rhea",
+       "type": "partner",
+       "label": "partner",
+       "status": "former",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null,
+       "start": "February 2018",
+       "end": "January 2019"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "c08-m5",
+     "text": "Quinn is still my girlfriend.",
+     "written": "2026-10-31",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Quinn",
+       "person": "quinn"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "my girlfriend",
+       "person": "quinn",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "quinn",
        "type": "partner",
        "label": "girlfriend",
        "status": "current",
@@ -1938,95 +1934,96 @@
      "not_linked": []
     }
    ],
-   "orders": [],
+   "orders": [
+    [
+     "c08-m1",
+     "c08-m3",
+     "c08-m4",
+     "c08-m2",
+     "c08-m5"
+    ]
+   ],
    "corrections": [
     {
-     "after": "c08m2",
-     "op": "reject",
-     "person": "c08a",
-     "memory": "c08m2",
-     "surface": "my boyfriend"
-    },
-    {
-     "after": "c08m3",
-     "op": "end",
-     "person": "c08b",
-     "value": "2019-08"
-    },
-    {
-     "after": "c08m4",
+     "after": "c08-m1",
      "op": "start",
-     "person": "c08c",
-     "value": "2020-12"
+     "person": "owen",
+     "value": "2014-11"
+    },
+    {
+     "after": "c08-m3",
+     "op": "reject",
+     "person": "owen",
+     "memory": "c08-m3",
+     "surface": "my ex"
+    },
+    {
+     "after": "c08-m4",
+     "op": "end",
+     "person": "owen",
+     "value": "2018-01"
     }
    ],
    "timeline": [
     {
-     "org": "Nico",
+     "org": "Owen",
      "kind": "partner",
-     "start": "2014",
-     "end": "2016-09",
+     "start": "2014-11",
+     "end": "2018-01",
      "memories": [
-      "c08m1"
+      "c08-m1"
      ]
     },
     {
-     "org": "Rafi",
+     "org": "Rhea",
      "kind": "partner",
-     "start": "2017-02",
-     "end": "2019-08",
+     "start": "2018-02",
+     "end": "2019-01",
      "memories": [
-      "c08m2",
-      "c08m3",
-      "c08m5"
+      "c08-m3",
+      "c08-m4"
      ]
     },
     {
-     "org": "Eden",
+     "org": "Quinn",
      "kind": "partner",
-     "start": "2020-12",
+     "start": "2019-02",
      "end": "",
      "memories": [
-      "c08m4",
-      "c08m6"
+      "c08-m2",
+      "c08-m5"
      ]
     }
    ],
    "queries": [
     {
-     "id": "c08q1",
-     "kind": "year",
-     "query": "Who was I going out with in 2018?",
-     "answer_org": "Rafi"
-    },
-    {
-     "id": "c08q2",
-     "kind": "current",
-     "query": "Who's my partner now?",
-     "answer_org": "Eden"
-    },
-    {
-     "id": "c08q3",
+     "id": "c08-q1",
      "kind": "before",
-     "query": "Who was my boyfriend before Rafi?",
-     "answer_org": "Nico"
+     "query": "Who was I seeing before Quinn?",
+     "answer_org": "Rhea"
     },
     {
-     "id": "c08q4",
+     "id": "c08-q2",
      "kind": "year",
-     "query": "Who was I dating in December 2020?",
-     "answer_org": "Eden"
+     "query": "Who was my boyfriend in 2016?",
+     "answer_org": "Owen"
     },
     {
-     "id": "c08q5",
-     "kind": "year",
-     "query": "Who was I dating in October 2019?",
-     "answer_org": ""
+     "id": "c08-q3",
+     "kind": "after",
+     "query": "¿Con quién salía después de Owen?",
+     "answer_org": "Rhea"
     },
     {
-     "id": "c08q6",
+     "id": "c08-q4",
+     "kind": "current",
+     "query": "Who is my girlfriend now?",
+     "answer_org": "Quinn"
+    },
+    {
+     "id": "c08-q5",
      "kind": "negative",
-     "query": "Did Eden visit the dating exhibition after the observatory trip?",
+     "query": "What did Quinn write on the form before Owen signed it?",
      "answer_org": ""
     }
    ]

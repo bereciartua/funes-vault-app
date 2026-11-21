@@ -111,7 +111,13 @@ import Testing
     @Test(.enabled(if: options != nil)) func fullRun() async throws {
         let o = try #require(Self.options)
         let set = o["set"] ?? "mixed"
-        let fixture = try FactsHarness.fixture(set)
+        var fixture = try FactsHarness.fixture(set)
+        // Development only: other wordings of the questions (`queries=<file>`, {story id: [query]}); never a gate run.
+        if let path = o["queries"] {
+            try #require(o["live"] == nil, "queries= is for development replays, never a live run")
+            let other = try JSONDecoder().decode([String: [FactsHarness.Fixture.Query]].self, from: Data(contentsOf: URL(fileURLWithPath: path)))
+            for i in fixture.stories.indices { fixture.stories[i].queries = other[fixture.stories[i].id] ?? [] }
+        }
         let out = URL(fileURLWithPath: try #require(o["out"]))
         // The canary set brings its own registry (a data-only change); `registry=` overrides.
         let registry = try FactsHarness.registry(o["registry"] ?? FactsHarness.defaultRegistry(set))

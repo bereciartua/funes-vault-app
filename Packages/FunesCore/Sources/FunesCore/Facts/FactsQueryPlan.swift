@@ -23,6 +23,10 @@ public struct FactsQueryPlan: Sendable, Equatable {
         public var predicate: String
         public var op: TimelineIntent.Operator
         public var anchor: String?
+        /// Every entity the anchor stands for on the timeline (a stated rename's names, 13e.1).
+        public var anchorGroup: Set<String> = []
+        /// Every entity the answer stands for (a stated rename's names): their memories state it too.
+        public var answerGroup: Set<String> = []
         public var answer: [String]
         public var basis: TimelineBasis
         /// The operator as the query wrote it ("before"), for the why line.
@@ -38,7 +42,9 @@ public struct FactsQueryPlan: Sendable, Equatable {
     public var rest = ""
 
     /// The entities matched, by name or role (a timeline anchor isn't: its memories drop instead).
-    public var matched: Set<String> { Set(matches.map(\.entity)).subtracting(timeline?.anchor.map { [$0] } ?? []) }
+    public var matched: Set<String> {
+        Set(matches.map(\.entity)).subtracting(timeline?.anchor.map { [$0] } ?? []).subtracting(timeline?.anchorGroup ?? [])
+    }
 
     /// Nothing named and no timeline question: search is unchanged.
     public var isEmpty: Bool { matches.isEmpty && timeline == nil }
@@ -93,6 +99,9 @@ extension FactsSearchIndex {
             if case let .entity(e)? = it.anchor { anchor = e }
             plan.timeline = .init(predicate: it.predicate, op: it.op, anchor: anchor, answer: answer.entities,
                                   basis: answer.basis, opWords: Self.operatorWords(it, graph: g))
+            let groups = g.statedGroups(it.predicate)
+            if let a = anchor { plan.timeline?.anchorGroup = groups.first { $0.contains(a) } ?? [a] }
+            plan.timeline?.answerGroup = Set(answer.entities.flatMap { e in groups.first { $0.contains(e) } ?? [e] })
         }
 
         plan.rest = Self.rest(query, removing: taken, functionWords: Set(g.registry.language.functionWords.map { FactsText.fold($0) }))

@@ -118,7 +118,12 @@ extension FactsGraph {
             let s = p.parse(a.start), e = p.parse(a.end), w = p.day(a.written)
             let hand = a.handover && s == nil && w != nil ? DateRange(lo: w!, hi: w!, precision: .handover) : nil
             let bound = a.status == .former && e == nil ? w : nil   // "time" (held in 2019) is never an end
-            let held = a.status == .current ? w : nil
+            // "Current" holds as of the memory's date, except in an import, whose date isn't the text's (§11.5): there
+            // it holds as of the statement's own time ("a notebook page from June 2018: I'm at Acme"), else at no
+            // known date. A "no longer" still bounds the end by the import's date: it had ended by then.
+            let imported = memories[a.memoryID]?.source == .import
+            let held: Int? = a.status != .current ? nil
+                : imported ? p.parse(a.time).map { t in w.map { min(t.hi, $0) } ?? t.hi } : w
             return Row(order: order, a: a, s: s, e: e, bound: bound, held: held, w: w, hand: hand)
         }
         var eps: [Building] = []
@@ -326,6 +331,9 @@ extension FactsGraph {
     }
 
     private func derivedEpisodes(_ predicate: String) -> [Episode] {
+        // A stated rename is one entity on the timeline (`statedGroups`): its episodes are its group's stand-in's.
+        let groups = statedGroups(predicate)
+        if !groups.isEmpty { return merging(predicate, groups).0.derivedEpisodes(predicate) }
         let eps = facts.filter { $0.predicate == predicate && !$0.negated }.flatMap { factEpisodes($0) }
         guard registry.predicate(predicate)?.succession == true else { return eps }
         // Succession runs over trusted episodes only: an untrusted one neither triggers nor blocks it.

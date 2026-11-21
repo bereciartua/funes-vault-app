@@ -86,6 +86,53 @@ public struct FactsRegistry: Sendable, Decodable {
         /// Nouns that make a role word part of a compound, not a role ("my parent company", "my sister company", "my
         /// friend group"): a lexicon word right before one isn't a role phrase. Optional (13a.2's fix round).
         public let compoundHeads: [String]?
+        /// Words that make a denial a "never" ("I never worked at Orlin Labs", "Nunca trabajé en Nácar"), not an end
+        /// ("I no longer work there"): a trusted never-denial also reaches an agent's claim under the same name (13e.1).
+        /// Optional: without them no denial reaches another entity.
+        public let neverWords: [String]?
+        /// Words that tie a placeholder to a named business in one clause ("por cuenta propia con Nudo Estudio",
+        /// "freelancing through Copper Finch"): the placeholder is that business (13e.1). Optional.
+        public let placeholderLinks: [String]?
+        /// Timeline grammar (13e.1, memory processing §11.7), all optional: words next to before / after that keep their
+        /// meaning ("my next job after…", "last employer before…"); closed-class words a user's own clause may hold
+        /// ("Where did I go…", "¿Qué empleo vino…"); words allowed only beside a cue word ("What do I call my business…",
+        /// never "Who did I call after Acme?"); and verbs only in their frame ("employed me", "me contrató").
+        public let operatorModifiers: [String]?
+        public let subjectWords: [String]?
+        public let cueBoundWords: [String]?
+        public let subjectFrames: [String]?
+        /// Operators after their anchor ("Acme was preceded by which job?"), per direction. Optional.
+        public let passiveOperators: [String: [String]]?
+        /// Words that are an "after" operator only with an end word in their phrase ("once I'd left Acme", "having left
+        /// Acme", "al salir de Acme"); anything else ("once at Acme") isn't one. Optional.
+        public let eventOperators: [String]?
+        /// Words a date after an anchor may open with besides its preposition ("at the end of 2021", "a finales de
+        /// 2021"). Optional.
+        public let dateLeadWords: [String]?
+        /// What a timeline question must ask, the organization (13e.1): "which" words with a noun of the predicate after
+        /// them; "where" words with one of `where_verbs`; `who_frames` ("who employed me"); `name_frames` ("what do I call…");
+        /// or a noun phrase. Optional: without them every question asks.
+        public let askFrames: [String: [String]]?
+        /// Words that can't open the stretch between an operator and its anchor ("after work at Acme"). Optional.
+        public let leadRefusedFirst: [String]?
+        /// The only words around a never-word in a never-denial: before it ("I", "yo"), and between it and the name
+        /// ("have", "been", "at"); the predicate's own cues may stand between too. Optional.
+        /// Verbs that name an event like the start and end words ("took", "set up", "came from"): a year, "current" or
+        /// "previous" question with one isn't about what held. Optional.
+        public let eventWords: [String]?
+        /// What may stand between a "which" word and the noun it asks for ("What was my previous job"). Optional.
+        public let askBetween: [String]?
+        /// Nouns that are also verbs ("trabajo"): a noun only after an owner or a determiner ("mi trabajo"). Optional.
+        public let verbNouns: [String]?
+        /// The only words around a placeholder phrase and its business for the fold ("I'm still freelancing with…"). Optional.
+        public let foldLeadWords: [String]?
+        public let neverLeadWords: [String]?
+        public let neverBetweenWords: [String]?
+        /// The only words a question may hold besides its operator phrase when no cue word names the predicate ("Where did
+        /// I go after Acme?", never "Where did I move after Acme?"). Optional: without them, a cue word is needed.
+        public let anchorCueWords: [String]?
+        /// Words that negate or contrast in a clause ("pero ya no con…"): a placeholder isn't folded across them. Optional.
+        public let negationWords: [String]?
         public let functionWords: [String]
         public let dateJoiners: [String]
         public let ordinalSuffixes: [String]
@@ -134,6 +181,12 @@ public struct FactsRegistry: Sendable, Decodable {
         public let phrases: [String: String]
         /// Words that make a question about one of its qualifiers ("my title before…"), not the timeline.
         public let qualifierCues: [String]?
+        /// Per value of the slot qualifier, words that ask about that value only ("day job" → employee, "mi negocio" →
+        /// self-employed): the timeline answers within it (13e.1). Optional.
+        public let slotCues: [String: [String]]?
+        /// The nouns among its cues ("company", "empresa"): a clause opening with one is a noun phrase, never a
+        /// yes/no question ("Company I worked for right before Acme", not "¿Trabajé justo después de…?"). Optional.
+        public let queryNouns: [String]?
     }
 
     public struct Qualifier: Sendable, Decodable {
@@ -330,6 +383,11 @@ public struct FactsRegistry: Sendable, Decodable {
                 }
             }
             if let slot = p.slot, p.qualifiers[slot] == nil { throw ValidationError.slotNotAQualifier(p.id) }
+            if let cues = p.slotCues {
+                guard let slot = p.slot, let values = p.qualifiers[slot]?.values, Set(cues.keys).isSubset(of: values) else {
+                    throw ValidationError.slotNotAQualifier(p.id)
+                }
+            }
         }
     }
 }

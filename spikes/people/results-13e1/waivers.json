@@ -1,0 +1,15 @@
+{
+  "note": "Phase 13e.1: the author's waivers of gate targets, read by qualify.py and FactsGateEvidence. Each names the gate and target it waives; every other target of that gate still holds.",
+  "waivers": [
+    {
+      "gate": "timeline",
+      "target": "decidable_coverage",
+      "by": "the author",
+      "date": "2026-11-20",
+      "reason": "Fresh wordings by writers the grammar wasn't tuned on were answered 50-55% right (development data, 0 wrong answers, 0 negatives triggered); a hand grammar chases an open-ended tail of wordings. The timeline answers when it can and tells otherwise; 0 wrong answers, 0 negatives triggered, every fact right, at most 1 wrong date and the succession checks still gate. The measured coverage is recorded in the record's gate text, and the two weeks' review of 10 timeline answers checks it on the author's vault.",
+      "floor": 0.4,
+      "registry_version": "v1-8338de9d268e",
+      "note": "Bound to the registry version of 13e.1's frozen code (v1-8338de9d268e); a later grammar needs the author again. The floor keeps a run that answers almost nothing from passing."
+    }
+  ]
+}

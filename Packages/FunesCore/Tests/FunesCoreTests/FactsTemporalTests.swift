@@ -306,7 +306,9 @@ import Testing
     }
 
     @Test func sentenceInitialCapitalsDontKillIntent() {
-        #expect(twoJobs().intent("Quick one. What was my job before Initech?") != nil)
+        #expect(twoJobs().intent("My job. What was my job before Initech?") != nil)
+        // 13e.1: every word of the question counts, so a preface of other words fails closed.
+        #expect(twoJobs().intent("Quick one. What was my job before Initech?") == nil)
     }
 
     // MARK: Round 3: Fable's final check of round 2

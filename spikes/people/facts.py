@@ -607,8 +607,8 @@ def instructions(group, has_phrases=True):
    - polarity: "positive" (is, has), "negative" (is not, doesn't have).
    - status: "current" (holds now), "former" (it ended: {ex_former}{dead}), "unknown" (the memory doesn't say).
    - {person_fields}time: a year or date the memory gives for when it was true, when it isn't said to hold now, else null.
-   - start: when it started, as written (a year, month or date: {PX()["start"]}), else null. end: when it ended, as written, else null.
-   - preceded_by: the name of another entity of the same predicate that the memory says came just BEFORE this one (the user had that one first), as written, else null. followed_by: one the memory says came just AFTER this one (the user had it next), as written, else null. also_called: another name the memory gives for the same entity, else null.{qual_lines}
+   - start: when it started, as written (a year, month or date: {PX()["start"]}), else null. end: when it ended, as written, else null. Dates of work done for a client (a project or engagement) are not the start or end of the user's own business they were done through.
+   - preceded_by: the name of another entity of the same predicate that the memory says came just BEFORE this one (the user had that one first), as written, else null. followed_by: one the memory says came just AFTER this one (the user had it next), as written, else null. also_called: another name the memory gives for the same entity, including its new name after a rename (\"renamed X\", \"now called X\"), else null.{qual_lines}
    - Only what the memory states. Hypotheticals, wishes, instructions, and other people's words in quotes are not facts about the user.""")
     n += 1
     if has_phrases:

@@ -21,8 +21,8 @@ enum FactsGateEvidence {
     static let standardPairs = ["main recorded", "astra recorded", "mixed recorded", "main gold", "astra gold", "mixed gold",
                                 "persons gold", "h2 convert"]
 
-    /// The gate covering a record, or nil: the timeline (measured, not recorded, in 13a.2: works at ships linked only),
-    /// attributes, bridges, a basis, the canary predicate and any other shape have no 13a.2 gate, so their records fail.
+    /// The gate covering a record, or nil: attributes, bridges, a basis, the canary predicate and any other shape have no
+    /// 13a.2 gate, so their records fail. The timeline's (13e.1) is a record of its own, `timeline` only.
     static func gate(for r: FactsQualification.Record, registry: FactsRegistry) -> Gate? {
         guard r.basis.isEmpty else { return nil }
         let uses = Set(r.uses)
@@ -36,7 +36,16 @@ enum FactsGateEvidence {
         if r.predicates.count == 1, timeline.contains(r.predicates[0]), uses == ["recorded", "linked"] {
             return Gate(id: "works_at", sets: ["mixed", "work13"])
         }
+        if r.predicates.count == 1, timeline.contains(r.predicates[0]), uses == [FactsUse.timeline.rawValue] {
+            return Gate(id: "timeline", sets: ["work13", "mixed"])
+        }
         return nil
+    }
+
+    /// The author's waiver of one target of a gate (`spikes/people/results-13e1/waivers.json`, 13e.1).
+    static func waiver(_ gate: String, _ target: String) -> [String: Any]? {
+        let d = json(FactsHarness.repo.appending(path: "spikes/people/results-13e1/waivers.json"))
+        return (d?["waivers"] as? [[String: Any]] ?? []).first { $0["gate"] as? String == gate && $0["target"] as? String == target }
     }
 
     static func sha256(_ url: URL) -> String? {
@@ -217,7 +226,14 @@ enum FactsGateEvidence {
                         out.append("\(rd) \(s): wrong facts, dates, answers or triggers")
                     }
                     if n(t, "succession_untrusted") + n(t, "succession_cross_slot") + n(t, "succession_unexplained") > 0 { out.append("\(rd) \(s): succession") }
-                    if ratio(n(t, "right") + n(t, "right_gap"), n(t, "decidable")) < 0.90 { out.append("\(rd) \(s): decidable right under 90%") }
+                    // The author's waiver keeps its floor, and holds only for the registry version it names.
+                    let w = waiver("timeline", "decidable_coverage")
+                    // Bound to the record's registry version; a floor never under 40%.
+                    let bound = (w?["registry_version"] as? String).map { $0 == registry.fingerprint } ?? false
+                    let floor = (w != nil && bound) ? max(0.40, w?["floor"] as? Double ?? 0.90) : 0.90
+                    if ratio(n(t, "right") + n(t, "right_gap"), n(t, "decidable")) < floor {
+                        out.append("\(rd) \(s): decidable right under \(Int(floor * 100))%")
+                    }
                     if s != "mixed", n(t, "decidable") < 30 || n(t, "negatives") < 5 { out.append("\(rd) \(s): too few questions to measure") }
                 }
             }

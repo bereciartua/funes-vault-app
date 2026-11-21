@@ -35,15 +35,14 @@ import Testing
 
     // MARK: Offers
 
-    @Test func whatShipsOffersHaikuOnTheClaudePlanOnly() {
-        // 13a.2's Gates step qualified Haiku through Claude Code for both call groups (the person pool; client): the
-        // plan is offered for every group, and the API account, whose adapter has no record, isn't.
+    @Test func nothingShipsSoNothingIsOfferedAndThePageSaysWhy() {
+        // Until 13e.1's gate runs write new records (its code voided 13a.2's and 13d's).
         let s = settings
         let offers = s.factsOffers(qualification: .bundled)
-        #expect(offers.map { "\($0.account)·\($0.model)" } == ["claude-code·claude-haiku-5-5"])
-        #expect(offers.first?.groups == Set(groups))
+        #expect(offers.isEmpty)
         #expect(s.factsProblem(qualification: .bundled, offers: offers, resolution: s.factsResolution(offers: offers),
-                               accountProblem: { _ in nil }) != .nothingQualified)
+                               accountProblem: { _ in nil }) == .nothingQualified)
+        #expect(s.factsResolution(offers: offers) == FactsResolution())
     }
 
     @Test func offersAreTheQualifiedEnginesThisAppBuilds() {
@@ -152,9 +151,8 @@ import Testing
         let none = FactsConfiguration(settings: s, chosen: .init(offer: haiku, executable: nil, key: nil), fallback: nil,
                                       cloudLimit: .upTo(.internal), cap: nil, backoff: ProviderBackoff())
         #expect(none.router(qualification: qualification).factsModels.isEmpty)
-        // The shipped records (Haiku only): Opus chosen falls back to Haiku in every group.
-        let shipped = config(opus, haiku).router(qualification: .bundled)
-        #expect(groups.allSatisfy { shipped.factsModels[$0]?.modelID == "claude-haiku-5-5" })
+        // The shipped records: nothing (until 13e.1's gate runs), whatever the configuration.
+        #expect(config(opus, haiku).router(qualification: .bundled).factsModels.isEmpty)
     }
 
     // MARK: Stored settings
