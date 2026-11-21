@@ -52,8 +52,8 @@ enum FactsHarness {
         }
         struct Story: Decodable {
             let id: String
-            let memories: [Memory]
-            let orders: [[String]]?
+            var memories: [Memory]
+            var orders: [[String]]?
             var queries: [Query]?
             let timeline: [TimelineEntry]?
             let people: [String: Person]?
@@ -465,7 +465,7 @@ enum FactsHarness {
             }
         }
         if let replay {
-            for r in replay {
+            for r in replay where mems[r.memory] != nil {     // (trusted_only: an agent's memory left out)
                 let id = try add(r.memory)
                 fixtureIDs.withLock { $0 = fixtureID }
                 rp?.expect(r)

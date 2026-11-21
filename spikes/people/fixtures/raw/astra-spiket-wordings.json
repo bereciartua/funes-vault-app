@@ -1,0 +1,224 @@
+{
+  "stories": [
+    {
+      "set": "work13",
+      "id": "w01",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "For my 2023 paperwork, what name goes under employer for the salaried job?", "answer_org": "Alder Mapworks", "why": "The user's notes establish uninterrupted salaried employment at Alder Mapworks."},
+        {"id": "n2", "kind": "year", "query": "That illustration business I had going in 2020—name?", "answer_org": "Sidepath Studio", "why": "Sidepath Studio operated from June 2019 to October 2024."},
+        {"id": "n3", "kind": "previous", "query": "What's the salaried employer one further back from my current one?", "answer_org": "", "why": "No salaried employer preceding Alder Mapworks is recorded."},
+        {"id": "n4", "kind": "negative", "query": "Was Dockroom the place I rented space from?", "answer_org": "", "why": "This asks about a coworking purchase, not the user's employment."}
+      ]
+    },
+    {
+      "set": "work13",
+      "id": "w02",
+      "queries": [
+        {"id": "n1", "kind": "after", "query": "Once my first Cedar Press chapter was over and I'd finished studying, who hired me next?", "answer_org": "Rowan Radio", "why": "Rowan Radio was explicitly the first job after the initial Cedar Press stint."},
+        {"id": "n2", "kind": "current", "query": "Need the company name for my present editor gig.", "answer_org": "Cedar Press", "why": "The latest capture confirms the second Cedar Press stint is ongoing."},
+        {"id": "n3", "kind": "role_in_stint", "query": "Back in my original Cedar Press days, what was my title?", "answer_org": "", "why": "The first stint's title was staff writer; this is a role question."},
+        {"id": "n4", "kind": "negative", "query": "Who nudged me to claim that Paperjet Air fare?", "answer_org": "", "why": "This asks who gave an expense reminder, not where the user worked."}
+      ]
+    },
+    {
+      "set": "work13",
+      "id": "w03",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "Which company should I put against 2020 on my CV?", "answer_org": "Marlin Analytics", "why": "The user's continuous-employment account overrides the agent's Oxbow Grid claim."},
+        {"id": "n2", "kind": "after", "query": "When that long Marlin job finally ended, what company did I move to?", "answer_org": "Pine Signal", "why": "The next employer after Marlin Analytics was Pine Signal."},
+        {"id": "n3", "kind": "year", "query": "Can you pin down my employer on New Year's Day 2016?", "answer_org": "", "why": "The Marlin start is dated only to 2016, so employment on January 1 is unknown."},
+        {"id": "n4", "kind": "role_in_stint", "query": "What position was I holding at Marlin when I left in June 2022?", "answer_org": "", "why": "The user finished the Marlin stint as analytics lead."}
+      ]
+    },
+    {
+      "set": "work13",
+      "id": "w04",
+      "queries": [
+        {"id": "n1", "kind": "after", "query": "Al salir de Bruma Solar, ¿qué empresa me contrató?", "answer_org": "Puerto Datos", "why": "Puerto Datos followed Bruma Solar on the salaried track."},
+        {"id": "n2", "kind": "year", "query": "En 2018, ¿cómo se llamaba mi propio negocio de ilustración?", "answer_org": "Taller Orilla", "why": "Taller Orilla was the user's business; Cooperativa Marea was its client."},
+        {"id": "n3", "kind": "before", "query": "¿De qué empleo venía yo cuando entré en Bruma Solar?", "answer_org": "", "why": "The memories do not identify a job before Bruma Solar."},
+        {"id": "n4", "kind": "negative", "query": "Silla Azul, ¿era el coworking del taller o un cliente de ilustración?", "answer_org": "", "why": "This asks about a vendor's relationship to the studio, not a job."}
+      ]
+    },
+    {
+      "set": "work13",
+      "id": "w05",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "Trying to place an old payslip: who was I with in 2018?", "answer_org": "Copper Archive", "why": "The imported CV dates the Copper Archive stint to 2017–2018."},
+        {"id": "n2", "kind": "before", "query": "Which employer belongs just ahead of Copper Archive on my work history?", "answer_org": "Moss Ledger", "why": "Copper Archive was explicitly the next job after Moss Ledger."},
+        {"id": "n3", "kind": "no_answer", "query": "What was the very first employer I ever had?", "answer_org": "", "why": "The earliest recorded employer is not established as the user's first-ever employer."},
+        {"id": "n4", "kind": "role_in_stint", "query": "Copper Archive job title, pls?", "answer_org": "", "why": "The recorded Copper Archive role was cataloguer."}
+      ]
+    },
+    {
+      "set": "work13",
+      "id": "w06",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "Who was paying my day-job salary in 2022?", "answer_org": "Falcon Works", "why": "The uninterrupted Falcon Works stint overrides the agent's claimed move."},
+        {"id": "n2", "kind": "after", "query": "After the Falcon Works years, where did I take the next salaried position?", "answer_org": "Cobalt Rail", "why": "Cobalt Rail directly followed Falcon Works in September 2024."},
+        {"id": "n3", "kind": "role_in_stint", "query": "What did Cobalt Rail hire me as?", "answer_org": "", "why": "The Cobalt Rail title is maintenance planner."},
+        {"id": "n4", "kind": "negative", "query": "Who put me onto LedgerNest for bookkeeping?", "answer_org": "", "why": "This asks who recommended an accounting vendor."}
+      ]
+    },
+    {
+      "set": "work13",
+      "id": "w07",
+      "queries": [
+        {"id": "n1", "kind": "previous", "query": "The employer immediately preceding my current stint—what was its name?", "answer_org": "Violet Devices", "why": "Violet Devices preceded the ongoing second Hush Audio stint."},
+        {"id": "n2", "kind": "year", "query": "In autumn 2019, whose payroll was I on?", "answer_org": "Hush Audio Ltd.", "why": "The first Hush Audio Ltd. stint continued through June 2020."},
+        {"id": "n3", "kind": "before", "query": "Before I first got into Hush Audio, where had I been working?", "answer_org": "", "why": "No employment before the first Hush Audio stint is recorded."},
+        {"id": "n4", "kind": "role_in_stint", "query": "Had I become test lead by 2019 at Hush Audio, or was I still a junior tester?", "answer_org": "", "why": "The promotion to test lead occurred in March 2018 within the first stint."}
+      ]
+    },
+    {
+      "set": "work13",
+      "id": "w08",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "Para completar el CV: empresa en la que trabajaba en 2022?", "answer_org": "Río Servicio", "why": "The user's uninterrupted Río Servicio employment overrides the agent's Granito Pago claim."},
+        {"id": "n2", "kind": "before", "query": "Antes de mi etapa en Faro Cívico, ¿en qué empresa estaba?", "answer_org": "Nube Textil", "why": "Faro Cívico was explicitly the next job after Nube Textil."},
+        {"id": "n3", "kind": "role_in_stint", "query": "¿Qué puesto tenía yo en Nube Textil?", "answer_org": "", "why": "The Nube Textil role was analista de inventario."},
+        {"id": "n4", "kind": "negative", "query": "¿Cómo se llama mi hermana, la que me aconsejó guardar contratos después del parón?", "answer_org": "", "why": "This asks for the sister's name, not an employer."}
+      ]
+    },
+    {
+      "set": "work13",
+      "id": "w09",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "The salaried part of my work in 2021 was with which company?", "answer_org": "Arc Orchard Inc.", "why": "Arc Orchard Inc. remained the salaried employer alongside the freelance business."},
+        {"id": "n2", "kind": "year", "query": "What name was I trading under for freelance copywriting in spring 2023?", "answer_org": "Northline Notes", "why": "Northline Notes remained open until June 30, 2023."},
+        {"id": "n3", "kind": "after", "query": "Which freelance business did I run next after shutting Northline Notes?", "answer_org": "", "why": "No successor freelance business is recorded."},
+        {"id": "n4", "kind": "negative", "query": "What was I buying from CloudTrellis?", "answer_org": "", "why": "CloudTrellis supplied a software subscription; this is a purchase question."}
+      ]
+    },
+    {
+      "set": "work13",
+      "id": "w10",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "Who employed me during 2020? I'm filling a hole in my CV.", "answer_org": "Kite Civic", "why": "The imported work log places Kite Civic from July 2018 through August 2022."},
+        {"id": "n2", "kind": "after", "query": "Kite Civic ended, then I joined… which company?", "answer_org": "Fern Systems", "why": "Fern Systems followed Kite Civic in September 2022."},
+        {"id": "n3", "kind": "role_in_stint", "query": "Was my Fern Systems title support specialist or support engineer?", "answer_org": "", "why": "The Fern Systems role is support engineer."},
+        {"id": "n4", "kind": "negative", "query": "How long was that sabbatical after Sable Books?", "answer_org": "", "why": "This asks about the duration of a break, not which job the user held."}
+      ]
+    },
+    {
+      "set": "work13",
+      "id": "w11",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "What business was I working in throughout 2018?", "answer_org": "Hearth Route", "why": "The user states Hearth Route was their only work from 2016 through 2020."},
+        {"id": "n2", "kind": "after", "query": "Once I wrapped up Hearth Route, who hired me?", "answer_org": "Dune Kitchen", "why": "The user returned to Dune Kitchen in January 2021 after closing Hearth Route."},
+        {"id": "n3", "kind": "role_in_stint", "query": "At Dune Kitchen in 2014, what kind of chef was I?", "answer_org": "", "why": "The first Dune Kitchen stint was as prep chef."},
+        {"id": "n4", "kind": "negative", "query": "Those CoWork Grove invoices Mika found—what were they for?", "answer_org": "", "why": "The invoices concern desk rental, not employment."}
+      ]
+    },
+    {
+      "set": "work13",
+      "id": "w12",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "¿Qué empresa pongo para mi trabajo de 2017, usando su nombre actualizado?", "answer_org": "Prisma Archivo", "why": "Prisma Salud and Prisma Archivo are the same employer."},
+        {"id": "n2", "kind": "after", "query": "Cuando acabé en Prisma Archivo, ¿a qué empresa pasé?", "answer_org": "Cauce Digital", "why": "Cauce Digital was explicitly the next employer after Prisma Archivo."},
+        {"id": "n3", "kind": "no_answer", "query": "¿Dónde trabajaba yo en 2015?", "answer_org": "", "why": "The recorded employment history begins in 2016."},
+        {"id": "n4", "kind": "role_in_stint", "query": "Al terminar mi etapa en Prisma, ¿seguía de auxiliar o ya era responsable de archivo?", "answer_org": "", "why": "The promotion to responsable de archivo occurred in March 2019."}
+      ]
+    },
+    {
+      "set": "mixed",
+      "id": "x01",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "Employer for 2021, please—I'm updating the dates on my résumé.", "answer_org": "Lumen Quay", "why": "The 2021 promotion occurred within the uninterrupted Lumen Quay stint."},
+        {"id": "n2", "kind": "current", "query": "What's the company attached to my ongoing operations lead role?", "answer_org": "Cinder Arc", "why": "The operations lead job at Cinder Arc is the ongoing stint."},
+        {"id": "n3", "kind": "role_in_stint", "query": "What title did I have when I first arrived at Lumen Quay, before the promotion?", "answer_org": "", "why": "The original Lumen Quay title was operations analyst."},
+        {"id": "n4", "kind": "negative", "query": "Who went over the quarterly plan with me at Cinder Arc?", "answer_org": "", "why": "This asks about a meeting participant, not the user's employer."}
+      ]
+    },
+    {
+      "set": "mixed",
+      "id": "x02",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "En 2020, ¿para qué empresa trabajaba yo, no mi hermana?", "answer_org": "Faro Trama", "why": "The user worked at Faro Trama in 2020; Órbita Banco employed the sister."},
+        {"id": "n2", "kind": "current", "query": "Recuérdame el nombre de la empresa donde sigo de product lead.", "answer_org": "Salvia Red", "why": "The Salvia Red stint is ongoing in the memories."},
+        {"id": "n3", "kind": "role_in_stint", "query": "¿Qué cargo tenía en Brisa Nodo?", "answer_org": "", "why": "The Brisa Nodo role was analista de datos."},
+        {"id": "n4", "kind": "negative", "query": "¿Inés seguía en Órbita Banco cuando comimos con su amiga?", "answer_org": "", "why": "This concerns the sister's employment, not the user's."}
+      ]
+    },
+    {
+      "set": "mixed",
+      "id": "x03",
+      "queries": [
+        {"id": "n1", "kind": "current", "query": "What is my active web-design business called again?", "answer_org": "Small Current Studio", "why": "Small Current Studio is explicitly still active."},
+        {"id": "n2", "kind": "year", "query": "Back in 2017, which company had me on staff?", "answer_org": "Tern Kiln", "why": "Tern Kiln employed the user from 2016 through December 2018."},
+        {"id": "n3", "kind": "no_answer", "query": "Who employed me before I got into Tern Kiln?", "answer_org": "", "why": "No employment preceding Tern Kiln is recorded."},
+        {"id": "n4", "kind": "negative", "query": "Who's my accountant over at Ledger Wren?", "answer_org": "", "why": "This asks for the accountant's identity at a purchased service provider."}
+      ]
+    },
+    {
+      "set": "mixed",
+      "id": "x04",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "When I was renting that Common Reed desk in 2021, which company actually employed me?", "answer_org": "Morrow", "why": "The desk-rental note explicitly says the user remained employed at Morrow."},
+        {"id": "n2", "kind": "previous", "query": "What's the employer from my last job, before this research lead position?", "answer_org": "Morrow", "why": "Morrow preceded the research lead position at Vela Spindle."},
+        {"id": "n3", "kind": "role_in_stint", "query": "My title at Quartz Thimble—what was it?", "answer_org": "", "why": "The Quartz Thimble role was materials researcher."},
+        {"id": "n4", "kind": "negative", "query": "Did Jules Flint stay at Morrow after I moved on?", "answer_org": "", "why": "This asks about Jules Flint's employment, not the user's."}
+      ]
+    },
+    {
+      "set": "mixed",
+      "id": "x05",
+      "queries": [
+        {"id": "n1", "kind": "after", "query": "When my first North Kestrel stint ended in 2018, where did I land next?", "answer_org": "Copper Delta", "why": "Copper Delta began in June 2018 after the first North Kestrel stint."},
+        {"id": "n2", "kind": "year", "query": "Which company was I with in 2023?", "answer_org": "North Kestrel", "why": "The second North Kestrel stint began in January 2021 and continued."},
+        {"id": "n3", "kind": "year", "query": "Where exactly was I employed on 1 February 2016?", "answer_org": "", "why": "The first North Kestrel start is specified only to the year."},
+        {"id": "n4", "kind": "role_in_stint", "query": "When I came back to North Kestrel in 2021, was I already a senior technician?", "answer_org": "", "why": "The user returned as technician and became senior technician in May 2022."}
+      ]
+    },
+    {
+      "set": "mixed",
+      "id": "x06",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "In 2021, what was the name of my own illustration business?", "answer_org": "Night Orchard Studio", "why": "Night Orchard Studio was the user's business; Reed Parcel was its client."},
+        {"id": "n2", "kind": "after", "query": "Leaving Harbor Wisp meant starting my next full-time gig where?", "answer_org": "Dune Relay", "why": "Dune Relay followed Harbor Wisp on the full-time employment track."},
+        {"id": "n3", "kind": "role_in_stint", "query": "What QA title did I have at Moss Circuit?", "answer_org": "", "why": "The Moss Circuit role was full-time QA tester."},
+        {"id": "n4", "kind": "negative", "query": "Who was my contact for the Reed Parcel illustration project?", "answer_org": "", "why": "This asks for a client contact, not an employer."}
+      ]
+    },
+    {
+      "set": "mixed",
+      "id": "x07",
+      "queries": [
+        {"id": "n1", "kind": "before", "query": "Looking back from Slate Tidal, what was my last paid workplace before the year off?", "answer_org": "Amber Purl", "why": "Amber Purl preceded the 2019 break and the subsequent Slate Tidal job."},
+        {"id": "n2", "kind": "year", "query": "Who was I working for during 2021?", "answer_org": "Slate Tidal", "why": "Slate Tidal employed the user from 2020 to November 2022."},
+        {"id": "n3", "kind": "role_in_stint", "query": "Was I a laboratory assistant or coordinator at Slate Tidal?", "answer_org": "", "why": "The Slate Tidal title was laboratory coordinator."},
+        {"id": "n4", "kind": "negative", "query": "Who kept the old Slate Tidal rota?", "answer_org": "", "why": "This asks who retained a document, not which job the user held."}
+      ]
+    },
+    {
+      "set": "mixed",
+      "id": "x08",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "Company on my payslips in 2022?", "answer_org": "Plum Transit", "why": "Plum Transit employed the user from January 2019 through June 2024."},
+        {"id": "n2", "kind": "after", "query": "Where did I take the scheduling lead job once Plum Transit was over?", "answer_org": "Ember Nacre", "why": "The user joined Ember Nacre as scheduling lead in July 2024."},
+        {"id": "n3", "kind": "role_in_stint", "query": "What was my job title back at Birch Helix?", "answer_org": "", "why": "The Birch Helix role was route planner."},
+        {"id": "n4", "kind": "negative", "query": "The Sasha at Opal Anchor—is that Quinn or Wynn?", "answer_org": "", "why": "This asks which other person works at Opal Anchor."}
+      ]
+    },
+    {
+      "set": "mixed",
+      "id": "x09",
+      "queries": [
+        {"id": "n1", "kind": "current", "query": "What's the company behind my full-time editing job now?", "answer_org": "Rill Summit", "why": "Rill Summit is the ongoing full-time employer from January 2022."},
+        {"id": "n2", "kind": "year", "query": "Which of my 2020 jobs had Karim Rook as my manager?", "answer_org": "Wren Array", "why": "Karim Rook identifies the Wren Array track among the concurrent jobs."},
+        {"id": "n3", "kind": "no_answer", "query": "Which company was I working at under the manager who suggested that scenic train route?", "answer_org": "", "why": "The recommendation does not identify which of the two concurrent managers gave it."},
+        {"id": "n4", "kind": "negative", "query": "Was Beryl Ledger where Nell worked?", "answer_org": "", "why": "This concerns the parent's employment, not the user's."}
+      ]
+    },
+    {
+      "set": "mixed",
+      "id": "x10",
+      "queries": [
+        {"id": "n1", "kind": "year", "query": "I need the employer name for my 2020 work history entry.", "answer_org": "Juniper Spoke", "why": "The Juniper Spoke stint ran from January 2019 through April 2021."},
+        {"id": "n2", "kind": "current", "query": "Where am I doing the managing editor job these days?", "answer_org": "August Loom", "why": "The latest capture confirms the August Loom managing editor job is ongoing."},
+        {"id": "n3", "kind": "year", "query": "Can you tell who employed me in May 2021?", "answer_org": "", "why": "May falls between recorded stints, with no explicit account of work that month."},
+        {"id": "n4", "kind": "negative", "query": "What was my payment to Cedar Still Practice for?", "answer_org": "", "why": "This asks about a therapy purchase, not the user's employment."}
+      ]
+    }
+  ]
+}

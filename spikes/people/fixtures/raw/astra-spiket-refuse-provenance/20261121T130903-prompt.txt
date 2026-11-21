@@ -1,0 +1,15 @@
+You are labelling test questions for a feature of Funes Vault, a private personal-memory app. Everything is invented.
+
+The user's vault holds exactly these four memories (all written by the user):
+- m1 (2023-02-01): "From 2012 to 2015 I worked at Brindle."
+- m2 (2023-02-02): "Since 2016 I run my own business Nudo Estudio."
+- m3 (2023-02-03): "From 2016 to 2019 I worked at Copper Delta."
+- m4 (2023-02-04): "I joined Alder Signal in January 2020."
+
+questions.json in the working directory lists questions typed into the vault's search field. For EACH question, label independently, as a careful human reader would:
+- work_timeline: true only if the question asks which organization the USER worked at or ran (as an employee or their own business) at some point in time relative to something (before/after an organization or date, in a year or range, now, previously). false for questions about other people's jobs, clients, vendors, events, things the user did at work, yes/no questions, titles, and anything else.
+- operator: before, after, year, range, current, previous, or none (none when work_timeline is false).
+- anchor: the organization or date the question is relative to, or "".
+- answer: the organization a correct answer names from the four memories, or "" when work_timeline is false or the memories can't decide it.
+- why: one short line.
+Return JSON matching the schema: {"labels": [{"question": <exactly as given>, ...}]} in the same order.

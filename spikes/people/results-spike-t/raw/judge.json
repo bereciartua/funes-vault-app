@@ -1,0 +1,866 @@
+{
+"haiku|work13|w01|q4|1": {
+"verdict": "correct",
+"why": "m4 supports this: the user was promoted to senior GIS analyst on 1 April 2022, and the answer correctly sets aside m3's conflicting claim."
+},
+"haiku|work13|w01|q4|4": {
+"verdict": "correct",
+"why": "m4 backs the promotion to senior GIS analyst on 1 April 2022, and the answer was right to set aside the AI note (m3) that conflicts with the user's own notes."
+},
+"haiku|work13|w01|n4|1": {
+"verdict": "correct",
+"why": "m2 backs up the Dockroom coworking rental, and the answer is right that no memory says whether it ended."
+},
+"haiku|work13|w01|n4|4": {
+"verdict": "correct",
+"why": "Memory m2 (written October 2019) says the user rents coworking space at Dockroom, and the answer gets the date right."
+},
+"haiku|work13|w02|q4|1": {
+"verdict": "declined",
+"why": "The answer says it can't tell, which fits: the memories never mention a receipt or when expenses were filed."
+},
+"haiku|work13|w02|q4|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't show whether the receipt was saved, which is right: the only Paperjet Air note (m5) mentions claiming the fare, not a receipt or a filing date."
+},
+"haiku|work13|w02|n3|1": {
+"verdict": "correct",
+"why": "m1 says the user started at Cedar Press as a staff writer in January 2014, and m2 says that first stint ended on 31 May 2017."
+},
+"haiku|work13|w02|n3|4": {
+"verdict": "correct",
+"why": "m1 and m2 support it: the user was a staff writer in the first Cedar Press stint, January 2014 to 31 May 2017."
+},
+"haiku|work13|w02|n4|1": {
+"verdict": "correct",
+"why": "m5 says the user's sibling, Eli Moss, reminded them to claim the Paperjet Air fare."
+},
+"haiku|work13|w02|n4|4": {
+"verdict": "correct",
+"why": "m5 backs this up: the user's sibling Eli Moss reminded them to claim the fare, and Paperjet Air is only the airline."
+},
+"haiku|work13|w03|n4|1": {
+"verdict": "correct",
+"why": "The user's own note (m4) says they finished at Marlin as analytics lead on 30 June 2022, and m2 backs up the promotion and the name change. The agent note (m3) conflicts with this, but the user's later notes override it."
+},
+"haiku|work13|w03|n4|4": {
+"verdict": "correct",
+"why": "The user's own note m4 says they finished at Marlin as analytics lead on 30 June 2022, which the answer states; m3 (an AI agent's note saying they left in 2019) is outweighed by the user's own notes."
+},
+"haiku|work13|w04|q4|1": {
+"verdict": "declined",
+"why": "The answer says the memories give no amount and mention no meeting, and that's accurate. It declines instead of answering."
+},
+"haiku|work13|w04|q4|4": {
+"verdict": "declined",
+"why": "The answer says it can't tell the amount. That's right: the memories mention no payment amount and no meeting."
+},
+"haiku|work13|w04|n4|1": {
+"verdict": "correct",
+"why": "m5 says Silla Azul is the coworking space the user rents for the studio. It doesn't appear among the clients, Museo Lirio and Cooperativa Marea."
+},
+"haiku|work13|w04|n4|4": {
+"verdict": "correct",
+"why": "m5 says Silla Azul is the coworking space rented for the studio, and no memory lists it as a client."
+},
+"haiku|work13|w05|n4|1": {
+"verdict": "correct",
+"why": "Memories m2 and m5 both say the user's job at Copper Archive was cataloguer."
+},
+"haiku|work13|w05|n4|4": {
+"verdict": "correct",
+"why": "Both m2 and m5 say the user was a cataloguer at Copper Archive."
+},
+"haiku|work13|w06|q4|1": {
+"verdict": "correct",
+"why": "The user's own notes m1 and m4 both say technician. The answer also handles the conflicting end date in m3 correctly by going with the user's later note."
+},
+"haiku|work13|w06|q4|4": {
+"verdict": "correct",
+"why": "The user's own notes (m1, m4) say technician, and the answer correctly sets aside the conflicting agent note (m3)."
+},
+"haiku|work13|w06|n3|1": {
+"verdict": "correct",
+"why": "m4 backs up maintenance planner from 1 Sep 2024, and m5 confirms the user still works there."
+},
+"haiku|work13|w06|n3|4": {
+"verdict": "correct",
+"why": "m4, the user's own note, says Cobalt Rail took them on as a maintenance planner from 1 September 2024. The AI note in m3 about Jetty Power doesn't bear on this."
+},
+"haiku|work13|w06|n4|1": {
+"verdict": "correct",
+"why": "m5 says directly that the user's colleague Sol Ren recommended LedgerNest for bookkeeping."
+},
+"haiku|work13|w06|n4|4": {
+"verdict": "correct",
+"why": "m5 says directly that the user's colleague Sol Ren recommended LedgerNest."
+},
+"haiku|work13|w07|q4|1": {
+"verdict": "correct",
+"why": "m4 backs the claim that the user returned in January 2023 as quality manager, and m5 is consistent with it."
+},
+"haiku|work13|w07|q4|4": {
+"verdict": "correct",
+"why": "m4 says the user returned to Hush Audio in January 2023 as quality manager, and m5 confirms they still hold that title."
+},
+"haiku|work13|w07|n4|1": {
+"verdict": "correct",
+"why": "m2 says you were promoted to test lead in March 2018, and m3 shows you stayed until June 2020, so you were test lead throughout 2019."
+},
+"haiku|work13|w07|n4|4": {
+"verdict": "correct",
+"why": "m2 says the promotion to test lead came in March 2018, and m3 shows the user stayed at Hush Audio until mid-2020, so they were test lead by 2019."
+},
+"haiku|work13|w08|q4|1": {
+"verdict": "correct",
+"why": "m5 backs this up directly: after your pause, your sister Luz Fen advised you to keep your contracts."
+},
+"haiku|work13|w08|q4|4": {
+"verdict": "correct",
+"why": "m5 says directly that Luz Fen's advice after the user's break was to keep the contracts."
+},
+"haiku|work13|w08|n3|1": {
+"verdict": "correct",
+"why": "m1 backs this up: the user worked as an inventory analyst at Nube Textil from 2014 to 2016, and no other memory says otherwise."
+},
+"haiku|work13|w08|n3|4": {
+"verdict": "correct",
+"why": "m1 says analista de inventario, 2014–2016, and m2 says Faro Cívico came next. Every claim is supported."
+},
+"haiku|work13|w08|n4|1": {
+"verdict": "correct",
+"why": "La m5 dice que la hermana se llama Luz Fen y que le aconsejó guardar los contratos después de la pausa."
+},
+"haiku|work13|w08|n4|4": {
+"verdict": "correct",
+"why": "m5 says directly that the sister who gave the contracts advice after the break is Luz Fen."
+},
+"haiku|work13|w09|n4|1": {
+"verdict": "correct",
+"why": "m4 backs up that CloudTrellis was a software subscription for the writing business, and m2 shows that business was Northline Notes."
+},
+"haiku|work13|w09|n4|4": {
+"verdict": "correct",
+"why": "m4 backs up the software subscription, and m2 backs up that Northline Notes was the writing business."
+},
+"haiku|work13|w10|n3|1": {
+"verdict": "correct",
+"why": "m4 says the user joined Fern Systems as a support engineer, and m3 ties the support specialist title to Kite Civic."
+},
+"haiku|work13|w10|n3|4": {
+"verdict": "correct",
+"why": "m4 backs up support engineer at Fern Systems, and m3 shows support specialist was the Kite Civic title."
+},
+"haiku|work13|w10|n4|1": {
+"verdict": "correct",
+"why": "The user's own note m2 says the sabbatical ran from January to June 2018, which is about six months. The answer's other claims also match the memories."
+},
+"haiku|work13|w10|n4|4": {
+"verdict": "correct",
+"why": "m2 says the sabbatical ran from January to June 2018, which is six months, and m5's July 2018 start at Kite Civic fits that."
+},
+"haiku|work13|w11|n3|1": {
+"verdict": "correct",
+"why": "m1 says the user was a prep chef at Dune Kitchen from 2014 through 2015, and no other memory contradicts that."
+},
+"haiku|work13|w11|n3|4": {
+"verdict": "correct",
+"why": "m1 says directly that the user was a prep chef at Dune Kitchen from 2014 through 2015."
+},
+"haiku|work13|w11|n4|1": {
+"verdict": "correct",
+"why": "m5 says CoWork Grove was the desk-rental company used while freelancing, so the invoices were for desk rental. Every claim is supported."
+},
+"haiku|work13|w11|n4|4": {
+"verdict": "correct",
+"why": "m5 backs up the desk-rental purpose and that Mika found the invoices. The 2016–2020 freelancing dates come from m2 and m4, the user's own later note, which replaces the AI note in m3."
+},
+"haiku|work13|w12|n4|1": {
+"verdict": "correct",
+"why": "Las memorias m2 y m3 respaldan la respuesta: al usuario lo ascendieron a responsable de archivo en marzo de 2019 y siguió en la empresa hasta el 30 de junio de 2022."
+},
+"haiku|work13|w12|n4|4": {
+"verdict": "correct",
+"why": "The memories back every claim: the user was promoted to responsable de archivo in March 2019 and left Prisma in June 2022, so they held that role when they left."
+},
+"haiku|mixed|x01|q3|1": {
+"verdict": "declined",
+"why": "The answer correctly says the memories don't cover Priya Sen's earlier work."
+},
+"haiku|mixed|x01|q3|4": {
+"verdict": "declined",
+"why": "The answer correctly says the memories don't cover Priya's work before Lumen Quay. Pebble Loom was the user's job, not hers."
+},
+"haiku|mixed|x01|n3|1": {
+"verdict": "correct",
+"why": "Memories m2 and m3 back this up: the user started as an operations analyst in March 2019 and was promoted in June 2021."
+},
+"haiku|mixed|x01|n3|4": {
+"verdict": "correct",
+"why": "m2 and m3 back this up: the user joined Lumen Quay as an operations analyst in March 2019 and was promoted in June 2021."
+},
+"haiku|mixed|x01|n4|1": {
+"verdict": "wrong",
+"why": "In m5, \"the user Vale\" refers to the user, so Mateo Ives went over the plan with them. The answer wrongly names Vale as a separate person."
+},
+"haiku|mixed|x01|n4|4": {
+"verdict": "declined",
+"why": "The answer says it isn't sure. But m5 says the user (\"the user Vale\") reviewed the plan with Mateo Ives, so the right answer was Mateo Ives."
+},
+"haiku|mixed|x02|q3|1": {
+"verdict": "correct",
+"why": "m2 says Inés has worked at Órbita Banco since 2017, and m3 confirms she was still there in 2020. The answer's \"tú mismo\" is masculine although m3 (\"comimos juntas\") suggests the user is a woman, but that's a wording slip, not a factual claim."
+},
+"haiku|mixed|x02|q3|4": {
+"verdict": "correct",
+"why": "m2 backs the 2017 start date, and m3 and m5 confirm she was still there later."
+},
+"haiku|mixed|x02|n3|1": {
+"verdict": "correct",
+"why": "m1 backs this up: the user was a data analyst (analista de datos) at Brisa Nodo from 2016 to 2018, and the answer correctly says it comes from an imported note."
+},
+"haiku|mixed|x02|n3|4": {
+"verdict": "correct",
+"why": "m1 directly says the user was a data analyst (\"analista de datos\") at Brisa Nodo from 2016 to 2018."
+},
+"haiku|mixed|x02|n4|1": {
+"verdict": "correct",
+"why": "La nota m3 (14/06/2020) dice que la hermana sigue en Órbita Banco y registra la comida con su amiga ese mismo día, y m2 respalda que estaba allí desde 2017."
+},
+"haiku|mixed|x02|n4|4": {
+"verdict": "correct",
+"why": "In m3, written by the user on 2020-06-14, the user says the sister was still at Órbita Banco and mentions eating with her friend that same day. m2 backs up that she had been there since 2017."
+},
+"haiku|mixed|x03|q3|1": {
+"verdict": "declined",
+"why": "The answer says the memories don't cover Lina Moss's earlier work, and that's true. The details it adds about her are supported by m3."
+},
+"haiku|mixed|x03|q3|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't cover Lina Moss's earlier history, and that's accurate. Its supporting claims match m3."
+},
+"haiku|mixed|x03|n4|1": {
+"verdict": "correct",
+"why": "m5 says Bea Holt is the user's accountant at Ledger Wren, so the answer is supported."
+},
+"haiku|mixed|x03|n4|4": {
+"verdict": "correct",
+"why": "m5 says Bea Holt is the user's accountant at Ledger Wren, and every claim is supported by it."
+},
+"haiku|mixed|x04|q3|1": {
+"verdict": "declined",
+"why": "The answer says the memories don't record what friend Morrow did before the flight, and it correctly keeps the friend separate from the company."
+},
+"haiku|mixed|x04|q3|4": {
+"verdict": "correct",
+"why": "m3 supports that friend Morrow bought a Cloud Plover Air ticket alongside the user, and the answer correctly treats the friend as separate from the company; the January 2020 date is a small inference from when the memory was written."
+},
+"haiku|mixed|x04|n3|1": {
+"verdict": "correct",
+"why": "m1 says the user worked as a materials researcher at Quartz Thimble from 2016 to 2018."
+},
+"haiku|mixed|x04|n3|4": {
+"verdict": "correct",
+"why": "m1 says the user was a materials researcher at Quartz Thimble from 2016 to 2018, which supports the answer."
+},
+"haiku|mixed|x04|n4|1": {
+"verdict": "correct",
+"why": "m5 says Jules Flint stayed at the furniture company after the user left, and m2 identifies Morrow as the furniture company."
+},
+"haiku|mixed|x04|n4|4": {
+"verdict": "correct",
+"why": "m5 says Jules Flint stayed at the furniture company (Morrow) after the user left in December 2022, and m2 backs up that they were colleagues."
+},
+"haiku|mixed|x05|q3|1": {
+"verdict": "declined",
+"why": "The answer says the memories don't show where Ada Pell worked before North Kestrel, and that's accurate."
+},
+"haiku|mixed|x05|q3|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't record where Ada Pell worked before, which is right: m1 only names her as the user's manager."
+},
+"haiku|mixed|x05|n4|1": {
+"verdict": "correct",
+"why": "m3 says the user rejoined as a technician in January 2021, and m4 places the senior technician promotion in May 2022."
+},
+"haiku|mixed|x05|n4|4": {
+"verdict": "correct",
+"why": "m3 shows the user rejoined as a technician in Jan 2021, and m4 shows the promotion to senior technician came in May 2022."
+},
+"haiku|mixed|x06|q3|1": {
+"verdict": "declined",
+"why": "The answer says the memories don't cover Cora Finch's background, and that's true. The context it adds is backed by m4."
+},
+"haiku|mixed|x06|q3|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't cover Cora Finch's history before Reed Parcel, and that's accurate."
+},
+"haiku|mixed|x06|n3|1": {
+"verdict": "correct",
+"why": "m1 says the user was a QA tester at Moss Circuit, full-time from 2016 to 2018."
+},
+"haiku|mixed|x06|n3|4": {
+"verdict": "correct",
+"why": "m1 says the user worked at Moss Circuit as a QA tester from 2016 through 2018, which matches the answer."
+},
+"haiku|mixed|x06|n4|1": {
+"verdict": "correct",
+"why": "m4 supports Cora Finch as the Reed Parcel client contact, and it also supports the project dates."
+},
+"haiku|mixed|x06|n4|4": {
+"verdict": "correct",
+"why": "m4 names Cora Finch as the client contact for the Reed Parcel illustration project, and the answer's other claims match m4 too."
+},
+"haiku|mixed|x07|q3|1": {
+"verdict": "declined",
+"why": "The answer correctly says the memories don't give Elena Voss's employer before Slate Tidal."
+},
+"haiku|mixed|x07|q3|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't name Elena's earlier employer, which is accurate."
+},
+"haiku|mixed|x07|n3|1": {
+"verdict": "correct",
+"why": "m3 says the user joined Slate Tidal as laboratory coordinator, and m1 ties the assistant title to Amber Purl."
+},
+"haiku|mixed|x07|n3|4": {
+"verdict": "correct",
+"why": "m3 says the user was a laboratory coordinator at Slate Tidal, and m1 places the assistant role at Amber Purl."
+},
+"haiku|mixed|x07|n4|1": {
+"verdict": "correct",
+"why": "m3 backs this up: it is the user's Slate Tidal note and says their former colleague Elena Voss kept the old rota."
+},
+"haiku|mixed|x07|n4|4": {
+"verdict": "correct",
+"why": "m3, which the user wrote, places the old rota at Slate Tidal and says Elena Voss kept it."
+},
+"haiku|mixed|x08|q3|1": {
+"verdict": "declined",
+"why": "The answer says the memories don't record what Oren Pike did before bringing the cake, which is true, so it declines to answer."
+},
+"haiku|mixed|x08|q3|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't record what Oren Pike did before the cake, which is accurate. It does get two side details wrong: 2021-09-22 is only the date the note was written, and Mara Fen is no longer the user's manager."
+},
+"haiku|mixed|x08|n3|1": {
+"verdict": "correct",
+"why": "m1 directly says the user worked at Birch Helix as a route planner from 2016 to 2018."
+},
+"haiku|mixed|x08|n3|4": {
+"verdict": "correct",
+"why": "Memory m1 says the user was a route planner at Birch Helix from 2016 to 2018, which matches the answer."
+},
+"haiku|mixed|x08|n4|1": {
+"verdict": "correct",
+"why": "m3 says Sasha Wynn works for Opal Anchor and Sasha Quinn is a colleague at Plum Transit."
+},
+"haiku|mixed|x08|n4|4": {
+"verdict": "correct",
+"why": "m3 says Sasha Wynn works for Opal Anchor, and Sasha Quinn is a colleague at Plum Transit."
+},
+"haiku|mixed|x09|q3|1": {
+"verdict": "declined",
+"why": "The answer correctly says the memories don't name an earlier employer for Nell Vale."
+},
+"haiku|mixed|x09|q3|4": {
+"verdict": "declined",
+"why": "The answer correctly says the memories don't record where Nell Vale worked before Beryl Ledger."
+},
+"haiku|mixed|x09|n4|1": {
+"verdict": "correct",
+"why": "m4 says Nell Vale works at Beryl Ledger, which supports the answer, and the answer is careful to tie it to 2021."
+},
+"haiku|mixed|x09|n4|4": {
+"verdict": "correct",
+"why": "m4 says Nell Vale works at Beryl Ledger. The answer says yes and correctly limits it to the time of the March 2021 note."
+},
+"haiku|mixed|x10|q3|1": {
+"verdict": "declined",
+"why": "The answer correctly says the memories don't cover what the mother did before Silk Orbit, so it declines."
+},
+"haiku|mixed|x10|q3|4": {
+"verdict": "declined",
+"why": "The answer correctly says the memories don't record the mother's job before Silk Orbit."
+},
+"haiku|mixed|x10|n4|1": {
+"verdict": "correct",
+"why": "m5 backs this up: the payment was for the appointment where Jo Fern helped the user prepare for a difficult conversation."
+},
+"haiku|mixed|x10|n4|4": {
+"verdict": "correct",
+"why": "m5 backs this up: the payment was for the appointment where therapist Jo Fern helped the user prepare for a difficult conversation, and the answer is careful not to overstate that link."
+},
+"haiku|workt|t01|q6|1": {
+"verdict": "correct",
+"why": "m1 backs this up: the user started as an analyst and became senior analyst in March 2017, during the 2016–2018 stint."
+},
+"haiku|workt|t01|q6|4": {
+"verdict": "correct",
+"why": "m1 backs this up: the first stint ran Feb 2016 to Jun 2018, and the user started as analyst and became senior analyst in Mar 2017."
+},
+"haiku|workt|t02|q6|1": {
+"verdict": "declined",
+"why": "The answer says it can't tell, and that's right: the memories never give Harbor Rooms' opening hours."
+},
+"haiku|workt|t02|q6|4": {
+"verdict": "declined",
+"why": "The answer says correctly that the memories don't give Harbor Rooms' hours, so it declines rather than answering yes or no."
+},
+"haiku|workt|t03|q6|1": {
+"verdict": "declined",
+"why": "The answer says it has no information about Solera's typeface or a logo change. That's accurate, since no memory mentions either."
+},
+"haiku|workt|t03|q6|4": {
+"verdict": "declined",
+"why": "The answer correctly says it can't answer: no memory mentions Solera's typeface or a logo change."
+},
+"haiku|workt|t04|q6|1": {
+"verdict": "declined",
+"why": "The answer says it can't tell the order. That's fair, since m3 gives no date for the payment or the filing."
+},
+"haiku|workt|t04|q6|4": {
+"verdict": "declined",
+"why": "The answer says it can't tell, and that's fair: m3 gives no dates for the payment or the filing."
+},
+"haiku|workt|t05|q6|1": {
+"verdict": "correct",
+"why": "m3 says the user was promoted to service design lead in April 2022 during the second Bracken stint, and m5 confirms it's still the title."
+},
+"haiku|workt|t05|q6|4": {
+"verdict": "correct",
+"why": "m3 backs this up: in the second stint the user was promoted to service design lead in April 2022, and m5 confirms that title."
+},
+"terra|work13|w01|q4|1": {
+"verdict": "correct",
+"why": "m4 says the user was promoted to senior GIS analyst on 1 April 2022, and m5 backs this up. The AI note in m3 claiming the user left is outweighed by the user's own later entries."
+},
+"terra|work13|w01|q4|4": {
+"verdict": "correct",
+"why": "m4 says the user was promoted to senior GIS analyst on 1 April 2022, and m5 backs this up. m3's claim that the user left in 2020 is outweighed by the user's own later notes."
+},
+"terra|work13|w01|n4|1": {
+"verdict": "correct",
+"why": "m2 directly says the user rented coworking space at Dockroom."
+},
+"terra|work13|w01|n4|4": {
+"verdict": "correct",
+"why": "m2 says the user rents coworking space at Dockroom, so the answer is backed by that memory."
+},
+"terra|work13|w02|q4|1": {
+"verdict": "declined",
+"why": "The answer says it can't tell, and that's right: the memories never mention saving a receipt or filing expenses."
+},
+"terra|work13|w02|q4|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't cover it, and that's true: they don't mention saving the receipt or filing expenses."
+},
+"terra|work13|w02|n3|1": {
+"verdict": "correct",
+"why": "Memory m1 says the user started at Cedar Press in January 2014 as a staff writer, so that was their title in the first stint."
+},
+"terra|work13|w02|n3|4": {
+"verdict": "correct",
+"why": "m1 shows the user started their first stint at Cedar Press as a staff writer, which supports the answer."
+},
+"terra|work13|w02|n4|1": {
+"verdict": "correct",
+"why": "m5 says the user's sibling Eli Moss reminded them to claim the Paperjet Air fare."
+},
+"terra|work13|w02|n4|4": {
+"verdict": "correct",
+"why": "m5 says the user's sibling Eli Moss reminded them to claim the Paperjet Air fare, which matches the answer."
+},
+"terra|work13|w03|n4|1": {
+"verdict": "correct",
+"why": "m4 says the user left Marlin Analytics on 30 June 2022 as analytics lead. m3's earlier departure date conflicts with this, but the user's own later note overrides it."
+},
+"terra|work13|w03|n4|4": {
+"verdict": "correct",
+"why": "The user's own note m4 says they finished at Marlin Analytics as analytics lead on 30 June 2022. The agent note m3 says they left in 2019, but the user's later notes m2 and m4 override it."
+},
+"terra|work13|w04|q4|1": {
+"verdict": "declined",
+"why": "The answer says the payment amount isn't recorded. The memories mention a Silla Azul invoice but give no amount and no meeting."
+},
+"terra|work13|w04|q4|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't give the amount; they only mention an invoice from Silla Azul, with no amount and no meeting."
+},
+"terra|work13|w04|n4|1": {
+"verdict": "correct",
+"why": "m5 says Silla Azul is the coworking space the user rents for the studio, in the same note as Taller Orilla, and no memory lists it as a client."
+},
+"terra|work13|w04|n4|4": {
+"verdict": "correct",
+"why": "m5 calls Silla Azul the coworking space rented for the studio, in the same note as Taller Orilla, and no memory lists it as a client."
+},
+"terra|work13|w05|n4|1": {
+"verdict": "correct",
+"why": "Both m2 and m5 say the user was a cataloguer at Copper Archive."
+},
+"terra|work13|w05|n4|4": {
+"verdict": "correct",
+"why": "The user's note m2 says the Copper Archive job was cataloguer, and the imported CV entry m5 agrees."
+},
+"terra|work13|w06|q4|1": {
+"verdict": "correct",
+"why": "m1 and m4 both say the user's title at Falcon Works was technician."
+},
+"terra|work13|w06|q4|4": {
+"verdict": "correct",
+"why": "m1 and m4 both say the user worked at Falcon Works as a technician. The AI note in m3 only conflicts on dates, not the title."
+},
+"terra|work13|w06|n3|1": {
+"verdict": "correct",
+"why": "m4 says Cobalt Rail took the user on as a maintenance planner from 1 September 2024, and m5 confirms they still work there."
+},
+"terra|work13|w06|n3|4": {
+"verdict": "correct",
+"why": "m4 backs this up: maintenance planner at Cobalt Rail from 1 September 2024. m3 names a different employer and is out of date."
+},
+"terra|work13|w06|n4|1": {
+"verdict": "correct",
+"why": "Memory m5 says the user's colleague Sol Ren recommended LedgerNest."
+},
+"terra|work13|w06|n4|4": {
+"verdict": "correct",
+"why": "m5 says directly that the user's colleague Sol Ren recommended LedgerNest for bookkeeping."
+},
+"terra|work13|w07|q4|1": {
+"verdict": "correct",
+"why": "m4 says the user went back to Hush Audio in January 2023 as quality manager, and m5 backs this up."
+},
+"terra|work13|w07|q4|4": {
+"verdict": "correct",
+"why": "The answer is backed by m4: the user went back to Hush Audio in January 2023 as quality manager, and m5 agrees."
+},
+"terra|work13|w07|n4|1": {
+"verdict": "correct",
+"why": "m2 shows the promotion to test lead in March 2018, before 2019, and m1 shows the user started as a junior tester in 2015."
+},
+"terra|work13|w07|n4|4": {
+"verdict": "correct",
+"why": "m2 says you were promoted to test lead in March 2018 with no break in employment, so you were already test lead in 2019."
+},
+"terra|work13|w08|q4|1": {
+"verdict": "correct",
+"why": "m5 says directly that Luz Fen's advice after the pause was to keep the contracts."
+},
+"terra|work13|w08|q4|4": {
+"verdict": "correct",
+"why": "m5 says directly that Luz Fen's advice after the break was to keep the contracts."
+},
+"terra|work13|w08|n3|1": {
+"verdict": "correct",
+"why": "m1 says directly that the user worked at Nube Textil as an inventory analyst (analista de inventario)."
+},
+"terra|work13|w08|n3|4": {
+"verdict": "correct",
+"why": "m1 backs this up directly: the user was an inventory analyst at Nube Textil from 2014 to 2016."
+},
+"terra|work13|w08|n4|1": {
+"verdict": "correct",
+"why": "En m5 la usuaria dice que su hermana es Luz Fen y que le aconsejó guardar los contratos después de su pausa."
+},
+"terra|work13|w08|n4|4": {
+"verdict": "correct",
+"why": "m5 says the sister is Luz Fen and that she gave the advice to keep the contracts after the user's break."
+},
+"terra|work13|w09|n4|1": {
+"verdict": "correct",
+"why": "Memory m4 backs this up directly: CloudTrellis was the software subscription the user bought for the writing business."
+},
+"terra|work13|w09|n4|4": {
+"verdict": "correct",
+"why": "m4 says CloudTrellis was a software subscription for the writing business, and m2 identifies that business as Northline Notes."
+},
+"terra|work13|w10|n3|1": {
+"verdict": "correct",
+"why": "m4 says the user joined Fern Systems as a support engineer; support specialist was their Kite Civic title."
+},
+"terra|work13|w10|n3|4": {
+"verdict": "correct",
+"why": "m4 says the user joined Fern Systems as a support engineer. Support specialist was their title at Kite Civic."
+},
+"terra|work13|w10|n4|1": {
+"verdict": "correct",
+"why": "m2 says the sabbatical ran January–June 2018, which is six months. m5 has Kite Civic starting in July 2018, which fits."
+},
+"terra|work13|w10|n4|4": {
+"verdict": "correct",
+"why": "m2 says the sabbatical ran January–June 2018, which is six months. That fits with the Kite Civic start in July 2018 (m5)."
+},
+"terra|work13|w11|n3|1": {
+"verdict": "correct",
+"why": "m1 says the user was a prep chef at Dune Kitchen from 2014 through 2015."
+},
+"terra|work13|w11|n3|4": {
+"verdict": "correct",
+"why": "m1 says the user was a prep chef at Dune Kitchen from 2014 through 2015, which backs the answer directly."
+},
+"terra|work13|w11|n4|1": {
+"verdict": "correct",
+"why": "m5 backs this up: CoWork Grove was the desk-rental company the user used while freelancing, so the invoices were for desk rental."
+},
+"terra|work13|w11|n4|4": {
+"verdict": "correct",
+"why": "m5 says CoWork Grove was the desk-rental company the user used while freelancing, and m2/m4 show that freelancing was Hearth Route."
+},
+"terra|work13|w12|n4|1": {
+"verdict": "correct",
+"why": "m3 and m2 back this up: the user left Prisma Archivo on 30/06/2022 and had been promoted to responsable de archivo on 15/03/2019."
+},
+"terra|work13|w12|n4|4": {
+"verdict": "correct",
+"why": "Las memorias m2 y m3 respaldan la respuesta: el ascenso a responsable de archivo fue el 15 de marzo de 2019 y la etapa en Prisma terminó el 30 de junio de 2022."
+},
+"terra|mixed|x01|q3|1": {
+"verdict": "declined",
+"why": "The answer is empty and makes no claims, so I'm counting it as a decline. The memories don't cover Priya Sen's earlier work anyway."
+},
+"terra|mixed|x01|q3|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't cover Priya Sen's past, and that's accurate: none of them mention it."
+},
+"terra|mixed|x01|n3|1": {
+"verdict": "correct",
+"why": "m2 says the user joined Lumen Quay as an operations analyst, and m3 confirms the later promotion to senior operations analyst."
+},
+"terra|mixed|x01|n3|4": {
+"verdict": "correct",
+"why": "m2 says the user joined Lumen Quay as an operations analyst, and m3 says the promotion to senior came in June 2021."
+},
+"terra|mixed|x01|n4|1": {
+"verdict": "correct",
+"why": "m5 says the user (Vale) went over the quarterly plan with their manager Mateo Ives at Cinder Arc, so the answer matches."
+},
+"terra|mixed|x01|n4|4": {
+"verdict": "correct",
+"why": "m5 says the user went over the quarterly plan with their manager Mateo Ives at Cinder Arc, and the answer correctly notes this comes from an AI agent's note."
+},
+"terra|mixed|x02|q3|1": {
+"verdict": "correct",
+"why": "m2 says the sister has worked at Órbita Banco since 2017, which matches the answer."
+},
+"terra|mixed|x02|q3|4": {
+"verdict": "correct",
+"why": "m2 dice que Inés trabaja en Órbita Banco desde 2017."
+},
+"terra|mixed|x02|n3|1": {
+"verdict": "correct",
+"why": "m1 says the user worked at Brisa Nodo as a data analyst (analista de datos)."
+},
+"terra|mixed|x02|n3|4": {
+"verdict": "correct",
+"why": "m1 says the user worked at Brisa Nodo as a data analyst (analista de datos)."
+},
+"terra|mixed|x02|n4|1": {
+"verdict": "correct",
+"why": "La memoria m3 dice que la hermana seguía en Órbita Banco el mismo día de la comida con su amiga, así que la respuesta está respaldada."
+},
+"terra|mixed|x02|n4|4": {
+"verdict": "correct",
+"why": "La m3 dice que Inés seguía en Órbita Banco el mismo día de la comida con su amiga."
+},
+"terra|mixed|x03|q3|1": {
+"verdict": "declined",
+"why": "The answer says the memories don't cover what Lina Moss did before Alder Pantry, which is true; m3 only calls her a former client contact."
+},
+"terra|mixed|x03|q3|4": {
+"verdict": "declined",
+"why": "The answer says it can't tell, and the memories don't cover Lina Moss's earlier history."
+},
+"terra|mixed|x03|n4|1": {
+"verdict": "correct",
+"why": "m5 says directly that Bea Holt is the user's accountant at Ledger Wren."
+},
+"terra|mixed|x03|n4|4": {
+"verdict": "correct",
+"why": "m5 says directly that Bea Holt is the user's accountant at Ledger Wren."
+},
+"terra|mixed|x04|q3|1": {
+"verdict": "correct",
+"why": "m3 backs this up: the user's friend Morrow (not the company) bought tickets from Cloud Plover Air for a holiday."
+},
+"terra|mixed|x04|q3|4": {
+"verdict": "correct",
+"why": "m3 says the user's friend Morrow bought tickets from Cloud Plover Air for a holiday, which answers the question."
+},
+"terra|mixed|x04|n3|1": {
+"verdict": "correct",
+"why": "m1 says the user worked as a materials researcher at Quartz Thimble."
+},
+"terra|mixed|x04|n3|4": {
+"verdict": "correct",
+"why": "m1 says the user was a materials researcher at Quartz Thimble."
+},
+"terra|mixed|x04|n4|1": {
+"verdict": "correct",
+"why": "m5 says the user left Morrow in December 2022 and Jules Flint stayed at the furniture company, which m2 identifies as Morrow."
+},
+"terra|mixed|x04|n4|4": {
+"verdict": "correct",
+"why": "m5 says Jules Flint stayed at the furniture company, and m2 shows that company is Morrow, so the answer is supported."
+},
+"terra|mixed|x05|q3|1": {
+"verdict": "declined",
+"why": "The answer is empty and makes no claims. The memories also never say where Ada Pell worked before North Kestrel."
+},
+"terra|mixed|x05|q3|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't give Ada Pell's earlier employer, which is accurate."
+},
+"terra|mixed|x05|n4|1": {
+"verdict": "correct",
+"why": "m3 and m4 back this up: the user rejoined as a technician in January 2021 and was promoted to senior technician in May 2022."
+},
+"terra|mixed|x05|n4|4": {
+"verdict": "correct",
+"why": "m3 and m4 back it up: the user rejoined as a technician in January 2021 and was promoted to senior technician in May 2022."
+},
+"terra|mixed|x06|q3|1": {
+"verdict": "declined",
+"why": "The answer says the memories don't cover Cora Finch's earlier work. That's accurate, since m4 only names her as the user's former client contact."
+},
+"terra|mixed|x06|q3|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't cover Cora Finch's work before Reed Parcel, which is true. The one claim it makes is supported by m4."
+},
+"terra|mixed|x06|n3|1": {
+"verdict": "correct",
+"why": "Memory m1 says the user worked at Moss Circuit as a QA tester."
+},
+"terra|mixed|x06|n3|4": {
+"verdict": "correct",
+"why": "m1 says the user worked at Moss Circuit as a QA tester."
+},
+"terra|mixed|x06|n4|1": {
+"verdict": "correct",
+"why": "m4 names Cora Finch as the client contact for the Reed Parcel project."
+},
+"terra|mixed|x06|n4|4": {
+"verdict": "correct",
+"why": "Memory m4 names Cora Finch as the client contact on the Reed Parcel project."
+},
+"terra|mixed|x07|q3|1": {
+"verdict": "declined",
+"why": "The answer says the memories don't show where Elena Voss worked before Slate Tidal, and that's accurate since they don't record it."
+},
+"terra|mixed|x07|q3|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't cover this, and that's true: none of them mention where Elena Voss worked before Slate Tidal."
+},
+"terra|mixed|x07|n3|1": {
+"verdict": "correct",
+"why": "m3 says the user joined Slate Tidal as a laboratory coordinator in 2020 and left in November 2022, which matches the answer."
+},
+"terra|mixed|x07|n3|4": {
+"verdict": "correct",
+"why": "m3 says the user joined Slate Tidal as a laboratory coordinator; they were an assistant at Amber Purl, not Slate Tidal."
+},
+"terra|mixed|x07|n4|1": {
+"verdict": "correct",
+"why": "m3 says Elena Voss, a former colleague from Slate Tidal, kept the old rota."
+},
+"terra|mixed|x07|n4|4": {
+"verdict": "correct",
+"why": "m3 says Elena Voss, a former colleague from Slate Tidal, kept the old rota."
+},
+"terra|mixed|x08|q3|1": {
+"verdict": "declined",
+"why": "The answer says the memories don't record what Oren Pike did before he brought the cake, and that's accurate."
+},
+"terra|mixed|x08|q3|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't record what Oren Pike did before bringing the cake. That's true, so this counts as declining."
+},
+"terra|mixed|x08|n3|1": {
+"verdict": "correct",
+"why": "m1 says the user worked at Birch Helix as a route planner."
+},
+"terra|mixed|x08|n3|4": {
+"verdict": "correct",
+"why": "m1 says the user worked at Birch Helix as a route planner."
+},
+"terra|mixed|x08|n4|1": {
+"verdict": "correct",
+"why": "m3 says plainly that Sasha Wynn works for Opal Anchor."
+},
+"terra|mixed|x08|n4|4": {
+"verdict": "correct",
+"why": "m3 says Sasha Wynn works for Opal Anchor."
+},
+"terra|mixed|x09|q3|1": {
+"verdict": "declined",
+"why": "The answer correctly says the memories don't record where Nell Vale worked before Beryl Ledger."
+},
+"terra|mixed|x09|q3|4": {
+"verdict": "declined",
+"why": "The answer correctly says the memories don't record where Nell Vale worked before Beryl Ledger."
+},
+"terra|mixed|x09|n4|1": {
+"verdict": "correct",
+"why": "m4 says Nell Vale, the user's parent, works at Beryl Ledger, so the answer is supported."
+},
+"terra|mixed|x09|n4|4": {
+"verdict": "correct",
+"why": "m4 says outright that Nell Vale works at Beryl Ledger."
+},
+"terra|mixed|x10|q3|1": {
+"verdict": "declined",
+"why": "The answer correctly says the memories don't cover what the mother did before Silk Orbit, so it declines to answer."
+},
+"terra|mixed|x10|q3|4": {
+"verdict": "declined",
+"why": "The answer correctly says the memories don't cover what the mother did before Silk Orbit."
+},
+"terra|mixed|x10|n4|1": {
+"verdict": "correct",
+"why": "m5 backs it up: the payment covered the appointment with therapist Jo Fern, who helped the user prepare for a difficult conversation."
+},
+"terra|mixed|x10|n4|4": {
+"verdict": "correct",
+"why": "m5 says the payment to Cedar Still Practice was for the appointment with therapist Jo Fern."
+},
+"terra|workt|t01|q6|1": {
+"verdict": "correct",
+"why": "m1 backs this up: the user was promoted to senior analyst in March 2017, during the first Cedar stint."
+},
+"terra|workt|t01|q6|4": {
+"verdict": "correct",
+"why": "m1 says the user was promoted to senior analyst in March 2017, during the first Cedar stint."
+},
+"terra|workt|t02|q6|1": {
+"verdict": "declined",
+"why": "The answer says it doesn't know, and that's right: the memories never mention Harbor Rooms' opening hours."
+},
+"terra|workt|t02|q6|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't give Harbor Rooms' opening hours, and that's true."
+},
+"terra|workt|t03|q6|1": {
+"verdict": "declined",
+"why": "The answer says the memories don't cover Solera's typeface, and that's true: none of them mention it."
+},
+"terra|workt|t03|q6|4": {
+"verdict": "declined",
+"why": "The answer says the memories don't cover Solera's typeface, and that's right: nothing in them mentions a font or a logo change."
+},
+"terra|workt|t04|q6|1": {
+"verdict": "declined",
+"why": "The answer says the order can't be determined. That's fair: m3 gives no timing for the payment or for the filing."
+},
+"terra|workt|t04|q6|4": {
+"verdict": "declined",
+"why": "The answer says it can't tell. Note that it also dates the payment to 2020–2021, which m3 doesn't actually state."
+},
+"terra|workt|t05|q6|1": {
+"verdict": "correct",
+"why": "m3 says that in the second Bracken stint the user was promoted to service design lead in April 2022."
+},
+"terra|workt|t05|q6|4": {
+"verdict": "correct",
+"why": "m3 says that in the second Bracken stint the user was promoted to service design lead in April 2022."
+}
+}

@@ -234,8 +234,8 @@ def main():
         print(f"  resolvable: {row(r)}")
         if a.check:
             probs = check(data)
-            if name in ("work13", "canary13"):
-                probs += check_timeline(data, work=name == "work13")
+            if name in ("work13", "canary13", "workt", "workr"):
+                probs += check_timeline(data, work=name in ("work13", "workt", "workr"))
             print(f"  checks: {len(probs)} problem(s)")
             for p in probs:
                 print("   -", p)

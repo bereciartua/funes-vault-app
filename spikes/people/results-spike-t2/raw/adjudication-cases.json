@@ -1,0 +1,1647 @@
+[
+ {
+  "id": "r01/q3",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "I joined Cedar Metrics as analyst on 4 January 2016. Harbor Ledger was my previous employer.",
+    "written": "2016-01-04",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "The bus to the Cedar Metrics office now stops beside the bakery.",
+    "written": "2017-02-08",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "My manager, Mira Chen, moved our Cedar Metrics meeting to Thursday.",
+    "written": "2018-05-09",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "In March 2019 I started my freelance business, Loom Studio, as designer alongside my Cedar Metrics job.",
+    "written": "2019-03-28",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "Juniper Museum was my Loom Studio design client from January 2020 through December 2020.",
+    "written": "2021-01-07",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Bought a day pass from Desk Dock for a quiet place to finish work.",
+    "written": "2021-04-13",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "My sister saved the soup recipe from the Cedar Metrics office lunch.",
+    "written": "2021-07-19",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Rowan Vale left Cedar Metrics in 2021 and joined Quartz Analytics as director in 2021.",
+    "written": "2022-02-02",
+    "source": "agent"
+   },
+   {
+    "id": "m9",
+    "text": "My manager agreed to keep my salary negotiation private; my requested increase is 8%.",
+    "written": "2023-06-06",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "Imported CV: I worked at Harbor Ledger as clerk from 2014 to 2015.",
+    "written": "2025-08-14",
+    "source": "import"
+   },
+   {
+    "id": "m11",
+    "text": "Before work tomorrow, water the balcony herbs and pack the blue lunch box.",
+    "written": "2026-09-18",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "As of 31 October 2026, Cedar Metrics is still my day job, continuously since joining; I also still run Loom Studio.",
+    "written": "2026-10-31",
+    "source": "capture"
+   }
+  ],
+  "question": "Where was I employed on 2 January 2014?",
+  "label_answer": "",
+  "answers_given": [
+   "Harbor Ledger"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra B",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r02/q3",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "I joined Alder Labs as tester in 2014.",
+    "written": "2014-12-20",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "The Alder Labs payslip PDF needs a better filename.",
+    "written": "2015-02-03",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "My friend, Nia Park, lent me a puzzle for the train to work.",
+    "written": "2015-09-11",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "I left Alder Labs in 2016. My next employer was Beacon Works, where I joined as analyst in 2017.",
+    "written": "2017-12-28",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "I left Beacon Works in 2019. Throughout 2020 I studied full-time and had no job.",
+    "written": "2021-01-08",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Sky Finch sold me the flight for the work conference; keep the receipt.",
+    "written": "2021-02-05",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "My partner wants the old office chair for the sewing room.",
+    "written": "2021-02-09",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "I rejoined Alder Labs in March 2021 as engineer. This is my first job since Beacon Works.",
+    "written": "2021-03-31",
+    "source": "capture"
+   },
+   {
+    "id": "m9",
+    "text": "Told my friend that my private salary target is 92,000. Keep this out of the shared work notes.",
+    "written": "2022-02-14",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "On 15 March 2022 I became senior engineer at Alder Labs, a promotion within my second stint, which continues today.",
+    "written": "2026-09-04",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "After the Alder Labs meeting, collect the repaired bicycle.",
+    "written": "2026-09-18",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Imported 2017 diary: my first Alder Labs stint ended in 2016; Beacon Works was my next employer.",
+    "written": "2026-10-31",
+    "source": "import"
+   }
+  ],
+  "question": "Where did I work before Alder Labs?",
+  "label_answer": "",
+  "answers_given": [
+   "Beacon Works"
+  ],
+  "wrong_in": [
+   "haiku A",
+   "terra B",
+   "terra Bc-gold",
+   "terra Bc-live"
+  ]
+ },
+ {
+  "id": "r02/q7",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "I joined Alder Labs as tester in 2014.",
+    "written": "2014-12-20",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "The Alder Labs payslip PDF needs a better filename.",
+    "written": "2015-02-03",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "My friend, Nia Park, lent me a puzzle for the train to work.",
+    "written": "2015-09-11",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "I left Alder Labs in 2016. My next employer was Beacon Works, where I joined as analyst in 2017.",
+    "written": "2017-12-28",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "I left Beacon Works in 2019. Throughout 2020 I studied full-time and had no job.",
+    "written": "2021-01-08",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Sky Finch sold me the flight for the work conference; keep the receipt.",
+    "written": "2021-02-05",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "My partner wants the old office chair for the sewing room.",
+    "written": "2021-02-09",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "I rejoined Alder Labs in March 2021 as engineer. This is my first job since Beacon Works.",
+    "written": "2021-03-31",
+    "source": "capture"
+   },
+   {
+    "id": "m9",
+    "text": "Told my friend that my private salary target is 92,000. Keep this out of the shared work notes.",
+    "written": "2022-02-14",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "On 15 March 2022 I became senior engineer at Alder Labs, a promotion within my second stint, which continues today.",
+    "written": "2026-09-04",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "After the Alder Labs meeting, collect the repaired bicycle.",
+    "written": "2026-09-18",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Imported 2017 diary: my first Alder Labs stint ended in 2016; Beacon Works was my next employer.",
+    "written": "2026-10-31",
+    "source": "import"
+   }
+  ],
+  "question": "What came after my Alder Labs job?",
+  "label_answer": "",
+  "answers_given": [
+   "Beacon Works"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r03/q3",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "Before Grove Radio, I worked at Fern Press as editor. Those were consecutive jobs.",
+    "written": "2019-11-02",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "Guardé la taza de Fern Press después de salir; está junto a los libros.",
+    "written": "2019-11-03",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "Mi amiga, Lucía Vega, trajo pan antes de la reunión de trabajo.",
+    "written": "2019-11-05",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "Empecé en Grove Radio como productor en 2019.",
+    "written": "2019-12-20",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "My former employer Fern Press was also called Fern House; those names describe the same company and my one stint.",
+    "written": "2020-02-14",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "The Grove Radio deadline is written on the yellow card, not the white one.",
+    "written": "2021-03-09",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "Mi hermana quiere escuchar la música que puse después del trabajo.",
+    "written": "2021-07-04",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Rowan Vale started at Pine Audio as producer in 2018, before Grove Radio.",
+    "written": "2022-04-18",
+    "source": "agent"
+   },
+   {
+    "id": "m9",
+    "text": "Mi amiga sabe mi cifra mínima para negociar el sueldo: 54.000. Es una nota privada.",
+    "written": "2023-01-11",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "My only Pine Audio stint was 2023 to 2025 as producer. It was my next job after leaving Grove Radio.",
+    "written": "2025-12-29",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "The Fern House mug survived another move. Put it away before painting.",
+    "written": "2026-04-20",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Imported CV: my Fern Press employment ran from 2014 to 2018; my Grove Radio employment ended in 2022.",
+    "written": "2026-10-31",
+    "source": "import"
+   }
+  ],
+  "question": "¿Dónde trabajaba el 10 de mayo de 2019?",
+  "label_answer": "",
+  "answers_given": [
+   "Grove Radio"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra B",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r03/q7",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "Before Grove Radio, I worked at Fern Press as editor. Those were consecutive jobs.",
+    "written": "2019-11-02",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "Guardé la taza de Fern Press después de salir; está junto a los libros.",
+    "written": "2019-11-03",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "Mi amiga, Lucía Vega, trajo pan antes de la reunión de trabajo.",
+    "written": "2019-11-05",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "Empecé en Grove Radio como productor en 2019.",
+    "written": "2019-12-20",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "My former employer Fern Press was also called Fern House; those names describe the same company and my one stint.",
+    "written": "2020-02-14",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "The Grove Radio deadline is written on the yellow card, not the white one.",
+    "written": "2021-03-09",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "Mi hermana quiere escuchar la música que puse después del trabajo.",
+    "written": "2021-07-04",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Rowan Vale started at Pine Audio as producer in 2018, before Grove Radio.",
+    "written": "2022-04-18",
+    "source": "agent"
+   },
+   {
+    "id": "m9",
+    "text": "Mi amiga sabe mi cifra mínima para negociar el sueldo: 54.000. Es una nota privada.",
+    "written": "2023-01-11",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "My only Pine Audio stint was 2023 to 2025 as producer. It was my next job after leaving Grove Radio.",
+    "written": "2025-12-29",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "The Fern House mug survived another move. Put it away before painting.",
+    "written": "2026-04-20",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Imported CV: my Fern Press employment ran from 2014 to 2018; my Grove Radio employment ended in 2022.",
+    "written": "2026-10-31",
+    "source": "import"
+   }
+  ],
+  "question": "What employer preceded Fern House on my CV?",
+  "label_answer": "",
+  "answers_given": [
+   "Fern Press"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r04/q3",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "I was an assistant at Maple Health from 2015 to 2018.",
+    "written": "2018-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "After leaving Maple Health I kept the green notebook with the lunch recipes.",
+    "written": "2019-01-06",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "My friend, Owen Reed, found a quieter keyboard for my work desk.",
+    "written": "2019-02-14",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "I started Ink Path, my freelance illustration business, in 2018.",
+    "written": "2019-03-03",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "Cobalt Cafe was my freelance client through Ink Path from April 2019 to June 2019.",
+    "written": "2019-07-01",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Paid Ledger Nest to prepare my work tax return. Their invoice is in the blue folder.",
+    "written": "2020-04-09",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "My partner booked a walking trip for the week after the illustration deadline.",
+    "written": "2020-07-15",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Rowan Vale closed the freelance business Ink Path in 2020.",
+    "written": "2021-02-04",
+    "source": "agent"
+   },
+   {
+    "id": "m9",
+    "text": "My private pay-negotiation floor is 61,000. My friend knows; do not put it in the office agenda.",
+    "written": "2023-02-02",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "I studied throughout 2022 while running Ink Path. In March 2023 I joined Delta Clinic as coordinator, my next employer after Maple Health.",
+    "written": "2023-03-31",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "Delta Clinic's lunch room has a shelf for spare mugs. Bring the orange one.",
+    "written": "2025-06-23",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Ink Path ran without interruption until I closed it in 2024. I still work at Delta Clinic as coordinator.",
+    "written": "2026-10-31",
+    "source": "capture"
+   }
+  ],
+  "question": "Where was my day job on 15 January 2018?",
+  "label_answer": "",
+  "answers_given": [
+   "Maple Health"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra B",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r04/q4",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "I was an assistant at Maple Health from 2015 to 2018.",
+    "written": "2018-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "After leaving Maple Health I kept the green notebook with the lunch recipes.",
+    "written": "2019-01-06",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "My friend, Owen Reed, found a quieter keyboard for my work desk.",
+    "written": "2019-02-14",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "I started Ink Path, my freelance illustration business, in 2018.",
+    "written": "2019-03-03",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "Cobalt Cafe was my freelance client through Ink Path from April 2019 to June 2019.",
+    "written": "2019-07-01",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Paid Ledger Nest to prepare my work tax return. Their invoice is in the blue folder.",
+    "written": "2020-04-09",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "My partner booked a walking trip for the week after the illustration deadline.",
+    "written": "2020-07-15",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Rowan Vale closed the freelance business Ink Path in 2020.",
+    "written": "2021-02-04",
+    "source": "agent"
+   },
+   {
+    "id": "m9",
+    "text": "My private pay-negotiation floor is 61,000. My friend knows; do not put it in the office agenda.",
+    "written": "2023-02-02",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "I studied throughout 2022 while running Ink Path. In March 2023 I joined Delta Clinic as coordinator, my next employer after Maple Health.",
+    "written": "2023-03-31",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "Delta Clinic's lunch room has a shelf for spare mugs. Bring the orange one.",
+    "written": "2025-06-23",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Ink Path ran without interruption until I closed it in 2024. I still work at Delta Clinic as coordinator.",
+    "written": "2026-10-31",
+    "source": "capture"
+   }
+  ],
+  "question": "Who employed me on 10 March 2023?",
+  "label_answer": "",
+  "answers_given": [
+   "Delta Clinic"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra B",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r04/q7",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "I was an assistant at Maple Health from 2015 to 2018.",
+    "written": "2018-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "After leaving Maple Health I kept the green notebook with the lunch recipes.",
+    "written": "2019-01-06",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "My friend, Owen Reed, found a quieter keyboard for my work desk.",
+    "written": "2019-02-14",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "I started Ink Path, my freelance illustration business, in 2018.",
+    "written": "2019-03-03",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "Cobalt Cafe was my freelance client through Ink Path from April 2019 to June 2019.",
+    "written": "2019-07-01",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Paid Ledger Nest to prepare my work tax return. Their invoice is in the blue folder.",
+    "written": "2020-04-09",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "My partner booked a walking trip for the week after the illustration deadline.",
+    "written": "2020-07-15",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Rowan Vale closed the freelance business Ink Path in 2020.",
+    "written": "2021-02-04",
+    "source": "agent"
+   },
+   {
+    "id": "m9",
+    "text": "My private pay-negotiation floor is 61,000. My friend knows; do not put it in the office agenda.",
+    "written": "2023-02-02",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "I studied throughout 2022 while running Ink Path. In March 2023 I joined Delta Clinic as coordinator, my next employer after Maple Health.",
+    "written": "2023-03-31",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "Delta Clinic's lunch room has a shelf for spare mugs. Bring the orange one.",
+    "written": "2025-06-23",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Ink Path ran without interruption until I closed it in 2024. I still work at Delta Clinic as coordinator.",
+    "written": "2026-10-31",
+    "source": "capture"
+   }
+  ],
+  "question": "Which freelance business was active on 15 December 2024?",
+  "label_answer": "",
+  "answers_given": [
+   "Ink Path"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r05/q3",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "Mi primer empleo en Sol Taller fue de 2014 a 2016 como auxiliar.",
+    "written": "2016-12-29",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "Después de salir de Sol Taller, conservé la caja de herramientas roja.",
+    "written": "2017-01-07",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "Mi amiga, Inés Costa, pidió la receta del almuerzo de trabajo.",
+    "written": "2018-05-12",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "Tras Sol Taller, mi siguiente empleo fue Mar Puente: coordinador de 2017 a 2019.",
+    "written": "2019-12-27",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "Volví a Sol Taller en 2020 como técnico, mi siguiente empleo tras Mar Puente. Sol Taller también se llama Sol Works.",
+    "written": "2020-12-20",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Compré a Ala Azul el vuelo para la feria de trabajo. El asiento era 12C.",
+    "written": "2021-06-04",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "Mi pareja dejó el paraguas en la oficina; recogerlo antes del viaje.",
+    "written": "2021-10-08",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "En marzo de 2022 ascendí a supervisor en Sol Works; seguí en el mismo empleo.",
+    "written": "2022-03-31",
+    "source": "capture"
+   },
+   {
+    "id": "m9",
+    "text": "Mi amiga conoce mi petición salarial privada: 6% más y una semana adicional de vacaciones.",
+    "written": "2023-02-16",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "Salí de Sol Taller en 2024; no trabajé durante 2025. Mi siguiente empleo empezó el 10 de febrero de 2026 en Estela como planificador; sigo allí.",
+    "written": "2026-09-15",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "La reunión de Estela terminó temprano; pude regar las plantas antes de cenar.",
+    "written": "2026-10-02",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "CV antiguo importado: Sol Works, auxiliar, 2014 a 2016. Es mi primer período en Sol Taller, no el segundo.",
+    "written": "2026-10-31",
+    "source": "import"
+   }
+  ],
+  "question": "¿Qué trabajo tuve antes de Sol Works?",
+  "label_answer": "",
+  "answers_given": [
+   "Mar Puente"
+  ],
+  "wrong_in": [
+   "haiku A",
+   "haiku C",
+   "terra A",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r05/q4",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "Mi primer empleo en Sol Taller fue de 2014 a 2016 como auxiliar.",
+    "written": "2016-12-29",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "Después de salir de Sol Taller, conservé la caja de herramientas roja.",
+    "written": "2017-01-07",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "Mi amiga, Inés Costa, pidió la receta del almuerzo de trabajo.",
+    "written": "2018-05-12",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "Tras Sol Taller, mi siguiente empleo fue Mar Puente: coordinador de 2017 a 2019.",
+    "written": "2019-12-27",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "Volví a Sol Taller en 2020 como técnico, mi siguiente empleo tras Mar Puente. Sol Taller también se llama Sol Works.",
+    "written": "2020-12-20",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Compré a Ala Azul el vuelo para la feria de trabajo. El asiento era 12C.",
+    "written": "2021-06-04",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "Mi pareja dejó el paraguas en la oficina; recogerlo antes del viaje.",
+    "written": "2021-10-08",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "En marzo de 2022 ascendí a supervisor en Sol Works; seguí en el mismo empleo.",
+    "written": "2022-03-31",
+    "source": "capture"
+   },
+   {
+    "id": "m9",
+    "text": "Mi amiga conoce mi petición salarial privada: 6% más y una semana adicional de vacaciones.",
+    "written": "2023-02-16",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "Salí de Sol Taller en 2024; no trabajé durante 2025. Mi siguiente empleo empezó el 10 de febrero de 2026 en Estela como planificador; sigo allí.",
+    "written": "2026-09-15",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "La reunión de Estela terminó temprano; pude regar las plantas antes de cenar.",
+    "written": "2026-10-02",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "CV antiguo importado: Sol Works, auxiliar, 2014 a 2016. Es mi primer período en Sol Taller, no el segundo.",
+    "written": "2026-10-31",
+    "source": "import"
+   }
+  ],
+  "question": "¿Quién me empleaba el 20 de junio de 2016?",
+  "label_answer": "",
+  "answers_given": [
+   "Sol Taller"
+  ],
+  "wrong_in": [
+   "terra B"
+  ]
+ },
+ {
+  "id": "r06/q3",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "My Birch Systems job ran from 2014 to 2016; my title was technician.",
+    "written": "2016-12-31",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "After leaving Birch Systems I took up pottery. The first bowl is very uneven.",
+    "written": "2017-02-10",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "My friend, Theo Moss, sent a book about office acoustics.",
+    "written": "2018-12-03",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "Oak Network was my next employer after leaving Birch Systems. I joined in 2018 as engineer.",
+    "written": "2018-12-29",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "I left Oak Network in 2020 and took all of 2021 off work for a sabbatical.",
+    "written": "2022-01-05",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Bought printer paper from Paper Pier for work; the receipt includes two packs.",
+    "written": "2022-12-20",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "My sister wants to borrow the pottery wheel after work on Friday.",
+    "written": "2023-03-10",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Rowan Vale worked at Ash Compute as consultant from January 2017 to December 2017, between Birch Systems and Oak Network.",
+    "written": "2023-08-22",
+    "source": "agent"
+   },
+   {
+    "id": "m9",
+    "text": "My friend helped rehearse my confidential salary request: 105,000 plus training costs.",
+    "written": "2024-04-17",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "After leaving Oak Network, my next job was Elm Logic, starting in 2022 as architect. I still hold that job.",
+    "written": "2026-08-01",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "Elm Logic's workshop starts after lunch. Pack the notebook with graph paper.",
+    "written": "2026-09-09",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Imported diary: throughout 2017 I studied full-time and held no job. I never worked at Ash Compute.",
+    "written": "2026-10-31",
+    "source": "import"
+   }
+  ],
+  "question": "Where did I work on 3 January 2018?",
+  "label_answer": "",
+  "answers_given": [
+   "Oak Network"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r07/q3",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "I worked at North Rail as scheduler from 2014 to 2017.",
+    "written": "2017-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "The North Rail office photo is in the album with the hiking pictures.",
+    "written": "2018-01-05",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "Mi amiga, Ada Flores, dejó galletas antes de mi reunión de trabajo.",
+    "written": "2018-02-12",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "I joined East Rail as planner on 12 February 2018, my next salaried job after North Rail.",
+    "written": "2018-02-13",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "Since 2016 I have also run Pixel Bend as freelance designer. My business is also called PB Studio.",
+    "written": "2018-03-09",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Alquilé una mesa en Mesa Clara para terminar trabajo de diseño; solo compré acceso por un día.",
+    "written": "2019-06-12",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "Mi pareja guardó los billetes del viaje junto al calendario de trabajo.",
+    "written": "2020-08-17",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "My Pixel Bend clients: Museo Alba, January 2019 to June 2019; Luma Fund, April 2021 to July 2021. Both hired my freelance design services.",
+    "written": "2021-08-02",
+    "source": "capture"
+   },
+   {
+    "id": "m9",
+    "text": "Mi amiga me ayudó con mi petición salarial privada: 4.500 más al año.",
+    "written": "2022-02-18",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "I closed Pixel Bend in 2023. East Rail remains my salaried employer, continuously since I joined.",
+    "written": "2026-08-08",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "Before the East Rail workshop, charge the headphones and bring an apple.",
+    "written": "2026-09-07",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Imported 2019 invoice note: Museo Alba hired my freelance services through PB Studio in May 2019.",
+    "written": "2026-10-31",
+    "source": "import"
+   }
+  ],
+  "question": "Who employed me on 6 January 2014?",
+  "label_answer": "",
+  "answers_given": [
+   "North Rail"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra B",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r07/q4",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "I worked at North Rail as scheduler from 2014 to 2017.",
+    "written": "2017-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "The North Rail office photo is in the album with the hiking pictures.",
+    "written": "2018-01-05",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "Mi amiga, Ada Flores, dejó galletas antes de mi reunión de trabajo.",
+    "written": "2018-02-12",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "I joined East Rail as planner on 12 February 2018, my next salaried job after North Rail.",
+    "written": "2018-02-13",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "Since 2016 I have also run Pixel Bend as freelance designer. My business is also called PB Studio.",
+    "written": "2018-03-09",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Alquilé una mesa en Mesa Clara para terminar trabajo de diseño; solo compré acceso por un día.",
+    "written": "2019-06-12",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "Mi pareja guardó los billetes del viaje junto al calendario de trabajo.",
+    "written": "2020-08-17",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "My Pixel Bend clients: Museo Alba, January 2019 to June 2019; Luma Fund, April 2021 to July 2021. Both hired my freelance design services.",
+    "written": "2021-08-02",
+    "source": "capture"
+   },
+   {
+    "id": "m9",
+    "text": "Mi amiga me ayudó con mi petición salarial privada: 4.500 más al año.",
+    "written": "2022-02-18",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "I closed Pixel Bend in 2023. East Rail remains my salaried employer, continuously since I joined.",
+    "written": "2026-08-08",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "Before the East Rail workshop, charge the headphones and bring an apple.",
+    "written": "2026-09-07",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Imported 2019 invoice note: Museo Alba hired my freelance services through PB Studio in May 2019.",
+    "written": "2026-10-31",
+    "source": "import"
+   }
+  ],
+  "question": "¿Qué negocio freelance tenía activo el 15 de junio de 2023?",
+  "label_answer": "",
+  "answers_given": [
+   "Pixel Bend"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r08/q3",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "My first Drift Games stint was 2014 to 2016 as junior designer.",
+    "written": "2016-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "Kept the sketchbook after leaving Drift Games. It has the recipe for the office brownies.",
+    "written": "2017-02-02",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "My colleague, Eli Brooks, sent the slides before our Orbit Apps meeting.",
+    "written": "2018-06-19",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "After leaving Drift Games, my next job was Orbit Apps as engineer from 2017 to 2019.",
+    "written": "2019-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "I studied from January 2020 through August 2020 and held no job during those months.",
+    "written": "2020-08-31",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "The old Orbit Apps lunch calendar is useful scrap paper for drawing practice.",
+    "written": "2020-09-06",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "My sister left a puzzle beside the work laptop.",
+    "written": "2021-03-12",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Rowan Vale left Drift Games in 2024 and started at New Peak as director in 2024.",
+    "written": "2024-12-16",
+    "source": "agent"
+   },
+   {
+    "id": "m9",
+    "text": "My sister helped rehearse my private salary negotiation. My minimum request is a 7% increase.",
+    "written": "2025-02-10",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "My next job after Orbit Apps: rejoined Drift Games in September 2020 as designer; promoted to lead designer in March 2022. One continuous stint.",
+    "written": "2025-11-13",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "Before the Drift Games review, sharpen the pencils and refill the water bottle.",
+    "written": "2026-04-09",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "I have never worked at New Peak. My second Drift Games stint continues today; I have not left since rejoining.",
+    "written": "2026-10-31",
+    "source": "capture"
+   }
+  ],
+  "question": "My job before Drift Games?",
+  "label_answer": "",
+  "answers_given": [
+   "Orbit Apps"
+  ],
+  "wrong_in": [
+   "haiku B",
+   "haiku Bc-gold",
+   "haiku Bc-live"
+  ]
+ },
+ {
+  "id": "r08/q4",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "My first Drift Games stint was 2014 to 2016 as junior designer.",
+    "written": "2016-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "Kept the sketchbook after leaving Drift Games. It has the recipe for the office brownies.",
+    "written": "2017-02-02",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "My colleague, Eli Brooks, sent the slides before our Orbit Apps meeting.",
+    "written": "2018-06-19",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "After leaving Drift Games, my next job was Orbit Apps as engineer from 2017 to 2019.",
+    "written": "2019-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "I studied from January 2020 through August 2020 and held no job during those months.",
+    "written": "2020-08-31",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "The old Orbit Apps lunch calendar is useful scrap paper for drawing practice.",
+    "written": "2020-09-06",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "My sister left a puzzle beside the work laptop.",
+    "written": "2021-03-12",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Rowan Vale left Drift Games in 2024 and started at New Peak as director in 2024.",
+    "written": "2024-12-16",
+    "source": "agent"
+   },
+   {
+    "id": "m9",
+    "text": "My sister helped rehearse my private salary negotiation. My minimum request is a 7% increase.",
+    "written": "2025-02-10",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "My next job after Orbit Apps: rejoined Drift Games in September 2020 as designer; promoted to lead designer in March 2022. One continuous stint.",
+    "written": "2025-11-13",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "Before the Drift Games review, sharpen the pencils and refill the water bottle.",
+    "written": "2026-04-09",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "I have never worked at New Peak. My second Drift Games stint continues today; I have not left since rejoining.",
+    "written": "2026-10-31",
+    "source": "capture"
+   }
+  ],
+  "question": "Where did I work on 15 May 2016?",
+  "label_answer": "",
+  "answers_given": [
+   "Drift Games"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r09/q3",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "Trabajé en Mesa Textil como tejedor de 2014 a 2016.",
+    "written": "2016-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "Después de salir de Mesa Textil, guardé el delantal en el armario del pasillo.",
+    "written": "2017-01-09",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "Mi amiga, Rosa Gil, trajo una planta para la mesa de trabajo.",
+    "written": "2017-12-01",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "Mi siguiente empleo después de Mesa Textil empezó en 2017: inspector en Rio Fibras.",
+    "written": "2017-12-29",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "Mi empresa Rio Fibras también se llama Rio Fiber; es la misma empresa y el mismo empleo.",
+    "written": "2018-02-05",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Compré a Cuenta Sur la preparación de mis impuestos del trabajo; guardar la factura.",
+    "written": "2018-04-16",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "Mi hermana necesita la llave de casa antes de mi reunión de trabajo.",
+    "written": "2020-11-18",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Después de Rio Fibras, mi siguiente empleo fue supervisor en Valle Tejidos, de 2020 a 2024.",
+    "written": "2024-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m9",
+    "text": "Mi amiga conoce la cifra privada que pedí en aquella negociación salarial: 48.000.",
+    "written": "2025-02-02",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "CV de 2019 importado: terminé mi empleo en Rio Fiber en 2019.",
+    "written": "2026-03-10",
+    "source": "import"
+   },
+   {
+    "id": "m11",
+    "text": "La foto de la oficina de Valle Tejidos está detrás del álbum de vacaciones.",
+    "written": "2026-08-15",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Mi empleo en Valle Tejidos terminó en 2024. No he anotado aquí mi situación laboral posterior.",
+    "written": "2026-10-31",
+    "source": "capture"
+   }
+  ],
+  "question": "¿Dónde estaba trabajando el 12 de marzo de 2017?",
+  "label_answer": "",
+  "answers_given": [
+   "Rio Fibras"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra B",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r10/q4",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "I joined Silver Foods as analyst in 2014.",
+    "written": "2014-12-29",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "Silver Foods has moved the office lunch to the courtyard because of the sunshine.",
+    "written": "2016-06-14",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "My boss, Jules Hart, asked me to bring the paper agenda to the work meeting.",
+    "written": "2017-08-16",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "On 15 March 2018 I became lead analyst at Silver Foods. This was a promotion, with no break in my employment.",
+    "written": "2018-03-16",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "I ran Quiet Type as freelance writer from March 2019 to December 2021 alongside my Silver Foods job.",
+    "written": "2022-01-06",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Paid Seat Harbor for a coworking day pass to sort old work files.",
+    "written": "2022-02-11",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "My partner put the office lunch containers beside the dishwasher.",
+    "written": "2022-05-18",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Red Barn was my Quiet Type writing client from February 2020 to November 2020.",
+    "written": "2023-01-15",
+    "source": "capture"
+   },
+   {
+    "id": "m9",
+    "text": "My boss heard my confidential request for a 9% pay rise. Save the negotiation notes privately.",
+    "written": "2024-04-08",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "Rowan Vale left Silver Foods in 2020 and joined Golden Foods as director in 2020.",
+    "written": "2025-07-11",
+    "source": "agent"
+   },
+   {
+    "id": "m11",
+    "text": "Before the Silver Foods workshop, pick up the repaired watch.",
+    "written": "2026-09-13",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "I still work at Silver Foods as lead analyst, continuously since joining. I have never worked at Golden Foods.",
+    "written": "2026-10-31",
+    "source": "capture"
+   }
+  ],
+  "question": "Which freelance business was I running on 5 March 2019?",
+  "label_answer": "",
+  "answers_given": [
+   "Quiet Type"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra B",
+   "terra C"
+  ]
+ },
+ {
+  "id": "r11/q3",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "Mi primer período en Alta Energia fue como ingeniero, de 2014 a 2015.",
+    "written": "2015-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "Conservé el termo después de salir de Alta Energia por primera vez.",
+    "written": "2016-01-08",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "Mi amiga, Paz Luna, encontró mi bufanda junto a los papeles del trabajo.",
+    "written": "2017-02-13",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "Mi siguiente empleo tras Alta Energia fue operador en Bajo Agua, de 2016 a 2018.",
+    "written": "2018-12-28",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "Después de Bajo Agua volví directamente a Alta Energia como ingeniero: mi segundo período fue de 2019 a 2021.",
+    "written": "2021-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "Vuelo Sur me vendió el billete para el antiguo viaje de trabajo; encontré el recibo.",
+    "written": "2022-01-15",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "Mi pareja quiere enmarcar la foto del almuerzo de Alta Energia.",
+    "written": "2022-06-10",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Durante todo 2022 estudié y no tuve empleo.",
+    "written": "2023-01-02",
+    "source": "capture"
+   },
+   {
+    "id": "m9",
+    "text": "Mi amiga conoce mi límite salarial privado para negociar: 57.000.",
+    "written": "2024-02-06",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "Mi siguiente empleo tras mi segundo período en Alta Energia empezó en 2023: técnico en Camino Solar. Sigo en ese empleo.",
+    "written": "2026-08-09",
+    "source": "capture"
+   },
+   {
+    "id": "m11",
+    "text": "Antes de la reunión de Camino Solar, comprar pilas para la linterna.",
+    "written": "2026-09-03",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Diario de 2015 importado: terminó mi primer empleo en Alta Energia en 2015.",
+    "written": "2026-10-31",
+    "source": "import"
+   }
+  ],
+  "question": "¿Dónde trabajé después de Alta Energia?",
+  "label_answer": "",
+  "answers_given": [
+   "Camino Solar"
+  ],
+  "wrong_in": [
+   "terra A"
+  ]
+ },
+ {
+  "id": "r12/q3",
+  "memories": [
+   {
+    "id": "m1",
+    "text": "I worked at Harbor Maps, also called Harbor Cartography, as mapper from 2014 to 2018.",
+    "written": "2018-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m2",
+    "text": "After leaving Harbor Maps, I kept the wall map with the coffee stain.",
+    "written": "2019-01-05",
+    "source": "capture"
+   },
+   {
+    "id": "m3",
+    "text": "My friend, Sam Wren, brought lunch before the work call.",
+    "written": "2019-03-20",
+    "source": "capture"
+   },
+   {
+    "id": "m4",
+    "text": "My next salaried job after leaving Harbor Maps began in March 2019 at Ridge Data as analyst.",
+    "written": "2019-03-31",
+    "source": "capture"
+   },
+   {
+    "id": "m5",
+    "text": "Alongside my day jobs I ran Small Atlas as freelance cartographer from 2017 to 2020.",
+    "written": "2020-12-30",
+    "source": "capture"
+   },
+   {
+    "id": "m6",
+    "text": "The Ridge Data office printer needs A3 paper for the workshop maps.",
+    "written": "2021-02-08",
+    "source": "capture"
+   },
+   {
+    "id": "m7",
+    "text": "My sister wants the old work backpack for a camping trip.",
+    "written": "2021-07-12",
+    "source": "capture"
+   },
+   {
+    "id": "m8",
+    "text": "Olive Trust was my Small Atlas mapping client from May 2018 to October 2018.",
+    "written": "2022-04-09",
+    "source": "capture"
+   },
+   {
+    "id": "m9",
+    "text": "My friend knows my confidential salary target is 88,000. Keep the rehearsal notes private.",
+    "written": "2023-05-16",
+    "source": "capture"
+   },
+   {
+    "id": "m10",
+    "text": "Rowan Vale left Ridge Data in 2021 and joined Peak Charts as manager in 2021.",
+    "written": "2024-11-19",
+    "source": "agent"
+   },
+   {
+    "id": "m11",
+    "text": "Before the Ridge Data lunch, return the library atlas.",
+    "written": "2026-09-14",
+    "source": "capture"
+   },
+   {
+    "id": "m12",
+    "text": "Diary: I joined Ridge Data on 15 March 2019. Added 31 October 2026: still my employer, with no break since joining.",
+    "written": "2026-10-31",
+    "source": "import"
+   }
+  ],
+  "question": "Who employed me on 4 January 2014?",
+  "label_answer": "",
+  "answers_given": [
+   "Harbor Maps"
+  ],
+  "wrong_in": [
+   "terra A",
+   "terra B",
+   "terra C"
+  ]
+ }
+]

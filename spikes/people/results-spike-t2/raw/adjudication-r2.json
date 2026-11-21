@@ -1,0 +1,23 @@
+{
+  "cases": [
+    {"id":"r01/q3","decidable":false,"answer":"","label_right":true,"why":"Harbor Ledger's start is only dated to 2014, so employment on 2 January is uncertain."},
+    {"id":"r02/q3","decidable":false,"answer":"","label_right":true,"why":"The question does not specify which Alder Labs stint; Beacon Works preceded the second, while the first stint's predecessor is unknown."},
+    {"id":"r02/q7","decidable":false,"answer":"","label_right":true,"why":"Beacon Works followed the first Alder Labs stint, but the second is ongoing; the question does not identify the stint."},
+    {"id":"r03/q3","decidable":false,"answer":"","label_right":true,"why":"Grove Radio's start is only dated to 2019, so it could have been before or after 10 May."},
+    {"id":"r03/q7","decidable":false,"answer":"","label_right":true,"why":"Fern House and Fern Press are the same employer and stint; no preceding employer is recorded."},
+    {"id":"r04/q3","decidable":false,"answer":"","label_right":true,"why":"Maple Health employment ended sometime in 2018, possibly before 15 January."},
+    {"id":"r04/q4","decidable":false,"answer":"","label_right":true,"why":"Delta Clinic employment began sometime in March 2023, possibly after 10 March."},
+    {"id":"r04/q7","decidable":false,"answer":"","label_right":true,"why":"Ink Path closed sometime in 2024; whether it remained active on 15 December is unknown."},
+    {"id":"r05/q3","decidable":false,"answer":"","label_right":true,"why":"Sol Works is Sol Taller, with two stints; Mar Puente preceded the second, but the first stint's predecessor is unknown."},
+    {"id":"r05/q4","decidable":false,"answer":"","label_right":true,"why":"The first Sol Taller stint ended sometime in 2016, possibly before 20 June."},
+    {"id":"r06/q3","decidable":false,"answer":"","label_right":true,"why":"Oak Network employment began sometime in 2018, possibly after 3 January."},
+    {"id":"r07/q3","decidable":false,"answer":"","label_right":true,"why":"North Rail employment began sometime in 2014, possibly after 6 January."},
+    {"id":"r07/q4","decidable":false,"answer":"","label_right":true,"why":"Pixel Bend closed sometime in 2023; whether it remained active on 15 June is unknown."},
+    {"id":"r08/q3","decidable":false,"answer":"","label_right":true,"why":"The question does not specify which Drift Games stint; Orbit Apps preceded the second, while the first stint's predecessor is unknown."},
+    {"id":"r08/q4","decidable":false,"answer":"","label_right":true,"why":"The first Drift Games stint ended sometime in 2016, possibly before 15 May."},
+    {"id":"r09/q3","decidable":false,"answer":"","label_right":true,"why":"Rio Fibras employment began sometime in 2017, possibly after 12 March."},
+    {"id":"r10/q4","decidable":false,"answer":"","label_right":true,"why":"Quiet Type began sometime in March 2019, possibly after 5 March."},
+    {"id":"r11/q3","decidable":false,"answer":"","label_right":true,"why":"Bajo Agua followed the first Alta Energia stint and Camino Solar followed the second; the question does not specify which stint."},
+    {"id":"r12/q3","decidable":false,"answer":"","label_right":true,"why":"Harbor Maps employment began sometime in 2014, possibly after 4 January."}
+  ]
+}

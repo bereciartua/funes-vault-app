@@ -1,0 +1,8 @@
+[
+ "/bin/zsh -lc 'cat stories.json'",
+ "/bin/zsh -lc 'cat stories.json'",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"stories.json\\\")); print(\\\"COUNT\\\", len(d[\\\"stories\\\"])); [print(json.dumps(s,ensure_ascii=False,separators=(\\\",\\\",\\\":\\\"))) for s in d[\\\"stories\\\"]]' \"",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"stories.json\\\")); print(\\\"COUNT\\\", len(d[\\\"stories\\\"])); [print(json.dumps(s,ensure_ascii=False,separators=(\\\",\\\",\\\":\\\"))) for s in d[\\\"stories\\\"]]' \"",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"stories.json\\\")); print(json.dumps(next(s for s in d[\\\"stories\\\"] if s[\\\"id\\\"]==\\\"w11\\\"), ensure_ascii=False, indent=2))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"stories.json\\\")); print(json.dumps(next(s for s in d[\\\"stories\\\"] if s[\\\"id\\\"]==\\\"w11\\\"), ensure_ascii=False, indent=2))'\""
+]

@@ -325,6 +325,13 @@ A card at the top of Home, above the greeting (before v0.4, at the top of the Va
   - **With learned facts in use** (v0.10, FR-F-06, [memory processing §10.5](../domain/memory-processing.md#105-results-and-activity)):
     - **An inferred claim** ends with an **Inferred** tag (secondary, with a dotted underline); hovering it says what the claim rests on that its quote doesn't say ("Maria is your sister: the only sister Funes knows", "From your history: Acme came before Initech"). Its menu has one button per correction target the claim carries, labelled as the target says ("Not Maria", "Not this"): a target tied to a memory corrects only that memory's quoted span, one without corrects the fact or order everywhere. VoiceOver reads "Inferred" after the claim.
     - **Footer lines:** "Read 10 results and 2 from your history" when bridges were read; "1 result wasn't read: what links it is above Internal"; and, for a timeline question Funes can't decide, the note above the footer ("Funes can't tell which job came before Acme"), with the answer from plain search.
+    - **Checked timeline answers** (13e.2):
+      - a claim the time model checked leads with Funes's own line ("Before Pine Signal: Marlin Analytics, until June 2022"), its quotes under it;
+      - "not sure" shows the reason in place of an answer ("Funes can't tell which job came before Acme");
+      - a claim only your own text supports, against text you didn't write, adds "text you didn't write says otherwise";
+      - a rehire without "the first time" or "again", where the stints give different answers, is "not sure", naming them;
+      - the footer says "Read 10 results and N from your history" (up to 6);
+      - **Not this** on a checked line works as on any inferred claim.
     - **When learned facts are in an answer** (13d): only for an answering model an *attributes* record covers (memory processing §10.3); others answer as before 13d. A correction from the card clears it (its claims rested on what changed) and reloads the list. An answer whose learned facts changed while it was on its way is dropped: "What Funes knows about your memories changed while it was answering. Try again."
     - **A bridge's number** opens that memory in a sheet, with its quote highlighted, since a bridge needn't be in the list.
     - **A correction** made from the card clears it, as a change to a cited memory does; the list reloads with the correction applied.

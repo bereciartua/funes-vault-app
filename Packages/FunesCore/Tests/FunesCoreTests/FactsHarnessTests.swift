@@ -118,6 +118,14 @@ import Testing
             let other = try JSONDecoder().decode([String: [FactsHarness.Fixture.Query]].self, from: Data(contentsOf: URL(fileURLWithPath: path)))
             for i in fixture.stories.indices { fixture.stories[i].queries = other[fixture.stories[i].id] ?? [] }
         }
+        // Spike T round 2 only: the store without agents' notes (the time model's check without untrusted text).
+        if o["trusted_only"] == "1" {
+            for i in fixture.stories.indices {
+                let keep = Set(fixture.stories[i].memories.filter { $0.source != "agent" }.map(\.id))
+                fixture.stories[i].memories = fixture.stories[i].memories.filter { keep.contains($0.id) }
+                fixture.stories[i].orders = fixture.stories[i].orders?.map { $0.filter(keep.contains) }
+            }
+        }
         let out = URL(fileURLWithPath: try #require(o["out"]))
         // The canary set brings its own registry (a data-only change); `registry=` overrides.
         let registry = try FactsHarness.registry(o["registry"] ?? FactsHarness.defaultRegistry(set))

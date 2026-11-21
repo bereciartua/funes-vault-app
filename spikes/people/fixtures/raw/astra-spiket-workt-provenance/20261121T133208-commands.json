@@ -1,0 +1,10 @@
+[
+ "/bin/zsh -lc 'cat notes.md\ncat stories.json'",
+ "/bin/zsh -lc 'cat notes.md\ncat stories.json'",
+ "/bin/zsh -c \"python3 -c 'import json; s=json.load(open(\\\"stories.json\\\")); print(json.dumps(s[\\\"stories\\\"][2:7],ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")))'\"",
+ "/bin/zsh -c \"python3 -c 'import json; s=json.load(open(\\\"stories.json\\\")); print(json.dumps(s[\\\"stories\\\"][2:7],ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")))'\"",
+ "/bin/zsh -c \"python3 -c 'import json; print(json.dumps(json.load(open(\\\"stories.json\\\")),ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")))'\"",
+ "/bin/zsh -c \"python3 -c 'import json; print(json.dumps(json.load(open(\\\"stories.json\\\")),ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")))'\"",
+ "/bin/zsh -c \"python3 -c 'import json; print(json.dumps(json.load(open(\\\"stories.json\\\")),ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")))'\"",
+ "/bin/zsh -c \"python3 -c 'import json; print(json.dumps(json.load(open(\\\"stories.json\\\")),ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")))'\""
+]

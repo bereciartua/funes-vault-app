@@ -19,7 +19,25 @@
   - **A trusted never-denial reaches an agent's claim.** "I never worked at Orlin Labs" negates the facts of that predicate held by an entity only untrusted memories named, under exactly the same name; an untrusted claim after it doesn't start a new one, a trusted one does. It adds that entity no alias, evidence or link (decision 4's trust rule).
   - **An answer resting only on untrusted text is told.** The user's own memories may say otherwise and not have been read (above the cloud limit): the 13a.2 canary's wrong "current" answer.
   - **The timeline gate's measures** judge untrusted-only facts and episodes apart, as the linked gate does for links (Your Timeline marks them "from text you didn't write"); an untrusted fact the story's own labels deny stays wrong, and answers count whatever they rest on.
-  - **The timeline's coverage target is waived** (≥ 90% of decidable wordings right). Fresh wordings by writers the grammar wasn't tuned on were answered about 45–55% right, with 0 wrong answers and 0 negatives triggered; a hand grammar chases an open-ended tail of wordings. A floor of 40% stays, the waiver holds only for the registry version frozen for these runs, every other timeline target still gates, the measured coverage goes in the record, and 13e's review of 10 timeline answers checks it on the author's vault. A grammar that generalizes (a model reading the question into an intent code checks) is later work.
+  - **The timeline's coverage target is waived** (≥ 90% of decidable wordings right). Fresh wordings by writers the grammar wasn't tuned on were answered about 45–55% right, with 0 wrong answers and 0 negatives triggered; a hand grammar chases an open-ended tail of wordings. A floor of 40% stays, the waiver holds only for the registry version frozen for these runs, every other timeline target still gates, the measured coverage goes in the record, and 13e's review of 10 timeline answers checks it on the author's vault. A grammar that generalizes (a model reading the question into an intent code checks) is later work. *Lapsed by the 2026-11-21 amendment below: timeline answers no longer go through the grammar.*
+- **Amended on 2026-11-21** after Spike T, the author's decision ("embrace LLMs more"), and GPT-6-Astra's and Fable 5.2's reviews: **timeline answers are read and worded by the answer model, and checked by the time model** (Phase 13 plan, 13e.2).
+  - **Why:**
+    - The fail-closed intent grammar was inadequate on every wording set tested: about 40% of fresh wordings in 13e.1, and 9 of 67 held-out questions in Spike T.
+    - A model answering from the memories named the right organization on every decidable held-out question, but named one on 10 to 14 of 38 undecidable ones.
+    - The time model said "not sure" on nearly all of those.
+    - Combined, in Spike T round 2 (28 decidable and 28 undecidable questions per engine, one sample, search among filler memories, a recorded live read, 13e.1's time model and store): the answer model with the work rows, checked by the time model, named the right organization on 26 (Haiku) and 25 (Terra) of 28 decidable questions, a wrong one on none, and held back on 27 of 28 undecidable ones. These are organization-selection scores, and the spike's rule differed from this amendment's. Two of Haiku's 26 stated no comparison and went unchecked, and this rule makes them "not sure" (24 of 28). The full graph decided, with the trusted store (agents' notes dropped) as a rescue. The extraction was the spike's Python, the check went through canonical questions, marking wasn't measured, and Haiku answered 2 of 28 negative questions wrongly with rows, against 0 without. The gate judges the claims, under this amendment's rules.
+  - **The changes** (decisions 4, 5, 7 and 9):
+    - the answer model reads the question;
+    - the grammar stays only in plain search's ranking, frozen at 13e.1's vocabulary;
+    - the answer's input gains the *timeline* predicates' trusted rows and the trusted memories they cite;
+    - code decides when a claim owes a check, and checks it against the time model on trusted evidence;
+    - code words the checked line;
+    - *bridges* are folded into *timeline*;
+    - the *timeline* gate judges answers end to end, per answer engine.
+  - **The base:** 13e.1's time model and store, the code Spike T ran on: the strict trust rule, the slot pool, anchor dates and stints, stated renames, the never-denial, an import's "current" and the placeholder fold.
+  - **Unchanged:** extraction and its gates, trust, corrections, the cloud limit's rules for derived facts, owner-only use.
+  - **Plain search's timeline uses** (the grammar's demotion and admission, why lines, and "my previous job" cues) need an engine-free record of their own, not yet defined, and stay off until one exists.
+  - **Known exception, outside the check's guarantee until it's modelled:** a stated possible overlap ("I can't remember if they overlapped"), which the same-year hand-over still answers at `inferred` (13a.2's canary c04).
 - **Clarified on 2026-11-15:** cloud selection uses sendable facts only, the five gated uses, correction targets, and older phones.
 - **Clarified on 2026-11-17** with 13a.2's qualification step, after GPT-6-Astra and Fable 5.2 reviewed its plan:
   - the registry declares *attributes* for the person predicates and works at, and *bridges* for works at (decision 7). Declared isn't on;
@@ -101,7 +119,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
      - *linked*: search admission and why lines;
      - *timeline*: "before / after" answers, and resolving time cues as of a memory's date;
      - *attributes*: the inference carried on an answer's memories (decision 7);
-     - *bridges*: memories added to a timeline answer (decision 7).
+     - *bridges*: memories added to a timeline answer (decision 7). Folded into *timeline* on 2026-11-21.
 
    **What a registry entry can add:** a predicate whose facts are you → entity, found by a supported template, anchored by a named entity or a date, and decidable on the timeline. Adding one takes a registry entry, a fixture, its gates and a re-read of one call group.
 
@@ -126,10 +144,9 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
    - Only models that qualified on the fixtures are offered: Claude Haiku 5.5 (the default) and Opus 5.5 for person predicates. Works-at extraction was tried on Haiku only.
    - Apple on-device isn't offered.
    - Memories the model can't read still get code-only links, never sent anywhere.
-4. **The model learns facts; code computes everything else.**
-   - **Code recomputes, from the memory text, the facts, the timeline and stored decisions:**
-     - which entity a mention means ("my sister", "Alex", "my previous job");
-     - which fact a timeline question means.
+4. **The model learns facts and reads questions; code computes and checks everything else** (amended 2026-11-21; it was "the model learns facts; code computes everything else").
+   - **Code recomputes, from the memory text, the facts, the timeline and stored decisions,** including which entity a mention means ("my sister", "Alex", "my previous job").
+   - **The answer model reads which fact a question means** (until 2026-11-21, code did, through the grammar). Code checks every claim that depends on the timeline (decision 5, "Questions and the check"). Code verifies the comparison the model states, not that the model understood the question; the gate measures that.
    - Only what code can't decide is stored: a decision with the facts and memories it relied on, invalidated when any of them changes.
    - **Resolution bases** (which entity a mention means): `confirmed`, `named`, `stated_unique`, `context`, `sole_known`, `candidates`, `ambiguous`, `untrusted`, `rejected`.
      - `stated_unique` needs text saying there's only one, or an exclusive predicate whose gate is met.
@@ -169,7 +186,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
      - the evidence is untrusted.
 
      On the author's vault, without the first rule the timeline picked the wrong job, and without the second, it did again.
-   - **Ambiguity is told, never guessed.** The answer gets plain search plus a note ("Funes can't tell which job came before Acme"), and no bridges, when there is:
+   - **Ambiguity is told, never guessed.** The answer gets plain search plus a note ("Funes can't tell which job came before Acme"), and no bridges, when there is the following. From 2026-11-21, a checked claim becomes "not sure" with that note instead (decision 5):
      - a possible tie;
      - conflicting dates, or contradictory or cyclic order edges (the edges are then dropped, and the dates may still decide);
      - an undated or half-dated fact of the predicate that could sit in a non-contiguous gap;
@@ -177,12 +194,37 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 
      On the author's vault a year-only rule guessed a tie and picked the wrong job.
    - **Gaps are told, with the answer.** A gap longer than the predicate's `gap_months`, measured over the possible ranges, gives a `gap` answer: it names the entity and tells the gap ("there's a gap of about 6 months"), and may carry bridges. A stated order still tells a gap that the dates show.
-   - **Intent:** a timeline query needs a predicate's cue word or role phrase, with an operator and a named anchor or date.
-     - The anchor is what follows the operator.
-     - The grammar fails closed: a question outside it gets plain search, never a guessed intent, and its words are registry data (memory processing §11.7). Adopted after 13a.1's review rounds showed hand-written rules over open text can't be made exhaustive; coverage is measured on fixtures instead.
-     - The question must be about the user: a query whose subject is another person, named or by role ("Where did Ada work before Acme?", "Where did my wife work before Acme?"), isn't the user's timeline, for every operator.
-     - In v0.10 the anchor must be of the same predicate. A cross-predicate anchor ("where did I live before I joined Acme") fits the same rule and waits for its own gate.
-     - A question about one fact's qualifiers ("my title at Acme before the promotion") isn't a timeline query in v0.10, and neither is "what did we use before Acme moved to Slack".
+   - **Questions and the check** (amended 2026-11-21; it replaced the Intent paragraph, under which a fail-closed grammar decided timeline answers):
+     - **Plain search** (no answer model) keeps the fail-closed grammar for ranking only: the "before X" demotion, why lines, admission (memory processing §11.7). It's frozen at 13e.1's vocabulary. A question outside it gets plain search.
+     - **When a claim owes a check:** code decides, never the model. Given rows (decision 7), a claim owes one when any of these holds:
+       - its comparison says `made`;
+       - it cites a memory that came in only through the rows;
+       - it names an entity of a *timeline* predicate, and the search or the claim has a registry operator or time cue (before, after, since, until, now, previous, a year or date).
+
+       Any other claim (a title, a coworker, how long, a list) follows the ordinary marking rules (decision 7).
+     - **What it carries:** a structured comparison:
+       - the subject (the user, or someone else) and the predicate;
+       - the operator: before, after, in, between (both endpoints) or current;
+       - the anchor: an entity id from the rows with a stint (first, second or any), or a date normalised to its written precision;
+       - the slot, if the question asks about one;
+       - the answer entity id: one claim per answer, so concurrent jobs are two claims.
+
+       Entity ids are sent as aliases (`e1`…), as memories are. It must validate against the registry and the graph; fields an operator doesn't use are empty.
+     - **The check runs the time model directly, on two graphs:**
+       - the trusted graph, which leaves out untrusted evidence (agents' notes, imports, shared text) and keeps corrections and manual entries;
+       - the full graph.
+
+       Both are built from the sendable projection for a cloud answer.
+       - The trusted graph agrees, and so does the full graph: the claim stands, with the basis and the ids behind it.
+       - The trusted graph agrees, but the full graph disagrees or can't tell: it stands, marked inferred, "text you didn't write says otherwise".
+       - The trusted graph can't tell (a tie, a possible overlap, an ambiguous anchor): "not sure", worded from the reason ("Funes can't tell which job came before Acme"), even when the full graph agrees, since that answer would rest on untrusted text.
+       - The trusted graph disagrees: the claim is dropped.
+       - A check is owed but there's no comparison, or it doesn't validate: "not sure".
+     - **Above the limit:** for a cloud answer, the same check also runs locally on all of the owner's trusted facts. If its outcome or answer differs from the sendable one, the claim is "not sure". Nothing more is sent.
+     - **An anchor with several stints** and no stint cue in the search (the registry's return and episode cues), when the stints give different answers: "not sure", naming the stints ("You worked at Drift Games twice; Funes can't tell which you mean").
+     - **The checked line is worded by code** from the validated fields (the answer, the anchor, the basis, a gap, "as of" for current). It replaces the claim's own text, and the claim's quotes stay under it.
+     - **Someone else:** a comparison whose subject is someone else isn't checked, and the claim is ordinary. A claim about someone else that cites a memory that came in only through the user's rows is dropped.
+     - **In v0.10, unchanged:** the anchor is of the same predicate, and a question about one fact's qualifiers ("my title at Acme before the promotion") isn't checked as a timeline comparison.
    - **Time cues in memories:**
      - Cues of status ("my ex", "my old boss") select former facts for every *linked* predicate.
      - Resolving a cue as of the memory's date ("my previous job" written in 2022) uses the timeline, so it needs the *timeline* use, and gives `inferred` at most.
@@ -200,22 +242,48 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
    - **Inferred, from structured data, never from the model's wording.** A claim is marked inferred when it:
      - names an entity its cited text doesn't name;
      - states a predicate, label, qualifier or date its cited text doesn't state;
-     - cites a bridge (it then carries the order's basis);
+     - cites a bridge (from 2026-11-21, a memory that came in only through the rows; it then carries the order's basis);
      - cites a memory that carries an attribute, when the search names the attributed entity (by name, or by a role phrase that resolves to it) and the cited text doesn't. In Spike H4 this marked all 5 wrong-person claims from a wrong attribute, including the claims about a memory that names nobody.
 
      Each marked claim carries the fact, link or order ids behind it.
-   - **Bridges** (timeline answers only): up to 2 memories that state the target fact are added on top of the 10 results. The card says "Read 10 results and 2 from your history". *Linked*-only predicates get no bridges: Spike H showed no gain from role bridges. Apple on-device answers get no bridges.
+   - **Rows and cited memories** (amended 2026-11-21; they replaced *bridges*, up to 2 memories stating the target fact on top of the 10 results):
+     - **When:** for a question whose entities or cue words match a *timeline* predicate loosely, the input gains that predicate's trusted episodes from the sendable projection as rows: at most 12, those of the search's entities first, then the most recent. Each row has an entity alias and name, slot, dates at their precision, inferred ends and stated renames. A boundary only untrusted text states is shown as unknown.
+     - **The memories they cite:** trusted ones within the cloud limit, up to 6 beyond the 10 results (16 in all), each by §10.3's passage rule at up to 1,000 characters, 6,000 in all, in the rows' order.
+     - **What's never sent:** untrusted-only episodes and untrusted memories.
+     - **The card** says "Read 10 results and N from your history".
+     - **Marking** adds the check's outcomes (decision 5). Each checked or marked claim carries the fact and order ids behind it as correction targets (**Not this**, keyed to its memory and span), as before.
+     - **Engines without rows:** Apple on-device and local engines get none, as they got no bridges.
+
    - **Your own names**, from About you, become "the user" in the answer's input, as in the Facts call (decision 8), with a map back so quotes still highlight in the original. Another person sharing the name isn't replaced.
 8. **About you, used locally and for the owner only.**
    - The profile's names identify *you* in memories, by local matching.
    - Before any memory text is sent (a Facts call or an answer), they're replaced by "the user", with a map of offsets back for quotes; a namesake in the same memory keeps the name. They're never added to a call, never in a roster, and never affect agent retrieval.
    - Access policy §3.10 is unchanged. This is the separate decision ADR-0026 called for.
 9. **Every path is gated, by the same tests for every predicate.**
-   - **What's gated:** extraction (with recording), linking, timeline resolution, attributes and bridges. Each is a separate use per predicate, and a use can't turn on before the ones it depends on.
+   - **What's gated:** extraction (with recording), linking, timeline resolution, attributes and bridges (folded into the timeline on 2026-11-21). Each is a separate use per predicate, and a use can't turn on before the ones it depends on.
    - **What a pass covers:** the model, call-group prompt, registry version, adapter and batching it was measured with. Changing any of them re-runs the gates.
    - **When a gate fails, or the 13e review finds a wrong one:** that use and everything downstream of it turn off, with no code change. The predicate stays *recorded* or off.
    - **The person predicates are gated as one pool,** with a minimum count per predicate. The author's vault has too few role phrases to gate them one by one.
    - Adding a predicate is cheap; trusting it takes evidence.
+   - **The *timeline* gate** (amended 2026-11-21) judges answers end to end, per answer engine, on top of the predicate's *linked* record.
+     - **Fixed before the run:** code, prompts, the scoring script, the denominators and the rule for changing a label.
+     - **The set:**
+       - a fresh blind set by GPT-6-Astra: 24 stories, at least 50 decidable, 50 undecidable (with at least 4 each of rehire, possible overlap, same-year hand-over, agent competitor, rename and exact day in a year) and 40 negative questions (including first job, how long, "did I work at A before B", lists, yes/no);
+       - about 300 filler memories, some naming the stories' organizations;
+       - the app's own search;
+       - one recorded live read through the Swift extractor.
+     - **Judging:** every answer's text, blind; the plain arm (no rows) is the baseline.
+     - **Targets:**
+       - decidable: right ≥ 85%, 0 unmarked wrong, at most 1 marked wrong;
+       - undecidable: "not sure" ≥ 90%;
+       - negatives wrong: no more than the plain arm's plus 1;
+       - 0 claims naming someone else's fact as the user's, and 0 owed checks skipped;
+       - 0 claims code fails to mark;
+       - the facts behind the rows: every fact right, ≤ 1 wrong date, 0 succession from untrusted text or across slots (on the gate's live read and Phase A's two reads);
+       - Spike G's gates;
+       - p95 ≤ 15 s.
+     - **Labels:** Astra's set labels which questions are time-relative (for "owed checks skipped") and which claims are inferred (for marking). A rehire question whose stints give different answers is undecidable unless it names one.
+     - **A record's key** adds the answer model and the answer prompt version. The person *attributes* share the answer prompt, so their 13d gates re-run with it.
 10. **Owner side only, in v0.10.**
     - Links are used in your own Vault search, iPhone search and search answers.
     - Agent retrieval, the related-memories finder and the tidy-up never use them, with regression tests that prove it.
@@ -228,9 +296,9 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 
 **Consequences.**
 - **The cloud limit covers derived facts, conservatively.** A fact, qualifier, date, order or decision may be sent, or may shape which memories a cloud answer gets, only if every memory behind it is within the limit. Manual entries use their own sensitivity.
-  - A cloud answer reads the results as re-ranked if only sendable facts existed (admission, demotions, the rest-of-query score, the timeline's choice and bridges), restricted to the results you see. A shown result outside that set appears in your results but not in the cloud answer. The card counts it as not read, and the slot isn't refilled.
+  - A cloud answer reads the results as re-ranked if only sendable facts existed (admission, demotions, the rest-of-query score, the timeline's choice and bridges; from 2026-11-21, the rows and their cited memories), restricted to the results you see. A shown result outside that set appears in your results but not in the cloud answer. The card counts it as not read, and the slot isn't refilled.
   - The rest of the query goes to a cloud embedding index only when every matched name comes from sendable facts.
-  - If the answer fact is decided only by a fact above the limit, the cloud answer gets plain search.
+  - If the answer fact is decided only by a fact above the limit, the cloud answer gets plain search; from 2026-11-21, the claim about it is "not sure" instead (decision 5's local cross-check). Rows carry their provenance and go through the secret scanner and send-time revalidation, as attributes do.
   - *Recorded* facts enter the model's roster only under the same rule.
   - Per-label sensitivity is deferred.
 - **New data, owner-side:**
@@ -285,9 +353,9 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
 | Search latency with links, 50 queries on the author's vault | FR-V-10's 150 ms at p95 |
 | Answers on linked questions, on Haiku and on the author's Search answers model (3 samples, a blind judge, every gain and loss read by hand) | coverage ≥ plain search on every question family. 0 wrong entity with correct links. With an injected wrong link, ≤ 1 unmarked claim per 30 answers |
 | Spike G's gates with the feature on | correct claims ≥ 95%, right "no answer" ≥ 90%, answered ≥ 80%, no new wrong claims |
-| Inferred claims code fails to mark (attributes, labels, neighbouring attributes, bridges) | 0 |
-| Each *timeline* predicate (works at in v0.10): a fresh blind fixture · the author's reviewed timeline | every fact right, ≤ 1 wrong date. "Before / after / in <year>" on wordings whose truth is decidable: right entity on ≥ 90%, counting "right entity, gap told" separately. Ambiguous on the others. 0 wrong answers, including gap answers. 0 timeline triggers on negative wordings. 0 succession from untrusted text or across slots. Every counterexample from Spike H3's reviews passes as a test. (13e.1: untrusted-only facts and episodes judged apart; the coverage target waived by the author, see the amendment of 2026-11-20) |
-| The registry canary: the partner timeline, entry and fixture written blind by GPT-6-Astra after the code freeze, with negatives, concurrency, untrusted text, privacy and corrections, reported as distinct questions | the change touches no source file (checked mechanically). A deterministic part (canned extractions through resolution, timeline and intent) runs in CI. With a model run, it meets the timeline gates above; if it does, it may ship |
+| Inferred claims code fails to mark (attributes, labels, neighbouring attributes, bridges; from 2026-11-21, checked claims) | 0 |
+| Each *timeline* predicate (works at in v0.10), amended 2026-11-21: decision 9's answer gate, per answer engine · the author's reviewed timeline | decision 9's targets: decidable right ≥ 85% with 0 unmarked and ≤ 1 marked wrong; undecidable "not sure" ≥ 90%; negatives no worse than the plain arm + 1; 0 someone-else claims and 0 owed checks skipped; 0 unmarked; every fact right, ≤ 1 wrong date, 0 succession from untrusted text or across slots; Spike G's gates; p95 ≤ 15 s. It replaced the grammar-measured row (≥ 90% of decidable wordings, 0 wrong answers) |
+| The registry canary: the partner timeline, entry and fixture written blind by GPT-6-Astra after the code freeze, with negatives, concurrency, untrusted text, privacy and corrections, reported as distinct questions | the change touches no source file (checked mechanically). A deterministic part (canned extractions through resolution, timeline and intent) runs in CI. With a model run, it meets the timeline gates above; if it does, it may ship *(Its timeline gate is redefined when person rows come, after the 2026-11-21 amendment.)* |
 | Adversarial review of the Swift time model: two independent reviewers try to produce a wrong answer or link with canned inputs; every case found becomes a test | none found in a final round: a wrong answer or link from the core model, or a confident misread from the language layer, which fails closed (narrowed after round 17; not met in round 18 and waived by the author, see the amendment of 2026-11-16; a missed answer counts in the timeline and recall gates instead) |
 | Privacy payload tests: facts and orders stated only above the limit | 0 in any cloud input, including which memories are selected |
 | Port fidelity: Spike H's matrix and Spike H2's timeline | within 1 point of the Python harnesses |
@@ -328,6 +396,9 @@ Nothing else is open; the remaining measures are 13a–13e's acceptance tests.
 - **Smarter retrieval alone** (several queries per question, more varied results): generic, but it costs model calls on every search, and it can't order facts that no single memory orders. Kept as a possible later complement.
 - **Boosting linked memories:** every boost tried (0.1–0.5) made a missed link rank the right memory below plain search, and added nothing to the top 3. Admission without a boost has a smaller cost of the same kind: 2 of 28 injected missed links did worse than plain search on the held-out set.
 - **Asking the user to confirm links:** the gold standard, but a stream of questions is the fatigue Funes avoids elsewhere. Links are inferred, honest about their basis, and correctable.
-- **Leaving inference to the answer model:** with the role-only memory in its input, Haiku named the person 0 of 15 times until the memory carried who it was about. And no answer model can order jobs whose memories it never sees.
+- **Leaving inference to the answer model:** with the role-only memory in its input, Haiku named the person 0 of 15 times until the memory carried who it was about. And no answer model can order jobs whose memories it never sees. *(2026-11-21: the answer model now reads timeline questions and states its comparison, and code checks it against the time model; decision 5.)*
 - **A prompt sentence telling the model to hedge:** it changed how often the model hedged, not what it got right. Code marks inference instead.
 - **Apple on-device or a local model:** not offered until one qualifies on the same fixtures; none has.
+- **The model alone over the rows** (Spike T, 2026-11-21): best coverage, but it named an organization on a quarter to a third of undecidable questions. Code checks it instead.
+- **A model writing an intent, and the time model answering** (Spike T): cautious, but it lost coverage to its schema, and it read 20–47 of 102 adversarial non-work questions as timeline questions.
+- **Widening the grammar further** (13e.1): inadequate on every wording tested.

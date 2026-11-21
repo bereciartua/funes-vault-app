@@ -1,0 +1,4 @@
+You are writing filler memories for a test of Funes Vault, a private personal-memory app. Everything is invented.
+
+Write 40 short everyday memories a person might keep (at most 170 characters each), about half in English and half in Spanish or mixed: errands, family, friends, health appointments, hobbies, trips, recipes, books, home repairs, money, and work routines in general terms ("long day at work", "team lunch on Friday", "my job's new laptop policy", "reunión de trabajo a las 10"). They must NOT name any company, employer, business, school or brand, must not say when the person started, left or changed a job, and must not use a person's own name for the writer. Each has a date written (YYYY-MM-DD, 2014-01-01 to 2026-10-31) and an id d01…d40.
+Return JSON matching the schema.
