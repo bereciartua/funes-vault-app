@@ -56,7 +56,8 @@ final class ActivityModel {
             .map { ActivityEntry(id: $0.rowID, event: $0.event) }
             .reversed()
             .sorted { $0.time > $1.time }
-        let ids = Array(Set(entries.flatMap(\.event.ids)))
+        // A facts row's id is its run's: never looked up.
+        let ids = Array(Set(entries.filter { !FactsActivityWords.events.contains($0.event.event) }.flatMap(\.event.ids)))
         var titles: [UUID: String] = [:]
         for memory in (try? services.store.memories(ids: ids)) ?? [] where memory.status != .deleted { titles[memory.id] = memory.title }
         let unknown = ids.filter { titles[$0] == nil }

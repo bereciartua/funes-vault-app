@@ -928,6 +928,9 @@
     "%lld blocked by the secret scanner" : {
 
     },
+    "%lld by rules only" : {
+
+    },
     "%lld changed" : {
 
     },
@@ -1000,6 +1003,9 @@
         }
       }
     },
+    "%lld cloud requests outside the daily count" : {
+
+    },
     "%lld couldn't be changed" : {
 
     },
@@ -1061,6 +1067,12 @@
       }
     },
     "%lld expired" : {
+
+    },
+    "%lld facts" : {
+
+    },
+    "%lld failed" : {
 
     },
     "%lld from agents" : {
@@ -1324,6 +1336,9 @@
         }
       }
     },
+    "%lld mentions" : {
+
+    },
     "%lld minutes %lld seconds left" : {
       "localizations" : {
         "en" : {
@@ -1466,6 +1481,9 @@
 
     },
     "%lld moved to Recently Deleted" : {
+
+    },
+    "%lld names" : {
 
     },
     "%lld need your answer" : {
@@ -1817,6 +1835,12 @@
         }
       }
     },
+    "%lld timeline orders" : {
+
+    },
+    "%lld to read later" : {
+
+    },
     "%lld waiting in Inbox" : {
 
     },
@@ -1873,6 +1897,12 @@
     "1 claim left out: it didn't quote a memory" : {
 
     },
+    "1 cloud request outside the daily count" : {
+
+    },
+    "1 fact" : {
+
+    },
     "1 memory" : {
 
     },
@@ -1885,7 +1915,13 @@
     "1 memory wasn't read: it looks like it holds a secret" : {
 
     },
+    "1 mention" : {
+
+    },
     "1 model" : {
+
+    },
+    "1 name" : {
 
     },
     "1 request refused" : {
@@ -1898,6 +1934,9 @@
 
     },
     "1 suggestion waiting for you" : {
+
+    },
+    "1 timeline order" : {
 
     },
     "1-week streak" : {
@@ -3393,6 +3432,9 @@
     "Correct this" : {
 
     },
+    "Corrected a fact" : {
+
+    },
     "Correction from %@ · %@" : {
       "localizations" : {
         "en" : {
@@ -3977,6 +4019,12 @@
 
     },
     "Finish setting up Remote Access in %@ first. This setup appears once the tunnel's public address is saved." : {
+
+    },
+    "Finished" : {
+
+    },
+    "Finished reading existing memories" : {
 
     },
     "First, turn on Remote Access. Port %@ opens on this Mac for the tunnel; nothing is reachable until the tunnel runs." : {
@@ -5255,6 +5303,15 @@
     "Learn from memories" : {
 
     },
+    "Learned facts from %lld memories" : {
+
+    },
+    "Learned facts from 1 memory" : {
+
+    },
+    "Learned no facts" : {
+
+    },
     "Learning from memories" : {
 
     },
@@ -6004,6 +6061,9 @@
     "Nothing to import was found." : {
 
     },
+    "Nothing to read" : {
+
+    },
     "Nothing to tidy up: this memory looks right." : {
 
     },
@@ -6612,6 +6672,12 @@
     "Read and suggest, up to Internal, except Health, Finance and Legal. Funes asks before sharing." : {
 
     },
+    "Read existing memories" : {
+
+    },
+    "Read later" : {
+
+    },
     "Read low-sensitivity memories, ask first" : {
 
     },
@@ -6940,6 +7006,9 @@
 
     },
     "Removed in To Check" : {
+
+    },
+    "Removed learned facts" : {
 
     },
     "Removed." : {
@@ -8239,8 +8308,14 @@
     "Start with nothing and set it up on the Access tab." : {
 
     },
+    "Started" : {
+
+    },
     "Started %@: two memories disagree" : {
       "comment" : "Timeline: conflicting dates"
+    },
+    "Started reading existing memories" : {
+
     },
     "Starting access" : {
 
@@ -8577,10 +8652,7 @@
     "The export couldn't be written." : {
 
     },
-    "The facts and corrections you entered yourself stay. Learning turns off; turning it on again learns from new and changed memories." : {
-
-    },
-    "The facts and corrections you entered yourself stay. Learning turns off; turning it on again reads your memories again over the following days, with a share of each day's cloud requests." : {
+    "The facts and corrections you entered yourself stay. Learning turns off; turning it on again offers to read your memories again." : {
 
     },
     "The file couldn't be read." : {
@@ -9217,6 +9289,9 @@
     "Undid a change" : {
 
     },
+    "Undid a correction" : {
+
+    },
     "Undo" : {
 
     },
@@ -9761,6 +9836,12 @@
 
     },
     "a temporary location" : {
+
+    },
+    "about %lld model calls" : {
+
+    },
+    "about 1 model call" : {
 
     },
     "an API key" : {

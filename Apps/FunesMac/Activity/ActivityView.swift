@@ -270,9 +270,11 @@ enum ActivityText {
         return String(localized: "Funes Vault")
     }
 
-    /// The Detail column: memory titles, looked up live, or the agent an event is about.
+    /// The Detail column: memory titles, looked up live, the agent an event is about, or a facts row's counts.
     static func detail(_ entry: ActivityEntry, model: AppModel) -> String {
         let e = entry.event
+        // Counts only: a learned row's id is its run's, never looked up as a memory's title.
+        if let facts = FactsActivityWords(e) { return facts.detail }
         switch e.event {
         case "agent_added", "agent_removed", "agent_paused", "agent_resumed", "access_changed", "key_rotated",
              "cloud_access_on", "cloud_access_off", "remote_key_issued", "cloud_apps_changed":
@@ -402,6 +404,13 @@ struct ActivityInspector: View {
                     Text(String(localized: "From")).foregroundStyle(.secondary)
                     Text(entry.isRemote ? String(localized: "\(ActivityText.who(entry, model: model)) via Remote Access")
                                         : ActivityText.who(entry, model: model))
+                }
+                // A facts row's counts in full (the Detail column cuts them short).
+                if let facts = FactsActivityWords(entry.event), !facts.detail.isEmpty {
+                    GridRow {
+                        Text(String(localized: "Detail")).foregroundStyle(.secondary)
+                        Text(facts.detail).fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 if entry.isRemote, let agentID = entry.agentID,
                    let note = model.remoteServer?.note(agentID: agentID, near: entry.time) {

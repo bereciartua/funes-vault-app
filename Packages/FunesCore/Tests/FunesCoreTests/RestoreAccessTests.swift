@@ -90,6 +90,80 @@ import Testing
         #expect(try f.value("SELECT COUNT(*) FROM processing_job WHERE exempt_version IS NOT NULL AND subject = ?", [owed.db]) as Int? == 1)
     }
 
+    /// A backup taken while a backfill ran (its marks in it), restored after Remove learned facts: the live vault has no
+    /// backfill, so neither does the restored one. The backup's backfill doesn't resume exempt, its marks go, and the
+    /// next turn-on offers the sheet, counted from the restored vault. Its owed reads go too, so Not Now reads only new
+    /// and changed memories; a first read of new text queued on a marked job stays, unmarked. The same for a backup of
+    /// a finished backfill.
+    @Test(arguments: [false, true]) func aBackupFromBeforeARemoveDoesntBringItsBackfillBack(finished: Bool) throws {
+        let f = try Folder()
+        var before = FactsBackfill.State(startedAt: t0, memories: 1, calls: 2, engines: [:], limit: .upTo(.internal))
+        if finished {
+            before.finishedAt = t0.plus(minutes: 5)
+            before.ended = "done"
+        }
+        try f.execute("INSERT INTO meta (key, value) VALUES ('facts_backfill', ?)", [JSON.encode(before)])
+        try f.execute("""
+            INSERT INTO processing_job (id, subject, kind, state, attempts, created_at, updated_at, memory_version, call_group, exempt_version)
+            VALUES (?, ?, 'facts', 'queued', 0, ?, ?, 1, 'g', ?)
+            """, [UUID().db, UUID().db, t0, t0, finished ? nil : 1])
+        let edited = UUID()
+        try f.execute("""
+            INSERT INTO processing_job (id, subject, kind, state, attempts, created_at, updated_at, memory_version, call_group, exempt_version,
+              normal_version)
+            VALUES (?, ?, 'facts', 'queued', 0, ?, ?, 2, 'g', ?, 2)
+            """, [UUID().db, edited.db, t0, t0, finished ? nil : 1])
+        let backup = try f.backUp()
+        _ = try f.store.removeLearnedFacts(activity: InMemoryActivityLog(), now: t0.plus(minutes: 10))
+        #expect(try f.store.factsBackfill() == nil)
+        try f.restore(backup)
+        #expect(try f.store.factsBackfill() == nil)
+        #expect(try f.value("SELECT COUNT(*) FROM meta WHERE key = 'facts_backfill'") as Int? == 0)
+        #expect(try f.value("SELECT COUNT(*) FROM processing_job WHERE exempt_version IS NOT NULL") as Int? == 0)
+        #expect(try f.value("SELECT COUNT(*) FROM processing_job WHERE kind = 'facts' AND call_group IS NOT NULL") as Int? == (finished ? 2 : 1))
+        #expect(try f.value("SELECT COUNT(*) FROM processing_job WHERE subject = ?", [edited.db]) as Int? == 1)
+    }
+
+    /// A backup taken after a Remove (no backfill), restored once a new backfill started: the live one is kept, so the
+    /// restore can't offer its exemption a second time. (The backup holds none of its marked jobs, so it ends at the
+    /// next launch's settle, and catch-up reads the rest under the cap.)
+    @Test func aBackupFromAfterARemoveKeepsTheBackfillStartedSince() throws {
+        let f = try Folder()
+        let first = FactsBackfill.State(startedAt: t0, memories: 1, calls: 1, engines: [:], limit: .upTo(.internal))
+        try f.execute("INSERT INTO meta (key, value) VALUES ('facts_backfill', ?)", [JSON.encode(first)])
+        _ = try f.store.removeLearnedFacts(activity: InMemoryActivityLog(), now: t0.plus(minutes: 1))
+        let backup = try f.backUp()
+        let running = FactsBackfill.State(startedAt: t0.plus(minutes: 2), memories: 1, calls: 1, engines: [:], limit: .upTo(.internal))
+        try f.execute("INSERT INTO meta (key, value) VALUES ('facts_backfill', ?)", [JSON.encode(running)])
+        try f.execute("""
+            INSERT INTO processing_job (id, subject, kind, state, attempts, created_at, updated_at, memory_version, call_group, exempt_version)
+            VALUES (?, ?, 'facts', 'queued', 0, ?, ?, 1, 'g', 1)
+            """, [UUID().db, UUID().db, t0, t0])
+        try f.restore(backup)
+        #expect(try f.store.factsBackfill()?.state == running)
+        #expect(try f.value("SELECT COUNT(*) FROM processing_job WHERE exempt_version IS NOT NULL") as Int? == 0)
+    }
+
+    /// The live vault holds a state an older version's Remove left (`removed`), and the backup a running backfill with
+    /// its marks: no backfill after the restore, no marks, its owed reads gone.
+    @Test func aLiveStateEndedRemovedReadsAsNoBackfillAfterARestore() throws {
+        let f = try Folder()
+        var s = FactsBackfill.State(startedAt: t0, memories: 1, calls: 1, engines: [:], limit: .upTo(.internal))
+        try f.execute("INSERT INTO meta (key, value) VALUES ('facts_backfill', ?)", [JSON.encode(s)])
+        try f.execute("""
+            INSERT INTO processing_job (id, subject, kind, state, attempts, created_at, updated_at, memory_version, call_group, exempt_version)
+            VALUES (?, ?, 'facts', 'queued', 0, ?, ?, 1, 'g', 1)
+            """, [UUID().db, UUID().db, t0, t0])
+        let backup = try f.backUp()
+        s.finishedAt = t0.plus(minutes: 1)
+        s.ended = "removed"
+        try f.execute("UPDATE meta SET value = ? WHERE key = 'facts_backfill'", [JSON.encode(s)])
+        try f.execute("DELETE FROM processing_job WHERE kind = 'facts'")
+        try f.restore(backup)
+        #expect(try f.store.factsBackfill() == nil)
+        #expect(try f.value("SELECT COUNT(*) FROM processing_job WHERE kind = 'facts' AND call_group IS NOT NULL") as Int? == 0)
+    }
+
     @Test func removedAgentsAndReplacedKeysStayOut() async throws {
         let f = try Folder()
         let (removed, removedKey) = try await f.agents.create(name: "Removed", kind: .claudeCode, now: t0)
