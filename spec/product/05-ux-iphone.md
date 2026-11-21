@@ -8,6 +8,7 @@ The iPhone app is a **thin client of the Mac's vault**. It captures anywhere, al
 Tab bar:  Capture · Search · Inbox · Settings          (v0.2–0.3)
           Home · Search · Inbox · Settings             (v0.4: Home replaces Capture)
 Status bar (v0.4): above the tab bar, only when something needs you
+Search ▸ People & history (v0.10, 13d.2): pushed from Search's toolbar
 Extensions: Share extension · App Intent "Remember in Funes" · Control (Control Center / Lock Screen / Action button) · Widgets (v0.4) · Notification service extension (approvals)
 ```
 
@@ -112,12 +113,35 @@ Top to bottom:
   - **Footer lines,** as on the Mac: "Read 10 results and 2 from your history"; "1 result wasn't read: what links it is above your Mac's cloud limit"; the timeline note ("Funes can't tell which job came before Acme"). A bridge's number opens that memory as any number does.
   - **The held answer** is dropped when `status.get`'s `factsRevision` changes, and so is an answer still on its way, so a corrected fact never reappears in an old answer.
   - **Older builds** that don't declare the capability get link-admitted results as ordinary results, with no why line. For their answers the Mac sends the model neither attributes nor bridges, drops every claim it would mark inferred (counted as left out), and still leaves out results whose link isn't sendable, so they never show an inferred claim unmarked.
-  - **No entity list on the phone in v0.10:** People & history, your timeline, To check and manual entries are on the Mac only.
+  - **People & history** is on the phone too (13d.2, [below](#people--history)), read from the Mac with corrections only.
 - **Memory detail:**
   - full text, kind, categories, sensitivity, expiry and provenance;
   - **Edit**, **Archive** and **Delete**.
   - Edits are sent to the Mac and confirmed. A failed save shows an error, and the text is kept until it saves.
 - Nothing is cached after leaving the screen, beyond in-memory state. (The one exception, from v0.4, is the overview's counts for Home and the widgets: no memory text or titles; [ADR-0025](../architecture/decisions/0025-vault-overview-and-iphone-cache.md).)
+
+## People & history
+*v0.10, 13d.2 ([ADR-0032](../architecture/decisions/0032-facts-about-you.md), amended 2026-11-20; companion protocol §4.3). The Mac's [People & history](04-ux-mac.md#people--history-v010) on the phone, read live from the Mac, with corrections only.* Everything shown follows the Mac section's rules, because the Mac reads it with the same code: the uses search would use (whether or not *Use in search and answers* is on), recorded-only facts, and the timeline's off state. Nothing is stored on the phone.
+
+```
+‹ Search        People & History
+[People & Names | Your Timeline | To Check 2]
+[Search names]                       [Kind ▾]
+● Maria                 your sister        14
+● Your parents                              6
+▣ Acme                  until 2021         22
+▣ Globex                client              4
+```
+- **Where:** a `person.2` button in Search's toolbar opens it on Search's stack (Search is the phone's Vault, and People sits under Vault on the Mac). It shows only while the Mac has People for the phone (`status.get`'s `people`); a phone on an older Mac doesn't show it. While the Mac can't be reached, the screen shows "Mac not reachable", as Search does.
+- **People & Names:** rows as on the Mac: the kind's icon, the name (a role group as "Your parents" or "Your sisters (2)"), the fact about you in a few words ("your sister", "where you worked until 2021", "client") and the memory count; **You** on entries you made or corrected. **Kind ▾** filters People, Organizations, Places, Things; **Search names** (names and aliases, case and accents ignored, as the Mac's field) filters the list the Mac sent. Hidden entries and the *you* entity aren't listed. VoiceOver reads a row as one element ("Maria, person, your sister, 14 memories").
+- **An entity's page:** the name, the kind and **Deceased**, **Hidden** or **Only what you entered** as on the Mac (a hidden entity's page opens from the timeline or a memory's link; an entry no memory names any more reads "Unnamed (Person)"); "Also called: Mari (3), my sister (9)"; **About you**, each fact with its label, dates, status and basis in words (04-ux-mac.md's table: "You said so", "Named in the memory", …), and "recorded only, not used in search" on a recorded-only fact; **Memories**, each with its title and why line ("my sister → Maria (only sister Funes knows)", or "From text you didn't write"). A memory opens in the memory detail (`memories.get`), as from Search.
+- **Corrections from the phone:** **Not Maria** on a memory row (this memory isn't about her), and **Not this** on a fact (**Remove** on a recorded-only one), each in the row's context menu and as a VoiceOver action, sent to the Mac with `facts.reject`. Not this and Remove ask first ("Maria isn't your sister?", "Funes stops using it in every memory. You can undo it on your Mac."). The page and the list reload; unreachable: "Mac not reachable", nothing queued; refused because it changed on the Mac: "Couldn't correct that", and the page reloads. A footer says "Rename, merge, hide, dates and undo are on your Mac." Nothing else changes from the phone.
+- **Your timeline:** as on the Mac, newest first, grouped by predicate: the entity (opening its page), the dates at their precision, the kind, the title history, conflicting dates, gaps and "Funes can't tell which came first", the basis, and "N memories say so". While a predicate's timeline use is off (every one in v0.10 until one qualifies), only your own entries show, with the dates and status you entered, under the Mac's line: "Funes doesn't learn or order this yet: no model has passed Funes's tests for it. Only what you enter shows here." So today it's empty until you add a job on the Mac.
+- **To check:** the open questions as the Mac words them ("Who is “my boss” in *Budget review*?" with the candidates; "Are Maria and María López the same?"; "Which Acme job did you mean?"), read-only, under "Answer these on your Mac. Nothing waits on them."
+- **Empty states, in the Mac's words:** Facts off on the Mac: "Funes can learn the people in your life and where you've worked from your memories, for your own search. Turn on Facts on your Mac in Settings ▸ AI ▸ Features."; your names unreadable: "Your Mac can't read your names in About You right now, so it shows nothing here."; nothing learned yet: "Funes hasn't learned anyone from your memories yet. It reads new and changed ones as you save them.", or "Reading your memories: 120 of 365" while the first backfill runs; learning off with your entries kept: "Funes isn't learning from your memories. Your own entries and corrections are kept."
+- **Freshness:** what's shown lives only while the screen is open. A new revision from `status.get` (foreground, pull to refresh) or a correction reloads what's open; a reply that brings one marks the other view to reload when it shows; a late reply never brings back what a newer one, leaving the screen or Facts going off cleared. A correction from People also drops Search's held answer, so going back to Search never shows an answer resting on what you just rejected.
+- **Demo:** sample people, a timeline and To check, for App Review; Not this and Not <name> apply to the demo only.
+- **Later:** editing from the iPhone (Rename, Kind, Relation, Merge, Hide, dates and status, orders, manual entries, Undo, answering To check).
 
 ## Inbox tab
 - Same cards as on the Mac: source, proposed fields, Save, Edit & Save, Reject (the [glossary](06-glossary.md)'s words).

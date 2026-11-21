@@ -286,6 +286,7 @@ enum ActivityText {
             return (e.profileFields ?? []).sorted().map(ProfileText.title).joined(separator: ", ")
         case "import", "export", "funes_paused", "funes_resumed", "approval", "list_memory_categories", "open_in_funes",
              "memories_searched", "inbox_listed", "categories_listed", "overview_viewed", "device_paired", "device_revoked", "cap_reached",
+             "people_listed", "people_viewed",
              "tidy_up_run", "undone":
             return ""
         case "search_answered":

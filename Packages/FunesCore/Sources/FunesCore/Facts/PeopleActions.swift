@@ -9,6 +9,9 @@ public enum PeopleError: Error, Equatable, Sendable {
     case notFound
     /// A date Funes can't read: a year, a month or a day ("2019", "2019-03", "2019-03-15").
     case badDate
+    /// People & history is closed for a phone (companion protocol §4.3): *Learn from memories* is off and nothing of
+    /// yours is kept, so the Mac shows its Facts-off empty state and sends nothing.
+    case closed
 }
 
 /// A manual entry from **+ ▾** or Relation… (04-ux-mac.md ▸ Manual entry).

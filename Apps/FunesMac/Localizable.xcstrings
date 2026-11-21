@@ -6264,8 +6264,14 @@
     "OpenAI Responses API" : {
 
     },
+    "Opened People & history" : {
+      "comment" : "Activity: an iPhone read People & history"
+    },
     "Opened a memory" : {
 
+    },
+    "Opened a name in People & history" : {
+      "comment" : "Activity: an iPhone opened an entity's page"
     },
     "Opened a request in Funes" : {
 

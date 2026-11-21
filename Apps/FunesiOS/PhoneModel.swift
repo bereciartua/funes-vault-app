@@ -25,6 +25,13 @@ final class PhoneModel {
         if case let .connected(connection) = reachability { return connection.status.factsRevision }
         return nil
     }
+    /// People & history on the Mac for this phone (13d.2), while it's connected; nil from an older Mac.
+    var macPeople: PeopleStatus? {
+        if case let .connected(connection) = reachability { return connection.status.people }
+        return nil
+    }
+    /// Search's navigation: a memory, People & history and an entity's page (13d.2).
+    var searchPath: [SearchRoute] = []
     /// The connection's state machine (FunesPhone's `ReachabilityTracker`).
     private(set) var tracker = ReachabilityTracker()
     var reachability: Reachability { tracker.state }
@@ -48,6 +55,8 @@ final class PhoneModel {
     @ObservationIgnored var switchDemo: (Bool) -> Void = { _ in }
     let capture: CaptureModel
     let search: SearchModel
+    /// People & history, read from the Mac (13d.2).
+    let people: PeopleModel
     let inbox: InboxModel
     let categories: CategoryList
     /// Requests waiting on the Mac (`approvals.list`).
@@ -92,6 +101,7 @@ final class PhoneModel {
         self.services = services
         capture = CaptureModel(queue: services.queue, sender: services.sender, isDemo: services.isDemo)
         search = SearchModel(caller: services.caller)
+        people = PeopleModel(caller: services.caller)
         inbox = InboxModel(caller: services.caller)
         categories = CategoryList(caller: services.caller)
         approvals = ApprovalsModel(caller: services.caller)
@@ -101,6 +111,12 @@ final class PhoneModel {
         overview.onCacheChange = { FunesWidgets.reload() }
         capture.onOutcome = { [weak self] outcome in self?.delivered(outcome) }
         search.onFailure = { [weak self] error in self?.callFailed(error) }
+        people.onFailure = { [weak self] error in self?.callFailed(error) }
+        // A correction from People: Search's held answer rested on what changed, and the status brings the revisions.
+        people.onCorrected = { [weak self] in
+            self?.search.factsCorrectedElsewhere()
+            Task { await self?.refresh(fresh: true) }
+        }
         inbox.onFailure = { [weak self] error in self?.callFailed(error) }
         approvals.onFailure = { [weak self] error in self?.callFailed(error) }
         approvalSettings.onFailure = { [weak self] error in self?.callFailed(error) }
@@ -153,8 +169,12 @@ final class PhoneModel {
         detail.onFailure = { [weak self] error in self?.callFailed(error) }
         detail.onChange = { [weak self] change in
             switch change {
-            case let .changed(memory): self?.search.changed(memory)
-            case let .removed(id): self?.search.removed(id)
+            case let .changed(memory):
+                self?.search.changed(memory)
+                self?.people.memoryChanged()
+            case let .removed(id):
+                self?.search.removed(id)
+                self?.people.memoryChanged()
             }
         }
         return detail
@@ -200,6 +220,11 @@ final class PhoneModel {
             #if DEBUG
             if let kind = ScreenshotScene.current?.approval, let item = approvals.items.first(where: { $0.kind == kind }) {
                 open(ApprovalRef(id: item.id))
+            }
+            if let scene = ScreenshotScene.current, !scene.searchPath.isEmpty {
+                people.statusChecked(macPeople)
+                people.tab = scene.peopleTab
+                searchPath = scene.searchPath
             }
             if ScreenshotScene.current?.asks == true {
                 search.macAnswers = macAnswers
@@ -304,6 +329,8 @@ final class PhoneModel {
     private func leaveVaultIfGone() {
         guard retention.shouldClear(reachability) else { return }
         search.clear()
+        people.statusChecked(nil)
+        dropPeopleRoutes()
         inbox.clear()
         approvals.clear()
         overview.clear()
@@ -409,6 +436,8 @@ final class PhoneModel {
         testCaptureID = nil
         // Perhaps another Mac: nothing read from the last one stays.
         search.clear()
+        people.statusChecked(nil)
+        dropPeopleRoutes()
         inbox.clear()
         approvals.clear()
         await refresh()
@@ -572,4 +601,33 @@ struct OpenApproval: Identifiable {
 
 extension Duration {
     var milliseconds: Int { Int(components.seconds * 1000 + components.attoseconds / 1_000_000_000_000_000) }
+}
+
+extension PhoneModel {
+    /// People & history leaves Search's stack with what it read (another Mac, unpaired, removed): its screens would have
+    /// nothing to show.
+    /// A status that reached the Mac: People follows it, and leaves Search's stack when the Mac no longer has it.
+    func peopleStatusChecked() {
+        people.statusChecked(macPeople)
+        if macPeople == nil { dropPeopleRoutes() }
+    }
+
+    func dropPeopleRoutes() {
+        guard let first = searchPath.firstIndex(where: \.isPeople) else { return }
+        searchPath.removeSubrange(first...)
+    }
+}
+
+/// Where Search's stack goes: a memory, People & history, an entity's page (13d.2).
+enum SearchRoute: Hashable {
+    case memory(UUID)
+    case people
+    case entity(String)
+
+    var isPeople: Bool {
+        switch self {
+        case .people, .entity: true
+        case .memory: false
+        }
+    }
 }

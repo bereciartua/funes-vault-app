@@ -38,15 +38,7 @@ final class PeopleModel {
 
     /// The list as filtered: name search (names and aliases, case and accents ignored), kinds, hidden.
     var entries: [PeopleDirectory.Entry] {
-        guard let directory else { return [] }
-        let q = query.trimmingCharacters(in: .whitespaces).folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
-        return directory.entries.filter { e in
-            (showHidden || !e.hidden)
-                && (kinds.isEmpty || kinds.contains(e.kind))
-                && (q.isEmpty || ([e.name ?? e.group?.attribute ?? ""] + e.aliases).contains {
-                    $0.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).contains(q)
-                })
-        }
+        directory?.filtered(query: query, kinds: kinds, showHidden: showHidden) ?? []
     }
 
     var toCheckCount: Int { directory?.toCheck.count ?? 0 }

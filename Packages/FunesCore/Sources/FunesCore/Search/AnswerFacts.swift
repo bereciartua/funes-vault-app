@@ -445,6 +445,7 @@ public enum FactsCorrections {
                   let version = try Int.fetchOne(db, sql: "SELECT version FROM memory WHERE id = ? AND status != 'deleted'", arguments: [m.db]),
                   let row = try Row.fetchOne(db, sql: "SELECT name FROM entity WHERE id = ?", arguments: [e]) else { return nil }
             fields += [id, String(version), (row["name"] as String?) ?? ""]
+            fields += try entityFields(db, e, merged: try FactStore.mergedInto(db))
             // What the button stood on: the entity's names, and the user's decisions on this memory's mentions.
             fields += try String.fetchAll(db, sql: "SELECT COALESCE(alias, '') FROM entity_alias WHERE entity_id = ? ORDER BY 1", arguments: [e])
             fields += try Row.fetchAll(db, sql: """
@@ -462,23 +463,50 @@ public enum FactsCorrections {
                                                      arguments: [m.db]) else { return nil }
                 fields += [m.db, String(version)]
             }
-            for r in try Row.fetchAll(db, sql: """
-                SELECT COALESCE(memory_id, ''), COALESCE(memory_version, 0), COALESCE(quote, ''), source, asserted FROM fact_evidence
-                WHERE fact_id = ? AND target_kind = 'fact' ORDER BY 1, 2, 3, 4, 5
-                """, arguments: [id]) {
-                fields.append("\(r[0] as String)|\(r[1] as Int)|\(r[2] as String)|\(r[3] as String)|\(r[4] as String)")
-            }
-            // The user's own corrections of it (a label, a status), which change what "Not this" means.
-            for r in try Row.fetchAll(db, sql: """
-                SELECT field, COALESCE(value, ''), COALESCE(memory_id, '') FROM manual_override
-                WHERE target_kind = 'fact' AND target_id = ? ORDER BY 1, 2, 3
-                """, arguments: [id]) {
-                fields.append("o:\(r[0] as String)|\(r[1] as String)|\(r[2] as String)")
+            // Its merge group: Not this everywhere rejects every row that reads as this fact (the same predicate on
+            // entities merged together, `rejectFactEverywhere`), so a merge since the button was shown changes the token.
+            let merged = try FactStore.mergedInto(db)
+            let canonical = FactStore.canonical(row["entity"], merged)
+            fields.append("c:" + canonical)
+            fields += try entityFields(db, row["entity"], merged: merged)
+            let folded = try Row.fetchAll(db, sql: "SELECT id, entity_id FROM fact WHERE predicate = ?", arguments: [row["predicate"] as String])
+                .filter { FactStore.canonical($0["entity_id"], merged) == canonical }.map { $0["id"] as String }
+            for fid in folded.sorted() {
+                fields.append("f:" + fid)
+                for r in try Row.fetchAll(db, sql: """
+                    SELECT COALESCE(memory_id, ''), COALESCE(memory_version, 0), COALESCE(quote, ''), source, asserted FROM fact_evidence
+                    WHERE fact_id = ? AND target_kind = 'fact' ORDER BY 1, 2, 3, 4, 5
+                    """, arguments: [fid]) {
+                    fields.append("\(r[0] as String)|\(r[1] as Int)|\(r[2] as String)|\(r[3] as String)|\(r[4] as String)")
+                }
+                // The user's own corrections of it (a label, a status), which change what "Not this" means.
+                for r in try Row.fetchAll(db, sql: """
+                    SELECT field, COALESCE(value, ''), COALESCE(memory_id, '') FROM manual_override
+                    WHERE target_kind = 'fact' AND target_id = ? ORDER BY 1, 2, 3
+                    """, arguments: [fid]) {
+                    fields.append("o:\(r[0] as String)|\(r[1] as String)|\(r[2] as String)")
+                }
             }
         case .order, .unknown:
             return nil
         }
         return digest(fields)
+    }
+
+    /// What the button named about an entity beyond its stored row: the entity it reads as (merges followed), and your
+    /// changes to it and to everything merged with it (a rename, a kind, a merge), so a change on the Mac since the button
+    /// was shown refuses it.
+    static func entityFields(_ db: Database, _ entity: String, merged: [String: String]) throws -> [String] {
+        let canonical = FactStore.canonical(entity, merged)
+        let members = Set(merged.keys.filter { FactStore.canonical($0, merged) == canonical }).union([canonical])
+        var out = ["e:" + canonical]
+        for r in try Row.fetchAll(db, sql: """
+            SELECT target_id, field, COALESCE(value, ''), created_at FROM manual_override
+            WHERE target_kind = 'entity' AND target_id IN (\(databaseQuestionMarks(count: members.count))) ORDER BY 1, 2, 3, 4
+            """, arguments: StatementArguments(Array(members).sorted())) {
+            out.append("eo:\(r[0] as String)|\(r[1] as String)|\(r[2] as String)|\(r[3] as String)")
+        }
+        return out
     }
 
     /// Length-prefixed fields, SHA-256, the first 16 bytes in base64url.

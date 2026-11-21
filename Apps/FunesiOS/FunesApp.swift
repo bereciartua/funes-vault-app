@@ -78,10 +78,19 @@ final class AppState {
         await model.backgroundDelivery()
     }
 
+    /// The demo's People state: what a People snapshot scene asks for, else everything on.
+    private static var demoPeople: DemoPeople.Mode {
+        #if DEBUG
+        ScreenshotScene.current?.demoPeople ?? .on
+        #else
+        .on
+        #endif
+    }
+
     private static func services(demo: Bool) -> PhoneServices {
         PhoneServices(demo: demo,
                       live: PhoneServices.Live(store: KeychainSecretStore(), transport: CompanionHTTPTransport(),
                                                discovery: BonjourDiscovery(), subscriptions: CloudKitSubscriptions()),
-                      demoDirectory: demoDirectory)
+                      demoDirectory: demoDirectory, demoPeople: demoPeople)
     }
 }

@@ -1,4 +1,5 @@
 #if DEBUG
+import FunesPhone
 import FunesProtocol
 import Foundation
 
@@ -9,6 +10,13 @@ enum ScreenshotScene: String {
     case home, share, save, access, search, inbox
     /// Search answers (FR-iOS-13): the demo's sample question, asked.
     case searchAnswer = "search-answer"
+    /// People & history (13d.2), from the demo's sample people.
+    case peopleList = "people-list"
+    case peopleEntity = "people-entity"
+    case peopleTimeline = "people-timeline"
+    case peopleTimelineOff = "people-timeline-off"
+    case peopleToCheck = "people-to-check"
+    case peopleEmptyOff = "people-empty-off"
 
     static var current: ScreenshotScene? {
         UserDefaults.standard.string(forKey: "FunesScreenshot").flatMap(ScreenshotScene.init(rawValue:))
@@ -16,7 +24,7 @@ enum ScreenshotScene: String {
 
     var tab: RootView.Tab {
         switch self {
-        case .search, .searchAnswer: .search
+        case .search, .searchAnswer, .peopleList, .peopleEntity, .peopleTimeline, .peopleTimelineOff, .peopleToCheck, .peopleEmptyOff: .search
         case .inbox: .inbox
         case .home, .share, .save, .access: .home
         }
@@ -28,7 +36,7 @@ enum ScreenshotScene: String {
         case .share: .share
         case .save: .save
         case .access: .access
-        case .home, .search, .searchAnswer, .inbox: nil
+        default: nil
         }
     }
 
@@ -43,6 +51,32 @@ enum ScreenshotScene: String {
 
     /// Whether the scene asks for the search's answer once the results load.
     var asks: Bool { self == .searchAnswer }
+
+    /// Search's stack for a People scene.
+    var searchPath: [SearchRoute] {
+        switch self {
+        case .peopleList, .peopleTimeline, .peopleTimelineOff, .peopleToCheck, .peopleEmptyOff: [.people]
+        case .peopleEntity: [.people, .entity("e-sam")]
+        default: []
+        }
+    }
+
+    var peopleTab: PeopleModel.Tab {
+        switch self {
+        case .peopleTimeline, .peopleTimelineOff: .timeline
+        case .peopleToCheck: .toCheck
+        default: .people
+        }
+    }
+
+    /// Which of the Mac's states the demo's People shows.
+    var demoPeople: DemoPeople.Mode {
+        switch self {
+        case .peopleTimelineOff: .timelineOff
+        case .peopleEmptyOff: .factsOff
+        default: .on
+        }
+    }
 }
 #endif
 
