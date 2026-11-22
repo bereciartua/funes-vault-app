@@ -22,7 +22,7 @@
       "callGroup": "people",
       "model": "claude-code/claude-haiku-5-5",
       "adapter": "claude-code/1;effort=low",
-      "batching": "one-memory;pipeline=2",
+      "batching": "one-memory;pipeline=3",
       "promptVersion": "b08af3894f34",
       "registryVersion": "v1-8338de9d268e",
       "gate": "13a.2 persons: main, astra, mixed, persons, reads r1, r2",
@@ -46,7 +46,7 @@
         "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/persons-manifest.json",
         "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/persons.jsonl"
       ],
-      "recordedAt": "2026-11-21"
+      "recordedAt": "2026-11-22"
     },
     {
       "predicates": [
@@ -59,7 +59,7 @@
       "callGroup": "work",
       "model": "claude-code/claude-haiku-5-5",
       "adapter": "claude-code/1;effort=low",
-      "batching": "one-memory;pipeline=2",
+      "batching": "one-memory;pipeline=3",
       "promptVersion": "22d054884a30",
       "registryVersion": "v1-8338de9d268e",
       "gate": "13a.2 client: mixed, work13, reads r1, r2",
@@ -75,7 +75,7 @@
         "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13-manifest.json",
         "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl"
       ],
-      "recordedAt": "2026-11-21"
+      "recordedAt": "2026-11-22"
     },
     {
       "predicates": [
@@ -89,7 +89,7 @@
       "callGroup": "work",
       "model": "claude-code/claude-haiku-5-5",
       "adapter": "claude-code/1;effort=low",
-      "batching": "one-memory;pipeline=2",
+      "batching": "one-memory;pipeline=3",
       "promptVersion": "22d054884a30",
       "registryVersion": "v1-8338de9d268e",
       "gate": "13a.2 works_at: mixed, work13, reads r1, r2",
@@ -105,7 +105,7 @@
         "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13-manifest.json",
         "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl"
       ],
-      "recordedAt": "2026-11-21"
+      "recordedAt": "2026-11-22"
     }
   ]
 }

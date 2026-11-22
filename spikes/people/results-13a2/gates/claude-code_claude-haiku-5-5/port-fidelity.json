@@ -2,7 +2,7 @@
  "format": "funes.facts-port-fidelity.v1",
  "pass": true,
  "problems": [],
- "commit": "ceb9d97060fa477ad47c870c0ac6ac43d5748f4b",
+ "commit": "0fe54a51ac47e8f7d3fa32a6bd17903a8bc70e49",
  "gold_reader": {
   "main": {
    "substituted": 5,
@@ -29,7 +29,7 @@
    "plays": 30,
    "expected_plays": 30,
    "python_sha256": "a1de103daa6a4eb37d925e5674266f4f7c23a91751ad0ece5b19cd5b677c22a1",
-   "swift_sha256": "6f53cdd2b166a1547ff9be901b786e479d40a9f27e8f32f2293abaf8a4f83f88",
+   "swift_sha256": "6271523b110bc3c12a2ecd48a63ed969047d7f6d6fbccf2d04b5e4d3de41478d",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 100.0,
@@ -78,7 +78,7 @@
    "plays": 28,
    "expected_plays": 28,
    "python_sha256": "4eed39a33fd5a261ce284366b81df3878301e3b147bf908bb9cd668964bbe835",
-   "swift_sha256": "6bb413465f48c068744a29d3b4fec0c7be99c1270a2b0c5aae87523bb1922938",
+   "swift_sha256": "926071c978241a7933785bc0855935c9dc0ff43b0a79bc946c8a06bf7e596edf",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 100.0,
@@ -124,7 +124,7 @@
    "plays": 16,
    "expected_plays": 16,
    "python_sha256": "40821e9eb5ac51b21deb3c103a4b79c1a87ecc0b73978fc283789a1c3624e8b1",
-   "swift_sha256": "e4638afd1c6d4bb971538fbc786f9f7fe1da806febfd5b69feef704b461b824c",
+   "swift_sha256": "00585f6835c85969b43eafdbc1cf446c6f484be59cf70ed53754ce61c9276efd",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 100.0,
@@ -183,7 +183,7 @@
    "plays": 30,
    "expected_plays": 30,
    "python_sha256": "46d2835000960a43e7e35901b080199768ed3ff19e8fbff8dc890d46191c6575",
-   "swift_sha256": "b4255f6d38d379bdc795020d661491dc6a06736d10bede6216d8a43f8a3a8628",
+   "swift_sha256": "60b64750ce4b5ea844425a36434a72cbc4f1665b88b8454c665c5d166cdb98c9",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 100.0,
@@ -228,7 +228,7 @@
    "plays": 28,
    "expected_plays": 28,
    "python_sha256": "9b6f3c0019a1e085c113a9be28eaac2f98f837ba197a3b65b9fa01ddc39c4b91",
-   "swift_sha256": "48a3760bdbeeb16daa1b9b74d72d1edb5e949d42e3ee6469877c7bc5830be917",
+   "swift_sha256": "ccd13325470b8f475ef9d150a2ee0f8f2bbc0f14e8c6556123268bc3359c8670",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 100.0,
@@ -275,7 +275,7 @@
    "plays": 16,
    "expected_plays": 16,
    "python_sha256": "ee9d9cd193ab739749a64be8ff83c8a3513295c60cea78427ede48cf08cc75ee",
-   "swift_sha256": "61f19279b41931e3929da4faceb58450643cd2e7331e37a88b613b74e84c0b17",
+   "swift_sha256": "143dfce58c80108a15daa7c04d25e8a130eb33fa30f4e240348015e793aec44d",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 100.0,
@@ -318,7 +318,7 @@
    "plays": 66,
    "expected_plays": 66,
    "python_sha256": "367e4295c77d972214423db2844bffb22c0ee7e13b74e963ea2dee473c30e578",
-   "swift_sha256": "1131b6d8faf043fb91ee622d241232f1717634f96a8d05df1ac056b0593b7f0a",
+   "swift_sha256": "e15e8e4fde065f1ccd44f7a631909434b17f5e664d9dff325a835bdbaed00397",
    "python": {
     "full basis right": 100.0,
     "sole_known right": 95.23809523809524,
