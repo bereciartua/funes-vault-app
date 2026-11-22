@@ -235,12 +235,15 @@ public struct FactsQualification: Sendable {
         }
         // On only with everything it needs on (the registry's `uses`, transitively); a basis-scoped use also needs the
         // unscoped one.
-        let on = candidates.filter { k in
+        var on = candidates.filter { k in
             (k.basis.isEmpty || candidates.contains(.init(predicate: k.predicate, use: k.use, basis: "")))
                 && registry.prerequisites(k.use.rawValue).allSatisfy { p in
                     FactsUse(rawValue: p).map { candidates.contains(.init(predicate: k.predicate, use: $0, basis: "")) } ?? false
                 }
         }
+        // 13e.2: the timeline gate measured an answer's *timeline* with the persons' *attributes* on (decision 9), so for
+        // an answer *timeline* is on only while some *attributes* use is (a review's off-switch on attributes turns it off).
+        if answer != nil, !on.contains(where: { $0.use == .attributes }) { on = on.filter { $0.use != .timeline } }
         return FactsUses(registry: registry, on: on)
     }
 

@@ -358,6 +358,9 @@ def timeline_measures(lines, stories, reg, person=False):
             if id(e) not in assign:
                 continue
             t = stints[assign[id(e)]]
+            # 13e.2: the episode's slot is its stint's kind (a freelance business read as employment is a wrong fact).
+            if e.get("slot") not in (None, "", "_") and e["slot"] != t["kind"]:
+                (wrong_facts if e.get("trusted", True) else untrusted_facts).add((r["story"], t["org"], "slot"))
             sink = wrong_dates if e.get("trusted", True) else untrusted_dates
             for bound, truth in (("start", t["start"]), ("end", t["end"])):
                 got, want = e[bound], _range(truth)
@@ -990,12 +993,310 @@ def verify_answer_record(r, reg):
     return probs
 
 
+# --- 13e.2: the timeline gate (works at {timeline}, per answer engine) --------------------------------------------------
+R13E2 = HERE / "results-13e2"
+GATE_SET = HERE / "fixtures" / "gate-13e2"
+VOLATILE = ("durationMs", "providerMs", "answerMs", "cached", "tries", "commit", "dirty")
+
+
+def timeline_blockers():
+    """The gate's own freeze (spikes/people/freeze-13e2.txt) and the shared blockers."""
+    import os
+    import subprocess
+    out = [b for b in blockers() if "freeze" not in b]
+    f = subprocess.run(["sh", str(REPO / "scripts/facts_freeze.sh"), "check"], capture_output=True, text=True,
+                       env=dict(os.environ, FACTS_FREEZE="spikes/people/freeze-13e2.txt"))
+    if f.returncode != 0:
+        out.append("the code changed since the timeline gate's freeze (FACTS_FREEZE=spikes/people/freeze-13e2.txt)")
+    return out
+
+
+def timeline_inputs(engine, tag):
+    """The evidence a timeline record rests on, repo-relative under results-13e2/ and the set."""
+    files = [f"answers-{engine}/answers.jsonl", f"answers-{engine}/manifest.json", f"answers-{engine}/judge-opus.jsonl",
+             f"answers-{engine}/judge-astra.jsonl", f"answers-{engine}/adjudicated.jsonl",
+             f"read-{tag}/stories.jsonl", f"read-{tag}/manifest.json", f"read-{tag}/calls.jsonl"]
+    files += ["labels-corrected.json"] + [f for f in ("relabels.jsonl", "fact-disputes.jsonl") if (R13E2 / f).exists()]
+    return files
+
+
+def normalized_answers(path):
+    out = []
+    for line in Path(path).read_text().splitlines():
+        r = {k: v for k, v in json.loads(line).items() if k not in VOLATILE}
+        if r.get("factsRevision"):
+            r["factsRevision"] = r["factsRevision"].split(".", 1)[1]
+        out.append(r)
+    return out
+
+
+FROZEN_PATHS = ["Packages", "Apps", "scripts", "FunesVault.xcodeproj", "spikes/people/*.py", "spikes/people/swift",
+                "spikes/people/registry.json", "spikes/people/port_fidelity_known.json"]
+
+
+def code_changed_since(commit):
+    """Frozen code that differs between `commit` and the working tree (the records file aside); None if unknown."""
+    import subprocess
+    p = subprocess.run(["git", "-C", str(REPO), "diff", "--name-only", commit, "--", *FROZEN_PATHS], capture_output=True, text=True)
+    if p.returncode != 0:
+        return None
+    return [f for f in p.stdout.split() if not f.endswith("Resources/facts-qualification.json")]
+
+
+def timeline_replay_problems(engine, model, replay, tag, facts_record=None, check_code=True):
+    """Why the evidence doesn't tie the live read and answers, and their replays, to one set and the frozen code
+    ([] = it does)."""
+    import score_13e2
+    probs = []
+    set_sha = {"storiesSha256": sha(GATE_SET / "stories.json"), "fillersSha256": sha(GATE_SET / "fillers.json")}
+    read_calls = R13E2 / f"read-{tag}" / "calls.jsonl"
+    manifests = {
+        "read": R13E2 / f"read-{tag}" / "manifest.json",
+        "answers": R13E2 / f"answers-{engine}" / "manifest.json",
+        "read replay": Path(replay) / f"replay-read-{tag}" / "manifest.json",
+        "answers replay": Path(replay) / f"answers-{engine}" / "manifest.json",
+    }
+    m = {}
+    for name, mp in manifests.items():
+        if not mp.exists():
+            probs.append(f"{name}: no manifest at {mp}")
+            continue
+        m[name] = json.loads(mp.read_text())
+        x = m[name]
+        if x.get("dirty") or not x.get("commit"):
+            probs.append(f"{name}: on a dirty tree")
+        if check_code:
+            changed = code_changed_since(x.get("commit", "HEAD"))
+            if changed is None or changed:
+                probs.append(f"{name}: frozen code changed since its commit ({(changed or ['unknown'])[:3]})")
+        if any(x.get(k) != v for k, v in set_sha.items()):
+            probs.append(f"{name}: not on the set's current files")
+        if x.get("options", {}).get("only") or x.get("options", {}).get("index") == "keyword":
+            probs.append(f"{name}: a partial or keyword-only run ({x.get('options')})")
+    if len(m) < 4:
+        return probs
+    rd, ans, rrep, arep = m["read"], m["answers"], m["read replay"], m["answers replay"]
+    if rd.get("mode") != "live" or rd.get("problems") or rd.get("unsettled"):
+        probs.append(f"read: not a clean live read ({rd.get('mode')}, {rd.get('problems')}, unsettled {rd.get('unsettled')})")
+    if rd.get("callsSha256") != sha(read_calls):
+        probs.append("read: its calls file isn't the one it wrote")
+    lines = R13E2 / f"read-{tag}" / "stories.jsonl"
+    if rd.get("linesSha256") != sha(lines):
+        probs.append("read: its stories file isn't the one it wrote")
+    else:
+        got = [json.loads(l)["story"] for l in lines.read_text().splitlines()]
+        want = [s["id"] for s in json.loads((GATE_SET / "stories.json").read_text())["stories"]]
+        if got != want or sorted(rd.get("digests", {})) != sorted(want):
+            probs.append("read: not every story of the set, once, in order")
+    if rrep.get("mode") != "replay" or rrep.get("calls", {}).get("misses") or rrep.get("problems"):
+        probs.append(f"read replay: {rrep.get('mode')}, misses {rrep.get('calls', {}).get('misses')}, {rrep.get('problems')}")
+    if rrep.get("digests") != rd.get("digests"):
+        probs.append("read replay: its stories' states differ from the live read's")
+    for name, x in (("answers", ans), ("answers replay", arep)):
+        if x.get("readCallsSha256") != sha(read_calls) or x.get("readDigests") != rd.get("digests"):
+            probs.append(f"{name}: not on the live read {tag}")
+        if x.get("reps") != score_13e2.GATE_REPS:
+            probs.append(f"{name}: {x.get('reps')} samples of R, the gate fixed {score_13e2.GATE_REPS}")
+    if ans.get("mode") != "live":
+        probs.append(f"answers: not a live run ({ans.get('mode')})")
+    provider, mid = model.split("/", 1)
+    seen = ans.get("modelsReported")
+    if not (seen == [mid] or (seen == [] and ans.get("engine") == {"provider": provider, "model": mid})):
+        probs.append(f"answers: the provider reported {seen}, for {ans.get('engine')}")
+    if arep.get("mode") != "replay" or arep.get("calls", {}).get("uncached"):
+        probs.append(f"answers replay: not a full replay ({arep.get('mode')}, {arep.get('calls')})")
+    f = Path(replay) / f"answers-{engine}" / "answers.jsonl"
+    live_file = R13E2 / f"answers-{engine}" / "answers.jsonl"
+    if not f.exists() or normalized_answers(f) != normalized_answers(live_file):
+        probs.append("answers replay: its records differ from the live ones")
+    if check_code:
+        for c in sorted({(json.loads(l).get("commit"), json.loads(l).get("dirty")) for l in live_file.read_text().splitlines()}, key=str):
+            if c[1] or not c[0]:
+                probs.append(f"answers: records made on a dirty tree or without a commit ({c})")
+            else:
+                changed = code_changed_since(c[0])
+                if changed is None or changed:
+                    probs.append(f"answers: records made at {c[0][:8]}, and frozen code changed since")
+    if rrep.get("commit") != arep.get("commit"):
+        probs.append("the two replays aren't at one commit")
+    if facts_record:
+        e = rd.get("engine", {})
+        if f"{e.get('provider')}/{e.get('model')}" != facts_record["model"] or e.get("adapter") != facts_record["adapter"]:
+            probs.append(f"read: engine {e} isn't the works at record's ({facts_record['model']}, {facts_record['adapter']})")
+        if rd.get("batching") != facts_record["batching"] or rd.get("registryVersion") != facts_record["registryVersion"] \
+                or rd.get("promptVersions", {}).get(facts_record["callGroup"]) != facts_record["promptVersion"]:
+            probs.append("read: batching, registry or prompt version isn't the works at record's")
+    probs += spikeg_timeline_problems(engine, model, replay, check_code)
+    return probs
+
+
+def spikeg_timeline_problems(engine, model, replay, check_code=True):
+    """The Spike G run with the rows on (FactsAnswerLiveTests timeline=1): live, full, clean, the model, and replayed at
+    a clean commit with the same records."""
+    probs = []
+    live_dir, rep_dir = R13D / f"spike-g-{engine}-timeline", Path(replay) / f"spike-g-{engine}-timeline"
+    for name, d, mode in (("Spike G", live_dir, "live"), ("Spike G replay", rep_dir, "replay")):
+        mp = d / "manifest-spikeg.json"
+        if not mp.exists():
+            probs.append(f"{name}: no manifest")
+            continue
+        x = json.loads(mp.read_text())
+        o = x.get("options", {})
+        if x.get("mode") != mode or (mode == "replay" and x.get("uncached")):
+            probs.append(f"{name}: mode {x.get('mode')}, uncached {x.get('uncached')}")
+        if o.get("timeline") != "1" or o.get("engine") != engine or o.get("only") or o.get("sets") or o.get("arms") or o.get("index") == "keyword":
+            probs.append(f"{name}: options {o}")
+        if x.get("dirty") or not x.get("commit"):
+            probs.append(f"{name}: on a dirty tree")
+        if check_code:
+            changed = code_changed_since(x.get("commit", "HEAD"))
+            if changed is None or changed:
+                probs.append(f"{name}: frozen code changed since its commit")
+        if mode == "live" and not model_identified(x, model):
+            probs.append(f"{name}: the provider reported {x.get('modelsReported')}")
+    for n in ("main-P.jsonl", "main-F.jsonl", "astra-P.jsonl", "astra-F.jsonl"):
+        a, b = live_dir / n, rep_dir / n
+        if not a.exists() or not b.exists() or normalized(a) != normalized(b):
+            probs.append(f"Spike G {n}: the replay's records differ from the live ones")
+    return probs
+
+
+def phase_a_lines(model):
+    """Phase A's reads behind the works at record: its work13 and mixed lines, r1 and r2 (the record's evidence)."""
+    rec = next((r for r in json.loads(RECORDS.read_text())["records"]
+                if r["model"] == model and r["uses"] == ["recorded", "linked"] and "works_at" in r["predicates"]), None)
+    if rec is None:
+        return None, []
+    return rec, sorted(e for e in rec["evidence"] if re.search(r"-gates-r\d+/(work13|mixed)\.jsonl$", e))
+
+
+def timeline_gates(engine, answer_model, facts_model, tag):
+    import score_13e2
+    import score_13d
+    import judge_13e2 as J
+    J.SET, J.RESULTS = GATE_SET, R13E2
+    score_13d.OUT = R13D
+    sc = score_13e2.score_engine(R13E2, engine, score_13e2.GATE_REPS)
+    orig = score_13e2.score_engine(R13E2, engine, score_13e2.GATE_REPS, J.original_labels(), check_minimums=False)
+    sc["original_labels"] = {"measures": orig["measures"], "gates": orig["gates"]}
+    rec, lines = phase_a_lines(facts_model)
+    reads = [("gate read", str(R13E2 / f"read-{tag}" / "stories.jsonl"), str(GATE_SET / "stories.json"))]
+    reads += [(l, str(REPO / l), str(HERE / "fixtures" / f"stories-{'work13' if 'work13' in l else 'mixed'}.json")) for l in lines]
+    sc["facts"] = score_13e2.facts_gate(R13E2, reads)
+    sc["gates"]["facts"] = len(lines) >= 4 and all(v["pass"] for v in sc["facts"].values())
+    ok_g, _ = score_13d.spikeg_gate(engine, "-timeline")
+    sc["gates"]["spike_g"] = all(ok_g.values())
+    return sc, rec, lines
+
+
+def cmd_timeline_scores(a):
+    rec0, _ = phase_a_lines(a.facts_model)
+    probs = timeline_replay_problems(a.engine, a.model, Path(a.replay), a.tag, rec0) + timeline_blockers()
+    if probs:
+        raise SystemExit("qualify.py: " + "; ".join(probs))
+    sc, rec, lines = timeline_gates(a.engine, a.model, a.facts_model, a.tag)
+    dest = R13E2 / "gates" / a.model.replace("/", "_")
+    (dest / "replay").mkdir(parents=True, exist_ok=True)
+    for sub in (f"replay-read-{a.tag}", f"answers-{a.engine}", f"spike-g-{a.engine}-timeline"):
+        (dest / "replay" / sub).mkdir(parents=True, exist_ok=True)
+        for f in Path(a.replay, sub).iterdir():
+            if f.is_file():
+                shutil.copy(f, dest / "replay" / sub / f.name)
+    inputs = timeline_inputs(a.engine, a.tag)
+    m = json.loads((dest / "replay" / f"answers-{a.engine}" / "manifest.json").read_text())
+    out = {"engine": a.engine, "model": a.model, "factsModel": a.facts_model, "tag": a.tag,
+           "inputs": {p: sha(R13E2 / p) for p in inputs}, "set": {f: sha(GATE_SET / f) for f in ("stories.json", "fillers.json")},
+           "spikeG": {f"spike-g-{a.engine}-timeline/{n}": sha(R13D / f"spike-g-{a.engine}-timeline" / n)
+                      for n in ("main-P.jsonl", "main-F.jsonl", "astra-P.jsonl", "astra-F.jsonl")},
+           "phaseA": {l: sha(REPO / l) for l in lines},
+           "replay": {"commit": m["commit"], "answerPromptVersion": m["answerPromptVersion"], "registryVersion": m["registryVersion"],
+                      "files": {str(f.relative_to(dest)): sha(f) for f in sorted((dest / "replay").rglob("*")) if f.is_file()}},
+           "measures": sc["measures"], "facts": sc["facts"], "gates": sc["gates"], "problems": sc["problems"],
+           "originalLabels": sc.get("original_labels"),
+           "date": m["date"][:10]}
+    path = dest / f"scores-13e2-{a.engine}.json"
+    path.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n")
+    print(json.dumps({"gates": sc["gates"], "measures": sc["measures"]}, indent=1, ensure_ascii=False))
+
+
+def timeline_record_problems(sc):
+    probs = [f"{k}: fails" for k, v in sc["gates"].items() if not v] + sc.get("problems", [])
+    rec, _ = phase_a_lines(sc["factsModel"])
+    if rec is None:
+        probs.append("no works at {recorded, linked} record for the Facts engine")
+    attrs = [r for r in json.loads(RECORDS.read_text())["records"] if r["uses"] == ["attributes"]
+             and r.get("answerModels") == [sc["model"]] and r.get("answerPromptVersion") == sc["replay"]["answerPromptVersion"]]
+    if not attrs:
+        probs.append("no attributes record for this answer model at this answer prompt version (the gate measured them together)")
+    if rec and sc["replay"]["registryVersion"] != rec["registryVersion"]:
+        probs.append("the replay's registry isn't the works at record's")
+    return probs, rec
+
+
+def cmd_timeline_records(a):
+    path = Path(a.scores)
+    sc = json.loads(path.read_text())
+    probs, rec = timeline_record_problems(sc)
+    probs += timeline_blockers()
+    if probs:
+        raise SystemExit("qualify.py: no record: " + "; ".join(probs))
+    rel = lambda p: str(Path(p).resolve().relative_to(REPO))
+    dest = path.parent
+    evidence = sorted([rel(path)] + [rel(R13E2 / p) for p in sc["inputs"]] + [rel(GATE_SET / f) for f in sc["set"]]
+                      + [rel(R13D / p) for p in sc["spikeG"]] + list(sc["phaseA"]) + [rel(dest / p) for p in sc["replay"]["files"]])
+    record = {"predicates": ["works_at"], "uses": ["timeline"], "basis": "", "callGroup": rec["callGroup"], "model": rec["model"],
+              "adapter": rec["adapter"], "batching": rec["batching"], "promptVersion": rec["promptVersion"],
+              "registryVersion": rec["registryVersion"],
+              "gate": "13e.2 timeline gate (ADR-0032 decision 9, amended 2026-11-21): a blind set by GPT-6-Astra (24 stories), "
+                      "one recorded live read, P/R answers judged blind by Opus and GPT-6-Astra with adjudication, "
+                      f"{sc['measures']['samples']} sample(s) of R; Spike G with the rows on; the facts behind the rows",
+              "evidence": evidence, "recordedAt": sc["date"], "answerModels": [sc["model"]],
+              "answerPromptVersion": sc["replay"]["answerPromptVersion"]}
+    print(json.dumps(record, indent=1, ensure_ascii=False))
+    if a.write:
+        f = json.loads(RECORDS.read_text())
+        f["records"] = [r for r in f["records"] if not (r.get("answerModels") == [sc["model"]] and r["uses"] == ["timeline"])] + [record]
+        RECORDS.write_text(json.dumps(f, indent=2, ensure_ascii=False) + "\n")
+        print("wrote 1 record")
+
+
+def verify_timeline_record(r, reg):
+    """Why a shipped timeline record's evidence doesn't hold up ([] = it does): digests, the replay, and every gate
+    recomputed from the evidence."""
+    scores = next((REPO / e for e in r["evidence"] if re.search(r"/scores-13e2-\w+\.json$", e)), None)
+    if scores is None or not scores.exists():
+        return ["no scores-13e2-<engine>.json in the evidence"]
+    missing = [e for e in r["evidence"] if not (REPO / e).exists()]
+    if missing:
+        return [f"missing {m}" for m in missing]
+    sc = json.loads(scores.read_text())
+    probs = [f"{p}: digest differs" for p, d in sc["inputs"].items() if sha(R13E2 / p) != d]
+    probs += [f"{p}: digest differs" for p, d in sc["phaseA"].items() if sha(REPO / p) != d]
+    probs += [f"replay {p}: digest differs" for p, d in sc["replay"]["files"].items() if sha(scores.parent / p) != d]
+    probs += [f"{p}: digest differs" for p, d in sc["set"].items() if sha(GATE_SET / p) != d]
+    probs += [f"{p}: digest differs" for p, d in sc["spikeG"].items() if sha(R13D / p) != d]
+    rec0, _ = phase_a_lines(sc["factsModel"])
+    probs += timeline_replay_problems(sc["engine"], sc["model"], scores.parent / "replay", sc["tag"], rec0, check_code=False)
+    again, _, _ = timeline_gates(sc["engine"], sc["model"], sc["factsModel"], sc["tag"])
+    probs += [f"{k}: fails (recomputed)" for k, v in again["gates"].items() if not v]
+    if again["measures"] != sc["measures"]:
+        probs.append("the measures recomputed from the evidence differ from the scores")
+    p2, rec = timeline_record_problems(sc)
+    probs += p2
+    if rec and any(rec[k] != r[k] for k in ("model", "adapter", "batching", "promptVersion", "registryVersion", "callGroup")):
+        probs.append("not on the facts key of the works at record")
+    if r.get("answerModels") != [sc["model"]] or r.get("answerPromptVersion") != sc["replay"]["answerPromptVersion"]:
+        probs.append("answer model or prompt version isn't the scores'")
+    return probs
+
+
 def cmd_verify(a):
     reg = registry()
     recs = json.loads(RECORDS.read_text())["records"]
     bad = 0
     for r in recs:
-        probs = verify_answer_record(r, reg) if r["uses"] == ["attributes"] else verify_record(r, reg)
+        probs = (verify_answer_record(r, reg) if r["uses"] == ["attributes"]
+                 else verify_timeline_record(r, reg) if r["uses"] == ["timeline"] and r.get("answerModels") else verify_record(r, reg))
         bad += bool(probs)
         print(f"{r['callGroup']} {r['uses']} {r['model']}: " + ("ok" if not probs else "; ".join(probs)))
     print(f"qualify.py verify: {len(recs)} record(s), {bad} failing")
@@ -1025,7 +1326,20 @@ def main():
     r13 = sub.add_parser("answer-records")
     r13.add_argument("scores")
     r13.add_argument("--write", action="store_true")
+    t13 = sub.add_parser("timeline-scores")
+    t13.add_argument("--engine", required=True)
+    t13.add_argument("--model", required=True, help="the answer model, <provider>/<id>")
+    t13.add_argument("--replay", required=True, help="the replay's out= (replay-read-<tag>/, answers-<engine>/)")
+    t13.add_argument("--tag", required=True, help="the live read's tag (results-13e2/read-<tag>/)")
+    t13.add_argument("--facts-model", default="claude-code/claude-haiku-5-5")
+    tr13 = sub.add_parser("timeline-records")
+    tr13.add_argument("scores")
+    tr13.add_argument("--write", action="store_true")
     a = ap.parse_args()
+    if a.cmd == "timeline-scores":
+        return cmd_timeline_scores(a)
+    if a.cmd == "timeline-records":
+        return cmd_timeline_records(a)
     if a.cmd == "answer-scores":
         return cmd_answer_scores(a)
     if a.cmd == "answer-records":
