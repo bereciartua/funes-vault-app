@@ -36,7 +36,7 @@ import judge_13e2 as J
 import qualify
 
 HERE = Path(__file__).resolve().parent
-# Samples of arm R, fixed before the freeze (the author's choice: 1 or 2). Percentages pool them; zero targets count
+# Samples of arm R, fixed before the freeze: the author chose 1 (2026-11-22). Percentages pool them; zero targets count
 # across all of them; the negatives' allowance is pooled (R's wrong over every sample ≤ P's × samples + 1).
 GATE_REPS = 1
 MIN_CLASSES = {"decidable": 50, "undecidable": 50, "negative": 40}
