@@ -15,9 +15,12 @@ public struct TimelineIntent: Sendable, Equatable {
     /// (`anchorBoundary`: "start", "end", or nil for the stint) it overlaps.
     public var anchorDate: DateRange?
     public var anchorBoundary: String?
+    /// The anchor's episode by number (1 the first, as the trusted episodes are ordered), for a comparison that names it
+    /// (13e.2's check); nil reads the phrase's episode cues as before.
+    public var stint: Int?
 
     public init(predicate: String, op: Operator, anchor: TimelineAnchor?, phrase: String? = nil, slot: String? = nil,
-                anchorDate: DateRange? = nil, anchorBoundary: String? = nil) {
+                anchorDate: DateRange? = nil, anchorBoundary: String? = nil, stint: Int? = nil) {
         self.predicate = predicate
         self.op = op
         self.anchor = anchor
@@ -25,10 +28,12 @@ public struct TimelineIntent: Sendable, Equatable {
         self.slot = slot
         self.anchorDate = anchorDate
         self.anchorBoundary = anchorBoundary
+        self.stint = stint
     }
 
     public static func == (a: TimelineIntent, b: TimelineIntent) -> Bool {
         a.predicate == b.predicate && a.op == b.op && a.anchor == b.anchor && a.slot == b.slot && a.anchorDate == b.anchorDate
+            && a.stint == b.stint
     }
 }
 

@@ -28,14 +28,17 @@ extension SearchService {
     /// the user sees now (any position; no refill past the view's top). Admission is recomputed from the query; the
     /// phone's ids are never trusted alone.
     func answerPlan(_ query: String, filter: MemoryFilter, count: Int, view: AnswerView, answerModel: String, onDevice: Bool,
-                    now: Date) async -> AnswerFactsPlan? {
+                    checked: Bool = true, now: Date) async -> AnswerFactsPlan? {
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, let config = facts else { return nil }
         if case let .sendable(limit) = view, limit != config.cloudLimit { return nil }
         do {
             let state: (FactsUses, FactsUses)? = try await store.writer.read { db in
                 let uses = try config.uses(db)
                 let answerUses = try config.answerUses(db, answerModel: answerModel)
-                guard !uses.predicates(.linked).isEmpty, !answerUses.predicates(.attributes).isEmpty else { return nil }
+                // 13e.2: an answer reads learned facts with an *attributes* record for its model, or a *timeline* one that
+                // gives it rows (a cloud engine, a screen that shows checked claims).
+                let rowsAllowed = checked && !onDevice && view != .full && !answerUses.predicates(.timeline).isEmpty
+                guard !uses.predicates(.linked).isEmpty, !answerUses.predicates(.attributes).isEmpty || rowsAllowed else { return nil }
                 return (uses, answerUses)
             }
             guard let (_, answerUses) = state else { return nil }
@@ -79,23 +82,50 @@ extension SearchService {
             var admissions: [UUID: SearchAdmission] = [:]
             for hit in ranked where readSet.contains(hit.memoryID) { if let a = hit.admission { admissions[hit.memoryID] = a } }
 
-            // Bridges and the note (§10.3, §11.6): a timeline the view decides, or can't.
-            var bridges: [AnswerFactsPlan.Bridge] = []
+            // The note (§10.3, §11.6): a timeline the view's grammar can't decide. Bridges are retired (13e.2): the rows
+            // and the memories they cite replaced them.
+            let bridges: [AnswerFactsPlan.Bridge] = []
             var note: TimelineNote?
             let g = index.graph
-            if let t = plan.timeline {
-                if t.decided {
-                    if answerUses.isOn(t.predicate, .bridges), !onDevice {
-                        bridges = try await self.bridges(t, index: index, ranked: ranked, read: readSet, filter: filter, view: view, now: now)
-                    }
-                } else {
-                    let noun = g.registry.predicate(t.predicate)?.phrases["note_noun"] ?? t.predicate
-                    note = TimelineNote(noun: noun, op: t.opWords, anchor: t.anchor.flatMap { g.entities[$0]?.name })
+            if let t = plan.timeline, !t.decided {
+                let noun = g.registry.predicate(t.predicate)?.phrases["note_noun"] ?? t.predicate
+                note = TimelineNote(noun: noun, op: t.opWords, anchor: t.anchor.flatMap { g.entities[$0]?.name })
+            }
+
+            // 13e.2's rows (§10.3): for a cloud answer shown where checked claims are, a *timeline* predicate the search
+            // touches loosely (one of its holders matched, a word of the predicate, or an operator or time cue).
+            var rows: TimelineRows?, check: TimelineCheck?, cited: [UUID] = []
+            if checked, !onDevice, case .sendable = view,
+               let p = answerUses.predicates(.timeline).first(where: { Self.touches(query, predicate: $0, plan: plan, graph: g) }) {
+                var rg = g
+                rg.uses = answerUses
+                let built = TimelineRows.build(rg, predicate: p, first: plan.matches.map(\.entity))
+                // Scanned for secrets like attributes (§10.3): a match sends no rows.
+                if !built.isEmpty, SecretScanner.scan([built.block()]).isEmpty {
+                    var local = fullIndex.graph
+                    local.uses = answerUses
+                    rows = built
+                    check = TimelineCheck(graph: rg, local: local, rows: built)
+                    let listed = try await store.writer.read { db in try MemoryStore.listed(db, filter: filter, now: now) }
+                    let active = Set(listed.map(\.id.db))
+                    // Every candidate, in the rows' order: the answer leaves out those it reads as results (its own
+                    // selection, which a rows-only plan takes from 13b) and keeps the first 6 within the budget.
+                    cited = built.citedMemoryIDs.filter { active.contains($0) }.compactMap(UUID.init(uuidString:))
                 }
             }
 
-            // Attributes, each with the highest sensitivity behind it.
+            // Attributes, each with the highest sensitivity behind it (and the rows', 13e.2).
             var behind = Set(read.map(\.db))
+            // The rows' holders and every holder a stated rename joins them to: their memories, and their fact ids (for the
+            // user's own entries and corrections, which the send boundary reads again).
+            let rowHolders: Set<String> = rows.map { r in
+                let ids = Set(r.entities.values)
+                return ids.union(g.statedGroups(r.predicate).filter { !$0.isDisjoint(with: ids) }.flatMap { $0 })
+            } ?? []
+            let rowFactsList = rows.map { r in g.facts.filter { $0.predicate == r.predicate && rowHolders.contains($0.entity) } } ?? []
+            let rowsBehind = Set(rowFactsList.flatMap { $0.assertions.filter { !$0.fromUser }.map(\.memoryID) })
+            let rowsFacts = Set(rowFactsList.compactMap { index.factIDs[FactStore.Loaded.key($0.predicate, $0.entity)] })
+            behind.formUnion(rowsBehind)
             for f in g.facts { for a in f.assertions where !a.fromUser { behind.insert(a.memoryID) } }
             let ids = Array(behind)
             let levels: [String: Sensitivity] = try await store.writer.read { db in
@@ -115,47 +145,35 @@ extension SearchService {
                 attributes[id] = a
             }
             let revision = await factsRevision() ?? ""
-            return AnswerFactsPlan(read: read, unreadLinked: unread, admissions: admissions, attributes: attributes, bridges: bridges,
-                                   note: note, revision: revision, view: index, plan: plan)
+            // Rows alone (a *timeline* record, no *attributes* one, 13e.2): 13b's selection with the rows on top, nothing
+            // else inferred; with neither, no plan.
+            let factsSelection = !answerUses.predicates(.attributes).isEmpty
+            if !factsSelection, rows == nil { return nil }
+            var out = AnswerFactsPlan(read: read, unreadLinked: factsSelection ? unread : [], admissions: factsSelection ? admissions : [:],
+                                      attributes: factsSelection ? attributes : [:], bridges: bridges, note: factsSelection ? note : nil,
+                                      revision: revision, view: index, plan: plan)
+            out.factsSelection = factsSelection
+            out.rowsFacts = rowsFacts
+            out.rowsHolders = rowHolders
+            out.rows = rows
+            out.check = check
+            out.cited = cited
+            out.rowsBehind = rowsBehind
+            out.rowsSensitivity = rowsBehind.map { levels[$0] ?? .secret }.max() ?? .public
+            return out
         } catch {
             return nil
         }
     }
 
-    /// Up to 2 memories that state a decided timeline answer's fact (§10.3): trusted, within the view (and so the limit),
-    /// active under the search's filter, not already read, best ranked first (then the most recently written).
-    private func bridges(_ t: FactsQueryPlan.Timeline, index: FactsSearchIndex, ranked: [SearchHit], read: Set<UUID>,
-                         filter: MemoryFilter, view: AnswerView, now: Date) async throws -> [AnswerFactsPlan.Bridge] {
-        let g = index.graph
-        let answer = t.answerGroup.isEmpty ? Set(t.answer) : t.answerGroup   // a stated rename's names too
-        var stating: [String: (entity: String, factID: String?, written: String)] = [:]
-        for f in g.facts where f.predicate == t.predicate && answer.contains(f.entity) && !f.negated {
-            let fid = index.factIDs[FactStore.Loaded.key(f.predicate, f.entity)]
-            for a in f.assertions where a.states && !a.fromUser && a.trusted {
-                stating[a.memoryID] = (f.entity, fid, max(stating[a.memoryID]?.written ?? "", a.written))
-            }
-        }
-        guard !stating.isEmpty else { return [] }
-        // Above the limit, a bridge is left out by the answer like any memory (the sendable view's stating memories are
-        // within it anyway).
-        let listed = try await store.writer.read { db in try MemoryStore.listed(db, filter: filter, now: now) }
-        var allowed = Set<String>()
-        for m in listed where stating[m.id.db] != nil && !read.contains(m.id) { allowed.insert(m.id.db) }
-        let rank = Dictionary(uniqueKeysWithValues: ranked.enumerated().map { ($1.memoryID.db, $0) })
-        let order = allowed.sorted { a, b in
-            switch (rank[a], rank[b]) {
-            case let (x?, y?): return x < y
-            case (_?, nil): return true
-            case (nil, _?): return false
-            default: return (stating[a]!.written, a) > (stating[b]!.written, b)
-            }
-        }
-        let others = g.facts.filter { $0.predicate == t.predicate && $0.entity == t.anchor }
-            .compactMap { index.factIDs[FactStore.Loaded.key($0.predicate, $0.entity)] }
-        return order.prefix(SearchAnswerer.bridgeCount).compactMap { id in
-            guard let s = stating[id], let uuid = UUID(uuidString: id) else { return nil }
-            return AnswerFactsPlan.Bridge(memoryID: uuid, entity: s.entity, factIDs: [s.factID].compactMap { $0 } + others, basis: t.basis)
-        }
+    /// Whether a search touches a *timeline* predicate, loosely (§10.3: a wrong include costs tokens, not an answer): one
+    /// of its holders matched, a word of the predicate's lexicon, or an operator or time cue of the registry.
+    static func touches(_ query: String, predicate: String, plan: FactsQueryPlan, graph: FactsGraph) -> Bool {
+        let holders = Set(graph.facts.filter { $0.predicate == predicate && !$0.negated }.map(\.entity))
+        if plan.matches.contains(where: { holders.contains($0.entity) }) { return true }
+        let q = FactsText.fold(query)
+        let words = (graph.registry.predicate(predicate)?.lexicon.flatMap(\.words) ?? []) + AnswerTimeCues.words(graph.registry)
+        return words.contains { FactsText.cue(q, $0) } || AnswerTimeCues.hasDate(query, registry: graph.registry)
     }
 }
 

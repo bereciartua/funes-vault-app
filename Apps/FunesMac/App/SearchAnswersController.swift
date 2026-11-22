@@ -94,6 +94,13 @@ final class SearchAnswersController: SearchAnswering {
     /// capability); false reads 13b's plain selection, with nothing Funes inferred in it.
     func answer(_ query: String, ids: [UUID], filter: MemoryFilter?, facts: Bool, actor: Actor = .user, via: ActivityEvent.Via = .app,
                 automatic: Bool = false) async throws -> SearchAnswer {
+        try await answer(query, ids: ids, filter: filter, facts: facts, checked: facts, actor: actor, via: via, automatic: automatic)
+    }
+
+    /// `checked`: whoever shows it shows checked timeline claims (the card here, a phone with the `checked` capability,
+    /// 13e.2); false sends no rows.
+    func answer(_ query: String, ids: [UUID], filter: MemoryFilter?, facts: Bool, checked: Bool, actor: Actor = .user,
+                via: ActivityEvent.Via = .app, automatic: Bool = false) async throws -> SearchAnswer {
         // Checked with the same settings the router is built from, on the main actor (§10.6).
         if automatic, !(isOn && trigger.fires(for: query)) { throw SearchAnswerError.askRequired }
         let build = settings.searchAnswerRouterBuilder(cap: settings.cap(store: environment.store, activity: environment.activity))
@@ -108,7 +115,8 @@ final class SearchAnswersController: SearchAnswering {
         }
         defer { settings.collectUsage(from: router) }
         do {
-            return try await answerer.answer(query, ids: ids, filter: filter, facts: facts, router: router, actor: actor, via: via)
+            return try await answerer.answer(query, ids: ids, filter: filter, facts: facts, checked: checked, router: router, actor: actor,
+                                             via: via)
         } catch SearchAnswerError.provider(.unavailable) {
             // A plan's CLI says why it's unavailable: paused after a tool event, or too old.
             if let plan = settings.searchAnswersPlan, let client = settings.subscriptionClient(plan) {

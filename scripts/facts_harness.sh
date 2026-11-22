@@ -13,7 +13,11 @@
 #                                                              a live run (only with the author's go-ahead); the
 #                                                              persons set is people-only: add ";groups=people";
 #                                                              a gate run adds ";tag=gates-r1" (the Phase 13 plan's
-#                                                              Gates step lists every batch)
+#                                                              Gates step lists every batch); every call is recorded
+#                                                              in build/facts-harness/<label>/<set>-calls.jsonl (13e.2)
+#   sh scripts/facts_harness.sh work13 "calls=<that file>;tag=r1-replay"
+#                                                              replays a recorded live read by each call's key, with
+#                                                              no model (the manifest counts replay_misses)
 #
 # Output goes to build/facts-harness/<label>/<set>.jsonl, with score.py's report.md and score_facts.py's output.
 set -eu

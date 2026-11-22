@@ -16,6 +16,9 @@ public struct FactsSearchConfig: Sendable {
     public var cloudLimit: CloudLimit
     /// A measurement's uses (the fixture gates, tests); the app never sets it.
     var measuredUses: FactsUses?
+    /// A measurement's answer-side uses, when they differ from search's (13e.2: a *timeline* record is an answer's alone,
+    /// so plain search runs without it). Nil: `measuredUses`.
+    var measuredAnswerUses: FactsUses?
     /// A measurement's extra links, by memory id (13d's answer gate injects a wrong one); the app never sets it. Part of
     /// the index's cache key.
     var measuredLinks: [String: [MemoryLink]] = [:]
@@ -64,6 +67,7 @@ public struct FactsSearchConfig: Sendable {
     /// What's on for an answer by `answerModel` (`ModelRouter.engine`), read in `db`: *attributes* and *bridges* only where a
     /// record covers that model at the current answer prompt version (13d).
     func answerUses(_ db: Database, answerModel: String) throws -> FactsUses {
+        if let measuredAnswerUses { return measuredAnswerUses }
         if let measuredUses { return measuredUses }
         return try qualification.withOffSwitches(db).uses(engines: engines, registry: registry,
                                                           promptVersions: FactsQualification.promptVersions(registry),

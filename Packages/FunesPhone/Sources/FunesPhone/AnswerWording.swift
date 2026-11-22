@@ -34,6 +34,9 @@ public enum AnswerWording {
     /// The **Inferred** tag on a claim the Mac marked (v0.10).
     public static let inferred = String(localized: "Inferred")
 
+    /// Under a checked claim only your own text supports (13e.2, `agrees_trusted`).
+    public static let untrustedSaysOtherwise = String(localized: "Text you didn't write says otherwise")
+
     /// "1 memory wasn't read: it's above your Mac's cloud limit", "1 claim left out: it didn't quote a memory".
     public static func notes(_ result: MemoryAnswerResult) -> [String] {
         var lines: [String] = []

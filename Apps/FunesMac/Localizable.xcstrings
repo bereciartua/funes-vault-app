@@ -8534,6 +8534,9 @@
     "Text" : {
 
     },
+    "Text you didn't write says otherwise" : {
+      "comment" : "Answer card: under a checked claim only the user's own text supports"
+    },
     "Text you share with a cloud agent goes to its vendor's servers. Use one agent per cloud app, with only the access it needs." : {
 
     },

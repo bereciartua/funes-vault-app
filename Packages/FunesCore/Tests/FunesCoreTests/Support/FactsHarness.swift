@@ -55,12 +55,29 @@ enum FactsHarness {
             var memories: [Memory]
             var orders: [[String]]?
             var queries: [Query]?
+            /// 13e.2, development only (`comparisons=`): Spike T round 2's recorded comparisons, run through the direct
+            /// time-model call to compare with the spike's canonical-question path.
+            var comparisons: [SpikeComparison]? = nil
             let timeline: [TimelineEntry]?
             let people: [String: Person]?
             let corrections: [Correction]?
         }
         let user: User
         var stories: [Story]
+
+        /// A comparison as Spike T round 2 recorded it (organization names, not aliases).
+        struct SpikeComparison: Decodable {
+            let id: String
+            let search: String
+            let made: Bool
+            let `operator`: String
+            let anchor_org: String
+            let stint: String
+            let anchor_date: String
+            let end_date: String
+            let kind: String
+            let answer_org: String
+        }
     }
 
     static var repo: URL {
@@ -120,6 +137,177 @@ enum FactsHarness {
             if let m = usage.model { models.withLock { _ = $0.insert(m) } }
             responses.withLock { $0.all += 1; if usage.model == nil { $0.unidentified += 1 } }
             return (out, usage)
+        }
+    }
+
+    /// Any JSON value: what a provider returned, kept as it came (13e.2: the harness records live calls).
+    enum JSONValue: Codable, Sendable, Equatable {
+        case null, bool(Bool), number(Double), string(String), array([JSONValue]), object([String: JSONValue])
+
+        init(from decoder: any Decoder) throws {
+            let c = try decoder.singleValueContainer()
+            if c.decodeNil() { self = .null }
+            else if let b = try? c.decode(Bool.self) { self = .bool(b) }
+            else if let n = try? c.decode(Double.self) { self = .number(n) }
+            else if let s = try? c.decode(String.self) { self = .string(s) }
+            else if let a = try? c.decode([JSONValue].self) { self = .array(a) }
+            else { self = .object(try c.decode([String: JSONValue].self)) }
+        }
+
+        func encode(to encoder: any Encoder) throws {
+            var c = encoder.singleValueContainer()
+            switch self {
+            case .null: try c.encodeNil()
+            case let .bool(b): try c.encode(b)
+            case let .number(n): if n == n.rounded(), abs(n) < 1e15 { try c.encode(Int(n)) } else { try c.encode(n) }
+            case let .string(s): try c.encode(s)
+            case let .array(a): try c.encode(a)
+            case let .object(o): try c.encode(o)
+            }
+        }
+    }
+
+    /// The key a call is recorded and replayed under: its instructions, prompt and schema. The Swift pipeline is
+    /// deterministic, so a replay on the same commit and fixture asks the same prompts.
+    static func callKey<T>(_ request: StructuredRequest<T>) -> String {
+        let text = request.instructions + "\u{1}" + request.prompt + "\u{1}" + request.schema.json
+        return SHA256.hash(data: Data(text.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// A provider error as the record keeps it, and back (13e.2: a failed live call replays as that failure).
+    static func errorCode(_ e: any Error) -> String {
+        guard let p = e as? ProviderError else { return e is CancellationError ? "cancelled" : "other" }
+        switch p {
+        case .unavailable: return "unavailable"
+        case .unauthorized: return "unauthorized"
+        case .rateLimited: return "rate_limited"
+        case let .server(status): return "server_\(status)"
+        case .invalidOutput: return "invalid_output"
+        case .refused: return "refused"
+        case .timeout: return "timeout"
+        case .insecureEndpoint: return "insecure_endpoint"
+        case .blocked: return "blocked"
+        case .transport: return "transport"
+        case .capReached: return "cap_reached"
+        }
+    }
+
+    static func error(_ code: String) -> ProviderError {
+        switch code {
+        case "unavailable": .unavailable
+        case "unauthorized": .unauthorized
+        case "rate_limited": .rateLimited(retryAfter: nil)
+        case "refused": .refused
+        case "timeout": .timeout
+        case "blocked": .blocked
+        case "transport": .transport
+        case "cap_reached": .capReached
+        case "invalid_output": .invalidOutput
+        default: code.hasPrefix("server_") ? .server(status: Int(code.dropFirst(7)) ?? 500) : .transport
+        }
+    }
+
+    /// Records every live call (13e.2, "the Swift harness records live calls"): its key, the provider and adapter, the
+    /// model that answered and the raw output, or the error, so a gate read replays (`calls=`). Each line is appended to
+    /// the file as its call ends, so an interrupted run keeps what it paid for. The prompt itself isn't kept: the key
+    /// binds it.
+    final class CallRecorder: GenerationProvider, @unchecked Sendable {
+        let inner: any GenerationProvider
+        let file: URL
+        let count = Mutex<Int>(0)
+        init(_ inner: any GenerationProvider, file: URL) throws {
+            self.inner = inner
+            self.file = file
+            try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+            // Never over a record: an interrupted read's calls are evidence (run again under the next tag).
+            if let size = try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int, size > 0 {
+                throw CocoaError(.fileWriteFileExists)
+            }
+            try Data().write(to: file)
+        }
+        var id: ProviderID { inner.id }
+        var locality: Locality { inner.locality }
+        var modelID: String { inner.modelID }
+        var factsAdapter: String { inner.factsAdapter }
+
+        private func append(_ entry: [String: Any]) {
+            guard let data = try? JSONSerialization.data(withJSONObject: entry, options: [.sortedKeys]) else { return }
+            count.withLock { _ in
+                if let h = try? FileHandle(forWritingTo: file) {
+                    h.seekToEndOfFile()
+                    h.write(data + Data("\n".utf8))
+                    try? h.close()
+                }
+            }
+        }
+
+        func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage) {
+            let raw = StructuredRequest<JSONValue>(instructions: request.instructions, prompt: request.prompt, schema: request.schema,
+                                                   maxOutputTokens: request.maxOutputTokens)
+            var entry: [String: Any] = ["key": FactsHarness.callKey(request), "provider": inner.id.rawValue, "adapter": inner.factsAdapter]
+            // One entry per provider call, with its final outcome: the output it returned (even if it then doesn't decode
+            // as the request's type, which replays the same way), or its error.
+            let result: Result<(JSONValue, ProviderUsage), any Error>
+            do { result = .success(try await inner.generate(raw)) } catch { result = .failure(error) }
+            switch result {
+            case let .failure(error):
+                entry["error"] = FactsHarness.errorCode(error)
+                append(entry)
+                count.withLock { $0 += 1 }
+                throw error
+            case let .success((value, usage)):
+                let data = try JSONEncoder().encode(value)
+                entry["model"] = usage.model ?? NSNull()
+                entry["output"] = try JSONSerialization.jsonObject(with: data)
+                append(entry)
+                count.withLock { $0 += 1 }
+                return (try HTTPClient.decode(String(decoding: data, as: UTF8.self), as: T.self), usage)
+            }
+        }
+    }
+
+    /// Replays a recorded run (`calls=`): each call is served the next recorded entry for its key (its output, or its
+    /// error), as the recorded provider and adapter; a call the record doesn't have is a miss (counted, and answered as
+    /// unreadable output, so the run shows it).
+    final class CallReplay: GenerationProvider, @unchecked Sendable {
+        struct Entry { var output: Data?; var error: String?; var model: String? }
+        let queues: Mutex<[String: [Entry]]>
+        let misses = Mutex<Int>(0)
+        let modelID: String
+        let id: ProviderID
+        let factsAdapter: String
+        init(_ url: URL) throws {
+            var q: [String: [Entry]] = [:]
+            var model: String?, provider: String?, adapter: String?
+            for line in try String(contentsOf: url, encoding: .utf8).split(separator: "\n") {
+                let d = try JSONSerialization.jsonObject(with: Data(line.utf8)) as! [String: Any]
+                let m = d["model"] as? String
+                model = model ?? m
+                provider = provider ?? d["provider"] as? String
+                adapter = adapter ?? d["adapter"] as? String
+                let out = try d["output"].map { try JSONSerialization.data(withJSONObject: $0) }
+                q[d["key"] as! String, default: []].append(Entry(output: out, error: d["error"] as? String, model: m))
+            }
+            queues = Mutex(q)
+            modelID = (model ?? "recorded").components(separatedBy: "/").last ?? "recorded"
+            id = ProviderID(rawValue: provider ?? "anthropic")
+            factsAdapter = adapter ?? "recorded"
+        }
+        var locality: Locality { .cloud }
+        func generate<T: Decodable & Sendable>(_ request: StructuredRequest<T>) async throws -> (T, ProviderUsage) {
+            let key = FactsHarness.callKey(request)
+            guard let next = queues.withLock({ q -> Entry? in
+                guard var list = q[key], !list.isEmpty else { return nil }
+                let first = list.removeFirst()
+                q[key] = list
+                return first
+            }) else {
+                misses.withLock { $0 += 1 }
+                throw ProviderError.invalidOutput
+            }
+            if let e = next.error { throw FactsHarness.error(e) }
+            return (try HTTPClient.decode(String(decoding: next.output ?? Data("{}".utf8), as: UTF8.self), as: T.self),
+                    ProviderUsage(requests: 1, model: next.model))
         }
     }
 
@@ -545,6 +733,30 @@ enum FactsHarness {
         }
         line["swift_judged"] = Dictionary(judged, uniquingKeysWith: { a, _ in a })
         line["swift_answers"] = answers
+        // 13e.2: each recorded comparison through the direct call, on the full graph and the trusted graph.
+        if let comps = story.comparisons, let pred = registry.timelinePredicates.first {
+            let rows = TimelineRows.build(g, predicate: pred, limit: 100)
+            func alias(_ name: String) -> String {
+                let n = FactsText.fold(name)
+                return rows.rows.first { r in ([r.name] + r.renames).contains { FactsText.fold($0) == n } }?.alias ?? ""
+            }
+            let check = TimelineCheck(graph: g, local: nil, rows: rows)
+            var direct: [String: Any] = [:]
+            for c in comps where c.made {
+                let cmp = TimelineComparison(predicate: pred, op: c.operator, anchor: c.anchor_org.isEmpty ? "" : alias(c.anchor_org),
+                                             stint: c.stint, anchorDate: c.anchor_date, endDate: c.end_date,
+                                             slot: c.kind == "any" ? "" : c.kind, answer: alias(c.answer_org))
+                let n = ["first": 1, "second": 2][c.stint]
+                guard let (it, _) = check.intent(cmp, stint: n) else { direct[c.id] = ["invalid": true]; continue }
+                func run(_ gr: FactsGraph) -> [String: Any] {
+                    let a = gr.answer(it, query: "")
+                    return ["entities": a.entities.compactMap { gr.entities[$0]?.name }, "basis": "\(a.basis)"]
+                }
+                direct[c.id] = ["full": run(g), "trusted": run(g.trustedOnly(pred)),
+                                "verdict": check.check(cmp, search: c.search).verdict.rawValue]
+            }
+            line["swift_direct"] = direct
+        }
         return Play(line: line, judged: judged, unmapped: rp?.unmapped ?? 0, reasks: rp?.reasks ?? 0, unsettled: unsettled,
                     substituted: rp?.substituted ?? 0, unexplained: rp?.unexplained ?? 0)
     }

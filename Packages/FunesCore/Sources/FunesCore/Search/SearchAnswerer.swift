@@ -24,15 +24,19 @@ public struct SearchAnswer: Sendable, Hashable {
     }
 
     public struct Claim: Sendable, Hashable {
-        public let text: String
+        /// The model's sentence; for a checked claim (13e.2), code's line.
+        public internal(set) var text: String
         public let citations: [Citation]
         /// v0.10: code marked it inferred (§10.4), with what it rests on and its corrections.
         public var inference: ClaimInference?
+        /// 13e.2: what the time model's check decided (§10.4); `text` is then code's line, and the quotes stay under it.
+        public var check: TimelineCheckResult?
 
-        public init(text: String, citations: [Citation], inference: ClaimInference? = nil) {
+        public init(text: String, citations: [Citation], inference: ClaimInference? = nil, check: TimelineCheckResult? = nil) {
             self.text = text
             self.citations = citations
             self.inference = inference
+            self.check = check
         }
     }
 
@@ -51,7 +55,8 @@ public struct SearchAnswer: Sendable, Hashable {
     public let duration: Duration
     /// The results sent, in the order the prompt gives them (`m1`…); bridges are in `bridgeIDs`.
     public var readIDs: [UUID] = []
-    /// v0.10, with learned facts in the answer: the bridge memories read on top of the results (`m11`, `m12`).
+    /// v0.10, with learned facts in the answer: the memories read on top of the results: from 13e.2, those the rows cite
+    /// (`m11`…`m16`; it was bridges, `m11` and `m12`).
     public var bridgeIDs: [UUID] = []
     /// Shown results not read: re-ranked with sendable facts only, they aren't in what a cloud answer reads.
     public var unreadLinked = 0
@@ -59,6 +64,18 @@ public struct SearchAnswer: Sendable, Hashable {
     public var note: TimelineNote?
     /// The facts revision the answer was made at (`SearchService.factsRevision`); nil without learned facts in it.
     public var factsRevision: String?
+    /// 13e.2's check, counted for Activity (§10.5): claims checked, and how each came out (`checkDropped` is also in
+    /// `dropped`).
+    public var checks = CheckCounts()
+
+    public struct CheckCounts: Sendable, Hashable {
+        public var checked = 0
+        public var agreed = 0
+        public var markedTrusted = 0
+        public var notSure = 0
+        public var checkDropped = 0
+        public init() {}
+    }
 
     public var bridges: Int { bridgeIDs.count }
 
@@ -105,6 +122,10 @@ public protocol SearchAnswering: Sendable {
     /// `facts` capability). False: the answer reads 13b's plain selection, with nothing Funes inferred in it.
     func answer(_ query: String, ids: [UUID], filter: MemoryFilter?, facts: Bool, actor: Actor, via: ActivityEvent.Via,
                 automatic: Bool) async throws -> SearchAnswer
+    /// The same; `checked`: whoever shows it shows checked timeline claims (the Mac's card, a phone with the `checked`
+    /// capability, 13e.2). False: no rows, so no claim owes a check.
+    func answer(_ query: String, ids: [UUID], filter: MemoryFilter?, facts: Bool, checked: Bool, actor: Actor, via: ActivityEvent.Via,
+                automatic: Bool) async throws -> SearchAnswer
 }
 
 public extension SearchAnswering {
@@ -116,6 +137,11 @@ public extension SearchAnswering {
     func answer(_ query: String, ids: [UUID], filter: MemoryFilter?, facts: Bool, actor: Actor, via: ActivityEvent.Via,
                 automatic: Bool) async throws -> SearchAnswer {
         try await answer(query, ids: ids, filter: filter, actor: actor, via: via, automatic: automatic)
+    }
+
+    func answer(_ query: String, ids: [UUID], filter: MemoryFilter?, facts: Bool, checked: Bool, actor: Actor, via: ActivityEvent.Via,
+                automatic: Bool) async throws -> SearchAnswer {
+        try await answer(query, ids: ids, filter: filter, facts: facts, actor: actor, via: via, automatic: automatic)
     }
 }
 
@@ -182,24 +208,29 @@ public final class SearchAnswerer: Sendable {
     public static let maxCitations = 2
     public static let maxClaimLength = 300
     public static let quoteLength = 8...300
-    /// Bridges on top of the results (§10.6), each within `textLimit`.
-    public static let bridgeCount = 2
+    /// The memories the rows cite, on top of the results (§10.6; 13e.2, it was 2 bridges).
+    public static let citedCount = TimelineRows.citedLimit
 
-    /// The answer prompt's version with learned facts (13d): the instructions, the schema, the attribute templates, the
-    /// name replacement and the marker. An *attributes* record names it; changing any of them lapses that record only.
-    public static let promptVersion = "a13d-1"
+    /// The answer prompt's version with learned facts: the instructions, the schema, the attribute templates, the name
+    /// replacement, the marker, and from 13e.2 the rows, the comparison and the check. An *attributes* or *timeline* record
+    /// names it; changing any of them lapses those records only. (13d: "a13d-1".)
+    public static let promptVersion = "a13e2-1"
 
     let store: VaultStore
     let search: SearchService
     let activity: any ActivityRecorder
     let window: Int
+    /// How code words a checked line (§10.4); the Mac's String Catalog may replace the English default.
+    let wording: TimelineCheckWording
     private let logger = Logger(subsystem: "com.funesvault.mac", category: "search-answers")
 
-    public init(store: VaultStore, search: SearchService, activity: any ActivityRecorder, onDeviceWindow: Int = onDeviceWindow) {
+    public init(store: VaultStore, search: SearchService, activity: any ActivityRecorder, onDeviceWindow: Int = onDeviceWindow,
+                wording: TimelineCheckWording = .english) {
         self.store = store
         self.search = search
         self.activity = activity
         window = onDeviceWindow
+        self.wording = wording
     }
 
     /// One answer to `query` from the memories `ids` (the search's results as shown, in order).
@@ -207,14 +238,14 @@ public final class SearchAnswerer: Sendable {
     /// attempt logs one Activity row, whatever ends it.
     /// `filter`: what the results were searched with (the Active scope when nil), for the facts-free selection.
     /// `facts`: whoever shows it shows learned facts as ADR-0032 requires; false reads 13b's plain selection.
-    public func answer(_ query: String, ids: [UUID], filter: MemoryFilter? = nil, facts: Bool = true, router: ModelRouter,
-                       actor: Actor = .user, via: ActivityEvent.Via = .app, now: Date = Date()) async throws -> SearchAnswer {
+    public func answer(_ query: String, ids: [UUID], filter: MemoryFilter? = nil, facts: Bool = true, checked: Bool = true,
+                       router: ModelRouter, actor: Actor = .user, via: ActivityEvent.Via = .app, now: Date = Date()) async throws -> SearchAnswer {
         let clock = ContinuousClock()
         let start = clock.now
         let progress = Progress()
         do {
-            let answer = try await attempt(query, ids: ids, filter: filter, facts: facts, router: router, now: now, progress: progress,
-                                           started: start)
+            let answer = try await attempt(query, ids: ids, filter: filter, facts: facts, checked: checked, router: router, now: now,
+                                           progress: progress, started: start)
             log(.done(answer), progress, actor: actor, via: via, now: now, elapsed: answer.duration)
             return answer
         } catch {
@@ -247,10 +278,12 @@ public final class SearchAnswerer: Sendable {
         var facts = false
         var bridges = 0
         var unreadLinked = 0
+        /// 13e.2: rows were in the input, so the check's counts are logged.
+        var rows = false
     }
 
-    private func attempt(_ query: String, ids: [UUID], filter: MemoryFilter?, facts allowed: Bool, router: ModelRouter, now: Date,
-                         progress: Progress, started: ContinuousClock.Instant) async throws -> SearchAnswer {
+    private func attempt(_ query: String, ids: [UUID], filter: MemoryFilter?, facts allowed: Bool, checked: Bool, router: ModelRouter,
+                         now: Date, progress: Progress, started: ContinuousClock.Instant) async throws -> SearchAnswer {
         guard let provider = router.answerer else { throw SearchAnswerError.provider(.unavailable) }
         progress.engine = ModelRouter.engine(provider)
         let onDevice = provider.locality == .onDevice
@@ -265,12 +298,15 @@ public final class SearchAnswerer: Sendable {
         // search would also put in its top results, in its order; no fact shapes which memories it reads. Slots aren't
         // refilled.
         let plan = allowed ? await search.answerPlan(query, filter: filter, count: count, view: view,
-                                                     answerModel: ModelRouter.engine(provider), onDevice: onDevice, now: now) : nil
+                                                     answerModel: ModelRouter.engine(provider), onDevice: onDevice, checked: checked,
+                                                     now: now) : nil
         let selected: [UUID]
-        if let plan { selected = plan.read } else { selected = try await search.answerSelection(query, ids: ids, filter: filter, count: count, now: now) }
+        if let plan, plan.factsSelection { selected = plan.read }
+        else { selected = try await search.answerSelection(query, ids: ids, filter: filter, count: count, now: now) }
         let ids = selected
         let unreadIDs = plan?.unreadLinked ?? []
-        let bridgeIDs = plan?.bridges.map(\.memoryID) ?? []
+        // The memories the rows cite (13e.2; bridges are retired).
+        let bridgeIDs = (plan?.cited ?? []).filter { !selected.contains($0) }
         let found = try store.memories(ids: ids + unreadIDs + bridgeIDs)
         let byID = Dictionary(found.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         func live(_ ids: [UUID]) -> [Memory] { ids.compactMap { byID[$0] }.filter { $0.status == .active && !$0.isExpired(at: now) } }
@@ -286,16 +322,25 @@ public final class SearchAnswerer: Sendable {
             progress.withheld += unread.filter { !router.cloudLimit.allows($0.sensitivity) }.count
             progress.unreadLinked = unread.filter { router.cloudLimit.allows($0.sensitivity) }.count
         }
-        progress.facts = plan != nil
+        progress.facts = plan?.factsSelection == true
         let limit = onDevice ? Self.onDeviceTextLimit : Self.textLimit
         let matches = try await search.bodyMatches(query, ids: chosen.map(\.id) + bridgeMemories.map(\.id))
         // The text sent is always the body read with its sensitivity: matches from a body edited
         // since are ignored, so newly sensitive text can't go out under its old level. With learned facts in the answer,
         // your names become "the user" (§10.3), mapped back for quotes.
-        let graph = plan?.view.graph
+        // Your names as "the user" with learned facts in the answer (13d); a rows-only plan (13e.2) sends text as written.
+        let graph = plan?.factsSelection == true ? plan?.view.graph : nil
         func sent(_ m: Memory) -> Sent { Sent(memory: m, passages: Self.passages(m, matches[m.id], limit: limit), graph: graph) }
         var sentList = chosen.map(sent)
-        var sentBridges = bridgeMemories.prefix(Self.bridgeCount).map(sent)
+        // Each cited memory by the passage rule at up to 1,000 characters, 6,000 in all (§10.3).
+        var citedText = 0
+        var sentBridges: [Sent] = []
+        for m in bridgeMemories.prefix(Self.citedCount) {
+            let s = Sent(memory: m, passages: Self.passages(m, matches[m.id], limit: TimelineRows.citedTextLimit), graph: graph)
+            guard citedText + s.text.count <= TimelineRows.citedTotalLimit else { break }
+            citedText += s.text.count
+            sentBridges.append(s)
+        }
         if !onDevice {
             // A memory whose text the scanner matches is left out rather than refusing the answer.
             let secret = sentList.filter { !SecretScanner.scan([$0.title, $0.text]).isEmpty }.count
@@ -314,11 +359,15 @@ public final class SearchAnswerer: Sendable {
         }
         let context = try promptContext(for: sentList.map(\.memory) + sentBridges.map(\.memory))
         let attributes = plan?.attributes ?? [:]
-        var request = Self.request(query: query, sent: sentList, bridges: sentBridges, attributes: attributes, context: context, now: now)
+        let rows = plan?.rows
+        progress.rows = rows != nil
+        var request = Self.request(query: query, sent: sentList, bridges: sentBridges, attributes: attributes, rows: rows, context: context,
+                                   now: now)
         if onDevice {
             while !sentList.isEmpty, Self.estimatedTokens(request) > window {
                 sentList.removeLast()
-                request = Self.request(query: query, sent: sentList, bridges: sentBridges, attributes: attributes, context: context, now: now)
+                request = Self.request(query: query, sent: sentList, bridges: sentBridges, attributes: attributes, rows: rows, context: context,
+                                       now: now)
             }
             guard !sentList.isEmpty else { throw SearchAnswerError.tooLongForOnDevice }
         }
@@ -329,6 +378,7 @@ public final class SearchAnswerer: Sendable {
         // the router's guard refuses the call if anything rose above the limit after the plan (§11.9).
         let items = [ModelItem.query(query)] + (sentList + sentBridges).map { ModelItem("\($0.title)\n\($0.text)", sensitivity: $0.memory.sensitivity) }
             + sentList.compactMap { s in attributes[s.memory.id].map { ModelItem($0.text, sensitivity: $0.sensitivity) } }
+            + (rows.map { [ModelItem($0.block(), sensitivity: plan?.rowsSensitivity ?? .secret)] } ?? [])
         // At the send boundary (§11.9): every memory sent and every memory behind an attribute is still within the limit, and
         // each attribute's use still on; otherwise nothing is sent and the answer is dropped as changed.
         let check = plan.map { p in Self.sendCheck(p, sent: sentList + sentBridges, attributes: attributes, router: router, config: search.facts,
@@ -349,19 +399,49 @@ public final class SearchAnswerer: Sendable {
         }
         // What the answer rested on, again: dropped only if that changed while it was on its way (not on every reading).
         let again = await search.answerPlan(query, filter: filter, count: count, view: view, answerModel: ModelRouter.engine(provider),
-                                            onDevice: onDevice, now: now)
+                                            onDevice: onDevice, checked: checked, now: now)
         let sentIDs = Set((sentList + sentBridges).map(\.memory.id))
         guard let again, again.fingerprint(sentIDs) == plan.fingerprint(sentIDs) else { throw SearchAnswerError.factsChanged }
         // Inferred, by code (§10.4), against what the model actually got, with each correction's token minted in one read.
         let aliases = search.facts?.userAliases ?? []
-        let given = plan.restricted(to: Set((sentList + sentBridges).map(\.memory.id)))
-        let marked = validated.claims.map { c -> SearchAnswer.Claim in
+        // The plan made again after the call: the check runs on the facts as they are now (its fingerprint matched).
+        var given = plan.restricted(to: Set((sentList + sentBridges).map(\.memory.id)))
+        given.check = again.check
+        // A memory counts as the rows' only when it was sent as one (`m11`…), never one also in the results.
+        given.cited = sentBridges.map(\.memory.id)
+        var marked = validated.claims.map { c -> SearchAnswer.Claim in
             var claim = c.claim
-            claim.inference = AnswerMarker.mark(c.claim.text, citations: c.sent, plan: given, userAliases: aliases)
+            claim.inference = given.factsSelection ? AnswerMarker.mark(c.claim.text, citations: c.sent, plan: given, userAliases: aliases) : nil
             return claim
         }
+        // The check (13e.2, §10.4): code decides which claims owe one; a disagreeing one is dropped.
+        var checks = SearchAnswer.CheckCounts()
+        var dropped = answer.dropped
+        if let check = given.check, let rows = given.rows {
+            let cited = Set(given.cited)
+            var kept: [SearchAnswer.Claim] = []
+            for (v, claim) in zip(validated.claims, marked) {
+                switch Self.checked(claim, validated: v, cited: cited, rows: rows, check: check, query: query, view: given.view, wording: wording) {
+                case let .keep(c): kept.append(c)
+                case let .checked(c, r):
+                    checks.checked += 1
+                    switch r.verdict {
+                    case .agrees: checks.agreed += 1
+                    case .agreesTrusted: checks.markedTrusted += 1
+                    case .notSure: checks.notSure += 1
+                    case .disagrees: break
+                    }
+                    kept.append(c)
+                case let .drop(owed):
+                    if owed { checks.checked += 1; checks.checkDropped += 1 }
+                    dropped += 1
+                }
+            }
+            marked = kept
+        }
+        let toMint = marked
         let claims = try await store.writer.read { db in
-            try marked.map { c -> SearchAnswer.Claim in
+            try toMint.map { c -> SearchAnswer.Claim in
                 var claim = c
                 if var inf = claim.inference {
                     inf.corrections = try FactsCorrections.minted(db, inf.corrections)
@@ -370,8 +450,9 @@ public final class SearchAnswerer: Sendable {
                 return claim
             }
         }
-        answer = SearchAnswer(outcome: answer.outcome, claims: claims, read: answer.read, withheld: answer.withheld, dropped: answer.dropped,
-                              engine: answer.engine, locality: answer.locality, duration: ContinuousClock.now - started)
+        answer = SearchAnswer(outcome: claims.isEmpty ? .noAnswer : .answered, claims: claims, read: answer.read, withheld: answer.withheld,
+                              dropped: dropped, engine: answer.engine, locality: answer.locality, duration: ContinuousClock.now - started)
+        answer.checks = checks
         answer.readIDs = sentList.map(\.memory.id)
         answer.bridgeIDs = sentBridges.map(\.memory.id)
         answer.unreadLinked = progress.unreadLinked
@@ -387,11 +468,33 @@ public final class SearchAnswerer: Sendable {
                           config: FactsSearchConfig?, answerModel: String) -> @Sendable (Database) throws -> Bool {
         let local = router.answerer?.locality.isLocal ?? false
         let limit = router.cloudLimit
-        let ids = Set(sent.map(\.memory.id.db)).union(attributes.values.flatMap(\.behind))
+        let ids = Set(sent.map(\.memory.id.db)).union(attributes.values.flatMap(\.behind)).union(plan.rows == nil ? [] : plan.rowsBehind)
         let wanted = Set(attributes.values.map { a in "\(a.predicate)|\(a.basis == .soleKnown ? LinkBasis.soleKnown.rawValue : "")" })
+        let rowsPredicate = plan.rows?.predicate
+        let rowFacts = Array(plan.rowsFacts), rowHolders = Array(plan.rowsHolders)
         return { db in
-            guard let config else { return attributes.isEmpty }
+            guard let config else { return attributes.isEmpty && rowsPredicate == nil }
             let uses = try config.answerUses(db, answerModel: answerModel)
+            // 13e.2: the rows' use is still on, and the user's own entries and corrections behind them still within the limit.
+            if let rowsPredicate, !uses.isOn(rowsPredicate, .timeline) { return false }
+            if !local, !rowFacts.isEmpty {
+                for chunk in stride(from: 0, to: rowFacts.count, by: 400).map({ Array(rowFacts[$0..<min($0 + 400, rowFacts.count)]) }) {
+                    let q = databaseQuestionMarks(count: chunk.count)
+                    let levels = try Int.fetchAll(db, sql: """
+                        SELECT sensitivity FROM fact_evidence WHERE source = 'user' AND (fact_id IN (\(q)) OR other_fact_id IN (\(q)))
+                        """, arguments: StatementArguments(chunk + chunk))
+                        + Int.fetchAll(db, sql: """
+                        SELECT sensitivity FROM manual_override WHERE target_kind IN ('fact','qualifier','date','status','order') AND target_id IN (\(q))
+                        """, arguments: StatementArguments(chunk))
+                    if levels.contains(where: { !limit.allows(Sensitivity(rawValue: $0) ?? .secret) }) { return false }
+                }
+                for chunk in stride(from: 0, to: rowHolders.count, by: 400).map({ Array(rowHolders[$0..<min($0 + 400, rowHolders.count)]) }) {
+                    let q = databaseQuestionMarks(count: chunk.count)
+                    let levels = try Int.fetchAll(db, sql: "SELECT sensitivity FROM manual_override WHERE target_kind = 'entity' AND target_id IN (\(q))",
+                                                  arguments: StatementArguments(chunk))
+                    if levels.contains(where: { !limit.allows(Sensitivity(rawValue: $0) ?? .secret) }) { return false }
+                }
+            }
             for w in wanted {
                 let parts = w.split(separator: "|", omittingEmptySubsequences: false).map(String.init)
                 guard uses.isOn(parts[0], .attributes), parts[1].isEmpty || uses.isOn(parts[0], .attributes, basis: parts[1]) else { return false }
@@ -548,17 +651,52 @@ public final class SearchAnswerer: Sendable {
         ]), maxItems: maxClaims)),
     ])
 
-    /// The schema with bridges: refs up to `m12`.
+    /// The schema with memories past the results: refs up to `m16` (13e.2's cited memories).
     static let bridgeSchema = JSONSchema.object(name: "SearchAnswer", properties: [
         ("found", .string(oneOf: ["yes", "partly", "no"])),
         ("claims", .array(of: .object(name: "Claim", properties: [
             ("text", .string(description: "One sentence, at most 300 characters")),
             ("citations", .array(of: .object(name: "Citation", properties: [
-                ("ref", .string(description: "The memory's ref, m1 to m\(memoryCount + bridgeCount)")),
+                ("ref", .string(description: "The memory's ref, m1 to m\(memoryCount + citedCount)")),
                 ("quote", .string(description: "8 to 300 characters copied exactly from that memory's text")),
             ]), minItems: 1, maxItems: maxCitations)),
         ]), maxItems: maxClaims)),
     ])
+
+    /// 13e.2: with rows, each claim states its comparison (memory processing §10.3's schema).
+    static let rowsSchema = JSONSchema.object(name: "SearchAnswer", properties: [
+        ("found", .string(oneOf: ["yes", "partly", "no"])),
+        ("claims", .array(of: .object(name: "Claim", properties: [
+            ("text", .string(description: "One sentence, at most 300 characters")),
+            ("citations", .array(of: .object(name: "Citation", properties: [
+                ("ref", .string(description: "The memory's ref, m1 to m\(memoryCount + citedCount)")),
+                ("quote", .string(description: "8 to 300 characters copied exactly from that memory's text")),
+            ]), minItems: 1, maxItems: maxCitations)),
+            ("comparison", .object(name: "Comparison", properties: [
+                ("made", .boolean(description: "True when the claim names which organization held relative to a time")),
+                ("subject", .string(oneOf: ["user", "someone_else", ""])),
+                ("predicate", .string(description: "The work history's predicate, or empty")),
+                ("operator", .string(oneOf: TimelineComparison.operators + [""])),
+                ("anchor", .string(description: "An entity alias from the work history (e1…) for before/after an organization, else empty")),
+                ("stint", .string(oneOf: ["first", "second", "any", ""])),
+                ("anchorDate", .string(description: "YYYY, YYYY-MM or YYYY-MM-DD, or empty")),
+                ("endDate", .string(description: "YYYY, YYYY-MM or YYYY-MM-DD for between, else empty")),
+                ("slot", .string(description: "A kind of work the search asks about only, or empty")),
+                ("answer", .string(description: "The entity alias the claim answers (e1…), or empty")),
+            ])),
+        ]), maxItems: maxClaims)),
+    ])
+
+    /// 13e.2's rules for the rows and the comparison (part of `promptVersion`); the slot values are the registry's.
+    static func rowsInstructions(_ rows: TimelineRows) -> String {
+        let reg = FactsRegistry.bundled
+        let slots = reg.predicate(rows.predicate).flatMap { p in p.slot.flatMap { p.qualifiers[$0]?.values } } ?? []
+        return """
+            - <work_history> lists the user's jobs as Funes read them from the user's own memories: each entity has an alias (e1…), dates as written ("unknown" when not known; "by" a date when Funes inferred the end). Use it with the memories, but cite only memories (m1 to m\(memoryCount + citedCount)), never the work history.
+            - Every claim has a comparison. When a claim names which organization the user worked at relative to a time (the one before or after another, at a date or between two dates, the current one, the previous one), fill it in: made true; subject "user", or "someone_else" when the claim is about another person's job; predicate "\(rows.predicate)"; operator (before, after, in, between, current, previous); anchor, the alias of the organization for before or after one, else empty; stint, "first" or "second" when the search means one stint of a job the user held twice, else "any"; anchorDate and endDate, normalised as YYYY, YYYY-MM or YYYY-MM-DD, for a date ("in", "between", before or after a date); slot, one of \(slots.map { "\"\($0)\"" }.joined(separator: ", ")) when the search asks about that kind of work only, else empty; answer, the alias of the organization the claim answers. One claim per organization. Otherwise made false and the other fields empty.
+            - When the memories and the work history can't tell which organization it was, say so rather than guess.
+            """
+    }
 
     static func attribute(_ value: String) -> String {
         value.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "\"", with: "&quot;")
@@ -566,7 +704,7 @@ public final class SearchAnswerer: Sendable {
     }
 
     /// The prompt's own tags (§10.3): stored text can't open or close them (`PromptTags`).
-    static let promptTags = ["memory", "title", "text", "search"]
+    static let promptTags = ["memory", "title", "text", "search", "work_history", "job"]
 
     static func neutralized(_ text: String) -> String { PromptTags.neutralized(text, tags: promptTags) }
 
@@ -574,14 +712,17 @@ public final class SearchAnswerer: Sendable {
     static func restored(_ quote: String) -> String { PromptTags.restored(quote, tags: promptTags) }
 
     static func request(query: String, sent: [Sent], context: Context, now: Date) -> StructuredRequest<Output> {
-        request(query: query, sent: sent, bridges: [], attributes: [:], context: context, now: now)
+        request(query: query, sent: sent, bridges: [], attributes: [:], rows: nil, context: context, now: now)
     }
 
     /// With learned facts (v0.10): a memory's attribute as `about="…"` (never in its quotable text, and no sentence about
     /// it in the instructions), and bridges after the results as `m11`, `m12`.
-    static func request(query: String, sent: [Sent], bridges: [Sent], attributes: [UUID: AnswerFactsPlan.Attribute], context: Context,
-                        now: Date) -> StructuredRequest<Output> {
+    static func request(query: String, sent: [Sent], bridges: [Sent], attributes: [UUID: AnswerFactsPlan.Attribute], rows: TimelineRows? = nil,
+                        context: Context, now: Date) -> StructuredRequest<Output> {
         var lines = ["Today is \(DecisionPrompt.day(now)) (\(weekday(now))).", "<search>\(neutralized(query))</search>"]
+        // 13e.2: the rows (§10.3), after the search and before the memories; never quotable.
+        // Code's own block: its names are attribute-escaped, and stored text can't open or close its tags (`promptTags`).
+        if let rows { lines.append(rows.block()) }
         func line(_ s: Sent, ref: String) -> String {
             let m = s.memory
             let categories = m.categoryKeys.map { context.categoryNames[$0] ?? $0 }.joined(separator: ", ")
@@ -593,6 +734,10 @@ public final class SearchAnswerer: Sendable {
         }
         for (i, s) in sent.enumerated() { lines.append(line(s, ref: "m\(i + 1)")) }
         for (i, s) in bridges.enumerated() { lines.append(line(s, ref: "m\(memoryCount + i + 1)")) }
+        if let rows {
+            return StructuredRequest(instructions: instructions + "\n" + rowsInstructions(rows), prompt: lines.joined(separator: "\n"),
+                                     schema: rowsSchema, maxOutputTokens: 1_536)
+        }
         return StructuredRequest(instructions: instructions, prompt: lines.joined(separator: "\n"),
                                  schema: bridges.isEmpty ? schema : bridgeSchema, maxOutputTokens: 1_024)
     }
@@ -639,10 +784,22 @@ public final class SearchAnswerer: Sendable {
     struct RawClaim: Decodable, Sendable {
         let text: String?
         let citations: [RawCitation]?
+        /// 13e.2: read leniently; a malformed one is missing (and, where a check is owed, "not sure").
+        let comparison: TimelineComparison?
 
-        init(text: String?, citations: [RawCitation]?) {
+        init(text: String?, citations: [RawCitation]?, comparison: TimelineComparison? = nil) {
             self.text = text
             self.citations = citations
+            self.comparison = comparison
+        }
+
+        enum CodingKeys: String, CodingKey { case text, citations, comparison }
+
+        init(from decoder: any Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            text = try c.decodeIfPresent(String.self, forKey: .text)
+            citations = try c.decodeIfPresent([RawCitation].self, forKey: .citations)
+            comparison = try? c.decodeIfPresent(TimelineComparison.self, forKey: .comparison)
         }
     }
 
@@ -664,6 +821,7 @@ public final class SearchAnswerer: Sendable {
     struct Validated: Sendable {
         var claim: SearchAnswer.Claim
         var sent: [AnswerMarker.Cited]
+        var comparison: TimelineComparison?
     }
 
     static func validate(_ output: Output, sent: [Sent], bridges: [Sent]) -> (claims: [Validated], dropped: Int) {
@@ -697,7 +855,8 @@ public final class SearchAnswerer: Sendable {
                 dropped += 1
                 continue
             }
-            kept.append(Validated(claim: SearchAnswer.Claim(text: text, citations: citations.map(\.0)), sent: citations.map(\.1)))
+            kept.append(Validated(claim: SearchAnswer.Claim(text: text, citations: citations.map(\.0)), sent: citations.map(\.1),
+                                  comparison: claim.comparison))
         }
         dropped += max(0, kept.count - maxClaims)
         return (Array(kept.prefix(maxClaims)), dropped)
@@ -707,6 +866,65 @@ public final class SearchAnswerer: Sendable {
     static func quoteFound(_ quote: String, in passages: [String]) -> Bool {
         guard quoteLength.contains(quote.count) else { return false }
         return passages.contains { QuoteLocator.contains(quote, in: $0) }
+    }
+
+    // MARK: The check (13e.2, §10.4)
+
+    enum Checked {
+        case keep(SearchAnswer.Claim)
+        case checked(SearchAnswer.Claim, TimelineCheckResult)
+        /// Dropped; `owed`: by the check (a disagreeing claim), else a claim about someone else citing a row's memory.
+        case drop(owed: Bool)
+    }
+
+    /// Whether a claim owes a check (§10.4): code decides, never the model. With rows, its comparison says `made`, or it
+    /// cites a memory that came in only through the rows, or it names an entity of the rows while the search or the claim
+    /// has a registry operator or time cue.
+    /// A claim naming a holder of the predicate (any in the view, not only the rows) owes one when the search or the
+    /// claim has an operator or time cue and the model gave no comparison; with `made: false`, only when the claim itself
+    /// has the cue ("At Birch you were a designer" answering "my title before the promotion" is a qualifier, ADR-0032).
+    static func owes(_ text: String, comparison: TimelineComparison?, citesRows: Bool, names: [String], query: String,
+                     registry: FactsRegistry) -> Bool {
+        if comparison?.made == true || citesRows { return true }
+        let claim = FactsText.fold(text)
+        let folded = names.map { FactsText.fold($0) }.filter { $0.count >= 2 }
+        guard folded.contains(where: { FactsText.cue(claim, $0) }) else { return false }
+        if comparison != nil { return AnswerTimeCues.selects(text, registry: registry) }
+        return AnswerTimeCues.has(query, registry: registry) || AnswerTimeCues.has(text, registry: registry)
+    }
+
+    static func checked(_ claim: SearchAnswer.Claim, validated v: Validated, cited: Set<UUID>, rows: TimelineRows, check: TimelineCheck,
+                        query: String, view: FactsSearchIndex, wording: TimelineCheckWording) -> Checked {
+        let g = view.graph
+        let citesRows = v.sent.contains { cited.contains($0.memoryID) }
+        // Someone else's job or partner: never checked against the user's rows; citing a memory only the rows brought in,
+        // it's dropped.
+        if v.comparison?.aboutSomeoneElse == true { return citesRows ? .drop(owed: false) : .keep(claim) }
+        guard owes(claim.text, comparison: v.comparison, citesRows: citesRows, names: TimelineCheck.holderNames(g, predicate: rows.predicate),
+                   query: query, registry: g.registry) else {
+            return .keep(claim)
+        }
+        let r = check.check(v.comparison, search: query)
+        if r.verdict == .disagrees { return .drop(owed: true) }
+        var c = claim
+        let noun = g.registry.predicate(rows.predicate)?.phrases["note_noun"] ?? rows.predicate
+        c.text = wording.line(r, { id in id.flatMap { g.entities[$0]?.name } }, noun)
+        c.check = r
+        // A checked line is inferred (§10.4's marking): the facts behind it are its corrections, with any its citations
+        // already had. A "not sure" line isn't an answer, so it carries no Inferred tag.
+        guard r.stands else {
+            c.inference = nil
+            return .checked(c, r)
+        }
+        let facts = check.facts(r, ids: view.factIDs)
+        var corrections = claim.inference?.corrections ?? []
+        for (entity, fid) in facts where !corrections.contains(where: { $0.target.what == .fact && $0.target.factID == fid }) {
+            corrections.append(FactsCorrection(target: FactsCorrectionTarget(what: .fact, factID: fid, token: ""), name: g.entities[entity]?.name,
+                                               attribute: g.registry.predicate(rows.predicate)?.phrases["attribute"]))
+        }
+        let ids = Array(NSOrderedSet(array: facts.map(\.factID) + (claim.inference?.factIDs ?? []))) as? [String] ?? facts.map(\.factID)
+        c.inference = ClaimInference(basis: (r.basis ?? .inferred).rawValue, factIDs: ids, why: claim.inference?.why, corrections: corrections)
+        return .checked(c, r)
     }
 
     // MARK: Activity (§10.5)
@@ -724,6 +942,8 @@ public final class SearchAnswerer: Sendable {
         if progress.facts {
             counts["bridges"] = progress.bridges
             counts["unreadLinked"] = progress.unreadLinked
+        } else if progress.rows {
+            counts["bridges"] = progress.bridges
         }
         let outcome: String
         var code: String?
@@ -733,6 +953,13 @@ public final class SearchAnswerer: Sendable {
             counts["claims"] = answer.claims.count
             counts["dropped"] = answer.dropped
             if progress.facts { counts["inferred"] = answer.claims.filter { $0.inference != nil }.count }
+            if progress.rows {
+                counts["checked"] = answer.checks.checked
+                counts["agreed"] = answer.checks.agreed
+                counts["markedTrusted"] = answer.checks.markedTrusted
+                counts["notSure"] = answer.checks.notSure
+                counts["checkDropped"] = answer.checks.checkDropped
+            }
         case .cancelled:
             outcome = "cancelled"
         case let .failure(error):

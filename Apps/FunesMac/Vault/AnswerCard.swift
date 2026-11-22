@@ -125,7 +125,10 @@ struct AnswerCard: View {
             ForEach(Array(answer.claims.enumerated()), id: \.offset) { index, claim in
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(claim.text).fontWeight(index == 0 ? .semibold : .regular)
+                        // 13e.2: a checked claim leads with Funes's line; "not sure" reads as a reason, not an answer.
+                        let notSure = claim.check?.verdict == .notSure
+                        Text(claim.text).fontWeight(index == 0 && !notSure ? .semibold : .regular)
+                            .foregroundStyle(notSure ? .secondary : .primary)
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
                         if let inference = claim.inference { inferredTag(inference) }
@@ -136,6 +139,11 @@ struct AnswerCard: View {
                                     .accessibilityLabel(String(localized: "Source \(number): \(title(citation.memoryID))"))
                             }
                         }
+                    }
+                    if claim.check?.verdict == .agreesTrusted {
+                        Text(String(localized: "Text you didn't write says otherwise",
+                                    comment: "Answer card: under a checked claim only the user's own text supports"))
+                            .font(.caption).foregroundStyle(.secondary)
                     }
                     if let quote = claim.citations.first?.quote {
                         Text("“\(quote)”")
