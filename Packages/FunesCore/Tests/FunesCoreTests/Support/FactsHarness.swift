@@ -1127,14 +1127,17 @@ extension FactsHarness {
                 "names": g.names.sorted { ($0.key.memoryID, $0.key.surface) < ($1.key.memoryID, $1.key.surface) }.map { k, n in
                     [mid(k.memoryID), flat(k.surface), p(n.entity), n.basis.rawValue, n.candidates.map { p($0) }] as [Any]
                 },
-                "decisions": g.decisions.map { k, d in
+                // Sorted: a dictionary's order changes with each process's hash seed, and the gate's digests must not.
+                "decisions": g.decisions.sorted { ($0.key.memoryID, $0.key.start) < ($1.key.memoryID, $1.key.start) }.map { k, d in
                     [mid(k.memoryID), codePoint(k.memoryID, k.start), d.basis == .someoneElse ? "someone_else" : p(d.entity),
                      d.basis.rawValue] as [Any]
                 },
                 "things": things.map { [$0.0, $0.1] },
                 "episodes": episodes(),
                 // Stated renames read as one entity on the timeline (13e.1): an episode's entity stands for its group.
-                "timeline_groups": g.registry.timelinePredicates.flatMap { g.statedGroups($0) }.map { $0.sorted().map { p($0) } },
+                // By dump id (order made), not entity id (new each run), so a replay dumps what the live read did.
+                "timeline_groups": g.registry.timelinePredicates.flatMap { g.statedGroups($0) }.map { $0.compactMap { pid[$0] }.sorted() }
+                    .sorted { $0.lexicographicallyPrecedes($1) },
                 "succession": succession(),
                 "user_aliases": user,
                 "memories": Dictionary(uniqueKeysWithValues: order.compactMap { id -> (String, Any)? in
