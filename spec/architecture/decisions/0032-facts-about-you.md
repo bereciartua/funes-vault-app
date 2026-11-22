@@ -38,6 +38,7 @@
   - **Unchanged:** extraction and its gates, trust, corrections, the cloud limit's rules for derived facts, owner-only use.
   - **Plain search's timeline uses** (the grammar's demotion and admission, why lines, and "my previous job" cues) need an engine-free record of their own, not yet defined, and stay off until one exists.
   - **Known exception, outside the check's guarantee until it's modelled:** a stated possible overlap ("I can't remember if they overlapped"), which the same-year hand-over still answers at `inferred` (13a.2's canary c04).
+- **Clarified on 2026-11-22** (13e.2, before the timeline gate): the timeline gate's scorer counts a name the story's own trusted labels give an employer (a stated rename) as that stint's, as the 2026-11-20 amendment already treats it; it had matched one name only. The correction was made before any new read and is recorded with its effect on Phase A's lines (Phase 13 plan, 13e.2 step 3b).
 - **Clarified on 2026-11-15:** cloud selection uses sendable facts only, the five gated uses, correction targets, and older phones.
 - **Clarified on 2026-11-17** with 13a.2's qualification step, after GPT-6-Astra and Fable 5.2 reviewed its plan:
   - the registry declares *attributes* for the person predicates and works at, and *bridges* for works at (decision 7). Declared isn't on;

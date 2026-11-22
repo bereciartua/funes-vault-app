@@ -76,7 +76,8 @@ public struct FactsExtractor: Sendable {
     /// How calls are batched, and the pipeline's revision (a qualification record names it, memory processing §11.10):
     /// one memory per call per group, full or partial. Bump the revision when validation, the apply, rosters,
     /// reconciliation or scheduling change in a way that could move a gate's result; the recorded-call replays guard it.
-    public static let batching = "one-memory;pipeline=2"
+    /// 3 (13e.2): a paired name no longer spans a line break.
+    public static let batching = "one-memory;pipeline=3"
 
     public init(store: VaultStore, router: ModelRouter, activity: any ActivityRecorder, registry: FactsRegistry = .bundled,
                 userAliases: [String] = [], qualification: FactsQualification = .bundled) {

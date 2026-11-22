@@ -564,17 +564,20 @@ enum FactsHarness {
         func now() -> Date { t.withLock { $0 = $0.addingTimeInterval(1); return $0 } }
     }
 
-    /// A story's text as a memory's title and body: split at its last space, so the stored text (`title\nbody`) is the
-    /// story's text with that space as the newline, and every offset is the same.
-    /// The space chosen is the last one before a lowercase word, so no name (or name pair) straddles the newline.
-    static func split(_ text: String) -> (String, String) {
-        let spaces = text.indices.filter { text[$0] == " " && text.index(after: $0) < text.endIndex }
-        guard let at = spaces.last(where: { text[text.index(after: $0)].isLowercase }) ?? spaces.last else { return (text, "-") }
-        return (String(text[..<at]), String(text[text.index(after: at)...]))
-    }
+    /// The title every story memory gets (13e.2). A memory's title is its own field in the app (a summary, or the
+    /// capture's first line), so a body sentence is never broken by the title's line break; a fixture's text is the
+    /// memory's body, whole, under this neutral title. (Until 13e.2 the text was split at a space inside its last
+    /// sentence, which hid that sentence from the sentence-bounded rules: a never-denial, the placeholder fold.)
+    static let title = "Note"
 
-    /// The stored text of a story memory.
-    static func stored(_ text: String) -> String { let (t, b) = split(text); return t + "\n" + b }
+    /// The stored text's offsets ahead of the story's text: the title and its line break (UTF-16 and code points alike).
+    static let prefix = title.utf16.count + 1
+
+    /// A story's text as a memory's title and body: the neutral title, and the text as written.
+    static func split(_ text: String) -> (String, String) { (title, text) }
+
+    /// The stored text of a story memory (`title\nbody`, as `FactStore.text` makes it).
+    static func stored(_ text: String) -> String { title + "\n" + text }
 
     static func day(_ written: String) -> Date {
         let p = written.split(separator: "-").compactMap { Int($0) }
@@ -856,14 +859,15 @@ extension FactsHarness {
         }
 
         func mid(_ id: String) -> String { fixtureID[id] ?? id }
-        /// A surface as the story writes it (the stored text has a newline where the story has a space).
+        /// A surface as the story writes it (a story's own line breaks read as spaces, as the spike's scorers compare).
         func flat(_ s: String) -> String { s.replacingOccurrences(of: "\n", with: " ") }
         func p(_ id: String?) -> Any { id.flatMap { pid[$0] } ?? NSNull() }
 
-        /// UTF-16 offset in the stored text → code-point offset in the story's text (Python's `str.find`).
+        /// UTF-16 offset in the stored text → code-point offset in the story's text (Python's `str.find`): the title and
+        /// its line break come first.
         func codePoint(_ memoryID: String, _ utf16: Int) -> Int {
             let t = graph.memories[memoryID]?.text ?? ""
-            return FactStore.scalarOffset(t, utf16: utf16)
+            return FactStore.scalarOffset(t, utf16: utf16) - FactsHarness.prefix
         }
 
         func people(calls: [[String: Any]]) -> [String: Any] {

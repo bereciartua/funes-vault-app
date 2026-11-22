@@ -39,6 +39,22 @@ import Testing
         #expect(s.intent(q).map { s.name(s.answer($0, query: q).entity) } == "EarlierCo")
     }
 
+    /// 13e.2: a paired name never spans a line break, so a title line can't join the name that opens the body.
+    @Test func aPairedNameStaysOnItsLine() {
+        let s = FactsGraph(registry: FX.registry)
+        for (text, name) in [("Dinner\nMax is my \(w).", "Max"), ("Note\nJoana is my \(w); we met in 2019.", "Joana"),
+                             ("Max Ruiz is my \(w).", "Max Ruiz"), ("Plans\nMy \(w) Max\nRuiz called.", "Max")] {
+            #expect(s.rolePhrases(text).first?.paired == name, "\(text)")
+        }
+        // Nor does a pair: the role ending one line isn't paired with the name opening the next.
+        for text in ["My \(w)\nAlice is my manager.", "Dinner with my \(w)\nMax came too."] {
+            #expect(s.rolePhrases(text).first?.paired == nil, "\(text)")
+        }
+        // Nor does the phrase itself: an owner ending one line and the role word opening the next.
+        #expect(s.rolePhrases("Dinner with my\n\(w.capitalized) Alice called.").isEmpty)
+        #expect(!s.rolePhrases("Dinner with my \(w)\nAlice called.").isEmpty)
+    }
+
     @Test func aPhraseThatMayBeQuotedIsSkipped() {
         let s = FactsGraph(registry: FX.registry)
         for text in ["She wrote: 'my \(w) is late and", "She said: 'I'm tired. My \(w) is mean.'",

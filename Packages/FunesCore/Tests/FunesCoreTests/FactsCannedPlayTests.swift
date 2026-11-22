@@ -236,6 +236,25 @@ import Testing
         }
     }
 
+    /// 13e.2: work13's w08, in both orders: the user's "Nunca trabajé en Granito Pago." negates an agent's note that the
+    /// user joined Granito Pago. Until 13e.2 the harness split that sentence with the title's line break, so the
+    /// never-denial was never seen in a gate read. With the agent's note first, the denial's trusted call can't see the
+    /// name only the agent gave (§11.4), so it makes its own Granito Pago and negates the agent's namesake too, without
+    /// joining them (13e.1's never-denial): both stay negated.
+    @Test func theUsersNeverDenialHoldsAgainstAnAgentsClaimInBothOrders() throws {
+        let url = FactsHarness.repo.appending(path: "spikes/people/fixtures/stories-work13.json")
+        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
+        let story = try #require(fixture.stories.first { $0.id == "w08" })
+        let pred = try #require(FactsRegistry.bundled.timelinePredicates.first)
+        for order in [story.memories.map(\.id)] + (story.orders ?? []) {
+            let (g, _) = try Self.play(story, order: order, user: fixture.user.aliases, registry: .bundled)
+            let held = g.facts.filter { f in f.predicate == pred && !f.negated && g.entities[f.entity]?.aliases.contains("Granito Pago") == true }
+            #expect(held.isEmpty, "\(order): \(held)")
+            #expect(g.facts.contains { $0.predicate == pred && $0.negated && g.entities[$0.entity]?.aliases.contains("Granito Pago") == true },
+                    "\(order)")
+        }
+    }
+
     /// The hand-written sample: the partner timeline as a data-only registry change, with successive partners, an agent's
     /// note that tries to end one, a restricted memory, a rejection, and negative wordings.
     @Test func theSampleCanaryPlaysAndIsntVacuous() throws {

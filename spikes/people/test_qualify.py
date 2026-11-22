@@ -279,6 +279,63 @@ class LineMeasures(unittest.TestCase):
         t = Q.timeline_measures([ln], self.story(mems, tl), REG)
         self.assertEqual(t["wrong_facts"], 1)                                # a duplicate takes no stint: a wrong fact
 
+    def test_a_rename_the_story_labels_is_one_stint(self):
+        """13e.2's scorer correction: a stated rename the story's trusted labels give ("Marlin Metrics" → "Marlin
+        Analytics") is that stint's, as one entity or one timeline group; an agent's label, a merge the story doesn't
+        make and a duplicate episode stay wrong."""
+        tl = [{"org": "Lattice Analytics", "kind": "employee", "start": "2016", "end": "2022-06-30", "memories": ["m1", "m2"]}]
+        label = {"id": "m2", "source": "capture", "organizations": [{"surface": "Lattice Metrics", "org": "Lattice Analytics",
+                                                                    "relation": "employer"}],
+                 "jobs": [{"org": "Lattice Analytics", "polarity": "positive", "also_called": "Lattice Metrics"}]}
+        bare = {"id": "m2", "source": "capture", "organizations": [], "jobs": []}
+        ep = self.ep("p1", ("2016-01-01", "2016-12-31"), ("2022-06-30", "2022-06-30"), ["m1", "m2"])
+        facts = [("p1", [["m1", "trusted"]]), ("p2", [["m2", "trusted"]])]
+
+        def grouped(members, extra=()):
+            ln = self.line([("p1", "Lattice Metrics"), ("p2", "Lattice Analytics"), ("p3", "Orlin")], facts + list(extra), [ep])
+            ln["state"]["timeline_groups"] = [members]
+            return ln
+        m1 = {"id": "m1", "source": "capture", "jobs": []}
+        t = Q.timeline_measures([grouped(["p1", "p2"])], self.story([m1, label], tl), REG)
+        self.assertEqual((t["wrong_facts"], t["wrong_dates"]), (0, 0), t["details"])
+        t = Q.timeline_measures([grouped(["p1", "p2"])], self.story([m1, bare], tl), REG)
+        self.assertEqual(t["wrong_facts"], 2, t["details"])                   # unlabelled: the old name and the merge
+        agent = {**label, "source": "agent"}
+        t = Q.timeline_measures([grouped(["p1", "p2"])], self.story([m1, agent], tl), REG)
+        self.assertEqual(t["wrong_facts"], 2, t["details"])                   # only an agent's label: still wrong
+        marked = {**label, "trust": "untrusted"}
+        t = Q.timeline_measures([grouped(["p1", "p2"])], self.story([m1, marked], tl), REG)
+        self.assertEqual(t["wrong_facts"], 2, t["details"])                   # an untrusted import's label: still wrong
+        t = Q.timeline_measures([grouped(["p1", "p2", "p3"], [("p3", [["m1", "trusted"]])])], self.story([m1, label], tl), REG)
+        self.assertIn("merged", " ".join(t["details"]["wrong_facts"]))        # a member the story doesn't rename
+        dup = self.ep("p1", ("2016-01-01", "2016-12-31"), ("2022-06-30", "2022-06-30"), ["m1"])
+        ln = self.line([("p1", "Lattice Metrics"), ("p2", "Lattice Analytics")], facts,
+                       [self.ep("p2", ("2016-01-01", "2016-12-31"), ("2022-06-30", "2022-06-30"), ["m1", "m2"]), dup])
+        t = Q.timeline_measures([ln], self.story([m1, label], tl), REG)
+        self.assertEqual(t["wrong_facts"], 1, t["details"])                   # two episodes for one stint: one is wrong
+        # Never by containment: a labelled "Lattice Metrics" isn't "Lattice Metrics Consulting", and "Lattice Analytics"
+        # with "Lattice Analytics Consulting" is a merge the story doesn't make.
+        ln = self.line([("p1", "Lattice Metrics Consulting"), ("p2", "Lattice Analytics")], facts, [ep])
+        ln["state"]["timeline_groups"] = [["p1", "p2"]]
+        t = Q.timeline_measures([ln], self.story([m1, label], tl), REG)
+        self.assertEqual(t["wrong_facts"], 2, t["details"])
+        ln = self.line([("p1", "Lattice Analytics Consulting"), ("p2", "Lattice Analytics")], facts, [ep])
+        ln["state"]["timeline_groups"] = [["p1", "p2"]]
+        t = Q.timeline_measures([ln], self.story([m1, bare], tl), REG)
+        self.assertIn("merged", " ".join(t["details"]["wrong_facts"]), t["details"])
+        # A labelled name a second stint (or a client) also has stops the scorer.
+        clash = tl + [{"org": "Lattice Metrics", "kind": "client", "start": "2019", "end": "", "memories": ["m2"]}]
+        with self.assertRaises(SystemExit):
+            Q.timeline_measures([grouped(["p1", "p2"])], self.story([m1, label], clash), REG)
+        suffixed = tl + [{"org": "Lattice Metrics Ltd", "kind": "vendor", "start": "", "end": "", "memories": []}]
+        with self.assertRaises(SystemExit):                                   # the same once the legal suffix goes
+            Q.timeline_measures([grouped(["p1", "p2"])], self.story([m1, label], suffixed), REG)
+        o = Q.org_measures([grouped(["p1", "p2"])], self.story([{**m1, "organizations": [{"org": "Lattice Analytics", "relation": "employer"}]},
+                                                                label], tl), REG)
+        self.assertEqual((o.get("works_at_right"), o.get("works_at_wrong", 0)), (2, 0))
+        o = Q.org_measures([grouped(["p1", "p2"])], self.story([m1, bare], tl), REG)
+        self.assertEqual(o.get("works_at_wrong", 0), 1)                       # the old name's unit, unlabelled
+
 
 class Verify(unittest.TestCase):
     def test_shipped_records_are_13e2s_records_step(self):

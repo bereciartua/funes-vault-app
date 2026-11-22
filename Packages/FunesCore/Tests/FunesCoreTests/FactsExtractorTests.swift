@@ -133,6 +133,21 @@ import Testing
             .validate(FactsJSON(out))
     }
 
+    /// 13e.2: a name the model gives must be written on one line: a title's last word over a body that opens with a
+    /// name isn't part of it, however whitespace-tolerant quote matching is.
+    @Test func aNameAcrossTheTitleLineIsDropped() {
+        let text = "Note\nMax is my boyfriend. Granito Pago called."
+        let v = validate(text, ["people": [["name": "Note Max", "quote": "Note Max is my", "person": "new"],
+                                           ["name": "Max", "quote": "Max is my", "person": "new"]],
+                                "things": [["name": "Note Max", "kind": "organization", "quote": "Note Max is"]]])
+        #expect(v.people.map(\.name) == ["Max"])
+        #expect(v.things.isEmpty)
+        #expect(v.dropped.map(\.reason).filter { $0 != "paired_applied" }.sorted() == ["person_quote", "thing_quote"])
+        let w = validate("Notes\nGranito Pago hired me in 2020.", ["facts": [Self.fact("Granito Pago hired me", employer, "Notes Granito Pago"),
+                                                                          Self.fact("Granito Pago hired me", employer, "Granito Pago")]], group: work)
+        #expect(w.facts.map(\.name) == ["Granito Pago"])
+    }
+
     @Test func secretsWrongTypesAndValuesOutsideAPredicatesEnumAreDropped() {
         let key = "sk-ant-api03-" + String(repeating: "a", count: 90)
         let text = "My sister Maria works with \(key) at Acme."
@@ -470,10 +485,13 @@ import Testing
         #expect(g.names[FactsGraph.NameKey(memoryID: early, surface: "Ana")]?.basis == .ambiguous)
     }
 
-    /// The memory section of a Facts prompt (not the roster's quotes of other memories).
+    /// The memory section of a Facts prompt (not the roster's quotes of other memories), without the harness's neutral
+    /// title line (`FactsHarness.title`).
     static func memoryText(_ prompt: String) -> String {
         guard let a = prompt.range(of: "\">\n"), let b = prompt.range(of: "\n</memory>") else { return "" }
-        return String(prompt[a.upperBound..<b.lowerBound]).replacingOccurrences(of: "\n", with: " ")
+        var text = String(prompt[a.upperBound..<b.lowerBound])
+        if text.hasPrefix(FactsHarness.title + "\n") { text.removeFirst(FactsHarness.prefix) }
+        return text.replacingOccurrences(of: "\n", with: " ")
     }
 
     /// The roster id (`e…`) of the line that lists this alias, or "new".

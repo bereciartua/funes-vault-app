@@ -129,6 +129,61 @@ def people_measures(lines, stories):
             "forbidden": T["forbidden_link"]}
 
 
+def trusted_memory(mm):
+    """A fixture memory's trust as the harness stores it: its `trust`, else untrusted for an agent's (13e.2: the scorer
+    reads trust, not the source, so an import or a shared note marked untrusted counts as untrusted)."""
+    return (mm.get("trust") or ("untrusted" if mm.get("source") == "agent" else "trusted")) == "trusted"
+
+
+def labelled_names(st, org):
+    """Every name a trusted memory of the story labels as this employer (13e.2, a scorer correction): the timeline's
+    org, an organization surface with relation employer or self_employed that the labels map to it ("Marlin Metrics" →
+    "Marlin Analytics"), and a job's also_called. A stated rename is one entity on the timeline (ADR-0032, amended
+    2026-11-20), so the old name's facts are that stint's; only the story's own labels say so, never an agent's."""
+    names = {org}
+    for mm in st["memories"]:
+        if not trusted_memory(mm):
+            continue
+        for o in mm.get("organizations", []):
+            if o.get("org") == org and o.get("relation") in ("employer", "self_employed") and o.get("surface"):
+                names.add(o["surface"])
+        for j in mm.get("jobs", []):
+            if j.get("org") == org and j.get("polarity") != "negative" and j.get("also_called"):
+                names.add(j["also_called"])
+    return names
+
+
+def check_labels(st, emp):
+    """A labelled name that two stints' organizations, or a stint's and a client's or vendor's, share (normalised as
+    the matching normalises it, legal suffixes stripped) would make the scorer's rename rule ambiguous: stop rather
+    than score it (13e.2)."""
+    import facts as F
+    kind = F.R.kind_of(emp)
+    owner = {}
+    for t in st.get("timeline", []):
+        names = labelled_names(st, t["org"]) if t["kind"] in ("employee", "self_employed") else {t["org"]}
+        for n in names:
+            k = F.norm_name(n, kind)
+            if owner.get(k, t["org"]) != t["org"]:
+                raise SystemExit(f"qualify.py: {st['id']}: {n!r} is labelled for both {owner[k]!r} and {t['org']!r}")
+            owner[k] = t["org"]
+
+
+def stint_entities(state, emp, st, org):
+    """The holders of `emp` for `org`: as entity_matches finds the org itself (the registry's match rule), plus those
+    with an alias exactly equal (normalised) to another name the story's trusted labels give it, never by containment
+    ("Marlin Metrics" labelled admits Marlin Metrics, not "Marlin Metrics Consulting")."""
+    import facts as F
+    kind = F.R.kind_of(emp)
+    found = set(F.entity_matches(state, emp, org))
+    extra = {F.norm_name(n, kind) for n in labelled_names(st, org) if n != org}
+    holders = {f.entity for f in state.facts if f.type == emp and not f.negated}
+    for e in state.named(kind):
+        if e.id in holders and any(F.norm_name(a, kind) in extra for a in e.aliases):
+            found.add(e.id)
+    return found
+
+
 def org_measures(lines, stories, reg):
     """Organizations: works-at mentions against the truth, clients and vendors, per play."""
     import facts as F
@@ -139,6 +194,7 @@ def org_measures(lines, stories, reg):
     m = Counter()
     for r in lines:
         st = stories[r["story"]]
+        check_labels(st, emp)
         state = load_state(r["state"])
         orgs = {t["org"]: t for t in st.get("timeline", [])}
         mention_rel = {(mm["id"], o["org"]): o["relation"] for mm in st["memories"] for o in mm.get("organizations", [])}
@@ -146,7 +202,8 @@ def org_measures(lines, stories, reg):
         for t in st.get("timeline", []):
             if t["kind"] in ("employee", "self_employed"):
                 stint_mems[t["org"]] |= set(t.get("memories", []))
-        match = {o: set(F.entity_matches(state, emp, o)) for o in orgs}
+        match = {o: stint_entities(state, emp, st, o) if t["kind"] in ("employee", "self_employed") else set(F.entity_matches(state, emp, o))
+                 for o, t in orgs.items()}
         units = {}
         for f in r["state"]["facts"]:
             if f["type"] != emp or f.get("negated"):
@@ -220,10 +277,12 @@ def timeline_measures(lines, stories, reg, person=False):
         if "episodes" not in r["state"] or "succession" not in r["state"] or "swift_judged" not in r:
             m["malformed"] += 1
         names = {e["id"]: e for e in r["state"]["entities"]}
+        check_labels(st, emp)
+        held = [stint_entities(state, emp, st, t["org"]) for t in stints]
         # The story's own trusted denials: a negative job label in a memory that isn't an agent's.
         denied = set()
         for mm in st["memories"]:
-            if mm.get("source") == "agent":
+            if not trusted_memory(mm):
                 continue
             for j in mm.get("jobs", []):
                 if j.get("polarity") == "negative" and j.get("org"):
@@ -231,7 +290,7 @@ def timeline_measures(lines, stories, reg, person=False):
         for f in r["state"]["facts"]:
             if f["type"] != emp or f.get("negated"):
                 continue
-            if any(f["entity"] in F.entity_matches(state, emp, t["org"]) for t in stints):
+            if any(f["entity"] in held[i] for i in range(len(stints))):
                 continue
             item = (r["story"], (names.get(f["entity"]) or {}).get("name"))
             only_untrusted = bool(f["evidence"]) and all(x[1] == "untrusted" for x in f["evidence"])
@@ -248,7 +307,8 @@ def timeline_measures(lines, stories, reg, person=False):
         eps = [e for e in r["state"].get("episodes", []) if e["predicate"] == emp]
         # A stated rename is one entity on the timeline: its episodes carry the group's stand-in (13e.1). Truth is the
         # story's, not the system's merge: a group's episode fits a stint only if every member's name is that stint's
-        # organization by a loose rule (one name inside the other), so a wrong merge leaves it unassigned, a wrong fact.
+        # organization by a loose rule (one name inside the other) or a name the story's trusted labels give it
+        # (`labelled_names`, 13e.2), so a merge the story doesn't make leaves it unassigned, a wrong fact.
         group_of = {x: set(g) for g in r["state"].get("timeline_groups", []) for x in g}
 
         def norm(n):
@@ -258,18 +318,19 @@ def timeline_measures(lines, stories, reg, person=False):
                     n = n[: -len(suf)]
             return n.strip()
 
-        def loose(ent, org):
-            a = [norm(x) for x in ((names.get(ent) or {}).get("aliases") or [(names.get(ent) or {}).get("name")])]
-            o = norm(org)
-            return any(x and (x in o or o in x) for x in a)
+        def loose(ent, i):
+            # The stint's org once its legal suffix is gone ("X" / "X Ltd."), or a name the story's trusted labels give
+            # it; never one name inside another ("X" and "X Consulting" stay two employers: 13e.2).
+            al = (names.get(ent) or {}).get("aliases") or [(names.get(ent) or {}).get("name")]
+            labelled = {norm(n) for n in labelled_names(st, stints[i]["org"])}
+            return any(x and norm(x) == norm(stints[i]["org"]) for x in al) or any(norm(x or "") in labelled for x in al)
         assign = {}
         for trust_pass in (True, False):
             group = [e for e in eps if bool(e.get("trusted", True)) == trust_pass]
             taken = set()
             def options(e):
                 ids = group_of.get(e["entity"], {e["entity"]})
-                mine = [i for i, t in enumerate(stints) if ids & set(F.entity_matches(state, emp, t["org"]))
-                        and (len(ids) == 1 or all(loose(x, t["org"]) for x in ids))]
+                mine = [i for i, t in enumerate(stints) if ids & held[i] and (len(ids) == 1 or all(loose(x, i) for x in ids))]
                 mems = set(e.get("memories", []))
                 tiers = ([i for i in mine if mems & set(stints[i].get("memories", [])) and overlaps(e, stints[i])],
                          [i for i in mine if overlaps(e, stints[i])],
@@ -281,7 +342,7 @@ def timeline_measures(lines, stories, reg, person=False):
                 mine, tiers = options(e)
                 if not mine:
                     ids = group_of.get(e["entity"], {e["entity"]})
-                    if len(ids) > 1 and any(ids & set(F.entity_matches(state, emp, t["org"])) for t in stints):
+                    if len(ids) > 1 and any(ids & held[i] for i in range(len(stints))):
                         # a merge the story doesn't make: its episode is no stint's
                         (wrong_facts if trust_pass else untrusted_facts).add((r["story"], (names.get(e["entity"]) or {}).get("name"), "merged"))
                     continue

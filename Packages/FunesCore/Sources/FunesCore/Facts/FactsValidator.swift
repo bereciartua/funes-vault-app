@@ -88,6 +88,11 @@ struct FactsValidator {
     static let namePrefix = "name:"
 
     func inText(_ s: String?) -> Bool { FactsSentText.contains(sent.sent, s ?? "") }
+    /// Whether a name the model gives is written within one line of `text` (13e.2). Quote matching tolerates
+    /// whitespace, line breaks included, so without this "Note Max" would match a title over a body that opens "Max".
+    func onOneLine(_ name: String, in text: String) -> Bool {
+        text.split(whereSeparator: \.isNewline).contains { FactsSentText.find(name, in: String($0)) != nil }
+    }
     func secret(_ s: String?) -> Bool { s.map { !SecretScanner.scan($0).isEmpty } ?? false }
     func capital(_ s: String) -> Bool { s.contains { $0.isUppercase } }
     func entity(_ rosterID: String) -> FactsEntity? { roster[rosterID].flatMap { graph.entities[$0] } }
@@ -109,7 +114,7 @@ struct FactsValidator {
         // Things.
         for (i, t) in out["things"].array.enumerated() {
             guard let name = t["name"].string, let quote = t["quote"].string,
-                  let (q, span) = quoted(quote, holding: name) else { drop("thing_quote", i); continue }
+                  let (q, span) = quoted(quote, holding: name), onOneLine(name, in: q) else { drop("thing_quote", i); continue }
             let trimmed = name.trimmingCharacters(in: .whitespaces)
             if trimmed.count < 2 || registry.lexicon[trimmed.lowercased()] != nil { drop("thing_not_a_name", i); continue }
             guard let kind = t["kind"].string.flatMap({ kinds[$0] }) else { drop("thing_kind", i); continue }
@@ -124,7 +129,7 @@ struct FactsValidator {
         let asksForPeople = predicates.contains { registry.kindOf($0) == Self.personKind }
         for (i, p) in (asksForPeople ? out["people"].array : []).enumerated() {
             guard let name = p["name"].string, let quote = p["quote"].string, let ref = p["person"].string,
-                  let (q, span) = quoted(quote, holding: name) else { drop("person_quote", i); continue }
+                  let (q, span) = quoted(quote, holding: name), onOneLine(name, in: q) else { drop("person_quote", i); continue }
             let special = [Ref.new, .different, .ambiguous].map(\.rawValue)
             guard roster[ref] != nil || special.contains(ref) else { drop("person_id", i); continue }
             if FactsSentText.norm(name) == placeholder { continue }
@@ -159,7 +164,9 @@ struct FactsValidator {
             var fields: [String: String] = [:]
             for f in ["time", "start", "end", "preceded_by", "followed_by", "also_called"] {
                 guard let s = r[f].string, !s.isEmpty else { continue }
-                if !inText(s) { drop(f + "_absent", i); continue }
+                if !inText(s) || (["preceded_by", "followed_by", "also_called"].contains(f) && !onOneLine(s, in: sent.sent)) {
+                    drop(f + "_absent", i); continue
+                }
                 if secret(s) { drop(f + "_secret", i); continue }
                 fields[f] = s
             }
@@ -189,7 +196,7 @@ struct FactsValidator {
             } else {
                 let nm = name ?? ""
                 let ph = graph.placeholder(pred, nm)
-                if nm.isEmpty || (ph == nil && !inText(nm)) { drop("fact_object", i); continue }
+                if nm.isEmpty || (ph == nil && (!inText(nm) || !onOneLine(nm, in: sent.sent))) { drop("fact_object", i); continue }
                 if ph == nil, namesHere.contains(FactsSentText.norm(nm)) { drop("fact_kind", i); continue }
                 if secret(nm) { drop("fact_secret", i); continue }
                 entityID = Ref.name.rawValue

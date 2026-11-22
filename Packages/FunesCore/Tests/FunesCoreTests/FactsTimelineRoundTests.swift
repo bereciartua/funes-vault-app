@@ -397,6 +397,16 @@ import Testing
         }
     }
 
+    /// A line break ends the never-denial's sentence (a title, a list): a hard-wrapped import that breaks "I never
+    /// worked at X" across lines isn't read as one, and fails closed (13e.2 keeps this; the harness no longer wraps).
+    @Test func aNeverDenialBrokenAcrossLinesFailsClosed() {
+        for text in ["Nunca trabajé\nen Orlin Labs.", "I never worked\nat Orlin Labs."] {
+            #expect(!FactsGraph(registry: FX.registry).isNeverDenial(fact(d, "Orlin Labs", quote: text, positive: false), text: text), "\(text)")
+        }
+        let whole = "Notes\nNunca trabajé en Orlin Labs."
+        #expect(FactsGraph(registry: FX.registry).isNeverDenial(fact(d, "Orlin Labs", quote: "Nunca trabajé en Orlin Labs", positive: false), text: whole))
+    }
+
     @Test func neverWordsThatDontDenyHoldingIt() {
         let claim: Row = ("a", "The user joined Orlin Labs in July 2020.", "2021-01-09", false, .agent,
                           [fact(d, "Orlin Labs", "July 2020", status: .current, slot: FX.emp, quote: "joined Orlin Labs in July 2020")])
