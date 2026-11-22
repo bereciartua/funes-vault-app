@@ -221,8 +221,9 @@ def spike_g_scorer():
     return m
 
 
-def spikeg_gate(engine):
-    """Spike G with the feature on: verdicts and report lines."""
+def spikeg_gate(engine, suffix=""):
+    """Spike G with the feature on: verdicts and report lines. `suffix` "-timeline": 13e.2's run, F with the rows and
+    checks on (FactsAnswerLiveTests `timeline=1`)."""
     g = spike_g_scorer()
     labels_path = HERE.parent / "search-answers" / "labels.json"
     labels = json.loads(labels_path.read_text()) if labels_path.exists() else {}
@@ -230,7 +231,7 @@ def spikeg_gate(engine):
     own = OUT / f"labels-spikeg-{engine}.json"
     if own.exists():
         labels.update(json.loads(own.read_text()))
-    d = OUT / f"spike-g-{engine}"
+    d = OUT / f"spike-g-{engine}{suffix}"
     out = [f"# 13d gate: Spike G with the feature on ({engine})", "",
            "P plain (13b), F learned facts (attributes on); Spike G's scorer and labels; answerable if either arm sent the "
            "answer's memory. Latency isn't gated here.", "",
@@ -289,8 +290,9 @@ def spikeg_gate(engine):
 
 
 def cmd_spikeg(a):
-    ok, out = spikeg_gate(a.engine)
-    report = OUT / f"gate-spikeg-{a.engine}.md"
+    sfx = "-timeline" if a.timeline else ""
+    ok, out = spikeg_gate(a.engine, sfx)
+    report = OUT / f"gate-spikeg-{a.engine}{sfx}.md"
     report.write_text("\n".join(out) + "\n")
     print("\n".join(out))
     return 0 if all(ok.values()) else 1
@@ -303,6 +305,7 @@ def main():
     ap.add_argument("--engine", default="haiku")
     ap.add_argument("--sets", default="main,astra,busy")
     ap.add_argument("--dir", default="", help="read records from here instead of results-13d (a dry run's out=)")
+    ap.add_argument("--timeline", action="store_true", help="spikeg: 13e.2's run with the rows and checks on")
     a = ap.parse_args()
     if a.dir:
         OUT = Path(a.dir)

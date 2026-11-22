@@ -1,0 +1,1554 @@
+{
+ "user": {
+  "name": "Rowan Vale",
+  "aliases": [
+   "Rowan Vale"
+  ]
+ },
+ "author": "development (Spike T round 2, workr)",
+ "stories": [
+  {
+   "id": "r01",
+   "title": "A day job and a design business",
+   "traps": [
+    "untrusted_end",
+    "concurrent_slots",
+    "freelance_clients",
+    "vendor",
+    "precision",
+    "import",
+    "negative_wording"
+   ],
+   "people": {
+    "p1": {
+     "names": [
+      "Mira Chen"
+     ]
+    },
+    "p2": {
+     "names": [],
+     "group": [
+      "sibling",
+      "sister"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "m1",
+     "text": "I joined Cedar Metrics as analyst on 4 January 2016. Harbor Ledger was my previous employer.",
+     "written": "2016-01-04",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Cedar Metrics",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      },
+      {
+       "surface": "Harbor Ledger",
+       "org": "Harbor Ledger",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Cedar Metrics",
+       "kind": "employee",
+       "title": "analyst",
+       "status": "current",
+       "polarity": "positive",
+       "start": "4 January 2016",
+       "preceded_by": "Harbor Ledger"
+      },
+      {
+       "org": "Harbor Ledger",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "followed_by": "Cedar Metrics"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "The bus to the Cedar Metrics office now stops beside the bakery.",
+     "written": "2017-02-08",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Cedar Metrics",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "My manager, Mira Chen, moved our Cedar Metrics meeting to Thursday.",
+     "written": "2018-05-09",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Mira Chen",
+       "person": "p1"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "My manager",
+       "person": "p1",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p1",
+       "type": "manager",
+       "label": "manager",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [
+      {
+       "surface": "Cedar Metrics",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "In March 2019 I started my freelance business, Loom Studio, as designer alongside my Cedar Metrics job.",
+     "written": "2019-03-28",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Loom Studio",
+       "org": "Loom Studio",
+       "relation": "self_employed"
+      },
+      {
+       "surface": "Cedar Metrics",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Loom Studio",
+       "kind": "self_employed",
+       "title": "designer",
+       "status": "current",
+       "polarity": "positive",
+       "start": "March 2019"
+      },
+      {
+       "org": "Cedar Metrics",
+       "kind": "employee",
+       "status": "current",
+       "polarity": "positive",
+       "time": "March 2019"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "Juniper Museum was my Loom Studio design client from January 2020 through December 2020.",
+     "written": "2021-01-07",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Juniper Museum",
+       "org": "Juniper Museum",
+       "relation": "client"
+      },
+      {
+       "surface": "Loom Studio",
+       "org": "Loom Studio",
+       "relation": "self_employed"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Juniper Museum",
+       "kind": "client",
+       "status": "former",
+       "polarity": "positive",
+       "start": "January 2020",
+       "end": "December 2020"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m6",
+     "text": "Bought a day pass from Desk Dock for a quiet place to finish work.",
+     "written": "2021-04-13",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Desk Dock",
+       "org": "Desk Dock",
+       "relation": "vendor"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m7",
+     "text": "My sister saved the soup recipe from the Cedar Metrics office lunch.",
+     "written": "2021-07-19",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [
+      {
+       "surface": "My sister",
+       "person": "p2",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p2",
+       "type": "sibling",
+       "label": "sister",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [
+      {
+       "surface": "Cedar Metrics",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m8",
+     "text": "Rowan Vale left Cedar Metrics in 2021 and joined Quartz Analytics as director in 2021.",
+     "written": "2022-02-02",
+     "source": "agent",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Rowan Vale",
+       "person": "user"
+      }
+     ],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Cedar Metrics",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      },
+      {
+       "surface": "Quartz Analytics",
+       "org": "Quartz Analytics",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Cedar Metrics",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "end": "2021",
+       "followed_by": "Quartz Analytics"
+      },
+      {
+       "org": "Quartz Analytics",
+       "kind": "employee",
+       "title": "director",
+       "status": "current",
+       "polarity": "positive",
+       "start": "2021",
+       "preceded_by": "Cedar Metrics"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m9",
+     "text": "My manager agreed to keep my salary negotiation private; my requested increase is 8%.",
+     "written": "2023-06-06",
+     "source": "capture",
+     "sensitivity": "restricted",
+     "names": [],
+     "roles": [
+      {
+       "surface": "My manager",
+       "person": "p1",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p1",
+       "type": "manager",
+       "label": "manager",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m10",
+     "text": "Imported CV: I worked at Harbor Ledger as clerk from 2014 to 2015.",
+     "written": "2025-08-14",
+     "source": "import",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Harbor Ledger",
+       "org": "Harbor Ledger",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Harbor Ledger",
+       "kind": "employee",
+       "title": "clerk",
+       "status": "former",
+       "polarity": "positive",
+       "start": "2014",
+       "end": "2015"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m11",
+     "text": "Before work tomorrow, water the balcony herbs and pack the blue lunch box.",
+     "written": "2026-09-18",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m12",
+     "text": "As of 31 October 2026, Cedar Metrics is still my day job, continuously since joining; I also still run Loom Studio.",
+     "written": "2026-10-31",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Cedar Metrics",
+       "org": "Cedar Metrics",
+       "relation": "employer"
+      },
+      {
+       "surface": "Loom Studio",
+       "org": "Loom Studio",
+       "relation": "self_employed"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Cedar Metrics",
+       "kind": "employee",
+       "status": "current",
+       "polarity": "positive",
+       "time": "31 October 2026"
+      },
+      {
+       "org": "Loom Studio",
+       "kind": "self_employed",
+       "status": "current",
+       "polarity": "positive",
+       "time": "31 October 2026"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [],
+   "timeline": [
+    {
+     "org": "Harbor Ledger",
+     "role": "clerk",
+     "start": "2014",
+     "end": "2015",
+     "kind": "employee",
+     "memories": [
+      "m1",
+      "m10"
+     ]
+    },
+    {
+     "org": "Cedar Metrics",
+     "role": "analyst",
+     "start": "2016-01-04",
+     "end": "",
+     "kind": "employee",
+     "memories": [
+      "m1",
+      "m4",
+      "m12"
+     ]
+    },
+    {
+     "org": "Loom Studio",
+     "role": "designer",
+     "start": "2019-03",
+     "end": "",
+     "kind": "self_employed",
+     "memories": [
+      "m4",
+      "m12"
+     ]
+    },
+    {
+     "org": "Juniper Museum",
+     "role": "design client",
+     "start": "2020-01",
+     "end": "2020-12",
+     "kind": "client",
+     "memories": [
+      "m5"
+     ]
+    },
+    {
+     "org": "Desk Dock",
+     "role": "coworking vendor",
+     "start": "",
+     "end": "",
+     "kind": "vendor",
+     "memories": [
+      "m6"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "before",
+     "query": "Who was my employer immediately before Cedar Metrics?",
+     "answer_org": "Harbor Ledger",
+     "class": "decidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q2",
+     "kind": "year",
+     "query": "What was my day job in June 2022?",
+     "answer_org": "Cedar Metrics",
+     "class": "decidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q3",
+     "kind": "year",
+     "query": "Where was I employed on 2 January 2014?",
+     "answer_org": "",
+     "class": "undecidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q4",
+     "kind": "before",
+     "query": "What job came before Harbor Ledger?",
+     "answer_org": "",
+     "class": "undecidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q5",
+     "kind": "negative",
+     "query": "What did my sister save from the Cedar Metrics lunch?",
+     "answer_org": "",
+     "class": "negative",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q6",
+     "kind": "negative",
+     "query": "Did I buy a pass from Desk Dock for work?",
+     "answer_org": "",
+     "class": "negative",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q7",
+     "kind": "after",
+     "query": "Which employer did I move to after leaving Cedar Metrics?",
+     "answer_org": "",
+     "class": "undecidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    }
+   ]
+  },
+  {
+   "id": "r02",
+   "title": "Two stints at Alder",
+   "traps": [
+    "rehire",
+    "promotion",
+    "gap",
+    "precision",
+    "import",
+    "vendor",
+    "negative_wording"
+   ],
+   "people": {
+    "p1": {
+     "names": [
+      "Nia Park"
+     ]
+    },
+    "p2": {
+     "names": [],
+     "group": [
+      "partner",
+      "partner"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "m1",
+     "text": "I joined Alder Labs as tester in 2014.",
+     "written": "2014-12-20",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Alder Labs",
+       "org": "Alder Labs",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Alder Labs",
+       "kind": "employee",
+       "title": "tester",
+       "status": "current",
+       "polarity": "positive",
+       "start": "2014"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "The Alder Labs payslip PDF needs a better filename.",
+     "written": "2015-02-03",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Alder Labs",
+       "org": "Alder Labs",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "My friend, Nia Park, lent me a puzzle for the train to work.",
+     "written": "2015-09-11",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [
+      {
+       "surface": "Nia Park",
+       "person": "p1"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "My friend",
+       "person": "p1",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p1",
+       "type": "friend",
+       "label": "friend",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "I left Alder Labs in 2016. My next employer was Beacon Works, where I joined as analyst in 2017.",
+     "written": "2017-12-28",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Alder Labs",
+       "org": "Alder Labs",
+       "relation": "employer"
+      },
+      {
+       "surface": "Beacon Works",
+       "org": "Beacon Works",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Alder Labs",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "end": "2016",
+       "followed_by": "Beacon Works"
+      },
+      {
+       "org": "Beacon Works",
+       "kind": "employee",
+       "title": "analyst",
+       "status": "current",
+       "polarity": "positive",
+       "start": "2017",
+       "preceded_by": "Alder Labs"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "I left Beacon Works in 2019. Throughout 2020 I studied full-time and had no job.",
+     "written": "2021-01-08",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Beacon Works",
+       "org": "Beacon Works",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Beacon Works",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "end": "2019"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m6",
+     "text": "Sky Finch sold me the flight for the work conference; keep the receipt.",
+     "written": "2021-02-05",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Sky Finch",
+       "org": "Sky Finch",
+       "relation": "vendor"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m7",
+     "text": "My partner wants the old office chair for the sewing room.",
+     "written": "2021-02-09",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [
+      {
+       "surface": "My partner",
+       "person": "p2",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p2",
+       "type": "partner",
+       "label": "partner",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m8",
+     "text": "I rejoined Alder Labs in March 2021 as engineer. This is my first job since Beacon Works.",
+     "written": "2021-03-31",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Alder Labs",
+       "org": "Alder Labs",
+       "relation": "employer"
+      },
+      {
+       "surface": "Beacon Works",
+       "org": "Beacon Works",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Alder Labs",
+       "kind": "employee",
+       "title": "engineer",
+       "status": "current",
+       "polarity": "positive",
+       "start": "March 2021",
+       "preceded_by": "Beacon Works"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m9",
+     "text": "Told my friend that my private salary target is 92,000. Keep this out of the shared work notes.",
+     "written": "2022-02-14",
+     "source": "capture",
+     "sensitivity": "restricted",
+     "names": [],
+     "roles": [
+      {
+       "surface": "my friend",
+       "person": "p1",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p1",
+       "type": "friend",
+       "label": "friend",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m10",
+     "text": "On 15 March 2022 I became senior engineer at Alder Labs, a promotion within my second stint, which continues today.",
+     "written": "2026-09-04",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Alder Labs",
+       "org": "Alder Labs",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Alder Labs",
+       "kind": "employee",
+       "title": "senior engineer",
+       "status": "current",
+       "polarity": "positive",
+       "time": "15 March 2022"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m11",
+     "text": "After the Alder Labs meeting, collect the repaired bicycle.",
+     "written": "2026-09-18",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Alder Labs",
+       "org": "Alder Labs",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m12",
+     "text": "Imported 2017 diary: my first Alder Labs stint ended in 2016; Beacon Works was my next employer.",
+     "written": "2026-10-31",
+     "source": "import",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Alder Labs",
+       "org": "Alder Labs",
+       "relation": "employer"
+      },
+      {
+       "surface": "Beacon Works",
+       "org": "Beacon Works",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Alder Labs",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "end": "2016",
+       "followed_by": "Beacon Works"
+      },
+      {
+       "org": "Beacon Works",
+       "kind": "employee",
+       "status": "unknown",
+       "polarity": "positive",
+       "preceded_by": "Alder Labs"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [],
+   "timeline": [
+    {
+     "org": "Alder Labs",
+     "role": "tester",
+     "start": "2014",
+     "end": "2016",
+     "kind": "employee",
+     "memories": [
+      "m1",
+      "m4",
+      "m12"
+     ]
+    },
+    {
+     "org": "Beacon Works",
+     "role": "analyst",
+     "start": "2017",
+     "end": "2019",
+     "kind": "employee",
+     "memories": [
+      "m4",
+      "m5",
+      "m8",
+      "m12"
+     ]
+    },
+    {
+     "org": "Full-time study",
+     "role": "student",
+     "start": "2020",
+     "end": "2020",
+     "kind": "study",
+     "memories": [
+      "m5"
+     ]
+    },
+    {
+     "org": "Alder Labs",
+     "role": "engineer; senior engineer from 2022-03-15",
+     "start": "2021-03",
+     "end": "",
+     "kind": "employee",
+     "memories": [
+      "m8",
+      "m10"
+     ]
+    },
+    {
+     "org": "Sky Finch",
+     "role": "airline vendor",
+     "start": "",
+     "end": "",
+     "kind": "vendor",
+     "memories": [
+      "m6"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "before",
+     "query": "My employer just before Beacon Works?",
+     "answer_org": "Alder Labs",
+     "class": "decidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q2",
+     "kind": "after",
+     "query": "Where did I next take a job after Beacon Works?",
+     "answer_org": "Alder Labs",
+     "class": "decidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q3",
+     "kind": "before",
+     "query": "Where did I work before Alder Labs?",
+     "answer_org": "",
+     "class": "undecidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q4",
+     "kind": "year",
+     "query": "Who employed me on 1 July 2016?",
+     "answer_org": "",
+     "class": "undecidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q5",
+     "kind": "negative",
+     "query": "What did my partner want the office chair for?",
+     "answer_org": "",
+     "class": "negative",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q6",
+     "kind": "negative",
+     "query": "Which airline sold me the conference flight?",
+     "answer_org": "",
+     "class": "negative",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q7",
+     "kind": "after",
+     "query": "What came after my Alder Labs job?",
+     "answer_org": "",
+     "class": "undecidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    }
+   ]
+  },
+  {
+   "id": "r08",
+   "title": "Back to games after a course",
+   "traps": [
+    "rehire",
+    "promotion",
+    "gap",
+    "untrusted_end",
+    "undated_order",
+    "precision",
+    "negative_wording"
+   ],
+   "people": {
+    "p1": {
+     "names": [
+      "Eli Brooks"
+     ]
+    },
+    "p2": {
+     "names": [],
+     "group": [
+      "sibling",
+      "sister"
+     ]
+    }
+   },
+   "memories": [
+    {
+     "id": "m1",
+     "text": "My first Drift Games stint was 2014 to 2016 as junior designer.",
+     "written": "2016-12-30",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Drift Games",
+       "org": "Drift Games",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Drift Games",
+       "kind": "employee",
+       "title": "junior designer",
+       "status": "former",
+       "polarity": "positive",
+       "start": "2014",
+       "end": "2016"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m2",
+     "text": "Kept the sketchbook after leaving Drift Games. It has the recipe for the office brownies.",
+     "written": "2017-02-02",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Drift Games",
+       "org": "Drift Games",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m3",
+     "text": "My colleague, Eli Brooks, sent the slides before our Orbit Apps meeting.",
+     "written": "2018-06-19",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Eli Brooks",
+       "person": "p1"
+      }
+     ],
+     "roles": [
+      {
+       "surface": "My colleague",
+       "person": "p1",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p1",
+       "type": "colleague",
+       "label": "colleague",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [
+      {
+       "surface": "Orbit Apps",
+       "org": "Orbit Apps",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m4",
+     "text": "After leaving Drift Games, my next job was Orbit Apps as engineer from 2017 to 2019.",
+     "written": "2019-12-30",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Drift Games",
+       "org": "Drift Games",
+       "relation": "employer"
+      },
+      {
+       "surface": "Orbit Apps",
+       "org": "Orbit Apps",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Orbit Apps",
+       "kind": "employee",
+       "title": "engineer",
+       "status": "former",
+       "polarity": "positive",
+       "start": "2017",
+       "end": "2019",
+       "preceded_by": "Drift Games"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m5",
+     "text": "I studied from January 2020 through August 2020 and held no job during those months.",
+     "written": "2020-08-31",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m6",
+     "text": "The old Orbit Apps lunch calendar is useful scrap paper for drawing practice.",
+     "written": "2020-09-06",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Orbit Apps",
+       "org": "Orbit Apps",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m7",
+     "text": "My sister left a puzzle beside the work laptop.",
+     "written": "2021-03-12",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [
+      {
+       "surface": "My sister",
+       "person": "p2",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p2",
+       "type": "sibling",
+       "label": "sister",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m8",
+     "text": "Rowan Vale left Drift Games in 2024 and started at New Peak as director in 2024.",
+     "written": "2024-12-16",
+     "source": "agent",
+     "sensitivity": "internal",
+     "names": [
+      {
+       "surface": "Rowan Vale",
+       "person": "user"
+      }
+     ],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Drift Games",
+       "org": "Drift Games",
+       "relation": "employer"
+      },
+      {
+       "surface": "New Peak",
+       "org": "New Peak",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Drift Games",
+       "kind": "employee",
+       "status": "former",
+       "polarity": "positive",
+       "end": "2024",
+       "followed_by": "New Peak"
+      },
+      {
+       "org": "New Peak",
+       "kind": "employee",
+       "title": "director",
+       "status": "current",
+       "polarity": "positive",
+       "start": "2024",
+       "preceded_by": "Drift Games"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m9",
+     "text": "My sister helped rehearse my private salary negotiation. My minimum request is a 7% increase.",
+     "written": "2025-02-10",
+     "source": "capture",
+     "sensitivity": "restricted",
+     "names": [],
+     "roles": [
+      {
+       "surface": "My sister",
+       "person": "p2",
+       "resolvable": true
+      }
+     ],
+     "facts": [
+      {
+       "person": "p2",
+       "type": "sibling",
+       "label": "sister",
+       "status": "current",
+       "polarity": "positive",
+       "deceased": false,
+       "only": false,
+       "count": null
+      }
+     ],
+     "organizations": [],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m10",
+     "text": "My next job after Orbit Apps: rejoined Drift Games in September 2020 as designer; promoted to lead designer in March 2022. One continuous stint.",
+     "written": "2025-11-13",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Orbit Apps",
+       "org": "Orbit Apps",
+       "relation": "employer"
+      },
+      {
+       "surface": "Drift Games",
+       "org": "Drift Games",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "Drift Games",
+       "kind": "employee",
+       "title": "designer",
+       "status": "unknown",
+       "polarity": "positive",
+       "start": "September 2020",
+       "preceded_by": "Orbit Apps"
+      },
+      {
+       "org": "Drift Games",
+       "kind": "employee",
+       "title": "lead designer",
+       "status": "unknown",
+       "polarity": "positive",
+       "time": "March 2022"
+      }
+     ],
+     "not_linked": []
+    },
+    {
+     "id": "m11",
+     "text": "Before the Drift Games review, sharpen the pencils and refill the water bottle.",
+     "written": "2026-04-09",
+     "source": "capture",
+     "sensitivity": "low",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "Drift Games",
+       "org": "Drift Games",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [],
+     "not_linked": []
+    },
+    {
+     "id": "m12",
+     "text": "I have never worked at New Peak. My second Drift Games stint continues today; I have not left since rejoining.",
+     "written": "2026-10-31",
+     "source": "capture",
+     "sensitivity": "internal",
+     "names": [],
+     "roles": [],
+     "facts": [],
+     "organizations": [
+      {
+       "surface": "New Peak",
+       "org": "New Peak",
+       "relation": "other"
+      },
+      {
+       "surface": "Drift Games",
+       "org": "Drift Games",
+       "relation": "employer"
+      }
+     ],
+     "jobs": [
+      {
+       "org": "New Peak",
+       "kind": "employee",
+       "status": "unknown",
+       "polarity": "negative"
+      },
+      {
+       "org": "Drift Games",
+       "kind": "employee",
+       "status": "current",
+       "polarity": "positive"
+      }
+     ],
+     "not_linked": []
+    }
+   ],
+   "orders": [],
+   "timeline": [
+    {
+     "org": "Drift Games",
+     "role": "junior designer",
+     "start": "2014",
+     "end": "2016",
+     "kind": "employee",
+     "memories": [
+      "m1",
+      "m4"
+     ]
+    },
+    {
+     "org": "Orbit Apps",
+     "role": "engineer",
+     "start": "2017",
+     "end": "2019",
+     "kind": "employee",
+     "memories": [
+      "m4",
+      "m10"
+     ]
+    },
+    {
+     "org": "Study break",
+     "role": "student without a job",
+     "start": "2020-01",
+     "end": "2020-08",
+     "kind": "study",
+     "memories": [
+      "m5"
+     ]
+    },
+    {
+     "org": "Drift Games",
+     "role": "designer; lead designer from 2022-03",
+     "start": "2020-09",
+     "end": "",
+     "kind": "employee",
+     "memories": [
+      "m10",
+      "m12"
+     ]
+    }
+   ],
+   "queries": [
+    {
+     "id": "q1",
+     "kind": "before",
+     "query": "Where was I employed just before Orbit Apps?",
+     "answer_org": "Drift Games",
+     "class": "decidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q2",
+     "kind": "after",
+     "query": "Which company hired me next after Orbit Apps?",
+     "answer_org": "Drift Games",
+     "class": "decidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q3",
+     "kind": "before",
+     "query": "My job before Drift Games?",
+     "answer_org": "",
+     "class": "undecidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q4",
+     "kind": "year",
+     "query": "Where did I work on 15 May 2016?",
+     "answer_org": "",
+     "class": "undecidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q5",
+     "kind": "negative",
+     "query": "Who sent the slides before the Orbit Apps meeting?",
+     "answer_org": "",
+     "class": "negative",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q6",
+     "kind": "negative",
+     "query": "What did I keep after leaving Drift Games?",
+     "answer_org": "",
+     "class": "negative",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    },
+    {
+     "id": "q7",
+     "kind": "current",
+     "query": "Which company employs me now?",
+     "answer_org": "Drift Games",
+     "class": "decidable",
+     "why": "development question (Spike T round 2)",
+     "traps": []
+    }
+   ]
+  }
+ ]
+}

@@ -41,6 +41,10 @@ final class GateModel: GenerationProvider, @unchecked Sendable {
         var inputTokens: Int
         var outputTokens: Int
         var model: String?
+        /// 13e.2's timeline gate (`cacheErrors`): the provider error the request ended with, replayed as that error.
+        var error: String? = nil
+        /// 13e.2's timeline gate: the answer's own final error code (a router timeout, say), replayed as that failure.
+        var answerError: String? = nil
     }
 
     struct State {
@@ -54,6 +58,7 @@ final class GateModel: GenerationProvider, @unchecked Sendable {
         var reused = 0
         var wouldCall: Set<String> = []
         var fake: (@Sendable (String) -> [String: Any])?
+        var servedAnswerError: String?
     }
 
     let base: (any GenerationProvider)?
@@ -61,6 +66,12 @@ final class GateModel: GenerationProvider, @unchecked Sendable {
     let modelID: String
     var locality: Locality { .cloud }
     let cache: URL
+    /// 13e.2's timeline gate: a request that ends in a provider error (other than a limit or a sign-in problem) is cached
+    /// as that error, so the replay gives the same failed answer (`forgetLast` drops it before a retry).
+    var cacheErrors = false
+    /// 13e.2's timeline gate: a live run always asks (and writes the cache for the replay): an answer resumed after a crash
+    /// is asked again rather than served a response that never became a record, so every live answer is timed.
+    var liveAlways = false
     private let state = Mutex(State())
 
     init(base: (any GenerationProvider)?, id: ProviderID, modelID: String, cache: URL) {
@@ -79,9 +90,28 @@ final class GateModel: GenerationProvider, @unchecked Sendable {
             $0.ms = nil
             $0.model = nil
             $0.cached = false
+            $0.servedAnswerError = nil
         }
     }
+    /// The answer error a replayed entry gave (the gate records it as that failure).
+    var servedAnswerError: String? { state.withLock { $0.servedAnswerError } }
+
+    /// A live answer's final failure, on its last request: the replay gives the same failed record.
+    func recordAnswerFailure(_ code: String) {
+        guard base != nil else { return }
+        let (hash, rep) = state.withLock { ($0.requestHash, $0.rep) }
+        guard let hash else { return }
+        try? FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
+        try? JSONEncoder().encode(Entry(content: "", ms: 0, inputTokens: 0, outputTokens: 0, model: nil, answerError: code))
+            .write(to: cache.appending(path: Self.key([hash, String(rep)]) + ".json"), options: .atomic)
+    }
     func fake(_ f: (@Sendable (String) -> [String: Any])?) { state.withLock { $0.fake = f } }
+    /// Drops the last request's cached entry (a transport error about to be retried once).
+    func forgetLast() {
+        let (hash, rep) = state.withLock { ($0.requestHash, $0.rep) }
+        guard let hash else { return }
+        try? FileManager.default.removeItem(at: cache.appending(path: Self.key([hash, String(rep)]) + ".json"))
+    }
     var last: (prompt: String?, hash: String?, ms: Int?, cached: Bool, model: String?) {
         state.withLock { ($0.prompt, $0.requestHash, $0.ms, $0.cached, $0.model) }
     }
@@ -110,13 +140,18 @@ final class GateModel: GenerationProvider, @unchecked Sendable {
             $0.prompt = request.prompt
             $0.requestHash = hash
         }
-        if let data = try? Data(contentsOf: file), let entry = try? JSONDecoder().decode(Entry.self, from: data) {
+        if !(liveAlways && base != nil), let data = try? Data(contentsOf: file), let entry = try? JSONDecoder().decode(Entry.self, from: data) {
             state.withLock {
                 $0.reused += 1
                 $0.cached = true
                 $0.ms = entry.ms
                 $0.model = entry.model
             }
+            if let code = entry.answerError {
+                state.withLock { $0.servedAnswerError = code }
+                throw ProviderError.transport
+            }
+            if let code = entry.error { throw FactsHarness.error(code) }
             return (try HTTPClient.decode(entry.content, as: T.self), ProviderUsage(requests: 0))
         }
         guard let base else {
@@ -130,9 +165,22 @@ final class GateModel: GenerationProvider, @unchecked Sendable {
         }
         let clock = ContinuousClock()
         let start = clock.now
-        let (raw, usage) = try await base.generate(StructuredRequest<RawJSON>(instructions: request.instructions, prompt: request.prompt,
-                                                                             schema: request.schema,
-                                                                             maxOutputTokens: request.maxOutputTokens))
+        let (raw, usage): (RawJSON, ProviderUsage)
+        do {
+            (raw, usage) = try await base.generate(StructuredRequest<RawJSON>(instructions: request.instructions, prompt: request.prompt,
+                                                                              schema: request.schema,
+                                                                              maxOutputTokens: request.maxOutputTokens))
+        } catch let e as ProviderError {
+            let code = FactsHarness.errorCode(e)
+            if cacheErrors, !["rate_limited", "unauthorized"].contains(code) {
+                let elapsed = clock.now - start
+                try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
+                try JSONEncoder().encode(Entry(content: "", ms: Int(elapsed / .milliseconds(1)), inputTokens: 0, outputTokens: 0,
+                                               model: nil, error: code)).write(to: file, options: .atomic)
+                state.withLock { $0.calls += 1 }
+            }
+            throw e
+        }
         let elapsed = clock.now - start
         let ms = Int(elapsed.components.seconds * 1_000) + Int(elapsed.components.attoseconds / 1_000_000_000_000_000)
         let content = String(decoding: try JSONEncoder().encode(raw), as: UTF8.self)

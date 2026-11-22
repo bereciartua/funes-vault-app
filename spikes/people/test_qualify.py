@@ -279,6 +279,16 @@ class LineMeasures(unittest.TestCase):
         t = Q.timeline_measures([ln], self.story(mems, tl), REG)
         self.assertEqual(t["wrong_facts"], 1)                                # a duplicate takes no stint: a wrong fact
 
+    def test_an_episode_in_the_wrong_slot_is_a_wrong_fact(self):
+        tl = [{"org": "Acme", "kind": "self_employed", "start": "2015", "end": "", "memories": ["m1"]}]
+        mems = [{"id": "m1", "source": "capture", "jobs": []}]
+        ep = {**self.ep("p1", ("2015-01-01", "2015-01-01"), None, ["m1"]), "slot": "employee"}
+        ln = self.line([("p1", "Acme")], [("p1", [["m1", "trusted"]])], [ep])
+        t = Q.timeline_measures([ln], self.story(mems, tl), REG)
+        self.assertEqual(t["details"]["wrong_facts"], ["('s1', 'Acme', 'slot')"])
+        ep["slot"] = "self_employed"
+        self.assertEqual(Q.timeline_measures([ln], self.story(mems, tl), REG)["wrong_facts"], 0)
+
     def test_a_rename_the_story_labels_is_one_stint(self):
         """13e.2's scorer correction: a stated rename the story's trusted labels give ("Marlin Metrics" → "Marlin
         Analytics") is that stint's, as one entity or one timeline group; an agent's label, a merge the story doesn't
@@ -335,6 +345,32 @@ class LineMeasures(unittest.TestCase):
         self.assertEqual((o.get("works_at_right"), o.get("works_at_wrong", 0)), (2, 0))
         o = Q.org_measures([grouped(["p1", "p2"])], self.story([m1, bare], tl), REG)
         self.assertEqual(o.get("works_at_wrong", 0), 1)                       # the old name's unit, unlabelled
+
+
+class TimelineGateScoring(unittest.TestCase):
+    """13e.2's scorer (score_13e2.py): §10.4's owed rule read from the record, and the label rule's minimums."""
+
+    def test_the_owed_rule_from_the_record(self):
+        import score_13e2 as S
+        names = {"birch labs", "cedar systems"}
+        claim = lambda text, made=None, cites=(): {"text": text, "citations": [{"memory": m} for m in cites],
+                                                   **({} if made is None else {"comparisonMade": made})}
+        self.assertTrue(S.owed(claim("Before Cedar Systems you worked at Birch Labs."), "Where did I work?", names, set()))
+        self.assertTrue(S.owed(claim("Birch Labs."), "Where did I work in 2019?", names, set()))            # the search's year
+        self.assertTrue(S.owed(claim("Birch Labs.", made=True), "anything", names, set()))
+        self.assertTrue(S.owed(claim("A note.", cites=["m3"]), "anything", names, {"m3"}))                  # a rows-only memory
+        # made: false: only the claim's own selection cue (a date is a qualifier).
+        self.assertFalse(S.owed(claim("You joined Birch Labs in 2018.", made=False), "My title in 2019?", names, set()))
+        self.assertTrue(S.owed(claim("After Birch Labs you went to Cedar Systems.", made=False), "?", names, set()))
+        self.assertFalse(S.owed(claim("You were a designer.", made=None), "Where did I work in 2019?", names, set()))
+
+    def test_the_corrected_set_must_keep_its_minimums(self):
+        import score_13e2 as S
+        qs = [{"id": f"q{i}", "traps": ["rehire"]} for i in range(3)]
+        stories = {"s1": {"id": "s1", "queries": qs}}
+        lab = {("s1", q["id"]): {"class": "undecidable"} for q in qs}
+        probs = S.minimums(stories, lab)
+        self.assertTrue(any("decidable questions" in p for p in probs) and any("rehire" in p for p in probs))
 
 
 class Verify(unittest.TestCase):

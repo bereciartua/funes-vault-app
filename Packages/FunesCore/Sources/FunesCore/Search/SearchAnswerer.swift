@@ -31,6 +31,10 @@ public struct SearchAnswer: Sendable, Hashable {
         public var inference: ClaimInference?
         /// 13e.2: what the time model's check decided (§10.4); `text` is then code's line, and the quotes stay under it.
         public var check: TimelineCheckResult?
+        /// 13e.2: the `made` of the comparison the model gave with rows (nil: none, or no rows), and whether it was about
+        /// someone else, for the timeline gate's audit of the owed rule; never shown.
+        public internal(set) var comparisonMade: Bool?
+        public internal(set) var comparisonAboutSomeoneElse = false
 
         public init(text: String, citations: [Citation], inference: ClaimInference? = nil, check: TimelineCheckResult? = nil) {
             self.text = text
@@ -420,7 +424,10 @@ public final class SearchAnswerer: Sendable {
         if let check = given.check, let rows = given.rows {
             let cited = Set(given.cited)
             var kept: [SearchAnswer.Claim] = []
-            for (v, claim) in zip(validated.claims, marked) {
+            for (v, given0) in zip(validated.claims, marked) {
+                var claim = given0
+                claim.comparisonMade = v.comparison?.made
+                claim.comparisonAboutSomeoneElse = v.comparison?.aboutSomeoneElse == true
                 switch Self.checked(claim, validated: v, cited: cited, rows: rows, check: check, query: query, view: given.view, wording: wording) {
                 case let .keep(c): kept.append(c)
                 case let .checked(c, r):

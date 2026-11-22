@@ -16,11 +16,23 @@ import Testing
               recordedAt: "2026-11-21", answerModels: answerModels, answerPromptVersion: answerPrompt)
     }
 
+    /// The persons' records: {recorded, linked}, and *attributes* for `answerModels` (13d's form).
+    func persons(_ uses: [FactsUse], answerModels: [String] = []) -> FactsQualification.Record {
+        let people = reg.predicates.filter { $0.objectKind == FactsValidator.personKind }
+        let group = people[0].callGroup
+        return .init(predicates: people.filter { $0.callGroup == group }.map(\.id), uses: uses.map(\.rawValue), callGroup: group,
+                     engine: Self.haiku, promptVersion: FactsPrompt.version(group, registry: reg), registryVersion: reg.fingerprint,
+                     gate: "test", recordedAt: "2026-11-21", answerModels: answerModels,
+                     answerPromptVersion: answerModels.isEmpty ? "" : SearchAnswerer.promptVersion)
+    }
+
     @Test func aTimelineRecordWithAnswerModelsIsTheirsAlone() {
         let haikuAnswers = "claude-code/claude-haiku-5-5"
         let q = FactsQualification(records: [record([.recorded, .linked]),
-                                             record([.timeline], answerModels: [haikuAnswers], answerPrompt: SearchAnswerer.promptVersion)])
-        let engines = [work: Self.haiku]
+                                             record([.timeline], answerModels: [haikuAnswers], answerPrompt: SearchAnswerer.promptVersion),
+                                             persons([.recorded, .linked]), persons([.attributes], answerModels: [haikuAnswers])])
+        let people = reg.predicates.first { $0.objectKind == FactsValidator.personKind }!
+        let engines = [work: Self.haiku, people.callGroup: Self.haiku]
         let versions = FactsQualification.promptVersions(reg)
         // Plain search and the Facts task: no timeline.
         #expect(!q.uses(engines: engines, registry: reg, promptVersions: versions).isOn(d, .timeline))
@@ -33,6 +45,12 @@ import Testing
                     FactsQualification.AnswerKey(model: haikuAnswers, promptVersion: "a13d-1")] {
             #expect(!q.uses(engines: engines, registry: reg, promptVersions: versions, answer: key).isOn(d, .timeline), "\(key)")
         }
+        // Without that model's *attributes* (never recorded, or turned off), its *timeline* is off too: the gate measured
+        // them together.
+        let alone = FactsQualification(records: [record([.recorded, .linked]),
+                                                 record([.timeline], answerModels: [haikuAnswers], answerPrompt: SearchAnswerer.promptVersion)])
+        #expect(!alone.uses(engines: engines, registry: reg, promptVersions: versions,
+                            answer: .init(model: haikuAnswers, promptVersion: SearchAnswerer.promptVersion)).isOn(d, .timeline))
         // An engine-free timeline record (13e.1's form) still counts for plain search, as before.
         let engineFree = FactsQualification(records: [record([.recorded, .linked, .timeline])])
         #expect(engineFree.uses(engines: engines, registry: reg, promptVersions: versions).isOn(d, .timeline))
