@@ -1,0 +1,1333 @@
+{
+  "user_name": "Alex Varela",
+  "user_aliases": ["Alex", "A. Varela"],
+  "stories": [
+    {
+      "id": "g01",
+      "title": "Two arrivals at the renamed workshop",
+      "traps": ["rehire", "rename", "import", "vendor"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "My first-ever employer was Oriel Loom, from 2012-01-01 to 2013-12-31. Immediately afterward, my first stint at Brindle Quay ran from 2014-01-01 to 2016-12-31.",
+          "written": "2017-01-08",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Oriel Loom", "org": "Oriel Loom", "relation": "employer"},
+            {"surface": "Brindle Quay", "org": "Brindle Arc", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Oriel Loom", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2012-01-01", "end": "2013-12-31", "time": null, "preceded_by": null, "followed_by": "Brindle Quay", "also_called": null},
+            {"org": "Brindle Quay", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2014-01-01", "end": "2016-12-31", "time": null, "preceded_by": "Oriel Loom", "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "Bought a woven lampshade from Oriel Loom for the kitchen.",
+          "written": "2018-05-12",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Oriel Loom", "org": "Oriel Loom", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "After leaving Brindle Quay the first time, I worked at Kestrel Mica from 2017-01-01 to 2020-06-30.",
+          "written": "2020-07-02",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Brindle Quay", "org": "Brindle Arc", "relation": "employer"},
+            {"surface": "Kestrel Mica", "org": "Kestrel Mica", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Brindle Quay", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Kestrel Mica", "also_called": null},
+            {"org": "Kestrel Mica", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2017-01-01", "end": "2020-06-30", "time": null, "preceded_by": "Brindle Quay", "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "My cousin sent a photo of the new reception desk at Kestrel Mica, where my cousin works.",
+          "written": "2021-02-14",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Kestrel Mica", "org": "Kestrel Mica", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "I returned to Brindle Quay on 2020-07-01, immediately after Kestrel Mica. This second stint is still going.",
+          "written": "2022-06-03",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Brindle Quay", "org": "Brindle Arc", "relation": "employer"},
+            {"surface": "Kestrel Mica", "org": "Kestrel Mica", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Brindle Quay", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2020-07-01", "end": null, "time": null, "preceded_by": "Kestrel Mica", "followed_by": null, "also_called": null},
+            {"org": "Kestrel Mica", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Brindle Quay", "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "Brindle Quay changed its name to Brindle Arc on 2023-01-01. Same employer, no employment break. I still work there today, 2026-10-28.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Brindle Quay", "org": "Brindle Arc", "relation": "employer"},
+            {"surface": "Brindle Arc", "org": "Brindle Arc", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Brindle Quay", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": "2026-10-28", "preceded_by": null, "followed_by": null, "also_called": "Brindle Arc"}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Oriel Loom", "role": "Employee", "start": "2012-01-01", "end": "2013-12-31", "kind": "employee", "memories": ["m1"]},
+        {"org": "Brindle Arc", "role": "Employee, first stint", "start": "2014-01-01", "end": "2016-12-31", "kind": "employee", "memories": ["m1", "m3", "m6"]},
+        {"org": "Kestrel Mica", "role": "Employee", "start": "2017-01-01", "end": "2020-06-30", "kind": "employee", "memories": ["m3", "m5"]},
+        {"org": "Brindle Arc", "role": "Employee, second stint", "start": "2020-07-01", "end": "", "kind": "employee", "memories": ["m5", "m6"]},
+        {"org": "Oriel Loom", "role": "Lampshade seller", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "before", "query": "Where was I immediately before my first stint at Brindle Quay?", "answer_org": "Oriel Loom", "traps": ["rehire", "rename", "import"], "why": "The imported account explicitly places Oriel Loom immediately before the first stint."},
+        {"id": "q2", "class": "decidable", "kind": "before", "query": "Before I came back to Brindle Arc, who employed me?", "answer_org": "Kestrel Mica", "traps": ["rehire", "rename"], "why": "The return is explicitly immediately after Kestrel Mica; both Brindle names denote one employer."},
+        {"id": "q3", "class": "decidable", "kind": "current", "query": "What's my current employer called now?", "answer_org": "Brindle Arc", "traps": ["rename"], "why": "The latest capture confirms continuing employment and the new name."},
+        {"id": "q4", "class": "undecidable", "kind": "before", "query": "Who did I work for right before joining Brindle Arc?", "answer_org": "", "traps": ["rehire", "rename"], "why": "The first joining follows Oriel Loom, while the return follows Kestrel Mica; no stint is specified."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "Where was I working six months before I started at Brindle Quay?", "answer_org": "", "traps": ["rehire", "rename"], "why": "Six months before the first start means Oriel Loom; six months before the return means Kestrel Mica."},
+        {"id": "q6", "class": "negative", "kind": "first_job", "query": "What was my first-ever employer?", "answer_org": "Oriel Loom", "traps": ["import"], "why": "The imported memory explicitly calls Oriel Loom the first-ever employer."},
+        {"id": "q7", "class": "negative", "kind": "how_long", "query": "How long was that first Brindle stint?", "answer_org": "", "traps": ["rehire"], "why": "The first stint covered three calendar years, from 2014-01-01 through 2016-12-31."}
+      ]
+    },
+    {
+      "id": "g02",
+      "title": "El regreso y el nombre nuevo",
+      "traps": ["rehire", "rename", "spanish", "vendor"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "Soy Alex Varela. Trabajé en Nimbo Cobre del 2012-01-01 al 2013-01-31. Justo después entré en Faro Jacinto como analista; mi primera etapa fue del 2013-02-01 al 2015-08-31.",
+          "written": "2015-09-04",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [{"surface": "Alex Varela", "person": "user"}],
+          "organizations": [
+            {"surface": "Nimbo Cobre", "org": "Nimbo Cobre", "relation": "employer"},
+            {"surface": "Faro Jacinto", "org": "Jacinto Prisma", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Nimbo Cobre", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2012-01-01", "end": "2013-01-31", "time": null, "preceded_by": null, "followed_by": "Faro Jacinto", "also_called": null},
+            {"org": "Faro Jacinto", "kind": "employee", "title": "analista", "status": "former", "polarity": "positive", "start": "2013-02-01", "end": "2015-08-31", "time": null, "preceded_by": "Nimbo Cobre", "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "Mi amistad Dani Sol empezó a trabajar en Nimbo Cobre. Celebramos con una merienda.",
+          "written": "2016-04-11",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Dani Sol", "person": "p1"}],
+          "organizations": [{"surface": "Nimbo Cobre", "org": "Nimbo Cobre", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "Tras mi primera salida de Faro Jacinto, trabajé en Duna Tecla del 2015-09-01 al 2018-04-30.",
+          "written": "2018-05-02",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Faro Jacinto", "org": "Jacinto Prisma", "relation": "employer"},
+            {"surface": "Duna Tecla", "org": "Duna Tecla", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Faro Jacinto", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Duna Tecla", "also_called": null},
+            {"org": "Duna Tecla", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2015-09-01", "end": "2018-04-30", "time": null, "preceded_by": "Faro Jacinto", "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "Compré una libreta en la tienda de Duna Tecla.",
+          "written": "2019-08-20",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Duna Tecla", "org": "Duna Tecla", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "Volví a Faro Jacinto el 2018-05-01, inmediatamente después de Duna Tecla, como responsable de operaciones. Sigo en esta segunda etapa.",
+          "written": "2020-02-09",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Faro Jacinto", "org": "Jacinto Prisma", "relation": "employer"},
+            {"surface": "Duna Tecla", "org": "Duna Tecla", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Faro Jacinto", "kind": "employee", "title": "responsable de operaciones", "status": "current", "polarity": "positive", "start": "2018-05-01", "end": null, "time": null, "preceded_by": "Duna Tecla", "followed_by": null, "also_called": null},
+            {"org": "Duna Tecla", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Faro Jacinto", "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "Faro Jacinto pasó a llamarse Jacinto Prisma el 2021-06-01; fue solo un cambio de nombre. Hoy, 2026-10-28, sigo trabajando allí sin interrupción desde mi regreso.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Faro Jacinto", "org": "Jacinto Prisma", "relation": "employer"},
+            {"surface": "Jacinto Prisma", "org": "Jacinto Prisma", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Faro Jacinto", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": "2026-10-28", "preceded_by": null, "followed_by": null, "also_called": "Jacinto Prisma"}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Nimbo Cobre", "role": "Employee", "start": "2012-01-01", "end": "2013-01-31", "kind": "employee", "memories": ["m1"]},
+        {"org": "Jacinto Prisma", "role": "analista", "start": "2013-02-01", "end": "2015-08-31", "kind": "employee", "memories": ["m1", "m3", "m6"]},
+        {"org": "Duna Tecla", "role": "Employee", "start": "2015-09-01", "end": "2018-04-30", "kind": "employee", "memories": ["m3", "m5"]},
+        {"org": "Jacinto Prisma", "role": "responsable de operaciones", "start": "2018-05-01", "end": "", "kind": "employee", "memories": ["m5", "m6"]},
+        {"org": "Duna Tecla", "role": "Notebook seller", "start": "", "end": "", "kind": "vendor", "memories": ["m4"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "before", "query": "¿Dónde trabajaba justo antes de mi primera etapa en Jacinto Prisma?", "answer_org": "Nimbo Cobre", "traps": ["rehire", "rename", "spanish"], "why": "La primera etapa, bajo el nombre anterior, empezó inmediatamente después de Nimbo Cobre."},
+        {"id": "q2", "class": "decidable", "kind": "before", "query": "Employer immediately before my return to Faro Jacinto?", "answer_org": "Duna Tecla", "traps": ["rehire", "rename"], "why": "The return is explicitly immediately after Duna Tecla."},
+        {"id": "q3", "class": "decidable", "kind": "current", "query": "¿En qué empresa sigo ahora?", "answer_org": "Jacinto Prisma", "traps": ["rename", "spanish"], "why": "La captura más reciente confirma continuidad y el nombre Jacinto Prisma."},
+        {"id": "q4", "class": "undecidable", "kind": "before", "query": "Before joining Jacinto Prisma, where did I work?", "answer_org": "", "traps": ["rehire", "rename"], "why": "The unspecified joining could follow Nimbo Cobre or Duna Tecla."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "¿Quién me empleaba seis meses antes de entrar en Faro Jacinto?", "answer_org": "", "traps": ["rehire", "rename", "spanish"], "why": "Seis meses antes de la primera entrada corresponde a Nimbo Cobre; antes del regreso, a Duna Tecla."},
+        {"id": "q6", "class": "negative", "kind": "title_in_job", "query": "What was my title when I returned to Faro Jacinto?", "answer_org": "", "traps": ["rehire", "spanish"], "why": "The title was responsable de operaciones."},
+        {"id": "q7", "class": "negative", "kind": "someone_else", "query": "¿Dónde empezó a trabajar Dani Sol?", "answer_org": "Nimbo Cobre", "traps": ["spanish"], "why": "La nota cotidiana dice que Dani Sol empezó en Nimbo Cobre; no describe un empleo del usuario."}
+      ]
+    },
+    {
+      "id": "g03",
+      "title": "A return hidden by a later rebrand",
+      "traps": ["rehire", "rename", "import", "vendor"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I worked at Tern Vellum from 2012-01-01 to 2014-12-31, then immediately at Sable Orchard from 2015-01-01 to 2017-12-31. That was my first Sable Orchard stint.",
+          "written": "2018-01-03",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Tern Vellum", "org": "Tern Vellum", "relation": "employer"},
+            {"surface": "Sable Orchard", "org": "Sable Meridian", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Tern Vellum", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2012-01-01", "end": "2014-12-31", "time": null, "preceded_by": null, "followed_by": "Sable Orchard", "also_called": null},
+            {"org": "Sable Orchard", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2015-01-01", "end": "2017-12-31", "time": null, "preceded_by": "Tern Vellum", "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "A parcel of greeting cards arrived from Tern Vellum; the paper feels lovely.",
+          "written": "2019-11-10",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Tern Vellum", "org": "Tern Vellum", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "My job immediately after the first Sable Orchard stint was at Pebble Helix, from 2018-01-01 through 2022-12-31.",
+          "written": "2023-01-02",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Sable Orchard", "org": "Sable Meridian", "relation": "employer"},
+            {"surface": "Pebble Helix", "org": "Pebble Helix", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Sable Orchard", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Pebble Helix", "also_called": null},
+            {"org": "Pebble Helix", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2018-01-01", "end": "2022-12-31", "time": null, "preceded_by": "Sable Orchard", "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "Read a newspaper story about Pebble Helix installing a rooftop garden.",
+          "written": "2023-07-16",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Pebble Helix", "org": "Pebble Helix", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "I rejoined Sable Orchard on 2023-01-01, directly after Pebble Helix, and am still employed here.",
+          "written": "2024-04-09",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Sable Orchard", "org": "Sable Meridian", "relation": "employer"},
+            {"surface": "Pebble Helix", "org": "Pebble Helix", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Sable Orchard", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2023-01-01", "end": null, "time": null, "preceded_by": "Pebble Helix", "followed_by": null, "also_called": null},
+            {"org": "Pebble Helix", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Sable Orchard", "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "Sable Orchard became Sable Meridian on 2025-02-01, purely a rename. My second stint continued uninterrupted and remains my current job on 2026-10-28.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Sable Orchard", "org": "Sable Meridian", "relation": "employer"},
+            {"surface": "Sable Meridian", "org": "Sable Meridian", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Sable Orchard", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": "2026-10-28", "preceded_by": null, "followed_by": null, "also_called": "Sable Meridian"}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Tern Vellum", "role": "Employee", "start": "2012-01-01", "end": "2014-12-31", "kind": "employee", "memories": ["m1"]},
+        {"org": "Sable Meridian", "role": "Employee, first stint", "start": "2015-01-01", "end": "2017-12-31", "kind": "employee", "memories": ["m1", "m3", "m6"]},
+        {"org": "Pebble Helix", "role": "Employee", "start": "2018-01-01", "end": "2022-12-31", "kind": "employee", "memories": ["m3", "m5"]},
+        {"org": "Sable Meridian", "role": "Employee, second stint", "start": "2023-01-01", "end": "", "kind": "employee", "memories": ["m5", "m6"]},
+        {"org": "Tern Vellum", "role": "Greeting-card seller", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "before", "query": "Who employed me just before the first Sable Meridian stint?", "answer_org": "Tern Vellum", "traps": ["rehire", "rename", "import"], "why": "The first stint under the old name immediately followed Tern Vellum."},
+        {"id": "q2", "class": "decidable", "kind": "after", "query": "Where did I go immediately after leaving Sable Orchard the first time?", "answer_org": "Pebble Helix", "traps": ["rehire", "rename"], "why": "The user's own note explicitly identifies Pebble Helix as the next job after the first stint."},
+        {"id": "q3", "class": "decidable", "kind": "current", "query": "Current company, using its latest name?", "answer_org": "Sable Meridian", "traps": ["rename"], "why": "The latest capture confirms the renamed employer and uninterrupted second stint."},
+        {"id": "q4", "class": "undecidable", "kind": "previous", "query": "What was my previous employer when I started at Sable Meridian?", "answer_org": "", "traps": ["rehire", "rename"], "why": "The first start follows Tern Vellum, but the second follows Pebble Helix."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "Company I was at six months before joining Sable Orchard?", "answer_org": "", "traps": ["rehire", "rename"], "why": "The two starts give Tern Vellum and Pebble Helix respectively."},
+        {"id": "q6", "class": "negative", "kind": "order_yes_no", "query": "Did I work at Tern Vellum before Pebble Helix?", "answer_org": "", "traps": ["import"], "why": "Yes; the Tern Vellum stint ended before the Pebble Helix stint began."},
+        {"id": "q7", "class": "negative", "kind": "list", "query": "List all my employers, without counting a rebrand twice.", "answer_org": "", "traps": ["rename", "rehire"], "why": "The distinct employers are Tern Vellum, Sable Meridian, and Pebble Helix."}
+      ]
+    },
+    {
+      "id": "g04",
+      "title": "The uncertain 2019 handover",
+      "traps": ["possible_overlap", "same_year_handover", "exact_day", "precision", "freelance_clients", "vendor"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I was an employee at Amber Spindle from 2015 to 2019. I remember only the years, not my first or last day.",
+          "written": "2020-01-08",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Amber Spindle", "org": "Amber Spindle", "relation": "employer"}],
+          "jobs": [
+            {"org": "Amber Spindle", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2015", "end": "2019", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "Ordered a sewing kit from Amber Spindle for a weekend repair project.",
+          "written": "2020-06-11",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Amber Spindle", "org": "Amber Spindle", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "I worked at Moss Circuit from 2019 to 2023. Those dates are only years. I cannot remember whether this job overlapped Amber Spindle or whether there was a break between them.",
+          "written": "2023-12-29",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Moss Circuit", "org": "Moss Circuit", "relation": "employer"},
+            {"surface": "Amber Spindle", "org": "Amber Spindle", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Moss Circuit", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2019", "end": "2023", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Amber Spindle", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "Met my neighbor outside Moss Circuit after the neighbor's shift there.",
+          "written": "2024-02-14",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Moss Circuit", "org": "Moss Circuit", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "I launched my own freelance business, Quiet Comet Studio, on 2024-01-01. I currently run it as a designer.",
+          "written": "2024-03-10",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Quiet Comet Studio", "org": "Quiet Comet Studio", "relation": "self_employed"}],
+          "jobs": [
+            {"org": "Quiet Comet Studio", "kind": "self_employed", "title": "designer", "status": "current", "polarity": "positive", "start": "2024-01-01", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "On 2026-10-28 I still run Quiet Comet Studio, my only work. Its client Larch Mosaic has hired my business continuously since 2025-01-01. I have never been an employee of Larch Mosaic.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Quiet Comet Studio", "org": "Quiet Comet Studio", "relation": "self_employed"},
+            {"surface": "Larch Mosaic", "org": "Larch Mosaic", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Quiet Comet Studio", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": "2026-10-28", "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Larch Mosaic", "kind": "client", "title": null, "status": "current", "polarity": "positive", "start": "2025-01-01", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Larch Mosaic", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Amber Spindle", "role": "Employee", "start": "2015", "end": "2019", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Moss Circuit", "role": "Employee", "start": "2019", "end": "2023", "kind": "employee", "memories": ["m3"]},
+        {"org": "Quiet Comet Studio", "role": "designer", "start": "2024-01-01", "end": "", "kind": "self_employed", "memories": ["m5", "m6"]},
+        {"org": "Larch Mosaic", "role": "Design client", "start": "2025-01-01", "end": "", "kind": "client", "memories": ["m6"]},
+        {"org": "Amber Spindle", "role": "Sewing-kit seller", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Where was I employed in 2018?", "answer_org": "Amber Spindle", "traps": ["precision", "possible_overlap", "same_year_handover"], "why": "2018 lies inside the Amber Spindle stint and before Moss Circuit's possible start."},
+        {"id": "q2", "class": "decidable", "kind": "on_day", "query": "Employer on 15 March 2021?", "answer_org": "Moss Circuit", "traps": ["exact_day", "precision", "same_year_handover"], "why": "That day lies safely inside the 2019–2023 stint, beyond the uncertain handover year."},
+        {"id": "q3", "class": "decidable", "kind": "current", "query": "What business am I running now?", "answer_org": "Quiet Comet Studio", "traps": ["freelance_clients"], "why": "The latest capture identifies Quiet Comet Studio as the user's current business and Larch Mosaic as its client."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Which employer had me on payroll on 15 March 2019?", "answer_org": "", "traps": ["possible_overlap", "same_year_handover", "exact_day", "precision"], "why": "The year-only boundaries permit either employer, both employers, or a gap on that day."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "Where was I still employed the day before I started at Moss Circuit?", "answer_org": "", "traps": ["possible_overlap", "same_year_handover"], "why": "Amber Spindle might still have employed the user, or its job might already have ended."},
+        {"id": "q6", "class": "negative", "kind": "vendor", "query": "Who sold me that sewing kit?", "answer_org": "Amber Spindle", "traps": ["vendor"], "why": "The everyday purchase note names Amber Spindle as the seller."},
+        {"id": "q7", "class": "negative", "kind": "other", "query": "What's the name of my studio's ongoing design client?", "answer_org": "Larch Mosaic", "traps": ["freelance_clients"], "why": "Larch Mosaic is the client; the question does not ask for an employer or owned business."}
+      ]
+    },
+    {
+      "id": "g05",
+      "title": "A side business beside an uncertain transition",
+      "traps": ["possible_overlap", "same_year_handover", "exact_day", "concurrent_slots", "freelance_clients", "spanish", "vendor"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "My employee job at Cinder Atlas lasted from 2017 to 2021. I have only year-level dates for that stint.",
+          "written": "2022-01-15",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Cinder Atlas", "org": "Cinder Atlas", "relation": "employer"}],
+          "jobs": [
+            {"org": "Cinder Atlas", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2017", "end": "2021", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "Bought a wall map from Cinder Atlas for the hallway.",
+          "written": "2022-05-04",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Cinder Atlas", "org": "Cinder Atlas", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "I opened my freelance business, Copper Finch Works, on 2022-03-01, and still run it alongside my employee work. Reed Lantern was a client from 2022-04-01 to 2023-09-30, never my employer.",
+          "written": "2023-10-03",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Copper Finch Works", "org": "Copper Finch Works", "relation": "self_employed"},
+            {"surface": "Reed Lantern", "org": "Reed Lantern", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Copper Finch Works", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2022-03-01", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Reed Lantern", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": "2022-04-01", "end": "2023-09-30", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Reed Lantern", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "My sibling works at Velvet Estuary and brought home a spare tote bag.",
+          "written": "2024-02-07",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Velvet Estuary", "org": "Velvet Estuary", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "My salaried job at Velvet Estuary ran from 2021 to 2024; I don't know the months. I can't remember whether I started before or after my Cinder Atlas job ended. Copper Finch Works was my separate side business during this salaried job.",
+          "written": "2025-01-09",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Velvet Estuary", "org": "Velvet Estuary", "relation": "employer"},
+            {"surface": "Cinder Atlas", "org": "Cinder Atlas", "relation": "employer"},
+            {"surface": "Copper Finch Works", "org": "Copper Finch Works", "relation": "self_employed"}
+          ],
+          "jobs": [
+            {"org": "Velvet Estuary", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2021", "end": "2024", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Cinder Atlas", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Copper Finch Works", "kind": "self_employed", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "As of 2026-10-28 I still run Copper Finch Works, continuously since opening it. It is now my only work.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Copper Finch Works", "org": "Copper Finch Works", "relation": "self_employed"}],
+          "jobs": [
+            {"org": "Copper Finch Works", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": "2026-10-28", "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Cinder Atlas", "role": "Employee", "start": "2017", "end": "2021", "kind": "employee", "memories": ["m1", "m5"]},
+        {"org": "Velvet Estuary", "role": "Salaried employee", "start": "2021", "end": "2024", "kind": "employee", "memories": ["m5"]},
+        {"org": "Copper Finch Works", "role": "Freelance business owner", "start": "2022-03-01", "end": "", "kind": "self_employed", "memories": ["m3", "m5", "m6"]},
+        {"org": "Reed Lantern", "role": "Freelance client", "start": "2022-04-01", "end": "2023-09-30", "kind": "client", "memories": ["m3"]},
+        {"org": "Cinder Atlas", "role": "Map seller", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "¿Cuál era mi empleo asalariado en 2023?", "answer_org": "Velvet Estuary", "traps": ["concurrent_slots", "freelance_clients", "spanish"], "why": "Velvet Estuary was the salaried employer; Copper Finch Works was the separate business and Reed Lantern its client."},
+        {"id": "q2", "class": "decidable", "kind": "current", "query": "Which of my businesses am I still running?", "answer_org": "Copper Finch Works", "traps": ["concurrent_slots", "freelance_clients"], "why": "The latest capture explicitly confirms Copper Finch Works remains active."},
+        {"id": "q3", "class": "decidable", "kind": "on_day", "query": "Who employed me on March 15, 2019?", "answer_org": "Cinder Atlas", "traps": ["exact_day", "precision", "same_year_handover", "possible_overlap", "import"], "why": "The day is inside the Cinder Atlas stint and two years before the uncertain transition."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "¿En qué empresa estaba el 15 de marzo de 2021?", "answer_org": "", "traps": ["exact_day", "precision", "same_year_handover", "possible_overlap", "spanish"], "why": "Only years are recorded, so either job, both jobs, or a gap could cover that date."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "Who was still employing me right before my first day at Velvet Estuary?", "answer_org": "", "traps": ["possible_overlap", "same_year_handover"], "why": "The user explicitly cannot place the Cinder Atlas ending relative to the Velvet Estuary start."},
+        {"id": "q6", "class": "negative", "kind": "vendor", "query": "Where did I get the hallway map?", "answer_org": "Cinder Atlas", "traps": ["vendor"], "why": "Cinder Atlas sold the map; this is a purchase question."},
+        {"id": "q7", "class": "negative", "kind": "other", "query": "Was Reed Lantern my employer or my client?", "answer_org": "Reed Lantern", "traps": ["freelance_clients"], "why": "Reed Lantern was a client, and the user explicitly denies employee status there."}
+      ]
+    },
+    {
+      "id": "g06",
+      "title": "An uncertain handover before a clear study break",
+      "traps": ["possible_overlap", "same_year_handover", "exact_day", "gap", "precision", "import"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I worked at Harbor Thimble from 2014 to 2018. I never wrote down the months or days.",
+          "written": "2019-01-12",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Harbor Thimble", "org": "Harbor Thimble", "relation": "employer"}],
+          "jobs": [
+            {"org": "Harbor Thimble", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2014", "end": "2018", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "Read about Harbor Thimble's new bicycle parking while eating breakfast.",
+          "written": "2019-05-08",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Harbor Thimble", "org": "Harbor Thimble", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "My job at Quartz Meadow lasted from 2018 to 2020, with only the years preserved. It might have overlapped Harbor Thimble, or there might have been a gap. Quartz Meadow was my last employer before my study break.",
+          "written": "2021-01-06",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Quartz Meadow", "org": "Quartz Meadow", "relation": "employer"},
+            {"surface": "Harbor Thimble", "org": "Harbor Thimble", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Quartz Meadow", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2018", "end": "2020", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Harbor Thimble", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "My friend at Quartz Meadow recommended a good walking route.",
+          "written": "2021-04-18",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Quartz Meadow", "org": "Quartz Meadow", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "My independent study break ran from 2021-01-01 through 2021-12-31. I studied bookbinding at home and did no paid work during that entire period.",
+          "written": "2022-01-02",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "Immediately after the study break I joined Elm Semaphore on 2022-01-01. I remain employed there on 2026-10-28 and have held no other job since the break.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Elm Semaphore", "org": "Elm Semaphore", "relation": "employer"}],
+          "jobs": [
+            {"org": "Elm Semaphore", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2022-01-01", "end": null, "time": "2026-10-28", "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Harbor Thimble", "role": "Employee", "start": "2014", "end": "2018", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Quartz Meadow", "role": "Employee", "start": "2018", "end": "2020", "kind": "employee", "memories": ["m3"]},
+        {"org": "Independent study break", "role": "Bookbinding study; no paid work", "start": "2021-01-01", "end": "2021-12-31", "kind": "study", "memories": ["m5"]},
+        {"org": "Elm Semaphore", "role": "Employee", "start": "2022-01-01", "end": "", "kind": "employee", "memories": ["m6"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "on_day", "query": "Where was I employed on 2016-09-12?", "answer_org": "Harbor Thimble", "traps": ["exact_day", "precision", "possible_overlap", "same_year_handover", "import"], "why": "The day lies inside the Harbor Thimble stint and before the uncertain 2018 handover."},
+        {"id": "q2", "class": "decidable", "kind": "after", "query": "Which company did I join straight after the bookbinding year?", "answer_org": "Elm Semaphore", "traps": ["gap"], "why": "The user's capture explicitly places Elm Semaphore immediately after the study break."},
+        {"id": "q3", "class": "decidable", "kind": "before", "query": "Last employer before I stopped to study?", "answer_org": "Quartz Meadow", "traps": ["gap", "possible_overlap", "same_year_handover"], "why": "Quartz Meadow is explicitly named as the last employer before the break, regardless of the earlier uncertain handover."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Who employed me on 1 June 2018?", "answer_org": "", "traps": ["exact_day", "precision", "possible_overlap", "same_year_handover"], "why": "The year-only transition permits either employer, concurrent employment, or a gap that day."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "Where was I still working just before Quartz Meadow started?", "answer_org": "", "traps": ["possible_overlap", "same_year_handover"], "why": "The notes do not establish whether Harbor Thimble was still active at that point."},
+        {"id": "q6", "class": "negative", "kind": "how_long", "query": "Exactly how many months did Harbor Thimble last?", "answer_org": "", "traps": ["precision"], "why": "An exact month count cannot be determined from start and end years alone."},
+        {"id": "q7", "class": "negative", "kind": "other", "query": "What was I studying during my year off?", "answer_org": "", "traps": ["gap"], "why": "The user studied bookbinding independently at home."}
+      ]
+    },
+    {
+      "id": "g07",
+      "title": "An agent fills a missing employment interval",
+      "traps": ["agent_competitor", "untrusted_end", "gap", "vendor"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "My employee stint at Indigo Purl ran from 2012-06-01 to 2019-12-31. My title was archive technician.",
+          "written": "2020-01-10",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Indigo Purl", "org": "Indigo Purl", "relation": "employer"}],
+          "jobs": [
+            {"org": "Indigo Purl", "kind": "employee", "title": "archive technician", "status": "former", "polarity": "positive", "start": "2012-06-01", "end": "2019-12-31", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "Bought archival sleeves from Indigo Purl for old family postcards.",
+          "written": "2020-08-12",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Indigo Purl", "org": "Indigo Purl", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "Alex Varela joined Rook Trestle on 2020-01-01 immediately after Indigo Purl and currently works there.",
+          "written": "2023-05-14",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [{"surface": "Alex Varela", "person": "user"}],
+          "organizations": [
+            {"surface": "Rook Trestle", "org": "Rook Trestle", "relation": "employer"},
+            {"surface": "Indigo Purl", "org": "Indigo Purl", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Rook Trestle", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2020-01-01", "end": null, "time": null, "preceded_by": "Indigo Purl", "followed_by": null, "also_called": null},
+            {"org": "Indigo Purl", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Rook Trestle", "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "I joined Willow Kiln on 2025-01-01 and currently work there. I have not reconstructed my employment during 2020 through 2024; those years in my own records are blank.",
+          "written": "2025-03-01",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Willow Kiln", "org": "Willow Kiln", "relation": "employer"}],
+          "jobs": [
+            {"org": "Willow Kiln", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2025-01-01", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m5",
+          "text": "The user left Willow Kiln on 2025-06-30 and rejoined Rook Trestle on 2025-07-01. Rook Trestle is now the user's employer.",
+          "written": "2025-08-04",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Willow Kiln", "org": "Willow Kiln", "relation": "employer"},
+            {"surface": "Rook Trestle", "org": "Rook Trestle", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Willow Kiln", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2025-06-30", "time": null, "preceded_by": null, "followed_by": "Rook Trestle", "also_called": null},
+            {"org": "Rook Trestle", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2025-07-01", "end": null, "time": null, "preceded_by": "Willow Kiln", "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "My neighbor's Rook Trestle staff picnic was rained out.",
+          "written": "2026-06-18",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Rook Trestle", "org": "Rook Trestle", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m7",
+          "text": "On 2026-10-28 Willow Kiln is still my sole employer. I have worked here continuously since 2025-01-01.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Willow Kiln", "org": "Willow Kiln", "relation": "employer"}],
+          "jobs": [
+            {"org": "Willow Kiln", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2025-01-01", "end": null, "time": "2026-10-28", "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Indigo Purl", "role": "archive technician", "start": "2012-06-01", "end": "2019-12-31", "kind": "employee", "memories": ["m1"]},
+        {"org": "Willow Kiln", "role": "Employee", "start": "2025-01-01", "end": "", "kind": "employee", "memories": ["m4", "m7"]},
+        {"org": "Indigo Purl", "role": "Archival-sleeve seller", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "current", "query": "Who is my employer now?", "answer_org": "Willow Kiln", "traps": ["agent_competitor", "untrusted_end"], "why": "The user's current capture confirms sole, continuous employment at Willow Kiln despite the agent's competing claim."},
+        {"id": "q2", "class": "decidable", "kind": "on_day", "query": "Where was I working on July 10, 2025?", "answer_org": "Willow Kiln", "traps": ["agent_competitor", "untrusted_end", "exact_day"], "why": "The user's continuous-employment statement covers that exact day and overrides the agent's alleged departure."},
+        {"id": "q3", "class": "undecidable", "kind": "in_year", "query": "Where did I work in 2022?", "answer_org": "", "traps": ["agent_competitor"], "why": "Only an agent supplies an employer for 2022; the user's records explicitly leave that interval unresolved."},
+        {"id": "q4", "class": "undecidable", "kind": "previous", "query": "Employer immediately before Willow Kiln?", "answer_org": "", "traps": ["agent_competitor", "gap"], "why": "The missing interval prevents identifying the immediate predecessor; the agent's proposed job cannot fill it."},
+        {"id": "q5", "class": "undecidable", "kind": "after", "query": "What was the very next employer I joined after leaving Indigo Purl?", "answer_org": "", "traps": ["agent_competitor", "gap"], "why": "Willow Kiln is later, but the user's notes do not establish whether any intervening employer came first."},
+        {"id": "q6", "class": "negative", "kind": "title_in_job", "query": "What was my title at Indigo Purl?", "answer_org": "", "traps": [], "why": "The user's title was archive technician."},
+        {"id": "q7", "class": "negative", "kind": "vendor", "query": "Who supplied my postcard sleeves?", "answer_org": "Indigo Purl", "traps": ["vendor"], "why": "The purchase memory identifies Indigo Purl as the supplier."}
+      ]
+    },
+    {
+      "id": "g08",
+      "title": "Old personal notes versus a confident agent",
+      "traps": ["agent_competitor", "untrusted_end", "import", "spanish", "gap"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "Trabajé en Olmo Nácar del 2013-04-01 al 2018-11-30 como coordinador de archivo.",
+          "written": "2018-12-02",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Olmo Nácar", "org": "Olmo Nácar", "relation": "employer"}],
+          "jobs": [
+            {"org": "Olmo Nácar", "kind": "employee", "title": "coordinador de archivo", "status": "former", "polarity": "positive", "start": "2013-04-01", "end": "2018-11-30", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "Leí una noticia sobre la restauración del patio de Olmo Nácar.",
+          "written": "2019-03-20",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Olmo Nácar", "org": "Olmo Nácar", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "The user joined Trama Lucero on 2019-01-01 after leaving Olmo Nácar and is still employed there.",
+          "written": "2022-09-01",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Trama Lucero", "org": "Trama Lucero", "relation": "employer"},
+            {"surface": "Olmo Nácar", "org": "Olmo Nácar", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Trama Lucero", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2019-01-01", "end": null, "time": null, "preceded_by": "Olmo Nácar", "followed_by": null, "also_called": null},
+            {"org": "Olmo Nácar", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Trama Lucero", "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "Entré en Nube Bisagra el 2024-02-01 y sigo allí. No he recuperado mis datos laborales desde diciembre de 2018 hasta enero de 2024.",
+          "written": "2024-04-06",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Nube Bisagra", "org": "Nube Bisagra", "relation": "employer"}],
+          "jobs": [
+            {"org": "Nube Bisagra", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2024-02-01", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m5",
+          "text": "Alex Varela left Nube Bisagra on 2024-09-30 and returned to Trama Lucero on 2024-10-01, where Alex Varela currently works.",
+          "written": "2025-01-14",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [{"surface": "Alex Varela", "person": "user"}],
+          "organizations": [
+            {"surface": "Nube Bisagra", "org": "Nube Bisagra", "relation": "employer"},
+            {"surface": "Trama Lucero", "org": "Trama Lucero", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Nube Bisagra", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2024-09-30", "time": null, "preceded_by": null, "followed_by": "Trama Lucero", "also_called": null},
+            {"org": "Trama Lucero", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2024-10-01", "end": null, "time": null, "preceded_by": "Nube Bisagra", "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "Mi amistad Cris Linde trabaja en Trama Lucero y me recomendó una receta de sopa.",
+          "written": "2026-02-11",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [{"surface": "Cris Linde", "person": "p1"}],
+          "organizations": [{"surface": "Trama Lucero", "org": "Trama Lucero", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m7",
+          "text": "Hoy, 2026-10-28, mi único empleo sigue siendo Nube Bisagra. No he interrumpido este empleo desde el 2024-02-01.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Nube Bisagra", "org": "Nube Bisagra", "relation": "employer"}],
+          "jobs": [
+            {"org": "Nube Bisagra", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2024-02-01", "end": null, "time": "2026-10-28", "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Olmo Nácar", "role": "coordinador de archivo", "start": "2013-04-01", "end": "2018-11-30", "kind": "employee", "memories": ["m1"]},
+        {"org": "Nube Bisagra", "role": "Employee", "start": "2024-02-01", "end": "", "kind": "employee", "memories": ["m4", "m7"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "current", "query": "¿Cuál es mi empresa actual?", "answer_org": "Nube Bisagra", "traps": ["agent_competitor", "untrusted_end", "spanish"], "why": "La captura actual confirma Nube Bisagra y contradice el supuesto cambio registrado por el agente."},
+        {"id": "q2", "class": "decidable", "kind": "on_day", "query": "Employer on 15 November 2024, according to my own notes?", "answer_org": "Nube Bisagra", "traps": ["agent_competitor", "untrusted_end", "exact_day"], "why": "The user's explicit uninterrupted stint covers the day despite the agent's claimed September ending."},
+        {"id": "q3", "class": "undecidable", "kind": "in_year", "query": "¿Dónde trabajaba en 2021?", "answer_org": "", "traps": ["agent_competitor", "spanish"], "why": "Solo el agente propone una empresa para un periodo que las notas propias dejan sin reconstruir."},
+        {"id": "q4", "class": "undecidable", "kind": "previous", "query": "Who was my last employer before Nube Bisagra?", "answer_org": "", "traps": ["agent_competitor", "gap"], "why": "The user's missing employment records leave the immediate predecessor unknown."},
+        {"id": "q5", "class": "undecidable", "kind": "between", "query": "¿Qué empresa me empleaba a mitad de 2020, entre Olmo Nácar y Nube Bisagra?", "answer_org": "", "traps": ["agent_competitor", "gap", "spanish"], "why": "The only proposed employer in that interval comes from an agent, without user confirmation."},
+        {"id": "q6", "class": "negative", "kind": "someone_else", "query": "¿Dónde trabaja Cris Linde?", "answer_org": "Trama Lucero", "traps": ["spanish", "agent_competitor"], "why": "La captura confirma el empleo de Cris Linde en Trama Lucero, no un empleo del usuario."},
+        {"id": "q7", "class": "negative", "kind": "order_yes_no", "query": "Did my Olmo Nácar job end before I joined Nube Bisagra?", "answer_org": "", "traps": ["import"], "why": "Yes; the trusted end is 2018-11-30 and the trusted later start is 2024-02-01."}
+      ]
+    },
+    {
+      "id": "g09",
+      "title": "A real freelance track and an invented day job",
+      "traps": ["agent_competitor", "untrusted_end", "concurrent_slots", "freelance_clients", "vendor"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I was an employee at Birch Abacus from 2014-01-01 to 2018-12-31. I have not recovered my salaried-work history after that.",
+          "written": "2019-01-09",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Birch Abacus", "org": "Birch Abacus", "relation": "employer"}],
+          "jobs": [
+            {"org": "Birch Abacus", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": "2014-01-01", "end": "2018-12-31", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "Bought a desk calculator from Birch Abacus for home budgeting.",
+          "written": "2019-02-12",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Birch Abacus", "org": "Birch Abacus", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "I launched my own freelance business, Moth Compass, on 2019-04-01. I currently run it as an illustrator. This note concerns my self-employment only.",
+          "written": "2019-06-08",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Moth Compass", "org": "Moth Compass", "relation": "self_employed"}],
+          "jobs": [
+            {"org": "Moth Compass", "kind": "self_employed", "title": "illustrator", "status": "current", "polarity": "positive", "start": "2019-04-01", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "The user has held a salaried job at Flint Parasol since 2019-01-01 and still works there. The user closed Moth Compass on 2022-12-31.",
+          "written": "2023-03-03",
+          "source": "agent",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Flint Parasol", "org": "Flint Parasol", "relation": "employer"},
+            {"surface": "Moth Compass", "org": "Moth Compass", "relation": "self_employed"}
+          ],
+          "jobs": [
+            {"org": "Flint Parasol", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2019-01-01", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Moth Compass", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2022-12-31", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m5",
+          "text": "My neighbor works at Flint Parasol and lent me a folding umbrella.",
+          "written": "2024-05-11",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Flint Parasol", "org": "Flint Parasol", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "On 2026-10-28 I still operate Moth Compass, continuously since 2019-04-01. Opal Switchyard has been its illustration client since 2024-02-01 and remains a client. I have never been an employee of Opal Switchyard. My salaried-work records after 2018 remain unresolved.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Moth Compass", "org": "Moth Compass", "relation": "self_employed"},
+            {"surface": "Opal Switchyard", "org": "Opal Switchyard", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Moth Compass", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "2019-04-01", "end": null, "time": "2026-10-28", "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Opal Switchyard", "kind": "client", "title": null, "status": "current", "polarity": "positive", "start": "2024-02-01", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Opal Switchyard", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Birch Abacus", "role": "Employee", "start": "2014-01-01", "end": "2018-12-31", "kind": "employee", "memories": ["m1"]},
+        {"org": "Moth Compass", "role": "illustrator", "start": "2019-04-01", "end": "", "kind": "self_employed", "memories": ["m3", "m6"]},
+        {"org": "Opal Switchyard", "role": "Illustration client", "start": "2024-02-01", "end": "", "kind": "client", "memories": ["m6"]},
+        {"org": "Birch Abacus", "role": "Calculator seller", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "current", "query": "What's the freelance business I still operate?", "answer_org": "Moth Compass", "traps": ["agent_competitor", "untrusted_end", "concurrent_slots", "freelance_clients"], "why": "The user's capture confirms Moth Compass remains active; the agent cannot close it or substitute a client or salaried job."},
+        {"id": "q2", "class": "decidable", "kind": "on_day", "query": "Which business of my own was running on 2024-06-15?", "answer_org": "Moth Compass", "traps": ["agent_competitor", "untrusted_end", "concurrent_slots", "freelance_clients", "exact_day"], "why": "The confirmed continuous business interval covers that day despite the agent's claimed closure."},
+        {"id": "q3", "class": "undecidable", "kind": "in_year", "query": "Who was my salaried employer in 2020?", "answer_org": "", "traps": ["agent_competitor", "concurrent_slots"], "why": "Only the agent names a salaried employer; the trusted freelance track cannot answer a day-job question."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Which company employed me in a day job on 2019-04-01, when I opened Moth Compass?", "answer_org": "", "traps": ["agent_competitor", "concurrent_slots", "exact_day"], "why": "The business launch is known exactly, but the user's salaried employer on that date is not recorded."},
+        {"id": "q5", "class": "undecidable", "kind": "current", "query": "Current salaried employer, separate from my freelance work?", "answer_org": "", "traps": ["agent_competitor", "concurrent_slots", "freelance_clients"], "why": "The user's own notes leave salaried employment unresolved; neither the agent claim nor the client supplies an answer."},
+        {"id": "q6", "class": "negative", "kind": "other", "query": "Who's the illustration client mentioned in my latest note?", "answer_org": "Opal Switchyard", "traps": ["freelance_clients"], "why": "Opal Switchyard is explicitly the illustration client."},
+        {"id": "q7", "class": "negative", "kind": "vendor", "query": "Calculator seller?", "answer_org": "Birch Abacus", "traps": ["vendor"], "why": "The purchase note names Birch Abacus as the seller."}
+      ]
+    },
+    {
+      "id": "g10",
+      "title": "Reliable order without a start date",
+      "traps": ["undated_order", "gap", "import", "freelance_clients", "precision", "vendor"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "Before joining Aster Turnstile, I worked at Saffron Bracket. Saffron Bracket was my immediately preceding employer, and I left it before starting Aster Turnstile. I do not remember either start date or when I left Saffron Bracket. I currently work at Aster Turnstile.",
+          "written": "2016-10-09",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Aster Turnstile", "org": "Aster Turnstile", "relation": "employer"},
+            {"surface": "Saffron Bracket", "org": "Saffron Bracket", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Saffron Bracket", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Aster Turnstile", "also_called": null},
+            {"org": "Aster Turnstile", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": "Saffron Bracket", "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "Bought replacement shelf brackets from Saffron Bracket.",
+          "written": "2017-04-13",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Saffron Bracket", "org": "Saffron Bracket", "relation": "vendor"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "I left Aster Turnstile on 2019-06-30. It was my last employer before a full-time independent study break from 2019-07-01 to 2020-06-30. I did no paid work during that break.",
+          "written": "2020-07-02",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Aster Turnstile", "org": "Aster Turnstile", "relation": "employer"}],
+          "jobs": [
+            {"org": "Aster Turnstile", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2019-06-30", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "My cousin at Aster Turnstile sent a photo of the office cat.",
+          "written": "2020-08-17",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Aster Turnstile", "org": "Aster Turnstile", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "Immediately after my study break I opened my own business, Juniper Dial, on 2020-07-01. I closed it on 2024-12-31. Cobalt Kite was a client from 2021-02-01 to 2023-03-31; I never worked there as an employee.",
+          "written": "2025-01-03",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Juniper Dial", "org": "Juniper Dial", "relation": "self_employed"},
+            {"surface": "Cobalt Kite", "org": "Cobalt Kite", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Juniper Dial", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": "2020-07-01", "end": "2024-12-31", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Cobalt Kite", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": "2021-02-01", "end": "2023-03-31", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Cobalt Kite", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "Immediately after closing Juniper Dial, I joined Fern Escapement on 2025-01-01. It remains my sole employer on 2026-10-28.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Juniper Dial", "org": "Juniper Dial", "relation": "self_employed"},
+            {"surface": "Fern Escapement", "org": "Fern Escapement", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Juniper Dial", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Fern Escapement", "also_called": null},
+            {"org": "Fern Escapement", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2025-01-01", "end": null, "time": "2026-10-28", "preceded_by": "Juniper Dial", "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Saffron Bracket", "role": "Employee; dates unrecorded", "start": "", "end": "", "kind": "employee", "memories": ["m1"]},
+        {"org": "Aster Turnstile", "role": "Employee; start unrecorded", "start": "", "end": "2019-06-30", "kind": "employee", "memories": ["m1", "m3"]},
+        {"org": "Independent study break", "role": "Full-time independent study; no paid work", "start": "2019-07-01", "end": "2020-06-30", "kind": "study", "memories": ["m3"]},
+        {"org": "Juniper Dial", "role": "Business owner", "start": "2020-07-01", "end": "2024-12-31", "kind": "self_employed", "memories": ["m5", "m6"]},
+        {"org": "Cobalt Kite", "role": "Freelance client", "start": "2021-02-01", "end": "2023-03-31", "kind": "client", "memories": ["m5"]},
+        {"org": "Fern Escapement", "role": "Employee", "start": "2025-01-01", "end": "", "kind": "employee", "memories": ["m6"]},
+        {"org": "Saffron Bracket", "role": "Shelf-bracket seller", "start": "", "end": "", "kind": "vendor", "memories": ["m2"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "previous", "query": "What was my immediately previous employer when I joined Aster Turnstile?", "answer_org": "Saffron Bracket", "traps": ["undated_order", "import"], "why": "The imported note explicitly supplies the immediate order even though calendar dates are missing."},
+        {"id": "q2", "class": "decidable", "kind": "after", "query": "What business did I open right after the study break?", "answer_org": "Juniper Dial", "traps": ["gap", "freelance_clients"], "why": "The user's own note explicitly identifies Juniper Dial as the business opened immediately after the break."},
+        {"id": "q3", "class": "undecidable", "kind": "in_year", "query": "Where was I working in 2014?", "answer_org": "", "traps": ["undated_order", "import", "precision"], "why": "Relative order does not locate either early employer in 2014."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Employer on January 1, 2016?", "answer_org": "", "traps": ["undated_order", "exact_day", "precision", "import"], "why": "Being at Aster Turnstile by the October note does not establish employment on January 1."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "Who did I work for just before Saffron Bracket?", "answer_org": "", "traps": ["undated_order"], "why": "No memory names an employer preceding Saffron Bracket."},
+        {"id": "q6", "class": "negative", "kind": "vendor", "query": "Who sold the replacement shelf brackets?", "answer_org": "Saffron Bracket", "traps": ["vendor"], "why": "The purchase note identifies Saffron Bracket as the vendor."},
+        {"id": "q7", "class": "negative", "kind": "order_yes_no", "query": "Did I leave Saffron Bracket before starting Aster Turnstile?", "answer_org": "", "traps": ["undated_order", "import"], "why": "Yes; the imported note states this order explicitly without supplying dates."}
+      ]
+    },
+    {
+      "id": "g11",
+      "title": "Two March starts on separate tracks",
+      "traps": ["possible_overlap", "exact_day", "precision", "concurrent_slots", "freelance_clients", "gap"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I started my salaried job at Pollen Rivet in March 2019 and still work there as a scheduler. I cannot remember the day in March.",
+          "written": "2020-02-10",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Pollen Rivet", "org": "Pollen Rivet", "relation": "employer"}],
+          "jobs": [
+            {"org": "Pollen Rivet", "kind": "employee", "title": "scheduler", "status": "current", "polarity": "positive", "start": "March 2019", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "My sibling's Pollen Rivet team won a charity quiz.",
+          "written": "2020-06-09",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Pollen Rivet", "org": "Pollen Rivet", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "I launched my own freelance business, Wren Tapestry, in March 2019 and still operate it. I don't remember whether I opened it before or after starting Pollen Rivet that month. Axle Petal was a client from 2021-01-01 to 2021-12-31, never my employer.",
+          "written": "2022-01-14",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Wren Tapestry", "org": "Wren Tapestry", "relation": "self_employed"},
+            {"surface": "Pollen Rivet", "org": "Pollen Rivet", "relation": "employer"},
+            {"surface": "Axle Petal", "org": "Axle Petal", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Wren Tapestry", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "March 2019", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Pollen Rivet", "kind": "employee", "title": null, "status": "unknown", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Axle Petal", "kind": "client", "title": null, "status": "former", "polarity": "positive", "start": "2021-01-01", "end": "2021-12-31", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Axle Petal", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "Read an article about Axle Petal's new public mural.",
+          "written": "2022-07-05",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Axle Petal", "org": "Axle Petal", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m5",
+          "text": "My Pollen Rivet employment ended in August 2022; I don't remember the day. From 2022-09-01 to 2023-04-09 I had no employee job and studied ceramics independently, while continuing Wren Tapestry.",
+          "written": "2023-04-11",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Pollen Rivet", "org": "Pollen Rivet", "relation": "employer"},
+            {"surface": "Wren Tapestry", "org": "Wren Tapestry", "relation": "self_employed"}
+          ],
+          "jobs": [
+            {"org": "Pollen Rivet", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "August 2022", "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Wren Tapestry", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m6",
+          "text": "I closed Wren Tapestry in November 2023. I don't remember the closing day. It had operated continuously from its launch until then.",
+          "written": "2023-12-06",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Wren Tapestry", "org": "Wren Tapestry", "relation": "self_employed"}],
+          "jobs": [
+            {"org": "Wren Tapestry", "kind": "self_employed", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "November 2023", "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m7",
+          "text": "I joined Lumen Thicket on 2023-04-10, immediately after my ceramics study break, and it remains my sole employer on 2026-10-28.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Lumen Thicket", "org": "Lumen Thicket", "relation": "employer"}],
+          "jobs": [
+            {"org": "Lumen Thicket", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2023-04-10", "end": null, "time": "2026-10-28", "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Pollen Rivet", "role": "scheduler", "start": "2019-03", "end": "2022-08", "kind": "employee", "memories": ["m1", "m3", "m5"]},
+        {"org": "Wren Tapestry", "role": "Freelance business owner", "start": "2019-03", "end": "2023-11", "kind": "self_employed", "memories": ["m3", "m5", "m6"]},
+        {"org": "Axle Petal", "role": "Freelance client", "start": "2021-01-01", "end": "2021-12-31", "kind": "client", "memories": ["m3"]},
+        {"org": "Independent ceramics study", "role": "Study break from employee work; freelance business continued", "start": "2022-09-01", "end": "2023-04-09", "kind": "study", "memories": ["m5"]},
+        {"org": "Lumen Thicket", "role": "Employee", "start": "2023-04-10", "end": "", "kind": "employee", "memories": ["m7"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "on_day", "query": "My salaried employer on 15 March 2020?", "answer_org": "Pollen Rivet", "traps": ["exact_day", "precision", "concurrent_slots"], "why": "That day falls inside the salaried stint; the concurrent business is a separate track."},
+        {"id": "q2", "class": "decidable", "kind": "current", "query": "¿Dónde tengo mi empleo actual?", "answer_org": "Lumen Thicket", "traps": ["gap", "spanish"], "why": "The latest capture explicitly names Lumen Thicket as the current sole employer after the study break."},
+        {"id": "q3", "class": "undecidable", "kind": "on_day", "query": "Who was my salaried employer on 15 March 2019?", "answer_org": "", "traps": ["exact_day", "precision", "concurrent_slots"], "why": "The March start might fall before or after the fifteenth; the freelance business cannot answer the salaried question."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Which business of mine was already operating on March 1, 2019?", "answer_org": "", "traps": ["exact_day", "precision", "concurrent_slots"], "why": "Wren Tapestry opened sometime in March, so it may not yet have existed on March 1."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "Which salaried employer did I have the day before I launched Wren Tapestry?", "answer_org": "", "traps": ["possible_overlap", "precision", "concurrent_slots"], "why": "The user cannot order the two March starts, so Pollen Rivet may or may not have begun by then."},
+        {"id": "q6", "class": "negative", "kind": "list", "query": "List my employers and businesses, leaving clients out.", "answer_org": "", "traps": ["concurrent_slots", "freelance_clients"], "why": "The recorded employers and owned business are Pollen Rivet, Wren Tapestry, and Lumen Thicket; Axle Petal is a client."},
+        {"id": "q7", "class": "negative", "kind": "other", "query": "What did I study during the break from salaried work?", "answer_org": "", "traps": ["gap", "concurrent_slots"], "why": "The user studied ceramics while continuing the freelance business."}
+      ]
+    },
+    {
+      "id": "g12",
+      "title": "A renamed employer and month-only boundaries",
+      "traps": ["rename", "exact_day", "precision", "possible_overlap", "same_year_handover", "freelance_clients", "import"],
+      "memories": [
+        {
+          "id": "m1",
+          "text": "I joined Marigold Socket in 2012 and still work here. I only remember the starting year.",
+          "written": "2015-04-12",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [{"surface": "Marigold Socket", "org": "Marigold Span", "relation": "employer"}],
+          "jobs": [
+            {"org": "Marigold Socket", "kind": "employee", "title": null, "status": "current", "polarity": "positive", "start": "2012", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m2",
+          "text": "My sibling started working at Marigold Span and sent me a photo of the staff kitchen.",
+          "written": "2017-02-14",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Marigold Span", "org": "Marigold Span", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m3",
+          "text": "Marigold Socket was renamed Marigold Span on 2016-05-01. It was the same employer, and my employment continued without a break until I left on 2018-06-30.",
+          "written": "2018-07-05",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Marigold Socket", "org": "Marigold Span", "relation": "employer"},
+            {"surface": "Marigold Span", "org": "Marigold Span", "relation": "employer"}
+          ],
+          "jobs": [
+            {"org": "Marigold Socket", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": "2018-06-30", "time": null, "preceded_by": null, "followed_by": null, "also_called": "Marigold Span"}
+          ]
+        },
+        {
+          "id": "m4",
+          "text": "After leaving Marigold Span, I joined Slate Minnow as a production planner in July 2018 and left in February 2020. I opened my own freelance business, Acorn Vector, in February 2020 and still run it. I don't remember any of those days, or whether the business opened before or after the employee job ended.",
+          "written": "2020-08-09",
+          "source": "import",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Marigold Span", "org": "Marigold Span", "relation": "employer"},
+            {"surface": "Slate Minnow", "org": "Slate Minnow", "relation": "employer"},
+            {"surface": "Acorn Vector", "org": "Acorn Vector", "relation": "self_employed"}
+          ],
+          "jobs": [
+            {"org": "Marigold Span", "kind": "employee", "title": null, "status": "former", "polarity": "positive", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": "Slate Minnow", "also_called": null},
+            {"org": "Slate Minnow", "kind": "employee", "title": "production planner", "status": "former", "polarity": "positive", "start": "July 2018", "end": "February 2020", "time": null, "preceded_by": "Marigold Span", "followed_by": null, "also_called": null},
+            {"org": "Acorn Vector", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": "February 2020", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        },
+        {
+          "id": "m5",
+          "text": "Read a local-news piece about Slate Minnow sponsoring a riverside cleanup.",
+          "written": "2022-05-17",
+          "source": "capture",
+          "filler": true,
+          "sensitivity": "low",
+          "names": [],
+          "organizations": [{"surface": "Slate Minnow", "org": "Slate Minnow", "relation": "other"}],
+          "jobs": []
+        },
+        {
+          "id": "m6",
+          "text": "On 2026-10-28 Acorn Vector remains my own active business, continuously since launch, and my only work. Pearl Hatch has been its client since 2024-03-01 and remains a client. I have never been an employee of Pearl Hatch.",
+          "written": "2026-10-28",
+          "source": "capture",
+          "filler": false,
+          "sensitivity": "internal",
+          "names": [],
+          "organizations": [
+            {"surface": "Acorn Vector", "org": "Acorn Vector", "relation": "self_employed"},
+            {"surface": "Pearl Hatch", "org": "Pearl Hatch", "relation": "client"}
+          ],
+          "jobs": [
+            {"org": "Acorn Vector", "kind": "self_employed", "title": null, "status": "current", "polarity": "positive", "start": null, "end": null, "time": "2026-10-28", "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Pearl Hatch", "kind": "client", "title": null, "status": "current", "polarity": "positive", "start": "2024-03-01", "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null},
+            {"org": "Pearl Hatch", "kind": "employee", "title": null, "status": "unknown", "polarity": "negative", "start": null, "end": null, "time": null, "preceded_by": null, "followed_by": null, "also_called": null}
+          ]
+        }
+      ],
+      "timeline": [
+        {"org": "Marigold Span", "role": "Employee", "start": "2012", "end": "2018-06-30", "kind": "employee", "memories": ["m1", "m3", "m4"]},
+        {"org": "Slate Minnow", "role": "production planner", "start": "2018-07", "end": "2020-02", "kind": "employee", "memories": ["m4"]},
+        {"org": "Acorn Vector", "role": "Freelance business owner", "start": "2020-02", "end": "", "kind": "self_employed", "memories": ["m4", "m6"]},
+        {"org": "Pearl Hatch", "role": "Freelance client", "start": "2024-03-01", "end": "", "kind": "client", "memories": ["m6"]}
+      ],
+      "questions": [
+        {"id": "q1", "class": "decidable", "kind": "in_year", "query": "Where did I work in 2017—was that still the Marigold Socket job?", "answer_org": "Marigold Span", "traps": ["rename", "import"], "why": "The same employment continued through the rename and covers all of 2017; the canonical name is Marigold Span."},
+        {"id": "q2", "class": "decidable", "kind": "current", "query": "What is my own business called these days?", "answer_org": "Acorn Vector", "traps": ["freelance_clients"], "why": "The latest capture identifies Acorn Vector as the owned business and Pearl Hatch as its client."},
+        {"id": "q3", "class": "undecidable", "kind": "on_day", "query": "Which employer did I have on 15 March 2012?", "answer_org": "", "traps": ["exact_day", "precision", "rename", "import"], "why": "The first employer's start is known only to 2012, so employment on March 15 is not established."},
+        {"id": "q4", "class": "undecidable", "kind": "on_day", "query": "Where was I employed on July 1, 2018?", "answer_org": "", "traps": ["exact_day", "precision", "import"], "why": "Marigold Span had ended, but Slate Minnow could have started on July 1 or later in July."},
+        {"id": "q5", "class": "undecidable", "kind": "before", "query": "What employer did I still have the day before launching Acorn Vector?", "answer_org": "", "traps": ["possible_overlap", "precision", "concurrent_slots", "import"], "why": "The business launch and employee-job ending both fall in February, with their order explicitly unknown."},
+        {"id": "q6", "class": "negative", "kind": "other", "query": "When did Marigold Socket change its name?", "answer_org": "", "traps": ["rename"], "why": "The rename occurred on 2016-05-01."},
+        {"id": "q7", "class": "negative", "kind": "title_in_job", "query": "Remind me of my Slate Minnow job title?", "answer_org": "", "traps": ["import"], "why": "The imported note gives the title production planner."}
+      ]
+    }
+  ]
+}

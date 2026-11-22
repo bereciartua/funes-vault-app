@@ -1,0 +1,14 @@
+[
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat input.json'",
+ "/bin/zsh -lc 'cat input.json'",
+ "/bin/zsh -lc \"sed -n '250,500p' input.json\"",
+ "/bin/zsh -lc \"sed -n '250,500p' input.json\"",
+ "/bin/zsh -lc \"sed -n '501,760p' input.json\"",
+ "/bin/zsh -lc \"sed -n '501,760p' input.json\"",
+ "/bin/zsh -lc \"sed -n '761,1040p' input.json\"",
+ "/bin/zsh -lc \"sed -n '761,1040p' input.json\"",
+ "/bin/zsh -lc \"sed -n '1041,1140p' input.json\"",
+ "/bin/zsh -lc \"sed -n '1041,1140p' input.json\""
+]
