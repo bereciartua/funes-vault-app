@@ -1,0 +1,6 @@
+[
+ "/bin/zsh -lc 'cat notes.md input.json'",
+ "/bin/zsh -lc 'cat notes.md input.json'",
+ "/bin/zsh -lc \"jq '.memories[117:136]' input.json\"",
+ "/bin/zsh -lc \"jq '.memories[117:136]' input.json\""
+]
