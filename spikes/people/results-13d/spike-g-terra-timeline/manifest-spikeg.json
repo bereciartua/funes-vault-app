@@ -1,0 +1,35 @@
+{
+  "answerPromptVersion" : "a13e2-1",
+  "cached" : 124,
+  "calls" : 0,
+  "commit" : "9ccb36069819695af8af99687ac3eae1377994b9",
+  "date" : "2026-11-23T00:52:02Z",
+  "dirty" : false,
+  "engine" : {
+    "model" : "gpt-5.6-terra",
+    "provider" : "codex"
+  },
+  "factsPromptVersions" : {
+    "people" : "b08af3894f34",
+    "work" : "22d054884a30"
+  },
+  "gate" : "spikeg",
+  "mode" : "live",
+  "modelsReported" : [
+
+  ],
+  "options" : {
+    "engine" : "terra",
+    "gate" : "spikeg",
+    "timeline" : "1"
+  },
+  "records" : {
+    "astra-F.jsonl" : "0a9f00fe6be4fa7383021b04a4e5631787f5b9eeb568fa3da8c57323caa21933",
+    "astra-P.jsonl" : "412e89557bcedacaa0d6281f72281c79ee3d678e916f0ec8a377f1432433a7fc",
+    "main-F.jsonl" : "85ababf6ce49613bc9353182b72c19e4dd1f0a191701b1228b36b681867db2f5",
+    "main-P.jsonl" : "8f1f72a7c2b0ad07db2921ac9181a3d6ff0f73df1597ae3afecdca1bfd39ee3e"
+  },
+  "registryVersion" : "v1-8338de9d268e",
+  "responsesWithoutModel" : 124,
+  "uncached" : 0
+}
