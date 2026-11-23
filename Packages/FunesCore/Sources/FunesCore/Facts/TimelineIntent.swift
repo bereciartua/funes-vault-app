@@ -2,7 +2,10 @@ import Foundation
 
 /// A timeline question: which predicate, which operator, and what it's anchored on (memory processing §11.7).
 public struct TimelineIntent: Sendable, Equatable {
-    public enum Operator: String, Sendable { case before, after, year, current, previous }
+    /// `atStart`, `endedBefore` and `first` come only from an answer's comparison (13e.2's fix round), never from a
+    /// search's grammar: who the user was still with just before a job began, the job they had already left by then,
+    /// and the earliest one recorded.
+    public enum Operator: String, Sendable { case before, after, year, current, previous, atStart = "at_start", endedBefore = "ended_before", first }
 
     public var predicate: String
     public var op: Operator
@@ -143,6 +146,20 @@ extension FactsGraph {
             + registry.lexicon.filter { $0.value.predicate == predicate }.map(\.key)
             + (lang.subjectWords ?? []) + (lang.operatorModifiers ?? []).flatMap { $0.split(separator: " ").map(String.init) }
             + (cue ? (lang.cueBoundWords ?? []) : [])
+    }
+
+    /// Whether a search asks for the organization (the which/where/who/name frames below), its whole text read: for
+    /// a claim the model made no comparison for (13e.2's fix round).
+    func asksForHolder(_ query: String, predicate: String) -> Bool {
+        asksWhich(FactsText.fold(query), outside: [], predicate: predicate)
+    }
+
+    /// The kind of work the whole search names: words of exactly one slot value ("employer", "my own business"), else
+    /// nil (13e.2's fix round).
+    func askedSlot(_ query: String, predicate: String) -> String? {
+        guard let p = registry.predicate(predicate) else { return nil }
+        let q = FactsText.fold(query)
+        return slotValue(q, p, from: 0, to: (q as NSString).length)
     }
 
     /// The question asks for the organization (13e.1): a "which" word with a noun of the predicate or a slot word after

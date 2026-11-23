@@ -26,7 +26,7 @@ public struct SearchAnswer: Sendable, Hashable {
     public struct Claim: Sendable, Hashable {
         /// The model's sentence; for a checked claim (13e.2), code's line.
         public internal(set) var text: String
-        public let citations: [Citation]
+        public internal(set) var citations: [Citation]
         /// v0.10: code marked it inferred (§10.4), with what it rests on and its corrections.
         public var inference: ClaimInference?
         /// 13e.2: what the time model's check decided (§10.4); `text` is then code's line, and the quotes stay under it.
@@ -218,7 +218,7 @@ public final class SearchAnswerer: Sendable {
     /// The answer prompt's version with learned facts: the instructions, the schema, the attribute templates, the name
     /// replacement, the marker, and from 13e.2 the rows, the comparison and the check. An *attributes* or *timeline* record
     /// names it; changing any of them lapses those records only. (13d: "a13d-1".)
-    public static let promptVersion = "a13e2-1"
+    public static let promptVersion = "a13e2-2"
 
     let store: VaultStore
     let search: SearchService
@@ -429,8 +429,21 @@ public final class SearchAnswerer: Sendable {
                 claim.comparisonMade = v.comparison?.made
                 claim.comparisonAboutSomeoneElse = v.comparison?.aboutSomeoneElse == true
                 switch Self.checked(claim, validated: v, cited: cited, rows: rows, check: check, query: query, view: given.view, wording: wording) {
-                case let .keep(c): kept.append(c)
+                case var .keep(c):
+                    // Unchecked, on an answer with rows: a claim speaking of the user's jobs (one named, or a date) is
+                    // marked inferred unless something already marks it (13e.2's fix round). Funes can't tell from the
+                    // text what of it the memories say outright, so the mark errs toward showing.
+                    if c.inference == nil, let ids = Self.speaksOfJobs(c.text, rows: rows, view: given.view) {
+                        c.inference = ClaimInference(basis: TimelineBasis.inferred.rawValue, factIDs: ids, why: nil, corrections: [])
+                    }
+                    kept.append(c)
                 case let .checked(c, r):
+                    // Two claims checked into the same line (an answer and its context, both read against the
+                    // search's own comparison) say it once.
+                    if let i = kept.firstIndex(where: { $0.check != nil && $0.text == c.text }) {
+                        for q in c.citations where !kept[i].citations.contains(q) { kept[i].citations.append(q) }
+                        continue
+                    }
                     checks.checked += 1
                     switch r.verdict {
                     case .agrees: checks.agreed += 1
@@ -684,7 +697,7 @@ public final class SearchAnswerer: Sendable {
                 ("subject", .string(oneOf: ["user", "someone_else", ""])),
                 ("predicate", .string(description: "The work history's predicate, or empty")),
                 ("operator", .string(oneOf: TimelineComparison.operators + [""])),
-                ("anchor", .string(description: "An entity alias from the work history (e1…) for before/after an organization, else empty")),
+                ("anchor", .string(description: "An entity alias from the work history (e1…) for before, after, at_start or ended_before an organization, else empty")),
                 ("stint", .string(oneOf: ["first", "second", "any", ""])),
                 ("anchorDate", .string(description: "YYYY, YYYY-MM or YYYY-MM-DD, or empty")),
                 ("endDate", .string(description: "YYYY, YYYY-MM or YYYY-MM-DD for between, else empty")),
@@ -700,7 +713,10 @@ public final class SearchAnswerer: Sendable {
         let slots = reg.predicate(rows.predicate).flatMap { p in p.slot.flatMap { p.qualifiers[$0]?.values } } ?? []
         return """
             - <work_history> lists the user's jobs as Funes read them from the user's own memories: each entity has an alias (e1…), dates as written ("unknown" when not known; "by" a date when Funes inferred the end). Use it with the memories, but cite only memories (m1 to m\(memoryCount + citedCount)), never the work history.
-            - Every claim has a comparison. When a claim names which organization the user worked at relative to a time (the one before or after another, at a date or between two dates, the current one, the previous one), fill it in: made true; subject "user", or "someone_else" when the claim is about another person's job; predicate "\(rows.predicate)"; operator (before, after, in, between, current, previous); anchor, the alias of the organization for before or after one, else empty; stint, "first" or "second" when the search means one stint of a job the user held twice, else "any"; anchorDate and endDate, normalised as YYYY, YYYY-MM or YYYY-MM-DD, for a date ("in", "between", before or after a date); slot, one of \(slots.map { "\"\($0)\"" }.joined(separator: ", ")) when the search asks about that kind of work only, else empty; answer, the alias of the organization the claim answers. One claim per organization. Otherwise made false and the other fields empty.
+            - A job's name is its newest name; also_called lists other names of the same organization. When the search or a memory uses another name, give both ("Brindle Arc, also called Brindle Quay").
+            - Every claim has a comparison. When a claim names which organization the user worked at relative to a time (the one before or after another, at a date or between two dates, the current one, the previous one, the first one), fill it in: made true; subject "user", or "someone_else" when the claim is about another person's job; predicate "\(rows.predicate)"; operator: before or after (the job that came just before or after another, in order), at_start (the job the user was still at just before another began: "still employed when I started at X", "who was employing me right before my first day at X"), ended_before (the job the user had already left by the time another began: "which employer had I left before X hired me"), in or between (at a date, or across two), current, previous, first (the earliest job recorded: "my first job"); anchor, the alias of the organization for before, after, at_start or ended_before, else empty; stint, "first" or "second" when the search means one stint of a job the user held twice, else "any"; anchorDate and endDate, normalised as YYYY, YYYY-MM or YYYY-MM-DD, for a date ("in", "between", before or after a date); slot, one of \(slots.map { "\"\($0)\"" }.joined(separator: ", ")) when the search asks about that kind of work only, else empty; answer, the alias of the organization the claim answers. One claim per organization. Otherwise made false and the other fields empty.
+            - Make a comparison only for a claim that picks which organization; a duration, a title, a list of jobs or a client's dates gets made false. A distance from a date or a job ("six months before", "two years after") can't be compared: say the memories don't place it exactly, with made false.
+            - A memory saying a job still holds is true as of the day it was written: a later memory saying that job ended, or that the user left and came back, doesn't contradict it. Don't call such memories inconsistent.
             - When the memories and the work history can't tell which organization it was, say so rather than guess.
             """
     }
@@ -889,15 +905,72 @@ public final class SearchAnswerer: Sendable {
     /// has a registry operator or time cue.
     /// A claim naming a holder of the predicate (any in the view, not only the rows) owes one when the search or the
     /// claim has an operator or time cue and the model gave no comparison; with `made: false`, only when the claim itself
-    /// has the cue ("At Birch you were a designer" answering "my title before the promotion" is a qualifier, ADR-0032).
+    /// has the cue ("At Birch you were a designer" answering "my title before the promotion" is a qualifier, ADR-0032),
+    /// or when the search asks which holder relative to another time (`asksHolder` and a selection cue) and the claim
+    /// names a holder the search doesn't: it answers the ask ("six months before I joined Acme, Birch employed you",
+    /// an offset no comparison can say; 13e.2's fix round).
     static func owes(_ text: String, comparison: TimelineComparison?, citesRows: Bool, names: [String], query: String,
-                     registry: FactsRegistry) -> Bool {
+                     registry: FactsRegistry, asksHolder: Bool = false) -> Bool {
         if comparison?.made == true || citesRows { return true }
         let claim = FactsText.fold(text)
         let folded = names.map { FactsText.fold($0) }.filter { $0.count >= 2 }
         guard folded.contains(where: { FactsText.cue(claim, $0) }) else { return false }
-        if comparison != nil { return AnswerTimeCues.selects(text, registry: registry) }
+        if comparison != nil {
+            if AnswerTimeCues.selects(text, registry: registry) { return true }
+            let q = FactsText.fold(query)
+            return asksHolder && AnswerTimeCues.selects(query, registry: registry)
+                && folded.contains { FactsText.cue(claim, $0) && !FactsText.cue(q, $0) }
+        }
         return AnswerTimeCues.has(query, registry: registry) || AnswerTimeCues.has(text, registry: registry)
+    }
+
+    /// The fact ids of the timeline holders an unchecked claim names, or [] for a claim that only gives a date; nil when
+    /// it does neither.
+    static func speaksOfJobs(_ text: String, rows: TimelineRows, view: FactsSearchIndex) -> [String]? {
+        let g = view.graph
+        let claim = FactsText.fold(text)
+        let holders = Set(g.facts.filter { $0.predicate == rows.predicate && !$0.negated }.map(\.entity))
+        let named = holders.filter { id in
+            guard let e = g.entities[id] else { return false }
+            return ([e.name].compactMap { $0 } + Array(e.aliases)).map { FactsText.fold($0) }.contains { $0.count >= 2 && FactsText.cue(claim, $0) }
+        }
+        if named.isEmpty { return AnswerTimeCues.hasDate(text, registry: g.registry) ? [] : nil }
+        return named.sorted().compactMap { view.factIDs[FactStore.Loaded.key(rows.predicate, $0)] }
+    }
+
+    /// A claim naming holders that made no comparison and that `owes` lets go, on a search asking which organization
+    /// held on a date (`TimelineCheck.askedDate`: "Which employer did I have on March 15, 2018?"): code checks it as
+    /// "in <that date>: <holder>", once per holder named (13e.2's fix round: an abstention or an answer given without a
+    /// comparison still owes its check). A holder that agrees wins; else a "can't tell" (one no trusted memory gives is
+    /// one); else the first disagreement; nil when one agrees and another can't be told. Nil when the search isn't one, the claim names no holder, or its one date is
+    /// apart from the search's ("You left Alder in 2015" is context about another time; "joined on 2020-01-01 and
+    /// still there in 2023" spans it).
+    static func derived(_ text: String, rows: TimelineRows, check: TimelineCheck, query: String, graph g: FactsGraph) -> TimelineCheckResult? {
+        guard let asked = check.askedDate(query) else { return nil }
+        let dates = DateParser(registry: g.registry)
+        if dates.count(text) == 1, let own = dates.parse(text), own.hi < asked.lo || asked.hi < own.lo { return nil }
+        let claim = FactsText.fold(text)
+        func names(_ id: String) -> Bool {
+            (g.entities[id].map { [$0.name].compactMap { $0 } + Array($0.aliases) } ?? []).map { FactsText.fold($0) }
+                .contains { $0.count >= 2 && FactsText.cue(claim, $0) }
+        }
+        let named = rows.rows.filter { row in
+            names(row.entity) || ([row.name] + row.renames).map { FactsText.fold($0) }.contains { $0.count >= 2 && FactsText.cue(claim, $0) }
+        }
+        var results = named.compactMap { row in check.comparison(search: query, answer: row.entity).map { check.check($0, search: query) } }
+        // Trusted beyond the rows' limit too: only a holder no trusted episode has is unrecorded.
+        let trusted = Set(g.trustedOnly(rows.predicate).episodes(rows.predicate).filter(\.trusted).compactMap(\.entity)
+            .map { g.timelineEntity(rows.predicate, $0) })
+        let holders = Set(g.facts.filter { $0.predicate == rows.predicate && !$0.negated }.map(\.entity))
+        if holders.contains(where: { !trusted.contains(g.timelineEntity(rows.predicate, $0)) && names($0) }), let r = check.unrecorded(search: query) {
+            results.append(r)
+        }
+        guard !results.isEmpty else { return nil }
+        let stands = results.filter(\.stands), unsure = results.filter { $0.verdict == .notSure }
+        // One holder held and another can't be told ("an agent's note says you left Auvren for Mezari"): context about
+        // a disputed holder, left to the marking rule.
+        if !stands.isEmpty, !unsure.isEmpty { return nil }
+        return stands.first ?? unsure.first ?? results[0]
     }
 
     static func checked(_ claim: SearchAnswer.Claim, validated v: Validated, cited: Set<UUID>, rows: TimelineRows, check: TimelineCheck,
@@ -907,15 +980,26 @@ public final class SearchAnswerer: Sendable {
         // Someone else's job or partner: never checked against the user's rows; citing a memory only the rows brought in,
         // it's dropped.
         if v.comparison?.aboutSomeoneElse == true { return citesRows ? .drop(owed: false) : .keep(claim) }
-        guard owes(claim.text, comparison: v.comparison, citesRows: citesRows, names: TimelineCheck.holderNames(g, predicate: rows.predicate),
-                   query: query, registry: g.registry) else {
+        let r: TimelineCheckResult
+        var keepWords = false
+        if owes(claim.text, comparison: v.comparison, citesRows: citesRows, names: TimelineCheck.holderNames(g, predicate: rows.predicate),
+                query: query, registry: g.registry, asksHolder: g.asksForHolder(query, predicate: rows.predicate)) {
+            r = check.check(v.comparison, search: query)
+        } else if v.comparison?.made != true, let derived = Self.derived(claim.text, rows: rows, check: check, query: query, graph: g) {
+            // The claim may be context (a title, a "not yet", a past job), so a derived check never drops or rewords
+            // it on its own: a disagreement leaves it unchecked, an agreement keeps its words. Only "can't tell" is
+            // said as the check says it.
+            if derived.verdict == .disagrees { return .keep(claim) }
+            r = derived
+            keepWords = derived.stands
+        } else {
             return .keep(claim)
         }
-        let r = check.check(v.comparison, search: query)
         if r.verdict == .disagrees { return .drop(owed: true) }
         var c = claim
         let noun = g.registry.predicate(rows.predicate)?.phrases["note_noun"] ?? rows.predicate
-        c.text = wording.line(r, { id in id.flatMap { g.entities[$0]?.name } }, noun)
+        // Named as the rows name them: a renamed holder by its newest name and its others (13e.2's fix round).
+        if !keepWords { c.text = wording.line(r, { id in id.flatMap { rows.label($0, graph: g) ?? g.entities[$0]?.name } }, noun) }
         c.check = r
         // A checked line is inferred (§10.4's marking): the facts behind it are its corrections, with any its citations
         // already had. A "not sure" line isn't an answer, so it carries no Inferred tag.

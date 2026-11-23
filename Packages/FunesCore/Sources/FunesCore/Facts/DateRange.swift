@@ -109,6 +109,15 @@ struct DateParser: Sendable {
         return nil
     }
 
+    /// How many dates a text holds: years, plus month words or numbers beyond one per year ("from March to June 2019"
+    /// holds two). For a search that may ask about a stretch rather than one date (13e.2's fix round).
+    func count(_ s: String) -> Int {
+        let t = FactsText.fold(s)
+        let years = FactsText.regex("\\b(?:19|20)\\d{2}\\b").numberOfMatches(in: t, range: NSRange(location: 0, length: (t as NSString).length))
+        let monthWords = FactsText.regex("\\b(?:" + monthAlternation + ")\\b").numberOfMatches(in: t, range: NSRange(location: 0, length: (t as NSString).length))
+        return max(years, monthWords)
+    }
+
     /// A memory's written date (ISO) → a day.
     func day(_ s: String?) -> Int? { parse(s)?.lo }
 

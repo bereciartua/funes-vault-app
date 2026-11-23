@@ -46,7 +46,7 @@ public struct TimelineComparison: Sendable, Hashable, Decodable {
         anchorDate = s(.anchorDate); endDate = s(.endDate); slot = s(.slot); answer = s(.answer)
     }
 
-    public static let operators = ["before", "after", "in", "between", "current", "previous"]
+    public static let operators = ["before", "after", "in", "between", "current", "previous", "at_start", "ended_before", "first"]
     public var aboutSomeoneElse: Bool { subject == "someone_else" }
 }
 
@@ -83,6 +83,12 @@ public struct TimelineRows: Sendable, Hashable {
     /// Alias → entity id.
     public var entities: [String: String] { Dictionary(rows.map { ($0.alias, $0.entity) }, uniquingKeysWith: { a, _ in a }) }
 
+    /// The row an entity stands under: its own, or its stated rename's.
+    public func row(for id: String, graph: FactsGraph) -> Row? {
+        let stand = graph.timelineEntity(predicate, id)
+        return rows.first(where: { $0.entity == id || $0.entity == stand })
+    }
+
     /// Every name the rows give an entity, for "names a *timeline* entity".
     public var names: [String] { rows.flatMap { [$0.name] + $0.renames } }
 
@@ -115,12 +121,11 @@ public struct TimelineRows: Sendable, Hashable {
         for id in order {
             for e in byEntity[id]!.stableSorted(by: { $0.sortKey }) {
                 guard rows.count < limit else { break }
-                let names = graph.timelineNames(predicate, id)
-                let name = graph.entities[id]?.name ?? names.first ?? id
+                let (name, renames) = graph.rowNames(predicate, id)
                 var seen = Set<String>()
                 let mems = e.assertions.filter { $0.trusted && !$0.fromUser }.sorted { $0.written > $1.written }.map { $0.memoryID }
                     .filter { seen.insert($0).inserted }
-                rows.append(Row(alias: "e\(rows.count + 1)", entity: id, name: name, renames: names.filter { $0 != name },
+                rows.append(Row(alias: "e\(rows.count + 1)", entity: id, name: name, renames: renames,
                                 slot: e.slot == "_" ? nil : e.slot, start: written(e.startTrusted ? e.tstart : nil),
                                 end: written(e.endTrusted ? e.end : nil), inferredEnd: e.inferredEnd, ongoing: e.ongoing,
                                 memoryIDs: mems))
@@ -206,6 +211,10 @@ public struct TimelineCheckResult: Sendable, Hashable {
     public var endDate: String?
     /// Several stints, each its answer (nil: can't tell), for a "not sure" by stints.
     public var stints: [String?] = []
+    /// The anchor's stint the check read (1-based), when the anchor was held more than once and one was meant.
+    public var stint: Int?
+    /// How many stints the anchor has in the trusted graph.
+    public var stintCount = 0
 
     public var stands: Bool { verdict == .agrees || verdict == .agreesTrusted }
 }
@@ -279,11 +288,18 @@ public struct TimelineCheck: Sendable {
             return (TimelineIntent(predicate: pred, op: op, anchor: .date(d), phrase: "", slot: slot), answer)
         case "in":
             guard c.anchor.isEmpty, c.endDate.isEmpty, let d = Self.iso(c.anchorDate) else { return nil }
-            return (TimelineIntent(predicate: pred, op: .year, anchor: .date(d), phrase: "", slot: slot), answer)
+            return (TimelineIntent(predicate: pred, op: .year, anchor: .date(d), phrase: "", slot: slot ?? answerSlot(answer)), answer)
         case "between":
             guard c.anchor.isEmpty, let a = Self.iso(c.anchorDate), let b = Self.iso(c.endDate), a.lo <= b.hi else { return nil }
             return (TimelineIntent(predicate: pred, op: .year, anchor: .date(DateRange(lo: a.lo, hi: b.hi, precision: .day)), phrase: "",
-                                   slot: slot), answer)
+                                   slot: slot ?? answerSlot(answer)), answer)
+        case "at_start", "ended_before":
+            guard let a = rows.entities[c.anchor], c.anchorDate.isEmpty, c.endDate.isEmpty else { return nil }
+            return (TimelineIntent(predicate: pred, op: c.op == "at_start" ? .atStart : .endedBefore, anchor: .entity(a), phrase: "",
+                                   slot: slot, stint: stint), answer)
+        case "first":
+            guard c.anchor.isEmpty, c.anchorDate.isEmpty, c.endDate.isEmpty else { return nil }
+            return (TimelineIntent(predicate: pred, op: .first, anchor: nil, phrase: "", slot: slot), answer)
         case "current", "previous":
             guard c.anchor.isEmpty, c.anchorDate.isEmpty, c.endDate.isEmpty else { return nil }
             return (TimelineIntent(predicate: pred, op: c.op == "current" ? .current : .previous, anchor: nil, phrase: "", slot: slot), answer)
@@ -298,8 +314,8 @@ public struct TimelineCheck: Sendable {
         let want = graph.timelineEntity(predicate, answer)
         let ids = got.entities.map { graph.timelineEntity(predicate, $0) }
         switch op {
-        case .before, .after, .previous: return ids.count == 1 && ids[0] == want
-        case .year, .current: return ids.contains(want)
+        case .before, .after, .previous, .endedBefore, .first: return ids.count == 1 && ids[0] == want
+        case .year, .current, .atStart: return ids.contains(want)
         }
     }
 
@@ -311,23 +327,42 @@ public struct TimelineCheck: Sendable {
         var outcome: Outcome
         var entities: Set<String>
         var stints: [String?] = []
+        /// The stint read, when the anchor has several and one was meant.
+        var stint: Int?
+        var stintCount = 0
         /// The comparison didn't validate, or the search's stint cue can't be met / disagrees with the model's.
         var invalid = false
     }
+
+    /// The kind of work a claim's answer was (13e.2's fix round): "In 2018: Cavren" says it held then, which a job of
+    /// another kind held at the same time (the user's own business) doesn't contradict. Only when every trusted episode
+    /// has a kind and all of the answer's are one.
+    func answerSlot(_ answer: String) -> String? {
+        let pred = rows.predicate
+        let eps = graph.trustedOnly(pred).episodes(pred).filter(\.trusted)
+        guard graph.registry.predicate(pred)?.slot != nil, !eps.contains(where: { $0.slot == "_" }) else { return nil }
+        let want = graph.timelineEntity(pred, answer)
+        let kinds = Set(eps.filter { $0.entity.map { graph.timelineEntity(pred, $0) } == want }.map(\.slot))
+        return kinds.count == 1 ? kinds.first : nil
+    }
+
+    /// Operators whose anchor is a job (and so may name one of its stints).
+    static let anchored = ["before", "after", "previous", "at_start", "ended_before"]
 
     static func evaluate(_ g: FactsGraph, _ c: TimelineComparison, rows: TimelineRows, search: String,
                          intent: (TimelineComparison, Int?) -> (TimelineIntent, answer: String)?) -> Evaluation {
         let pred = rows.predicate
         let trusted = g.trustedOnly(pred)
         var stints: [Int?] = [nil]
-        if let a = rows.entities[c.anchor], ["before", "after", "previous"].contains(c.op) {
+        var count = 0
+        if let a = rows.entities[c.anchor], anchored.contains(c.op) {
+            count = trusted.episodes(pred).filter { $0.entity == a }.count
             switch searchStint(g, predicate: pred, anchor: a, search: search) {
             case .some(.some(0)): return Evaluation(outcome: .cantTell, entities: [], invalid: true)
             case .some(.some(let n)):
                 if let m = ["first": 1, "second": 2][c.stint], m != n { return Evaluation(outcome: .cantTell, entities: [], invalid: true) }
                 stints = [n]
             default:
-                let count = trusted.episodes(pred).filter { $0.entity == a }.count
                 if count > 1 { stints = (1...count).map { $0 } }
             }
         }
@@ -348,7 +383,9 @@ public struct TimelineCheck: Sendable {
             }
         }
         let first = per[0]
-        return Evaluation(outcome: first.0, entities: first.0 == .cantTell ? [] : ids(first.1))
+        var e = Evaluation(outcome: first.0, entities: first.0 == .cantTell ? [] : ids(first.1))
+        if count > 1, stints.count == 1, let n = stints[0] { e.stint = n; e.stintCount = count }
+        return e
     }
 
     /// Checks one comparison against the search it answers. The trusted graph decides; for a cloud answer the same
@@ -381,6 +418,8 @@ public struct TimelineCheck: Sendable {
             base.stints = mine.stints
             return base
         }
+        base.stint = mine.stint
+        base.stintCount = mine.stintCount
         switch mine.outcome {
         case .cantTell:
             base.reason = .cantTell
@@ -397,9 +436,57 @@ public struct TimelineCheck: Sendable {
             let full = Self.evaluate(graph, c, rows: rows, search: search, intent: intent)
             var agrees = false
             if case .agrees = full.outcome, full.entities == mine.entities { agrees = true }
+            // A gap the user's memories leave where text they didn't write names a job: whether anything came between
+            // isn't known, so it isn't told as "with a gap" (13e.2's fix round).
+            if !agrees, basis == .gap {
+                base.verdict = .notSure
+                base.reason = .cantTell
+                base.basis = nil
+                return base
+            }
             base.verdict = agrees ? .agrees : .agreesTrusted
             return base
         }
+    }
+
+    /// The date a search asks about, for a claim the model made no comparison for (13e.2's fix round): the search asks
+    /// for the organization (the grammar's which/where/who/name frames), has exactly one date, and has no before,
+    /// after, bound or return cue ("before rejoining Acme in January 2021" asks about another time; "from 2016 to
+    /// 2019" asks about a stretch). Nil otherwise.
+    public func askedDate(_ search: String) -> DateRange? {
+        let reg = graph.registry
+        let dates = DateParser(registry: reg)
+        guard graph.asksForHolder(search, predicate: rows.predicate), !AnswerTimeCues.selects(search, registry: reg),
+              dates.count(search) == 1 else { return nil }
+        return dates.parse(search)
+    }
+
+    /// "In <the search's date>: <this holder>", as a comparison, or nil (see `askedDate`; the holder must have a row).
+    public func comparison(search: String, answer id: String) -> TimelineComparison? {
+        guard let d = askedDate(search), let answer = rows.row(for: id, graph: graph)?.alias else { return nil }
+        let p: DateRange.Precision = [.year, .month, .day].contains(d.precision) ? d.precision : .day
+        let lo = TimelineRows.written(DateRange(lo: d.lo, hi: d.lo, precision: p))
+        let hi = TimelineRows.written(DateRange(lo: d.hi, hi: d.hi, precision: p))
+        // The kind of work the search names, not the answer's ("Which employer…" isn't answered by the user's own
+        // business).
+        let slot = graph.askedSlot(search, predicate: rows.predicate) ?? ""
+        let c = TimelineComparison(predicate: rows.predicate, op: lo == hi ? "in" : "between", anchorDate: lo, endDate: lo == hi ? "" : hi,
+                                   slot: slot, answer: answer)
+        return intent(c, stint: nil) == nil ? nil : c
+    }
+
+    /// "Can't tell" about the search's date, for a claim naming a holder no trusted memory gives (only text the user
+    /// didn't write names it): the user's notes can't say it held then.
+    public func unrecorded(search: String) -> TimelineCheckResult? {
+        guard let d = askedDate(search) else { return nil }
+        let p: DateRange.Precision = [.year, .month, .day].contains(d.precision) ? d.precision : .day
+        let lo = TimelineRows.written(DateRange(lo: d.lo, hi: d.lo, precision: p))
+        let hi = TimelineRows.written(DateRange(lo: d.hi, hi: d.hi, precision: p))
+        var r = TimelineCheckResult(verdict: .notSure, reason: .cantTell, basis: nil, predicate: rows.predicate, op: lo == hi ? "in" : "between",
+                                    anchor: nil, answer: nil)
+        r.anchorDate = lo
+        if lo != hi { r.endDate = hi }
+        return r
     }
 
     /// The fact ids a result rests on, answer first then anchor, each with its entity.
@@ -439,5 +526,43 @@ enum AnswerTimeCues {
         let bounds = Set(l.timePrepositions).subtracting(l.yearPrepositions).subtracting(l.rangePrepositions)
         let q = FactsText.fold(text)
         return (l.operators.before + l.operators.after + bounds.sorted() + l.returnCues).contains { FactsText.cue(q, $0) }
+    }
+}
+
+extension FactsGraph {
+    /// A row's names (13e.2's fix round): every trusted name of the holder and of its stated group, its own
+    /// statements' other names (`alsoCalled`, a rename with no second holder) included. The row's name is the one whose
+    /// first trusted mention was written latest (a new name appears only after the rename); a tie keeps the holder's
+    /// own name. The others follow, oldest first. Never a direction: the line says "also called", never "formerly".
+    public func rowNames(_ predicate: String, _ id: String) -> (name: String, others: [String]) {
+        let group = statedGroups(predicate).first(where: { $0.contains(id) }) ?? [id]
+        let own = entities[id]?.name ?? timelineNames(predicate, id).first ?? id
+        var names: [String] = [], seen = Set<String>()
+        func add(_ n: String?) {
+            guard let n, !n.trimmingCharacters(in: .whitespaces).isEmpty, seen.insert(FactsText.fold(n)).inserted else { return }
+            names.append(n)
+        }
+        add(own)
+        for gid in group.sorted(by: { (entities[$0]?.seq ?? 0, $0) < (entities[$1]?.seq ?? 0, $1) }) {
+            add(entities[gid]?.name)
+            for a in (entities[gid]?.trustedAliases ?? []).sorted() { add(a) }
+        }
+        let mine = facts.filter { $0.predicate == predicate && !$0.negated && group.contains($0.entity) }
+        let said = mine.flatMap(\.assertions).filter { $0.trusted && !$0.fromUser }
+        for a in said where !isRejoin(a) { add(a.alsoCalled) }
+        // Only full names: an alias that is another name's first word ("Brindle") is a short form, not a rename.
+        let full = names.filter { n in !names.contains { $0 != n && FactsText.cue(FactsText.fold($0), FactsText.fold(n)) } }
+        guard full.count > 1 else { return (own, []) }
+        func first(_ n: String) -> String {
+            let f = FactsText.fold(n)
+            return said.filter { FactsText.cue(FactsText.fold($0.quote), f) || FactsText.fold($0.alsoCalled) == f }
+                .map(\.written).min() ?? "9999"
+        }
+        let dated = full.map { ($0, first($0)) }
+        let latest = dated.map(\.1).max()!
+        let newest = dated.filter { $0.1 == latest }.map(\.0)
+        let name = newest.count == 1 ? newest[0] : (full.contains(own) ? own : newest[0])
+        let others = dated.filter { $0.0 != name }.sorted { ($0.1, $0.0) < ($1.1, $1.0) }.map(\.0)
+        return (name, others)
     }
 }

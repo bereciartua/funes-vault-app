@@ -91,6 +91,8 @@ extension FactsGraph {
         var ends: [Dated] = []
         var rows: [Row] = []
         var uncertain: Int?
+        /// Every "no longer" that left it open, by its memory's day.
+        var denials: [Int] = []
         var startRange: DateRange? { FactsGraph.combine(starts).0 }
         var endRange: DateRange? { FactsGraph.combine(ends).0 }
         /// The boundaries a row may be placed by: a trusted row sees only trusted boundaries, so untrusted text can
@@ -188,7 +190,7 @@ extension FactsGraph {
                             ep.endRange(for: r.a.trusted) == nil && (ep.startRange(for: r.a.trusted).map { $0.lo <= w } ?? true)
                         }
                         if !open.isEmpty, !ended.isEmpty, r.a.trusted {
-                            for ep in open { ep.uncertain = min(ep.uncertain ?? w, w) }   // it may have ended by then
+                            for ep in open { ep.uncertain = min(ep.uncertain ?? w, w); ep.denials.append(w) }   // it may have ended by then
                             target = ended.last
                             r.bound = nil
                         } else if !ended.isEmpty {
@@ -305,7 +307,10 @@ extension FactsGraph {
             e.slot = vals.mostCommon() ?? "_"
             e.assertions = ep.rows.map(\.a)
             e.writtenKey = ep.rows.filter { $0.a.trusted || !trusted }.compactMap(\.w).max()   // trusted chronology only
-            e.uncertain = ep.uncertain != nil && end == nil && !userStatus
+            // A memory saying it still held, written on or after the last "no longer" that left it open, settles it
+            // (13e.2's fix round): that denial was about an earlier stint.
+            let settled = held.max().map { h in h >= (ep.denials.max() ?? DateRange.minDay) } ?? false
+            e.uncertain = ep.uncertain != nil && end == nil && !userStatus && !settled
             e.uncertainFrom = e.uncertain ? ep.uncertain : nil
             out.append(e)
         }

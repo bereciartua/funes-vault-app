@@ -12,10 +12,12 @@ Per engine, arm R against the corrected labels (P is the negatives' baseline); e
 - undecidable "not sure" ≥ 90%: rows sent, no claim answering with an organization, and a not_sure claim or no answer;
 - negatives wrong ≤ P's + 1 (a failed answer is wrong);
 - 0 someone_else claims;
-- 0 owed checks skipped: (a) a claim a judge calls temporal without a check; (b) judge-free: on an answer with rows, an
-  unchecked claim §10.4's rule owes a check, implemented here from the record (the model's comparison flag, the citations
-  of memories only the rows brought, the story's employer names, the registry's cues, years and dates); (c) a question
-  with a temporal claim in any arm where R sent no rows;
+- 0 owed checks skipped: (a) a claim a judge calls temporal, and that answers the question's ask (answers_right,
+  answers_wrong or not_sure), without a check; (b) judge-free: on an answer with rows, an unchecked claim §10.4's rule
+  owes a check, implemented here from the record (the model's comparison flag, the citations of memories only the rows
+  brought, the story's employer names, the registry's cues, years and dates); (c) a question with such a claim in any arm
+  where R sent no rows. A context claim (true_other, wrong_other, someone_else) owes no check: the wrong-claim and
+  marking targets still count it (the author's amendment, 2026-11-22, after the first gate set);
 - 0 claims code fails to mark: any claim a judge calls inferred, without the mark;
 - p95 of R's live end-to-end duration ≤ 15 s, a failed answer counting as over;
 - the facts behind the rows: qualify.timeline_measures (with its slot check) on the gate read and Phase A's reads: 0 wrong
@@ -46,6 +48,8 @@ TARGETS = {"decidable_right": 0.85, "decidable_unmarked_wrong": 0, "decidable_ma
            "negatives_over_plain": 1, "someone_else": 0, "owed_skipped": 0, "unmarked_inferred": 0, "p95_ms": 15000,
            "wrong_facts": 0, "wrong_dates": 1}
 ANSWERING = ("answers_right", "answers_wrong")
+# A claim that answers the question's ask, abstaining included: only these owe a check when temporal (amended 2026-11-22).
+OWING = ANSWERING + ("not_sure",)
 WRONG = ("answers_wrong", "wrong_other", "someone_else")
 
 
@@ -174,7 +178,7 @@ def score_engine(dirpath, engine, reps=GATE_REPS, lab=None, check_minimums=True)
     temporal_q = set()
     for r in recs:
         for c in claims.get(J.akey(r)) or []:
-            if c["temporal"]:
+            if c["temporal"] and c["verdict"] in OWING:
                 temporal_q.add((r["story"], r["id"]))
     durations = []
     for r in recs:
@@ -230,7 +234,7 @@ def score_engine(dirpath, engine, reps=GATE_REPS, lab=None, check_minimums=True)
             at = f"{k} claim {c['n']}"
             if c["verdict"] == "someone_else":
                 lists["someone_else"].append(at)
-            if c["temporal"] and not rc.get("check"):
+            if c["temporal"] and c["verdict"] in OWING and not rc.get("check"):
                 lists["owed_skipped"].append(f"{at} (judge: temporal, unchecked)")
             # Code's own "not sure" line carries no Inferred tag by design (§10.4): not a marking failure.
             if c["inferred"] and not rc.get("inferred") and (rc.get("check") or {}).get("verdict") != "not_sure":

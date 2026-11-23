@@ -284,6 +284,7 @@ The evidence is Spike H and Spike H2 ([spike results](../../plans/spike-results.
        - Spike G's gates;
        - p95 ≤ 15 s.
      - **Labels:** Astra's set labels each question's class and answer. A rehire question whose stints give different answers is undecidable unless it names one. *(Amended 2026-11-22, before the gate's freeze, after GPT-6-Astra's and Fable 5.2's reviews of its harness: whether a claim is time-relative or inferred is judged per claim, blind, by Opus and GPT-6-Astra with an adjudicator, instead of labelled per question; "owed checks skipped" also counts, without a judge, every unchecked claim §10.4's rule owes a check; a disputed label is relabelled from scratch once, and the corrected set must still meet the minimums.)*
+     - **Owed checks** *(amended 2026-11-22, the author's decision after the first gate set failed)*: a claim the judges call time-relative owes a check only when it answers the question's ask (right, wrong or "not sure"). A context claim (an agent's note reported, an exclusion, a dated list item, a client's years) owes none; the wrong-claim and marking targets still count it. The judge-free count of §10.4's rule is unchanged.
      - **A record's key** adds the answer model and the answer prompt version. The person *attributes* share the answer prompt, so their 13d gates re-run with it.
 10. **Owner side only, in v0.10.**
     - Links are used in your own Vault search, iPhone search and search answers.

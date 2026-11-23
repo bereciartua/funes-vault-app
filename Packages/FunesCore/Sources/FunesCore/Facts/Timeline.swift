@@ -617,7 +617,7 @@ extension FactsGraph {
         }
         // Before, after and previous: an agent's note never reorders the user's own jobs. When the trusted memories
         // alone answer someone else, an untrusted-only episode changed the answer, so it's told (memory processing §11.6).
-        guard [.before, .after, .previous].contains(it.op), !got.entities.isEmpty,
+        guard [.before, .after, .previous, .atStart, .endedBefore, .first].contains(it.op), !got.entities.isEmpty,
               facts.contains(where: { $0.predicate == it.predicate && !$0.negated && $0.assertions.contains { !$0.trusted } }) else { return got }
         let alt = trustedOnly(it.predicate).answerCore(it, query: query)
         return alt.entities.isEmpty || alt.entities == got.entities ? got : .none(.ambiguous)
@@ -676,6 +676,10 @@ extension FactsGraph {
         case .year:
             guard case .date(let rng) = it.anchor else { return .none(.ambiguous) }
             return inRange(it.predicate, rng, episodes: eps, strictTrust: true)
+        case .atStart, .endedBefore:
+            return atStart(it, episodes: eps)
+        case .first:
+            return firstHeld(it, episodes: eps)
         case .current, .previous:
             let now = eps.filter { $0.ongoing && !$0.inferredEnd }
             if it.op == .previous {
@@ -695,5 +699,53 @@ extension FactsGraph {
             if ids.count > 1 { ids.sort { (entities[$0]?.seq ?? 0) < (entities[$1]?.seq ?? 0) } }
             return TimelineAnswer(entities: ids, basis: basis)
         }
+    }
+
+    /// The anchor's episode a comparison means: its stint by number, else its only one (trusted ones first).
+    private func anchorEpisode(_ it: TimelineIntent, _ eps: [Episode]) -> Episode? {
+        guard case .entity(let x) = it.anchor else { return nil }
+        let all = eps.filter { $0.entity == x }.stableSorted { $0.sortKey }
+        let mine = all.contains(where: \.trusted) ? all.filter(\.trusted) : all
+        if let n = it.stint { return (1...max(1, mine.count)).contains(n) && n <= mine.count ? mine[n - 1] : nil }
+        return mine.count == 1 ? mine[0] : nil
+    }
+
+    /// `atStart`: who the user was still with just before the anchor began (the day before its start, at the start's
+    /// precision), the anchor excluded; every holder that may have held then must certainly have. `endedBefore`: the
+    /// job that had certainly ended before the anchor began, the latest such; told when another job's end may fall on
+    /// either side of that start, or may be later than the answer's (13e.2's fix round).
+    func atStart(_ it: TimelineIntent, episodes eps: [Episode]) -> TimelineAnswer {
+        guard case .entity(let x) = it.anchor, let sx = anchorEpisode(it, eps), let s = sx.tstart, sx.startTrusted else {
+            return .none(.ambiguous)
+        }
+        let others = eps.filter { $0.entity != nil && $0.entity != x }
+        if it.op == .atStart {
+            let rng = DateRange(lo: s.lo - 1, hi: max(s.lo - 1, s.hi - 1), precision: .day)
+            return inRange(it.predicate, rng, episodes: others, strictTrust: true)
+        }
+        var ended: [(e: Episode, end: DateRange)] = []
+        for e in others {
+            if let st = e.tstart, st.lo >= s.hi { continue }          // began with or after the anchor: never left before
+            if e.mayBeOpen { return .none(.ambiguous) }
+            guard let end = e.end else {
+                if e.ongoing { continue }                             // still held: not left
+                return .none(.ambiguous)                              // ended, but nobody knows when
+            }
+            if end.hi < s.lo { ended.append((e, end)) } else if end.lo < s.hi { return .none(.ambiguous) }
+        }
+        guard let w = ended.firstMax(by: { $0.end.hi }) else { return .none(.ambiguous) }
+        if ended.contains(where: { $0.e.entity != w.e.entity && $0.end.hi >= w.end.lo }) { return .none(.ambiguous) }
+        let inferred = !w.e.endTrusted || w.e.inferredEnd || !w.e.trusted || !sx.trusted
+        return .one(w.e.entity, inferred ? .inferred : .ordered)
+    }
+
+    /// `first`: the earliest job recorded; told when another may have begun as early (an unknown start included).
+    func firstHeld(_ it: TimelineIntent, episodes eps: [Episode]) -> TimelineAnswer {
+        let named = eps.filter { $0.entity != nil }
+        guard let w = named.filter({ $0.tstart != nil }).firstMin(by: { $0.tstart!.lo }), let ws = w.tstart else { return .none(.ambiguous) }
+        for c in named where c.entity != w.entity {
+            guard let cs = c.tstart, cs.lo > ws.hi else { return .none(.ambiguous) }
+        }
+        return .one(w.entity, w.startTrusted && w.trusted ? .ordered : .inferred)
     }
 }
