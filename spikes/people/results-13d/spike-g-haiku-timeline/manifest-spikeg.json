@@ -1,9 +1,9 @@
 {
-  "answerPromptVersion" : "a13e2-1",
+  "answerPromptVersion" : "a13e2-2",
   "cached" : 124,
   "calls" : 0,
-  "commit" : "9ccb36069819695af8af99687ac3eae1377994b9",
-  "date" : "2026-11-23T00:51:48Z",
+  "commit" : "d0c1764b283331979bc0dabec1bb6fd5becb332c",
+  "date" : "2026-11-23T17:36:38Z",
   "dirty" : false,
   "engine" : {
     "model" : "haiku",
@@ -24,9 +24,9 @@
     "timeline" : "1"
   },
   "records" : {
-    "astra-F.jsonl" : "60d712ea079414f736d2db9934d095b7b0121697ee8fc9db66d49ffc92330edd",
+    "astra-F.jsonl" : "472bed801d0c597c571311c4c3768731f42f376e42ee968cda4ccc56540ba344",
     "astra-P.jsonl" : "958c9e4d844b43965405bd5a0c2a9f8b29fec006d79122092e03f23e666eb1f0",
-    "main-F.jsonl" : "b3c2d20cd08797935e84558f32f88f94207acd6854c827732bf4559ca0bb19f2",
+    "main-F.jsonl" : "fc4a3102e62fe29b2520ff920fd2e50f995f277c350525f76dd17ac21a459da6",
     "main-P.jsonl" : "94fcb091206402927015fec91931f54c4df1c185a172a18562040832e34f643a"
   },
   "registryVersion" : "v1-8338de9d268e",
