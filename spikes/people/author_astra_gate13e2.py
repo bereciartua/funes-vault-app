@@ -9,7 +9,8 @@ check_gate13e2.py fails on structural or label problems; fixes are Astra's (`--f
                                                     first's organization names so none repeats)
     python3 author_astra_gate13e2.py fillers        about 250 shared everyday memories naming no story organization
     python3 author_astra_gate13e2.py convert        fixtures/gate-13e2/stories.json and fillers.json from the raw files
-    python3 author_astra_gate13e2.py stories --fix <notes> --half 1|2     a correction round from the checks' problems
+    python3 author_astra_gate13e2.py stories --fix <notes> --half 1|2     a correction round from the checks' problems,
+                                                    on only the stories the notes name
     python3 author_astra_gate13e2.py fillers --fix <notes>
 
 The raw files and each round's prompt are kept in fixtures/raw/astra-gate13e2-provenance/.
@@ -105,7 +106,7 @@ FIX = """You wrote the attached file (input.json in the working directory) for t
 {brief}
 </brief>
 
-A script checked it and found the problems listed in notes.md in the working directory. Fix exactly those: correct the labels, or reword a memory or question when that is the cleaner fix (keep surfaces exact substrings, and dates in jobs exactly as written). Keep every id and everything the problems don't touch. Return the WHOLE corrected file as JSON matching the schema. Read only input.json and notes.md."""
+A script checked it and found the problems listed in notes.md in the working directory. Fix exactly those: correct the labels, or reword a memory or question when that is the cleaner fix (keep surfaces exact substrings, and dates in jobs exactly as written). Keep every id and everything the problems don't touch. Return the WHOLE corrected file as JSON matching the schema. Read only input.json and notes.md, and only with cat, head, tail, sed, grep, jq or wc: running python or any other program fails the round. Write the corrected file as your answer, not with a command."""
 
 
 def frozen():
@@ -221,6 +222,30 @@ def fix(brief, schema, path, notes):
     tmp.replace(path)
 
 
+def fix_stories(brief, path, notes):
+    """A story correction round on only the stories the notes name, merged back by id. A whole half is big enough that
+    Astra reaches for python to read it, which the audit refuses (13e.2's second set, the author's decision)."""
+    import re
+    full = json.loads(path.read_text())
+    ids = set(re.findall(r"\bg\d{2}\b", Path(notes).read_text()))
+    part = dict(full, stories=[s for s in full["stories"] if s["id"] in ids])
+    if not part["stories"]:
+        raise SystemExit("author: the notes name no story of this half")
+    given = path.with_suffix(".subset.json")
+    given.write_text(json.dumps(part, ensure_ascii=False, indent=1))
+    tmp = path.with_suffix(".fixed.json")
+    tmp.unlink(missing_ok=True)
+    run_codex(FIX.replace("{brief}", brief), STORY_SCHEMA, tmp, [("input.json", given), ("notes.md", notes)])
+    fixed = {s["id"]: s for s in json.loads(tmp.read_text())["stories"]}
+    if set(fixed) != {s["id"] for s in part["stories"]}:
+        raise SystemExit("author: the fix returned other stories than it was given")
+    shutil.copy(path, LOG / f"{datetime.now().strftime('%Y%m%dT%H%M%S')}-before-fix-{path.name}")
+    full["stories"] = [fixed.get(s["id"], s) for s in full["stories"]]
+    path.write_text(json.dumps(full, ensure_ascii=False))
+    tmp.unlink()
+    given.unlink()
+
+
 def convert():
     """The two halves → stories.json (work13's story format; questions under `queries` with their labels), and fillers."""
     a, b = json.loads(raw("half1").read_text()), json.loads(raw("half2").read_text())
@@ -258,7 +283,7 @@ def main():
             avoid = orgs_of(raw("half1")) if first else []
             brief = stories_brief(half, avoid, first)
             if a.fix:
-                fix(brief, STORY_SCHEMA, raw(f"half{half}"), a.fix)
+                fix_stories(brief, raw(f"half{half}"), a.fix)
             elif not raw(f"half{half}").exists():
                 run_codex(brief, STORY_SCHEMA, raw(f"half{half}"))
     elif a.what == "fillers":
