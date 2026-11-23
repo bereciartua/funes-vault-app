@@ -272,4 +272,43 @@ import Testing
         let r = c.check(compare(c, "before", anchor: "Birch Labs", answer: "Alder Works"), search: "x")
         #expect(r.verdict == .notSure && r.reason == .cantTell)
     }
+
+    // MARK: Fix round 3 (r2)
+
+    /// A note read as "former" with no end date ("my next employer was Udequin: I started on 2020-09-01") and a later
+    /// "still there since 2020-09-01": the later memory says it held through the note's date, so the job still holds.
+    /// A later "still there" with no start keeps the conflict (no return was stated, and nothing says it held across).
+    @Test func aLaterStillThereSinceBeforeAStatusOnlyEndKeepsTheJob() {
+        let s = stateWith([fact(d, "Udequin", "2020-09-01", status: .former).at("2020-09-05"),
+                           fact(d, "Udequin", "2020-09-01", status: .current).at("2026-10-28")])
+        let e = s.episodes(of: "Udequin")
+        #expect(e.count == 1 && e[0].ongoing && !e[0].conflictEnd)
+        #expect(s.inRange(d, DateParser(registry: FX.registry).parse("2023")!).entities == [s.ent("Udequin")])
+        let year = stateWith([fact(d, "Ruzento", "2020", status: .former).at("2021-03-02"),
+                              fact(d, "Ruzento", "2020", status: .current).at("2026-10-28")])
+        #expect(year.episodes(of: "Ruzento").first?.ongoing == true)
+        let noStart = stateWith([fact(d, "Udequin", "2020-09-01", status: .former).at("2020-09-05"),
+                                 fact(d, "Udequin", status: .current).at("2026-10-28")])
+        #expect(noStart.episodes(of: "Udequin").first?.conflictEnd == true)
+        // The same start in the bound's own year counts too.
+        let sameYear = stateWith([fact(d, "Ruzento", "2020", status: .former, quote: "my next employer was Ruzento").at("2020-09-05"),
+                                  fact(d, "Ruzento", "2020", status: .current).at("2026-10-28")])
+        #expect(sameYear.episodes(of: "Ruzento").first?.ongoing == true)
+        // A real exit ("I left Acme"), or a bound row with no start of its own, stays a conflict: maybe a return.
+        let left = stateWith([fact(d, "Acme", "2014", status: .former, quote: "I left Acme").at("2018-05-01"),
+                              fact(d, "Acme", "2014", status: .current).at("2022-01-01")])
+        #expect(left.episodes(of: "Acme").first?.conflictEnd == true)
+        let bare = stateWith([fact(d, "Acme", status: .former, quote: "my employer was Acme").at("2018-05-01"),
+                              fact(d, "Acme", "2014", status: .current).at("2022-01-01")])
+        #expect(bare.episodes(of: "Acme").first?.conflictEnd == true)
+        // A "former" written after the correction still ends the job.
+        let after = stateWith([fact(d, "Udequin", "2020-09-01", status: .former).at("2020-09-05"),
+                               fact(d, "Udequin", "2020-09-01", status: .current).at("2022-01-01"),
+                               fact(d, "Udequin", "2020-09-01", status: .former).at("2024-01-01")])
+        #expect(after.episodes(of: "Udequin").first?.ongoing == false)
+        // A stated end isn't a status's bound: "2010 to 2018", then "still at Globex" stays a conflict.
+        let stated = stateWith([fact(d, "Globex", "2010", "2018", status: .former).at("2019-01-01"),
+                                fact(d, "Globex", "2010", status: .current).at("2024-01-01")])
+        #expect(stated.episodes(of: "Globex").first?.conflictEnd == true)
+    }
 }

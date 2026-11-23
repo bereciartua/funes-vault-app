@@ -358,6 +358,10 @@ def timeline_measures(lines, stories, reg, person=False):
             if id(e) not in assign:
                 continue
             t = stints[assign[id(e)]]
+            # A later stint of the same kind follows an undated one (the timeline lists each kind in order): its blank
+            # end is "not recorded", not "still held".
+            # Only for a stint with no dates at all: a dated one, or two businesses running at once, keeps "still held".
+            followed = not t["start"] and not t["end"] and any(x["kind"] == t["kind"] for x in stints[assign[id(e)] + 1:])
             # 13e.2: the episode's slot is its stint's kind (a freelance business read as employment is a wrong fact).
             if e.get("slot") not in (None, "", "_") and e["slot"] != t["kind"]:
                 (wrong_facts if e.get("trusted", True) else untrusted_facts).add((r["story"], t["org"], "slot"))
@@ -367,7 +371,10 @@ def timeline_measures(lines, stories, reg, person=False):
                 if got is None or got[2] == "handover":
                     continue                                   # unknown isn't wrong; a hand-over start is for role resolution only
                 if want is None:
-                    if bound == "end":                          # a current stint given an end
+                    # A current stint given an end. Fix round 3 (r2): a blank end is "still held" only for a stint
+                    # nothing follows; "I worked at X immediately before Y. I did not keep the dates" bounds X by the day
+                    # the memory was written, which is true and no date made up.
+                    if bound == "end" and not (followed and got[2] == "bound"):
                         sink.add((r["story"], t["org"], t["start"], bound))
                     continue
                 if got[1] < want[0] or got[0] > want[1]:

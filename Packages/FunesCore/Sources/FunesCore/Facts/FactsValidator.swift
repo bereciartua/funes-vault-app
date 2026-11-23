@@ -95,6 +95,29 @@ struct FactsValidator {
     }
     func secret(_ s: String?) -> Bool { s.map { !SecretScanner.scan($0).isEmpty } ?? false }
     func capital(_ s: String) -> Bool { s.contains { $0.isUppercase } }
+    /// Whether an organization the model names reads as a name (13e.2 r2): "work" in "a difficult day at work", "the
+    /// office", a sentence's opening "The office" or "Mi trabajo" isn't an employer. A name has a capital letter, a digit
+    /// or an inner dot ("eBay", "37signals", "bol.com"), isn't a registry word, and isn't only an owner or determiner and
+    /// words a workplace is called (the language's workplace and work-noun words, organization predicates' query nouns).
+    func namesAnOrganization(_ s: String) -> Bool {
+        let t = s.trimmingCharacters(in: .whitespaces)
+        guard t.count >= 2, capital(t) || t.contains(where: \.isNumber) || t.dropFirst().dropLast().contains(".") else { return false }
+        if registry.lexicon[t.lowercased()] != nil { return false }
+        let words = FactsText.fold(t).split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
+        let common = Self.commonOrgWords(registry)
+        return words.contains { !common.contains($0) }
+    }
+    /// The kinds a timeline's holders are (an employer's).
+    static func organizationKinds(_ registry: FactsRegistry) -> Set<String> { Set(registry.timelinePredicates.map(registry.kindOf)) }
+    /// The words an organization's name can't consist of alone (`namesAnOrganization`), per registry.
+    static func commonOrgWords(_ registry: FactsRegistry) -> Set<String> {
+        let lang = registry.language
+        let kinds = organizationKinds(registry)
+        let nouns = registry.predicates.filter { kinds.contains(registry.kindOf($0.id)) }.flatMap { $0.queryNouns ?? [] }
+        let all = lang.notNames + lang.owners + lang.ownerWords + lang.anchorDeterminers + (lang.leadRefusedFirst ?? [])
+            + (lang.verbNouns ?? []) + nouns
+        return Set(all.flatMap { FactsText.fold($0).split(separator: " ").map(String.init) })
+    }
     func entity(_ rosterID: String) -> FactsEntity? { roster[rosterID].flatMap { graph.entities[$0] } }
     func isUnnamedGroup(_ e: FactsEntity?) -> Bool { e.map { $0.group != nil && $0.name == nil } ?? false }
     func folded(_ e: FactsEntity) -> Set<String> { Set((trusted ? e.trustedAliases : e.aliases).map { FactsText.fold($0) }) }
@@ -118,6 +141,7 @@ struct FactsValidator {
             let trimmed = name.trimmingCharacters(in: .whitespaces)
             if trimmed.count < 2 || registry.lexicon[trimmed.lowercased()] != nil { drop("thing_not_a_name", i); continue }
             guard let kind = t["kind"].string.flatMap({ kinds[$0] }) else { drop("thing_kind", i); continue }
+            if Self.organizationKinds(registry).contains(kind), !namesAnOrganization(trimmed) { drop("thing_not_a_name", i); continue }
             if secret(name) { drop("thing_secret", i); continue }
             v.things.append(ExtractedThing(name: name, kind: kind, quote: q, span: span))
         }
@@ -168,6 +192,7 @@ struct FactsValidator {
                     drop(f + "_absent", i); continue
                 }
                 if secret(s) { drop(f + "_secret", i); continue }
+                if f == "also_called", Self.organizationKinds(registry).contains(registry.kindOf(pred)), !namesAnOrganization(s) { drop("also_called_not_a_name", i); continue }
                 fields[f] = s
             }
             var quals: [String: String] = [:]
@@ -198,6 +223,7 @@ struct FactsValidator {
                 let ph = graph.placeholder(pred, nm)
                 if nm.isEmpty || (ph == nil && (!inText(nm) || !onOneLine(nm, in: sent.sent))) { drop("fact_object", i); continue }
                 if ph == nil, namesHere.contains(FactsSentText.norm(nm)) { drop("fact_kind", i); continue }
+                if ph == nil, Self.organizationKinds(registry).contains(kind), !namesAnOrganization(nm) { drop("fact_not_a_name", i); continue }
                 if secret(nm) { drop("fact_secret", i); continue }
                 entityID = Ref.name.rawValue
                 name = ph ?? nm

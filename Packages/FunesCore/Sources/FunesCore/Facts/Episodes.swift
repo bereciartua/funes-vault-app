@@ -269,8 +269,9 @@ extension FactsGraph {
                 .map { ep.rows[$0] }
             let boundRows = statusRows.filter { $0.bound != nil }
             let bounds = boundRows.compactMap(\.bound)
-            let former = end != nil || !bounds.isEmpty
+            var former = end != nil || !bounds.isEmpty
             let held = statusRows.compactMap(\.held)
+            var statusEnd = false       // the end is only a status's bound ("former" with no end date)
             if end == nil, let minBound = bounds.min() {
                 let stated = start?.precision != .handover ? start : nil
                 let lo = ([stated?.lo ?? DateRange.minDay] + held.filter { $0 <= minBound }).max()!
@@ -280,11 +281,29 @@ extension FactsGraph {
                 } else {
                     end = DateRange(lo: lo, hi: minBound, precision: .bound)   // ended after the last day it held
                     ce = false
+                    statusEnd = true
                 }
                 enTr = boundRows.contains { $0.a.trusted }
             }
             // A trusted memory saying it still held after that end: the memories disagree (no return was stated).
             let userEnd = ep.ends.contains { $0.assertion.fromUser }
+            // 13e.2 r2: a note read as "former" that says nothing ended ("my next employer was Udequin: I started on
+            // 2020-09-01"), then a later memory that it still holds since that same start ("still at Udequin since
+            // 2020-09-01"): the later one corrects the status, and it still holds. Every bound row must state a start
+            // and no end word ("I left Acme", then "I'm at Acme, since 2014", stays a conflict: maybe a return), and the
+            // later memory must come after every bound (a "former" written after it still ends the job).
+            func overlap(_ a: DateRange, _ b: DateRange) -> Bool { a.lo <= b.hi && b.lo <= a.hi }
+            if end != nil, statusEnd, !userStatus, !userEnd, let lastBound = bounds.max(),
+               boundRows.allSatisfy({ $0.s != nil && !statesAnEnd($0.a.quote) }),
+               statusRows.contains(where: { r in
+                   guard let h = r.held, h > lastBound, let rs = r.s else { return false }
+                   return boundRows.allSatisfy { overlap($0.s!, rs) }
+               }) {
+                end = nil
+                ce = false
+                enTr = false
+                former = false
+            }
             if let e = end, !userStatus, !userEnd, let late = held.max(), late > e.hi {     // the user's end wins
                 // Nothing ends it after that "still current": the conflicting end is open (it may hold today).
                 end = DateRange(lo: e.lo, hi: DateRange.maxDay, precision: .conflict)
@@ -371,6 +390,14 @@ extension FactsGraph {
     public func status(of f: LearnedFact) -> FactAssertion.Status {
         let eps = factEpisodes(f)
         return (eps.last(where: \.trusted) ?? eps.last)?.former == true ? .former : .current   // trusted evidence first
+    }
+}
+
+extension FactsGraph {
+    /// Whether a quote says something ended: a former word or an end event of the language.
+    func statesAnEnd(_ quote: String) -> Bool {
+        let q = FactsText.fold(quote)
+        return formerWords.union(registry.language.endEvents).contains { FactsText.has(q, FactsText.fold($0)) }
     }
 }
 

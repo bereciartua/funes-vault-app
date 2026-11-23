@@ -513,7 +513,8 @@ public struct FactsGraph: Sendable {
             if kind == "person" {
                 pid = r.entity == "name" ? here[FactsText.fold(r.name)] : (regroup[r.entity] ?? r.entity)
             } else {
-                pid = foldedPlaceholder(r, mem: mem, others: newFacts) ?? entityFor(r.name, kind: kind, also: r.alsoCalled, trusted: trusted)
+                pid = foldedPlaceholder(r, mem: mem, others: newFacts) ?? labelledPlaceholder(r, mem: mem, others: newFacts)
+                    ?? entityFor(r.name, kind: kind, also: r.alsoCalled, trusted: trusted)
             }
             guard let pid, let ent = entities[pid] else { continue }
             landed[ri] = pid
@@ -668,6 +669,43 @@ public struct FactsGraph: Sendable {
             hits.append(e.id)
         }
         return hits.count == 1 ? hits[0] : nil
+    }
+
+    /// A placeholder the user calls by the role phrase a trusted memory gave one named business (13e.2 r2): "my own
+    /// freelance business, Juxali Illustration, has run since 2017", then "while keeping my freelance business going".
+    /// The quote has an owner word right before that same label; exactly one named trusted holder of the predicate has an
+    /// assertion with the placeholder's slot value and that label; it holds now (its latest trusted episode isn't ended);
+    /// and this memory neither ends nor denies it nor contrasts it. Else nil, and the placeholder is its own entity.
+    func labelledPlaceholder(_ r: ExtractedFact, mem: FactsMemory, others: [ExtractedFact]) -> String? {
+        guard mem.trusted, r.positive, r.status != .former, r.end == nil, placeholder(r.predicate, r.name) != nil,
+              let label = r.label.map({ FactsText.fold($0) }), !label.isEmpty,
+              let p = registry.predicate(r.predicate), let slot = p.slot, let value = r.qualifiers[slot] else { return nil }
+        let quote = FactsText.fold(r.quote)
+        let owners = registry.language.owners.map { FactsText.escape(FactsText.fold($0)) }
+        // The label right after the owner word: "my other freelance business" is another one.
+        let owned = "(?<!\\w)(?:" + owners.joined(separator: "|") + ")\\s+" + FactsText.escape(label) + "(?!\\w)"
+        guard FactsText.first(FactsText.regex(owned), in: quote) != nil else { return nil }
+        if (registry.language.negationWords ?? []).contains(where: { FactsText.has(quote, FactsText.fold($0)) }) { return nil }
+        let kind = registry.kindOf(r.predicate)
+        // Every named holder with that label and slot value, closed or not: two businesses called that never fold.
+        let named = facts.filter { f in
+            f.predicate == r.predicate && !f.negated && f.trusted
+                && (entities[f.entity]?.name.map { placeholder(r.predicate, $0) == nil } ?? false)
+                && f.assertions.contains(where: { $0.trusted && $0.qualifiers[slot] == value && $0.label.map { FactsText.fold($0) } == label })
+        }
+        guard Set(named.map(\.entity)).count == 1, let f = named.first, let e = entities[f.entity] else { return nil }
+        guard let last = factEpisodes(f).filter(\.trusted).last, last.ongoing else { return nil }
+        // Only while it ran: nothing the placeholder dates (its start or time, else a capture's own date) before it.
+        let since = last.tstart?.lo ?? DateRange.minDay
+        let when = parser.parse(r.start ?? r.time)?.hi ?? (mem.source == .import ? nil : parser.day(mem.written))
+        if let w = when, w < since { return nil }
+        let mine = Set(e.aliases.map { FactsText.normName($0, kind: kind, registry: registry) })
+        if others.contains(where: { o in o.predicate == r.predicate && mine.contains(FactsText.normName(o.name, kind: kind, registry: registry))
+            && (!o.positive || o.status == .former || o.end != nil) }) { return nil }
+        if notSame.contains(where: { $0.contains(e.id) && $0.contains { entities[$0]?.name.map { placeholder(r.predicate, $0) != nil } ?? false } }) {
+            return nil
+        }
+        return e.id
     }
 
     /// A denial that says it never held ("I never worked at Orlin Labs"), with no date of its own: not "no longer".
