@@ -173,13 +173,56 @@ def strict_audit(events, stamp):
             continue
         c = item.get("command")
         c = c if isinstance(c, str) else " ".join(map(str, c or []))
-        inner = re.sub(r"^(/bin/)?(ba|z)?sh\s+-l?c\s+", "", c).strip().strip("'\"")
-        if re.search(r"\.\.|~|\$|`|[;&|<>\n\r]", inner):
+        if re.search(r"\.\.|~|\$|`|[\n\r]", c):
             bad.append(c)
             continue
+
+        def tokens(s):
+            """Shell words, with every unquoted operator its own token: a quoted "|" is a jq filter's own pipe (13e.2's
+            r3 set), not a shell's."""
+            lex = shlex.shlex(s, posix=True, punctuation_chars=True)
+            lex.whitespace_split = True
+            lex.commenters = ""                     # the shell reads "x#" as a word, not a comment
+            return list(lex)
+
+        def operator(t):
+            return bool(t) and set(t) <= set("();<>|&")
         try:
-            words = shlex.split(inner)
+            outer = tokens(c)
+            if outer and re.fullmatch(r"(/bin/)?(ba|z)?sh", outer[0]):
+                if len(outer) != 3 or outer[1] not in ("-c", "-lc"):
+                    bad.append(c)
+                    continue
+                inner = outer[2]
+            else:
+                inner = c
+            words = tokens(inner)
         except ValueError:
+            bad.append(c)
+            continue
+        if any(map(operator, outer + words)):
+            bad.append(c)
+            continue
+        # Only the forms Codex reads with: jq without file-loading options (modules, -f, --rawfile), sed printing lines.
+        flags = [w for w in words[1:] if w.startswith("-")]
+        if words and words[0] == "jq" and (
+                any(not re.fullmatch(r"-[crSMesnja]+|--(raw-output|compact-output|sort-keys|slurp|tab|monochrome-output)", f)
+                    for f in flags) or any(re.search(r"\b(import|include|input_filename)\b", w) for w in words[1:])):
+            bad.append(c)
+            continue
+        script = next((w for w in words[1:] if not w.startswith("-")), "")
+        if words and words[0] == "sed" and (any(f not in ("-n", "-E") for f in flags)
+                                            or not re.fullmatch(r"\d+(,\d+)?p|/[^/]*/p", script)):
+            bad.append(c)
+            continue
+        # Every program's options from a list: none reads other files or runs a program (grep -f, rg --pre,
+        # wc --files0-from); no word zsh expands into a path ("=sh").
+        opts = {"grep": r"-[niFwcloEhHvx]+|-[ABCm]\d*|--(line-number|ignore-case|fixed-strings|count|word-regexp)",
+                "rg": r"-[niFwcloEhHvx]+|-[ABCm]\d*|--(line-number|ignore-case|fixed-strings|count|word-regexp)",
+                "head": r"-[nc]\d*|-\d+", "tail": r"-[nc]\+?\d*|-\d+", "wc": r"-[lcwm]+", "ls": r"-[la1hR]+",
+                "nl": r"-ba|-b|a"}
+        if words and (any(w.startswith("=") for w in words)
+                      or (words[0] in opts and any(not re.fullmatch(opts[words[0]], f) for f in flags))):
             bad.append(c)
             continue
         # A sed, grep or rg script may hold slashes; every other word is a plain relative name.
