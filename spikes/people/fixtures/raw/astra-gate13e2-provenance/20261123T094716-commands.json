@@ -1,0 +1,8 @@
+[
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat notes.md'",
+ "/bin/zsh -lc 'cat input.json'",
+ "/bin/zsh -lc 'cat input.json'",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"input.json\\\")); print(json.dumps(d,ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")))'\"",
+ "/bin/zsh -lc \"python3 -c 'import json; d=json.load(open(\\\"input.json\\\")); print(json.dumps(d,ensure_ascii=False,separators=(\\\",\\\",\\\":\\\")))'\""
+]

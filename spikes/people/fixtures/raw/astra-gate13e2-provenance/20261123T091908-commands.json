@@ -1,0 +1,4 @@
+[
+ "/bin/zsh -lc 'cat input.json notes.md'",
+ "/bin/zsh -lc 'cat input.json notes.md'"
+]
