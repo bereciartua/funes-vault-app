@@ -218,7 +218,7 @@ public final class SearchAnswerer: Sendable {
     /// The answer prompt's version with learned facts: the instructions, the schema, the attribute templates, the name
     /// replacement, the marker, and from 13e.2 the rows, the comparison and the check. An *attributes* or *timeline* record
     /// names it; changing any of them lapses those records only. (13d: "a13d-1".)
-    public static let promptVersion = "a13e2-2"
+    public static let promptVersion = "a13e2-3"
 
     let store: VaultStore
     let search: SearchService
@@ -456,6 +456,16 @@ public final class SearchAnswerer: Sendable {
                     if owed { checks.checked += 1; checks.checkDropped += 1 }
                     dropped += 1
                 }
+            }
+            // "Funes couldn't check this" beside a claim the check read says nothing that one doesn't (13e.2 r3): dropped, so
+            // the answer isn't padded with a line about the check rather than the user's memories.
+            let unchecked: (SearchAnswer.Claim) -> Bool = { [.noComparison, .invalid].contains($0.check?.reason) }
+            if kept.contains(where: { $0.check != nil && !unchecked($0) }) {
+                let n = kept.filter(unchecked).count
+                kept.removeAll(where: unchecked)
+                checks.checked -= n
+                checks.notSure -= n
+                dropped += n
             }
             marked = kept
         }
@@ -715,6 +725,9 @@ public final class SearchAnswerer: Sendable {
             - <work_history> lists the user's jobs as Funes read them from the user's own memories: each entity has an alias (e1…), dates as written ("unknown" when not known; "by" a date when Funes inferred the end). Use it with the memories, but cite only memories (m1 to m\(memoryCount + citedCount)), never the work history.
             - A job's name is its newest name; also_called lists other names of the same organization. When the search or a memory uses another name, give both ("Brindle Arc, also called Brindle Quay").
             - Every claim has a comparison. When a claim names which organization the user worked at relative to a time (the one before or after another, at a date or between two dates, the current one, the previous one, the first one), fill it in: made true; subject "user", or "someone_else" when the claim is about another person's job; predicate "\(rows.predicate)"; operator: before or after (the job that came just before or after another, in order), at_start (the job the user was still at just before another began: "still employed when I started at X", "who was employing me right before my first day at X"), ended_before (the job the user had already left by the time another began: "which employer had I left before X hired me"), in or between (at a date, or across two), current, previous, first (the earliest job recorded: "my first job"); anchor, the alias of the organization for before, after, at_start or ended_before, else empty; stint, "first" or "second" when the search means one stint of a job the user held twice, else "any"; anchorDate and endDate, normalised as YYYY, YYYY-MM or YYYY-MM-DD, for a date ("in", "between", before or after a date); slot, one of \(slots.map { "\"\($0)\"" }.joined(separator: ", ")) when the search asks about that kind of work only, else empty; answer, the alias of the organization the claim answers. One claim per organization. Otherwise made false and the other fields empty.
+            - A sentence weighing which organization held (the order is uncertain, the memories don't confirm whether one job had ended or started by a date, a note claims a later job) still picks among organizations: make its comparison too, with the organization it leans to as the answer, or leave that sentence out.
+            - A period that isn't a job ("after my 2022 study year", "after the break in 2020 and 2021") is a date: the operator is after, anchorDate its last date, never "in" the year that follows.
+            - When the work history settles it (a job whose dates cover the date asked, the job right before or after another), answer with that organization; don't decline because no memory mentions that exact day.
             - Make a comparison only for a claim that picks which organization; a duration, a title, a list of jobs or a client's dates gets made false. A distance from a date or a job ("six months before", "two years after") can't be compared: say the memories don't place it exactly, with made false.
             - A memory saying a job still holds is true as of the day it was written: a later memory saying that job ended, or that the user left and came back, doesn't contradict it. Don't call such memories inconsistent.
             - When the memories and the work history can't tell which organization it was, say so rather than guess.

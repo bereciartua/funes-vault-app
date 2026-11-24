@@ -88,6 +88,14 @@ struct FactsValidator {
     static let namePrefix = "name:"
 
     func inText(_ s: String?) -> Bool { FactsSentText.contains(sent.sent, s ?? "") }
+
+    /// The numeric dates in a text, as written ("2014-06", "2019", "2020-03-15"): enough to tell whether a quote and
+    /// a date field speak of the same time.
+    static func dateTokens(_ text: String) -> Set<String> {
+        let ns = text as NSString
+        let re = try! NSRegularExpression(pattern: #"(?<![0-9])(1[89]|20)[0-9]{2}(-[0-9]{2}){0,2}(?![0-9])"#)
+        return Set(re.matches(in: text, range: NSRange(location: 0, length: ns.length)).map { ns.substring(with: $0.range) })
+    }
     /// Whether a name the model gives is written within one line of `text` (13e.2). Quote matching tolerates
     /// whitespace, line breaks included, so without this "Note Max" would match a title over a body that opens "Max".
     func onOneLine(_ name: String, in text: String) -> Bool {
@@ -231,9 +239,34 @@ struct FactsValidator {
             var label = r["label"].string
             if let l = label, !inText(l) || secret(l) { label = nil; drop("label_not_in_text", i) }
             let count = r["count"].int.flatMap { $0 >= 0 ? $0 : nil }
+            var status = r["status"].string.flatMap(FactAssertion.Status.init) ?? .unknown
+            // A "time" its quote contradicts: the quote has dates of its own and none of the time's (13e.2 r3's g01: "I
+            // left my first Acme stint in 2014-06" read with time 2017-09, the next sentence's return). Dropped; when
+            // the quote holds one date and an end or start word, that date is the end or start it states.
+            if let t = fields["time"] {
+                let own = Self.dateTokens(quote), its = Self.dateTokens(t)
+                let years = { (x: Set<String>) in Set(x.map { String($0.prefix(4)) }) }
+                if !own.isEmpty, !its.isEmpty, years(its).isDisjoint(with: years(own)) {
+                    fields["time"] = nil
+                    drop("time_not_in_quote", i)
+                    let words = FactsText.fold(quote)
+                    let lang = registry.language
+                    // Only with one kind of event word: "joined Acme in 2014 after leaving Birch" says nothing alone.
+                    let ends = lang.endEvents.contains { FactsText.cue(words, FactsText.fold($0)) }
+                    let starts = lang.startEvents.contains { FactsText.cue(words, FactsText.fold($0)) }
+                    if own.count == 1, fields["start"] == nil, fields["end"] == nil, let only = own.first, ends != starts {
+                        if ends {
+                            fields["end"] = only
+                            status = .former
+                        } else {
+                            fields["start"] = only
+                        }
+                    }
+                }
+            }
             var f = ExtractedFact(predicate: pred, name: name ?? "", entity: entityID, label: label, quote: quote,
                                   positive: polarity == .positive,
-                                  status: r["status"].string.flatMap(FactAssertion.Status.init) ?? .unknown,
+                                  status: status,
                                   deceased: r["deceased"].bool ?? false, only: r["only"].bool ?? false, count: count,
                                   time: fields["time"], start: fields["start"], end: fields["end"],
                                   precededBy: fields["preceded_by"], followedBy: fields["followed_by"],

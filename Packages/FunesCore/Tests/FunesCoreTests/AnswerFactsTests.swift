@@ -354,9 +354,9 @@ extension AnswerFactsTests {
         let digest = FactsCorrections.digest(covered)
         // If this fails, bump `SearchAnswerer.promptVersion` (an attributes or timeline record measured the old prompt) and
         // update it.
-        #expect(SearchAnswerer.promptVersion == "a13e2-2" && digest == Self.pinnedDigest, "\(digest)")
+        #expect(SearchAnswerer.promptVersion == "a13e2-3" && digest == Self.pinnedDigest, "\(digest)")
     }
-    static let pinnedDigest = "2a-xk_0Sm5BEnFtvcqnHlw"
+    static let pinnedDigest = "ii3az3G_9Q_fcxH6iZZbAg"
 
     @Test func aMemoryThatNamesThePersonElsewhereIsntMarkedForTheName() async throws {
         _ = try fx.sisters()

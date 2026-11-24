@@ -86,6 +86,20 @@ extension FactsGraph {
         return registry.language.returnCues.contains { FactsText.cue(q, $0) }
     }
 
+    /// A row that says it's about a later stint ("my second Acme stint ended in 2020-02", "after I returned"): its
+    /// ordinal is 2 or more, or it carries a return word (13e.2 r3's g01).
+    /// `stints`: how many this fact has so far; an ordinal names one ("second"), so a stint already there isn't new.
+    /// The ordinal or return word must come right before one of the entity's names ("my second Acme stint", "went back
+    /// to Acme"): "the second quarter of 2019" or "went back to school" isn't about a stint.
+    func namesLaterStint(_ a: FactAssertion, stints: Int, names: [String]) -> Bool {
+        let q = FactsText.fold(a.quote)
+        let lang = registry.language
+        let ns = names.map { FactsText.fold($0) }.filter { !$0.isEmpty }
+        func before(_ w: String) -> Bool { ns.contains { FactsText.cue(q, FactsText.fold(w) + " " + $0) } }
+        if let n = lang.episodeOrdinals.filter({ before($0.key) }).map(\.value).max() { return n > stints }
+        return lang.returnCues.contains(where: before) || lang.episodeLast.contains(where: before)
+    }
+
     private final class Building {
         var starts: [Dated] = []
         var ends: [Dated] = []
@@ -124,8 +138,15 @@ extension FactsGraph {
             // it holds as of the statement's own time ("a notebook page from June 2018: I'm at Acme"), else at no
             // known date. A "no longer" still bounds the end by the import's date: it had ended by then.
             let imported = memories[a.memoryID]?.source == .import
-            let held: Int? = a.status != .current ? nil
-                : imported ? p.parse(a.time).map { t in w.map { min(t.hi, $0) } ?? t.hi } : w
+            // A row's own time says when it held (13e.2 r3), certainly only on its first day: "found my 2018 Acme
+            // contract" (no status) held in 2018, not through its end. A current row of another memory holds as of its
+            // time only when that's a day ("I was still employed there on 2018-09-10"); a year there is often its start
+            // ("at Acme since 2019"), so the day it was written stands.
+            let t = p.parse(a.time)
+            let held: Int? = a.status == .former ? nil
+                : a.status == .unknown ? (a.trusted ? t.map { x in w.map { min(x.lo, $0) } ?? x.lo } : nil)
+                : imported ? t.map { x in w.map { min(x.hi, $0) } ?? x.hi }
+                : t.flatMap { x in x.lo == x.hi ? w.map { min(x.lo, $0) } ?? x.lo : nil } ?? w
             return Row(order: order, a: a, s: s, e: e, bound: bound, held: held, w: w, hand: hand)
         }
         var eps: [Building] = []
@@ -143,6 +164,8 @@ extension FactsGraph {
                     if let e = r.e, let es, e.hi < es.lo { disjoint = true }
                     if disjoint { continue }
                     if isRejoin(r.a), let s = r.s, let es, s.lo > es.hi { continue }
+                    // An end alone, after this stint's end, that names a later stint: that later stint's end (13e.2 r3).
+                    if r.s == nil, let e = r.e, let ee, ee.hi < e.lo, namesLaterStint(r.a, stints: eps.count, names: [entities[f.entity]?.name].compactMap { $0 } + Array(entities[f.entity]?.aliases ?? [])) { continue }
                     target = ep
                     break
                 }
@@ -198,9 +221,11 @@ extension FactsGraph {
                         }
                     }
                     if target == nil {
+                        // A row with its own time is placed by it ("found my 2019 Acme contract", written in 2026).
+                        let at = r.a.time != nil ? (r.held ?? w) : w
                         for ep in candidates.reversed() {
                             let es = ep.startRange(for: r.a.trusted), ee = ep.endRange(for: r.a.trusted)
-                            if (es.map { $0.lo <= w } ?? true), r.held == nil || ee == nil || ee!.hi >= w {
+                            if (es.map { $0.lo <= at } ?? true), r.held == nil || ee == nil || ee!.hi >= at {
                                 target = ep
                                 break
                             }
@@ -284,6 +309,11 @@ extension FactsGraph {
                     statusEnd = true
                 }
                 enTr = boundRows.contains { $0.a.trusted }
+            }
+            // A day it still held inside a dated end narrows that end ("2015 to 2018 … still employed there on
+            // 2018-09-10": it ended between that day and the end of 2018; 13e.2 r3's g20).
+            if let e = end, !ce, e.precision != .conflict, let h = held.filter({ $0 >= e.lo && $0 <= e.hi }).max(), h > e.lo {
+                end = DateRange(lo: h, hi: e.hi, precision: e.precision)
             }
             // A trusted memory saying it still held after that end: the memories disagree (no return was stated).
             let userEnd = ep.ends.contains { $0.assertion.fromUser }

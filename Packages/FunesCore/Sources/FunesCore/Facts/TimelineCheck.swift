@@ -394,7 +394,7 @@ public struct TimelineCheck: Sendable {
     public func check(_ c: TimelineComparison?, search: String) -> TimelineCheckResult {
         var base = TimelineCheckResult(verdict: .notSure, reason: .noComparison, basis: nil, predicate: rows.predicate,
                                        op: "", anchor: nil, answer: nil)
-        guard let c, c.made else { return base }
+        guard var c, c.made else { return base }
         base.reason = .invalid
         // Only validated values go on the result (and so into the line).
         guard intent(c, stint: nil) != nil else { return base }
@@ -404,8 +404,18 @@ public struct TimelineCheck: Sendable {
         base.anchorDate = c.anchorDate.isEmpty ? nil : c.anchorDate
         base.endDate = c.endDate.isEmpty ? nil : c.endDate
         let pred = rows.predicate
-        let mine = Self.evaluate(graph.trustedOnly(pred), c, rows: rows, search: search, intent: intent)
+        var mine = Self.evaluate(graph.trustedOnly(pred), c, rows: rows, search: search, intent: intent)
         if mine.invalid { return base }
+        // The comparison is the answering model's reading of the search; where the search's own words read it more
+        // narrowly or say what the model's operator missed, the search's reading is checked (13e.2 r3).
+        if case .cantTell = mine.outcome, let (alt, e) = reread(c, search: search) {
+            if case .agrees(let b) = e.outcome, alt.op != "before" || b == TimelineBasis.stated {
+                c = alt
+                mine = e
+                base.op = c.op
+                base.anchorDate = c.anchorDate.isEmpty ? nil : c.anchorDate
+            }
+        }
         if let local {
             let theirs = Self.evaluate(local.trustedOnly(pred), c, rows: rows, search: search, intent: intent)
             if theirs != mine {
@@ -438,14 +448,147 @@ public struct TimelineCheck: Sendable {
             if case .agrees = full.outcome, full.entities == mine.entities { agrees = true }
             // A gap the user's memories leave where text they didn't write names a job: whether anything came between
             // isn't known, so it isn't told as "with a gap" (13e.2's fix round).
+            // A departure the search asks about ("which job had I left before X", "after leaving X"): unless the
+            // user's memories state the order, the answer stands only if the two jobs certainly didn't overlap.
+            if basis != TimelineBasis.stated, departureOverlap(c, search: search, stint: mine.stint) {
+                base.verdict = .notSure
+                base.reason = .cantTell
+                base.basis = nil
+                return base
+            }
             if !agrees, basis == .gap {
                 base.verdict = .notSure
                 base.reason = .cantTell
                 base.basis = nil
                 return base
             }
+            // "Now", when text the user didn't write names a job still running that began after the last day the
+            // user's own memories say theirs held: the user's evidence may be out of date, so it's told, not marked
+            // (13e.2 r3's g07). An agent's note never reorders the past (before, after), but "now" is about today.
+            if !agrees, c.op == TimelineIntent.Operator.current.rawValue {
+                let eps = graph.episodes(pred)
+                let answer = rows.entities[c.answer].map { graph.timelineEntity(pred, $0) }
+                let theirs = eps.filter { $0.trusted && $0.ongoing && $0.entity.map { graph.timelineEntity(pred, $0) } == answer }
+                let held = theirs.compactMap(\.heldAt).max() ?? Int.min
+                let slots = Set(theirs.map(\.slot))
+                // An agent's job with no start counts from the last day its text says it held; another kind of work
+                // (the user's own business beside a salaried job) doesn't make "now" stale.
+                if eps.contains(where: { e in
+                    !e.trusted && e.ongoing && (slots.isEmpty || slots.contains(e.slot) || e.slot == "_" || slots.contains("_"))
+                        && (e.tstart?.lo ?? e.heldAt ?? Int.min) > held
+                }) {
+                    base.verdict = .notSure
+                    base.reason = .cantTell
+                    base.basis = nil
+                    return base
+                }
+            }
             base.verdict = agrees ? .agrees : .agreesTrusted
             return base
+        }
+    }
+
+    /// The search's words, folded, as tokens.
+    static func tokens(_ text: String) -> [String] {
+        FactsText.fold(text).split { !$0.isLetter && !$0.isNumber }.map(String.init)
+    }
+
+    /// Where the first of these phrases starts in the tokens ("antes de" as two; "regres*" a prefix). `head`: only a
+    /// phrase's first word must match ("después del año" holds "después de").
+    static func find(_ phrases: [String], in t: [String], head: Bool = false) -> Int? {
+        var best: Int?
+        for p in phrases {
+            var w = tokens(p.replacingOccurrences(of: "*", with: "")), star = p.hasSuffix("*")
+            if head, w.count > 1 { w = [w[0]]; star = false }
+            guard !w.isEmpty, t.count >= w.count else { continue }
+            for i in 0...(t.count - w.count) {
+                let hit = w.indices.allSatisfy { j in
+                    star && j == w.count - 1 ? t[i + j].hasPrefix(w[j]) : t[i + j] == w[j]
+                }
+                if hit { best = min(best ?? i, i); break }
+            }
+        }
+        return best
+    }
+
+    /// Another reading of a comparison the time model can't tell, from the search's own words (13e.2 r3):
+    /// - "at_start" ("who employed me just before I came back to X") is also "before": taken only on a stated order;
+    /// - "in" a year after the date the search names, when the search asks what came after that date ("after my 2022
+    ///   study year" read as "in 2023"): "after" that date.
+    func reread(_ c: TimelineComparison, search: String) -> (TimelineComparison, Evaluation)? {
+        let pred = rows.predicate
+        var alt = c
+        if c.op == "at_start" {
+            // Not when the search asks who was "still" employing the user, and only when the answer's job may have
+            // run up to the anchor's start (year-only dates): a known gap stays "can't tell".
+            let reg = graph.registry
+            if Self.find(reg.language.operators.current, in: Self.tokens(search)) != nil { return nil }
+            let g = graph.trustedOnly(pred)
+            guard let anchor = rows.entities[c.anchor], let answer = rows.entities[c.answer] else { return nil }
+            let eps = g.episodes(pred).filter(\.trusted).stableSorted { $0.sortKey }
+            let mine = eps.filter { $0.entity.map { g.timelineEntity(pred, $0) } == g.timelineEntity(pred, anchor) }
+            let n = ["first": 1, "second": 2][c.stint]
+            guard let anc = n.flatMap({ $0 <= mine.count ? mine[$0 - 1] : nil }) ?? mine.last, let s = anc.tstart else { return nil }
+            let theirs = eps.filter { $0.entity.map { g.timelineEntity(pred, $0) } == g.timelineEntity(pred, answer) }
+            guard theirs.contains(where: { e in e.end.map { $0.hi >= s.lo - 1 } ?? true }) else { return nil }
+            alt.op = "before"
+        } else if c.op == "in", let asked = Self.iso(c.anchorDate) {
+            let reg = graph.registry
+            let t = Self.tokens(search)
+            guard let at = Self.find(reg.language.operators.after, in: t, head: true) else { return nil }
+            let dates = DateParser(registry: reg)
+            // The latest date the search names after its "after" ("de 2020 y 2021": 2021), as written (a day stays one).
+            let head = t[at]
+            let words = FactsText.fold(search).split(whereSeparator: \.isWhitespace).map(String.init)
+            guard let i = words.firstIndex(where: { $0.trimmingCharacters(in: .punctuationCharacters) == head }) else { return nil }
+            let named = FactsValidator.dateTokens(words[i...].joined(separator: " ")).compactMap { dates.parse($0) }
+            guard let last = named.max(by: { $0.hi < $1.hi }), last.hi < asked.lo else { return nil }
+            alt.op = "after"
+            alt.anchor = ""
+            alt.anchorDate = TimelineRows.written(last)
+        } else {
+            return nil
+        }
+        let e = Self.evaluate(graph.trustedOnly(pred), alt, rows: rows, search: search, intent: intent)
+        return e.invalid ? nil : (alt, e)
+    }
+
+    /// Whether a before/after comparison is about a departure ("had I left before", "after leaving") and the answer's
+    /// job and the anchor's may have overlapped, so the answer may not have ended before (or begun after) it.
+    func departureOverlap(_ c: TimelineComparison, search: String, stint: Int?) -> Bool {
+        guard ["before", "after"].contains(c.op), let anchor = rows.entities[c.anchor], let answer = rows.entities[c.answer] else { return false }
+        let reg = graph.registry
+        let t = Self.tokens(search)
+        let ends = reg.language.endEvents
+        // The end word right by the operator ("had I left just before", "after leaving"), never inside the anchor's
+        // name ("after Closed Loop Partners").
+        let named = Set((rows.row(for: anchor, graph: graph).map { [$0.name] + $0.renames } ?? []).flatMap { Self.tokens($0) })
+        func endNear(_ range: Range<Int>) -> Bool {
+            range.contains { i in i >= 0 && i < t.count && !named.contains(t[i]) && Self.find(ends, in: [t[i]]) != nil }
+        }
+        if c.op == "before" {
+            guard let op = Self.find(reg.language.operators.before, in: t, head: true), endNear((op - 4)..<op) else { return false }
+        } else {
+            guard let op = Self.find(reg.language.operators.after, in: t, head: true), endNear((op + 1)..<(op + 4)) else { return false }
+        }
+        let pred = rows.predicate
+        let g = graph.trustedOnly(pred)
+        let eps = g.episodes(pred).filter(\.trusted).stableSorted { $0.sortKey }
+        let mineEps = eps.filter { $0.entity.map { g.timelineEntity(pred, $0) } == g.timelineEntity(pred, anchor) }
+        guard let anc = stint.flatMap({ $0 >= 1 && $0 <= mineEps.count ? mineEps[$0 - 1] : nil }) ?? (mineEps.count == 1 ? mineEps[0] : nil)
+        else { return false }
+        let theirs = eps.filter { $0.entity.map { g.timelineEntity(pred, $0) } == g.timelineEntity(pred, answer) }
+        // An end succession inferred from the other's start is that start: no overlap. Touching days don't overlap.
+        if c.op == "before" {
+            guard let s = anc.tstart else { return true }
+            return theirs.contains { e in
+                e.endedBy !== anc && (e.tstart?.lo ?? DateRange.minDay) < s.hi && (e.end.map { $0.hi > s.lo || ($0.hi == s.lo && s.precision != .day) } ?? true)
+            }
+        }
+        guard let end = anc.end else { return true }
+        return theirs.contains { e in
+            anc.endedBy !== e && (e.tstart.map { $0.lo < end.hi || ($0.lo == end.hi && end.precision != .day) } ?? true)
+                && (e.end?.hi ?? DateRange.maxDay) > end.lo
         }
     }
 

@@ -105,8 +105,16 @@ def trusted(m):
     return (m.get("trust") or ("untrusted" if m["source"] == "agent" else "trusted")) == "trusted"
 
 
+def user_line():
+    """The user's names as the set records them: a memory naming one is about the user (r3: an agent's note saying
+    "Alex Soler left" was judged someone else's job)."""
+    u = load_set()[1]
+    names = sorted({u["name"], *u.get("aliases", [])}, key=lambda n: (-len(n), n))
+    return "THE USER'S NAMES: " + ", ".join(names) + " (a memory or claim naming one of these speaks of the user)"
+
+
 def story_text(s):
-    lines = ["MEMORIES"]
+    lines = [user_line(), "", "MEMORIES"]
     for m in sorted(s["memories"], key=lambda m: m["written"]):
         lines.append(f"- {m['id']} ({m['written']}, {m['source']}, {'trusted' if trusted(m) else 'untrusted'}): {m['text']}")
     lines.append("\nTRUE WORK HISTORY")
