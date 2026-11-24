@@ -103,6 +103,20 @@ public struct FactsQualification: Sendable {
             answerModels.contains(answer.model) && answerPromptVersion == answer.promptVersion
         }
 
+        /// Whether use `u` of this record counts for a reader: `answer` is the answering model, nil for plain search and the
+        /// Facts task. *Attributes* and *bridges* go to an answer only when the record covers its model (and count as
+        /// recorded elsewhere). From 13e.2, a *timeline* record measured with answer models (13e.2's gate) is an answer's
+        /// alone: it covers only those models, and plain search's grammar never reads it (ADR-0032 decision 5, amended
+        /// 2026-11-21: plain search's timeline stays off until an engine-free record).
+        func counts(_ u: String, answer: AnswerKey?) -> Bool {
+            if u == FactsUse.timeline.rawValue, !answerModels.isEmpty {
+                guard let answer else { return false }
+                return covers(answer: answer)
+            }
+            guard let answer, FactsQualification.answerUses.contains(u) else { return true }
+            return covers(answer: answer)
+        }
+
         public var engine: FactsEngine { FactsEngine(model: model, adapter: adapter, batching: batching) }
 
         func key(_ predicate: String, _ use: String) -> Key {
@@ -214,7 +228,7 @@ public struct FactsQualification: Sendable {
                   registry.fingerprint == r.registryVersion else { continue }
             for p in r.predicates where registry.predicate(p)?.callGroup == r.callGroup {
                 for u in r.uses where registry.predicate(p)?.uses.contains(u) == true && !off.contains(r.key(p, u))
-                    && (answer == nil || !Self.answerUses.contains(u) || r.covers(answer: answer!)) {
+                    && r.counts(u, answer: answer) {
                     if let use = FactsUse(rawValue: u) { candidates.insert(.init(predicate: p, use: use, basis: r.basis)) }
                 }
             }

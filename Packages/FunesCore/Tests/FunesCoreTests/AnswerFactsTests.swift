@@ -344,13 +344,19 @@ extension AnswerFactsTests {
 
     /// The answer prompt's version is what an attributes record names: changing what it covers needs a new version.
     @Test func thePromptVersionCoversWhatItNames() {
-        let covered = [SearchAnswerer.instructions, SearchAnswerer.schema.json, SearchAnswerer.bridgeSchema.json]
-            + AnswerAttributes.templates + [String(SearchAnswerer.bridgeCount), String(SearchAnswerer.textLimit)]
+        // 13e.2: the rows' rules and schema, the cited memories' limits and the check's wording too.
+        let rows = TimelineRows(predicate: FX.dated, rows: [])
+        let covered = [SearchAnswerer.instructions, SearchAnswerer.schema.json, SearchAnswerer.bridgeSchema.json,
+                       SearchAnswerer.rowsSchema.json, SearchAnswerer.rowsInstructions(rows), rows.block()]
+            + AnswerAttributes.templates
+            + [SearchAnswerer.citedCount, SearchAnswerer.textLimit, TimelineRows.limit, TimelineRows.citedTextLimit,
+               TimelineRows.citedTotalLimit].map(String.init)
         let digest = FactsCorrections.digest(covered)
-        // If this fails, bump `SearchAnswerer.promptVersion` (an attributes record measured the old prompt) and update it.
-        #expect(SearchAnswerer.promptVersion == "a13d-1" && digest == Self.pinnedDigest, "\(digest)")
+        // If this fails, bump `SearchAnswerer.promptVersion` (an attributes or timeline record measured the old prompt) and
+        // update it.
+        #expect(SearchAnswerer.promptVersion == "a13e2-1" && digest == Self.pinnedDigest, "\(digest)")
     }
-    static let pinnedDigest = "N-QOoNwF5As1EQ65TFnDyw"
+    static let pinnedDigest = "3YqKijMhuqYrdf8VJmfb7w"
 
     @Test func aMemoryThatNamesThePersonElsewhereIsntMarkedForTheName() async throws {
         _ = try fx.sisters()

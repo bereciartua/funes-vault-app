@@ -118,6 +118,14 @@ import Testing
             let other = try JSONDecoder().decode([String: [FactsHarness.Fixture.Query]].self, from: Data(contentsOf: URL(fileURLWithPath: path)))
             for i in fixture.stories.indices { fixture.stories[i].queries = other[fixture.stories[i].id] ?? [] }
         }
+        // 13e.2, development only: Spike T round 2's comparisons through the direct call (`comparisons=<file>`,
+        // {story id: [comparison]}).
+        if let path = o["comparisons"] {
+            try #require(o["live"] == nil, "comparisons= is for development replays, never a live run")
+            let comps = try JSONDecoder().decode([String: [FactsHarness.Fixture.SpikeComparison]].self,
+                                                 from: Data(contentsOf: URL(fileURLWithPath: path)))
+            for i in fixture.stories.indices { fixture.stories[i].comparisons = comps[fixture.stories[i].id] }
+        }
         // Spike T round 2 only: the store without agents' notes (the time model's check without untrusted text).
         if o["trusted_only"] == "1" {
             for i in fixture.stories.indices {
@@ -134,6 +142,8 @@ import Testing
             : registry.callGroups.keys.sorted()
         var provider: any GenerationProvider
         var recorded: [FactsHarness.Recorded] = []
+        var callRecorder: FactsHarness.CallRecorder?
+        var callReplay: FactsHarness.CallReplay?
         let label: String
         let schedule = o["schedule"] == "1"
         if let path = o["replay"] {
@@ -146,12 +156,20 @@ import Testing
             let parts = live.split(separator: ":", maxSplits: 1).map(String.init)
             // A full model id: a qualification record never matches an alias.
             let model = parts.count > 1 ? parts[1] : "claude-haiku-5-5"
-            provider = FactsHarness.ModelsSeen(parts[0] == "codex"
+            // Every live call is recorded (13e.2), so the read replays with `calls=`.
+            let client: any GenerationProvider = parts[0] == "codex"
                 ? CodexClient(executable: o["executable"] ?? "codex", model: model)
-                : ClaudeCodeClient(executable: o["executable"] ?? "claude", model: model))
+                : ClaudeCodeClient(executable: o["executable"] ?? "claude", model: model)
             label = "swift-\(parts[0])-\(model)" + (o["tag"].map { "-" + $0 } ?? "")
+            callRecorder = try FactsHarness.CallRecorder(client, file: out.appending(path: label).appending(path: "\(set)-calls.jsonl"))
+            provider = FactsHarness.ModelsSeen(callRecorder!)
+        } else if let path = o["calls"] {
+            // A recorded live read, replayed by each call's key (13e.2); a call it doesn't have is a miss.
+            callReplay = try FactsHarness.CallReplay(URL(fileURLWithPath: path))
+            provider = FactsHarness.ModelsSeen(callReplay!)
+            label = "swift-calls-" + (o["tag"] ?? set)
         } else {
-            Issue.record("FUNES_FACTS_HARNESS needs replay= or live=")
+            Issue.record("FUNES_FACTS_HARNESS needs replay=, live= or calls=")
             return
         }
         let payloadGuard = FactsHarness.PayloadGuard(provider)
@@ -235,6 +253,12 @@ import Testing
             "lines_sha256": try FactsHarness.sha256(jsonl),
         ]
         if o["reader"] == "1" { manifest["substituted"] = substituted; manifest["unexplained"] = unexplained }
+        if let callRecorder {
+            manifest["calls_file"] = callRecorder.file.lastPathComponent
+            manifest["calls_recorded"] = callRecorder.count.withLock { $0 }
+            manifest["calls_sha256"] = try FactsHarness.sha256(callRecorder.file)
+        }
+        if let callReplay { manifest["replay_misses"] = callReplay.misses.withLock { $0 } }
         if let seen {
             manifest["models_reported"] = seen.models.withLock { $0.sorted() }
             let r = seen.responses.withLock { $0 }

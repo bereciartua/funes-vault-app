@@ -113,6 +113,9 @@ public struct CompanionRequestHead: Sendable {
 
     /// The call shows People & history (`CompanionCapability.people`, 13d.2).
     public var showsPeople: Bool { caps.contains(CompanionCapability.people) }
+
+    /// The call shows checked timeline claims (`CompanionCapability.checked`, 13e.2); only with `facts`.
+    public var showsChecked: Bool { showsFacts && caps.contains(CompanionCapability.checked) }
 }
 
 /// `{"id":"…","result":{…}}` or `{"id":"…","error":{"code":"…","message":"…"}}`.
@@ -390,9 +393,28 @@ public struct MemoryAnswerResult: Codable, Sendable, Equatable {
         public var why: String?
         /// Its buttons: one target per link or fact it rests on.
         public var corrections: [FactsCorrectionTarget]?
+        /// 13e.2, for a call with the `checked` capability: what the time model's check decided; `text` is then the Mac's
+        /// line ("Before Pine Signal: Marlin Analytics."), or for `not_sure` the reason.
+        public var check: Check?
+
+        public struct Check: Codable, Sendable, Equatable, Hashable {
+            /// `agrees`, `agrees_trusted` ("text you didn't write says otherwise") or `not_sure`; an unknown one is shown as
+            /// not sure.
+            public var verdict: String
+            /// The time model's basis (`ordered`, `stated`, `inferred`, `gap`), for an agreeing claim.
+            public var basis: String?
+
+            public init(verdict: String, basis: String? = nil) {
+                self.verdict = verdict
+                self.basis = basis
+            }
+
+            public var markedTrusted: Bool { verdict == "agrees_trusted" }
+            public var notSure: Bool { verdict != "agrees" && verdict != "agrees_trusted" }
+        }
 
         public init(text: String, citations: [Citation], inferred: Bool? = nil, factIDs: [String]? = nil, basis: String? = nil,
-                    why: String? = nil, corrections: [FactsCorrectionTarget]? = nil) {
+                    why: String? = nil, corrections: [FactsCorrectionTarget]? = nil, check: Check? = nil) {
             self.text = text
             self.citations = citations
             self.inferred = inferred
@@ -400,10 +422,11 @@ public struct MemoryAnswerResult: Codable, Sendable, Equatable {
             self.basis = basis
             self.why = why
             self.corrections = corrections
+            self.check = check
         }
 
         enum CodingKeys: String, CodingKey {
-            case text, citations, inferred, basis, why, corrections
+            case text, citations, inferred, basis, why, corrections, check
             case factIDs = "factIds"
         }
     }
@@ -417,7 +440,8 @@ public struct MemoryAnswerResult: Codable, Sendable, Equatable {
     public var engine: String
     public var locality: AnswerLocality
     public var durationMs: Int
-    /// v0.10, `facts` capability only: bridge memories read on top of the results (up to 2).
+    /// v0.10, `facts` capability only: memories read on top of the results: from 13e.2, those the rows cite (up to 6; it
+    /// was bridges, up to 2).
     public var bridges: Int?
     /// Shown results not read because, re-ranked with sendable facts only, they aren't in what a cloud answer reads.
     public var unreadLinked: Int?

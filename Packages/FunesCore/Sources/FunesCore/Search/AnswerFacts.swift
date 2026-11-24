@@ -90,6 +90,24 @@ struct AnswerFactsPlan: Sendable {
     var attributes: [UUID: Attribute]
     var bridges: [Bridge]
     var note: TimelineNote?
+    /// 13e.2: the *timeline* rows the answer reads (memory processing §10.3), and the check its claims owe (§10.4); nil
+    /// without the use on for this answer model, for an engine on this Mac, or for a phone without `checked`.
+    var rows: TimelineRows?
+    var check: TimelineCheck?
+    /// The trusted memories the rows cite that the results don't include, in the rows' order, at most 6 (`m11`…).
+    var cited: [UUID] = []
+    /// The highest sensitivity behind the rows (every memory stating them), sent as a typed item, and those memories,
+    /// checked again at the send boundary.
+    var rowsSensitivity: Sensitivity = .public
+    var rowsBehind: Set<String> = []
+    /// The fact ids behind the rows (renamed holders included), whose user entries and corrections the send boundary
+    /// checks again.
+    var rowsFacts: Set<String> = []
+    /// The rows' holders, renamed ones included: their own corrections (names, renames) are checked again at send.
+    var rowsHolders: Set<String> = []
+    /// False for a plan made only for the rows (a *timeline* record, no *attributes* one): the answer then reads 13b's
+    /// plain selection with the rows on top, and nothing else Funes inferred (§10.3).
+    var factsSelection = true
     /// The facts revision the plan was made at (`SearchService.factsRevision`'s form).
     var revision: String
     let view: FactsSearchIndex
@@ -114,11 +132,44 @@ struct AnswerFactsPlan: Sendable {
         let linkLines = sent.sorted { $0.uuidString < $1.uuidString }.flatMap { id in (view.links[id.db] ?? []).map {
             "\(id):\($0.kind.rawValue):\($0.entity ?? "-"):\($0.candidates.joined(separator: "+")):\($0.basis.rawValue):\($0.predicate ?? ""):\($0.surface):\($0.start)"
         } }
-        parts.append(linkLines.sorted().joined(separator: ";"))
+        // A rows-only plan (13e.2) rests on none of the links, admissions or the query plan's timeline.
+        parts.append(factsSelection ? linkLines.sorted().joined(separator: ";") : "")
         parts.append(admissions.map { "\($0.key):\($0.value.way.rawValue):\($0.value.entity ?? ""):\($0.value.basis.rawValue)" }.sorted().joined(separator: ";"))
-        parts.append(plan.matches.map { "\($0.entity):\($0.via.rawValue):\($0.basis.rawValue):\($0.predicate ?? "")" }.sorted().joined(separator: ","))
-        parts.append(plan.timeline.map { "\($0.predicate)|\($0.answer.joined(separator: "+"))|\($0.anchor ?? "")|\($0.basis.rawValue)" } ?? "")
+        parts.append(factsSelection ? plan.matches.map { "\($0.entity):\($0.via.rawValue):\($0.basis.rawValue):\($0.predicate ?? "")" }.sorted()
+            .joined(separator: ",") : "")
+        parts.append(factsSelection ? plan.timeline.map { "\($0.predicate)|\($0.answer.joined(separator: "+"))|\($0.anchor ?? "")|\($0.basis.rawValue)" } ?? "" : "")
         parts.append(bridges.map { "\($0.memoryID):\($0.factIDs.joined(separator: "+")):\($0.basis.rawValue)" }.joined(separator: ";"))
+        // 13e.2: the rows as sent and the memories they cite: a change to either drops the answer (§10.5).
+        parts.append(rows?.block() ?? "")
+        parts.append(cited.map(\.uuidString).joined(separator: ","))
+        // What the check reads: the predicate's facts in the view (every assertion, any trust), the user's rejected orders,
+        // and for a cloud answer the owner's whole graph's, so a change above the limit during the call drops the answer
+        // rather than checking against facts that no longer hold.
+        if let check {
+            // Every input the time model reads for the predicate: each assertion whole (qualifiers in order), the holders'
+            // names and aliases, Not the Same, and the rejected orders with their selectors.
+            func digest(_ g: FactsGraph) -> String {
+                let pred = check.rows.predicate
+                let mine = g.facts.filter { $0.predicate == pred }
+                let facts = mine.map { f -> String in
+                    let a = f.assertions.map { a -> String in
+                        var b = a
+                        b.qualifiers = [:]
+                        return "\(b)|" + a.qualifiers.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
+                    }.sorted()
+                    return "\(f.entity):\(f.negated):\(f.label ?? ""):" + a.joined(separator: ";")
+                }.sorted()
+                let holders = Set(mine.map(\.entity)).sorted().map { id -> String in
+                    let e = g.entities[id]
+                    return "\(id):\(e?.name ?? ""):\(e?.aliases.sorted() ?? []):\(e?.trustedAliases.sorted() ?? [])"
+                }
+                let notSame = g.notSame.map { $0.sorted().joined(separator: "+") }.sorted()
+                let edges = g.rejectedEdges.map { "\($0)" }.sorted()
+                return FactsCorrections.digest(facts + holders + notSame + edges)
+            }
+            parts.append(digest(check.graph))
+            parts.append(check.local.map(digest) ?? "")
+        }
         let facts = Set(admissions.values.compactMap(\.entity) + attributes.values.compactMap(\.entity))
         parts.append(view.graph.facts.filter { facts.contains($0.entity) && !$0.negated }.map {
             "\($0.entity):\($0.predicate):\($0.label ?? ""):\($0.cls ?? "")"
@@ -134,6 +185,7 @@ struct AnswerFactsPlan: Sendable {
         p.admissions = admissions.filter { sent.contains($0.key) }
         p.attributes = attributes.filter { sent.contains($0.key) }
         p.bridges = bridges.filter { sent.contains($0.memoryID) }
+        p.cited = cited.filter(sent.contains)
         return p
     }
 }

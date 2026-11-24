@@ -165,7 +165,12 @@ struct AnswerCardView: View {
             header(result)
             ForEach(Array(result.claims.enumerated()), id: \.offset) { index, claim in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(claim.text).fontWeight(index == 0 ? .semibold : .regular)
+                    // 13e.2: a checked claim leads with the Mac's line; "not sure" reads as a reason, not an answer.
+                    Text(claim.text).fontWeight(index == 0 && claim.check?.notSure != true ? .semibold : .regular)
+                        .foregroundStyle(claim.check?.notSure == true ? .secondary : .primary)
+                    if claim.check?.markedTrusted == true {
+                        Text(AnswerWording.untrustedSaysOtherwise).font(.caption).foregroundStyle(.secondary)
+                    }
                     HStack(spacing: 6) {
                         if claim.inferred == true {
                             // The Mac marked it: what it rests on and its corrections are a tap away.

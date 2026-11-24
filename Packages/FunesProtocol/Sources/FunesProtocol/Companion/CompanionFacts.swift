@@ -10,8 +10,12 @@ public enum CompanionCapability {
     /// The phone shows People & history, read from the Mac (13d.2, §4.3): `people.*`, and `status.get`'s `people`.
     public static let people = "people"
 
+    /// The phone shows answers the time model checked (13e.2, §3): the Mac's line in place of a claim's text, "not sure",
+    /// and "text you didn't write says otherwise". Without it, `memories.answer` reads no rows, so no claim owes a check.
+    public static let checked = "checked"
+
     /// What this build sends on every call.
-    public static let current = [facts, people]
+    public static let current = [facts, people, checked]
 }
 
 /// One correction a result's why line or an answer's inferred claim offers (§4, memory processing §11.8): **Not <name>**

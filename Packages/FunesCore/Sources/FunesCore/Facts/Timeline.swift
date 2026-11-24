@@ -273,7 +273,7 @@ extension FactsGraph {
     public func before(_ predicate: String, _ anchor: TimelineAnchor, query: String = "",
                        direction: TimelineDirection = .before, episodes given: [Episode]? = nil,
                        anchorDate: DateRange? = nil, boundary: String? = nil, slot: String? = nil,
-                       strictTrust: Bool = false) -> TimelineAnswer {
+                       strictTrust: Bool = false, stint: Int? = nil) -> TimelineAnswer {
         guard uses.isOn(predicate, .timeline) else { return .none(.unknown) }      // §11.10
         let eps = given ?? episodes(predicate)
         switch anchor {
@@ -292,7 +292,9 @@ extension FactsGraph {
             let trustedOnes = all.filter(\.trusted)
             let mine = trustedOnes.isEmpty ? all : trustedOnes
             if mine.isEmpty { return .none(.unknown) }
-            let cue = episodeCue(mine, query: query)
+            var cue = episodeCue(mine, query: query)
+            // A stint by number (13e.2's check) stands for the phrase's cues: one past those known can't be met.
+            if let n = stint { cue = (true, (1...mine.count).contains(n) ? mine[n - 1] : nil) }
             if cue.cued, cue.pick == nil { return .none(.ambiguous) }    // a cue that can't be met: never overridden
             let picked = cue.pick
             var chosen = picked
@@ -654,7 +656,7 @@ extension FactsGraph {
             // Episode cues come from the operator phrase alone ("before Acme the second time").
             let direction: TimelineDirection = it.op == .before ? .before : .after
             let got = before(it.predicate, anchor, query: it.phrase ?? query, direction: direction, episodes: eps,
-                             anchorDate: it.anchorDate, boundary: it.anchorBoundary, slot: it.slot, strictTrust: true)
+                             anchorDate: it.anchorDate, boundary: it.anchorBoundary, slot: it.slot, strictTrust: true, stint: it.stint)
             // Holders that may be one entity under two names: an answer naming one of them is told (it would name half
             // of it); otherwise the answer stands only if it's the same with each group read as one entity.
             let groups = splitGroups(it.predicate)
@@ -668,7 +670,7 @@ extension FactsGraph {
             mit.anchor = mAnchor
             guard let meps = m.slotted(mit) else { return .none(.ambiguous) }
             let alt = m.before(it.predicate, mAnchor, query: it.phrase ?? query, direction: direction, episodes: meps,
-                               anchorDate: it.anchorDate, boundary: it.anchorBoundary, slot: it.slot, strictTrust: true)
+                               anchorDate: it.anchorDate, boundary: it.anchorBoundary, slot: it.slot, strictTrust: true, stint: it.stint)
             // The same entity on the same basis (a gap or an inference the merged reading tells is a different answer).
             return alt.entities == got.entities.map { rep[$0] ?? $0 } && alt.basis == got.basis ? got : .none(.ambiguous)
         case .year:

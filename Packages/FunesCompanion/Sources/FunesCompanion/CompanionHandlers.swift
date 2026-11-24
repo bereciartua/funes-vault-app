@@ -86,11 +86,12 @@ public final class CompanionHandlers: Sendable {
         let device = deviceID
         // What this call can show (v0.10, §3): decided per call from its own caps, never a remembered phone version.
         let facts = head.showsFacts
+        let checked = head.showsChecked
         let people = head.showsPeople
         if method == .memoriesAnswer {
             return await withTimeout(id: head.id, limit: answerLimit, error: CompanionError(.modelTimeout, message: "Deadline"),
                                      cancelsWork: true) { [self] in
-                await run(MemoriesAnswer.self, head) { try await answer($0, device: device, facts: facts, now: now) }
+                await run(MemoriesAnswer.self, head) { try await answer($0, device: device, facts: facts, checked: checked, now: now) }
             }
         }
         return await withTimeout(id: head.id, limit: callLimit) { [self] in
@@ -156,7 +157,8 @@ public final class CompanionHandlers: Sendable {
     /// `memories.answer` (v0.6): the Mac re-reads the ids as the owner and answers from them
     /// (memory processing §10.3–10.4). A new call from the same device cancels this one, which
     /// ends its model call; the result never carries offsets or more than the claims.
-    func answer(_ params: MemoryAnswerParams, device: UUID, facts: Bool = false, now: Date) async throws -> MemoryAnswerResult {
+    func answer(_ params: MemoryAnswerParams, device: UUID, facts: Bool = false, checked: Bool = false, now: Date) async throws
+        -> MemoryAnswerResult {
         try params.validate()
         guard let answers = services.answers else { throw CompanionError(.answersOff) }
         // Registered before anything waits, so the same device's next Ask always cancels this one,
@@ -173,8 +175,10 @@ public final class CompanionHandlers: Sendable {
             // also puts in its top results under them (memory processing §11.9; 13d replaces this with its selection).
             // The phone's filters; with learned facts (a call with the `facts` capability), admission is recomputed from the
             // query and filters, never the ids alone; without it, 13b's plain selection, with nothing Funes inferred.
+            // 13e.2: rows (and so checked claims) only for a call that shows them.
             return (engine, try await answers.answer(params.query, ids: params.ids, filter: Self.filter(params.filters), facts: facts,
-                                                     actor: .device(device), via: .companion, automatic: automatic))
+                                                     checked: facts && checked, actor: .device(device), via: .companion,
+                                                     automatic: automatic))
         }
         let previous = answering.withLock { inFlight -> Task<(SearchAnswerEngine, SearchAnswer), any Error>? in
             let old = inFlight[device]?.task
@@ -188,7 +192,8 @@ public final class CompanionHandlers: Sendable {
             let wording = services.factsWording
             // A call that can't show learned facts never gets an inferred claim: none can arise (13b's selection), and any
             // marked one would be dropped, counted in `dropped`.
-            let shown = facts ? answer.claims : answer.claims.filter { $0.inference == nil }
+            let shown = (facts ? answer.claims : answer.claims.filter { $0.inference == nil })
+                .filter { checked || $0.check == nil }
             return MemoryAnswerResult(
                 outcome: shown.isEmpty ? .noAnswer : .answered,
                 claims: shown.map { claim in
@@ -197,7 +202,8 @@ public final class CompanionHandlers: Sendable {
                         text: claim.text, citations: claim.citations.map { .init(id: $0.memoryID, quote: $0.quote) },
                         inferred: inf.map { _ in true }, factIDs: inf?.factIDs, basis: inf?.basis,
                         why: inf?.why.map { Self.clip(wording.claimWhy($0)) },
-                        corrections: inf.map { $0.corrections.map { c in var t = c.target; t.label = wording.label(c); return t } })
+                        corrections: inf.map { $0.corrections.map { c in var t = c.target; t.label = wording.label(c); return t } },
+                        check: checked ? claim.check.map { .init(verdict: $0.verdict.rawValue, basis: $0.basis?.rawValue) } : nil)
                 },
                 read: answer.read, withheld: answer.withheld + (facts ? 0 : answer.unreadLinked),
                 dropped: answer.dropped + answer.claims.count - shown.count, engine: engine.name,
