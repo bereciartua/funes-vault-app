@@ -1379,7 +1379,8 @@ def verify_timeline_record(r, reg):
     probs += timeline_replay_problems(sc["engine"], sc["model"], scores.parent / "replay", sc["tag"], rec0, check_code=False)
     again, _, _ = timeline_gates(sc["engine"], sc["model"], sc["factsModel"], sc["tag"])
     probs += [f"{k}: fails (recomputed)" for k in unwaived_failures(again["gates"], again["measures"], scores_waiver(sc))]
-    if again["measures"] != sc["measures"]:
+    # Compared as the scores file stores them (JSON object keys are strings: negative_wrong_R_per_sample's samples).
+    if json.loads(json.dumps(again["measures"])) != sc["measures"]:
         probs.append("the measures recomputed from the evidence differ from the scores")
     p2, rec = timeline_record_problems(sc)
     probs += p2
