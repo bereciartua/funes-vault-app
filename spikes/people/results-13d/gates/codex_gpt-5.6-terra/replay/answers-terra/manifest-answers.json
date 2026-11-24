@@ -1,17 +1,17 @@
 {
-  "answerPromptVersion" : "a13d-1",
+  "answerPromptVersion" : "a13e2-3",
   "cached" : 627,
   "calls" : 0,
-  "commit" : "2295a4b81660ec29e93dad218dd7eaa128fe31c8",
-  "date" : "2026-11-20T19:00:44Z",
+  "commit" : "491740da3adb983716c77af34461ca634bfc099f",
+  "date" : "2026-11-24T19:45:45Z",
   "dirty" : false,
   "engine" : {
     "model" : "gpt-5.6-terra",
     "provider" : "codex"
   },
   "factsPromptVersions" : {
-    "people" : "a3a15bf93aa2",
-    "work" : "1ce3eb9fc51a"
+    "people" : "b08af3894f34",
+    "work" : "22d054884a30"
   },
   "gate" : "answers",
   "mode" : "replay",
@@ -24,11 +24,11 @@
     "gate" : "answers"
   },
   "records" : {
-    "astra-r3.jsonl" : "51695ae6af4736a9a002c76adf0c178613f1dce3304abf7b4b5d1081445eb7bb",
-    "busy-r3.jsonl" : "abb4286aa5f933cb3e8f76d8c38643a8d94e5d377e126af7975c8e2350841ef5",
-    "main-r3.jsonl" : "9d1e59e45a2053a337cfad724e71ea2c680b078f44ee3b3aaa0195bc87c7ab6b"
+    "astra-r3.jsonl" : "ea9a9d85406e55af4e79d9ea7e2ab8c2b70bba2673affce3478a54413c5d6b71",
+    "busy-r3.jsonl" : "1fa5d2415e49e5dd1582b21a2abc400cd0e1557ddf3e05d0ef2cceda7c436dfc",
+    "main-r3.jsonl" : "1a2c0c4f27c63ba7e44c7b55660a8ef946a66c0532d0956121ac7cb750a97f53"
   },
-  "registryVersion" : "v1-4f14a1e53524",
+  "registryVersion" : "v1-8338de9d268e",
   "responsesWithoutModel" : 627,
   "uncached" : 0
 }

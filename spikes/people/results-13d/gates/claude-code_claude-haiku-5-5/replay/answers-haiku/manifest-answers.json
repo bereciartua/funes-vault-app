@@ -1,17 +1,17 @@
 {
-  "answerPromptVersion" : "a13d-1",
+  "answerPromptVersion" : "a13e2-3",
   "cached" : 627,
   "calls" : 0,
-  "commit" : "cba3633ffdf1d1277f5eebb8db613d6a6acb70ee",
-  "date" : "2026-11-20T15:32:38Z",
+  "commit" : "491740da3adb983716c77af34461ca634bfc099f",
+  "date" : "2026-11-24T19:16:10Z",
   "dirty" : false,
   "engine" : {
     "model" : "haiku",
     "provider" : "claude-code"
   },
   "factsPromptVersions" : {
-    "people" : "a3a15bf93aa2",
-    "work" : "1ce3eb9fc51a"
+    "people" : "b08af3894f34",
+    "work" : "22d054884a30"
   },
   "gate" : "answers",
   "mode" : "replay",
@@ -24,11 +24,11 @@
     "gate" : "answers"
   },
   "records" : {
-    "astra-r3.jsonl" : "8a9d40fd72d5a6a431b38dda88cdbcb4cf9ffb43494694945c5cb1af1b40cb96",
-    "busy-r3.jsonl" : "065c56cfc69263422e4362d8d57c8c224686b8c69d5f13c7c966f982f2df5eab",
-    "main-r3.jsonl" : "21ff11f9edfa6b03be0055381ee2018b6ef348f6960c794bbf89be7a23042f0d"
+    "astra-r3.jsonl" : "e3799c4057e4d6baaf89ec0723a1ee0fab289d6b6ab0cd8495695847d01aa6de",
+    "busy-r3.jsonl" : "449fd52b2aa8feb962413b8f492d7ad0b9106530c88fe7c6d5f356618d555f9f",
+    "main-r3.jsonl" : "98dc5eb577640d8fd30d0aa828d5dfa910619ae6f9cb00fa94a68fe740c51497"
   },
-  "registryVersion" : "v1-4f14a1e53524",
+  "registryVersion" : "v1-8338de9d268e",
   "responsesWithoutModel" : 0,
   "uncached" : 0
 }

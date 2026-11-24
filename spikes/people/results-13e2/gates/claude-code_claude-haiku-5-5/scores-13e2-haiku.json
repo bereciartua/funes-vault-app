@@ -1,0 +1,172 @@
+{
+ "engine": "haiku",
+ "model": "claude-code/claude-haiku-5-5",
+ "factsModel": "claude-code/claude-haiku-5-5",
+ "tag": "r4",
+ "inputs": {
+  "answers-haiku/answers.jsonl": "d18d371e6fee3920bba2f0e0e3e39ec1c4d4c87c00559f6b9422e16290fa5d14",
+  "answers-haiku/manifest.json": "d1611dd85f579928dfc5f9d30d346fd58f2946676a607756ba26aee5e980977f",
+  "answers-haiku/judge-opus.jsonl": "5bc187de3273e954fef99c53e03a459b00110c4eec04472fbb54b168abe3b643",
+  "answers-haiku/judge-astra.jsonl": "335c89d0887cafd34778e0acaee03f4a8453eef34752783cdce510f0bd6a65da",
+  "answers-haiku/adjudicated.jsonl": "eee0d674c0da47864505cb43e722693084383479ae6eb38af63a9b01b45bc0bf",
+  "read-r4/stories.jsonl": "1650eafe2020ec088e2b324734c4f6598a4d09f2c4dc0e5a8b11c66a3c3b13f4",
+  "read-r4/manifest.json": "512386714cf0ffc9a0feefae92d3e94e65d1980cbab5cad652413cc29781c9ad",
+  "read-r4/calls.jsonl": "3a4ffb0a3fad1b513a3785e95cb3ca894633280b5dbec726ab3dcb3753018cd2",
+  "labels-corrected.json": "a7f899330d6126c8a7b959b0f8cefcee8d922d6482eb568d798c9e239128da17",
+  "relabels.jsonl": "b69ed43dc148c99282e5485756b02cd8cae05dd67bc7b6bcdb480b83bd1bb4e2",
+  "waivers.json": "71593d517971cfd82455491fec96365f4b22f3b73b07c92cb1e61c0a9b186a81"
+ },
+ "set": {
+  "stories.json": "d8585f16dd0f356c0a3b455ad55490cdb4344ac4d1925cbe13b8989c4b4e723f",
+  "fillers.json": "19859e993012055d4257acce40bc602bc37317a594af183ff697e36345a46a4f"
+ },
+ "spikeG": {
+  "spike-g-haiku-timeline/main-P.jsonl": "94fcb091206402927015fec91931f54c4df1c185a172a18562040832e34f643a",
+  "spike-g-haiku-timeline/main-F.jsonl": "659d73d17534bd9d789f1ced3646df1e68159bcc0a3525f1c51a39790a19aa62",
+  "spike-g-haiku-timeline/astra-P.jsonl": "958c9e4d844b43965405bd5a0c2a9f8b29fec006d79122092e03f23e666eb1f0",
+  "spike-g-haiku-timeline/astra-F.jsonl": "5e963b45c9ece97a226e4f14cb8a1aabb5866a65a1328aadd5a4ff376eda52ea"
+ },
+ "phaseA": {
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl": "5071e095f587fd94704d495893bc50c270fb5a4eff479c7fb74b917a6baf2469",
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl": "c64420024978e2ed50cdb72949af003418d3757466abe3b7b790ebd0677e9c78",
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl": "11addd49a5eb99e2249e5da52863cdcc303a5aad9edd79a4cd0a416bc6383901",
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl": "49576f4d2c06fdec9db4379f7aa6e86f762a54f63fbc6d84c68c6061da3031b5"
+ },
+ "replay": {
+  "commit": "491740da3adb983716c77af34461ca634bfc099f",
+  "answerPromptVersion": "a13e2-3",
+  "registryVersion": "v1-8338de9d268e",
+  "files": {
+   "replay/answers-haiku/answers.jsonl": "6733b9cb33b1ec1567aba48715581999c88060e8a94bc2f328ac06b6a1655eed",
+   "replay/answers-haiku/manifest.json": "a62d2bf980a9b4f70d4c16ae83f019a26c2b3c49bcbd2b6713bdf5df814bd1e3",
+   "replay/answers-haiku/mode": "b755cb248c3c4a7d94f835b4421809336e7015850342064be4dfa23349dcdcaa",
+   "replay/replay-read-r4/manifest.json": "729b201efbd062c450730266b259770a60144fc0118ba975eeedd93a9161aabb",
+   "replay/replay-read-r4/stories.jsonl": "86d136e5182453262d048eb570a21a48ba2d4bbbe88e729a7388c1f4af4613b5",
+   "replay/spike-g-haiku-timeline/astra-F.jsonl": "c7049d1aa98825449f1f9c5f26d3a5179035a500dbd60647808cd5dd489fa64c",
+   "replay/spike-g-haiku-timeline/astra-P.jsonl": "958c9e4d844b43965405bd5a0c2a9f8b29fec006d79122092e03f23e666eb1f0",
+   "replay/spike-g-haiku-timeline/main-F.jsonl": "8ebb1c5b87bdbb3b7f6be48e52f3f0cafa8978fb1dc2d85caba7934ce224d320",
+   "replay/spike-g-haiku-timeline/main-P.jsonl": "94fcb091206402927015fec91931f54c4df1c185a172a18562040832e34f643a",
+   "replay/spike-g-haiku-timeline/manifest-spikeg.json": "d7aa31d30361ec8e68e1cdf54be3d87bee735d9ce4c2c60050430e5a4d3bf2e4"
+  }
+ },
+ "measures": {
+  "decidable": 60,
+  "decidable_right": 60,
+  "decidable_right_rate": 1.0,
+  "decidable_unmarked_wrong": 0,
+  "decidable_marked_wrong": 0,
+  "undecidable": 60,
+  "undecidable_not_sure": 58,
+  "undecidable_not_sure_rate": 0.9666666666666667,
+  "undecidable_no_answer": 10,
+  "negatives": 48,
+  "negative_wrong_R_per_sample": {
+   "1": 1
+  },
+  "negative_wrong_P": 5,
+  "someone_else": 0,
+  "owed_skipped": 2,
+  "unmarked_inferred": 1,
+  "failed": 0,
+  "p95_ms": 8105.95,
+  "live_answers_timed": 168,
+  "samples": 1
+ },
+ "facts": {
+  "gate read": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/mixed.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r1/work13.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/mixed.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [
+    "('x03', 'Small Current Studio', '2019-02', 'end')"
+   ],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  },
+  "spikes/people/results-13a2/gates/claude-code_claude-haiku-5-5/swift-claude-claude-haiku-5-5-gates-r2/work13.jsonl": {
+   "wrong_facts": [],
+   "wrong_dates": [
+    "('w02', 'Cedar Press', '2020-09', 'end')"
+   ],
+   "succession_untrusted": 0,
+   "succession_cross_slot": 0,
+   "ruled_stated": [],
+   "pass": true
+  }
+ },
+ "gates": {
+  "complete": true,
+  "decidable_right": true,
+  "decidable_wrong": true,
+  "undecidable_not_sure": true,
+  "negatives": true,
+  "someone_else": true,
+  "owed_checks": false,
+  "marking": false,
+  "p95": true,
+  "facts": true,
+  "spike_g": true
+ },
+ "problems": [],
+ "originalLabels": {
+  "measures": {
+   "decidable": 60,
+   "decidable_right": 60,
+   "decidable_right_rate": 1.0,
+   "decidable_unmarked_wrong": 0,
+   "decidable_marked_wrong": 0,
+   "undecidable": 60,
+   "undecidable_not_sure": 58,
+   "undecidable_not_sure_rate": 0.9666666666666667,
+   "undecidable_no_answer": 10,
+   "negatives": 48,
+   "negative_wrong_R_per_sample": {
+    "1": 1
+   },
+   "negative_wrong_P": 5,
+   "someone_else": 0,
+   "owed_skipped": 2,
+   "unmarked_inferred": 1,
+   "failed": 0,
+   "p95_ms": 8105.95,
+   "live_answers_timed": 168,
+   "samples": 1
+  },
+  "gates": {
+   "complete": true,
+   "decidable_right": true,
+   "decidable_wrong": true,
+   "undecidable_not_sure": true,
+   "negatives": true,
+   "someone_else": true,
+   "owed_checks": false,
+   "marking": false,
+   "p95": true
+  }
+ },
+ "date": "2026-11-24"
+}

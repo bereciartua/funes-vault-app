@@ -1,17 +1,17 @@
 {
-  "answerPromptVersion" : "a13d-1",
+  "answerPromptVersion" : "a13e2-3",
   "cached" : 124,
   "calls" : 0,
-  "commit" : "2295a4b81660ec29e93dad218dd7eaa128fe31c8",
-  "date" : "2026-11-20T19:01:10Z",
+  "commit" : "491740da3adb983716c77af34461ca634bfc099f",
+  "date" : "2026-11-24T19:46:02Z",
   "dirty" : false,
   "engine" : {
     "model" : "gpt-5.6-terra",
     "provider" : "codex"
   },
   "factsPromptVersions" : {
-    "people" : "a3a15bf93aa2",
-    "work" : "1ce3eb9fc51a"
+    "people" : "b08af3894f34",
+    "work" : "22d054884a30"
   },
   "gate" : "spikeg",
   "mode" : "replay",
@@ -24,12 +24,12 @@
     "gate" : "spikeg"
   },
   "records" : {
-    "astra-F.jsonl" : "f9dbddaeb94506d194e5b01266289ead6d23dbd6ea734ecad81289fed9643df5",
+    "astra-F.jsonl" : "fd9d7e461f56a46cc8667d4fb36acf36598f8f5d4285c869f29792e4b04b884d",
     "astra-P.jsonl" : "412e89557bcedacaa0d6281f72281c79ee3d678e916f0ec8a377f1432433a7fc",
-    "main-F.jsonl" : "b71c78020c5795581b848c621ff0888e04663ebb5f8f08134084672ffe99d1e2",
+    "main-F.jsonl" : "a834b2f37584002bcd82d1c37d12f79e0ea75c384dbf4fab34541312dd4740ce",
     "main-P.jsonl" : "8f1f72a7c2b0ad07db2921ac9181a3d6ff0f73df1597ae3afecdca1bfd39ee3e"
   },
-  "registryVersion" : "v1-4f14a1e53524",
+  "registryVersion" : "v1-8338de9d268e",
   "responsesWithoutModel" : 124,
   "uncached" : 0
 }
