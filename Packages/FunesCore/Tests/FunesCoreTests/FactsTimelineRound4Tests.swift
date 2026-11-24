@@ -374,4 +374,27 @@ import Testing
                 facts: [fact(d, "Tallow Prints", "2019", status: .current, slot: FX.own, time: "2026-10-28", quote: "As of 2026-10-28 I still run Tallow Prints, my own business.")])
         #expect(check(g, "current", answer: "Copperfern Index").reason == .cantTell)
     }
+
+    // MARK: A hedge on a date question is checked (r3 rehearsal's owed checks)
+
+    @Test func whoAndFollowUpQuestionsAskForTheHolderToo() {
+        let g = FactsGraph(registry: FX.registry)
+        for q in ["Who was my salaried employer on 2 January 2019?", "Who had me on day-job payroll on 10 June 2022?",
+                  "And my employer on 1 July 2021?", "Which company employed me in 2019?", "Who employed me in 2019?",
+                  "Who was my next employer after leaving Copperfern Index?", "Who was my second employer after leaving Cedar Systems?",
+                  "¿Quién me tenía en nómina el 2 de enero de 2019?", "Who was my employer?"] {
+            #expect(g.asksForHolder(q, predicate: d), "\(q)")
+        }
+        // Someone, not the holder (both reviews' counterexamples).
+        for q in ["Who was my manager at my employer in 2019?", "Who worked for my employer in 2020?", "Who did I work for at my last job?",
+                  "And who was my manager then?", "Where is my company now?", "Who was my husband in 2019?",
+                  "Who was my salaried manager on 2 January 2019?", "Who was my company contact on 2 January 2019?",
+                  "Who was her employer in 2019?", "Who was the employer of my husband in 2019?", "Who was my employment lawyer in 2019?",
+                  "Who at my company approved my leave in 2021?", "Who did my employer hire after me?",
+                  "Who was my previous employer's CEO in 2019?", "Who was my business partner in 2019?",
+                  "Who was on payroll at my company in 2020?", "Who was an employee of my company in 2020?",
+                  "And my manager at my job in 2019?", "And my title at my employer in 2020?"] {
+            #expect(!g.asksForHolder(q, predicate: d), "\(q)")
+        }
+    }
 }
